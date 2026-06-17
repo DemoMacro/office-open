@@ -6,8 +6,8 @@ import { stringifyDataModel } from "./data-model/data-model";
 import { stringifyPoint, stringifyTransPoint } from "./data-model/point";
 
 export interface TreeNode {
-  readonly text: string;
-  readonly children?: readonly TreeNode[];
+  text: string;
+  children?: readonly TreeNode[];
 }
 
 function stringifyDocPoint(layout: string, style: string, color: string): string {

@@ -359,7 +359,7 @@ export const createBodyProperties = (options: BodyPropertiesOptions = {}): strin
  * parsed (later phase).
  */
 export const parseBodyProperties = (el: Element): BodyPropertiesOptions => {
-  const result: Partial<BodyPropertiesOptions> = {};
+  const result: BodyPropertiesOptions = {};
 
   const rotation = attrNum(el, "rot");
   if (rotation !== undefined) result.rotation = rotation;

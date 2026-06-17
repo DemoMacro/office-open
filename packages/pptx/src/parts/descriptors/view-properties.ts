@@ -29,7 +29,7 @@ export const viewPropsDesc: CustomDescriptor<ViewPropertiesDescriptorOptions> = 
 
 // ── Parse ──
 
-function parseViewProperties(el: XmlElement): Partial<ViewPropertiesDescriptorOptions> {
+function parseViewProperties(el: XmlElement): ViewPropertiesDescriptorOptions {
   const result: Record<string, unknown> = {};
 
   if (el.attributes) {

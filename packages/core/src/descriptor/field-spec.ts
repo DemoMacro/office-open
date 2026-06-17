@@ -19,19 +19,19 @@
 
 export interface DescriptorFieldSpec {
   /** Stable identifier, matched to the descriptor under test. */
-  readonly id: string;
+  id: string;
   /** Options interface name (documentation / assertion messages). */
-  readonly optionsInterface: string;
+  optionsInterface: string;
   /** Fields declared on the Options interface — the contract. */
-  readonly interfaceFields: readonly string[];
+  interfaceFields: readonly string[];
   /** Fields the stringify path actually emits; may carry inflation not on the interface. */
-  readonly writeFields: readonly string[];
+  writeFields: readonly string[];
   /** Fields the parse path actually restores. */
-  readonly parseFields: readonly string[];
+  parseFields: readonly string[];
   /** Expected child order when the XSD mandates sequence; omitted when order-independent. */
-  readonly order?: readonly string[];
+  order?: readonly string[];
   /** Sample exercising the interface fields, for F4 round-trip deep-equality. */
-  readonly sampleOptions: unknown;
+  sampleOptions: unknown;
   /**
    * Interface fields excluded from the contract comparison — input-side sugar
    * (thematicBreak→border, rightTabStop→tabStops) and control flags
@@ -39,8 +39,8 @@ export interface DescriptorFieldSpec {
    * 1:1 round-trip assumption. The interface-drift test asserts
    * `interfaceFields === (live interface fields − excludeFields)`.
    */
-  readonly excludeFields?: readonly string[];
-  readonly notes?: string;
+  excludeFields?: readonly string[];
+  notes?: string;
 }
 
 /**

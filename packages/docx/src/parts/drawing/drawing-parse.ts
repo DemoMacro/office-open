@@ -136,7 +136,7 @@ interface AnchorInfo {
  *  child) returns `{}` so it round-trips as `<wp:cNvGraphicFramePr/>`. */
 function readGraphicFrameLocks(el: Element): GraphicFrameLocksOptions {
   const locks = findChild(el, "a:graphicFrameLocks");
-  const result: Partial<GraphicFrameLocksOptions> = {};
+  const result: GraphicFrameLocksOptions = {};
   if (!locks) return result;
   const a = locks.attributes ?? {};
   if (a["noGrp"] !== undefined) result.noGrp = a["noGrp"] !== "0";
@@ -156,7 +156,7 @@ function readGrpSpLocks(cNvGrpSpPr: Element | undefined): GroupShapeLocksOptions
   if (!cNvGrpSpPr) return undefined;
   const locks = findChild(cNvGrpSpPr, "a:grpSpLocks");
   if (!locks) return undefined;
-  const result: Partial<GroupShapeLocksOptions> = {};
+  const result: GroupShapeLocksOptions = {};
   const a = locks.attributes ?? {};
   if (a["noGrp"] !== undefined) result.noGrp = a["noGrp"] !== "0";
   if (a["noUngrp"] !== undefined) result.noUngrp = a["noUngrp"] !== "0";
@@ -373,7 +373,7 @@ function readBlipUseLocalDpi(blip: Element): boolean | undefined {
 function readSourceRectangle(parent: Element): SourceRectangleOptions | undefined {
   const sr = findChild(parent, "a:srcRect");
   if (!sr) return undefined;
-  const result: Partial<SourceRectangleOptions> = {};
+  const result: SourceRectangleOptions = {};
   const left = attrNum(sr, "l");
   const top = attrNum(sr, "t");
   const right = attrNum(sr, "r");
@@ -437,7 +437,7 @@ function readShapeFill(parent: Element, ctx: DocxReadContext) {
 function parseStyleRef(el: Element, ctx: DocxReadContext): StyleMatrixReferenceOptions | undefined {
   const idx = attr(el, "idx");
   if (idx === undefined) return undefined;
-  const result: Partial<StyleMatrixReferenceOptions> = { idx };
+  const result: StyleMatrixReferenceOptions = { idx };
   const color = parseColorChoice(el, ctx);
   if (color && Object.keys(color).length > 0) result.color = color;
   return result as StyleMatrixReferenceOptions;
@@ -448,7 +448,7 @@ function parseStyleRef(el: Element, ctx: DocxReadContext): StyleMatrixReferenceO
  * document theme. Delegates color to the shared core {@link parseColorChoice}.
  */
 function parseShapeStyle(styleEl: Element, ctx: DocxReadContext): ShapeStyleOptions {
-  const result: Partial<ShapeStyleOptions> = {};
+  const result: ShapeStyleOptions = {};
   const lnRef = findChild(styleEl, "a:lnRef");
   if (lnRef) result.lineReference = parseStyleRef(lnRef, ctx);
   const fillRef = findChild(styleEl, "a:fillRef");
@@ -487,7 +487,7 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): WpsShapeCoreOp
   const cNvCnPr = findChild(wspEl, "wps:cNvCnPr");
   const txBox = cNvSpPr ? attr(cNvSpPr, "txBox") : undefined;
   if (cNvPr || txBox !== undefined || cNvCnPr) {
-    const nvp: Partial<NonVisualShapePropertiesOptions> = {};
+    const nvp: NonVisualShapePropertiesOptions = {};
     if (cNvPr) {
       const id = attrNum(cNvPr, "id");
       const name = attr(cNvPr, "name");
@@ -642,7 +642,7 @@ function parseWpsShapeDrawing(
   const info = parseAnchorOrInline(el) ?? {};
   const data = parseWpsShapeCore(wsp, ctx);
 
-  const shape: Partial<WpsShapeRunOptions> = {
+  const shape: WpsShapeRunOptions = {
     ...data,
     transformation: {
       width: info.width ?? 0,
@@ -671,7 +671,7 @@ function parseWpgGroupDrawing(
   const grpSpPr = findChild(wgp, "wpg:grpSpPr");
   const { childOffset, childExtent } = readGroupCoords(grpSpPr);
 
-  const group: Partial<WpgGroupRunOptions> = {
+  const group: WpgGroupRunOptions = {
     children: parseGroupChildren(wgp, ctx),
     transformation: {
       width: info.width ?? 0,

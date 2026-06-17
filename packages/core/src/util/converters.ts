@@ -66,18 +66,18 @@ export const convertEmuToPoints = (emus: number): number => emus / 12700;
 
 /** A rectangular position in pixels. */
 export interface PixelPosition {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 /** An EMU-based rectangular position. */
 export interface EmuPosition {
-  readonly x: number;
-  readonly y: number;
-  readonly cx: number;
-  readonly cy: number;
+  x: number;
+  y: number;
+  cx: number;
+  cy: number;
 }
 
 /**

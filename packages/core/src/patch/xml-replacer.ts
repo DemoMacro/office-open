@@ -13,14 +13,14 @@ import { createTextElementContents } from "./xml-patch-utils";
 import { createTraverser } from "./xml-traverser";
 
 export interface ReplacerConfig {
-  readonly ns: XmlNamespaceConfig;
-  readonly formatChild: (child: unknown, context: unknown) => Element[];
-  readonly preserveSpace?: boolean;
+  ns: XmlNamespaceConfig;
+  formatChild: (child: unknown, context: unknown) => Element[];
+  preserveSpace?: boolean;
 }
 
 interface ReplacerResult {
-  readonly element: Element;
-  readonly didFindOccurrence: boolean;
+  element: Element;
+  didFindOccurrence: boolean;
 }
 
 const SPLIT_TOKEN = "\u0275";
@@ -45,14 +45,14 @@ export function createReplacer(config: ReplacerConfig) {
     context,
     keepOriginalStyles = true,
   }: {
-    readonly json: Element;
-    readonly patch: {
-      readonly type: string;
-      readonly children: readonly unknown[];
+    json: Element;
+    patch: {
+      type: string;
+      children: readonly unknown[];
     };
-    readonly patchText: string;
-    readonly context: unknown;
-    readonly keepOriginalStyles?: boolean;
+    patchText: string;
+    context: unknown;
+    keepOriginalStyles?: boolean;
   }): ReplacerResult => {
     const renderedParagraphs = findLocationOfText(json, patchText);
 

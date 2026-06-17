@@ -72,13 +72,13 @@ const W3CDTF_ATTR: IXmlableObject = Object.freeze({
  * and Dublin Core property construction.
  */
 export function buildCorePropertiesXml(opts: {
-  readonly title?: string;
-  readonly subject?: string;
-  readonly creator?: string;
-  readonly keywords?: string;
-  readonly description?: string;
-  readonly lastModifiedBy?: string;
-  readonly revision?: number;
+  title?: string;
+  subject?: string;
+  creator?: string;
+  keywords?: string;
+  description?: string;
+  lastModifiedBy?: string;
+  revision?: number;
 }): IXmlableObject {
   const children: IXmlableObject[] = [CORE_PROPS_NS];
 
@@ -103,13 +103,13 @@ export function buildCorePropertiesXml(opts: {
  * Shared by pptx and xlsx to bypass the toXml() → xml() pipeline.
  */
 export function buildCorePropertiesXmlString(opts: {
-  readonly title?: string;
-  readonly subject?: string;
-  readonly creator?: string;
-  readonly keywords?: string;
-  readonly description?: string;
-  readonly lastModifiedBy?: string;
-  readonly revision?: number;
+  title?: string;
+  subject?: string;
+  creator?: string;
+  keywords?: string;
+  description?: string;
+  lastModifiedBy?: string;
+  revision?: number;
 }): string {
   const p: string[] = [
     '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',

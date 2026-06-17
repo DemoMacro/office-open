@@ -36,7 +36,7 @@ function stringifyRelativeRect(tag: string, rect: RelativeRect): string {
 }
 
 function readRelativeRect(el: XmlElement): RelativeRect {
-  const result: Partial<RelativeRect> = {};
+  const result: RelativeRect = {};
   if (el.attributes?.["l"]) result.left = String(el.attributes["l"]);
   if (el.attributes?.["t"]) result.top = String(el.attributes["t"]);
   if (el.attributes?.["r"]) result.right = String(el.attributes["r"]);
@@ -113,19 +113,19 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     // Shade (a:lin or a:path)
     const lin = findChild(el, "a:lin");
     if (lin) {
-      const shade: Partial<LinearShadeOptions> = {};
+      const shade: LinearShadeOptions = {};
       if (lin.attributes?.["ang"] !== undefined) shade.angle = Number(lin.attributes["ang"]);
       if (lin.attributes?.["scaled"] !== undefined) shade.scaled = lin.attributes["scaled"] !== "0";
-      result.shade = shade as GradientShadeOptions;
+      result.shade = shade;
     } else {
       const path = findChild(el, "a:path");
       if (path) {
-        const shade: Partial<PathShadeOptions> = {};
+        const shade: PathShadeOptions = {};
         if (path.attributes?.["path"] !== undefined)
           shade.path = String(path.attributes["path"]) as PathShadeOptions["path"];
         const fillToRectangle = findChild(path, "a:fillToRect");
         if (fillToRectangle) shade.fillToRectangle = readRelativeRect(fillToRectangle);
-        result.shade = shade as GradientShadeOptions;
+        result.shade = shade;
       }
     }
 
@@ -268,33 +268,33 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
 
     const noFill = resolve("a:noFill");
     if (noFill) {
-      return { type: "none" } as FillOptions;
+      return { type: "none" };
     }
 
     const solidFill = resolve("a:solidFill");
     if (solidFill) {
-      const color = parse(solidFillDesc, solidFill, ctx) as SolidFillOptions;
-      return { type: "solid", color } as FillOptions;
+      const color = parse(solidFillDesc, solidFill, ctx);
+      return { type: "solid", color };
     }
 
     const gradFill = resolve("a:gradFill");
     if (gradFill) {
       const gradOpts = parse(gradientFillDesc, gradFill, ctx);
-      return { type: "gradient", options: gradOpts as GradientFillOptions } as FillOptions;
+      return { type: "gradient", options: gradOpts as GradientFillOptions };
     }
 
     const pattFill = resolve("a:pattFill");
     if (pattFill) {
       const pattOpts = parse(patternFillDesc, pattFill, ctx);
-      return { type: "pattern", ...(pattOpts as PatternFillOptions) } as FillOptions;
+      return { type: "pattern", ...(pattOpts as PatternFillOptions) };
     }
 
     const grpFill = resolve("a:grpFill");
     if (grpFill) {
-      return { type: "group" } as FillOptions;
+      return { type: "group" };
     }
 
-    return { type: "none" } as FillOptions;
+    return { type: "none" };
   },
 };
 
@@ -306,6 +306,6 @@ function readDirectColor(el: XmlElement, ctx: ReadContext): SolidFillOptions {
   if (Object.keys(color).length > 0) return color;
   // Fallback: try solidFill wrapper (for backward compat with old-generated XML)
   const solidFill = findChild(el, "a:solidFill");
-  if (solidFill) return parse(solidFillDesc, solidFill, ctx) as SolidFillOptions;
-  return { value: "" } as SolidFillOptions;
+  if (solidFill) return parse(solidFillDesc, solidFill, ctx);
+  return { value: "" };
 }

@@ -336,7 +336,7 @@ export const createFormFieldData = (options: FormFieldOptions): string => {
  * checkBox / dropDownList / textInput.
  */
 export function parseFormFieldData(el: Element): FormFieldOptions {
-  const opts: Partial<FormFieldOptions> = {};
+  const opts: FormFieldOptions = {};
 
   const name = findChild(el, "w:name");
   if (name) opts.name = attr(name, "w:val");
@@ -357,7 +357,7 @@ export function parseFormFieldData(el: Element): FormFieldOptions {
 
   const checkBox = findChild(el, "w:checkBox");
   if (checkBox) {
-    const cb: Partial<CheckBoxOptions> = {};
+    const cb: CheckBoxOptions = {};
     if (findChild(checkBox, "w:sizeAuto")) cb.sizeAuto = true;
     const size = findChild(checkBox, "w:size");
     if (size) {
@@ -376,7 +376,7 @@ export function parseFormFieldData(el: Element): FormFieldOptions {
       for (const li of xmlChildren(ddList, "w:listEntry")) {
         entries.push(attr(li, "w:val") ?? "");
       }
-      const ddl: Partial<DropDownListOptions> = { entries };
+      const ddl: DropDownListOptions = { entries };
       const result = findChild(ddList, "w:result");
       if (result) {
         const v = attrNum(result, "w:val");
@@ -391,7 +391,7 @@ export function parseFormFieldData(el: Element): FormFieldOptions {
     } else {
       const textInput = findChild(el, "w:textInput");
       if (textInput) {
-        const ti: Partial<TextInputOptions> = {};
+        const ti: TextInputOptions = {};
         const type = findChild(textInput, "w:type");
         if (type) ti.type = attr(type, "w:val") as TextInputOptions["type"];
         const def = findChild(textInput, "w:default");

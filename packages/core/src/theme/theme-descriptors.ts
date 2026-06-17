@@ -16,8 +16,8 @@ type Mutable<T> = { -readonly [P in keyof T]?: T[P] };
 
 /** Color scheme XML tag → ThemeOptions.colors key mapping. */
 const COLOR_TAGS: ReadonlyArray<{
-  readonly tag: string;
-  readonly key: keyof ColorSchemeOptions & string;
+  tag: string;
+  key: keyof ColorSchemeOptions & string;
 }> = [
   { tag: "a:dk1", key: "dark1" },
   { tag: "a:lt1", key: "light1" },
@@ -69,7 +69,7 @@ export const themeDesc: CustomDescriptor<ThemeOptions> = {
         if (value) colors[key] = value;
       }
       if (Object.keys(colors).length > 0) {
-        result.colors = colors as ColorSchemeOptions;
+        result.colors = colors;
       }
     }
 
@@ -88,10 +88,10 @@ export const themeDesc: CustomDescriptor<ThemeOptions> = {
         const fonts: Mutable<FontSchemeOptions> = {};
         if (majorTypeface) fonts.majorFont = String(majorTypeface);
         if (minorTypeface) fonts.minorFont = String(minorTypeface);
-        result.fonts = fonts as FontSchemeOptions;
+        result.fonts = fonts;
       }
     }
 
-    return result as ThemeOptions;
+    return result;
   },
 };

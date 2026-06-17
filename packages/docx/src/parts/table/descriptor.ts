@@ -273,7 +273,7 @@ function computeVerticalMergeCells(
 
 /** Parse a w:tblCellMar / w:tcMar container into TableCellMarginOptions. */
 function parseCellMargins(marginEl: Element): TableCellMarginOptions | undefined {
-  const margins: Partial<TableCellMarginOptions> = {};
+  const margins: TableCellMarginOptions = {};
   // CT_TblCellMar sides: top, start, left, bottom, end, right — each an
   // independent CT_TblWidth ({ size, type }). Parse faithfully: omit type
   // when the XML has none (stringify defaults it to DXA on the way back).
@@ -293,7 +293,7 @@ function parseCellMargins(marginEl: Element): TableCellMarginOptions | undefined
 
 /** Parse a w:shd (CT_Shd) element into ShadingAttributesProperties. */
 function parseShading(shd: Element): ShadingAttributesProperties | undefined {
-  const shading: Partial<ShadingAttributesProperties> = {};
+  const shading: ShadingAttributesProperties = {};
   const fill = attr(shd, "w:fill");
   if (fill) shading.fill = fill;
   const color = attr(shd, "w:color");
@@ -322,7 +322,7 @@ function parseShading(shd: Element): ShadingAttributesProperties | undefined {
 
 /** Parse a w:cnfStyle (CT_Cnf) element into CnfStyleOptions. */
 function parseCnfStyle(cnfEl: Element): CnfStyleOptions | undefined {
-  const cnf: Partial<CnfStyleOptions> = {};
+  const cnf: CnfStyleOptions = {};
   const val = attr(cnfEl, "w:val");
   if (val) cnf.val = val;
   const firstRow = attrBool(cnfEl, "w:firstRow");
@@ -360,7 +360,7 @@ function parseCnfStyle(cnfEl: Element): CnfStyleOptions | undefined {
  */
 function parseTablePropertyExceptions(el: Element): TablePropertyExOptions {
   const base = parseTablePropertiesEl(el);
-  const opts: Partial<TablePropertyExOptions> = {};
+  const opts: TablePropertyExOptions = {};
   if (base.width !== undefined) opts.width = base.width as TableWidthProperties;
   if (base.indent !== undefined) opts.indent = base.indent as TableWidthProperties;
   if (base.layout !== undefined) opts.layout = base.layout as TablePropertyExOptions["layout"];
@@ -530,7 +530,7 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
       ["insideH", "insideHorizontal"],
       ["insideV", "insideVertical"],
     ];
-    const borders: Partial<TableBordersOptions> = {};
+    const borders: TableBordersOptions = {};
     for (const [xmlSide, key] of SIDE_KEYS) {
       const sideEl = findChild(tblBorders, `w:${xmlSide}`);
       if (!sideEl) continue;
@@ -894,7 +894,7 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
       ["tl2br", "topLeftToBottomRight"],
       ["tr2bl", "topRightToBottomLeft"],
     ];
-    const borders: Partial<TableCellBordersOptions> = {};
+    const borders: TableCellBordersOptions = {};
     for (const [xmlSide, key] of SIDE_KEYS) {
       const sideEl = findChild(tcBorders, `w:${xmlSide}`);
       if (!sideEl) continue;

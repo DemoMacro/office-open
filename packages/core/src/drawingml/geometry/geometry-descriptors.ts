@@ -35,7 +35,7 @@ const adjustmentValuesDesc: CustomDescriptor<readonly GeometryGuide[]> = {
     return `<a:avLst>${inner}</a:avLst>`;
   },
   parse(el, _ctx) {
-    const result: Partial<GeometryGuide>[] = [];
+    const result: GeometryGuide[] = [];
     if (el.elements) {
       for (const child of el.elements) {
         if (child.name === "a:gd" && child.attributes) {
@@ -66,7 +66,7 @@ export const presetGeometryDesc: CustomDescriptor<PresetGeometryOptions> = {
     return `<a:prstGeom prst="${escapeXml(prst)}">${avXml}</a:prstGeom>`;
   },
   parse(el, ctx) {
-    const result: Partial<PresetGeometryOptions> = {};
+    const result: PresetGeometryOptions = {};
     if (el.attributes?.["prst"] !== undefined) {
       result.preset = String(el.attributes["prst"]);
     }
@@ -77,7 +77,7 @@ export const presetGeometryDesc: CustomDescriptor<PresetGeometryOptions> = {
         result.adjustmentValues = guides;
       }
     }
-    return result as PresetGeometryOptions;
+    return result;
   },
 };
 

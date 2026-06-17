@@ -8,32 +8,32 @@ import type { Element } from "@office-open/xml";
 import type { XmlNamespaceConfig } from "./xml-namespace";
 
 export interface ElementWrapper {
-  readonly element: Element;
-  readonly index: number;
-  readonly parent: ElementWrapper | undefined;
+  element: Element;
+  index: number;
+  parent: ElementWrapper | undefined;
 }
 
 export interface RenderedParagraphNode {
-  readonly text: string;
-  readonly runs: readonly RenderedRunNode[];
-  readonly index: number;
-  readonly pathToParagraph: readonly number[];
+  text: string;
+  runs: readonly RenderedRunNode[];
+  index: number;
+  pathToParagraph: readonly number[];
 }
 
 interface StartAndEnd {
-  readonly start: number;
-  readonly end: number;
+  start: number;
+  end: number;
 }
 
 type IParts = {
-  readonly text: string;
-  readonly index: number;
+  text: string;
+  index: number;
 } & StartAndEnd;
 
 export type RenderedRunNode = {
-  readonly text: string;
-  readonly parts: readonly IParts[];
-  readonly index: number;
+  text: string;
+  parts: readonly IParts[];
+  index: number;
 } & StartAndEnd;
 
 export function createRunRenderer(ns: XmlNamespaceConfig) {

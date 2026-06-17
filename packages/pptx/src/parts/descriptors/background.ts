@@ -70,7 +70,7 @@ function stringifyBackgroundInner(opts: BackgroundDescriptorOptions): string {
 
 // ── Parse ──
 
-function parseBackground(el: XmlElement, ctx: ReadContext): Partial<BackgroundDescriptorOptions> {
+function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundDescriptorOptions {
   const result: Record<string, unknown> = {};
 
   if (el.attributes?.["p:bwMode"]) {

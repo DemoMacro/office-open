@@ -448,7 +448,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
   },
 
   parse(el, ctx) {
-    const result: Partial<ParagraphDescriptorOptions> = {};
+    const result: ParagraphDescriptorOptions = {};
 
     // Paragraph properties
     const pPr = findChild(el, "a:pPr");

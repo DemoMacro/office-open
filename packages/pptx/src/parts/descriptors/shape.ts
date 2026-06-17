@@ -308,7 +308,7 @@ export const shapeDesc: CustomDescriptor<ShapeDescriptorOptions> = {
   },
 
   parse(el, ctx) {
-    const result: Partial<ShapeDescriptorOptions> = {};
+    const result: ShapeDescriptorOptions = {};
 
     // Root attributes
     if (el.attributes) {
@@ -736,8 +736,8 @@ function stringifyPicSpPr(opts: PictureDescriptorOptions, ctx: WriteContext): st
 
 // ── Read helpers ──
 
-export function readNvSpPr(nvSpPr: XmlElement): Partial<ShapeDescriptorOptions> {
-  const result: Partial<ShapeDescriptorOptions> = {};
+export function readNvSpPr(nvSpPr: XmlElement): ShapeDescriptorOptions {
+  const result: ShapeDescriptorOptions = {};
 
   const cNvPr = findChild(nvSpPr, "p:cNvPr");
   if (cNvPr?.attributes) {
@@ -775,8 +775,8 @@ export function readNvSpPr(nvSpPr: XmlElement): Partial<ShapeDescriptorOptions> 
   return result;
 }
 
-export function readSpPr(spPr: XmlElement, ctx: ReadContext): Partial<ShapeDescriptorOptions> {
-  const result: Partial<ShapeDescriptorOptions> = {};
+export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOptions {
+  const result: ShapeDescriptorOptions = {};
 
   // Transform
   const xfrm = findChild(spPr, "a:xfrm");
@@ -1049,7 +1049,7 @@ export function readEffectList(effectLst: XmlElement): Record<string, unknown> |
       case "a:reflection": {
         // CT_ReflectionEffect has 14 attrs; toReflectionCore writes them all
         // (with unit scaling). Invert each scale on read.
-        const reflection: Partial<ReflectionOptions> = {};
+        const reflection: ReflectionOptions = {};
         const blurRad = attrNum(child, "blurRad");
         if (blurRad !== undefined) reflection.blurRadius = blurRad;
         const dist = attrNum(child, "dist");

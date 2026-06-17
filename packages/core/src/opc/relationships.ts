@@ -67,10 +67,10 @@ export const TargetModeType = {
 } as const;
 
 interface RelationshipEntry {
-  readonly id: string;
-  readonly type: RelationshipType;
-  readonly target: string;
-  readonly targetMode?: string;
+  id: string;
+  type: RelationshipType;
+  target: string;
+  targetMode?: string;
 }
 
 /**

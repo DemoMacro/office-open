@@ -32,7 +32,7 @@ export const presPropsDesc: CustomDescriptor<PresPropsDescriptorOptions> = {
 
 // ── Parse ──
 
-function parsePresProps(el: XmlElement): Partial<PresPropsDescriptorOptions> {
+function parsePresProps(el: XmlElement): PresPropsDescriptorOptions {
   const result: Record<string, unknown> = {};
 
   // show (p:showPr in real PPTX files, or p:show for round-trip compat)

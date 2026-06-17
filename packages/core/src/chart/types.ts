@@ -10,10 +10,10 @@
 // ── BubbleSeriesData ──
 
 export interface BubbleSeriesData {
-  readonly name: string;
-  readonly xValues: readonly number[];
-  readonly yValues: readonly number[];
-  readonly bubbleSize: readonly number[];
+  name: string;
+  xValues: readonly number[];
+  yValues: readonly number[];
+  bubbleSize: readonly number[];
 }
 
 // ── Trendline ──
@@ -30,15 +30,15 @@ export const TrendlineType = {
 export type TrendlineType = (typeof TrendlineType)[keyof typeof TrendlineType];
 
 export interface TrendlineOptions {
-  readonly type?: TrendlineType;
-  readonly name?: string;
-  readonly order?: number;
-  readonly period?: number;
-  readonly forward?: number;
-  readonly backward?: number;
-  readonly intercept?: number;
-  readonly dispRSqr?: boolean;
-  readonly dispEq?: boolean;
+  type?: TrendlineType;
+  name?: string;
+  order?: number;
+  period?: number;
+  forward?: number;
+  backward?: number;
+  intercept?: number;
+  dispRSqr?: boolean;
+  dispEq?: boolean;
 }
 
 // ── Error bars ──
@@ -70,10 +70,10 @@ export const ErrorValueType = {
 export type ErrorValueType = (typeof ErrorValueType)[keyof typeof ErrorValueType];
 
 export interface ErrorBarOptions {
-  readonly direction?: ErrorBarDirection;
-  readonly barType?: ErrorBarType;
-  readonly valueType?: ErrorValueType;
-  readonly value?: number;
+  direction?: ErrorBarDirection;
+  barType?: ErrorBarType;
+  valueType?: ErrorValueType;
+  value?: number;
 }
 
 // ── Data labels ──
@@ -93,23 +93,23 @@ export const DataLabelPosition = {
 export type DataLabelPosition = (typeof DataLabelPosition)[keyof typeof DataLabelPosition];
 
 export interface DataLabelsOptions {
-  readonly position?: DataLabelPosition;
-  readonly showVal?: boolean;
-  readonly showCatName?: boolean;
-  readonly showSerName?: boolean;
-  readonly showPercent?: boolean;
-  readonly showBubbleSize?: boolean;
-  readonly showLeaderLines?: boolean;
+  position?: DataLabelPosition;
+  showVal?: boolean;
+  showCatName?: boolean;
+  showSerName?: boolean;
+  showPercent?: boolean;
+  showBubbleSize?: boolean;
+  showLeaderLines?: boolean;
 }
 
 // ── Chart series ──
 
 export interface ChartSeriesData {
-  readonly name: string;
-  readonly values: readonly number[];
-  readonly trendlines?: readonly TrendlineOptions[];
-  readonly errorBars?: ErrorBarOptions;
-  readonly dataLabels?: DataLabelsOptions;
+  name: string;
+  values: readonly number[];
+  trendlines?: readonly TrendlineOptions[];
+  errorBars?: ErrorBarOptions;
+  dataLabels?: DataLabelsOptions;
 }
 
 // ── Chart types ──
@@ -132,13 +132,13 @@ export type AxisChartType = Exclude<ChartType, "bubble">;
 // ── ChartSpace options ──
 
 export interface ChartSpaceOptions {
-  readonly title?: string;
-  readonly type: ChartType;
-  readonly categories?: readonly string[];
-  readonly series: readonly ChartSeriesData[] | readonly BubbleSeriesData[];
-  readonly showLegend?: boolean;
-  readonly style?: number;
-  readonly threeD?: boolean;
+  title?: string;
+  type: ChartType;
+  categories?: readonly string[];
+  series: readonly ChartSeriesData[] | readonly BubbleSeriesData[];
+  showLegend?: boolean;
+  style?: number;
+  threeD?: boolean;
 }
 
 // ── 3D view ──
@@ -152,9 +152,9 @@ export const TimeUnit = {
 export type TimeUnit = (typeof TimeUnit)[keyof typeof TimeUnit];
 
 export interface View3DOptions {
-  readonly rotX?: number;
-  readonly rotY?: number;
-  readonly depthPercent?: number;
-  readonly rAngAx?: boolean;
-  readonly perspective?: number;
+  rotX?: number;
+  rotY?: number;
+  depthPercent?: number;
+  rAngAx?: boolean;
+  perspective?: number;
 }

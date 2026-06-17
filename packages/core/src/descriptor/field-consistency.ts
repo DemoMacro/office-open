@@ -15,13 +15,13 @@ import type { DescriptorFieldSpec } from "./field-spec";
 
 export interface FieldConsistencyReport {
   /** F1 — declared on the interface but never written (write-loss). */
-  readonly f1WriteLoss: readonly string[];
+  f1WriteLoss: readonly string[];
   /** F2 — written but absent from the interface (write-only inflation). */
-  readonly f2WriteOnly: readonly string[];
+  f2WriteOnly: readonly string[];
   /** F3 — written but never restored on parse (round-trip loss). */
-  readonly f3ParseLoss: readonly string[];
+  f3ParseLoss: readonly string[];
   /** F5 — restored on parse but never written (parse-only). */
-  readonly f5ParseOnly: readonly string[];
+  f5ParseOnly: readonly string[];
 }
 
 /** Diff the interface / write / parse field sets declared on a spec. */
@@ -39,11 +39,11 @@ export function diffTagSets(spec: DescriptorFieldSpec): FieldConsistencyReport {
 
 export interface RoundTripResult {
   /** Present in the sample, absent after round-trip. */
-  readonly lost: readonly string[];
+  lost: readonly string[];
   /** Absent from the sample, present after round-trip. */
-  readonly gained: readonly string[];
+  gained: readonly string[];
   /** Present on both sides with differing values. */
-  readonly mutated: readonly string[];
+  mutated: readonly string[];
 }
 
 /**
@@ -71,11 +71,11 @@ export function roundTripFields<T extends object, WC = unknown, RC = unknown>(
 
 export interface OrderViolation {
   /** Position of the offending child within its parent. */
-  readonly index: number;
+  index: number;
   /** Local name of the child element (namespace prefix stripped). */
-  readonly tag: string;
+  tag: string;
   /** Why the child violates the expected sequence. */
-  readonly reason: "unexpected" | "out-of-order";
+  reason: "unexpected" | "out-of-order";
 }
 
 /**

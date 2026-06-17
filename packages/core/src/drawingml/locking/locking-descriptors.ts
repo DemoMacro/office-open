@@ -72,7 +72,7 @@ export const shapeLockingDesc: CustomDescriptor<ShapeLockingOptions> = {
   },
   parse(el, _ctx) {
     const allKeys = [...BASE_LOCKING_KEYS, ...SHAPE_EXTRA_KEYS];
-    return readLockingAttrs(el, allKeys) as ShapeLockingOptions;
+    return readLockingAttrs(el, allKeys);
   },
 };
 
@@ -88,7 +88,7 @@ export const pictureLockingDesc: CustomDescriptor<PictureLockingOptions> = {
   },
   parse(el, _ctx) {
     const allKeys = [...BASE_LOCKING_KEYS, ...PICTURE_EXTRA_KEYS];
-    return readLockingAttrs(el, allKeys) as PictureLockingOptions;
+    return readLockingAttrs(el, allKeys);
   },
 };
 
@@ -104,7 +104,7 @@ export const groupLockingDesc: CustomDescriptor<GroupLockingOptions> = {
   },
   parse(el, _ctx) {
     const allKeys = [...BASE_LOCKING_KEYS, ...GROUP_EXTRA_KEYS];
-    return readLockingAttrs(el, allKeys) as GroupLockingOptions;
+    return readLockingAttrs(el, allKeys);
   },
 };
 
@@ -120,6 +120,6 @@ export const graphicFrameLockingDesc: CustomDescriptor<GraphicFrameLockingOption
   },
   parse(el, _ctx) {
     const allKeys = [...BASE_LOCKING_KEYS, ...FRAME_EXTRA_KEYS];
-    return readLockingAttrs(el, allKeys) as GraphicFrameLockingOptions;
+    return readLockingAttrs(el, allKeys);
   },
 };

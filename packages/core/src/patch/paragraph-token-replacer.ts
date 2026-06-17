@@ -31,10 +31,10 @@ export function createTokenReplacer(
     originalText,
     replacementText,
   }: {
-    readonly paragraphElement: Element;
-    readonly renderedParagraph: RenderedParagraphNode;
-    readonly originalText: string;
-    readonly replacementText: string;
+    paragraphElement: Element;
+    renderedParagraph: RenderedParagraphNode;
+    originalText: string;
+    replacementText: string;
   }): Element => {
     const startIndex = renderedParagraph.text.indexOf(originalText);
     const endIndex = startIndex + originalText.length - 1;

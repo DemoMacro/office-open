@@ -19,9 +19,6 @@ import type {
   LuminanceEffectOptions,
   HSLEffectOptions,
   TintEffectOptions,
-  BiLevelEffectOptions,
-  AlphaReplaceEffectOptions,
-  AlphaBiLevelEffectOptions,
   AlphaModulateFixedEffectOptions,
   ColorChangeEffectOptions,
   BlipBlurEffectOptions,
@@ -47,7 +44,7 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
     return `<a:tile${attrStr}/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<TileOptions> = {};
+    const result: TileOptions = {};
     if (el.attributes?.["tx"] !== undefined) result.tx = Number(el.attributes["tx"]);
     if (el.attributes?.["ty"] !== undefined) result.ty = Number(el.attributes["ty"]);
     if (el.attributes?.["sx"] !== undefined) result.sx = Number(el.attributes["sx"]);
@@ -56,7 +53,7 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
       result.flip = String(el.attributes["flip"]) as TileOptions["flip"];
     if (el.attributes?.["algn"] !== undefined)
       result.align = xsdRectAlignment.from(String(el.attributes["algn"])) as TileOptions["align"];
-    return result as TileOptions;
+    return result;
   },
 };
 
@@ -74,12 +71,12 @@ export const sourceRectangleDesc: CustomDescriptor<SourceRectangleOptions> = {
     return `<a:srcRect${attrStr}/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<SourceRectangleOptions> = {};
+    const result: SourceRectangleOptions = {};
     if (el.attributes?.["l"] !== undefined) result.left = Number(el.attributes["l"]);
     if (el.attributes?.["t"] !== undefined) result.top = Number(el.attributes["t"]);
     if (el.attributes?.["r"] !== undefined) result.right = Number(el.attributes["r"]);
     if (el.attributes?.["b"] !== undefined) result.bottom = Number(el.attributes["b"]);
-    return result as SourceRectangleOptions;
+    return result;
   },
 };
 
@@ -99,12 +96,12 @@ export const stretchDesc: CustomDescriptor<SourceRectangleOptions> = {
   parse(el, _ctx) {
     const fillRect = findChild(el, "a:fillRect");
     if (!fillRect) return {};
-    const result: Partial<SourceRectangleOptions> = {};
+    const result: SourceRectangleOptions = {};
     if (fillRect.attributes?.["l"] !== undefined) result.left = Number(fillRect.attributes["l"]);
     if (fillRect.attributes?.["t"] !== undefined) result.top = Number(fillRect.attributes["t"]);
     if (fillRect.attributes?.["r"] !== undefined) result.right = Number(fillRect.attributes["r"]);
     if (fillRect.attributes?.["b"] !== undefined) result.bottom = Number(fillRect.attributes["b"]);
-    return result as SourceRectangleOptions;
+    return result;
   },
 };
 
@@ -211,45 +208,45 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
 }
 
 function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions | undefined {
-  const result: Partial<BlipEffectsOptions> = {};
+  const result: BlipEffectsOptions = {};
 
   if (findChild(el, "a:grayscl")) result.grayscale = true;
 
   const lum = findChild(el, "a:lum");
   if (lum) {
-    const opts: Partial<LuminanceEffectOptions> = {};
+    const opts: LuminanceEffectOptions = {};
     if (lum.attributes?.["bright"] !== undefined)
       opts.bright = Number(String(lum.attributes["bright"]).replace("%", ""));
     if (lum.attributes?.["contrast"] !== undefined)
       opts.contrast = Number(String(lum.attributes["contrast"]).replace("%", ""));
-    result.luminance = opts as LuminanceEffectOptions;
+    result.luminance = opts;
   }
 
   const hsl = findChild(el, "a:hsl");
   if (hsl) {
-    const opts: Partial<HSLEffectOptions> = {};
+    const opts: HSLEffectOptions = {};
     if (hsl.attributes?.["hue"] !== undefined) opts.hue = Number(hsl.attributes["hue"]);
     if (hsl.attributes?.["sat"] !== undefined)
       opts.saturation = Number(String(hsl.attributes["sat"]).replace("%", ""));
     if (hsl.attributes?.["lum"] !== undefined)
       opts.luminance = Number(String(hsl.attributes["lum"]).replace("%", ""));
-    result.hsl = opts as HSLEffectOptions;
+    result.hsl = opts;
   }
 
   const tint = findChild(el, "a:tint");
   if (tint) {
-    const opts: Partial<TintEffectOptions> = {};
+    const opts: TintEffectOptions = {};
     if (tint.attributes?.["hue"] !== undefined) opts.hue = Number(tint.attributes["hue"]);
     if (tint.attributes?.["amt"] !== undefined)
       opts.amount = Number(String(tint.attributes["amt"]).replace("%", ""));
-    result.tint = opts as TintEffectOptions;
+    result.tint = opts;
   }
 
   const biLevel = findChild(el, "a:biLevel");
   if (biLevel?.attributes?.["thresh"] !== undefined) {
     result.biLevel = {
       threshold: Number(String(biLevel.attributes["thresh"]).replace("%", "")),
-    } as BiLevelEffectOptions;
+    };
   }
 
   if (findChild(el, "a:alphaCeiling")) result.alphaCeiling = true;
@@ -259,7 +256,7 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   if (alphaInv) {
     const solidFill = findChild(alphaInv, "a:solidFill");
     if (solidFill) {
-      result.alphaInverse = parse(solidFillDesc, solidFill, ctx) as SolidFillOptions;
+      result.alphaInverse = parse(solidFillDesc, solidFill, ctx);
     } else {
       result.alphaInverse = {} as SolidFillOptions;
     }
@@ -267,24 +264,24 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
 
   const alphaModFix = findChild(el, "a:alphaModFix");
   if (alphaModFix) {
-    const opts: Partial<AlphaModulateFixedEffectOptions> = {};
+    const opts: AlphaModulateFixedEffectOptions = {};
     if (alphaModFix.attributes?.["amt"] !== undefined)
       opts.amount = Number(String(alphaModFix.attributes["amt"]).replace("%", ""));
-    result.alphaModFix = opts as AlphaModulateFixedEffectOptions;
+    result.alphaModFix = opts;
   }
 
   const alphaRepl = findChild(el, "a:alphaRepl");
   if (alphaRepl?.attributes?.["a"] !== undefined) {
     result.alphaRepl = {
       amount: Number(String(alphaRepl.attributes["a"]).replace("%", "")),
-    } as AlphaReplaceEffectOptions;
+    };
   }
 
   const alphaBiLevel = findChild(el, "a:alphaBiLevel");
   if (alphaBiLevel?.attributes?.["thresh"] !== undefined) {
     result.alphaBiLevel = {
       threshold: Number(String(alphaBiLevel.attributes["thresh"]).replace("%", "")),
-    } as AlphaBiLevelEffectOptions;
+    };
   }
 
   const clrChange = findChild(el, "a:clrChange");
@@ -295,12 +292,12 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
     const clrFrom = findChild(clrChange, "a:clrFrom");
     if (clrFrom) {
       const fromFill = findChild(clrFrom, "a:solidFill");
-      if (fromFill) opts.from = parse(solidFillDesc, fromFill, ctx) as SolidFillOptions;
+      if (fromFill) opts.from = parse(solidFillDesc, fromFill, ctx);
     }
     const clrTo = findChild(clrChange, "a:clrTo");
     if (clrTo) {
       const toFill = findChild(clrTo, "a:solidFill");
-      if (toFill) opts.to = parse(solidFillDesc, toFill, ctx) as SolidFillOptions;
+      if (toFill) opts.to = parse(solidFillDesc, toFill, ctx);
     }
     result.colorChange = opts as ColorChangeEffectOptions;
   }
@@ -314,10 +311,10 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
 
   const blur = findChild(el, "a:blur");
   if (blur) {
-    const opts: Partial<BlipBlurEffectOptions> = {};
+    const opts: BlipBlurEffectOptions = {};
     if (blur.attributes?.["rad"] !== undefined) opts.radius = Number(blur.attributes["rad"]);
     if (blur.attributes?.["grow"] !== undefined) opts.grow = blur.attributes["grow"] !== "0";
-    result.blur = opts as BlipBlurEffectOptions;
+    result.blur = opts;
   }
 
   const duotone = findChild(el, "a:duotone");
@@ -434,12 +431,11 @@ export const blipFillDesc: CustomDescriptor<
 
     // Source rectangle
     const srcRect = findChild(el, "a:srcRect");
-    if (srcRect)
-      result.sourceRectangle = parse(sourceRectangleDesc, srcRect, ctx) as SourceRectangleOptions;
+    if (srcRect) result.sourceRectangle = parse(sourceRectangleDesc, srcRect, ctx);
 
     // Tile
     const tile = findChild(el, "a:tile");
-    if (tile) result.tile = parse(tileDesc, tile, ctx) as TileOptions;
+    if (tile) result.tile = parse(tileDesc, tile, ctx);
 
     return result as BlipFillOptions & { referenceId?: string; blipEffects?: BlipEffectsOptions };
   },

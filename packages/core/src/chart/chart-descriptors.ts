@@ -410,7 +410,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       const seriesEls = children(plotArea, "c:ser");
       if (seriesEls.length > 0) {
         if (detectedType === "bubble") {
-          const bubbleSeries: Partial<BubbleSeriesData>[] = [];
+          const bubbleSeries: BubbleSeriesData[] = [];
           for (const serEl of seriesEls) {
             const name = readSeriesName(serEl);
             const xVal = findChild(serEl, "c:xVal");
@@ -425,7 +425,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
           }
           result.series = bubbleSeries as BubbleSeriesData[];
         } else {
-          const chartSeries: Partial<ChartSeriesData>[] = [];
+          const chartSeries: ChartSeriesData[] = [];
           let categories: string[] | undefined;
 
           for (const serEl of seriesEls) {

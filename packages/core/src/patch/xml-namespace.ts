@@ -6,10 +6,10 @@
  */
 
 export interface XmlNamespaceConfig {
-  readonly paragraph: string;
-  readonly run: string;
-  readonly text: string;
-  readonly runProperties: string;
+  paragraph: string;
+  run: string;
+  text: string;
+  runProperties: string;
 }
 
 export const DOCX_NS: XmlNamespaceConfig = {

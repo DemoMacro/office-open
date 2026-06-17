@@ -17,7 +17,7 @@ import type { ReadContext, WriteContext } from "./context";
 
 /** Custom descriptor — hand-written stringify/parse for an OOXML part. */
 export interface CustomDescriptor<T, Ctx = WriteContext> {
-  readonly kind: "custom";
+  kind: "custom";
   stringify(value: T, ctx: Ctx): string | undefined;
   parse(el: XmlElement, ctx: ReadContext): T;
 }

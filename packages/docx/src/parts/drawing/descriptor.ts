@@ -521,13 +521,13 @@ function stringifyBodyPr(opts?: BodyPropertiesOptions): string {
 
 function stringifyWpgGroup(
   opts: {
-    readonly children: readonly GroupChildMediaData[];
-    readonly transformation: MediaDataTransformation;
-    readonly childOffset?: ChildOffset;
-    readonly childExtent?: ChildExtent;
-    readonly fill?: FillOptions;
-    readonly effects?: EffectListOptions;
-    readonly groupShapeLocks?: GroupShapeLocksOptions | null;
+    children: readonly GroupChildMediaData[];
+    transformation: MediaDataTransformation;
+    childOffset?: ChildOffset;
+    childExtent?: ChildExtent;
+    fill?: FillOptions;
+    effects?: EffectListOptions;
+    groupShapeLocks?: GroupShapeLocksOptions | null;
   },
   ctx: BodyContext,
 ): string {

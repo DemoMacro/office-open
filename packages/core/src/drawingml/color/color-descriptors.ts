@@ -97,11 +97,10 @@ export const rgbColorDesc: CustomDescriptor<RgbColorOptions> = {
     return `<a:srgbClr val="${escapeXml(opts.value)}"/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<RgbColorOptions> = {};
-    result.value = String(el.attributes?.["val"] ?? "");
+    const result: RgbColorOptions = { value: String(el.attributes?.["val"] ?? "") };
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result as RgbColorOptions;
+    return result;
   },
 };
 
@@ -117,11 +116,12 @@ export const schemeColorDesc: CustomDescriptor<SchemeColorOptions> = {
     return `<a:schemeClr val="${escapeXml(opts.value)}"/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<SchemeColorOptions> = {};
-    result.value = String(el.attributes?.["val"] ?? "") as SchemeColorOptions["value"];
+    const result: SchemeColorOptions = {
+      value: String(el.attributes?.["val"] ?? "") as SchemeColorOptions["value"],
+    };
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result as SchemeColorOptions;
+    return result;
   },
 };
 
@@ -137,13 +137,14 @@ export const hslColorDesc: CustomDescriptor<HslColorOptions> = {
     return `<a:hslClr hue="${opts.hue}" sat="${opts.saturation}" lum="${opts.luminance}"/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<HslColorOptions> = {};
-    result.hue = Number(el.attributes?.["hue"] ?? 0);
-    result.saturation = Number(el.attributes?.["sat"] ?? 0);
-    result.luminance = Number(el.attributes?.["lum"] ?? 0);
+    const result: HslColorOptions = {
+      hue: Number(el.attributes?.["hue"] ?? 0),
+      saturation: Number(el.attributes?.["sat"] ?? 0),
+      luminance: Number(el.attributes?.["lum"] ?? 0),
+    };
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result as HslColorOptions;
+    return result;
   },
 };
 
@@ -162,13 +163,14 @@ export const systemColorDesc: CustomDescriptor<SystemColorOptions> = {
     return `<a:sysClr ${attrStr}/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<SystemColorOptions> = {};
-    result.value = String(el.attributes?.["val"] ?? "") as SystemColorOptions["value"];
+    const result: SystemColorOptions = {
+      value: String(el.attributes?.["val"] ?? "") as SystemColorOptions["value"],
+    };
     const lastClr = el.attributes?.["lastClr"];
     if (lastClr) result.lastClr = String(lastClr);
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result as SystemColorOptions;
+    return result;
   },
 };
 
@@ -184,11 +186,12 @@ export const presetColorDesc: CustomDescriptor<PresetColorOptions> = {
     return `<a:prstClr val="${escapeXml(opts.value)}"/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<PresetColorOptions> = {};
-    result.value = String(el.attributes?.["val"] ?? "") as PresetColorOptions["value"];
+    const result: PresetColorOptions = {
+      value: String(el.attributes?.["val"] ?? "") as PresetColorOptions["value"],
+    };
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result as PresetColorOptions;
+    return result;
   },
 };
 
@@ -204,13 +207,14 @@ export const scRgbColorDesc: CustomDescriptor<ScRgbColorOptions> = {
     return `<a:scrgbClr r="${escapeXml(opts.r)}" g="${escapeXml(opts.g)}" b="${escapeXml(opts.b)}"/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<ScRgbColorOptions> = {};
-    result.r = String(el.attributes?.["r"] ?? "");
-    result.g = String(el.attributes?.["g"] ?? "");
-    result.b = String(el.attributes?.["b"] ?? "");
+    const result: ScRgbColorOptions = {
+      r: String(el.attributes?.["r"] ?? ""),
+      g: String(el.attributes?.["g"] ?? ""),
+      b: String(el.attributes?.["b"] ?? ""),
+    };
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
-    return result as ScRgbColorOptions;
+    return result;
   },
 };
 

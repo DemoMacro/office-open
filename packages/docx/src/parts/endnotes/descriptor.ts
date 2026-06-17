@@ -23,8 +23,8 @@ import type { BodyContext, DocxReadContext } from "../../context";
 
 /** System endnote (separator / continuationSeparator). Round-tripped verbatim. */
 export interface EndnoteSeparator {
-  readonly id: number;
-  readonly paragraphs: (ParagraphOptions | string)[];
+  id: number;
+  paragraphs: (ParagraphOptions | string)[];
 }
 
 export interface EndnotesData {

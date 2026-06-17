@@ -10,8 +10,8 @@
  */
 
 export interface DefaultAttributes {
-  readonly contentType: string;
-  readonly extension?: string;
+  contentType: string;
+  extension?: string;
 }
 
 /**
@@ -23,8 +23,8 @@ export const createDefault = (contentType: string, extension?: string): string =
     : `<Default ContentType="${contentType}"/>`;
 
 export interface OverrideAttributes {
-  readonly contentType: string;
-  readonly partName?: string;
+  contentType: string;
+  partName?: string;
 }
 
 /**

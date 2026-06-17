@@ -51,7 +51,7 @@ export const diagramStyleDesc: CustomDescriptor<DiagramStyleOptions> = {
     );
   },
   parse(el, _ctx) {
-    const result: Partial<DiagramStyleOptions> = {};
+    const result: DiagramStyleOptions = {};
 
     const lnRef = findChild(el, "a:lnRef");
     if (lnRef?.attributes?.["idx"] !== undefined)
@@ -69,7 +69,7 @@ export const diagramStyleDesc: CustomDescriptor<DiagramStyleOptions> = {
     if (fontRef?.attributes?.["idx"] !== undefined)
       result.fontReference = { idx: String(fontRef.attributes["idx"]) };
 
-    return result as DiagramStyleOptions;
+    return result;
   },
 };
 
@@ -103,7 +103,7 @@ export const presentationLayoutVariablesDesc: CustomDescriptor<PresentationLayou
       return `<dgm:presLayoutVars>${parts.join("")}</dgm:presLayoutVars>`;
     },
     parse(el, _ctx) {
-      const result: Partial<PresentationLayoutVariablesOptions> = {};
+      const result: PresentationLayoutVariablesOptions = {};
 
       const orgChart = findChild(el, "dgm:orgChart");
       if (orgChart?.attributes?.["val"] !== undefined)
@@ -155,7 +155,7 @@ export const presentationLayoutVariablesDesc: CustomDescriptor<PresentationLayou
             : never,
         };
 
-      return result as PresentationLayoutVariablesOptions;
+      return result;
     },
   };
 
@@ -171,7 +171,7 @@ export const diagramExtensionListDesc: CustomDescriptor<DiagramExtensionListOpti
     return `<dgm:extLst>${inner}</dgm:extLst>`;
   },
   parse(el, _ctx) {
-    const result: Partial<DiagramExtensionListOptions> = {};
+    const result: DiagramExtensionListOptions = {};
 
     if (el.elements) {
       const extensions = el.elements
@@ -180,6 +180,6 @@ export const diagramExtensionListDesc: CustomDescriptor<DiagramExtensionListOpti
       if (extensions.length) result.extensions = extensions;
     }
 
-    return result as DiagramExtensionListOptions;
+    return result;
   },
 };

@@ -12,7 +12,6 @@ import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { xsdMaterialType } from "../../util/mappings";
 import { solidFillDesc } from "../color/color-descriptors";
-import type { SolidFillOptions } from "../color/solid-fill";
 import type { BevelOptions } from "./bevel";
 import type {
   Scene3DOptions,
@@ -52,12 +51,12 @@ export const bevelDesc: CustomDescriptor<BevelOptions> = {
     return `<a:bevel${attrStr}/>`;
   },
   parse(el, _ctx) {
-    const result: Partial<BevelOptions> = {};
+    const result: BevelOptions = {};
     if (el.attributes?.["w"] !== undefined) result.w = Number(el.attributes["w"]);
     if (el.attributes?.["h"] !== undefined) result.h = Number(el.attributes["h"]);
     if (el.attributes?.["prst"] !== undefined)
       result.prst = String(el.attributes["prst"]) as BevelOptions["prst"];
-    return result as BevelOptions;
+    return result;
   },
 };
 
@@ -102,7 +101,7 @@ export const shape3DDesc: CustomDescriptor<Shape3DOptions> = {
     return `<a:sp3d${attrStr}>${content}</a:sp3d>`;
   },
   parse(el, ctx) {
-    const result: Partial<Shape3DOptions> = {};
+    const result: Shape3DOptions = {};
 
     // Attributes
     if (el.attributes?.["z"] !== undefined) result.z = Number(el.attributes["z"]);
@@ -118,25 +117,24 @@ export const shape3DDesc: CustomDescriptor<Shape3DOptions> = {
 
     // Children
     const bevelT = findChild(el, "a:bevelT");
-    if (bevelT) result.bevelT = parse(bevelDesc, bevelT, ctx) as BevelOptions;
+    if (bevelT) result.bevelT = parse(bevelDesc, bevelT, ctx);
 
     const bevelB = findChild(el, "a:bevelB");
-    if (bevelB) result.bevelB = parse(bevelDesc, bevelB, ctx) as BevelOptions;
+    if (bevelB) result.bevelB = parse(bevelDesc, bevelB, ctx);
 
     const extrusionClr = findChild(el, "a:extrusionClr");
     if (extrusionClr) {
       const solidFill = findChild(extrusionClr, "a:solidFill");
-      if (solidFill)
-        result.extrusionColor = parse(solidFillDesc, solidFill, ctx) as SolidFillOptions;
+      if (solidFill) result.extrusionColor = parse(solidFillDesc, solidFill, ctx);
     }
 
     const contourClr = findChild(el, "a:contourClr");
     if (contourClr) {
       const solidFill = findChild(contourClr, "a:solidFill");
-      if (solidFill) result.contourColor = parse(solidFillDesc, solidFill, ctx) as SolidFillOptions;
+      if (solidFill) result.contourColor = parse(solidFillDesc, solidFill, ctx);
     }
 
-    return result as Shape3DOptions;
+    return result;
   },
 };
 
@@ -224,10 +222,10 @@ export const scene3DDesc: CustomDescriptor<Scene3DOptions> = {
     const result: Partial<Scene3DOptions> = {};
 
     const camera = findChild(el, "a:camera");
-    if (camera) result.camera = parse(cameraDesc, camera, ctx) as CameraOptions;
+    if (camera) result.camera = parse(cameraDesc, camera, ctx);
 
     const lightRig = findChild(el, "a:lightRig");
-    if (lightRig) result.lightRig = parse(lightRigDesc, lightRig, ctx) as LightRigOptions;
+    if (lightRig) result.lightRig = parse(lightRigDesc, lightRig, ctx);
 
     const backdrop = findChild(el, "a:backdrop");
     if (backdrop) result.backdrop = readBackdrop(backdrop);

@@ -342,7 +342,7 @@ export function stringifySectionPropertiesXml(opts: SectionPropertiesOptions): s
 // ── Parse (Element → SectionPropertiesOptions) ──
 
 /** Parse a w:sectPr element into SectionPropertiesOptions. */
-export function parseSectionPropertiesEl(el: Element): Partial<SectionPropertiesOptions> {
+export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions {
   const opts: Record<string, unknown> = {};
 
   // rsid attributes on w:sectPr element

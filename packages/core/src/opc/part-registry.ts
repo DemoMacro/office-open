@@ -39,25 +39,25 @@ export interface PartDef {
    * ZIP path template. `${i}` expands per repeated index (1-based); a template
    * without the placeholder denotes a singleton part.
    */
-  readonly path: string;
+  path: string;
   /**
    * `[Content_Types].xml` Override value the part carries when generated.
    * `undefined` when the part relies on a `<Default>` extension mapping
    * (e.g. media, fonts, docx theme under raw-part passthrough).
    */
-  readonly contentType?: string;
-  readonly presence: PartPresence;
+  contentType?: string;
+  presence: PartPresence;
 }
 
 export interface PackagePartRegistry {
-  readonly format: "docx" | "pptx" | "xlsx";
-  readonly parts: readonly PartDef[];
+  format: "docx" | "pptx" | "xlsx";
+  parts: readonly PartDef[];
   /**
    * Path prefixes that are always legitimate even when undeclared — media,
    * fonts, embeddings, altChunks, custom XML, and `.rels` parts. Used to
    * suppress O1 false positives from round-tripped / pass-through content.
    */
-  readonly orphanWhitelist: readonly string[];
+  orphanWhitelist: readonly string[];
 }
 
 // ── DOCX ────────────────────────────────────────────────────────────────────

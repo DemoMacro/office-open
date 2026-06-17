@@ -269,8 +269,8 @@ export interface Packer<TFile> {
  * a MIME type.
  */
 export const createPacker = <TFile>(options: {
-  readonly compile: CompileFn<TFile>;
-  readonly mimeType: string;
+  compile: CompileFn<TFile>;
+  mimeType: string;
 }): Packer<TFile> => {
   const { compile, mimeType } = options;
 

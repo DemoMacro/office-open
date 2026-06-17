@@ -42,7 +42,7 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
     return `<a:xfrm${attrStr}>${parts.join("")}</a:xfrm>`;
   },
   parse(el, _ctx) {
-    const result: Partial<Transform2DOptions> = {};
+    const result: Transform2DOptions = {};
 
     // Attributes
     if (el.attributes) {
@@ -67,7 +67,7 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
       result.height = Number(ext.attributes["cy"] ?? 0);
     }
 
-    return result as Transform2DOptions;
+    return result;
   },
 };
 
@@ -102,6 +102,6 @@ export const groupTransform2DDesc: CustomDescriptor<GroupTransform2DOptions> = {
       result.childExtentHeight = Number(chExt.attributes["cy"] ?? 0);
     }
 
-    return result as Transform2DOptions;
+    return result;
   },
 };

@@ -43,13 +43,13 @@ export interface SectionPropertiesOptionsBase {
   rsidR?: string;
   rsidSect?: string;
   page?: {
-    size?: Partial<PageSizeAttributes>;
+    size?: PageSizeAttributes;
     margin?: PageMarginAttributes;
     pageNumbers?: PageNumberTypeAttributes;
     borders?: PageBordersOptions;
     textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
   };
-  grid?: Partial<DocGridAttributesProperties>;
+  grid?: DocGridAttributesProperties;
   headerWrapperGroup?: HeaderFooterGroup<HeaderFooterEntry>;
   footerWrapperGroup?: HeaderFooterGroup<HeaderFooterEntry>;
   lineNumbers?: LineNumberAttributes;

@@ -23,8 +23,8 @@ import type { BodyContext, DocxReadContext } from "../../context";
 
 /** System footnote (separator / continuationSeparator). Round-tripped verbatim. */
 export interface FootnoteSeparator {
-  readonly id: number;
-  readonly paragraphs: (ParagraphOptions | string)[];
+  id: number;
+  paragraphs: (ParagraphOptions | string)[];
 }
 
 export interface FootnotesData {

@@ -175,15 +175,15 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
     return `<a:effectLst>${content}</a:effectLst>`;
   },
   parse(el, ctx) {
-    const result: Partial<EffectListOptions> = {};
+    const result: EffectListOptions = {};
 
     // Blur
     const blur = findChild(el, "a:blur");
     if (blur) {
-      const blurOpts: Partial<BlurEffectOptions> = {};
+      const blurOpts: BlurEffectOptions = {};
       if (blur.attributes?.["rad"] !== undefined) blurOpts.radius = Number(blur.attributes["rad"]);
       if (blur.attributes?.["grow"] !== undefined) blurOpts.grow = blur.attributes["grow"] !== "0";
-      result.blur = blurOpts as BlurEffectOptions;
+      result.blur = blurOpts;
     }
 
     // Glow
@@ -271,7 +271,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
     // Reflection
     const reflection = findChild(el, "a:reflection");
     if (reflection) {
-      const refOpts: Partial<ReflectionEffectOptions> = {};
+      const refOpts: ReflectionEffectOptions = {};
       if (reflection.attributes?.["blurRad"] !== undefined)
         refOpts.blurRadius = Number(reflection.attributes["blurRad"]);
       if (reflection.attributes?.["stA"] !== undefined)
@@ -300,7 +300,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
         refOpts.alignment = String(reflection.attributes["algn"]);
       if (reflection.attributes?.["rotWithShape"] !== undefined)
         refOpts.rotWithShape = reflection.attributes["rotWithShape"] !== "0";
-      result.reflection = refOpts as ReflectionEffectOptions;
+      result.reflection = refOpts;
     }
 
     // Soft edge
@@ -309,6 +309,6 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       result.softEdge = Number(softEdge.attributes["rad"]);
     }
 
-    return result as EffectListOptions;
+    return result;
   },
 };

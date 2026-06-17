@@ -20,9 +20,9 @@ export interface GenerateOptionsMap {
 }
 
 export interface GenerateOptions<T extends GenerateType = GenerateType> {
-  readonly type: T;
-  readonly options: GenerateOptionsMap[T];
-  readonly outputType?: OutputType;
+  type: T;
+  options: GenerateOptionsMap[T];
+  outputType?: OutputType;
 }
 
 export async function generate<T extends GenerateType>(

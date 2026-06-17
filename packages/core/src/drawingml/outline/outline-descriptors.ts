@@ -12,7 +12,6 @@ import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { convertToEmu } from "../../util/converters";
 import { solidFillDesc } from "../color/color-descriptors";
-import type { SolidFillOptions } from "../color/solid-fill";
 import { gradientFillDesc } from "../fill/fill-descriptors";
 import type { DashStop } from "./custom-dash";
 import type { LineEndOptions } from "./line-end";
@@ -29,7 +28,7 @@ function stringifyLineEnd(tag: string, opts: LineEndOptions): string {
   return `<${tag}${attrStr}/>`;
 }
 
-function readLineEnd(el: XmlElement): Partial<LineEndOptions> {
+function readLineEnd(el: XmlElement): LineEndOptions {
   const result: Partial<LineEndOptions> = {};
   if (el.attributes?.["type"])
     result.type = String(el.attributes["type"]) as LineEndOptions["type"];
@@ -99,7 +98,7 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     return `<a:ln${attrStr}>${parts.join("")}</a:ln>`;
   },
   parse(el, _ctx) {
-    const result: Partial<OutlineOptions> = {};
+    const result: OutlineOptions = {};
 
     // Attributes
     if (el.attributes) {
@@ -116,7 +115,7 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     const solidFill = findChild(el, "a:solidFill");
     if (solidFill) {
       result.type = "solidFill";
-      result.color = parse(solidFillDesc, solidFill, _ctx) as SolidFillOptions;
+      result.color = parse(solidFillDesc, solidFill, _ctx);
     }
     if (findChild(el, "a:noFill")) {
       result.type = "noFill";
@@ -154,10 +153,10 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
 
     // Line ends
     const headEnd = findChild(el, "a:headEnd");
-    if (headEnd) result.headEnd = readLineEnd(headEnd) as LineEndOptions;
+    if (headEnd) result.headEnd = readLineEnd(headEnd);
     const tailEnd = findChild(el, "a:tailEnd");
-    if (tailEnd) result.tailEnd = readLineEnd(tailEnd) as LineEndOptions;
+    if (tailEnd) result.tailEnd = readLineEnd(tailEnd);
 
-    return result as OutlineOptions;
+    return result;
   },
 };
