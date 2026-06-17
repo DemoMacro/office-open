@@ -647,6 +647,7 @@ function parseWpsShapeDrawing(
     transformation: {
       width: info.width ?? 0,
       height: info.height ?? 0,
+      ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
     },
   };
   if (info.floating) shape.floating = info.floating;
@@ -675,6 +676,7 @@ function parseWpgGroupDrawing(
     transformation: {
       width: info.width ?? 0,
       height: info.height ?? 0,
+      ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
     },
   };
   if (childOffset) group.childOffset = childOffset;

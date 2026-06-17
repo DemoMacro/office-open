@@ -110,6 +110,10 @@ export function stringifyHeaderFooter(
   for (const ns of namespaces) {
     attrParts.push(`xmlns:${ns}="${escapeXml(DocumentAttributeNamespaces[ns])}"`);
   }
+  // mc:Ignorable must declare the ignorable namespaces (w14/w15/wp14) that
+  // header/footer content uses (e.g. w14:paraId). Without it, Word in
+  // compatibility mode 14 rejects the part as unreadable content.
+  attrParts.push('mc:Ignorable="w14 w15 wp14"');
   const attrStr = attrParts.join(" ");
 
   const childParts: string[] = [];

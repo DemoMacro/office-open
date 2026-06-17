@@ -1,5 +1,5 @@
 import type { UniversalMeasure } from "@office-open/core";
-import { convertPixelsToEmu, convertUniversalMeasureToEmu } from "@office-open/core";
+import { convertPixelsToEmu, convertUniversalMeasureToEmu, toUint8Array } from "@office-open/core";
 
 /**
  * Media module for WordprocessingML documents.
@@ -107,9 +107,26 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
  */
 export class Media {
   private map: Map<string, MediaData>;
+  private nextMediaCounter = 0;
 
   public constructor() {
     this.map = new Map<string, MediaData>();
+  }
+
+  /**
+   * Allocates the next sequential media file name (Office-style `image1.png`,
+   * `image2.png`, …). The counter is package-global because media is shared
+   * across the document, headers, and footers, matching MS Office's numbering.
+   *
+   * Deterministic across runs (unlike random ids) so round-trip output is stable
+   * and diffable. Callers pair this with {@link findByContent} to reuse an
+   * existing entry for byte-identical content before allocating a new name.
+   *
+   * @param type - File extension / image type token (e.g. "png", "jpg")
+   * @returns A sequential file name like `image3.png`
+   */
+  public nextMediaName(type: string): string {
+    return `image${++this.nextMediaCounter}.${type}`;
   }
 
   /**
@@ -120,6 +137,32 @@ export class Media {
    */
   public addImage(key: string, mediaData: MediaData): void {
     this.map.set(key, mediaData);
+  }
+
+  /**
+   * Finds an existing image with byte-identical content (content-based dedup).
+   *
+   * Returns the matching entry's key (fileName) so callers reuse it instead of
+   * registering a duplicate — e.g. a VML fallback image that mirrors the Choice
+   * blip should share one relationship/file, matching Office's output.
+   *
+   * @param data - Raw image bytes to search for
+   * @returns The matching entry's key, or `undefined` if no match
+   */
+  public findByContent(data: Uint8Array): string | undefined {
+    for (const [key, md] of this.map) {
+      const existing = toUint8Array(md.data) as Uint8Array;
+      if (existing.length !== data.length) continue;
+      let match = true;
+      for (let i = 0; i < existing.length; i++) {
+        if (existing[i] !== data[i]) {
+          match = false;
+          break;
+        }
+      }
+      if (match) return key;
+    }
+    return undefined;
   }
 
   /**

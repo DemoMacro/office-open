@@ -114,11 +114,21 @@ function toUint8Array(data: Uint8Array | ArrayBuffer | Buffer): Uint8Array {
  *
  * The returned data should be registered with the document's media store
  * during serialization so the packer can resolve the `{fileName}` placeholder.
+ *
+ * @param fill - Fill options to inspect
+ * @param nameAllocator - Optional sequential name provider (e.g. a format
+ *   package's media counter). When omitted, falls back to a random id so the
+ *   function stays usable from contexts without a shared counter.
  */
-export const extractBlipFillMedia = (fill: FillOptions): BlipFillMediaData | undefined => {
+export const extractBlipFillMedia = (
+  fill: FillOptions,
+  nameAllocator?: (type: string) => string,
+): BlipFillMediaData | undefined => {
   if (typeof fill === "string" || fill.type !== "blip") return undefined;
   const raw = toUint8Array(fill.data);
-  const fileName = `${uniqueId()}.${fill.imageType}`;
+  const fileName = nameAllocator
+    ? nameAllocator(fill.imageType)
+    : `${uniqueId()}.${fill.imageType}`;
   return { data: raw, fileName, type: fill.imageType };
 };
 

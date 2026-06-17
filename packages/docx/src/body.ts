@@ -323,7 +323,7 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
   const attrStr = attrs.join(" ");
 
   if (opts.image) {
-    const fileName = `${uniqueId()}.${opts.image.type}`;
+    const fileName = ctx.file.media.nextMediaName(opts.image.type);
     const rawData = toUint8Array(opts.image.data) as Uint8Array;
 
     // Register media

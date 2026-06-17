@@ -927,7 +927,7 @@ export const drawingDesc: CustomDescriptor<DrawingDescriptorOptions, BodyContext
   stringify(opts, ctx) {
     // Register blip fill media from fill options (shape fill with image)
     if (opts.fill) {
-      const media = extractBlipFillMedia(opts.fill);
+      const media = extractBlipFillMedia(opts.fill, (type) => ctx.file.media.nextMediaName(type));
       if (media) {
         ctx.file.media.addImage(media.fileName, {
           data: media.data,

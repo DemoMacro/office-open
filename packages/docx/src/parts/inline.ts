@@ -140,13 +140,25 @@ function wrapDrawingRun(
 /**
  * Register media carried by a VML fallback (mc:AlternateContent Fallback) so the
  * compiler resolves the fallback's `{fileName}` placeholders into rIds.
+ *
+ * A VML fallback image mirrors its Choice blip (same source bytes). When the
+ * blip is already registered, reuse it and remap the fallback's `{fileName}`
+ * placeholder to the shared media — matching Office, which emits one
+ * relationship/file per image rather than a duplicate for the VML branch.
  */
 function registerVmlFallbackMedia(
-  opts: { vmlFallbackMedia?: BackgroundRawMediaOptions[] },
+  opts: { vmlFallback?: string; vmlFallbackMedia?: BackgroundRawMediaOptions[] },
   ctx: BodyContext,
 ): void {
   if (!opts.vmlFallbackMedia) return;
   for (const m of opts.vmlFallbackMedia) {
+    const existing = ctx.file.media.findByContent(m.data);
+    if (existing) {
+      if (opts.vmlFallback) {
+        opts.vmlFallback = opts.vmlFallback.split(`{${m.fileName}}`).join(`{${existing}}`);
+      }
+      continue;
+    }
     ctx.file.media.addImage(m.fileName, {
       type: m.type,
       data: m.data,
@@ -248,7 +260,7 @@ export function stringifyChildDispatch(
   // Image — side effect: media registration
   if ("image" in child) {
     const opts = child.image;
-    const key = `${uniqueId()}.${opts.type}`;
+    const key = ctx.file.media.nextMediaName(opts.type);
     const rawData = toUint8Array(opts.data) as Uint8Array;
 
     let mediaData: MediaData;
@@ -269,7 +281,7 @@ export function stringifyChildDispatch(
           ...createImageData(
             fallbackData,
             opts.transformation,
-            `${uniqueId()}.${opts.fallback.type}`,
+            ctx.file.media.nextMediaName(opts.fallback.type),
           ),
         },
       } as MediaData;
