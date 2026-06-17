@@ -85,15 +85,14 @@ export function compileDocument(
   const map = new Map<string, XmlifyedFile | XmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
 
   for (const [, obj] of map) {
+    if (obj === undefined) continue;
     if (Array.isArray(obj)) {
-      for (const subFile of obj as XmlifyedFile[]) {
+      for (const subFile of obj) {
         files[subFile.path] =
           typeof subFile.data === "string" ? encoder.encode(subFile.data) : subFile.data;
       }
     } else {
-      const fileObj = obj as XmlifyedFile;
-      files[fileObj.path] =
-        typeof fileObj.data === "string" ? encoder.encode(fileObj.data) : fileObj.data;
+      files[obj.path] = typeof obj.data === "string" ? encoder.encode(obj.data) : obj.data;
     }
   }
 
@@ -158,9 +157,9 @@ interface XmlifyedFileMapping {
   CustomProperties: XmlifyedFile;
   AppProperties: XmlifyedFile;
   FootNotes: XmlifyedFile;
-  FootNotesRelationships: XmlifyedFile;
+  FootNotesRelationships?: XmlifyedFile;
   Endnotes: XmlifyedFile;
-  EndnotesRelationships: XmlifyedFile;
+  EndnotesRelationships?: XmlifyedFile;
   Settings: XmlifyedFile;
   Comments?: XmlifyedFile;
   CommentsRelationships?: XmlifyedFile;
@@ -236,6 +235,15 @@ function xmlifyContext(
     ctx.media.array,
     footnoteRelationshipCount,
   );
+  // Register footnote media relationships eagerly so the relationshipCount used
+  // to gate footnotes.xml.rels reflects the final state (see FootNotesRelationships).
+  for (let i = 0; i < footnoteMedia.referenced.length; i++) {
+    ctx.footNotes.relationships.addRelationship(
+      footnoteRelationshipCount + i,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+      `media/${footnoteMedia.referenced[i].fileName}`,
+    );
+  }
 
   return {
     AppProperties: {
@@ -384,10 +392,13 @@ function xmlifyContext(
       })(),
       path: "word/endnotes.xml",
     },
-    EndnotesRelationships: {
-      data: XML_DECL + ctx.endnotes.relationships.serialize(),
-      path: "word/_rels/endnotes.xml.rels",
-    },
+    EndnotesRelationships:
+      ctx.endnotes.relationships.relationshipCount > 0
+        ? {
+            data: XML_DECL + ctx.endnotes.relationships.serialize(),
+            path: "word/_rels/endnotes.xml.rels",
+          }
+        : undefined,
     FileRelationships: {
       data: XML_DECL + ctx.fileRelationships.serialize(),
       path: "_rels/.rels",
@@ -409,19 +420,13 @@ function xmlifyContext(
       })(),
       path: "word/footnotes.xml",
     },
-    FootNotesRelationships: {
-      data: (() => {
-        for (let i = 0; i < footnoteMedia.referenced.length; i++) {
-          ctx.footNotes.relationships.addRelationship(
-            footnoteRelationshipCount + i,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${footnoteMedia.referenced[i].fileName}`,
-          );
-        }
-        return XML_DECL + ctx.footNotes.relationships.serialize();
-      })(),
-      path: "word/_rels/footnotes.xml.rels",
-    },
+    FootNotesRelationships:
+      ctx.footNotes.relationships.relationshipCount > 0
+        ? {
+            data: XML_DECL + ctx.footNotes.relationships.serialize(),
+            path: "word/_rels/footnotes.xml.rels",
+          }
+        : undefined,
     FooterRelationships: ctx.footers.map((entry, index) => {
       const footerCtx = mkCtx({ relationships: entry.relationships });
       const xmlData =
