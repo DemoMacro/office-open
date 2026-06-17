@@ -80,12 +80,12 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
 
 ### Interfaces
 
-**PascalCase** without `I` prefix. Configuration interfaces use `Options` suffix. All properties `readonly`.
+**PascalCase** without `I` prefix. Configuration interfaces use `Options` suffix. Do **not** mark properties `readonly` — the parse path assigns into these objects.
 
 ```typescript
 export interface ParagraphOptions {
-  readonly alignment?: string;
-  readonly children?: readonly (RunOptions | string)[];
+  alignment?: string;
+  children?: (RunOptions | string)[];
 }
 ```
 
