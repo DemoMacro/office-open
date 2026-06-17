@@ -70,9 +70,10 @@ describe("corePropertiesDesc round-trip", () => {
     expect(result.revision).toBe(5);
   });
 
-  it("round-trips empty properties", () => {
+  it("round-trips empty properties (only created/modified default to now)", () => {
     const result = roundTrip({});
-    expect(Object.keys(result).length).toBe(0);
+    // created/modified always emit (now default); every other field is absent.
+    expect(Object.keys(result).sort()).toEqual(["created", "modified"]);
   });
 
   it("round-trips special XML characters", () => {

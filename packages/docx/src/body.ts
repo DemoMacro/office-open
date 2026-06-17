@@ -612,7 +612,12 @@ export function parseParagraphProperties(
           }
         }
         if (abstractNumId !== undefined) {
-          opts.numbering = { reference: `list_${numId}`, level };
+          // custom: true suppresses the ListParagraph pStyle auto-injection in
+          // stringifyParagraphProperties. Round-tripped list paragraphs carry
+          // no pStyle in the source (the list formatting lives in numbering);
+          // injecting ListParagraph would reference a style that round-tripped
+          // styles.xml may not define → dangling reference Word rejects.
+          opts.numbering = { reference: `list_${numId}`, level, custom: true };
         } else {
           opts.bullet = { level };
         }

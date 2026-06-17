@@ -14,6 +14,9 @@
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml } from "@office-open/xml";
 
+/** xsd:boolean lexical form — spec canonical form is "true"/"false" (Word's convention). */
+const xsdBoolean = (value: boolean): string => (value ? "true" : "false");
+
 /**
  * Options for docProps/app.xml extended properties (CT_Properties).
  *
@@ -103,16 +106,18 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
     if (opts.hiddenSlides !== undefined)
       p.push(`<HiddenSlides>${opts.hiddenSlides}</HiddenSlides>`);
     if (opts.mmClips !== undefined) p.push(`<MMClips>${opts.mmClips}</MMClips>`);
-    if (opts.scaleCrop !== undefined) p.push(`<ScaleCrop>${opts.scaleCrop ? 1 : 0}</ScaleCrop>`);
+    if (opts.scaleCrop !== undefined)
+      p.push(`<ScaleCrop>${xsdBoolean(opts.scaleCrop)}</ScaleCrop>`);
     if (opts.linksUpToDate !== undefined)
-      p.push(`<LinksUpToDate>${opts.linksUpToDate ? 1 : 0}</LinksUpToDate>`);
+      p.push(`<LinksUpToDate>${xsdBoolean(opts.linksUpToDate)}</LinksUpToDate>`);
     if (opts.charactersWithSpaces !== undefined)
       p.push(`<CharactersWithSpaces>${opts.charactersWithSpaces}</CharactersWithSpaces>`);
-    if (opts.sharedDoc !== undefined) p.push(`<SharedDoc>${opts.sharedDoc ? 1 : 0}</SharedDoc>`);
+    if (opts.sharedDoc !== undefined)
+      p.push(`<SharedDoc>${xsdBoolean(opts.sharedDoc)}</SharedDoc>`);
     if (opts.hyperlinkBase !== undefined)
       p.push(`<HyperlinkBase>${escapeXml(opts.hyperlinkBase)}</HyperlinkBase>`);
     if (opts.hyperlinksChanged !== undefined)
-      p.push(`<HyperlinksChanged>${opts.hyperlinksChanged ? 1 : 0}</HyperlinksChanged>`);
+      p.push(`<HyperlinksChanged>${xsdBoolean(opts.hyperlinksChanged)}</HyperlinksChanged>`);
     if (opts.application !== undefined)
       p.push(`<Application>${escapeXml(opts.application)}</Application>`);
     if (opts.appVersion !== undefined)

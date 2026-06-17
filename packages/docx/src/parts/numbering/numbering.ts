@@ -269,6 +269,10 @@ export class Numbering {
 /** Extra options for abstract numbering. Re-exported from abstract-numbering module. */
 interface AbstractNumberingExtraOptions {
   nsid?: string;
+  /** w:multiLevelType value (singleLevel/multilevel/hybridMultilevel). */
+  multiLevelType?: string;
+  /** w15:restartNumberingAfterBreak attribute on w:abstractNum. Omitted when undefined. */
+  restartNumberingAfterBreak?: boolean;
   tmpl?: string;
   name?: string;
   styleLink?: string;
@@ -283,14 +287,18 @@ function stringifyAbstractNumbering(
   extraOptions?: AbstractNumberingExtraOptions,
 ): string {
   const parts: string[] = [];
-  parts.push(
-    `<w:abstractNum w:abstractNumId="${decimalNumber(id)}" w15:restartNumberingAfterBreak="0">`,
-  );
+  // w15:restartNumberingAfterBreak is optional (w15 extension); only emit when
+  // explicitly carried so round-trip matches sources that omit it.
+  const restartAttr =
+    extraOptions?.restartNumberingAfterBreak !== undefined
+      ? ` w15:restartNumberingAfterBreak="${extraOptions.restartNumberingAfterBreak ? 1 : 0}"`
+      : "";
+  parts.push(`<w:abstractNum w:abstractNumId="${decimalNumber(id)}"${restartAttr}>`);
 
   if (extraOptions?.nsid !== undefined) {
     parts.push(`<w:nsid w:val="${extraOptions.nsid}"/>`);
   }
-  parts.push(`<w:multiLevelType w:val="hybridMultilevel"/>`);
+  parts.push(`<w:multiLevelType w:val="${extraOptions?.multiLevelType ?? "hybridMultilevel"}"/>`);
   if (extraOptions?.tmpl !== undefined) {
     parts.push(`<w:tmpl w:val="${extraOptions.tmpl}"/>`);
   }
@@ -364,10 +372,10 @@ function stringifyLevel(opts: LevelsOptions): string {
   if (pPrXml) children.push(pPrXml);
   if (rPrXml) children.push(rPrXml);
 
-  const lvlAttrs: string[] = [
-    `w:ilvl="${decimalNumber(Math.min(opts.level, 9))}"`,
-    `w15:tentative="1"`,
-  ];
+  const lvlAttrs: string[] = [`w:ilvl="${decimalNumber(Math.min(opts.level, 9))}"`];
+  // w15:tentative is optional; only emit when carried (matches sources that omit it).
+  if (opts.w15Tentative !== undefined)
+    lvlAttrs.push(`w15:tentative="${opts.w15Tentative ? 1 : 0}"`);
   if (opts.templateCode !== undefined) lvlAttrs.push(`w:tplc="${opts.templateCode}"`);
   if (opts.tentative !== undefined) lvlAttrs.push(`w:tentative="${opts.tentative ? 1 : 0}"`);
 
@@ -422,6 +430,13 @@ export function parseNumberingDefinitions(
         const v = attr(nsidEl, "w:val");
         if (v) extraOptions.nsid = v;
       }
+      const multiLevelTypeEl = findChild(abstractEl, "w:multiLevelType");
+      if (multiLevelTypeEl) {
+        const v = attr(multiLevelTypeEl, "w:val");
+        if (v) extraOptions.multiLevelType = v;
+      }
+      const restartVal = attrBool(abstractEl, "w15:restartNumberingAfterBreak");
+      if (restartVal !== undefined) extraOptions.restartNumberingAfterBreak = restartVal;
       const tmplEl = findChild(abstractEl, "w:tmpl");
       if (tmplEl) {
         const v = attr(tmplEl, "w:val");
@@ -500,12 +515,13 @@ function parseLevelEl(
     if (val) opts.alignment = val as LevelsOptions["alignment"];
   }
 
-  // Level attributes (w:tplc templateCode; w:tentative — note stringify also
-  // emits a fixed w15:tentative="1" which we don't round-trip as it's constant)
+  // Level attributes (w:tplc templateCode; w:tentative; w15:tentative)
   const tplc = attr(el, "w:tplc");
   if (tplc) opts.templateCode = tplc;
   const tentative = attrBool(el, "w:tentative");
   if (tentative !== undefined) opts.tentative = tentative;
+  const w15Tentative = attrBool(el, "w15:tentative");
+  if (w15Tentative !== undefined) opts.w15Tentative = w15Tentative;
 
   // Run + paragraph properties — reuse the complete parse helpers for full
   // fidelity (stringifyLevel delegates to stringifyRunProperties /

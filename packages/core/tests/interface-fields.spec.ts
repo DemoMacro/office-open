@@ -15,13 +15,15 @@ const INTERFACE_SOURCE: Record<string, { interfaceName: string; file: string }> 
 };
 
 describe("extractInterfaceFields", () => {
-  it("reads a flat interface (CorePropertiesInput, 8 fields, sorted)", () => {
+  it("reads a flat interface (CorePropertiesInput, 10 fields, sorted)", () => {
     expect(extractInterfaceFields("CorePropertiesInput", `${DOCX}/core-properties.ts`)).toEqual([
+      "created",
       "creator",
       "description",
       "keywords",
       "lastModifiedBy",
       "lastPrinted",
+      "modified",
       "revision",
       "subject",
       "title",

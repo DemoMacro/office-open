@@ -8,14 +8,13 @@ import type { CorePropertiesInput } from "./core-properties";
 const spec = findFieldSpec("core-properties")!;
 
 describe("core-properties field consistency", () => {
-  it("flags created/modified as F2 write-only inflation and F3 parse-loss", () => {
-    // stringify unconditionally emits dcterms:created + dcterms:modified but
-    // they have no home on CorePropertiesInput (F2) and parse never reads
-    // them back (F3) — the same two fields violate both dimensions.
+  it("round-trips created/modified with no F2 inflation or F3 parse-loss", () => {
+    // created/modified now have a home on CorePropertiesInput and parse reads
+    // them back, so the field sets are fully symmetric.
     const report = diffTagSets(spec);
-    expect(report.f2WriteOnly).toEqual(["created", "modified"]);
-    expect(report.f3ParseLoss).toEqual(["created", "modified"]);
     expect(report.f1WriteLoss).toEqual([]);
+    expect(report.f2WriteOnly).toEqual([]);
+    expect(report.f3ParseLoss).toEqual([]);
     expect(report.f5ParseOnly).toEqual([]);
   });
 

@@ -52,7 +52,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
   {
     id: "core-properties",
     optionsInterface: "CorePropertiesInput",
-    // 8 interface fields — the contract.
+    // 10 interface fields — created/modified are now carried for round-trip fidelity.
     interfaceFields: [
       "title",
       "subject",
@@ -62,9 +62,10 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "lastModifiedBy",
       "revision",
       "lastPrinted",
+      "created",
+      "modified",
     ],
-    // stringify unconditionally appends dcterms:created + dcterms:modified
-    // (core-properties.ts stringify body) — two fields with no interface home.
+    // stringify emits all 10 fields; created/modified default to now when absent.
     writeFields: [
       "title",
       "subject",
@@ -77,7 +78,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "created",
       "modified",
     ],
-    // parse reads back exactly the 8 interface fields.
+    // parse reads back all 10 interface fields.
     parseFields: [
       "title",
       "subject",
@@ -87,6 +88,8 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "lastModifiedBy",
       "revision",
       "lastPrinted",
+      "created",
+      "modified",
     ],
     sampleOptions: {
       title: "T",
@@ -97,9 +100,10 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       lastModifiedBy: "LMB",
       revision: 3,
       lastPrinted: "2024-01-02T03:04:05Z",
+      created: "2018-05-11T07:02:00Z",
+      modified: "2026-04-10T02:02:36Z",
     },
-    notes:
-      "F2 write-only: created/modified always written (new Date, non-deterministic), never parsed.",
+    notes: "created/modified round-tripped verbatim from dcterms:created/modified.",
   },
   {
     id: "paragraph-properties",

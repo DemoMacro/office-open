@@ -2,8 +2,8 @@
  * Endnotes descriptor — produces word/endnotes.xml.
  *
  * Generates the complete `<w:endnotes>` element including:
- * - Separator endnote (id=-1)
- * - Continuation separator endnote (id=0)
+ * - Separator endnote (id round-tripped from source; default -1)
+ * - Continuation separator endnote (id round-tripped from source; default 0)
  * - User endnotes with auto-injected endnoteRef in first paragraph
  *
  * Reference: http://officeopenxml.com/WPfootnotes.php, CT_Endnotes / CT_FtnEdn
@@ -21,8 +21,21 @@ import type { BodyContext, DocxReadContext } from "../../context";
 
 // ── Input ──
 
+/** System endnote (separator / continuationSeparator). Round-tripped verbatim. */
+export interface EndnoteSeparator {
+  readonly id: number;
+  readonly paragraphs: (ParagraphOptions | string)[];
+}
+
 export interface EndnotesData {
   notes: Map<number, (ParagraphOptions | string)[]>;
+  /**
+   * Separator endnote — id + content round-tripped from the source so it stays
+   * consistent with settings.endnotePr, which references this id.
+   */
+  separator?: EndnoteSeparator;
+  /** Continuation separator endnote — id + content round-tripped from the source. */
+  continuationSeparator?: EndnoteSeparator;
 }
 
 // ── Constants ──
@@ -49,7 +62,7 @@ const NS =
 const ENDNOTE_REF_RUN =
   '<w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r>';
 
-/** Separator endnote (id=-1). */
+/** Default separator endnote (id=-1) for freshly generated documents. */
 const SEPARATOR_ENDNOTE =
   '<w:endnote w:type="separator" w:id="-1">' +
   '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>' +
@@ -57,7 +70,7 @@ const SEPARATOR_ENDNOTE =
   "</w:p>" +
   "</w:endnote>";
 
-/** Continuation separator endnote (id=0). */
+/** Default continuation separator endnote (id=0) for freshly generated documents. */
 const CONTINUATION_SEPARATOR_ENDNOTE =
   '<w:endnote w:type="continuationSeparator" w:id="0">' +
   '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>' +
@@ -67,15 +80,36 @@ const CONTINUATION_SEPARATOR_ENDNOTE =
 
 // ── Descriptor ──
 
+/** Render a system endnote from round-tripped id + content, or the spec default. */
+function endnoteSystemNote(
+  type: "separator" | "continuationSeparator",
+  sep: EndnoteSeparator | undefined,
+  fallback: string,
+  ctx: BodyContext,
+): string {
+  if (!sep) return fallback;
+  const inner = sep.paragraphs.map((p) => stringifyParagraphInline(p, ctx)).join("");
+  return `<w:endnote w:type="${type}" w:id="${sep.id}">${inner}</w:endnote>`;
+}
+
 export const endnotesDesc: CustomDescriptor<EndnotesData, BodyContext> = {
   kind: "custom",
 
   stringify(data, ctx) {
-    const parts: string[] = [
-      `<w:endnotes ${NS} mc:Ignorable="w14 w15 wp14">`,
-      SEPARATOR_ENDNOTE,
-      CONTINUATION_SEPARATOR_ENDNOTE,
-    ];
+    const parts: string[] = [`<w:endnotes ${NS} mc:Ignorable="w14 w15 wp14">`];
+
+    // Separator / continuation separator: round-trip id + content verbatim so they
+    // stay consistent with settings.endnotePr (which references these ids). Fall
+    // back to spec defaults only for freshly generated documents.
+    parts.push(endnoteSystemNote("separator", data.separator, SEPARATOR_ENDNOTE, ctx));
+    parts.push(
+      endnoteSystemNote(
+        "continuationSeparator",
+        data.continuationSeparator,
+        CONTINUATION_SEPARATOR_ENDNOTE,
+        ctx,
+      ),
+    );
 
     for (const [id, paragraphs] of data.notes) {
       parts.push(`<w:endnote w:id="${id}">`);
@@ -102,13 +136,13 @@ export const endnotesDesc: CustomDescriptor<EndnotesData, BodyContext> = {
 
   parse(el, ctx) {
     const notes = new Map<number, (ParagraphOptions | string)[]>();
+    let separator: EndnoteSeparator | undefined;
+    let continuationSeparator: EndnoteSeparator | undefined;
     for (const child of el.elements ?? []) {
       if (child.name !== "w:endnote") continue;
       const id = attrNum(child, "w:id");
       if (id === undefined) continue;
-      // Skip system endnotes (separator id=-1, continuationSeparator id=0)
       const type = attr(child, "w:type");
-      if (type || id < 1) continue;
 
       const paragraphs: (ParagraphOptions | string)[] = [];
       for (const sub of child.elements ?? []) {
@@ -116,8 +150,18 @@ export const endnotesDesc: CustomDescriptor<EndnotesData, BodyContext> = {
           paragraphs.push(parseParagraph(sub, ctx as DocxReadContext));
         }
       }
-      notes.set(id, paragraphs);
+
+      // System endnotes carry type="separator"/"continuationSeparator" — capture
+      // their id + content so stringify round-trips them verbatim (settings
+      // references these ids). Normal endnotes (type absent/"normal") go to notes.
+      if (type === "separator") {
+        separator = { id, paragraphs };
+      } else if (type === "continuationSeparator") {
+        continuationSeparator = { id, paragraphs };
+      } else {
+        notes.set(id, paragraphs);
+      }
     }
-    return { notes } as EndnotesData;
+    return { notes, separator, continuationSeparator } as EndnotesData;
   },
 };

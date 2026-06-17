@@ -2,8 +2,8 @@
  * Footnotes descriptor — produces word/footnotes.xml.
  *
  * Generates the complete `<w:footnotes>` element including:
- * - Separator footnote (id=-1)
- * - Continuation separator footnote (id=0)
+ * - Separator footnote (id round-tripped from source; default -1)
+ * - Continuation separator footnote (id round-tripped from source; default 0)
  * - User footnotes with auto-injected footnoteRef in first paragraph
  *
  * Reference: http://officeopenxml.com/WPfootnotes.php, CT_Footnotes / CT_FtnEdn
@@ -21,8 +21,21 @@ import type { BodyContext, DocxReadContext } from "../../context";
 
 // ── Input ──
 
+/** System footnote (separator / continuationSeparator). Round-tripped verbatim. */
+export interface FootnoteSeparator {
+  readonly id: number;
+  readonly paragraphs: (ParagraphOptions | string)[];
+}
+
 export interface FootnotesData {
   notes: Map<number, (ParagraphOptions | string)[]>;
+  /**
+   * Separator footnote — id + content round-tripped from the source so it stays
+   * consistent with settings.footnotePr, which references this id.
+   */
+  separator?: FootnoteSeparator;
+  /** Continuation separator footnote — id + content round-tripped from the source. */
+  continuationSeparator?: FootnoteSeparator;
 }
 
 // ── Constants ──
@@ -49,7 +62,7 @@ const NS =
 const FOOTNOTE_REF_RUN =
   '<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteRef/></w:r>';
 
-/** Separator footnote (id=-1). */
+/** Default separator footnote (id=-1) for freshly generated documents. */
 const SEPARATOR_FOOTNOTE =
   '<w:footnote w:type="separator" w:id="-1">' +
   '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>' +
@@ -57,7 +70,7 @@ const SEPARATOR_FOOTNOTE =
   "</w:p>" +
   "</w:footnote>";
 
-/** Continuation separator footnote (id=0). */
+/** Default continuation separator footnote (id=0) for freshly generated documents. */
 const CONTINUATION_SEPARATOR_FOOTNOTE =
   '<w:footnote w:type="continuationSeparator" w:id="0">' +
   '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>' +
@@ -67,15 +80,36 @@ const CONTINUATION_SEPARATOR_FOOTNOTE =
 
 // ── Descriptor ──
 
+/** Render a system footnote from round-tripped id + content, or the spec default. */
+function footnoteSystemNote(
+  type: "separator" | "continuationSeparator",
+  sep: FootnoteSeparator | undefined,
+  fallback: string,
+  ctx: BodyContext,
+): string {
+  if (!sep) return fallback;
+  const inner = sep.paragraphs.map((p) => stringifyParagraphInline(p, ctx)).join("");
+  return `<w:footnote w:type="${type}" w:id="${sep.id}">${inner}</w:footnote>`;
+}
+
 export const footnotesDesc: CustomDescriptor<FootnotesData, BodyContext> = {
   kind: "custom",
 
   stringify(data, ctx) {
-    const parts: string[] = [
-      `<w:footnotes ${NS} mc:Ignorable="w14 w15 wp14">`,
-      SEPARATOR_FOOTNOTE,
-      CONTINUATION_SEPARATOR_FOOTNOTE,
-    ];
+    const parts: string[] = [`<w:footnotes ${NS} mc:Ignorable="w14 w15 wp14">`];
+
+    // Separator / continuation separator: round-trip id + content verbatim so they
+    // stay consistent with settings.footnotePr (which references these ids). Fall
+    // back to spec defaults only for freshly generated documents.
+    parts.push(footnoteSystemNote("separator", data.separator, SEPARATOR_FOOTNOTE, ctx));
+    parts.push(
+      footnoteSystemNote(
+        "continuationSeparator",
+        data.continuationSeparator,
+        CONTINUATION_SEPARATOR_FOOTNOTE,
+        ctx,
+      ),
+    );
 
     for (const [id, paragraphs] of data.notes) {
       parts.push(`<w:footnote w:id="${id}">`);
@@ -102,13 +136,13 @@ export const footnotesDesc: CustomDescriptor<FootnotesData, BodyContext> = {
 
   parse(el, ctx) {
     const notes = new Map<number, (ParagraphOptions | string)[]>();
+    let separator: FootnoteSeparator | undefined;
+    let continuationSeparator: FootnoteSeparator | undefined;
     for (const child of el.elements ?? []) {
       if (child.name !== "w:footnote") continue;
       const id = attrNum(child, "w:id");
       if (id === undefined) continue;
-      // Skip system footnotes (separator id=-1, continuationSeparator id=0)
       const type = attr(child, "w:type");
-      if (type || id < 1) continue;
 
       const paragraphs: (ParagraphOptions | string)[] = [];
       for (const sub of child.elements ?? []) {
@@ -116,8 +150,18 @@ export const footnotesDesc: CustomDescriptor<FootnotesData, BodyContext> = {
           paragraphs.push(parseParagraph(sub, ctx as DocxReadContext));
         }
       }
-      notes.set(id, paragraphs);
+
+      // System footnotes carry type="separator"/"continuationSeparator" — capture
+      // their id + content so stringify round-trips them verbatim (settings
+      // references these ids). Normal footnotes (type absent/"normal") go to notes.
+      if (type === "separator") {
+        separator = { id, paragraphs };
+      } else if (type === "continuationSeparator") {
+        continuationSeparator = { id, paragraphs };
+      } else {
+        notes.set(id, paragraphs);
+      }
     }
-    return { notes } as FootnotesData;
+    return { notes, separator, continuationSeparator } as FootnotesData;
   },
 };

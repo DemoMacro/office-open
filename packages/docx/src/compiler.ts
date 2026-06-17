@@ -220,7 +220,15 @@ function xmlifyContext(
     relationships: ctx.footNotes.relationships,
   });
   const footnoteXmlData =
-    XML_DECL + (footnotesDesc.stringify({ notes: ctx.footNotes.notes }, footnoteCtx) ?? "");
+    XML_DECL +
+    (footnotesDesc.stringify(
+      {
+        notes: ctx.footNotes.notes,
+        separator: ctx.footNotes.separator,
+        continuationSeparator: ctx.footNotes.continuationSeparator,
+      },
+      footnoteCtx,
+    ) ?? "");
 
   const documentMedia = findAndReplaceImagePlaceholders(
     documentXmlData,
@@ -371,7 +379,15 @@ function xmlifyContext(
           relationships: ctx.endnotes.relationships,
         });
         const xmlData =
-          XML_DECL + (endnotesDesc.stringify({ notes: ctx.endnotes.notes }, endnoteCtx) ?? "");
+          XML_DECL +
+          (endnotesDesc.stringify(
+            {
+              notes: ctx.endnotes.notes,
+              separator: ctx.endnotes.separator,
+              continuationSeparator: ctx.endnotes.continuationSeparator,
+            },
+            endnoteCtx,
+          ) ?? "");
         const endnoteRelCount = ctx.endnotes.relationships.relationshipCount + 1;
         const endnoteMedia = findAndReplaceImagePlaceholders(
           xmlData,

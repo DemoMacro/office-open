@@ -200,8 +200,10 @@ export interface LevelsOptions {
   lvlPicBulletId?: number;
   /** Template code for the level. */
   templateCode?: string;
-  /** Whether this level is tentative. */
+  /** Whether this level is tentative (w:tentative attribute). */
   tentative?: boolean;
+  /** Whether this level is tentative (w15:tentative attribute). */
+  w15Tentative?: boolean;
   /** Legacy spacing/indent settings. */
   legacy?: { space?: number; indent?: number };
   /** Run and paragraph style properties. */

@@ -315,6 +315,8 @@ export function parseDocument(data: DataType): DocumentOptions {
       if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
       if (cp.revision) opts.revision = cp.revision;
       if (cp.lastPrinted) opts.lastPrinted = cp.lastPrinted;
+      if (cp.created) opts.created = cp.created;
+      if (cp.modified) opts.modified = cp.modified;
     }
   }
 
@@ -384,7 +386,19 @@ export function parseDocument(data: DataType): DocumentOptions {
       for (const [id, paragraphs] of fnResult.notes) {
         footnotesMap[String(id)] = { children: paragraphs };
       }
-      if (Object.keys(footnotesMap).length > 0) opts.footnotes = footnotesMap;
+      // Preserve round-tripped separators so the generated ids stay consistent
+      // with settings.footnotePr (which references them).
+      if (
+        Object.keys(footnotesMap).length > 0 ||
+        fnResult.separator ||
+        fnResult.continuationSeparator
+      ) {
+        const fnOpts = footnotesMap as NonNullable<DocumentOptions["footnotes"]>;
+        if (fnResult.separator) fnOpts.separator = fnResult.separator;
+        if (fnResult.continuationSeparator)
+          fnOpts.continuationSeparator = fnResult.continuationSeparator;
+        opts.footnotes = fnOpts;
+      }
     }
   }
 
@@ -399,7 +413,17 @@ export function parseDocument(data: DataType): DocumentOptions {
       for (const [id, paragraphs] of enResult.notes) {
         endnotesMap[String(id)] = { children: paragraphs };
       }
-      if (Object.keys(endnotesMap).length > 0) opts.endnotes = endnotesMap;
+      if (
+        Object.keys(endnotesMap).length > 0 ||
+        enResult.separator ||
+        enResult.continuationSeparator
+      ) {
+        const enOpts = endnotesMap as NonNullable<DocumentOptions["endnotes"]>;
+        if (enResult.separator) enOpts.separator = enResult.separator;
+        if (enResult.continuationSeparator)
+          enOpts.continuationSeparator = enResult.continuationSeparator;
+        opts.endnotes = enOpts;
+      }
     }
   }
 

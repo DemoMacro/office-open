@@ -15,7 +15,9 @@ import type { Element } from "@office-open/xml";
 import { AltChunkCollection } from "@parts/alt-chunk/alt-chunk-collection";
 import type { DocumentOptions } from "@parts/core-properties";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
+import type { EndnoteSeparator } from "@parts/endnotes/descriptor";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
+import type { FootnoteSeparator } from "@parts/footnotes/descriptor";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { HeaderFooterEntry } from "@parts/header-footer";
 import { Numbering } from "@parts/numbering";
@@ -73,10 +75,14 @@ export class DocxWriteContext implements WriteContext {
   declare public footNotes: {
     relationships: Relationships;
     notes: Map<number, (ParagraphOptions | string)[]>;
+    separator?: FootnoteSeparator;
+    continuationSeparator?: FootnoteSeparator;
   };
   declare public endnotes: {
     relationships: Relationships;
     notes: Map<number, (ParagraphOptions | string)[]>;
+    separator?: EndnoteSeparator;
+    continuationSeparator?: EndnoteSeparator;
   };
 
   // --- Additional state used by the compiler ---
@@ -231,14 +237,21 @@ export class DocxWriteContext implements WriteContext {
 
     if (options.footnotes) {
       for (const key in options.footnotes) {
+        // Skip the round-tripped separator markers (they carry no .children).
+        if (key === "separator" || key === "continuationSeparator") continue;
         this.footNotes.notes.set(parseFloat(key), options.footnotes[key].children);
       }
+      this.footNotes.separator = options.footnotes.separator;
+      this.footNotes.continuationSeparator = options.footnotes.continuationSeparator;
     }
 
     if (options.endnotes) {
       for (const key in options.endnotes) {
+        if (key === "separator" || key === "continuationSeparator") continue;
         this.endnotes.notes.set(parseFloat(key), options.endnotes[key].children);
       }
+      this.endnotes.separator = options.endnotes.separator;
+      this.endnotes.continuationSeparator = options.endnotes.continuationSeparator;
     }
 
     this.fontTable = new FontWrapper(options.fonts ?? []);

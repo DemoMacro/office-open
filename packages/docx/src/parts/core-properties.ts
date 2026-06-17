@@ -25,6 +25,8 @@ import type { SectionOptions } from "@shared/section";
 import type { AppPropertiesOptions } from "./app-properties";
 import type { CustomPropertyOptions } from "./custom-properties";
 import type { DocumentBackgroundOptions } from "./document";
+import type { EndnoteSeparator } from "./endnotes/descriptor";
+import type { FootnoteSeparator } from "./footnotes/descriptor";
 import type { NumberingOptions } from "./numbering";
 import type { ParagraphOptions } from "./paragraph";
 import type { StylesOptions } from "./styles";
@@ -81,27 +83,31 @@ export interface DocumentOptions {
   lastModifiedBy?: string;
   revision?: number;
   lastPrinted?: string;
+  /** Creation timestamp (W3CDTF), round-tripped from dcterms:created. */
+  created?: string;
+  /** Last modified timestamp (W3CDTF), round-tripped from dcterms:modified. */
+  modified?: string;
   externalStyles?: string;
   styles?: StylesOptions;
   numbering?: NumberingOptions;
   comments?: CommentsOptions;
   bibliography?: BibliographyOptions;
-  footnotes?: Readonly<
-    Record<
-      string,
-      {
-        children: (ParagraphOptions | string)[];
-      }
-    >
-  >;
-  endnotes?: Readonly<
-    Record<
-      string,
-      {
-        children: (ParagraphOptions | string)[];
-      }
-    >
-  >;
+  footnotes?: Record<string, { children: (ParagraphOptions | string)[] }> & {
+    /**
+     * Separator footnote — id + content round-tripped verbatim from the source
+     * so the generated id stays consistent with settings.footnotePr, which
+     * references it. Omit for freshly generated documents (defaults apply).
+     */
+    separator?: FootnoteSeparator;
+    /** Continuation separator footnote — round-tripped verbatim from the source. */
+    continuationSeparator?: FootnoteSeparator;
+  };
+  endnotes?: Record<string, { children: (ParagraphOptions | string)[] }> & {
+    /** Separator endnote — id + content round-tripped verbatim from the source. */
+    separator?: EndnoteSeparator;
+    /** Continuation separator endnote — round-tripped verbatim from the source. */
+    continuationSeparator?: EndnoteSeparator;
+  };
   background?: DocumentBackgroundOptions;
   features?: FeaturesOptions;
   compatabilityModeVersion?: number;
@@ -170,6 +176,10 @@ export interface CorePropertiesInput {
   lastModifiedBy?: string;
   revision?: number;
   lastPrinted?: string;
+  /** Creation timestamp (W3CDTF), round-tripped from dcterms:created. */
+  created?: string;
+  /** Last modified timestamp (W3CDTF), round-tripped from dcterms:modified. */
+  modified?: string;
 }
 
 export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
@@ -184,17 +194,22 @@ export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
         ' xmlns:dcmitype="http://purl.org/dc/dcmitype/"' +
         ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
     ];
-    if (opts.title) p.push(`<dc:title>${escapeXml(opts.title)}</dc:title>`);
-    if (opts.subject) p.push(`<dc:subject>${escapeXml(opts.subject)}</dc:subject>`);
+    // Emit in CT_CoreProperties xsd:all schema order: created, creator,
+    // description, keywords, lastModifiedBy, lastPrinted, modified, revision,
+    // subject, title. created/modified default to now for fresh documents.
+    p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`);
     if (opts.creator) p.push(`<dc:creator>${escapeXml(opts.creator)}</dc:creator>`);
-    if (opts.keywords) p.push(`<cp:keywords>${escapeXml(opts.keywords)}</cp:keywords>`);
     if (opts.description) p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
+    if (opts.keywords) p.push(`<cp:keywords>${escapeXml(opts.keywords)}</cp:keywords>`);
     if (opts.lastModifiedBy)
       p.push(`<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy)}</cp:lastModifiedBy>`);
-    if (opts.revision !== undefined) p.push(`<cp:revision>${opts.revision}</cp:revision>`);
     if (opts.lastPrinted) p.push(`<cp:lastPrinted>${escapeXml(opts.lastPrinted)}</cp:lastPrinted>`);
-    p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created>`);
-    p.push(`<dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>`);
+    p.push(
+      `<dcterms:modified xsi:type="dcterms:W3CDTF">${opts.modified ?? now}</dcterms:modified>`,
+    );
+    if (opts.revision !== undefined) p.push(`<cp:revision>${opts.revision}</cp:revision>`);
+    if (opts.subject) p.push(`<dc:subject>${escapeXml(opts.subject)}</dc:subject>`);
+    if (opts.title) p.push(`<dc:title>${escapeXml(opts.title)}</dc:title>`);
     p.push("</cp:coreProperties>");
     return p.join("");
   },
@@ -229,6 +244,12 @@ export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
           break;
         case "cp:lastPrinted":
           result.lastPrinted = text;
+          break;
+        case "dcterms:created":
+          result.created = text;
+          break;
+        case "dcterms:modified":
+          result.modified = text;
           break;
       }
     }
