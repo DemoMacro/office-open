@@ -245,7 +245,7 @@ Export to Buffer, Blob, Base64, stream, or string
 ---
 color: neutral
 label: Explore @office-open/docx
-to: /en/docx
+to: /en/docx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---
@@ -255,7 +255,7 @@ variant: subtle
 ---
 color: neutral
 label: Explore @office-open/pptx
-to: /en/pptx
+to: /en/pptx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---
@@ -307,7 +307,7 @@ const result = await patchPresentation({
 ```
 
 ```ts [XLSX]
-import { parseWorkbook, patchWorkbook, PatchType } from "@office-open/xlsx";
+import { parseWorkbook, patchWorkbook } from "@office-open/xlsx";
 
 // Parse existing file
 const opts = parseWorkbook(buffer);
@@ -319,7 +319,7 @@ const result = await patchWorkbook({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    name: { type: PatchType.CELL, value: "John Doe" },
+    name: { value: "John Doe" },
   },
 });
 ```
@@ -362,7 +362,7 @@ Parse, modify, and re-export in a pipeline
 ---
 color: neutral
 label: Explore @office-open/xlsx
-to: /en/xlsx
+to: /en/xlsx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---

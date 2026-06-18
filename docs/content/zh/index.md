@@ -307,7 +307,7 @@ const result = await patchPresentation({
 ```
 
 ```ts [XLSX]
-import { parseWorkbook, patchWorkbook, PatchType } from "@office-open/xlsx";
+import { parseWorkbook, patchWorkbook } from "@office-open/xlsx";
 
 // 解析现有文件
 const opts = parseWorkbook(buffer);
@@ -319,7 +319,7 @@ const result = await patchWorkbook({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    name: { type: PatchType.CELL, value: "张三" },
+    name: { value: "张三" },
   },
 });
 ```
