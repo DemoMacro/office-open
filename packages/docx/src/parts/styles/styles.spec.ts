@@ -4,7 +4,8 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { parseParagraphProperties } from "../../body";
 import type { DocxReadContext } from "../../context";
-import { parseStyleDefinitions, Styles } from "./styles";
+import { DefaultStylesFactory } from "./factory";
+import { parseStyleDefinitions, Styles, extractStyleId } from "./styles";
 
 // Style pPr and docDefaults pPr carry no numPr, so an empty read context
 // suffices for parseParagraphProperties.
@@ -108,5 +109,53 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(doc?.paragraph?.spacing?.after).toBe(160);
     expect(doc?.paragraph?.spacing?.line).toBe(278);
     expect(doc?.paragraph?.alignment).toBe(AlignmentType.CENTER);
+  });
+});
+
+describe("DefaultStylesFactory overrides (user definitions win)", () => {
+  it("applies user heading1 override and syncs Heading1Char + outlineLevel", () => {
+    const { importedStyles } = new DefaultStylesFactory().newInstance({
+      heading1: { run: { color: "FF0000" } },
+    });
+    const h1 = importedStyles!.find((s) => extractStyleId(s._raw) === "Heading1")!;
+    expect(h1._raw).toContain('w:val="FF0000"');
+    expect(h1._raw).toContain('<w:outlineLvl w:val="0"/>');
+    const h1Char = importedStyles!.find((s) => extractStyleId(s._raw) === "Heading1Char")!;
+    expect(h1Char._raw).toContain('w:val="FF0000"');
+  });
+
+  it("emits Strong/Emphasis only when the user defines them", () => {
+    const custom = new DefaultStylesFactory().newInstance({
+      strong: { run: { bold: true } },
+      emphasis: { run: { italic: true } },
+    });
+    expect(custom.importedStyles!.some((s) => extractStyleId(s._raw) === "Strong")).toBe(true);
+    expect(custom.importedStyles!.some((s) => extractStyleId(s._raw) === "Emphasis")).toBe(true);
+
+    const defaults = new DefaultStylesFactory().newInstance({});
+    expect(defaults.importedStyles!.some((s) => extractStyleId(s._raw) === "Strong")).toBe(false);
+    expect(defaults.importedStyles!.some((s) => extractStyleId(s._raw) === "Emphasis")).toBe(false);
+  });
+
+  it("keeps the built-in heading default when no override (zero regression)", () => {
+    const { importedStyles } = new DefaultStylesFactory().newInstance({});
+    const h1 = importedStyles!.find((s) => extractStyleId(s._raw) === "Heading1")!;
+    expect(h1._raw).toContain('w:themeColor="accent1"');
+  });
+});
+
+describe("Styles dedup (user definitions override builtins)", () => {
+  it("paragraphStyles override importedStyles with the same styleId", () => {
+    const styles = new Styles({
+      importedStyles: [
+        {
+          _raw: '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style>',
+        },
+      ],
+      paragraphStyles: [{ id: "Heading1", name: "My Heading 1", run: { color: "FF0000" } }],
+    });
+    const xml = styles.serialize();
+    expect((xml.match(/styleId="Heading1"/g) ?? []).length).toBe(1);
+    expect(xml).toContain("My Heading 1");
   });
 });

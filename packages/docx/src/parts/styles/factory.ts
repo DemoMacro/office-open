@@ -146,6 +146,35 @@ export function stringifyCharacterStyle(
   return `<w:style w:type="character" w:styleId="${esc(opts.id)}">${children.join("")}</w:style>`;
 }
 
+/** Resolve a user override for heading level N (1-9) from default styles options. */
+function headingOverride(
+  options: DefaultStylesOptions,
+  level: number,
+): BaseParagraphStyleOptions | undefined {
+  switch (level) {
+    case 1:
+      return options.heading1;
+    case 2:
+      return options.heading2;
+    case 3:
+      return options.heading3;
+    case 4:
+      return options.heading4;
+    case 5:
+      return options.heading5;
+    case 6:
+      return options.heading6;
+    case 7:
+      return options.heading7;
+    case 8:
+      return options.heading8;
+    case 9:
+      return options.heading9;
+    default:
+      return undefined;
+  }
+}
+
 /** Build `<w:docDefaults>` XML matching Word's default settings. */
 function stringifyDocDefaults(opts: DocumentDefaultsOptions): string {
   const children: string[] = [];
@@ -342,7 +371,37 @@ export class DefaultStylesFactory {
       },
     ];
 
-    for (const h of headings) {
+    for (let headingIdx = 0; headingIdx < headings.length; headingIdx++) {
+      const h = headings[headingIdx];
+      const headingOverrideOpts = headingOverride(options, headingIdx + 1);
+      if (headingOverrideOpts) {
+        // User-defined heading overrides the built-in entirely.
+        importedStyles.push({
+          _raw: stringifyParagraphStyle({
+            id: h.id,
+            name: headingOverrideOpts.name ?? h.name,
+            basedOn: headingOverrideOpts.basedOn ?? "Normal",
+            next: headingOverrideOpts.next ?? "Normal",
+            link: headingOverrideOpts.link ?? h.link,
+            uiPriority: headingOverrideOpts.uiPriority ?? 9,
+            quickFormat: headingOverrideOpts.quickFormat ?? true,
+            semiHidden: headingOverrideOpts.semiHidden,
+            unhideWhenUsed: headingOverrideOpts.unhideWhenUsed,
+            paragraph: { outlineLevel: headingIdx, ...headingOverrideOpts.paragraph },
+            run: headingOverrideOpts.run,
+          }),
+        });
+        importedStyles.push({
+          _raw: stringifyCharacterStyle({
+            id: h.link,
+            name: `${h.name} Char`,
+            basedOn: "DefaultParagraphFont",
+            link: h.id,
+            run: headingOverrideOpts.run,
+          }),
+        });
+        continue;
+      }
       const pPrParts: string[] = [`<w:keepNext/>`, `<w:keepLines/>`];
       if (h.before || h.after) {
         const sp: string[] = [];
@@ -436,104 +495,217 @@ export class DefaultStylesFactory {
         `</w:style>`,
     });
 
-    // Title style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="paragraph" w:styleId="Title">` +
-        `<w:name w:val="Title"/>` +
-        `<w:basedOn w:val="Normal"/>` +
-        `<w:next w:val="Normal"/>` +
-        `<w:link w:val="TitleChar"/>` +
-        `<w:uiPriority w:val="10"/>` +
-        `<w:qFormat/>` +
-        `<w:pPr><w:spacing w:after="80" w:line="240" w:lineRule="auto"/><w:contextualSpacing/><w:jc w:val="center"/></w:pPr>` +
-        `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
-        `<w:spacing w:val="-10"/><w:kern w:val="28"/><w:sz w:val="56"/><w:szCs w:val="56"/></w:rPr>` +
-        `</w:style>`,
-    });
+    // Title style (user override via options.title, else built-in default)
+    if (options.title) {
+      importedStyles.push({
+        _raw: stringifyParagraphStyle({
+          id: "Title",
+          name: options.title.name ?? "Title",
+          basedOn: options.title.basedOn ?? "Normal",
+          next: options.title.next ?? "Normal",
+          link: options.title.link ?? "TitleChar",
+          uiPriority: options.title.uiPriority ?? 10,
+          quickFormat: options.title.quickFormat ?? true,
+          paragraph: options.title.paragraph,
+          run: options.title.run,
+        }),
+      });
+      importedStyles.push({
+        _raw: stringifyCharacterStyle({
+          id: "TitleChar",
+          name: "Title Char",
+          basedOn: "DefaultParagraphFont",
+          link: "Title",
+          run: options.title.run,
+        }),
+      });
+    } else {
+      importedStyles.push({
+        _raw:
+          `<w:style w:type="paragraph" w:styleId="Title">` +
+          `<w:name w:val="Title"/>` +
+          `<w:basedOn w:val="Normal"/>` +
+          `<w:next w:val="Normal"/>` +
+          `<w:link w:val="TitleChar"/>` +
+          `<w:uiPriority w:val="10"/>` +
+          `<w:qFormat/>` +
+          `<w:pPr><w:spacing w:after="80" w:line="240" w:lineRule="auto"/><w:contextualSpacing/><w:jc w:val="center"/></w:pPr>` +
+          `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
+          `<w:spacing w:val="-10"/><w:kern w:val="28"/><w:sz w:val="56"/><w:szCs w:val="56"/></w:rPr>` +
+          `</w:style>`,
+      });
+      importedStyles.push({
+        _raw:
+          `<w:style w:type="character" w:styleId="TitleChar">` +
+          `<w:name w:val="Title Char"/>` +
+          `<w:basedOn w:val="DefaultParagraphFont"/>` +
+          `<w:link w:val="Title"/>` +
+          `<w:uiPriority w:val="10"/>` +
+          `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
+          `<w:spacing w:val="-10"/><w:kern w:val="28"/><w:sz w:val="56"/><w:szCs w:val="56"/></w:rPr>` +
+          `</w:style>`,
+      });
+    }
 
-    // Title Char style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="character" w:styleId="TitleChar">` +
-        `<w:name w:val="Title Char"/>` +
-        `<w:basedOn w:val="DefaultParagraphFont"/>` +
-        `<w:link w:val="Title"/>` +
-        `<w:uiPriority w:val="10"/>` +
-        `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
-        `<w:spacing w:val="-10"/><w:kern w:val="28"/><w:sz w:val="56"/><w:szCs w:val="56"/></w:rPr>` +
-        `</w:style>`,
-    });
+    // Subtitle style (user override via options.subtitle, else built-in default)
+    if (options.subtitle) {
+      importedStyles.push({
+        _raw: stringifyParagraphStyle({
+          id: "Subtitle",
+          name: options.subtitle.name ?? "Subtitle",
+          basedOn: options.subtitle.basedOn ?? "Normal",
+          next: options.subtitle.next ?? "Normal",
+          link: options.subtitle.link ?? "SubtitleChar",
+          uiPriority: options.subtitle.uiPriority ?? 11,
+          quickFormat: options.subtitle.quickFormat ?? true,
+          paragraph: options.subtitle.paragraph,
+          run: options.subtitle.run,
+        }),
+      });
+      importedStyles.push({
+        _raw: stringifyCharacterStyle({
+          id: "SubtitleChar",
+          name: "Subtitle Char",
+          basedOn: "DefaultParagraphFont",
+          link: "Subtitle",
+          run: options.subtitle.run,
+        }),
+      });
+    } else {
+      importedStyles.push({
+        _raw:
+          `<w:style w:type="paragraph" w:styleId="Subtitle">` +
+          `<w:name w:val="Subtitle"/>` +
+          `<w:basedOn w:val="Normal"/>` +
+          `<w:next w:val="Normal"/>` +
+          `<w:link w:val="SubtitleChar"/>` +
+          `<w:uiPriority w:val="11"/>` +
+          `<w:qFormat/>` +
+          `<w:pPr><w:jc w:val="center"/></w:pPr>` +
+          `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
+          `<w:color w:val="595959" w:themeColor="text1" w:themeTint="A6"/>` +
+          `<w:spacing w:val="15"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr>` +
+          `</w:style>`,
+      });
+      importedStyles.push({
+        _raw:
+          `<w:style w:type="character" w:styleId="SubtitleChar">` +
+          `<w:name w:val="Subtitle Char"/>` +
+          `<w:basedOn w:val="DefaultParagraphFont"/>` +
+          `<w:link w:val="Subtitle"/>` +
+          `<w:uiPriority w:val="11"/>` +
+          `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
+          `<w:color w:val="595959" w:themeColor="text1" w:themeTint="A6"/>` +
+          `<w:spacing w:val="15"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr>` +
+          `</w:style>`,
+      });
+    }
 
-    // Subtitle style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="paragraph" w:styleId="Subtitle">` +
-        `<w:name w:val="Subtitle"/>` +
-        `<w:basedOn w:val="Normal"/>` +
-        `<w:next w:val="Normal"/>` +
-        `<w:link w:val="SubtitleChar"/>` +
-        `<w:uiPriority w:val="11"/>` +
-        `<w:qFormat/>` +
-        `<w:pPr><w:jc w:val="center"/></w:pPr>` +
-        `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
-        `<w:color w:val="595959" w:themeColor="text1" w:themeTint="A6"/>` +
-        `<w:spacing w:val="15"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr>` +
-        `</w:style>`,
-    });
+    // List Paragraph style (user override via options.listParagraph, else built-in default)
+    if (options.listParagraph) {
+      importedStyles.push({
+        _raw: stringifyParagraphStyle({
+          id: "ListParagraph",
+          name: options.listParagraph.name ?? "List Paragraph",
+          basedOn: options.listParagraph.basedOn ?? "Normal",
+          uiPriority: options.listParagraph.uiPriority ?? 34,
+          quickFormat: options.listParagraph.quickFormat ?? true,
+          paragraph: options.listParagraph.paragraph,
+          run: options.listParagraph.run,
+        }),
+      });
+    } else {
+      importedStyles.push({
+        _raw:
+          `<w:style w:type="paragraph" w:styleId="ListParagraph">` +
+          `<w:name w:val="List Paragraph"/>` +
+          `<w:basedOn w:val="Normal"/>` +
+          `<w:uiPriority w:val="34"/>` +
+          `<w:qFormat/>` +
+          `<w:pPr><w:ind w:left="720"/><w:contextualSpacing/></w:pPr>` +
+          `</w:style>`,
+      });
+    }
 
-    // Subtitle Char style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="character" w:styleId="SubtitleChar">` +
-        `<w:name w:val="Subtitle Char"/>` +
-        `<w:basedOn w:val="DefaultParagraphFont"/>` +
-        `<w:link w:val="Subtitle"/>` +
-        `<w:uiPriority w:val="11"/>` +
-        `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
-        `<w:color w:val="595959" w:themeColor="text1" w:themeTint="A6"/>` +
-        `<w:spacing w:val="15"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr>` +
-        `</w:style>`,
-    });
+    // Strong style — only emitted when the user provides a definition
+    if (options.strong) {
+      importedStyles.push({
+        _raw: stringifyParagraphStyle({
+          id: "Strong",
+          name: options.strong.name ?? "Strong",
+          basedOn: options.strong.basedOn ?? "Normal",
+          next: options.strong.next ?? "Normal",
+          quickFormat: options.strong.quickFormat ?? true,
+          paragraph: options.strong.paragraph,
+          run: options.strong.run,
+        }),
+      });
+    }
 
-    // List Paragraph style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="paragraph" w:styleId="ListParagraph">` +
-        `<w:name w:val="List Paragraph"/>` +
-        `<w:basedOn w:val="Normal"/>` +
-        `<w:uiPriority w:val="34"/>` +
-        `<w:qFormat/>` +
-        `<w:pPr><w:ind w:left="720"/><w:contextualSpacing/></w:pPr>` +
-        `</w:style>`,
-    });
+    // Emphasis style — only emitted when the user provides a definition
+    if (options.emphasis) {
+      importedStyles.push({
+        _raw: stringifyParagraphStyle({
+          id: "Emphasis",
+          name: options.emphasis.name ?? "Emphasis",
+          basedOn: options.emphasis.basedOn ?? "Normal",
+          next: options.emphasis.next ?? "Normal",
+          quickFormat: options.emphasis.quickFormat ?? true,
+          paragraph: options.emphasis.paragraph,
+          run: options.emphasis.run,
+        }),
+      });
+    }
 
-    // Quote style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="paragraph" w:styleId="Quote">` +
-        `<w:name w:val="Quote"/>` +
-        `<w:basedOn w:val="Normal"/>` +
-        `<w:next w:val="Normal"/>` +
-        `<w:link w:val="QuoteChar"/>` +
-        `<w:uiPriority w:val="29"/>` +
-        `<w:qFormat/>` +
-        `<w:pPr><w:spacing w:before="160"/><w:jc w:val="center"/></w:pPr>` +
-        `<w:rPr><w:i/><w:iCs/><w:color w:val="404040" w:themeColor="text1" w:themeTint="BF"/></w:rPr>` +
-        `</w:style>`,
-    });
-
-    // Quote Char style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="character" w:styleId="QuoteChar">` +
-        `<w:name w:val="Quote Char"/>` +
-        `<w:basedOn w:val="DefaultParagraphFont"/>` +
-        `<w:link w:val="Quote"/>` +
-        `<w:uiPriority w:val="29"/>` +
-        `<w:rPr><w:i/><w:iCs/><w:color w:val="404040" w:themeColor="text1" w:themeTint="BF"/></w:rPr>` +
-        `</w:style>`,
-    });
+    // Quote style (user override via options.quote, else built-in default)
+    if (options.quote) {
+      importedStyles.push({
+        _raw: stringifyParagraphStyle({
+          id: "Quote",
+          name: options.quote.name ?? "Quote",
+          basedOn: options.quote.basedOn ?? "Normal",
+          next: options.quote.next ?? "Normal",
+          link: options.quote.link ?? "QuoteChar",
+          uiPriority: options.quote.uiPriority ?? 29,
+          quickFormat: options.quote.quickFormat ?? true,
+          paragraph: options.quote.paragraph,
+          run: options.quote.run,
+        }),
+      });
+      importedStyles.push({
+        _raw: stringifyCharacterStyle({
+          id: "QuoteChar",
+          name: "Quote Char",
+          basedOn: "DefaultParagraphFont",
+          link: "Quote",
+          run: options.quote.run,
+        }),
+      });
+    } else {
+      importedStyles.push({
+        _raw:
+          `<w:style w:type="paragraph" w:styleId="Quote">` +
+          `<w:name w:val="Quote"/>` +
+          `<w:basedOn w:val="Normal"/>` +
+          `<w:next w:val="Normal"/>` +
+          `<w:link w:val="QuoteChar"/>` +
+          `<w:uiPriority w:val="29"/>` +
+          `<w:qFormat/>` +
+          `<w:pPr><w:spacing w:before="160"/><w:jc w:val="center"/></w:pPr>` +
+          `<w:rPr><w:i/><w:iCs/><w:color w:val="404040" w:themeColor="text1" w:themeTint="BF"/></w:rPr>` +
+          `</w:style>`,
+      });
+      importedStyles.push({
+        _raw:
+          `<w:style w:type="character" w:styleId="QuoteChar">` +
+          `<w:name w:val="Quote Char"/>` +
+          `<w:basedOn w:val="DefaultParagraphFont"/>` +
+          `<w:link w:val="Quote"/>` +
+          `<w:uiPriority w:val="29"/>` +
+          `<w:rPr><w:i/><w:iCs/><w:color w:val="404040" w:themeColor="text1" w:themeTint="BF"/></w:rPr>` +
+          `</w:style>`,
+      });
+    }
 
     // Intense Quote style
     importedStyles.push({

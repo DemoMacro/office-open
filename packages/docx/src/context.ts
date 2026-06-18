@@ -23,7 +23,7 @@ import type { HeaderFooterEntry } from "@parts/header-footer";
 import { Numbering } from "@parts/numbering";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { SettingsOptions } from "@parts/settings/settings";
-import { Styles } from "@parts/styles";
+import { Styles, extractStyleId } from "@parts/styles";
 import { ExternalStylesFactory } from "@parts/styles/external-styles-factory";
 import { DefaultStylesFactory } from "@parts/styles/factory";
 import { SubDocCollection } from "@parts/sub-doc/sub-doc-collection";
@@ -169,8 +169,18 @@ export class DocxWriteContext implements WriteContext {
       const externalFactory = new ExternalStylesFactory();
       const externalStyles = externalFactory.newInstance(options.externalStyles);
       // Skip docDefaults AND latentStyles from default factory —
-      // external styles already provide them; XSD requires docDefaults → latentStyles → style sequence
-      const defaultStyleElements = defaultStyles.importedStyles!.slice(2);
+      // external styles already provide them; XSD requires docDefaults → latentStyles → style sequence.
+      // Also drop builtins whose styleId the external XML already defines so
+      // user definitions override defaults (no duplicate styleId in the output).
+      const externalStyleIds = new Set<string>();
+      for (const s of externalStyles.importedStyles ?? []) {
+        const id = extractStyleId(s._raw);
+        if (id) externalStyleIds.add(id);
+      }
+      const defaultStyleElements = defaultStyles.importedStyles!.slice(2).filter((s) => {
+        const id = extractStyleId(s._raw);
+        return !id || !externalStyleIds.has(id);
+      });
       this.styles = new Styles({
         ...externalStyles,
         importedStyles: [...externalStyles.importedStyles!, ...defaultStyleElements],

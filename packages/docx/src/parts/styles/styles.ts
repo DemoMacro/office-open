@@ -53,6 +53,17 @@ export interface StylesOptions {
 }
 
 /**
+ * Extract the `w:styleId` from a raw `<w:style>` XML string, if present.
+ *
+ * Returns `undefined` for non-style elements (docDefaults / latentStyles),
+ * whose raw XML carries no `w:styleId` attribute.
+ */
+export function extractStyleId(raw: string): string | undefined {
+  const m = raw.match(/w:styleId="([^"]+)"/);
+  return m ? m[1] : undefined;
+}
+
+/**
  * Represents the styles definitions in a WordprocessingML document.
  *
  * Pure collector — no XmlComponent inheritance.
@@ -67,9 +78,21 @@ export class Styles {
       this.attributes = options.initialAttributes;
     }
 
+    // styleIds explicitly redefined via paragraphStyles/characterStyles take
+    // precedence over importedStyles (user definitions override builtins) —
+    // skip those imported entries to avoid duplicate styleId in the output.
+    const customStyleIds = new Set<string>();
+    for (const s of options.paragraphStyles ?? []) customStyleIds.add(s.id);
+    for (const s of options.characterStyles ?? []) customStyleIds.add(s.id);
+
     if (options.importedStyles) {
       for (const style of options.importedStyles) {
-        if (style._raw) this.parts.push(style._raw);
+        if (!style._raw) continue;
+        if (customStyleIds.size > 0) {
+          const id = extractStyleId(style._raw);
+          if (id && customStyleIds.has(id)) continue;
+        }
+        this.parts.push(style._raw);
       }
     }
 
