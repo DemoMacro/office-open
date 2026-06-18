@@ -6,6 +6,8 @@
 
 import { strFromU8 } from "fflate";
 
+import { encodeBase64 } from "../util/base64";
+
 export interface OutputByType {
   base64: string;
   string: string;
@@ -48,12 +50,7 @@ export const convertOutput = <T extends OutputType>(
     case "uint8array":
       return data as OutputByType[T];
     case "base64":
-      // Use Buffer in Node.js (more robust), btoa as browser fallback
-      return (
-        typeof Buffer !== "undefined"
-          ? Buffer.from(data).toString("base64")
-          : btoa(strFromU8(data, true))
-      ) as OutputByType[T];
+      return encodeBase64(data) as OutputByType[T];
     case "string":
     case "text":
     case "binarystring":

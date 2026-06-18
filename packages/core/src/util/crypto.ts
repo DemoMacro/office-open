@@ -12,29 +12,7 @@
 
 import { sha512 } from "@noble/hashes/sha2.js";
 
-// ── Fast base64 encoding ──
-
-// Node.js: Buffer.from(bytes).toString("base64") is ~7.6× faster than btoa
-let _bufToBase64: ((bytes: Uint8Array) => string) | undefined;
-
-try {
-  const { Buffer: Buf } = await import("node:buffer");
-  _bufToBase64 = (bytes) => Buf.from(bytes).toString("base64");
-} catch {
-  // Browser — will use btoa fallback
-}
-
-function toBase64(bytes: Uint8Array): string {
-  if (_bufToBase64) return _bufToBase64(bytes);
-  // Build the binary string byte-by-byte: String.fromCharCode(...bytes)
-  // spreads every element onto the call stack and overflows for large
-  // buffers (V8 caps function arguments near ~65k).
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
+import { encodeBase64 } from "./base64";
 
 // ── Helpers ──
 
@@ -88,7 +66,7 @@ export function hashPasswordAgile(password: string, salt: Uint8Array, spinCount:
     h = sha512(buf);
   }
 
-  return toBase64(new Uint8Array(h));
+  return encodeBase64(new Uint8Array(h));
 }
 
 /**
@@ -105,7 +83,7 @@ export function derivePasswordHash(
   const hashValue = hashPasswordAgile(password, salt, spinCount);
   return {
     hashValue,
-    saltValue: toBase64(salt),
+    saltValue: encodeBase64(salt),
     spinCount,
     algorithmName: "SHA-512",
   };

@@ -1,12 +1,7 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import {
-  createPacker,
-  decodeBase64,
-  isBase64DataURL,
-  toUint8Array,
-  type XmlifyedFile,
-} from "./opc/packer";
+import { createPacker, isBase64DataURL, toUint8Array, type XmlifyedFile } from "./opc/packer";
+import { decodeBase64, encodeBase64 } from "./util/base64";
 
 // Simple mock compile function for testing createPacker
 const compileMock = vi.fn();
@@ -382,5 +377,11 @@ describe("toUint8Array / base64", () => {
     expect(Array.from(toUint8Array(buf))).toEqual(Array.from(bytes));
     expect(Array.from(toUint8Array(Array.from(bytes)))).toEqual(Array.from(bytes));
     expect(Array.from(toUint8Array(new DataView(buf)))).toEqual(Array.from(bytes));
+  });
+
+  it("encodeBase64 round-trips with decodeBase64", () => {
+    expect(Array.from(decodeBase64(encodeBase64(bytes)))).toEqual(Array.from(bytes));
+    // Known alphabet value: a single zero byte -> "AA=="
+    expect(encodeBase64(new Uint8Array([0]))).toBe("AA==");
   });
 });

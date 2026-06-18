@@ -15,6 +15,7 @@ import {
   zipSync,
 } from "fflate";
 
+import { decodeBase64 } from "../util/base64";
 import { hasNativeDeflate, nativeZip, nativeZipAsync } from "../zip-native";
 import { convertOutput } from "./output";
 import type { OutputByType, OutputType } from "./output";
@@ -40,22 +41,6 @@ const DATA_URL_RE = /^data:([\w.+-]+\/[\w.+-]+)?;base64,/;
 /** Test whether a string is a base64 data URL (`data:[mime];base64,...`). */
 export function isBase64DataURL(input: string): boolean {
   return DATA_URL_RE.test(input);
-}
-
-/**
- * Decode a base64 string into a Uint8Array using the most efficient path
- * available: Node `Buffer` (zero-copy) > `Uint8Array.fromBase64()` (2025
- * baseline, no intermediate binary string) > `atob` fallback. Prefer this over
- * raw `atob` for large payloads — `atob` materializes a UCS-2 binary string
- * (~2x memory) before the byte array.
- */
-export function decodeBase64(input: string): Uint8Array {
-  if (typeof Buffer !== "undefined") return Buffer.from(input, "base64");
-  const fromBase64 = (Uint8Array as { fromBase64?: (s: string) => Uint8Array }).fromBase64;
-  if (typeof fromBase64 === "function") {
-    return fromBase64.call(Uint8Array, input);
-  }
-  return Uint8Array.from(atob(input), (c) => c.codePointAt(0)!);
 }
 
 export function toUint8Array(data: DataType): Uint8Array {
