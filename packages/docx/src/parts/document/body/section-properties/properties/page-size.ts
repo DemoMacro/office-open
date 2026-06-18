@@ -51,7 +51,7 @@ export interface PageSizeAttributes {
    *
    * The possible values for this attribute are defined by the ST_TwipsMeasure simple type (§2.18.105).
    */
-  width: number | PositiveUniversalMeasure;
+  width?: number | PositiveUniversalMeasure;
   /**
    * ## Page Height
    *
@@ -67,7 +67,7 @@ export interface PageSizeAttributes {
    *
    * The possible values for this attribute are defined by the `ST_TwipsMeasure` simple type (§2.18.105).
    */
-  height: number | PositiveUniversalMeasure;
+  height?: number | PositiveUniversalMeasure;
   /**
    * ## Page Orientation
    *
@@ -121,8 +121,9 @@ export interface PageSizeAttributes {
  * ```
  */
 export const createPageSize = ({
-  width,
-  height,
+  // A4 portrait defaults (11906 × 16838 twips), aligned with sectionPageSizeDefaults.
+  width = 11_906,
+  height = 16_838,
   orientation,
   code,
 }: PageSizeAttributes): string => {
