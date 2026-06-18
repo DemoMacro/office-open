@@ -28,9 +28,22 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
     const eastAsia = attr(font, "w:eastAsia");
     const hAnsi = attr(font, "w:hAnsi");
     const cs = attr(font, "w:cs");
+    const asciiTheme = attr(font, "w:asciiTheme");
+    const eastAsiaTheme = attr(font, "w:eastAsiaTheme");
+    const hAnsiTheme = attr(font, "w:hAnsiTheme");
+    const cstheme = attr(font, "w:cstheme");
     const hint = attr(font, "w:hint");
 
-    if (ascii && !eastAsia && !hAnsi && !cs) {
+    if (
+      ascii &&
+      !eastAsia &&
+      !hAnsi &&
+      !cs &&
+      !asciiTheme &&
+      !eastAsiaTheme &&
+      !hAnsiTheme &&
+      !cstheme
+    ) {
       opts.font = hint ? { name: ascii, hint } : ascii;
     } else {
       const fontObj: Record<string, string | undefined> = {};
@@ -38,6 +51,10 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
       if (eastAsia) fontObj.eastAsia = eastAsia;
       if (hAnsi) fontObj.hAnsi = hAnsi;
       if (cs) fontObj.cs = cs;
+      if (asciiTheme) fontObj.asciiTheme = asciiTheme;
+      if (eastAsiaTheme) fontObj.eastAsiaTheme = eastAsiaTheme;
+      if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme;
+      if (cstheme) fontObj.cstheme = cstheme;
       if (hint) fontObj.hint = hint;
       opts.font = fontObj;
     }

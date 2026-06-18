@@ -25,7 +25,7 @@ import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { SettingsOptions } from "@parts/settings/settings";
 import { Styles, extractStyleId } from "@parts/styles";
 import { ExternalStylesFactory } from "@parts/styles/external-styles-factory";
-import { DefaultStylesFactory } from "@parts/styles/factory";
+import { DefaultStylesFactory, collectDefaultOverrideIds } from "@parts/styles/factory";
 import { SubDocCollection } from "@parts/sub-doc/sub-doc-collection";
 import type { WebSettingsOptions } from "@parts/web-settings";
 import { Media } from "@shared/media";
@@ -209,9 +209,30 @@ export class DocxWriteContext implements WriteContext {
       }
       if (parsedStyles && parsedStyles.length > 0) {
         // Round-trip: emit verbatim source styles (suppress factory builtins
-        // and structured re-emission).
+        // and structured re-emission). User overrides via default.<field>
+        // (e.g. default.heading1) take precedence over the verbatim source —
+        // drop those ids from the source and emit the factory's structured
+        // version instead, so "modify a default style" works post-parse.
         merged.splice(2);
-        merged.push(...parsedStyles);
+        const overrideIds = collectDefaultOverrideIds(options.styles.default);
+        if (overrideIds.size > 0) {
+          const overrideById = new Map<string, { _raw: string }>();
+          for (const s of defaultStyles.importedStyles!.slice(2)) {
+            const id = extractStyleId(s._raw);
+            if (id) overrideById.set(id, s);
+          }
+          for (const s of parsedStyles) {
+            const id = extractStyleId(s._raw);
+            if (id && overrideIds.has(id)) continue;
+            merged.push(s);
+          }
+          for (const id of overrideIds) {
+            const s = overrideById.get(id);
+            if (s) merged.push(s);
+          }
+        } else {
+          merged.push(...parsedStyles);
+        }
         this.styles = new Styles({ ...defaultStyles, importedStyles: merged, ...restStyles });
       } else {
         // Generation: factory builtins + structured custom styles.

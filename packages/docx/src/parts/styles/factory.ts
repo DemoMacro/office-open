@@ -175,6 +175,55 @@ function headingOverride(
   }
 }
 
+/**
+ * Maps DefaultStylesOptions override fields to every built-in styleId the
+ * factory (re)emits when that field is provided — the main style plus its
+ * linked character style (e.g. heading1 -> Heading1 + Heading1Char).
+ */
+const DEFAULT_STYLE_FIELDS: ReadonlyArray<[keyof DefaultStylesOptions, string[]]> = [
+  ["title", ["Title", "TitleChar"]],
+  ["subtitle", ["Subtitle", "SubtitleChar"]],
+  ["heading1", ["Heading1", "Heading1Char"]],
+  ["heading2", ["Heading2", "Heading2Char"]],
+  ["heading3", ["Heading3", "Heading3Char"]],
+  ["heading4", ["Heading4", "Heading4Char"]],
+  ["heading5", ["Heading5", "Heading5Char"]],
+  ["heading6", ["Heading6", "Heading6Char"]],
+  ["heading7", ["Heading7", "Heading7Char"]],
+  ["heading8", ["Heading8", "Heading8Char"]],
+  ["heading9", ["Heading9", "Heading9Char"]],
+  ["listParagraph", ["ListParagraph"]],
+  ["quote", ["Quote", "QuoteChar"]],
+  ["strong", ["Strong"]],
+  ["emphasis", ["Emphasis"]],
+];
+
+/**
+ * Reverse map: main built-in styleId -> the DefaultStylesOptions field that
+ * overrides it. Linked char ids (Heading1Char, TitleChar, ...) are excluded —
+ * they ride along with their main style.
+ */
+export const STYLE_ID_TO_DEFAULT_FIELD: Record<string, keyof DefaultStylesOptions> =
+  Object.fromEntries(DEFAULT_STYLE_FIELDS.map(([field, [mainId]]) => [mainId, field]));
+
+/**
+ * Collect every styleId the factory (re)emits for the default-styles fields the
+ * user explicitly provided — including linked character styles, so the
+ * round-trip path drops the matching verbatim entries (no duplicate styleId).
+ */
+export function collectDefaultOverrideIds(
+  defaultOpts: DefaultStylesOptions | undefined,
+): Set<string> {
+  const ids = new Set<string>();
+  if (!defaultOpts) return ids;
+  for (const [field, styleIds] of DEFAULT_STYLE_FIELDS) {
+    if ((defaultOpts as unknown as Record<string, unknown>)[field as string] !== undefined) {
+      for (const id of styleIds) ids.add(id);
+    }
+  }
+  return ids;
+}
+
 /** Build `<w:docDefaults>` XML matching Word's default settings. */
 function stringifyDocDefaults(opts: DocumentDefaultsOptions): string {
   const children: string[] = [];
