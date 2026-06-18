@@ -1,7 +1,7 @@
 import { element } from "@office-open/xml";
 
-import { toUint8Array } from "../../opc/packer";
-import type { DataType } from "../../opc/packer";
+import { toUint8Array } from "../../util/data-type";
+import type { DataType } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
 import { createBlipEffects } from "../blip/blip-effects";
 import type { BlipEffectsOptions } from "../blip/blip-effects";

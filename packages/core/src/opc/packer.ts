@@ -15,50 +15,12 @@ import {
   zipSync,
 } from "fflate";
 
-import { decodeBase64 } from "../util/base64";
 import { hasNativeDeflate, nativeZip, nativeZipAsync } from "../zip-native";
 import { convertOutput } from "./output";
 import type { OutputByType, OutputType } from "./output";
 
 export type { Zippable, ZipOptions } from "fflate";
 export { strFromU8, unzipSync } from "fflate";
-
-// ── Inline toUint8Array (replaces undio dependency) ──
-
-export type DataType =
-  | ArrayBufferLike
-  | Blob
-  | DataView
-  | number[]
-  | ReadableStream
-  | string
-  | Uint8Array;
-
-// Matches data:[<mediatype>][;base64],<data> — a base64 data URL. Mirrors the
-// `isBase64DataURL` check in unjs/undio so plain strings stay UTF-8 text.
-const DATA_URL_RE = /^data:([\w.+-]+\/[\w.+-]+)?;base64,/;
-
-/** Test whether a string is a base64 data URL (`data:[mime];base64,...`). */
-export function isBase64DataURL(input: string): boolean {
-  return DATA_URL_RE.test(input);
-}
-
-export function toUint8Array(data: DataType): Uint8Array {
-  if (data instanceof Uint8Array) return data;
-  if (data instanceof ArrayBuffer) return new Uint8Array(data);
-  if (data instanceof DataView)
-    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-  if (typeof data === "string") {
-    const match = data.match(DATA_URL_RE);
-    if (match) return decodeBase64(data.slice(match[0].length));
-    return new TextEncoder().encode(data);
-  }
-  if (Array.isArray(data)) return new Uint8Array(data);
-  if (data instanceof Blob) throw new TypeError("Blob input requires async processing");
-  if (data instanceof ReadableStream)
-    throw new TypeError("ReadableStream input requires async processing");
-  throw new TypeError(`Unsupported data type: ${typeof data}`);
-}
 
 export interface XmlifyedFile {
   path: string;

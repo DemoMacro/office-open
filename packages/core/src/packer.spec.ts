@@ -1,7 +1,8 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { createPacker, isBase64DataURL, toUint8Array, type XmlifyedFile } from "./opc/packer";
+import { createPacker, type XmlifyedFile } from "./opc/packer";
 import { decodeBase64, encodeBase64 } from "./util/base64";
+import { isBase64DataURL, toUint8Array } from "./util/data-type";
 
 // Simple mock compile function for testing createPacker
 const compileMock = vi.fn();

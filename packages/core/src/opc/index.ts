@@ -32,9 +32,7 @@ export {
 } from "./packer";
 export type { Zippable, ZipOptions } from "./packer";
 export { strFromU8, unzipSync } from "./packer";
-export { toUint8Array, isBase64DataURL } from "./packer";
 export { decodeBase64, encodeBase64 } from "../util/base64";
-export type { DataType } from "./packer";
 
 // Archive parser
 export { parseArchive, ParsedArchive } from "./parser";
