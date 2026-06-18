@@ -16,6 +16,7 @@ export default defineNuxtConfig({
         "@vue/devtools-kit",
         "@vueuse/core",
         "ai",
+        "fflate",
         "remark-emoji",
         "remark-mdc",
       ],
