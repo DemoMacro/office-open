@@ -2,13 +2,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 
-import {
-  HeadingLevel,
-  PatchType,
-  TextDirection,
-  VerticalAlignTable,
-  patchDocument,
-} from "@office-open/docx";
+import { HeadingLevel, TextDirection, VerticalAlignTable, patchDocument } from "@office-open/docx";
 
 const doc = await patchDocument({
   data: readFileSync("demo/assets/simple-template-4.docx"),
@@ -20,11 +14,11 @@ const doc = await patchDocument({
         " well",
         { hyperlink: { link: "https://www.bbc.co.uk/news", children: ["BBC News Link"] } },
       ],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
     header_adjective: {
       children: ["Delightful Header"],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
     image_test: {
       children: [
@@ -36,18 +30,18 @@ const doc = await patchDocument({
           },
         },
       ],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
     item_1: {
       children: [
         "#657",
         { hyperlink: { link: "https://www.bbc.co.uk/news", children: ["BBC News Link"] } },
       ],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
     name: {
       children: ["Sir. ", "John Doe", "(The Conqueror)"],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
     paragraph_replace: {
       children: [
@@ -69,7 +63,7 @@ const doc = await patchDocument({
           },
         },
       ],
-      type: PatchType.DOCUMENT,
+      type: "document",
     },
     table: {
       children: [
@@ -144,11 +138,11 @@ const doc = await patchDocument({
           },
         },
       ],
-      type: PatchType.DOCUMENT,
+      type: "document",
     },
     table_heading_1: {
       children: ["Heading wow!"],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
   },
   placeholderDelimiters: { end: ">>", start: "<<" },

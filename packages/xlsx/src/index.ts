@@ -14,14 +14,8 @@ export type {
 } from "@office-open/core";
 export { parseXlsx, parseWorkbook } from "./parse";
 export type { XlsxDocument, XlsxPartRefs } from "./parse";
-export { patchWorkbook, PatchType } from "./patch";
-export type {
-  Patch,
-  CellPatch,
-  PatchWorkbookOptions,
-  PatchDocumentOutputType,
-  InputDataType,
-} from "./patch";
+export { patchWorkbook } from "./patch";
+export type { Patch, ScalarValue, PatchWorkbookOptions } from "./patch";
 export { compileWorkbook } from "./compiler";
 export { XlsxWriteContext, XlsxReadContext } from "./context";
 export { generateWorkbook, generateWorkbookSync, generateWorkbookStream } from "./generate";

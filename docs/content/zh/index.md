@@ -271,7 +271,7 @@ reverse: true
 :::code-group
 
 ```ts [DOCX]
-import { parseDocument, patchDocument, PatchType } from "@office-open/docx";
+import { parseDocument, patchDocument } from "@office-open/docx";
 
 // 解析现有文件
 const opts = parseDocument(buffer);
@@ -283,13 +283,13 @@ const result = await patchDocument({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    name: { type: PatchType.PARAGRAPH, children: [{ text: "John" }] },
+    name: { type: "paragraph", children: [{ text: "John" }] },
   },
 });
 ```
 
 ```ts [PPTX]
-import { parsePresentation, patchPresentation, PatchType } from "@office-open/pptx";
+import { parsePresentation, patchPresentation } from "@office-open/pptx";
 
 // 解析现有文件
 const opts = parsePresentation(buffer);
@@ -301,7 +301,7 @@ const result = await patchPresentation({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    title: { type: PatchType.PARAGRAPH, children: [{ text: "已更新", bold: true }] },
+    title: [{ text: "已更新", bold: true }],
   },
 });
 ```
@@ -319,7 +319,7 @@ const result = await patchWorkbook({
   outputType: "nodebuffer",
   data: buffer,
   patches: {
-    name: { value: "张三" },
+    name: "张三",
   },
 });
 ```

@@ -7,7 +7,6 @@ import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { BodyContext } from "../context";
 import type { ViewWrapper } from "../context";
-import { PatchType } from "./from-docx";
 
 const stubCtx = {
   fileData: {},
@@ -147,7 +146,7 @@ describe("replacer", () => {
         },
         patch: {
           children: [],
-          type: PatchType.PARAGRAPH,
+          type: "paragraph",
         },
         patchText: "hello",
       });
@@ -166,7 +165,7 @@ describe("replacer", () => {
         json: JSON.parse(JSON.stringify(MOCK_JSON)),
         patch: {
           children: [{ text: "Delightful Header" }],
-          type: PatchType.PARAGRAPH,
+          type: "paragraph",
         },
         patchText: "{{header_adjective}}",
       });
@@ -188,7 +187,7 @@ describe("replacer", () => {
         keepOriginalStyles: false,
         patch: {
           children: [{ text: "sweet" }],
-          type: PatchType.PARAGRAPH,
+          type: "paragraph",
         },
         patchText: "{{bold}}",
       });
@@ -219,7 +218,7 @@ describe("replacer", () => {
         keepOriginalStyles: true,
         patch: {
           children: [{ text: "sweet" }],
-          type: PatchType.PARAGRAPH,
+          type: "paragraph",
         },
         patchText: "{{bold}}",
       });
@@ -888,7 +887,7 @@ describe("replacer", () => {
         // Cspell:enable
         patch: {
           children: [{ text: "Lorem ipsum paragraph" }],
-          type: PatchType.PARAGRAPH,
+          type: "paragraph",
         },
         patchText: "{{address}}",
         context: {
@@ -967,7 +966,7 @@ describe("replacer", () => {
         // Cspell:enable
         patch: {
           children: [{ text: "" }],
-          type: PatchType.PARAGRAPH,
+          type: "paragraph",
         },
         patchText: "{{empty}}",
         context: {
@@ -1027,7 +1026,7 @@ describe("replacer", () => {
           viewWrapper: { Relationships: {} } as unknown as ViewWrapper,
         },
         json,
-        patch: { children: [{ text: "X" }], type: PatchType.PARAGRAPH },
+        patch: { children: [{ text: "X" }], type: "paragraph" },
         patchText: "{{token1}}",
       });
 
@@ -1039,7 +1038,7 @@ describe("replacer", () => {
           viewWrapper: { Relationships: {} } as unknown as ViewWrapper,
         },
         json,
-        patch: { children: [{ text: "Y" }], type: PatchType.PARAGRAPH },
+        patch: { children: [{ text: "Y" }], type: "paragraph" },
         patchText: "{{token2}}",
       });
 

@@ -13,7 +13,7 @@ import {
   unzipSync,
   zipAndConvert,
 } from "@office-open/core";
-import type { OutputByType, OutputType } from "@office-open/core";
+import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { escapeXml, js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -112,29 +112,15 @@ const docxReplacer = createReplacer({
 let currentPatchCtx: BodyContext;
 
 /**
- * Supported input data types for document patching.
- */
-export type InputDataType = Buffer | string | number[] | Uint8Array | ArrayBuffer | Blob;
-
-/**
- * Patch type enumeration.
+ * A patch operation: replace a placeholder with either inline run-level
+ * content (`type: "paragraph"`) or block-level content (`type: "document"`).
  *
- * @publicApi
+ * The `type` is a bare string literal (no PatchType enum) — the core
+ * replacer already discriminates on `patch.type`.
  */
-export const PatchType = {
-  DOCUMENT: "file",
-  PARAGRAPH: "paragraph",
-} as const;
-
-interface ParagraphPatch {
-  type: typeof PatchType.PARAGRAPH;
-  children: unknown[];
-}
-
-interface FilePatch {
-  type: typeof PatchType.DOCUMENT;
-  children: SectionChild[];
-}
+export type Patch =
+  | { type: "paragraph"; children: (string | RunOptions | ParagraphChild)[] }
+  | { type: "document"; children: SectionChild[] };
 
 interface ImageRelationshipAddition {
   key: string;
@@ -146,19 +132,11 @@ interface HyperlinkRelationshipAddition {
   hyperlink: { id: string; link: string };
 }
 
-export type Patch = ParagraphPatch | FilePatch;
-
-export type PatchDocumentOutputType = OutputType;
-
-export interface PatchDocumentOptions<T extends PatchDocumentOutputType = PatchDocumentOutputType> {
-  outputType: T;
-  data: InputDataType;
+export interface PatchDocumentOptions<
+  T extends OutputType = OutputType,
+> extends BasePatchOptions<T> {
   patches: Readonly<Record<string, Patch>>;
   keepOriginalStyles?: boolean;
-  placeholderDelimiters?: Readonly<{
-    start: string;
-    end: string;
-  }>;
   recursive?: boolean;
 }
 
@@ -182,7 +160,7 @@ const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
  *
  * @publicApi
  */
-export const patchDocument = async <T extends PatchDocumentOutputType = PatchDocumentOutputType>({
+export const patchDocument = async <T extends OutputType = OutputType>({
   outputType,
   data,
   patches,

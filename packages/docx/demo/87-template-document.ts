@@ -2,7 +2,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 
-import { PatchType, patchDocument } from "@office-open/docx";
+import { patchDocument } from "@office-open/docx";
 
 const doc = await patchDocument({
   data: readFileSync("demo/assets/simple-template-2.docx"),
@@ -10,7 +10,7 @@ const doc = await patchDocument({
   patches: {
     name: {
       children: ["Max"],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
   },
 });

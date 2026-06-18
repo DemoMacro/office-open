@@ -5,8 +5,7 @@
  */
 import { DOCX_NS, createTraverser, strFromU8, toJson, unzipSync } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
-
-import type { InputDataType } from "./from-docx";
+import type { DataType } from "@office-open/core";
 
 /**
  * Options for patch detection.
@@ -14,7 +13,7 @@ import type { InputDataType } from "./from-docx";
  * @property data - The document template to scan for placeholders
  */
 interface PatchDetectorOptions {
-  data: InputDataType;
+  data: DataType;
 }
 
 /**
@@ -36,7 +35,7 @@ interface PatchDetectorOptions {
  * const patches = {};
  * for (const key of placeholders) {
  *   patches[key] = {
- *     type: PatchType.PARAGRAPH,
+ *     type: "paragraph",
  *     children: [new TextRun(getUserData(key))],
  *   };
  * });

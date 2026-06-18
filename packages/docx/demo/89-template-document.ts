@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 import type { Patch } from "@office-open/docx";
-import { PatchType, patchDocument } from "@office-open/docx";
+import { patchDocument } from "@office-open/docx";
 
 export const font = "Trebuchet MS";
 export const getPatches = (fields: Record<string, string>) => {
@@ -12,7 +12,7 @@ export const getPatches = (fields: Record<string, string>) => {
   for (const field in fields) {
     patches[field] = {
       children: [{ font, text: fields[field] }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     };
   }
 

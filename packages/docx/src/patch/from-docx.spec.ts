@@ -13,7 +13,7 @@ vi.mock("fflate", () => ({
 
 import { unzipSync } from "@office-open/core";
 
-import { PatchType, patchDocument } from "./from-docx";
+import { patchDocument } from "./from-docx";
 
 const MOCK_XML = `
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -256,7 +256,7 @@ describe("from-docx", () => {
                   },
                 },
               ],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
             item_1: {
               children: [
@@ -268,11 +268,11 @@ describe("from-docx", () => {
                   },
                 },
               ],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
             name: {
               children: ["Sir. ", "John Doe", "(The Conqueror)"],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
             paragraph_replace: {
               children: [
@@ -297,7 +297,7 @@ describe("from-docx", () => {
                   },
                 },
               ],
-              type: PatchType.DOCUMENT,
+              type: "document",
             },
           },
         });
@@ -343,7 +343,7 @@ describe("from-docx", () => {
                   },
                 },
               ],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
             item_1: {
               children: [
@@ -355,11 +355,11 @@ describe("from-docx", () => {
                   },
                 },
               ],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
             name: {
               children: ["Sir. ", "John Doe", "(The Conqueror)"],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
             paragraph_replace: {
               children: [
@@ -384,7 +384,7 @@ describe("from-docx", () => {
                   },
                 },
               ],
-              type: PatchType.DOCUMENT,
+              type: "document",
             },
           },
           placeholderDelimiters: { end: "}}", start: "{{" },
@@ -463,7 +463,7 @@ describe("from-docx", () => {
                   },
                 },
               ],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
           },
         });
@@ -499,7 +499,7 @@ describe("from-docx", () => {
                   },
                 },
               ],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
           },
         });
@@ -539,7 +539,7 @@ describe("from-docx", () => {
           patches: {
             name: {
               children: ["World"],
-              type: PatchType.PARAGRAPH,
+              type: "paragraph",
             },
           },
         });
@@ -574,7 +574,7 @@ describe("from-docx", () => {
                     },
                   },
                 ],
-                type: PatchType.PARAGRAPH,
+                type: "paragraph",
               },
             },
           }),
@@ -611,7 +611,7 @@ describe("from-docx", () => {
                     },
                   },
                 ],
-                type: PatchType.PARAGRAPH,
+                type: "paragraph",
               },
             },
           }),
@@ -637,7 +637,7 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "nodebuffer",
           patches: {
-            name: { children: ["World"], type: PatchType.PARAGRAPH },
+            name: { children: ["World"], type: "paragraph" },
           },
         });
         expect(output instanceof Uint8Array).toBe(true);
@@ -648,7 +648,7 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "blob",
           patches: {
-            name: { children: ["World"], type: PatchType.PARAGRAPH },
+            name: { children: ["World"], type: "paragraph" },
           },
         });
         expect(output).toBeInstanceOf(Blob);
@@ -659,7 +659,7 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "arraybuffer",
           patches: {
-            name: { children: ["World"], type: PatchType.PARAGRAPH },
+            name: { children: ["World"], type: "paragraph" },
           },
         });
         expect(output).toBeInstanceOf(ArrayBuffer);
@@ -670,7 +670,7 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "base64",
           patches: {
-            name: { children: ["World"], type: PatchType.PARAGRAPH },
+            name: { children: ["World"], type: "paragraph" },
           },
         });
         expect(typeof output).toBe("string");
@@ -681,7 +681,7 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "string",
           patches: {
-            name: { children: ["World"], type: PatchType.PARAGRAPH },
+            name: { children: ["World"], type: "paragraph" },
           },
         });
         expect(typeof output).toBe("string");
@@ -692,7 +692,7 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "binarystring",
           patches: {
-            name: { children: ["World"], type: PatchType.PARAGRAPH },
+            name: { children: ["World"], type: "paragraph" },
           },
         });
         expect(typeof output).toBe("string");
@@ -703,7 +703,7 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "array",
           patches: {
-            name: { children: ["World"], type: PatchType.PARAGRAPH },
+            name: { children: ["World"], type: "paragraph" },
           },
         });
         expect(Array.isArray(output)).toBe(true);

@@ -2,7 +2,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 
-import { PatchType, patchDocument } from "@office-open/docx";
+import { patchDocument } from "@office-open/docx";
 
 const doc = await patchDocument({
   data: readFileSync("demo/assets/field-trip.docx"),
@@ -10,62 +10,62 @@ const doc = await patchDocument({
   patches: {
     address: {
       children: [{ text: "blah blah" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     city: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     email_address: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     first_name: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     ft_dates: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     grade: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     last_name: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     phone: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     school_name: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     state: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     todays_date: {
       children: [{ text: new Date().toLocaleDateString() }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
 
     zip: {
       children: [{ text: "test" }],
-      type: PatchType.PARAGRAPH,
+      type: "paragraph",
     },
   },
 });

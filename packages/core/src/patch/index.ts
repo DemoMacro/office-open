@@ -28,3 +28,6 @@ export {
 export { appendContentType } from "./content-types-manager";
 
 export { getNextRelationshipIndex, appendRelationship } from "./relationship-manager";
+
+// Shared patch option types (extended by each format's patch options)
+export type { BasePatchOptions, PlaceholderDelimiters } from "./types";

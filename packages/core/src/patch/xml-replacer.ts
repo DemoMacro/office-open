@@ -64,7 +64,7 @@ export function createReplacer(config: ReplacerConfig) {
       const textJson = patch.children.flatMap((c) => formatChild(c, context));
 
       switch (patch.type) {
-        case "file": {
+        case "document": {
           const parentElement = goToParentElementFromPath(json, renderedParagraph.pathToParagraph);
           const elementIndex = getLastElementIndexFromPath(renderedParagraph.pathToParagraph);
           parentElement.elements!.splice(elementIndex, 1, ...textJson);
