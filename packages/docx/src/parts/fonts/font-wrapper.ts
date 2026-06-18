@@ -1,5 +1,4 @@
-import { Relationships } from "@office-open/core";
-import { uniqueUuid } from "@office-open/core";
+import { Relationships, toUint8Array, uniqueUuid } from "@office-open/core";
 
 /**
  * Font Wrapper module for WordprocessingML documents.
@@ -21,6 +20,8 @@ export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & {
   fontKey: string;
   /** Relationship id assigned to embedRegular (only fonts carrying data). */
   embedRid?: string;
+  /** Normalized font bytes (Uint8Array regardless of the input form). */
+  data?: Uint8Array;
 };
 
 /**
@@ -47,6 +48,7 @@ export class FontWrapper implements ViewWrapper {
     this.fontOptionsWithKey = options.map(
       (o): EmbeddedFontOptionsWithKey => ({
         ...o,
+        data: o.data !== undefined ? toUint8Array(o.data) : undefined,
         fontKey: o.data !== undefined ? (o.fontKey ?? uniqueUuid()) : (o.fontKey ?? ""),
       }),
     );

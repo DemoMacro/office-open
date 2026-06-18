@@ -1,11 +1,11 @@
-import type { UniversalMeasure } from "@office-open/core";
+import type { DataType, UniversalMeasure } from "@office-open/core";
 
 export interface PictureOptions {
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
-  data: Uint8Array;
+  data: DataType;
   type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
   name?: string;
 }

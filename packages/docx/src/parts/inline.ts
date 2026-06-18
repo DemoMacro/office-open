@@ -152,7 +152,8 @@ function registerVmlFallbackMedia(
 ): void {
   if (!opts.vmlFallbackMedia) return;
   for (const m of opts.vmlFallbackMedia) {
-    const existing = ctx.file.media.findByContent(m.data);
+    const data = toUint8Array(m.data);
+    const existing = ctx.file.media.findByContent(data);
     if (existing) {
       if (opts.vmlFallback) {
         opts.vmlFallback = opts.vmlFallback.split(`{${m.fileName}}`).join(`{${existing}}`);
@@ -161,7 +162,7 @@ function registerVmlFallbackMedia(
     }
     ctx.file.media.addImage(m.fileName, {
       type: m.type,
-      data: m.data,
+      data,
       fileName: m.fileName,
       transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
     });

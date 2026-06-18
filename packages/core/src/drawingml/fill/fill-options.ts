@@ -1,5 +1,7 @@
 import { element } from "@office-open/xml";
 
+import { toUint8Array } from "../../opc/packer";
+import type { DataType } from "../../opc/packer";
 import { uniqueId } from "../../util/generators";
 import { createBlipEffects } from "../blip/blip-effects";
 import type { BlipEffectsOptions } from "../blip/blip-effects";
@@ -27,8 +29,8 @@ export interface GradientStopOptions {
  * Blip fill options (image fill) for DrawingML shapes.
  */
 export interface BlipFillConfigOptions {
-  /** Image data (raw bytes) */
-  data: Uint8Array | ArrayBuffer | Buffer;
+  /** Image data: raw bytes, ArrayBuffer, or a base64 data URL string. */
+  data: DataType;
   /** Image type */
   imageType: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   /** DPI of the image */
@@ -102,10 +104,6 @@ export type FillOptions =
 
 function normalizeColor(color: string | SolidFillOptions): SolidFillOptions {
   return typeof color === "string" ? { value: color.replace("#", "") } : color;
-}
-
-function toUint8Array(data: Uint8Array | ArrayBuffer | Buffer): Uint8Array {
-  return data instanceof Uint8Array ? data : new Uint8Array(data);
 }
 
 /**

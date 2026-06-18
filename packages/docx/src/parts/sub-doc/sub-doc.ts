@@ -10,10 +10,12 @@
  * @module
  */
 
+import type { DataType } from "@office-open/core";
+
 /**
  * Options for creating a SubDoc element.
  */
 export interface SubDocOptions {
-  /** The sub-document data (raw bytes of a .docx file) */
-  data: Uint8Array | string;
+  /** The sub-document data: raw .docx bytes, ArrayBuffer, or a base64 data URL. */
+  data: DataType;
 }

@@ -7,6 +7,7 @@
  *
  * @module
  */
+import type { DataType } from "@office-open/core";
 import { element } from "@office-open/xml";
 
 import { createRegularFont } from "./create-regular-font";
@@ -39,8 +40,8 @@ export interface FontSignature {
 export interface EmbeddedFontOptions {
   /** Font family name */
   name: string;
-  /** Font file data (TTF, OTF). Undefined for non-embedded font declarations. */
-  data?: Buffer;
+  /** Font file data (TTF, OTF): raw bytes, ArrayBuffer, or a base64 data URL. */
+  data?: DataType;
   /** Character set/encoding for the font */
   characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
   /** Font family classification (e.g. "auto", "roman", "swiss") */

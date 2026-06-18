@@ -53,8 +53,8 @@ export interface DocumentBackgroundOptions {
 export interface BackgroundRawMediaOptions {
   /** Placeholder key matching the `{fileName}` token in {@link rawXml}. */
   fileName: string;
-  /** Raw image bytes. */
-  data: Uint8Array;
+  /** Raw image data: Uint8Array, ArrayBuffer, or a base64 data URL. */
+  data: DataType;
   /** Image format type. */
   type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
 }

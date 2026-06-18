@@ -305,7 +305,7 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
       for (const m of opts.rawMedia) {
         ctx.file.media.addImage(m.fileName, {
           type: m.type,
-          data: m.data,
+          data: toUint8Array(m.data),
           fileName: m.fileName,
           transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
         });

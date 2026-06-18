@@ -10,6 +10,7 @@
 import {
   convertPixelsToEmu,
   convertToEmu,
+  toUint8Array,
   xsdRectAlignment,
   xsdTextAnchor,
 } from "@office-open/core";
@@ -374,7 +375,7 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
       key: fileName,
       type: opts.type,
       fileName,
-      data: opts.data,
+      data: toUint8Array(opts.data),
       transformation: {
         pixels: { x: widthPixels, y: heightPixels },
         emus: { x: widthEmu, y: heightEmu },
@@ -547,10 +548,7 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
     if (fillType === "blip") {
       const blipFill = opts.fill as Extract<CoreFillOptions, { type: "blip" }>;
       if (blipFill.data) {
-        const raw =
-          blipFill.data instanceof Uint8Array
-            ? blipFill.data
-            : new TextEncoder().encode(blipFill.data);
+        const raw = toUint8Array(blipFill.data);
         const fileName = `image_blip.${blipFill.imageType ?? "png"}`;
         pptx.addImage(fileName, {
           key: fileName,

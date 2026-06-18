@@ -7,7 +7,7 @@
  * @module
  */
 
-import { uniqueId } from "@office-open/core";
+import { toUint8Array, uniqueId } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   attr,
@@ -132,7 +132,7 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
   stringify(opts, ctx) {
     const relId = uniqueId();
     const partPath = `subdocs/subdoc${relId}.docx`;
-    const data = typeof opts.data === "string" ? new TextEncoder().encode(opts.data) : opts.data;
+    const data = toUint8Array(opts.data);
 
     ctx.fileData.document.relationships.addRelationship(relId, SUBDOC_REL_TYPE, partPath);
     ctx.fileData.subDocs.addSubDoc(relId, {

@@ -1,6 +1,12 @@
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { createPacker, type XmlifyedFile } from "./opc/packer";
+import {
+  createPacker,
+  decodeBase64,
+  isBase64DataURL,
+  toUint8Array,
+  type XmlifyedFile,
+} from "./opc/packer";
 
 // Simple mock compile function for testing createPacker
 const compileMock = vi.fn();
@@ -336,5 +342,45 @@ describe("createPacker", () => {
       const data = await collectStream(stream);
       expect(data.length).toBeGreaterThan(0);
     });
+  });
+});
+
+describe("toUint8Array / base64", () => {
+  // "Hello" + some binary bytes (incl. 0xff and 0x00) to exercise non-ASCII.
+  const bytes = new Uint8Array([72, 101, 108, 108, 111, 255, 0, 128]);
+  const b64 = Buffer.from(bytes).toString("base64");
+
+  it("isBase64DataURL detects data URLs (with/without mediatype)", () => {
+    expect(isBase64DataURL(`data:image/png;base64,${b64}`)).toBe(true);
+    expect(isBase64DataURL(`data:;base64,${b64}`)).toBe(true);
+    expect(isBase64DataURL(b64)).toBe(false);
+    expect(isBase64DataURL("not a data url")).toBe(false);
+  });
+
+  it("decodeBase64 round-trips arbitrary bytes", () => {
+    expect(Array.from(decodeBase64(b64))).toEqual(Array.from(bytes));
+  });
+
+  it("toUint8Array decodes a base64 data URL", () => {
+    expect(Array.from(toUint8Array(`data:image/png;base64,${b64}`))).toEqual(Array.from(bytes));
+  });
+
+  it("toUint8Array decodes a data URL without mediatype", () => {
+    expect(Array.from(toUint8Array(`data:;base64,${b64}`))).toEqual(Array.from(bytes));
+  });
+
+  it("toUint8Array keeps plain (non-data-URL) strings as UTF-8", () => {
+    expect(Array.from(toUint8Array("Hello"))).toEqual([72, 101, 108, 108, 111]);
+  });
+
+  it("toUint8Array passes Uint8Array through by reference", () => {
+    expect(toUint8Array(bytes)).toBe(bytes);
+  });
+
+  it("toUint8Array converts ArrayBuffer / number[] / DataView", () => {
+    const buf = bytes.buffer.slice(0);
+    expect(Array.from(toUint8Array(buf))).toEqual(Array.from(bytes));
+    expect(Array.from(toUint8Array(Array.from(bytes)))).toEqual(Array.from(bytes));
+    expect(Array.from(toUint8Array(new DataView(buf)))).toEqual(Array.from(bytes));
   });
 });

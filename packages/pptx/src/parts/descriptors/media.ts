@@ -8,6 +8,7 @@
  */
 
 import { convertPixelsToEmu } from "@office-open/core";
+import type { DataType } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, findChild, findDeep } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
@@ -27,9 +28,9 @@ export interface VideoDescriptorOptions {
   y?: number;
   width?: number;
   height?: number;
-  data?: Uint8Array;
+  data?: DataType;
   type?: VideoType;
-  poster?: Uint8Array;
+  poster?: DataType;
   posterType?: PosterType;
 }
 
@@ -40,7 +41,7 @@ export interface AudioDescriptorOptions {
   y?: number;
   width?: number;
   height?: number;
-  data?: Uint8Array;
+  data?: DataType;
   type?: AudioType;
 }
 
