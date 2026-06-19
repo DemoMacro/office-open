@@ -506,7 +506,7 @@ Modify an existing `.docx` template by replacing placeholders:
 
 // Replace with block-level content
 {
-  "type": "file",
+  "type": "document",
   "children": [
     { "children": [{ "text": "First paragraph" }] },
     { "children": [{ "text": "Second paragraph" }] }
@@ -520,10 +520,10 @@ import { patchDocument } from "@office-open/docx";
 const result = await patchDocument({
   outputType: "nodebuffer",
   data: templateBuffer,
-  patches: {
+  placeholders: {
     name: { type: "paragraph", children: [{ text: "John Doe" }] },
     content: {
-      type: "file",
+      type: "document",
       children: [{ children: ["First"] }, { children: ["Second"] }],
     },
   },
@@ -533,19 +533,23 @@ const result = await patchDocument({
 });
 ```
 
-| Option                  | Type                           | Default      | Description                                 |
-| ----------------------- | ------------------------------ | ------------ | ------------------------------------------- |
-| `outputType`            | `string`                       | —            | Output format                               |
-| `data`                  | `Buffer \| Uint8Array \| ...`  | —            | Input .docx file                            |
-| `patches`               | `Record<string, PatchOptions>` | —            | Placeholder name → patch content map        |
-| `keepOriginalStyles`    | `boolean`                      | `true`       | Preserve original run formatting properties |
-| `placeholderDelimiters` | `{ start, end }`               | `{ {{, }} }` | Custom delimiters                           |
-| `recursive`             | `boolean`                      | `true`       | Replace all occurrences                     |
+Use `findReplace` for literal text (no delimiters) and `coreProperties` to override `docProps/core.xml`.
 
-| PatchType     | Value         | Description                  |
+| Option                  | Type                             | Default      | Description                                 |
+| ----------------------- | -------------------------------- | ------------ | ------------------------------------------- |
+| `outputType`            | `string`                         | —            | Output format                               |
+| `data`                  | `Buffer \| Uint8Array \| ...`    | —            | Input .docx file                            |
+| `placeholders`          | `Record<string, Patch>`          | —            | Delimiter-wrapped placeholder → patch       |
+| `findReplace`           | `Record<string, Patch>`          | —            | Literal find string → patch                 |
+| `coreProperties`        | `Partial<CorePropertiesOptions>` | —            | Core metadata override                      |
+| `keepOriginalStyles`    | `boolean`                        | `true`       | Preserve original run formatting properties |
+| `placeholderDelimiters` | `{ start, end }`                 | `{ {{, }} }` | Custom delimiters                           |
+| `recursive`             | `boolean`                        | `true`       | Replace all occurrences                     |
+
+| Patch type    | Value         | Description                  |
 | ------------- | ------------- | ---------------------------- |
 | `"paragraph"` | `"paragraph"` | Inline run-level replacement |
-| `"file"`      | `"file"`      | Block-level replacement      |
+| `"document"`  | `"document"`  | Block-level replacement      |
 
 ### patchDetector
 

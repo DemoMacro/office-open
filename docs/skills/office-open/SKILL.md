@@ -74,19 +74,19 @@ import { patchDocument } from "@office-open/docx";
 const result = await patchDocument({
   outputType: "nodebuffer",
   data: readFileSync("template.docx"),
-  patches: {
+  placeholders: {
     name: { type: "paragraph", children: [{ text: "John Doe" }] },
-    content: { type: "file", children: [{ paragraph: { children: ["Body"] } }] },
+    content: { type: "document", children: [{ paragraph: { children: ["Body"] } }] },
   },
   keepOriginalStyles: true,
 });
 
-// PPTX — paragraph-level replacement
+// PPTX — run-level replacement
 import { patchPresentation } from "@office-open/pptx";
 const result = await patchPresentation({
   outputType: "nodebuffer",
   data: readFileSync("template.pptx"),
-  patches: { title: { type: "paragraph", children: [{ text: "Updated" }] } },
+  placeholders: { title: [{ text: "Updated" }] },
 });
 
 // XLSX — cell-level replacement
@@ -94,7 +94,7 @@ import { patchWorkbook } from "@office-open/xlsx";
 const result = await patchWorkbook({
   outputType: "nodebuffer",
   data: readFileSync("template.xlsx"),
-  patches: { amount: { value: "$1,500.00" } },
+  placeholders: { amount: 1500 },
 });
 ```
 

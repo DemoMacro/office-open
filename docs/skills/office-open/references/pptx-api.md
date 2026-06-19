@@ -599,36 +599,37 @@ parsePresentation(readFileSync("input.pptx"))
 
 ### patchPresentation
 
-Modify an existing `.pptx` template by replacing placeholders:
+Modify an existing `.pptx` template by replacing placeholders, literal text, or metadata:
 
 ```json
 {
-  "type": "paragraph",
-  "children": [{ "text": "Updated Title", "bold": true, "size": 24 }]
+  "placeholders": {
+    "title": [{ "text": "Updated Title", "bold": true, "size": 24 }]
+  }
 }
 ```
 
 ```ts
-import { patchPresentation, PatchType } from "@office-open/pptx";
+import { patchPresentation } from "@office-open/pptx";
 
 const result = await patchPresentation({
   outputType: "nodebuffer",
   data: templateBuffer,
-  patches: {
-    title: { type: PatchType.PARAGRAPH, children: [{ text: "Updated", bold: true }] },
+  placeholders: {
+    title: [{ text: "Updated", bold: true }],
   },
   placeholderDelimiters: { start: "{{", end: "}}" },
 });
 ```
 
-| Option                  | Type                          | Default      | Description                                 |
-| ----------------------- | ----------------------------- | ------------ | ------------------------------------------- |
-| `outputType`            | `string`                      | —            | Output format                               |
-| `data`                  | `Buffer \| Uint8Array \| ...` | —            | Input .pptx file                            |
-| `patches`               | `Record<string, IPatch>`      | —            | Placeholder name → patch content map        |
-| `keepOriginalStyles`    | `boolean`                     | `true`       | Preserve original run formatting properties |
-| `placeholderDelimiters` | `{ start, end }`              | `{ {{, }} }` | Custom delimiters                           |
+Use `findReplace` for literal text (no delimiters) and `coreProperties` to override `docProps/core.xml`.
 
-| PatchType             | Value         | Description                  |
-| --------------------- | ------------- | ---------------------------- |
-| `PatchType.PARAGRAPH` | `"paragraph"` | Inline run-level replacement |
+| Option                  | Type                                                   | Default      | Description                                 |
+| ----------------------- | ------------------------------------------------------ | ------------ | ------------------------------------------- |
+| `outputType`            | `string`                                               | —            | Output format                               |
+| `data`                  | `Buffer \| Uint8Array \| ...`                          | —            | Input .pptx file                            |
+| `placeholders`          | `Record<string, RunOptions \| RunOptions[] \| string>` | —            | Delimiter-wrapped placeholder → run content |
+| `findReplace`           | `Record<string, RunOptions \| RunOptions[] \| string>` | —            | Literal find string → run content           |
+| `coreProperties`        | `Partial<CorePropertiesOptions>`                       | —            | Core metadata override                      |
+| `keepOriginalStyles`    | `boolean`                                              | `true`       | Preserve original run formatting properties |
+| `placeholderDelimiters` | `{ start, end }`                                       | `{ {{, }} }` | Custom delimiters                           |

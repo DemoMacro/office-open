@@ -282,7 +282,7 @@ const opts = parseDocument(buffer);
 const result = await patchDocument({
   outputType: "nodebuffer",
   data: buffer,
-  patches: {
+  placeholders: {
     name: { type: "paragraph", children: [{ text: "John" }] },
   },
 });
@@ -300,7 +300,7 @@ const opts = parsePresentation(buffer);
 const result = await patchPresentation({
   outputType: "nodebuffer",
   data: buffer,
-  patches: {
+  placeholders: {
     title: [{ text: "已更新", bold: true }],
   },
 });
@@ -318,7 +318,7 @@ const opts = parseWorkbook(buffer);
 const result = await patchWorkbook({
   outputType: "nodebuffer",
   data: buffer,
-  patches: {
+  placeholders: {
     name: "张三",
   },
 });

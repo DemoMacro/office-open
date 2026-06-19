@@ -417,30 +417,28 @@ const doc = parseXlsx(readFileSync("input.xlsx"));
 Modify an existing `.xlsx` template by replacing cell placeholder values:
 
 ```ts
-import { patchWorkbook, PatchType } from "@office-open/xlsx";
+import { patchWorkbook } from "@office-open/xlsx";
 
 const result = await patchWorkbook({
   outputType: "nodebuffer",
   data: templateBuffer,
-  patches: {
-    number: { value: "INV-2024-001" },
-    customer: { value: "Acme Corp" },
-    amount: { value: "$1,500.00" },
-    date: { value: "2024-12-31" },
+  placeholders: {
+    number: "INV-2024-001",
+    customer: "Acme Corp",
+    amount: 1500,
+    date: new Date("2024-12-31"),
   },
   placeholderDelimiters: { start: "{{", end: "}}" },
 });
 ```
 
-Placeholders are matched in shared strings and inline strings. For string replacements, the shared string value is updated in-place.
+Placeholders are matched in shared strings, inline strings, and print headers/footers. When a placeholder fills an entire cell, `number`/`boolean`/`Date` values become real typed cells. Use `findReplace` for literal text and `coreProperties` to override `docProps/core.xml`.
 
-| Option                  | Type                          | Default      | Description                   |
-| ----------------------- | ----------------------------- | ------------ | ----------------------------- |
-| `outputType`            | `string`                      | --           | Output format                 |
-| `data`                  | `Buffer \| Uint8Array \| ...` | --           | Input .xlsx file              |
-| `patches`               | `Record<string, CellPatch>`   | --           | Placeholder name -> patch map |
-| `placeholderDelimiters` | `{ start, end }`              | `{ {{, }} }` | Custom delimiters             |
-
-| PatchType        | Value    | Description      |
-| ---------------- | -------- | ---------------- |
-| `PatchType.CELL` | `"cell"` | Cell value patch |
+| Option                  | Type                             | Default      | Description                                  |
+| ----------------------- | -------------------------------- | ------------ | -------------------------------------------- |
+| `outputType`            | `string`                         | --           | Output format                                |
+| `data`                  | `Buffer \| Uint8Array \| ...`    | --           | Input .xlsx file                             |
+| `placeholders`          | `Record<string, ScalarValue>`    | --           | Delimiter-wrapped placeholder → scalar value |
+| `findReplace`           | `Record<string, ScalarValue>`    | --           | Literal find string → scalar value           |
+| `coreProperties`        | `Partial<CorePropertiesOptions>` | --           | Core metadata override                       |
+| `placeholderDelimiters` | `{ start, end }`                 | `{ {{, }} }` | Custom delimiters                            |
