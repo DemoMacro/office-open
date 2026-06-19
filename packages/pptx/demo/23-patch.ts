@@ -84,17 +84,3 @@ const patchedBuffer = await patchPresentation({
 });
 
 writeFileSync("My Presentation.pptx", patchedBuffer);
-
-// Step 3: Append comments to slides. comments keys are 0-based slide indices.
-//          Authors are merged into commentAuthors.xml (deduped, ids continued);
-//          per-slide comments are merged into ppt/comments/commentN.xml.
-const withComments = await patchPresentation({
-  outputType: "nodebuffer",
-  data: patchedBuffer,
-  comments: {
-    0: [{ author: "Alice", text: "Review the greeting", x: 100, y: 150 }],
-    2: [{ author: "Bob", text: "Nice appendix slide", x: 100, y: 150 }],
-  },
-});
-
-writeFileSync("My Presentation.pptx", withComments);

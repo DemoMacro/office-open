@@ -46,19 +46,3 @@ const patched = await patchWorkbook({
 });
 
 writeFileSync("My Workbook.xlsx", patched);
-
-// Step 3: Append cell comments to the Invoice worksheet. Existing comments on a
-//          worksheet are merged — parsed and re-serialized with the new notes.
-//          comments keys are sheet names (as declared in workbook.xml).
-const withComments = await patchWorkbook({
-  outputType: "uint8array",
-  data: readFileSync("My Workbook.xlsx"),
-  comments: {
-    Invoice: [
-      { cell: "B1", author: "Alice", text: "Invoice number confirmed" },
-      { cell: "B3", author: "Bob", text: "Amount needs approval" },
-    ],
-  },
-});
-
-writeFileSync("My Workbook.xlsx", withComments);
