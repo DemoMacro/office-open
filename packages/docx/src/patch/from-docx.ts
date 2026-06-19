@@ -79,40 +79,74 @@ function createPatchContext(
   };
 }
 
+/**
+ * Serialize a patch child (SectionChild / ParagraphChild / string) into XML
+ * elements via the compile-path stringifiers. Shared by the placeholder
+ * replacer and body-level `append`. Relies on the module-level
+ * {@link currentPatchCtx} for relationship/media sinks.
+ */
+const formatChildElement = (child: unknown): Element[] => {
+  let xmlStr: string;
+
+  if (typeof child === "string") {
+    // Plain string → simple run
+    xmlStr = `<w:r><w:t xml:space="preserve">${escapeXml(child)}</w:t></w:r>`;
+  } else if (typeof child === "object" && child !== null) {
+    const obj = child as Record<string, unknown>;
+    // SectionChild level (paragraph / table) — for DOCUMENT patches and append
+    if ("paragraph" in obj) {
+      xmlStr = stringifyParagraphInline(obj.paragraph as ParagraphOptions, currentPatchCtx);
+    } else if ("table" in obj) {
+      xmlStr = tableDesc.stringify(obj.table as TableOptions, currentPatchCtx) ?? "";
+    } else {
+      // ParagraphChild level — for PARAGRAPH patches
+      // Try compile-path JSON child dispatch first
+      const jr = stringifyChildDispatch(child as ParagraphChild, currentPatchCtx);
+      if (jr !== undefined) {
+        xmlStr = Array.isArray(jr) ? jr.join("") : jr;
+      } else {
+        // RunOptions (plain objects with text/children/bold/etc.)
+        xmlStr = stringifyRunInline(child as RunOptions, currentPatchCtx);
+      }
+    }
+  } else {
+    xmlStr = "<w:r/>";
+  }
+
+  const jsonObj = xml2js(xmlStr, { captureSpacesBetweenElements: true });
+  return [jsonObj.elements![0]];
+};
+
 const docxReplacer = createReplacer({
   ns: DOCX_NS,
-  formatChild: (child: unknown): Element[] => {
-    let xmlStr: string;
-
-    if (typeof child === "string") {
-      // Plain string → simple run
-      xmlStr = `<w:r><w:t xml:space="preserve">${escapeXml(child)}</w:t></w:r>`;
-    } else if (typeof child === "object" && child !== null) {
-      const obj = child as Record<string, unknown>;
-      // SectionChild level (paragraph / table) — for DOCUMENT patches
-      if ("paragraph" in obj) {
-        xmlStr = stringifyParagraphInline(obj.paragraph as ParagraphOptions, currentPatchCtx);
-      } else if ("table" in obj) {
-        xmlStr = tableDesc.stringify(obj.table as TableOptions, currentPatchCtx) ?? "";
-      } else {
-        // ParagraphChild level — for PARAGRAPH patches
-        // Try compile-path JSON child dispatch first
-        const jr = stringifyChildDispatch(child as ParagraphChild, currentPatchCtx);
-        if (jr !== undefined) {
-          xmlStr = Array.isArray(jr) ? jr.join("") : jr;
-        } else {
-          // RunOptions (plain objects with text/children/bold/etc.)
-          xmlStr = stringifyRunInline(child as RunOptions, currentPatchCtx);
-        }
-      }
-    } else {
-      xmlStr = "<w:r/>";
-    }
-
-    const jsonObj = xml2js(xmlStr, { captureSpacesBetweenElements: true });
-    return [jsonObj.elements![0]];
-  },
+  formatChild: formatChildElement,
 });
+
+/**
+ * Splice block-level children into `<w:body>` before the trailing `<w:sectPr>`
+ * (the final section properties). If the body has no trailing sectPr, append at
+ * the end. Reuses {@link formatChildElement} so the same serialization and
+ * relationship/media sinks apply as placeholder patches.
+ */
+const appendToBody = (root: Element, children: SectionChild[]): void => {
+  const docEl = root.elements?.find((e) => e.name === "w:document");
+  const body = docEl?.elements?.find((e) => e.name === "w:body");
+  if (!body) return;
+  const els = body.elements ?? (body.elements = []);
+  const newEls: Element[] = [];
+  for (const child of children) {
+    newEls.push(...formatChildElement(child));
+  }
+  // Insert before the trailing <w:sectPr>; otherwise at the end.
+  let insertAt = els.length;
+  for (let i = els.length - 1; i >= 0; i--) {
+    if (els[i].name === "w:sectPr") {
+      insertAt = i;
+      break;
+    }
+  }
+  els.splice(insertAt, 0, ...newEls);
+};
 
 /** Current patch context — set per file in the main loop. */
 let currentPatchCtx: BodyContext;
@@ -149,6 +183,8 @@ export interface PatchDocumentOptions<
   coreProperties?: Partial<CorePropertiesOptions>;
   keepOriginalStyles?: boolean;
   recursive?: boolean;
+  /** Block-level content appended to the document body, before the final section break. */
+  append?: SectionChild[];
 }
 
 const UTF16LE = new Uint8Array([0xff, 0xfe]);
@@ -177,6 +213,7 @@ export const patchDocument = async <T extends OutputType = OutputType>({
   placeholders,
   findReplace,
   coreProperties,
+  append,
   keepOriginalStyles = true,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
   recursive = true,
@@ -286,6 +323,11 @@ export const patchDocument = async <T extends OutputType = OutputType>({
             break;
           }
         }
+      }
+
+      // Append block-level children to the document body before the final sectPr.
+      if (append && append.length > 0 && key === "word/document.xml") {
+        appendToBody(json, append);
       }
 
       // Flush hyperlink relationships captured by the compile-path context

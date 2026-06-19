@@ -709,5 +709,91 @@ describe("from-docx", () => {
         expect(Array.isArray(output)).toBe(true);
       });
     });
+
+    describe("append", () => {
+      // Real unzip (bypass the fflate mock) to inspect the actually-zipped output.
+      // zipAndConvert uses nativeZipAsync under Node, so spying on the mocked
+      // fflate `zip` captures nothing; we re-inflate the returned buffer instead.
+      let realUnzip: typeof import("fflate").unzipSync;
+
+      beforeEach(async () => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+          ]),
+        );
+        realUnzip = (await vi.importActual<typeof import("fflate")>("fflate")).unzipSync;
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      const decodeDoc = async (output: unknown): Promise<string> => {
+        const unzipped = realUnzip(output as Uint8Array);
+        const entry = unzipped["word/document.xml"];
+        expect(entry, "word/document.xml should be zipped").toBeDefined();
+        return new TextDecoder().decode(entry);
+      };
+
+      it("should splice appended children before the trailing sectPr", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          append: [
+            { paragraph: { children: ["APPENDED_MARKER"] } },
+            { paragraph: { children: ["SECOND_APPENDED"] } },
+          ],
+        });
+
+        const xml = await decodeDoc(output);
+        expect(xml).toContain("APPENDED_MARKER");
+        expect(xml).toContain("SECOND_APPENDED");
+        // Appended content must precede the body's final section properties.
+        const markerPos = xml.indexOf("APPENDED_MARKER");
+        const sectPrPos = xml.indexOf("<w:sectPr");
+        expect(markerPos).toBeGreaterThan(-1);
+        expect(sectPrPos).toBeGreaterThan(-1);
+        expect(markerPos).toBeLessThan(sectPrPos);
+      });
+
+      it("should append when no placeholders are given", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          append: [{ paragraph: { children: ["ONLY_APPEND"] } }],
+        });
+
+        expect(await decodeDoc(output)).toContain("ONLY_APPEND");
+      });
+
+      it("should serialize appended tables via the compile-path stringifier", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          append: [
+            {
+              table: {
+                columnWidths: [2000, 2000],
+                rows: [
+                  {
+                    cells: [
+                      { children: [{ paragraph: "APPENDED_CELL_A" }] },
+                      { children: [{ paragraph: "APPENDED_CELL_B" }] },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        });
+
+        const xml = await decodeDoc(output);
+        expect(xml).toContain("<w:tbl>");
+        expect(xml).toContain("APPENDED_CELL_A");
+        expect(xml).toContain("APPENDED_CELL_B");
+      });
+    });
   });
 });
