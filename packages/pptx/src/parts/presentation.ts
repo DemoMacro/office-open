@@ -108,6 +108,15 @@ export interface PresentationPartOptions {
   customShows?: CustomShowOptions[];
   kinsoku?: KinsokuOptions[];
   customerData?: CustomerDataOptions;
+  /** Slide sections (p14:sectionLst); slides are grouped by name. */
+  sections?: PresentationSectionGroup[];
+}
+
+/** A named group of slides forming one p14:section in presentation.xml. */
+export interface PresentationSectionGroup {
+  name: string;
+  /** Indices into PresentationPartOptions.slideIds belonging to this section. */
+  slideIndices: number[];
 }
 
 // ── Legacy types ──

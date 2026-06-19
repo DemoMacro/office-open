@@ -306,6 +306,75 @@ function resolveRelTargets(
 }
 
 /**
+ * Parse p14:sectionLst from presentation.xml and map each slide path to its
+ * section name. Bridges p14:sldId (by slide id) -> p:sldIdLst (slide id ->
+ * rId) -> presentation rels (rId -> path).
+ */
+function parseSlideSections(
+  presentation: Element | undefined,
+  doc: ParsedArchive,
+): Map<string, string> {
+  const pathToSection = new Map<string, string>();
+  if (!presentation) return pathToSection;
+
+  const extLst = findChild(presentation, "p:extLst");
+  if (!extLst) return pathToSection;
+
+  let sectionLst: Element | undefined;
+  for (const ext of extLst.elements ?? []) {
+    if (ext.name !== "p:ext") continue;
+    if (attr(ext, "uri") !== "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}") continue;
+    sectionLst = findChild(ext, "p14:sectionLst");
+    if (sectionLst) break;
+  }
+  if (!sectionLst) return pathToSection;
+
+  // slideId -> sectionName
+  const sectionBySlideId = new Map<number, string>();
+  for (const section of sectionLst.elements ?? []) {
+    if (section.name !== "p14:section") continue;
+    const name = attr(section, "name");
+    if (!name) continue;
+    const sldIdLst = findChild(section, "p14:sldIdLst");
+    for (const sldId of sldIdLst?.elements ?? []) {
+      if (sldId.name !== "p14:sldId") continue;
+      const id = attrNum(sldId, "id");
+      if (id !== undefined) sectionBySlideId.set(id, name);
+    }
+  }
+  if (sectionBySlideId.size === 0) return pathToSection;
+
+  // slideId -> rId (from p:sldIdLst)
+  const sldIdLst = findChild(presentation, "p:sldIdLst");
+  const rIdBySlideId = new Map<number, string>();
+  for (const sldId of sldIdLst?.elements ?? []) {
+    if (sldId.name !== "p:sldId") continue;
+    const id = attrNum(sldId, "id");
+    const rId = attr(sldId, "r:id");
+    if (id !== undefined && rId) rIdBySlideId.set(id, rId);
+  }
+
+  // rId -> path (from presentation.xml.rels)
+  const relsEl = doc.get("ppt/_rels/presentation.xml.rels");
+  const pathByRId = new Map<string, string>();
+  for (const child of relsEl?.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    const id = attr(child, "Id");
+    const target = attr(child, "Target");
+    if (id && target) pathByRId.set(id, resolveRelsPath(target));
+  }
+
+  for (const [slideId, name] of sectionBySlideId) {
+    const rId = rIdBySlideId.get(slideId);
+    if (!rId) continue;
+    const path = pathByRId.get(rId);
+    if (path) pathToSection.set(path, name);
+  }
+
+  return pathToSection;
+}
+
+/**
  * Parse a .pptx file and convert it into PresentationOptions.
  *
  * This is the main public API for parsing PPTX files.
@@ -318,6 +387,7 @@ function resolveRelTargets(
 export function parsePresentation(data: DataType): PresentationOptions {
   const pptx = parsePptx(data);
   const opts: Record<string, unknown> = {};
+  const sectionBySlidePath = parseSlideSections(pptx.presentation, pptx.doc);
 
   // 1. Parse slide size from p:sldSz
   if (pptx.presentation) {
@@ -569,6 +639,10 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (notesData.text) slideOpts.notes = notesData.text;
       break;
     }
+
+    // Section (p14:sectionLst) — bridged via slide id -> rId -> path
+    const sectionName = sectionBySlidePath.get(slidePath);
+    if (sectionName) slideOpts.section = sectionName;
 
     result.push(slideOpts as SlideOptions);
   }

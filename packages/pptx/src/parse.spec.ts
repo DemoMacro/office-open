@@ -197,4 +197,34 @@ describe("parsePresentation", () => {
     expect(parsed2.slides![0].master).to.equal("Theme One");
     expect(parsed2.slides![1].master).to.equal("Theme Two");
   });
+
+  it("round-trips slide sections (p14:sectionLst)", async () => {
+    const options: PresentationOptions = {
+      slides: [
+        {
+          section: "Intro",
+          children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }],
+        },
+        {
+          section: "Intro",
+          children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "B" } } }],
+        },
+        {
+          section: "Content",
+          children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "C" } } }],
+        },
+        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "D" } } }] },
+      ],
+    };
+    const buffer = await generatePresentation(options);
+    const result = parsePresentation(buffer);
+
+    // Same-name slides merge into one section; the unsectioned slide stays out
+    expect(result.slides!.map((s) => s.section)).to.deep.equal([
+      "Intro",
+      "Intro",
+      "Content",
+      undefined,
+    ]);
+  });
 });

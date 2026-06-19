@@ -33,7 +33,7 @@ import { ChartCollection } from "@office-open/core/chart";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import { ContentTypes } from "@parts/content-types";
-import type { PresentationPartOptions } from "@parts/presentation";
+import type { PresentationPartOptions, PresentationSectionGroup } from "@parts/presentation";
 import { buildCustomLayoutXml, buildLayoutXml, type SlideLayoutType } from "@parts/slide-layout";
 import { buildSlideMasterXml } from "@parts/slide-master";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
@@ -608,11 +608,32 @@ export function compilePresentation(
   const contentTypes = initContentTypes(slides, includeHandout);
   if (hasCustomProperties) contentTypes.addCustomProperties();
   const presRels = initPresRels(masters, slides.length);
+  // Group slides into p14:sections by name (first-occurrence order); slides
+  // without a section name are left ungrouped (absent from p14:sectionLst).
+  const sectionOrder: string[] = [];
+  const sectionIndices = new Map<string, number[]>();
+  for (let i = 0; i < slides.length; i++) {
+    const name = slides[i].section;
+    if (!name) continue;
+    let arr = sectionIndices.get(name);
+    if (!arr) {
+      arr = [];
+      sectionIndices.set(name, arr);
+      sectionOrder.push(name);
+    }
+    arr.push(i);
+  }
+  const sections: PresentationSectionGroup[] = sectionOrder.map((name) => ({
+    name,
+    slideIndices: sectionIndices.get(name)!,
+  }));
+
   const presOptions: PresentationPartOptions = {
     slideWidth: sz.width,
     slideHeight: sz.height,
     slideIds: slides.map((_, i) => 256 + i),
     masterCount: masters.length,
+    sections,
     ...buildPresAttrOpts(options),
   };
   const fileRels = buildFileRels(hasCustomProperties);

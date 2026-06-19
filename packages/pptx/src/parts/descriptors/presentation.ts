@@ -4,9 +4,9 @@
  * @module
  */
 
-import { derivePasswordHash } from "@office-open/core";
+import { derivePasswordHash, uniqueUuid } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type {
   PresentationPartOptions,
@@ -240,6 +240,27 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
     }
 
     parts.push(`<p:modifyVerifier${mvAttrs.join("")}/>`);
+  }
+
+  // p14:sectionLst — slide sections (Microsoft PowerPoint 2010 extension).
+  // Only emitted when at least one slide carries a section name.
+  if (opts.sections && opts.sections.length > 0) {
+    const sectionXml: string[] = [];
+    for (const sec of opts.sections) {
+      const ids = sec.slideIndices
+        .map((idx) => opts.slideIds[idx])
+        .filter((id): id is number => id !== undefined);
+      if (ids.length === 0) continue;
+      const sldIds = ids.map((id) => `<p14:sldId id="${id}"/>`).join("");
+      sectionXml.push(
+        `<p14:section name="${escapeXml(sec.name)}" id="{${uniqueUuid().toUpperCase()}}"><p14:sldIdLst>${sldIds}</p14:sldIdLst></p14:section>`,
+      );
+    }
+    if (sectionXml.length > 0) {
+      parts.push(
+        `<p:extLst><p:ext uri="{521415D9-36F7-43E2-AB2F-B90AF26B5E84}"><p14:sectionLst xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main">${sectionXml.join("")}</p14:sectionLst></p:ext></p:extLst>`,
+      );
+    }
   }
 
   parts.push("</p:presentation>");

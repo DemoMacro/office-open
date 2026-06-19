@@ -90,6 +90,8 @@ export interface SlideOptions {
   customerData?: { rId: string }[];
   slideSync?: SlideSyncOptions;
   animations?: SlideAnimation[];
+  /** Section name — slides sharing a name form one p14:section in presentation.xml. */
+  section?: string;
 }
 
 export interface ShowOptions {
