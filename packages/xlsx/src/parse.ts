@@ -21,9 +21,15 @@ import type { ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc } from "@parts/comments";
 import { drawingDesc } from "@parts/drawing";
 import { externalLinkDesc } from "@parts/external-link";
-import type { WorkbookOptions } from "@parts/file";
+import type { SharedWorkbookOptions, WorkbookOptions } from "@parts/file";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
+import {
+  revisionHeadersDesc,
+  revisionLogDesc,
+  usersDesc,
+  type RevisionLogOptions,
+} from "@parts/revision-log";
 import { sharedStringsDesc } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
@@ -452,6 +458,56 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       externalLinks.push(elData);
     }
     if (externalLinks.length > 0) opts.externalLinks = externalLinks;
+  }
+
+  // Shared-workbook revisions: workbook.xml.rels → revisionHeaders/users;
+  // revisionHeaders.xml.rels → per-header revision logs.
+  const wbRelsEl2 = xlsx.doc.get("xl/_rels/workbook.xml.rels");
+  let revHeadersTarget: string | undefined;
+  let usersTarget: string | undefined;
+  if (wbRelsEl2) {
+    for (const child of wbRelsEl2.elements ?? []) {
+      if (child.name !== "Relationship") continue;
+      const type = attr(child, "Type") ?? "";
+      const target = attr(child, "Target") ?? "";
+      if (type.includes("/revisionHeaders")) revHeadersTarget = target;
+      else if (type.includes("/users")) usersTarget = target;
+    }
+  }
+  if (revHeadersTarget) {
+    const headersPath = revHeadersTarget.startsWith("/")
+      ? revHeadersTarget.slice(1)
+      : `xl/${revHeadersTarget}`;
+    const headersEl = xlsx.doc.get(headersPath);
+    if (headersEl) {
+      const headers = revisionHeadersDesc.parse(headersEl, readContext);
+      const logs: RevisionLogOptions[] = [];
+      const slash = headersPath.lastIndexOf("/");
+      const revHeadersRelsEl = xlsx.doc.get(
+        `${headersPath.slice(0, slash)}/_rels/${headersPath.slice(slash + 1)}.rels`,
+      );
+      if (revHeadersRelsEl) {
+        for (const child of revHeadersRelsEl.elements ?? []) {
+          if (child.name !== "Relationship") continue;
+          if (!(attr(child, "Type") ?? "").includes("/revisionLog")) continue;
+          const t = attr(child, "Target");
+          if (!t) continue;
+          const logEl = xlsx.doc.get(t.startsWith("/") ? t.slice(1) : `xl/${t}`);
+          if (logEl) logs.push(revisionLogDesc.parse(logEl, readContext));
+        }
+      }
+      const revisionLog: SharedWorkbookOptions = { headers, logs };
+      if (usersTarget) {
+        const usersEl = xlsx.doc.get(
+          usersTarget.startsWith("/") ? usersTarget.slice(1) : `xl/${usersTarget}`,
+        );
+        if (usersEl) {
+          const users = usersDesc.parse(usersEl, readContext);
+          if (users.users) revisionLog.users = users;
+        }
+      }
+      opts.revisionLog = revisionLog;
+    }
   }
 
   return opts as WorkbookOptions;

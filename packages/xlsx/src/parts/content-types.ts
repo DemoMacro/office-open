@@ -215,6 +215,14 @@ export class ContentTypes {
     });
   }
 
+  public addUsers(): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.users+xml",
+      key: "/xl/users.xml",
+    });
+  }
+
   public addQueryTable(index: number): void {
     this.dynamicEntries.push({
       type: "Override",

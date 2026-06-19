@@ -60,7 +60,10 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheRecords"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLink"
-  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath";
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionHeaders"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionLog"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/users";
 
 export const TargetModeType = {
   EXTERNAL: "External",

@@ -30,6 +30,7 @@ import { aggregate, collectUniqueValues } from "@parts/pivot";
 import type { PivotSourceData, PivotTableOptions } from "@parts/pivot";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
+import { revisionHeadersDesc, revisionLogDesc, usersDesc } from "@parts/revision-log";
 import { sharedStringsDesc } from "@parts/shared-strings";
 import type { SharedStrings } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
@@ -698,12 +699,6 @@ export function compileWorkbook(
     path: "xl/workbook.xml",
   };
 
-  // Workbook relationships
-  mapping["WorkbookRelationships"] = {
-    data: XML_DECL + ctx.workbookRels.serialize(),
-    path: "xl/_rels/workbook.xml.rels",
-  };
-
   // Shared Strings — AFTER worksheets so all strings are collected
   if (ctx.sharedStrings.count > 0) {
     const ssXml = sharedStringsDesc.stringify(ctx.sharedStrings.toDescriptorOptions(), ctx);
@@ -750,6 +745,65 @@ export function compileWorkbook(
       "calcChain.xml",
     );
   }
+
+  // Shared-workbook revisions (xl/revisionHeaders.xml + xl/revisions/revisionN.xml + xl/users.xml).
+  // CT_Workbook has no revision element — parts are discovered via workbook.xml.rels + [Content_Types].
+  if (options.revisionLog) {
+    const rl = options.revisionLog;
+    const REV_HEADERS_REL =
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionHeaders";
+    const REV_LOG_REL =
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionLog";
+    const USERS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/users";
+
+    // xl/revisionHeaders.xml — target of an implicit relationship from the workbook.
+    mapping["RevisionHeaders"] = {
+      data: XML_DECL + (revisionHeadersDesc.stringify(rl.headers, ctx) ?? ""),
+      path: "xl/revisionHeaders.xml",
+    };
+    ctx.contentTypes.addRevisionHeaders();
+    ctx.workbookRels.addRelationship(
+      ctx.workbookRels.relationshipCount + 1,
+      REV_HEADERS_REL,
+      "revisionHeaders.xml",
+    );
+
+    // One revision log per header entry, plus revisionHeaders.xml.rels pointing to each.
+    const revHeadersRels = new Relationships();
+    for (let i = 0; i < rl.logs.length; i++) {
+      mapping[`RevisionLog${i}`] = {
+        data: XML_DECL + (revisionLogDesc.stringify(rl.logs[i], ctx) ?? ""),
+        path: `xl/revisions/revision${i + 1}.xml`,
+      };
+      ctx.contentTypes.addRevisionLog(i + 1);
+      revHeadersRels.addRelationship(i + 1, REV_LOG_REL, `revisions/revision${i + 1}.xml`);
+    }
+    mapping["RevisionHeadersRels"] = {
+      data: XML_DECL + revHeadersRels.serialize(),
+      path: "xl/_rels/revisionHeaders.xml.rels",
+    };
+
+    // xl/users.xml (optional)
+    if (rl.users) {
+      const usersXml = usersDesc.stringify(rl.users, ctx);
+      if (usersXml) {
+        mapping["Users"] = { data: XML_DECL + usersXml, path: "xl/users.xml" };
+        ctx.contentTypes.addUsers();
+        ctx.workbookRels.addRelationship(
+          ctx.workbookRels.relationshipCount + 1,
+          USERS_REL,
+          "users.xml",
+        );
+      }
+    }
+  }
+
+  // Workbook relationships — serialized after calcChain/revision register their
+  // targets, so every workbook-level relationship lands in workbook.xml.rels.
+  mapping["WorkbookRelationships"] = {
+    data: XML_DECL + ctx.workbookRels.serialize(),
+    path: "xl/_rels/workbook.xml.rels",
+  };
 
   // Register image content types
   const imageExts = new Set<string>();

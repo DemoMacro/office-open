@@ -28,6 +28,7 @@ import type {
 
 import type { ChartsheetOptions } from "./chartsheet";
 import type { ExternalLinkOptions } from "./external-link";
+import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
 import type { WorksheetOptions } from "./worksheet";
 
 export interface WorkbookOptions extends CorePropertiesOptions {
@@ -66,4 +67,16 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   appProperties?: AppPropertiesOptions;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */
   customProperties?: CustomPropertyOptions[];
+  /** Shared-workbook revision log (xl/revisionHeaders.xml + xl/revisions/revisionN.xml + xl/users.xml). */
+  revisionLog?: SharedWorkbookOptions;
+}
+
+/** Shared-workbook revision tracking data. */
+export interface SharedWorkbookOptions {
+  /** xl/revisionHeaders.xml (CT_RevisionHeaders). */
+  headers: RevisionHeadersOptions;
+  /** Revision logs (CT_Revisions), one per header entry. logs[i] maps to headers.headers[i].rId. */
+  logs: RevisionLogOptions[];
+  /** xl/users.xml (CT_Users), optional. */
+  users?: UsersOptions;
 }

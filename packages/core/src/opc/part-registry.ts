@@ -457,6 +457,22 @@ export const XLSX_PARTS = {
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml",
       presence: { kind: "conditional", flag: "any formula cell" },
     },
+    {
+      path: "xl/revisionHeaders.xml",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.revisionHeaders+xml",
+      presence: { kind: "conditional", flag: "revisionLog" },
+    },
+    {
+      path: "xl/revisions/revision${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.revisionLog+xml",
+      presence: { kind: "repeated", countFrom: "revisionLog.logs.length" },
+    },
+    {
+      path: "xl/users.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.users+xml",
+      presence: { kind: "conditional", flag: "revisionLog.users" },
+    },
   ],
 } as const satisfies PackagePartRegistry;
 
