@@ -14,6 +14,8 @@ import { escapeXml } from "@office-open/xml";
 
 import type {
   CommentOptions,
+  CommentPropertiesOptions,
+  ObjectAnchorOptions,
   RichTextOptions,
   RichTextRunOptions,
   RichTextRunPropertiesOptions,
@@ -32,7 +34,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
     if (opts.comments.length === 0) return undefined;
     const authors = collectAuthors(opts.comments);
     const p: string[] = [
-      `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`,
+      `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing">`,
       `<authors>`,
     ];
 
@@ -48,8 +50,10 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
         typeof entry.text === "string"
           ? `<t>${escapeXml(entry.text)}</t>`
           : buildRstXml(entry.text);
+      // CT_Comment model is text then commentPr (sml.xsd:290-294).
+      const commentPrXml = entry.commentPr ? buildCommentPrXml(entry.commentPr) : "";
       p.push(
-        `<comment ref="${entry.cell}" authorId="${authorId}"><text>${textXml}</text></comment>`,
+        `<comment ref="${entry.cell}" authorId="${authorId}"><text>${textXml}</text>${commentPrXml}</comment>`,
       );
     }
 
@@ -76,11 +80,14 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
         const authorId = Number(attr(c, "authorId") ?? 0);
         const textEl = findChild(c, "text");
         const text = textEl ? parseRst(textEl) : "";
-        comments.push({
+        const commentPrEl = findChild(c, "commentPr");
+        const comment: CommentOptions = {
           cell: ref,
           author: authors[authorId] ?? "",
           text,
-        });
+        };
+        if (commentPrEl) comment.commentPr = parseCommentPr(commentPrEl);
+        comments.push(comment);
       }
     }
 
@@ -107,8 +114,7 @@ export const vmlNotesDesc: CustomDescriptor<CommentsDocOptions> = {
 
     for (let i = 0; i < opts.comments.length; i++) {
       const c = opts.comments[i];
-      const col = c.cell.charCodeAt(0) - 65;
-      const row = parseInt(c.cell.slice(1), 10) - 1;
+      const { col, row } = cellRefToVmlCoords(c.cell);
       const anchor = `${col}, 0, ${row}, 0, ${col + 2}, 0, ${row + 2}, 0`;
       p.push(
         `<v:shape id="_x0000_s${1025 + i}" type="#_x0000_t202" ` +
@@ -150,6 +156,82 @@ function collectAuthors(comments: CommentOptions[]): string[] {
     }
   }
   return result.length > 0 ? result : [""];
+}
+
+// ── Comment properties (CT_CommentPr) helpers ──
+
+/** Serialize CT_CommentPr. anchor is required (CT_ObjectAnchor), defaults to empty. */
+function buildCommentPrXml(pr: CommentPropertiesOptions): string {
+  const attrs: string[] = [];
+  if (pr.locked !== undefined) attrs.push(`locked="${pr.locked ? 1 : 0}"`);
+  if (pr.defaultSize !== undefined) attrs.push(`defaultSize="${pr.defaultSize ? 1 : 0}"`);
+  if (pr.print !== undefined) attrs.push(`print="${pr.print ? 1 : 0}"`);
+  if (pr.disabled !== undefined) attrs.push(`disabled="${pr.disabled ? 1 : 0}"`);
+  if (pr.autoFill !== undefined) attrs.push(`autoFill="${pr.autoFill ? 1 : 0}"`);
+  if (pr.autoLine !== undefined) attrs.push(`autoLine="${pr.autoLine ? 1 : 0}"`);
+  if (pr.altText !== undefined) attrs.push(`altText="${escapeXml(pr.altText)}"`);
+  if (pr.textHAlign !== undefined) attrs.push(`textHAlign="${pr.textHAlign}"`);
+  if (pr.textVAlign !== undefined) attrs.push(`textVAlign="${pr.textVAlign}"`);
+  if (pr.lockText !== undefined) attrs.push(`lockText="${pr.lockText ? 1 : 0}"`);
+  if (pr.justLastX !== undefined) attrs.push(`justLastX="${pr.justLastX ? 1 : 0}"`);
+  if (pr.autoScale !== undefined) attrs.push(`autoScale="${pr.autoScale ? 1 : 0}"`);
+  return `<commentPr ${attrs.join(" ")}>${buildAnchorXml(pr.anchor)}</commentPr>`;
+}
+
+/** Serialize CT_ObjectAnchor. from/to/ext are optional in the XSD; attributes required. */
+function buildAnchorXml(anchor: ObjectAnchorOptions | undefined): string {
+  const moveWithCells = anchor?.moveWithCells ? 1 : 0;
+  const sizeWithCells = anchor?.sizeWithCells ? 1 : 0;
+  return `<xdr:anchor moveWithCells="${moveWithCells}" sizeWithCells="${sizeWithCells}"/>`;
+}
+
+function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
+  const pr: CommentPropertiesOptions = {};
+  const locked = attr(el, "locked");
+  if (locked !== undefined) pr.locked = locked === "1";
+  const defaultSize = attr(el, "defaultSize");
+  if (defaultSize !== undefined) pr.defaultSize = defaultSize === "1";
+  const print = attr(el, "print");
+  if (print !== undefined) pr.print = print === "1";
+  const disabled = attr(el, "disabled");
+  if (disabled !== undefined) pr.disabled = disabled === "1";
+  const autoFill = attr(el, "autoFill");
+  if (autoFill !== undefined) pr.autoFill = autoFill === "1";
+  const autoLine = attr(el, "autoLine");
+  if (autoLine !== undefined) pr.autoLine = autoLine === "1";
+  const altText = attr(el, "altText");
+  if (altText !== undefined) pr.altText = altText;
+  const textHAlign = attr(el, "textHAlign");
+  if (textHAlign !== undefined)
+    pr.textHAlign = textHAlign as CommentPropertiesOptions["textHAlign"];
+  const textVAlign = attr(el, "textVAlign");
+  if (textVAlign !== undefined)
+    pr.textVAlign = textVAlign as CommentPropertiesOptions["textVAlign"];
+  const lockText = attr(el, "lockText");
+  if (lockText !== undefined) pr.lockText = lockText === "1";
+  const justLastX = attr(el, "justLastX");
+  if (justLastX !== undefined) pr.justLastX = justLastX === "1";
+  const autoScale = attr(el, "autoScale");
+  if (autoScale !== undefined) pr.autoScale = autoScale === "1";
+  const anchorEl = findChild(el, "xdr:anchor");
+  if (anchorEl) pr.anchor = parseAnchor(anchorEl);
+  return pr;
+}
+
+function parseAnchor(el: XmlElement): ObjectAnchorOptions {
+  return {
+    moveWithCells: attr(el, "moveWithCells") === "1",
+    sizeWithCells: attr(el, "sizeWithCells") === "1",
+  };
+}
+
+// VML anchors use 0-based column/row; cell refs are 1-based uppercase letters + digits.
+function cellRefToVmlCoords(ref: string): { col: number; row: number } {
+  let i = 0;
+  while (i < ref.length && ref.charCodeAt(i) >= 65 && ref.charCodeAt(i) <= 90) i++;
+  let col = 0;
+  for (let j = 0; j < i; j++) col = col * 26 + (ref.charCodeAt(j) - 64);
+  return { col: col - 1, row: parseInt(ref.slice(i), 10) - 1 };
 }
 
 /** Build rich text (CT_Rst) XML from runs. */

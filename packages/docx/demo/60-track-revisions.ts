@@ -29,7 +29,7 @@ const paragraph = {
           author: "Firstname Lastname",
           date: "2020-10-06T09:00:00Z",
           id: 0,
-          text: "mark a text as an insertion ",
+          children: [{ text: "mark a text as an insertion " }],
         },
       },
       {
@@ -37,7 +37,7 @@ const paragraph = {
           author: "Firstname Lastname",
           date: "2020-10-06T09:00:00Z",
           id: 1,
-          text: "or a deletion.",
+          children: [{ text: "or a deletion." }],
         },
       },
     ],
@@ -59,7 +59,7 @@ const buffer = await generateDocument({
                 author: "Firstname Lastname",
                 date: "2020-10-06T09:05:00Z",
                 id: 0,
-                text: " with some extra text which was deleted",
+                children: [{ text: " with some extra text which was deleted" }],
               },
             },
             {
@@ -67,7 +67,7 @@ const buffer = await generateDocument({
                 author: "Firstname Lastname",
                 date: "2020-10-06T09:05:00Z",
                 id: 1,
-                text: " and new content",
+                children: [{ text: " and new content" }],
               },
             },
           ],
@@ -85,31 +85,39 @@ const buffer = await generateDocument({
               "This is a demo ",
               {
                 deletion: {
-                  break: 1,
-                  text: "in order",
-                  color: "ff0000",
-                  bold: true,
-                  size: 12,
-                  font: {
-                    name: "Garamond",
-                  },
-                  shading: {
-                    type: ShadingType.REVERSE_DIAGONAL_STRIPE,
-                    color: "00FFFF",
-                    fill: "FF0000",
-                  },
                   id: 2,
                   author: "Firstname Lastname",
                   date: "2020-10-06T09:00:00Z",
+                  children: [
+                    {
+                      break: 1,
+                      text: "in order",
+                      color: "ff0000",
+                      bold: true,
+                      size: 12,
+                      font: {
+                        name: "Garamond",
+                      },
+                      shading: {
+                        type: ShadingType.REVERSE_DIAGONAL_STRIPE,
+                        color: "00FFFF",
+                        fill: "FF0000",
+                      },
+                    },
+                  ],
                 },
               },
               {
                 insertion: {
-                  text: "to show how to ",
-                  bold: false,
                   id: 3,
                   author: "Firstname Lastname",
                   date: "2020-10-06T09:05:00Z",
+                  children: [
+                    {
+                      text: "to show how to ",
+                      bold: false,
+                    },
+                  ],
                 },
               },
               {
@@ -151,8 +159,7 @@ const buffer = await generateDocument({
                 },
                 {
                   insertion: {
-                    children: [" from ", PageNumber.TOTAL_PAGES],
-                    bold: true,
+                    children: [{ text: " from ", bold: true }, PageNumber.TOTAL_PAGES],
                     id: 5,
                     author: "Firstname Lastname",
                     date: "2020-10-06T09:05:00Z",

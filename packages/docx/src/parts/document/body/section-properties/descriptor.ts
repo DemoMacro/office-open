@@ -590,6 +590,21 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   if (Object.keys(headerGroup).length > 0) opts.headerWrapperGroup = headerGroup;
   if (Object.keys(footerGroup).length > 0) opts.footerWrapperGroup = footerGroup;
 
+  // Revision (w:sectPrChange) — symmetric with stringifySectionPropertiesChange
+  const sectPrChange = findChild(el, "w:sectPrChange");
+  if (sectPrChange) {
+    const rev: Record<string, unknown> = {};
+    const author = attr(sectPrChange, "w:author");
+    if (author) rev.author = author;
+    const revDate = attr(sectPrChange, "w:date");
+    if (revDate) rev.date = revDate;
+    const revId = attrNum(sectPrChange, "w:id");
+    if (revId !== undefined) rev.id = revId;
+    const innerSectPr = findChild(sectPrChange, "w:sectPr");
+    if (innerSectPr) Object.assign(rev, parseSectionPropertiesEl(innerSectPr));
+    if (Object.keys(rev).length > 0) opts.revision = rev;
+  }
+
   return opts as unknown as SectionPropertiesOptions;
 }
 

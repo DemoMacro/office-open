@@ -2,7 +2,7 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { commentsDesc } from "./comments";
+import { commentsDesc, vmlNotesDesc } from "./comments";
 import type { CommentsDocOptions } from "./comments";
 
 // ── Minimal context stubs ──
@@ -138,5 +138,49 @@ describe("commentsDesc round-trip", () => {
     const props1 = (runs[1] as { properties: Record<string, unknown> }).properties;
     expect(props1.underline).toBe("single");
     expect(props1.strike).toBe(true);
+  });
+
+  it("round-trips commentPr with properties and anchor", () => {
+    const opts: CommentsDocOptions = {
+      comments: [
+        {
+          cell: "A1",
+          author: "Alice",
+          text: "note",
+          commentPr: {
+            locked: false,
+            print: false,
+            textHAlign: "center",
+            anchor: { moveWithCells: true, sizeWithCells: false },
+          },
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const pr = result.comments![0].commentPr!;
+    expect(pr.locked).toBe(false);
+    expect(pr.print).toBe(false);
+    expect(pr.textHAlign).toBe("center");
+    expect(pr.anchor?.moveWithCells).toBe(true);
+    expect(pr.anchor?.sizeWithCells).toBe(false);
+  });
+});
+
+describe("vmlNotesDesc stringify multi-column cell refs", () => {
+  it("anchors AA1 and AB10 with correct 0-based column/row", () => {
+    const xml = vmlNotesDesc.stringify(
+      {
+        comments: [
+          { cell: "AA1", author: "A", text: "x" },
+          { cell: "AB10", author: "B", text: "y" },
+        ],
+      },
+      writeCtx,
+    )!;
+    // AA = col 26, AB = col 27 (0-based); rows are 1-based in refs → 0-based
+    expect(xml).toContain("<x:Column>26</x:Column>");
+    expect(xml).toContain("<x:Row>0</x:Row>");
+    expect(xml).toContain("<x:Column>27</x:Column>");
+    expect(xml).toContain("<x:Row>9</x:Row>");
   });
 });

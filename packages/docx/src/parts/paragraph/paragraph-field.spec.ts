@@ -41,13 +41,18 @@ describe("paragraph-properties field consistency", () => {
     expect(opts.cnfStyle).toBeUndefined();
   });
 
-  it("F3 — parse drops revision (w:pPrChange)", () => {
+  it("round-trips revision (w:pPrChange)", () => {
     const opts = parsePPr(
       `<w:pPrChange w:id="1" w:author="a" w:date="2024-01-01T00:00:00Z">` +
         `<w:pPr><w:jc w:val="left"/></w:pPr>` +
         `</w:pPrChange>`,
     );
-    expect(opts.revision).toBeUndefined();
+    expect(opts.revision).toEqual({
+      id: 1,
+      author: "a",
+      date: "2024-01-01T00:00:00Z",
+      alignment: "left",
+    });
   });
 
   it("declared F3 parse-loss matches the live parse gap (regression guard)", () => {
@@ -55,13 +60,7 @@ describe("paragraph-properties field consistency", () => {
     // field set above must be updated too — this keeps FIELD_SPECS honest.
     const report = diffTagSets(spec);
     // Order follows writeFields (textboxTightWrap precedes textDirection there).
-    expect(report.f3ParseLoss).toEqual([
-      "textboxTightWrap",
-      "textDirection",
-      "divId",
-      "cnfStyle",
-      "revision",
-    ]);
+    expect(report.f3ParseLoss).toEqual(["textboxTightWrap", "textDirection", "divId", "cnfStyle"]);
     expect(report.f1WriteLoss).toEqual([]);
     expect(report.f2WriteOnly).toEqual([]);
     expect(report.f5ParseOnly).toEqual([]);

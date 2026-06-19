@@ -68,8 +68,8 @@ export type ParagraphChild =
   | { commentRangeStart: number }
   | { commentRangeEnd: number }
   | { commentReference: number }
-  | { insertion: RunOptions & ChangedAttributesProperties }
-  | { deletion: RunOptions & ChangedAttributesProperties }
+  | { insertion: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
+  | { deletion: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   | {
       hyperlink: {
         link?: string;
@@ -103,8 +103,8 @@ export type ParagraphChild =
   | { moveToRangeStart: { id: number; name?: string; author?: string; date?: string } }
   | { moveToRangeEnd: number }
   // Move revision text runs
-  | { movedFrom: RunOptions & ChangedAttributesProperties }
-  | { movedTo: RunOptions & ChangedAttributesProperties }
+  | { movedFrom: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
+  | { movedTo: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   // Custom XML range markers (track changes)
   | { customXmlInsRangeStart: { id: number; author: string; date?: string } }
   | { customXmlInsRangeEnd: number }

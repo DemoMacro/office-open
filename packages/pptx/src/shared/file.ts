@@ -68,6 +68,7 @@ export interface SlideCommentOptions {
   y: number;
   initials?: string;
   date?: string;
+  modified?: boolean;
 }
 
 export interface SlideAnimation {

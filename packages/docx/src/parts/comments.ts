@@ -65,8 +65,12 @@ const COMMENTS_NS =
 function stringifyComment(opts: CommentOptions, ctx: BodyContext): string {
   const dateStr =
     typeof opts.date === "string" ? opts.date : (opts.date ?? new Date()).toISOString();
-  const attrs: string[] = [`w:id="${opts.id}"`, `w:date="${escapeAttr(dateStr)}"`];
-  if (opts.author !== undefined) attrs.push(`w:author="${escapeAttr(opts.author)}"`);
+  // w:author is XSD-required (CT_TrackChange); default to empty string when absent.
+  const attrs: string[] = [
+    `w:id="${opts.id}"`,
+    `w:author="${escapeAttr(opts.author ?? "")}"`,
+    `w:date="${escapeAttr(dateStr)}"`,
+  ];
   if (opts.initials !== undefined) attrs.push(`w:initials="${escapeAttr(opts.initials)}"`);
 
   const parts: string[] = [];
@@ -94,18 +98,18 @@ export const commentsDesc: CustomDescriptor<CommentsOptions, BodyContext> = {
   },
 
   parse(el, ctx) {
-    const comments: Record<string, unknown>[] = [];
+    const comments: CommentOptions[] = [];
     for (const child of el.elements ?? []) {
       if (child.name !== "w:comment") continue;
       const id = attrNum(child, "w:id");
       if (id === undefined) continue;
-      const comment: Record<string, unknown> = { id };
+      const comment: Partial<CommentOptions> = { id };
       const date = attr(child, "w:date");
       if (date) comment.date = date;
       const author = attr(child, "w:author");
-      if (author) comment.author = author;
+      if (author !== undefined) comment.author = author;
       const initials = attr(child, "w:initials");
-      if (initials) comment.initials = initials;
+      if (initials !== undefined) comment.initials = initials;
 
       const children: unknown[] = [];
       for (const sub of child.elements ?? []) {
@@ -114,8 +118,8 @@ export const commentsDesc: CustomDescriptor<CommentsOptions, BodyContext> = {
         }
       }
       comment.children = children;
-      comments.push(comment);
+      comments.push(comment as CommentOptions);
     }
-    return { children: comments } as unknown as CommentsOptions;
+    return { children: comments };
   },
 };

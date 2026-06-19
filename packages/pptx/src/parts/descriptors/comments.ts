@@ -59,10 +59,13 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
     for (const c of comments) {
       const attrs: string[] = [`authorId="${c.authorId}"`, `idx="${c.idx}"`];
       if (c.date != null) attrs.push(`dt="${escapeXml(c.date)}"`);
-      if (c.modified !== undefined) attrs.push(`mod="${c.modified ? 1 : 0}"`);
       parts.push(`<p:cm ${attrs.join(" ")}>`);
       parts.push(`<p:pos x="${c.x}" y="${c.y}"/>`);
       parts.push(`<p:text>${escapeXml(c.text)}</p:text>`);
+      // CT_ExtensionListModify.mod lives on <p:extLst>, not <p:cm>.
+      if (c.modified !== undefined) {
+        parts.push(`<p:extLst mod="${c.modified ? 1 : 0}"/>`);
+      }
       parts.push("</p:cm>");
     }
     parts.push("</p:cmLst>");
@@ -76,7 +79,6 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
       const authorId = attrNum(cm, "authorId") ?? 0;
       const idx = attrNum(cm, "idx") ?? 0;
       const date = attr(cm, "dt");
-      const modifiedAttr = attr(cm, "mod");
       const pos = findChild(cm, "p:pos");
       const x = pos ? (attrNum(pos, "x") ?? 0) : 0;
       const y = pos ? (attrNum(pos, "y") ?? 0) : 0;
@@ -84,7 +86,12 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
       const text = textEl ? (textOf(textEl) ?? "") : "";
       const entry: CommentEntry = { authorId, idx, x, y, text };
       if (date !== undefined) entry.date = date;
-      if (modifiedAttr !== undefined) entry.modified = modifiedAttr === "1";
+      // mod lives on <p:extLst> (CT_ExtensionListModify), not on <p:cm>.
+      const extLst = findChild(cm, "p:extLst");
+      if (extLst) {
+        const mod = attr(extLst, "mod");
+        if (mod !== undefined) entry.modified = mod === "1";
+      }
       comments.push(entry);
     }
     return comments as CommentEntry[];

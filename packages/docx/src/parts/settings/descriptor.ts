@@ -12,7 +12,6 @@ import { derivePasswordHash } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, findChild, stringify } from "@office-open/xml";
 
-import type { FeaturesOptions } from "../core-properties";
 import type {
   SettingsOptions,
   DocumentProtectionOptions,
@@ -714,21 +713,13 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (val) opts.defaultTabStop = parseInt(val, 10);
     }
 
-    // features.trackRevisions → w:trackRevisions (onOff: read w:val)
+    // w:trackRevisions → opts.trackRevisions (top-level, matches generate)
     const trackRevEl = findChild(el, "w:trackRevisions");
-    if (trackRevEl) {
-      const features: FeaturesOptions = (opts.features as FeaturesOptions | undefined) ?? {};
-      features.trackRevisions = attrBool(trackRevEl, "w:val") ?? true;
-      opts.features = features;
-    }
+    if (trackRevEl) opts.trackRevisions = attrBool(trackRevEl, "w:val") ?? true;
 
-    // features.updateFields → w:updateFields (onOff: read w:val)
+    // w:updateFields → opts.updateFields (top-level, matches generate)
     const updateFieldsEl = findChild(el, "w:updateFields");
-    if (updateFieldsEl) {
-      const features: FeaturesOptions = (opts.features as FeaturesOptions | undefined) ?? {};
-      features.updateFields = attrBool(updateFieldsEl, "w:val") ?? true;
-      opts.features = features;
-    }
+    if (updateFieldsEl) opts.updateFields = attrBool(updateFieldsEl, "w:val") ?? true;
 
     // compatibilityModeVersion → w:compat/w:compatSetting
     const compatEl = findChild(el, "w:compat");
@@ -1015,11 +1006,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
         const formatting = attr(docProtEl, "w:formatting");
         if (formatting !== undefined) prot.formatting = formatting === "1" || formatting === "true";
       }
-      if (Object.keys(prot).length > 0) {
-        const features: FeaturesOptions = (opts.features as FeaturesOptions | undefined) ?? {};
-        features.documentProtection = prot;
-        opts.features = features;
-      }
+      if (Object.keys(prot).length > 0) opts.documentProtection = prot;
     }
 
     // doNotTrackMoves → w:doNotTrackMoves (onOff: read w:val)

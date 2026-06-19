@@ -307,6 +307,7 @@ function buildCommentData(slides: SlideOptions[]): {
         x: c.x,
         y: c.y,
         text: c.text,
+        modified: c.modified,
       });
     }
 

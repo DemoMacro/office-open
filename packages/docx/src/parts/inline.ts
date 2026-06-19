@@ -43,6 +43,43 @@ import { stringifyParagraphProperties, stringifyRunProperties } from "./paragrap
 
 // ── Run ──
 
+/** Serialize a deleted run: rPr + delText (or field delInstrText). */
+function stringifyDeletedRun(c: RunOptions | string): string {
+  const opts = typeof c === "string" ? { text: c } : c;
+  const parts: string[] = [];
+  const rPr = stringifyRunProperties(opts);
+  if (rPr) parts.push(rPr);
+  if (opts.break) {
+    for (let i = 0; i < opts.break; i++) parts.push("<w:br/>");
+  }
+  const fieldMap: Record<string, string> = {
+    CURRENT: "PAGE",
+    TOTAL_PAGES: "NUMPAGES",
+    TOTAL_PAGES_IN_SECTION: "SECTIONPAGES",
+  };
+  if (opts.children) {
+    for (const cc of opts.children) {
+      if (typeof cc === "string") {
+        // Page number fields use delInstrText instead of instrText
+        const instrText = fieldMap[cc];
+        if (instrText) {
+          parts.push(
+            '<w:fldChar w:fldCharType="begin"/>' +
+              `<w:delInstrText xml:space="preserve">${instrText}</w:delInstrText>` +
+              '<w:fldChar w:fldCharType="separate"/>' +
+              '<w:fldChar w:fldCharType="end"/>',
+          );
+        } else {
+          parts.push(`<w:delText xml:space="preserve">${escapeXml(cc)}</w:delText>`);
+        }
+      }
+    }
+  } else if (opts.text) {
+    parts.push(`<w:delText xml:space="preserve">${escapeXml(String(opts.text))}</w:delText>`);
+  }
+  return `<w:r>${parts.join("")}</w:r>`;
+}
+
 export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   const parts: string[] = [];
 
@@ -495,55 +532,20 @@ export function stringifyChildDispatch(
     return stringifyMath(children);
   }
 
-  // Inserted text run — pure function
+  // Inserted text run(s) — w:ins wraps one or more runs (CT_RunTrackChange)
   if ("insertion" in child) {
-    const opts = child.insertion;
-    const { id, author, date, ...runOpts } = opts;
-    const runXml = stringifyRunInline(runOpts, ctx);
-    return `<w:ins w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${runXml}</w:ins>`;
+    const { id, author, date, children } = child.insertion;
+    const body = children
+      .map((c) => stringifyRunInline(typeof c === "string" ? { text: c } : c, ctx))
+      .join("");
+    return `<w:ins w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:ins>`;
   }
 
-  // Deleted text run — pure function
+  // Deleted text run(s) — w:del wraps one or more runs (delText content)
   if ("deletion" in child) {
-    const opts = child.deletion;
-    const { id, author, date, ...runOpts } = opts;
-
-    const parts: string[] = [];
-    const rPr = stringifyRunProperties(runOpts);
-    if (rPr) parts.push(rPr);
-
-    if (runOpts.break) {
-      for (let i = 0; i < runOpts.break; i++) parts.push("<w:br/>");
-    }
-
-    if (runOpts.children) {
-      for (const c of runOpts.children) {
-        if (typeof c === "string") {
-          // Page number fields use delInstrText instead of instrText
-          const fieldMap: Record<string, string> = {
-            CURRENT: "PAGE",
-            TOTAL_PAGES: "NUMPAGES",
-            TOTAL_PAGES_IN_SECTION: "SECTIONPAGES",
-          };
-          const instrText = fieldMap[c];
-          if (instrText) {
-            parts.push(
-              '<w:fldChar w:fldCharType="begin"/>' +
-                `<w:delInstrText xml:space="preserve">${instrText}</w:delInstrText>` +
-                '<w:fldChar w:fldCharType="separate"/>' +
-                '<w:fldChar w:fldCharType="end"/>',
-            );
-          } else {
-            parts.push(`<w:delText xml:space="preserve">${escapeXml(c)}</w:delText>`);
-          }
-        }
-      }
-    } else if (runOpts.text) {
-      parts.push(`<w:delText xml:space="preserve">${escapeXml(String(runOpts.text))}</w:delText>`);
-    }
-
-    const runBody = parts.join("");
-    return `<w:del w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}"><w:r>${runBody}</w:r></w:del>`;
+    const { id, author, date, children } = child.deletion;
+    const body = children.map((c) => stringifyDeletedRun(c)).join("");
+    return `<w:del w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:del>`;
   }
 
   // Hyperlink — side effect: relationship registration
@@ -626,16 +628,18 @@ export function stringifyChildDispatch(
 
   // ── Move revision text runs ──
   if ("movedFrom" in child) {
-    const opts = child.movedFrom;
-    const { id, author, date, ...runOpts } = opts;
-    const runXml = stringifyRunInline(runOpts, ctx);
-    return `<w:moveFrom w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${runXml}</w:moveFrom>`;
+    const { id, author, date, children } = child.movedFrom;
+    const body = children
+      .map((c) => stringifyRunInline(typeof c === "string" ? { text: c } : c, ctx))
+      .join("");
+    return `<w:moveFrom w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveFrom>`;
   }
   if ("movedTo" in child) {
-    const opts = child.movedTo;
-    const { id, author, date, ...runOpts } = opts;
-    const runXml = stringifyRunInline(runOpts, ctx);
-    return `<w:moveTo w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${runXml}</w:moveTo>`;
+    const { id, author, date, children } = child.movedTo;
+    const body = children
+      .map((c) => stringifyRunInline(typeof c === "string" ? { text: c } : c, ctx))
+      .join("");
+    return `<w:moveTo w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveTo>`;
   }
 
   // ── Custom XML range markers (track changes) ──

@@ -617,7 +617,25 @@ export function parseParagraphProperties(
           // no pStyle in the source (the list formatting lives in numbering);
           // injecting ListParagraph would reference a style that round-tripped
           // styles.xml may not define → dangling reference Word rejects.
-          opts.numbering = { reference: `list_${numId}`, level, custom: true };
+          const numberingOpts: {
+            reference: string;
+            level: number;
+            custom: boolean;
+            numberingChange?: { original: string; id: string; author: string; date?: string };
+          } = { reference: `list_${numId}`, level, custom: true };
+          // w:numberingChange (CT_TrackChangeNumbering) — child of w:numPr
+          const numberingChangeEl = findChild(numPr, "w:numberingChange");
+          if (numberingChangeEl) {
+            const nc: { original: string; id: string; author: string; date?: string } = {
+              original: attr(numberingChangeEl, "w:original") ?? "",
+              id: attr(numberingChangeEl, "w:id") ?? "",
+              author: attr(numberingChangeEl, "w:author") ?? "",
+            };
+            const ncDate = attr(numberingChangeEl, "w:date");
+            if (ncDate) nc.date = ncDate;
+            numberingOpts.numberingChange = nc;
+          }
+          opts.numbering = numberingOpts;
         } else {
           opts.bullet = { level };
         }
@@ -786,6 +804,21 @@ export function parseParagraphProperties(
     if (Object.keys(frame).length > 0) opts.frame = frame;
   }
 
+  // Revision (w:pPrChange) — symmetric with stringifyParagraphProperties
+  const pPrChange = findChild(el, "w:pPrChange");
+  if (pPrChange) {
+    const rev: Record<string, unknown> = {};
+    const author = attr(pPrChange, "w:author");
+    if (author) rev.author = author;
+    const revDate = attr(pPrChange, "w:date");
+    if (revDate) rev.date = revDate;
+    const revId = attrNum(pPrChange, "w:id");
+    if (revId !== undefined) rev.id = revId;
+    const innerPPr = findChild(pPrChange, "w:pPr");
+    if (innerPPr) Object.assign(rev, parseParagraphProperties(innerPPr, ctx));
+    if (Object.keys(rev).length > 0) opts.revision = rev;
+  }
+
   return opts;
 }
 
@@ -796,6 +829,20 @@ export function parseParagraphProperties(
  * (the runs between the `separate` and `end` fldChars). Only `<w:t>` is read —
  * `<w:tab>`/`<w:br>` in results are ignored as rare for user-entered text.
  */
+/** Parse the w:r children of a track-change wrapper (w:ins/w:moveFrom/w:moveTo). */
+function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): RunOptions[] {
+  const runs: RunOptions[] = [];
+  for (const sub of el.elements ?? []) {
+    if (sub.name !== "w:r") continue;
+    const parsed = parseRun(sub, ctx);
+    const runOpts = parsedRunToOptions(parsed);
+    if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
+      runs.push(runOpts as RunOptions);
+    }
+  }
+  return runs;
+}
+
 function collectRunText(el: Element): string {
   let text = "";
   for (const c of el.elements ?? []) {
@@ -1152,97 +1199,76 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         break;
       }
       case "w:ins": {
-        const insRun = findChild(child, "w:r");
-        if (insRun) {
-          const parsed = parseRun(insRun, ctx);
-          const runOpts = parsedRunToOptions(parsed);
-          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
-            childList.push({
-              insertion: {
-                id: attrNum(child, "w:id") ?? 0,
-                author: attr(child, "w:author") ?? "",
-                date: attr(child, "w:date") ?? "",
-                ...(runOpts as Record<string, unknown>),
-              },
-            });
-          }
+        const children = parseTrackChangeRuns(child, ctx);
+        if (children.length > 0) {
+          childList.push({
+            insertion: {
+              id: attrNum(child, "w:id") ?? 0,
+              author: attr(child, "w:author") ?? "",
+              date: attr(child, "w:date") ?? "",
+              children,
+            },
+          });
         }
         break;
       }
       case "w:del": {
         // Deleted page-number fields emit w:delInstrText (not w:instrText);
-        // reverse inline.ts's field map so they round-trip as a children
-        // placeholder instead of being dropped.
-        let delFieldPlaceholder: string | undefined;
+        // reverse inline.ts's field map so they round-trip as placeholder children.
+        const children: (RunOptions | string)[] = [];
         for (const sub of child.elements ?? []) {
           if (sub.name !== "w:r") continue;
           const delInstrEl = findChild(sub, "w:delInstrText");
           if (delInstrEl) {
-            delFieldPlaceholder = DELETED_PAGE_FIELD[(textOf(delInstrEl) ?? "").trim()];
-            if (delFieldPlaceholder) break;
+            const placeholder = DELETED_PAGE_FIELD[(textOf(delInstrEl) ?? "").trim()];
+            if (placeholder) {
+              children.push(placeholder);
+              continue;
+            }
+          }
+          const parsed = parseRun(sub, ctx);
+          const runOpts = parsedRunToOptions(parsed);
+          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
+            children.push(runOpts as RunOptions);
           }
         }
-        if (delFieldPlaceholder) {
+        if (children.length > 0) {
           childList.push({
             deletion: {
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
               date: attr(child, "w:date") ?? "",
-              children: [delFieldPlaceholder],
+              children,
             },
           });
-          break;
-        }
-        const delRun = findChild(child, "w:r");
-        if (delRun) {
-          const parsed = parseRun(delRun, ctx);
-          const runOpts = parsedRunToOptions(parsed);
-          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
-            childList.push({
-              deletion: {
-                id: attrNum(child, "w:id") ?? 0,
-                author: attr(child, "w:author") ?? "",
-                date: attr(child, "w:date") ?? "",
-                ...(runOpts as Record<string, unknown>),
-              },
-            });
-          }
         }
         break;
       }
       case "w:moveFrom": {
-        const runEl = findChild(child, "w:r");
-        if (runEl) {
-          const parsed = parseRun(runEl, ctx);
-          const runOpts = parsedRunToOptions(parsed);
-          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
-            childList.push({
-              movedFrom: {
-                id: attrNum(child, "w:id") ?? 0,
-                author: attr(child, "w:author") ?? "",
-                date: attr(child, "w:date") ?? "",
-                ...(runOpts as Record<string, unknown>),
-              },
-            });
-          }
+        const children = parseTrackChangeRuns(child, ctx);
+        if (children.length > 0) {
+          childList.push({
+            movedFrom: {
+              id: attrNum(child, "w:id") ?? 0,
+              author: attr(child, "w:author") ?? "",
+              date: attr(child, "w:date") ?? "",
+              children,
+            },
+          });
         }
         break;
       }
       case "w:moveTo": {
-        const runEl = findChild(child, "w:r");
-        if (runEl) {
-          const parsed = parseRun(runEl, ctx);
-          const runOpts = parsedRunToOptions(parsed);
-          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
-            childList.push({
-              movedTo: {
-                id: attrNum(child, "w:id") ?? 0,
-                author: attr(child, "w:author") ?? "",
-                date: attr(child, "w:date") ?? "",
-                ...(runOpts as Record<string, unknown>),
-              },
-            });
-          }
+        const children = parseTrackChangeRuns(child, ctx);
+        if (children.length > 0) {
+          childList.push({
+            movedTo: {
+              id: attrNum(child, "w:id") ?? 0,
+              author: attr(child, "w:author") ?? "",
+              date: attr(child, "w:date") ?? "",
+              children,
+            },
+          });
         }
         break;
       }

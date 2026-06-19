@@ -29,7 +29,12 @@ import type { SlideChild } from "./parts/slide/slide-child";
 export { parseArchive };
 
 import type { SlideLayoutType } from "./parts/slide-layout";
-import type { MasterDefinition, SlideOptions, PresentationOptions } from "./shared/file";
+import type {
+  MasterDefinition,
+  SlideOptions,
+  SlideCommentOptions,
+  PresentationOptions,
+} from "./shared/file";
 
 /**
  * All part paths extracted from the PPTX package.
@@ -612,20 +617,20 @@ export function parsePresentation(data: DataType): PresentationOptions {
 
       const parsedComments = slideCommentsDesc.parse(commentsEl, readCtx);
       if (parsedComments.length > 0) {
-        const comments: Record<string, unknown>[] = [];
+        const comments: Partial<SlideCommentOptions>[] = [];
         for (const cm of parsedComments) {
-          const entry: Record<string, unknown> = {};
-          entry.authorId = cm.authorId;
-          entry.idx = cm.idx;
-          entry.x = cm.x;
-          entry.y = cm.y;
+          const entry: Partial<SlideCommentOptions> = { x: cm.x, y: cm.y };
           if (cm.text) entry.text = cm.text;
           if (cm.date) entry.date = cm.date;
+          if (cm.modified !== undefined) entry.modified = cm.modified;
           const author = commentAuthors.get(cm.authorId);
-          if (author) entry.author = author.name;
+          if (author) {
+            entry.author = author.name;
+            if (author.initials) entry.initials = author.initials;
+          }
           comments.push(entry);
         }
-        if (comments.length > 0) slideOpts.comments = comments;
+        if (comments.length > 0) slideOpts.comments = comments as SlideCommentOptions[];
       }
       break;
     }

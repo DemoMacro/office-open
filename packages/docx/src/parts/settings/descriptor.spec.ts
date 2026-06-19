@@ -17,7 +17,6 @@ const readCtx = {
 } as unknown as ReadContext;
 
 interface SettingsParseResult extends SettingsOptions {
-  features?: { trackRevisions?: boolean; updateFields?: boolean };
   compatabilityModeVersion?: number;
   evenAndOddHeaderAndFooters?: boolean;
 }
@@ -59,14 +58,12 @@ describe("settingsDesc round-trip", () => {
 
   it("round-trips trackRevisions", () => {
     const result = roundTrip({ trackRevisions: true });
-    const features = result.features!;
-    expect(features.trackRevisions).toBe(true);
+    expect(result.trackRevisions).toBe(true);
   });
 
   it("round-trips updateFields", () => {
     const result = roundTrip({ updateFields: true });
-    const features = result.features!;
-    expect(features.updateFields).toBe(true);
+    expect(result.updateFields).toBe(true);
   });
 
   it("round-trips compatibilityModeVersion via compatSetting", () => {
@@ -147,8 +144,7 @@ describe("settingsDesc round-trip", () => {
     const zoom = result.zoom!;
     expect(zoom.percent).toBe(100);
     expect(result.defaultTabStop).toBe(420);
-    const features = result.features!;
-    expect(features.trackRevisions).toBe(true);
+    expect(result.trackRevisions).toBe(true);
   });
 
   it("round-trips empty settings", () => {

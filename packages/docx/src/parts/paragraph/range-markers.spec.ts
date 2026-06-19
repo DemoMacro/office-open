@@ -100,7 +100,12 @@ describe("move revision runs parse", () => {
         `<w:moveFrom w:id="1" w:author="A" w:date="2020"><w:r><w:t>moved text</w:t></w:r></w:moveFrom>`,
       ),
     );
-    expect(cs[0].movedFrom).toMatchObject({ id: 1, author: "A", date: "2020", text: "moved text" });
+    expect(cs[0].movedFrom).toMatchObject({
+      id: 1,
+      author: "A",
+      date: "2020",
+      children: [{ text: "moved text" }],
+    });
   });
 
   it("parses movedTo (w:moveTo wrapping a run)", () => {
@@ -109,6 +114,11 @@ describe("move revision runs parse", () => {
         `<w:moveTo w:id="2" w:author="B" w:date="2021"><w:r><w:t>target</w:t></w:r></w:moveTo>`,
       ),
     );
-    expect(cs[0].movedTo).toMatchObject({ id: 2, author: "B", date: "2021", text: "target" });
+    expect(cs[0].movedTo).toMatchObject({
+      id: 2,
+      author: "B",
+      date: "2021",
+      children: [{ text: "target" }],
+    });
   });
 });
