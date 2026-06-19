@@ -4,14 +4,17 @@
  * @module
  */
 
+import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+
 /**
  * Options for creating a single comment.
  */
 export interface CommentOptions {
   /** Unique identifier for the comment */
   id: number;
-  /** Content of the comment (typically paragraphs) */
-  children: unknown[];
+  /** Content of the comment (paragraphs) */
+  children: (string | ParagraphOptions)[];
+
   /** Initials of the comment author */
   initials?: string;
   /** Name of the comment author */

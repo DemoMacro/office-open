@@ -75,7 +75,7 @@ function stringifyComment(opts: CommentOptions, ctx: BodyContext): string {
 
   const parts: string[] = [];
   for (const child of opts.children) {
-    parts.push(stringifyParagraphInline(child as string | ParagraphOptions, ctx));
+    parts.push(stringifyParagraphInline(child, ctx));
   }
 
   return `<w:comment ${attrs.join(" ")}>${parts.join("")}</w:comment>`;
@@ -111,7 +111,7 @@ export const commentsDesc: CustomDescriptor<CommentsOptions, BodyContext> = {
       const initials = attr(child, "w:initials");
       if (initials !== undefined) comment.initials = initials;
 
-      const children: unknown[] = [];
+      const children: (string | ParagraphOptions)[] = [];
       for (const sub of child.elements ?? []) {
         if (sub.name === "w:p") {
           children.push(parseParagraph(sub, ctx as DocxReadContext));
