@@ -102,6 +102,24 @@ export class SharedStrings {
     return idx;
   }
 
+  /**
+   * Bulk-load parsed template entries, preserving their original indices so
+   * existing cell references stay valid. Plain strings populate the dedup map
+   * (first occurrence wins); rich-text entries are appended unchanged.
+   *
+   * Used by patch to extend an existing workbook's shared strings, so appended
+   * worksheets continue registering strings at the correct offset.
+   */
+  public loadEntries(entries: SharedStringsDocOptions["entries"]): void {
+    for (const entry of entries) {
+      const idx = this.entries.length;
+      this.entries.push(entry);
+      if (typeof entry === "string" && !this.indexMap.has(entry)) {
+        this.indexMap.set(entry, idx);
+      }
+    }
+  }
+
   public get count(): number {
     return this.entries.length;
   }

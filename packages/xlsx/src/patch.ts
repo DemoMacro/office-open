@@ -13,7 +13,9 @@
  */
 import {
   OoxmlMimeType,
+  appendRelationship,
   applyCorePropertiesOverride,
+  getNextRelationshipIndex,
   strFromU8,
   toJson,
   unzipSync,
@@ -26,8 +28,12 @@ import type {
   OutputType,
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
+import type { ReadContext } from "@office-open/core/descriptor";
 import { js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { SharedStrings, sharedStringsDesc } from "@parts/shared-strings";
+import { buildWorksheetXml } from "@parts/worksheet";
+import type { WorksheetOptions } from "@parts/worksheet";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
@@ -47,11 +53,39 @@ export interface PatchWorkbookOptions<
   findReplace?: Readonly<Record<string, ScalarValue>>;
   /** Core-properties metadata override (merged over the existing docProps/core.xml). */
   coreProperties?: Partial<CorePropertiesOptions>;
+  /**
+   * Worksheet collection edits. The shared-strings table is rebuilt from the
+   * template first, so appended/replaced worksheets continue indexing strings
+   * at the correct offset. Cell styles are not supported on appended rows —
+   * reference only styles already present in the template.
+   */
+  worksheets?: {
+    /** Replace worksheets keyed by sheet name (as declared in workbook.xml). */
+    replace?: Readonly<Record<string, WorksheetOptions>>;
+    /** Append worksheets after the last existing sheet. */
+    append?: Readonly<WorksheetOptions[]>;
+  };
 }
 
 // Excel serial-date epoch: 1899-12-30 accounts for the spurious 1900 leap year.
 const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30);
 const MS_PER_DAY = 86_400_000;
+
+const WORKSHEET_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
+const WORKSHEET_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
+
+/**
+ * sharedStringsDesc.parse ignores its context, but its signature requires a
+ * {@link ReadContext}. This stub satisfies the type without pulling in parse
+ * machinery the patch path does not need.
+ */
+const STUB_READ_CTX: ReadContext = {
+  resolveRelationship: () => undefined,
+  getPart: () => undefined,
+  getRaw: () => undefined,
+};
 
 const toExcelSerial = (date: Date): number => (date.getTime() - EXCEL_EPOCH_MS) / MS_PER_DAY;
 
@@ -73,6 +107,7 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
   placeholders,
   findReplace,
   coreProperties,
+  worksheets,
   placeholderDelimiters = { start: "{{", end: "}}" } as const,
 }: PatchWorkbookOptions<T>): Promise<OutputByType[T]> => {
   const { start, end } = placeholderDelimiters;
@@ -130,6 +165,23 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
     patchWorksheetInlineStrings(ws, patchMap);
     // Pass C: print headers/footers (oddHeader/oddFooter/… literal text)
     patchHeaderFooter(ws, patchMap);
+  }
+
+  // Worksheet collection edits — rebuild shared strings first so appended/
+  // replaced worksheets continue indexing at the right offset, then serialize.
+  if (worksheets) {
+    const sharedStrings = rebuildSharedStrings(xmlMap);
+    if (worksheets.replace) {
+      for (const [name, wsOpts] of Object.entries(worksheets.replace)) {
+        replaceWorksheetInMap(xmlMap, name, wsOpts, sharedStrings);
+      }
+    }
+    if (worksheets.append) {
+      for (const wsOpts of worksheets.append) {
+        appendWorksheetToMap(xmlMap, wsOpts, sharedStrings);
+      }
+    }
+    rewriteSharedStrings(xmlMap, sharedStrings);
   }
 
   // Rebuild ZIP
@@ -351,4 +403,158 @@ function localName(el: Element): string {
 
 function findLocalChild(parent: Element, name: string): Element | undefined {
   return (parent.elements ?? []).find((el) => localName(el) === name);
+}
+
+// ── Worksheet collection edits (append / replace) ──
+
+/** Unwrap the document element: a parsed part is `{ declaration, elements: [<root>] }`. */
+function rootOf(doc: Element | undefined): Element | undefined {
+  return doc && (doc.name ? doc : doc.elements?.[0]);
+}
+
+/** Build a bare element node with the given attributes. */
+function makeElement(name: string, attributes: Record<string, string> = {}): Element {
+  return { type: "element", name, attributes, elements: [] };
+}
+
+/** Empty `<Relationships>` part (wrapped for js2xml serialization). */
+function createRelationshipFile(): Element {
+  return {
+    declaration: { attributes: { encoding: "UTF-8", standalone: "yes", version: "1.0" } },
+    elements: [
+      {
+        attributes: { xmlns: "http://schemas.openxmlformats.org/package/2006/relationships" },
+        elements: [],
+        name: "Relationships",
+        type: "element",
+      },
+    ],
+  };
+}
+
+/** Next 1-based worksheet file number given existing worksheet parts. */
+function nextWorksheetNumber(xmlMap: Map<string, Element>): number {
+  let maxN = 0;
+  for (const key of xmlMap.keys()) {
+    const m = key.match(/^xl\/worksheets\/sheet(\d+)\.xml$/);
+    if (m) maxN = Math.max(maxN, Number(m[1]));
+  }
+  return maxN + 1;
+}
+
+/** Largest numeric `sheetId` among existing `<sheet>` entries. */
+function maxSheetId(sheetsEl: Element | undefined): number {
+  let maxId = 0;
+  for (const child of sheetsEl?.elements ?? []) {
+    if (localName(child) !== "sheet") continue;
+    const id = Number(child.attributes?.["sheetId"]);
+    if (Number.isFinite(id)) maxId = Math.max(maxId, id);
+  }
+  return maxId;
+}
+
+/** Resolve a relationship `rId` to its Target via a rels part root. */
+function resolveRelTarget(relsRoot: Element | undefined, rId: string): string | undefined {
+  for (const child of relsRoot?.elements ?? []) {
+    if (localName(child) === "Relationship" && String(child.attributes?.["Id"]) === rId) {
+      const target = child.attributes?.["Target"];
+      return target !== undefined ? String(target) : undefined;
+    }
+  }
+  return undefined;
+}
+
+/** Rebuild the shared-strings table from the template so new sheets extend it. */
+function rebuildSharedStrings(xmlMap: Map<string, Element>): SharedStrings {
+  const ss = new SharedStrings();
+  const sstRoot = rootOf(xmlMap.get("xl/sharedStrings.xml"));
+  if (sstRoot) {
+    ss.loadEntries(sharedStringsDesc.parse(sstRoot, STUB_READ_CTX).entries);
+  }
+  return ss;
+}
+
+/** Re-serialize the shared-strings part (called after worksheets are built). */
+function rewriteSharedStrings(xmlMap: Map<string, Element>, ss: SharedStrings): void {
+  if (ss.count === 0) return;
+  xmlMap.set(
+    "xl/sharedStrings.xml",
+    toJson(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${ss.serialize()}`),
+  );
+}
+
+/**
+ * Append a worksheet: serialize it (registering strings into the shared-strings
+ * table), then wire workbook `<sheets>` + workbook rels + content types.
+ */
+function appendWorksheetToMap(
+  xmlMap: Map<string, Element>,
+  wsOpts: WorksheetOptions,
+  sharedStrings: SharedStrings,
+): void {
+  const newN = nextWorksheetNumber(xmlMap);
+  const sheetPath = `xl/worksheets/sheet${newN}.xml`;
+  const sheetName = wsOpts.name ?? `Sheet${newN}`;
+
+  // Worksheet part (no XML declaration — matches generated worksheet parts)
+  xmlMap.set(sheetPath, toJson(buildWorksheetXml(wsOpts, { sharedStrings })));
+
+  // workbook.xml <sheets> + workbook.xml.rels (the new rId ties them)
+  const wbRoot = rootOf(xmlMap.get("xl/workbook.xml"));
+  const wbSheets = wbRoot && findLocalChild(wbRoot, "sheets");
+  const wbRels = xmlMap.get("xl/_rels/workbook.xml.rels") ?? createRelationshipFile();
+  xmlMap.set("xl/_rels/workbook.xml.rels", wbRels);
+  const newRId = getNextRelationshipIndex(wbRels);
+
+  if (wbSheets) {
+    const els = wbSheets.elements ?? (wbSheets.elements = []);
+    els.push(
+      makeElement("sheet", {
+        name: sheetName,
+        sheetId: String(maxSheetId(wbSheets) + 1),
+        "r:id": `rId${newRId}`,
+      }),
+    );
+  }
+  appendRelationship(wbRels, newRId, WORKSHEET_REL_TYPE, `worksheets/sheet${newN}.xml`);
+
+  // [Content_Types].xml Override
+  const typesRoot = rootOf(xmlMap.get("[Content_Types].xml"));
+  if (typesRoot) {
+    const els = typesRoot.elements ?? (typesRoot.elements = []);
+    els.push(
+      makeElement("Override", {
+        PartName: `/${sheetPath}`,
+        ContentType: WORKSHEET_CONTENT_TYPE,
+      }),
+    );
+  }
+}
+
+/**
+ * Replace a worksheet by name: resolve the name to its part via workbook rels,
+ * then rewrite only that part's content. Sheet identity, rId, and content types
+ * are unchanged.
+ */
+function replaceWorksheetInMap(
+  xmlMap: Map<string, Element>,
+  name: string,
+  wsOpts: WorksheetOptions,
+  sharedStrings: SharedStrings,
+): void {
+  const wbRoot = rootOf(xmlMap.get("xl/workbook.xml"));
+  const wbSheets = wbRoot && findLocalChild(wbRoot, "sheets");
+  const sheetEls = (wbSheets?.elements ?? []).filter((e) => localName(e) === "sheet");
+  const target = sheetEls.find((e) => String(e.attributes?.["name"]) === name);
+  if (!target?.attributes?.["r:id"]) {
+    throw new Error(`patchWorkbook: no worksheet named "${name}" to replace`);
+  }
+  const relTarget = resolveRelTarget(
+    rootOf(xmlMap.get("xl/_rels/workbook.xml.rels")),
+    String(target.attributes["r:id"]),
+  );
+  if (!relTarget) {
+    throw new Error(`patchWorkbook: worksheet "${name}" relationship target not found`);
+  }
+  xmlMap.set(`xl/${relTarget}`, toJson(buildWorksheetXml(wsOpts, { sharedStrings })));
 }

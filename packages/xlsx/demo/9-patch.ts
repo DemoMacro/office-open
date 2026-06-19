@@ -1,8 +1,8 @@
-import { writeFileSync, readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 import { generateWorkbook, patchWorkbook } from "@office-open/xlsx";
 
-// Step 1: Create a template workbook with placeholders
+// Step 1: Create a template workbook with placeholders and two worksheets
 const buffer = await generateWorkbook({
   title: "Template",
   worksheets: [
@@ -15,12 +15,19 @@ const buffer = await generateWorkbook({
         { cells: [{ value: "Date" }, { value: "{{date}}" }] },
       ],
     },
+    {
+      name: "Notes",
+      rows: [{ cells: [{ value: "Original notes" }] }],
+    },
   ],
 });
 
 writeFileSync("My Workbook.xlsx", buffer);
 
-// Step 2: Patch the placeholders
+// Step 2: Patch placeholders, replace the "Notes" sheet, and append a "Summary".
+//          worksheets.replace keys are sheet names (as declared in workbook.xml);
+//          worksheets.append adds sheets after the last existing one. The
+//          shared-strings table is rebuilt so indexing continues correctly.
 const patched = await patchWorkbook({
   outputType: "uint8array",
   data: readFileSync("My Workbook.xlsx"),
@@ -29,6 +36,12 @@ const patched = await patchWorkbook({
     customer: "Acme Corp",
     amount: 1500, // number → typed numeric cell (t="n")
     date: new Date("2024-12-31"), // Date → numeric serial cell
+  },
+  worksheets: {
+    replace: {
+      Notes: { rows: [{ cells: [{ value: "Replaced notes" }] }] },
+    },
+    append: [{ name: "Summary", rows: [{ cells: [{ value: "Appended summary sheet" }] }] }],
   },
 });
 
