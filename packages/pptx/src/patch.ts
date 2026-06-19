@@ -19,13 +19,16 @@ import type {
   OutputType,
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
+import type { ReadContext } from "@office-open/core/descriptor";
 import { findChild, js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import type { AuthorEntry, CommentEntry } from "@parts/comment";
+import { commentAuthorsDesc, slideCommentsDesc } from "@parts/descriptors/comments";
 import { textRunDesc } from "@parts/descriptors/text";
-import type { SlideOptions } from "@shared/file";
+import type { SlideCommentOptions, SlideOptions } from "@shared/file";
 import type { RunOptions } from "@shared/shape/paragraph/run";
 
-import { stringifySlide } from "./compiler";
+import { buildCommentData, stringifySlide } from "./compiler";
 import { PptxWriteContext } from "./context";
 
 /** Reusable TextEncoder (stateless, safe to share). */
@@ -45,6 +48,14 @@ const SLIDE_PART_CONTENT_TYPE =
 const SLIDE_REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide";
 const SLIDE_LAYOUT_REL_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout";
+const COMMENTS_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
+const COMMENT_AUTHORS_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors";
+const COMMENTS_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.presentationml.comments+xml";
+const COMMENT_AUTHORS_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.presentationml.commentAuthors+xml";
 
 /**
  * Inline run-level patch content. Reuses the generate vocabulary: a
@@ -72,6 +83,12 @@ export interface PatchPresentationOptions<
     /** Append slides after the last existing slide. */
     append?: Readonly<SlideOptions[]>;
   };
+  /**
+   * Comments to append per slide, keyed by 0-based slide index (sldIdLst order).
+   * Authors are merged into commentAuthors.xml (deduped by name, ids continued);
+   * per-slide comments are merged into ppt/comments/commentN.xml.
+   */
+  comments?: Readonly<Record<number, SlideCommentOptions[]>>;
   keepOriginalStyles?: boolean;
 }
 
@@ -220,6 +237,25 @@ const appendSlideToMap = (
   xmlMap.set(`ppt/slides/_rels/slide${newN}.xml.rels`, slideRels);
 };
 
+/** Resolve a 0-based sldIdLst index to its slide part path (ppt/slides/slideN.xml). */
+const resolveSlidePath = (xmlMap: Map<string, Element>, index: number): string => {
+  const presRoot = rootElement(xmlMap.get("ppt/presentation.xml"), "p:presentation");
+  const sldIdLst = findChild(presRoot, "p:sldIdLst");
+  const sldIds = (sldIdLst?.elements ?? []).filter((e) => e.name === "p:sldId");
+  const entry = sldIds[index];
+  if (!entry?.attributes?.["r:id"]) {
+    throw new Error(`patchPresentation: no slide at index ${index}`);
+  }
+  const target = resolveRelTarget(
+    xmlMap.get("ppt/_rels/presentation.xml.rels"),
+    entry.attributes["r:id"],
+  );
+  if (!target) {
+    throw new Error(`patchPresentation: slide ${index} relationship target not found`);
+  }
+  return `ppt/${target}`;
+};
+
 /**
  * Replace a slide in place by sldIdLst index: resolve the index to its slide
  * path via presentation rels, then rewrite only that part's content. sldId,
@@ -231,21 +267,124 @@ const replaceSlideInMap = (
   slideOpts: SlideOptions,
   ctx: PptxWriteContext,
 ): void => {
-  const presRoot = rootElement(xmlMap.get("ppt/presentation.xml"), "p:presentation");
-  const sldIdLst = findChild(presRoot, "p:sldIdLst");
-  const sldIds = (sldIdLst?.elements ?? []).filter((e) => e.name === "p:sldId");
-  const entry = sldIds[index];
-  if (!entry?.attributes?.["r:id"]) {
-    throw new Error(`patchPresentation: no slide at index ${index} to replace`);
+  const slidePath = resolveSlidePath(xmlMap, index);
+  xmlMap.set(slidePath, toJson(stringifySlide(slideOpts, ctx)));
+};
+
+/** Build the rels part path for a given part path (…/_rels/<file>.rels). */
+const relsKeyFor = (partPath: string): string => {
+  const slash = partPath.lastIndexOf("/");
+  return `${partPath.substring(0, slash)}/_rels/${partPath.substring(slash + 1)}.rels`;
+};
+
+/** Find an existing relationship of a type in a Relationships root. */
+const findRelByType = (
+  rels: Element | undefined,
+  type: string,
+): { id: string; target: string } | undefined => {
+  const relationshipsRoot = rootElement(rels, "Relationships");
+  for (const child of relationshipsRoot?.elements ?? []) {
+    if (child.name === "Relationship" && String(child.attributes?.["Type"]) === type) {
+      const target = child.attributes?.["Target"];
+      if (target !== undefined) {
+        return { id: String(child.attributes?.["Id"]), target: String(target) };
+      }
+    }
   }
-  const target = resolveRelTarget(
-    xmlMap.get("ppt/_rels/presentation.xml.rels"),
-    entry.attributes["r:id"],
+  return undefined;
+};
+
+/** descriptor.parse helpers ignore their context; this satisfies ReadContext. */
+const STUB_READ_CTX = {} as unknown as ReadContext;
+
+/**
+ * Append comments to a slide, merging authors into commentAuthors.xml and the
+ * per-slide list into ppt/comments/commentN.xml. Wires presentation rels
+ * (commentAuthors) + slide rels (comments) + content types when newly introduced.
+ */
+const appendCommentsToMap = (
+  xmlMap: Map<string, Element>,
+  index: number,
+  slideComments: SlideCommentOptions[],
+  ctx: PptxWriteContext,
+): void => {
+  const slidePath = resolveSlidePath(xmlMap, index);
+  const slideNMatch = slidePath.match(/slide(\d+)\.xml$/);
+  const slideN = slideNMatch ? Number(slideNMatch[1]) : index + 1;
+  const commentPath = `ppt/comments/comment${slideN}.xml`;
+
+  // Parse existing authors + per-slide comments (merge targets).
+  const existingAuthorsRoot = rootElement(xmlMap.get("ppt/commentAuthors.xml"), "p:cmAuthorLst");
+  const existingAuthors: AuthorEntry[] = existingAuthorsRoot
+    ? commentAuthorsDesc.parse(existingAuthorsRoot, STUB_READ_CTX)
+    : [];
+  const existingEntriesRoot = rootElement(xmlMap.get(commentPath), "p:cmLst");
+  const existingEntries: CommentEntry[] = existingEntriesRoot
+    ? slideCommentsDesc.parse(existingEntriesRoot, STUB_READ_CTX)
+    : [];
+
+  // buildCommentData continues author ids + per-author idx from existing authors.
+  const { authors, perSlide } = buildCommentData(
+    [{ comments: slideComments }] as unknown as SlideOptions[],
+    existingAuthors,
   );
-  if (!target) {
-    throw new Error(`patchPresentation: slide ${index} relationship target not found`);
+  const mergedEntries = [...existingEntries, ...(perSlide[0] ?? [])];
+  const mergedAuthors = authors ?? existingAuthors;
+
+  // commentAuthors.xml (global) — written when any authors exist.
+  if (mergedAuthors.length > 0) {
+    xmlMap.set(
+      "ppt/commentAuthors.xml",
+      toJson(
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${commentAuthorsDesc.stringify(mergedAuthors, ctx)}`,
+      ),
+    );
+    const presRels = xmlMap.get("ppt/_rels/presentation.xml.rels") ?? createRelationshipFile();
+    xmlMap.set("ppt/_rels/presentation.xml.rels", presRels);
+    if (!findRelByType(presRels, COMMENT_AUTHORS_REL_TYPE)) {
+      const n = getNextRelationshipIndex(presRels);
+      appendRelationship(presRels, n, COMMENT_AUTHORS_REL_TYPE, "commentAuthors.xml");
+    }
   }
-  xmlMap.set(`ppt/${target}`, toJson(stringifySlide(slideOpts, ctx)));
+
+  // commentN.xml (per slide).
+  xmlMap.set(
+    commentPath,
+    toJson(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${slideCommentsDesc.stringify(mergedEntries, ctx)}`,
+    ),
+  );
+  const slideRelsKey = relsKeyFor(slidePath);
+  const slideRels = xmlMap.get(slideRelsKey) ?? createRelationshipFile();
+  xmlMap.set(slideRelsKey, slideRels);
+  if (!findRelByType(slideRels, COMMENTS_REL_TYPE)) {
+    const n = getNextRelationshipIndex(slideRels);
+    appendRelationship(slideRels, n, COMMENTS_REL_TYPE, `../comments/comment${slideN}.xml`);
+  }
+
+  // Content types — commentAuthors + commentN Overrides (deduped).
+  const typesRoot = rootElement(xmlMap.get("[Content_Types].xml"), "Types");
+  if (typesRoot) {
+    const els = typesRoot.elements ?? (typesRoot.elements = []);
+    const has = (partName: string): boolean =>
+      els.some((e) => e.name === "Override" && e.attributes?.["PartName"] === partName);
+    if (mergedAuthors.length > 0 && !has("/ppt/commentAuthors.xml")) {
+      els.push(
+        makeElement("Override", {
+          PartName: "/ppt/commentAuthors.xml",
+          ContentType: COMMENT_AUTHORS_CONTENT_TYPE,
+        }),
+      );
+    }
+    if (!has(`/${commentPath}`)) {
+      els.push(
+        makeElement("Override", {
+          PartName: `/${commentPath}`,
+          ContentType: COMMENTS_CONTENT_TYPE,
+        }),
+      );
+    }
+  }
 };
 
 /**
@@ -265,6 +404,7 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
   findReplace,
   coreProperties,
   slides,
+  comments,
   keepOriginalStyles = true,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
 }: PatchPresentationOptions<T>): Promise<OutputByType[T]> => {
@@ -369,6 +509,13 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
       for (const slideOpts of slides.append) {
         appendSlideToMap(xmlMap, slideOpts, currentPatchCtx);
       }
+    }
+  }
+
+  // Slide comments — append per slide, merging authors + per-slide comment lists.
+  if (comments) {
+    for (const [indexStr, slideComments] of Object.entries(comments)) {
+      appendCommentsToMap(xmlMap, Number(indexStr), slideComments, currentPatchCtx);
     }
   }
 

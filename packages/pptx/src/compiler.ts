@@ -267,7 +267,10 @@ function buildSlideRels(masters: MasterInfo[], slides: SlideOptions[]): Relation
   return rels;
 }
 
-function buildCommentData(slides: SlideOptions[]): {
+export function buildCommentData(
+  slides: SlideOptions[],
+  existingAuthors: AuthorEntry[] = [],
+): {
   authors: AuthorEntry[] | undefined;
   perSlide: (CommentEntry[] | undefined)[];
 } {
@@ -276,6 +279,18 @@ function buildCommentData(slides: SlideOptions[]): {
     { id: number; name: string; initials: string; clrIdx: number; commentCount: number }
   >();
   let nextAuthorId = 0;
+  // Seed from existing authors so appended comments continue author ids and the
+  // per-author idx counter (commentCount resumes at lastIdx).
+  for (const a of existingAuthors) {
+    authorMap.set(a.name, {
+      id: a.id,
+      name: a.name,
+      initials: a.initials,
+      clrIdx: a.clrIdx,
+      commentCount: a.lastIdx,
+    });
+    if (a.id >= nextAuthorId) nextAuthorId = a.id + 1;
+  }
 
   const perSlide: (CommentEntry[] | undefined)[] = Array.from({ length: slides.length });
 

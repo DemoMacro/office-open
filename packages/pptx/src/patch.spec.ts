@@ -74,3 +74,75 @@ describe("patchPresentation slides", () => {
     ).rejects.toThrow(/index 5/);
   });
 });
+
+describe("patchPresentation comments", () => {
+  it("appends comments, wiring authors + comments + rels + content types", async () => {
+    const buffer = await generatePresentation(template([slide("Hello"), slide("World")]));
+    const patched = await patchPresentation({
+      data: buffer,
+      outputType: "uint8array",
+      comments: {
+        0: [{ author: "Alice", text: "check this", x: 10, y: 20 }],
+      },
+    });
+
+    // commentAuthors.xml carries Alice
+    expect(decodeEntry(patched, "ppt/commentAuthors.xml")).toContain("Alice");
+
+    // comment1.xml (slide 1) carries the note
+    expect(decodeEntry(patched, "ppt/comments/comment1.xml")).toContain("check this");
+
+    // slide rels + presentation rels wire the parts
+    expect(decodeEntry(patched, "ppt/slides/_rels/slide1.xml.rels")).toContain(
+      "comments/comment1.xml",
+    );
+    expect(decodeEntry(patched, "ppt/_rels/presentation.xml.rels")).toContain("commentAuthors.xml");
+
+    // content types
+    const types = decodeEntry(patched, "[Content_Types].xml");
+    expect(types).toContain("/ppt/commentAuthors.xml");
+    expect(types).toContain("/ppt/comments/comment1.xml");
+  });
+
+  it("merges authors + entries with existing comments", async () => {
+    const buffer = await generatePresentation({
+      slides: [
+        { ...slide("One"), comments: [{ author: "Alice", text: "original", x: 1, y: 1 }] },
+        slide("Two"),
+      ],
+    });
+    const patched = await patchPresentation({
+      data: buffer,
+      outputType: "uint8array",
+      comments: {
+        0: [{ author: "Bob", text: "appended", x: 2, y: 2 }],
+      },
+    });
+
+    // Both authors present — Bob's id continues after Alice (id 0 → id 1).
+    const authors = decodeEntry(patched, "ppt/commentAuthors.xml");
+    expect(authors).toContain("Alice");
+    expect(authors).toContain("Bob");
+
+    // comment1.xml has both notes (merged entries).
+    const comments = decodeEntry(patched, "ppt/comments/comment1.xml");
+    expect(comments).toContain("original");
+    expect(comments).toContain("appended");
+
+    // No duplicate content-type overrides.
+    const types = decodeEntry(patched, "[Content_Types].xml");
+    expect((types.match(/\/ppt\/commentAuthors\.xml/g) ?? []).length).toBe(1);
+    expect((types.match(/\/ppt\/comments\/comment1\.xml/g) ?? []).length).toBe(1);
+  });
+
+  it("throws when commenting a non-existent slide index", async () => {
+    const buffer = await generatePresentation(template([slide("A")]));
+    await expect(
+      patchPresentation({
+        data: buffer,
+        outputType: "uint8array",
+        comments: { 5: [{ author: "X", text: "y", x: 0, y: 0 }] },
+      }),
+    ).rejects.toThrow(/index 5/);
+  });
+});
