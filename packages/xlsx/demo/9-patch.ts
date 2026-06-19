@@ -24,7 +24,7 @@ writeFileSync("My Workbook.xlsx", buffer);
 const patched = await patchWorkbook({
   outputType: "uint8array",
   data: readFileSync("My Workbook.xlsx"),
-  patches: {
+  placeholders: {
     number: "INV-2024-001",
     customer: "Acme Corp",
     amount: 1500, // number → typed numeric cell (t="n")

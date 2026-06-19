@@ -9,7 +9,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type {
-  PresentationOptions,
+  PresentationPartOptions,
   PhotoAlbumOptions,
   ModifyVerifierOptions,
   EmbeddedFontOptions,
@@ -20,7 +20,7 @@ import type {
 
 // Re-export sub-types for convenience
 export type {
-  PresentationOptions as PresentationDescriptorOptions,
+  PresentationPartOptions as PresentationDescriptorOptions,
   PhotoAlbumOptions,
   ModifyVerifierOptions,
   EmbeddedFontOptions,
@@ -64,7 +64,7 @@ const DEFAULT_TEXT_STYLE_XML = `<p:defaultTextStyle xmlns:a="http://schemas.open
 
 // ── Stringify (internal) ──
 
-function stringifyPresentation(opts: PresentationOptions): string {
+function stringifyPresentation(opts: PresentationPartOptions): string {
   const cx = opts.slideWidth ?? 12192000;
   const cy = opts.slideHeight ?? 6858000;
 
@@ -248,7 +248,7 @@ function stringifyPresentation(opts: PresentationOptions): string {
 
 // ── Parse ──
 
-function parsePresentation(el: XmlElement): PresentationOptions {
+function parsePresentation(el: XmlElement): PresentationPartOptions {
   const result: Record<string, unknown> = {};
 
   if (el.attributes) {
@@ -428,12 +428,12 @@ function parsePresentation(el: XmlElement): PresentationOptions {
     result.kinsoku = kinsoku;
   }
 
-  return result as unknown as PresentationOptions;
+  return result as unknown as PresentationPartOptions;
 }
 
 // ── Descriptor ──
 
-export const presentationDesc: CustomDescriptor<PresentationOptions> = {
+export const presentationDesc: CustomDescriptor<PresentationPartOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {

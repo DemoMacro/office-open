@@ -146,7 +146,6 @@ export {
 } from "./animation/types";
 
 // Constants
-export { APP_PROPS_XML } from "@office-open/core";
 export { Relationships } from "@office-open/core";
 export { type RelationshipType } from "@office-open/core";
 export { ChartCollection, type ChartData } from "@office-open/core/chart";

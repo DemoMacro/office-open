@@ -1,15 +1,15 @@
+import type { CorePropertiesOptions } from "@office-open/core";
 import { diffTagSets, roundTripFields, findFieldSpec } from "@office-open/core/descriptor";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { describe, it, expect } from "vite-plus/test";
 
 import { corePropertiesDesc } from "./core-properties";
-import type { CorePropertiesInput } from "./core-properties";
 
 const spec = findFieldSpec("core-properties")!;
 
 describe("core-properties field consistency", () => {
   it("round-trips created/modified with no F2 inflation or F3 parse-loss", () => {
-    // created/modified now have a home on CorePropertiesInput and parse reads
+    // created/modified now have a home on CorePropertiesOptions and parse reads
     // them back, so the field sets are fully symmetric.
     const report = diffTagSets(spec);
     expect(report.f1WriteLoss).toEqual([]);
@@ -25,7 +25,7 @@ describe("core-properties field consistency", () => {
     const result = roundTripFields(
       (opts, ctx) => corePropertiesDesc.stringify(opts, ctx),
       (el, ctx) => corePropertiesDesc.parse(el, ctx),
-      spec.sampleOptions as CorePropertiesInput,
+      spec.sampleOptions as CorePropertiesOptions,
       {} as unknown as WriteContext,
       {} as unknown as ReadContext,
     );

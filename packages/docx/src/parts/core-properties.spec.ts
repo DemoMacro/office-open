@@ -1,14 +1,14 @@
+import type { CorePropertiesOptions } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import type { CorePropertiesInput } from "./core-properties";
 import { corePropertiesDesc } from "./core-properties";
 
 const writeCtx = {} as unknown as WriteContext;
 const readCtx = {} as unknown as ReadContext;
 
-function roundTrip(opts: CorePropertiesInput) {
+function roundTrip(opts: CorePropertiesOptions) {
   const xml = corePropertiesDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements![0];

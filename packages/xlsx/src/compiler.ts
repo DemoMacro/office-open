@@ -8,11 +8,12 @@
  */
 
 import {
-  APP_PROPS_XML,
   Relationships,
   TargetModeType,
+  appPropertiesDesc,
   buildCorePropertiesXmlString,
   compileMapping,
+  customPropertiesDesc,
   type XmlifyedFile,
   type Zippable,
 } from "@office-open/core";
@@ -56,6 +57,7 @@ export function compileWorkbook(
 
   const worksheetConfigs = options.worksheets ?? [];
   const chartsheetConfigs = options.chartsheets ?? [];
+  const hasCustomProperties = !!options.customProperties && options.customProperties.length > 0;
 
   // Core properties
   mapping["Properties"] = {
@@ -65,12 +67,22 @@ export function compileWorkbook(
 
   // App properties
   mapping["AppProperties"] = {
-    data: XML_DECL + APP_PROPS_XML,
+    data: XML_DECL + (appPropertiesDesc.stringify(options.appProperties ?? {}, ctx) ?? ""),
     path: "docProps/app.xml",
   };
 
+  // Custom properties (optional part; only emitted when present)
+  if (hasCustomProperties) {
+    mapping["CustomProperties"] = {
+      data:
+        XML_DECL +
+        (customPropertiesDesc.stringify({ properties: options.customProperties ?? [] }, ctx) ?? ""),
+      path: "docProps/custom.xml",
+    };
+  }
+
   // File-level relationships (_rels/.rels)
-  const fileRels = buildFileRelationships();
+  const fileRels = buildFileRelationships(hasCustomProperties);
   mapping["FileRelationships"] = {
     data: XML_DECL + fileRels.serialize(),
     path: "_rels/.rels",
@@ -83,6 +95,7 @@ export function compileWorkbook(
   ctx.contentTypes.addStyles();
   ctx.contentTypes.addSharedStrings();
   ctx.contentTypes.addTheme();
+  if (hasCustomProperties) ctx.contentTypes.addCustomProperties();
 
   // Register predefined DXFs before worksheets use styles
   for (const dxf of options.dxfs ?? []) {
@@ -765,7 +778,7 @@ export function compileWorkbook(
 
 // ── Pure helper functions ──
 
-function buildFileRelationships(): Relationships {
+function buildFileRelationships(hasCustomProperties: boolean): Relationships {
   const rels = new Relationships();
   rels.addRelationship(
     1,
@@ -782,6 +795,13 @@ function buildFileRelationships(): Relationships {
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
     "docProps/app.xml",
   );
+  if (hasCustomProperties) {
+    rels.addRelationship(
+      4,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+      "docProps/custom.xml",
+    );
+  }
   return rels;
 }
 

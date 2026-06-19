@@ -245,7 +245,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "uint8array",
-          patches: {
+          placeholders: {
             image_test: {
               children: [
                 {
@@ -308,7 +308,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "uint8array",
-          patches: {},
+          placeholders: {},
         });
         expect(output).to.not.be.undefined;
       });
@@ -323,7 +323,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "uint8array",
-          patches: {},
+          placeholders: {},
         });
         expect(output).to.not.be.undefined;
       });
@@ -332,7 +332,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "uint8array",
-          patches: {
+          placeholders: {
             image_test: {
               children: [
                 {
@@ -396,7 +396,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "uint8array",
-          patches: {},
+          placeholders: {},
         });
         expect(output).to.not.be.undefined;
       });
@@ -406,7 +406,7 @@ describe("from-docx", () => {
           patchDocument({
             data: Buffer.from(""),
             outputType: "uint8array",
-            patches: {},
+            placeholders: {},
             placeholderDelimiters: { end: "", start: "" },
           }),
         ).rejects.toThrow();
@@ -417,7 +417,7 @@ describe("from-docx", () => {
           patchDocument({
             data: Buffer.from(""),
             outputType: "uint8array",
-            patches: {},
+            placeholders: {},
             placeholderDelimiters: { end: " ", start: " " },
           }),
         ).rejects.toThrowError();
@@ -446,7 +446,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "uint8array",
-          patches: {
+          placeholders: {
             image_test: {
               children: [
                 {
@@ -489,7 +489,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "uint8array",
-          patches: {
+          placeholders: {
             image_test: {
               children: [
                 {
@@ -536,7 +536,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "uint8array",
-          patches: {
+          placeholders: {
             name: {
               children: ["World"],
               type: "paragraph",
@@ -563,7 +563,7 @@ describe("from-docx", () => {
           patchDocument({
             data: Buffer.from(""),
             outputType: "uint8array",
-            patches: {
+            placeholders: {
               image_test: {
                 children: [
                   {
@@ -600,7 +600,7 @@ describe("from-docx", () => {
           patchDocument({
             data: Buffer.from(""),
             outputType: "uint8array",
-            patches: {
+            placeholders: {
               image_test: {
                 children: [
                   {
@@ -636,7 +636,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "nodebuffer",
-          patches: {
+          placeholders: {
             name: { children: ["World"], type: "paragraph" },
           },
         });
@@ -647,7 +647,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "blob",
-          patches: {
+          placeholders: {
             name: { children: ["World"], type: "paragraph" },
           },
         });
@@ -658,7 +658,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "arraybuffer",
-          patches: {
+          placeholders: {
             name: { children: ["World"], type: "paragraph" },
           },
         });
@@ -669,7 +669,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "base64",
-          patches: {
+          placeholders: {
             name: { children: ["World"], type: "paragraph" },
           },
         });
@@ -680,7 +680,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "string",
-          patches: {
+          placeholders: {
             name: { children: ["World"], type: "paragraph" },
           },
         });
@@ -691,7 +691,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "binarystring",
-          patches: {
+          placeholders: {
             name: { children: ["World"], type: "paragraph" },
           },
         });
@@ -702,7 +702,7 @@ describe("from-docx", () => {
         const output = await patchDocument({
           data: Buffer.from(""),
           outputType: "array",
-          patches: {
+          placeholders: {
             name: { children: ["World"], type: "paragraph" },
           },
         });

@@ -3,10 +3,16 @@
  *
  * @module
  */
-import { parseArchive, parseCorePropsElement } from "@office-open/core";
+import {
+  appPropertiesDesc,
+  customPropertiesDesc,
+  parseArchive,
+  parseCorePropsElement,
+} from "@office-open/core";
 import type { ParsedArchive } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
+import type { ReadContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
 import { attr } from "@office-open/xml";
 import { calcChainDesc } from "@parts/calc-chain";
@@ -53,6 +59,8 @@ export interface XlsxDocument {
   coreProps?: string;
   /** docProps/app.xml path */
   appProps?: string;
+  /** docProps/custom.xml path */
+  customProps?: string;
 }
 
 function sortByNumber(paths: string[]): string[] {
@@ -115,6 +123,7 @@ export function parseXlsx(data: DataType): XlsxDocument {
   // Root rels → core/app props
   let coreProps: string | undefined;
   let appProps: string | undefined;
+  let customProps: string | undefined;
   const rootRels = doc.get("_rels/.rels");
   if (rootRels) {
     for (const child of rootRels.elements ?? []) {
@@ -123,6 +132,7 @@ export function parseXlsx(data: DataType): XlsxDocument {
       const target = attr(child, "Target") ?? "";
       if (type.includes("/core-properties")) coreProps = target;
       else if (type.includes("/extended-properties")) appProps = target;
+      else if (type.includes("/custom-properties")) customProps = target;
     }
   }
 
@@ -135,6 +145,7 @@ export function parseXlsx(data: DataType): XlsxDocument {
     partRefs: { worksheets, charts, media, drawings },
     coreProps,
     appProps,
+    customProps,
   };
 }
 
@@ -180,7 +191,28 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       if (cp.keywords) opts.keywords = cp.keywords;
       if (cp.description) opts.description = cp.description;
       if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
-      if (cp.revision) opts.revision = parseInt(cp.revision, 10);
+      if (cp.revision !== undefined) opts.revision = cp.revision;
+      if (cp.lastPrinted) opts.lastPrinted = cp.lastPrinted;
+      if (cp.created) opts.created = cp.created;
+      if (cp.modified) opts.modified = cp.modified;
+    }
+  }
+
+  // Extended (app) properties
+  if (xlsx.appProps) {
+    const appPropsEl = xlsx.doc.get(xlsx.appProps);
+    if (appPropsEl) {
+      const ap = appPropertiesDesc.parse(appPropsEl, {} as ReadContext);
+      if (ap && Object.keys(ap).length > 0) opts.appProperties = ap;
+    }
+  }
+
+  // Custom properties
+  if (xlsx.customProps) {
+    const customPropsEl = xlsx.doc.get(xlsx.customProps);
+    if (customPropsEl) {
+      const cp = customPropertiesDesc.parse(customPropsEl, {} as ReadContext);
+      if (cp.properties?.length) opts.customProperties = cp.properties;
     }
   }
 

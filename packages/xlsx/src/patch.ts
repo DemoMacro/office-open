@@ -11,8 +11,20 @@
  *
  * @module
  */
-import { OoxmlMimeType, strFromU8, toJson, unzipSync, zipAndConvert } from "@office-open/core";
-import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
+import {
+  OoxmlMimeType,
+  applyCorePropertiesOverride,
+  strFromU8,
+  toJson,
+  unzipSync,
+  zipAndConvert,
+} from "@office-open/core";
+import type {
+  BasePatchOptions,
+  CorePropertiesOptions,
+  OutputByType,
+  OutputType,
+} from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -29,7 +41,12 @@ export type Patch = ScalarValue;
 export interface PatchWorkbookOptions<
   T extends OutputType = OutputType,
 > extends BasePatchOptions<T> {
-  patches: Readonly<Record<string, ScalarValue>>;
+  /** Placeholder substitutions: `{{key}}` (per delimiters) → value. */
+  placeholders?: Readonly<Record<string, ScalarValue>>;
+  /** Literal find/replace: the find string → value (no delimiters added). */
+  findReplace?: Readonly<Record<string, ScalarValue>>;
+  /** Core-properties metadata override (merged over the existing docProps/core.xml). */
+  coreProperties?: Partial<CorePropertiesOptions>;
 }
 
 // Excel serial-date epoch: 1899-12-30 accounts for the spurious 1900 leap year.
@@ -53,7 +70,9 @@ const toDisplayString = (value: Exclude<ScalarValue, string>): string => {
 export const patchWorkbook = async <T extends OutputType = OutputType>({
   outputType,
   data,
-  patches,
+  placeholders,
+  findReplace,
+  coreProperties,
   placeholderDelimiters = { start: "{{", end: "}}" } as const,
 }: PatchWorkbookOptions<T>): Promise<OutputByType[T]> => {
   const { start, end } = placeholderDelimiters;
@@ -75,9 +94,18 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
     }
   }
 
+  // Unified patch map: placeholders are delimiter-wrapped, findReplace keys are
+  // literal strings. Both feed the same Pass A (typed cells) / Pass B (text) engine.
   const patchMap = new Map<string, ScalarValue>();
-  for (const [key, value] of Object.entries(patches)) {
-    patchMap.set(`${start}${key}${end}`, value);
+  if (placeholders) {
+    for (const [key, value] of Object.entries(placeholders)) {
+      patchMap.set(`${start}${key}${end}`, value);
+    }
+  }
+  if (findReplace) {
+    for (const [key, value] of Object.entries(findReplace)) {
+      patchMap.set(key, value);
+    }
   }
 
   const sharedStrings = xmlMap.get("xl/sharedStrings.xml");
@@ -98,13 +126,20 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
   if (sharedStrings) patchSharedStrings(sharedStrings, patchMap);
   for (const wsKey of worksheetKeys) {
     const ws = xmlMap.get(wsKey);
-    if (ws) patchWorksheetInlineStrings(ws, patchMap);
+    if (!ws) continue;
+    patchWorksheetInlineStrings(ws, patchMap);
+    // Pass C: print headers/footers (oddHeader/oddFooter/… literal text)
+    patchHeaderFooter(ws, patchMap);
   }
 
   // Rebuild ZIP
   const files: Record<string, Uint8Array> = {};
+  const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
   for (const [key, value] of xmlMap) {
-    files[key] = encoder.encode(js2xml(value));
+    files[key] =
+      key === "docProps/core.xml" && coreProperties
+        ? encoder.encode(XML_DECL + applyCorePropertiesOverride(value, coreProperties))
+        : encoder.encode(js2xml(value));
   }
   for (const [key, value] of binaryMap) {
     files[key] = value;
@@ -236,6 +271,44 @@ function patchWorksheetInlineStrings(ws: Element, patchMap: Map<string, ScalarVa
         const t = findLocalChild(isEl, "t");
         if (t) patchTextElement(t, patchMap);
       }
+    }
+  }
+}
+
+const HEADER_FOOTER_NAMES = new Set([
+  "oddHeader",
+  "oddFooter",
+  "evenHeader",
+  "evenFooter",
+  "firstHeader",
+  "firstFooter",
+]);
+
+/**
+ * Pass C — substitute placeholders in worksheet print header/footer text.
+ * Header/footer children (oddHeader/oddFooter/…) carry their text directly
+ * (not wrapped in `<t>`), so this is a substring substitution on the element's
+ * own text node.
+ */
+function patchHeaderFooter(ws: Element, patchMap: Map<string, ScalarValue>): void {
+  const root = ws.name ? ws : ws.elements?.[0];
+  if (!root) return;
+  const headerFooter = findLocalChild(root, "headerFooter");
+  if (!headerFooter) return;
+
+  for (const part of headerFooter.elements ?? []) {
+    if (part.type !== "element" || !HEADER_FOOTER_NAMES.has(localName(part))) continue;
+    const textNode = part.elements?.[0];
+    if (!textNode || typeof textNode.text !== "string") continue;
+
+    let replaced = textNode.text;
+    for (const [placeholder, value] of patchMap) {
+      if (!replaced.includes(placeholder)) continue;
+      const display = typeof value === "string" ? value : toDisplayString(value);
+      replaced = replaced.split(placeholder).join(display);
+    }
+    if (replaced !== textNode.text) {
+      part.elements![0] = { ...textNode, text: replaced };
     }
   }
 }

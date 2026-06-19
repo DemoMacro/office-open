@@ -28,6 +28,6 @@ const doc = await patchDocument({
   data: readFileSync("demo/assets/simple-template-3.docx"),
   keepOriginalStyles: true,
   outputType: "nodebuffer",
-  patches,
+  placeholders: patches,
 });
 writeFileSync("My Document.docx", doc);

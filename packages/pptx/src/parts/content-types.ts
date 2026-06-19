@@ -32,6 +32,7 @@ const PPTX_TABLE_STYLES =
   "application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml";
 const PPTX_SLIDE_SYNC =
   "application/vnd.openxmlformats-officedocument.presentationml.slideSyncProperties+xml";
+const CUSTOM_PROPS = "application/vnd.openxmlformats-officedocument.custom-properties+xml";
 
 type EntryType = "Default" | "Override";
 
@@ -193,6 +194,14 @@ export class ContentTypes {
       type: "Override",
       contentType: PPTX_SLIDE_MASTER,
       key: `/ppt/slideMasters/slideMaster${index}.xml`,
+    });
+  }
+
+  public addCustomProperties(): void {
+    this.entries.push({
+      type: "Override",
+      contentType: CUSTOM_PROPS,
+      key: "/docProps/custom.xml",
     });
   }
 

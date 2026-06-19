@@ -7,7 +7,10 @@ const DOCX = "packages/docx/src/parts";
 
 /** Maps a FIELD_SPECS id to the interface + source file that declares it. */
 const INTERFACE_SOURCE: Record<string, { interfaceName: string; file: string }> = {
-  "core-properties": { interfaceName: "CorePropertiesInput", file: `${DOCX}/core-properties.ts` },
+  "core-properties": {
+    interfaceName: "CorePropertiesOptions",
+    file: "packages/core/src/opc/core.ts",
+  },
   "paragraph-properties": {
     interfaceName: "ParagraphPropertiesOptions",
     file: `${DOCX}/paragraph/properties.ts`,
@@ -15,8 +18,10 @@ const INTERFACE_SOURCE: Record<string, { interfaceName: string; file: string }> 
 };
 
 describe("extractInterfaceFields", () => {
-  it("reads a flat interface (CorePropertiesInput, 10 fields, sorted)", () => {
-    expect(extractInterfaceFields("CorePropertiesInput", `${DOCX}/core-properties.ts`)).toEqual([
+  it("reads a flat interface (CorePropertiesOptions, 10 fields, sorted)", () => {
+    expect(
+      extractInterfaceFields("CorePropertiesOptions", "packages/core/src/opc/core.ts"),
+    ).toEqual([
       "created",
       "creator",
       "description",

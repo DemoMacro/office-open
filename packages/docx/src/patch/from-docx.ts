@@ -4,6 +4,7 @@ import {
   OoxmlMimeType,
   appendContentType,
   appendRelationship,
+  applyCorePropertiesOverride,
   createReplacer,
   getNextRelationshipIndex,
   getReferencedMedia,
@@ -13,7 +14,12 @@ import {
   unzipSync,
   zipAndConvert,
 } from "@office-open/core";
-import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
+import type {
+  BasePatchOptions,
+  CorePropertiesOptions,
+  OutputByType,
+  OutputType,
+} from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { escapeXml, js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -135,7 +141,12 @@ interface HyperlinkRelationshipAddition {
 export interface PatchDocumentOptions<
   T extends OutputType = OutputType,
 > extends BasePatchOptions<T> {
-  patches: Readonly<Record<string, Patch>>;
+  /** Placeholder substitutions: `{{key}}` (per delimiters) → patch content. */
+  placeholders?: Readonly<Record<string, Patch>>;
+  /** Literal find/replace: the find string → patch content (no delimiters added). */
+  findReplace?: Readonly<Record<string, Patch>>;
+  /** Core-properties metadata override (merged over the existing docProps/core.xml). */
+  coreProperties?: Partial<CorePropertiesOptions>;
   keepOriginalStyles?: boolean;
   recursive?: boolean;
 }
@@ -163,7 +174,9 @@ const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
 export const patchDocument = async <T extends OutputType = OutputType>({
   outputType,
   data,
-  patches,
+  placeholders,
+  findReplace,
+  coreProperties,
   keepOriginalStyles = true,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
   recursive = true,
@@ -246,8 +259,21 @@ export const patchDocument = async <T extends OutputType = OutputType>({
       const patchCtx = createPatchContext(file, hyperlinkSink);
       currentPatchCtx = patchCtx;
 
-      for (const [patchKey, patchValue] of Object.entries(patches)) {
-        const patchText = `${start}${patchKey}${end}`;
+      // Build (find-text → patch) entries. Placeholders wrap the key in
+      // delimiters; findReplace uses the literal key. Both share one engine.
+      const entries: Array<{ find: string; patch: Patch }> = [];
+      if (placeholders) {
+        for (const [key, value] of Object.entries(placeholders)) {
+          entries.push({ find: `${start}${key}${end}`, patch: value });
+        }
+      }
+      if (findReplace) {
+        for (const [key, value] of Object.entries(findReplace)) {
+          entries.push({ find: key, patch: value });
+        }
+      }
+
+      for (const { find: patchText, patch: patchValue } of entries) {
         while (true) {
           const { didFindOccurrence } = docxReplacer({
             context,
@@ -339,9 +365,13 @@ export const patchDocument = async <T extends OutputType = OutputType>({
   }
 
   const files: Record<string, Uint8Array> = {};
+  const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 
   for (const [key, value] of map) {
-    files[key] = encoder.encode(js2xml(value));
+    files[key] =
+      key === "docProps/core.xml" && coreProperties
+        ? encoder.encode(XML_DECL + applyCorePropertiesOverride(value, coreProperties))
+        : encoder.encode(js2xml(value));
   }
 
   for (const [key, value] of binaryContentMap) {

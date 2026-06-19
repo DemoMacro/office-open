@@ -1,5 +1,11 @@
 import type { ParsedArchive } from "@office-open/core";
-import { parseArchive, parseCorePropsElement, convertEmuToPixels } from "@office-open/core";
+import {
+  appPropertiesDesc,
+  customPropertiesDesc,
+  parseArchive,
+  parseCorePropsElement,
+  convertEmuToPixels,
+} from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
@@ -69,6 +75,8 @@ export interface PptxDocument {
   coreProps?: string;
   /** docProps/app.xml */
   appProps?: string;
+  /** docProps/custom.xml */
+  customProps?: string;
 }
 
 function resolveRelsPath(target: string): string {
@@ -89,12 +97,17 @@ function xmlKeys(keys: string[]): string[] {
   return keys.filter((k) => k.endsWith(".xml"));
 }
 
-function parseRootRels(doc: ParsedArchive): { coreProps?: string; appProps?: string } {
+function parseRootRels(doc: ParsedArchive): {
+  coreProps?: string;
+  appProps?: string;
+  customProps?: string;
+} {
   const relsEl = doc.get("_rels/.rels");
   if (!relsEl) return {};
 
   let coreProps: string | undefined;
   let appProps: string | undefined;
+  let customProps: string | undefined;
 
   for (const child of relsEl.elements ?? []) {
     if (child.name !== "Relationship") continue;
@@ -108,10 +121,12 @@ function parseRootRels(doc: ParsedArchive): { coreProps?: string; appProps?: str
       coreProps = path;
     } else if (type.includes("/extended-properties")) {
       appProps = path;
+    } else if (type.includes("/custom-properties")) {
+      customProps = path;
     }
   }
 
-  return { coreProps, appProps };
+  return { coreProps, appProps, customProps };
 }
 
 function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPartRefs): void {
@@ -226,7 +241,7 @@ export function parsePptx(data: DataType): PptxDocument {
   sortByNumber(partRefs.charts);
   sortByNumber(partRefs.diagramData);
 
-  const { coreProps, appProps } = parseRootRels(doc);
+  const { coreProps, appProps, customProps } = parseRootRels(doc);
 
   return {
     doc,
@@ -241,6 +256,7 @@ export function parsePptx(data: DataType): PptxDocument {
     tableStyles,
     coreProps,
     appProps,
+    customProps,
   };
 }
 
@@ -330,7 +346,28 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (cp.keywords) opts.keywords = cp.keywords;
       if (cp.description) opts.description = cp.description;
       if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
-      if (cp.revision) opts.revision = parseInt(cp.revision, 10);
+      if (cp.revision !== undefined) opts.revision = cp.revision;
+      if (cp.lastPrinted) opts.lastPrinted = cp.lastPrinted;
+      if (cp.created) opts.created = cp.created;
+      if (cp.modified) opts.modified = cp.modified;
+    }
+  }
+
+  // 2b. Parse extended (app) properties
+  if (pptx.appProps) {
+    const appPropsEl = pptx.doc.get(pptx.appProps);
+    if (appPropsEl) {
+      const ap = appPropertiesDesc.parse(appPropsEl, {} as ReadContext);
+      if (ap && Object.keys(ap).length > 0) opts.appProperties = ap;
+    }
+  }
+
+  // 2c. Parse custom properties
+  if (pptx.customProps) {
+    const customPropsEl = pptx.doc.get(pptx.customProps);
+    if (customPropsEl) {
+      const cp = customPropertiesDesc.parse(customPropsEl, {} as ReadContext);
+      if (cp.properties?.length) opts.customProperties = cp.properties;
     }
   }
 

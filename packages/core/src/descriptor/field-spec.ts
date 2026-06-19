@@ -51,7 +51,7 @@ export interface DescriptorFieldSpec {
 export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
   {
     id: "core-properties",
-    optionsInterface: "CorePropertiesInput",
+    optionsInterface: "CorePropertiesOptions",
     // 10 interface fields — created/modified are now carried for round-trip fidelity.
     interfaceFields: [
       "title",

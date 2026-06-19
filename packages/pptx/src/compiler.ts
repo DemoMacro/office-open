@@ -10,10 +10,11 @@
 import { Relationships, convertPixelsToEmu } from "@office-open/core";
 import type { RelationshipType } from "@office-open/core";
 import {
-  APP_PROPS_XML,
+  appPropertiesDesc,
   buildCorePropertiesXmlString,
   collectPlaceholderKeys,
   compileMapping,
+  customPropertiesDesc,
   getReferencedMedia,
   getMediaRefs,
   getVideoRefs,
@@ -32,7 +33,7 @@ import { ChartCollection } from "@office-open/core/chart";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import { ContentTypes } from "@parts/content-types";
-import type { PresentationOptions as PresInternalOptions } from "@parts/presentation";
+import type { PresentationPartOptions } from "@parts/presentation";
 import { buildCustomLayoutXml, buildLayoutXml, type SlideLayoutType } from "@parts/slide-layout";
 import { buildSlideMasterXml } from "@parts/slide-master";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
@@ -352,8 +353,8 @@ function initContentTypes(slides: SlideOptions[], includeHandout: boolean): Cont
   return ct;
 }
 
-function buildFileRels(): Relationships {
-  return buildRels([
+function buildFileRels(hasCustomProperties: boolean): Relationships {
+  const entries: RelEntry[] = [
     {
       id: 1,
       type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
@@ -369,7 +370,15 @@ function buildFileRels(): Relationships {
       type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
       target: "docProps/app.xml",
     },
-  ]);
+  ];
+  if (hasCustomProperties) {
+    entries.push({
+      id: 4,
+      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+      target: "docProps/custom.xml",
+    });
+  }
+  return buildRels(entries);
 }
 
 function initPresRels(masters: MasterInfo[], slideCount: number): Relationships {
@@ -418,7 +427,7 @@ function buildPresAttrOpts(
   options: PresentationOptions,
 ): Partial<
   Pick<
-    PresInternalOptions,
+    PresentationPartOptions,
     | "serverZoom"
     | "firstSlideNum"
     | "showSpecialPlsOnTitleSld"
@@ -595,16 +604,18 @@ export function compilePresentation(
 
   // ── Mutable state ──
 
+  const hasCustomProperties = !!options.customProperties && options.customProperties.length > 0;
   const contentTypes = initContentTypes(slides, includeHandout);
+  if (hasCustomProperties) contentTypes.addCustomProperties();
   const presRels = initPresRels(masters, slides.length);
-  const presOptions: PresInternalOptions = {
+  const presOptions: PresentationPartOptions = {
     slideWidth: sz.width,
     slideHeight: sz.height,
     slideIds: slides.map((_, i) => 256 + i),
     masterCount: masters.length,
     ...buildPresAttrOpts(options),
   };
-  const fileRels = buildFileRels();
+  const fileRels = buildFileRels(hasCustomProperties);
   const media = new Media();
   const charts = new ChartCollection();
   const smartArts = new SmartArtCollection();
@@ -630,13 +641,26 @@ export function compilePresentation(
 
   const mapping: XmlifyedFileMapping = {
     AppProperties: {
-      data: XML_DECL + APP_PROPS_XML,
+      data: XML_DECL + (appPropertiesDesc.stringify(options.appProperties ?? {}, descCtx) ?? ""),
       path: "docProps/app.xml",
     },
     Properties: {
       data: XML_DECL + buildCorePropertiesXmlString(options),
       path: "docProps/core.xml",
     },
+    ...(hasCustomProperties
+      ? {
+          CustomProperties: {
+            data:
+              XML_DECL +
+              (customPropertiesDesc.stringify(
+                { properties: options.customProperties ?? [] },
+                descCtx,
+              ) ?? ""),
+            path: "docProps/custom.xml",
+          },
+        }
+      : {}),
     FileRelationships: {
       data: XML_DECL + fileRels.serialize(),
       path: "_rels/.rels",

@@ -1,6 +1,10 @@
 import type { TableStyleListOptions } from "@office-open/core";
+import type {
+  AppPropertiesOptions,
+  CorePropertiesOptions,
+  CustomPropertyOptions,
+} from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
-import type { CorePropertiesOptions } from "@parts/core-properties";
 import type { HandoutMasterOptions } from "@parts/handout-master";
 import type { NotesMasterOptions } from "@parts/notes-master";
 import type {
@@ -133,4 +137,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   kinsoku?: KinsokuOptions[];
   customerData?: CustomerDataOptions;
   colorMru?: string[];
+  /** Extended properties (docProps/app.xml) */
+  appProperties?: AppPropertiesOptions;
+  /** Custom properties (docProps/custom.xml); omitted from the package when empty */
+  customProperties?: CustomPropertyOptions[];
 }

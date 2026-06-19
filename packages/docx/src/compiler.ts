@@ -19,7 +19,6 @@ import {
   replaceNumberingPlaceholders,
 } from "@office-open/core";
 import type { XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
-import { APP_PROPS_XML } from "@office-open/core";
 import {
   DEFAULT_DRAWING_XML,
   getColorXml,
@@ -255,11 +254,7 @@ function xmlifyContext(
 
   return {
     AppProperties: {
-      data:
-        XML_DECL +
-        (ctx._options.appProperties
-          ? (appPropertiesDesc.stringify(ctx._options.appProperties, ctx) ?? APP_PROPS_XML)
-          : APP_PROPS_XML),
+      data: XML_DECL + (appPropertiesDesc.stringify(ctx._options.appProperties ?? {}, ctx) ?? ""),
       path: "docProps/app.xml",
     },
     ...(hasComments

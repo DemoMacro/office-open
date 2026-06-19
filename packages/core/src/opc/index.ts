@@ -1,4 +1,3 @@
-export { APP_PROPS_XML } from "./app-properties";
 export { Relationships, TargetModeType } from "./relationships";
 export type { RelationshipType } from "./relationships";
 export { createDefault, createOverride } from "./content-types";
@@ -9,8 +8,20 @@ export {
   parseCorePropsElement,
   buildCorePropertiesXml,
   buildCorePropertiesXmlString,
-  type CoreProperties,
+  type CorePropertiesOptions,
 } from "./core";
+
+// Extended (app) + custom properties (shared OPC parts)
+export {
+  appPropertiesDesc,
+  type AppPropertiesOptions,
+  type AppPropertiesInput,
+} from "./app-properties";
+export {
+  customPropertiesDesc,
+  type CustomPropertyOptions,
+  type CustomPropertiesInput,
+} from "./custom-properties";
 
 // Output types
 export { convertOutput, OoxmlMimeType, type OutputByType, type OutputType } from "./output";

@@ -7,7 +7,7 @@ import { HeadingLevel, TextDirection, VerticalAlignTable, patchDocument } from "
 const doc = await patchDocument({
   data: readFileSync("demo/assets/simple-template-4.docx"),
   outputType: "nodebuffer",
-  patches: {
+  placeholders: {
     footer_text: {
       children: [
         "replaced just as",

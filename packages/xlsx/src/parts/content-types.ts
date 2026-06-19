@@ -13,6 +13,7 @@ const XLSX_SHARED_STRINGS =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml";
 const XLSX_THEME = "application/vnd.openxmlformats-officedocument.theme+xml";
 const XLSX_CHART = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
+const CUSTOM_PROPS = "application/vnd.openxmlformats-officedocument.custom-properties+xml";
 
 type EntryType = "Default" | "Override";
 
@@ -89,6 +90,14 @@ export class ContentTypes {
       type: "Override",
       contentType: XLSX_THEME,
       key: `/xl/theme/theme${index}.xml`,
+    });
+  }
+
+  public addCustomProperties(): void {
+    this.dynamicEntries.push({
+      type: "Override",
+      contentType: CUSTOM_PROPS,
+      key: "/docProps/custom.xml",
     });
   }
 

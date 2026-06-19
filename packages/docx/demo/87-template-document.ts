@@ -7,7 +7,7 @@ import { patchDocument } from "@office-open/docx";
 const doc = await patchDocument({
   data: readFileSync("demo/assets/simple-template-2.docx"),
   outputType: "nodebuffer",
-  patches: {
+  placeholders: {
     name: {
       children: ["Max"],
       type: "paragraph",

@@ -36,7 +36,7 @@ const templateBuffer = await generatePresentation(options);
 const patchedBuffer = await patchPresentation({
   outputType: "nodebuffer",
   data: templateBuffer,
-  patches: {
+  placeholders: {
     name: [{ text: "World", bold: true, size: 24 }],
   },
 });

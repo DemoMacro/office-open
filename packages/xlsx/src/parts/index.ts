@@ -42,7 +42,7 @@ export type {
   SheetBackgroundImageOptions,
 } from "./worksheet";
 export type { IconSetType, CfvoType } from "./worksheet";
-export type { CorePropertiesOptions } from "./core-properties";
+export type { CorePropertiesOptions } from "@office-open/core";
 export { calcChainDesc, type CalcChainOptions } from "./calc-chain";
 export { chartsheetDesc, type ChartsheetDescriptorOptions } from "./chartsheet";
 export { commentsDesc, vmlNotesDesc, type CommentsDocOptions } from "./comments";

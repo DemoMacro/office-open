@@ -2,7 +2,7 @@
 
 export type { ViewPropertiesOptions } from "./view-properties";
 export type {
-  PresentationOptions as IPresentationXmlOptions,
+  PresentationPartOptions as IPresentationXmlOptions,
   PhotoAlbumOptions,
   ModifyVerifierOptions,
   EmbeddedFontOptions,
@@ -11,7 +11,7 @@ export type {
   CustomerDataOptions,
   ViewWrapper,
 } from "./presentation";
-export type { CorePropertiesOptions } from "./core-properties";
+export type { CorePropertiesOptions } from "@office-open/core";
 export { ContentTypes } from "./content-types";
 export { type SlideChild } from "./slide/slide-child";
 export {

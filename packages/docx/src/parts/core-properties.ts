@@ -73,20 +73,8 @@ export interface FeaturesOptions {
  * @property fonts - Font configurations
  * @property hyphenation - Hyphenation settings
  */
-export interface DocumentOptions {
+export interface DocumentOptions extends CorePropertiesOptions {
   sections: SectionOptions[];
-  title?: string;
-  subject?: string;
-  creator?: string;
-  keywords?: string;
-  description?: string;
-  lastModifiedBy?: string;
-  revision?: number;
-  lastPrinted?: string;
-  /** Creation timestamp (W3CDTF), round-tripped from dcterms:created. */
-  created?: string;
-  /** Last modified timestamp (W3CDTF), round-tripped from dcterms:modified. */
-  modified?: string;
   externalStyles?: string;
   styles?: StylesOptions;
   numbering?: NumberingOptions;
@@ -163,26 +151,11 @@ export interface DocumentOptions {
 
 // ── Descriptor ──
 
+import type { CorePropertiesOptions } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml } from "@office-open/xml";
 
-/** Subset of DocumentOptions used for core properties XML. */
-export interface CorePropertiesInput {
-  title?: string;
-  subject?: string;
-  creator?: string;
-  keywords?: string;
-  description?: string;
-  lastModifiedBy?: string;
-  revision?: number;
-  lastPrinted?: string;
-  /** Creation timestamp (W3CDTF), round-tripped from dcterms:created. */
-  created?: string;
-  /** Last modified timestamp (W3CDTF), round-tripped from dcterms:modified. */
-  modified?: string;
-}
-
-export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
+export const corePropertiesDesc: CustomDescriptor<CorePropertiesOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -215,7 +188,7 @@ export const corePropertiesDesc: CustomDescriptor<CorePropertiesInput> = {
   },
 
   parse(el, _ctx) {
-    const result: CorePropertiesInput = {};
+    const result: CorePropertiesOptions = {};
     for (const child of el.elements ?? []) {
       if (typeof child.name !== "string") continue;
       const text = child.elements?.[0]?.text;

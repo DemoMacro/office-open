@@ -83,7 +83,7 @@ export interface CustomerDataOptions {
   tagList?: StringTagOptions[];
 }
 
-export interface PresentationOptions {
+export interface PresentationPartOptions {
   slideWidth?: number;
   slideHeight?: number;
   slideIds: number[];

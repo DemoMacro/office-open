@@ -29,5 +29,8 @@ export { appendContentType } from "./content-types-manager";
 
 export { getNextRelationshipIndex, appendRelationship } from "./relationship-manager";
 
+// Core-properties metadata override (used by patch coreProperties layers)
+export { applyCorePropertiesOverride } from "./core-properties-override";
+
 // Shared patch option types (extended by each format's patch options)
 export type { BasePatchOptions, PlaceholderDelimiters } from "./types";

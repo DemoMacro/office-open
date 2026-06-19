@@ -4,7 +4,11 @@
  * @module
  */
 
-import type { CorePropertiesOptions } from "@parts/core-properties";
+import type {
+  AppPropertiesOptions,
+  CorePropertiesOptions,
+  CustomPropertyOptions,
+} from "@office-open/core";
 import type {
   ColorsOptions,
   CustomCellStyleOptions,
@@ -58,4 +62,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   volTypes?: VolTypeOptions[];
   /** Web publish objects (CT_WebPublishItems) */
   webPublishObjects?: WebPublishObjectOptions[];
+  /** Extended properties (docProps/app.xml) */
+  appProperties?: AppPropertiesOptions;
+  /** Custom properties (docProps/custom.xml); omitted from the package when empty */
+  customProperties?: CustomPropertyOptions[];
 }

@@ -2,6 +2,7 @@ import {
   PPTX_NS,
   OoxmlMimeType,
   appendRelationship,
+  applyCorePropertiesOverride,
   collectPlaceholderKeys,
   createReplacer,
   getNextRelationshipIndex,
@@ -11,7 +12,12 @@ import {
   unzipSync,
   zipAndConvert,
 } from "@office-open/core";
-import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
+import type {
+  BasePatchOptions,
+  CorePropertiesOptions,
+  OutputByType,
+  OutputType,
+} from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -23,7 +29,13 @@ import { PptxWriteContext } from "./context";
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
 
-const SLIDE_RE = /^ppt\/slides\/slide(\d+)\.xml$/;
+/**
+ * Parts scanned for text replacement: slides, slide masters, slide layouts,
+ * and notes slides. Replacing text in a master/layout propagates to every
+ * dependent slide — intended for template branding.
+ */
+const TARGET_RE =
+  /^ppt\/(?:slides\/slide\d+|slideMasters\/slideMaster\d+|slideLayouts\/slideLayout\d+|notesSlides\/notesSlide\d+)\.xml$/;
 const HYPERLINK_REL_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
 
@@ -37,7 +49,12 @@ export type Patch = RunOptions | RunOptions[] | string;
 export interface PatchPresentationOptions<
   T extends OutputType = OutputType,
 > extends BasePatchOptions<T> {
-  patches: Readonly<Record<string, Patch>>;
+  /** Placeholder substitutions: `{{key}}` (per delimiters) → run content. */
+  placeholders?: Readonly<Record<string, Patch>>;
+  /** Literal find/replace: the find string → run content (no delimiters added). */
+  findReplace?: Readonly<Record<string, Patch>>;
+  /** Core-properties metadata override (merged over the existing docProps/core.xml). */
+  coreProperties?: Partial<CorePropertiesOptions>;
   keepOriginalStyles?: boolean;
 }
 
@@ -95,7 +112,9 @@ const createRelationshipFile = (): Element => ({
 export const patchPresentation = async <T extends OutputType = OutputType>({
   outputType,
   data,
-  patches,
+  placeholders,
+  findReplace,
+  coreProperties,
   keepOriginalStyles = true,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
 }: PatchPresentationOptions<T>): Promise<OutputByType[T]> => {
@@ -118,74 +137,86 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
     }
   }
 
-  // Collect slide paths sorted by number
-  const slidePaths = Object.keys(zipContent)
-    .filter((k) => SLIDE_RE.test(k))
-    .sort((a, b) => {
-      const na = parseInt(a.match(SLIDE_RE)![1], 10);
-      const nb = parseInt(b.match(SLIDE_RE)![1], 10);
-      return na - nb;
-    });
-
-  // Normalize patches once into the replacer's envelope
-  const normalizedPatches: Record<string, { type: "paragraph"; children: RunOptions[] }> = {};
-  for (const [key, value] of Object.entries(patches)) {
-    normalizedPatches[key] = toReplacerPatch(value);
+  // Build (find-text → patch envelope) entries. Placeholders wrap the key in
+  // delimiters; findReplace uses the literal key. Both share the same engine.
+  const entries: Array<{
+    find: string;
+    patch: { type: "paragraph"; children: RunOptions[] };
+  }> = [];
+  if (placeholders) {
+    for (const [key, value] of Object.entries(placeholders)) {
+      entries.push({ find: `${start}${key}${end}`, patch: toReplacerPatch(value) });
+    }
   }
+  if (findReplace) {
+    for (const [key, value] of Object.entries(findReplace)) {
+      entries.push({ find: key, patch: toReplacerPatch(value) });
+    }
+  }
+
+  // Target parts: slides + masters + layouts + notes (deterministic order)
+  const targetPaths = Object.keys(zipContent)
+    .filter((k) => TARGET_RE.test(k))
+    .sort();
 
   currentPatchCtx = new PptxWriteContext();
   const context = {};
 
-  // Process text replacement on each slide
-  for (const slidePath of slidePaths) {
-    const json = xmlMap.get(slidePath);
+  // Process text replacement on each target part
+  for (const targetPath of targetPaths) {
+    const json = xmlMap.get(targetPath);
     if (!json) continue;
 
-    for (const [patchKey, patchValue] of Object.entries(normalizedPatches)) {
-      const patchText = `${start}${patchKey}${end}`;
+    for (const { find, patch } of entries) {
       pptxReplacer({
         context,
         json,
         keepOriginalStyles,
-        patch: patchValue,
-        patchText,
+        patch,
+        patchText: find,
       });
     }
   }
 
-  // Resolve hyperlink placeholders registered by patch runs into each slide's rels
+  // Resolve hyperlink placeholders registered by patch runs into each part's rels
   const hlinkByKey = new Map(currentPatchCtx.hyperlinks.map((h) => [h.key, h]));
-  for (const slidePath of slidePaths) {
-    const slideEl = xmlMap.get(slidePath);
-    if (!slideEl) continue;
+  for (const targetPath of targetPaths) {
+    const targetEl = xmlMap.get(targetPath);
+    if (!targetEl) continue;
 
-    const slideXml = js2xml(slideEl);
-    const hlinkKeys = collectPlaceholderKeys(slideXml, "hlink:");
+    const targetXml = js2xml(targetEl);
+    const hlinkKeys = collectPlaceholderKeys(targetXml, "hlink:");
     if (hlinkKeys.length === 0) continue;
 
-    const slideHlinks = hlinkKeys
+    const targetHlinks = hlinkKeys
       .map((k) => hlinkByKey.get(k))
       .filter((h): h is NonNullable<typeof h> => h !== undefined);
-    if (slideHlinks.length === 0) continue;
+    if (targetHlinks.length === 0) continue;
 
-    const relsKey = `ppt/slides/_rels/${slidePath.split("/").pop()}.rels`;
+    // Generalized rels path: ppt/<dir>/_rels/<file>.rels
+    const lastSlash = targetPath.lastIndexOf("/");
+    const relsKey = `${targetPath.substring(0, lastSlash)}/_rels/${targetPath.substring(lastSlash + 1)}.rels`;
     const relsJson = xmlMap.get(relsKey) ?? createRelationshipFile();
     xmlMap.set(relsKey, relsJson);
     const offset = getNextRelationshipIndex(relsJson);
 
-    const resolved = replaceHyperlinkPlaceholders(slideXml, slideHlinks, offset);
-    xmlMap.set(slidePath, toJson(resolved));
+    const resolved = replaceHyperlinkPlaceholders(targetXml, targetHlinks, offset);
+    xmlMap.set(targetPath, toJson(resolved));
 
-    for (let i = 0; i < slideHlinks.length; i++) {
-      appendRelationship(relsJson, offset + i, HYPERLINK_REL_TYPE, slideHlinks[i].url, "External");
+    for (let i = 0; i < targetHlinks.length; i++) {
+      appendRelationship(relsJson, offset + i, HYPERLINK_REL_TYPE, targetHlinks[i].url, "External");
     }
   }
 
   // Rebuild ZIP
   const files: Record<string, Uint8Array> = {};
+  const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 
   for (const [key, value] of xmlMap) {
-    files[key] = encoder.encode(js2xml(value));
+    files[key] =
+      key === "docProps/core.xml" && coreProperties
+        ? encoder.encode(XML_DECL + applyCorePropertiesOverride(value, coreProperties))
+        : encoder.encode(js2xml(value));
   }
 
   for (const [key, value] of binaryMap) {
