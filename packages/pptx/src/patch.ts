@@ -19,11 +19,13 @@ import type {
   OutputType,
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
-import { js2xml, xml2js } from "@office-open/xml";
+import { findChild, js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { textRunDesc } from "@parts/descriptors/text";
+import type { SlideOptions } from "@shared/file";
 import type { RunOptions } from "@shared/shape/paragraph/run";
 
+import { stringifySlide } from "./compiler";
 import { PptxWriteContext } from "./context";
 
 /** Reusable TextEncoder (stateless, safe to share). */
@@ -38,6 +40,11 @@ const TARGET_RE =
   /^ppt\/(?:slides\/slide\d+|slideMasters\/slideMaster\d+|slideLayouts\/slideLayout\d+|notesSlides\/notesSlide\d+)\.xml$/;
 const HYPERLINK_REL_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+const SLIDE_PART_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.presentationml.slide+xml";
+const SLIDE_REL_TYPE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide";
+const SLIDE_LAYOUT_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout";
 
 /**
  * Inline run-level patch content. Reuses the generate vocabulary: a
@@ -55,6 +62,16 @@ export interface PatchPresentationOptions<
   findReplace?: Readonly<Record<string, Patch>>;
   /** Core-properties metadata override (merged over the existing docProps/core.xml). */
   coreProperties?: Partial<CorePropertiesOptions>;
+  /**
+   * Slide collection edits. Appended slides inherit the template's first slide
+   * layout; replaced slides keep their existing identity (sldId/rId/rels).
+   */
+  slides?: {
+    /** Replace slides keyed by 0-based index in the slide list (sldIdLst order). */
+    replace?: Readonly<Record<number, SlideOptions>>;
+    /** Append slides after the last existing slide. */
+    append?: Readonly<SlideOptions[]>;
+  };
   keepOriginalStyles?: boolean;
 }
 
@@ -99,6 +116,138 @@ const createRelationshipFile = (): Element => ({
   ],
 });
 
+/** Build a bare OOXML element node. */
+const makeElement = (name: string, attributes: Record<string, string> = {}): Element => ({
+  type: "element",
+  name,
+  attributes,
+  elements: [],
+});
+
+/**
+ * Locate the document root element by tag. A parsed XML part is wrapped as
+ * `{ declaration, elements: [<root>] }`, so named children live one level down.
+ */
+const rootElement = (doc: Element | undefined, name: string): Element | undefined =>
+  doc?.elements?.find((e) => e.name === name);
+
+/** Next 1-based slide file number given the existing slide parts. */
+const nextSlideNumber = (xmlMap: Map<string, Element>): number => {
+  let maxN = 0;
+  for (const key of xmlMap.keys()) {
+    const m = key.match(/^ppt\/slides\/slide(\d+)\.xml$/);
+    if (m) maxN = Math.max(maxN, Number(m[1]));
+  }
+  return maxN + 1;
+};
+
+/** Largest numeric `id` among existing `<p:sldId>` entries. */
+const maxSldId = (sldIdLst: Element | undefined): number => {
+  let maxId = 255;
+  for (const child of sldIdLst?.elements ?? []) {
+    if (child.name === "p:sldId" && child.attributes) {
+      const id = Number(child.attributes["id"]);
+      if (Number.isFinite(id)) maxId = Math.max(maxId, id);
+    }
+  }
+  return maxId;
+};
+
+/** Resolve a relationship `r:id` to its Target via a rels part. */
+const resolveRelTarget = (
+  rels: Element | undefined,
+  rId: string | number | undefined,
+): string | undefined => {
+  if (rId === undefined) return undefined;
+  const needle = String(rId);
+  const relationshipsRoot = rootElement(rels, "Relationships");
+  for (const child of relationshipsRoot?.elements ?? []) {
+    if (child.name === "Relationship" && String(child.attributes?.["Id"]) === needle) {
+      const target = child.attributes?.["Target"];
+      return target !== undefined ? String(target) : undefined;
+    }
+  }
+  return undefined;
+};
+
+/**
+ * Append a slide: serialize it, then wire sldIdLst + presentation rels +
+ * content types + a slide rels pointing at the first slide layout (which must
+ * already exist in the template). The appended slide inherits the template's
+ * layout/master; it cannot reference styles or media not already present.
+ */
+const appendSlideToMap = (
+  xmlMap: Map<string, Element>,
+  slideOpts: SlideOptions,
+  ctx: PptxWriteContext,
+): void => {
+  const newN = nextSlideNumber(xmlMap);
+  const slidePath = `ppt/slides/slide${newN}.xml`;
+
+  // Slide part — no XML declaration, matching generated slide parts.
+  xmlMap.set(slidePath, toJson(stringifySlide(slideOpts, ctx)));
+
+  // presentation.xml sldIdLst + presentation.xml.rels (the new rId ties them)
+  const presRoot = rootElement(xmlMap.get("ppt/presentation.xml"), "p:presentation");
+  const presRels = xmlMap.get("ppt/_rels/presentation.xml.rels") ?? createRelationshipFile();
+  xmlMap.set("ppt/_rels/presentation.xml.rels", presRels);
+  const newRId = getNextRelationshipIndex(presRels);
+
+  const sldIdLst = findChild(presRoot, "p:sldIdLst");
+  if (sldIdLst) {
+    const els = sldIdLst.elements ?? (sldIdLst.elements = []);
+    els.push(
+      makeElement("p:sldId", { id: String(maxSldId(sldIdLst) + 1), "r:id": `rId${newRId}` }),
+    );
+  }
+  appendRelationship(presRels, newRId, SLIDE_REL_TYPE, `slides/slide${newN}.xml`);
+
+  // [Content_Types].xml Override
+  const typesRoot = rootElement(xmlMap.get("[Content_Types].xml"), "Types");
+  if (typesRoot) {
+    const els = typesRoot.elements ?? (typesRoot.elements = []);
+    els.push(
+      makeElement("Override", {
+        PartName: `/${slidePath}`,
+        ContentType: SLIDE_PART_CONTENT_TYPE,
+      }),
+    );
+  }
+
+  // Slide rels → first slide layout (template must already provide it)
+  const slideRels = createRelationshipFile();
+  appendRelationship(slideRels, 1, SLIDE_LAYOUT_REL_TYPE, "../slideLayouts/slideLayout1.xml");
+  xmlMap.set(`ppt/slides/_rels/slide${newN}.xml.rels`, slideRels);
+};
+
+/**
+ * Replace a slide in place by sldIdLst index: resolve the index to its slide
+ * path via presentation rels, then rewrite only that part's content. sldId,
+ * rId, content types, and slide rels are left untouched.
+ */
+const replaceSlideInMap = (
+  xmlMap: Map<string, Element>,
+  index: number,
+  slideOpts: SlideOptions,
+  ctx: PptxWriteContext,
+): void => {
+  const presRoot = rootElement(xmlMap.get("ppt/presentation.xml"), "p:presentation");
+  const sldIdLst = findChild(presRoot, "p:sldIdLst");
+  const sldIds = (sldIdLst?.elements ?? []).filter((e) => e.name === "p:sldId");
+  const entry = sldIds[index];
+  if (!entry?.attributes?.["r:id"]) {
+    throw new Error(`patchPresentation: no slide at index ${index} to replace`);
+  }
+  const target = resolveRelTarget(
+    xmlMap.get("ppt/_rels/presentation.xml.rels"),
+    entry.attributes["r:id"],
+  );
+  if (!target) {
+    throw new Error(`patchPresentation: slide ${index} relationship target not found`);
+  }
+  xmlMap.set(`ppt/${target}`, toJson(stringifySlide(slideOpts, ctx)));
+};
+
 /**
  * Patches an existing .pptx presentation by replacing placeholders with run content.
  *
@@ -115,6 +264,7 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
   placeholders,
   findReplace,
   coreProperties,
+  slides,
   keepOriginalStyles = true,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
 }: PatchPresentationOptions<T>): Promise<OutputByType[T]> => {
@@ -205,6 +355,20 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
 
     for (let i = 0; i < targetHlinks.length; i++) {
       appendRelationship(relsJson, offset + i, HYPERLINK_REL_TYPE, targetHlinks[i].url, "External");
+    }
+  }
+
+  // Slide collection edits — reuse the slide stringifier (no compiler re-run)
+  if (slides) {
+    if (slides.replace) {
+      for (const [index, slideOpts] of Object.entries(slides.replace)) {
+        replaceSlideInMap(xmlMap, Number(index), slideOpts, currentPatchCtx);
+      }
+    }
+    if (slides.append) {
+      for (const slideOpts of slides.append) {
+        appendSlideToMap(xmlMap, slideOpts, currentPatchCtx);
+      }
     }
   }
 

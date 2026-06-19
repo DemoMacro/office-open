@@ -494,7 +494,12 @@ function buildPresAttrOpts(
 
 // ── Slide serializer using descriptors ──
 
-function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): string {
+/**
+ * Serialize a single slide to its `<p:sld>` XML (no XML declaration — matches
+ * the generated slide parts). Exposed so patch can append/replace slides by
+ * reusing the full slide vocabulary without re-running the compiler.
+ */
+export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): string {
   const parts: string[] = [];
 
   const sldAttrs: string[] = [];
