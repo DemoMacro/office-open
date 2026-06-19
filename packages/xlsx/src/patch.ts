@@ -28,12 +28,13 @@ import type {
   OutputType,
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
-import type { ReadContext } from "@office-open/core/descriptor";
+import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { SharedStrings, sharedStringsDesc } from "@parts/shared-strings";
 import { buildWorksheetXml } from "@parts/worksheet";
-import type { WorksheetOptions } from "@parts/worksheet";
+import type { CommentOptions, WorksheetOptions } from "@parts/worksheet";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
@@ -65,6 +66,12 @@ export interface PatchWorkbookOptions<
     /** Append worksheets after the last existing sheet. */
     append?: Readonly<WorksheetOptions[]>;
   };
+  /**
+   * Cell comments (notes) to append per worksheet. Existing comments on the
+   * target worksheet are merged — parsed, extended with the new entries, and
+   * re-serialized. Keyed by worksheet name (as declared in workbook.xml).
+   */
+  comments?: Readonly<Record<string, CommentOptions[]>>;
 }
 
 // Excel serial-date epoch: 1899-12-30 accounts for the spurious 1900 leap year.
@@ -75,6 +82,13 @@ const WORKSHEET_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
 const WORKSHEET_REL_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet";
+const COMMENTS_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
+const VML_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing";
+const COMMENTS_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml";
+const VML_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.vmlDrawing";
 
 /**
  * sharedStringsDesc.parse ignores its context, but its signature requires a
@@ -108,6 +122,7 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
   findReplace,
   coreProperties,
   worksheets,
+  comments,
   placeholderDelimiters = { start: "{{", end: "}}" } as const,
 }: PatchWorkbookOptions<T>): Promise<OutputByType[T]> => {
   const { start, end } = placeholderDelimiters;
@@ -119,6 +134,9 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
 
   const xmlMap = new Map<string, Element>();
   const binaryMap = new Map<string, Uint8Array>();
+  // VML parts are text XML under a .vml extension — kept out of xmlMap (which
+  // only holds .xml/.rels) and serialized as raw text at the end.
+  const vmlFiles = new Map<string, string>();
 
   // Separate XML files from binary files
   for (const [key, value] of Object.entries(zipContent)) {
@@ -184,6 +202,13 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
     rewriteSharedStrings(xmlMap, sharedStrings);
   }
 
+  // Cell comments — append per worksheet, merging with any existing comments.
+  if (comments) {
+    for (const [sheetName, commentOpts] of Object.entries(comments)) {
+      appendCommentsToMap(xmlMap, vmlFiles, sheetName, commentOpts);
+    }
+  }
+
   // Rebuild ZIP
   const files: Record<string, Uint8Array> = {};
   const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
@@ -195,6 +220,9 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
   }
   for (const [key, value] of binaryMap) {
     files[key] = value;
+  }
+  for (const [key, value] of vmlFiles) {
+    files[key] = encoder.encode(value);
   }
 
   return await zipAndConvert(files, outputType, OoxmlMimeType.XLSX);
@@ -531,6 +559,26 @@ function appendWorksheetToMap(
   }
 }
 
+/** Normalize a worksheet name to its full part path via workbook.xml + rels. */
+function resolveSheetPath(xmlMap: Map<string, Element>, name: string): string {
+  const wbRoot = rootOf(xmlMap.get("xl/workbook.xml"));
+  const wbSheets = wbRoot && findLocalChild(wbRoot, "sheets");
+  const sheetEls = (wbSheets?.elements ?? []).filter((e) => localName(e) === "sheet");
+  const target = sheetEls.find((e) => String(e.attributes?.["name"]) === name);
+  if (!target?.attributes?.["r:id"]) {
+    throw new Error(`patchWorkbook: no worksheet named "${name}"`);
+  }
+  const relTarget = resolveRelTarget(
+    rootOf(xmlMap.get("xl/_rels/workbook.xml.rels")),
+    String(target.attributes["r:id"]),
+  );
+  if (!relTarget) {
+    throw new Error(`patchWorkbook: worksheet "${name}" relationship target not found`);
+  }
+  if (relTarget.startsWith("/")) return relTarget.slice(1);
+  return relTarget.startsWith("xl/") ? relTarget : `xl/${relTarget}`;
+}
+
 /**
  * Replace a worksheet by name: resolve the name to its part via workbook rels,
  * then rewrite only that part's content. Sheet identity, rId, and content types
@@ -542,19 +590,158 @@ function replaceWorksheetInMap(
   wsOpts: WorksheetOptions,
   sharedStrings: SharedStrings,
 ): void {
-  const wbRoot = rootOf(xmlMap.get("xl/workbook.xml"));
-  const wbSheets = wbRoot && findLocalChild(wbRoot, "sheets");
-  const sheetEls = (wbSheets?.elements ?? []).filter((e) => localName(e) === "sheet");
-  const target = sheetEls.find((e) => String(e.attributes?.["name"]) === name);
-  if (!target?.attributes?.["r:id"]) {
-    throw new Error(`patchWorkbook: no worksheet named "${name}" to replace`);
+  const sheetPath = resolveSheetPath(xmlMap, name);
+  xmlMap.set(sheetPath, toJson(buildWorksheetXml(wsOpts, { sharedStrings })));
+}
+
+/** Build the rels part path for a given part path (…/_rels/<file>.rels). */
+function relsKeyFor(partPath: string): string {
+  const slash = partPath.lastIndexOf("/");
+  return `${partPath.substring(0, slash)}/_rels/${partPath.substring(slash + 1)}.rels`;
+}
+
+/** Find an existing relationship of a type in a rels root: { id, target }. */
+function findRelByType(
+  relsRoot: Element | undefined,
+  type: string,
+): { id: string; target: string } | undefined {
+  for (const child of relsRoot?.elements ?? []) {
+    if (localName(child) === "Relationship" && String(child.attributes?.["Type"]) === type) {
+      const target = child.attributes?.["Target"];
+      if (target !== undefined) {
+        return { id: String(child.attributes?.["Id"]), target: String(target) };
+      }
+    }
   }
-  const relTarget = resolveRelTarget(
-    rootOf(xmlMap.get("xl/_rels/workbook.xml.rels")),
-    String(target.attributes["r:id"]),
-  );
-  if (!relTarget) {
-    throw new Error(`patchWorkbook: worksheet "${name}" relationship target not found`);
+  return undefined;
+}
+
+/** Largest existing comments file number (xl/comments{n}.xml), for append offset. */
+function nextCommentsNumber(xmlMap: Map<string, Element>): number {
+  let maxN = 0;
+  for (const key of xmlMap.keys()) {
+    const m = key.match(/^xl\/comments(\d+)\.xml$/);
+    if (m) maxN = Math.max(maxN, Number(m[1]));
   }
-  xmlMap.set(`xl/${relTarget}`, toJson(buildWorksheetXml(wsOpts, { sharedStrings })));
+  return maxN + 1;
+}
+
+/**
+ * Insert `<legacyDrawing>` into a worksheet, after `<drawing>` and before the
+ * trailing collection elements (CT_Worksheet sequence order). Skipped when one
+ * already exists.
+ */
+function insertLegacyDrawing(wsRoot: Element, rId: string): void {
+  const els = wsRoot.elements ?? (wsRoot.elements = []);
+  if (els.some((e) => localName(e) === "legacyDrawing")) return;
+  const legacy = makeElement("legacyDrawing", { "r:id": rId });
+  const afterLegacy = new Set([
+    "tableParts",
+    "extLst",
+    "oleObjects",
+    "controls",
+    "picture",
+    "webPublishItems",
+  ]);
+  let insertAt = els.length;
+  for (let i = 0; i < els.length; i++) {
+    if (afterLegacy.has(localName(els[i]))) {
+      insertAt = i;
+      break;
+    }
+  }
+  els.splice(insertAt, 0, legacy);
+}
+
+/** commentsDesc.stringify ignores its context; this satisfies the WriteContext type. */
+const STUB_WRITE_CTX = {} as unknown as WriteContext;
+
+/**
+ * Append cell comments to a worksheet, merging with any existing comments part.
+ * Wires commentsN.xml + vmlDrawingN.vml (reusing the existing pair when present),
+ * the worksheet relationships, the `<legacyDrawing>` anchor, and content types.
+ * VML text is written to {@link vmlFiles} (not xmlMap) because of its extension.
+ */
+function appendCommentsToMap(
+  xmlMap: Map<string, Element>,
+  vmlFiles: Map<string, string>,
+  sheetName: string,
+  commentOpts: CommentOptions[],
+): void {
+  const sheetPath = resolveSheetPath(xmlMap, sheetName);
+  const wsRelsKey = relsKeyFor(sheetPath);
+  const wsRels = xmlMap.get(wsRelsKey) ?? createRelationshipFile();
+  xmlMap.set(wsRelsKey, wsRels);
+
+  // Reuse the worksheet's existing comments/vmlDrawing relationships when present.
+  const existingComments = findRelByType(rootOf(wsRels), COMMENTS_REL_TYPE);
+  const existingVml = findRelByType(rootOf(wsRels), VML_REL_TYPE);
+
+  const commentsN = existingComments
+    ? Number((existingComments.target.match(/comments(\d+)\.xml$/) ?? [])[1]) ||
+      nextCommentsNumber(xmlMap)
+    : nextCommentsNumber(xmlMap);
+  const commentsPath = `xl/comments${commentsN}.xml`;
+  // Reuse the existing vmlDrawing path when present — its index can differ from
+  // the comments index in third-party files.
+  const vmlPath = existingVml
+    ? `xl/drawings/${existingVml.target.slice(existingVml.target.lastIndexOf("/") + 1)}`
+    : `xl/drawings/vmlDrawing${commentsN}.vml`;
+
+  // Merge with the existing comments part if it was already in the package.
+  const existingPart = rootOf(xmlMap.get(commentsPath));
+  let merged = commentOpts;
+  if (existingPart) {
+    merged = [...commentsDesc.parse(existingPart, STUB_READ_CTX).comments, ...commentOpts];
+  }
+
+  const commentsXml = commentsDesc.stringify({ comments: merged }, STUB_WRITE_CTX);
+  if (commentsXml) {
+    xmlMap.set(
+      commentsPath,
+      toJson(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${commentsXml}`),
+    );
+  }
+  const vmlXml = vmlNotesDesc.stringify({ comments: merged }, STUB_WRITE_CTX);
+  if (vmlXml) {
+    vmlFiles.set(vmlPath, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${vmlXml}`);
+  }
+
+  // Worksheet relationships — added only when the part is newly introduced.
+  if (!existingComments) {
+    const n = getNextRelationshipIndex(wsRels);
+    appendRelationship(wsRels, n, COMMENTS_REL_TYPE, `../comments${commentsN}.xml`);
+  }
+  let vmlRidRef: string;
+  if (existingVml) {
+    vmlRidRef = existingVml.id;
+  } else {
+    const n = getNextRelationshipIndex(wsRels);
+    appendRelationship(wsRels, n, VML_REL_TYPE, `../drawings/vmlDrawing${commentsN}.vml`);
+    vmlRidRef = `rId${n}`;
+  }
+
+  // `<legacyDrawing>` anchor on the worksheet (deduped).
+  const wsRoot = rootOf(xmlMap.get(sheetPath));
+  if (wsRoot) insertLegacyDrawing(wsRoot, vmlRidRef);
+
+  // Content types — comments Override (new part only) + vml Default (deduped).
+  const typesRoot = rootOf(xmlMap.get("[Content_Types].xml"));
+  if (typesRoot) {
+    const els = typesRoot.elements ?? (typesRoot.elements = []);
+    if (!existingPart) {
+      els.push(
+        makeElement("Override", {
+          PartName: `/${commentsPath}`,
+          ContentType: COMMENTS_CONTENT_TYPE,
+        }),
+      );
+    }
+    const hasVml = els.some(
+      (e) => localName(e) === "Default" && e.attributes?.["Extension"] === "vml",
+    );
+    if (!hasVml) {
+      els.push(makeElement("Default", { Extension: "vml", ContentType: VML_CONTENT_TYPE }));
+    }
+  }
 }

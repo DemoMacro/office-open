@@ -103,3 +103,98 @@ describe("patchWorkbook worksheets", () => {
     ).rejects.toThrow(/Missing/);
   });
 });
+
+describe("patchWorkbook comments", () => {
+  it("appends comments to a worksheet, wiring parts + rels + content types", async () => {
+    const template = (await generateWorkbook(
+      { worksheets: [{ name: "Data", rows: [{ cells: [{ reference: "A1", value: "hello" }] }] }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    const patched = await patchWorkbook({
+      data: template,
+      outputType: "uint8array",
+      comments: {
+        Data: [{ cell: "A1", author: "Alice", text: "needs review" }],
+      },
+    });
+
+    // comments part carries the note + author + cell ref
+    const commentsXml = decodeEntry(patched, "xl/comments1.xml");
+    expect(commentsXml).toContain("Alice");
+    expect(commentsXml).toContain("needs review");
+    expect(commentsXml).toContain('ref="A1"');
+
+    // vmlDrawing part exists (legacy note shape)
+    expect(decodeEntry(patched, "xl/drawings/vmlDrawing1.vml")).toContain("<v:shape");
+
+    // worksheet anchors the vmlDrawing
+    expect(decodeEntry(patched, "xl/worksheets/sheet1.xml")).toContain("<legacyDrawing");
+
+    // worksheet rels wire comments + vmlDrawing
+    const wsRels = decodeEntry(patched, "xl/worksheets/_rels/sheet1.xml.rels");
+    expect(wsRels).toContain("comments1.xml");
+    expect(wsRels).toContain("vmlDrawing1.vml");
+
+    // content types registered
+    const types = decodeEntry(patched, "[Content_Types].xml");
+    expect(types).toContain("/xl/comments1.xml");
+    expect(types).toContain('Extension="vml"');
+  });
+
+  it("merges with existing comments on the worksheet", async () => {
+    const template = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Data",
+            rows: [{ cells: [{ reference: "A1", value: "x" }] }],
+            comments: [{ cell: "A1", author: "Alice", text: "original note" }],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    const patched = await patchWorkbook({
+      data: template,
+      outputType: "uint8array",
+      comments: {
+        Data: [{ cell: "B2", author: "Bob", text: "appended note" }],
+      },
+    });
+
+    // Both authors present (merged), both notes present
+    const commentsXml = decodeEntry(patched, "xl/comments1.xml");
+    expect(commentsXml).toContain("original note");
+    expect(commentsXml).toContain("appended note");
+    expect(commentsXml).toContain("Alice");
+    expect(commentsXml).toContain("Bob");
+
+    // Reuses the same comments1.xml — no duplicate override, single vml default
+    const types = decodeEntry(patched, "[Content_Types].xml");
+    expect((types.match(/\/xl\/comments1\.xml/g) ?? []).length).toBe(1);
+    expect((types.match(/Extension="vml"/g) ?? []).length).toBe(1);
+
+    // No duplicate legacyDrawing anchor or duplicate comments rel
+    const sheet = decodeEntry(patched, "xl/worksheets/sheet1.xml");
+    expect((sheet.match(/<legacyDrawing/g) ?? []).length).toBe(1);
+    const wsRels = decodeEntry(patched, "xl/worksheets/_rels/sheet1.xml.rels");
+    expect((wsRels.match(/comments1\.xml/g) ?? []).length).toBe(1);
+  });
+
+  it("throws when commenting a non-existent worksheet name", async () => {
+    const template = (await generateWorkbook(
+      { worksheets: [{ name: "Only", rows: [] }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    await expect(
+      patchWorkbook({
+        data: template,
+        outputType: "uint8array",
+        comments: { Missing: [{ cell: "A1", author: "X", text: "y" }] },
+      }),
+    ).rejects.toThrow(/Missing/);
+  });
+});
