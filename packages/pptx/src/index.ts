@@ -7,6 +7,8 @@ export {
   generatePresentationSync,
   generatePresentationStream,
 } from "./generate";
+export { compilePresentation } from "./compiler";
+export { PptxWriteContext, PptxReadContext } from "./context";
 export type {
   CompressionOptions,
   OutputType,
