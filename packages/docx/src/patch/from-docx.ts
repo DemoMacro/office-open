@@ -23,6 +23,7 @@ import type {
 import { toUint8Array } from "@office-open/core";
 import { escapeXml, js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { commentsDesc } from "@parts/comments";
 import { DocumentAttributeNamespaces } from "@parts/document";
 import {
   stringifyChildDispatch,
@@ -31,6 +32,7 @@ import {
 } from "@parts/inline";
 import type { ParagraphChild } from "@parts/paragraph/paragraph";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { tableDesc } from "@parts/table/descriptor";
 import type { TableOptions } from "@parts/table/table";
@@ -42,6 +44,22 @@ import type { ViewWrapper } from "../context";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
+
+const COMMENTS_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
+const COMMENTS_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml";
+
+/** A comment injected by patch — same as CommentOptions but without an id
+ *  (the patch assigns continuation ids). */
+export type PatchComment = Omit<CommentOptions, "id">;
+
+/** A comment request resolved to an id and an anchor (paragraph index or placeholder). */
+interface AssignedComment {
+  id: number;
+  anchor: { kind: "paragraph"; index: number } | { kind: "placeholder"; key: string };
+  options: PatchComment;
+}
 
 /**
  * Document patching module for modifying existing .docx files.
@@ -185,6 +203,16 @@ export interface PatchDocumentOptions<
   recursive?: boolean;
   /** Block-level content appended to the document body, before the final section break. */
   append?: SectionChild[];
+  /**
+   * Comments to inject. `paragraphs` anchors a comment to the Nth body paragraph
+   * (0-based, wraps the whole paragraph); `placeholders` anchors to the run
+   * containing a {{key}} (wrapped before placeholder substitution). Ids are
+   * continued from any existing word/comments.xml; entries are merged in.
+   */
+  comments?: {
+    paragraphs?: Readonly<Record<number, PatchComment[]>>;
+    placeholders?: Readonly<Record<string, PatchComment[]>>;
+  };
 }
 
 const UTF16LE = new Uint8Array([0xff, 0xfe]);
@@ -214,6 +242,7 @@ export const patchDocument = async <T extends OutputType = OutputType>({
   findReplace,
   coreProperties,
   append,
+  comments,
   keepOriginalStyles = true,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
   recursive = true,
@@ -222,6 +251,9 @@ export const patchDocument = async <T extends OutputType = OutputType>({
   const contexts = new Map<string, BodyContext>();
   const media = new Media();
   const file = { media } as BodyContext["file"];
+
+  // Resolve comment ids by continuation from any existing word/comments.xml.
+  const assignedComments = buildAssignedComments(zipContent, comments);
 
   const map = new Map<string, Element>();
 
@@ -296,6 +328,15 @@ export const patchDocument = async <T extends OutputType = OutputType>({
       const patchCtx = createPatchContext(file, hyperlinkSink);
       currentPatchCtx = patchCtx;
 
+      // Anchor placeholder comments BEFORE substitution, wrapping the {{key}} run.
+      if (key === "word/document.xml") {
+        for (const ac of assignedComments) {
+          if (ac.anchor.kind === "placeholder") {
+            wrapPlaceholderComment(json, `${start}${ac.anchor.key}${end}`, ac.id);
+          }
+        }
+      }
+
       // Build (find-text → patch) entries. Placeholders wrap the key in
       // delimiters; findReplace uses the literal key. Both share one engine.
       const entries: Array<{ find: string; patch: Patch }> = [];
@@ -330,6 +371,15 @@ export const patchDocument = async <T extends OutputType = OutputType>({
         appendToBody(json, append);
       }
 
+      // Anchor paragraph comments AFTER body edits, wrapping the Nth paragraph.
+      if (key === "word/document.xml") {
+        for (const ac of assignedComments) {
+          if (ac.anchor.kind === "paragraph") {
+            wrapParagraphComment(json, ac.anchor.index, ac.id);
+          }
+        }
+      }
+
       // Flush hyperlink relationships captured by the compile-path context
       for (const hl of hyperlinkSink) {
         hyperlinkRelationshipAdditions.push({
@@ -349,6 +399,11 @@ export const patchDocument = async <T extends OutputType = OutputType>({
     }
 
     map.set(key, json);
+  }
+
+  // Merge injected comments into word/comments.xml + wire rels + content types.
+  if (assignedComments.length > 0) {
+    mergeCommentsPart(map, assignedComments, file);
   }
 
   for (const { key, mediaDatas } of imageRelationshipAdditions) {
@@ -447,3 +502,159 @@ const createRelationshipFile = (): Element => ({
     },
   ],
 });
+
+/** Build a bare OOXML element node with attributes and no children. */
+function makeElement(name: string, attributes: Record<string, string> = {}): Element {
+  return { type: "element", name, attributes, elements: [] };
+}
+
+/** A `<w:r>` carrying a `<w:commentReference>` (CommentReference run style). */
+function commentReferenceRun(id: number): Element {
+  return xml2js(
+    `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${id}"/></w:r>`,
+  ).elements![0];
+}
+
+/** Largest `w:id` among existing `<w:comment>` entries (-1 when none). */
+function maxCommentId(commentsPart: Element | undefined): number {
+  const root = commentsPart?.elements?.find((e) => e.name === "w:comments");
+  let max = -1;
+  for (const c of root?.elements ?? []) {
+    if (c.name === "w:comment") {
+      const id = Number(c.attributes?.["w:id"]);
+      if (Number.isFinite(id)) max = Math.max(max, id);
+    }
+  }
+  return max;
+}
+
+/** Assign continuation ids to every requested comment anchor. */
+function buildAssignedComments(
+  zipContent: Record<string, Uint8Array>,
+  comments: PatchDocumentOptions["comments"],
+): AssignedComment[] {
+  if (!comments) return [];
+  const raw = zipContent["word/comments.xml"];
+  let nextId = raw ? maxCommentId(toJson(strFromU8(raw))) + 1 : 0;
+  const assigned: AssignedComment[] = [];
+  if (comments.placeholders) {
+    for (const [key, list] of Object.entries(comments.placeholders)) {
+      for (const options of list) {
+        assigned.push({ id: nextId++, anchor: { kind: "placeholder", key }, options });
+      }
+    }
+  }
+  if (comments.paragraphs) {
+    for (const [indexStr, list] of Object.entries(comments.paragraphs)) {
+      const index = Number(indexStr);
+      for (const options of list) {
+        assigned.push({ id: nextId++, anchor: { kind: "paragraph", index }, options });
+      }
+    }
+  }
+  return assigned;
+}
+
+/** Wrap the Nth body paragraph with comment range markers + a reference run. */
+function wrapParagraphComment(json: Element, index: number, commentId: number): void {
+  const body = json.elements
+    ?.find((e) => e.name === "w:document")
+    ?.elements?.find((e) => e.name === "w:body");
+  if (!body) return;
+  const paragraphs = (body.elements ?? []).filter((e) => e.name === "w:p");
+  const target = paragraphs[index];
+  if (!target) {
+    throw new Error(`patchDocument: no paragraph at index ${index} to comment`);
+  }
+  const els = target.elements ?? (target.elements = []);
+  const start = makeElement("w:commentRangeStart", { "w:id": String(commentId) });
+  const end = makeElement("w:commentRangeEnd", { "w:id": String(commentId) });
+  // Insert start after a leading <w:pPr> (or at the head); end + ref at the tail.
+  const insertAt = els.length > 0 && els[0].name === "w:pPr" ? 1 : 0;
+  els.splice(insertAt, 0, start);
+  els.push(end, commentReferenceRun(commentId));
+}
+
+/** Wrap the first run whose `<w:t>` contains the placeholder with comment markers. */
+function wrapPlaceholderComment(json: Element, placeholder: string, commentId: number): void {
+  const body = json.elements
+    ?.find((e) => e.name === "w:document")
+    ?.elements?.find((e) => e.name === "w:body");
+  if (!body) return;
+  for (const p of body.elements ?? []) {
+    if (p.name !== "w:p") continue;
+    const els = p.elements ?? [];
+    for (let i = 0; i < els.length; i++) {
+      if (els[i].name !== "w:r") continue;
+      const t = (els[i].elements ?? []).find((e) => e.name === "w:t");
+      const text = t?.elements?.[0]?.text;
+      if (typeof text === "string" && text.includes(placeholder)) {
+        els.splice(i, 0, makeElement("w:commentRangeStart", { "w:id": String(commentId) }));
+        els.splice(
+          i + 2,
+          0,
+          makeElement("w:commentRangeEnd", { "w:id": String(commentId) }),
+          commentReferenceRun(commentId),
+        );
+        return; // only the first occurrence
+      }
+    }
+  }
+}
+
+/**
+ * Merge assigned comments into word/comments.xml (appending to an existing part
+ * or creating one) and wire document.xml.rels + content types when newly added.
+ */
+function mergeCommentsPart(
+  map: Map<string, Element>,
+  assigned: AssignedComment[],
+  file: { media: Media },
+): void {
+  const newOpts: CommentOptions[] = assigned.map((ac) => ({ id: ac.id, ...ac.options }));
+  const ctx = createPatchContext(file, []);
+  const newXml = commentsDesc.stringify({ children: newOpts }, ctx) ?? "";
+  const existingEl = map.get("word/comments.xml");
+  const wasNew = !existingEl;
+
+  if (existingEl) {
+    // Append new <w:comment> elements to the existing <w:comments> root.
+    const existingRoot = existingEl.elements?.find((e) => e.name === "w:comments");
+    const newRoot = xml2js(newXml).elements?.find((e) => e.name === "w:comments");
+    existingRoot?.elements?.push(...(newRoot?.elements ?? []));
+  } else {
+    map.set(
+      "word/comments.xml",
+      toJson(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${newXml}`),
+    );
+  }
+
+  if (wasNew) {
+    const relsKey = "word/_rels/document.xml.rels";
+    const relsJson = map.get(relsKey) ?? createRelationshipFile();
+    map.set(relsKey, relsJson);
+    appendRelationship(
+      relsJson,
+      getNextRelationshipIndex(relsJson),
+      COMMENTS_REL_TYPE,
+      "comments.xml",
+    );
+  }
+
+  // Content types — ensure the comments Override exists (deduped). An existing
+  // comments part normally already declares it, but defend against incomplete templates.
+  const typesEl = map.get("[Content_Types].xml")?.elements?.find((e) => e.name === "Types");
+  if (typesEl) {
+    const els = typesEl.elements ?? (typesEl.elements = []);
+    if (
+      !els.some((e) => e.name === "Override" && e.attributes?.["PartName"] === "/word/comments.xml")
+    ) {
+      els.push(
+        makeElement("Override", {
+          PartName: "/word/comments.xml",
+          ContentType: COMMENTS_CONTENT_TYPE,
+        }),
+      );
+    }
+  }
+}

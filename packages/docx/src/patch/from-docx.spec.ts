@@ -795,5 +795,120 @@ describe("from-docx", () => {
         expect(xml).toContain("APPENDED_CELL_B");
       });
     });
+
+    describe("comments", () => {
+      let realUnzip: typeof import("fflate").unzipSync;
+      const CT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`;
+
+      beforeEach(async () => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            ["[Content_Types].xml", CT],
+          ]),
+        );
+        realUnzip = (await vi.importActual<typeof import("fflate")>("fflate")).unzipSync;
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      const decodeEntry = async (output: unknown, path: string): Promise<string> => {
+        const unzipped = realUnzip(output as Uint8Array);
+        const entry = unzipped[path];
+        expect(entry, `${path} should be zipped`).toBeDefined();
+        return new TextDecoder().decode(entry);
+      };
+
+      it("wraps the Nth paragraph + creates comments.xml with rels/content types", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          comments: {
+            paragraphs: {
+              0: [{ author: "Alice", children: [{ children: ["First note"] }] }],
+            },
+          },
+        });
+
+        const xml = await decodeEntry(output, "word/document.xml");
+        expect(xml).toContain('<w:commentRangeStart w:id="0"');
+        expect(xml).toContain('<w:commentRangeEnd w:id="0"');
+        expect(xml).toContain('<w:commentReference w:id="0"');
+
+        const commentsXml = await decodeEntry(output, "word/comments.xml");
+        expect(commentsXml).toContain("Alice");
+        expect(commentsXml).toContain("First note");
+
+        expect(await decodeEntry(output, "word/_rels/document.xml.rels")).toContain("comments.xml");
+        expect(await decodeEntry(output, "[Content_Types].xml")).toContain("/word/comments.xml");
+      });
+
+      it("wraps the placeholder run before substitution", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          comments: {
+            placeholders: {
+              name: [{ author: "Bob", children: [{ children: ["On the name"] }] }],
+            },
+          },
+        });
+
+        const xml = await decodeEntry(output, "word/document.xml");
+        expect(xml).toContain('<w:commentRangeStart w:id="0"');
+        expect(xml).toContain('<w:commentReference w:id="0"');
+      });
+
+      it("continues ids + merges entries with an existing comments part", async () => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", MOCK_XML],
+            [
+              "word/comments.xml",
+              `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:comment w:id="5" w:author="Old" w:date="2024-01-01T00:00:00Z"><w:p/></w:comment></w:comments>`,
+            ],
+            ["[Content_Types].xml", CT],
+          ]),
+        );
+
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          comments: {
+            paragraphs: {
+              0: [{ author: "Alice", children: [{ children: ["New note"] }] }],
+            },
+          },
+        });
+
+        // New comment id continues at 6 (after existing max 5).
+        const xml = await decodeEntry(output, "word/document.xml");
+        expect(xml).toContain('<w:commentRangeStart w:id="6"');
+
+        const commentsXml = await decodeEntry(output, "word/comments.xml");
+        expect(commentsXml).toContain("Old"); // existing preserved
+        expect(commentsXml).toContain("Alice"); // new merged
+
+        // No duplicate content-type override.
+        const types = await decodeEntry(output, "[Content_Types].xml");
+        expect((types.match(/\/word\/comments\.xml/g) ?? []).length).toBe(1);
+      });
+
+      it("throws when commenting a non-existent paragraph index", async () => {
+        await expect(
+          patchDocument({
+            data: Buffer.from(""),
+            outputType: "uint8array",
+            comments: {
+              paragraphs: {
+                999: [{ author: "X", children: [{ children: ["y"] }] }],
+              },
+            },
+          }),
+        ).rejects.toThrow(/index 999/);
+      });
+    });
   });
 });
