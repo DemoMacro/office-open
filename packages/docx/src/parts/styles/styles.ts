@@ -14,8 +14,8 @@ import type { ParagraphStylePropertiesOptions } from "@parts/paragraph/propertie
 import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
-  BaseCharacterStyleOptions,
-  BaseParagraphStyleOptions,
+  CharacterStyleOptions,
+  ParagraphStyleOptions,
   DefaultStylesOptions,
   DocumentDefaultsOptions,
 } from "@parts/styles/factory";
@@ -39,9 +39,9 @@ export interface StylesOptions {
   /** Array of raw XML style elements */
   importedStyles?: { _raw: string }[];
   /** Array of custom paragraph style definitions */
-  paragraphStyles?: (BaseParagraphStyleOptions & { id: string })[];
+  paragraphStyles?: (ParagraphStyleOptions & { id: string })[];
   /** Array of custom character style definitions */
-  characterStyles?: (BaseCharacterStyleOptions & { id: string })[];
+  characterStyles?: (CharacterStyleOptions & { id: string })[];
   /**
    * Verbatim `<w:latentStyles>` XML (CT_LatentStyles + lsdException list).
    * When set (from parse), generate uses it in place of the default factory's
@@ -259,8 +259,8 @@ export function parseStyleDefinitions(
   ctx: DocxReadContext,
 ): StylesOptions | undefined {
   const opts: StylesOptions = {};
-  const paragraphStyles: (BaseParagraphStyleOptions & { id: string })[] = [];
-  const characterStyles: (BaseCharacterStyleOptions & { id: string })[] = [];
+  const paragraphStyles: (ParagraphStyleOptions & { id: string })[] = [];
+  const characterStyles: (CharacterStyleOptions & { id: string })[] = [];
 
   for (const child of el.elements ?? []) {
     if (child.name === "w:docDefaults") {
@@ -301,9 +301,9 @@ export function parseStyleDefinitions(
       delete styleOpts._type;
 
       if (type === "paragraph") {
-        paragraphStyles.push(styleOpts as BaseParagraphStyleOptions & { id: string });
+        paragraphStyles.push(styleOpts as ParagraphStyleOptions & { id: string });
       } else if (type === "character") {
-        characterStyles.push(styleOpts as BaseCharacterStyleOptions & { id: string });
+        characterStyles.push(styleOpts as CharacterStyleOptions & { id: string });
       }
     }
   }

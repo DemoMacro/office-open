@@ -13,6 +13,9 @@ export type {
   BorderSideOptions,
   BorderOptions,
   AlignmentOptions,
+  CustomTableStyleOptions,
+  CustomCellStyleOptions,
+  StyleExtensionOptions,
 } from "./styles";
 export { worksheetDesc, stringifyWorksheet, buildWorksheetXml } from "./worksheet";
 export type {

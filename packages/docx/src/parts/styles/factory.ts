@@ -18,29 +18,29 @@ import type { StylesOptions } from "./styles";
 
 export interface DefaultStylesOptions {
   document?: DocumentDefaultsOptions;
-  title?: BaseParagraphStyleOptions;
-  subtitle?: BaseParagraphStyleOptions;
-  heading1?: BaseParagraphStyleOptions;
-  heading2?: BaseParagraphStyleOptions;
-  heading3?: BaseParagraphStyleOptions;
-  heading4?: BaseParagraphStyleOptions;
-  heading5?: BaseParagraphStyleOptions;
-  heading6?: BaseParagraphStyleOptions;
-  heading7?: BaseParagraphStyleOptions;
-  heading8?: BaseParagraphStyleOptions;
-  heading9?: BaseParagraphStyleOptions;
-  strong?: BaseParagraphStyleOptions;
-  emphasis?: BaseParagraphStyleOptions;
-  listParagraph?: BaseParagraphStyleOptions;
-  quote?: BaseParagraphStyleOptions;
-  intenseQuote?: BaseParagraphStyleOptions;
-  hyperlink?: BaseCharacterStyleOptions;
-  footnoteReference?: BaseCharacterStyleOptions;
-  footnoteText?: BaseParagraphStyleOptions;
-  footnoteTextChar?: BaseCharacterStyleOptions;
-  endnoteReference?: BaseCharacterStyleOptions;
-  endnoteText?: BaseParagraphStyleOptions;
-  endnoteTextChar?: BaseCharacterStyleOptions;
+  title?: ParagraphStyleOptions;
+  subtitle?: ParagraphStyleOptions;
+  heading1?: ParagraphStyleOptions;
+  heading2?: ParagraphStyleOptions;
+  heading3?: ParagraphStyleOptions;
+  heading4?: ParagraphStyleOptions;
+  heading5?: ParagraphStyleOptions;
+  heading6?: ParagraphStyleOptions;
+  heading7?: ParagraphStyleOptions;
+  heading8?: ParagraphStyleOptions;
+  heading9?: ParagraphStyleOptions;
+  strong?: ParagraphStyleOptions;
+  emphasis?: ParagraphStyleOptions;
+  listParagraph?: ParagraphStyleOptions;
+  quote?: ParagraphStyleOptions;
+  intenseQuote?: ParagraphStyleOptions;
+  hyperlink?: CharacterStyleOptions;
+  footnoteReference?: CharacterStyleOptions;
+  footnoteText?: ParagraphStyleOptions;
+  footnoteTextChar?: CharacterStyleOptions;
+  endnoteReference?: CharacterStyleOptions;
+  endnoteText?: ParagraphStyleOptions;
+  endnoteTextChar?: CharacterStyleOptions;
 }
 
 export interface DocumentDefaultsOptions {
@@ -48,7 +48,7 @@ export interface DocumentDefaultsOptions {
   run?: RunStylePropertiesOptions;
 }
 
-interface StyleOptions {
+export interface StyleOptions {
   name?: string;
   aliases?: string;
   basedOn?: string;
@@ -65,12 +65,12 @@ interface StyleOptions {
   personalReply?: boolean;
 }
 
-export type BaseParagraphStyleOptions = {
+export type ParagraphStyleOptions = {
   paragraph?: ParagraphStylePropertiesOptions;
   run?: RunStylePropertiesOptions;
 } & StyleOptions & { id?: string };
 
-export type BaseCharacterStyleOptions = {
+export type CharacterStyleOptions = {
   run?: RunStylePropertiesOptions;
 } & StyleOptions & { id?: string };
 
@@ -150,7 +150,7 @@ export function stringifyCharacterStyle(
 function headingOverride(
   options: DefaultStylesOptions,
   level: number,
-): BaseParagraphStyleOptions | undefined {
+): ParagraphStyleOptions | undefined {
   switch (level) {
     case 1:
       return options.heading1;

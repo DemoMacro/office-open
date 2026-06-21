@@ -4,3 +4,4 @@
  * @module
  */
 export * from "./styles";
+export * from "./factory";
