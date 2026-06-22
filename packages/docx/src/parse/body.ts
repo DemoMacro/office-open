@@ -13,7 +13,7 @@ import { parseSectionPropertiesEl } from "@parts/document/body/section-propertie
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
-import { parseToc } from "@parts/table-of-contents/toc-parse";
+import { parseToc, parseTocFieldFromElements } from "@parts/table-of-contents/toc-parse";
 import { tableDesc } from "@parts/table/descriptor";
 import type { TableOptions } from "@parts/table/table";
 import { parseTextbox } from "@parts/textbox/textbox-parse";
@@ -309,40 +309,46 @@ function isTocFieldBegin(el: Element): boolean {
  */
 function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionChild[] {
   const children: SectionChild[] = [];
-  let tocBuffer: string[] | null = null;
+  let tocBuffer: Element[] | null = null;
   let tocDepth = 0;
+
+  const flushToc = (): void => {
+    if (!tocBuffer) return;
+    children.push(buildTocChild(tocBuffer));
+    tocBuffer = null;
+    tocDepth = 0;
+  };
 
   for (const el of elements) {
     if (tocBuffer !== null) {
-      tocBuffer.push(stringifyElement(el));
+      tocBuffer.push(el);
       tocDepth += countFieldDelta(el);
-      if (tocDepth <= 0) {
-        children.push({ rawXml: tocBuffer.join("") });
-        tocBuffer = null;
-        tocDepth = 0;
-      }
+      if (tocDepth <= 0) flushToc();
       continue;
     }
     if (isTocFieldBegin(el)) {
-      tocBuffer = [stringifyElement(el)];
+      tocBuffer = [el];
       tocDepth = countFieldDelta(el);
-      if (tocDepth <= 0) {
-        // Single-paragraph TOC field (rare) — flush immediately.
-        children.push({ rawXml: tocBuffer.join("") });
-        tocBuffer = null;
-        tocDepth = 0;
-      }
+      if (tocDepth <= 0) flushToc();
       continue;
     }
     children.push(parseSectionChild(el, ctx));
   }
 
   // Unclosed TOC field at end of content — flush what we have (best effort).
-  if (tocBuffer !== null) {
-    children.push({ rawXml: tocBuffer.join("") });
-  }
+  flushToc();
 
   return children;
+}
+
+/**
+ * Build a structured TOC SectionChild from a captured bare TOC field. Extracts
+ * the field instruction (switches → TableOfContentsOptions) and discards the
+ * rendered result (separate→end content) — Word regenerates it from headings on
+ * open via the dirty flag emitted by stringifyTableOfContents.
+ */
+function buildTocChild(els: Element[]): SectionChild {
+  return { toc: parseTocFieldFromElements(els) };
 }
 
 /**

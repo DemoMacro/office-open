@@ -99,7 +99,7 @@ function hasTocFieldInstruction(el: Element): boolean {
  * Parse a TOC field instruction string (e.g., ' TOC \o "1-3" \h \z ')
  * into TableOfContentsOptions properties.
  */
-function parseTocFieldInstruction(instruction: string, opts: Record<string, unknown>): void {
+export function parseTocFieldInstruction(instruction: string, opts: Record<string, unknown>): void {
   if (!instruction.startsWith("TOC")) return;
 
   const rest = instruction.slice(3).trim();
@@ -131,6 +131,29 @@ function parseTocFieldInstruction(instruction: string, opts: Record<string, unkn
   if ("w" in switches) opts.preserveTabInEntries = true;
   if ("x" in switches) opts.preserveNewLineInEntries = true;
   if ("z" in switches) opts.hideTabAndPageNumbersInWebView = true;
+}
+
+/**
+ * Extract TOC options from the elements of a captured TOC field (SDT content or
+ * a bare cross-paragraph field). Feeds every w:instrText to the instruction
+ * parser; non-TOC fields (HYPERLINK/PAGEREF inside the rendered entries) are
+ * ignored — parseTocFieldInstruction only acts on instructions starting "TOC".
+ */
+export function parseTocFieldFromElements(els: Element[]): TableOfContentsOptions {
+  const opts: Record<string, unknown> = {};
+  for (const el of els) collectTocInstructions(el, opts);
+  return opts as TableOfContentsOptions;
+}
+
+/** Recursively feed every w:instrText to the TOC instruction parser. */
+function collectTocInstructions(el: Element, opts: Record<string, unknown>): void {
+  if (el.name === "w:instrText") {
+    const instruction = textOf(el)?.trim();
+    if (instruction) parseTocFieldInstruction(instruction, opts);
+  }
+  for (const c of el.elements ?? []) {
+    if (c.type === "element") collectTocInstructions(c, opts);
+  }
 }
 
 /**
