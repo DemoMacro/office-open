@@ -33,12 +33,12 @@ export type TableRowOptions = {
   cells: (TableCellOptions | { sdt: SdtCellOptions } | { customXml: CustomXmlCellOptions })[];
   /** Table property exceptions for this row (override table-level properties) */
   propertyExceptions?: TablePropertyExOptions;
-  /** Revision save ID for row properties (hex string, e.g. "00123456"). */
-  rsidRPr?: string;
-  /** Revision save ID for the row (hex string). */
-  rsidR?: string;
-  /** Revision save ID when row was deleted (hex string). */
-  rsidDel?: string;
-  /** Revision save ID for table row (hex string). */
-  rsidTr?: string;
+  /** Revision save ID for row properties (w:rsidRPr, hex string). */
+  runPropertiesRsid?: string;
+  /** Revision save ID for the row (w:rsidR, hex string). */
+  rsid?: string;
+  /** Revision save ID when row was deleted (w:rsidDel, hex string). */
+  deletionRsid?: string;
+  /** Revision save ID for table row (w:rsidTr, hex string). */
+  tableRowRsid?: string;
 } & TableRowPropertiesOptions;

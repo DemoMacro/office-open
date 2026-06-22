@@ -114,8 +114,9 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   }
 
   const rsidAttrs: string[] = [];
-  if (opts.rsidRPr) rsidAttrs.push(` w:rsidRPr="${opts.rsidRPr}"`);
-  if (opts.rsidDel) rsidAttrs.push(` w:rsidDel="${opts.rsidDel}"`);
+  if (opts.rsid) rsidAttrs.push(` w:rsidR="${opts.rsid}"`);
+  if (opts.runPropertiesRsid) rsidAttrs.push(` w:rsidRPr="${opts.runPropertiesRsid}"`);
+  if (opts.deletionRsid) rsidAttrs.push(` w:rsidDel="${opts.deletionRsid}"`);
   const attr = rsidAttrs.join("");
 
   const body = parts.join("");

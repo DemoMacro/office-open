@@ -178,14 +178,18 @@ export type ParagraphOptions = {
   text?: string;
   /** Array of child elements. */
   children?: (ParagraphChild | string)[];
-  /** Revision save ID for the paragraph mark. */
-  rsidR?: string;
-  /** Revision save ID for the paragraph properties. */
-  rsidRPr?: string;
-  /** Revision save ID for the default run properties. */
-  rsidRDefault?: string;
-  /** Revision save ID when paragraph was deleted. */
-  rsidDel?: string;
-  /** Revision save ID for the paragraph. */
-  rsidP?: string;
+  /** Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string). */
+  rsid?: string;
+  /** Default revision save ID for runs in this paragraph (w:rsidRDefault). */
+  defaultRunRsid?: string;
+  /** Revision save ID for the paragraph properties (w:rsidP). */
+  propertiesRsid?: string;
+  /** Revision save ID for the paragraph mark run properties (w:rsidRPr). */
+  runPropertiesRsid?: string;
+  /** Revision save ID when the paragraph was deleted (w:rsidDel). */
+  deletionRsid?: string;
+  /** Unique paragraph identifier (w14:paraId, 8-digit hex string). */
+  paraId?: string;
+  /** Paragraph text identifier (w14:textId, 8-digit hex string). */
+  textId?: string;
 } & ParagraphPropertiesOptions;

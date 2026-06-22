@@ -77,6 +77,39 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(char!.run?.bold).toBe(true);
   });
 
+  it("reads back custom table style with conditional formats (fully structured)", () => {
+    const styles = new Styles({
+      tableStyles: [
+        {
+          id: "MyTable",
+          name: "My Table",
+          uiPriority: 59,
+          rsid: "00112233",
+          table: { alignment: AlignmentType.CENTER },
+          conditionalFormats: [{ type: "firstRow", run: { bold: true } }, { type: "band1Horz" }],
+        },
+      ],
+    });
+
+    const xml = styles.serialize();
+    const el = parseXml(xml).elements![0];
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+
+    const table = opts?.tableStyles?.[0];
+    expect(table).toBeDefined();
+    expect(table!.id).toBe("MyTable");
+    expect(table!.name).toBe("My Table");
+    expect(table!.uiPriority).toBe(59);
+    expect(table!.rsid).toBe("00112233");
+    expect(table!.table?.alignment).toBe(AlignmentType.CENTER);
+    const cf1 = table!.conditionalFormats?.find((c) => c.type === "firstRow");
+    expect(cf1).toBeDefined();
+    expect(cf1!.run?.bold).toBe(true);
+    expect(table!.conditionalFormats?.find((c) => c.type === "band1Horz")).toBeDefined();
+    // Table styles are fully structured — NOT captured as verbatim _raw.
+    expect(opts?.importedStyles ?? []).toEqual([]);
+  });
+
   it("skips built-in style ids that DefaultStylesFactory generates", () => {
     const xml =
       '<?xml version="1.0"?><w:styles>' +

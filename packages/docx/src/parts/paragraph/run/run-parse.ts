@@ -396,10 +396,16 @@ export function parseRun(
 ): {
   properties: RunPropertiesOptions | undefined;
   children: ParsedRunChild[];
+  rsid?: string;
+  runPropertiesRsid?: string;
+  deletionRsid?: string;
 } {
   const rPr = findChild(el, "w:rPr");
   const properties = rPr ? parseRunProperties(rPr) : undefined;
   const children: ParsedRunChild[] = [];
+  const rsid = attr(el, "w:rsidR");
+  const runPropertiesRsid = attr(el, "w:rsidRPr");
+  const deletionRsid = attr(el, "w:rsidDel");
 
   for (const child of el.elements ?? []) {
     switch (child.name) {
@@ -523,7 +529,7 @@ export function parseRun(
     }
   }
 
-  return { properties, children };
+  return { properties, children, rsid, runPropertiesRsid, deletionRsid };
 }
 
 /**
@@ -570,6 +576,9 @@ export function parsedRunToOptions(
   }
 
   const opts: Record<string, unknown> = { ...parsed.properties };
+  if (parsed.rsid) opts.rsid = parsed.rsid;
+  if (parsed.runPropertiesRsid) opts.runPropertiesRsid = parsed.runPropertiesRsid;
+  if (parsed.deletionRsid) opts.deletionRsid = parsed.deletionRsid;
 
   // Check if this run is a pure reference run (commentReference, footnoteReference, endnoteReference)
   const isRefChild = (c: unknown): c is Record<string, number> =>

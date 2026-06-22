@@ -334,10 +334,10 @@ export function stringifySectionPropertiesXml(opts: SectionPropertiesOptions): s
   const inner = stringifySectionPropertiesInner(opts);
 
   const attrs: string[] = [];
-  if (opts.rsidRPr !== undefined) attrs.push(`w:rsidRPr="${opts.rsidRPr}"`);
-  if (opts.rsidDel !== undefined) attrs.push(`w:rsidDel="${opts.rsidDel}"`);
-  if (opts.rsidR !== undefined) attrs.push(`w:rsidR="${opts.rsidR}"`);
-  if (opts.rsidSect !== undefined) attrs.push(`w:rsidSect="${opts.rsidSect}"`);
+  if (opts.runPropertiesRsid !== undefined) attrs.push(`w:rsidRPr="${opts.runPropertiesRsid}"`);
+  if (opts.deletionRsid !== undefined) attrs.push(`w:rsidDel="${opts.deletionRsid}"`);
+  if (opts.rsid !== undefined) attrs.push(`w:rsidR="${opts.rsid}"`);
+  if (opts.sectionRsid !== undefined) attrs.push(`w:rsidSect="${opts.sectionRsid}"`);
 
   const attrStr = attrs.length ? " " + attrs.join(" ") : "";
   return `<w:sectPr${attrStr}>${inner}</w:sectPr>`;
@@ -351,10 +351,10 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
 
   // rsid attributes on w:sectPr element
   for (const [attrName, optKey] of [
-    ["w:rsidR", "rsidR"],
-    ["w:rsidRPr", "rsidRPr"],
-    ["w:rsidDel", "rsidDel"],
-    ["w:rsidSect", "rsidSect"],
+    ["w:rsidR", "rsid"],
+    ["w:rsidRPr", "runPropertiesRsid"],
+    ["w:rsidDel", "deletionRsid"],
+    ["w:rsidSect", "sectionRsid"],
   ] as const) {
     const val = attr(el, attrName);
     if (val) opts[optKey] = val;

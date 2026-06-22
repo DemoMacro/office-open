@@ -66,10 +66,12 @@ interface RunOptionsBase {
  */
 export type RunOptions = RunOptionsBase &
   RunPropertiesOptions & {
-    /** Revision save ID for run properties (hex string, e.g. "00123456"). */
-    rsidRPr?: string;
-    /** Revision save ID when run was deleted (hex string). */
-    rsidDel?: string;
+    /** Revision save ID for the run (w:rsidR, hex string e.g. "00123456"). */
+    rsid?: string;
+    /** Revision save ID for run properties (w:rsidRPr, hex string). */
+    runPropertiesRsid?: string;
+    /** Revision save ID when run was deleted (w:rsidDel, hex string). */
+    deletionRsid?: string;
   };
 
 export type ParagraphRunOptions = RunOptionsBase & ParagraphRunPropertiesOptions;

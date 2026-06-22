@@ -196,6 +196,7 @@ export class DocxWriteContext implements WriteContext {
         importedStyles: parsedStyles,
         paragraphStyles,
         characterStyles,
+        tableStyles,
         ...restStyles
       } = options.styles;
       const merged = defaultStyles.importedStyles ? [...defaultStyles.importedStyles] : [];
@@ -240,6 +241,7 @@ export class DocxWriteContext implements WriteContext {
           ...defaultStyles,
           paragraphStyles,
           characterStyles,
+          tableStyles,
           ...restStyles,
         });
       }

@@ -171,8 +171,9 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
 
   // rsid attributes on <w:r>
   const rsidAttrs: string[] = [];
-  if (opts.rsidRPr) rsidAttrs.push(` w:rsidRPr="${opts.rsidRPr}"`);
-  if (opts.rsidDel) rsidAttrs.push(` w:rsidDel="${opts.rsidDel}"`);
+  if (opts.rsid) rsidAttrs.push(` w:rsidR="${opts.rsid}"`);
+  if (opts.runPropertiesRsid) rsidAttrs.push(` w:rsidRPr="${opts.runPropertiesRsid}"`);
+  if (opts.deletionRsid) rsidAttrs.push(` w:rsidDel="${opts.deletionRsid}"`);
   const attr = rsidAttrs.join("");
 
   const body = parts.join("");
@@ -246,7 +247,16 @@ export function stringifyParagraph(
   }
 
   const body = parts.join("");
-  return body ? `<w:p>${body}</w:p>` : "<w:p/>";
+  const paraAttrs: string[] = [];
+  if (resolved.paraId) paraAttrs.push(` w14:paraId="${resolved.paraId}"`);
+  if (resolved.textId) paraAttrs.push(` w14:textId="${resolved.textId}"`);
+  if (resolved.rsid) paraAttrs.push(` w:rsidR="${resolved.rsid}"`);
+  if (resolved.defaultRunRsid) paraAttrs.push(` w:rsidRDefault="${resolved.defaultRunRsid}"`);
+  if (resolved.propertiesRsid) paraAttrs.push(` w:rsidP="${resolved.propertiesRsid}"`);
+  if (resolved.runPropertiesRsid) paraAttrs.push(` w:rsidRPr="${resolved.runPropertiesRsid}"`);
+  if (resolved.deletionRsid) paraAttrs.push(` w:rsidDel="${resolved.deletionRsid}"`);
+  const attr = paraAttrs.join("");
+  return body ? `<w:p${attr}>${body}</w:p>` : `<w:p${attr}/>`;
 }
 
 // ── Body child dispatch ──
@@ -1528,7 +1538,23 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
 }
 
 export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<ParagraphOptions> = {};
+
+  // w:p element attributes: rsid family + w14:paraId/textId (hex string verbatim)
+  const paraId = attr(el, "w14:paraId");
+  if (paraId) opts.paraId = paraId;
+  const textId = attr(el, "w14:textId");
+  if (textId) opts.textId = textId;
+  const rsid = attr(el, "w:rsidR");
+  if (rsid) opts.rsid = rsid;
+  const defaultRunRsid = attr(el, "w:rsidRDefault");
+  if (defaultRunRsid) opts.defaultRunRsid = defaultRunRsid;
+  const propertiesRsid = attr(el, "w:rsidP");
+  if (propertiesRsid) opts.propertiesRsid = propertiesRsid;
+  const runPropertiesRsid = attr(el, "w:rsidRPr");
+  if (runPropertiesRsid) opts.runPropertiesRsid = runPropertiesRsid;
+  const deletionRsid = attr(el, "w:rsidDel");
+  if (deletionRsid) opts.deletionRsid = deletionRsid;
 
   const pPr = findChild(el, "w:pPr");
   if (pPr) {

@@ -30,6 +30,7 @@ import type { TableCellBordersOptions } from "@parts/table/table-cell/table-cell
 import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components";
 import type { TableBordersOptions } from "@parts/table/table-properties/table-borders";
 import type { TableCellMarginOptions } from "@parts/table/table-properties/table-cell-margin";
+import type { TableFloatOptions } from "@parts/table/table-properties/table-float-properties";
 import type { TableLookOptions } from "@parts/table/table-properties/table-look";
 import type {
   TablePropertyExChangeOptions,
@@ -42,6 +43,8 @@ import { BorderStyle } from "@shared/border";
 import type { BorderOptions } from "@shared/border";
 import type { SectionChild } from "@shared/section";
 import type { ShadingAttributesProperties } from "@shared/shading";
+import type { CellMergeAttributes } from "@shared/track-revision";
+import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
 import type { BodyContext, DocxReadContext } from "../../context";
 import {
@@ -49,7 +52,12 @@ import {
   stringifyTableProperties,
   stringifyTablePropertyExceptions,
   stringifyTableRowProperties,
+  type TableCellPropertiesChangeOptions,
+  type TableCellPropertiesOptions,
+  type TablePropertiesChangeOptions,
   type TablePropertiesOptions,
+  type TableRowPropertiesChangeOptions,
+  type TableRowPropertiesOptions,
 } from "./stringify";
 
 // Valid border @w:val (ST_Border / BorderStyle) and @w:themeColor (ST_ThemeColor) values.
@@ -57,8 +65,8 @@ const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
 const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
 
 /** Parse track-change attributes (id/author/date) from w:ins/w:del/w:cellIns/w:cellDel. */
-function parseChangeAttrs(el: Element): Record<string, unknown> {
-  const change: Record<string, unknown> = {};
+function parseChangeAttrs(el: Element): Partial<ChangedAttributesProperties> {
+  const change: Partial<ChangedAttributesProperties> = {};
   const id = attrNum(el, "w:id");
   if (id !== undefined) change.id = id;
   const author = attr(el, "w:author");
@@ -189,10 +197,10 @@ function stringifyTableRow(
 
   // rsid attributes
   const rsidAttrs: string[] = [];
-  if (row.rsidRPr) rsidAttrs.push(` w:rsidRPr="${row.rsidRPr}"`);
-  if (row.rsidR) rsidAttrs.push(` w:rsidR="${row.rsidR}"`);
-  if (row.rsidDel) rsidAttrs.push(` w:rsidDel="${row.rsidDel}"`);
-  if (row.rsidTr) rsidAttrs.push(` w:rsidTr="${row.rsidTr}"`);
+  if (row.runPropertiesRsid) rsidAttrs.push(` w:rsidRPr="${row.runPropertiesRsid}"`);
+  if (row.rsid) rsidAttrs.push(` w:rsidR="${row.rsid}"`);
+  if (row.deletionRsid) rsidAttrs.push(` w:rsidDel="${row.deletionRsid}"`);
+  if (row.tableRowRsid) rsidAttrs.push(` w:rsidTr="${row.tableRowRsid}"`);
   const attr = rsidAttrs.join("");
 
   const body = parts.join("");
@@ -375,7 +383,7 @@ function parseTablePropertyExceptions(el: Element): TablePropertyExOptions {
   if (base.alignment !== undefined) {
     opts.alignment = base.alignment as TablePropertyExOptions["alignment"];
   }
-  if (base.margins !== undefined) opts.cellMargin = base.margins as TableCellMarginOptions;
+  if (base.cellMargin !== undefined) opts.cellMargin = base.cellMargin;
   if (base.tableLook !== undefined) opts.tableLook = base.tableLook as TableLookOptions;
   if (base.cellSpacing !== undefined) {
     opts.cellSpacing = base.cellSpacing as TableCellSpacingProperties;
@@ -493,8 +501,8 @@ export function setTableParseChild(fn: ParseChildFn): void {
   _parseChild = fn;
 }
 
-function parseTablePropertiesEl(el: Element): Record<string, unknown> {
-  const opts: Record<string, unknown> = {};
+export function parseTablePropertiesEl(el: Element): Partial<TablePropertiesOptions> {
+  const opts: Partial<TablePropertiesOptions> = {};
 
   const style = findChild(el, "w:tblStyle");
   if (style) {
@@ -507,14 +515,14 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
     const type = attr(tblW, "w:type");
     const size = attrMeasure(tblW, "w:w", type);
     if (size !== undefined || type) {
-      opts.width = { size: size ?? 0, ...(type ? { type } : {}) };
+      opts.width = { size: size ?? 0, ...(type ? { type } : {}) } as TableWidthProperties;
     }
   }
 
   const jc = findChild(el, "w:jc");
   if (jc) {
     const val = attr(jc, "w:val");
-    if (val) opts.alignment = val;
+    if (val) opts.alignment = val as TablePropertiesOptions["alignment"];
   }
 
   const layout = findChild(el, "w:tblLayout");
@@ -569,7 +577,7 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
   const tblCellMar = findChild(el, "w:tblCellMar");
   if (tblCellMar) {
     const margins = parseCellMargins(tblCellMar);
-    if (margins) opts.margins = margins;
+    if (margins) opts.cellMargin = margins;
   }
 
   const shd = findChild(el, "w:shd");
@@ -589,20 +597,25 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
   const tblpPr = findChild(el, "w:tblpPr");
   const tblOverlap = findChild(el, "w:tblOverlap");
   if (tblpPr || tblOverlap) {
-    const floatOpts: Record<string, unknown> = {};
+    const floatOpts: Partial<TableFloatOptions> = {};
     if (tblpPr) {
       const horzAnchor = attr(tblpPr, "w:horzAnchor");
-      if (horzAnchor) floatOpts.horizontalAnchor = horzAnchor;
+      if (horzAnchor)
+        floatOpts.horizontalAnchor = horzAnchor as TableFloatOptions["horizontalAnchor"];
       const vertAnchor = attr(tblpPr, "w:vertAnchor");
-      if (vertAnchor) floatOpts.verticalAnchor = vertAnchor;
+      if (vertAnchor) floatOpts.verticalAnchor = vertAnchor as TableFloatOptions["verticalAnchor"];
       const tblpX = attrNum(tblpPr, "w:tblpX");
       if (tblpX !== undefined) floatOpts.absoluteHorizontalPosition = tblpX;
       const tblpXSpec = attr(tblpPr, "w:tblpXSpec");
-      if (tblpXSpec) floatOpts.relativeHorizontalPosition = tblpXSpec;
+      if (tblpXSpec)
+        floatOpts.relativeHorizontalPosition =
+          tblpXSpec as TableFloatOptions["relativeHorizontalPosition"];
       const tblpY = attrNum(tblpPr, "w:tblpY");
       if (tblpY !== undefined) floatOpts.absoluteVerticalPosition = tblpY;
       const tblpYSpec = attr(tblpPr, "w:tblpYSpec");
-      if (tblpYSpec) floatOpts.relativeVerticalPosition = tblpYSpec;
+      if (tblpYSpec)
+        floatOpts.relativeVerticalPosition =
+          tblpYSpec as TableFloatOptions["relativeVerticalPosition"];
       const bottomFromText = attrNum(tblpPr, "w:bottomFromText");
       if (bottomFromText !== undefined) floatOpts.bottomFromText = bottomFromText;
       const topFromText = attrNum(tblpPr, "w:topFromText");
@@ -614,9 +627,9 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
     }
     if (tblOverlap) {
       const overlap = attr(tblOverlap, "w:val");
-      if (overlap) floatOpts.overlap = overlap;
+      if (overlap) floatOpts.overlap = overlap as TableFloatOptions["overlap"];
     }
-    if (Object.keys(floatOpts).length > 0) opts.float = floatOpts;
+    if (Object.keys(floatOpts).length > 0) opts.float = floatOpts as TableFloatOptions;
   }
 
   // indent → w:tblInd/@w:w and @w:type
@@ -625,7 +638,7 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
     const type = attr(tblInd, "w:type");
     const size = attrMeasure(tblInd, "w:w", type);
     if (size !== undefined) {
-      opts.indent = { size, ...(type ? { type } : {}) };
+      opts.indent = { size, ...(type ? { type } : {}) } as TableWidthProperties;
     }
   }
 
@@ -657,13 +670,14 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
     const w = attrMeasure(tblCellSpacing, "w:w", type);
-    if (w !== undefined) opts.cellSpacing = { size: w, ...(type ? { type } : {}) };
+    if (w !== undefined)
+      opts.cellSpacing = { size: w, ...(type ? { type } : {}) } as TableCellSpacingProperties;
   }
 
   // Revision (w:tblPrChange)
   const tblPrChange = findChild(el, "w:tblPrChange");
   if (tblPrChange) {
-    const rev: Record<string, unknown> = {};
+    const rev: Partial<TablePropertiesChangeOptions> = {};
     const author = attr(tblPrChange, "w:author");
     if (author) rev.author = author;
     const date = attr(tblPrChange, "w:date");
@@ -674,7 +688,7 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
     if (innerTblPr) {
       Object.assign(rev, parseTablePropertiesEl(innerTblPr));
     }
-    if (Object.keys(rev).length > 0) opts.revision = rev;
+    if (Object.keys(rev).length > 0) opts.revision = rev as TablePropertiesChangeOptions;
   }
 
   // tblLook — conditional formatting flags (CT_TblLook)
@@ -735,15 +749,17 @@ function parseColumnWidthsEl(el: Element): {
   return { widths };
 }
 
-function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
-  const opts: Record<string, unknown> = {};
+export function parseTableRowPropertiesEl(el: Element): Partial<TableRowPropertiesOptions> {
+  const opts: Partial<TableRowPropertiesOptions> = {};
 
   const trHeight = findChild(el, "w:trHeight");
   if (trHeight) {
     const val = attrMeasure(trHeight, "w:val");
     const rule = attr(trHeight, "w:hRule");
     if (val !== undefined) {
-      opts.height = { value: val, ...(rule ? { rule } : {}) };
+      opts.height = { value: val, ...(rule ? { rule } : {}) } as NonNullable<
+        TableRowPropertiesOptions["height"]
+      >;
     }
   }
 
@@ -778,20 +794,22 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
   if (wBefore) {
     const type = attr(wBefore, "w:type");
     const size = attrMeasure(wBefore, "w:w", type);
-    if (size !== undefined) opts.widthBefore = { size, ...(type ? { type } : {}) };
+    if (size !== undefined)
+      opts.widthBefore = { size, ...(type ? { type } : {}) } as TableWidthProperties;
   }
   const wAfter = findChild(el, "w:wAfter");
   if (wAfter) {
     const type = attr(wAfter, "w:type");
     const size = attrMeasure(wAfter, "w:w", type);
-    if (size !== undefined) opts.widthAfter = { size, ...(type ? { type } : {}) };
+    if (size !== undefined)
+      opts.widthAfter = { size, ...(type ? { type } : {}) } as TableWidthProperties;
   }
 
   // rowAlignment → w:jc/@w:val
   const jc = findChild(el, "w:jc");
   if (jc) {
     const val = attr(jc, "w:val");
-    if (val) opts.rowAlignment = val;
+    if (val) opts.rowAlignment = val as TableRowPropertiesOptions["rowAlignment"];
   }
 
   // hidden → w:hidden
@@ -803,19 +821,20 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
     const w = attrMeasure(tblCellSpacing, "w:w", type);
-    if (w !== undefined) opts.cellSpacing = { size: w, ...(type ? { type } : {}) };
+    if (w !== undefined)
+      opts.cellSpacing = { size: w, ...(type ? { type } : {}) } as TableCellSpacingProperties;
   }
 
   // insertion / deletion (track changes)
   const ins = findChild(el, "w:ins");
-  if (ins) opts.insertion = parseChangeAttrs(ins);
+  if (ins) opts.insertion = parseChangeAttrs(ins) as ChangedAttributesProperties;
   const del = findChild(el, "w:del");
-  if (del) opts.deletion = parseChangeAttrs(del);
+  if (del) opts.deletion = parseChangeAttrs(del) as ChangedAttributesProperties;
 
   // Revision (w:trPrChange)
   const trPrChange = findChild(el, "w:trPrChange");
   if (trPrChange) {
-    const rev: Record<string, unknown> = {};
+    const rev: Partial<TableRowPropertiesChangeOptions> = {};
     const author = attr(trPrChange, "w:author");
     if (author) rev.author = author;
     const date = attr(trPrChange, "w:date");
@@ -826,7 +845,7 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
     if (innerTrPr) {
       Object.assign(rev, parseTableRowPropertiesEl(innerTrPr));
     }
-    if (Object.keys(rev).length > 0) opts.revision = rev;
+    if (Object.keys(rev).length > 0) opts.revision = rev as TableRowPropertiesChangeOptions;
   }
 
   const tblHeader = findChild(el, "w:tblHeader");
@@ -842,8 +861,8 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
   return opts;
 }
 
-function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
-  const opts: Record<string, unknown> = {};
+export function parseTableCellPropertiesEl(el: Element): Partial<TableCellPropertiesOptions> {
+  const opts: Partial<TableCellPropertiesOptions> = {};
 
   const cnfStyle = findChild(el, "w:cnfStyle");
   if (cnfStyle) {
@@ -856,7 +875,7 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
     const type = attr(tcW, "w:type");
     const size = attrMeasure(tcW, "w:w", type);
     if (size !== undefined) {
-      opts.width = { size, ...(type ? { type } : {}) };
+      opts.width = { size, ...(type ? { type } : {}) } as TableWidthProperties;
     }
   }
 
@@ -875,7 +894,7 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
   const vAlign = findChild(el, "w:vAlign");
   if (vAlign) {
     const val = attr(vAlign, "w:val");
-    if (val) opts.verticalAlign = val;
+    if (val) opts.verticalAlign = val as TableCellPropertiesOptions["verticalAlign"];
   }
 
   const shd = findChild(el, "w:shd");
@@ -943,7 +962,7 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
   const textDirection = findChild(el, "w:textDirection");
   if (textDirection) {
     const val = attr(textDirection, "w:val");
-    if (val) opts.textDirection = val;
+    if (val) opts.textDirection = val as TableCellPropertiesOptions["textDirection"];
   }
 
   // horizontalMerge → w:hMerge
@@ -975,14 +994,14 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
 
   // insertion / deletion (track changes)
   const cellIns = findChild(el, "w:cellIns");
-  if (cellIns) opts.insertion = parseChangeAttrs(cellIns);
+  if (cellIns) opts.insertion = parseChangeAttrs(cellIns) as ChangedAttributesProperties;
   const cellDel = findChild(el, "w:cellDel");
-  if (cellDel) opts.deletion = parseChangeAttrs(cellDel);
+  if (cellDel) opts.deletion = parseChangeAttrs(cellDel) as ChangedAttributesProperties;
 
   // Revision (w:tcPrChange)
   const tcPrChange = findChild(el, "w:tcPrChange");
   if (tcPrChange) {
-    const rev: Record<string, unknown> = {};
+    const rev: Partial<TableCellPropertiesChangeOptions> = {};
     const author = attr(tcPrChange, "w:author");
     if (author) rev.author = author;
     const date = attr(tcPrChange, "w:date");
@@ -993,20 +1012,20 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
     if (innerTcPr) {
       Object.assign(rev, parseTableCellPropertiesEl(innerTcPr));
     }
-    if (Object.keys(rev).length > 0) opts.revision = rev;
+    if (Object.keys(rev).length > 0) opts.revision = rev as TableCellPropertiesChangeOptions;
   }
 
   // cellMerge → w:cellMerge
   const cellMerge = findChild(el, "w:cellMerge");
   if (cellMerge) {
-    const cm = parseChangeAttrs(cellMerge);
+    const cm = parseChangeAttrs(cellMerge) as Partial<CellMergeAttributes>;
     const vMerge = attr(cellMerge, "w:vMerge");
     if (vMerge) cm.verticalMerge = xsdVerticalMergeRev.from(vMerge) as "continue" | "restart";
     const vMergeOrig = attr(cellMerge, "w:vMergeOrig");
     if (vMergeOrig) {
       cm.verticalMergeOriginal = xsdVerticalMergeRev.from(vMergeOrig) as "continue" | "restart";
     }
-    if (Object.keys(cm).length > 0) opts.cellMerge = cm;
+    if (Object.keys(cm).length > 0) opts.cellMerge = cm as CellMergeAttributes;
   }
 
   return opts;
@@ -1055,10 +1074,10 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
 
   // rsid attributes on w:tr element
   for (const [attrName, optKey] of [
-    ["w:rsidRPr", "rsidRPr"],
-    ["w:rsidR", "rsidR"],
-    ["w:rsidDel", "rsidDel"],
-    ["w:rsidTr", "rsidTr"],
+    ["w:rsidRPr", "runPropertiesRsid"],
+    ["w:rsidR", "rsid"],
+    ["w:rsidDel", "deletionRsid"],
+    ["w:rsidTr", "tableRowRsid"],
   ] as const) {
     const val = attr(el, attrName);
     if (val) opts[optKey] = val;
@@ -1119,7 +1138,11 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
 
   const tblPr = findChild(el, "w:tblPr");
   if (tblPr) {
-    Object.assign(opts, parseTablePropertiesEl(tblPr));
+    const tblPrParsed = parseTablePropertiesEl(tblPr);
+    Object.assign(opts, tblPrParsed);
+    // TableOptions exposes w:tblCellMar as `margins`; TablePropertiesOptions
+    // uses `cellMargin`. Map back so round-trip keeps the public field name.
+    if (tblPrParsed.cellMargin !== undefined) opts.margins = tblPrParsed.cellMargin;
   }
 
   const grid = parseColumnWidthsEl(el);

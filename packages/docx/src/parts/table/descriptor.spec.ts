@@ -304,19 +304,19 @@ describe("tableDesc round-trip", () => {
     const result = roundTrip({
       rows: [
         {
-          rsidRPr: "00112233",
-          rsidR: "00AABBCC",
-          rsidDel: "00DDEEFF",
-          rsidTr: "00445566",
+          runPropertiesRsid: "00112233",
+          rsid: "00AABBCC",
+          deletionRsid: "00DDEEFF",
+          tableRowRsid: "00445566",
           cells: [{ children: [] }],
         },
       ],
     });
     const row = result.rows[0] as TableRowOptions;
-    expect(row.rsidRPr).toBe("00112233");
-    expect(row.rsidR).toBe("00AABBCC");
-    expect(row.rsidDel).toBe("00DDEEFF");
-    expect(row.rsidTr).toBe("00445566");
+    expect(row.runPropertiesRsid).toBe("00112233");
+    expect(row.rsid).toBe("00AABBCC");
+    expect(row.deletionRsid).toBe("00DDEEFF");
+    expect(row.tableRowRsid).toBe("00445566");
   });
 
   it("round-trips row trPr fields (cnfStyle/divId/grid/gridBefore/gridAfter/wBefore/wAfter/jc/hidden)", () => {

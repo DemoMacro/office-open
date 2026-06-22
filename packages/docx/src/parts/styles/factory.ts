@@ -10,6 +10,16 @@
  */
 import type { ParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
 import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
+import type {
+  TableCellPropertiesOptions,
+  TablePropertiesOptions,
+  TableRowPropertiesOptions,
+} from "@parts/table/stringify";
+import {
+  stringifyTableCellProperties,
+  stringifyTableProperties,
+  stringifyTableRowProperties,
+} from "@parts/table/stringify";
 
 import { stringifyParagraphProperties, stringifyRunProperties } from "../paragraph/stringify";
 import type { StylesOptions } from "./styles";
@@ -63,6 +73,10 @@ export interface StyleOptions {
   personal?: boolean;
   personalCompose?: boolean;
   personalReply?: boolean;
+  /** CT_Style w:hidden — style hidden from the UI (CT_OnOff). */
+  hidden?: boolean;
+  /** CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim). */
+  rsid?: string;
 }
 
 export type ParagraphStyleOptions = {
@@ -85,6 +99,32 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+/**
+ * Build CT_Style style-level children (name…rsid), shared by paragraph/character/table styles.
+ * Order follows CT_Style sequence: name, aliases, basedOn, next, link, autoRedefine, hidden,
+ * uiPriority, semiHidden, unhideWhenUsed, qFormat, locked, personal, personalCompose,
+ * personalReply, rsid.
+ */
+function stringifyStyleLevelChildren(opts: StyleOptions & { id?: string }): string {
+  const parts: string[] = [`<w:name w:val="${esc(opts.name ?? opts.id ?? "")}"/>`];
+  if (opts.aliases) parts.push(`<w:aliases w:val="${esc(opts.aliases)}"/>`);
+  if (opts.basedOn) parts.push(`<w:basedOn w:val="${esc(opts.basedOn)}"/>`);
+  if (opts.next) parts.push(`<w:next w:val="${esc(opts.next)}"/>`);
+  if (opts.link) parts.push(`<w:link w:val="${esc(opts.link)}"/>`);
+  if (opts.autoRedefine) parts.push("<w:autoRedefine/>");
+  if (opts.hidden) parts.push("<w:hidden/>");
+  if (opts.uiPriority !== undefined) parts.push(`<w:uiPriority w:val="${opts.uiPriority}"/>`);
+  if (opts.semiHidden) parts.push("<w:semiHidden/>");
+  if (opts.unhideWhenUsed) parts.push("<w:unhideWhenUsed/>");
+  if (opts.quickFormat) parts.push("<w:qFormat/>");
+  if (opts.locked) parts.push("<w:locked/>");
+  if (opts.personal) parts.push("<w:personal/>");
+  if (opts.personalCompose) parts.push("<w:personalCompose/>");
+  if (opts.personalReply) parts.push("<w:personalReply/>");
+  if (opts.rsid) parts.push(`<w:rsid w:val="${opts.rsid}"/>`);
+  return parts.join("");
+}
+
 /** Build `<w:style>` XML for a paragraph style. */
 export function stringifyParagraphStyle(
   opts: StyleOptions & {
@@ -93,22 +133,7 @@ export function stringifyParagraphStyle(
     run?: RunStylePropertiesOptions;
   },
 ): string {
-  const children: string[] = [];
-
-  children.push(`<w:name w:val="${esc(opts.name ?? opts.id)}"/>`);
-  if (opts.aliases) children.push(`<w:aliases w:val="${esc(opts.aliases)}"/>`);
-  if (opts.basedOn) children.push(`<w:basedOn w:val="${esc(opts.basedOn)}"/>`);
-  if (opts.next) children.push(`<w:next w:val="${esc(opts.next)}"/>`);
-  if (opts.link) children.push(`<w:link w:val="${esc(opts.link)}"/>`);
-  if (opts.autoRedefine) children.push("<w:autoRedefine/>");
-  if (opts.uiPriority !== undefined) children.push(`<w:uiPriority w:val="${opts.uiPriority}"/>`);
-  if (opts.semiHidden) children.push("<w:semiHidden/>");
-  if (opts.unhideWhenUsed) children.push("<w:unhideWhenUsed/>");
-  if (opts.quickFormat) children.push("<w:qFormat/>");
-  if (opts.locked) children.push("<w:locked/>");
-  if (opts.personal) children.push("<w:personal/>");
-  if (opts.personalCompose) children.push("<w:personalCompose/>");
-  if (opts.personalReply) children.push("<w:personalReply/>");
+  const children: string[] = [stringifyStyleLevelChildren(opts)];
 
   const pPr = stringifyParagraphProperties(opts.paragraph).xml;
   if (pPr) children.push(pPr);
@@ -125,25 +150,111 @@ export function stringifyCharacterStyle(
     run?: RunStylePropertiesOptions;
   },
 ): string {
-  const children: string[] = [];
-
-  children.push(`<w:name w:val="${esc(opts.name ?? opts.id)}"/>`);
-  if (opts.aliases) children.push(`<w:aliases w:val="${esc(opts.aliases)}"/>`);
-  if (opts.basedOn) children.push(`<w:basedOn w:val="${esc(opts.basedOn)}"/>`);
-  if (opts.link) children.push(`<w:link w:val="${esc(opts.link)}"/>`);
-  if (opts.autoRedefine) children.push("<w:autoRedefine/>");
-  if (opts.uiPriority !== undefined) children.push(`<w:uiPriority w:val="${opts.uiPriority}"/>`);
-  if (opts.semiHidden) children.push("<w:semiHidden/>");
-  if (opts.unhideWhenUsed) children.push("<w:unhideWhenUsed/>");
-  if (opts.locked) children.push("<w:locked/>");
-  if (opts.personal) children.push("<w:personal/>");
-  if (opts.personalCompose) children.push("<w:personalCompose/>");
-  if (opts.personalReply) children.push("<w:personalReply/>");
+  const children: string[] = [stringifyStyleLevelChildren(opts)];
 
   const rPr = stringifyRunProperties(opts.run);
   if (rPr) children.push(rPr);
 
   return `<w:style w:type="character" w:styleId="${esc(opts.id)}">${children.join("")}</w:style>`;
+}
+
+// ── Table style (CT_Style type="table") ──
+
+/** ST_TblStyleOverrideType — OOXML tokens verbatim (CT_TblStylePr @w:type). */
+export type TableStyleOverrideType =
+  | "wholeTable"
+  | "firstRow"
+  | "lastRow"
+  | "firstCol"
+  | "lastCol"
+  | "band1Vert"
+  | "band2Vert"
+  | "band1Horz"
+  | "band2Horz"
+  | "neCell"
+  | "nwCell"
+  | "seCell"
+  | "swCell";
+
+/** Conditional table style format (CT_TblStylePr). */
+export interface ConditionalTableStyleOptions {
+  /** Which region this format applies to (CT_TblStylePr @w:type, required). */
+  type: TableStyleOverrideType;
+  /** Paragraph properties (CT_PPrGeneral). */
+  paragraph?: ParagraphStylePropertiesOptions;
+  /** Run properties (CT_RPr). */
+  run?: RunStylePropertiesOptions;
+  /** Table properties (CT_TblPrBase). */
+  table?: TablePropertiesOptions;
+  /** Table row properties (CT_TrPr). */
+  row?: TableRowPropertiesOptions;
+  /** Table cell properties (CT_TcPr). */
+  cell?: TableCellPropertiesOptions;
+}
+
+/** Table style (CT_Style type="table"). */
+export type TableStyleOptions = {
+  /** Paragraph properties (CT_PPrGeneral). */
+  paragraph?: ParagraphStylePropertiesOptions;
+  /** Run properties (CT_RPr). */
+  run?: RunStylePropertiesOptions;
+  /** Table properties (CT_TblPrBase). */
+  table?: TablePropertiesOptions;
+  /** Table row properties (CT_TrPr). */
+  row?: TableRowPropertiesOptions;
+  /** Table cell properties (CT_TcPr). */
+  cell?: TableCellPropertiesOptions;
+  /** Conditional formats per region (CT_TblStylePr, unbounded). */
+  conditionalFormats?: ConditionalTableStyleOptions[];
+} & StyleOptions & { id: string };
+
+/** Build `<w:tblStylePr>` XML for a conditional table style format. */
+export function stringifyConditionalTableStyle(opts: ConditionalTableStyleOptions): string {
+  const children: string[] = [];
+  // CT_TblStylePr child order: pPr, rPr, tblPr, trPr, tcPr
+  const pPr = stringifyParagraphProperties(opts.paragraph).xml;
+  if (pPr) children.push(pPr);
+  const rPr = stringifyRunProperties(opts.run);
+  if (rPr) children.push(rPr);
+  if (opts.table) {
+    const tblPr = stringifyTableProperties(opts.table);
+    if (tblPr) children.push(tblPr);
+  }
+  if (opts.row) {
+    const trPr = stringifyTableRowProperties(opts.row);
+    if (trPr) children.push(trPr);
+  }
+  if (opts.cell) {
+    const tcPr = stringifyTableCellProperties(opts.cell);
+    if (tcPr) children.push(tcPr);
+  }
+  return `<w:tblStylePr w:type="${opts.type}">${children.join("")}</w:tblStylePr>`;
+}
+
+/** Build `<w:style type="table">` XML for a table style. */
+export function stringifyTableStyle(opts: TableStyleOptions): string {
+  const children: string[] = [stringifyStyleLevelChildren(opts)];
+  // CT_Style child order: style-level, pPr, rPr, tblPr, trPr, tcPr, tblStylePr[]
+  const pPr = stringifyParagraphProperties(opts.paragraph).xml;
+  if (pPr) children.push(pPr);
+  const rPr = stringifyRunProperties(opts.run);
+  if (rPr) children.push(rPr);
+  if (opts.table) {
+    const tblPr = stringifyTableProperties(opts.table);
+    if (tblPr) children.push(tblPr);
+  }
+  if (opts.row) {
+    const trPr = stringifyTableRowProperties(opts.row);
+    if (trPr) children.push(trPr);
+  }
+  if (opts.cell) {
+    const tcPr = stringifyTableCellProperties(opts.cell);
+    if (tcPr) children.push(tcPr);
+  }
+  for (const cf of opts.conditionalFormats ?? []) {
+    children.push(stringifyConditionalTableStyle(cf));
+  }
+  return `<w:style w:type="table" w:styleId="${esc(opts.id)}">${children.join("")}</w:style>`;
 }
 
 /** Resolve a user override for heading level N (1-9) from default styles options. */

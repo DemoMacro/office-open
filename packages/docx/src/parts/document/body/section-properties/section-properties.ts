@@ -38,10 +38,10 @@ export interface HeaderFooterGroup<T> {
 }
 
 export interface SectionPropertiesOptionsBase {
-  rsidRPr?: string;
-  rsidDel?: string;
-  rsidR?: string;
-  rsidSect?: string;
+  runPropertiesRsid?: string;
+  deletionRsid?: string;
+  rsid?: string;
+  sectionRsid?: string;
   page?: {
     size?: PageSizeAttributes;
     margin?: PageMarginAttributes;

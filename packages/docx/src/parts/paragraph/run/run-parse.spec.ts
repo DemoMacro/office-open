@@ -3,7 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { stringifyRunProperties } from "../stringify";
 import type { RunPropertiesOptions } from "./properties";
-import { parseRunProperties } from "./run-parse";
+import { parseRun, parseRunProperties } from "./run-parse";
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 
@@ -113,5 +113,18 @@ describe("parseRunProperties round-trip", () => {
     const rPr = stringifyRunProperties({ size: 24, sizeComplexScript: 20 })!;
     expect(rPr).toContain("<w:sz ");
     expect(rPr).toContain("<w:szCs");
+  });
+});
+
+describe("parseRun rsid attributes", () => {
+  it("reads w:rsidR/w:rsidRPr/w:rsidDel (hex verbatim, leading zeros kept)", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS} w:rsidR="00992297" w:rsidRPr="00112233" w:rsidDel="AABBCCDD"><w:t>hi</w:t></w:r>`,
+    );
+    // parseRun does not use its context for rsid reads.
+    const parsed = parseRun(doc.elements![0], {} as never);
+    expect(parsed.rsid).toBe("00992297");
+    expect(parsed.runPropertiesRsid).toBe("00112233");
+    expect(parsed.deletionRsid).toBe("AABBCCDD");
   });
 });
