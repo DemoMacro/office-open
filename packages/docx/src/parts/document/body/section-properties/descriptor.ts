@@ -240,9 +240,13 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
   // Section type
   if (opts.type) parts.push(sectionTypeXml(opts.type));
 
-  // Page size — swap w/h when landscape
-  const pgW = orientation === "landscape" ? convertToTwip(height) : width;
-  const pgH = orientation === "landscape" ? convertToTwip(width) : height;
+  // Page size — normalize both logical dimensions to twips, then swap w/h when
+  // landscape. UniversalMeasure ("210mm") is converted so the emitted w:w/w:h is
+  // always a plain twip number that the attrNum-based parse reads back exactly.
+  const wTwips = convertToTwip(width);
+  const hTwips = convertToTwip(height);
+  const pgW = orientation === "landscape" ? hTwips : wTwips;
+  const pgH = orientation === "landscape" ? wTwips : hTwips;
   parts.push(pageSizeXml(pgW, pgH, orientation, code));
 
   // Page margin (always present)

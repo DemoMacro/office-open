@@ -1,6 +1,4 @@
-import { twipsMeasureValue } from "@office-open/core";
 import type { PositiveUniversalMeasure } from "@office-open/core";
-import { element } from "@office-open/xml";
 
 /**
  * This simple type specifies the orientation of all pages in the parent section. This information is used to determine the actual paper size to use when printing the file.
@@ -103,36 +101,3 @@ export interface PageSizeAttributes {
    */
   code?: number;
 }
-
-/**
- * This element specifies the properties (size and orientation) for all pages in the current section.
- *
- * Reference: https://c-rex.net/samples/ooxml/e1/Part4/OOXML_P4_DOCX_pgSz_topic_ID0ENEDT.html?hl=pgsz%2Cpage%2Csize
- *
- * ## XSD Schema
- *
- * ```xml
- * <xsd:complexType name="CT_PageSz">
- *   <xsd:attribute name="w" type="s:ST_TwipsMeasure"/>
- *   <xsd:attribute name="h" type="s:ST_TwipsMeasure"/>
- *   <xsd:attribute name="orient" type="ST_PageOrientation" use="optional"/>
- *   <xsd:attribute name="code" type="ST_DecimalNumber" use="optional"/>
- * </xsd:complexType>
- * ```
- */
-export const createPageSize = ({
-  // A4 portrait defaults (11906 × 16838 twips), aligned with sectionPageSizeDefaults.
-  width = 11_906,
-  height = 16_838,
-  orientation,
-  code,
-}: PageSizeAttributes): string => {
-  const widthTwips = twipsMeasureValue(width);
-  const heightTwips = twipsMeasureValue(height);
-  return element("w:pgSz", {
-    "w:code": code,
-    "w:h": orientation === PageOrientation.LANDSCAPE ? widthTwips : heightTwips,
-    "w:orient": orientation,
-    "w:w": orientation === PageOrientation.LANDSCAPE ? heightTwips : widthTwips,
-  });
-};

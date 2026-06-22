@@ -39,12 +39,53 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(result.page!.size!.height).toBe(15840);
   });
 
-  it("round-trips landscape orientation", () => {
+  it("round-trips landscape orientation (swaps w/h and swaps back)", () => {
     const result = roundTrip({
       page: { size: { width: 12240, height: 15840, orientation: "landscape" } },
     });
-    // In landscape, width/height are swapped in XML, parse swaps them back
+    // Logical width/height (portrait perspective) must survive the stringify
+    // swap (w:w=height, w:h=width) and the parse swap-back.
     expect(result.page!.size!.orientation).toBe("landscape");
+    expect(result.page!.size!.width).toBe(12240);
+    expect(result.page!.size!.height).toBe(15840);
+  });
+
+  it("parses a Word-emitted landscape page size (physical w > h)", () => {
+    // Word stores landscape with the long edge in w:w (physical), e.g. Letter
+    // landscape: w:w=15840 w:h=12240 orient=landscape. Parse must swap back to
+    // logical width=12240 (short) height=15840 (long).
+    const xml =
+      '<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/></w:sectPr>';
+    const el = parseXml(xml).elements![0];
+    const result = sectionPropertiesDesc.parse(el, readCtx);
+    expect(result.page!.size!.orientation).toBe("landscape");
+    expect(result.page!.size!.width).toBe(12240);
+    expect(result.page!.size!.height).toBe(15840);
+  });
+
+  it("parses portrait page size without swapping (w = logical width)", () => {
+    const xml =
+      '<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:pgSz w:w="12240" w:h="15840"/></w:sectPr>';
+    const el = parseXml(xml).elements![0];
+    const result = sectionPropertiesDesc.parse(el, readCtx);
+    expect(result.page!.size!.width).toBe(12240);
+    expect(result.page!.size!.height).toBe(15840);
+    expect(result.page!.size!.orientation).toBeUndefined();
+  });
+
+  it("round-trips portrait page size with UniversalMeasure (mm → twips)", () => {
+    // UniversalMeasure on width/height is normalized to twips on stringify (so
+    // the attrNum-based parse reads it back). 210/297mm floor to 11905/16837
+    // twips (convertMillimetersToTwip uses Math.floor).
+    const result = roundTrip({
+      page: { size: { width: "210mm", height: "297mm" } },
+    });
+    expect(result.page!.size!.width).toBe(11905);
+    expect(result.page!.size!.height).toBe(16837);
+    // orientation defaults to portrait when omitted.
+    expect(result.page!.size!.orientation).toBe("portrait");
   });
 
   it("round-trips page size code (printer paper code)", () => {

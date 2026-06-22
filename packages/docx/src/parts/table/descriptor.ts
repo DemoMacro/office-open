@@ -9,8 +9,9 @@
 
 import { ThemeColor } from "@office-open/core";
 import { xsdVerticalMergeRev } from "@office-open/core";
+import type { PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
+import { attr, attrBool, attrMeasure, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import {
   parseCustomXmlProperties,
@@ -69,7 +70,10 @@ function parseChangeAttrs(el: Element): Record<string, unknown> {
 
 // ── Table grid ──
 
-function buildTableGridXml(widths: number[], revision?: TableGridChangeOptions): string {
+function buildTableGridXml(
+  widths: Array<number | string>,
+  revision?: TableGridChangeOptions,
+): string {
   const cols = widths.map((w) => `<w:gridCol w:w="${w}"/>`).join("");
 
   if (revision) {
@@ -280,10 +284,12 @@ function parseCellMargins(marginEl: Element): TableCellMarginOptions | undefined
   for (const side of ["top", "start", "left", "bottom", "end", "right"] as const) {
     const sideEl = findChild(marginEl, `w:${side}`);
     if (sideEl) {
-      const size = attrNum(sideEl, "w:w");
+      const type = attr(sideEl, "w:type");
+      const size = attrMeasure(sideEl, "w:w", type);
       if (size !== undefined) {
-        const type = attr(sideEl, "w:type");
-        margins[side] = type ? { size, type: type as TableWidthProperties["type"] } : { size };
+        margins[side] = (
+          type ? { size, type: type as TableWidthProperties["type"] } : { size }
+        ) as TableWidthProperties;
       }
     }
   }
@@ -498,9 +504,8 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
 
   const tblW = findChild(el, "w:tblW");
   if (tblW) {
-    const rawSize = attr(tblW, "w:w");
     const type = attr(tblW, "w:type");
-    const size = type === "pct" ? rawSize : attrNum(tblW, "w:w");
+    const size = attrMeasure(tblW, "w:w", type);
     if (size !== undefined || type) {
       opts.width = { size: size ?? 0, ...(type ? { type } : {}) };
     }
@@ -617,8 +622,8 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
   // indent → w:tblInd/@w:w and @w:type
   const tblInd = findChild(el, "w:tblInd");
   if (tblInd) {
-    const size = attrNum(tblInd, "w:w");
     const type = attr(tblInd, "w:type");
+    const size = attrMeasure(tblInd, "w:w", type);
     if (size !== undefined) {
       opts.indent = { size, ...(type ? { type } : {}) };
     }
@@ -651,7 +656,7 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
   const tblCellSpacing = findChild(el, "w:tblCellSpacing");
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
-    const w = attrNum(tblCellSpacing, "w:w");
+    const w = attrMeasure(tblCellSpacing, "w:w", type);
     if (w !== undefined) opts.cellSpacing = { size: w, ...(type ? { type } : {}) };
   }
 
@@ -695,15 +700,15 @@ function parseTablePropertiesEl(el: Element): Record<string, unknown> {
 }
 
 function parseColumnWidthsEl(el: Element): {
-  widths: number[];
+  widths: Array<number | string>;
   revision?: TableGridChangeOptions;
 } {
-  const widths: number[] = [];
+  const widths: Array<number | string> = [];
   const tblGrid = findChild(el, "w:tblGrid");
   if (!tblGrid) return { widths };
 
   for (const col of children(tblGrid, "w:gridCol")) {
-    const w = attrNum(col, "w:w");
+    const w = attrMeasure(col, "w:w");
     widths.push(w ?? 100);
   }
 
@@ -712,15 +717,18 @@ function parseColumnWidthsEl(el: Element): {
   if (tblGridChange) {
     const id = attrNum(tblGridChange, "w:id");
     const innerGrid = findChild(tblGridChange, "w:tblGrid");
-    const revWidths: number[] = [];
+    const revWidths: Array<number | string> = [];
     if (innerGrid) {
       for (const col of children(innerGrid, "w:gridCol")) {
-        const w = attrNum(col, "w:w");
+        const w = attrMeasure(col, "w:w");
         revWidths.push(w ?? 100);
       }
     }
     if (id !== undefined) {
-      return { widths, revision: { id, columnWidths: revWidths } };
+      return {
+        widths,
+        revision: { id, columnWidths: revWidths as number[] | PositiveUniversalMeasure[] },
+      };
     }
   }
 
@@ -732,7 +740,7 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
 
   const trHeight = findChild(el, "w:trHeight");
   if (trHeight) {
-    const val = attrNum(trHeight, "w:val");
+    const val = attrMeasure(trHeight, "w:val");
     const rule = attr(trHeight, "w:hRule");
     if (val !== undefined) {
       opts.height = { value: val, ...(rule ? { rule } : {}) };
@@ -768,16 +776,14 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
   // wBefore / wAfter → widthBefore / widthAfter
   const wBefore = findChild(el, "w:wBefore");
   if (wBefore) {
-    const rawSize = attr(wBefore, "w:w");
     const type = attr(wBefore, "w:type");
-    const size = type === "pct" ? rawSize : attrNum(wBefore, "w:w");
+    const size = attrMeasure(wBefore, "w:w", type);
     if (size !== undefined) opts.widthBefore = { size, ...(type ? { type } : {}) };
   }
   const wAfter = findChild(el, "w:wAfter");
   if (wAfter) {
-    const rawSize = attr(wAfter, "w:w");
     const type = attr(wAfter, "w:type");
-    const size = type === "pct" ? rawSize : attrNum(wAfter, "w:w");
+    const size = attrMeasure(wAfter, "w:w", type);
     if (size !== undefined) opts.widthAfter = { size, ...(type ? { type } : {}) };
   }
 
@@ -796,7 +802,7 @@ function parseTableRowPropertiesEl(el: Element): Record<string, unknown> {
   const tblCellSpacing = findChild(el, "w:tblCellSpacing");
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
-    const w = attrNum(tblCellSpacing, "w:w");
+    const w = attrMeasure(tblCellSpacing, "w:w", type);
     if (w !== undefined) opts.cellSpacing = { size: w, ...(type ? { type } : {}) };
   }
 
@@ -847,8 +853,8 @@ function parseTableCellPropertiesEl(el: Element): Record<string, unknown> {
 
   const tcW = findChild(el, "w:tcW");
   if (tcW) {
-    const size = attrNum(tcW, "w:w");
     const type = attr(tcW, "w:type");
+    const size = attrMeasure(tcW, "w:w", type);
     if (size !== undefined) {
       opts.width = { size, ...(type ? { type } : {}) };
     }

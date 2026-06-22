@@ -47,6 +47,7 @@
  *
  * @module
  */
+import type { PositiveUniversalMeasure } from "@office-open/core";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
 import type { AlignmentType } from "../../paragraph";
@@ -106,7 +107,7 @@ export interface TableRowPropertiesOptionsBase {
   /** Row height configuration (trHeight) */
   height?: {
     /** Height value in twips or as a PositiveUniversalMeasure */
-    value: number;
+    value: number | PositiveUniversalMeasure;
     /** Height rule determining how the height value is applied (ST_HeightRule) */
     rule?: (typeof HeightRule)[keyof typeof HeightRule];
   };
