@@ -10,6 +10,7 @@ import {
   collectText,
   attr,
   attrNum,
+  attrMeasure,
   attrBool,
   hasChild,
   findDeep,
@@ -169,6 +170,36 @@ describe("attrBool", () => {
   it("should handle string 'true' attribute", () => {
     const el: Element = { attributes: { flag: "true" } };
     expect(attrBool(el, "flag")).toBe(true);
+  });
+});
+
+describe("attrMeasure", () => {
+  it("should return number for a plain numeric token", () => {
+    const el: Element = { attributes: { w: "5000" } };
+    expect(attrMeasure(el, "w")).toBe(5000);
+  });
+
+  it("should keep UniversalMeasure verbatim", () => {
+    const el: Element = { attributes: { w: "5mm" } };
+    expect(attrMeasure(el, "w")).toBe("5mm");
+  });
+
+  it("should keep Percentage verbatim", () => {
+    const el: Element = { attributes: { w: "50%" } };
+    expect(attrMeasure(el, "w")).toBe("50%");
+  });
+
+  it("should keep pct fiftieths verbatim when type is 'pct'", () => {
+    const el: Element = { attributes: { w: "5000" } };
+    expect(attrMeasure(el, "w", "pct")).toBe("5000");
+  });
+
+  it("should return undefined for missing attribute", () => {
+    expect(attrMeasure({ attributes: {} }, "w")).toBeUndefined();
+  });
+
+  it("should handle undefined element", () => {
+    expect(attrMeasure(undefined, "w")).toBeUndefined();
   });
 });
 
