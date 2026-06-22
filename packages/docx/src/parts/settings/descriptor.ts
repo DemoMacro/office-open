@@ -10,7 +10,8 @@
 
 import { derivePasswordHash } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrBool, findChild, stringify } from "@office-open/xml";
+import { attr, findChild, stringify } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import type {
   SettingsOptions,
@@ -20,7 +21,10 @@ import type {
   OdsoOptions,
   OdsoFieldMapDataOptions,
   CompatibilityOptions,
+  CompatSettingOptions,
   CaptionsOptions,
+  CaptionOptions,
+  AutoCaptionOptions,
   MathPropertiesOptions,
   RsidsOptions,
   ReadModeInkLockDownOptions,
@@ -72,8 +76,372 @@ function attrEl(tag: string, attrs: Record<string, string | number | boolean | u
   return a ? `<${tag} ${a}/>` : `<${tag}/>`;
 }
 
-function compatSetting(name: string, val: string | number): string {
-  return `<w:compatSetting w:name="${escapeAttr(name)}" w:uri="http://schemas.microsoft.com/office/word" w:val="${val}"/>`;
+function compatSetting(name: string, val: string | number, uri?: string): string {
+  const u = uri ?? "http://schemas.microsoft.com/office/word";
+  return `<w:compatSetting w:name="${escapeAttr(name)}" w:uri="${u}" w:val="${val}"/>`;
+}
+
+// ── Parse helpers ──
+
+/** Read a CT_OnOff child as boolean (presence true unless val is explicitly false). */
+function readOnOff(el: Element | undefined): boolean | undefined {
+  if (!el || !el.name) return undefined;
+  const v = attr(el, valAttr(el.name));
+  return v !== "false" && v !== "0" && v !== "off";
+}
+
+/** Read an attribute as a number, or undefined if absent/unparseable. */
+function readNum(el: Element | undefined, name: string): number | undefined {
+  if (!el) return undefined;
+  const v = attr(el, name);
+  if (v === undefined || v === "") return undefined;
+  const n = parseInt(v, 10);
+  return Number.isNaN(n) ? undefined : n;
+}
+
+/** Read an attribute as a string, or undefined if absent. */
+function readStr(el: Element | undefined, name: string): string | undefined {
+  if (!el) return undefined;
+  const v = attr(el, name);
+  return v === undefined || v === "" ? undefined : v;
+}
+
+/** Shared password/crypto attributes (AG_TransitionalPassword) → options keys. */
+const PASSWORD_ATTR_MAP: [string, string, boolean][] = [
+  ["hashValue", "w:hashValue", false],
+  ["saltValue", "w:saltValue", false],
+  ["hash", "w:hash", false],
+  ["salt", "w:salt", false],
+  ["spinCount", "w:spinCount", true],
+  ["algorithmName", "w:algorithmName", false],
+  ["cryptoAlgorithmClass", "w:cryptAlgorithmClass", false],
+  ["cryptoAlgorithmSid", "w:cryptAlgorithmSid", true],
+  ["cryptoAlgorithmType", "w:cryptAlgorithmType", false],
+  ["cryptoProvider", "w:cryptProvider", false],
+  ["cryptoProviderType", "w:cryptProviderType", false],
+  ["cryptoProviderTypeExtension", "w:cryptProviderTypeExt", true],
+  ["cryptoProviderTypeExtensionSource", "w:cryptProviderTypeExtSource", false],
+  ["algorithmExtensionId", "w:algIdExt", true],
+  ["algorithmExtensionSource", "w:algIdExtSource", false],
+  ["cryptoSpinCount", "w:cryptSpinCount", true],
+];
+
+/** Read shared password/crypto attributes into an options object. */
+function readPasswordAttrs(el: Element): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const [key, xmlAttr, isNum] of PASSWORD_ATTR_MAP) {
+    const v = attr(el, xmlAttr);
+    if (v === undefined || v === "") continue;
+    out[key] = isNum ? parseInt(v, 10) : v;
+  }
+  return out;
+}
+
+/**
+ * CT_OnOff compat flag elements → CompatibilityOptions keys. The XML tag often
+ * differs from the option key (e.g. wordPerfectJustification → w:wpJustification).
+ * Order mirrors stringifyCompatibility so round-trip preserves element order.
+ */
+const COMPAT_FLAG_MAP: [string, string][] = [
+  ["useSingleBorderforContiguousCells", "w:useSingleBorderforContiguousCells"],
+  ["wordPerfectJustification", "w:wpJustification"],
+  ["noTabStopForHangingIndent", "w:noTabHangInd"],
+  ["noLeading", "w:noLeading"],
+  ["spaceForUnderline", "w:spaceForUL"],
+  ["noColumnBalance", "w:noColumnBalance"],
+  ["balanceSingleByteDoubleByteWidth", "w:balanceSingleByteDoubleByteWidth"],
+  ["noExtraLineSpacing", "w:noExtraLineSpacing"],
+  ["doNotLeaveBackslashAlone", "w:doNotLeaveBackslashAlone"],
+  ["underlineTrailingSpaces", "w:ulTrailSpace"],
+  ["doNotExpandShiftReturn", "w:doNotExpandShiftReturn"],
+  ["spacingInWholePoints", "w:spacingInWholePoints"],
+  ["lineWrapLikeWord6", "w:lineWrapLikeWord6"],
+  ["printBodyTextBeforeHeader", "w:printBodyTextBeforeHeader"],
+  ["printColorsBlack", "w:printColBlack"],
+  ["spaceWidth", "w:wpSpaceWidth"],
+  ["showBreaksInFrames", "w:showBreaksInFrames"],
+  ["subFontBySize", "w:subFontBySize"],
+  ["suppressBottomSpacing", "w:suppressBottomSpacing"],
+  ["suppressTopSpacing", "w:suppressTopSpacing"],
+  ["suppressSpacingAtTopOfPage", "w:suppressSpacingAtTopOfPage"],
+  ["suppressTopSpacingWP", "w:suppressTopSpacingWP"],
+  ["suppressSpBfAfterPgBrk", "w:suppressSpBfAfterPgBrk"],
+  ["swapBordersFacingPages", "w:swapBordersFacingPages"],
+  ["convertMailMergeEsc", "w:convMailMergeEsc"],
+  ["truncateFontHeightsLikeWP6", "w:truncateFontHeightsLikeWP6"],
+  ["macWordSmallCaps", "w:mwSmallCaps"],
+  ["usePrinterMetrics", "w:usePrinterMetrics"],
+  ["doNotSuppressParagraphBorders", "w:doNotSuppressParagraphBorders"],
+  ["wrapTrailSpaces", "w:wrapTrailSpaces"],
+  ["footnoteLayoutLikeWW8", "w:footnoteLayoutLikeWW8"],
+  ["shapeLayoutLikeWW8", "w:shapeLayoutLikeWW8"],
+  ["alignTablesRowByRow", "w:alignTablesRowByRow"],
+  ["forgetLastTabAlignment", "w:forgetLastTabAlignment"],
+  ["adjustLineHeightInTable", "w:adjustLineHeightInTable"],
+  ["autoSpaceLikeWord95", "w:autoSpaceLikeWord95"],
+  ["noSpaceRaiseLower", "w:noSpaceRaiseLower"],
+  ["doNotUseHTMLParagraphAutoSpacing", "w:doNotUseHTMLParagraphAutoSpacing"],
+  ["layoutRawTableWidth", "w:layoutRawTableWidth"],
+  ["layoutTableRowsApart", "w:layoutTableRowsApart"],
+  ["useWord97LineBreakRules", "w:useWord97LineBreakRules"],
+  ["doNotBreakWrappedTables", "w:doNotBreakWrappedTables"],
+  ["doNotSnapToGridInCell", "w:doNotSnapToGridInCell"],
+  ["selectFieldWithFirstOrLastCharacter", "w:selectFldWithFirstOrLastChar"],
+  ["applyBreakingRules", "w:applyBreakingRules"],
+  ["doNotWrapTextWithPunctuation", "w:doNotWrapTextWithPunct"],
+  ["doNotUseEastAsianBreakRules", "w:doNotUseEastAsianBreakRules"],
+  ["useWord2002TableStyleRules", "w:useWord2002TableStyleRules"],
+  ["growAutofit", "w:growAutofit"],
+  ["useFELayout", "w:useFELayout"],
+  ["useNormalStyleForList", "w:useNormalStyleForList"],
+  ["doNotUseIndentAsNumberingTabStop", "w:doNotUseIndentAsNumberingTabStop"],
+  ["useAlternateEastAsianLineBreakRules", "w:useAltKinsokuLineBreakRules"],
+  ["allowSpaceOfSameStyleInTable", "w:allowSpaceOfSameStyleInTable"],
+  ["doNotSuppressIndentation", "w:doNotSuppressIndentation"],
+  ["doNotAutofitConstrainedTables", "w:doNotAutofitConstrainedTables"],
+  ["autofitToFirstFixedWidthCell", "w:autofitToFirstFixedWidthCell"],
+  ["underlineTabInNumberingList", "w:underlineTabInNumList"],
+  ["displayHangulFixedWidth", "w:displayHangulFixedWidth"],
+  ["splitPgBreakAndParaMark", "w:splitPgBreakAndParaMark"],
+  ["doNotVerticallyAlignCellWithSp", "w:doNotVertAlignCellWithSp"],
+  ["doNotBreakConstrainedForcedTable", "w:doNotBreakConstrainedForcedTable"],
+  ["ignoreVerticalAlignmentInTextboxes", "w:doNotVertAlignInTxbx"],
+  ["useAnsiKerningPairs", "w:useAnsiKerningPairs"],
+  ["cachedColumnBalance", "w:cachedColBalance"],
+];
+
+/** compatSetting names that map to dedicated sugar fields (not into compatSettings[]). */
+const COMPAT_SETTING_SUGAR: Record<
+  string,
+  | "version"
+  | "overrideTableStyleFontSizeAndJustification"
+  | "enableOpenTypeFeatures"
+  | "doNotFlipMirrorIndents"
+> = {
+  compatibilityMode: "version",
+  overrideTableStyleFontSizeAndJustification: "overrideTableStyleFontSizeAndJustification",
+  enableOpenTypeFeatures: "enableOpenTypeFeatures",
+  doNotFlipMirrorIndents: "doNotFlipMirrorIndents",
+};
+
+/** Parse w:footnotePr / w:endnotePr (CT_FtnDocProps / CT_EdnDocProps). */
+function parseFtnEdnPr(el: Element): Record<string, unknown> | undefined {
+  const o: Record<string, unknown> = {};
+  const pos = readStr(findChild(el, "w:pos"), "w:val");
+  if (pos) o.pos = pos;
+  const numFmtEl = findChild(el, "w:numFmt");
+  if (numFmtEl) {
+    const v = readStr(numFmtEl, "w:val");
+    if (v) o.numFmt = v;
+    const format = readStr(numFmtEl, "w:format");
+    if (format) o.format = format;
+  }
+  const numStart = readNum(findChild(el, "w:numStart"), "w:val");
+  if (numStart !== undefined) o.numStart = numStart;
+  const numRestart = readStr(findChild(el, "w:numRestart"), "w:val");
+  if (numRestart) o.numRestart = numRestart;
+  return Object.keys(o).length > 0 ? o : undefined;
+}
+
+/** Parse w:compat (CT_Compat): on/off flag elements + w:compatSetting entries. */
+function parseCompatibility(el: Element): CompatibilityOptions | undefined {
+  const o: Record<string, unknown> = {};
+  const flagMap: Record<string, string> = Object.fromEntries(
+    COMPAT_FLAG_MAP.map(([key, tag]) => [tag, key]),
+  );
+  const extras: CompatSettingOptions[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.type !== "element" || !child.name) continue;
+    const key = flagMap[child.name];
+    if (key !== undefined) {
+      o[key] = true;
+      continue;
+    }
+    if (child.name === "w:compatSetting") {
+      const name = attr(child, "w:name");
+      const val = attr(child, "w:val");
+      if (name === undefined || val === undefined) continue;
+      const sugar = COMPAT_SETTING_SUGAR[name];
+      if (sugar === "version") {
+        const n = parseInt(val, 10);
+        if (!Number.isNaN(n)) o.version = n;
+      } else if (sugar !== undefined) {
+        o[sugar] = val !== "0" && val !== "false";
+      } else {
+        extras.push({ name, val, uri: attr(child, "w:uri") });
+      }
+    }
+  }
+  if (extras.length > 0) o.compatSettings = extras;
+  return Object.keys(o).length > 0 ? (o as CompatibilityOptions) : undefined;
+}
+
+/** Parse m:mathPr (CT_MathPr). */
+function parseMathPr(el: Element): MathPropertiesOptions | undefined {
+  const o: Record<string, unknown> = {};
+  const mathFont = readStr(findChild(el, "m:mathFont"), "m:val");
+  if (mathFont) o.mathFont = mathFont;
+  const brkBin = readStr(findChild(el, "m:brkBin"), "m:val");
+  if (brkBin) o.brkBin = brkBin;
+  const brkBinSub = readStr(findChild(el, "m:brkBinSub"), "m:val");
+  if (brkBinSub) o.brkBinSub = brkBinSub;
+  const smallFrac = readOnOff(findChild(el, "m:smallFrac"));
+  if (smallFrac !== undefined) o.smallFrac = smallFrac;
+  const dispDef = readOnOff(findChild(el, "m:dispDef"));
+  if (dispDef !== undefined) o.dispDef = dispDef;
+  const lMargin = readNum(findChild(el, "m:lMargin"), "m:val");
+  if (lMargin !== undefined) o.lMargin = lMargin;
+  const rMargin = readNum(findChild(el, "m:rMargin"), "m:val");
+  if (rMargin !== undefined) o.rMargin = rMargin;
+  const defJc = readStr(findChild(el, "m:defJc"), "m:val");
+  if (defJc) o.defJc = defJc;
+  const wrapIndent = readNum(findChild(el, "m:wrapIndent"), "m:val");
+  if (wrapIndent !== undefined) o.wrapIndent = wrapIndent;
+  const intLim = readStr(findChild(el, "m:intLim"), "m:val");
+  if (intLim) o.intLim = intLim;
+  const naryLim = readStr(findChild(el, "m:naryLim"), "m:val");
+  if (naryLim) o.naryLim = naryLim;
+  return Object.keys(o).length > 0 ? (o as MathPropertiesOptions) : undefined;
+}
+
+/** Parse w:captions (CT_Captions). */
+function parseCaptions(el: Element): CaptionsOptions | undefined {
+  const captions: CaptionOptions[] = [];
+  const autoCaptions: AutoCaptionOptions[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "w:caption") {
+      const c: Record<string, unknown> = { name: attr(child, "w:name") ?? "" };
+      const pos = attr(child, "w:pos");
+      if (pos) c.pos = pos as CaptionOptions["pos"];
+      const chapNum = attr(child, "w:chapNum");
+      if (chapNum !== undefined) c.chapNum = chapNum === "1";
+      const heading = attr(child, "w:heading");
+      if (heading !== undefined) c.heading = parseInt(heading, 10);
+      const noLabel = attr(child, "w:noLabel");
+      if (noLabel !== undefined) c.noLabel = noLabel === "1";
+      const numFmt = attr(child, "w:numFmt");
+      if (numFmt) c.numFmt = numFmt;
+      const sep = attr(child, "w:sep");
+      if (sep) c.sep = sep as CaptionOptions["sep"];
+      captions.push(c as unknown as CaptionOptions);
+    } else if (child.name === "w:autoCaptions") {
+      for (const ac of child.elements ?? []) {
+        if (ac.name !== "w:autoCaption") continue;
+        const name = attr(ac, "w:name");
+        const caption = attr(ac, "w:caption");
+        if (name && caption) autoCaptions.push({ name, caption });
+      }
+    }
+  }
+  if (captions.length === 0) return undefined;
+  const o: CaptionsOptions = { captions };
+  if (autoCaptions.length > 0) o.autoCaptions = autoCaptions;
+  return o;
+}
+
+/** Parse w:odso (CT_Odso). */
+function parseOdso(el: Element): OdsoOptions | undefined {
+  const o: Record<string, unknown> = {};
+  const udl = readStr(findChild(el, "w:udl"), "w:val");
+  if (udl) o.udl = udl;
+  const table = readStr(findChild(el, "w:table"), "w:val");
+  if (table) o.table = table;
+  const srcEl = findChild(el, "w:src");
+  if (srcEl) {
+    const rid = attr(srcEl, "r:id");
+    if (rid) o.src = rid;
+  }
+  const colDelim = readNum(findChild(el, "w:colDelim"), "w:val");
+  if (colDelim !== undefined) o.colDelim = colDelim;
+  const type = readStr(findChild(el, "w:type"), "w:val");
+  if (type) o.type = type as OdsoOptions["type"];
+  const fHdr = readOnOff(findChild(el, "w:fHdr"));
+  if (fHdr !== undefined) o.fHdr = fHdr;
+  const fieldMapData: OdsoFieldMapDataOptions[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.name !== "w:fieldMapData") continue;
+    const fm: Record<string, unknown> = {};
+    const t = readStr(findChild(child, "w:type"), "w:val");
+    if (t) fm.type = t as OdsoFieldMapDataOptions["type"];
+    const n = readStr(findChild(child, "w:name"), "w:val");
+    if (n) fm.name = n;
+    const mn = readStr(findChild(child, "w:mappedName"), "w:val");
+    if (mn) fm.mappedName = mn;
+    const col = readNum(findChild(child, "w:column"), "w:val");
+    if (col !== undefined) fm.column = col;
+    const lid = readStr(findChild(child, "w:lid"), "w:val");
+    if (lid) fm.lid = lid;
+    const dyn = readOnOff(findChild(child, "w:dynamicAddress"));
+    if (dyn !== undefined) fm.dynamicAddress = dyn;
+    if (Object.keys(fm).length > 0) fieldMapData.push(fm as OdsoFieldMapDataOptions);
+  }
+  if (fieldMapData.length > 0) o.fieldMapData = fieldMapData;
+  const recipientData: string[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.name !== "w:recipientData") continue;
+    const rid = attr(child, "r:id");
+    if (rid) recipientData.push(rid);
+  }
+  if (recipientData.length > 0) o.recipientData = recipientData;
+  const uniqueTag = readStr(findChild(el, "w:uniqueTag"), "w:val");
+  if (uniqueTag) o.uniqueTag = uniqueTag;
+  return Object.keys(o).length > 0 ? (o as OdsoOptions) : undefined;
+}
+
+/** Parse w:mailMerge (CT_MailMerge). */
+function parseMailMerge(el: Element): MailMergeOptions | undefined {
+  const o: Record<string, unknown> = {};
+  const mdt = readStr(findChild(el, "w:mainDocumentType"), "w:val");
+  if (mdt) o.mainDocumentType = mdt as MailMergeOptions["mainDocumentType"];
+  const dataType = readStr(findChild(el, "w:dataType"), "w:val");
+  if (dataType) o.dataType = dataType as MailMergeOptions["dataType"];
+  const dest = readStr(findChild(el, "w:destination"), "w:val");
+  if (dest) o.destination = dest as MailMergeOptions["destination"];
+  const connectString = readStr(findChild(el, "w:connectString"), "w:val");
+  if (connectString) o.connectString = connectString;
+  const query = readStr(findChild(el, "w:query"), "w:val");
+  if (query) o.query = query;
+  const dsEl = findChild(el, "w:dataSource");
+  if (dsEl) {
+    const rid = attr(dsEl, "r:id");
+    if (rid) o.dataSource = rid;
+  }
+  const hsEl = findChild(el, "w:headerSource");
+  if (hsEl) {
+    const rid = attr(hsEl, "r:id");
+    if (rid) o.headerSource = rid;
+  }
+  const linkToQuery = readOnOff(findChild(el, "w:linkToQuery"));
+  if (linkToQuery !== undefined) o.linkToQuery = linkToQuery;
+  const doNotSuppress = readOnOff(findChild(el, "w:doNotSuppressBlankLines"));
+  if (doNotSuppress !== undefined) o.doNotSuppressBlankLines = doNotSuppress;
+  const addressFieldName = readStr(findChild(el, "w:addressFieldName"), "w:val");
+  if (addressFieldName) o.addressFieldName = addressFieldName;
+  const mailSubject = readStr(findChild(el, "w:mailSubject"), "w:val");
+  if (mailSubject) o.mailSubject = mailSubject;
+  const mailAsAttachment = readOnOff(findChild(el, "w:mailAsAttachment"));
+  if (mailAsAttachment !== undefined) o.mailAsAttachment = mailAsAttachment;
+  const viewMergedData = readOnOff(findChild(el, "w:viewMergedData"));
+  if (viewMergedData !== undefined) o.viewMergedData = viewMergedData;
+  const activeRecord = readNum(findChild(el, "w:activeRecord"), "w:val");
+  if (activeRecord !== undefined) o.activeRecord = activeRecord;
+  const checkErrors = readNum(findChild(el, "w:checkErrors"), "w:val");
+  if (checkErrors !== undefined) o.checkErrors = checkErrors;
+  const active = readOnOff(findChild(el, "w:active"));
+  if (active !== undefined) o.active = active;
+  const recipientsEl = findChild(el, "w:recipients");
+  if (recipientsEl) {
+    const rid = attr(recipientsEl, "r:id");
+    if (rid) o.recipients = rid;
+  }
+  const odsoEl = findChild(el, "w:odso");
+  if (odsoEl) {
+    const odso = parseOdso(odsoEl);
+    if (odso) o.odso = odso;
+  }
+  if (Object.keys(o).length === 0) return undefined;
+  return o as unknown as MailMergeOptions;
 }
 
 // ── Password derivation ──
@@ -413,6 +781,21 @@ function stringifyCompatibility(opts: CompatibilityOptions): string {
     p.push(compatSetting("overrideTableStyleFontSizeAndJustification", 1));
   if (opts.enableOpenTypeFeatures) p.push(compatSetting("enableOpenTypeFeatures", 1));
   if (opts.doNotFlipMirrorIndents) p.push(compatSetting("doNotFlipMirrorIndents", 1));
+
+  // Additional compatSetting entries (sugar fields above take precedence on name clash)
+  if (opts.compatSettings) {
+    const emitted = new Set<string>();
+    if (opts.version) emitted.add("compatibilityMode");
+    if (opts.overrideTableStyleFontSizeAndJustification)
+      emitted.add("overrideTableStyleFontSizeAndJustification");
+    if (opts.enableOpenTypeFeatures) emitted.add("enableOpenTypeFeatures");
+    if (opts.doNotFlipMirrorIndents) emitted.add("doNotFlipMirrorIndents");
+    for (const cs of opts.compatSettings) {
+      if (emitted.has(cs.name)) continue;
+      p.push(compatSetting(cs.name, cs.val, cs.uri));
+      emitted.add(cs.name);
+    }
+  }
   return p.length ? `<w:compat>${p.join("")}</w:compat>` : "";
 }
 
@@ -621,7 +1004,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w:alwaysMergeEmptyNamespace", opts.alwaysMergeEmptyNamespace));
     p.push(onOff("w:updateFields", opts.updateFields));
 
-    if (opts.hdrShapeDefaults !== undefined) p.push("<w:hdrShapeDefaults/>");
+    if (opts.hdrShapeDefaults !== undefined)
+      p.push(`<w:hdrShapeDefaults>${opts.hdrShapeDefaults}</w:hdrShapeDefaults>`);
     if (opts.footnotePr !== undefined) p.push(stringifyFootnotePr(opts.footnotePr));
     if (opts.endnotePr !== undefined) p.push(stringifyEndnotePr(opts.endnotePr));
 
@@ -649,8 +1033,13 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
 
     if (opts.colorSchemeMapping !== undefined)
       p.push(stringifyColorSchemeMapping(opts.colorSchemeMapping));
-    if (opts.themeFontLang !== undefined)
-      p.push(attrEl("w:themeFontLang", { "w:val": opts.themeFontLang }));
+    if (opts.themeFontLang !== undefined) {
+      const a: Record<string, string> = {};
+      if (opts.themeFontLang.val !== undefined) a["w:val"] = opts.themeFontLang.val;
+      if (opts.themeFontLang.eastAsia !== undefined) a["w:eastAsia"] = opts.themeFontLang.eastAsia;
+      if (opts.themeFontLang.bidi !== undefined) a["w:bidi"] = opts.themeFontLang.bidi;
+      p.push(attrEl("w:themeFontLang", a));
+    }
     p.push(onOff("w:doNotIncludeSubdocsInStats", opts.doNotIncludeSubdocsInStats));
     p.push(onOff("w:doNotAutoCompressPictures", opts.doNotAutoCompressPictures));
     if (opts.forceUpgrade !== undefined) p.push("<w:forceUpgrade/>");
@@ -670,7 +1059,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     }
 
     p.push(onOff("w:doNotEmbedSmartTags", opts.doNotEmbedSmartTags));
-    if (opts.shapeDefaults !== undefined) p.push("<w:shapeDefaults/>");
+    if (opts.shapeDefaults !== undefined)
+      p.push(`<w:shapeDefaults>${opts.shapeDefaults}</w:shapeDefaults>`);
     p.push(strVal("w:decimalSymbol", opts.decimalSymbol));
     p.push(strVal("w:listSeparator", opts.listSeparator));
 
@@ -681,19 +1071,18 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
   parse(el, _ctx) {
     const opts: Record<string, unknown> = {};
 
-    // evenAndOddHeaderAndFooters → w:evenAndOddHeaders
-    const eohEl = findChild(el, "w:evenAndOddHeaders");
-    if (eohEl) {
-      const val = attr(eohEl, "w:val");
-      opts.evenAndOddHeaderAndFooters = val !== "false" && val !== "0" && val !== "off";
+    // writeProtection (CT_WriteProtection)
+    const wpEl = findChild(el, "w:writeProtection");
+    if (wpEl) {
+      const wp = readPasswordAttrs(wpEl) as WriteProtectionOptions;
+      const recommended = attr(wpEl, "w:recommended");
+      if (recommended !== undefined) wp.recommended = recommended === "1" || recommended === "true";
+      if (Object.keys(wp).length > 0) opts.writeProtection = wp;
     }
 
     // view → w:view/@w:val
-    const viewEl = findChild(el, "w:view");
-    if (viewEl) {
-      const val = attr(viewEl, "w:val");
-      if (val) opts.view = val;
-    }
+    const viewVal = readStr(findChild(el, "w:view"), "w:val");
+    if (viewVal) opts.view = viewVal;
 
     // zoom → w:zoom/@w:percent, @w:val
     const zoomEl = findChild(el, "w:zoom");
@@ -701,242 +1090,69 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const zoom: Record<string, unknown> = {};
       const percent = attr(zoomEl, "w:percent");
       if (percent) zoom.percent = parseInt(percent, 10);
-      const val = attr(zoomEl, "w:val");
-      if (val) zoom.val = val;
+      const zval = attr(zoomEl, "w:val");
+      if (zval) zoom.val = zval;
       if (Object.keys(zoom).length > 0) opts.zoom = zoom;
     }
 
-    // defaultTabStop → w:defaultTabStop/@w:val
-    const tabStopEl = findChild(el, "w:defaultTabStop");
-    if (tabStopEl) {
-      const val = attr(tabStopEl, "w:val");
-      if (val) opts.defaultTabStop = parseInt(val, 10);
+    // CT_OnOff scalar settings (presence = true unless w:val is explicitly false)
+    const onOffScalar: [string, string][] = [
+      ["removePersonalInformation", "w:removePersonalInformation"],
+      ["removeDateAndTime", "w:removeDateAndTime"],
+      ["doNotDisplayPageBoundaries", "w:doNotDisplayPageBoundaries"],
+      ["displayBackgroundShape", "w:displayBackgroundShape"],
+      ["printPostScriptOverText", "w:printPostScriptOverText"],
+      ["printFractionalCharacterWidth", "w:printFractionalCharacterWidth"],
+      ["printFormsData", "w:printFormsData"],
+      ["embedTrueTypeFonts", "w:embedTrueTypeFonts"],
+      ["embedSystemFonts", "w:embedSystemFonts"],
+      ["saveSubsetFonts", "w:saveSubsetFonts"],
+      ["saveFormsData", "w:saveFormsData"],
+      ["mirrorMargins", "w:mirrorMargins"],
+      ["alignBordersAndEdges", "w:alignBordersAndEdges"],
+      ["bordersDoNotSurroundHeader", "w:bordersDoNotSurroundHeader"],
+      ["bordersDoNotSurroundFooter", "w:bordersDoNotSurroundFooter"],
+      ["gutterAtTop", "w:gutterAtTop"],
+      ["hideSpellingErrors", "w:hideSpellingErrors"],
+      ["hideGrammaticalErrors", "w:hideGrammaticalErrors"],
+      ["formsDesign", "w:formsDesign"],
+      ["linkStyles", "w:linkStyles"],
+      ["trackRevisions", "w:trackRevisions"],
+      ["doNotTrackMoves", "w:doNotTrackMoves"],
+      ["doNotTrackFormatting", "w:doNotTrackFormatting"],
+      ["autoFormatOverride", "w:autoFormatOverride"],
+      ["styleLockTheme", "w:styleLockTheme"],
+      ["styleLockQFSet", "w:styleLockQFSet"],
+      ["showEnvelope", "w:showEnvelope"],
+      ["evenAndOddHeaders", "w:evenAndOddHeaders"],
+      ["bookFoldRevPrinting", "w:bookFoldRevPrinting"],
+      ["bookFoldPrinting", "w:bookFoldPrinting"],
+      ["doNotUseMarginsForDrawingGridOrigin", "w:doNotUseMarginsForDrawingGridOrigin"],
+      ["doNotShadeFormData", "w:doNotShadeFormData"],
+      ["noPunctuationKerning", "w:noPunctuationKerning"],
+      ["printTwoOnOne", "w:printTwoOnOne"],
+      ["strictFirstAndLastChars", "w:strictFirstAndLastChars"],
+      ["savePreviewPicture", "w:savePreviewPicture"],
+      ["doNotValidateAgainstSchema", "w:doNotValidateAgainstSchema"],
+      ["saveInvalidXml", "w:saveInvalidXml"],
+      ["ignoreMixedContent", "w:ignoreMixedContent"],
+      ["alwaysShowPlaceholderText", "w:alwaysShowPlaceholderText"],
+      ["doNotDemarcateInvalidXml", "w:doNotDemarcateInvalidXml"],
+      ["saveXmlDataOnly", "w:saveXmlDataOnly"],
+      ["useXSLTWhenSaving", "w:useXSLTWhenSaving"],
+      ["showXMLTags", "w:showXMLTags"],
+      ["alwaysMergeEmptyNamespace", "w:alwaysMergeEmptyNamespace"],
+      ["updateFields", "w:updateFields"],
+      ["doNotIncludeSubdocsInStats", "w:doNotIncludeSubdocsInStats"],
+      ["doNotAutoCompressPictures", "w:doNotAutoCompressPictures"],
+      ["doNotEmbedSmartTags", "w:doNotEmbedSmartTags"],
+    ];
+    for (const [key, tag] of onOffScalar) {
+      const v = readOnOff(findChild(el, tag));
+      if (v !== undefined) opts[key] = v;
     }
 
-    // w:trackRevisions → opts.trackRevisions (top-level, matches generate)
-    const trackRevEl = findChild(el, "w:trackRevisions");
-    if (trackRevEl) opts.trackRevisions = attrBool(trackRevEl, "w:val") ?? true;
-
-    // w:updateFields → opts.updateFields (top-level, matches generate)
-    const updateFieldsEl = findChild(el, "w:updateFields");
-    if (updateFieldsEl) opts.updateFields = attrBool(updateFieldsEl, "w:val") ?? true;
-
-    // compatibilityModeVersion → w:compat/w:compatSetting
-    const compatEl = findChild(el, "w:compat");
-    if (compatEl) {
-      for (const child of compatEl.elements ?? []) {
-        if (child.name === "w:compatSetting") {
-          const name = attr(child, "w:name");
-          if (name === "compatibilityMode") {
-            const val = attr(child, "w:val");
-            if (val) opts.compatabilityModeVersion = parseInt(val, 10);
-          }
-        }
-      }
-    }
-
-    // docVars → w:docVars/w:docVar
-    const docVarsEl = findChild(el, "w:docVars");
-    if (docVarsEl) {
-      const vars: Array<{ name: string; val: string }> = [];
-      for (const child of docVarsEl.elements ?? []) {
-        if (child.name === "w:docVar") {
-          const name = attr(child, "w:name");
-          const val = attr(child, "w:val");
-          if (name && val) vars.push({ name, val });
-        }
-      }
-      if (vars.length > 0) opts.docVars = vars;
-    }
-
-    // characterSpacingControl → w:characterSpacingControl/@w:val
-    const cscEl = findChild(el, "w:characterSpacingControl");
-    if (cscEl) {
-      const val = attr(cscEl, "w:val");
-      if (val) opts.characterSpacingControl = val;
-    }
-
-    // displayBackgroundShape → w:displayBackgroundShape (presence)
-    if (findChild(el, "w:displayBackgroundShape")) {
-      opts.displayBackgroundShape = true;
-    }
-
-    // embedTrueTypeFonts → w:embedTrueTypeFonts (presence)
-    if (findChild(el, "w:embedTrueTypeFonts")) {
-      opts.embedTrueTypeFonts = true;
-    }
-
-    // embedSystemFonts → w:embedSystemFonts (presence)
-    if (findChild(el, "w:embedSystemFonts")) {
-      opts.embedSystemFonts = true;
-    }
-
-    // saveSubsetFonts → w:saveSubsetFonts (presence)
-    if (findChild(el, "w:saveSubsetFonts")) {
-      opts.saveSubsetFonts = true;
-    }
-
-    // removePersonalInformation → w:removePersonalInformation (presence)
-    if (findChild(el, "w:removePersonalInformation")) {
-      opts.removePersonalInformation = true;
-    }
-
-    // removeDateAndTime → w:removeDateAndTime (presence)
-    if (findChild(el, "w:removeDateAndTime")) {
-      opts.removeDateAndTime = true;
-    }
-
-    // hideSpellingErrors → w:hideSpellingErrors (presence)
-    if (findChild(el, "w:hideSpellingErrors")) {
-      opts.hideSpellingErrors = true;
-    }
-
-    // hideGrammaticalErrors → w:hideGrammaticalErrors (presence)
-    if (findChild(el, "w:hideGrammaticalErrors")) {
-      opts.hideGrammaticalErrors = true;
-    }
-
-    // mirrorMargins → w:mirrorMargins (presence)
-    if (findChild(el, "w:mirrorMargins")) {
-      opts.mirrorMargins = true;
-    }
-
-    // saveFormsData → w:saveFormsData (presence)
-    if (findChild(el, "w:saveFormsData")) {
-      opts.saveFormsData = true;
-    }
-
-    // alignBordersAndEdges → w:alignBordersAndEdges (presence)
-    if (findChild(el, "w:alignBordersAndEdges")) {
-      opts.alignBordersAndEdges = true;
-    }
-
-    // bordersDoNotSurroundHeader → w:bordersDoNotSurroundHeader (presence)
-    if (findChild(el, "w:bordersDoNotSurroundHeader")) {
-      opts.bordersDoNotSurroundHeader = true;
-    }
-
-    // bordersDoNotSurroundFooter → w:bordersDoNotSurroundFooter (presence)
-    if (findChild(el, "w:bordersDoNotSurroundFooter")) {
-      opts.bordersDoNotSurroundFooter = true;
-    }
-
-    // gutterAtTop → w:gutterAtTop (presence)
-    if (findChild(el, "w:gutterAtTop")) {
-      opts.gutterAtTop = true;
-    }
-
-    // formsDesign → w:formsDesign (presence)
-    if (findChild(el, "w:formsDesign")) {
-      opts.formsDesign = true;
-    }
-
-    // linkStyles → w:linkStyles (presence)
-    if (findChild(el, "w:linkStyles")) {
-      opts.linkStyles = true;
-    }
-
-    // autoHyphenation → w:autoHyphenation
-    const autoHyphEl = findChild(el, "w:autoHyphenation");
-    if (autoHyphEl) {
-      const hyphenation = (opts.hyphenation as Record<string, unknown>) ?? {};
-      hyphenation.autoHyphenation = true;
-      opts.hyphenation = hyphenation;
-    }
-
-    // doNotHyphenateCaps → w:doNotHyphenateCaps
-    const noHyphCapsEl = findChild(el, "w:doNotHyphenateCaps");
-    if (noHyphCapsEl) {
-      const hyphenation = (opts.hyphenation as Record<string, unknown>) ?? {};
-      hyphenation.doNotHyphenateCaps = true;
-      opts.hyphenation = hyphenation;
-    }
-
-    // consecutiveHyphenLimit → w:consecutiveHyphenLimit/@w:val
-    const consHyphEl = findChild(el, "w:consecutiveHyphenLimit");
-    if (consHyphEl) {
-      const val = attr(consHyphEl, "w:val");
-      if (val) {
-        const hyphenation = (opts.hyphenation as Record<string, unknown>) ?? {};
-        hyphenation.consecutiveHyphenLimit = parseInt(val, 10);
-        opts.hyphenation = hyphenation;
-      }
-    }
-
-    // hyphenationZone → w:hyphenationZone/@w:val
-    const hyphZoneEl = findChild(el, "w:hyphenationZone");
-    if (hyphZoneEl) {
-      const val = attr(hyphZoneEl, "w:val");
-      if (val) {
-        const hyphenation = (opts.hyphenation as Record<string, unknown>) ?? {};
-        hyphenation.hyphenationZone = parseInt(val, 10);
-        opts.hyphenation = hyphenation;
-      }
-    }
-
-    // attachedTemplate → w:attachedTemplate/@r:id
-    const attachedTplEl = findChild(el, "w:attachedTemplate");
-    if (attachedTplEl) {
-      const val = attr(attachedTplEl, "r:id");
-      if (val) opts.attachedTemplate = val;
-    }
-
-    // stylePaneSortMethod → w:stylePaneSortMethod/@w:val
-    const spsmEl = findChild(el, "w:stylePaneSortMethod");
-    if (spsmEl) {
-      const val = attr(spsmEl, "w:val");
-      if (val) opts.stylePaneSortMethod = val;
-    }
-
-    // documentType → w:documentType/@w:val
-    const docTypeEl = findChild(el, "w:documentType");
-    if (docTypeEl) {
-      const val = attr(docTypeEl, "w:val");
-      if (val) opts.documentType = val;
-    }
-
-    // defaultTableStyle → w:defaultTableStyle/@w:val
-    const defTblStyleEl = findChild(el, "w:defaultTableStyle");
-    if (defTblStyleEl) {
-      const val = attr(defTblStyleEl, "w:val");
-      if (val) opts.defaultTableStyle = val;
-    }
-
-    // stylePaneFormatFilter → w:stylePaneFormatFilter (complex attributes)
-    const spffEl = findChild(el, "w:stylePaneFormatFilter");
-    if (spffEl) {
-      const filter: Record<string, boolean> = {};
-      const flags: [string, string][] = [
-        ["allStyles", "w:allStyles"],
-        ["customStyles", "w:customStyles"],
-        ["stylesInUse", "w:stylesInUse"],
-        ["headingStyles", "w:headingStyles"],
-        ["numberingStyles", "w:numberingStyles"],
-        ["tableStyles", "w:tableStyles"],
-        ["directFormattingOnRuns", "w:directFormattingOnRuns"],
-        ["directFormattingOnParagraphs", "w:directFormattingOnParagraphs"],
-        ["directFormattingOnNumbering", "w:directFormattingOnNumbering"],
-        ["directFormattingOnTables", "w:directFormattingOnTables"],
-        ["clearFormatting", "w:clearFormatting"],
-        ["top3HeadingStyles", "w:top3HeadingStyles"],
-        ["visibleStyles", "w:visibleStyles"],
-        ["alternateStyleNames", "w:alternateStyleNames"],
-      ];
-      for (const [prop, xmlKey] of flags) {
-        const v = attr(spffEl, xmlKey);
-        if (v !== undefined) filter[prop] = v !== "0" && v !== "false" && v !== "off";
-      }
-      if (Object.keys(filter).length > 0) opts.stylePaneFormatFilter = filter;
-    }
-
-    // clickAndTypeStyle → w:clickAndTypeStyle/@w:val
-    const catEl = findChild(el, "w:clickAndTypeStyle");
-    if (catEl) {
-      const val = attr(catEl, "w:val");
-      if (val) opts.clickAndTypeStyle = val;
-    }
-
-    // activeWritingStyle → iterate w:activeWritingStyle children
+    // activeWritingStyle → w:activeWritingStyle[] (multiple)
     const awsList: Array<Record<string, unknown>> = [];
     for (const child of el.elements ?? []) {
       if (child.name !== "w:activeWritingStyle") continue;
@@ -970,7 +1186,77 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (Object.keys(proof).length > 0) opts.proofState = proof;
     }
 
-    // documentProtection → w:documentProtection (written under features)
+    // attachedTemplate → w:attachedTemplate/@r:id
+    const attachedTplEl = findChild(el, "w:attachedTemplate");
+    if (attachedTplEl) {
+      const rid = attr(attachedTplEl, "r:id");
+      if (rid) opts.attachedTemplate = rid;
+    }
+
+    // stylePaneFormatFilter → w:stylePaneFormatFilter (complex attributes)
+    const spffEl = findChild(el, "w:stylePaneFormatFilter");
+    if (spffEl) {
+      const filter: Record<string, boolean> = {};
+      const spffFlags: [string, string][] = [
+        ["allStyles", "w:allStyles"],
+        ["customStyles", "w:customStyles"],
+        ["stylesInUse", "w:stylesInUse"],
+        ["headingStyles", "w:headingStyles"],
+        ["numberingStyles", "w:numberingStyles"],
+        ["tableStyles", "w:tableStyles"],
+        ["directFormattingOnRuns", "w:directFormattingOnRuns"],
+        ["directFormattingOnParagraphs", "w:directFormattingOnParagraphs"],
+        ["directFormattingOnNumbering", "w:directFormattingOnNumbering"],
+        ["directFormattingOnTables", "w:directFormattingOnTables"],
+        ["clearFormatting", "w:clearFormatting"],
+        ["top3HeadingStyles", "w:top3HeadingStyles"],
+        ["visibleStyles", "w:visibleStyles"],
+        ["alternateStyleNames", "w:alternateStyleNames"],
+      ];
+      for (const [prop, xmlKey] of spffFlags) {
+        const v = attr(spffEl, xmlKey);
+        if (v !== undefined) filter[prop] = v !== "0" && v !== "false" && v !== "off";
+      }
+      if (Object.keys(filter).length > 0) opts.stylePaneFormatFilter = filter;
+    }
+
+    // stylePaneSortMethod / documentType / clickAndTypeStyle / defaultTableStyle
+    const stylePaneSortMethod = readStr(findChild(el, "w:stylePaneSortMethod"), "w:val");
+    if (stylePaneSortMethod)
+      opts.stylePaneSortMethod = stylePaneSortMethod as SettingsOptions["stylePaneSortMethod"];
+    const documentType = readStr(findChild(el, "w:documentType"), "w:val");
+    if (documentType) opts.documentType = documentType as SettingsOptions["documentType"];
+    const clickAndTypeStyle = readStr(findChild(el, "w:clickAndTypeStyle"), "w:val");
+    if (clickAndTypeStyle) opts.clickAndTypeStyle = clickAndTypeStyle;
+    const defaultTableStyle = readStr(findChild(el, "w:defaultTableStyle"), "w:val");
+    if (defaultTableStyle) opts.defaultTableStyle = defaultTableStyle;
+
+    // mailMerge → w:mailMerge (CT_MailMerge)
+    const mailMergeEl = findChild(el, "w:mailMerge");
+    if (mailMergeEl) {
+      const mm = parseMailMerge(mailMergeEl);
+      if (mm) opts.mailMerge = mm;
+    }
+
+    // revisionView → w:revisionView (CT_TrackChangesView)
+    const revViewEl = findChild(el, "w:revisionView");
+    if (revViewEl) {
+      const rv: Record<string, boolean> = {};
+      const rvFlags: [string, string][] = [
+        ["markup", "w:markup"],
+        ["comments", "w:comments"],
+        ["insDel", "w:insDel"],
+        ["formatting", "w:formatting"],
+        ["inkAnnotations", "w:inkAnnotations"],
+      ];
+      for (const [k, a] of rvFlags) {
+        const v = attr(revViewEl, a);
+        if (v !== undefined) rv[k] = v !== "false" && v !== "0";
+      }
+      if (Object.keys(rv).length > 0) opts.revisionView = rv as RevisionViewOptions;
+    }
+
+    // documentProtection → w:documentProtection (CT_DocProtect)
     const docProtEl = findChild(el, "w:documentProtection");
     if (docProtEl) {
       const prot: DocumentProtectionOptions = {};
@@ -980,52 +1266,245 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       }
       const enforcement = attr(docProtEl, "w:enforcement");
       if (enforcement !== undefined) {
-        // Only include documentProtection if enforcement is set
-        const hash = attr(docProtEl, "w:hash");
-        if (hash) prot.hash = hash;
-        const salt = attr(docProtEl, "w:salt");
-        if (salt) prot.salt = salt;
-        const cryptProviderType = attr(docProtEl, "w:cryptProviderType");
-        if (cryptProviderType) prot.cryptoProviderType = cryptProviderType;
-        const cryptAlgorithmClass = attr(docProtEl, "w:cryptAlgorithmClass");
-        if (cryptAlgorithmClass) prot.cryptoAlgorithmClass = cryptAlgorithmClass;
-        const cryptAlgorithmType = attr(docProtEl, "w:cryptAlgorithmType");
-        if (cryptAlgorithmType) prot.cryptoAlgorithmType = cryptAlgorithmType;
-        const cryptAlgorithmSid = attr(docProtEl, "w:cryptAlgorithmSid");
-        if (cryptAlgorithmSid) prot.cryptoAlgorithmSid = parseInt(cryptAlgorithmSid, 10);
-        const cryptSpinCount = attr(docProtEl, "w:cryptSpinCount");
-        if (cryptSpinCount) prot.cryptoSpinCount = parseInt(cryptSpinCount, 10);
-        const hashValue = attr(docProtEl, "w:hashValue");
-        if (hashValue) prot.hashValue = hashValue;
-        const saltValue = attr(docProtEl, "w:saltValue");
-        if (saltValue) prot.saltValue = saltValue;
-        const spinCount = attr(docProtEl, "w:spinCount");
-        if (spinCount) prot.spinCount = parseInt(spinCount, 10);
-        const algorithmName = attr(docProtEl, "w:algorithmName");
-        if (algorithmName) prot.algorithmName = algorithmName;
+        Object.assign(prot, readPasswordAttrs(docProtEl));
         const formatting = attr(docProtEl, "w:formatting");
         if (formatting !== undefined) prot.formatting = formatting === "1" || formatting === "true";
       }
       if (Object.keys(prot).length > 0) opts.documentProtection = prot;
     }
 
-    // doNotTrackMoves → w:doNotTrackMoves (onOff: read w:val)
-    const noMovesEl = findChild(el, "w:doNotTrackMoves");
-    if (noMovesEl) opts.doNotTrackMoves = attrBool(noMovesEl, "w:val") ?? true;
+    // defaultTabStop → w:defaultTabStop/@w:val
+    const defaultTabStop = readNum(findChild(el, "w:defaultTabStop"), "w:val");
+    if (defaultTabStop !== undefined) opts.defaultTabStop = defaultTabStop;
 
-    // doNotTrackFormatting → w:doNotTrackFormatting (onOff: read w:val)
-    const noFmtEl = findChild(el, "w:doNotTrackFormatting");
-    if (noFmtEl) opts.doNotTrackFormatting = attrBool(noFmtEl, "w:val") ?? true;
+    // hyphenation (autoHyphenation/consecutiveHyphenLimit/hyphenationZone/doNotHyphenateCaps)
+    if (
+      findChild(el, "w:autoHyphenation") ||
+      findChild(el, "w:doNotHyphenateCaps") ||
+      findChild(el, "w:consecutiveHyphenLimit") ||
+      findChild(el, "w:hyphenationZone")
+    ) {
+      const hyphenation: Record<string, unknown> = {};
+      const autoHyph = readOnOff(findChild(el, "w:autoHyphenation"));
+      if (autoHyph !== undefined) hyphenation.autoHyphenation = autoHyph;
+      const noHyphCaps = readOnOff(findChild(el, "w:doNotHyphenateCaps"));
+      if (noHyphCaps !== undefined) hyphenation.doNotHyphenateCaps = noHyphCaps;
+      const consLimit = readNum(findChild(el, "w:consecutiveHyphenLimit"), "w:val");
+      if (consLimit !== undefined) hyphenation.consecutiveHyphenLimit = consLimit;
+      const zone = readNum(findChild(el, "w:hyphenationZone"), "w:val");
+      if (zone !== undefined) hyphenation.hyphenationZone = zone;
+      if (Object.keys(hyphenation).length > 0) opts.hyphenation = hyphenation;
+    }
 
-    // Capture the full settings part verbatim (child elements only — the root
-    // <w:settings> tag + namespaces are supplied by stringify). CT_Settings has
-    // ~100 element types (compat flags, m:mathPr, w:rsids, o:shapelayout,
-    // footnote/endnote properties, etc.); the structured reads above cover only
-    // a subset. This guarantees byte-exact round-trip; stringify emits it as-is
-    // when present. The structured fields above remain for generation-from-scratch
-    // and for callers that delete rawXml to edit individual settings.
-    opts.rawXml = stringify(el);
-    if (el.attributes) opts.rootAttributes = { ...el.attributes };
+    // summaryLength → w:summaryLength/@w:val
+    const summaryLength = readNum(findChild(el, "w:summaryLength"), "w:val");
+    if (summaryLength !== undefined) opts.summaryLength = summaryLength;
+
+    // bookFoldPrintingSheets → w:bookFoldPrintingSheets/@w:val
+    const bookFoldSheets = readNum(findChild(el, "w:bookFoldPrintingSheets"), "w:val");
+    if (bookFoldSheets !== undefined) opts.bookFoldPrintingSheets = bookFoldSheets;
+
+    // drawing grid numerics
+    const drawNum: [string, string][] = [
+      ["drawingGridHorizontalSpacing", "w:drawingGridHorizontalSpacing"],
+      ["drawingGridVerticalSpacing", "w:drawingGridVerticalSpacing"],
+      ["displayHorizontalDrawingGridEvery", "w:displayHorizontalDrawingGridEvery"],
+      ["displayVerticalDrawingGridEvery", "w:displayVerticalDrawingGridEvery"],
+      ["drawingGridHorizontalOrigin", "w:drawingGridHorizontalOrigin"],
+      ["drawingGridVerticalOrigin", "w:drawingGridVerticalOrigin"],
+    ];
+    for (const [key, tag] of drawNum) {
+      const v = readNum(findChild(el, tag), "w:val");
+      if (v !== undefined) opts[key] = v;
+    }
+
+    // characterSpacingControl → w:characterSpacingControl/@w:val
+    const characterSpacingControl = readStr(findChild(el, "w:characterSpacingControl"), "w:val");
+    if (characterSpacingControl) {
+      opts.characterSpacingControl =
+        characterSpacingControl as SettingsOptions["characterSpacingControl"];
+    }
+
+    // noLineBreaksAfter/Before → w:noLineBreaksAfter/Before (w:lang, w:val)
+    const lineBreakPairs: [string, string][] = [
+      ["noLineBreaksAfter", "w:noLineBreaksAfter"],
+      ["noLineBreaksBefore", "w:noLineBreaksBefore"],
+    ];
+    for (const [key, tag] of lineBreakPairs) {
+      const lbEl = findChild(el, tag);
+      if (!lbEl) continue;
+      const entry: Record<string, string> = {};
+      const lang = attr(lbEl, "w:lang");
+      if (lang) entry.lang = lang;
+      const val = attr(lbEl, "w:val");
+      if (val) entry.val = val;
+      if (Object.keys(entry).length > 0) opts[key] = entry;
+    }
+
+    // saveThroughXslt → w:saveThroughXslt (r:id, w:val, w:solutionID)
+    const stxEl = findChild(el, "w:saveThroughXslt");
+    if (stxEl) {
+      const stx: Record<string, string> = {};
+      const id = attr(stxEl, "r:id");
+      if (id) stx.id = id;
+      const val = attr(stxEl, "w:val");
+      if (val) stx.val = val;
+      const solutionID = attr(stxEl, "w:solutionID");
+      if (solutionID) stx.solutionID = solutionID;
+      if (Object.keys(stx).length > 0) opts.saveThroughXslt = stx;
+    }
+
+    // hdrShapeDefaults / shapeDefaults → verbatim inner XML (o:shapedefaults/o:shapelayout)
+    const hdrSdEl = findChild(el, "w:hdrShapeDefaults");
+    if (hdrSdEl) opts.hdrShapeDefaults = stringify(hdrSdEl);
+    const sdEl = findChild(el, "w:shapeDefaults");
+    if (sdEl) opts.shapeDefaults = stringify(sdEl);
+
+    // footnotePr / endnotePr (CT_FtnDocProps / CT_EdnDocProps)
+    const fnPrEl = findChild(el, "w:footnotePr");
+    if (fnPrEl) {
+      const fn = parseFtnEdnPr(fnPrEl);
+      if (fn) opts.footnotePr = fn;
+    }
+    const enPrEl = findChild(el, "w:endnotePr");
+    if (enPrEl) {
+      const en = parseFtnEdnPr(enPrEl);
+      if (en) opts.endnotePr = en;
+    }
+
+    // compatibility (CT_Compat: on/off flags + compatSetting entries)
+    const compatEl = findChild(el, "w:compat");
+    if (compatEl) {
+      const compat = parseCompatibility(compatEl);
+      if (compat) opts.compatibility = compat;
+    }
+
+    // docVars → w:docVars/w:docVar
+    const docVarsEl = findChild(el, "w:docVars");
+    if (docVarsEl) {
+      const vars: Array<{ name: string; val: string }> = [];
+      for (const child of docVarsEl.elements ?? []) {
+        if (child.name !== "w:docVar") continue;
+        const name = attr(child, "w:name");
+        const val = attr(child, "w:val");
+        if (name !== undefined && val !== undefined) vars.push({ name, val });
+      }
+      if (vars.length > 0) opts.docVars = vars;
+    }
+
+    // rsids → w:rsids (CT_DocRsids)
+    const rsidsEl = findChild(el, "w:rsids");
+    if (rsidsEl) {
+      const rsids: Record<string, unknown> = {};
+      const root = readStr(findChild(rsidsEl, "w:rsidRoot"), "w:val");
+      if (root) rsids.rsidRoot = root;
+      const list: string[] = [];
+      for (const child of rsidsEl.elements ?? []) {
+        if (child.name !== "w:rsid") continue;
+        const val = attr(child, "w:val");
+        if (val) list.push(val);
+      }
+      if (list.length > 0) rsids.rsids = list;
+      if (Object.keys(rsids).length > 0) opts.rsids = rsids as RsidsOptions;
+    }
+
+    // mathPr → m:mathPr (CT_MathPr)
+    const mathPrEl = findChild(el, "m:mathPr");
+    if (mathPrEl) {
+      const mp = parseMathPr(mathPrEl);
+      if (mp) opts.mathPr = mp;
+    }
+
+    // attachedSchema → w:attachedSchema/@w:val (multiple)
+    const attachedSchemas: string[] = [];
+    for (const child of el.elements ?? []) {
+      if (child.name !== "w:attachedSchema") continue;
+      const val = attr(child, "w:val");
+      if (val) attachedSchemas.push(val);
+    }
+    if (attachedSchemas.length > 0) opts.attachedSchema = attachedSchemas;
+
+    // themeFontLang → w:themeFontLang (CT_Language: val/eastAsia/bidi)
+    const tflEl = findChild(el, "w:themeFontLang");
+    if (tflEl) {
+      const tfl: Record<string, string> = {};
+      const val = attr(tflEl, "w:val");
+      if (val) tfl.val = val;
+      const eastAsia = attr(tflEl, "w:eastAsia");
+      if (eastAsia) tfl.eastAsia = eastAsia;
+      const bidi = attr(tflEl, "w:bidi");
+      if (bidi) tfl.bidi = bidi;
+      if (Object.keys(tfl).length > 0) opts.themeFontLang = tfl;
+    }
+
+    // clrSchemeMapping → w:clrSchemeMapping
+    const csmEl = findChild(el, "w:clrSchemeMapping");
+    if (csmEl) {
+      const csm: Record<string, string> = {};
+      const csmMap: [string, string][] = [
+        ["bg1", "w:bg1"],
+        ["t1", "w:t1"],
+        ["bg2", "w:bg2"],
+        ["t2", "w:t2"],
+        ["accent1", "w:accent1"],
+        ["accent2", "w:accent2"],
+        ["accent3", "w:accent3"],
+        ["accent4", "w:accent4"],
+        ["accent5", "w:accent5"],
+        ["accent6", "w:accent6"],
+        ["hyperlink", "w:hyperlink"],
+        ["followedHyperlink", "w:followedHyperlink"],
+      ];
+      for (const [key, xmlAttr] of csmMap) {
+        const v = attr(csmEl, xmlAttr);
+        if (v) csm[key] = v;
+      }
+      if (Object.keys(csm).length > 0) opts.colorSchemeMapping = csm;
+    }
+
+    // forceUpgrade → w:forceUpgrade (CT_Empty, presence)
+    if (findChild(el, "w:forceUpgrade")) opts.forceUpgrade = true;
+
+    // captions → w:captions (CT_Captions)
+    const captionsEl = findChild(el, "w:captions");
+    if (captionsEl) {
+      const captions = parseCaptions(captionsEl);
+      if (captions) opts.captions = captions;
+    }
+
+    // readModeInkLockDown → w:readModeInkLockDown
+    const rmilEl = findChild(el, "w:readModeInkLockDown");
+    if (rmilEl) {
+      opts.readModeInkLockDown = {
+        actualPg: attr(rmilEl, "w:actualPg") !== "0",
+        w: parseInt(attr(rmilEl, "w:w") ?? "0", 10),
+        h: parseInt(attr(rmilEl, "w:h") ?? "0", 10),
+        fontSz: parseInt(attr(rmilEl, "w:fontSz") ?? "0", 10),
+      } as ReadModeInkLockDownOptions;
+    }
+
+    // smartTagType → w:smartTagType[] (multiple)
+    const smartTags: Array<Record<string, string>> = [];
+    for (const child of el.elements ?? []) {
+      if (child.name !== "w:smartTagType") continue;
+      const entry: Record<string, string> = {};
+      const ns = attr(child, "w:namespace");
+      if (ns) entry.namespace = ns;
+      const nsuri = attr(child, "w:namespaceuri");
+      if (nsuri) entry.namespaceuri = nsuri;
+      const name = attr(child, "w:name");
+      if (name) entry.name = name;
+      const url = attr(child, "w:url");
+      if (url) entry.url = url;
+      if (Object.keys(entry).length > 0) smartTags.push(entry);
+    }
+    if (smartTags.length > 0) opts.smartTagType = smartTags;
+
+    // decimalSymbol / listSeparator → w:decimalSymbol|w:listSeparator/@w:val
+    const decimalSymbol = readStr(findChild(el, "w:decimalSymbol"), "w:val");
+    if (decimalSymbol) opts.decimalSymbol = decimalSymbol;
+    const listSeparator = readStr(findChild(el, "w:listSeparator"), "w:val");
+    if (listSeparator) opts.listSeparator = listSeparator;
 
     return opts as unknown as SettingsOptions;
   },

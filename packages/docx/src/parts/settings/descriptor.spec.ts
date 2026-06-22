@@ -16,16 +16,11 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-interface SettingsParseResult extends SettingsOptions {
-  compatabilityModeVersion?: number;
-  evenAndOddHeaderAndFooters?: boolean;
-}
-
-function roundTrip(opts: SettingsOptions) {
+function roundTrip(opts: SettingsOptions): SettingsOptions {
   const xml = settingsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements![0];
-  return settingsDesc.parse(el, readCtx) as unknown as SettingsParseResult;
+  return settingsDesc.parse(el, readCtx);
 }
 
 describe("settingsDesc round-trip", () => {
@@ -66,9 +61,9 @@ describe("settingsDesc round-trip", () => {
     expect(result.updateFields).toBe(true);
   });
 
-  it("round-trips compatibilityModeVersion via compatSetting", () => {
-    const result = roundTrip({ compatibilityModeVersion: 15 });
-    expect(result.compatabilityModeVersion).toBe(15);
+  it("round-trips compatibility version via compatSetting", () => {
+    const result = roundTrip({ compatibility: { version: 15 } });
+    expect(result.compatibility?.version).toBe(15);
   });
 
   it("round-trips docVars", () => {
@@ -108,28 +103,40 @@ describe("settingsDesc round-trip", () => {
 
   it("round-trips evenAndOddHeaders", () => {
     const result = roundTrip({ evenAndOddHeaders: true });
-    expect(result.evenAndOddHeaderAndFooters).toBe(true);
+    expect(result.evenAndOddHeaders).toBe(true);
   });
 
-  it("round-trips documentProtection with password", () => {
-    // Verify stringify produces the XML correctly — parse doesn't support documentProtection
-    const opts: SettingsOptions = {
-      documentProtection: {
-        edit: "readOnly",
-        password: "test",
+  it("round-trips themeFontLang with eastAsia", () => {
+    const result = roundTrip({
+      themeFontLang: { val: "en-US", eastAsia: "zh-CN" },
+    });
+    expect(result.themeFontLang?.val).toBe("en-US");
+    expect(result.themeFontLang?.eastAsia).toBe("zh-CN");
+  });
+
+  it("round-trips compat compatSettings (newer flags)", () => {
+    const result = roundTrip({
+      compatibility: {
+        compatSettings: [{ name: "differentiateMultirowTableHeaders", val: "1" }],
       },
-    };
-    const xml = settingsDesc.stringify(opts, writeCtx)!;
-    expect(xml).toContain("w:documentProtection");
-    expect(xml).toContain('w:edit="readOnly"');
+    });
+    expect(result.compatibility?.compatSettings).toEqual([
+      {
+        name: "differentiateMultirowTableHeaders",
+        val: "1",
+        uri: "http://schemas.microsoft.com/office/word",
+      },
+    ]);
   });
 
-  it("round-trips writeProtection", () => {
-    const opts: SettingsOptions = {
-      writeProtection: { recommended: true },
-    };
-    const xml = settingsDesc.stringify(opts, writeCtx)!;
-    expect(xml).toContain("w:writeProtection");
+  it("round-trips documentProtection edit", () => {
+    const result = roundTrip({ documentProtection: { edit: "readOnly" } });
+    expect(result.documentProtection?.edit).toBe("readOnly");
+  });
+
+  it("round-trips writeProtection recommended", () => {
+    const result = roundTrip({ writeProtection: { recommended: true } });
+    expect(result.writeProtection?.recommended).toBe(true);
   });
 
   it("round-trips combined options", () => {
@@ -154,10 +161,10 @@ describe("settingsDesc round-trip", () => {
     expect(result.characterSpacingControl).toBeUndefined();
   });
 
-  it("captures the full settings part verbatim with source namespaces", () => {
-    // CT_Settings has ~100 element types; the verbatim rawXml capture preserves
-    // all of them (including non-standard namespaces like WPS's wpsCustomData)
-    // for byte-exact round-trip, while structured reads still run in parallel.
+  it("drops unmapped non-standard elements (no verbatim rawXml fallback)", () => {
+    // Parse is fully structured and aligned with generate; elements outside
+    // SettingsOptions (like WPS's wpsCustomData) are dropped rather than
+    // captured verbatim.
     const src =
       '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
       'xmlns:wpsCustomData="http://www.wps.cn/officeDocument/2013/wpsCustomData">' +
@@ -165,20 +172,17 @@ describe("settingsDesc round-trip", () => {
       '<wpsCustomData:typoFeatureVersion wpsCustomData:val="1"/>' +
       "</w:settings>";
     const el = parseXml(src).elements![0];
-    const parsed = settingsDesc.parse(el, readCtx) as unknown as SettingsParseResult;
+    const parsed = settingsDesc.parse(el, readCtx);
 
-    // Structured read still works alongside verbatim capture.
+    // Structured read still works.
     expect(parsed.defaultTabStop).toBe(720);
-    // Verbatim inner content + root attributes captured.
-    expect(parsed.rawXml).toContain("wpsCustomData:typoFeatureVersion");
-    expect(parsed.rootAttributes?.["xmlns:wpsCustomData"]).toBe(
-      "http://www.wps.cn/officeDocument/2013/wpsCustomData",
-    );
+    // Unmapped non-standard element is dropped (no rawXml capture).
+    expect(parsed.rawXml).toBeUndefined();
 
-    // Re-emit verbatim: source namespace + custom element preserved.
-    const xml = settingsDesc.stringify(parsed as unknown as SettingsOptions, writeCtx)!;
-    expect(xml).toContain("xmlns:wpsCustomData");
-    expect(xml).toContain("wpsCustomData:typoFeatureVersion");
+    // Re-emit uses structured generation (fixed SETTINGS_NS).
+    const xml = settingsDesc.stringify(parsed, writeCtx)!;
+    expect(xml).toContain('<w:defaultTabStop w:val="720"/>');
+    expect(xml).not.toContain("wpsCustomData");
   });
 
   it("uses structured generation when rawXml is absent", () => {

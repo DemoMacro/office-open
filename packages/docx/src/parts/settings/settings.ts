@@ -14,7 +14,7 @@ import {
 } from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
 
 import type { CompatibilityOptions } from "./compatibility";
-export type { CompatibilityOptions } from "./compatibility";
+export type { CompatibilityOptions, CompatSettingOptions } from "./compatibility";
 
 /**
  * Options for configuring document settings.
@@ -101,8 +101,8 @@ export interface SettingsOptions {
   };
   /** Relationship ID to the attached template document */
   attachedTemplate?: string;
-  /** Theme font language (BCP-47 tag, e.g. "en-US", "ja-JP") */
-  themeFontLang?: string;
+  /** Theme font languages (CT_Language): latin, eastAsian, and complex-script BCP-47 tags */
+  themeFontLang?: { val?: string; eastAsia?: string; bidi?: string };
   /** Hide spelling errors in the document */
   hideSpellingErrors?: boolean;
   /** Hide grammatical errors in the document */
@@ -263,8 +263,8 @@ export interface SettingsOptions {
   showXMLTags?: boolean;
   /** Always merge empty namespace */
   alwaysMergeEmptyNamespace?: boolean;
-  /** Header shape defaults */
-  hdrShapeDefaults?: boolean;
+  /** Header shape defaults — verbatim inner XML (o:shapedefaults/o:shapelayout) */
+  hdrShapeDefaults?: string;
   /** Attached schema references */
   attachedSchema?: string[];
   /** Force schema upgrade */
@@ -276,8 +276,8 @@ export interface SettingsOptions {
     name?: string;
     url?: string;
   }[];
-  /** Shape defaults */
-  shapeDefaults?: boolean;
+  /** Shape defaults — verbatim inner XML (o:shapedefaults/o:shapelayout) */
+  shapeDefaults?: string;
 }
 
 /**

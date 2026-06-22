@@ -329,19 +329,11 @@ export function parseDocument(data: DataType): DocumentOptions {
     }
   }
 
-  // Settings
+  // Settings — parse produces a structured SettingsOptions aligned with
+  // generate (no verbatim rawXml fallback). Assign wholesale so context.ts
+  // spreads it into _settingsOptions for the descriptor's stringify input.
   if (docx.settings) {
-    const settingsOpts = settingsDesc.parse(docx.settings, ctx);
-    Object.assign(opts, settingsOpts);
-    // Surface the verbatim capture (rootAttributes + rawXml) onto
-    // DocumentOptions.settings so context.ts spreads it into _settingsOptions
-    // (the descriptor's stringify input).
-    if (settingsOpts.rawXml !== undefined) {
-      opts.settings = {
-        rawXml: settingsOpts.rawXml,
-        rootAttributes: settingsOpts.rootAttributes,
-      };
-    }
+    opts.settings = settingsDesc.parse(docx.settings, ctx);
   }
 
   // Web settings

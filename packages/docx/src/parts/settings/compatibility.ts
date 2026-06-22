@@ -156,4 +156,29 @@ export interface CompatibilityOptions {
   enableOpenTypeFeatures?: boolean;
   /** Do Not Flip Mirror Indents */
   doNotFlipMirrorIndents?: boolean;
+  /**
+   * Additional w:compatSetting entries beyond the named sugar fields above.
+   *
+   * Each maps to `<w:compatSetting w:name w:uri w:val/>`. Use this for newer
+   * Word compatibility flags (e.g. differentiateMultirowTableHeaders,
+   * useWord2013TrackBottomHyphenation) that lack a dedicated boolean field.
+   * Names already covered by sugar fields (compatibilityMode via version,
+   * overrideTableStyleFontSizeAndJustification, enableOpenTypeFeatures,
+   * doNotFlipMirrorIndents) are de-duplicated on stringify.
+   */
+  compatSettings?: CompatSettingOptions[];
+}
+
+/**
+ * A single w:compatSetting entry (CT_CompatSetting).
+ *
+ * Captures Word version-specific compatibility flags as name/value pairs.
+ */
+export interface CompatSettingOptions {
+  /** Setting name (w:name), e.g. "compatibilityMode" */
+  name: string;
+  /** Setting value (w:val) */
+  val: string;
+  /** Setting namespace URI (w:uri); defaults to the Microsoft Word compat namespace */
+  uri?: string;
 }
