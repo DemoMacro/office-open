@@ -240,6 +240,7 @@ export interface SettingsOptions {
     top3HeadingStyles?: boolean;
     visibleStyles?: boolean;
     alternateStyleNames?: boolean;
+    latentStyles?: boolean;
   };
   /** Style pane sort method */
   stylePaneSortMethod?: "name" | "priority" | "default" | "font";

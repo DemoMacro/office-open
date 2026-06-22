@@ -573,6 +573,12 @@ export function stringifyChildDispatch(
     }
     const body = childParts.join("");
 
+    const pushHlAttrs = (attrs: string[]): void => {
+      if (hl.history !== false) attrs.push('w:history="1"');
+      if (hl.tooltip) attrs.push(`w:tooltip="${escapeXml(hl.tooltip)}"`);
+      if (hl.tgtFrame) attrs.push(`w:tgtFrame="${escapeXml(hl.tgtFrame)}"`);
+      if (hl.docLocation) attrs.push(`w:docLocation="${escapeXml(hl.docLocation)}"`);
+    };
     if (hl.link) {
       const linkId = uniqueId();
       ctx.viewWrapper.relationships.addRelationship(
@@ -581,13 +587,13 @@ export function stringifyChildDispatch(
         hl.link,
         TargetModeType.EXTERNAL,
       );
-      const attrs = [`r:id="rId${linkId}"`, 'w:history="1"'];
-      if (hl.tooltip) attrs.push(`w:tooltip="${escapeXml(hl.tooltip)}"`);
+      const attrs = [`r:id="rId${linkId}"`];
+      pushHlAttrs(attrs);
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;
     }
     if (hl.anchor) {
-      const attrs = [`w:anchor="${escapeXml(hl.anchor)}"`, 'w:history="1"'];
-      if (hl.tooltip) attrs.push(`w:tooltip="${escapeXml(hl.tooltip)}"`);
+      const attrs = [`w:anchor="${escapeXml(hl.anchor)}"`];
+      pushHlAttrs(attrs);
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;
     }
     return "";
@@ -679,10 +685,13 @@ export function stringifyChildDispatch(
   // ── Simple field ──
   if ("simpleField" in child) {
     const sf = child.simpleField;
+    const sfAttrs = [`w:instr="${escapeXml(sf.instruction)}"`];
+    if (sf.fldLock !== undefined) sfAttrs.push(`w:fldLock="${sf.fldLock ? 1 : 0}"`);
+    if (sf.dirty !== undefined) sfAttrs.push(`w:dirty="${sf.dirty ? 1 : 0}"`);
     if (sf.cachedValue !== undefined) {
-      return `<w:fldSimple w:instr="${escapeXml(sf.instruction)}"><w:r><w:t>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;
+      return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:t>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;
     }
-    return `<w:fldSimple w:instr="${escapeXml(sf.instruction)}"/>`;
+    return `<w:fldSimple ${sfAttrs.join(" ")}/>`;
   }
 
   // ── Complex field (PAGE/DATE/TOC/... — fldChar field without w:ffData) ──

@@ -166,7 +166,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect(lvl.lvlRestart).toBe(0);
     expect(lvl.templateCode).toBe("0409000F");
     expect(lvl.isLegalNumberingStyle).toBe(true);
-    expect(lvl.legacy).toEqual({ space: 0, indent: 0 });
+    expect(lvl.legacy).toEqual({ enabled: true, space: 0, indent: 0 });
     expect(lvl.style?.run?.bold).toBe(true);
     // font:"Arial" serializes as w:rFonts ascii+hAnsi (Word convention: hAnsi
     // defaults to the ascii font), so it round-trips as a multi-field object —

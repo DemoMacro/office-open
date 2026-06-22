@@ -1167,6 +1167,12 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         if (anchor) hl.anchor = anchor;
         const tooltip = attr(child, "w:tooltip");
         if (tooltip) hl.tooltip = tooltip;
+        const tgtFrame = attr(child, "w:tgtFrame");
+        if (tgtFrame) hl.tgtFrame = tgtFrame;
+        const docLocation = attr(child, "w:docLocation");
+        if (docLocation) hl.docLocation = docLocation;
+        const history = attrBool(child, "w:history");
+        if (history !== undefined) hl.history = history;
 
         const linkRuns: unknown[] = [];
         for (const sub of child.elements ?? []) {
@@ -1307,7 +1313,12 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
       case "w:fldSimple": {
         const instruction = attr(child, "w:instr");
         if (instruction) {
-          const sf: { instruction: string; cachedValue?: string } = { instruction };
+          const sf: {
+            instruction: string;
+            cachedValue?: string;
+            fldLock?: boolean;
+            dirty?: boolean;
+          } = { instruction };
           // cachedValue: concatenate the result-run <w:t> text (one or more
           // <w:r> children between the fldSimple tags).
           let cachedValue = "";
@@ -1315,6 +1326,10 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
             if (sub.name === "w:r") cachedValue += collectRunText(sub);
           }
           if (cachedValue) sf.cachedValue = cachedValue;
+          const sfLock = attrBool(child, "w:fldLock");
+          if (sfLock !== undefined) sf.fldLock = sfLock;
+          const sfDirty = attrBool(child, "w:dirty");
+          if (sfDirty !== undefined) sf.dirty = sfDirty;
           childList.push({ simpleField: sf });
         }
         break;

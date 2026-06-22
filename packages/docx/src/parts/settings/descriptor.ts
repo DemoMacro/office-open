@@ -909,6 +909,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
         ["top3HeadingStyles", "w:top3HeadingStyles"],
         ["visibleStyles", "w:visibleStyles"],
         ["alternateStyleNames", "w:alternateStyleNames"],
+        ["latentStyles", "w:latentStyles"],
       ];
       for (const [prop, xmlKey] of flags) {
         if (f[prop] !== undefined) attrs[xmlKey] = f[prop] ? "1" : "0";
@@ -1212,6 +1213,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
         ["top3HeadingStyles", "w:top3HeadingStyles"],
         ["visibleStyles", "w:visibleStyles"],
         ["alternateStyleNames", "w:alternateStyleNames"],
+        ["latentStyles", "w:latentStyles"],
       ];
       for (const [prop, xmlKey] of spffFlags) {
         const v = attr(spffEl, xmlKey);

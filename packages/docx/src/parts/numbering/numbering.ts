@@ -354,11 +354,16 @@ function stringifyLevel(opts: LevelsOptions): string {
     children.push(`<w:lvlRestart w:val="${decimalNumber(opts.lvlRestart)}"/>`);
   if (opts.suffix) children.push(`<w:suff w:val="${opts.suffix}"/>`);
   if (opts.isLegalNumberingStyle) children.push("<w:isLgl/>");
-  if (opts.text) children.push(`<w:lvlText w:val="${opts.text}"/>`);
+  if (opts.text !== undefined || opts.textNull) {
+    const lvlTextAttrs: string[] = [];
+    if (opts.text !== undefined) lvlTextAttrs.push(`w:val="${opts.text}"`);
+    if (opts.textNull) lvlTextAttrs.push('w:null="1"');
+    children.push(`<w:lvlText ${lvlTextAttrs.join(" ")}/>`);
+  }
   if (opts.lvlPicBulletId !== undefined)
     children.push(`<w:lvlPicBulletId w:val="${decimalNumber(opts.lvlPicBulletId)}"/>`);
   if (opts.legacy !== undefined) {
-    const legacyAttrs: string[] = [];
+    const legacyAttrs: string[] = [`w:legacy="${(opts.legacy.enabled ?? true) ? 1 : 0}"`];
     if (opts.legacy.space !== undefined) legacyAttrs.push(`w:legacySpace="${opts.legacy.space}"`);
     if (opts.legacy.indent !== undefined)
       legacyAttrs.push(`w:legacyIndent="${opts.legacy.indent}"`);
@@ -490,6 +495,8 @@ function parseLevelEl(
   if (lvlText) {
     const val = attr(lvlText, "w:val");
     if (val) opts.text = val;
+    const isNull = attrBool(lvlText, "w:null");
+    if (isNull) opts.textNull = isNull;
   }
 
   const lvlPicBulletId = findChild(el, "w:lvlPicBulletId");
@@ -498,15 +505,17 @@ function parseLevelEl(
     if (val !== undefined) opts.lvlPicBulletId = val;
   }
 
-  // Legacy spacing (w:legacy/@w:legacySpace, @w:legacyIndent)
+  // Legacy spacing (w:legacy/@w:legacy [required], @w:legacySpace, @w:legacyIndent)
   const legacyEl = findChild(el, "w:legacy");
   if (legacyEl) {
     const legacy: NonNullable<LevelsOptions["legacy"]> = {};
+    const enabled = attrBool(legacyEl, "w:legacy");
+    if (enabled !== undefined) legacy.enabled = enabled;
     const space = attrNum(legacyEl, "w:legacySpace");
     if (space !== undefined) legacy.space = space;
     const indent = attrNum(legacyEl, "w:legacyIndent");
     if (indent !== undefined) legacy.indent = indent;
-    if (Object.keys(legacy).length > 0) opts.legacy = legacy;
+    opts.legacy = legacy;
   }
 
   const lvlJc = findChild(el, "w:lvlJc");

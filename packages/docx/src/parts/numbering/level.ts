@@ -186,6 +186,8 @@ export interface LevelsOptions {
   format?: (typeof LevelFormat)[keyof typeof LevelFormat];
   /** Level text template with placeholders like %1, %2. */
   text?: string;
+  /** Whether this level emits no text (CT_LevelText @w:null). */
+  textNull?: boolean;
   /** Text alignment for the numbering. */
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   /** Starting number for this level. */
@@ -204,8 +206,8 @@ export interface LevelsOptions {
   tentative?: boolean;
   /** Whether this level is tentative (w15:tentative attribute). */
   w15Tentative?: boolean;
-  /** Legacy spacing/indent settings. */
-  legacy?: { space?: number; indent?: number };
+  /** Legacy spacing/indent settings. `enabled` maps to the required CT_LvlLegacy @w:legacy flag. */
+  legacy?: { enabled?: boolean; space?: number; indent?: number };
   /** Run and paragraph style properties. */
   style?: {
     /** Run style properties for the numbering text. */

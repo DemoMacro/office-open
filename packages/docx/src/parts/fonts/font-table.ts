@@ -67,6 +67,11 @@ export interface EmbeddedFontOptions {
    * Undefined on authoring — a fresh key is generated for embedded fonts.
    */
   fontKey?: string;
+  /**
+   * Embedded font is subsetted rather than complete (CT_FontRel @subsetted).
+   * Round-trip flag preserved from source embedRegular.
+   */
+  subsetted?: boolean;
 }
 
 /**

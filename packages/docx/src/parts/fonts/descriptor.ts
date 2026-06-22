@@ -7,7 +7,7 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, escapeXml, findChild } from "@office-open/xml";
+import { attr, attrBool, escapeXml, findChild } from "@office-open/xml";
 import type { FontSignature } from "@parts/fonts/font-table";
 import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
 
@@ -65,7 +65,9 @@ function fontXml(font: EmbeddedFontOptionsWithKey): string {
     );
   }
   if (font.embedRid) {
-    parts.push(`<w:embedRegular r:id="${font.embedRid}" w:fontKey="{${font.fontKey}}"/>`);
+    const embedAttrs = [`r:id="${font.embedRid}"`, `w:fontKey="{${font.fontKey}}"`];
+    if (font.subsetted !== undefined) embedAttrs.push(`w:subsetted="${font.subsetted ? 1 : 0}"`);
+    parts.push(`<w:embedRegular ${embedAttrs.join(" ")}/>`);
   }
 
   parts.push("</w:font>");
@@ -153,6 +155,8 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
         }
         const rid = attr(embedEl, "r:id");
         if (rid) font.embedRid = rid;
+        const subsetted = attrBool(embedEl, "w:subsetted");
+        if (subsetted !== undefined) font.subsetted = subsetted;
       }
 
       fonts.push(font as EmbeddedFontOptionsWithKey);

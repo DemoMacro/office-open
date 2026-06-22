@@ -17,6 +17,7 @@ import type { ChartOptions } from "./run/chart-run";
 import type { FormFieldOptions } from "./run/form-field";
 import type { ImageOptions } from "./run/image-run";
 import type { RubyOptions } from "./run/ruby";
+import type { SimpleFieldOptions } from "./run/simple-field";
 import type { SmartArtOptions } from "./run/smartart-run";
 import type { SymbolRunOptions } from "./run/symbol-run";
 import type { WpgGroupRunOptions } from "./run/wpg-group-run";
@@ -75,6 +76,12 @@ export type ParagraphChild =
         link?: string;
         anchor?: string;
         tooltip?: string;
+        /** Target frame for the hyperlink (CT_Hyperlink @tgtFrame) */
+        tgtFrame?: string;
+        /** Location within the target document (CT_Hyperlink @docLocation) */
+        docLocation?: string;
+        /** Add the target to the navigation history (CT_Hyperlink @history) */
+        history?: boolean;
         children?: (RunOptions | string)[];
       };
     }
@@ -117,7 +124,7 @@ export type ParagraphChild =
   // Ruby annotation (East Asian pronunciation guides)
   | { ruby: RubyOptions }
   // Simple field
-  | { simpleField: { instruction: string; cachedValue?: string } }
+  | { simpleField: SimpleFieldOptions }
   // Form field (checkbox, dropdown list, text input)
   | { formField: FormFieldOptions }
   // Complex field (PAGE/DATE/TOC/HYPERLINK... — any fldChar field without
