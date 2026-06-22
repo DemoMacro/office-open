@@ -504,6 +504,14 @@ function extractUsedElements(config: XsdConfig): Set<string> {
       while ((m = valElRe.exec(src)) !== null) {
         found.add(m[2]);
       }
+
+      // Pattern 8: element traversal helpers — children(el,"name"), hasChild,
+      // findDeep, childText. Parse-side counterparts to findChild.
+      const elementHelpersRe =
+        /\b(?:children|hasChild|findDeep|childText)\(\s*[^,)]+,\s*["']([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      while ((m = elementHelpersRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
     }
   }
 
@@ -598,6 +606,30 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
       const tmplSuffixRe = /\}:([a-zA-Z][a-zA-Z0-9]+)/g;
       while ((m = tmplSuffixRe.exec(src)) !== null) {
         found.add(m[1]);
+      }
+
+      // Pattern 7: typed attr helpers — attrNum(el,"name"), attrBool(el,"name"),
+      // attrMeasure(el,"name",...), colorAttr(el,"name"). Parse-side workhorses
+      // (the plain `attr(` helper is covered by Pattern 4 above).
+      const typedAttrRe =
+        /\b(?:attr[A-Z]\w*|colorAttr)\(\s*[^,)]+,\s*["']([a-z]+:)?([a-zA-Z]\w+)["']/g;
+      while ((m = typedAttrRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
+
+      // Pattern 8: builder object property assignment — `xxxAttrs.name = val`
+      // (and `xxxAttrs.name?:` ternaries). xlsx/pptx build attribute maps as
+      // plain objects whose keys ARE the emitted XML attribute names.
+      const builderPropRe = /\b\w*Attrs\.([a-zA-Z]\w*)\s*[?:=]/g;
+      while ((m = builderPropRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 9: attribute mapping pairs — `["w:name", "jsName"]`. docx parse
+      // loops over [xmlName, optionName] pairs to read frame/section/run attrs.
+      const attrPairRe = /\[\s*["']([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)["']\s*,\s*["'][a-zA-Z]/g;
+      while ((m = attrPairRe.exec(src)) !== null) {
+        found.add(m[2]);
       }
     }
   }
