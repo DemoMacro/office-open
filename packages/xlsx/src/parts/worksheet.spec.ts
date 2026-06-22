@@ -241,6 +241,19 @@ describe("Worksheet", () => {
       expect(xml).toContain('fitToWidth="1"');
       expect(xml).toContain('fitToHeight="0"');
     });
+
+    it("round-trips pageSetup paperWidth/paperHeight with UniversalMeasure (mm)", () => {
+      const xml = buildWorksheetXml(
+        { pageSetup: { paperWidth: "210mm", paperHeight: "297mm" }, rows: [] },
+        {},
+      );
+      expect(xml).toContain('paperWidth="210mm"');
+      expect(xml).toContain('paperHeight="297mm"');
+      const el = parseXml(xml).elements![0];
+      const result = worksheetDesc.parse(el, {} as unknown as ReadContext);
+      expect(result.pageSetup?.paperWidth).toBe("210mm");
+      expect(result.pageSetup?.paperHeight).toBe("297mm");
+    });
   });
 
   describe("headerFooter", () => {

@@ -4,7 +4,7 @@
  * @module
  */
 
-import { findChild } from "@office-open/xml";
+import { attrMeasure, findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import { convertToEmu } from "../util/converters";
@@ -42,7 +42,7 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
     return `<a:xfrm${attrStr}>${parts.join("")}</a:xfrm>`;
   },
   parse(el, _ctx) {
-    const result: Transform2DOptions = {};
+    const result: Record<string, unknown> = {};
 
     // Attributes
     if (el.attributes) {
@@ -53,21 +53,25 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
       if (el.attributes["rot"] !== undefined) result.rotation = Number(el.attributes["rot"]);
     }
 
-    // Child: off
+    // Child: off — a:off x/y are ST_Coordinate (number EMU | UniversalMeasure)
     const off = findChild(el, "a:off");
     if (off?.attributes) {
-      result.x = Number(off.attributes["x"] ?? 0);
-      result.y = Number(off.attributes["y"] ?? 0);
+      const xv = attrMeasure(off, "x");
+      result.x = xv ?? 0;
+      const yv = attrMeasure(off, "y");
+      result.y = yv ?? 0;
     }
 
     // Child: ext
     const ext = findChild(el, "a:ext");
     if (ext?.attributes) {
-      result.width = Number(ext.attributes["cx"] ?? 0);
-      result.height = Number(ext.attributes["cy"] ?? 0);
+      const cxv = attrMeasure(ext, "cx");
+      result.width = cxv ?? 0;
+      const cyv = attrMeasure(ext, "cy");
+      result.height = cyv ?? 0;
     }
 
-    return result;
+    return result as Transform2DOptions;
   },
 };
 
@@ -88,20 +92,24 @@ export const groupTransform2DDesc: CustomDescriptor<GroupTransform2DOptions> = {
     return base.replace(/<\/a:xfrm>$/, `${chOff}${chExt}</a:xfrm>`);
   },
   parse(el, ctx) {
-    const result = transform2DDesc.parse(el, ctx) as GroupTransform2DOptions;
+    const result = transform2DDesc.parse(el, ctx) as Record<string, unknown>;
 
     const chOff = findChild(el, "a:chOff");
     if (chOff?.attributes) {
-      result.childOffsetX = Number(chOff.attributes["x"] ?? 0);
-      result.childOffsetY = Number(chOff.attributes["y"] ?? 0);
+      const cx = attrMeasure(chOff, "x");
+      result.childOffsetX = cx ?? 0;
+      const cy = attrMeasure(chOff, "y");
+      result.childOffsetY = cy ?? 0;
     }
 
     const chExt = findChild(el, "a:chExt");
     if (chExt?.attributes) {
-      result.childExtentWidth = Number(chExt.attributes["cx"] ?? 0);
-      result.childExtentHeight = Number(chExt.attributes["cy"] ?? 0);
+      const ccx = attrMeasure(chExt, "cx");
+      result.childExtentWidth = ccx ?? 0;
+      const ccy = attrMeasure(chExt, "cy");
+      result.childExtentHeight = ccy ?? 0;
     }
 
-    return result;
+    return result as GroupTransform2DOptions;
   },
 };

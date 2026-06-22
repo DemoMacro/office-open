@@ -1,3 +1,4 @@
+import type { UniversalMeasure } from "@office-open/core";
 import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "@shared/constants";
 
 import type { ColorMapOptions, HeaderFooterOptions } from "./handout-master";
@@ -6,10 +7,10 @@ export type { ColorMapOptions, HeaderFooterOptions };
 
 /** Notes style level override */
 export interface NotesLevelProperties {
-  /** Font size in hundredths of a point (e.g., 1200 = 12pt) */
-  fontSize?: number;
-  /** Left margin in EMU */
-  marginLeft?: number;
+  /** Font size in hundredths of a point (e.g., 1200 = 12pt), ST_TextPoint */
+  fontSize?: number | UniversalMeasure;
+  /** Left margin (ST_Coordinate32) */
+  marginLeft?: number | UniversalMeasure;
   /** Alignment ("l" | "ctr" | "r" | "just") */
   alignment?: string;
 }

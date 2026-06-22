@@ -9,6 +9,7 @@
  *
  * @module
  */
+import type { UniversalMeasure } from "@office-open/core";
 import type { BorderOptions } from "@shared/border";
 import type { ShadingAttributesProperties } from "@shared/shading";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
@@ -118,7 +119,8 @@ export interface RunStylePropertiesOptions {
   position?: string;
   /** Font size in points. Internally stored as half-points in XML (×2). */
   size?: number;
-  sizeComplexScript?: boolean | number;
+  /** Complex-script font size in points (w:szCs). Independent from {@link size}. */
+  sizeComplexScript?: number;
   rightToLeft?: boolean;
   smallCaps?: boolean;
   allCaps?: boolean;
@@ -128,8 +130,9 @@ export interface RunStylePropertiesOptions {
   superScript?: boolean;
   font?: string | RunFontReference | FontAttributesProperties;
   highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
-  highlightComplexScript?: boolean | string;
-  characterSpacing?: number;
+  /** Complex-script highlight color (w:highlightCs). Independent from {@link highlight}. */
+  highlightComplexScript?: string;
+  characterSpacing?: number | UniversalMeasure;
   shading?: ShadingAttributesProperties;
   emboss?: boolean;
   imprint?: boolean;

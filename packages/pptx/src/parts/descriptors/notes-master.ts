@@ -5,7 +5,7 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrMeasure, findChild } from "@office-open/xml";
 import { buildNotesMasterXml } from "@parts/notes-master";
 import type {
   NotesMasterOptions,
@@ -95,10 +95,10 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
           const lvl: Record<string, unknown> = {};
           const defRPr = findChild(lvlEl, "a:defRPr");
           if (defRPr) {
-            const sz = attrNum(defRPr, "sz");
+            const sz = attrMeasure(defRPr, "sz");
             if (sz !== undefined) lvl.fontSize = sz;
           }
-          const marL = attrNum(lvlEl, "marL");
+          const marL = attrMeasure(lvlEl, "marL");
           if (marL !== undefined) lvl.marginLeft = marL;
           const algn = attr(lvlEl, "algn");
           if (algn !== undefined) lvl.alignment = algn;

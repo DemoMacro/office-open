@@ -6,6 +6,7 @@
 import type { FillOptions } from "@office-open/core/drawingml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { GroupChildMediaData, MediaTransformation } from "@shared/media";
 
 import type { Floating } from "../../drawing";
@@ -37,8 +38,8 @@ interface CoreGroupOptions {
   vmlFallbackMedia?: BackgroundRawMediaOptions[];
   /** mc:Choice Requires attribute (e.g. "wpg") used to regenerate the AlternateContent wrapper. */
   mcChoiceRequires?: string;
-  /** Raw XML of the wrapping w:r's rPr (round-trip) — emitted before the drawing. */
-  runPropertiesRawXml?: string;
+  /** Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing. */
+  runProperties?: RunPropertiesOptions;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip. */

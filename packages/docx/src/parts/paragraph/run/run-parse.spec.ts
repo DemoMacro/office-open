@@ -69,4 +69,49 @@ describe("parseRunProperties round-trip", () => {
     expect(rev.date).toBe("2024-01-01T00:00:00Z");
     expect(rev.italic).toBe(true);
   });
+
+  it("round-trips characterSpacing with UniversalMeasure (mm)", () => {
+    const result = roundTrip({ characterSpacing: "0.5mm" });
+    expect(result.characterSpacing).toBe("0.5mm");
+  });
+
+  // b/bCs, i/iCs, sz/szCs are independent toggle/measure properties (Latin vs
+  // complex script, per ISO/IEC 29500). stringify must not auto-pair them
+  // (bold → b+bCs would inflate), so round-trip stays field-faithful:
+  // a source <w:b/> round-trips as <w:b/>, not <w:b/><w:bCs/>.
+  it("does not auto-pair bCs when only bold is set", () => {
+    const rPr = stringifyRunProperties({ bold: true })!;
+    expect(rPr).toContain("<w:b");
+    expect(rPr).not.toContain("bCs");
+  });
+
+  it("emits bCs only when boldComplexScript is explicitly set", () => {
+    const rPr = stringifyRunProperties({ bold: true, boldComplexScript: true })!;
+    expect(rPr).toContain("<w:b");
+    expect(rPr).toContain("<w:bCs");
+  });
+
+  it("round-trips bold without inflating boldComplexScript", () => {
+    const result = roundTrip({ bold: true });
+    expect(result.bold).toBe(true);
+    expect(result.boldComplexScript).toBeUndefined();
+  });
+
+  it("does not auto-pair iCs when only italic is set", () => {
+    const rPr = stringifyRunProperties({ italic: true })!;
+    expect(rPr).toContain("<w:i");
+    expect(rPr).not.toContain("iCs");
+  });
+
+  it("does not auto-pair szCs when only size is set", () => {
+    const rPr = stringifyRunProperties({ size: 24 })!;
+    expect(rPr).toContain("<w:sz ");
+    expect(rPr).not.toContain("szCs");
+  });
+
+  it("emits szCs when sizeComplexScript is an explicit number", () => {
+    const rPr = stringifyRunProperties({ size: 24, sizeComplexScript: 20 })!;
+    expect(rPr).toContain("<w:sz ");
+    expect(rPr).toContain("<w:szCs");
+  });
 });

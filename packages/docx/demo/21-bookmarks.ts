@@ -20,7 +20,7 @@ const buffer = await generateDocument({
             children: [
               { bookmarkStart: { id: 0, name: "myAnchorId" } },
               "Lorem Ipsum",
-              { bookmarkEnd: 0 },
+              { bookmarkEnd: { id: 0 } },
             ],
           },
         },

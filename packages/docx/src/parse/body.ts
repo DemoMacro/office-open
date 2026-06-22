@@ -141,12 +141,31 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       // they round-trip even though they are not wrapped in a paragraph.
       const idRaw = attr(el, "w:id");
       const name = attr(el, "w:name");
-      if (idRaw !== undefined && name) return { bookmarkStart: { id: Number(idRaw), name } };
+      if (idRaw !== undefined && name) {
+        const bookmarkStart: {
+          id: number;
+          name: string;
+          displacedByCustomXml?: "before" | "after";
+        } = {
+          id: Number(idRaw),
+          name,
+        };
+        const disp = attr(el, "w:displacedByCustomXml");
+        if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
+        return { bookmarkStart };
+      }
       return { rawXml: stringifyElement(el) };
     }
     case "w:bookmarkEnd": {
       const idRaw = attr(el, "w:id");
-      if (idRaw !== undefined) return { bookmarkEnd: Number(idRaw) };
+      if (idRaw !== undefined) {
+        const bookmarkEnd: { id: number; displacedByCustomXml?: "before" | "after" } = {
+          id: Number(idRaw),
+        };
+        const disp = attr(el, "w:displacedByCustomXml");
+        if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
+        return { bookmarkEnd };
+      }
       return { rawXml: stringifyElement(el) };
     }
     default:

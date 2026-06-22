@@ -11,7 +11,15 @@ import { toUint8Array } from "@office-open/core";
 import { uniqueId } from "@office-open/core";
 import { hexColorValue, uCharHexNumber } from "@office-open/core";
 import { ThemeColor } from "@office-open/core";
-import { attr, attrBool, attrNum, escapeXml, findChild, textOf } from "@office-open/xml";
+import {
+  attr,
+  attrBool,
+  attrMeasure,
+  attrNum,
+  escapeXml,
+  findChild,
+  textOf,
+} from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { sectionPropertiesDesc } from "@parts/document/body/section-properties/descriptor";
 import type {
@@ -100,9 +108,7 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
 
   // Run properties — inject CommentReference style if needed
   const runOpts = commentRefStyle ? { ...opts, style: "CommentReference" as const } : opts;
-  // Prefer the raw rPr carried from parse (verbatim round-trip) over
-  // regenerating from structured fields (avoids b/bCs, sz/szCs pairing).
-  const rPr = (runOpts as { rPrRawXml?: string }).rPrRawXml ?? stringifyRunProperties(runOpts);
+  const rPr = stringifyRunProperties(runOpts);
   if (rPr) parts.push(rPr);
 
   // Breaks
@@ -279,10 +285,18 @@ export function stringifyBodyChild(child: SectionChild, ctx: BodyContext): strin
     return customXmlBlockDesc.stringify(child.customXml, ctx) ?? "";
   }
   if ("bookmarkStart" in child) {
-    return `<w:bookmarkStart w:id="${child.bookmarkStart.id}" w:name="${child.bookmarkStart.name}"/>`;
+    const bs = child.bookmarkStart;
+    const bsDisp = bs.displacedByCustomXml
+      ? ` w:displacedByCustomXml="${bs.displacedByCustomXml}"`
+      : "";
+    return `<w:bookmarkStart w:id="${bs.id}" w:name="${bs.name}"${bsDisp}/>`;
   }
   if ("bookmarkEnd" in child) {
-    return `<w:bookmarkEnd w:id="${child.bookmarkEnd}"/>`;
+    const be = child.bookmarkEnd;
+    const beDisp = be.displacedByCustomXml
+      ? ` w:displacedByCustomXml="${be.displacedByCustomXml}"`
+      : "";
+    return `<w:bookmarkEnd w:id="${be.id}"${beDisp}/>`;
   }
   if ("rawXml" in child) {
     return child.rawXml;
@@ -536,19 +550,20 @@ export function parseParagraphProperties(
     if (val) opts.alignment = val;
   }
 
-  // Spacing
+  // Spacing — before/after/line are ST_TwipsMeasure (number | UniversalMeasure);
+  // use attrMeasure so UniversalMeasure round-trips with the stringify side.
   const spacing = findChild(el, "w:spacing");
   if (spacing) {
-    const sp: SpacingProperties = {};
-    const before = attrNum(spacing, "w:before");
+    const sp: Record<string, unknown> = {};
+    const before = attrMeasure(spacing, "w:before");
     if (before !== undefined) sp.before = before;
-    const after = attrNum(spacing, "w:after");
+    const after = attrMeasure(spacing, "w:after");
     if (after !== undefined) sp.after = after;
-    const line = attrNum(spacing, "w:line");
+    const line = attrMeasure(spacing, "w:line");
     if (line !== undefined) sp.line = line;
     const lineRule = attr(spacing, "w:lineRule");
     if (lineRule && (LINE_RULES as readonly string[]).includes(lineRule)) {
-      sp.lineRule = lineRule as SpacingProperties["lineRule"];
+      sp.lineRule = lineRule;
     }
     const beforeAutoSpacing = attrBool(spacing, "w:beforeAutospacing");
     if (beforeAutoSpacing !== undefined) sp.beforeAutoSpacing = beforeAutoSpacing;
@@ -558,38 +573,40 @@ export function parseParagraphProperties(
     if (beforeLines !== undefined) sp.beforeLines = beforeLines;
     const afterLines = attrNum(spacing, "w:afterLines");
     if (afterLines !== undefined) sp.afterLines = afterLines;
-    if (Object.keys(sp).length > 0) opts.spacing = sp;
+    if (Object.keys(sp).length > 0) opts.spacing = sp as SpacingProperties;
   }
 
-  // Indent
+  // Indent — left/right/start/end are ST_SignedTwipsMeasure, hanging/firstLine
+  // are ST_TwipsMeasure (number | UniversalMeasure); use attrMeasure so
+  // UniversalMeasure round-trips. *Chars are ST_DecimalNumber (pure number).
   const ind = findChild(el, "w:ind");
   if (ind) {
-    const indentObj: IndentAttributesProperties = {};
-    const left = attrNum(ind, "w:left");
+    const indentObj: Record<string, unknown> = {};
+    const left = attrMeasure(ind, "w:left");
     if (left !== undefined) indentObj.left = left;
     const leftChars = attrNum(ind, "w:leftChars");
     if (leftChars !== undefined) indentObj.leftChars = leftChars;
-    const right = attrNum(ind, "w:right");
+    const right = attrMeasure(ind, "w:right");
     if (right !== undefined) indentObj.right = right;
     const rightChars = attrNum(ind, "w:rightChars");
     if (rightChars !== undefined) indentObj.rightChars = rightChars;
-    const start = attrNum(ind, "w:start");
+    const start = attrMeasure(ind, "w:start");
     if (start !== undefined) indentObj.start = start;
     const startChars = attrNum(ind, "w:startChars");
     if (startChars !== undefined) indentObj.startChars = startChars;
-    const end = attrNum(ind, "w:end");
+    const end = attrMeasure(ind, "w:end");
     if (end !== undefined) indentObj.end = end;
     const endChars = attrNum(ind, "w:endChars");
     if (endChars !== undefined) indentObj.endChars = endChars;
-    const hanging = attrNum(ind, "w:hanging");
+    const hanging = attrMeasure(ind, "w:hanging");
     if (hanging !== undefined) indentObj.hanging = hanging;
     const hangingChars = attrNum(ind, "w:hangingChars");
     if (hangingChars !== undefined) indentObj.hangingChars = hangingChars;
-    const firstLine = attrNum(ind, "w:firstLine");
+    const firstLine = attrMeasure(ind, "w:firstLine");
     if (firstLine !== undefined) indentObj.firstLine = firstLine;
     const firstLineChars = attrNum(ind, "w:firstLineChars");
     if (firstLineChars !== undefined) indentObj.firstLineChars = firstLineChars;
-    if (Object.keys(indentObj).length > 0) opts.indent = indentObj;
+    if (Object.keys(indentObj).length > 0) opts.indent = indentObj as IndentAttributesProperties;
   }
 
   // Numbering (w:numPr)
@@ -1104,10 +1121,10 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         if (drawingEl) {
           const drawingChild = parseDrawingRun(drawingEl, ctx);
           if (drawingChild) {
-            // Carry the wrapping run's rPr verbatim so round-trip preserves it
-            // (drawings/shapes can be wrapped in <w:r><w:rPr>…</w:rPr>…).
+            // Parse the wrapping run's rPr into structured fields so round-trip
+            // stays editable (drawings/shapes can be wrapped in <w:r><w:rPr>…</w:rPr>…).
             const rPrEl = findChild(child, "w:rPr");
-            const runPropertiesRawXml = rPrEl ? stringifyElement(rPrEl) : undefined;
+            const runProperties = rPrEl ? parseRunProperties(rPrEl) : undefined;
             // Attach the VML fallback + Choice Requires so stringify can rebuild
             // the mc:AlternateContent wrapper (Choice structured + Fallback raw).
             if (altFallback) {
@@ -1121,13 +1138,13 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
                 if (altRequires) drawingChild.wpgGroup.mcChoiceRequires = altRequires;
               }
             }
-            if (runPropertiesRawXml) {
+            if (runProperties) {
               if ("image" in drawingChild) {
-                drawingChild.image.runPropertiesRawXml = runPropertiesRawXml;
+                drawingChild.image.runProperties = runProperties;
               } else if ("wpsShape" in drawingChild) {
-                drawingChild.wpsShape.runPropertiesRawXml = runPropertiesRawXml;
+                drawingChild.wpsShape.runProperties = runProperties;
               } else if ("wpgGroup" in drawingChild) {
-                drawingChild.wpgGroup.runPropertiesRawXml = runPropertiesRawXml;
+                drawingChild.wpgGroup.runProperties = runProperties;
               }
             }
             childList.push(drawingChild);
@@ -1169,13 +1186,28 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         const id = attrNum(child, "w:id");
         const name = attr(child, "w:name");
         if (id !== undefined && name) {
-          childList.push({ bookmarkStart: { id, name } });
+          const bookmarkStart: {
+            id: number;
+            name: string;
+            displacedByCustomXml?: "before" | "after";
+          } = {
+            id,
+            name,
+          };
+          const disp = attr(child, "w:displacedByCustomXml");
+          if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
+          childList.push({ bookmarkStart });
         }
         break;
       }
       case "w:bookmarkEnd": {
         const id = attrNum(child, "w:id");
-        if (id !== undefined) childList.push({ bookmarkEnd: id });
+        if (id !== undefined) {
+          const bookmarkEnd: { id: number; displacedByCustomXml?: "before" | "after" } = { id };
+          const disp = attr(child, "w:displacedByCustomXml");
+          if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
+          childList.push({ bookmarkEnd });
+        }
         break;
       }
       case "w:commentRangeStart": {

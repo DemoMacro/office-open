@@ -26,7 +26,10 @@ const buffer = await generateDocument({
         },
         {
           paragraph: {
-            children: [{ bookmarkStart: { id: 0, name: "anchorForHeader1" } }, { bookmarkEnd: 0 }],
+            children: [
+              { bookmarkStart: { id: 0, name: "anchorForHeader1" } },
+              { bookmarkEnd: { id: 0 } },
+            ],
             heading: HeadingLevel.HEADING_1,
             pageBreakBefore: true,
             text: "Header #1",

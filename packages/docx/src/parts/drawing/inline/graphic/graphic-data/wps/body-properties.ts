@@ -10,7 +10,7 @@
  */
 import type { UniversalMeasure } from "@office-open/core";
 import { convertToEmu } from "@office-open/core";
-import { attr, attrBool, attrNum, element, findChild } from "@office-open/xml";
+import { attr, attrBool, attrMeasure, attrNum, element, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { Scene3DOptions } from "../pic/three-d/scene-3d";
@@ -375,14 +375,14 @@ export const parseBodyProperties = (el: Element): BodyPropertiesOptions => {
   if (vert !== undefined) result.vert = vert as BodyPropertiesOptions["vert"];
   const wrap = attr(el, "wrap");
   if (wrap !== undefined) result.wrap = wrap as BodyPropertiesOptions["wrap"];
-  const lIns = attrNum(el, "lIns");
-  if (lIns !== undefined) result.lIns = lIns;
-  const tIns = attrNum(el, "tIns");
-  if (tIns !== undefined) result.tIns = tIns;
-  const rIns = attrNum(el, "rIns");
-  if (rIns !== undefined) result.rIns = rIns;
-  const bIns = attrNum(el, "bIns");
-  if (bIns !== undefined) result.bIns = bIns;
+  const lIns = attrMeasure(el, "lIns");
+  if (lIns !== undefined) result.lIns = lIns as number | UniversalMeasure;
+  const tIns = attrMeasure(el, "tIns");
+  if (tIns !== undefined) result.tIns = tIns as number | UniversalMeasure;
+  const rIns = attrMeasure(el, "rIns");
+  if (rIns !== undefined) result.rIns = rIns as number | UniversalMeasure;
+  const bIns = attrMeasure(el, "bIns");
+  if (bIns !== undefined) result.bIns = bIns as number | UniversalMeasure;
   const numCol = attrNum(el, "numCol");
   if (numCol !== undefined) result.numCol = numCol;
   const spcCol = attrNum(el, "spcCol");

@@ -5,7 +5,15 @@
  *
  * @module
  */
-import { attr, attrBool, attrNum, colorAttr, findChild, textOf } from "@office-open/xml";
+import {
+  attr,
+  attrBool,
+  attrMeasure,
+  attrNum,
+  colorAttr,
+  findChild,
+  textOf,
+} from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { RunPropertiesOptions, RunOptions } from "@parts/paragraph/run";
 
@@ -168,7 +176,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
 
   const spacing = findChild(el, "w:spacing");
   if (spacing) {
-    const val = attrNum(spacing, "w:val");
+    const val = attrMeasure(spacing, "w:val");
     if (val !== undefined) opts.characterSpacing = val;
   }
 
@@ -387,14 +395,10 @@ export function parseRun(
   _ctx: DocxReadContext,
 ): {
   properties: RunPropertiesOptions | undefined;
-  rPrRawXml?: string;
   children: ParsedRunChild[];
 } {
   const rPr = findChild(el, "w:rPr");
   const properties = rPr ? parseRunProperties(rPr) : undefined;
-  // Preserve the raw rPr so break/tab/pageBreak runs re-emit it verbatim,
-  // avoiding authoring-style b/bCs, sz/szCs pairing inflation on round-trip.
-  const rPrRawXml = rPr ? stringifyElement(rPr) : undefined;
   const children: ParsedRunChild[] = [];
 
   for (const child of el.elements ?? []) {
@@ -519,7 +523,7 @@ export function parseRun(
     }
   }
 
-  return { properties, rPrRawXml, children };
+  return { properties, children };
 }
 
 /**
@@ -566,7 +570,6 @@ export function parsedRunToOptions(
   }
 
   const opts: Record<string, unknown> = { ...parsed.properties };
-  if (parsed.rPrRawXml) opts.rPrRawXml = parsed.rPrRawXml;
 
   // Check if this run is a pure reference run (commentReference, footnoteReference, endnoteReference)
   const isRefChild = (c: unknown): c is Record<string, number> =>

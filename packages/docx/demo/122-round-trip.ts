@@ -180,7 +180,7 @@ async function main() {
             children: [
               { bookmarkStart: { id: 42, name: "my-bookmark" } },
               "This is a bookmarked paragraph.",
-              { bookmarkEnd: 42 },
+              { bookmarkEnd: { id: 42 } },
             ],
           },
         },

@@ -8,6 +8,7 @@
  *
  * @module
  */
+import type { PositiveUniversalMeasure } from "@office-open/core";
 
 /**
  * Line spacing rule types.
@@ -33,12 +34,12 @@ export const LineRuleType = {
  * All values are in twips (twentieths of a point) unless otherwise specified.
  */
 export interface SpacingProperties {
-  /** Spacing after the paragraph in twips */
-  after?: number;
-  /** Spacing before the paragraph in twips */
-  before?: number;
-  /** Line spacing value in twips (interpretation depends on lineRule) */
-  line?: number;
+  /** Spacing after the paragraph in twips or as a PositiveUniversalMeasure */
+  after?: number | PositiveUniversalMeasure;
+  /** Spacing before the paragraph in twips or as a PositiveUniversalMeasure */
+  before?: number | PositiveUniversalMeasure;
+  /** Line spacing value in twips or as a PositiveUniversalMeasure (depends on lineRule) */
+  line?: number | PositiveUniversalMeasure;
   /** How to interpret the line spacing value */
   lineRule?: (typeof LineRuleType)[keyof typeof LineRuleType];
   /** Use automatic spacing before the paragraph */

@@ -10,6 +10,7 @@ import type { FillOptions } from "@office-open/core/drawingml";
  * @module
  */
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { MediaTransformation } from "@shared/media";
 import { createTransformation } from "@shared/media";
 import type { MediaData, NonVisualPropertiesOptions } from "@shared/media/data";
@@ -37,8 +38,8 @@ interface CoreImageOptions {
   tile?: TileOptions;
   /** Picture non-visual properties (pic:cNvPr) — populated by parse */
   nonVisualProperties?: NonVisualPropertiesOptions;
-  /** Raw XML of the wrapping w:r's rPr (round-trip) — emitted before the drawing. */
-  runPropertiesRawXml?: string;
+  /** Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing. */
+  runProperties?: RunPropertiesOptions;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** Blip rendering hint `a14:useLocalDpi` (round-trip). */

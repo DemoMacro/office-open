@@ -20,6 +20,7 @@ import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
@@ -161,10 +162,10 @@ let nextChartId = 1;
  */
 function wrapDrawingRun(
   drawingXml: string | undefined,
-  opts: { vmlFallback?: string; mcChoiceRequires?: string; runPropertiesRawXml?: string },
+  opts: { vmlFallback?: string; mcChoiceRequires?: string; runProperties?: RunPropertiesOptions },
 ): string {
   const xml = drawingXml ?? "";
-  const rPr = opts.runPropertiesRawXml ?? "";
+  const rPr = stringifyRunProperties(opts.runProperties) ?? "";
   if (opts.vmlFallback) {
     const requires = opts.mcChoiceRequires ?? "wps";
     // opts.vmlFallback is the serialized <mc:Fallback>…</mc:Fallback> element,
@@ -207,12 +208,9 @@ function registerVmlFallbackMedia(
 }
 
 /**
- * Resolve a break/tab run's rPr: prefer the raw rPr carried from parse (verbatim,
- * no b/bCs, sz/szCs pairing), else regenerate from the structured fields.
+ * Build the rPr XML for a break/tab run from its structured run properties.
  */
-function runPrOrRaw(child: ParagraphChild): string {
-  const raw = (child as { rPrRawXml?: string }).rPrRawXml;
-  if (raw) return raw;
+function runPropertiesXml(child: ParagraphChild): string {
   return stringifyRunProperties(child as RunOptions) ?? "";
 }
 
@@ -221,16 +219,15 @@ export function stringifyChildDispatch(
   ctx: BodyContext,
 ): string | string[] | undefined {
   // Simple break types — pure XML, no side effects. A break run may carry run
-  // properties (round-tripped from <w:r><w:rPr>…</w:rPr><w:br…/></w:r>); prefer
-  // the raw rPr when present to avoid b/bCs, sz/szCs pairing inflation.
+  // properties (round-tripped from <w:r><w:rPr>…</w:rPr><w:br…/></w:r>).
   if ("pageBreak" in child) {
-    return `<w:r>${runPrOrRaw(child)}<w:br w:type="page"/></w:r>`;
+    return `<w:r>${runPropertiesXml(child)}<w:br w:type="page"/></w:r>`;
   }
   if ("columnBreak" in child) {
-    return `<w:r>${runPrOrRaw(child)}<w:br w:type="column"/></w:r>`;
+    return `<w:r>${runPropertiesXml(child)}<w:br w:type="column"/></w:r>`;
   }
   if ("tab" in child) {
-    return `<w:r>${runPrOrRaw(child)}<w:tab/></w:r>`;
+    return `<w:r>${runPropertiesXml(child)}<w:tab/></w:r>`;
   }
 
   // Reference types — pure XML, no side effects
@@ -247,9 +244,20 @@ export function stringifyChildDispatch(
     return `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${child.commentReference}"/></w:r>`;
 
   // Bookmark markers — pure XML
-  if ("bookmarkStart" in child)
-    return `<w:bookmarkStart w:id="${child.bookmarkStart.id}" w:name="${child.bookmarkStart.name}"/>`;
-  if ("bookmarkEnd" in child) return `<w:bookmarkEnd w:id="${child.bookmarkEnd}"/>`;
+  if ("bookmarkStart" in child) {
+    const bs = child.bookmarkStart;
+    const bsDisp = bs.displacedByCustomXml
+      ? ` w:displacedByCustomXml="${bs.displacedByCustomXml}"`
+      : "";
+    return `<w:bookmarkStart w:id="${bs.id}" w:name="${bs.name}"${bsDisp}/>`;
+  }
+  if ("bookmarkEnd" in child) {
+    const be = child.bookmarkEnd;
+    const beDisp = be.displacedByCustomXml
+      ? ` w:displacedByCustomXml="${be.displacedByCustomXml}"`
+      : "";
+    return `<w:bookmarkEnd w:id="${be.id}"${beDisp}/>`;
+  }
 
   // Symbol run — direct XML output.
   // <w:sym> is a self-closing element, not text: emit it directly so it is

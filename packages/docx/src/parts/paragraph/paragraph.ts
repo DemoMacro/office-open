@@ -78,8 +78,8 @@ export type ParagraphChild =
         children?: (RunOptions | string)[];
       };
     }
-  | { bookmarkStart: { id: number; name: string } }
-  | { bookmarkEnd: number }
+  | { bookmarkStart: { id: number; name: string; displacedByCustomXml?: "before" | "after" } }
+  | { bookmarkEnd: { id: number; displacedByCustomXml?: "before" | "after" } }
   | { wpsShape: WpsShapeRunOptions }
   | { wpgGroup: WpgGroupRunOptions }
   // Proof error markers

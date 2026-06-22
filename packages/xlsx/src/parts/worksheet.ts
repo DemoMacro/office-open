@@ -8,11 +8,11 @@
  */
 
 import { derivePasswordHash } from "@office-open/core";
-import type { ChartSpaceOptions } from "@office-open/core";
+import type { ChartSpaceOptions, PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, attrsRaw, escapeXml, selfCloseElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, attr, attrNum, textOf } from "@office-open/xml";
+import { findChild, attr, attrMeasure, attrNum, textOf } from "@office-open/xml";
 
 import type { XlsxReadContext } from "../context";
 import type { PivotTableOptions } from "./pivot";
@@ -394,10 +394,10 @@ export interface PageSetupOptions {
   pageOrder?: "downThenOver" | "overThenDown";
   useFirstPageNumber?: boolean;
   firstPageNumber?: number;
-  /** Paper height (CT_PageSetup @paperHeight) */
-  paperHeight?: number;
-  /** Paper width (CT_PageSetup @paperWidth) */
-  paperWidth?: number;
+  /** Paper height (CT_PageSetup @paperHeight, ST_PositiveUniversalMeasure) */
+  paperHeight?: number | PositiveUniversalMeasure;
+  /** Paper width (CT_PageSetup @paperWidth, ST_PositiveUniversalMeasure) */
+  paperWidth?: number | PositiveUniversalMeasure;
   /** Use printer defaults (CT_PageSetup @usePrinterDefaults) */
   usePrinterDefaults?: boolean;
   /** Black and white printing (CT_PageSetup @blackAndWhite) */
@@ -1620,6 +1620,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const ps: Record<string, unknown> = {};
       const pz = attrNum(psEl, "paperSize");
       if (pz !== undefined) ps.paperSize = pz;
+      const ph = attrMeasure(psEl, "paperHeight");
+      if (ph !== undefined) ps.paperHeight = ph;
+      const pw = attrMeasure(psEl, "paperWidth");
+      if (pw !== undefined) ps.paperWidth = pw;
       if (attr(psEl, "orientation")) ps.orientation = attr(psEl, "orientation");
       const sc = attrNum(psEl, "scale");
       if (sc !== undefined) ps.scale = sc;

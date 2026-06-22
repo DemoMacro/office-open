@@ -55,6 +55,18 @@ describe("transform2DDesc", () => {
     expect(result.flipHorizontal).toBe(true);
     expect(result.flipVertical).toBe(true);
   });
+
+  it("parses a:off x/y verbatim when source uses UniversalMeasure", () => {
+    // a:off x/y are ST_Coordinate (number EMU | UniversalMeasure); a source
+    // emitting a measure string must be preserved, not coerced to NaN.
+    const xml =
+      '<a:xfrm xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+      '<a:off x="5mm" y="10mm"/></a:xfrm>';
+    const el = parseXml(xml).elements![0];
+    const result = parse(transform2DDesc, el, {} as never);
+    expect(result.x).toBe("5mm");
+    expect(result.y).toBe("10mm");
+  });
 });
 
 describe("groupTransform2DDesc", () => {

@@ -49,8 +49,8 @@ export type SectionChild =
   | { altChunk: AltChunkOptions }
   | { subDoc: SubDocOptions }
   | { customXml: CustomXmlBlockOptions }
-  | { bookmarkStart: { id: number; name: string } }
-  | { bookmarkEnd: number }
+  | { bookmarkStart: { id: number; name: string; displacedByCustomXml?: "before" | "after" } }
+  | { bookmarkEnd: { id: number; displacedByCustomXml?: "before" | "after" } }
   | { rawXml: string };
 
 /**

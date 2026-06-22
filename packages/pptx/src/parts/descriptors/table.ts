@@ -5,12 +5,21 @@
  */
 
 import { convertPixelsToEmu, xsdTextAnchor } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { fillDesc } from "@office-open/core/drawingml";
 import type { FillOptions } from "@office-open/core/drawingml";
-import { attr, attrBool, attrNum, children, findChild, textOf } from "@office-open/xml";
+import {
+  attr,
+  attrBool,
+  attrMeasure,
+  attrNum,
+  children,
+  findChild,
+  textOf,
+} from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
@@ -42,10 +51,10 @@ export interface TableCellDescriptorOptions {
   verticalMerge?: "continue" | "restart";
   verticalAlign?: "top" | "center" | "bottom" | "justify" | "distribute";
   margins?: {
-    top?: number;
-    bottom?: number;
-    left?: number;
-    right?: number;
+    top?: number | UniversalMeasure;
+    bottom?: number | UniversalMeasure;
+    left?: number | UniversalMeasure;
+    right?: number | UniversalMeasure;
   };
 }
 
@@ -436,16 +445,17 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): Record<string, unkn
     // Extract margins from a:bodyPr
     const bodyPr = findChild(txBody, "a:bodyPr");
     if (bodyPr) {
-      const margins: Record<string, number> = {};
-      const tIns = attrNum(bodyPr, "tIns");
+      const margins: Record<string, unknown> = {};
+      const tIns = attrMeasure(bodyPr, "tIns");
       if (tIns !== undefined) margins.top = tIns;
-      const bIns = attrNum(bodyPr, "bIns");
+      const bIns = attrMeasure(bodyPr, "bIns");
       if (bIns !== undefined) margins.bottom = bIns;
-      const lIns = attrNum(bodyPr, "lIns");
+      const lIns = attrMeasure(bodyPr, "lIns");
       if (lIns !== undefined) margins.left = lIns;
-      const rIns = attrNum(bodyPr, "rIns");
+      const rIns = attrMeasure(bodyPr, "rIns");
       if (rIns !== undefined) margins.right = rIns;
-      if (Object.keys(margins).length > 0) result.margins = margins;
+      if (Object.keys(margins).length > 0)
+        result.margins = margins as TableCellDescriptorOptions["margins"];
     }
   }
 
@@ -456,16 +466,17 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): Record<string, unkn
     if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor);
 
     // Margins from tcPr attributes
-    const margins: Record<string, number> = {};
-    const marL = attrNum(tcPr, "marL");
+    const margins: Record<string, unknown> = {};
+    const marL = attrMeasure(tcPr, "marL");
     if (marL !== undefined) margins.left = marL;
-    const marR = attrNum(tcPr, "marR");
+    const marR = attrMeasure(tcPr, "marR");
     if (marR !== undefined) margins.right = marR;
-    const marT = attrNum(tcPr, "marT");
+    const marT = attrMeasure(tcPr, "marT");
     if (marT !== undefined) margins.top = marT;
-    const marB = attrNum(tcPr, "marB");
+    const marB = attrMeasure(tcPr, "marB");
     if (marB !== undefined) margins.bottom = marB;
-    if (Object.keys(margins).length > 0) result.margins = margins;
+    if (Object.keys(margins).length > 0)
+      result.margins = margins as TableCellDescriptorOptions["margins"];
 
     // Fill — use full fillDesc for all fill types
     const fillResult = parse(fillDesc, tcPr, ctx);

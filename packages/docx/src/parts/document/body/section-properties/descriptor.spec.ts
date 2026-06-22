@@ -163,6 +163,25 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(result.column!.space).toBe(720);
   });
 
+  it("round-trips column space with UniversalMeasure (mm)", () => {
+    const result = roundTrip({
+      column: { count: 2, space: "5mm" },
+    });
+    expect(result.column!.space).toBe("5mm");
+  });
+
+  it("round-trips custom column width/space with UniversalMeasure (mm)", () => {
+    const result = roundTrip({
+      column: {
+        children: [{ width: "30mm", space: "2.5mm" }, { width: "40mm" }],
+      },
+    });
+    const children = result.column!.children!;
+    expect(children[0].width).toBe("30mm");
+    expect(children[0].space).toBe("2.5mm");
+    expect(children[1].width).toBe("40mm");
+  });
+
   it("round-trips line numbers", () => {
     const result = roundTrip({
       lineNumbers: { countBy: 5, start: 1, restart: "continuous", distance: 360 },

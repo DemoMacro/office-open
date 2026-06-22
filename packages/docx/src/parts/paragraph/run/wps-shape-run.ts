@@ -6,6 +6,7 @@ import type { BackgroundRawMediaOptions } from "@parts/document/document-backgro
  */
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { WpsShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { MediaTransformation } from "@shared/media";
 
 import type { Floating } from "../../drawing";
@@ -23,8 +24,8 @@ interface CoreShapeOptions {
   vmlFallbackMedia?: BackgroundRawMediaOptions[];
   /** mc:Choice Requires attribute (e.g. "wps") used to regenerate the AlternateContent wrapper. */
   mcChoiceRequires?: string;
-  /** Raw XML of the wrapping w:r's rPr (round-trip) — emitted before the drawing. */
-  runPropertiesRawXml?: string;
+  /** Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing. */
+  runProperties?: RunPropertiesOptions;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
 }

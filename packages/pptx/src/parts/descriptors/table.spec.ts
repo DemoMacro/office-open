@@ -222,6 +222,25 @@ describe("tableDesc round-trip", () => {
     expect(margins.right).toBe(4000);
   });
 
+  it("round-trips cell margins with UniversalMeasure (mm)", () => {
+    const opts: TableDescriptorOptions = {
+      rows: [
+        {
+          cells: [
+            {
+              text: "M",
+              margins: { top: "1mm", left: "2.5mm" },
+            },
+          ],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const margins = result.rows![0].cells![0].margins!;
+    expect(margins.top).toBe("1mm");
+    expect(margins.left).toBe("2.5mm");
+  });
+
   it("round-trips tableStyleId (a:tableStyleId)", () => {
     const opts: TableDescriptorOptions = {
       rows: [{ cells: [{ text: "A1" }] }],

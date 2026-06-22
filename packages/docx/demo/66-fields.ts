@@ -29,7 +29,7 @@ const buffer = await generateDocument({
               " words and if you'd print it ",
               { bookmarkStart: { id: 0, name: "TimesPrinted" } },
               "42",
-              { bookmarkEnd: 0 },
+              { bookmarkEnd: { id: 0 } },
               " times two-sided, you would need ",
               { simpleField: { instruction: "=INT((TimesPrinted+1)/2)" } },
               " sheets of paper.",

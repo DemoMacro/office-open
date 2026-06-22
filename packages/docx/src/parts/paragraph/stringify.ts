@@ -94,15 +94,15 @@ export function shadingStr(opts: ShadingAttributesProperties): string {
 
 function spacingStr(opts: SpacingProperties): string {
   const a = attrParts({
-    "w:after": opts.after,
+    "w:after": opts.after !== undefined ? twipsMeasureValue(opts.after) : undefined,
     "w:afterAutospacing":
       opts.afterAutoSpacing !== undefined ? (opts.afterAutoSpacing ? 1 : 0) : undefined,
     "w:afterLines": opts.afterLines !== undefined ? decimalNumber(opts.afterLines) : undefined,
-    "w:before": opts.before,
+    "w:before": opts.before !== undefined ? twipsMeasureValue(opts.before) : undefined,
     "w:beforeAutospacing":
       opts.beforeAutoSpacing !== undefined ? (opts.beforeAutoSpacing ? 1 : 0) : undefined,
     "w:beforeLines": opts.beforeLines !== undefined ? decimalNumber(opts.beforeLines) : undefined,
-    "w:line": opts.line,
+    "w:line": opts.line !== undefined ? twipsMeasureValue(opts.line) : undefined,
     "w:lineRule": opts.lineRule,
   });
   return `<w:spacing ${a}/>`;
@@ -499,18 +499,15 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
     }
   }
 
-  // Bold
+  // Bold — w:b and w:bCs are independent toggle properties (Latin vs complex
+  // script, per ISO/IEC 29500). Emit each only when explicitly set so round-trip
+  // is field-faithful (source <w:b/> stays <w:b/>, not inflated to <w:b/><w:bCs/>).
   if (opts.bold !== undefined) parts.push(onOff("w:b", opts.bold));
-  const bCs =
-    (opts.boldComplexScript === undefined && opts.bold !== undefined) || opts.boldComplexScript;
-  if (bCs !== undefined) parts.push(onOff("w:bCs", opts.boldComplexScript ?? opts.bold!));
+  if (opts.boldComplexScript !== undefined) parts.push(onOff("w:bCs", opts.boldComplexScript));
 
-  // Italic
+  // Italic — w:i and w:iCs are independent (same rationale as bold).
   if (opts.italic !== undefined) parts.push(onOff("w:i", opts.italic));
-  const iCs =
-    (opts.italicComplexScript === undefined && opts.italic !== undefined) ||
-    opts.italicComplexScript;
-  if (iCs !== undefined) parts.push(onOff("w:iCs", opts.italicComplexScript ?? opts.italic!));
+  if (opts.italicComplexScript !== undefined) parts.push(onOff("w:iCs", opts.italicComplexScript));
 
   // Caps
   if (opts.smallCaps !== undefined) {
@@ -549,19 +546,16 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   // Position
   if (opts.position) parts.push(`<w:position w:val="${opts.position}"/>`);
 
-  // Size (points → half-points)
+  // Size (points → half-points). sz and szCs are independent (Latin vs complex
+  // script); emit each only when set so round-trip is field-faithful.
   if (opts.size !== undefined) parts.push(`<w:sz w:val="${hpsMeasureValue(opts.size * 2)}"/>`);
-  const szCs =
-    opts.sizeComplexScript === undefined || opts.sizeComplexScript === true
-      ? opts.size
-      : opts.sizeComplexScript;
-  if (szCs) parts.push(`<w:szCs w:val="${hpsMeasureValue((szCs as number) * 2)}"/>`);
+  if (opts.sizeComplexScript !== undefined) {
+    parts.push(`<w:szCs w:val="${hpsMeasureValue(opts.sizeComplexScript * 2)}"/>`);
+  }
 
-  // Highlight
+  // Highlight — independent Latin vs complex-script values.
   if (opts.highlight) parts.push(`<w:highlight w:val="${opts.highlight}"/>`);
-  if (opts.highlightComplexScript === true) {
-    if (opts.highlight) parts.push(`<w:highlightCs w:val="${opts.highlight}"/>`);
-  } else if (opts.highlightComplexScript !== undefined && opts.highlightComplexScript !== false) {
+  if (opts.highlightComplexScript !== undefined) {
     parts.push(`<w:highlightCs w:val="${opts.highlightComplexScript}"/>`);
   }
 

@@ -27,10 +27,10 @@ export interface DivBorderOptions {
 export interface DivOptions {
   /** Unique div identifier (required by CT_Div/@id) */
   id: number;
-  marginLeft: number;
-  marginRight: number;
-  marginTop: number;
-  marginBottom: number;
+  marginLeft: number | UniversalMeasure;
+  marginRight: number | UniversalMeasure;
+  marginTop: number | UniversalMeasure;
+  marginBottom: number | UniversalMeasure;
   /** Mark as HTML blockquote element */
   blockQuote?: boolean;
   /** Mark as HTML body element */
@@ -90,8 +90,9 @@ export interface WebSettingsOptions {
 
 // ── Descriptor ──
 
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
+import { attr, attrBool, attrMeasure, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { FrameOptions, FramesetSplitbarOptions } from "@parts/frameset";
 
@@ -126,7 +127,7 @@ function wsStringVal(tag: string, val: string): string {
   return `<${tag} w:val="${wsEscapeAttr(val)}"/>`;
 }
 
-function wsNumVal(tag: string, val: number): string {
+function wsNumVal(tag: string, val: number | UniversalMeasure): string {
   return `<${tag} w:val="${val}"/>`;
 }
 
@@ -271,25 +272,25 @@ function parseDivEl(el: Element): DivOptions {
 
   const marLeft = findChild(el, "w:marLeft");
   if (marLeft) {
-    const val = attrNum(marLeft, "w:val");
+    const val = attrMeasure(marLeft, "w:val");
     if (val !== undefined) opts.marginLeft = val;
   }
 
   const marRight = findChild(el, "w:marRight");
   if (marRight) {
-    const val = attrNum(marRight, "w:val");
+    const val = attrMeasure(marRight, "w:val");
     if (val !== undefined) opts.marginRight = val;
   }
 
   const marTop = findChild(el, "w:marTop");
   if (marTop) {
-    const val = attrNum(marTop, "w:val");
+    const val = attrMeasure(marTop, "w:val");
     if (val !== undefined) opts.marginTop = val;
   }
 
   const marBottom = findChild(el, "w:marBottom");
   if (marBottom) {
-    const val = attrNum(marBottom, "w:val");
+    const val = attrMeasure(marBottom, "w:val");
     if (val !== undefined) opts.marginBottom = val;
   }
 

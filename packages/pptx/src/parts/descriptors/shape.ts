@@ -14,7 +14,7 @@ import {
   xsdRectAlignment,
   xsdTextAnchor,
 } from "@office-open/core";
-import type { ShapeLockingOptions } from "@office-open/core";
+import type { ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { stringify, parse } from "@office-open/core/descriptor";
 import {
@@ -33,7 +33,7 @@ import type {
   OutlineOptions as CoreOutlineOptions,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, findDeep, escapeXml, attrNum, attr } from "@office-open/xml";
+import { attrMeasure, findChild, findDeep, escapeXml, attrNum, attr } from "@office-open/xml";
 import type { EffectsOptions, ReflectionOptions } from "@shared/drawingml/effects";
 import type { OutlineOptions } from "@shared/drawingml/outline";
 import type { ParagraphOptions } from "@shared/shape/paragraph/paragraph";
@@ -64,9 +64,14 @@ export interface TextBodyDescriptorOptions {
   anchor?: "top" | "center" | "bottom" | "justify" | "distribute";
   autoFit?: "normal" | "shape" | "none";
   wrap?: "square" | "none";
-  margins?: { top?: number; bottom?: number; left?: number; right?: number };
-  marginTop?: number;
-  marginBottom?: number;
+  margins?: {
+    top?: number | UniversalMeasure;
+    bottom?: number | UniversalMeasure;
+    left?: number | UniversalMeasure;
+    right?: number | UniversalMeasure;
+  };
+  marginTop?: number | UniversalMeasure;
+  marginBottom?: number | UniversalMeasure;
   columns?: number;
   columnSpacing?: number;
 }
@@ -909,18 +914,23 @@ function readTxBody(txBody: XmlElement, ctx: ReadContext): TextBodyDescriptorOpt
       ) as TextBodyDescriptorOptions["anchor"];
     if (attrs["wrap"] !== undefined)
       result.wrap = String(attrs["wrap"]) as TextBodyDescriptorOptions["wrap"];
-    if (attrs["tIns"] !== undefined)
-      result.margins = { ...result.margins, top: Number(attrs["tIns"]) };
-    if (attrs["bIns"] !== undefined)
-      result.margins = { ...result.margins, bottom: Number(attrs["bIns"]) };
-    if (attrs["lIns"] !== undefined)
-      result.margins = { ...result.margins, left: Number(attrs["lIns"]) };
-    if (attrs["rIns"] !== undefined)
-      result.margins = { ...result.margins, right: Number(attrs["rIns"]) };
+    const insMargins: Record<string, unknown> = {};
+    const tIns = attrMeasure(bodyPr, "tIns");
+    if (tIns !== undefined) insMargins.top = tIns;
+    const bIns = attrMeasure(bodyPr, "bIns");
+    if (bIns !== undefined) insMargins.bottom = bIns;
+    const lIns = attrMeasure(bodyPr, "lIns");
+    if (lIns !== undefined) insMargins.left = lIns;
+    const rIns = attrMeasure(bodyPr, "rIns");
+    if (rIns !== undefined) insMargins.right = rIns;
+    if (Object.keys(insMargins).length > 0)
+      result.margins = { ...result.margins, ...insMargins } as TextBodyDescriptorOptions["margins"];
     if (attrs["numCol"] !== undefined) result.columns = Number(attrs["numCol"]);
     if (attrs["spcCol"] !== undefined) result.columnSpacing = Number(attrs["spcCol"]) / 100;
-    if (attrs["marT"] !== undefined) result.marginTop = Number(attrs["marT"]);
-    if (attrs["marB"] !== undefined) result.marginBottom = Number(attrs["marB"]);
+    const marT = attrMeasure(bodyPr, "marT");
+    if (marT !== undefined) result.marginTop = marT as number | UniversalMeasure;
+    const marB = attrMeasure(bodyPr, "marB");
+    if (marB !== undefined) result.marginBottom = marB as number | UniversalMeasure;
 
     if (findChild(bodyPr, "a:normAutofit")) result.autoFit = "normal";
     else if (findChild(bodyPr, "a:spAutoFit")) result.autoFit = "shape";

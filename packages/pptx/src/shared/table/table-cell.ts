@@ -1,3 +1,5 @@
+import type { UniversalMeasure } from "@office-open/core";
+
 import type { FillOptions } from "../drawingml/fill";
 import type { ParagraphOptions } from "../shape/paragraph/paragraph";
 import type { CellBorderOptions } from "./table-cell-properties";
@@ -20,9 +22,9 @@ export interface TableCellOptions {
   verticalMerge?: "continue" | "restart";
   verticalAlign?: VerticalAlignment;
   margins?: {
-    top?: number;
-    bottom?: number;
-    left?: number;
-    right?: number;
+    top?: number | UniversalMeasure;
+    bottom?: number | UniversalMeasure;
+    left?: number | UniversalMeasure;
+    right?: number | UniversalMeasure;
   };
 }
