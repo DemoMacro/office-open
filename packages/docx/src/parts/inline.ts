@@ -22,7 +22,7 @@ import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragrap
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
-import type { RunOptions } from "@parts/paragraph/run/run";
+import { breakXml, type RunOptions } from "@parts/paragraph/run/run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type {
   ChartMediaData,
@@ -50,9 +50,7 @@ function stringifyDeletedRun(c: RunOptions | string): string {
   const parts: string[] = [];
   const rPr = stringifyRunProperties(opts);
   if (rPr) parts.push(rPr);
-  if (opts.break) {
-    for (let i = 0; i < opts.break; i++) parts.push("<w:br/>");
-  }
+  if (opts.break) parts.push(breakXml(opts.break));
   const fieldMap: Record<string, string> = {
     CURRENT: "PAGE",
     TOTAL_PAGES: "NUMPAGES",
@@ -87,9 +85,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   const rPr = stringifyRunProperties(opts);
   if (rPr) parts.push(rPr);
 
-  if (opts.break) {
-    for (let i = 0; i < opts.break; i++) parts.push("<w:br/>");
-  }
+  if (opts.break) parts.push(breakXml(opts.break));
 
   if (opts.children) {
     for (const child of opts.children) {
@@ -232,10 +228,20 @@ export function stringifyChildDispatch(
   }
 
   // Reference types — pure XML, no side effects
-  if ("footnoteReference" in child)
-    return `<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="${child.footnoteReference}"/></w:r>`;
-  if ("endnoteReference" in child)
-    return `<w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteReference w:id="${child.endnoteReference}"/></w:r>`;
+  if ("footnoteReference" in child) {
+    const ref = child.footnoteReference;
+    const id = typeof ref === "number" ? ref : ref.id;
+    const cmf =
+      typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+    return `<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="${id}"${cmf}/></w:r>`;
+  }
+  if ("endnoteReference" in child) {
+    const ref = child.endnoteReference;
+    const id = typeof ref === "number" ? ref : ref.id;
+    const cmf =
+      typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+    return `<w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteReference w:id="${id}"${cmf}/></w:r>`;
+  }
 
   // Comment markers — pure XML
   if ("commentRangeStart" in child)

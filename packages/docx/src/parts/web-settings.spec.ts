@@ -21,6 +21,16 @@ describe("webSettingsDesc round-trip", () => {
     expect(result.optimizeForBrowser).toBe(true);
   });
 
+  it("round-trips optimizeForBrowser with target", () => {
+    const result = roundTrip({ optimizeForBrowser: { value: true, target: "1024x768" } });
+    expect(result.optimizeForBrowser).toEqual({ value: true, target: "1024x768" });
+  });
+
+  it("round-trips optimizeForBrowser disabled with target", () => {
+    const result = roundTrip({ optimizeForBrowser: { value: false, target: "800x600" } });
+    expect(result.optimizeForBrowser).toEqual({ value: false, target: "800x600" });
+  });
+
   it("round-trips allowPNG", () => {
     const result = roundTrip({ allowPNG: true });
     expect(result.allowPNG).toBe(true);

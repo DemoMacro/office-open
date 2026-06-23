@@ -105,6 +105,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
   defaultTabStop?: number;
   fonts?: EmbeddedFontOptions[];
   hyphenation?: HyphenationOptions;
+  /** Document conformance class (w:document/@w:conformance). */
+  conformance?: "strict" | "transitional";
   /** Controls whether punctuation is compressed at line ends */
   characterSpacingControl?: "compressPunctuation" | "doNotCompress";
   /** Default document view mode */

@@ -3,7 +3,8 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { stringifyRunProperties } from "../stringify";
 import type { RunPropertiesOptions } from "./properties";
-import { parseRun, parseRunProperties } from "./run-parse";
+import { breakXml } from "./run";
+import { parseRun, parseRunProperties, parsedRunToOptions } from "./run-parse";
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 
@@ -126,5 +127,50 @@ describe("parseRun rsid attributes", () => {
     expect(parsed.rsid).toBe("00992297");
     expect(parsed.runPropertiesRsid).toBe("00112233");
     expect(parsed.deletionRsid).toBe("AABBCCDD");
+  });
+});
+
+describe("parseRun break clear (CT_Br/@w:clear)", () => {
+  it("parses w:br/@w:clear into a structured break", () => {
+    const doc = parseXml(`<w:r ${W_NS}><w:br w:clear="all"/></w:r>`);
+    const opts = parsedRunToOptions(parseRun(doc.elements![0], {} as never)) as {
+      break: { count: number; clear: string };
+    };
+    expect(opts.break).toEqual({ count: 1, clear: "all" });
+  });
+
+  it("parses a plain line break as a count", () => {
+    const doc = parseXml(`<w:r ${W_NS}><w:br/></w:r>`);
+    const opts = parsedRunToOptions(parseRun(doc.elements![0], {} as never)) as {
+      break: number;
+    };
+    expect(opts.break).toBe(1);
+  });
+
+  it("stringifies a structured break with clear (breakXml)", () => {
+    expect(breakXml({ count: 2, clear: "left" })).toBe(
+      '<w:br w:clear="left"/><w:br w:clear="left"/>',
+    );
+    expect(breakXml(3)).toBe("<w:br/><w:br/><w:br/>");
+  });
+});
+
+describe("parseRun customMarkFollows (CT_FtnEdnRef)", () => {
+  it("parses w:footnoteReference/@w:customMarkFollows", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS}><w:footnoteReference w:id="3" w:customMarkFollows="true"/></w:r>`,
+    );
+    const opts = parsedRunToOptions(parseRun(doc.elements![0], {} as never)) as {
+      footnoteReference: { id: number; customMarkFollows: boolean };
+    };
+    expect(opts.footnoteReference).toEqual({ id: 3, customMarkFollows: true });
+  });
+
+  it("parses a plain footnoteReference as a numeric id", () => {
+    const doc = parseXml(`<w:r ${W_NS}><w:footnoteReference w:id="5"/></w:r>`);
+    const opts = parsedRunToOptions(parseRun(doc.elements![0], {} as never)) as {
+      footnoteReference: number;
+    };
+    expect(opts.footnoteReference).toBe(5);
   });
 });

@@ -73,6 +73,8 @@ export interface DocxPartRefs {
 
 export interface DocxDocument {
   doc: ParsedArchive;
+  /** word/document.xml → root w:document element */
+  documentRoot: Element;
   /** word/document.xml → w:body element */
   body: Element;
   /** word/document.xml → w:background element */
@@ -273,6 +275,10 @@ export function parseDocument(data: DataType): DocumentOptions {
   const sections = parseBody(docx.body, ctx);
 
   const opts: Partial<DocumentOptions> = { sections };
+
+  // Document conformance class (w:document/@w:conformance)
+  const conformance = attr(docx.documentRoot, "w:conformance");
+  if (conformance === "strict" || conformance === "transitional") opts.conformance = conformance;
 
   // Background (w:background in document.xml)
   if (docx.background) {
@@ -506,6 +512,7 @@ export function parseDocx(data: DataType): DocxDocument {
 
   return {
     doc,
+    documentRoot: documentEl,
     body,
     background,
     styles,

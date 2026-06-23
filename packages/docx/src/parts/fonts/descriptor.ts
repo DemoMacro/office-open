@@ -50,8 +50,12 @@ function fontXml(font: EmbeddedFontOptionsWithKey): string {
   // what was parsed.
   if (font.altName) parts.push(`<w:altName w:val="${escapeXml(font.altName)}"/>`);
   if (font.panose1) parts.push(`<w:panose1 w:val="${escapeXml(font.panose1)}"/>`);
-  if (font.characterSet) {
-    parts.push(`<w:charset w:val="${escapeXml(font.characterSet)}"/>`);
+  if (font.characterSet || font.characterSetName) {
+    const valAttr = font.characterSet ? ` w:val="${escapeXml(font.characterSet)}"` : "";
+    const csAttr = font.characterSetName
+      ? ` w:characterSet="${escapeXml(font.characterSetName)}"`
+      : "";
+    parts.push(`<w:charset${valAttr}${csAttr}/>`);
   }
   const family = font.family ?? (font.embedRid ? "auto" : undefined);
   if (family) parts.push(`<w:family w:val="${escapeXml(family)}"/>`);
@@ -114,6 +118,8 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
       if (charsetEl) {
         const val = attr(charsetEl, "w:val");
         if (val) font.characterSet = val as EmbeddedFontOptionsWithKey["characterSet"];
+        const csName = attr(charsetEl, "w:characterSet");
+        if (csName) font.characterSetName = csName;
       }
 
       const familyEl = findChild(child, "w:family");

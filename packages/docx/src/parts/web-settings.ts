@@ -57,6 +57,18 @@ export const TargetScreenSize = {
 } as const;
 
 /**
+ * Options for the w:optimizeForBrowser element.
+ *
+ * CT_OptimizeForBrowser extends CT_OnOff with an optional @w:target attribute.
+ */
+export interface OptimizeForBrowserOptions {
+  /** On/off value — defaults to true when omitted (CT_OnOff). */
+  value?: boolean;
+  /** Target screen resolution name (w:optimizeForBrowser/@w:target). */
+  target?: string;
+}
+
+/**
  * Options for web settings (CT_WebSettings).
  */
 export interface WebSettingsOptions {
@@ -66,8 +78,8 @@ export interface WebSettingsOptions {
   divs?: DivOptions[];
   /** Character encoding for web output */
   encoding?: string;
-  /** Optimize document rendering for web browser */
-  optimizeForBrowser?: boolean;
+  /** Optimize document rendering for web browser (w:optimizeForBrowser). */
+  optimizeForBrowser?: boolean | OptimizeForBrowserOptions;
   /** Rely on VML for graphics display */
   relyOnVML?: boolean;
   /** Allow PNG image format in web output */
@@ -101,7 +113,7 @@ export interface WebSettingsInput {
   frameset?: FramesetOptions;
   divs?: DivOptions[];
   encoding?: string;
-  optimizeForBrowser?: boolean;
+  optimizeForBrowser?: boolean | OptimizeForBrowserOptions;
   relyOnVML?: boolean;
   allowPNG?: boolean;
   doNotRelyOnCSS?: boolean;
@@ -436,8 +448,18 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
       p.push("</w:divs>");
     }
     if (opts.encoding !== undefined) p.push(wsStringVal("w:encoding", opts.encoding));
-    if (opts.optimizeForBrowser !== undefined)
-      p.push(wsOnOff("w:optimizeForBrowser", opts.optimizeForBrowser));
+    if (opts.optimizeForBrowser !== undefined) {
+      const ob = opts.optimizeForBrowser;
+      if (typeof ob === "boolean") {
+        p.push(wsOnOff("w:optimizeForBrowser", ob));
+      } else {
+        // CT_OptimizeForBrowser: CT_OnOff + optional @w:target. Omit w:val when
+        // true to match typical Word output; emit w:val="false" only when disabled.
+        const valAttr = ob.value === false ? ' w:val="false"' : "";
+        const targetAttr = ob.target ? ` w:target="${wsEscapeAttr(ob.target)}"` : "";
+        p.push(`<w:optimizeForBrowser${valAttr}${targetAttr}/>`);
+      }
+    }
     if (opts.relyOnVML !== undefined) p.push(wsOnOff("w:relyOnVML", opts.relyOnVML));
     if (opts.allowPNG !== undefined) p.push(wsOnOff("w:allowPNG", opts.allowPNG));
     if (opts.doNotRelyOnCSS !== undefined) p.push(wsOnOff("w:doNotRelyOnCSS", opts.doNotRelyOnCSS));
@@ -482,7 +504,6 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
 
     // Boolean fields
     for (const [name, optKey] of [
-      ["w:optimizeForBrowser", "optimizeForBrowser"],
       ["w:relyOnVML", "relyOnVML"],
       ["w:allowPNG", "allowPNG"],
       ["w:doNotRelyOnCSS", "doNotRelyOnCSS"],
@@ -493,6 +514,17 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
     ] as const) {
       const child = findChild(el, name);
       if (child) opts[optKey] = attrBool(child, "w:val") ?? true;
+    }
+
+    // optimizeForBrowser — CT_OptimizeForBrowser (CT_OnOff + optional @w:target)
+    const obEl = findChild(el, "w:optimizeForBrowser");
+    if (obEl) {
+      const target = attr(obEl, "w:target");
+      if (target) {
+        opts.optimizeForBrowser = { value: attrBool(obEl, "w:val") ?? true, target };
+      } else {
+        opts.optimizeForBrowser = attrBool(obEl, "w:val") ?? true;
+      }
     }
 
     // Pixels per inch

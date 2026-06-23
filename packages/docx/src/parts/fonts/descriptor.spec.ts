@@ -50,6 +50,22 @@ describe("fontTableDesc round-trip", () => {
     expect(result.fonts[0].characterSet).toBe("02");
   });
 
+  it("round-trips font with characterSetName (w:characterSet)", () => {
+    const result = roundTrip({
+      fonts: [
+        {
+          name: "Wingdings",
+          fontKey: "wd-key",
+          data: Buffer.from([]),
+          characterSet: "02",
+          characterSetName: "ISO-8859-1",
+        },
+      ],
+    });
+    expect(result.fonts[0].characterSet).toBe("02");
+    expect(result.fonts[0].characterSetName).toBe("ISO-8859-1");
+  });
+
   it("round-trips font key stripping braces", () => {
     const result = roundTrip({
       fonts: [

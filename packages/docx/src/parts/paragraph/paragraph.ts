@@ -55,6 +55,14 @@ export interface SdtRunOptions {
   endProperties?: RunPropertiesOptions;
 }
 
+/** Options for a footnote/endnote reference (CT_FtnEdnRef). */
+export interface FootnoteEndnoteReferenceOptions {
+  /** Footnote/endnote id (w:footnoteReference/@w:id or w:endnoteReference/@w:id, required). */
+  id: number;
+  /** Whether a custom reference mark follows the reference (w:customMarkFollows). */
+  customMarkFollows?: boolean;
+}
+
 /** Discriminated union of all paragraph child types (inline elements, runs, etc.). */
 export type ParagraphChild =
   | ChartChild
@@ -62,8 +70,8 @@ export type ParagraphChild =
   | ImageChild
   | MathChild
   | { symbolRun: SymbolRunOptions }
-  | { footnoteReference: number }
-  | { endnoteReference: number }
+  | { footnoteReference: number | FootnoteEndnoteReferenceOptions }
+  | { endnoteReference: number | FootnoteEndnoteReferenceOptions }
   | { pageBreak: true }
   | { columnBreak: true }
   | { commentRangeStart: number }

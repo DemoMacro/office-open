@@ -31,6 +31,30 @@ import type {
 } from "./empty-children";
 import type { ParagraphRunPropertiesOptions, RunPropertiesOptions } from "./properties";
 
+/** w:br/@w:clear values (ST_BrClear) — clears floating content on the given side(s). */
+export type BreakClear = "none" | "left" | "right" | "all";
+
+/** Options for a line break with optional float-clearing (CT_Br). */
+export interface BreakOptions {
+  /** Number of `<w:br/>` elements (defaults to 1). */
+  count?: number;
+  /** Clear floating content (w:br/@w:clear). */
+  clear?: BreakClear;
+}
+
+/**
+ * Serialize a break option (count shorthand or structured with clear) to one or
+ * more `<w:br/>` tags.
+ */
+export function breakXml(breakOpt: number | BreakOptions | undefined): string {
+  if (!breakOpt) return "";
+  const count = typeof breakOpt === "number" ? breakOpt : (breakOpt.count ?? 1);
+  if (count <= 0) return "";
+  const clear = typeof breakOpt === "object" ? breakOpt.clear : undefined;
+  const one = clear ? `<w:br w:clear="${clear}"/>` : "<w:br/>";
+  return count === 1 ? one : one.repeat(count);
+}
+
 interface RunOptionsBase {
   children?: (
     | (typeof PageNumber)[keyof typeof PageNumber]
@@ -55,7 +79,7 @@ interface RunOptionsBase {
     | { object: ObjectElementOptions }
     | Record<string, unknown>
   )[];
-  break?: number;
+  break?: number | BreakOptions;
   text?: string;
 }
 

@@ -44,7 +44,7 @@ import type {
 import { parseFormFieldData } from "@parts/paragraph/run/form-field";
 import type { FormFieldOptions } from "@parts/paragraph/run/form-field";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
-import type { RunOptions } from "@parts/paragraph/run/run";
+import { breakXml, type BreakOptions, type RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
@@ -120,11 +120,9 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
   const rPr = stringifyRunProperties(runOpts);
   if (rPr) parts.push(rPr);
 
-  // Breaks
+  // Breaks (w:br) — count shorthand or structured with clear (CT_Br)
   if (opts.break) {
-    for (let i = 0; i < opts.break; i++) {
-      parts.push("<w:br/>");
-    }
+    parts.push(breakXml(opts.break));
   }
 
   // Children or text
@@ -145,6 +143,10 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
         }
         if ("columnBreak" in child) {
           parts.push('<w:br w:type="column"/>');
+          continue;
+        }
+        if ("break" in child) {
+          parts.push(breakXml((child as { break: number | BreakOptions }).break));
           continue;
         }
         if ("commentReference" in child) {
@@ -476,7 +478,10 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
   const parts: string[] = [];
 
   // <w:document> open tag
-  parts.push(`<w:document ${DOC_NS} mc:Ignorable="w14 w15 wp14">`);
+  const conformanceAttr = ctx._options.conformance
+    ? ` w:conformance="${ctx._options.conformance}"`
+    : "";
+  parts.push(`<w:document ${DOC_NS} mc:Ignorable="w14 w15 wp14"${conformanceAttr}>`);
 
   // Background (if any)
   if (ctx._options.background) {

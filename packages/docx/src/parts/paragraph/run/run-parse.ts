@@ -17,7 +17,13 @@ import {
 import type { Element } from "@office-open/xml";
 import { objectDesc } from "@parts/object";
 import type { ObjectElementOptions } from "@parts/object";
-import type { RunPropertiesOptions, RunOptions } from "@parts/paragraph/run";
+import type { FootnoteEndnoteReferenceOptions } from "@parts/paragraph/paragraph";
+import type {
+  BreakClear,
+  BreakOptions,
+  RunPropertiesOptions,
+  RunOptions,
+} from "@parts/paragraph/run";
 
 import type { DocxReadContext } from "../../../context";
 import { stringifyElement } from "../../../util/stringify-element";
@@ -387,7 +393,10 @@ export type ParsedRunChild =
   | typeof PARSED_PAGE_NUMBER
   | typeof PARSED_LAST_RENDERED_PAGE_BREAK
   | { commentReference: number }
-  | { object: ObjectElementOptions };
+  | { object: ObjectElementOptions }
+  | { break: number | BreakOptions }
+  | { footnoteReference: number | FootnoteEndnoteReferenceOptions }
+  | { endnoteReference: number | FootnoteEndnoteReferenceOptions };
 
 /**
  * Parse a w:r element into run data.
@@ -433,10 +442,16 @@ export function parseRun(
       }
       case "w:br": {
         const brType = attr(child, "w:type");
+        const brClear = attr(child, "w:clear");
         if (brType === "page") {
           children.push(PARSED_PAGE_BREAK);
         } else if (brType === "column") {
           children.push(PARSED_COLUMN_BREAK);
+        } else if (brClear) {
+          // Line break clearing floating content (w:br/@w:clear) — preserve clear
+          children.push({
+            break: { count: 1, clear: brClear as BreakClear },
+          } as unknown as ParsedRunChild);
         } else {
           children.push(PARSED_LINE_BREAK);
         }
@@ -482,12 +497,28 @@ export function parseRun(
       // Footnote/endnote reference — preserve as { footnoteReference: id } / { endnoteReference: id }
       case "w:footnoteReference": {
         const id = attrNum(child, "w:id");
-        if (id !== undefined) children.push({ footnoteReference: id } as unknown as ParsedRunChild);
+        if (id !== undefined) {
+          const customMarkFollows = attrBool(child, "w:customMarkFollows") === true;
+          children.push(
+            customMarkFollows
+              ? ({
+                  footnoteReference: { id, customMarkFollows: true },
+                } as unknown as ParsedRunChild)
+              : ({ footnoteReference: id } as unknown as ParsedRunChild),
+          );
+        }
         break;
       }
       case "w:endnoteReference": {
         const id = attrNum(child, "w:id");
-        if (id !== undefined) children.push({ endnoteReference: id } as unknown as ParsedRunChild);
+        if (id !== undefined) {
+          const customMarkFollows = attrBool(child, "w:customMarkFollows") === true;
+          children.push(
+            customMarkFollows
+              ? ({ endnoteReference: { id, customMarkFollows: true } } as unknown as ParsedRunChild)
+              : ({ endnoteReference: id } as unknown as ParsedRunChild),
+          );
+        }
         break;
       }
       // Footnote/endnote ref mark inside footnote/endnote content —
@@ -623,6 +654,7 @@ export function parsedRunToOptions(
   // Collect text and breaks
   const textParts: string[] = [];
   let breakCount = 0;
+  const structuredBreaks: BreakOptions[] = [];
   let hasPageBreak = false;
   let hasColumnBreak = false;
   const extraChildren: Record<string, true>[] = [];
@@ -636,6 +668,9 @@ export function parsedRunToOptions(
       hasPageBreak = true;
     } else if (child === PARSED_COLUMN_BREAK) {
       hasColumnBreak = true;
+    } else if (typeof child === "object" && child !== null && "break" in child) {
+      // Line break carrying a clear attribute (w:br/@w:clear) — preserve structure
+      structuredBreaks.push((child as { break: BreakOptions }).break);
     } else {
       // Empty run elements (tab, noBreakHyphen, date fields, etc.)
       const mapped = SYMBOL_TO_CHILD.get(child as symbol);
@@ -643,8 +678,15 @@ export function parsedRunToOptions(
     }
   }
 
-  // When empty elements are present, use children[] format for round-trip fidelity
-  if (extraChildren.length > 0) {
+  // A single structured break (with clear) coexists cleanly with text/page/column
+  // breaks via opts.break; mixed or multiple breaks fall back to children[] form.
+  const hasStructuredBreaks = structuredBreaks.length > 0;
+  const useChildrenForm =
+    extraChildren.length > 0 ||
+    (hasStructuredBreaks &&
+      (breakCount > 0 || structuredBreaks.length > 1 || hasPageBreak || hasColumnBreak));
+
+  if (useChildrenForm) {
     const children: (string | Record<string, unknown>)[] = [];
     for (const child of nonRefChildren) {
       if (typeof child === "string") {
@@ -655,6 +697,8 @@ export function parsedRunToOptions(
         children.push({ pageBreak: true });
       } else if (child === PARSED_COLUMN_BREAK) {
         children.push({ columnBreak: true });
+      } else if (typeof child === "object" && child !== null && "break" in child) {
+        children.push({ break: (child as { break: BreakOptions }).break });
       } else {
         const mapped = SYMBOL_TO_CHILD.get(child as symbol);
         if (mapped) children.push(mapped);
@@ -667,6 +711,8 @@ export function parsedRunToOptions(
     }
     if (breakCount > 0) {
       opts.break = breakCount;
+    } else if (hasStructuredBreaks) {
+      opts.break = structuredBreaks[0];
     }
     if (hasPageBreak) {
       opts.pageBreak = true;
