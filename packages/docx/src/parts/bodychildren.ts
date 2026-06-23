@@ -24,7 +24,11 @@ import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import { stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
-import type { SdtCheckboxOptions, SdtPropertiesOptions } from "@parts/table-of-contents";
+import type {
+  SdtCheckboxOptions,
+  SdtDateOptions,
+  SdtPropertiesOptions,
+} from "@parts/table-of-contents";
 import type { SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../context";
@@ -364,7 +368,7 @@ export function stringifySdtShell(
 
 /** Parse w:sdtPr element into SdtPropertiesOptions. */
 function parseSdtPr(el: Element): SdtPropertiesOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: SdtPropertiesOptions = {};
 
   const alias = findChild(el, "w:alias");
   if (alias) opts.alias = attr(alias, "w:val");
@@ -430,13 +434,17 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
     };
   } else if (findChild(el, "w:date")) {
     const date = findChild(el, "w:date")!;
-    const dateOpts: Record<string, unknown> = {};
+    const dateOpts: SdtDateOptions = {};
     const dateFormat = findChild(date, "w:dateFormat");
     if (dateFormat) dateOpts.dateFormat = textOf(dateFormat);
     const lid = findChild(date, "w:lid");
     if (lid) dateOpts.languageId = textOf(lid);
     const storeMapped = findChild(date, "w:storeMappedDataAs");
-    if (storeMapped) dateOpts.storeMappedDataAs = attr(storeMapped, "w:val");
+    if (storeMapped)
+      dateOpts.storeMappedDataAs = attr(
+        storeMapped,
+        "w:val",
+      ) as SdtDateOptions["storeMappedDataAs"];
     const calendar = findChild(date, "w:calendar");
     if (calendar) dateOpts.calendar = attr(calendar, "w:val");
     const fullDate = attr(date, "w:fullDate");
@@ -444,7 +452,7 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
     opts.date = dateOpts;
   } else if (findChild(el, "w:docPartObj")) {
     const dp = findChild(el, "w:docPartObj")!;
-    const dpObj: Record<string, unknown> = {};
+    const dpObj: NonNullable<SdtPropertiesOptions["docPartObj"]> = {};
     const gallery = findChild(dp, "w:docPartGallery");
     if (gallery) dpObj.gallery = attr(gallery, "w:val");
     const category = findChild(dp, "w:docPartCategory");
@@ -453,7 +461,7 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
     opts.docPartObj = dpObj;
   } else if (findChild(el, "w:docPartList")) {
     const dp = findChild(el, "w:docPartList")!;
-    const dpObj: Record<string, unknown> = {};
+    const dpObj: NonNullable<SdtPropertiesOptions["docPartList"]> = {};
     const gallery = findChild(dp, "w:docPartGallery");
     if (gallery) dpObj.gallery = attr(gallery, "w:val");
     const category = findChild(dp, "w:docPartCategory");
@@ -485,7 +493,7 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
     opts.bibliography = true;
   } else if (findChild(el, "w14:checkbox")) {
     const cb = findChild(el, "w14:checkbox")!;
-    const cbObj: Record<string, unknown> = {};
+    const cbObj: SdtCheckboxOptions = {};
     const checked = findChild(cb, "w14:checked");
     if (checked) cbObj.checked = attrBool(checked, "w14:val") ?? true;
     const checkedState = findChild(cb, "w14:checkedState");
@@ -503,12 +511,12 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
     opts.checkbox = cbObj;
   }
 
-  return opts as SdtPropertiesOptions;
+  return opts;
 }
 
 /** Parse w:customXmlPr element into CustomXmlPropertiesOptions. */
 export function parseCustomXmlProperties(el: Element): CustomXmlPropertiesOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: CustomXmlPropertiesOptions = {};
   const placeholder = findChild(el, "w:placeholder");
   if (placeholder) {
     const val = attr(placeholder, "w:val");
@@ -527,7 +535,7 @@ export function parseCustomXmlProperties(el: Element): CustomXmlPropertiesOption
     }
   }
   if (attributes.length > 0) opts.attributes = attributes;
-  return opts as unknown as CustomXmlPropertiesOptions;
+  return opts;
 }
 
 /** Body child element parsing callback for SDT/customXml content. */
@@ -665,7 +673,7 @@ export const customXmlBlockDesc: CustomDescriptor<CustomXmlBlockDescriptorOption
 
   parse(el, ctx) {
     const dctx = ctx as DocxReadContext;
-    const opts: Record<string, unknown> = {};
+    const opts: Partial<CustomXmlBlockDescriptorOptions> = {};
 
     const element = attr(el, "w:element");
     if (element) opts.element = element;
@@ -689,6 +697,6 @@ export const customXmlBlockDesc: CustomDescriptor<CustomXmlBlockDescriptorOption
     }
     if (childList.length > 0) opts.children = childList;
 
-    return opts as unknown as CustomXmlBlockDescriptorOptions;
+    return opts as CustomXmlBlockDescriptorOptions;
   },
 };

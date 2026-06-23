@@ -15,7 +15,7 @@ function roundTripFrame(frame: Record<string, unknown>): Record<string, unknown>
   const doc = parseXml(xml!.replace("<w:pPr>", `<w:pPr ${W_NS}>`));
   const pPr = doc.elements![0];
   const opts = parseParagraphProperties(pPr, readCtx);
-  return opts.frame as Record<string, unknown>;
+  return opts.frame as unknown as Record<string, unknown>;
 }
 
 describe("framePr parse round-trip", () => {

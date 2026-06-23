@@ -186,14 +186,14 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
 
   parse(el, ctx) {
     const dctx = ctx as DocxReadContext;
-    const parts: Record<string, unknown>[] = [];
+    const parts: DocPartOptions[] = [];
 
     const docPartsEl = findChild(el, "w:docParts");
-    if (!docPartsEl) return { parts } as unknown as GlossaryDocumentOptions;
+    if (!docPartsEl) return { parts };
 
     for (const docPart of docPartsEl.elements ?? []) {
       if (docPart.name !== "w:docPart") continue;
-      const part: Record<string, unknown> = {};
+      const part: Partial<DocPartOptions> = {};
 
       // Parse w:docPartPr
       const pr = findChild(docPart, "w:docPartPr");
@@ -212,7 +212,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
           const catName = findChild(category, "w:name");
           if (catName) part.category = attr(catName, "w:val");
           const gallery = findChild(category, "w:gallery");
-          if (gallery) part.gallery = attr(gallery, "w:val");
+          if (gallery) part.gallery = attr(gallery, "w:val") as DocPartOptions["gallery"];
         }
 
         // types
@@ -225,7 +225,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
               if (val) typeList.push(val);
             }
           }
-          if (typeList.length > 0) part.types = typeList;
+          if (typeList.length > 0) part.types = typeList as DocPartOptions["types"];
           const allAttr = attr(types, "w:all");
           if (allAttr === "1") part.allTypes = true;
         }
@@ -240,7 +240,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
               if (val) behaviorList.push(val);
             }
           }
-          if (behaviorList.length > 0) part.behaviors = behaviorList;
+          if (behaviorList.length > 0) part.behaviors = behaviorList as DocPartOptions["behaviors"];
         }
 
         // description
@@ -267,12 +267,12 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
             childList.push({ paragraph: parseParagraph(sub, dctx) });
           }
         }
-        if (childList.length > 0) part.children = childList;
+        if (childList.length > 0) part.children = childList as DocPartOptions["children"];
       }
 
-      parts.push(part);
+      parts.push(part as DocPartOptions);
     }
 
-    return { parts } as unknown as GlossaryDocumentOptions;
+    return { parts };
   },
 };

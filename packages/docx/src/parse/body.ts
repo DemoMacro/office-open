@@ -27,16 +27,22 @@ import { stringifyElement } from "../util/stringify-element";
 
 // ── Section properties parser ────────────────────────────────────────────────
 
+/** Internal parse result: section properties with extracted header/footer refs. */
+type ParsedSectionProperties = SectionPropertiesOptions & {
+  parsedHeaders?: Record<string, SectionChild[]>;
+  parsedFooters?: Record<string, SectionChild[]>;
+};
+
 /**
  * Parse w:sectPr element into SectionPropertiesOptions.
  * Delegates to the section properties descriptor's parse method.
  */
-function parseSectionProperties(el: Element, ctx: DocxReadContext): SectionPropertiesOptions {
-  const opts = parseSectionPropertiesEl(el) as Record<string, unknown>;
+function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectionProperties {
+  const opts: ParsedSectionProperties = parseSectionPropertiesEl(el);
 
   // Headers/footers - parse from references and store in a separate field
-  const headerRefs: Record<string, unknown> = {};
-  const footerRefs: Record<string, unknown> = {};
+  const headerRefs: Record<string, SectionChild[]> = {};
+  const footerRefs: Record<string, SectionChild[]> = {};
 
   for (const child of el.elements ?? []) {
     if (child.name === "w:headerReference") {
@@ -64,7 +70,7 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): SectionPrope
     opts.parsedFooters = footerRefs;
   }
 
-  return opts as SectionPropertiesOptions;
+  return opts;
 }
 
 /**
@@ -249,16 +255,14 @@ export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[]
     const endIdx = isInlineSectPr ? Math.max(start, boundary.index - 1) : boundary.index;
     const sectionElements = bodyChildren.slice(start, endIdx);
     const parsedProps = parseSectionProperties(boundary.sectPr, ctx);
-    const rawProps = parsedProps as Record<string, unknown>;
 
     // Extract headers/footers that were stored as parsedHeaders/parsedFooters
-    const parsedHeaders = rawProps.parsedHeaders as Record<string, SectionChild[]> | undefined;
-    const parsedFooters = rawProps.parsedFooters as Record<string, SectionChild[]> | undefined;
+    const { parsedHeaders, parsedFooters } = parsedProps;
 
     // Build clean properties without internal fields
     const cleanProps = { ...parsedProps };
-    delete (cleanProps as Record<string, unknown>).parsedHeaders;
-    delete (cleanProps as Record<string, unknown>).parsedFooters;
+    delete cleanProps.parsedHeaders;
+    delete cleanProps.parsedFooters;
 
     const section = {
       children: parseBodyChildren(sectionElements, ctx),

@@ -142,7 +142,7 @@ function wsEscapeAttr(s: string): string {
 // ── Parse helpers (for descriptor parse path) ──
 
 function parseFramesetEl(el: Element): FramesetOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<FramesetOptions> = {};
 
   const sz = findChild(el, "w:sz");
   if (sz) {
@@ -175,11 +175,11 @@ function parseFramesetEl(el: Element): FramesetOptions {
   }
   if (children.length > 0) opts.children = children;
 
-  return opts as unknown as FramesetOptions;
+  return opts as FramesetOptions;
 }
 
 function parseSplitbarEl(el: Element): FramesetSplitbarOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<FramesetSplitbarOptions> = {};
 
   const w = findChild(el, "w:w");
   if (w) {
@@ -196,11 +196,11 @@ function parseSplitbarEl(el: Element): FramesetSplitbarOptions {
   if (findChild(el, "w:noBorder")) opts.noBorder = true;
   if (findChild(el, "w:flatBorders")) opts.flatBorders = true;
 
-  return opts as unknown as FramesetSplitbarOptions;
+  return opts as FramesetSplitbarOptions;
 }
 
 function parseFrameEl(el: Element): FrameOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<FrameOptions> = {};
 
   const sz = findChild(el, "w:sz");
   if (sz) {
@@ -253,7 +253,7 @@ function parseFrameEl(el: Element): FrameOptions {
     if (val) opts.longDescRId = val;
   }
 
-  return opts as unknown as FrameOptions;
+  return opts as FrameOptions;
 }
 
 function parseDivsEl(el: Element): DivOptions[] {
@@ -268,30 +268,30 @@ function parseDivsEl(el: Element): DivOptions[] {
 
 function parseDivEl(el: Element): DivOptions {
   const id = attrNum(el, "w:id") ?? 0;
-  const opts: Record<string, unknown> = { id };
+  const opts: Partial<DivOptions> = { id };
 
   const marLeft = findChild(el, "w:marLeft");
   if (marLeft) {
     const val = attrMeasure(marLeft, "w:val");
-    if (val !== undefined) opts.marginLeft = val;
+    if (val !== undefined) opts.marginLeft = val as number | UniversalMeasure;
   }
 
   const marRight = findChild(el, "w:marRight");
   if (marRight) {
     const val = attrMeasure(marRight, "w:val");
-    if (val !== undefined) opts.marginRight = val;
+    if (val !== undefined) opts.marginRight = val as number | UniversalMeasure;
   }
 
   const marTop = findChild(el, "w:marTop");
   if (marTop) {
     const val = attrMeasure(marTop, "w:val");
-    if (val !== undefined) opts.marginTop = val;
+    if (val !== undefined) opts.marginTop = val as number | UniversalMeasure;
   }
 
   const marBottom = findChild(el, "w:marBottom");
   if (marBottom) {
     const val = attrMeasure(marBottom, "w:val");
-    if (val !== undefined) opts.marginBottom = val;
+    if (val !== undefined) opts.marginBottom = val as number | UniversalMeasure;
   }
 
   const blockQuote = findChild(el, "w:blockQuote");
@@ -317,27 +317,27 @@ function parseDivEl(el: Element): DivOptions {
     if (children.length > 0) opts.children = children;
   }
 
-  return opts as unknown as DivOptions;
+  return opts as DivOptions;
 }
 
 function parseDivBorderEl(el: Element): DivBorderOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<DivBorderOptions> = {};
 
   for (const side of ["top", "left", "bottom", "right"] as const) {
     const sideEl = findChild(el, `w:${side}`);
     if (sideEl) {
-      const b: Record<string, unknown> = {};
+      const b: Partial<NonNullable<DivBorderOptions["top"]>> = {};
       const val = attr(sideEl, "w:val");
       if (val) b.style = val;
       const color = attr(sideEl, "w:color");
       if (color) b.color = color;
       const sz = attrNum(sideEl, "w:sz");
       if (sz !== undefined) b.size = sz;
-      opts[side] = b;
+      opts[side] = b as NonNullable<DivBorderOptions["top"]>;
     }
   }
 
-  return opts as unknown as DivBorderOptions;
+  return opts as DivBorderOptions;
 }
 
 function wsDivBorderXml(b: NonNullable<DivOptions["border"]>): string {
@@ -458,7 +458,7 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
   },
 
   parse(el, _ctx) {
-    const opts: Record<string, unknown> = {};
+    const opts: Partial<WebSettingsInput> = {};
 
     // Frameset
     const frameset = findChild(el, "w:frameset");
@@ -509,6 +509,6 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
       if (val) opts.targetScreenSize = val;
     }
 
-    return opts as unknown as WebSettingsInput;
+    return opts as WebSettingsInput;
   },
 };

@@ -123,17 +123,17 @@ export const bibliographyDesc: CustomDescriptor<BibliographyOptions> = {
   },
 
   parse(el, _ctx) {
-    const opts: Record<string, unknown> = {};
+    const opts: Partial<BibliographyOptions> = {};
 
     // StyleName attribute
     const styleName = el.attributes?.["StyleName"];
-    if (styleName) opts.styleName = styleName;
+    if (styleName) opts.styleName = styleName as string;
 
     // Parse b:Source children
-    const sources: Record<string, unknown>[] = [];
+    const sources: SourceTypeOptions[] = [];
     for (const child of el.elements ?? []) {
       if (child.name !== "b:Source") continue;
-      const source: Record<string, unknown> = {};
+      const source: SourceTypeOptions = {};
       for (const [, key] of SOURCE_FIELDS) {
         const xmlChild = findChild(child, `b:${SOURCE_FIELDS.find((f) => f[1] === key)![0]}`);
         if (xmlChild) {
@@ -145,6 +145,6 @@ export const bibliographyDesc: CustomDescriptor<BibliographyOptions> = {
     }
     opts.sources = sources;
 
-    return opts as unknown as BibliographyOptions;
+    return opts as BibliographyOptions;
   },
 };

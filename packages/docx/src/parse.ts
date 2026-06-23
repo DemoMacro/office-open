@@ -272,7 +272,7 @@ export function parseDocument(data: DataType): DocumentOptions {
 
   const sections = parseBody(docx.body, ctx);
 
-  const opts: Record<string, unknown> = { sections };
+  const opts: Partial<DocumentOptions> = { sections };
 
   // Background (w:background in document.xml)
   if (docx.background) {
@@ -289,7 +289,7 @@ export function parseDocument(data: DataType): DocumentOptions {
       );
       opts.background = rawMedia.length > 0 ? { rawXml, rawMedia } : { rawXml };
     } else {
-      const bg: Record<string, unknown> = {};
+      const bg: NonNullable<DocumentOptions["background"]> = {};
       const color = attr(docx.background, "w:color");
       if (color) bg.color = color;
       const themeColor = attr(docx.background, "w:themeColor");
@@ -480,7 +480,7 @@ export function parseDocument(data: DataType): DocumentOptions {
   }
   if (rawParts.length > 0) opts.rawParts = rawParts;
 
-  return opts as unknown as DocumentOptions;
+  return opts as DocumentOptions;
 }
 
 export function parseDocx(data: DataType): DocxDocument {

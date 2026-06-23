@@ -22,7 +22,7 @@ export function parseCustomXmlBlock(
   ctx: DocxReadContext,
   parseChild: (el: Element, ctx: DocxReadContext) => SectionChild,
 ): CustomXmlBlockOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<CustomXmlBlockOptions> = {};
 
   // Required attribute
   const element = attr(el, "w:element");
@@ -47,5 +47,5 @@ export function parseCustomXmlBlock(
   }
   if (children.length > 0) opts.children = children;
 
-  return opts as unknown as CustomXmlBlockOptions;
+  return opts as CustomXmlBlockOptions;
 }

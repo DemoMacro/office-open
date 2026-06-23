@@ -33,9 +33,16 @@ import type { IndentAttributesProperties } from "@parts/paragraph/formatting/ind
 import { LineRuleType } from "@parts/paragraph/formatting/spacing";
 import type { SpacingProperties } from "@parts/paragraph/formatting/spacing";
 import { HeadingLevel } from "@parts/paragraph/formatting/style";
+import type { TabStopDefinition } from "@parts/paragraph/formatting/tab-stop";
+import type { FrameOptions } from "@parts/paragraph/frame/frame-properties";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import type {
+  ParagraphPropertiesOptions,
+  ParagraphPropertiesChangeOptions,
+} from "@parts/paragraph/properties";
 import { parseFormFieldData } from "@parts/paragraph/run/form-field";
 import type { FormFieldOptions } from "@parts/paragraph/run/form-field";
+import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
@@ -45,6 +52,7 @@ import { styleToKeyMap } from "@parts/textbox/shape/shape";
 import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
 import type { SectionChild } from "@shared/section";
+import type { ShadingAttributesProperties } from "@shared/shading";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
@@ -503,7 +511,7 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
 // Parse (XML → JSON options)
 // ────────────────────────────────────────────────────────────────────────────────
 
-const HEADING_MAP: Record<string, string> = {
+const HEADING_MAP: Record<string, (typeof HeadingLevel)[keyof typeof HeadingLevel]> = {
   Heading1: HeadingLevel.HEADING_1,
   Heading2: HeadingLevel.HEADING_2,
   Heading3: HeadingLevel.HEADING_3,
@@ -532,13 +540,45 @@ const DELETED_PAGE_FIELD: Record<string, string> = {
 };
 
 /**
+ * Parsed w:framePr attributes — flat capture of whatever attributes the source
+ * carries. The public FrameOptions union (type/position/alignment + required
+ * width/height/anchor) is rebuilt on the stringify side; parse preserves raw
+ * attributes verbatim so round-trip keeps source fidelity.
+ */
+interface ParsedFrameProperties {
+  dropCap?: string;
+  lines?: string;
+  wrap?: string;
+  vAnchor?: string;
+  hAnchor?: string;
+  x?: string;
+  y?: string;
+  hRule?: string;
+  hSpace?: string;
+  vSpace?: string;
+  alignment?: { x?: string; y?: string };
+  anchor?: { horizontal?: string; vertical?: string };
+  anchorLock?: boolean;
+  width?: number;
+  height?: number;
+}
+
+// Inline element payloads extracted from the ParagraphChild union — used by
+// parse to build typed objects instead of Record<string, unknown>.
+type SmartTagInlineOptions = Extract<ParagraphChild, { smartTag: unknown }>["smartTag"];
+type CustomXmlInlineOptions = Extract<ParagraphChild, { customXml: unknown }>["customXml"];
+type DirInlineOptions = Extract<ParagraphChild, { dir: unknown }>["dir"];
+type HyperlinkInlineOptions = Extract<ParagraphChild, { hyperlink: unknown }>["hyperlink"];
+type PermStartInlineOptions = Extract<ParagraphChild, { permStart: unknown }>["permStart"];
+
+/**
  * Parse w:pPr element into paragraph properties (without children).
  */
 export function parseParagraphProperties(
   el: Element,
   ctx: DocxReadContext,
-): Record<string, unknown> {
-  const opts: Record<string, unknown> = {};
+): Partial<ParagraphPropertiesOptions> {
+  const opts: Partial<ParagraphPropertiesOptions> = {};
 
   // Style / heading
   const pStyle = findChild(el, "w:pStyle");
@@ -557,23 +597,23 @@ export function parseParagraphProperties(
   const jc = findChild(el, "w:jc");
   if (jc) {
     const val = attr(jc, "w:val");
-    if (val) opts.alignment = val;
+    if (val) opts.alignment = val as ParagraphPropertiesOptions["alignment"];
   }
 
   // Spacing — before/after/line are ST_TwipsMeasure (number | UniversalMeasure);
   // use attrMeasure so UniversalMeasure round-trips with the stringify side.
   const spacing = findChild(el, "w:spacing");
   if (spacing) {
-    const sp: Record<string, unknown> = {};
+    const sp: SpacingProperties = {};
     const before = attrMeasure(spacing, "w:before");
-    if (before !== undefined) sp.before = before;
+    if (before !== undefined) sp.before = before as SpacingProperties["before"];
     const after = attrMeasure(spacing, "w:after");
-    if (after !== undefined) sp.after = after;
+    if (after !== undefined) sp.after = after as SpacingProperties["after"];
     const line = attrMeasure(spacing, "w:line");
-    if (line !== undefined) sp.line = line;
+    if (line !== undefined) sp.line = line as SpacingProperties["line"];
     const lineRule = attr(spacing, "w:lineRule");
     if (lineRule && (LINE_RULES as readonly string[]).includes(lineRule)) {
-      sp.lineRule = lineRule;
+      sp.lineRule = lineRule as SpacingProperties["lineRule"];
     }
     const beforeAutoSpacing = attrBool(spacing, "w:beforeAutospacing");
     if (beforeAutoSpacing !== undefined) sp.beforeAutoSpacing = beforeAutoSpacing;
@@ -583,7 +623,7 @@ export function parseParagraphProperties(
     if (beforeLines !== undefined) sp.beforeLines = beforeLines;
     const afterLines = attrNum(spacing, "w:afterLines");
     if (afterLines !== undefined) sp.afterLines = afterLines;
-    if (Object.keys(sp).length > 0) opts.spacing = sp as SpacingProperties;
+    if (Object.keys(sp).length > 0) opts.spacing = sp;
   }
 
   // Indent — left/right/start/end are ST_SignedTwipsMeasure, hanging/firstLine
@@ -591,32 +631,33 @@ export function parseParagraphProperties(
   // UniversalMeasure round-trips. *Chars are ST_DecimalNumber (pure number).
   const ind = findChild(el, "w:ind");
   if (ind) {
-    const indentObj: Record<string, unknown> = {};
+    const indentObj: IndentAttributesProperties = {};
     const left = attrMeasure(ind, "w:left");
-    if (left !== undefined) indentObj.left = left;
+    if (left !== undefined) indentObj.left = left as IndentAttributesProperties["left"];
     const leftChars = attrNum(ind, "w:leftChars");
     if (leftChars !== undefined) indentObj.leftChars = leftChars;
     const right = attrMeasure(ind, "w:right");
-    if (right !== undefined) indentObj.right = right;
+    if (right !== undefined) indentObj.right = right as IndentAttributesProperties["right"];
     const rightChars = attrNum(ind, "w:rightChars");
     if (rightChars !== undefined) indentObj.rightChars = rightChars;
     const start = attrMeasure(ind, "w:start");
-    if (start !== undefined) indentObj.start = start;
+    if (start !== undefined) indentObj.start = start as IndentAttributesProperties["start"];
     const startChars = attrNum(ind, "w:startChars");
     if (startChars !== undefined) indentObj.startChars = startChars;
     const end = attrMeasure(ind, "w:end");
-    if (end !== undefined) indentObj.end = end;
+    if (end !== undefined) indentObj.end = end as IndentAttributesProperties["end"];
     const endChars = attrNum(ind, "w:endChars");
     if (endChars !== undefined) indentObj.endChars = endChars;
     const hanging = attrMeasure(ind, "w:hanging");
-    if (hanging !== undefined) indentObj.hanging = hanging;
+    if (hanging !== undefined) indentObj.hanging = hanging as IndentAttributesProperties["hanging"];
     const hangingChars = attrNum(ind, "w:hangingChars");
     if (hangingChars !== undefined) indentObj.hangingChars = hangingChars;
     const firstLine = attrMeasure(ind, "w:firstLine");
-    if (firstLine !== undefined) indentObj.firstLine = firstLine;
+    if (firstLine !== undefined)
+      indentObj.firstLine = firstLine as IndentAttributesProperties["firstLine"];
     const firstLineChars = attrNum(ind, "w:firstLineChars");
     if (firstLineChars !== undefined) indentObj.firstLineChars = firstLineChars;
-    if (Object.keys(indentObj).length > 0) opts.indent = indentObj as IndentAttributesProperties;
+    if (Object.keys(indentObj).length > 0) opts.indent = indentObj;
   }
 
   // Numbering (w:numPr)
@@ -677,17 +718,17 @@ export function parseParagraphProperties(
   // Tab stops
   const tabs = findChild(el, "w:tabs");
   if (tabs) {
-    const tabStops: Record<string, unknown>[] = [];
+    const tabStops: TabStopDefinition[] = [];
     for (const tab of tabs.elements ?? []) {
       if (tab.name !== "w:tab") continue;
-      const tabObj: Record<string, unknown> = {};
+      const tabObj: Partial<TabStopDefinition> = {};
       const pos = attrNum(tab, "w:pos");
       if (pos !== undefined) tabObj.position = pos;
       const val = attr(tab, "w:val");
-      if (val) tabObj.type = val;
+      if (val) tabObj.type = val as TabStopDefinition["type"];
       const leader = attr(tab, "w:leader");
-      if (leader) tabObj.leader = leader;
-      tabStops.push(tabObj);
+      if (leader) tabObj.leader = leader as TabStopDefinition["leader"];
+      tabStops.push(tabObj as TabStopDefinition);
     }
     if (tabStops.length > 0) opts.tabStops = tabStops;
   }
@@ -754,13 +795,13 @@ export function parseParagraphProperties(
   // Shading
   const shd = findChild(el, "w:shd");
   if (shd) {
-    const shdObj: Record<string, unknown> = {};
+    const shdObj: ShadingAttributesProperties = {};
     const fill = attr(shd, "w:fill");
     if (fill) shdObj.fill = fill;
     const color = attr(shd, "w:color");
     if (color) shdObj.color = color;
     const val = attr(shd, "w:val");
-    if (val) shdObj.type = val;
+    if (val) shdObj.type = val as ShadingAttributesProperties["type"];
     if (Object.keys(shdObj).length > 0) opts.shading = shdObj;
   }
 
@@ -768,7 +809,7 @@ export function parseParagraphProperties(
   const textAlignment = findChild(el, "w:textAlignment");
   if (textAlignment) {
     const val = attr(textAlignment, "w:val");
-    if (val) opts.textAlignment = val;
+    if (val) opts.textAlignment = val as ParagraphPropertiesOptions["textAlignment"];
   }
 
   // Outline level
@@ -787,7 +828,7 @@ export function parseParagraphProperties(
   // Frame properties
   const framePr = findChild(el, "w:framePr");
   if (framePr) {
-    const frame: Record<string, unknown> = {};
+    const frame: ParsedFrameProperties = {};
     for (const [attrName, optName] of [
       ["w:dropCap", "dropCap"],
       ["w:lines", "lines"],
@@ -807,7 +848,7 @@ export function parseParagraphProperties(
     const xAlign = attr(framePr, "w:xAlign");
     const yAlign = attr(framePr, "w:yAlign");
     if (xAlign || yAlign) {
-      const alignment: Record<string, unknown> = {};
+      const alignment: NonNullable<ParsedFrameProperties["alignment"]> = {};
       if (xAlign) alignment.x = xAlign;
       if (yAlign) alignment.y = yAlign;
       frame.alignment = alignment;
@@ -816,7 +857,7 @@ export function parseParagraphProperties(
     const hAnchor = attr(framePr, "w:hAnchor");
     const vAnchor = attr(framePr, "w:vAnchor");
     if (hAnchor || vAnchor) {
-      const anchor: Record<string, unknown> = {};
+      const anchor: NonNullable<ParsedFrameProperties["anchor"]> = {};
       if (hAnchor) anchor.horizontal = hAnchor;
       if (vAnchor) anchor.vertical = vAnchor;
       frame.anchor = anchor;
@@ -828,13 +869,13 @@ export function parseParagraphProperties(
     if (w !== undefined) frame.width = w;
     const h = attrNum(framePr, "w:h");
     if (h !== undefined) frame.height = h;
-    if (Object.keys(frame).length > 0) opts.frame = frame;
+    if (Object.keys(frame).length > 0) opts.frame = frame as unknown as FrameOptions;
   }
 
   // Revision (w:pPrChange) — symmetric with stringifyParagraphProperties
   const pPrChange = findChild(el, "w:pPrChange");
   if (pPrChange) {
-    const rev: Record<string, unknown> = {};
+    const rev: Partial<ParagraphPropertiesChangeOptions> = {};
     const author = attr(pPrChange, "w:author");
     if (author) rev.author = author;
     const revDate = attr(pPrChange, "w:date");
@@ -843,7 +884,7 @@ export function parseParagraphProperties(
     if (revId !== undefined) rev.id = revId;
     const innerPPr = findChild(pPrChange, "w:pPr");
     if (innerPPr) Object.assign(rev, parseParagraphProperties(innerPPr, ctx));
-    if (Object.keys(rev).length > 0) opts.revision = rev;
+    if (Object.keys(rev).length > 0) opts.revision = rev as ParagraphPropertiesChangeOptions;
   }
 
   return opts;
@@ -918,8 +959,8 @@ function parseContainerChildren(el: Element, ctx: DocxReadContext): unknown[] {
 }
 
 /** Parse a w:smartTag element into its ParagraphChild form. */
-function parseSmartTagInline(el: Element, ctx: DocxReadContext): Record<string, unknown> {
-  const st: Record<string, unknown> = {};
+function parseSmartTagInline(el: Element, ctx: DocxReadContext): Partial<SmartTagInlineOptions> {
+  const st: Partial<SmartTagInlineOptions> = {};
   const element = attr(el, "w:element");
   if (element) st.element = element;
   const uri = attr(el, "w:uri");
@@ -940,13 +981,13 @@ function parseSmartTagInline(el: Element, ctx: DocxReadContext): Record<string, 
     if (props.length > 0) st.properties = props;
   }
   const content = parseContainerChildren(el, ctx);
-  if (content.length > 0) st.children = content;
+  if (content.length > 0) st.children = content as (RunOptions | string)[];
   return st;
 }
 
 /** Parse an inline w:customXml element into its ParagraphChild form. */
-function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Record<string, unknown> {
-  const cx: Record<string, unknown> = {};
+function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Partial<CustomXmlInlineOptions> {
+  const cx: Partial<CustomXmlInlineOptions> = {};
   const element = attr(el, "w:element");
   if (element) cx.element = element;
   const uri = attr(el, "w:uri");
@@ -959,7 +1000,7 @@ function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Record<string,
     }
   }
   const content = parseContainerChildren(el, ctx);
-  if (content.length > 0) cx.children = content;
+  if (content.length > 0) cx.children = content as (ParagraphChild | string)[];
   return cx;
 }
 
@@ -1167,7 +1208,7 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         break;
       }
       case "w:hyperlink": {
-        const hl: Record<string, unknown> = {};
+        const hl: Partial<HyperlinkInlineOptions> = {};
         const rId = attr(child, "r:id");
         if (rId) {
           const target = ctx.docx.partRefs.hyperlinks.get(rId);
@@ -1193,7 +1234,7 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
           }
         }
         if (linkRuns.length > 0) {
-          hl.children = linkRuns;
+          hl.children = linkRuns as (RunOptions | string)[];
           childList.push({ hyperlink: hl });
         }
         break;
@@ -1358,9 +1399,9 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
       case "w:dir": {
         const val = attr(child, "w:val");
         if (val) {
-          const dir: Record<string, unknown> = { val };
+          const dir: DirInlineOptions = { val: val as "ltr" | "rtl" };
           const content = parseContainerChildren(child, ctx);
-          if (content.length > 0) dir.children = content;
+          if (content.length > 0) dir.children = content as (RunOptions | string)[];
           childList.push({ dir });
         }
         break;
@@ -1368,22 +1409,22 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
       case "w:bdo": {
         const val = attr(child, "w:val");
         if (val) {
-          const bdo: Record<string, unknown> = { val };
+          const bdo: DirInlineOptions = { val: val as "ltr" | "rtl" };
           const content = parseContainerChildren(child, ctx);
-          if (content.length > 0) bdo.children = content;
+          if (content.length > 0) bdo.children = content as (RunOptions | string)[];
           childList.push({ bdo });
         }
         break;
       }
       // ── Ruby annotation (East Asian pronunciation guides) ──
       case "w:ruby": {
-        const ruby: Record<string, unknown> = {};
+        const ruby: Partial<RubyOptions> = {};
         const pr = findChild(child, "w:rubyPr");
         if (pr) {
           const alignEl = findChild(pr, "w:rubyAlign");
           if (alignEl) {
             const v = attr(alignEl, "w:val");
-            if (v) ruby.alignment = v;
+            if (v) ruby.alignment = v as RubyOptions["alignment"];
           }
           // hps / hpsRaise / hpsBaseText are half-points; the API uses points.
           const hpsEl = findChild(pr, "w:hps");
@@ -1436,7 +1477,7 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
       case "w:permStart": {
         const id = attr(child, "w:id");
         if (id !== undefined) {
-          const ps: Record<string, unknown> = { id };
+          const ps: PermStartInlineOptions = { id };
           const ed = attr(child, "w:ed");
           if (ed !== undefined) ps.ed = ed;
           const editGroup = attr(child, "w:edGrp");
@@ -1537,6 +1578,11 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
   return childList;
 }
 
+/** True when a child is a single-field `{ text: string }` run (simple text). */
+function isTextOnlyRun(c: unknown): c is { text: string } {
+  return typeof c === "object" && c !== null && "text" in c && Object.keys(c).length === 1;
+}
+
 export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOptions {
   const opts: Partial<ParagraphOptions> = {};
 
@@ -1565,15 +1611,9 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
 
   // Simple text optimization
   if (childList.length > 0) {
-    const allStrings = childList.every(
-      (c) =>
-        typeof c === "object" &&
-        c !== null &&
-        "text" in (c as Record<string, unknown>) &&
-        Object.keys(c as Record<string, unknown>).length === 1,
-    );
+    const allStrings = childList.every(isTextOnlyRun);
     if (allStrings) {
-      const combined = childList.map((c) => (c as Record<string, unknown>).text as string).join("");
+      const combined = childList.map((c) => (c as { text: string }).text).join("");
       if (combined && Object.keys(opts).length === 0) {
         return combined as unknown as ParagraphOptions;
       }

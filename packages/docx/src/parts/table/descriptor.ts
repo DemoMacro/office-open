@@ -501,8 +501,8 @@ export function setTableParseChild(fn: ParseChildFn): void {
   _parseChild = fn;
 }
 
-export function parseTablePropertiesEl(el: Element): Partial<TablePropertiesOptions> {
-  const opts: Partial<TablePropertiesOptions> = {};
+export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
+  const opts: TablePropertiesOptions = {};
 
   const style = findChild(el, "w:tblStyle");
   if (style) {
@@ -749,8 +749,8 @@ function parseColumnWidthsEl(el: Element): {
   return { widths };
 }
 
-export function parseTableRowPropertiesEl(el: Element): Partial<TableRowPropertiesOptions> {
-  const opts: Partial<TableRowPropertiesOptions> = {};
+export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOptions {
+  const opts: TableRowPropertiesOptions = {};
 
   const trHeight = findChild(el, "w:trHeight");
   if (trHeight) {
@@ -861,8 +861,8 @@ export function parseTableRowPropertiesEl(el: Element): Partial<TableRowProperti
   return opts;
 }
 
-export function parseTableCellPropertiesEl(el: Element): Partial<TableCellPropertiesOptions> {
-  const opts: Partial<TableCellPropertiesOptions> = {};
+export function parseTableCellPropertiesEl(el: Element): TableCellPropertiesOptions {
+  const opts: TableCellPropertiesOptions = {};
 
   const cnfStyle = findChild(el, "w:cnfStyle");
   if (cnfStyle) {
@@ -1032,7 +1032,7 @@ export function parseTableCellPropertiesEl(el: Element): Partial<TableCellProper
 }
 
 function parseTableCellEl(el: Element, ctx: DocxReadContext): TableCellOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<TableCellOptions> = {};
 
   const tcPr = findChild(el, "w:tcPr");
   if (tcPr) {
@@ -1054,11 +1054,11 @@ function parseTableCellEl(el: Element, ctx: DocxReadContext): TableCellOptions {
   }
 
   opts.children = childElements;
-  return opts as unknown as TableCellOptions;
+  return opts as TableCellOptions;
 }
 
 function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<TableRowOptions> = {};
 
   const trPr = findChild(el, "w:trPr");
   if (trPr) {
@@ -1130,11 +1130,11 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
   }
 
   opts.cells = childCells;
-  return opts as unknown as TableRowOptions;
+  return opts as TableRowOptions;
 }
 
 function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<TableOptions> = {};
 
   const tblPr = findChild(el, "w:tblPr");
   if (tblPr) {
@@ -1147,7 +1147,7 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
 
   const grid = parseColumnWidthsEl(el);
   if (grid.widths.length > 0) {
-    opts.columnWidths = grid.widths;
+    opts.columnWidths = grid.widths as NonNullable<TableOptions["columnWidths"]>;
   }
   if (grid.revision) {
     opts.columnWidthsRevision = grid.revision;
@@ -1197,5 +1197,5 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
   }
 
   opts.rows = rows;
-  return opts as unknown as TableOptions;
+  return opts as TableOptions;
 }
