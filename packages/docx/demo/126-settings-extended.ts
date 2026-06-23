@@ -62,13 +62,13 @@ const buffer = await generateDocument({
     },
     mathPr: {
       mathFont: "Cambria Math",
-      brkBin: "before",
-      smallFrac: true,
-      lMargin: 0,
-      rMargin: 0,
-      defJc: "centerGroup",
-      intLim: "subSup",
-      naryLim: "subSup",
+      binaryOperatorBreak: "before",
+      smallFractions: true,
+      leftMargin: 0,
+      rightMargin: 0,
+      defaultJustification: "centerGroup",
+      integralLimitLocation: "subSup",
+      naryLimitLocation: "subSup",
     },
 
     // Batch D: Revision tracking

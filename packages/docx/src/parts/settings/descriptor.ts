@@ -106,6 +106,16 @@ function readStr(el: Element | undefined, name: string): string | undefined {
   return v === undefined || v === "" ? undefined : v;
 }
 
+/** Read an attribute constrained to an enum; undefined if absent or not allowed. */
+function readEnum<T extends string>(
+  el: Element | undefined,
+  name: string,
+  allowed: readonly T[],
+): T | undefined {
+  const v = readStr(el, name);
+  return v !== undefined && (allowed as readonly string[]).includes(v) ? (v as T) : undefined;
+}
+
 /** Shared password/crypto attributes (AG_TransitionalPassword) → options keys. */
 const PASSWORD_ATTR_MAP: [string, string, boolean][] = [
   ["hashValue", "w:hashValue", false],
@@ -278,29 +288,59 @@ function parseCompatibility(el: Element): CompatibilityOptions | undefined {
 
 /** Parse m:mathPr (CT_MathPr). */
 function parseMathPr(el: Element): MathPropertiesOptions | undefined {
-  const o: Record<string, unknown> = {};
+  const o: Partial<MathPropertiesOptions> = {};
   const mathFont = readStr(findChild(el, "m:mathFont"), "m:val");
   if (mathFont) o.mathFont = mathFont;
-  const brkBin = readStr(findChild(el, "m:brkBin"), "m:val");
-  if (brkBin) o.brkBin = brkBin;
-  const brkBinSub = readStr(findChild(el, "m:brkBinSub"), "m:val");
-  if (brkBinSub) o.brkBinSub = brkBinSub;
-  const smallFrac = readOnOff(findChild(el, "m:smallFrac"));
-  if (smallFrac !== undefined) o.smallFrac = smallFrac;
-  const dispDef = readOnOff(findChild(el, "m:dispDef"));
-  if (dispDef !== undefined) o.dispDef = dispDef;
-  const lMargin = readNum(findChild(el, "m:lMargin"), "m:val");
-  if (lMargin !== undefined) o.lMargin = lMargin;
-  const rMargin = readNum(findChild(el, "m:rMargin"), "m:val");
-  if (rMargin !== undefined) o.rMargin = rMargin;
-  const defJc = readStr(findChild(el, "m:defJc"), "m:val");
-  if (defJc) o.defJc = defJc;
+  const binaryOperatorBreak = readEnum(findChild(el, "m:brkBin"), "m:val", [
+    "before",
+    "after",
+    "repeat",
+  ] as const);
+  if (binaryOperatorBreak) o.binaryOperatorBreak = binaryOperatorBreak;
+  const binaryOperatorBreakSubtraction = readEnum(findChild(el, "m:brkBinSub"), "m:val", [
+    "--",
+    "-+",
+    "+-",
+  ] as const);
+  if (binaryOperatorBreakSubtraction)
+    o.binaryOperatorBreakSubtraction = binaryOperatorBreakSubtraction;
+  const smallFractions = readOnOff(findChild(el, "m:smallFrac"));
+  if (smallFractions !== undefined) o.smallFractions = smallFractions;
+  const displayDefaults = readOnOff(findChild(el, "m:dispDef"));
+  if (displayDefaults !== undefined) o.displayDefaults = displayDefaults;
+  const leftMargin = readNum(findChild(el, "m:lMargin"), "m:val");
+  if (leftMargin !== undefined) o.leftMargin = leftMargin;
+  const rightMargin = readNum(findChild(el, "m:rMargin"), "m:val");
+  if (rightMargin !== undefined) o.rightMargin = rightMargin;
+  const defaultJustification = readEnum(findChild(el, "m:defJc"), "m:val", [
+    "left",
+    "right",
+    "center",
+    "centerGroup",
+  ] as const);
+  if (defaultJustification) o.defaultJustification = defaultJustification;
+  const preSpacing = readNum(findChild(el, "m:preSp"), "m:val");
+  if (preSpacing !== undefined) o.preSpacing = preSpacing;
+  const postSpacing = readNum(findChild(el, "m:postSp"), "m:val");
+  if (postSpacing !== undefined) o.postSpacing = postSpacing;
+  const interSpacing = readNum(findChild(el, "m:interSp"), "m:val");
+  if (interSpacing !== undefined) o.interSpacing = interSpacing;
+  const intraSpacing = readNum(findChild(el, "m:intraSp"), "m:val");
+  if (intraSpacing !== undefined) o.intraSpacing = intraSpacing;
   const wrapIndent = readNum(findChild(el, "m:wrapIndent"), "m:val");
   if (wrapIndent !== undefined) o.wrapIndent = wrapIndent;
-  const intLim = readStr(findChild(el, "m:intLim"), "m:val");
-  if (intLim) o.intLim = intLim;
-  const naryLim = readStr(findChild(el, "m:naryLim"), "m:val");
-  if (naryLim) o.naryLim = naryLim;
+  const wrapRight = readOnOff(findChild(el, "m:wrapRight"));
+  if (wrapRight !== undefined) o.wrapRight = wrapRight;
+  const integralLimitLocation = readEnum(findChild(el, "m:intLim"), "m:val", [
+    "subSup",
+    "undOvr",
+  ] as const);
+  if (integralLimitLocation) o.integralLimitLocation = integralLimitLocation;
+  const naryLimitLocation = readEnum(findChild(el, "m:naryLim"), "m:val", [
+    "subSup",
+    "undOvr",
+  ] as const);
+  if (naryLimitLocation) o.naryLimitLocation = naryLimitLocation;
   return Object.keys(o).length > 0 ? (o as MathPropertiesOptions) : undefined;
 }
 
@@ -666,16 +706,26 @@ function stringifyCaptions(opts: CaptionsOptions): string {
 function stringifyMathPr(opts: MathPropertiesOptions): string {
   const p: string[] = [];
   if (opts.mathFont !== undefined) p.push(attrEl("m:mathFont", { "m:val": opts.mathFont }));
-  if (opts.brkBin !== undefined) p.push(attrEl("m:brkBin", { "m:val": opts.brkBin }));
-  if (opts.brkBinSub !== undefined) p.push(attrEl("m:brkBinSub", { "m:val": opts.brkBinSub }));
-  p.push(onOff("m:smallFrac", opts.smallFrac));
-  p.push(onOff("m:dispDef", opts.dispDef));
-  p.push(numVal("m:lMargin", opts.lMargin));
-  p.push(numVal("m:rMargin", opts.rMargin));
-  if (opts.defJc !== undefined) p.push(attrEl("m:defJc", { "m:val": opts.defJc }));
+  if (opts.binaryOperatorBreak !== undefined)
+    p.push(attrEl("m:brkBin", { "m:val": opts.binaryOperatorBreak }));
+  if (opts.binaryOperatorBreakSubtraction !== undefined)
+    p.push(attrEl("m:brkBinSub", { "m:val": opts.binaryOperatorBreakSubtraction }));
+  p.push(onOff("m:smallFrac", opts.smallFractions));
+  p.push(onOff("m:dispDef", opts.displayDefaults));
+  p.push(numVal("m:lMargin", opts.leftMargin));
+  p.push(numVal("m:rMargin", opts.rightMargin));
+  if (opts.defaultJustification !== undefined)
+    p.push(attrEl("m:defJc", { "m:val": opts.defaultJustification }));
+  p.push(numVal("m:preSp", opts.preSpacing));
+  p.push(numVal("m:postSp", opts.postSpacing));
+  p.push(numVal("m:interSp", opts.interSpacing));
+  p.push(numVal("m:intraSp", opts.intraSpacing));
   p.push(numVal("m:wrapIndent", opts.wrapIndent));
-  if (opts.intLim !== undefined) p.push(attrEl("m:intLim", { "m:val": opts.intLim }));
-  if (opts.naryLim !== undefined) p.push(attrEl("m:naryLim", { "m:val": opts.naryLim }));
+  p.push(onOff("m:wrapRight", opts.wrapRight));
+  if (opts.integralLimitLocation !== undefined)
+    p.push(attrEl("m:intLim", { "m:val": opts.integralLimitLocation }));
+  if (opts.naryLimitLocation !== undefined)
+    p.push(attrEl("m:naryLim", { "m:val": opts.naryLimitLocation }));
   return `<m:mathPr>${p.join("")}</m:mathPr>`;
 }
 

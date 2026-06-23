@@ -11,7 +11,12 @@
 
 import { attr, children, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import type { MathInput, MathRunPropertiesOptions } from "@parts/paragraph/math";
+import type {
+  MathDelimiterProperties,
+  MathInput,
+  MathNaryProperties,
+  MathRunPropertiesOptions,
+} from "@parts/paragraph/math";
 
 // ── MathRun properties ──
 
@@ -46,7 +51,10 @@ export function stringifyMathInput(value: MathInput): string {
   // Discriminated union: check unique keys (order matters — subSuperScript first)
   if ("subSuperScript" in value) {
     const opts = value.subSuperScript;
-    return `<m:sSubSup><m:sSubSupPr/><m:e>${stringifyChildren(opts.children)}</m:e><m:sub>${stringifyChildren(opts.subScript)}</m:sub><m:sup>${stringifyChildren(opts.superScript)}</m:sup></m:sSubSup>`;
+    const pr = opts.alignScript
+      ? '<m:sSubSupPr><m:alnScr m:val="1"/></m:sSubSupPr>'
+      : "<m:sSubSupPr/>";
+    return `<m:sSubSup>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:sub>${stringifyChildren(opts.subScript)}</m:sub><m:sup>${stringifyChildren(opts.superScript)}</m:sup></m:sSubSup>`;
   }
 
   if ("preSubSuperScript" in value) {
@@ -67,7 +75,9 @@ export function stringifyMathInput(value: MathInput): string {
   if ("fraction" in value) {
     const opts = value.fraction;
     const pr = opts.fractionType ? `<m:fPr><m:type m:val="${opts.fractionType}"/></m:fPr>` : "";
-    return `<m:f>${pr}<m:num>${stringifyChildren(opts.numerator)}</m:num><m:den>${stringifyChildren(opts.denominator)}</m:den></m:f>`;
+    const numArgPr = argPrXml(opts.numeratorArgumentSize);
+    const denArgPr = argPrXml(opts.denominatorArgumentSize);
+    return `<m:f>${pr}<m:num>${numArgPr}${stringifyChildren(opts.numerator)}</m:num><m:den>${denArgPr}${stringifyChildren(opts.denominator)}</m:den></m:f>`;
   }
 
   if ("radical" in value) {
@@ -140,16 +150,20 @@ export function stringifyMathInput(value: MathInput): string {
 
   // Bracket types
   if ("roundBrackets" in value) {
-    return stringifyDelimiters(bracketChildren(value.roundBrackets), "(", ")");
+    const spec = bracketSpec(value.roundBrackets);
+    return stringifyDelimiters(spec.children, "(", ")", spec.properties);
   }
   if ("curlyBrackets" in value) {
-    return stringifyDelimiters(bracketChildren(value.curlyBrackets), "{", "}");
+    const spec = bracketSpec(value.curlyBrackets);
+    return stringifyDelimiters(spec.children, "{", "}", spec.properties);
   }
   if ("angledBrackets" in value) {
-    return stringifyDelimiters(bracketChildren(value.angledBrackets), "〈", "〉");
+    const spec = bracketSpec(value.angledBrackets);
+    return stringifyDelimiters(spec.children, "〈", "〉", spec.properties);
   }
   if ("squareBrackets" in value) {
-    return stringifyDelimiters(bracketChildren(value.squareBrackets), "[", "]");
+    const spec = bracketSpec(value.squareBrackets);
+    return stringifyDelimiters(spec.children, "[", "]", spec.properties);
   }
 
   if ("borderBox" in value) {
@@ -258,12 +272,21 @@ export function stringifyMathInput(value: MathInput): string {
 // ── N-ary operator (sum/integral) ──
 
 function stringifyNAry(
-  opts: { children: MathInput[]; subScript?: MathInput[]; superScript?: MathInput[] },
+  opts: {
+    children: MathInput[];
+    subScript?: MathInput[];
+    superScript?: MathInput[];
+    properties?: MathNaryProperties;
+  },
   chr: string,
 ): string {
   const hasSub = opts.subScript && opts.subScript.length > 0;
   const hasSup = opts.superScript && opts.superScript.length > 0;
   const prParts: string[] = [`<m:chr m:val="${chr}"/>`];
+  if (opts.properties?.limitLocation)
+    prParts.push(`<m:limLoc m:val="${opts.properties.limitLocation}"/>`);
+  if (opts.properties?.grow !== undefined)
+    prParts.push(`<m:grow m:val="${opts.properties.grow ? 1 : 0}"/>`);
   if (!hasSub) prParts.push('<m:subHide m:val="1"/>');
   if (!hasSup) prParts.push('<m:supHide m:val="1"/>');
   const pr = `<m:naryPr>${prParts.join("")}</m:naryPr>`;
@@ -274,13 +297,35 @@ function stringifyNAry(
 
 // ── Delimiters (brackets) ──
 
-function stringifyDelimiters(children: MathInput[], begChr: string, endChr: string): string {
-  return `<m:d><m:dPr><m:begChr m:val="${begChr}"/><m:endChr m:val="${endChr}"/></m:dPr><m:e>${stringifyChildren(children)}</m:e></m:d>`;
+function stringifyDelimiters(
+  children: MathInput[],
+  begChr: string,
+  endChr: string,
+  properties?: MathDelimiterProperties,
+): string {
+  const prParts: string[] = [`<m:begChr m:val="${properties?.beginCharacter ?? begChr}"/>`];
+  if (properties?.separatorCharacter)
+    prParts.push(`<m:sepChr m:val="${properties.separatorCharacter}"/>`);
+  prParts.push(`<m:endChr m:val="${properties?.endCharacter ?? endChr}"/>`);
+  if (properties?.grow !== undefined) prParts.push(`<m:grow m:val="${properties.grow ? 1 : 0}"/>`);
+  if (properties?.shape) prParts.push(`<m:shp m:val="${properties.shape}"/>`);
+  return `<m:d><m:dPr>${prParts.join("")}</m:dPr><m:e>${stringifyChildren(children)}</m:e></m:d>`;
 }
 
-function bracketChildren(v: MathInput[] | { children: MathInput[] }): MathInput[] {
-  if (Array.isArray(v)) return v;
-  return (v as { children: MathInput[] }).children;
+/** Build an m:argPr/m:argSz block for an argument size scaling value. */
+function argPrXml(size: number | undefined): string {
+  return size !== undefined ? `<m:argPr><m:argSz m:val="${size}"/></m:argPr>` : "";
+}
+
+/** Split a bracket shorthand into children + optional delimiter properties. */
+function bracketSpec(
+  v: MathInput[] | { children: MathInput[]; properties?: MathDelimiterProperties },
+): {
+  children: MathInput[];
+  properties?: MathDelimiterProperties;
+} {
+  if (Array.isArray(v)) return { children: v };
+  return { children: v.children, properties: v.properties };
 }
 
 // ── Top-level Math wrapper ──
@@ -290,9 +335,13 @@ export function stringifyMath(children: MathInput[]): string {
   return `<m:oMath>${inner}</m:oMath>`;
 }
 
-export function stringifyMathParagraph(children: MathInput[]): string {
+export function stringifyMathParagraph(
+  children: MathInput[],
+  justification?: "left" | "right" | "center" | "centerGroup",
+): string {
   const inner = children.map((c) => stringifyMathInput(c)).join("");
-  return `<m:oMathPara><m:oMath>${inner}</m:oMath></m:oMathPara>`;
+  const pr = justification ? `<m:oMathParaPr><m:jc m:val="${justification}"/></m:oMathParaPr>` : "";
+  return `<m:oMathPara>${pr}<m:oMath>${inner}</m:oMath></m:oMathPara>`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -383,11 +432,39 @@ function parseMathRun(el: Element): MathInput {
   return text ?? "";
 }
 
+// ── Parse helpers ──
+
+/** Read an m:val on/off attribute (1/0/true/false; empty element = on). */
+function readOnOff(el: Element | undefined): boolean | undefined {
+  if (!el) return undefined;
+  const v = attr(el, "m:val");
+  return v === undefined ? true : v === "1" || v === "true" || v === "on";
+}
+
+/** Read an m:val numeric attribute. */
+function readNum(el: Element | undefined): number | undefined {
+  if (!el) return undefined;
+  const v = attr(el, "m:val");
+  if (v === undefined || v === "") return undefined;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/** Read an m:argSz scaling value from an m:argPr-bearing argument element. */
+function readArgSize(argEl: Element | undefined): number | undefined {
+  if (!argEl) return undefined;
+  return readNum(findChild(argEl, "m:argSz"));
+}
+
 function parseMathFraction(el: Element): MathInput {
+  const numeratorArgumentSize = readArgSize(findChild(el, "m:num"));
+  const denominatorArgumentSize = readArgSize(findChild(el, "m:den"));
   return {
     fraction: {
       numerator: parseMathArg(el, "m:num"),
       denominator: parseMathArg(el, "m:den"),
+      ...(numeratorArgumentSize !== undefined ? { numeratorArgumentSize } : {}),
+      ...(denominatorArgumentSize !== undefined ? { denominatorArgumentSize } : {}),
     },
   };
 }
@@ -422,11 +499,14 @@ function parseMathSubScript(el: Element): MathInput {
 }
 
 function parseMathSubSuperScript(el: Element): MathInput {
+  const pr = findChild(el, "m:sSubSupPr");
+  const alignScript = pr ? readOnOff(findChild(pr, "m:alnScr")) : undefined;
   return {
     subSuperScript: {
       children: parseMathArg(el, "m:e"),
       subScript: parseMathArg(el, "m:sub"),
       superScript: parseMathArg(el, "m:sup"),
+      ...(alignScript !== undefined ? { alignScript } : {}),
     },
   };
 }
@@ -440,10 +520,22 @@ function parseMathNAry(el: Element): MathInput {
   const sub = parseMathArg(el, "m:sub");
   const sup = parseMathArg(el, "m:sup");
 
+  const properties: MathNaryProperties = {};
+  if (naryPr) {
+    const limLocEl = findChild(naryPr, "m:limLoc");
+    if (limLocEl) {
+      const limLoc = attr(limLocEl, "m:val");
+      if (limLoc === "subSup" || limLoc === "undOvr") properties.limitLocation = limLoc;
+    }
+    const grow = readOnOff(findChild(naryPr, "m:grow"));
+    if (grow !== undefined) properties.grow = grow;
+  }
+
   const common = {
     children: baseChildren,
     ...(sub.length > 0 ? { subScript: sub } : {}),
     ...(sup.length > 0 ? { superScript: sup } : {}),
+    ...(Object.keys(properties).length > 0 ? { properties } : {}),
   };
 
   if (chrVal === "∑") return { sum: common };
@@ -465,16 +557,35 @@ function parseMathDelimiter(el: Element): MathInput {
   const begChr = begChrEl ? attr(begChrEl, "m:val") : "(";
   const mathChildren = parseMathArg(el, "m:e");
 
+  // Collect delimiter properties when present (sepChr/grow/shp/non-default chars).
+  const properties: MathDelimiterProperties = {};
+  if (dPr) {
+    if (begChrEl) properties.beginCharacter = begChr;
+    const endChrEl = findChild(dPr, "m:endChr");
+    if (endChrEl) properties.endCharacter = attr(endChrEl, "m:val");
+    const sepChrEl = findChild(dPr, "m:sepChr");
+    if (sepChrEl) properties.separatorCharacter = attr(sepChrEl, "m:val");
+    const grow = readOnOff(findChild(dPr, "m:grow"));
+    if (grow !== undefined) properties.grow = grow;
+    const shpEl = findChild(dPr, "m:shp");
+    if (shpEl) {
+      const shp = attr(shpEl, "m:val");
+      if (shp === "centered" || shp === "match") properties.shape = shp;
+    }
+  }
+  const hasProperties = Object.keys(properties).length > 0;
+  const value = hasProperties ? { children: mathChildren, properties } : mathChildren;
+
   switch (begChr) {
     case "[":
-      return { squareBrackets: mathChildren };
+      return { squareBrackets: value };
     case "{":
-      return { curlyBrackets: mathChildren };
+      return { curlyBrackets: value };
     case "<":
     case "⟨":
-      return { angledBrackets: mathChildren };
+      return { angledBrackets: value };
     default:
-      return { roundBrackets: mathChildren };
+      return { roundBrackets: value };
   }
 }
 

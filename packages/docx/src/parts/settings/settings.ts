@@ -8,11 +8,6 @@
  *
  * @module
  */
-import {
-  FootnotePositionType,
-  EndnotePositionType,
-} from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
-
 import type { CompatibilityOptions } from "./compatibility";
 export type { CompatibilityOptions, CompatSettingOptions } from "./compatibility";
 
@@ -513,7 +508,7 @@ export interface HyphenationOptions {
  */
 export interface FootnotePropertiesOptions {
   /** Footnote placement */
-  pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
+  pos?: "pageBottom" | "beneathText" | "sectEnd" | "docEnd";
   /** Number format */
   numFmt?: string;
   /** Custom number format string */
@@ -529,7 +524,7 @@ export interface FootnotePropertiesOptions {
  */
 export interface EndnotePropertiesOptions {
   /** Endnote placement */
-  pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
+  pos?: "sectEnd" | "docEnd";
   /** Number format */
   numFmt?: string;
   /** Custom number format string */
@@ -596,26 +591,36 @@ export interface CaptionsOptions {
 
 /** Math properties (CT_MathPr) */
 export interface MathPropertiesOptions {
-  /** Default math font */
+  /** Default math font (m:mathFont) */
   mathFont?: string;
-  /** Binary operator break style ("before" | "after" | "repeat") */
-  brkBin?: string;
-  /** Subtraction binary operator break ("--" | "-+" | "+-") */
-  brkBinSub?: string;
-  /** Use small fractions */
-  smallFrac?: boolean;
-  /** Use display defaults */
-  dispDef?: boolean;
-  /** Left margin (twips) */
-  lMargin?: number;
-  /** Right margin (twips) */
-  rMargin?: number;
-  /** Default justification ("centerGroup" | "center") */
-  defJc?: string;
-  /** Wrap indent (twips) */
+  /** Binary operator break style (m:brkBin) */
+  binaryOperatorBreak?: "before" | "after" | "repeat";
+  /** Subtraction binary operator break (m:brkBinSub) */
+  binaryOperatorBreakSubtraction?: "--" | "-+" | "+-";
+  /** Use small fractions (m:smallFrac) */
+  smallFractions?: boolean;
+  /** Use display defaults (m:dispDef) */
+  displayDefaults?: boolean;
+  /** Left margin in twips (m:lMargin) */
+  leftMargin?: number;
+  /** Right margin in twips (m:rMargin) */
+  rightMargin?: number;
+  /** Default justification (m:defJc) */
+  defaultJustification?: "left" | "right" | "center" | "centerGroup";
+  /** Spacing before a math instance in twips (m:preSp) */
+  preSpacing?: number;
+  /** Spacing after a math instance in twips (m:postSp) */
+  postSpacing?: number;
+  /** Inter-equation spacing in twips (m:interSp) */
+  interSpacing?: number;
+  /** Intra-equation spacing in twips (m:intraSp) */
+  intraSpacing?: number;
+  /** Wrap indent in twips (m:wrapIndent) */
   wrapIndent?: number;
-  /** Integral limit location ("subSup" | "undOvr") */
-  intLim?: string;
-  /** N-ary limit location ("subSup" | "undOvr") */
-  naryLim?: string;
+  /** Wrap equations to the right (m:wrapRight; alternative to wrapIndent) */
+  wrapRight?: boolean;
+  /** Integral limit location (m:intLim) */
+  integralLimitLocation?: "subSup" | "undOvr";
+  /** N-ary limit location (m:naryLim) */
+  naryLimitLocation?: "subSup" | "undOvr";
 }
