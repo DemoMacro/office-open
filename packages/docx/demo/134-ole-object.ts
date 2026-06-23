@@ -1,4 +1,4 @@
-import * as fs from "node:fs";
+import { writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 import type { DocumentOptions } from "@office-open/docx";
@@ -120,4 +120,4 @@ const doc: DocumentOptions = {
 };
 
 const buffer = await generateDocument(doc);
-fs.writeFileSync("OLE Document.docx", buffer);
+writeFileSync("My Document.docx", buffer);
