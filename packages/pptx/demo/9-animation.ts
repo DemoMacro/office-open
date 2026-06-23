@@ -270,7 +270,10 @@ const options: PresentationOptions = {
         },
       ],
       animations: [
-        { shapeId: 2, options: { class: "emph", emphasisType: "growShrink", duration: 800 } },
+        {
+          shapeId: 2,
+          options: { class: "emph", emphasisType: "growShrink", zoomContents: true, duration: 800 },
+        },
         { shapeId: 3, options: { class: "emph", emphasisType: "spin", duration: 1000 } },
         {
           shapeId: 4,
@@ -354,6 +357,7 @@ const options: PresentationOptions = {
           options: {
             pathType: "customPath",
             path: "M 0 0 L 100 0 L 100 100 L 0 100 Z",
+            pathEditMode: "relative",
             duration: 1200,
           },
         },

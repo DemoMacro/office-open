@@ -44,6 +44,7 @@ const options: PresentationOptions = {
           options: {
             mediaType: "playVideo",
             trigger: "withPrevious",
+            showWhenStopped: true,
           },
         },
       ],

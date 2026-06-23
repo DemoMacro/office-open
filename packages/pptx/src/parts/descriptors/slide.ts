@@ -43,6 +43,8 @@ export interface SlideDescriptorOptions {
   customerData?: { rId: string }[];
   headerFooter?: HeaderFooterDescriptorOptions;
   animations?: AnimationDescriptorOptions[];
+  /** Hidden slide — excluded from slideshow (emits p:sld/@show="0"). */
+  hidden?: boolean;
 }
 
 /** Discriminated union for slide children (JSON-friendly). */
@@ -95,6 +97,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     const sldAttrs: string[] = [];
     if (opts.showMasterSp === false) sldAttrs.push(' showMasterSp="0"');
     if (opts.showMasterPhAnim === false) sldAttrs.push(' showMasterPhAnim="0"');
+    if (opts.hidden) sldAttrs.push(' show="0"');
     parts.push(
       `<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${sldAttrs.join("")}>`,
     );
@@ -176,6 +179,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
         result.showMasterSp = el.attributes["showMasterSp"] !== "0";
       if (el.attributes["showMasterPhAnim"] !== undefined)
         result.showMasterPhAnim = el.attributes["showMasterPhAnim"] !== "0";
+      if (el.attributes["show"] === "0") result.hidden = true;
     }
 
     // p:cSld

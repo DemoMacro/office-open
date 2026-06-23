@@ -521,6 +521,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   const sldAttrs: string[] = [];
   if (slideOpts.showMasterShapes === false) sldAttrs.push(' showMasterSp="0"');
   if (slideOpts.showMasterPlaceholderAnimations === false) sldAttrs.push(' showMasterPhAnim="0"');
+  if (slideOpts.hidden) sldAttrs.push(' show="0"');
   parts.push(
     `<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${sldAttrs.join("")}>`,
   );

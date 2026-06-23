@@ -283,9 +283,12 @@ function buildEmphasisEffects(
   const tgtEl = buildXml("p:tgtEl", undefined, [buildXml("p:spTgt", { spid })]);
 
   switch (emphType) {
-    case "growShrink":
+    case "growShrink": {
+      const animScaleAttrs: Record<string, string | number | undefined> = {};
+      if (options.zoomContents !== undefined)
+        animScaleAttrs.zoomContents = options.zoomContents ? 1 : 0;
       children.push(
-        buildXml("p:animScale", undefined, [
+        buildXml("p:animScale", animScaleAttrs, [
           buildXml("p:cBhvr", undefined, [
             buildXml(
               "p:cTn",
@@ -303,6 +306,7 @@ function buildEmphasisEffects(
         ]),
       );
       break;
+    }
 
     case "spin":
       children.push(
@@ -432,6 +436,8 @@ function buildPathEffects(
     path: pathStr,
   };
   if (options.pointsTypes) animMotionAttrs.ptsTypes = options.pointsTypes;
+  if (options.pathEditMode) animMotionAttrs.pathEditMode = options.pathEditMode;
+  if (options.rotationAngle !== undefined) animMotionAttrs.rAng = String(options.rotationAngle);
 
   const animMotionChildren: string[] = [
     buildXml("p:cBhvr", undefined, [
@@ -615,6 +621,9 @@ function buildMediaStateNode(
   if (options.numberOfSlides !== undefined) {
     cMediaNodeAttrs.numSld = options.numberOfSlides;
   }
+  if (options.showWhenStopped !== undefined) {
+    cMediaNodeAttrs.showWhenStopped = options.showWhenStopped ? 1 : 0;
+  }
 
   return buildXml(elementName, mediaAttrs, [
     buildXml("p:cMediaNode", cMediaNodeAttrs, [
@@ -645,7 +654,6 @@ function buildPropertyAnimation(
   if (options.animBy !== undefined) attrs.by = options.animBy;
   if (options.formula !== undefined) attrs.fmla = options.formula;
   if (options.colorSpace !== undefined) attrs.clrSpc = options.colorSpace;
-  if (options.rotationAngle !== undefined) attrs.rAng = String(options.rotationAngle);
 
   const cBhvrChildren: string[] = [
     buildXml("p:cTn", {
