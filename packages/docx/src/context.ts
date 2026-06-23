@@ -28,6 +28,7 @@ import { ExternalStylesFactory } from "@parts/styles/external-styles-factory";
 import { DefaultStylesFactory, collectDefaultOverrideIds } from "@parts/styles/factory";
 import { SubDocCollection } from "@parts/sub-doc/sub-doc-collection";
 import type { WebSettingsOptions } from "@parts/web-settings";
+import { EmbeddingCollection } from "@shared/embeddings/embeddings";
 import { Media } from "@shared/media";
 import type { SectionOptions } from "@shared/section";
 import type { SectionChild } from "@shared/section";
@@ -69,6 +70,7 @@ export class DocxWriteContext implements WriteContext {
   declare public media: Media;
   declare public charts: ChartCollection;
   declare public smartArts: SmartArtCollection;
+  declare public embeddings: EmbeddingCollection;
   declare public altChunks: AltChunkCollection;
   declare public subDocs: SubDocCollection;
   declare public comments: { relationships: Relationships };
@@ -160,6 +162,7 @@ export class DocxWriteContext implements WriteContext {
     this.media = new Media();
     this.charts = new ChartCollection();
     this.smartArts = new SmartArtCollection();
+    this.embeddings = new EmbeddingCollection();
     this.altChunks = new AltChunkCollection();
     this.subDocs = new SubDocCollection();
 

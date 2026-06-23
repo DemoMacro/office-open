@@ -86,6 +86,10 @@ const STANDARD_DEFAULTS: ContentTypeDefault[] = [
     extension: "odttf",
     contentType: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
   },
+  {
+    extension: "bin",
+    contentType: "application/vnd.openxmlformats-officedocument.oleObject",
+  },
 ];
 
 /**

@@ -117,6 +117,14 @@ export function compileDocument(
     }
   }
 
+  // OLE embedding binaries (word/embeddings/oleObjectN.bin)
+  for (const embedding of ctx.embeddings.array) {
+    files[`word/embeddings/${embedding.fileName}`] = [
+      embedding.data as Uint8Array,
+      { level: levelForMediaName(embedding.fileName, mediaLevel) as ZipOptions["level"] },
+    ];
+  }
+
   // Font files — only fonts carrying binary data produce a .odttf part.
   // Round-tripped fonts (rawOdttf) keep their original obfuscated bytes.
   for (const font of ctx.fontTable.fontOptionsWithKey) {
@@ -234,6 +242,14 @@ function xmlifyContext(
     ctx.media.array,
     documentRelationshipCount,
   );
+  // OLE embeddings reuse the same {fileName} placeholder bridge as images; run
+  // after media so {oleObjectN.bin} placeholders resolve against the embedding array.
+  const documentEmbeddingOffset = documentRelationshipCount + documentMedia.referenced.length;
+  const documentEmbeddings = findAndReplaceImagePlaceholders(
+    documentMedia.xml,
+    ctx.embeddings.array,
+    documentEmbeddingOffset,
+  );
   const commentMedia = hasComments
     ? findAndReplaceImagePlaceholders(commentXmlData, ctx.media.array, commentRelationshipCount)
     : { xml: "", referenced: [] as { fileName: string }[] };
@@ -315,7 +331,10 @@ function xmlifyContext(
                     },
                   );
             })(),
-            ctx.media.array.map((m) => m.fileName),
+            [
+              ...ctx.media.array.map((m) => m.fileName),
+              ...ctx.embeddings.array.map((e) => e.fileName),
+            ],
           ),
           ctx,
         ) ?? ""),
@@ -330,12 +349,13 @@ function xmlifyContext(
     },
     Document: {
       data: (() => {
-        let xmlData = documentMedia.referenced.length > 0 ? documentMedia.xml : documentXmlData;
+        let xmlData = documentEmbeddings.xml;
         if (hasPlaceholders(xmlData)) {
           const mediaCount = documentMedia.referenced.length;
+          const embeddingCount = documentEmbeddings.referenced.length;
           const chartKeys = ctx.charts.array.map((c) => c.key);
           const smartArtKeys = ctx.smartArts.array.map((s) => s.key);
-          const chartOffset = documentRelationshipCount + mediaCount;
+          const chartOffset = documentRelationshipCount + mediaCount + embeddingCount;
           const smartArtOffset = chartOffset + chartKeys.length;
 
           // Build combined replacement entries for charts, smartart, and numbering
@@ -525,8 +545,18 @@ function xmlifyContext(
             `media/${documentMedia.referenced[i].fileName}`,
           );
         }
+        for (let i = 0; i < documentEmbeddings.referenced.length; i++) {
+          ctx.document.relationships.addRelationship(
+            documentEmbeddingOffset + i,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
+            `embeddings/${documentEmbeddings.referenced[i].fileName}`,
+          );
+        }
 
-        const chartOffset = documentRelationshipCount + documentMedia.referenced.length;
+        const chartOffset =
+          documentRelationshipCount +
+          documentMedia.referenced.length +
+          documentEmbeddings.referenced.length;
         for (let i = 0; i < ctx.charts.array.length; i++) {
           ctx.document.relationships.addRelationship(
             chartOffset + i,
@@ -540,7 +570,10 @@ function xmlifyContext(
           (id, type, target) => {
             ctx.document.relationships.addRelationship(id, type, target);
           },
-          documentRelationshipCount + documentMedia.referenced.length + ctx.charts.array.length,
+          documentRelationshipCount +
+            documentMedia.referenced.length +
+            documentEmbeddings.referenced.length +
+            ctx.charts.array.length,
           0,
           {
             pathPrefix: "",

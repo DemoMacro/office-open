@@ -28,6 +28,7 @@ import type {
 } from "@parts/document/document-background";
 import { parseDrawingRun } from "@parts/drawing/drawing-parse";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
+import { objectDesc, type ObjectElementOptions } from "@parts/object";
 import type { BordersOptions } from "@parts/paragraph/formatting/border";
 import type { IndentAttributesProperties } from "@parts/paragraph/formatting/indent";
 import { LineRuleType } from "@parts/paragraph/formatting/spacing";
@@ -156,6 +157,14 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
         const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0]];
         if (emptyXml) {
           parts.push(emptyXml);
+          continue;
+        }
+
+        // OLE object — w:object (VML shape + objectEmbed/link/control/movie)
+        if ("object" in child) {
+          parts.push(
+            objectDesc.stringify((child as { object: ObjectElementOptions }).object, ctx) ?? "",
+          );
           continue;
         }
 

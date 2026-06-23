@@ -1,3 +1,5 @@
+import type { ObjectElementOptions } from "@parts/object";
+
 /**
  * Run module for WordprocessingML documents.
  *
@@ -50,6 +52,7 @@ interface RunOptionsBase {
     | Tab
     | YearLong
     | YearShort
+    | { object: ObjectElementOptions }
     | Record<string, unknown>
   )[];
   break?: number;

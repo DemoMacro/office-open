@@ -1,1 +1,8 @@
-export type { ObjectElementOptions, ObjectEmbedOptions, ObjectLinkOptions } from "./object-element";
+export type {
+  ObjectElementOptions,
+  ObjectEmbedOptions,
+  ObjectLinkOptions,
+  ObjectControlOptions,
+  ObjectIconImageOptions,
+} from "./object-element";
+export { objectDesc } from "./object-element";

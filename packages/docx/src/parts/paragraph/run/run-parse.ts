@@ -15,6 +15,8 @@ import {
   textOf,
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { objectDesc } from "@parts/object";
+import type { ObjectElementOptions } from "@parts/object";
 import type { RunPropertiesOptions, RunOptions } from "@parts/paragraph/run";
 
 import type { DocxReadContext } from "../../../context";
@@ -384,7 +386,8 @@ export type ParsedRunChild =
   | typeof PARSED_CONTINUATION_SEPARATOR
   | typeof PARSED_PAGE_NUMBER
   | typeof PARSED_LAST_RENDERED_PAGE_BREAK
-  | { commentReference: number };
+  | { commentReference: number }
+  | { object: ObjectElementOptions };
 
 /**
  * Parse a w:r element into run data.
@@ -461,6 +464,10 @@ export function parseRun(
       case "w:drawing":
       case "w:pict":
         break;
+      case "w:object": {
+        children.push({ object: objectDesc.parse(child, _ctx) } as unknown as ParsedRunChild);
+        break;
+      }
       // Symbol run — extract char and font attributes
       case "w:sym": {
         const charVal = attr(child, "w:char");
@@ -601,6 +608,16 @@ export function parsedRunToOptions(
   );
   if (symbolIdx >= 0 && nonRefChildren.length === 1 && !parsed.properties) {
     return nonRefChildren[symbolIdx] as unknown as RunOptions;
+  }
+
+  // If the run contains an OLE object (w:object), return it directly with any
+  // run properties — an OLE object occupies its own run.
+  const objectIdx = nonRefChildren.findIndex(
+    (c) => typeof c === "object" && c !== null && "object" in c,
+  );
+  if (objectIdx >= 0) {
+    const objectChild = nonRefChildren[objectIdx] as { object: ObjectElementOptions };
+    return { ...parsed.properties, ...objectChild } as unknown as RunOptions;
   }
 
   // Collect text and breaks
