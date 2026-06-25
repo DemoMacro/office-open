@@ -2,6 +2,7 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { DocxReadContext } from "../../context";
+import { parseBody } from "../../parse/body";
 import { parseToc, parseTocFieldFromElements, parseTocFieldInstruction } from "./toc-parse";
 
 const readCtx = {} as unknown as DocxReadContext;
@@ -71,5 +72,25 @@ describe("parseToc", () => {
     expect(result?.alias).toBe("Contents");
     expect(result?.headingStyleRange).toBe("1-3");
     expect(result?.hyperlink).toBe(true);
+  });
+});
+
+describe("parseBody TOC page-break rescue", () => {
+  it("preserves a page break that shares the TOC field-end paragraph", () => {
+    // Bare TOC field whose end paragraph also carries a page break (the
+    // section break before the first heading) — must not be swallowed.
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r>
+        <w:r><w:br w:type="page"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements![0];
+    const sections = parseBody(body, readCtx);
+    const json = JSON.stringify(sections[0].children ?? []);
+    expect(json).toContain('"toc"');
+    expect(json).toContain('"pageBreak"');
   });
 });
