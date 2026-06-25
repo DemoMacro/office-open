@@ -6,9 +6,13 @@
 
 import { convertEmuToPixels, convertPixelsToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { parse, stringify } from "@office-open/core/descriptor";
+import { effectListDesc, fillDesc } from "@office-open/core/drawingml";
+import type { FillOptions as CoreFillOptions } from "@office-open/core/drawingml";
 import { attrBool, attrNum, findChild } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
+import { toEffectListOptions, type EffectsOptions } from "@shared/drawingml/effects";
 
 import type { PptxWriteContext } from "../../context";
 import { parseChild, stringifyChild } from "./bridge";
@@ -22,6 +26,14 @@ export interface GroupShapeDescriptorOptions {
   height?: number;
   rotation?: number;
   flipHorizontal?: boolean;
+  /** Child coordinate system offset (a:chOff). Defaults to {x,y} when omitted. */
+  childOffset?: { x: number; y: number };
+  /** Child coordinate system extent (a:chExt). Defaults to {width,height} when omitted. */
+  childExtent?: { cx: number; cy: number };
+  /** Group-level fill (EG_FillProperties on grpSpPr). */
+  fill?: CoreFillOptions;
+  /** Group-level effects (EG_EffectProperties on grpSpPr). */
+  effects?: EffectsOptions;
   children?: LegacySlideChild[];
 }
 
@@ -44,9 +56,33 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     const w = convertPixelsToEmu(opts.width ?? 100);
     const h = convertPixelsToEmu(opts.height ?? 100);
 
+    // chOff/chExt default to off/ext when the child coordinate system is unchanged.
+    const chOffX = opts.childOffset ? convertPixelsToEmu(opts.childOffset.x) : x;
+    const chOffY = opts.childOffset ? convertPixelsToEmu(opts.childOffset.y) : y;
+    const chExtCx = opts.childExtent ? convertPixelsToEmu(opts.childExtent.cx) : w;
+    const chExtCy = opts.childExtent ? convertPixelsToEmu(opts.childExtent.cy) : h;
+
     const xfrmAttrs: string[] = [];
     if (opts.flipHorizontal) xfrmAttrs.push(' flipH="1"');
     if (opts.rotation !== undefined) xfrmAttrs.push(` rot="${opts.rotation}"`);
+
+    const grpSpPrParts: string[] = [
+      `<a:xfrm${xfrmAttrs.join("")}>` +
+        `<a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/>` +
+        `<a:chOff x="${chOffX}" y="${chOffY}"/><a:chExt cx="${chExtCx}" cy="${chExtCy}"/>` +
+        `</a:xfrm>`,
+    ];
+    if (opts.fill) {
+      const fillXml = stringify(fillDesc, opts.fill, descCtx);
+      if (fillXml) grpSpPrParts.push(fillXml);
+    }
+    if (opts.effects) {
+      const effectListOpts = toEffectListOptions(opts.effects);
+      if (effectListOpts) {
+        const fxXml = stringify(effectListDesc, effectListOpts, descCtx);
+        if (fxXml) grpSpPrParts.push(fxXml);
+      }
+    }
 
     const parts: string[] = [];
 
@@ -56,12 +92,7 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     );
 
     // p:grpSpPr
-    parts.push(
-      `<p:grpSpPr><a:xfrm${xfrmAttrs.join("")}>` +
-        `<a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/>` +
-        `<a:chOff x="${x}" y="${y}"/><a:chExt cx="${w}" cy="${h}"/>` +
-        `</a:xfrm></p:grpSpPr>`,
-    );
+    parts.push(`<p:grpSpPr>${grpSpPrParts.join("")}</p:grpSpPr>`);
 
     // Children
     if (opts.children) {
@@ -74,8 +105,8 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     return `<p:grpSp>${parts.join("")}</p:grpSp>`;
   },
 
-  parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+  parse(el, ctx) {
+    const result: Partial<GroupShapeDescriptorOptions> = {};
 
     const grpSpPr = findChild(el, "p:grpSpPr");
     if (grpSpPr) {
@@ -95,9 +126,37 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
           const cy = attrNum(ext, "cy");
           if (cy !== undefined) result.height = convertEmuToPixels(cy);
         }
+        const chOff = findChild(xfrm, "a:chOff");
+        if (chOff) {
+          const cox = attrNum(chOff, "x");
+          const coy = attrNum(chOff, "y");
+          if (cox !== undefined && coy !== undefined) {
+            result.childOffset = { x: convertEmuToPixels(cox), y: convertEmuToPixels(coy) };
+          }
+        }
+        const chExt = findChild(xfrm, "a:chExt");
+        if (chExt) {
+          const ccx = attrNum(chExt, "cx");
+          const ccy = attrNum(chExt, "cy");
+          if (ccx !== undefined && ccy !== undefined) {
+            result.childExtent = { cx: convertEmuToPixels(ccx), cy: convertEmuToPixels(ccy) };
+          }
+        }
         const rot = attrNum(xfrm, "rot");
         if (rot !== undefined) result.rotation = rot;
         if (attrBool(xfrm, "flipH")) result.flipHorizontal = true;
+      }
+      const fillResult = parse(fillDesc, grpSpPr, ctx);
+      if (fillResult && Object.keys(fillResult).length > 0) {
+        result.fill = fillResult as GroupShapeDescriptorOptions["fill"];
+      }
+      const effectLst = findChild(grpSpPr, "a:effectLst");
+      if (effectLst) {
+        result.effects = parse(
+          effectListDesc,
+          effectLst,
+          ctx,
+        ) as GroupShapeDescriptorOptions["effects"];
       }
     }
 
@@ -105,11 +164,11 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     const groupChildren: LegacySlideChild[] = [];
     for (const child of el.elements ?? []) {
       if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
-      const parsed = parseChild(child, _ctx);
+      const parsed = parseChild(child, ctx);
       if (parsed !== undefined) groupChildren.push(parsed);
     }
     if (groupChildren.length > 0) result.children = groupChildren;
 
-    return result as unknown as GroupShapeDescriptorOptions;
+    return result as GroupShapeDescriptorOptions;
   },
 };

@@ -176,7 +176,7 @@ function toBevel(opts: PPTXBevelOptions): BevelOptions {
 }
 
 /** Map PPTX EffectsOptions to core EffectListOptions. */
-function toEffectListOptions(opts: EffectsOptions): EffectListOptions | undefined {
+export function toEffectListOptions(opts: EffectsOptions): EffectListOptions | undefined {
   const hasEffects =
     opts.outerShadow || opts.innerShadow || opts.glow || opts.reflection || opts.softEdge;
   if (!hasEffects) return undefined;

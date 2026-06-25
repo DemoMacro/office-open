@@ -21,6 +21,7 @@ import {
   transform2DDesc,
   fillDesc,
   presetGeometryDesc,
+  customGeometryDesc,
   outlineDesc,
   shapeLockingDesc,
   effectListDesc,
@@ -31,6 +32,8 @@ import type {
   Transform2DOptions,
   FillOptions as CoreFillOptions,
   OutlineOptions as CoreOutlineOptions,
+  PresetGeometryOptions,
+  CustomGeometryOptions,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { attrMeasure, findChild, findDeep, escapeXml, attrNum, attr } from "@office-open/xml";
@@ -83,7 +86,8 @@ export interface ShapeDescriptorOptions {
   y?: number;
   width?: number;
   height?: number;
-  geometry?: string;
+  geometry?: string | PresetGeometryOptions;
+  customGeometry?: CustomGeometryOptions;
   fill?: CoreFillOptions;
   outline?: OutlineOptions;
   effects?: EffectsOptions;
@@ -119,6 +123,8 @@ export interface PictureDescriptorOptions {
   y?: number;
   width?: number;
   height?: number;
+  /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
+  effects?: EffectsOptions;
   data: Uint8Array;
   type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
 }
@@ -431,6 +437,13 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
           result.height = Math.round(Number(ext.attributes["cy"] ?? 0) / 9525);
         }
       }
+
+      // Effects (e.g. shadow/reflection on the picture)
+      const effectLst = findChild(spPr, "a:effectLst");
+      if (effectLst) {
+        const effects = parse(effectListDesc, effectLst, ctx);
+        if (effects) result.effects = effects as EffectsOptions;
+      }
     }
 
     // Image data from p:blipFill → a:blip → r:embed
@@ -543,9 +556,19 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
     if (xml) parts.push(xml);
   }
 
-  // PresetGeometry
-  const geomXml = stringify(presetGeometryDesc, { preset: opts.geometry ?? "rect" }, ctx);
-  if (geomXml) parts.push(geomXml);
+  // Geometry: EG_Geometry choice — customGeometry takes precedence, else presetGeometry.
+  // A bare string normalizes to { preset }; an object preserves adjustmentValues.
+  if (opts.customGeometry) {
+    const xml = stringify(customGeometryDesc, opts.customGeometry, ctx);
+    if (xml) parts.push(xml);
+  } else {
+    const geom =
+      typeof opts.geometry === "string" || opts.geometry === undefined
+        ? { preset: opts.geometry ?? "rect" }
+        : opts.geometry;
+    const xml = stringify(presetGeometryDesc, geom, ctx);
+    if (xml) parts.push(xml);
+  }
 
   // Fill (with blipFill media registration side effect)
   if (opts.fill) {
@@ -733,6 +756,15 @@ function stringifyPicSpPr(opts: PictureDescriptorOptions, ctx: WriteContext): st
   const geomXml = stringify(presetGeometryDesc, { preset: "rect" }, ctx);
   if (geomXml) parts.push(geomXml);
 
+  // Effects (e.g. shadow/reflection on the picture)
+  if (opts.effects) {
+    const effectListOpts = toEffectListOptions(opts.effects);
+    if (effectListOpts) {
+      const fxXml = stringify(effectListDesc, effectListOpts, ctx);
+      if (fxXml) parts.push(fxXml);
+    }
+  }
+
   if (parts.length === 0) return "<p:spPr/>";
   return `<p:spPr>${parts.join("")}</p:spPr>`;
 }
@@ -796,11 +828,21 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOpt
     if (transformOpts.rotation !== undefined) result.rotation = transformOpts.rotation;
   }
 
-  // Geometry
-  const prstGeom = findChild(spPr, "a:prstGeom");
-  if (prstGeom) {
-    const geomOpts = parse(presetGeometryDesc, prstGeom, ctx);
-    if (geomOpts.preset) result.geometry = geomOpts.preset;
+  // Geometry: EG_Geometry choice — custGeom | prstGeom
+  const custGeom = findChild(spPr, "a:custGeom");
+  if (custGeom) {
+    result.customGeometry = parse(customGeometryDesc, custGeom, ctx);
+  } else {
+    const prstGeom = findChild(spPr, "a:prstGeom");
+    if (prstGeom) {
+      const geomOpts = parse(presetGeometryDesc, prstGeom, ctx);
+      // Preserve adjustmentValues as an object; fall back to bare string for back-comat.
+      if (geomOpts.adjustmentValues && geomOpts.adjustmentValues.length > 0) {
+        result.geometry = geomOpts;
+      } else if (geomOpts.preset) {
+        result.geometry = geomOpts.preset;
+      }
+    }
   }
 
   // Fill
