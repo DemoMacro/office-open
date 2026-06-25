@@ -194,6 +194,40 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain("<pic:spPr");
   });
 
+  it("stringifies wps shape with preset geometry (not hardcoded rect)", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: {
+          children: [],
+          presetGeometry: { preset: "roundRect" },
+        },
+      },
+    });
+    expect(xml).toContain('prst="roundRect"');
+    expect(xml).not.toContain('prst="rect"');
+  });
+
+  it("round-trips wps shape preset geometry", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: {
+          children: [],
+          presetGeometry: { preset: "roundRect" },
+        },
+      },
+    });
+    const doc = parseXml(xml);
+    const el = doc.elements![0];
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      wpsShape?: { presetGeometry?: { preset?: string } };
+    };
+    expect(result.wpsShape?.presetGeometry?.preset).toBe("roundRect");
+  });
+
   it("round-trips floating image margins/flags/relativeFrom/wrap", () => {
     // parseImageRun must read all Floating fields the anchor stringify writes:
     // margins (distT-D), relativeFrom, allowOverlap/behindDoc/locked/

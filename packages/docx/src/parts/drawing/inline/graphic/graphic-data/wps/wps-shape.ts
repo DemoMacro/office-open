@@ -1,4 +1,8 @@
-import type { FillOptions, SolidFillOptions } from "@office-open/core/drawingml";
+import type {
+  FillOptions,
+  PresetGeometryOptions,
+  SolidFillOptions,
+} from "@office-open/core/drawingml";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 /**
  * WPS shape types for WordprocessingML documents.
@@ -47,6 +51,7 @@ export interface WpsShapeCoreOptions {
   outline?: OutlineOptions;
   fill?: FillOptions;
   customGeometry?: CustomGeometryOptions;
+  presetGeometry?: PresetGeometryOptions;
   effectDag?: EffectDagOptions;
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;

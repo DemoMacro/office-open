@@ -13,6 +13,7 @@ import {
   fillDesc,
   outlineDesc,
   parseColorChoice,
+  presetGeometryDesc,
 } from "@office-open/core";
 import { attr, attrBool, attrNum, findChild, findDeep, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -515,6 +516,8 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): WpsShapeCoreOp
     if (effectLst) result.effects = effectListDesc.parse(effectLst, ctx);
     const custGeom = findChild(spPr, "a:custGeom");
     if (custGeom) result.customGeometry = customGeometryDesc.parse(custGeom, ctx);
+    const prstGeom = findChild(spPr, "a:prstGeom");
+    if (prstGeom) result.presetGeometry = presetGeometryDesc.parse(prstGeom, ctx);
   }
 
   // Body properties (wps:bodyPr)

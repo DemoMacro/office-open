@@ -30,6 +30,7 @@ import {
   extractBlipFillMedia,
   fillDesc,
   outlineDesc,
+  presetGeometryDesc,
   scene3DDesc,
   shape3DDesc,
   transform2DDesc,
@@ -427,6 +428,8 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   );
   if (opts.customGeometry) {
     spPrParts.push(customGeometryDesc.stringify(opts.customGeometry, NOOP_CTX) ?? "");
+  } else if (opts.presetGeometry) {
+    spPrParts.push(presetGeometryDesc.stringify(opts.presetGeometry, NOOP_CTX) ?? "");
   } else {
     spPrParts.push('<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>');
   }
