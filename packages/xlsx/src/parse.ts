@@ -312,7 +312,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     for (const dr of drawingRels) {
       const drawingEl = xlsx.doc.get(dr.target);
       if (!drawingEl) continue;
-      const drawingData = drawingDesc.parse(drawingEl, readContext) as Record<string, unknown>;
+      const drawingData = drawingDesc.parse(drawingEl, readContext);
       if (drawingData.images) wsOpts.images = drawingData.images;
       if (drawingData.charts) wsOpts.charts = drawingData.charts;
       break;

@@ -54,6 +54,8 @@ export {
   type DrawingOptions,
   type DrawingImageOptions,
   type DrawingChartOptions,
+  type AnchorType,
+  type EditAsType,
 } from "./drawing";
 export { externalLinkDesc } from "./external-link";
 export { pivotTableDesc, type PivotTableDescriptorOptions } from "./pivot-table";
