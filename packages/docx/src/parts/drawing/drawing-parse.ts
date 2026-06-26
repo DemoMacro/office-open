@@ -15,6 +15,7 @@ import {
   parseColorChoice,
   presetGeometryDesc,
 } from "@office-open/core";
+import { scene3DDesc, shape3DDesc } from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, findChild, findDeep, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
@@ -518,11 +519,15 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): WpsShapeCoreOp
     if (custGeom) result.customGeometry = customGeometryDesc.parse(custGeom, ctx);
     const prstGeom = findChild(spPr, "a:prstGeom");
     if (prstGeom) result.presetGeometry = presetGeometryDesc.parse(prstGeom, ctx);
+    const scene3d = findChild(spPr, "a:scene3d");
+    if (scene3d) result.scene3d = scene3DDesc.parse(scene3d, ctx);
+    const sp3d = findChild(spPr, "a:sp3d");
+    if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
   }
 
   // Body properties (wps:bodyPr)
   const bodyPr = findChild(wspEl, "wps:bodyPr");
-  if (bodyPr) result.bodyProperties = parseBodyProperties(bodyPr);
+  if (bodyPr) result.bodyProperties = parseBodyProperties(bodyPr, ctx);
 
   // Shape style (wps:style) — theme references (lnRef/fillRef/effectRef/fontRef)
   const styleEl = findChild(wspEl, "wps:style");

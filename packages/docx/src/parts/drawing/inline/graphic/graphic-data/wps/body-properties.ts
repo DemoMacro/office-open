@@ -10,6 +10,8 @@
  */
 import type { UniversalMeasure } from "@office-open/core";
 import { convertToEmu } from "@office-open/core";
+import type { ReadContext } from "@office-open/core/descriptor";
+import { scene3DDesc, shape3DDesc } from "@office-open/core/drawingml";
 import { attr, attrBool, attrMeasure, attrNum, element, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -358,7 +360,7 @@ export const createBodyProperties = (options: BodyPropertiesOptions = {}): strin
  * (noAutofit/normAutofit/spAutoFit). prstTxWarp/scene3d/text-3D are not yet
  * parsed (later phase).
  */
-export const parseBodyProperties = (el: Element): BodyPropertiesOptions => {
+export const parseBodyProperties = (el: Element, ctx: ReadContext): BodyPropertiesOptions => {
   const result: BodyPropertiesOptions = {};
 
   const rotation = attrNum(el, "rot");
@@ -416,6 +418,36 @@ export const parseBodyProperties = (el: Element): BodyPropertiesOptions => {
       result.normAutofit = normOpts;
     } else if (findChild(el, "a:spAutoFit")) {
       result.spAutoFit = true;
+    }
+  }
+
+  // a:prstTxWarp (CT_PresetTextShape)
+  const prstTxWarp = findChild(el, "a:prstTxWarp");
+  if (prstTxWarp) {
+    const preset = attr(prstTxWarp, "prst") ?? "";
+    const avLst = findChild(prstTxWarp, "a:avLst");
+    const adjustments: { name: string; formula: string }[] = [];
+    for (const gd of avLst?.elements ?? []) {
+      if (gd.type === "element" && gd.name === "a:gd") {
+        adjustments.push({ name: attr(gd, "name") ?? "", formula: attr(gd, "fmla") ?? "" });
+      }
+    }
+    result.prstTxWarp = { preset, ...(adjustments.length > 0 ? { adjustments } : {}) };
+  }
+
+  // a:scene3d
+  const scene3d = findChild(el, "a:scene3d");
+  if (scene3d) result.scene3d = scene3DDesc.parse(scene3d, ctx);
+
+  // EG_Text3D (mutually exclusive: sp3d | flatTx)
+  const sp3d = findChild(el, "a:sp3d");
+  if (sp3d) {
+    result.sp3d = shape3DDesc.parse(sp3d, ctx);
+  } else {
+    const flatTx = findChild(el, "a:flatTx");
+    if (flatTx) {
+      const z = attrNum(flatTx, "z");
+      result.flatTx = z !== undefined ? { z } : {};
     }
   }
 
