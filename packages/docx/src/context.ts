@@ -199,9 +199,9 @@ export class DocxWriteContext implements WriteContext {
       const stylesFactory = new DefaultStylesFactory();
       const defaultStyles = stylesFactory.newInstance(options.styles.default);
       // importedStyles[0]=docDefaults, [1]=latentStyles, [2+]=builtin styles.
-      // paragraphStyles/characterStyles stay available for numbering registration
-      // below but are NOT emitted when round-tripping (the raw importedStyles
-      // already carry every source style — emitting both would duplicate them).
+      // Custom paragraph/character/table styles are NOT captured verbatim —
+      // they round-trip via the structured path below. paragraphStyles/
+      // characterStyles also feed numbering registration further down.
       const {
         importedStyles: parsedStyles,
         paragraphStyles,
@@ -219,11 +219,12 @@ export class DocxWriteContext implements WriteContext {
         if (latentIdx >= 0) merged[latentIdx] = { _raw: restStyles.latentStylesXml };
       }
       if (parsedStyles && parsedStyles.length > 0) {
-        // Round-trip: emit verbatim source styles (suppress factory builtins
-        // and structured re-emission). User overrides via default.<field>
-        // (e.g. default.heading1) take precedence over the verbatim source —
-        // drop those ids from the source and emit the factory's structured
-        // version instead, so "modify a default style" works post-parse.
+        // Round-trip: builtins emit verbatim from the source (factory builtins
+        // suppressed); custom styles re-emit structured. User overrides via
+        // default.<field> (e.g. default.heading1) take precedence over the
+        // verbatim builtin — drop those ids from the source and emit the
+        // factory's structured version instead, so "modify a default style"
+        // works post-parse.
         merged.splice(2);
         const overrideIds = collectDefaultOverrideIds(options.styles.default);
         if (overrideIds.size > 0) {
@@ -244,7 +245,14 @@ export class DocxWriteContext implements WriteContext {
         } else {
           merged.push(...parsedStyles);
         }
-        this.styles = new Styles({ ...defaultStyles, importedStyles: merged, ...restStyles });
+        this.styles = new Styles({
+          ...defaultStyles,
+          importedStyles: merged,
+          paragraphStyles,
+          characterStyles,
+          tableStyles,
+          ...restStyles,
+        });
       } else {
         // Generation: factory builtins + structured custom styles.
         this.styles = new Styles({
