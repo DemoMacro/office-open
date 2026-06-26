@@ -1,5 +1,6 @@
 export { Relationships, TargetModeType, optionalRelsPart } from "./relationships";
 export type { RelationshipType } from "./relationships";
+export { Media, type BaseMediaEntry } from "./media";
 export { createDefault, createOverride } from "./content-types";
 export type { DefaultAttributes, OverrideAttributes } from "./content-types";
 

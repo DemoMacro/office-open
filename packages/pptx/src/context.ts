@@ -4,6 +4,7 @@
  * @module
  */
 
+import { Media } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 
 import type { PptxDocument } from "./parse";
@@ -63,13 +64,12 @@ export interface HyperlinkEntry {
  * generic `WriteContext` to this type to access PPTX-specific features.
  */
 export class PptxWriteContext implements WriteContext {
-  private _media = new Map<string, MediaEntry>();
+  private _media = new Media<MediaEntry>();
   private _charts = new Map<string, ChartEntry>();
   private _smartArts = new Map<string, SmartArtEntry>();
   private _hyperlinks = new Map<string, HyperlinkEntry>();
   private _contentTypes = new Map<string, string>();
   private _nextRelId = 1;
-  private _nextMediaId = 1;
   private _nextChartId = 1;
   private _nextSmartArtId = 1;
 
@@ -81,21 +81,25 @@ export class PptxWriteContext implements WriteContext {
   }
 
   public addMedia(data: Uint8Array, type: string): string {
-    const fileName = `image${this._nextMediaId++}.${type}`;
-    this._media.set(fileName, {
+    const entry = this._media.addMedia(data, type, (fileName) => ({
       key: fileName,
       fileName,
       data,
       type,
       transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
-    });
-    return `{${fileName}}`;
+    }));
+    return `{${entry.fileName}}`;
   }
 
   // ── PPTX-specific registration ──
 
-  public addImage(key: string, entry: MediaEntry): void {
-    this._media.set(key, entry);
+  public addImage(key: string, entry: MediaEntry): MediaEntry {
+    return this._media.addMedia(
+      entry.data,
+      entry.type,
+      (fileName) => ({ ...entry, fileName, key: fileName }),
+      key,
+    );
   }
 
   public addChart(key: string, entry: ChartEntry): void {
@@ -125,7 +129,12 @@ export class PptxWriteContext implements WriteContext {
   // ── Getters ──
 
   public get media(): MediaEntry[] {
-    return [...this._media.values()];
+    return this._media.array;
+  }
+
+  /** Underlying deduplicated collection — used by the compiler for media output. */
+  public get mediaCollection(): Media<MediaEntry> {
+    return this._media;
   }
 
   public get charts(): ChartEntry[] {

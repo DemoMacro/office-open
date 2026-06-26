@@ -103,16 +103,17 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
 
     const shapeChildren: string[] = [];
     if (opts.iconImage) {
-      const iconFileName = ctx.file.media.nextMediaName(opts.iconImage.type);
-      const iconMediaData = {
-        type: opts.iconImage.type,
-        ...createImageData(
-          toUint8Array(opts.iconImage.data) as Uint8Array,
-          { width: widthVal, height: heightVal },
-          iconFileName,
-        ),
-      } as MediaData;
-      ctx.file.media.addImage(iconFileName, iconMediaData);
+      const rawData = toUint8Array(opts.iconImage.data) as Uint8Array;
+      const iconType = opts.iconImage.type;
+      const { fileName: iconFileName } = ctx.file.media.addMedia(
+        rawData,
+        iconType,
+        (fileName) =>
+          ({
+            type: iconType,
+            ...createImageData(rawData, { width: widthVal, height: heightVal }, fileName),
+          }) as MediaData,
+      );
       const titleAttr = opts.iconImage.title ? ` o:title="${opts.iconImage.title}"` : "";
       shapeChildren.push(`<v:imagedata r:id="{${iconFileName}}"${titleAttr}/>`);
     }

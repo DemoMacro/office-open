@@ -57,6 +57,7 @@ import type { VmlShapeStyle } from "@parts/textbox/shape/shape";
 import { styleToKeyMap } from "@parts/textbox/shape/shape";
 import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
+import type { MediaData } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
 import type { ShadingAttributesProperties } from "@shared/shading";
 
@@ -351,12 +352,24 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
   if (opts.rawXml) {
     if (opts.rawMedia) {
       for (const m of opts.rawMedia) {
-        ctx.file.media.addImage(m.fileName, {
-          type: m.type,
-          data: toUint8Array(m.data),
-          fileName: m.fileName,
-          transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
-        });
+        const data = toUint8Array(m.data);
+        const entry = ctx.file.media.addMedia(
+          data,
+          m.type,
+          (fileName) =>
+            ({
+              type: m.type,
+              data,
+              fileName,
+              transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+            }) as MediaData,
+          m.fileName,
+        );
+        // Dedup may reuse an earlier file name; remap the placeholder so the
+        // compiler resolves it to the shared media relationship.
+        if (entry.fileName !== m.fileName) {
+          opts.rawXml = opts.rawXml.split(`{${m.fileName}}`).join(`{${entry.fileName}}`);
+        }
       }
     }
     return opts.rawXml;
@@ -371,16 +384,19 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
   const attrStr = attrs.join(" ");
 
   if (opts.image) {
-    const fileName = ctx.file.media.nextMediaName(opts.image.type);
-    const rawData = toUint8Array(opts.image.data) as Uint8Array;
-
-    // Register media
-    ctx.file.media.addImage(fileName, {
-      type: opts.image.type as "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf",
-      data: rawData,
-      fileName,
-      transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
-    });
+    const image = opts.image;
+    const rawData = toUint8Array(image.data) as Uint8Array;
+    const { fileName } = ctx.file.media.addMedia(
+      rawData,
+      image.type,
+      (name) =>
+        ({
+          type: image.type as "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf",
+          data: rawData,
+          fileName: name,
+          transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+        }) as MediaData,
+    );
 
     const vmlBg = `<v:background id="_x0000_s1025"><v:fill r:id="{${fileName}}" o:title="${fileName}" recolor="t" type="frame"/></v:background>`;
     return `<w:background ${attrStr}>${vmlBg}</w:background>`;

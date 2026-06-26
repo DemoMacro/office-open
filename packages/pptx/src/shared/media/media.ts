@@ -1,12 +1,15 @@
 /**
  * Media module for PresentationML documents.
  *
+ * Provides transformation helpers for embedded media. The deduplicated
+ * {@link Media} collection lives in @office-open/core and is shared across all
+ * format packages.
+ *
  * @module
  */
 import { convertPixelsToEmu } from "@office-open/core";
 
 import type { MediaDataTransformation } from "./data";
-import type { MediaData } from "./data";
 
 export interface MediaTransformation {
   offset?: {
@@ -34,23 +37,3 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
   flip: options.flip,
   rotation: options.rotation ? options.rotation * 60_000 : undefined,
 });
-
-export class Media {
-  private map: Map<string, MediaData>;
-
-  public constructor() {
-    this.map = new Map<string, MediaData>();
-  }
-
-  public addImage(key: string, mediaData: MediaData): void {
-    this.map.set(key, mediaData);
-  }
-
-  public addMedia(key: string, mediaData: MediaData): void {
-    this.map.set(key, mediaData);
-  }
-
-  public get array(): MediaData[] {
-    return [...this.map.values()];
-  }
-}

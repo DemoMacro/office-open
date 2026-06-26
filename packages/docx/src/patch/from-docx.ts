@@ -37,6 +37,7 @@ import type { RunOptions } from "@parts/paragraph/run/run";
 import { tableDesc } from "@parts/table/descriptor";
 import type { TableOptions } from "@parts/table/table";
 import { Media } from "@shared/media";
+import type { MediaData } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
 
 import type { BodyContext } from "../context";
@@ -77,7 +78,7 @@ interface AssignedComment {
  * Captures hyperlink and image relationships for post-processing.
  */
 function createPatchContext(
-  file: { media: Media },
+  file: { media: Media<MediaData> },
   hyperlinkSink: Array<{ id: string; link: string }>,
 ): BodyContext {
   return {
@@ -249,7 +250,7 @@ export const patchDocument = async <T extends OutputType = OutputType>({
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
   const zipContent = unzipSync(toUint8Array(data));
   const contexts = new Map<string, BodyContext>();
-  const media = new Media();
+  const media = new Media<MediaData>();
   const file = { media } as BodyContext["file"];
 
   // Resolve comment ids by continuation from any existing word/comments.xml.
@@ -609,7 +610,7 @@ function wrapPlaceholderComment(json: Element, placeholder: string, commentId: n
 function mergeCommentsPart(
   map: Map<string, Element>,
   assigned: AssignedComment[],
-  file: { media: Media },
+  file: { media: Media<MediaData> },
 ): void {
   const newOpts: CommentOptions[] = assigned.map((ac) => ({ id: ac.id, ...ac.options }));
   const ctx = createPatchContext(file, []);

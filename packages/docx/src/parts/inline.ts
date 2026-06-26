@@ -189,19 +189,23 @@ function registerVmlFallbackMedia(
   if (!opts.vmlFallbackMedia) return;
   for (const m of opts.vmlFallbackMedia) {
     const data = toUint8Array(m.data);
-    const existing = ctx.file.media.findByContent(data);
-    if (existing) {
-      if (opts.vmlFallback) {
-        opts.vmlFallback = opts.vmlFallback.split(`{${m.fileName}}`).join(`{${existing}}`);
-      }
-      continue;
-    }
-    ctx.file.media.addImage(m.fileName, {
-      type: m.type,
+    const entry = ctx.file.media.addMedia(
       data,
-      fileName: m.fileName,
-      transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
-    });
+      m.type,
+      (fileName) =>
+        ({
+          type: m.type,
+          data,
+          fileName,
+          transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+        }) as MediaData,
+      m.fileName,
+    );
+    // Dedup may reuse the Choice blip's file name; remap the VML fallback
+    // placeholder so both branches share one relationship/file (matches Office).
+    if (entry.fileName !== m.fileName && opts.vmlFallback) {
+      opts.vmlFallback = opts.vmlFallback.split(`{${m.fileName}}`).join(`{${entry.fileName}}`);
+    }
   }
 }
 
@@ -331,52 +335,61 @@ export function stringifyChildDispatch(
     );
   }
 
-  // Image — side effect: media registration
+  // Image — side effect: media registration (content-deduplicated via core Media)
   if ("image" in child) {
     const opts = child.image;
-    const key = ctx.file.media.nextMediaName(opts.type);
     const rawData = toUint8Array(opts.data) as Uint8Array;
 
     let mediaData: MediaData;
     if (opts.type === "svg") {
       const fallbackData = toUint8Array(opts.fallback.data) as Uint8Array;
-      mediaData = {
-        type: "svg",
-        ...createImageData(
-          rawData,
-          opts.transformation,
-          key,
-          opts.sourceRectangle,
-          opts.nonVisualProperties,
-        ),
-        useLocalDpi: opts.useLocalDpi,
-        fallback: {
-          type: opts.fallback.type,
-          ...createImageData(
-            fallbackData,
-            opts.transformation,
-            ctx.file.media.nextMediaName(opts.fallback.type),
-          ),
-        },
-      } as MediaData;
+      const fallbackType = opts.fallback.type;
+      // Register the raster fallback first so its file name is allocated, then
+      // build the svg entry referencing it. Dedup applies to both independently.
+      const fallback = ctx.file.media.addMedia(
+        fallbackData,
+        fallbackType,
+        (fileName) =>
+          ({
+            type: fallbackType,
+            ...createImageData(fallbackData, opts.transformation, fileName),
+          }) as MediaData,
+      );
+      mediaData = ctx.file.media.addMedia(
+        rawData,
+        "svg",
+        (fileName) =>
+          ({
+            type: "svg" as const,
+            ...createImageData(
+              rawData,
+              opts.transformation,
+              fileName,
+              opts.sourceRectangle,
+              opts.nonVisualProperties,
+            ),
+            useLocalDpi: opts.useLocalDpi,
+            fallback,
+          }) as MediaData,
+      );
     } else {
-      mediaData = {
-        type: opts.type,
-        ...createImageData(
-          rawData,
-          opts.transformation,
-          key,
-          opts.sourceRectangle,
-          opts.nonVisualProperties,
-        ),
-        useLocalDpi: opts.useLocalDpi,
-      } as MediaData;
-    }
-
-    // Register media
-    ctx.file.media.addImage(mediaData.fileName, mediaData);
-    if (mediaData.type === "svg") {
-      ctx.file.media.addImage(mediaData.fallback.fileName, mediaData.fallback);
+      const type = opts.type;
+      mediaData = ctx.file.media.addMedia(
+        rawData,
+        type,
+        (fileName) =>
+          ({
+            type,
+            ...createImageData(
+              rawData,
+              opts.transformation,
+              fileName,
+              opts.sourceRectangle,
+              opts.nonVisualProperties,
+            ),
+            useLocalDpi: opts.useLocalDpi,
+          }) as MediaData,
+      );
     }
 
     // Build drawing XML via descriptor (zero XmlComponent instances)
@@ -519,7 +532,7 @@ export function stringifyChildDispatch(
           registerMedia(c.children);
           continue;
         }
-        ctx.file.media.addImage(c.fileName, c);
+        ctx.file.media.addMedia(c.data, c.type, () => c as MediaData, c.fileName);
       }
     };
     registerMedia(opts.children);

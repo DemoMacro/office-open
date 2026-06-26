@@ -94,7 +94,7 @@ export type { GroupShapeOptions } from "./shape/group-shape";
 export type { LineShapeOptions, ConnectorShapeOptions } from "./shape/line-shape";
 
 // Media
-export { Media } from "./media/media";
+export { Media } from "@office-open/core";
 export { createTransformation, type MediaTransformation } from "./media/media";
 export type { MediaData, MediaDataTransformation } from "./media/data";
 export type { VideoFrameOptions, VideoType, PosterType } from "./media/video-frame";

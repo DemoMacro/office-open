@@ -8,11 +8,11 @@ import { ChartCollection, Relationships, type RelationshipType } from "@office-o
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
 import { ContentTypes } from "@parts/content-types";
-import { Media } from "@parts/media";
 import { SharedStrings } from "@parts/shared-strings";
 import { Styles } from "@parts/styles";
 import type { DxfOptions, StyleOptions, StylesParseResult } from "@parts/styles";
 import type { PivotCacheReference } from "@parts/workbook";
+import { Media, type MediaData } from "@shared/media";
 
 import type { XlsxDocument } from "./parse";
 
@@ -27,7 +27,7 @@ import type { XlsxDocument } from "./parse";
 export class XlsxWriteContext implements WriteContext {
   sharedStrings = new SharedStrings();
   styles = new Styles();
-  media = new Media();
+  media = new Media<MediaData>();
   charts = new ChartCollection();
   contentTypes = new ContentTypes();
   workbookRels = new Relationships();
@@ -42,7 +42,7 @@ export class XlsxWriteContext implements WriteContext {
   }
 
   public addMedia(_data: Uint8Array, _type: string): string {
-    // Stub — XLSX media registration goes through Media.addImage() in compiler.
+    // Stub — XLSX media registration goes through Media.addMedia() in compiler.
     return "";
   }
 

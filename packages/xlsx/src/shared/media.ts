@@ -1,6 +1,10 @@
 /**
  * Media collection for XLSX files — stores image binary data.
  *
+ * The deduplicated {@link Media} collection lives in @office-open/core and is
+ * re-exported here so XLSX call sites and the public API share one
+ * content-based dedup implementation across all format packages.
+ *
  * @module
  */
 
@@ -12,14 +16,4 @@ export interface MediaData {
   height: number;
 }
 
-export class Media {
-  private map = new Map<string, MediaData>();
-
-  public addImage(key: string, data: MediaData): void {
-    this.map.set(key, data);
-  }
-
-  public get array(): MediaData[] {
-    return [...this.map.values()];
-  }
-}
+export { Media } from "@office-open/core";

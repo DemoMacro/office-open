@@ -68,7 +68,7 @@ export class DocxWriteContext implements WriteContext {
   // --- Accessed by XmlComponent via context.file.* during toXml() ---
   declare public document: { relationships: Relationships };
   declare public numbering: Numbering;
-  declare public media: Media;
+  declare public media: Media<MediaData>;
   declare public charts: ChartCollection;
   declare public smartArts: SmartArtCollection;
   declare public embeddings: EmbeddingCollection;
@@ -110,14 +110,18 @@ export class DocxWriteContext implements WriteContext {
   }
 
   public addMedia(data: Uint8Array, type: string): string {
-    const fileName = this.media.nextMediaName(type);
-    this.media.addImage(fileName, {
+    const entry = this.media.addMedia(
       data,
-      fileName,
       type,
-      transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
-    } as MediaData);
-    return `{${fileName}}`;
+      (fileName) =>
+        ({
+          data,
+          fileName,
+          type,
+          transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+        }) as MediaData,
+    );
+    return `{${entry.fileName}}`;
   }
 
   // --- Internal tracking ---
@@ -166,7 +170,7 @@ export class DocxWriteContext implements WriteContext {
       ...options.settings,
     };
 
-    this.media = new Media();
+    this.media = new Media<MediaData>();
     this.charts = new ChartCollection();
     this.smartArts = new SmartArtCollection();
     this.embeddings = new EmbeddingCollection();

@@ -47,7 +47,6 @@ import {
 } from "@shared/file";
 import { HyperlinkCollection } from "@shared/hyperlink-collection";
 import type { MediaData } from "@shared/media/data";
-import { Media } from "@shared/media/media";
 import { createThemeXml } from "@shared/theme";
 import { buildTransition } from "@shared/transition";
 
@@ -659,7 +658,7 @@ export function compilePresentation(
     ...buildPresAttrOpts(options),
   };
   const fileRels = buildFileRels(hasCustomProperties);
-  const media = new Media();
+  const media = descCtx.mediaCollection;
   const charts = new ChartCollection();
   const smartArts = new SmartArtCollection();
   const hyperlinks = new HyperlinkCollection();

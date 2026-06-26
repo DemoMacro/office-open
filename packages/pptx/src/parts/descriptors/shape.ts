@@ -381,8 +381,8 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
     const widthPixels = typeof opts.width === "number" ? opts.width : 0;
     const heightPixels = typeof opts.height === "number" ? opts.height : 0;
 
-    // Register media with the PPTX context
-    pptx.addImage(fileName, {
+    // Register media with the PPTX context (content-deduplicated)
+    const mediaEntry = pptx.addImage(fileName, {
       key: fileName,
       type: opts.type,
       fileName,
@@ -399,7 +399,7 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
     parts.push(stringifyNvPicPr(id, name));
 
     // ── p:blipFill ──
-    parts.push(stringifyPptxBlipFill(fileName));
+    parts.push(stringifyPptxBlipFill(mediaEntry.fileName));
 
     // ── p:spPr ──
     const spPrXml = stringifyPicSpPr(opts, ctx);

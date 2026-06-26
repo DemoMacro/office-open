@@ -212,20 +212,19 @@ export function compileWorkbook(
 
       // Process images
       for (const img of imgOpts) {
-        const mediaKey = `image_${globalMediaIdx}`;
         const ext = img.type === "jpg" ? "jpeg" : "png";
-        ctx.media.addImage(mediaKey, {
-          fileName: `image${globalMediaIdx + 1}.${ext}`,
+        const entry = ctx.media.addMedia(img.data, ext, (fileName) => ({
+          fileName,
           type: ext,
           data: img.data,
           width: 0,
           height: 0,
-        });
+        }));
 
         drawingRels.addRelationship(
           rid,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-          `../media/image${globalMediaIdx + 1}.${ext}`,
+          `../media/${entry.fileName}`,
         );
 
         drawingImages.push({
@@ -339,21 +338,19 @@ export function compileWorkbook(
     // Background picture
     if (bgImg) {
       const ext = bgImg.type === "jpg" ? "jpeg" : bgImg.type;
-      const mediaKey = `bg_${i}`;
-      const mediaIdx = globalMediaIdx + 1;
-      ctx.media.addImage(mediaKey, {
-        fileName: `image${mediaIdx}.${ext}`,
+      const entry = ctx.media.addMedia(bgImg.data, ext, (fileName) => ({
+        fileName,
         type: ext,
         data: bgImg.data,
         width: 0,
         height: 0,
-      });
+      }));
       globalMediaIdx++;
       const bgRid = ++nextRid;
       wsRels!.addRelationship(
         bgRid,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-        `../media/image${mediaIdx}.${ext}`,
+        `../media/${entry.fileName}`,
       );
       sheetXml = sheetXml.replace("<!--BACKGROUND_PICTURE-->", `<picture r:id="rId${bgRid}"/>`);
     }
