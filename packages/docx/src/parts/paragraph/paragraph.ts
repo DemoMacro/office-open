@@ -97,6 +97,12 @@ export type ParagraphChild =
         history?: boolean;
         children?: (RunOptions | string)[];
       };
+      /**
+       * Display-text shorthand for the hyperlink (emitted as a single text run).
+       * Alternative to `hyperlink.children`; without it `{ text, hyperlink }`
+       * would serialize an empty `<w:hyperlink>`.
+       */
+      text?: string;
     }
   | { bookmarkStart: BookmarkStartOptions }
   | { bookmarkEnd: MarkupRangeOptions }

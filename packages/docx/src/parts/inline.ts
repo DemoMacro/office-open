@@ -588,8 +588,13 @@ export function stringifyChildDispatch(
   if ("hyperlink" in child) {
     const hl = child.hyperlink;
 
-    // Serialize children using stringifyRunInline
+    // Serialize children using stringifyRunInline. A top-level `text` is a
+    // shorthand for a single text run; without it `{ text, hyperlink }` would
+    // emit an empty <w:hyperlink>.
     const childParts: string[] = [];
+    if (child.text !== undefined) {
+      childParts.push(stringifyRunInline({ text: child.text }, ctx));
+    }
     if (hl.children) {
       for (const rc of hl.children) {
         if (typeof rc === "string") {
