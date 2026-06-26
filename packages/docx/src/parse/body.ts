@@ -11,6 +11,7 @@ import { parseAltChunk } from "@parts/alt-chunk/alt-chunk-parse";
 import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
 import { parseSectionPropertiesEl } from "@parts/document/body/section-properties/descriptor";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
+import type { BookmarkEndOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import { parseToc, parseTocFieldFromElements } from "@parts/table-of-contents/toc-parse";
@@ -148,29 +149,24 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       const idRaw = attr(el, "w:id");
       const name = attr(el, "w:name");
       if (idRaw !== undefined && name) {
-        const bookmarkStart: {
-          id: number;
-          name: string;
-          displacedByCustomXml?: "before" | "after";
-        } = {
-          id: Number(idRaw),
-          name,
-        };
+        const bookmarkStart: Partial<BookmarkStartOptions> = { id: Number(idRaw), name };
         const disp = attr(el, "w:displacedByCustomXml");
         if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
-        return { bookmarkStart };
+        const colFirstRaw = attr(el, "w:colFirst");
+        if (colFirstRaw !== undefined) bookmarkStart.colFirst = Number(colFirstRaw);
+        const colLastRaw = attr(el, "w:colLast");
+        if (colLastRaw !== undefined) bookmarkStart.colLast = Number(colLastRaw);
+        return { bookmarkStart: bookmarkStart as BookmarkStartOptions };
       }
       return { rawXml: stringifyElement(el) };
     }
     case "w:bookmarkEnd": {
       const idRaw = attr(el, "w:id");
       if (idRaw !== undefined) {
-        const bookmarkEnd: { id: number; displacedByCustomXml?: "before" | "after" } = {
-          id: Number(idRaw),
-        };
+        const bookmarkEnd: Partial<BookmarkEndOptions> = { id: Number(idRaw) };
         const disp = attr(el, "w:displacedByCustomXml");
         if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
-        return { bookmarkEnd };
+        return { bookmarkEnd: bookmarkEnd as BookmarkEndOptions };
       }
       return { rawXml: stringifyElement(el) };
     }

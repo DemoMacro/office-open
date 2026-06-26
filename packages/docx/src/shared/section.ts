@@ -9,6 +9,7 @@ import type { CustomXmlBlockOptions } from "@parts/custom-xml";
  * @module
  */
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties";
+import type { BookmarkEndOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
@@ -49,8 +50,8 @@ export type SectionChild =
   | { altChunk: AltChunkOptions }
   | { subDoc: SubDocOptions }
   | { customXml: CustomXmlBlockOptions }
-  | { bookmarkStart: { id: number; name: string; displacedByCustomXml?: "before" | "after" } }
-  | { bookmarkEnd: { id: number; displacedByCustomXml?: "before" | "after" } }
+  | { bookmarkStart: BookmarkStartOptions }
+  | { bookmarkEnd: BookmarkEndOptions }
   | { rawXml: string };
 
 /**

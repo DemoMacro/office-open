@@ -68,6 +68,38 @@ describe("range markers parse", () => {
     expect(cs[3].moveToRangeEnd).toBe(2);
   });
 
+  it("parses bookmarkStart/End with column scope and displacedByCustomXml", () => {
+    const cs = childrenOf(
+      parseParagraphXml(
+        `<w:bookmarkStart w:id="1" w:name="bm" w:colFirst="0" w:colLast="2" w:displacedByCustomXml="before"/>` +
+          `<w:bookmarkEnd w:id="1" w:displacedByCustomXml="after"/>`,
+      ),
+    );
+    expect(cs[0].bookmarkStart).toEqual({
+      id: 1,
+      name: "bm",
+      colFirst: 0,
+      colLast: 2,
+      displacedByCustomXml: "before",
+    });
+    expect(cs[1].bookmarkEnd).toEqual({ id: 1, displacedByCustomXml: "after" });
+  });
+
+  it("parses moveFromRangeStart with column scope and displacedByCustomXml", () => {
+    const cs = childrenOf(
+      parseParagraphXml(
+        `<w:moveFromRangeStart w:id="3" w:name="m" w:colFirst="0" w:colLast="1" w:displacedByCustomXml="after"/>`,
+      ),
+    );
+    expect(cs[0].moveFromRangeStart).toEqual({
+      id: 3,
+      name: "m",
+      colFirst: 0,
+      colLast: 1,
+      displacedByCustomXml: "after",
+    });
+  });
+
   it("parses the four customXml range marker pairs", () => {
     const cs = childrenOf(
       parseParagraphXml(

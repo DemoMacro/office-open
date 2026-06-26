@@ -18,6 +18,7 @@ import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { createDataModel } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
+import type { MoveRangeStartOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
@@ -207,6 +208,18 @@ function registerVmlFallbackMedia(
 /**
  * Build the rPr XML for a break/tab run from its structured run properties.
  */
+/** Shared attribute string for w:moveFromRangeStart / w:moveToRangeStart (CT_MoveBookmark). */
+function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
+  const a: string[] = [`w:id="${m.id}"`];
+  if (m.name) a.push(`w:name="${escapeXml(m.name)}"`);
+  if (m.author) a.push(`w:author="${escapeXml(m.author)}"`);
+  if (m.date) a.push(`w:date="${m.date}"`);
+  if (m.displacedByCustomXml) a.push(`w:displacedByCustomXml="${m.displacedByCustomXml}"`);
+  if (m.colFirst !== undefined) a.push(`w:colFirst="${m.colFirst}"`);
+  if (m.colLast !== undefined) a.push(`w:colLast="${m.colLast}"`);
+  return a.join(" ");
+}
+
 function runPropertiesXml(child: ParagraphChild): string {
   return stringifyRunProperties(child as RunOptions) ?? "";
 }
@@ -253,17 +266,17 @@ export function stringifyChildDispatch(
   // Bookmark markers — pure XML
   if ("bookmarkStart" in child) {
     const bs = child.bookmarkStart;
-    const bsDisp = bs.displacedByCustomXml
-      ? ` w:displacedByCustomXml="${bs.displacedByCustomXml}"`
-      : "";
-    return `<w:bookmarkStart w:id="${bs.id}" w:name="${bs.name}"${bsDisp}/>`;
+    const a: string[] = [`w:id="${bs.id}"`, `w:name="${escapeXml(bs.name)}"`];
+    if (bs.displacedByCustomXml) a.push(`w:displacedByCustomXml="${bs.displacedByCustomXml}"`);
+    if (bs.colFirst !== undefined) a.push(`w:colFirst="${bs.colFirst}"`);
+    if (bs.colLast !== undefined) a.push(`w:colLast="${bs.colLast}"`);
+    return `<w:bookmarkStart ${a.join(" ")}/>`;
   }
   if ("bookmarkEnd" in child) {
     const be = child.bookmarkEnd;
-    const beDisp = be.displacedByCustomXml
-      ? ` w:displacedByCustomXml="${be.displacedByCustomXml}"`
-      : "";
-    return `<w:bookmarkEnd w:id="${be.id}"${beDisp}/>`;
+    const a: string[] = [`w:id="${be.id}"`];
+    if (be.displacedByCustomXml) a.push(`w:displacedByCustomXml="${be.displacedByCustomXml}"`);
+    return `<w:bookmarkEnd ${a.join(" ")}/>`;
   }
 
   // Symbol run — direct XML output.
@@ -629,21 +642,11 @@ export function stringifyChildDispatch(
 
   // ── Move revision range markers ──
   if ("moveFromRangeStart" in child) {
-    const m = child.moveFromRangeStart;
-    const a: string[] = [`w:id="${m.id}"`];
-    if (m.name) a.push(`w:name="${escapeXml(m.name)}"`);
-    if (m.author) a.push(`w:author="${escapeXml(m.author)}"`);
-    if (m.date) a.push(`w:date="${m.date}"`);
-    return `<w:moveFromRangeStart ${a.join(" ")}/>`;
+    return `<w:moveFromRangeStart ${buildMoveRangeStartAttrs(child.moveFromRangeStart)}/>`;
   }
   if ("moveFromRangeEnd" in child) return `<w:moveFromRangeEnd w:id="${child.moveFromRangeEnd}"/>`;
   if ("moveToRangeStart" in child) {
-    const m = child.moveToRangeStart;
-    const a: string[] = [`w:id="${m.id}"`];
-    if (m.name) a.push(`w:name="${escapeXml(m.name)}"`);
-    if (m.author) a.push(`w:author="${escapeXml(m.author)}"`);
-    if (m.date) a.push(`w:date="${m.date}"`);
-    return `<w:moveToRangeStart ${a.join(" ")}/>`;
+    return `<w:moveToRangeStart ${buildMoveRangeStartAttrs(child.moveToRangeStart)}/>`;
   }
   if ("moveToRangeEnd" in child) return `<w:moveToRangeEnd w:id="${child.moveToRangeEnd}"/>`;
 

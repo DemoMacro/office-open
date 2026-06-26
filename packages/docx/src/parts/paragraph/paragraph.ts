@@ -10,6 +10,11 @@ import type { CustomXmlRunOptions } from "@parts/custom-xml";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
+import type {
+  BookmarkEndOptions,
+  BookmarkStartOptions,
+  MoveRangeStartOptions,
+} from "./links/bookmark";
 import type { MathInput } from "./math";
 import type { ParagraphPropertiesOptions } from "./properties";
 import type { RunOptions, RunPropertiesOptions } from "./run";
@@ -93,8 +98,8 @@ export type ParagraphChild =
         children?: (RunOptions | string)[];
       };
     }
-  | { bookmarkStart: { id: number; name: string; displacedByCustomXml?: "before" | "after" } }
-  | { bookmarkEnd: { id: number; displacedByCustomXml?: "before" | "after" } }
+  | { bookmarkStart: BookmarkStartOptions }
+  | { bookmarkEnd: BookmarkEndOptions }
   | { wpsShape: WpsShapeRunOptions }
   | { wpgGroup: WpgGroupRunOptions }
   // Proof error markers
@@ -113,9 +118,9 @@ export type ParagraphChild =
     }
   | { permEnd: number | string }
   // Move revision range markers
-  | { moveFromRangeStart: { id: number; name?: string; author?: string; date?: string } }
+  | { moveFromRangeStart: MoveRangeStartOptions }
   | { moveFromRangeEnd: number }
-  | { moveToRangeStart: { id: number; name?: string; author?: string; date?: string } }
+  | { moveToRangeStart: MoveRangeStartOptions }
   | { moveToRangeEnd: number }
   // Move revision text runs
   | { movedFrom: ChangedAttributesProperties & { children: (RunOptions | string)[] } }

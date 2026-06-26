@@ -36,6 +36,11 @@ import type { SpacingProperties } from "@parts/paragraph/formatting/spacing";
 import { HeadingLevel } from "@parts/paragraph/formatting/style";
 import type { TabStopDefinition } from "@parts/paragraph/formatting/tab-stop";
 import type { FrameOptions } from "@parts/paragraph/frame/frame-properties";
+import type {
+  BookmarkEndOptions,
+  BookmarkStartOptions,
+  MoveRangeStartOptions,
+} from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type {
   ParagraphPropertiesOptions,
@@ -315,17 +320,17 @@ export function stringifyBodyChild(child: SectionChild, ctx: BodyContext): strin
   }
   if ("bookmarkStart" in child) {
     const bs = child.bookmarkStart;
-    const bsDisp = bs.displacedByCustomXml
-      ? ` w:displacedByCustomXml="${bs.displacedByCustomXml}"`
-      : "";
-    return `<w:bookmarkStart w:id="${bs.id}" w:name="${bs.name}"${bsDisp}/>`;
+    const a: string[] = [`w:id="${bs.id}"`, `w:name="${escapeXml(bs.name)}"`];
+    if (bs.displacedByCustomXml) a.push(`w:displacedByCustomXml="${bs.displacedByCustomXml}"`);
+    if (bs.colFirst !== undefined) a.push(`w:colFirst="${bs.colFirst}"`);
+    if (bs.colLast !== undefined) a.push(`w:colLast="${bs.colLast}"`);
+    return `<w:bookmarkStart ${a.join(" ")}/>`;
   }
   if ("bookmarkEnd" in child) {
     const be = child.bookmarkEnd;
-    const beDisp = be.displacedByCustomXml
-      ? ` w:displacedByCustomXml="${be.displacedByCustomXml}"`
-      : "";
-    return `<w:bookmarkEnd w:id="${be.id}"${beDisp}/>`;
+    const a: string[] = [`w:id="${be.id}"`];
+    if (be.displacedByCustomXml) a.push(`w:displacedByCustomXml="${be.displacedByCustomXml}"`);
+    return `<w:bookmarkEnd ${a.join(" ")}/>`;
   }
   if ("rawXml" in child) {
     return child.rawXml;
@@ -1019,19 +1024,23 @@ function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Partial<Custom
 }
 
 /** Parse a move-revision range start (w:moveFromRangeStart / w:moveToRangeStart). */
-function parseMoveRangeStart(
-  el: Element,
-): { id: number; name?: string; author?: string; date?: string } | null {
+function parseMoveRangeStart(el: Element): MoveRangeStartOptions | null {
   const id = attrNum(el, "w:id");
   if (id === undefined) return null;
-  const m: { id: number; name?: string; author?: string; date?: string } = { id };
+  const m: Partial<MoveRangeStartOptions> = { id };
   const name = attr(el, "w:name");
   if (name !== undefined) m.name = name;
   const author = attr(el, "w:author");
   if (author !== undefined) m.author = author;
   const date = attr(el, "w:date");
   if (date !== undefined) m.date = date;
-  return m;
+  const disp = attr(el, "w:displacedByCustomXml");
+  if (disp === "before" || disp === "after") m.displacedByCustomXml = disp;
+  const colFirst = attrNum(el, "w:colFirst");
+  if (colFirst !== undefined) m.colFirst = colFirst;
+  const colLast = attrNum(el, "w:colLast");
+  if (colLast !== undefined) m.colLast = colLast;
+  return m as MoveRangeStartOptions;
 }
 
 /** Parse a customXml range start (Ins/Del/MoveFrom/MoveTo). */
@@ -1257,27 +1266,24 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         const id = attrNum(child, "w:id");
         const name = attr(child, "w:name");
         if (id !== undefined && name) {
-          const bookmarkStart: {
-            id: number;
-            name: string;
-            displacedByCustomXml?: "before" | "after";
-          } = {
-            id,
-            name,
-          };
+          const bookmarkStart: Partial<BookmarkStartOptions> = { id, name };
           const disp = attr(child, "w:displacedByCustomXml");
           if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
-          childList.push({ bookmarkStart });
+          const colFirst = attrNum(child, "w:colFirst");
+          if (colFirst !== undefined) bookmarkStart.colFirst = colFirst;
+          const colLast = attrNum(child, "w:colLast");
+          if (colLast !== undefined) bookmarkStart.colLast = colLast;
+          childList.push({ bookmarkStart: bookmarkStart as BookmarkStartOptions });
         }
         break;
       }
       case "w:bookmarkEnd": {
         const id = attrNum(child, "w:id");
         if (id !== undefined) {
-          const bookmarkEnd: { id: number; displacedByCustomXml?: "before" | "after" } = { id };
+          const bookmarkEnd: Partial<BookmarkEndOptions> = { id };
           const disp = attr(child, "w:displacedByCustomXml");
           if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
-          childList.push({ bookmarkEnd });
+          childList.push({ bookmarkEnd: bookmarkEnd as BookmarkEndOptions });
         }
         break;
       }
