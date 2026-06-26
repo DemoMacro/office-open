@@ -194,9 +194,14 @@ export const DOCX_PARTS = {
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml",
       presence: { kind: "conditional", flag: "hasWebSettings" },
     },
-    // docx theme is raw-part passthrough — no fixed Override; relies on the
-    // `xml` Default. contentType intentionally omitted.
-    { path: "word/theme/theme1.xml", presence: { kind: "conditional", flag: "rawParts theme" } },
+    // docx theme — fresh-compile generates a language-neutral default theme
+    // (createThemeXml); round-trip passes the source theme through rawParts.
+    // Declared as a theme+xml Override to match Word's own packages.
+    {
+      path: "word/theme/theme1.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.theme+xml",
+      presence: { kind: "conditional", flag: "freshCompile" },
+    },
   ],
 } as const satisfies PackagePartRegistry;
 

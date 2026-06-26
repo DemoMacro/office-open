@@ -460,17 +460,15 @@ export class DocxWriteContext implements WriteContext {
       );
     }
 
-    // Theme — a raw-passthrough part. Only declare the document→theme
-    // relationship when the source carried one, so Word can resolve theme
-    // colors/fonts. Without it theme1.xml is an orphan part Word may reject.
+    // Theme — always present: fresh-compile generates a default theme, round-trip
+    // passes the source theme through rawParts. Word needs the document→theme
+    // relationship to resolve theme colors/fonts.
     const themePart = this._options.rawParts?.find((p) => p.path.startsWith("word/theme/"));
-    if (themePart) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-        themePart.path.replace(/^word\//, ""),
-      );
-    }
+    this.document.relationships.addRelationship(
+      this._currentRelationshipId++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+      themePart ? themePart.path.replace(/^word\//, "") : "theme/theme1.xml",
+    );
 
     // customXml storage — raw-passthrough parts. Declare the document→customXml
     // relationship for each item (itemProps are linked via the item's own .rels,

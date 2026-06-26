@@ -11,6 +11,7 @@
 
 import {
   addSmartArtRelationships,
+  createThemeXml,
   findAndReplaceImagePlaceholders,
   formatId,
   hasPlaceholders,
@@ -141,6 +142,13 @@ export function compileDocument(
     files[part.path] = part.data;
   }
 
+  // [Content_Types].xml is serialized last: parts register their media/fonts
+  // during stringify (run by xmlifyContext above), so backfilling <Default>
+  // extensions from `ctx` now sees the complete set. Building it inside
+  // xmlifyContext's object literal evaluated it before header/footer/font media
+  // was registered, leaving jpg/gif/odttf without a covering Default.
+  files["[Content_Types].xml"] = encoder.encode(buildContentTypesData(ctx, files));
+
   return files;
 }
 
@@ -160,7 +168,6 @@ interface XmlifyedFileMapping {
   Footers: XmlifyedFile[];
   HeaderRelationships: XmlifyedFile[];
   FooterRelationships: XmlifyedFile[];
-  ContentTypes: XmlifyedFile;
   CustomProperties: XmlifyedFile;
   AppProperties: XmlifyedFile;
   FootNotes: XmlifyedFile;
@@ -183,6 +190,50 @@ interface XmlifyedFileMapping {
   SubDocs?: XmlifyedFile[];
   Glossary?: XmlifyedFile;
   WebSettings?: XmlifyedFile;
+}
+
+/**
+ * Serialize [Content_Types].xml from the part registry, then backfill media/
+ * font/embedding `<Default>` entries from the parts actually written.
+ *
+ * Must run after every part has been stringified (parts call `ctx.addMedia`
+ * during stringify), so call this once `xmlifyContext` has finished — not from
+ * inside its object literal, where ContentTypes would evaluate before the
+ * later-defined header/footer/font parts have registered their media.
+ */
+function buildContentTypesData(ctx: DocxWriteContext, files: Zippable): string {
+  const altChunks = ctx.altChunks.array.map((ac) => ({
+    path: `/word/${ac.path}`,
+    contentType: ac.contentType ?? "application/xhtml+xml",
+  }));
+  // Round-trip passes the source [Content_Types] through, but the compiler
+  // regenerates altChunk part paths — realign the afchunk Overrides to the
+  // freshly written parts (else O5/O6).
+  const base = ctx._options.contentTypes
+    ? withAltChunkOverrides(ctx._options.contentTypes, altChunks)
+    : buildContentTypesFromRegistry(
+        new Map<string, boolean | number>([
+          ["freshCompile", true],
+          ["hasComments", !!ctx._options.comments?.children?.length],
+          ["hasBibliography", !!ctx._options.bibliography],
+          ["hasGlossary", !!ctx.glossaryOptions],
+          ["hasWebSettings", !!ctx.webSettings],
+          ["headerCount", ctx.headers.length],
+          ["footerCount", ctx.footers.length],
+          ["chartCount", ctx.charts.array.length],
+          ["smartArtCount", ctx.smartArts.array.length],
+        ]),
+        {
+          altChunks,
+          subDocs: ctx.subDocs.array.map((sd) => ({ path: `/word/${sd.path}` })),
+        },
+      );
+  // Backfill <Default> extensions from every part actually written to the
+  // package — the parts on disk are the single source of truth, so media/font/
+  // embedding defaults can never drift from what the package contains (e.g. a
+  // font written via the fallback path when `odttfPath` is unset).
+  const withMedia = withMediaDefaults(base, Object.keys(files));
+  return XML_DECL + (contentTypesDesc.stringify(withMedia, ctx) ?? "");
 }
 
 function xmlifyContext(
@@ -298,48 +349,6 @@ function xmlifyContext(
           },
         }
       : {}),
-    ContentTypes: {
-      data:
-        XML_DECL +
-        (contentTypesDesc.stringify(
-          withMediaDefaults(
-            (() => {
-              const altChunks = ctx.altChunks.array.map((ac) => ({
-                path: `/word/${ac.path}`,
-                contentType: ac.contentType ?? "application/xhtml+xml",
-              }));
-              // Round-trip passes the source [Content_Types] through, but the
-              // compiler regenerates altChunk part paths — realign the afchunk
-              // Overrides to the freshly written parts (else O5/O6).
-              return ctx._options.contentTypes
-                ? withAltChunkOverrides(ctx._options.contentTypes, altChunks)
-                : buildContentTypesFromRegistry(
-                    new Map<string, boolean | number>([
-                      ["freshCompile", true],
-                      ["hasComments", hasComments],
-                      ["hasBibliography", !!ctx._options.bibliography],
-                      ["hasGlossary", !!ctx.glossaryOptions],
-                      ["hasWebSettings", !!ctx.webSettings],
-                      ["headerCount", ctx.headers.length],
-                      ["footerCount", ctx.footers.length],
-                      ["chartCount", ctx.charts.array.length],
-                      ["smartArtCount", ctx.smartArts.array.length],
-                    ]),
-                    {
-                      altChunks,
-                      subDocs: ctx.subDocs.array.map((sd) => ({ path: `/word/${sd.path}` })),
-                    },
-                  );
-            })(),
-            [
-              ...ctx.media.array.map((m) => m.fileName),
-              ...ctx.embeddings.array.map((e) => e.fileName),
-            ],
-          ),
-          ctx,
-        ) ?? ""),
-      path: "[Content_Types].xml",
-    },
     CustomProperties: {
       data:
         XML_DECL +
@@ -388,6 +397,17 @@ function xmlifyContext(
       })(),
       path: "word/document.xml",
     },
+    // Theme — fresh-compile emits a language-neutral default theme
+    // (createThemeXml). Round-trip carries the source theme in rawParts,
+    // already copied verbatim above, so skip emitting here to avoid a duplicate.
+    ...(ctx._options.rawParts?.some((part) => part.path.startsWith("word/theme/"))
+      ? {}
+      : {
+          Theme: {
+            data: XML_DECL + createThemeXml(),
+            path: "word/theme/theme1.xml",
+          },
+        }),
     Endnotes: {
       data: (() => {
         const endnoteCtx = mkCtx({

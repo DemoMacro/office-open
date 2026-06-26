@@ -189,5 +189,23 @@ export function buildContentTypesFromRegistry(
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
     });
   }
-  return { defaults: [...STANDARD_DEFAULTS], overrides };
+  // Minimal defaults: rels/xml are present in every package; altChunk
+  // extensions only when altChunks exist. Image/font/embedding extensions are
+  // backfilled by withMediaDefaults from the actual part file names, so we no
+  // longer declare every possible media type unconditionally — Word strips the
+  // unused ones when repairing and that pollutes the "removed unsupported
+  // content" diff.
+  const defaults: ContentTypeDefault[] = [
+    { extension: "rels", contentType: "application/vnd.openxmlformats-package.relationships+xml" },
+    { extension: "xml", contentType: "application/xml" },
+  ];
+  const haveExt = new Set(["rels", "xml"]);
+  for (const ac of dynamic.altChunks ?? []) {
+    const ext = (ac.path.split(".").pop() ?? "").toLowerCase();
+    if (ext && !haveExt.has(ext) && ALTCHUNK_DEFAULTS[ext]) {
+      defaults.push({ extension: ext, contentType: ALTCHUNK_DEFAULTS[ext] });
+      haveExt.add(ext);
+    }
+  }
+  return { defaults, overrides };
 }

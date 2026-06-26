@@ -3,7 +3,7 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ContentTypesInput } from "./contenttypes";
-import { buildContentTypesFromRegistry, contentTypesDesc } from "./contenttypes";
+import { buildContentTypesFromRegistry, contentTypesDesc, withMediaDefaults } from "./contenttypes";
 
 const writeCtx = {} as unknown as WriteContext;
 const readCtx = {} as unknown as ReadContext;
@@ -152,11 +152,23 @@ describe("buildContentTypesFromRegistry", () => {
     expect(subDoc?.contentType).toContain("wordprocessingml.document.main+xml");
   });
 
-  it("always carries the standard media extension defaults", () => {
+  it("declares only structural defaults (rels/xml); media extensions backfilled on demand", () => {
     const result = buildContentTypesFromRegistry(new Map([["freshCompile", true]]));
     const exts = new Set(result.defaults.map((d) => d.extension));
-    expect(exts).toContain("png");
     expect(exts).toContain("xml");
+    expect(exts).toContain("rels");
+    // Media extensions are NOT declared unconditionally — Word strips unused
+    // ones when repairing. They are backfilled from actual file names instead.
+    expect(exts).not.toContain("png");
+    expect(exts).not.toContain("jpeg");
+  });
+
+  it("withMediaDefaults backfills extensions for media actually in the package", () => {
+    const base = buildContentTypesFromRegistry(new Map([["freshCompile", true]]));
+    const result = withMediaDefaults(base, ["image1.png", "embeddings/oleObject1.bin"]);
+    const exts = new Set(result.defaults.map((d) => d.extension));
+    expect(exts).toContain("png");
+    expect(exts).toContain("bin");
     expect(exts).toContain("rels");
   });
 });
