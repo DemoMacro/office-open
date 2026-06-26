@@ -77,6 +77,10 @@ export interface StyleOptions {
   hidden?: boolean;
   /** CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim). */
   rsid?: string;
+  /** CT_Style @w:default — the default style for its type (CT_OnOff). */
+  default?: boolean;
+  /** CT_Style @w:customStyle — a user-defined custom style (CT_OnOff). */
+  customStyle?: boolean;
 }
 
 export type ParagraphStyleOptions = {
@@ -125,6 +129,21 @@ function stringifyStyleLevelChildren(opts: StyleOptions & { id?: string }): stri
   return parts.join("");
 }
 
+/**
+ * Build the `<w:style>` opening tag: type/styleId plus the optional w:default
+ * and w:customStyle element attributes (CT_Style). Shared by paragraph/
+ * character/table styles.
+ */
+function styleOpenTag(
+  type: string,
+  opts: { id?: string; default?: boolean; customStyle?: boolean },
+): string {
+  let attrs = ` w:type="${type}" w:styleId="${esc(opts.id ?? "")}"`;
+  if (opts.default) attrs += ' w:default="1"';
+  if (opts.customStyle) attrs += ' w:customStyle="1"';
+  return `<w:style${attrs}>`;
+}
+
 /** Build `<w:style>` XML for a paragraph style. */
 export function stringifyParagraphStyle(
   opts: StyleOptions & {
@@ -140,7 +159,7 @@ export function stringifyParagraphStyle(
   const rPr = stringifyRunProperties(opts.run);
   if (rPr) children.push(rPr);
 
-  return `<w:style w:type="paragraph" w:styleId="${esc(opts.id)}">${children.join("")}</w:style>`;
+  return `${styleOpenTag("paragraph", opts)}${children.join("")}</w:style>`;
 }
 
 /** Build `<w:style>` XML for a character style. */
@@ -155,7 +174,7 @@ export function stringifyCharacterStyle(
   const rPr = stringifyRunProperties(opts.run);
   if (rPr) children.push(rPr);
 
-  return `<w:style w:type="character" w:styleId="${esc(opts.id)}">${children.join("")}</w:style>`;
+  return `${styleOpenTag("character", opts)}${children.join("")}</w:style>`;
 }
 
 // ── Table style (CT_Style type="table") ──
@@ -254,7 +273,7 @@ export function stringifyTableStyle(opts: TableStyleOptions): string {
   for (const cf of opts.conditionalFormats ?? []) {
     children.push(stringifyConditionalTableStyle(cf));
   }
-  return `<w:style w:type="table" w:styleId="${esc(opts.id)}">${children.join("")}</w:style>`;
+  return `${styleOpenTag("table", opts)}${children.join("")}</w:style>`;
 }
 
 /** Resolve a user override for heading level N (1-9) from default styles options. */

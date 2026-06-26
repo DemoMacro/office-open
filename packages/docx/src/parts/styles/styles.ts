@@ -135,6 +135,10 @@ export class Styles {
             personal: style.personal,
             personalCompose: style.personalCompose,
             personalReply: style.personalReply,
+            hidden: style.hidden,
+            rsid: style.rsid,
+            default: style.default,
+            customStyle: style.customStyle,
             paragraph: style.paragraph,
             run: style.run,
           }),
@@ -159,6 +163,10 @@ export class Styles {
             personal: style.personal,
             personalCompose: style.personalCompose,
             personalReply: style.personalReply,
+            hidden: style.hidden,
+            rsid: style.rsid,
+            default: style.default,
+            customStyle: style.customStyle,
             run: style.run,
           }),
         );
@@ -250,7 +258,7 @@ interface ParsedStyle {
   _type?: string;
   id?: string;
   default?: boolean;
-  customStyle?: string;
+  customStyle?: boolean;
   name?: string;
   aliases?: string;
   basedOn?: string;
@@ -398,7 +406,7 @@ function parseStyleElement(
   if (id) opts.id = id;
 
   if (attrBool(el, "w:default")) opts.default = true;
-  if (attrBool(el, "w:customStyle")) opts.customStyle = "1";
+  if (attrBool(el, "w:customStyle")) opts.customStyle = true;
 
   const nameEl = findChild(el, "w:name");
   if (nameEl) {

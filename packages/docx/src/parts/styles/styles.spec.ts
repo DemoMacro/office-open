@@ -110,6 +110,67 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(opts?.importedStyles ?? []).toEqual([]);
   });
 
+  it("round-trips default/customStyle/hidden/rsid on a custom paragraph style", () => {
+    const styles = new Styles({
+      paragraphStyles: [
+        {
+          id: "MyDefault",
+          name: "My Default",
+          default: true,
+          customStyle: true,
+          hidden: true,
+          rsid: "00992297",
+          run: { bold: true },
+        },
+      ],
+    });
+
+    const xml = styles.serialize();
+    // w:default/w:customStyle are <w:style> element attributes; hidden/rsid are children.
+    expect(xml).toContain('w:default="1"');
+    expect(xml).toContain('w:customStyle="1"');
+    expect(xml).toContain("<w:hidden/>");
+    expect(xml).toContain('w:rsid w:val="00992297"');
+
+    const el = parseXml(xml).elements![0];
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+    const para = opts?.paragraphStyles?.[0];
+    expect(para).toBeDefined();
+    expect(para!.default).toBe(true);
+    expect(para!.customStyle).toBe(true);
+    expect(para!.hidden).toBe(true);
+    expect(para!.rsid).toBe("00992297"); // leading zero preserved verbatim
+  });
+
+  it("round-trips default/customStyle/hidden/rsid on a custom character style", () => {
+    const styles = new Styles({
+      characterStyles: [
+        {
+          id: "MyCharDefault",
+          name: "My Char",
+          default: true,
+          customStyle: true,
+          hidden: true,
+          rsid: "00ABCDEF",
+          run: { italic: true },
+        },
+      ],
+    });
+
+    const xml = styles.serialize();
+    expect(xml).toContain('w:default="1"');
+    expect(xml).toContain('w:customStyle="1"');
+
+    const el = parseXml(xml).elements![0];
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+    const char = opts?.characterStyles?.[0];
+    expect(char).toBeDefined();
+    expect(char!.default).toBe(true);
+    expect(char!.customStyle).toBe(true);
+    expect(char!.hidden).toBe(true);
+    expect(char!.rsid).toBe("00ABCDEF");
+  });
+
   it("skips built-in style ids that DefaultStylesFactory generates", () => {
     const xml =
       '<?xml version="1.0"?><w:styles>' +
