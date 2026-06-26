@@ -27,7 +27,6 @@ import {
   createEffectDag,
   customGeometryDesc,
   effectListDesc,
-  extractBlipFillMedia,
   fillDesc,
   outlineDesc,
   presetGeometryDesc,
@@ -433,7 +432,7 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   } else {
     spPrParts.push('<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>');
   }
-  if (opts.fill) spPrParts.push(fillDesc.stringify(opts.fill, NOOP_CTX) ?? "");
+  if (opts.fill) spPrParts.push(fillDesc.stringify(opts.fill, ctx) ?? "");
   if (opts.outline) spPrParts.push(outlineDesc.stringify(opts.outline, NOOP_CTX) ?? "");
   if (opts.effectDag) {
     spPrParts.push(createEffectDag(opts.effectDag));
@@ -537,7 +536,7 @@ function stringifyWpgGroup(
   const transform = opts.transformation;
   const grpSpPrParts: string[] = [];
   grpSpPrParts.push(stringifyGroupTransform2D(transform, opts.childOffset, opts.childExtent));
-  if (opts.fill) grpSpPrParts.push(fillDesc.stringify(opts.fill, NOOP_CTX) ?? "");
+  if (opts.fill) grpSpPrParts.push(fillDesc.stringify(opts.fill, ctx) ?? "");
   if (opts.effects) grpSpPrParts.push(effectListDesc.stringify(opts.effects, NOOP_CTX) ?? "");
 
   // Children — wps shapes, nested wpg groups, or pic elements
@@ -603,7 +602,7 @@ function stringifyNestedGroup(grp: WpgMediaData, ctx: BodyContext): string {
   grpSpPrParts.push(
     stringifyGroupTransform2D(grp.transformation, grp.childOffset, grp.childExtent),
   );
-  if (grp.fill) grpSpPrParts.push(fillDesc.stringify(grp.fill, NOOP_CTX) ?? "");
+  if (grp.fill) grpSpPrParts.push(fillDesc.stringify(grp.fill, ctx) ?? "");
   if (grp.effects) grpSpPrParts.push(effectListDesc.stringify(grp.effects, NOOP_CTX) ?? "");
   return (
     "<wpg:grpSp>" +
@@ -928,19 +927,6 @@ export const drawingDesc: CustomDescriptor<DrawingDescriptorOptions, BodyContext
   kind: "custom",
 
   stringify(opts, ctx) {
-    // Register blip fill media from fill options (shape fill with image)
-    if (opts.fill) {
-      const media = extractBlipFillMedia(opts.fill, (type) => ctx.file.media.nextMediaName(type));
-      if (media) {
-        ctx.file.media.addImage(media.fileName, {
-          data: media.data,
-          fileName: media.fileName,
-          type: media.type as "png",
-          transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
-        });
-      }
-    }
-
     // Register hyperlink relationships
     const hlIds = registerHyperlinks(opts.docProperties?.hyperlink, ctx);
 

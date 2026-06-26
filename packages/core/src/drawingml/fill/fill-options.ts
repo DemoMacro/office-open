@@ -133,7 +133,7 @@ export const extractBlipFillMedia = (
 /**
  * Builds a DrawingML fill XML string from a FillOptions config.
  */
-export const buildFill = (options: FillOptions): string => {
+export const buildFill = (options: FillOptions, embedPlaceholder?: string): string => {
   if (typeof options === "string") {
     return createSolidFill({ value: options.replace("#", "") });
   }
@@ -166,14 +166,18 @@ export const buildFill = (options: FillOptions): string => {
       // Build a:blip with {fileName} placeholder — the packer's ImageReplacer
       // will replace `{fileName}` with `rId{N}` and create the relationship.
       // We do NOT use createBlip here because it prefixes "rId" to the value,
-      // which would produce "rIdrId{N}" after replacement.
+      // which would produce "rIdrId{N}" after replacement. When the caller
+      // supplies embedPlaceholder (a media reference already registered with
+      // the write context, e.g. `{image1.png}`), use it verbatim instead of
+      // minting a fresh id so the emitted reference matches the registration.
+      const embed = embedPlaceholder ?? `{${fileName}}`;
       const blipChildren: string[] = [];
       if (options.blipEffects) {
         blipChildren.push(...createBlipEffects(options.blipEffects));
       }
       const blip = element(
         "a:blip",
-        { cstate: "none", "r:embed": `{${fileName}}` },
+        { cstate: "none", "r:embed": embed },
         blipChildren.length > 0 ? blipChildren : undefined,
       );
 

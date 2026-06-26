@@ -427,7 +427,8 @@ function readShapeFill(parent: Element, ctx: DocxReadContext) {
     findChild(parent, "a:solidFill") ??
     findChild(parent, "a:gradFill") ??
     findChild(parent, "a:pattFill") ??
-    findChild(parent, "a:grpFill");
+    findChild(parent, "a:grpFill") ??
+    findChild(parent, "a:blipFill");
   if (!fillChild) return undefined;
   return fillDesc.parse(parent, ctx);
 }

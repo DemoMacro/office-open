@@ -30,6 +30,7 @@ import { SubDocCollection } from "@parts/sub-doc/sub-doc-collection";
 import type { WebSettingsOptions } from "@parts/web-settings";
 import { EmbeddingCollection } from "@shared/embeddings/embeddings";
 import { Media } from "@shared/media";
+import type { MediaData } from "@shared/media/data";
 import type { SectionOptions } from "@shared/section";
 import type { SectionChild } from "@shared/section";
 
@@ -108,9 +109,15 @@ export class DocxWriteContext implements WriteContext {
     return `rId${id}`;
   }
 
-  public addMedia(_data: Uint8Array, _type: string): string {
-    // DOCX media registration goes through Media.addImage() in compiler.
-    return "";
+  public addMedia(data: Uint8Array, type: string): string {
+    const fileName = this.media.nextMediaName(type);
+    this.media.addImage(fileName, {
+      data,
+      fileName,
+      type,
+      transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+    } as MediaData);
+    return `{${fileName}}`;
   }
 
   // --- Internal tracking ---

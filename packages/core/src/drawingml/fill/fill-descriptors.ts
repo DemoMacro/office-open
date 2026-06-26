@@ -10,11 +10,12 @@ import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
+import { toUint8Array } from "../../util/data-type";
 import { xsdPattern } from "../../util/mappings";
 import { blipFillDesc } from "../blip/blip-descriptors";
 import { solidFillDesc, getColorDescriptor, parseColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
-import type { BlipFillConfigOptions, FillOptions } from "./fill-options";
+import { buildFill, type BlipFillConfigOptions, type FillOptions } from "./fill-options";
 import type {
   GradientFillOptions,
   GradientShadeOptions,
@@ -265,9 +266,13 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
         return stringify(gradientFillDesc, gradOpts, ctx);
       }
 
-      case "blip":
-        // Blip fills are handled in the blip module; skip here
-        return undefined;
+      case "blip": {
+        // Register the image media via the write context, then emit a:blipFill
+        // with the returned {fileName} placeholder. The format-package compiler
+        // replaces the placeholder with a relationship rId at pack time.
+        const placeholder = ctx.addMedia(toUint8Array(opts.data), opts.imageType);
+        return buildFill(opts, placeholder);
+      }
 
       case "pattern": {
         const patternOpts: PatternFillOptions = {

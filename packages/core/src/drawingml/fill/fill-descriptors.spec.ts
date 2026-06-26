@@ -1,7 +1,7 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
-import { stringify, parse, type ReadContext } from "../../descriptor";
+import { stringify, parse, type ReadContext, type WriteContext } from "../../descriptor";
 import { fillDesc, gradientFillDesc, patternFillDesc } from "./fill-descriptors";
 import type { FillOptions } from "./fill-options";
 import type { GradientFillOptions } from "./gradient-fill";
@@ -231,5 +231,37 @@ describe("fillDesc blip fill (parse)", () => {
     const el = parseXml(xml).elements![0];
     const result = parse(fillDesc, el, mockReadCtx()) as Record<string, unknown>;
     expect(result.type).toBe("none");
+  });
+});
+
+describe("fillDesc blip fill (stringify)", () => {
+  // Blip stringify registers image media via ctx.addMedia and emits a:blipFill
+  // with the returned {fileName} placeholder; the format-package compiler
+  // replaces the placeholder with a relationship rId at pack time.
+  const mockWriteCtx = (placeholder = "{image1.png}"): WriteContext =>
+    ({
+      addRelationship: () => "rId1",
+      addMedia: (_data: Uint8Array, _type: string) => placeholder,
+    }) as unknown as WriteContext;
+
+  it("registers media and emits a:blipFill with the embed placeholder", () => {
+    const opts: FillOptions = { type: "blip", data: new Uint8Array([1, 2, 3]), imageType: "png" };
+    const xml = stringify(fillDesc, opts, mockWriteCtx());
+    expect(xml).toContain("<a:blipFill");
+    expect(xml).toContain('r:embed="{image1.png}"');
+    expect(xml).toContain("<a:stretch><a:fillRect/></a:stretch>");
+  });
+
+  it("emits source rectangle and blip effects when provided", () => {
+    const opts: FillOptions = {
+      type: "blip",
+      data: new Uint8Array([1]),
+      imageType: "png",
+      blipEffects: { grayscale: true },
+      sourceRectangle: { left: 10000, top: 20000, right: 30000, bottom: 40000 },
+    };
+    const xml = stringify(fillDesc, opts, mockWriteCtx());
+    expect(xml).toContain("<a:srcRect");
+    expect(xml).toContain("a:grayscl");
   });
 });

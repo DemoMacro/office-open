@@ -80,8 +80,16 @@ export class PptxWriteContext implements WriteContext {
     return `rId${id}`;
   }
 
-  public addMedia(_data: Uint8Array, _type: string): string {
-    return `media_${this._nextMediaId++}`;
+  public addMedia(data: Uint8Array, type: string): string {
+    const fileName = `image${this._nextMediaId++}.${type}`;
+    this._media.set(fileName, {
+      key: fileName,
+      fileName,
+      data,
+      type,
+      transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+    });
+    return `{${fileName}}`;
   }
 
   // ── PPTX-specific registration ──
