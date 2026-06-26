@@ -1059,9 +1059,6 @@ export function compilePresentation(
   ];
   for (let i = 0; i < allCharts.length; i++) {
     files[`ppt/charts/chart${i + 1}.xml`] = encoder.encode(allCharts[i].xml);
-    files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = encoder.encode(
-      `${XML_DECL}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`,
-    );
   }
 
   // SmartArt parts

@@ -1,5 +1,7 @@
 import { escapeXml } from "@office-open/xml";
 
+import type { XmlifyedFile } from "./packer";
+
 export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme"
@@ -113,4 +115,23 @@ export class Relationships {
     p.push("</Relationships>");
     return p.join("");
   }
+}
+
+/**
+ * Serialize a Relationships part only when it carries at least one
+ * relationship. Optional parts (fontTable, headers, footers, charts, drawings,
+ * worksheets, …) emit no .rels part when empty — Office strips empty rels
+ * shells when re-saving, so skipping them keeps generated packages free of
+ * redundant empty parts and matches Office's normalized output.
+ *
+ * Always-on parts (the package `_rels/.rels` and the main
+ * document/presentation/workbook parts) carry relationships by construction
+ * and must NOT use this gate.
+ */
+export function optionalRelsPart(
+  rel: Relationships,
+  xmlDeclaration: string,
+  path: string,
+): XmlifyedFile | undefined {
+  return rel.relationshipCount > 0 ? { data: xmlDeclaration + rel.serialize(), path } : undefined;
 }

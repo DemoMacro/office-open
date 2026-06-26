@@ -16,6 +16,7 @@ import {
   formatId,
   hasPlaceholders,
   levelForMediaName,
+  optionalRelsPart,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
 } from "@office-open/core";
@@ -334,19 +335,20 @@ function xmlifyContext(
             })(),
             path: "word/comments.xml",
           },
-          CommentsRelationships: {
-            data: (() => {
-              for (let i = 0; i < commentMedia.referenced.length; i++) {
-                ctx.comments.relationships.addRelationship(
-                  commentRelationshipCount + i,
-                  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                  `media/${commentMedia.referenced[i].fileName}`,
-                );
-              }
-              return XML_DECL + ctx.comments.relationships.serialize();
-            })(),
-            path: "word/_rels/comments.xml.rels",
-          },
+          CommentsRelationships: (() => {
+            for (let i = 0; i < commentMedia.referenced.length; i++) {
+              ctx.comments.relationships.addRelationship(
+                commentRelationshipCount + i,
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                `media/${commentMedia.referenced[i].fileName}`,
+              );
+            }
+            return optionalRelsPart(
+              ctx.comments.relationships,
+              XML_DECL,
+              "word/_rels/comments.xml.rels",
+            );
+          })(),
         }
       : {}),
     CustomProperties: {
@@ -460,10 +462,11 @@ function xmlifyContext(
         (fontTableDesc.stringify({ fonts: ctx.fontTable.fontOptionsWithKey }, ctx) ?? ""),
       path: "word/fontTable.xml",
     },
-    FontTableRelationships: {
-      data: XML_DECL + ctx.fontTable.relationships.serialize(),
-      path: "word/_rels/fontTable.xml.rels",
-    },
+    FontTableRelationships: optionalRelsPart(
+      ctx.fontTable.relationships,
+      XML_DECL,
+      "word/_rels/fontTable.xml.rels",
+    ),
     FootNotes: {
       data: (() => {
         const xmlData = footnoteMedia.referenced.length > 0 ? footnoteMedia.xml : footnoteXmlData;
@@ -478,31 +481,38 @@ function xmlifyContext(
             path: "word/_rels/footnotes.xml.rels",
           }
         : undefined,
-    FooterRelationships: ctx.footers.map((entry, index) => {
-      const footerCtx = mkCtx({ relationships: entry.relationships });
-      const xmlData =
-        XML_DECL + stringifyHeaderFooter("w:ftr", FOOTER_NAMESPACES, entry.children, footerCtx);
-      footerFormattedViews.set(index, xmlData);
-      // Footer images get per-part relationship IDs starting at
-      // relationshipCount+1, mirroring the document part. The placeholder pass
-      // uses referenced-local positions, so body r:embed and .rels stay aligned.
-      const footerRelCount = entry.relationships.relationshipCount + 1;
-      const footerMedia = findAndReplaceImagePlaceholders(xmlData, ctx.media.array, footerRelCount);
-      footerMediaResults.set(index, footerMedia);
-
-      for (let i = 0; i < footerMedia.referenced.length; i++) {
-        entry.relationships.addRelationship(
-          footerRelCount + i,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-          `media/${footerMedia.referenced[i].fileName}`,
+    FooterRelationships: ctx.footers
+      .map((entry, index) => {
+        const footerCtx = mkCtx({ relationships: entry.relationships });
+        const xmlData =
+          XML_DECL + stringifyHeaderFooter("w:ftr", FOOTER_NAMESPACES, entry.children, footerCtx);
+        footerFormattedViews.set(index, xmlData);
+        // Footer images get per-part relationship IDs starting at
+        // relationshipCount+1, mirroring the document part. The placeholder pass
+        // uses referenced-local positions, so body r:embed and .rels stay aligned.
+        const footerRelCount = entry.relationships.relationshipCount + 1;
+        const footerMedia = findAndReplaceImagePlaceholders(
+          xmlData,
+          ctx.media.array,
+          footerRelCount,
         );
-      }
+        footerMediaResults.set(index, footerMedia);
 
-      return {
-        data: XML_DECL + entry.relationships.serialize(),
-        path: `word/_rels/footer${index + 1}.xml.rels`,
-      };
-    }),
+        for (let i = 0; i < footerMedia.referenced.length; i++) {
+          entry.relationships.addRelationship(
+            footerRelCount + i,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${footerMedia.referenced[i].fileName}`,
+          );
+        }
+
+        return optionalRelsPart(
+          entry.relationships,
+          XML_DECL,
+          `word/_rels/footer${index + 1}.xml.rels`,
+        );
+      })
+      .filter((r): r is XmlifyedFile => r !== undefined),
     Footers: ctx.footers.map((_entry, index) => {
       const footerMedia = footerMediaResults.get(index)!;
       const tempXmlData = footerFormattedViews.get(index)!;
@@ -513,31 +523,38 @@ function xmlifyContext(
         path: `word/footer${index + 1}.xml`,
       };
     }),
-    HeaderRelationships: ctx.headers.map((entry, index) => {
-      const headerCtx = mkCtx({ relationships: entry.relationships });
-      const xmlData =
-        XML_DECL + stringifyHeaderFooter("w:hdr", HEADER_NAMESPACES, entry.children, headerCtx);
-      headerFormattedViews.set(index, xmlData);
-      // Header images get per-part relationship IDs starting at
-      // relationshipCount+1, mirroring the document part. The placeholder pass
-      // uses referenced-local positions, so body r:embed and .rels stay aligned.
-      const headerRelCount = entry.relationships.relationshipCount + 1;
-      const headerMedia = findAndReplaceImagePlaceholders(xmlData, ctx.media.array, headerRelCount);
-      headerMediaResults.set(index, headerMedia);
-
-      for (let i = 0; i < headerMedia.referenced.length; i++) {
-        entry.relationships.addRelationship(
-          headerRelCount + i,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-          `media/${headerMedia.referenced[i].fileName}`,
+    HeaderRelationships: ctx.headers
+      .map((entry, index) => {
+        const headerCtx = mkCtx({ relationships: entry.relationships });
+        const xmlData =
+          XML_DECL + stringifyHeaderFooter("w:hdr", HEADER_NAMESPACES, entry.children, headerCtx);
+        headerFormattedViews.set(index, xmlData);
+        // Header images get per-part relationship IDs starting at
+        // relationshipCount+1, mirroring the document part. The placeholder pass
+        // uses referenced-local positions, so body r:embed and .rels stay aligned.
+        const headerRelCount = entry.relationships.relationshipCount + 1;
+        const headerMedia = findAndReplaceImagePlaceholders(
+          xmlData,
+          ctx.media.array,
+          headerRelCount,
         );
-      }
+        headerMediaResults.set(index, headerMedia);
 
-      return {
-        data: XML_DECL + entry.relationships.serialize(),
-        path: `word/_rels/header${index + 1}.xml.rels`,
-      };
-    }),
+        for (let i = 0; i < headerMedia.referenced.length; i++) {
+          entry.relationships.addRelationship(
+            headerRelCount + i,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            `media/${headerMedia.referenced[i].fileName}`,
+          );
+        }
+
+        return optionalRelsPart(
+          entry.relationships,
+          XML_DECL,
+          `word/_rels/header${index + 1}.xml.rels`,
+        );
+      })
+      .filter((r): r is XmlifyedFile => r !== undefined),
     Headers: ctx.headers.map((_entry, index) => {
       const headerMedia = headerMediaResults.get(index)!;
       const tempXmlData = headerFormattedViews.get(index)!;
@@ -632,16 +649,10 @@ function xmlifyContext(
       : {}),
     ...(ctx.charts.array.length > 0
       ? {
-          Charts: ctx.charts.array.flatMap((chartData, i) => [
-            {
-              data: XML_DECL + chartData.chartSpaceXml,
-              path: `word/charts/chart${i + 1}.xml`,
-            },
-            {
-              data: '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>',
-              path: `word/charts/_rels/chart${i + 1}.xml.rels`,
-            },
-          ]),
+          Charts: ctx.charts.array.map((chartData, i) => ({
+            data: XML_DECL + chartData.chartSpaceXml,
+            path: `word/charts/chart${i + 1}.xml`,
+          })),
         }
       : {}),
     ...(ctx.smartArts.array.length > 0
