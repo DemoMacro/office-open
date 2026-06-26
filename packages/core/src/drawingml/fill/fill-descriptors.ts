@@ -11,9 +11,10 @@ import { findChild } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { xsdPattern } from "../../util/mappings";
+import { blipFillDesc } from "../blip/blip-descriptors";
 import { solidFillDesc, getColorDescriptor, parseColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
-import type { FillOptions } from "./fill-options";
+import type { BlipFillConfigOptions, FillOptions } from "./fill-options";
 import type {
   GradientFillOptions,
   GradientShadeOptions,
@@ -190,6 +191,36 @@ export const patternFillDesc: CustomDescriptor<PatternFillOptions> = {
 
 // ── Fill (EG_FillProperties) descriptor ──
 
+// Infer the image-type token from a media path's file extension. Mirrors the
+// docx imageTypeFromPath helper; kept local to avoid a cross-package import.
+function imageTypeFromPath(
+  path: string,
+): "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf" {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  switch (ext) {
+    case "png":
+      return "png";
+    case "jpg":
+    case "jpeg":
+      return "jpg";
+    case "gif":
+      return "gif";
+    case "bmp":
+      return "bmp";
+    case "tif":
+    case "tiff":
+      return "tif";
+    case "ico":
+      return "ico";
+    case "emf":
+      return "emf";
+    case "wmf":
+      return "wmf";
+    default:
+      return "png";
+  }
+}
+
 export const fillDesc: CustomDescriptor<FillOptions> = {
   kind: "custom",
   stringify(opts, ctx) {
@@ -292,6 +323,29 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
     const grpFill = resolve("a:grpFill");
     if (grpFill) {
       return { type: "group" };
+    }
+
+    // Blip fill (image) — resolve r:embed to binary media via the read context
+    const blipFill = resolve("a:blipFill");
+    if (blipFill) {
+      const blipOpts = parse(blipFillDesc, blipFill, ctx);
+      const mediaPath = blipOpts.referenceId
+        ? ctx.resolveRelationship(blipOpts.referenceId)
+        : undefined;
+      const data = mediaPath ? ctx.getRaw(mediaPath) : undefined;
+      if (mediaPath && data) {
+        const blip: BlipFillConfigOptions & { type: "blip" } = {
+          type: "blip",
+          data,
+          imageType: imageTypeFromPath(mediaPath),
+        };
+        if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
+        if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
+        if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+        if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
+        if (blipOpts.tile) blip.tile = blipOpts.tile;
+        return blip;
+      }
     }
 
     return { type: "none" };

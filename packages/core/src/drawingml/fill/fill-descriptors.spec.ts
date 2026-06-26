@@ -1,7 +1,7 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
-import { stringify, parse } from "../../descriptor";
+import { stringify, parse, type ReadContext } from "../../descriptor";
 import { fillDesc, gradientFillDesc, patternFillDesc } from "./fill-descriptors";
 import type { FillOptions } from "./fill-options";
 import type { GradientFillOptions } from "./gradient-fill";
@@ -179,5 +179,57 @@ describe("patternFillDesc", () => {
     };
     const result = roundTripPattern(opts);
     expect(result.foregroundColor).toEqual({ hue: 0, saturation: 100000, luminance: 50000 });
+  });
+});
+
+describe("fillDesc blip fill (parse)", () => {
+  // Blip fills can't round-trip through fillDesc.stringify — image media is
+  // registered by the format-package compiler (not the core descriptor), so
+  // stringify returns undefined for `type: "blip"`. These tests parse a
+  // hand-built a:blipFill and assert the read-context media bridge resolves
+  // r:embed → binary data + image type.
+  const mockReadCtx = (overrides: Partial<ReadContext> = {}): ReadContext =>
+    ({
+      resolveRelationship: (rId: string) => (rId === "rId1" ? "media/image1.png" : undefined),
+      getRaw: (path: string) =>
+        path === "media/image1.png" ? new Uint8Array([1, 2, 3]) : undefined,
+      getPart: () => undefined,
+      ...overrides,
+    }) as unknown as ReadContext;
+
+  it("parses a:blipFill, bridging r:embed to binary media", () => {
+    const xml = `<a:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
+    const el = parseXml(xml).elements![0];
+    const result = parse(fillDesc, el, mockReadCtx()) as Record<string, unknown>;
+    expect(result.type).toBe("blip");
+    expect(result.imageType).toBe("png");
+    expect(Array.from(result.data as Uint8Array)).toEqual([1, 2, 3]);
+  });
+
+  it("preserves blip fill structure (dpi, rotWithShape)", () => {
+    const xml = `<a:blipFill dpi="150" rotWithShape="1"><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
+    const el = parseXml(xml).elements![0];
+    const result = parse(fillDesc, el, mockReadCtx()) as Record<string, unknown>;
+    expect(result.type).toBe("blip");
+    expect(result.dpi).toBe(150);
+    expect(result.rotWithShape).toBe(true);
+  });
+
+  it("infers image type from path extension (jpg)", () => {
+    const xml = `<a:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
+    const el = parseXml(xml).elements![0];
+    const ctx = mockReadCtx({
+      resolveRelationship: (rId) => (rId === "rId2" ? "media/photo.jpeg" : undefined),
+      getRaw: (path) => (path === "media/photo.jpeg" ? new Uint8Array([9]) : undefined),
+    });
+    const result = parse(fillDesc, el, ctx) as Record<string, unknown>;
+    expect(result.imageType).toBe("jpg");
+  });
+
+  it("falls back to none when media cannot be resolved", () => {
+    const xml = `<a:blipFill><a:blip r:embed="missing"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
+    const el = parseXml(xml).elements![0];
+    const result = parse(fillDesc, el, mockReadCtx()) as Record<string, unknown>;
+    expect(result.type).toBe("none");
   });
 });
