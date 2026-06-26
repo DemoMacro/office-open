@@ -151,9 +151,9 @@ async function main() {
           paragraph: {
             children: [
               "This paragraph has a ",
-              { commentRangeStart: 0 },
+              { commentRangeStart: { id: 0 } },
               "comment",
-              { commentRangeEnd: 0 },
+              { commentRangeEnd: { id: 0 } },
               { commentReference: 0 },
               " attached.",
             ],

@@ -9,7 +9,7 @@ import type { CustomXmlBlockOptions } from "@parts/custom-xml";
  * @module
  */
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties";
-import type { BookmarkEndOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
+import type { MarkupRangeOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
@@ -51,7 +51,7 @@ export type SectionChild =
   | { subDoc: SubDocOptions }
   | { customXml: CustomXmlBlockOptions }
   | { bookmarkStart: BookmarkStartOptions }
-  | { bookmarkEnd: BookmarkEndOptions }
+  | { bookmarkEnd: MarkupRangeOptions }
   | { rawXml: string };
 
 /**

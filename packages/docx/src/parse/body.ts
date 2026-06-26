@@ -11,7 +11,7 @@ import { parseAltChunk } from "@parts/alt-chunk/alt-chunk-parse";
 import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
 import { parseSectionPropertiesEl } from "@parts/document/body/section-properties/descriptor";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
-import type { BookmarkEndOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
+import type { MarkupRangeOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import { parseToc, parseTocFieldFromElements } from "@parts/table-of-contents/toc-parse";
@@ -163,10 +163,10 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
     case "w:bookmarkEnd": {
       const idRaw = attr(el, "w:id");
       if (idRaw !== undefined) {
-        const bookmarkEnd: Partial<BookmarkEndOptions> = { id: Number(idRaw) };
+        const bookmarkEnd: Partial<MarkupRangeOptions> = { id: Number(idRaw) };
         const disp = attr(el, "w:displacedByCustomXml");
         if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
-        return { bookmarkEnd: bookmarkEnd as BookmarkEndOptions };
+        return { bookmarkEnd: bookmarkEnd as MarkupRangeOptions };
       }
       return { rawXml: stringifyElement(el) };
     }

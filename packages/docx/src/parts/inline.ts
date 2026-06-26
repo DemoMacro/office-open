@@ -18,7 +18,7 @@ import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { createDataModel } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
-import type { MoveRangeStartOptions } from "@parts/paragraph/links/bookmark";
+import type { MarkupRangeOptions, MoveRangeStartOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
@@ -208,6 +208,13 @@ function registerVmlFallbackMedia(
 /**
  * Build the rPr XML for a break/tab run from its structured run properties.
  */
+/** Shared attribute string for CT_MarkupRange end markers (commentRange, move range end). */
+function buildMarkupRangeAttrs(m: MarkupRangeOptions): string {
+  const a: string[] = [`w:id="${m.id}"`];
+  if (m.displacedByCustomXml) a.push(`w:displacedByCustomXml="${m.displacedByCustomXml}"`);
+  return a.join(" ");
+}
+
 /** Shared attribute string for w:moveFromRangeStart / w:moveToRangeStart (CT_MoveBookmark). */
 function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
   const a: string[] = [`w:id="${m.id}"`];
@@ -258,8 +265,9 @@ export function stringifyChildDispatch(
 
   // Comment markers — pure XML
   if ("commentRangeStart" in child)
-    return `<w:commentRangeStart w:id="${child.commentRangeStart}"/>`;
-  if ("commentRangeEnd" in child) return `<w:commentRangeEnd w:id="${child.commentRangeEnd}"/>`;
+    return `<w:commentRangeStart ${buildMarkupRangeAttrs(child.commentRangeStart)}/>`;
+  if ("commentRangeEnd" in child)
+    return `<w:commentRangeEnd ${buildMarkupRangeAttrs(child.commentRangeEnd)}/>`;
   if ("commentReference" in child)
     return `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${child.commentReference}"/></w:r>`;
 
@@ -644,11 +652,13 @@ export function stringifyChildDispatch(
   if ("moveFromRangeStart" in child) {
     return `<w:moveFromRangeStart ${buildMoveRangeStartAttrs(child.moveFromRangeStart)}/>`;
   }
-  if ("moveFromRangeEnd" in child) return `<w:moveFromRangeEnd w:id="${child.moveFromRangeEnd}"/>`;
+  if ("moveFromRangeEnd" in child)
+    return `<w:moveFromRangeEnd ${buildMarkupRangeAttrs(child.moveFromRangeEnd)}/>`;
   if ("moveToRangeStart" in child) {
     return `<w:moveToRangeStart ${buildMoveRangeStartAttrs(child.moveToRangeStart)}/>`;
   }
-  if ("moveToRangeEnd" in child) return `<w:moveToRangeEnd w:id="${child.moveToRangeEnd}"/>`;
+  if ("moveToRangeEnd" in child)
+    return `<w:moveToRangeEnd ${buildMarkupRangeAttrs(child.moveToRangeEnd)}/>`;
 
   // ── Move revision text runs ──
   if ("movedFrom" in child) {

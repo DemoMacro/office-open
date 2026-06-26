@@ -11,7 +11,7 @@ import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
 import type {
-  BookmarkEndOptions,
+  MarkupRangeOptions,
   BookmarkStartOptions,
   MoveRangeStartOptions,
 } from "./links/bookmark";
@@ -79,8 +79,8 @@ export type ParagraphChild =
   | { endnoteReference: number | FootnoteEndnoteReferenceOptions }
   | { pageBreak: true }
   | { columnBreak: true }
-  | { commentRangeStart: number }
-  | { commentRangeEnd: number }
+  | { commentRangeStart: MarkupRangeOptions }
+  | { commentRangeEnd: MarkupRangeOptions }
   | { commentReference: number }
   | { insertion: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   | { deletion: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
@@ -99,7 +99,7 @@ export type ParagraphChild =
       };
     }
   | { bookmarkStart: BookmarkStartOptions }
-  | { bookmarkEnd: BookmarkEndOptions }
+  | { bookmarkEnd: MarkupRangeOptions }
   | { wpsShape: WpsShapeRunOptions }
   | { wpgGroup: WpgGroupRunOptions }
   // Proof error markers
@@ -119,9 +119,9 @@ export type ParagraphChild =
   | { permEnd: number | string }
   // Move revision range markers
   | { moveFromRangeStart: MoveRangeStartOptions }
-  | { moveFromRangeEnd: number }
+  | { moveFromRangeEnd: MarkupRangeOptions }
   | { moveToRangeStart: MoveRangeStartOptions }
-  | { moveToRangeEnd: number }
+  | { moveToRangeEnd: MarkupRangeOptions }
   // Move revision text runs
   | { movedFrom: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   | { movedTo: ChangedAttributesProperties & { children: (RunOptions | string)[] } }

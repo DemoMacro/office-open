@@ -101,12 +101,12 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               "Hello World",
-              { commentRangeStart: 0 },
+              { commentRangeStart: { id: 0 } },
               {
                 bold: true,
                 text: "Foo Bar",
               },
-              { commentRangeEnd: 0 },
+              { commentRangeEnd: { id: 0 } },
               {
                 bold: true,
                 children: [{ commentReference: 0 }],
@@ -117,24 +117,24 @@ const buffer = await generateDocument({
         {
           paragraph: {
             children: [
-              { commentRangeStart: 1 },
-              { commentRangeStart: 2 },
-              { commentRangeStart: 3 },
+              { commentRangeStart: { id: 1 } },
+              { commentRangeStart: { id: 2 } },
+              { commentRangeStart: { id: 3 } },
               {
                 bold: true,
                 text: "Some text which need commenting",
               },
-              { commentRangeEnd: 1 },
+              { commentRangeEnd: { id: 1 } },
               {
                 bold: true,
                 children: [{ commentReference: 1 }],
               },
-              { commentRangeEnd: 2 },
+              { commentRangeEnd: { id: 2 } },
               {
                 bold: true,
                 children: [{ commentReference: 2 }],
               },
-              { commentRangeEnd: 3 },
+              { commentRangeEnd: { id: 3 } },
               {
                 bold: true,
                 children: [{ commentReference: 3 }],

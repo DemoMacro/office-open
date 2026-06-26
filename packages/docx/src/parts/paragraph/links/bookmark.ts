@@ -15,15 +15,16 @@
 export type DisplacedByCustomXml = "before" | "after";
 
 /**
- * Options for a bookmark end (w:bookmarkEnd).
+ * Options for a CT_MarkupRange end marker — `@id` + `@displacedByCustomXml`.
  *
- * Maps to CT_MarkupRange (CT_Markup `@id` + `@displacedByCustomXml`). Unlike
- * bookmarkStart, the end marker carries neither a name nor a column range.
+ * Shared by every range end marker that derives from CT_MarkupRange:
+ * w:bookmarkEnd, w:commentRangeStart/End, w:moveFromRangeEnd, w:moveToRangeEnd.
+ * None of these carry a name or column range (only the start markers do).
  *
  * Reference: wml.xsd CT_MarkupRange, EG_RangeMarkupElements
  */
-export interface BookmarkEndOptions {
-  /** Bookmark identifier (CT_Markup @w:id, required). */
+export interface MarkupRangeOptions {
+  /** Marker identifier (CT_Markup @w:id, required). */
   id: number;
   /** Displacement relative to a sibling customXml (CT_MarkupRange @w:displacedByCustomXml). */
   displacedByCustomXml?: DisplacedByCustomXml;
@@ -38,7 +39,7 @@ export interface BookmarkEndOptions {
  *
  * Reference: wml.xsd CT_Bookmark, CT_BookmarkRange
  */
-export interface BookmarkStartOptions extends BookmarkEndOptions {
+export interface BookmarkStartOptions extends MarkupRangeOptions {
   /** Bookmark name used for reference (CT_Bookmark @w:name, required). */
   name: string;
   /** First column of a table-cell bookmark scope (CT_BookmarkRange @w:colFirst). */

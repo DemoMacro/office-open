@@ -63,9 +63,9 @@ describe("range markers parse", () => {
       ),
     );
     expect(cs[0].moveFromRangeStart).toEqual({ id: 1, name: "move1", author: "A", date: "2020" });
-    expect(cs[1].moveFromRangeEnd).toBe(1);
+    expect(cs[1].moveFromRangeEnd).toEqual({ id: 1 });
     expect(cs[2].moveToRangeStart).toEqual({ id: 2, name: "move2" });
-    expect(cs[3].moveToRangeEnd).toBe(2);
+    expect(cs[3].moveToRangeEnd).toEqual({ id: 2 });
   });
 
   it("parses bookmarkStart/End with column scope and displacedByCustomXml", () => {
@@ -98,6 +98,21 @@ describe("range markers parse", () => {
       colLast: 1,
       displacedByCustomXml: "after",
     });
+  });
+
+  it("parses commentRange and move range ends with displacedByCustomXml", () => {
+    const cs = childrenOf(
+      parseParagraphXml(
+        `<w:commentRangeStart w:id="1" w:displacedByCustomXml="before"/>` +
+          `<w:commentRangeEnd w:id="1" w:displacedByCustomXml="after"/>` +
+          `<w:moveFromRangeEnd w:id="2" w:displacedByCustomXml="before"/>` +
+          `<w:moveToRangeEnd w:id="3"/>`,
+      ),
+    );
+    expect(cs[0].commentRangeStart).toEqual({ id: 1, displacedByCustomXml: "before" });
+    expect(cs[1].commentRangeEnd).toEqual({ id: 1, displacedByCustomXml: "after" });
+    expect(cs[2].moveFromRangeEnd).toEqual({ id: 2, displacedByCustomXml: "before" });
+    expect(cs[3].moveToRangeEnd).toEqual({ id: 3 });
   });
 
   it("parses the four customXml range marker pairs", () => {
