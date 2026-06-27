@@ -1,3 +1,5 @@
+import { escapeXml } from "@office-open/xml";
+import { AlignmentType } from "@parts/paragraph";
 /**
  * Factory module for creating default document styles.
  *
@@ -20,6 +22,8 @@ import {
   stringifyTableProperties,
   stringifyTableRowProperties,
 } from "@parts/table/stringify";
+import { WidthType } from "@parts/table/table-width";
+import { BorderStyle, type BorderOptions } from "@shared/border";
 
 import { stringifyParagraphProperties, stringifyRunProperties } from "../paragraph/stringify";
 import type { StylesOptions } from "./styles";
@@ -94,15 +98,6 @@ export type CharacterStyleOptions = {
 
 // ── String builders ──
 
-/** Escape special XML characters. */
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 /**
  * Build CT_Style style-level children (name…rsid), shared by paragraph/character/table styles.
  * Order follows CT_Style sequence: name, aliases, basedOn, next, link, autoRedefine, hidden,
@@ -110,11 +105,11 @@ function esc(s: string): string {
  * personalReply, rsid.
  */
 function stringifyStyleLevelChildren(opts: StyleOptions & { id?: string }): string {
-  const parts: string[] = [`<w:name w:val="${esc(opts.name ?? opts.id ?? "")}"/>`];
-  if (opts.aliases) parts.push(`<w:aliases w:val="${esc(opts.aliases)}"/>`);
-  if (opts.basedOn) parts.push(`<w:basedOn w:val="${esc(opts.basedOn)}"/>`);
-  if (opts.next) parts.push(`<w:next w:val="${esc(opts.next)}"/>`);
-  if (opts.link) parts.push(`<w:link w:val="${esc(opts.link)}"/>`);
+  const parts: string[] = [`<w:name w:val="${escapeXml(opts.name ?? opts.id ?? "")}"/>`];
+  if (opts.aliases) parts.push(`<w:aliases w:val="${escapeXml(opts.aliases)}"/>`);
+  if (opts.basedOn) parts.push(`<w:basedOn w:val="${escapeXml(opts.basedOn)}"/>`);
+  if (opts.next) parts.push(`<w:next w:val="${escapeXml(opts.next)}"/>`);
+  if (opts.link) parts.push(`<w:link w:val="${escapeXml(opts.link)}"/>`);
   if (opts.autoRedefine) parts.push("<w:autoRedefine/>");
   if (opts.hidden) parts.push("<w:hidden/>");
   if (opts.uiPriority !== undefined) parts.push(`<w:uiPriority w:val="${opts.uiPriority}"/>`);
@@ -138,7 +133,7 @@ function styleOpenTag(
   type: string,
   opts: { id?: string; default?: boolean; customStyle?: boolean },
 ): string {
-  let attrs = ` w:type="${type}" w:styleId="${esc(opts.id ?? "")}"`;
+  let attrs = ` w:type="${type}" w:styleId="${escapeXml(opts.id ?? "")}"`;
   if (opts.default) attrs += ' w:default="1"';
   if (opts.customStyle) attrs += ' w:customStyle="1"';
   return `<w:style${attrs}>`;
@@ -227,6 +222,14 @@ export type TableStyleOptions = {
   conditionalFormats?: ConditionalTableStyleOptions[];
 } & StyleOptions & { id: string };
 
+/** Numbering style (CT_Style type="numbering"). */
+export type NumberingStyleOptions = {
+  /** Paragraph properties (CT_PPrGeneral — usually carries numPr). */
+  paragraph?: ParagraphStylePropertiesOptions;
+  /** Run properties (CT_RPr). */
+  run?: RunStylePropertiesOptions;
+} & StyleOptions & { id: string };
+
 /** Build `<w:tblStylePr>` XML for a conditional table style format. */
 export function stringifyConditionalTableStyle(opts: ConditionalTableStyleOptions): string {
   const children: string[] = [];
@@ -276,6 +279,17 @@ export function stringifyTableStyle(opts: TableStyleOptions): string {
   return `${styleOpenTag("table", opts)}${children.join("")}</w:style>`;
 }
 
+/** Build `<w:style type="numbering">` XML for a numbering style. */
+export function stringifyNumberingStyle(opts: NumberingStyleOptions): string {
+  const children: string[] = [stringifyStyleLevelChildren(opts)];
+  // CT_Style child order: style-level, pPr, rPr
+  const pPr = stringifyParagraphProperties(opts.paragraph).xml;
+  if (pPr) children.push(pPr);
+  const rPr = stringifyRunProperties(opts.run);
+  if (rPr) children.push(rPr);
+  return `${styleOpenTag("numbering", opts)}${children.join("")}</w:style>`;
+}
+
 /** Resolve a user override for heading level N (1-9) from default styles options. */
 function headingOverride(
   options: DefaultStylesOptions,
@@ -303,55 +317,6 @@ function headingOverride(
     default:
       return undefined;
   }
-}
-
-/**
- * Maps DefaultStylesOptions override fields to every built-in styleId the
- * factory (re)emits when that field is provided — the main style plus its
- * linked character style (e.g. heading1 -> Heading1 + Heading1Char).
- */
-const DEFAULT_STYLE_FIELDS: ReadonlyArray<[keyof DefaultStylesOptions, string[]]> = [
-  ["title", ["Title", "TitleChar"]],
-  ["subtitle", ["Subtitle", "SubtitleChar"]],
-  ["heading1", ["Heading1", "Heading1Char"]],
-  ["heading2", ["Heading2", "Heading2Char"]],
-  ["heading3", ["Heading3", "Heading3Char"]],
-  ["heading4", ["Heading4", "Heading4Char"]],
-  ["heading5", ["Heading5", "Heading5Char"]],
-  ["heading6", ["Heading6", "Heading6Char"]],
-  ["heading7", ["Heading7", "Heading7Char"]],
-  ["heading8", ["Heading8", "Heading8Char"]],
-  ["heading9", ["Heading9", "Heading9Char"]],
-  ["listParagraph", ["ListParagraph"]],
-  ["quote", ["Quote", "QuoteChar"]],
-  ["strong", ["Strong"]],
-  ["emphasis", ["Emphasis"]],
-];
-
-/**
- * Reverse map: main built-in styleId -> the DefaultStylesOptions field that
- * overrides it. Linked char ids (Heading1Char, TitleChar, ...) are excluded —
- * they ride along with their main style.
- */
-export const STYLE_ID_TO_DEFAULT_FIELD: Record<string, keyof DefaultStylesOptions> =
-  Object.fromEntries(DEFAULT_STYLE_FIELDS.map(([field, [mainId]]) => [mainId, field]));
-
-/**
- * Collect every styleId the factory (re)emits for the default-styles fields the
- * user explicitly provided — including linked character styles, so the
- * round-trip path drops the matching verbatim entries (no duplicate styleId).
- */
-export function collectDefaultOverrideIds(
-  defaultOpts: DefaultStylesOptions | undefined,
-): Set<string> {
-  const ids = new Set<string>();
-  if (!defaultOpts) return ids;
-  for (const [field, styleIds] of DEFAULT_STYLE_FIELDS) {
-    if ((defaultOpts as unknown as Record<string, unknown>)[field as string] !== undefined) {
-      for (const id of styleIds) ids.add(id);
-    }
-  }
-  return ids;
 }
 
 /** Build `<w:docDefaults>` XML matching Word's default settings. */
@@ -413,7 +378,14 @@ export class DefaultStylesFactory {
   }
 
   private build(options: DefaultStylesOptions): StylesOptions {
+    // importedStyles carries only docDefaults + latentStyles verbatim. Every
+    // builtin w:style is emitted as a structured Options object so HTML renderers
+    // can consume style attributes directly.
     const importedStyles: { _raw: string }[] = [];
+    const paragraphStyles: (ParagraphStyleOptions & { id: string })[] = [];
+    const characterStyles: (CharacterStyleOptions & { id: string })[] = [];
+    const tableStyles: TableStyleOptions[] = [];
+    const numberingStyles: NumberingStyleOptions[] = [];
 
     // XML namespace attributes for styles root element (matching Word exactly)
     const initialAttributes: Record<string, string> = {
@@ -457,12 +429,12 @@ export class DefaultStylesFactory {
 
     // Built-in styles required by Word
     // Normal paragraph style (default for paragraphs)
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="paragraph" w:default="1" w:styleId="Normal">` +
-        `<w:name w:val="Normal"/><w:qFormat/>` +
-        `<w:pPr><w:widowControl w:val="0"/></w:pPr>` +
-        `</w:style>`,
+    paragraphStyles.push({
+      id: "Normal",
+      name: "Normal",
+      default: true,
+      quickFormat: true,
+      paragraph: { widowControl: false },
     });
 
     // heading 1-9 styles with proper formatting
@@ -471,64 +443,64 @@ export class DefaultStylesFactory {
         id: "Heading1",
         name: "heading 1",
         link: "Heading1Char",
-        sz: "48",
-        before: "480",
-        after: "80",
-        outlineLvl: "0",
+        sz: 48,
+        before: 480,
+        after: 80,
+        outlineLvl: 0,
       },
       {
         id: "Heading2",
         name: "heading 2",
         link: "Heading2Char",
-        sz: "40",
-        before: "160",
-        after: "80",
-        outlineLvl: "1",
+        sz: 40,
+        before: 160,
+        after: 80,
+        outlineLvl: 1,
       },
       {
         id: "Heading3",
         name: "heading 3",
         link: "Heading3Char",
-        sz: "32",
-        before: "160",
-        after: "80",
-        outlineLvl: "2",
+        sz: 32,
+        before: 160,
+        after: 80,
+        outlineLvl: 2,
       },
       {
         id: "Heading4",
         name: "heading 4",
         link: "Heading4Char",
-        sz: "28",
-        before: "80",
-        after: "40",
-        outlineLvl: "3",
+        sz: 28,
+        before: 80,
+        after: 40,
+        outlineLvl: 3,
       },
       {
         id: "Heading5",
         name: "heading 5",
         link: "Heading5Char",
-        sz: "24",
-        before: "80",
-        after: "40",
-        outlineLvl: "4",
+        sz: 24,
+        before: 80,
+        after: 40,
+        outlineLvl: 4,
       },
       {
         id: "Heading6",
         name: "heading 6",
         link: "Heading6Char",
         sz: undefined,
-        before: "40",
-        after: "0",
-        outlineLvl: "5",
+        before: 40,
+        after: 0,
+        outlineLvl: 5,
       },
       {
         id: "Heading7",
         name: "heading 7",
         link: "Heading7Char",
         sz: undefined,
-        before: "40",
-        after: "0",
-        outlineLvl: "6",
+        before: 40,
+        after: 0,
+        outlineLvl: 6,
       },
       {
         id: "Heading8",
@@ -536,8 +508,8 @@ export class DefaultStylesFactory {
         link: "Heading8Char",
         sz: undefined,
         before: undefined,
-        after: "0",
-        outlineLvl: "7",
+        after: 0,
+        outlineLvl: 7,
       },
       {
         id: "Heading9",
@@ -545,485 +517,491 @@ export class DefaultStylesFactory {
         link: "Heading9Char",
         sz: undefined,
         before: undefined,
-        after: "0",
-        outlineLvl: "8",
+        after: 0,
+        outlineLvl: 8,
       },
     ];
 
     for (let headingIdx = 0; headingIdx < headings.length; headingIdx++) {
       const h = headings[headingIdx];
+      const outlineLvl = h.outlineLvl;
       const headingOverrideOpts = headingOverride(options, headingIdx + 1);
       if (headingOverrideOpts) {
         // User-defined heading overrides the built-in entirely.
-        importedStyles.push({
-          _raw: stringifyParagraphStyle({
-            id: h.id,
-            name: headingOverrideOpts.name ?? h.name,
-            basedOn: headingOverrideOpts.basedOn ?? "Normal",
-            next: headingOverrideOpts.next ?? "Normal",
-            link: headingOverrideOpts.link ?? h.link,
-            uiPriority: headingOverrideOpts.uiPriority ?? 9,
-            quickFormat: headingOverrideOpts.quickFormat ?? true,
-            semiHidden: headingOverrideOpts.semiHidden,
-            unhideWhenUsed: headingOverrideOpts.unhideWhenUsed,
-            paragraph: { outlineLevel: headingIdx, ...headingOverrideOpts.paragraph },
-            run: headingOverrideOpts.run,
-          }),
+        paragraphStyles.push({
+          id: h.id,
+          name: headingOverrideOpts.name ?? h.name,
+          basedOn: headingOverrideOpts.basedOn ?? "Normal",
+          next: headingOverrideOpts.next ?? "Normal",
+          link: headingOverrideOpts.link ?? h.link,
+          uiPriority: headingOverrideOpts.uiPriority ?? 9,
+          quickFormat: headingOverrideOpts.quickFormat ?? true,
+          semiHidden: headingOverrideOpts.semiHidden,
+          unhideWhenUsed: headingOverrideOpts.unhideWhenUsed,
+          paragraph: { outlineLevel: headingIdx, ...headingOverrideOpts.paragraph },
+          run: headingOverrideOpts.run,
         });
-        importedStyles.push({
-          _raw: stringifyCharacterStyle({
-            id: h.link,
-            name: `${h.name} Char`,
-            basedOn: "DefaultParagraphFont",
-            link: h.id,
-            run: headingOverrideOpts.run,
-          }),
+        characterStyles.push({
+          id: h.link,
+          name: `${h.name} Char`,
+          basedOn: "DefaultParagraphFont",
+          link: h.id,
+          run: headingOverrideOpts.run,
         });
         continue;
       }
-      const pPrParts: string[] = [`<w:keepNext/>`, `<w:keepLines/>`];
-      if (h.before || h.after) {
-        const sp: string[] = [];
-        if (h.before) sp.push(`w:before="${h.before}"`);
-        if (h.after) sp.push(`w:after="${h.after}"`);
-        pPrParts.push(`<w:spacing ${sp.join(" ")}/>`);
-      }
-      pPrParts.push(`<w:outlineLvl w:val="${h.outlineLvl}"/>`);
 
-      const rPrParts: string[] = [];
-      // heading 1-6 use accent1 color, 7-9 use text1 color
-      if (parseInt(h.outlineLvl) < 6) {
-        rPrParts.push(
-          `<w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>`,
-        );
-        rPrParts.push(`<w:color w:val="0F4761" w:themeColor="accent1" w:themeShade="BF"/>`);
-      } else {
-        rPrParts.push(`<w:rFonts w:cstheme="majorBidi"/>`);
-        rPrParts.push(`<w:color w:val="595959" w:themeColor="text1" w:themeTint="A6"/>`);
-      }
+      // heading 1-6 use accent1 color + major theme fonts; 7-9 use text1 color.
+      const accentRange = outlineLvl < 6;
+      const runProps: RunStylePropertiesOptions = {
+        font: accentRange
+          ? {
+              asciiTheme: "majorHAnsi",
+              eastAsiaTheme: "majorEastAsia",
+              hAnsiTheme: "majorHAnsi",
+              cstheme: "majorBidi",
+            }
+          : { cstheme: "majorBidi" },
+        color: accentRange
+          ? { val: "0F4761", themeColor: "accent1", themeShade: "BF" }
+          : { val: "595959", themeColor: "text1", themeTint: "A6" },
+      };
       if (h.sz) {
-        rPrParts.push(`<w:sz w:val="${h.sz}"/><w:szCs w:val="${h.sz}"/>`);
+        const sizePt = h.sz / 2; // half-points → points
+        runProps.size = sizePt;
+        runProps.sizeComplexScript = sizePt;
       }
       // heading 6-9 have bold
-      if (parseInt(h.outlineLvl) >= 5) {
-        rPrParts.push(`<w:b/><w:bCs/>`);
+      if (outlineLvl >= 5) {
+        runProps.bold = true;
+        runProps.boldComplexScript = true;
       }
 
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="paragraph" w:styleId="${h.id}">` +
-          `<w:name w:val="${h.name}"/>` +
-          `<w:basedOn w:val="Normal"/>` +
-          `<w:next w:val="Normal"/>` +
-          `<w:link w:val="${h.link}"/>` +
-          `<w:uiPriority w:val="9"/>` +
-          (parseInt(h.outlineLvl) > 0 ? `<w:semiHidden/><w:unhideWhenUsed/>` : "") +
-          `<w:qFormat/>` +
-          `<w:pPr>${pPrParts.join("")}</w:pPr>` +
-          `<w:rPr>${rPrParts.join("")}</w:rPr>` +
-          `</w:style>`,
+      paragraphStyles.push({
+        id: h.id,
+        name: h.name,
+        basedOn: "Normal",
+        next: "Normal",
+        link: h.link,
+        uiPriority: 9,
+        semiHidden: outlineLvl > 0,
+        unhideWhenUsed: outlineLvl > 0,
+        quickFormat: true,
+        paragraph: {
+          keepNext: true,
+          keepLines: true,
+          spacing: {
+            before: h.before,
+            after: h.after,
+          },
+          outlineLevel: outlineLvl,
+        },
+        run: runProps,
       });
 
       // Linked character styles for headings
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="character" w:styleId="${h.link}">` +
-          `<w:name w:val="${h.name} Char"/>` +
-          `<w:basedOn w:val="DefaultParagraphFont"/>` +
-          `<w:link w:val="${h.id}"/>` +
-          `<w:uiPriority w:val="9"/>` +
-          (parseInt(h.outlineLvl) > 0 ? `<w:semiHidden/>` : "") +
-          `<w:rPr>${rPrParts.join("")}</w:rPr>` +
-          `</w:style>`,
+      characterStyles.push({
+        id: h.link,
+        name: `${h.name} Char`,
+        basedOn: "DefaultParagraphFont",
+        link: h.id,
+        uiPriority: 9,
+        semiHidden: outlineLvl > 0,
+        run: runProps,
       });
     }
 
     // DefaultParagraphFont character style (default for runs)
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont">` +
-        `<w:name w:val="Default Paragraph Font"/>` +
-        `<w:uiPriority w:val="1"/><w:semiHidden/><w:unhideWhenUsed/>` +
-        `</w:style>`,
+    characterStyles.push({
+      id: "DefaultParagraphFont",
+      name: "Default Paragraph Font",
+      default: true,
+      uiPriority: 1,
+      semiHidden: true,
+      unhideWhenUsed: true,
     });
 
     // Normal Table style (default for tables)
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="table" w:default="1" w:styleId="NormalTable">` +
-        `<w:name w:val="Normal Table"/>` +
-        `<w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/>` +
-        `<w:tblPr>` +
-        `<w:tblInd w:w="0" w:type="dxa"/>` +
-        `<w:tblCellMar>` +
-        `<w:top w:w="0" w:type="dxa"/>` +
-        `<w:left w:w="108" w:type="dxa"/>` +
-        `<w:bottom w:w="0" w:type="dxa"/>` +
-        `<w:right w:w="108" w:type="dxa"/>` +
-        `</w:tblCellMar>` +
-        `</w:tblPr>` +
-        `</w:style>`,
+    tableStyles.push({
+      id: "NormalTable",
+      name: "Normal Table",
+      default: true,
+      uiPriority: 99,
+      semiHidden: true,
+      unhideWhenUsed: true,
+      table: {
+        indent: { size: 0, type: WidthType.DXA },
+        cellMargin: {
+          top: { size: 0, type: WidthType.DXA },
+          left: { size: 108, type: WidthType.DXA },
+          bottom: { size: 0, type: WidthType.DXA },
+          right: { size: 108, type: WidthType.DXA },
+        },
+      },
     });
 
     // No List numbering style (default for numbering)
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="numbering" w:default="1" w:styleId="NoList">` +
-        `<w:name w:val="No List"/>` +
-        `<w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/>` +
-        `</w:style>`,
+    numberingStyles.push({
+      id: "NoList",
+      name: "No List",
+      default: true,
+      uiPriority: 99,
+      semiHidden: true,
+      unhideWhenUsed: true,
     });
 
     // Title style (user override via options.title, else built-in default)
     if (options.title) {
-      importedStyles.push({
-        _raw: stringifyParagraphStyle({
-          id: "Title",
-          name: options.title.name ?? "Title",
-          basedOn: options.title.basedOn ?? "Normal",
-          next: options.title.next ?? "Normal",
-          link: options.title.link ?? "TitleChar",
-          uiPriority: options.title.uiPriority ?? 10,
-          quickFormat: options.title.quickFormat ?? true,
-          paragraph: options.title.paragraph,
-          run: options.title.run,
-        }),
+      paragraphStyles.push({
+        id: "Title",
+        name: options.title.name ?? "Title",
+        basedOn: options.title.basedOn ?? "Normal",
+        next: options.title.next ?? "Normal",
+        link: options.title.link ?? "TitleChar",
+        uiPriority: options.title.uiPriority ?? 10,
+        quickFormat: options.title.quickFormat ?? true,
+        paragraph: options.title.paragraph,
+        run: options.title.run,
       });
-      importedStyles.push({
-        _raw: stringifyCharacterStyle({
-          id: "TitleChar",
-          name: "Title Char",
-          basedOn: "DefaultParagraphFont",
-          link: "Title",
-          run: options.title.run,
-        }),
+      characterStyles.push({
+        id: "TitleChar",
+        name: "Title Char",
+        basedOn: "DefaultParagraphFont",
+        link: "Title",
+        run: options.title.run,
       });
     } else {
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="paragraph" w:styleId="Title">` +
-          `<w:name w:val="Title"/>` +
-          `<w:basedOn w:val="Normal"/>` +
-          `<w:next w:val="Normal"/>` +
-          `<w:link w:val="TitleChar"/>` +
-          `<w:uiPriority w:val="10"/>` +
-          `<w:qFormat/>` +
-          `<w:pPr><w:spacing w:after="80" w:line="240" w:lineRule="auto"/><w:contextualSpacing/><w:jc w:val="center"/></w:pPr>` +
-          `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
-          `<w:spacing w:val="-10"/><w:kern w:val="28"/><w:sz w:val="56"/><w:szCs w:val="56"/></w:rPr>` +
-          `</w:style>`,
+      const titleRun: RunStylePropertiesOptions = {
+        font: {
+          asciiTheme: "majorHAnsi",
+          eastAsiaTheme: "majorEastAsia",
+          hAnsiTheme: "majorHAnsi",
+          cstheme: "majorBidi",
+        },
+        characterSpacing: -10,
+        kern: 28,
+        size: 28,
+        sizeComplexScript: 28,
+      };
+      paragraphStyles.push({
+        id: "Title",
+        name: "Title",
+        basedOn: "Normal",
+        next: "Normal",
+        link: "TitleChar",
+        uiPriority: 10,
+        quickFormat: true,
+        paragraph: {
+          spacing: { after: 80, line: 240, lineRule: "auto" },
+          contextualSpacing: true,
+          alignment: AlignmentType.CENTER,
+        },
+        run: titleRun,
       });
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="character" w:styleId="TitleChar">` +
-          `<w:name w:val="Title Char"/>` +
-          `<w:basedOn w:val="DefaultParagraphFont"/>` +
-          `<w:link w:val="Title"/>` +
-          `<w:uiPriority w:val="10"/>` +
-          `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
-          `<w:spacing w:val="-10"/><w:kern w:val="28"/><w:sz w:val="56"/><w:szCs w:val="56"/></w:rPr>` +
-          `</w:style>`,
+      characterStyles.push({
+        id: "TitleChar",
+        name: "Title Char",
+        basedOn: "DefaultParagraphFont",
+        link: "Title",
+        uiPriority: 10,
+        run: titleRun,
       });
     }
 
     // Subtitle style (user override via options.subtitle, else built-in default)
     if (options.subtitle) {
-      importedStyles.push({
-        _raw: stringifyParagraphStyle({
-          id: "Subtitle",
-          name: options.subtitle.name ?? "Subtitle",
-          basedOn: options.subtitle.basedOn ?? "Normal",
-          next: options.subtitle.next ?? "Normal",
-          link: options.subtitle.link ?? "SubtitleChar",
-          uiPriority: options.subtitle.uiPriority ?? 11,
-          quickFormat: options.subtitle.quickFormat ?? true,
-          paragraph: options.subtitle.paragraph,
-          run: options.subtitle.run,
-        }),
+      paragraphStyles.push({
+        id: "Subtitle",
+        name: options.subtitle.name ?? "Subtitle",
+        basedOn: options.subtitle.basedOn ?? "Normal",
+        next: options.subtitle.next ?? "Normal",
+        link: options.subtitle.link ?? "SubtitleChar",
+        uiPriority: options.subtitle.uiPriority ?? 11,
+        quickFormat: options.subtitle.quickFormat ?? true,
+        paragraph: options.subtitle.paragraph,
+        run: options.subtitle.run,
       });
-      importedStyles.push({
-        _raw: stringifyCharacterStyle({
-          id: "SubtitleChar",
-          name: "Subtitle Char",
-          basedOn: "DefaultParagraphFont",
-          link: "Subtitle",
-          run: options.subtitle.run,
-        }),
+      characterStyles.push({
+        id: "SubtitleChar",
+        name: "Subtitle Char",
+        basedOn: "DefaultParagraphFont",
+        link: "Subtitle",
+        run: options.subtitle.run,
       });
     } else {
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="paragraph" w:styleId="Subtitle">` +
-          `<w:name w:val="Subtitle"/>` +
-          `<w:basedOn w:val="Normal"/>` +
-          `<w:next w:val="Normal"/>` +
-          `<w:link w:val="SubtitleChar"/>` +
-          `<w:uiPriority w:val="11"/>` +
-          `<w:qFormat/>` +
-          `<w:pPr><w:jc w:val="center"/></w:pPr>` +
-          `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
-          `<w:color w:val="595959" w:themeColor="text1" w:themeTint="A6"/>` +
-          `<w:spacing w:val="15"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr>` +
-          `</w:style>`,
+      const subtitleRun: RunStylePropertiesOptions = {
+        font: {
+          asciiTheme: "majorHAnsi",
+          eastAsiaTheme: "majorEastAsia",
+          hAnsiTheme: "majorHAnsi",
+          cstheme: "majorBidi",
+        },
+        color: { val: "595959", themeColor: "text1", themeTint: "A6" },
+        characterSpacing: 15,
+        size: 14,
+        sizeComplexScript: 14,
+      };
+      paragraphStyles.push({
+        id: "Subtitle",
+        name: "Subtitle",
+        basedOn: "Normal",
+        next: "Normal",
+        link: "SubtitleChar",
+        uiPriority: 11,
+        quickFormat: true,
+        paragraph: { alignment: AlignmentType.CENTER },
+        run: subtitleRun,
       });
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="character" w:styleId="SubtitleChar">` +
-          `<w:name w:val="Subtitle Char"/>` +
-          `<w:basedOn w:val="DefaultParagraphFont"/>` +
-          `<w:link w:val="Subtitle"/>` +
-          `<w:uiPriority w:val="11"/>` +
-          `<w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>` +
-          `<w:color w:val="595959" w:themeColor="text1" w:themeTint="A6"/>` +
-          `<w:spacing w:val="15"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr>` +
-          `</w:style>`,
+      characterStyles.push({
+        id: "SubtitleChar",
+        name: "Subtitle Char",
+        basedOn: "DefaultParagraphFont",
+        link: "Subtitle",
+        uiPriority: 11,
+        run: subtitleRun,
       });
     }
 
     // List Paragraph style (user override via options.listParagraph, else built-in default)
     if (options.listParagraph) {
-      importedStyles.push({
-        _raw: stringifyParagraphStyle({
-          id: "ListParagraph",
-          name: options.listParagraph.name ?? "List Paragraph",
-          basedOn: options.listParagraph.basedOn ?? "Normal",
-          uiPriority: options.listParagraph.uiPriority ?? 34,
-          quickFormat: options.listParagraph.quickFormat ?? true,
-          paragraph: options.listParagraph.paragraph,
-          run: options.listParagraph.run,
-        }),
+      paragraphStyles.push({
+        id: "ListParagraph",
+        name: options.listParagraph.name ?? "List Paragraph",
+        basedOn: options.listParagraph.basedOn ?? "Normal",
+        uiPriority: options.listParagraph.uiPriority ?? 34,
+        quickFormat: options.listParagraph.quickFormat ?? true,
+        paragraph: options.listParagraph.paragraph,
+        run: options.listParagraph.run,
       });
     } else {
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="paragraph" w:styleId="ListParagraph">` +
-          `<w:name w:val="List Paragraph"/>` +
-          `<w:basedOn w:val="Normal"/>` +
-          `<w:uiPriority w:val="34"/>` +
-          `<w:qFormat/>` +
-          `<w:pPr><w:ind w:left="720"/><w:contextualSpacing/></w:pPr>` +
-          `</w:style>`,
+      paragraphStyles.push({
+        id: "ListParagraph",
+        name: "List Paragraph",
+        basedOn: "Normal",
+        uiPriority: 34,
+        quickFormat: true,
+        paragraph: { indent: { left: 720 }, contextualSpacing: true },
       });
     }
 
     // Strong style — only emitted when the user provides a definition
     if (options.strong) {
-      importedStyles.push({
-        _raw: stringifyParagraphStyle({
-          id: "Strong",
-          name: options.strong.name ?? "Strong",
-          basedOn: options.strong.basedOn ?? "Normal",
-          next: options.strong.next ?? "Normal",
-          quickFormat: options.strong.quickFormat ?? true,
-          paragraph: options.strong.paragraph,
-          run: options.strong.run,
-        }),
+      paragraphStyles.push({
+        id: "Strong",
+        name: options.strong.name ?? "Strong",
+        basedOn: options.strong.basedOn ?? "Normal",
+        next: options.strong.next ?? "Normal",
+        quickFormat: options.strong.quickFormat ?? true,
+        paragraph: options.strong.paragraph,
+        run: options.strong.run,
       });
     }
 
     // Emphasis style — only emitted when the user provides a definition
     if (options.emphasis) {
-      importedStyles.push({
-        _raw: stringifyParagraphStyle({
-          id: "Emphasis",
-          name: options.emphasis.name ?? "Emphasis",
-          basedOn: options.emphasis.basedOn ?? "Normal",
-          next: options.emphasis.next ?? "Normal",
-          quickFormat: options.emphasis.quickFormat ?? true,
-          paragraph: options.emphasis.paragraph,
-          run: options.emphasis.run,
-        }),
+      paragraphStyles.push({
+        id: "Emphasis",
+        name: options.emphasis.name ?? "Emphasis",
+        basedOn: options.emphasis.basedOn ?? "Normal",
+        next: options.emphasis.next ?? "Normal",
+        quickFormat: options.emphasis.quickFormat ?? true,
+        paragraph: options.emphasis.paragraph,
+        run: options.emphasis.run,
       });
     }
 
     // Quote style (user override via options.quote, else built-in default)
+    const quoteRun: RunStylePropertiesOptions = {
+      italic: true,
+      italicComplexScript: true,
+      color: { val: "404040", themeColor: "text1", themeTint: "BF" },
+    };
     if (options.quote) {
-      importedStyles.push({
-        _raw: stringifyParagraphStyle({
-          id: "Quote",
-          name: options.quote.name ?? "Quote",
-          basedOn: options.quote.basedOn ?? "Normal",
-          next: options.quote.next ?? "Normal",
-          link: options.quote.link ?? "QuoteChar",
-          uiPriority: options.quote.uiPriority ?? 29,
-          quickFormat: options.quote.quickFormat ?? true,
-          paragraph: options.quote.paragraph,
-          run: options.quote.run,
-        }),
+      paragraphStyles.push({
+        id: "Quote",
+        name: options.quote.name ?? "Quote",
+        basedOn: options.quote.basedOn ?? "Normal",
+        next: options.quote.next ?? "Normal",
+        link: options.quote.link ?? "QuoteChar",
+        uiPriority: options.quote.uiPriority ?? 29,
+        quickFormat: options.quote.quickFormat ?? true,
+        paragraph: options.quote.paragraph,
+        run: options.quote.run,
       });
-      importedStyles.push({
-        _raw: stringifyCharacterStyle({
-          id: "QuoteChar",
-          name: "Quote Char",
-          basedOn: "DefaultParagraphFont",
-          link: "Quote",
-          run: options.quote.run,
-        }),
+      characterStyles.push({
+        id: "QuoteChar",
+        name: "Quote Char",
+        basedOn: "DefaultParagraphFont",
+        link: "Quote",
+        run: options.quote.run,
       });
     } else {
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="paragraph" w:styleId="Quote">` +
-          `<w:name w:val="Quote"/>` +
-          `<w:basedOn w:val="Normal"/>` +
-          `<w:next w:val="Normal"/>` +
-          `<w:link w:val="QuoteChar"/>` +
-          `<w:uiPriority w:val="29"/>` +
-          `<w:qFormat/>` +
-          `<w:pPr><w:spacing w:before="160"/><w:jc w:val="center"/></w:pPr>` +
-          `<w:rPr><w:i/><w:iCs/><w:color w:val="404040" w:themeColor="text1" w:themeTint="BF"/></w:rPr>` +
-          `</w:style>`,
+      paragraphStyles.push({
+        id: "Quote",
+        name: "Quote",
+        basedOn: "Normal",
+        next: "Normal",
+        link: "QuoteChar",
+        uiPriority: 29,
+        quickFormat: true,
+        paragraph: { spacing: { before: 160 }, alignment: AlignmentType.CENTER },
+        run: quoteRun,
       });
-      importedStyles.push({
-        _raw:
-          `<w:style w:type="character" w:styleId="QuoteChar">` +
-          `<w:name w:val="Quote Char"/>` +
-          `<w:basedOn w:val="DefaultParagraphFont"/>` +
-          `<w:link w:val="Quote"/>` +
-          `<w:uiPriority w:val="29"/>` +
-          `<w:rPr><w:i/><w:iCs/><w:color w:val="404040" w:themeColor="text1" w:themeTint="BF"/></w:rPr>` +
-          `</w:style>`,
+      characterStyles.push({
+        id: "QuoteChar",
+        name: "Quote Char",
+        basedOn: "DefaultParagraphFont",
+        link: "Quote",
+        uiPriority: 29,
+        run: quoteRun,
       });
     }
 
-    // Intense Quote style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="paragraph" w:styleId="IntenseQuote">` +
-        `<w:name w:val="Intense Quote"/>` +
-        `<w:basedOn w:val="Normal"/>` +
-        `<w:next w:val="Normal"/>` +
-        `<w:link w:val="IntenseQuoteChar"/>` +
-        `<w:uiPriority w:val="30"/>` +
-        `<w:qFormat/>` +
-        `<w:pPr><w:pBdr><w:top w:val="single" w:sz="4" w:space="10" w:color="0F4761" w:themeColor="accent1" w:themeShade="BF"/>` +
-        `<w:bottom w:val="single" w:sz="4" w:space="10" w:color="0F4761" w:themeColor="accent1" w:themeShade="BF"/></w:pBdr>` +
-        `<w:spacing w:before="360" w:after="360"/><w:ind w:left="864" w:right="864"/><w:jc w:val="center"/></w:pPr>` +
-        `<w:rPr><w:i/><w:iCs/><w:color w:val="0F4761" w:themeColor="accent1" w:themeShade="BF"/></w:rPr>` +
-        `</w:style>`,
+    // Intense Quote style + linked character style (built-in defaults)
+    const intenseQuoteRun: RunStylePropertiesOptions = {
+      italic: true,
+      italicComplexScript: true,
+      color: { val: "0F4761", themeColor: "accent1", themeShade: "BF" },
+    };
+    const intenseQuoteBorder: BorderOptions = {
+      style: BorderStyle.SINGLE,
+      size: 4,
+      space: 10,
+      color: "0F4761",
+      themeColor: "accent1",
+      themeShade: "BF",
+    };
+    paragraphStyles.push({
+      id: "IntenseQuote",
+      name: "Intense Quote",
+      basedOn: "Normal",
+      next: "Normal",
+      link: "IntenseQuoteChar",
+      uiPriority: 30,
+      quickFormat: true,
+      paragraph: {
+        border: { top: intenseQuoteBorder, bottom: intenseQuoteBorder },
+        spacing: { before: 360, after: 360 },
+        indent: { left: 864, right: 864 },
+        alignment: AlignmentType.CENTER,
+      },
+      run: intenseQuoteRun,
     });
-
-    // Intense Quote Char style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="character" w:styleId="IntenseQuoteChar">` +
-        `<w:name w:val="Intense Quote Char"/>` +
-        `<w:basedOn w:val="DefaultParagraphFont"/>` +
-        `<w:link w:val="IntenseQuote"/>` +
-        `<w:uiPriority w:val="30"/>` +
-        `<w:rPr><w:i/><w:iCs/><w:color w:val="0F4761" w:themeColor="accent1" w:themeShade="BF"/></w:rPr>` +
-        `</w:style>`,
+    characterStyles.push({
+      id: "IntenseQuoteChar",
+      name: "Intense Quote Char",
+      basedOn: "DefaultParagraphFont",
+      link: "IntenseQuote",
+      uiPriority: 30,
+      run: intenseQuoteRun,
     });
 
     // Hyperlink character style
-    importedStyles.push({
-      _raw: stringifyCharacterStyle({
-        id: "Hyperlink",
-        name: "Hyperlink",
-        basedOn: "DefaultParagraphFont",
-        semiHidden: true,
-        unhideWhenUsed: true,
-        run: { color: "0563C1", underline: { type: "single" } },
-        ...options.hyperlink,
-      }),
+    characterStyles.push({
+      id: "Hyperlink",
+      name: "Hyperlink",
+      basedOn: "DefaultParagraphFont",
+      semiHidden: true,
+      unhideWhenUsed: true,
+      run: { color: "0563C1", underline: { type: "single" } },
+      ...options.hyperlink,
     });
 
     // Footnote Reference character style
-    importedStyles.push({
-      _raw: stringifyCharacterStyle({
-        id: "FootnoteReference",
-        name: "footnote reference",
-        basedOn: "DefaultParagraphFont",
-        semiHidden: true,
-        unhideWhenUsed: true,
-        run: { superScript: true },
-        ...options.footnoteReference,
-      }),
+    characterStyles.push({
+      id: "FootnoteReference",
+      name: "footnote reference",
+      basedOn: "DefaultParagraphFont",
+      semiHidden: true,
+      unhideWhenUsed: true,
+      run: { superScript: true },
+      ...options.footnoteReference,
     });
 
     // Footnote Text paragraph style
-    importedStyles.push({
-      _raw: stringifyParagraphStyle({
-        id: "FootnoteText",
-        name: "footnote text",
-        basedOn: "Normal",
-        link: "FootnoteTextChar",
-        semiHidden: true,
-        uiPriority: 99,
-        unhideWhenUsed: true,
-        paragraph: { spacing: { after: 0, line: 240, lineRule: "auto" } },
-        run: { size: 20 },
-        ...options.footnoteText,
-      }),
+    paragraphStyles.push({
+      id: "FootnoteText",
+      name: "footnote text",
+      basedOn: "Normal",
+      link: "FootnoteTextChar",
+      semiHidden: true,
+      uiPriority: 99,
+      unhideWhenUsed: true,
+      paragraph: { spacing: { after: 0, line: 240, lineRule: "auto" } },
+      run: { size: 20 },
+      ...options.footnoteText,
     });
 
     // Footnote Text Char character style
-    importedStyles.push({
-      _raw: stringifyCharacterStyle({
-        id: "FootnoteTextChar",
-        name: "Footnote Text Char",
-        basedOn: "DefaultParagraphFont",
-        link: "FootnoteText",
-        semiHidden: true,
-        run: { size: 20 },
-        ...options.footnoteTextChar,
-      }),
+    characterStyles.push({
+      id: "FootnoteTextChar",
+      name: "Footnote Text Char",
+      basedOn: "DefaultParagraphFont",
+      link: "FootnoteText",
+      semiHidden: true,
+      run: { size: 20 },
+      ...options.footnoteTextChar,
     });
 
     // Endnote Reference character style
-    importedStyles.push({
-      _raw: stringifyCharacterStyle({
-        id: "EndnoteReference",
-        name: "endnote reference",
-        basedOn: "DefaultParagraphFont",
-        semiHidden: true,
-        unhideWhenUsed: true,
-        run: { superScript: true },
-        ...options.endnoteReference,
-      }),
+    characterStyles.push({
+      id: "EndnoteReference",
+      name: "endnote reference",
+      basedOn: "DefaultParagraphFont",
+      semiHidden: true,
+      unhideWhenUsed: true,
+      run: { superScript: true },
+      ...options.endnoteReference,
     });
 
     // Endnote Text paragraph style
-    importedStyles.push({
-      _raw: stringifyParagraphStyle({
-        id: "EndnoteText",
-        name: "endnote text",
-        basedOn: "Normal",
-        link: "EndnoteTextChar",
-        semiHidden: true,
-        uiPriority: 99,
-        unhideWhenUsed: true,
-        paragraph: { spacing: { after: 0, line: 240, lineRule: "auto" } },
-        run: { size: 20 },
-        ...options.endnoteText,
-      }),
+    paragraphStyles.push({
+      id: "EndnoteText",
+      name: "endnote text",
+      basedOn: "Normal",
+      link: "EndnoteTextChar",
+      semiHidden: true,
+      uiPriority: 99,
+      unhideWhenUsed: true,
+      paragraph: { spacing: { after: 0, line: 240, lineRule: "auto" } },
+      run: { size: 20 },
+      ...options.endnoteText,
     });
 
     // Endnote Text Char character style
-    importedStyles.push({
-      _raw: stringifyCharacterStyle({
-        id: "EndnoteTextChar",
-        name: "Endnote Text Char",
-        basedOn: "DefaultParagraphFont",
-        link: "EndnoteText",
-        semiHidden: true,
-        run: { size: 20 },
-        ...options.endnoteTextChar,
-      }),
+    characterStyles.push({
+      id: "EndnoteTextChar",
+      name: "Endnote Text Char",
+      basedOn: "DefaultParagraphFont",
+      link: "EndnoteText",
+      semiHidden: true,
+      run: { size: 20 },
+      ...options.endnoteTextChar,
     });
 
     // Intense Reference character style
-    importedStyles.push({
-      _raw:
-        `<w:style w:type="character" w:styleId="IntenseReference">` +
-        `<w:name w:val="Intense Reference"/>` +
-        `<w:basedOn w:val="DefaultParagraphFont"/>` +
-        `<w:uiPriority w:val="32"/>` +
-        `<w:qFormat/>` +
-        `<w:rPr><w:b/><w:bCs/><w:smallCaps/><w:color w:val="0F4761" w:themeColor="accent1" w:themeShade="BF"/><w:spacing w:val="5"/></w:rPr>` +
-        `</w:style>`,
+    characterStyles.push({
+      id: "IntenseReference",
+      name: "Intense Reference",
+      basedOn: "DefaultParagraphFont",
+      uiPriority: 32,
+      quickFormat: true,
+      run: {
+        bold: true,
+        boldComplexScript: true,
+        smallCaps: true,
+        color: { val: "0F4761", themeColor: "accent1", themeShade: "BF" },
+        characterSpacing: 5,
+      },
     });
 
-    return { importedStyles, initialAttributes };
+    return {
+      importedStyles,
+      paragraphStyles,
+      characterStyles,
+      tableStyles,
+      numberingStyles,
+      initialAttributes,
+    };
   }
 }

@@ -7,7 +7,7 @@ import type { DocxReadContext } from "../../context";
 import { generateDocumentSync } from "../../generate";
 import { parseDocument } from "../../parse";
 import { DefaultStylesFactory } from "./factory";
-import { parseStyleDefinitions, Styles, extractStyleId } from "./styles";
+import { parseStyleDefinitions, Styles } from "./styles";
 
 // Style pPr and docDefaults pPr carry no numPr, so an empty read context
 // suffices for parseParagraphProperties.
@@ -173,7 +173,7 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(char!.rsid).toBe("00ABCDEF");
   });
 
-  it("captures builtins verbatim and custom styles structured", () => {
+  it("captures builtin and custom styles structured (no verbatim _raw)", () => {
     const xml =
       '<?xml version="1.0"?><w:styles>' +
       '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style>' +
@@ -181,13 +181,27 @@ describe("parseStyleDefinitions (round-trip)", () => {
       "</w:styles>";
     const el = parseXml(xml).elements![0];
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
-    // Custom styles round-trip structured — NOT captured as verbatim _raw.
-    expect(opts?.paragraphStyles?.map((s) => s.id)).toEqual(["Custom1"]);
-    // Only builtins round-trip verbatim (factory defaults can't reproduce a
-    // source builtin); Heading1 is a builtin, Custom1 is not.
-    expect(opts?.importedStyles?.map((s) => s._raw)).toEqual([
-      '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style>',
-    ]);
+    // All styles (builtin + custom) round-trip structured so HTML renderers
+    // can consume attributes directly — no verbatim _raw for builtins anymore.
+    expect(opts?.paragraphStyles?.map((s) => s.id)).toEqual(["Heading1", "Custom1"]);
+    expect(opts?.importedStyles ?? []).toEqual([]);
+    expect(opts?.roundTripped).toBe(true);
+  });
+
+  it("round-trips a numbering style (NoList no longer lost)", () => {
+    const xml =
+      '<?xml version="1.0"?><w:styles>' +
+      '<w:style w:type="numbering" w:default="1" w:styleId="NoList">' +
+      '<w:name w:val="No List"/><w:uiPriority w:val="99"/>' +
+      "</w:style></w:styles>";
+    const el = parseXml(xml).elements![0];
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+    const num = opts?.numberingStyles?.[0];
+    expect(num).toBeDefined();
+    expect(num!.id).toBe("NoList");
+    expect(num!.name).toBe("No List");
+    expect(num!.uiPriority).toBe(99);
+    expect(num!.default).toBe(true);
   });
 
   it("reads document defaults with full paragraph properties (not just spacing)", () => {
@@ -210,14 +224,14 @@ describe("parseStyleDefinitions (round-trip)", () => {
 
 describe("DefaultStylesFactory overrides (user definitions win)", () => {
   it("applies user heading1 override and syncs Heading1Char + outlineLevel", () => {
-    const { importedStyles } = new DefaultStylesFactory().newInstance({
+    const result = new DefaultStylesFactory().newInstance({
       heading1: { run: { color: "FF0000" } },
     });
-    const h1 = importedStyles!.find((s) => extractStyleId(s._raw) === "Heading1")!;
-    expect(h1._raw).toContain('w:val="FF0000"');
-    expect(h1._raw).toContain('<w:outlineLvl w:val="0"/>');
-    const h1Char = importedStyles!.find((s) => extractStyleId(s._raw) === "Heading1Char")!;
-    expect(h1Char._raw).toContain('w:val="FF0000"');
+    const h1 = result.paragraphStyles!.find((s) => s.id === "Heading1")!;
+    expect(h1.run?.color).toBe("FF0000");
+    expect(h1.paragraph?.outlineLevel).toBe(0);
+    const h1Char = result.characterStyles!.find((s) => s.id === "Heading1Char")!;
+    expect(h1Char.run?.color).toBe("FF0000");
   });
 
   it("emits Strong/Emphasis only when the user defines them", () => {
@@ -225,18 +239,18 @@ describe("DefaultStylesFactory overrides (user definitions win)", () => {
       strong: { run: { bold: true } },
       emphasis: { run: { italic: true } },
     });
-    expect(custom.importedStyles!.some((s) => extractStyleId(s._raw) === "Strong")).toBe(true);
-    expect(custom.importedStyles!.some((s) => extractStyleId(s._raw) === "Emphasis")).toBe(true);
+    expect(custom.paragraphStyles!.some((s) => s.id === "Strong")).toBe(true);
+    expect(custom.paragraphStyles!.some((s) => s.id === "Emphasis")).toBe(true);
 
     const defaults = new DefaultStylesFactory().newInstance({});
-    expect(defaults.importedStyles!.some((s) => extractStyleId(s._raw) === "Strong")).toBe(false);
-    expect(defaults.importedStyles!.some((s) => extractStyleId(s._raw) === "Emphasis")).toBe(false);
+    expect(defaults.paragraphStyles!.some((s) => s.id === "Strong")).toBe(false);
+    expect(defaults.paragraphStyles!.some((s) => s.id === "Emphasis")).toBe(false);
   });
 
   it("keeps the built-in heading default when no override (zero regression)", () => {
-    const { importedStyles } = new DefaultStylesFactory().newInstance({});
-    const h1 = importedStyles!.find((s) => extractStyleId(s._raw) === "Heading1")!;
-    expect(h1._raw).toContain('w:themeColor="accent1"');
+    const { paragraphStyles } = new DefaultStylesFactory().newInstance({});
+    const h1 = paragraphStyles!.find((s) => s.id === "Heading1")!;
+    expect(h1.run?.color).toEqual({ val: "0F4761", themeColor: "accent1", themeShade: "BF" });
   });
 });
 
@@ -282,5 +296,46 @@ describe("styles round-trip (generate → parse → generate)", () => {
     const reparsed = parseDocument(generateDocumentSync(parsed));
     expect(reparsed.styles?.tableStyles?.map((s) => s.id)).toContain("MyTable");
     expect(reparsed.styles?.paragraphStyles?.map((s) => s.id)).toContain("MyPara");
+  });
+
+  it("exposes builtin styles as structured paragraphStyles for HTML rendering", () => {
+    const buffer = generateDocumentSync({
+      sections: [{ children: [{ paragraph: { children: [{ text: "x" }] } }] }],
+      styles: { default: { heading1: { run: { color: "FF0000" } } } },
+    });
+    const parsed = parseDocument(buffer);
+    // Builtins (Heading1, Normal) round-trip structured so an HTML renderer can
+    // read their run/paragraph attributes directly — no XML string parsing.
+    const h1 = parsed.styles?.paragraphStyles?.find((s) => s.id === "Heading1");
+    expect(h1).toBeDefined();
+    expect(JSON.stringify(h1!.run?.color)).toContain("FF0000");
+    expect(parsed.styles?.paragraphStyles?.some((s) => s.id === "Normal")).toBe(true);
+  });
+
+  it("preserves a customized builtin across serialize → parse (no _raw)", () => {
+    const xml =
+      '<?xml version="1.0"?><w:styles>' +
+      "<w:docDefaults><w:rPrDefault><w:rPr/></w:rPrDefault><w:pPrDefault><w:pPr/></w:pPrDefault></w:docDefaults>" +
+      '<w:latentStyles w:defLockedState="0" w:count="1"/>' +
+      '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/>' +
+      '<w:rPr><w:color w:val="00AA00"/></w:rPr></w:style>' +
+      "</w:styles>";
+    const parsed = parseStyleDefinitions(parseXml(xml).elements![0], parseParagraphProperties, ctx);
+    expect(
+      JSON.stringify(parsed?.paragraphStyles?.find((s) => s.id === "Heading1")?.run?.color),
+    ).toContain("00AA00");
+
+    const styles = new Styles({
+      importedStyles: [{ _raw: parsed!.docDefaultsXml! }, { _raw: parsed!.latentStylesXml! }],
+      paragraphStyles: parsed!.paragraphStyles,
+    });
+    const reParsed = parseStyleDefinitions(
+      parseXml(styles.serialize()).elements![0],
+      parseParagraphProperties,
+      ctx,
+    );
+    expect(
+      JSON.stringify(reParsed?.paragraphStyles?.find((s) => s.id === "Heading1")?.run?.color),
+    ).toContain("00AA00");
   });
 });

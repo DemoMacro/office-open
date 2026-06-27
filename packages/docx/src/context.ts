@@ -25,7 +25,7 @@ import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { SettingsOptions } from "@parts/settings/settings";
 import { Styles, extractStyleId } from "@parts/styles";
 import { ExternalStylesFactory } from "@parts/styles/external-styles-factory";
-import { DefaultStylesFactory, collectDefaultOverrideIds } from "@parts/styles/factory";
+import { DefaultStylesFactory } from "@parts/styles/factory";
 import { SubDocCollection } from "@parts/sub-doc/sub-doc-collection";
 import type { WebSettingsOptions } from "@parts/web-settings";
 import { EmbeddingCollection } from "@shared/embeddings/embeddings";
@@ -35,6 +35,17 @@ import type { SectionOptions } from "@shared/section";
 import type { SectionChild } from "@shared/section";
 
 import type { DocxDocument } from "./parse";
+
+/** User styles override factory defaults with the same styleId; keep the rest. */
+function mergeById<T extends { id: string }>(
+  factoryStyles: T[] | undefined,
+  userStyles: T[] | undefined,
+): T[] {
+  const factory = factoryStyles ?? [];
+  if (!userStyles || userStyles.length === 0) return factory;
+  const userIds = new Set(userStyles.map((s) => s.id));
+  return [...factory.filter((s) => !userIds.has(s.id)), ...userStyles];
+}
 
 /** Interface for document view wrappers — provides relationships access. */
 export interface ViewWrapper {
@@ -178,93 +189,58 @@ export class DocxWriteContext implements WriteContext {
     this.subDocs = new SubDocCollection();
 
     if (options.externalStyles !== undefined) {
-      const defaultFactory = new DefaultStylesFactory();
-      const defaultStyles = defaultFactory.newInstance(options.styles?.default);
-      const externalFactory = new ExternalStylesFactory();
-      const externalStyles = externalFactory.newInstance(options.externalStyles);
-      // Skip docDefaults AND latentStyles from default factory —
-      // external styles already provide them; XSD requires docDefaults → latentStyles → style sequence.
-      // Also drop builtins whose styleId the external XML already defines so
-      // user definitions override defaults (no duplicate styleId in the output).
-      const externalStyleIds = new Set<string>();
+      const externalStyles = new ExternalStylesFactory().newInstance(options.externalStyles);
+      const defaultStyles = new DefaultStylesFactory().newInstance(options.styles?.default ?? {});
+      // External (user-provided full styles.xml) wins; factory builtins fill
+      // any gaps. Drop factory builtins whose styleId the external XML already
+      // defines (no duplicate styleId). docDefaults/latentStyles come from the
+      // external XML — the factory's are not mixed in.
+      const externalIds = new Set<string>();
       for (const s of externalStyles.importedStyles ?? []) {
         const id = extractStyleId(s._raw);
-        if (id) externalStyleIds.add(id);
+        if (id) externalIds.add(id);
       }
-      const defaultStyleElements = defaultStyles.importedStyles!.slice(2).filter((s) => {
-        const id = extractStyleId(s._raw);
-        return !id || !externalStyleIds.has(id);
-      });
+      const notInExternal = <T extends { id: string }>(arr: T[] | undefined) =>
+        (arr ?? []).filter((s) => !externalIds.has(s.id));
       this.styles = new Styles({
-        ...externalStyles,
-        importedStyles: [...externalStyles.importedStyles!, ...defaultStyleElements],
+        importedStyles: externalStyles.importedStyles,
+        initialAttributes: externalStyles.initialAttributes ?? defaultStyles.initialAttributes,
+        paragraphStyles: notInExternal(defaultStyles.paragraphStyles),
+        characterStyles: notInExternal(defaultStyles.characterStyles),
+        tableStyles: notInExternal(defaultStyles.tableStyles),
+        numberingStyles: notInExternal(defaultStyles.numberingStyles),
       });
     } else if (options.styles) {
-      const stylesFactory = new DefaultStylesFactory();
-      const defaultStyles = stylesFactory.newInstance(options.styles.default);
-      // importedStyles[0]=docDefaults, [1]=latentStyles, [2+]=builtin styles.
-      // Custom paragraph/character/table styles are NOT captured verbatim —
-      // they round-trip via the structured path below. paragraphStyles/
-      // characterStyles also feed numbering registration further down.
-      const {
-        importedStyles: parsedStyles,
-        paragraphStyles,
-        characterStyles,
-        tableStyles,
-        ...restStyles
-      } = options.styles;
-      const merged = defaultStyles.importedStyles ? [...defaultStyles.importedStyles] : [];
-      if (restStyles.docDefaultsXml) {
-        const ddIdx = merged.findIndex((s) => s._raw.startsWith("<w:docDefaults"));
-        if (ddIdx >= 0) merged[ddIdx] = { _raw: restStyles.docDefaultsXml };
-      }
-      if (restStyles.latentStylesXml) {
-        const latentIdx = merged.findIndex((s) => s._raw.startsWith("<w:latentStyles"));
-        if (latentIdx >= 0) merged[latentIdx] = { _raw: restStyles.latentStylesXml };
-      }
-      if (parsedStyles && parsedStyles.length > 0) {
-        // Round-trip: builtins emit verbatim from the source (factory builtins
-        // suppressed); custom styles re-emit structured. User overrides via
-        // default.<field> (e.g. default.heading1) take precedence over the
-        // verbatim builtin — drop those ids from the source and emit the
-        // factory's structured version instead, so "modify a default style"
-        // works post-parse.
-        merged.splice(2);
-        const overrideIds = collectDefaultOverrideIds(options.styles.default);
-        if (overrideIds.size > 0) {
-          const overrideById = new Map<string, { _raw: string }>();
-          for (const s of defaultStyles.importedStyles!.slice(2)) {
-            const id = extractStyleId(s._raw);
-            if (id) overrideById.set(id, s);
-          }
-          for (const s of parsedStyles) {
-            const id = extractStyleId(s._raw);
-            if (id && overrideIds.has(id)) continue;
-            merged.push(s);
-          }
-          for (const id of overrideIds) {
-            const s = overrideById.get(id);
-            if (s) merged.push(s);
-          }
-        } else {
-          merged.push(...parsedStyles);
-        }
+      const s = options.styles;
+      if (s.roundTripped) {
+        // Round-trip origin (parseStyleDefinitions): parsed structured
+        // builtin/custom styles win. The factory only supplies docDefaults +
+        // latentStyles verbatim defaults; parsed docDefaultsXml/latentStylesXml
+        // override when present. No factory builtin rebuild — parsed builtins
+        // already carry the source document's customizations.
+        const f = new DefaultStylesFactory().newInstance({});
+        const docDefaults = s.docDefaultsXml ?? f.importedStyles?.[0]?._raw ?? "";
+        const latentStyles = s.latentStylesXml ?? f.importedStyles?.[1]?._raw ?? "";
         this.styles = new Styles({
-          ...defaultStyles,
-          importedStyles: merged,
-          paragraphStyles,
-          characterStyles,
-          tableStyles,
-          ...restStyles,
+          importedStyles: [{ _raw: docDefaults }, { _raw: latentStyles }],
+          initialAttributes: s.initialAttributes ?? f.initialAttributes,
+          paragraphStyles: s.paragraphStyles,
+          characterStyles: s.characterStyles,
+          tableStyles: s.tableStyles,
+          numberingStyles: s.numberingStyles,
         });
       } else {
-        // Generation: factory builtins + structured custom styles.
+        // Fresh generation: factory default builtins (structured) + user
+        // overrides. User paragraphStyles/characterStyles/tableStyles/
+        // numberingStyles override factory builtins with the same styleId.
+        const f = new DefaultStylesFactory().newInstance(s.default);
         this.styles = new Styles({
-          ...defaultStyles,
-          paragraphStyles,
-          characterStyles,
-          tableStyles,
-          ...restStyles,
+          importedStyles: f.importedStyles,
+          initialAttributes: s.initialAttributes ?? f.initialAttributes,
+          paragraphStyles: mergeById(f.paragraphStyles, s.paragraphStyles),
+          characterStyles: mergeById(f.characterStyles, s.characterStyles),
+          tableStyles: mergeById(f.tableStyles, s.tableStyles),
+          numberingStyles: mergeById(f.numberingStyles, s.numberingStyles),
         });
       }
     } else {
