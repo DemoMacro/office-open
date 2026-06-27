@@ -9,8 +9,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
-import { stringify } from "../../descriptor";
-import { getColorDescriptor, parseColorChoice } from "../color/color-descriptors";
+import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlurEffectOptions, EffectListOptions } from "./effect-list";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
@@ -28,8 +27,7 @@ function stringifyEffectColor(
 ): string | undefined {
   if (!color) return undefined;
   // Effect elements expect EG_ColorChoice (direct color), NOT wrapped in solidFill
-  const desc = getColorDescriptor(color);
-  return stringify(desc, color, ctx);
+  return stringifyColorChoice(color, ctx);
 }
 
 function stringifyColorEffect(

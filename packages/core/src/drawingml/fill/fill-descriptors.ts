@@ -13,7 +13,7 @@ import { stringify, parse } from "../../descriptor";
 import { toUint8Array } from "../../util/data-type";
 import { xsdPattern } from "../../util/mappings";
 import { blipFillDesc } from "../blip/blip-descriptors";
-import { solidFillDesc, getColorDescriptor, parseColorChoice } from "../color/color-descriptors";
+import { solidFillDesc, parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { buildFill, type BlipFillConfigOptions, type FillOptions } from "./fill-options";
 import type {
@@ -74,8 +74,7 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     // Gradient stop list — a:gs expects EG_ColorChoice (direct color), NOT solidFill
     const stopsXml = opts.stops
       .map((stop) => {
-        const desc = getColorDescriptor(stop.color);
-        const colorXml = stringify(desc, stop.color, ctx);
+        const colorXml = stringifyColorChoice(stop.color, ctx);
         if (!colorXml) return `<a:gs pos="${stop.position}"/>`;
         return `<a:gs pos="${stop.position}">${colorXml}</a:gs>`;
       })
@@ -157,13 +156,11 @@ export const patternFillDesc: CustomDescriptor<PatternFillOptions> = {
 
     // a:fgClr/a:bgClr expect EG_ColorChoice (direct color), NOT solidFill
     if (opts.foregroundColor) {
-      const desc = getColorDescriptor(opts.foregroundColor);
-      const colorXml = stringify(desc, opts.foregroundColor, ctx);
+      const colorXml = stringifyColorChoice(opts.foregroundColor, ctx);
       if (colorXml) parts.push(`<a:fgClr>${colorXml}</a:fgClr>`);
     }
     if (opts.backgroundColor) {
-      const desc = getColorDescriptor(opts.backgroundColor);
-      const colorXml = stringify(desc, opts.backgroundColor, ctx);
+      const colorXml = stringifyColorChoice(opts.backgroundColor, ctx);
       if (colorXml) parts.push(`<a:bgClr>${colorXml}</a:bgClr>`);
     }
 

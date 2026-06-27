@@ -224,16 +224,21 @@ const SYSTEM_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SystemCol
 const PRESET_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(PresetColor));
 const SCHEME_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SchemeColor));
 
-export function getColorDescriptor(
-  color: SolidFillOptions,
-): CustomDescriptor<any, WriteContext, SolidFillOptions> {
-  if ("hue" in color && "saturation" in color && "luminance" in color) return hslColorDesc;
-  if ("r" in color && "g" in color && "b" in color) return scRgbColorDesc;
+/** Stringify an EG_ColorChoice (direct color element, no `a:solidFill` wrapper).
+ * Used for gradient stops, fg/bg clr, and effect colors. Replaces the former
+ * `getColorDescriptor` which returned a polymorphic `CustomDescriptor<any>`. */
+export function stringifyColorChoice(color: SolidFillOptions, ctx: WriteContext): string {
+  if ("hue" in color) return stringify(hslColorDesc, color, ctx) ?? "";
+  if ("r" in color) return stringify(scRgbColorDesc, color, ctx) ?? "";
+  // Remaining variants (rgb/scheme/system/preset) share a `value` key.
   const colorValue = (color as { value: string }).value;
-  if (SYSTEM_COLOR_VALUES.has(colorValue)) return systemColorDesc;
-  if (PRESET_COLOR_VALUES.has(colorValue)) return presetColorDesc;
-  if (SCHEME_COLOR_VALUES.has(colorValue)) return schemeColorDesc;
-  return rgbColorDesc;
+  if (SYSTEM_COLOR_VALUES.has(colorValue))
+    return stringify(systemColorDesc, color as SystemColorOptions, ctx) ?? "";
+  if (PRESET_COLOR_VALUES.has(colorValue))
+    return stringify(presetColorDesc, color as PresetColorOptions, ctx) ?? "";
+  if (SCHEME_COLOR_VALUES.has(colorValue))
+    return stringify(schemeColorDesc, color as SchemeColorOptions, ctx) ?? "";
+  return stringify(rgbColorDesc, color as RgbColorOptions, ctx) ?? "";
 }
 
 /**
@@ -268,8 +273,7 @@ export function parseColorChoice(el: XmlElement, ctx: ReadContext): SolidFillOpt
 export const solidFillDesc: CustomDescriptor<SolidFillOptions> = {
   kind: "custom",
   stringify(color, ctx) {
-    const desc = getColorDescriptor(color);
-    const inner = stringify(desc, color, ctx);
+    const inner = stringifyColorChoice(color, ctx);
     if (!inner) return undefined;
     return `<a:solidFill>${inner}</a:solidFill>`;
   },
