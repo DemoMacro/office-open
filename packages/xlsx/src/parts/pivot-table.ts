@@ -7,7 +7,7 @@
  * @module
  */
 
-import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attrs, escapeXml, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, attr, attrNum } from "@office-open/xml";
@@ -31,9 +31,189 @@ export interface PivotTableDescriptorOptions {
   cacheId: number;
 }
 
+/** Parsed pivotField (CT_PivotField) — index-based, inspect-only. */
+export interface PivotFieldParseResult {
+  axis?: string;
+  showAll?: boolean;
+  dataField?: boolean;
+  hierarchy?: string;
+  dragToRow?: boolean;
+  dragToCol?: boolean;
+  dragToPage?: boolean;
+  dragToData?: boolean;
+  dragOff?: boolean;
+  showDropDowns?: boolean;
+  insertBlankRow?: boolean;
+  showPropCell?: boolean;
+  showPropTip?: boolean;
+  showPropAsCaption?: boolean;
+  compact?: boolean;
+  outline?: boolean;
+  subtotalTop?: boolean;
+  includeNewItemsInFilter?: boolean;
+}
+
+/** Parsed dataField (CT_DataField). */
+export interface DataFieldParseResult {
+  name?: string;
+  fld?: number;
+  subtotal?: string;
+  showDataAs?: string;
+  baseField?: number;
+  baseItem?: number;
+  numFmtId?: string;
+}
+
+/** Parsed pageField (CT_PageField). */
+export interface PageFieldParseResult {
+  fld?: number;
+  hier?: number;
+  cap?: string;
+}
+
+/** Parsed format entry (CT_Format). */
+export interface PivotFormatParseResult {
+  action?: string;
+  dxfId?: number;
+  pivotArea?: Partial<PivotAreaOptions>;
+}
+
+/** Parsed chartFormat (CT_ChartFormat). */
+export interface ChartFormatParseResult {
+  chart?: number;
+  format?: number;
+  series?: boolean;
+  pivotArea?: Partial<PivotAreaOptions>;
+}
+
+/** Parsed pivotHierarchy (CT_PivotHierarchy). */
+export interface PivotHierarchyParseResult {
+  outline?: boolean;
+  multipleItemSelectionAllowed?: boolean;
+  subtotalTop?: boolean;
+  showInFieldList?: boolean;
+  dragToRow?: boolean;
+  dragToCol?: boolean;
+  dragToPage?: boolean;
+  dragToData?: boolean;
+  dragOff?: boolean;
+  includeNewItemsInFilter?: boolean;
+  caption?: string;
+}
+
+/** Parsed pivotFilter (CT_PivotFilter). */
+export interface PivotFilterParseResult {
+  fld?: number;
+  type?: string;
+  id?: number;
+  mpFld?: number;
+  evalOrder?: number;
+}
+
+/** Parsed row/col hierarchyUsage entry (CT_RowColHierarchyUsage). */
+export interface HierarchyUsageParseResult {
+  hierarchyUsage: number;
+}
+
+/** Parsed calculatedItem (CT_CalculatedItem). */
+export interface CalculatedItemParseResult {
+  field?: number;
+  formula?: string;
+  pivotArea?: Partial<PivotAreaOptions>;
+}
+
+/** Parsed calculatedMember (CT_CalculatedMember). */
+export interface CalculatedMemberParseResult {
+  name?: string;
+  mdx?: string;
+  memberName?: string;
+  hierarchy?: string;
+  parent?: string;
+  solveOrder?: number;
+  set?: boolean;
+}
+
+/**
+ * Structured output of {@link pivotTableDesc}.parse — CT_pivotTableDefinition as
+ * parsed (index-based pivotFields/dataFields, flat attributes). This is the
+ * CT-layer shape, NOT {@link PivotTableOptions} (the name-based user shape),
+ * so it cannot be fed straight back into stringify; the compiler regenerates a
+ * pivot table from `sourceData` + user `PivotTableOptions` instead.
+ */
+export interface PivotTableParseResult {
+  name?: string;
+  cacheId?: number;
+  dataOnRows?: boolean;
+  showHeaders?: boolean;
+  showEmptyRow?: boolean;
+  showEmptyCol?: boolean;
+  grandTotalCaption?: string;
+  errorCaption?: string;
+  showError?: boolean;
+  missingCaption?: string;
+  showMissing?: boolean;
+  pageStyle?: string;
+  pivotTableStyle?: string;
+  tag?: string;
+  showItems?: boolean;
+  editData?: boolean;
+  disableFieldList?: boolean;
+  showCalcMbrs?: boolean;
+  visualTotals?: boolean;
+  showMultipleLabel?: boolean;
+  showDataDropDown?: boolean;
+  showDrill?: boolean;
+  printDrill?: boolean;
+  showMemberPropertyTips?: boolean;
+  showDataTips?: boolean;
+  enableWizard?: boolean;
+  enableDrill?: boolean;
+  enableFieldProperties?: boolean;
+  pageWrap?: number;
+  pageOverThenDown?: boolean;
+  subtotalHiddenItems?: boolean;
+  fieldPrintTitles?: boolean;
+  mergeItem?: boolean;
+  showDropZones?: boolean;
+  published?: boolean;
+  gridDropZones?: boolean;
+  multipleFieldFilters?: boolean;
+  rowHeaderCaption?: string;
+  colHeaderCaption?: string;
+  fieldListSortAscending?: boolean;
+  mdxSubqueries?: boolean;
+  customListSort?: boolean;
+  asteriskTotals?: boolean;
+  dataPosition?: number;
+  immersive?: boolean;
+  vacatedStyle?: string;
+  dataCaption?: string;
+  location?: string;
+  locationRowPageCount?: number;
+  locationColPageCount?: number;
+  pivotFields?: PivotFieldParseResult[];
+  dataFields?: DataFieldParseResult[];
+  rowFields?: number[];
+  colFields?: number[];
+  pageFields?: PageFieldParseResult[];
+  formats?: PivotFormatParseResult[];
+  chartFormats?: ChartFormatParseResult[];
+  pivotHierarchies?: PivotHierarchyParseResult[];
+  filters?: PivotFilterParseResult[];
+  rowHierarchiesUsage?: HierarchyUsageParseResult[];
+  colHierarchiesUsage?: HierarchyUsageParseResult[];
+  calculatedItems?: CalculatedItemParseResult[];
+  calculatedMembers?: CalculatedMemberParseResult[];
+  style?: string;
+}
+
 // ── Descriptor ──
 
-export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
+export const pivotTableDesc: CustomDescriptor<
+  PivotTableDescriptorOptions,
+  WriteContext,
+  PivotTableParseResult
+> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -41,7 +221,7 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<PivotTableParseResult> = {};
 
     // Root element attributes
     if (attr(el, "name")) result.name = attr(el, "name");
@@ -107,10 +287,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // PivotFields
     const pfEl = findChild(el, "pivotFields");
     if (pfEl) {
-      const fields: Record<string, unknown>[] = [];
+      const fields: PivotFieldParseResult[] = [];
       for (const fEl of pfEl.elements ?? []) {
         if (fEl.name !== "pivotField") continue;
-        const field: Record<string, unknown> = {};
+        const field: PivotFieldParseResult = {};
         const axis = attr(fEl, "axis");
         if (axis) field.axis = axis;
         if (attr(fEl, "showAll") === "0") field.showAll = false;
@@ -139,10 +319,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // DataFields
     const dfEl = findChild(el, "dataFields");
     if (dfEl) {
-      const dataFields: Record<string, unknown>[] = [];
+      const dataFields: DataFieldParseResult[] = [];
       for (const dEl of dfEl.elements ?? []) {
         if (dEl.name !== "dataField") continue;
-        const df: Record<string, unknown> = {};
+        const df: DataFieldParseResult = {};
         if (attr(dEl, "name")) df.name = attr(dEl, "name");
         const fld = attrNum(dEl, "fld");
         if (fld !== undefined) df.fld = fld;
@@ -187,10 +367,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // Page fields
     const pageFieldsEl = findChild(el, "pageFields");
     if (pageFieldsEl) {
-      const pageFields: Record<string, unknown>[] = [];
+      const pageFields: PageFieldParseResult[] = [];
       for (const pf of pageFieldsEl.elements ?? []) {
         if (pf.name !== "pageField") continue;
-        const pfResult: Record<string, unknown> = {};
+        const pfResult: PageFieldParseResult = {};
         const fld = attrNum(pf, "fld");
         if (fld !== undefined) pfResult.fld = fld;
         const hier = attrNum(pf, "hier");
@@ -204,10 +384,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // Formats
     const formatsEl = findChild(el, "formats");
     if (formatsEl) {
-      const formats: Record<string, unknown>[] = [];
+      const formats: PivotFormatParseResult[] = [];
       for (const fmtEl of formatsEl.elements ?? []) {
         if (fmtEl.name !== "format") continue;
-        const fmt: Record<string, unknown> = {};
+        const fmt: PivotFormatParseResult = {};
         if (attr(fmtEl, "action")) fmt.action = attr(fmtEl, "action");
         const dxfId = attrNum(fmtEl, "dxfId");
         if (dxfId !== undefined) fmt.dxfId = dxfId;
@@ -221,10 +401,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // ChartFormats
     const chartFormatsEl = findChild(el, "chartFormats");
     if (chartFormatsEl) {
-      const chartFormats: Record<string, unknown>[] = [];
+      const chartFormats: ChartFormatParseResult[] = [];
       for (const cfEl of chartFormatsEl.elements ?? []) {
         if (cfEl.name !== "chartFormat") continue;
-        const cf: Record<string, unknown> = {};
+        const cf: ChartFormatParseResult = {};
         const chart = attrNum(cfEl, "chart");
         if (chart !== undefined) cf.chart = chart;
         const format = attrNum(cfEl, "format");
@@ -240,10 +420,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // PivotHierarchies
     const hierarchiesEl = findChild(el, "pivotHierarchies");
     if (hierarchiesEl) {
-      const hierarchies: Record<string, unknown>[] = [];
+      const hierarchies: PivotHierarchyParseResult[] = [];
       for (const hEl of hierarchiesEl.elements ?? []) {
         if (hEl.name !== "pivotHierarchy") continue;
-        const h: Record<string, unknown> = {};
+        const h: PivotHierarchyParseResult = {};
         if (attr(hEl, "outline") === "1") h.outline = true;
         if (attr(hEl, "multipleItemSelectionAllowed") === "1")
           h.multipleItemSelectionAllowed = true;
@@ -264,10 +444,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // Filters
     const filtersEl = findChild(el, "filters");
     if (filtersEl) {
-      const filters: Record<string, unknown>[] = [];
+      const filters: PivotFilterParseResult[] = [];
       for (const fEl of filtersEl.elements ?? []) {
         if (fEl.name !== "filter") continue;
-        const f: Record<string, unknown> = {};
+        const f: PivotFilterParseResult = {};
         const fld = attrNum(fEl, "fld");
         if (fld !== undefined) f.fld = fld;
         if (attr(fEl, "type")) f.type = attr(fEl, "type");
@@ -285,7 +465,7 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // RowHierarchiesUsage
     const rhuEl = findChild(el, "rowHierarchiesUsage");
     if (rhuEl) {
-      const usage: Record<string, unknown>[] = [];
+      const usage: HierarchyUsageParseResult[] = [];
       for (const u of rhuEl.elements ?? []) {
         if (u.name === "rowHierarchyUsage") {
           usage.push({ hierarchyUsage: attrNum(u, "hierarchyUsage") ?? 0 });
@@ -297,7 +477,7 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // ColHierarchiesUsage
     const chuEl = findChild(el, "colHierarchiesUsage");
     if (chuEl) {
-      const usage: Record<string, unknown>[] = [];
+      const usage: HierarchyUsageParseResult[] = [];
       for (const u of chuEl.elements ?? []) {
         if (u.name === "colHierarchyUsage") {
           usage.push({ hierarchyUsage: attrNum(u, "hierarchyUsage") ?? 0 });
@@ -309,10 +489,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // CalculatedItems
     const ciEl = findChild(el, "calculatedItems");
     if (ciEl) {
-      const items: Record<string, unknown>[] = [];
+      const items: CalculatedItemParseResult[] = [];
       for (const iEl of ciEl.elements ?? []) {
         if (iEl.name !== "calculatedItem") continue;
-        const item: Record<string, unknown> = {};
+        const item: CalculatedItemParseResult = {};
         const field = attrNum(iEl, "field");
         if (field !== undefined) item.field = field;
         const formulaEl = findChild(iEl, "formula");
@@ -327,10 +507,10 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
     // CalculatedMembers
     const cmEl = findChild(el, "calculatedMembers");
     if (cmEl) {
-      const members: Record<string, unknown>[] = [];
+      const members: CalculatedMemberParseResult[] = [];
       for (const mEl of cmEl.elements ?? []) {
         if (mEl.name !== "calculatedMember") continue;
-        const m: Record<string, unknown> = {};
+        const m: CalculatedMemberParseResult = {};
         if (attr(mEl, "name")) m.name = attr(mEl, "name");
         const mdxEl = findChild(mEl, "mdx");
         if (mdxEl) m.mdx = textOf(mdxEl) ?? "";
@@ -354,7 +534,7 @@ export const pivotTableDesc: CustomDescriptor<PivotTableDescriptorOptions> = {
       result.style = attr(el, "styleName");
     }
 
-    return result as unknown as PivotTableDescriptorOptions;
+    return result as PivotTableParseResult;
   },
 };
 

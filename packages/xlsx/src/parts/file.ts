@@ -18,6 +18,9 @@ import type {
 } from "@parts/styles";
 import type {
   WorkbookProtectionOptions,
+  WorkbookViewOptions,
+  CalculationPropertiesOptions,
+  WorkbookPropertiesOptions,
   FileRecoveryPropertiesOptions,
   WebPublishingOptions,
   FileSharingOptions,
@@ -26,8 +29,10 @@ import type {
   WebPublishObjectOptions,
 } from "@parts/workbook";
 
+import type { CalcCell } from "./calc-chain";
 import type { ChartsheetOptions } from "./chartsheet";
 import type { ExternalLinkOptions } from "./external-link";
+import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
 import type { WorksheetOptions } from "./worksheet";
 
@@ -63,6 +68,18 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   volTypes?: VolTypeOptions[];
   /** Web publish objects (CT_WebPublishItems) */
   webPublishObjects?: WebPublishObjectOptions[];
+  /** Workbook view (CT_BookView) — parse-only; compiler does not round-trip this field */
+  bookView?: WorkbookViewOptions;
+  /** Calculation properties (CT_CalcPr) — parse-only */
+  calcPr?: CalculationPropertiesOptions;
+  /** Workbook properties (CT_WorkbookPr) — parse-only */
+  workbookPr?: WorkbookPropertiesOptions;
+  /** Calculation chain cells (xl/calcChain.xml) — parse-only; compiler rebuilds from formulas */
+  calcChain?: CalcCell[];
+  /** Pivot cache definitions — parse-only (CT-layer); compiler regenerates from sourceData */
+  pivotCaches?: PivotCacheDefParseResult[];
+  /** Pivot cache records — parse-only (CT-layer) */
+  pivotCacheRecords?: PivotCacheRecordsParseResult[];
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */

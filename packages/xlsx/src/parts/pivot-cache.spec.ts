@@ -25,14 +25,14 @@ function roundTripDef(opts: PivotCacheDefDescriptorOptions) {
   const xml = pivotCacheDefDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements![0];
-  return pivotCacheDefDesc.parse(el, readCtx) as unknown as Record<string, unknown>;
+  return pivotCacheDefDesc.parse(el, readCtx);
 }
 
 function roundTripRecords(opts: PivotCacheRecordsDescriptorOptions) {
   const xml = pivotCacheRecordsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements![0];
-  return pivotCacheRecordsDesc.parse(el, readCtx) as unknown as Record<string, unknown>;
+  return pivotCacheRecordsDesc.parse(el, readCtx);
 }
 
 // ── Tests ──
@@ -55,11 +55,11 @@ describe("pivotCacheDefDesc round-trip", () => {
     };
     const result = roundTripDef(opts);
 
-    const ws = result.worksheetSource as Record<string, unknown>;
+    const ws = result.worksheetSource!;
     expect(ws.ref).toBe("A1:B3");
     expect(ws.sheet).toBe("Sheet1");
 
-    const fields = result.cacheFields as Record<string, unknown>[];
+    const fields = result.cacheFields!;
     expect(fields).toHaveLength(2);
     expect(fields[0].name).toBe("Name");
     expect(fields[1].name).toBe("Amount");
@@ -74,14 +74,14 @@ describe("pivotCacheDefDesc round-trip", () => {
     };
     const result = roundTripDef(opts);
 
-    const fields = result.cacheFields as Record<string, unknown>[];
+    const fields = result.cacheFields!;
     // "Name" field has string shared items
-    const nameItems = fields[0].sharedItems as (string | number)[];
+    const nameItems = fields[0].sharedItems!;
     expect(nameItems).toContain("Alice");
     expect(nameItems).toContain("Bob");
 
     // "Amount" field has numeric shared items
-    const amountItems = fields[1].sharedItems as (string | number)[];
+    const amountItems = fields[1].sharedItems!;
     expect(amountItems).toContain(100);
     expect(amountItems).toContain(200);
   });
@@ -99,17 +99,16 @@ describe("pivotCacheRecordsDesc round-trip", () => {
     const opts: PivotCacheRecordsDescriptorOptions = { sourceData };
     const result = roundTripRecords(opts);
 
-    const records = result.records as Record<string, unknown>[][];
+    const records = result.records;
     expect(records).toHaveLength(2);
 
     // First record: string index + number
     expect(records[0]).toHaveLength(2);
     expect(records[0][0].type).toBe("string");
-    expect(records[0][1].type).toBe("number");
-    expect(records[0][1].v).toBe(100);
+    expect(records[0][1]).toEqual({ type: "number", v: 100 });
 
     // Second record
     expect(records[1]).toHaveLength(2);
-    expect(records[1][1].v).toBe(200);
+    expect(records[1][1]).toEqual({ type: "number", v: 200 });
   });
 });

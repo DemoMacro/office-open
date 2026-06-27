@@ -21,10 +21,10 @@ import type { CustomDescriptor } from "./types";
  * Serialize an Options object to an XML string using its descriptor.
  * Returns `undefined` when an optional element should be omitted.
  */
-export function stringify<T>(
-  desc: CustomDescriptor<T>,
-  value: T,
-  ctx: WriteContext,
+export function stringify<TInput, Ctx = WriteContext, TOutput = TInput>(
+  desc: CustomDescriptor<TInput, Ctx, TOutput>,
+  value: TInput,
+  ctx: Ctx,
 ): string | undefined {
   return desc.stringify(value, ctx);
 }
@@ -32,6 +32,10 @@ export function stringify<T>(
 // ── Read path ──
 
 /** Parse an XML Element into an Options object using its descriptor. */
-export function parse<T>(desc: CustomDescriptor<T>, el: XmlElement, ctx: ReadContext): T {
+export function parse<TInput, TOutput = TInput, Ctx = WriteContext>(
+  desc: CustomDescriptor<TInput, Ctx, TOutput>,
+  el: XmlElement,
+  ctx: ReadContext,
+): TOutput {
   return desc.parse(el, ctx);
 }

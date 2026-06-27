@@ -6,7 +6,7 @@
  *
  * @module
  */
-import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attrs, escapeXml, findChild, attr, attrNum, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
@@ -850,7 +850,7 @@ export interface StylesDocOptions {
 
 // ── Descriptor ──
 
-export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
+export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, StylesParseResult> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -1076,7 +1076,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
       result.styleExtensions = exts;
     }
 
-    return result as unknown as StylesDocOptions;
+    return result;
   },
 };
 

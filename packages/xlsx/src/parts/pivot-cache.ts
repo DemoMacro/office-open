@@ -7,7 +7,7 @@
  * @module
  */
 
-import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { escapeXml, findChild, attr, attrNum } from "@office-open/xml";
 
 import type { PivotCacheDefinitionOptions } from "./pivot/pivot-utils";
@@ -16,10 +16,17 @@ import { collectUniqueValues, isNumericField } from "./pivot/pivot-utils";
 
 // ── Types ──
 
+/** One parsed cell from a pivotCacheRecords row (CT_Record). */
+export type PivotCacheRecordEntry =
+  | { type: "string"; v: number } // <x v="idx"/> — shared-items index
+  | { type: "number"; v: number } // <n v="num"/>
+  | { type: "date"; v: string } // <d v="date"/>
+  | { type: "missing" }; // <m/>
+
 export interface PivotCacheRecordsDescriptorOptions {
   sourceData: PivotSourceData;
   /** Parsed records (from parse path) */
-  records?: Record<string, unknown>[][];
+  records?: PivotCacheRecordEntry[][];
 }
 
 export interface PivotCacheDefDescriptorOptions {
@@ -30,9 +37,51 @@ export interface PivotCacheDefDescriptorOptions {
   cacheDefOpts?: PivotCacheDefinitionOptions;
 }
 
+/** Worksheet source (CT_WorksheetSource) parsed from a pivotCacheDefinition. */
+export interface PivotCacheDefWorksheetSource {
+  ref?: string;
+  sheet?: string;
+}
+
+/** Cache field (CT_CacheField) parsed from a pivotCacheDefinition. */
+export interface PivotCacheDefCacheField {
+  name?: string;
+  numFmtId?: number;
+  sharedItems?: (string | number)[];
+}
+
+/** Structured output of {@link pivotCacheDefDesc}.parse — flat attributes + source + fields. */
+export interface PivotCacheDefParseResult {
+  invalid?: boolean;
+  saveData?: boolean;
+  optimizeMemory?: boolean;
+  enableRefresh?: boolean;
+  refreshedBy?: string;
+  refreshedDate?: number;
+  refreshedDateIso?: string;
+  backgroundQuery?: boolean;
+  missingItemsLimit?: number;
+  upgradeOnRefresh?: boolean;
+  supportSubquery?: boolean;
+  supportAdvancedDrill?: boolean;
+  recordCount?: number;
+  sourceType?: string;
+  worksheetSource?: PivotCacheDefWorksheetSource;
+  cacheFields?: PivotCacheDefCacheField[];
+}
+
+/** Structured output of {@link pivotCacheRecordsDesc}.parse. */
+export interface PivotCacheRecordsParseResult {
+  records: PivotCacheRecordEntry[][];
+}
+
 // ── Descriptors ──
 
-export const pivotCacheDefDesc: CustomDescriptor<PivotCacheDefDescriptorOptions> = {
+export const pivotCacheDefDesc: CustomDescriptor<
+  PivotCacheDefDescriptorOptions,
+  WriteContext,
+  PivotCacheDefParseResult
+> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -46,7 +95,7 @@ export const pivotCacheDefDesc: CustomDescriptor<PivotCacheDefDescriptorOptions>
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<PivotCacheDefParseResult> = {};
 
     // Root element attributes
     if (attr(el, "invalid") === "1") result.invalid = true;
@@ -71,7 +120,7 @@ export const pivotCacheDefDesc: CustomDescriptor<PivotCacheDefDescriptorOptions>
       result.sourceType = attr(csEl, "type");
       const wssEl = findChild(csEl, "worksheetSource");
       if (wssEl) {
-        const wss: Record<string, unknown> = {};
+        const wss: PivotCacheDefWorksheetSource = {};
         if (attr(wssEl, "ref")) wss.ref = attr(wssEl, "ref");
         if (attr(wssEl, "sheet")) wss.sheet = attr(wssEl, "sheet");
         result.worksheetSource = wss;
@@ -79,10 +128,10 @@ export const pivotCacheDefDesc: CustomDescriptor<PivotCacheDefDescriptorOptions>
     }
     const cfEl = findChild(el, "cacheFields");
     if (cfEl) {
-      const fields: Record<string, unknown>[] = [];
+      const fields: PivotCacheDefCacheField[] = [];
       for (const fEl of cfEl.elements ?? []) {
         if (fEl.name !== "cacheField") continue;
-        const field: Record<string, unknown> = {};
+        const field: PivotCacheDefCacheField = {};
         if (attr(fEl, "name")) field.name = attr(fEl, "name");
         if (attrNum(fEl, "numFmtId") !== undefined) field.numFmtId = attrNum(fEl, "numFmtId");
         const siEl = findChild(fEl, "sharedItems");
@@ -98,11 +147,15 @@ export const pivotCacheDefDesc: CustomDescriptor<PivotCacheDefDescriptorOptions>
       }
       result.cacheFields = fields;
     }
-    return result as unknown as PivotCacheDefDescriptorOptions;
+    return result as PivotCacheDefParseResult;
   },
 };
 
-export const pivotCacheRecordsDesc: CustomDescriptor<PivotCacheRecordsDescriptorOptions> = {
+export const pivotCacheRecordsDesc: CustomDescriptor<
+  PivotCacheRecordsDescriptorOptions,
+  WriteContext,
+  PivotCacheRecordsParseResult
+> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -110,30 +163,29 @@ export const pivotCacheRecordsDesc: CustomDescriptor<PivotCacheRecordsDescriptor
   },
 
   parse(el, _ctx) {
-    const records: Record<string, unknown>[][] = [];
+    const records: PivotCacheRecordEntry[][] = [];
     for (const rEl of el.elements ?? []) {
       if (rEl.name !== "r") continue;
-      const record: Record<string, unknown>[] = [];
+      const record: PivotCacheRecordEntry[] = [];
       for (const fEl of rEl.elements ?? []) {
-        const entry: Record<string, unknown> = {};
+        let entry: PivotCacheRecordEntry;
         if (fEl.name === "x") {
-          entry.type = "string";
-          entry.v = attrNum(fEl, "v") ?? 0;
+          entry = { type: "string", v: attrNum(fEl, "v") ?? 0 };
         } else if (fEl.name === "n") {
-          entry.type = "number";
           const v = attr(fEl, "v");
-          entry.v = v !== undefined ? Number(v) : 0;
+          entry = { type: "number", v: v !== undefined ? Number(v) : 0 };
         } else if (fEl.name === "d") {
-          entry.type = "date";
-          entry.v = attr(fEl, "v") ?? "";
+          entry = { type: "date", v: attr(fEl, "v") ?? "" };
         } else if (fEl.name === "m") {
-          entry.type = "missing";
+          entry = { type: "missing" };
+        } else {
+          continue; // skip unrecognized cell elements
         }
         record.push(entry);
       }
       records.push(record);
     }
-    return { records } as unknown as PivotCacheDefDescriptorOptions;
+    return { records };
   },
 };
 
