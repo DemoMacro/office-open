@@ -11,6 +11,7 @@ import {
   buildPresPropsXml,
   type PresentationPropertiesFullOptions,
 } from "@parts/presentation-properties";
+import type { ShowOptions } from "@shared/file";
 
 // ── Types ──
 
@@ -33,12 +34,12 @@ export const presPropsDesc: CustomDescriptor<PresPropsDescriptorOptions> = {
 // ── Parse ──
 
 function parsePresProps(el: XmlElement): PresPropsDescriptorOptions {
-  const result: Record<string, unknown> = {};
+  const result: Partial<PresPropsDescriptorOptions> = {};
 
   // show (p:showPr in real PPTX files, or p:show for round-trip compat)
   const showPr = findChild(el, "p:showPr") ?? findChild(el, "p:show");
   if (showPr) {
-    const showOpts: Record<string, unknown> = {};
+    const showOpts: Partial<ShowOptions> = {};
     if (showPr.attributes?.["loop"] !== undefined)
       showOpts.loop = showPr.attributes["loop"] === "1";
     if (showPr.attributes?.["showNarration"] !== undefined)
@@ -53,8 +54,8 @@ function parsePresProps(el: XmlElement): PresPropsDescriptorOptions {
     } else if (findChild(showPr, "p:present")) {
       showOpts.type = "present";
     }
-    if (Object.keys(showOpts).length > 0) result.show = showOpts;
+    if (Object.keys(showOpts).length > 0) result.show = showOpts as ShowOptions;
   }
 
-  return result as unknown as PresPropsDescriptorOptions;
+  return result as PresPropsDescriptorOptions;
 }

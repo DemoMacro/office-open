@@ -1767,9 +1767,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           // Formula
           const fEl = findChild(cellEl, "f");
           if (fEl) {
-            const formula: Record<string, unknown> = { formula: textOf(fEl) ?? "" };
+            const formula: FormulaOptions = { formula: textOf(fEl) ?? "" };
             const ft = attr(fEl, "t");
-            if (ft && ft !== "normal") formula.type = ft;
+            if (ft && ft !== "normal") formula.type = ft as FormulaType;
             const fRef = attr(fEl, "ref");
             if (fRef) formula.reference = fRef;
             const fSi = attrNum(fEl, "si");
@@ -1777,7 +1777,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
             if (attr(fEl, "aca") === "1") formula.aca = true;
             if (attr(fEl, "ca") === "1") formula.ca = true;
             if (attr(fEl, "bx") === "1") formula.bx = true;
-            cell.formula = formula as unknown as FormulaOptions;
+            cell.formula = formula;
           }
 
           cells.push(cell);
@@ -2909,9 +2909,9 @@ function dateToSerialNumber(date: Date): number {
 
 // ── Parse helpers ──
 
-function parseCfvo(el: XmlElement): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-  result.type = attr(el, "type") ?? "num";
+function parseCfvo(el: XmlElement): Partial<CfvoOptions> {
+  const result: Partial<CfvoOptions> = {};
+  result.type = (attr(el, "type") ?? "num") as CfvoType;
   const val = attr(el, "val");
   if (val !== undefined) result.val = isNaN(Number(val)) ? val : Number(val);
   if (attr(el, "gte") === "0") result.gte = false;

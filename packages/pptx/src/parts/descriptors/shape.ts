@@ -8,7 +8,10 @@
  */
 
 import {
+  convertEmuToPixels,
+  convertEmuToPoints,
   convertPixelsToEmu,
+  convertPointsToEmu,
   convertToEmu,
   toUint8Array,
   xsdRectAlignment,
@@ -37,7 +40,14 @@ import type {
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { attrMeasure, findChild, findDeep, escapeXml, attrNum, attr } from "@office-open/xml";
-import type { EffectsOptions, ReflectionOptions } from "@shared/drawingml/effects";
+import type {
+  EffectsOptions,
+  ReflectionOptions,
+  ShadowOptions,
+  GlowOptions,
+  PPTXBevelOptions,
+  Rotation3DOptions,
+} from "@shared/drawingml/effects";
 import type { OutlineOptions } from "@shared/drawingml/outline";
 import type { ParagraphOptions } from "@shared/shape/paragraph/paragraph";
 
@@ -51,6 +61,13 @@ export interface ShapeStyleDescriptorOptions {
   fillReference?: { index: number; color?: string };
   effectReference?: { index: number; color?: string };
   fontReference?: { index: number; color?: string };
+}
+
+export interface TextBodyMarginsDescriptorOptions {
+  top?: number | UniversalMeasure;
+  bottom?: number | UniversalMeasure;
+  left?: number | UniversalMeasure;
+  right?: number | UniversalMeasure;
 }
 
 export interface TextBodyDescriptorOptions {
@@ -67,12 +84,7 @@ export interface TextBodyDescriptorOptions {
   anchor?: "top" | "center" | "bottom" | "justify" | "distribute";
   autoFit?: "normal" | "shape" | "none";
   wrap?: "square" | "none";
-  margins?: {
-    top?: number | UniversalMeasure;
-    bottom?: number | UniversalMeasure;
-    left?: number | UniversalMeasure;
-    right?: number | UniversalMeasure;
-  };
+  margins?: TextBodyMarginsDescriptorOptions;
   marginTop?: number | UniversalMeasure;
   marginBottom?: number | UniversalMeasure;
   columns?: number;
@@ -242,10 +254,20 @@ function toShape3DOptions(opts: EffectsOptions): Shape3DOptions | undefined {
 
   return {
     ...(opts.bevelTop
-      ? { bevelT: { w: opts.bevelTop.width! * 12700, h: opts.bevelTop.height! * 12700 } }
+      ? {
+          bevelT: {
+            w: convertPointsToEmu(opts.bevelTop.width!),
+            h: convertPointsToEmu(opts.bevelTop.height!),
+          },
+        }
       : {}),
     ...(opts.bevelBottom
-      ? { bevelB: { w: opts.bevelBottom.width! * 12700, h: opts.bevelBottom.height! * 12700 } }
+      ? {
+          bevelB: {
+            w: convertPointsToEmu(opts.bevelBottom.width!),
+            h: convertPointsToEmu(opts.bevelBottom.height!),
+          },
+        }
       : {}),
     ...(opts.extrusionH !== undefined ? { extrusionH: opts.extrusionH } : {}),
     ...(opts.material ? { prstMaterial: opts.material } : {}),
@@ -428,13 +450,13 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
       if (xfrm) {
         const off = findChild(xfrm, "a:off");
         if (off?.attributes) {
-          result.x = Math.round(Number(off.attributes["x"] ?? 0) / 9525);
-          result.y = Math.round(Number(off.attributes["y"] ?? 0) / 9525);
+          result.x = Math.round(convertEmuToPixels(Number(off.attributes["x"] ?? 0)));
+          result.y = Math.round(convertEmuToPixels(Number(off.attributes["y"] ?? 0)));
         }
         const ext = findChild(xfrm, "a:ext");
         if (ext?.attributes) {
-          result.width = Math.round(Number(ext.attributes["cx"] ?? 0) / 9525);
-          result.height = Math.round(Number(ext.attributes["cy"] ?? 0) / 9525);
+          result.width = Math.round(convertEmuToPixels(Number(ext.attributes["cx"] ?? 0)));
+          result.height = Math.round(convertEmuToPixels(Number(ext.attributes["cy"] ?? 0)));
         }
       }
 
@@ -870,34 +892,33 @@ export function readPositionFromXfrm(xfrm: XmlElement): Record<string, number> {
   const off = findChild(xfrm, "a:off");
   if (off) {
     const x = attrNum(off, "x");
-    if (x !== undefined) result.x = Math.round(x / 9525);
+    if (x !== undefined) result.x = Math.round(convertEmuToPixels(x));
     const y = attrNum(off, "y");
-    if (y !== undefined) result.y = Math.round(y / 9525);
+    if (y !== undefined) result.y = Math.round(convertEmuToPixels(y));
   }
   const ext = findChild(xfrm, "a:ext");
   if (ext) {
     const cx = attrNum(ext, "cx");
-    if (cx !== undefined) result.width = Math.round(cx / 9525);
+    if (cx !== undefined) result.width = Math.round(convertEmuToPixels(cx));
     const cy = attrNum(ext, "cy");
-    if (cy !== undefined) result.height = Math.round(cy / 9525);
+    if (cy !== undefined) result.height = Math.round(convertEmuToPixels(cy));
   }
   return result;
 }
 
 export function readOutlineCompat(ln: XmlElement): OutlineOptions {
   const coreOpts = parse(outlineDesc, ln, {} as ReadContext);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: Record<string, any> = {};
+  const result: OutlineOptions = {};
 
-  if (coreOpts.width !== undefined) result.width = coreOpts.width;
-  if (coreOpts.dash) result.dashStyle = coreOpts.dash;
+  if (coreOpts.width !== undefined) result.width = coreOpts.width as number;
+  if (coreOpts.dash) result.dashStyle = coreOpts.dash as OutlineOptions["dashStyle"];
 
   if (coreOpts.type === "solidFill" && coreOpts.color) {
     const c = coreOpts.color as { value?: string };
     result.color = c.value ?? "";
   }
 
-  return result as OutlineOptions;
+  return result;
 }
 
 function readStyle(styleEl: XmlElement): ShapeStyleDescriptorOptions {
@@ -956,17 +977,16 @@ function readTxBody(txBody: XmlElement, ctx: ReadContext): TextBodyDescriptorOpt
       ) as TextBodyDescriptorOptions["anchor"];
     if (attrs["wrap"] !== undefined)
       result.wrap = String(attrs["wrap"]) as TextBodyDescriptorOptions["wrap"];
-    const insMargins: Record<string, unknown> = {};
+    const insMargins: TextBodyMarginsDescriptorOptions = {};
     const tIns = attrMeasure(bodyPr, "tIns");
-    if (tIns !== undefined) insMargins.top = tIns;
+    if (tIns !== undefined) insMargins.top = tIns as number | UniversalMeasure;
     const bIns = attrMeasure(bodyPr, "bIns");
-    if (bIns !== undefined) insMargins.bottom = bIns;
+    if (bIns !== undefined) insMargins.bottom = bIns as number | UniversalMeasure;
     const lIns = attrMeasure(bodyPr, "lIns");
-    if (lIns !== undefined) insMargins.left = lIns;
+    if (lIns !== undefined) insMargins.left = lIns as number | UniversalMeasure;
     const rIns = attrMeasure(bodyPr, "rIns");
-    if (rIns !== undefined) insMargins.right = rIns;
-    if (Object.keys(insMargins).length > 0)
-      result.margins = { ...result.margins, ...insMargins } as TextBodyDescriptorOptions["margins"];
+    if (rIns !== undefined) insMargins.right = rIns as number | UniversalMeasure;
+    if (Object.keys(insMargins).length > 0) result.margins = { ...result.margins, ...insMargins };
     if (attrs["numCol"] !== undefined) result.columns = Number(attrs["numCol"]);
     if (attrs["spcCol"] !== undefined) result.columnSpacing = Number(attrs["spcCol"]) / 100;
     const marT = attrMeasure(bodyPr, "marT");
@@ -1047,13 +1067,13 @@ function extractColorFromElement(el: XmlElement): { color?: string; alpha?: numb
 }
 
 /** Parse 2D effects (a:effectLst) into PPTX EffectsOptions fields. */
-export function readEffectList(effectLst: XmlElement): Record<string, unknown> | undefined {
-  const opts: Record<string, unknown> = {};
+export function readEffectList(effectLst: XmlElement): EffectsOptions | undefined {
+  const opts: EffectsOptions = {};
   for (const child of effectLst.elements ?? []) {
     if (!child.name) continue;
     switch (child.name) {
       case "a:outerShdw": {
-        const shadow: Record<string, unknown> = {};
+        const shadow: ShadowOptions = {};
         const blurRad = attrNum(child, "blurRad");
         if (blurRad !== undefined) shadow.blur = blurRad;
         const dist = attrNum(child, "dist");
@@ -1069,7 +1089,7 @@ export function readEffectList(effectLst: XmlElement): Record<string, unknown> |
         break;
       }
       case "a:innerShdw": {
-        const shadow: Record<string, unknown> = {};
+        const shadow: ShadowOptions = {};
         const blurRad = attrNum(child, "blurRad");
         if (blurRad !== undefined) shadow.blur = blurRad;
         const dist = attrNum(child, "dist");
@@ -1085,7 +1105,7 @@ export function readEffectList(effectLst: XmlElement): Record<string, unknown> |
         break;
       }
       case "a:glow": {
-        const glow: Record<string, unknown> = {};
+        const glow: GlowOptions = {};
         const rad = attrNum(child, "rad");
         if (rad !== undefined) glow.radius = rad;
         const color = extractColorFromElement(child);
@@ -1143,8 +1163,8 @@ export function readEffectList(effectLst: XmlElement): Record<string, unknown> |
 }
 
 /** Parse effects from p:spPr (2D effects, 3D scene, 3D shape props). */
-function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefined {
-  const opts: Record<string, unknown> = {};
+function readEffectsFromSpPr(spPr: XmlElement): EffectsOptions | undefined {
+  const opts: EffectsOptions = {};
 
   // 2D effects from a:effectLst
   const effectLst = findChild(spPr, "a:effectLst");
@@ -1160,7 +1180,7 @@ function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefi
     if (camera) {
       const rot = findChild(camera, "a:rot");
       if (rot) {
-        const rotation3d: Record<string, number> = {};
+        const rotation3d: Rotation3DOptions = {};
         const lat = attrNum(rot, "lat");
         const lon = attrNum(rot, "lon");
         const rev = attrNum(rot, "rev");
@@ -1175,7 +1195,7 @@ function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefi
     const lightRig = findChild(scene3d, "a:lightRig");
     if (lightRig) {
       const rig = attr(lightRig, "rig");
-      if (rig) opts.lighting = rig;
+      if (rig) opts.lighting = rig as EffectsOptions["lighting"];
     }
   }
 
@@ -1184,22 +1204,22 @@ function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefi
   if (sp3d) {
     const bevelT = findChild(sp3d, "a:bevelT");
     if (bevelT) {
-      const bevel: Record<string, unknown> = {};
+      const bevel: PPTXBevelOptions = {};
       const w = attrNum(bevelT, "w");
       const h = attrNum(bevelT, "h");
-      if (w !== undefined) bevel.width = Math.round(w / 12700);
-      if (h !== undefined) bevel.height = Math.round(h / 12700);
+      if (w !== undefined) bevel.width = Math.round(convertEmuToPoints(w));
+      if (h !== undefined) bevel.height = Math.round(convertEmuToPoints(h));
       const prst = attr(bevelT, "prst");
       if (prst) bevel.preset = prst;
       if (Object.keys(bevel).length > 0) opts.bevelTop = bevel;
     }
     const bevelB = findChild(sp3d, "a:bevelB");
     if (bevelB) {
-      const bevel: Record<string, unknown> = {};
+      const bevel: PPTXBevelOptions = {};
       const w = attrNum(bevelB, "w");
       const h = attrNum(bevelB, "h");
-      if (w !== undefined) bevel.width = Math.round(w / 12700);
-      if (h !== undefined) bevel.height = Math.round(h / 12700);
+      if (w !== undefined) bevel.width = Math.round(convertEmuToPoints(w));
+      if (h !== undefined) bevel.height = Math.round(convertEmuToPoints(h));
       const prst = attr(bevelB, "prst");
       if (prst) bevel.preset = prst;
       if (Object.keys(bevel).length > 0) opts.bevelBottom = bevel;
@@ -1211,7 +1231,7 @@ function readEffectsFromSpPr(spPr: XmlElement): Record<string, unknown> | undefi
     const extrusionH = attrNum(sp3d, "extrusionH");
     if (extrusionH !== undefined) opts.extrusionH = extrusionH;
     const prstMaterial = attr(sp3d, "prstMaterial");
-    if (prstMaterial) opts.material = prstMaterial;
+    if (prstMaterial) opts.material = prstMaterial as EffectsOptions["material"];
   }
 
   return Object.keys(opts).length > 0 ? opts : undefined;

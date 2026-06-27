@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { attr, findChild } from "@office-open/xml";
+import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { DocxReadContext } from "../../context";
@@ -34,7 +34,7 @@ export function parseTextbox(
   style?: Record<string, string>;
   children?: unknown[];
 } {
-  const shape = findDeep(el, "v:shape")[0];
+  const shape = findFirst(el, "v:shape");
   if (!shape) return {};
 
   const opts: Record<string, unknown> = {};
@@ -46,7 +46,7 @@ export function parseTextbox(
   }
 
   // Parse textbox content
-  const textbox = findDeep(shape, "v:textbox")[0];
+  const textbox = findFirst(shape, "v:textbox");
   if (textbox) {
     const txbxContent = findChild(textbox, "w:txbxContent");
     if (txbxContent) {
@@ -56,14 +56,4 @@ export function parseTextbox(
   }
 
   return opts as { style?: Record<string, string>; children?: unknown[] };
-}
-
-// Simple deep finder
-function findDeep(parent: Element, name: string): Element[] {
-  const result: Element[] = [];
-  for (const child of parent.elements ?? []) {
-    if (child.name === name) result.push(child);
-    result.push(...findDeep(child, name));
-  }
-  return result;
 }

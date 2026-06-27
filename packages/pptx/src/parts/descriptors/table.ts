@@ -29,33 +29,41 @@ import { paragraphDesc, type ParagraphDescriptorOptions } from "./text";
 
 // ── Types ──
 
+export type CellDashStyle = "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
+
 export interface CellBorderDescriptorOptions {
   width?: number;
   color?: string;
-  dashStyle?: "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
+  dashStyle?: CellDashStyle;
 }
+
+export interface TableBordersDescriptorOptions {
+  top?: CellBorderDescriptorOptions;
+  bottom?: CellBorderDescriptorOptions;
+  left?: CellBorderDescriptorOptions;
+  right?: CellBorderDescriptorOptions;
+}
+
+export interface CellMarginsDescriptorOptions {
+  top?: number | UniversalMeasure;
+  bottom?: number | UniversalMeasure;
+  left?: number | UniversalMeasure;
+  right?: number | UniversalMeasure;
+}
+
+export type CellVerticalAlign = "top" | "center" | "bottom" | "justify" | "distribute";
 
 export interface TableCellDescriptorOptions {
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];
   fill?: FillOptions;
-  borders?: {
-    top?: CellBorderDescriptorOptions;
-    bottom?: CellBorderDescriptorOptions;
-    left?: CellBorderDescriptorOptions;
-    right?: CellBorderDescriptorOptions;
-  };
+  borders?: TableBordersDescriptorOptions;
   columnSpan?: number;
   rowSpan?: number;
   horizontalMerge?: "continue" | "restart";
   verticalMerge?: "continue" | "restart";
-  verticalAlign?: "top" | "center" | "bottom" | "justify" | "distribute";
-  margins?: {
-    top?: number | UniversalMeasure;
-    bottom?: number | UniversalMeasure;
-    left?: number | UniversalMeasure;
-    right?: number | UniversalMeasure;
-  };
+  verticalAlign?: CellVerticalAlign;
+  margins?: CellMarginsDescriptorOptions;
 }
 
 export interface TableRowDescriptorOptions {
@@ -79,12 +87,7 @@ export interface TableDescriptorOptions {
   lastCol?: boolean;
   bandCol?: boolean;
   tableStyleId?: string;
-  borders?: {
-    top?: CellBorderDescriptorOptions;
-    bottom?: CellBorderDescriptorOptions;
-    left?: CellBorderDescriptorOptions;
-    right?: CellBorderDescriptorOptions;
-  };
+  borders?: TableBordersDescriptorOptions;
 }
 
 // ── ID counter ──
@@ -149,7 +152,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<TableDescriptorOptions> = {};
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");
@@ -171,7 +174,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     const graphicData = findChild(el, "a:graphic") ? findChild(el, "a:graphic") : undefined;
     const gd = graphicData ? findChild(graphicData, "a:graphicData") : undefined;
     const tbl = gd ? findChild(gd, "a:tbl") : undefined;
-    if (!tbl) return result as unknown as TableDescriptorOptions;
+    if (!tbl) return result as TableDescriptorOptions;
 
     // a:tblPr
     const tblPr = findChild(tbl, "a:tblPr");
@@ -190,7 +193,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
       }
 
       // Table-level borders
-      const borders: Record<string, unknown> = {};
+      const borders: TableBordersDescriptorOptions = {};
       for (const [elName, key] of [
         ["a:lnL", "left"],
         ["a:lnR", "right"],
@@ -199,7 +202,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
       ] as const) {
         const borderEl = findChild(tblPr, elName);
         if (borderEl) {
-          const borderOpts: Record<string, unknown> = {};
+          const borderOpts: Partial<CellBorderDescriptorOptions> = {};
           const w = attrNum(borderEl, "w");
           if (w !== undefined) borderOpts.width = w;
           const fillResult = parseTableCellFill(borderEl);
@@ -207,7 +210,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
           const prstDash = findChild(borderEl, "a:prstDash");
           if (prstDash) {
             const val = attr(prstDash, "val");
-            if (val) borderOpts.dashStyle = val;
+            if (val) borderOpts.dashStyle = val as CellDashStyle;
           }
           if (Object.keys(borderOpts).length > 0) borders[key] = borderOpts;
         }
@@ -227,22 +230,20 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     }
 
     // a:tr → rows
-    const rows: Record<string, unknown>[] = [];
+    const rows: TableRowDescriptorOptions[] = [];
     for (const tr of children(tbl, "a:tr")) {
-      const rowOpts: Record<string, unknown> = {};
       const h = attrNum(tr, "h");
-      if (h !== undefined) rowOpts.height = h;
-
-      const cells: Record<string, unknown>[] = [];
+      const cells: TableCellDescriptorOptions[] = [];
       for (const tc of children(tr, "a:tc")) {
         cells.push(parseTableCell(tc, _ctx));
       }
-      rowOpts.cells = cells;
-      rows.push(rowOpts);
+      const row: TableRowDescriptorOptions = { cells };
+      if (h !== undefined) row.height = h;
+      rows.push(row);
     }
     result.rows = rows;
 
-    return result as unknown as TableDescriptorOptions;
+    return result as TableDescriptorOptions;
   },
 };
 
@@ -406,8 +407,8 @@ function distributeBorders(
 }
 
 /** Parse a table cell (a:tc) into options. */
-function parseTableCell(tc: Element, readCtx?: ReadContext): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptorOptions {
+  const result: TableCellDescriptorOptions = {};
   const ctx = readCtx ?? ({} as ReadContext);
 
   const gridSpan = attrNum(tc, "gridSpan");
@@ -424,10 +425,10 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): Record<string, unkn
   // a:txBody → paragraph children
   const txBody = findChild(tc, "a:txBody");
   if (txBody) {
-    const paragraphs: Record<string, unknown>[] = [];
+    const paragraphs: ParagraphDescriptorOptions[] = [];
     for (const pEl of txBody.elements ?? []) {
       if (pEl.name !== "a:p") continue;
-      const para = paragraphDesc.parse(pEl, ctx) as Record<string, unknown>;
+      const para = paragraphDesc.parse(pEl, ctx);
       paragraphs.push(para);
     }
 
@@ -445,17 +446,16 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): Record<string, unkn
     // Extract margins from a:bodyPr
     const bodyPr = findChild(txBody, "a:bodyPr");
     if (bodyPr) {
-      const margins: Record<string, unknown> = {};
+      const margins: CellMarginsDescriptorOptions = {};
       const tIns = attrMeasure(bodyPr, "tIns");
-      if (tIns !== undefined) margins.top = tIns;
+      if (tIns !== undefined) margins.top = tIns as number | UniversalMeasure;
       const bIns = attrMeasure(bodyPr, "bIns");
-      if (bIns !== undefined) margins.bottom = bIns;
+      if (bIns !== undefined) margins.bottom = bIns as number | UniversalMeasure;
       const lIns = attrMeasure(bodyPr, "lIns");
-      if (lIns !== undefined) margins.left = lIns;
+      if (lIns !== undefined) margins.left = lIns as number | UniversalMeasure;
       const rIns = attrMeasure(bodyPr, "rIns");
-      if (rIns !== undefined) margins.right = rIns;
-      if (Object.keys(margins).length > 0)
-        result.margins = margins as TableCellDescriptorOptions["margins"];
+      if (rIns !== undefined) margins.right = rIns as number | UniversalMeasure;
+      if (Object.keys(margins).length > 0) result.margins = margins;
     }
   }
 
@@ -463,27 +463,26 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): Record<string, unkn
   const tcPr = findChild(tc, "a:tcPr");
   if (tcPr) {
     const anchor = attr(tcPr, "anchor");
-    if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor);
+    if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as CellVerticalAlign;
 
     // Margins from tcPr attributes
-    const margins: Record<string, unknown> = {};
+    const margins: CellMarginsDescriptorOptions = {};
     const marL = attrMeasure(tcPr, "marL");
-    if (marL !== undefined) margins.left = marL;
+    if (marL !== undefined) margins.left = marL as number | UniversalMeasure;
     const marR = attrMeasure(tcPr, "marR");
-    if (marR !== undefined) margins.right = marR;
+    if (marR !== undefined) margins.right = marR as number | UniversalMeasure;
     const marT = attrMeasure(tcPr, "marT");
-    if (marT !== undefined) margins.top = marT;
+    if (marT !== undefined) margins.top = marT as number | UniversalMeasure;
     const marB = attrMeasure(tcPr, "marB");
-    if (marB !== undefined) margins.bottom = marB;
-    if (Object.keys(margins).length > 0)
-      result.margins = margins as TableCellDescriptorOptions["margins"];
+    if (marB !== undefined) margins.bottom = marB as number | UniversalMeasure;
+    if (Object.keys(margins).length > 0) result.margins = margins;
 
     // Fill — use full fillDesc for all fill types
     const fillResult = parse(fillDesc, tcPr, ctx);
     if (fillResult && Object.keys(fillResult).length > 0) result.fill = fillResult;
 
     // Cell borders
-    const borders: Record<string, unknown> = {};
+    const borders: TableBordersDescriptorOptions = {};
     for (const [elName, key] of [
       ["a:lnL", "left"],
       ["a:lnR", "right"],
@@ -492,7 +491,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): Record<string, unkn
     ] as const) {
       const borderEl = findChild(tcPr, elName);
       if (borderEl) {
-        const borderOpts: Record<string, unknown> = {};
+        const borderOpts: Partial<CellBorderDescriptorOptions> = {};
         const w = attrNum(borderEl, "w");
         if (w !== undefined) borderOpts.width = w;
         const fillResult = parseTableCellFill(borderEl);
@@ -501,7 +500,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): Record<string, unkn
         const prstDash = findChild(borderEl, "a:prstDash");
         if (prstDash) {
           const val = attr(prstDash, "val");
-          if (val) borderOpts.dashStyle = val;
+          if (val) borderOpts.dashStyle = val as CellDashStyle;
         }
         if (Object.keys(borderOpts).length > 0) borders[key] = borderOpts;
       }

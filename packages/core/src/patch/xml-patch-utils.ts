@@ -30,3 +30,25 @@ export const patchSpaceAttribute = (element: Element): Element => ({
 
 export const getFirstLevelElements = (relationships: Element, id: string): Element[] =>
   relationships.elements?.find((e) => e.name === id)?.elements ?? [];
+
+/**
+ * Next sequential numeric id: the largest `attr` value among direct children
+ * named `childName`, plus one. `seed` is the floor — e.g. PPTX `<p:sldId>`
+ * values start at 255, so the first appended id is at least 256.
+ *
+ * Unifies the per-package `maxCommentId` / `maxSldId` / `maxSheetId` helpers.
+ */
+export const nextNumericId = (
+  parent: Element | undefined,
+  childName: string,
+  attr: string,
+  seed = 0,
+): number => {
+  let maxId = seed;
+  for (const child of parent?.elements ?? []) {
+    if (child.name !== childName) continue;
+    const id = Number(child.attributes?.[attr]);
+    if (Number.isFinite(id)) maxId = Math.max(maxId, id);
+  }
+  return maxId + 1;
+};

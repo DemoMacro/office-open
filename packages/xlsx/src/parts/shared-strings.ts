@@ -10,7 +10,11 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml, findChild, attr, attrNum, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import type { RichTextOptions } from "./worksheet";
+import type {
+  RichTextOptions,
+  RichTextRunOptions,
+  RichTextRunPropertiesOptions,
+} from "./worksheet";
 
 /** String or rich text entry in the SST. */
 type SstEntry = string | RichTextOptions;
@@ -197,15 +201,15 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
       }
 
       // Rich text: <si><r>...</r>...</si>
-      const runs: { text: string; properties?: Record<string, unknown> }[] = [];
+      const runs: RichTextRunOptions[] = [];
       for (const r of si.elements ?? []) {
         if (r.name !== "r") continue;
         const rt = findChild(r, "t");
         if (rt) {
           const rPrEl = findChild(r, "rPr");
-          const run: Record<string, unknown> = { text: textOf(rt) ?? "" };
+          const run: RichTextRunOptions = { text: textOf(rt) ?? "" };
           if (rPrEl) run.properties = parseRPr(rPrEl);
-          runs.push(run as (typeof runs)[number]);
+          runs.push(run);
         }
       }
 
@@ -220,22 +224,22 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
       }
 
       if (runs.length > 0) {
-        const entry: Record<string, unknown> = { runs };
+        const entry: RichTextOptions = { runs };
         if (phonetics.length > 0) entry.phonetics = phonetics;
-        entries.push(entry as RichTextOptions);
+        entries.push(entry);
       }
     }
 
     return {
       entries,
       uniqueCount: entries.length,
-    } as unknown as SharedStringsDocOptions;
+    };
   },
 };
 
 /** Parse CT_RPrElt (run properties inside shared strings r element). */
-function parseRPr(el: XmlElement): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
+  const result: RichTextRunPropertiesOptions = {};
   for (const child of el.elements ?? []) {
     switch (child.name) {
       case "rFont":
@@ -287,14 +291,17 @@ function parseRPr(el: XmlElement): Record<string, unknown> {
         break;
       case "u": {
         const uVal = attr(child, "val");
-        result.underline = uVal ?? true;
+        result.underline =
+          (uVal as RichTextRunPropertiesOptions["underline"] | undefined) ?? "single";
         break;
       }
       case "vertAlign":
-        result.vertAlign = attr(child, "val") ?? undefined;
+        result.vertAlign = attr(child, "val") as
+          | RichTextRunPropertiesOptions["vertAlign"]
+          | undefined;
         break;
       case "scheme":
-        result.scheme = attr(child, "val") ?? undefined;
+        result.scheme = attr(child, "val") as RichTextRunPropertiesOptions["scheme"] | undefined;
         break;
     }
   }

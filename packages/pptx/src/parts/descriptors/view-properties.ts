@@ -30,7 +30,7 @@ export const viewPropsDesc: CustomDescriptor<ViewPropertiesDescriptorOptions> = 
 // ── Parse ──
 
 function parseViewProperties(el: XmlElement): ViewPropertiesDescriptorOptions {
-  const result: Record<string, unknown> = {};
+  const result: Partial<ViewPropertiesDescriptorOptions> = {};
 
   if (el.attributes) {
     const a = el.attributes;
@@ -44,7 +44,7 @@ function parseViewProperties(el: XmlElement): ViewPropertiesDescriptorOptions {
         sldSorterView: "slideSorterView",
       };
       const mapped = reverseMap[a["lastView"]];
-      if (mapped) result.lastView = mapped;
+      if (mapped) result.lastView = mapped as ViewPropertiesDescriptorOptions["lastView"];
     }
     if (a["showComments"] !== undefined) result.showComments = a["showComments"] !== "0";
   }
@@ -58,5 +58,5 @@ function parseViewProperties(el: XmlElement): ViewPropertiesDescriptorOptions {
     }
   }
 
-  return result as unknown as ViewPropertiesDescriptorOptions;
+  return result as ViewPropertiesDescriptorOptions;
 }

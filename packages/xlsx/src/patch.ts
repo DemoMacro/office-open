@@ -13,9 +13,12 @@
  */
 import {
   OoxmlMimeType,
+  appendContentType,
+  appendOverride,
   appendRelationship,
   applyCorePropertiesOverride,
   getNextRelationshipIndex,
+  nextNumericId,
   strFromU8,
   toJson,
   unzipSync,
@@ -470,15 +473,9 @@ function nextWorksheetNumber(xmlMap: Map<string, Element>): number {
   return maxN + 1;
 }
 
-/** Largest numeric `sheetId` among existing `<sheet>` entries. */
-function maxSheetId(sheetsEl: Element | undefined): number {
-  let maxId = 0;
-  for (const child of sheetsEl?.elements ?? []) {
-    if (localName(child) !== "sheet") continue;
-    const id = Number(child.attributes?.["sheetId"]);
-    if (Number.isFinite(id)) maxId = Math.max(maxId, id);
-  }
-  return maxId;
+/** Next `sheetId` for an appended `<sheet>` entry. */
+function nextSheetId(sheetsEl: Element | undefined): number {
+  return nextNumericId(sheetsEl, "sheet", "sheetId", 0);
 }
 
 /** Resolve a relationship `rId` to its Target via a rels part root. */
@@ -539,7 +536,7 @@ function appendWorksheetToMap(
     els.push(
       makeElement("sheet", {
         name: sheetName,
-        sheetId: String(maxSheetId(wbSheets) + 1),
+        sheetId: String(nextSheetId(wbSheets)),
         "r:id": `rId${newRId}`,
       }),
     );
@@ -547,15 +544,9 @@ function appendWorksheetToMap(
   appendRelationship(wbRels, newRId, WORKSHEET_REL_TYPE, `worksheets/sheet${newN}.xml`);
 
   // [Content_Types].xml Override
-  const typesRoot = rootOf(xmlMap.get("[Content_Types].xml"));
-  if (typesRoot) {
-    const els = typesRoot.elements ?? (typesRoot.elements = []);
-    els.push(
-      makeElement("Override", {
-        PartName: `/${sheetPath}`,
-        ContentType: WORKSHEET_CONTENT_TYPE,
-      }),
-    );
+  const contentTypes = xmlMap.get("[Content_Types].xml");
+  if (contentTypes) {
+    appendOverride(contentTypes, `/${sheetPath}`, WORKSHEET_CONTENT_TYPE);
   }
 }
 
@@ -726,22 +717,11 @@ function appendCommentsToMap(
   if (wsRoot) insertLegacyDrawing(wsRoot, vmlRidRef);
 
   // Content types — comments Override (new part only) + vml Default (deduped).
-  const typesRoot = rootOf(xmlMap.get("[Content_Types].xml"));
-  if (typesRoot) {
-    const els = typesRoot.elements ?? (typesRoot.elements = []);
+  const contentTypes = xmlMap.get("[Content_Types].xml");
+  if (contentTypes) {
     if (!existingPart) {
-      els.push(
-        makeElement("Override", {
-          PartName: `/${commentsPath}`,
-          ContentType: COMMENTS_CONTENT_TYPE,
-        }),
-      );
+      appendOverride(contentTypes, `/${commentsPath}`, COMMENTS_CONTENT_TYPE);
     }
-    const hasVml = els.some(
-      (e) => localName(e) === "Default" && e.attributes?.["Extension"] === "vml",
-    );
-    if (!hasVml) {
-      els.push(makeElement("Default", { Extension: "vml", ContentType: VML_CONTENT_TYPE }));
-    }
+    appendContentType(contentTypes, VML_CONTENT_TYPE, "vml");
   }
 }

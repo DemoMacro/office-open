@@ -98,7 +98,7 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<VideoDescriptorOptions> = {};
 
     // Position from p:spPr
     const spPr = findChild(el, "p:spPr");
@@ -149,7 +149,7 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
       }
     }
 
-    return result as unknown as VideoDescriptorOptions;
+    return result as VideoDescriptorOptions;
   },
 };
 
@@ -192,7 +192,7 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<AudioDescriptorOptions> = {};
 
     // Position from p:spPr
     const spPr = findChild(el, "p:spPr");
@@ -226,12 +226,14 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
       }
     }
 
-    return result as unknown as AudioDescriptorOptions;
+    return result as AudioDescriptorOptions;
   },
 };
 
 // ── Helpers ──
 
+function mediaTypeFromPath(path: string, kind: "video"): VideoType;
+function mediaTypeFromPath(path: string, kind: "audio"): AudioType;
 function mediaTypeFromPath(path: string, kind: "video" | "audio"): VideoType | AudioType {
   const ext = path.split(".").pop()?.toLowerCase() ?? "";
   if (kind === "video") {

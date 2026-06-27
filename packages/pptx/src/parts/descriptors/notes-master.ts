@@ -4,6 +4,7 @@
  * @module
  */
 
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrMeasure, findChild } from "@office-open/xml";
 import { buildNotesMasterXml } from "@parts/notes-master";
@@ -11,6 +12,7 @@ import type {
   NotesMasterOptions,
   NotesLevelProperties,
   ColorMapOptions,
+  HeaderFooterOptions,
 } from "@parts/notes-master";
 
 // ── Types ──
@@ -56,13 +58,13 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
-    const options: Record<string, unknown> = {};
+    const result: Partial<NotesMasterDescriptorOptions> = {};
+    const options: Partial<NotesMasterOptions> = {};
 
     // colorMap
     const clrMap = findChild(el, "p:clrMap");
     if (clrMap) {
-      const colorMap: Record<string, string> = {};
+      const colorMap: Partial<ColorMapOptions> = {};
       for (const key of COLOR_MAP_KEYS) {
         const v = attr(clrMap, key);
         if (v !== undefined) colorMap[key] = v;
@@ -73,7 +75,7 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
     // headerFooter
     const hf = findChild(el, "p:hf");
     if (hf) {
-      const headerFooter: Record<string, boolean> = {};
+      const headerFooter: Partial<HeaderFooterOptions> = {};
       const dt = attr(hf, "dt");
       if (dt !== undefined) headerFooter.date = dt === "1";
       const hdr = attr(hf, "hdr");
@@ -92,14 +94,14 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
       for (const tag of LEVEL_TAGS) {
         const lvlEl = findChild(notesStyle, tag);
         if (lvlEl) {
-          const lvl: Record<string, unknown> = {};
+          const lvl: Partial<NotesLevelProperties> = {};
           const defRPr = findChild(lvlEl, "a:defRPr");
           if (defRPr) {
             const sz = attrMeasure(defRPr, "sz");
-            if (sz !== undefined) lvl.fontSize = sz;
+            if (sz !== undefined) lvl.fontSize = sz as number | UniversalMeasure;
           }
           const marL = attrMeasure(lvlEl, "marL");
-          if (marL !== undefined) lvl.marginLeft = marL;
+          if (marL !== undefined) lvl.marginLeft = marL as number | UniversalMeasure;
           const algn = attr(lvlEl, "algn");
           if (algn !== undefined) lvl.alignment = algn;
           levels.push(lvl as NotesLevelProperties);
@@ -108,7 +110,7 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
       if (levels.length > 0) options.notesStyle = levels;
     }
 
-    if (Object.keys(options).length > 0) result.options = options;
-    return result as unknown as NotesMasterDescriptorOptions;
+    if (Object.keys(options).length > 0) result.options = options as NotesMasterOptions;
+    return result as NotesMasterDescriptorOptions;
   },
 };

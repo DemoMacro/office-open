@@ -96,7 +96,7 @@ export const oleDesc: CustomDescriptor<OleDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<OleDescriptorOptions> = {};
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
     const nvGrFrm = findChild(el, "p:nvGraphicFramePr");
@@ -169,7 +169,7 @@ export const oleDesc: CustomDescriptor<OleDescriptorOptions> = {
       }
     }
 
-    return result as unknown as OleDescriptorOptions;
+    return result as OleDescriptorOptions;
   },
 };
 

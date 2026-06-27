@@ -149,7 +149,7 @@ export class XlsxReadContext implements ReadContext {
   public resolveStyle(styleIndex: number): StyleOptions | undefined {
     const ps = this.parsedStyles;
     if (!ps) return undefined;
-    const { cellXfs, fonts, fills, borders, customNumFmts } = ps;
+    const { cellXfs, fonts, fills, borders, customNumFmtById } = ps;
     if (!cellXfs || styleIndex >= cellXfs.length) return undefined;
     const xf = cellXfs[styleIndex];
     const result: StyleOptions = {};
@@ -162,13 +162,9 @@ export class XlsxReadContext implements ReadContext {
     if (borderId !== undefined && borders && borderId < borders.length)
       result.border = borders[borderId];
     const numFmtId = xf.numFmtId;
-    if (numFmtId !== undefined && customNumFmts) {
-      for (const [code, id] of Object.entries(customNumFmts)) {
-        if (id === numFmtId) {
-          result.numFmt = code;
-          break;
-        }
-      }
+    if (numFmtId !== undefined && customNumFmtById) {
+      const code = customNumFmtById.get(numFmtId);
+      if (code !== undefined) result.numFmt = code;
     }
     if (xf.alignment) result.alignment = xf.alignment;
     if (xf.protection) result.protection = xf.protection;

@@ -102,7 +102,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<SmartArtDescriptorOptions> = {};
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");
@@ -133,12 +133,12 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
       }
     }
 
-    return result as unknown as SmartArtDescriptorOptions;
+    return result as SmartArtDescriptorOptions;
   },
 };
 
 /** Parse SmartArt data XML into options. */
-function parseSmartArtDataXml(dataEl: Element, result: Record<string, unknown>): void {
+function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtDescriptorOptions>): void {
   const model = findChild(dataEl, "dgm:dataModel");
   if (!model) return;
 
@@ -218,7 +218,7 @@ function buildSmartArtNode(
   id: string,
   nodeMap: Map<string, string>,
   childrenMap: Map<string, string[]>,
-): { text: string; children?: unknown[] } {
+): TreeNode {
   const text = nodeMap.get(id) ?? "";
   const childIds = childrenMap.get(id) ?? [];
   if (childIds.length === 0) return { text };

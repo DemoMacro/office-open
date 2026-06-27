@@ -58,7 +58,7 @@ export const slideLayoutDesc: CustomDescriptor<SlideLayoutDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<SlideLayoutDescriptorOptions> = {};
 
     const cSld = findChild(el, "p:cSld");
     if (cSld) {
@@ -112,6 +112,6 @@ export const slideLayoutDesc: CustomDescriptor<SlideLayoutDescriptorOptions> = {
       }
     }
 
-    return result as unknown as SlideLayoutDescriptorOptions;
+    return result as SlideLayoutDescriptorOptions;
   },
 };

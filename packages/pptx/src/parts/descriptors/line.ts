@@ -111,7 +111,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<LineShapeDescriptorOptions> = {};
 
     // p:nvSpPr → id, name
     const nvSpPr = findChild(el, "p:nvSpPr");
@@ -159,7 +159,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
       if (ln) result.outline = readOutlineCompat(ln);
     }
 
-    return result as unknown as LineShapeDescriptorOptions;
+    return result as LineShapeDescriptorOptions;
   },
 };
 
@@ -259,7 +259,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<ConnectorShapeDescriptorOptions> = {};
 
     // p:nvCxnSpPr → id, name
     const nvCxnSpPr = findChild(el, "p:nvCxnSpPr");
@@ -332,6 +332,6 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
       }
     }
 
-    return result as unknown as ConnectorShapeDescriptorOptions;
+    return result as ConnectorShapeDescriptorOptions;
   },
 };

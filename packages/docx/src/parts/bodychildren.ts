@@ -14,6 +14,7 @@ import {
   attrBool,
   attrNum,
   children as xmlChildren,
+  escapeXml,
   findChild,
   textOf,
 } from "@office-open/xml";
@@ -32,16 +33,6 @@ import type {
 import type { SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../context";
-
-// ── XML helpers ──
-
-function escapeAttr(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 // ── AltChunk (pure string — registers relationships + altChunks) ──
 
@@ -62,10 +53,10 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
     const relId = uniqueId();
     const extension = opts.extension;
     const partPath = `afchunks/afchunk${relId}.${extension}`;
-    const rawData = typeof opts.data === "string" ? new TextEncoder().encode(opts.data) : opts.data;
+    const rawData = typeof opts.data === "string" ? toUint8Array(opts.data) : opts.data;
     const data =
       opts.contentType === "text/html" && typeof opts.data === "string"
-        ? new TextEncoder().encode(wrapHtmlDocument(opts.data))
+        ? toUint8Array(wrapHtmlDocument(opts.data))
         : rawData;
 
     ctx.fileData.document.relationships.addRelationship(relId, ALTCHUNK_REL_TYPE, partPath);
@@ -170,14 +161,6 @@ export interface SdtChildOptions {
   children?: SectionChild[];
   /** Run properties for the SDT end mark (w:sdtEndPr). */
   endProperties?: RunPropertiesOptions;
-}
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function sdtListItemXml(
@@ -628,15 +611,15 @@ export interface CustomXmlBlockDescriptorOptions {
 function buildCustomXmlPropertiesXml(pr: CustomXmlPropertiesOptions): string {
   const parts: string[] = ["<w:customXmlPr>"];
   if (pr.placeholder !== undefined) {
-    parts.push(`<w:placeholder w:val="${escapeAttr(pr.placeholder)}"/>`);
+    parts.push(`<w:placeholder w:val="${escapeXml(pr.placeholder)}"/>`);
   }
   if (pr.attributes) {
     for (const attr of pr.attributes) {
       const attrParts: string[] = [
-        `w:name="${escapeAttr(attr.name)}"`,
-        `w:val="${escapeAttr(attr.val)}"`,
+        `w:name="${escapeXml(attr.name)}"`,
+        `w:val="${escapeXml(attr.val)}"`,
       ];
-      if (attr.uri !== undefined) attrParts.push(`w:uri="${escapeAttr(attr.uri)}"`);
+      if (attr.uri !== undefined) attrParts.push(`w:uri="${escapeXml(attr.uri)}"`);
       parts.push(`<w:attr ${attrParts.join(" ")}/>`);
     }
   }
@@ -656,8 +639,8 @@ export function stringifyCustomXmlShell(
   opts: { element: string; uri?: string; customXmlPr?: CustomXmlPropertiesOptions },
   contentXml: string,
 ): string {
-  const attrs: string[] = [`w:element="${escapeAttr(opts.element)}"`];
-  if (opts.uri !== undefined) attrs.push(`w:uri="${escapeAttr(opts.uri)}"`);
+  const attrs: string[] = [`w:element="${escapeXml(opts.element)}"`];
+  if (opts.uri !== undefined) attrs.push(`w:uri="${escapeXml(opts.uri)}"`);
   const prXml = opts.customXmlPr ? buildCustomXmlPropertiesXml(opts.customXmlPr) : "";
   return `<w:customXml ${attrs.join(" ")}>${prXml}${contentXml}</w:customXml>`;
 }

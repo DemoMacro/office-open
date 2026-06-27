@@ -10,6 +10,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { AnimationEntry } from "@shared/animation/timing";
 import { SlideTiming } from "@shared/animation/timing";
 import type {
+  AnimationClass,
   AnimationOptions,
   AnimationType,
   EmphasisType,
@@ -150,7 +151,7 @@ function parseTiming(el: XmlElement): Map<number, AnimationOptions> {
 }
 
 function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<AnimationOptions> = {};
 
   const cTn = findChild(el, "p:cTn") ?? el;
 
@@ -160,7 +161,7 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
   else if (nodeType === "afterEffect") opts.trigger = "afterPrevious";
 
   const presetClass = attr(cTn, "presetClass");
-  if (presetClass) opts.class = presetClass;
+  if (presetClass) opts.class = presetClass as AnimationClass;
 
   const presetID = attrNum(cTn, "presetID");
 

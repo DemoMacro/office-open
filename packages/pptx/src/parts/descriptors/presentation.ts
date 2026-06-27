@@ -270,11 +270,11 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
 // ── Parse ──
 
 function parsePresentation(el: XmlElement): PresentationPartOptions {
-  const result: Record<string, unknown> = {};
+  const result: Partial<PresentationPartOptions> = {};
 
   if (el.attributes) {
     const a = el.attributes;
-    if (a["serverZoom"]) result.serverZoom = a["serverZoom"];
+    if (a["serverZoom"]) result.serverZoom = String(a["serverZoom"]);
     if (a["firstSlideNum"] !== undefined) result.firstSlideNum = Number(a["firstSlideNum"]);
     if (a["showSpecialPlsOnTitleSld"] !== undefined)
       result.showSpecialPlsOnTitleSld = a["showSpecialPlsOnTitleSld"] !== "0";
@@ -290,7 +290,8 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
     if (a["autoCompressPictures"] !== undefined)
       result.autoCompressPictures = a["autoCompressPictures"] !== "0";
     if (a["bookmarkIdSeed"] !== undefined) result.bookmarkIdSeed = Number(a["bookmarkIdSeed"]);
-    if (a["conformance"]) result.conformance = a["conformance"];
+    if (a["conformance"])
+      result.conformance = a["conformance"] as PresentationPartOptions["conformance"];
   }
 
   // sldSz
@@ -449,7 +450,7 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
     result.kinsoku = kinsoku;
   }
 
-  return result as unknown as PresentationPartOptions;
+  return result as PresentationPartOptions;
 }
 
 // ── Descriptor ──

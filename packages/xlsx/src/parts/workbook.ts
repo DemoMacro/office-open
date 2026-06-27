@@ -339,7 +339,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<WorkbookDescriptorOptions> = {};
 
     // Sheets
     const sheetsEl = findChild(el, "sheets");
@@ -373,7 +373,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     // Workbook protection
     const protEl = findChild(el, "workbookProtection");
     if (protEl?.attributes) {
-      const prot: Record<string, unknown> = {};
+      const prot: WorkbookProtectionOptions = {};
       if (attr(protEl, "lockStructure") === "1") prot.lockStructure = true;
       if (attr(protEl, "lockWindows") === "1") prot.lockWindows = true;
       if (attr(protEl, "lockRevision") === "1") prot.lockRevision = true;
@@ -395,7 +395,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     if (bookViewsEl) {
       const bvEl = findChild(bookViewsEl, "workbookView");
       if (bvEl?.attributes) {
-        const bv: Record<string, unknown> = {};
+        const bv: WorkbookViewOptions = {};
         const xw = attrNum(bvEl, "xWindow");
         if (xw !== undefined) bv.xWindow = xw;
         const yw = attrNum(bvEl, "yWindow");
@@ -421,7 +421,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     // Calc properties
     const calcPrEl = findChild(el, "calcPr");
     if (calcPrEl?.attributes) {
-      const calc: Record<string, unknown> = {};
+      const calc: CalculationPropertiesOptions = {};
       const calcId = attrNum(calcPrEl, "calcId");
       if (calcId !== undefined) calc.calcId = calcId;
       if (attr(calcPrEl, "calcMode")) calc.calcMode = attr(calcPrEl, "calcMode");
@@ -448,7 +448,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const views: CustomWorkbookViewOptions[] = [];
       for (const v of customViewsEl.elements ?? []) {
         if (v.name !== "customWorkbookView") continue;
-        const view: Record<string, unknown> = {
+        const view: CustomWorkbookViewOptions = {
           name: attr(v, "name") ?? "",
           guid: attr(v, "guid") ?? "",
           windowWidth: attrNum(v, "windowWidth") ?? 0,
@@ -477,7 +477,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (attr(v, "changesSavedWin") === "1") view.changesSavedWin = true;
         if (attr(v, "onlySync") === "1") view.onlySync = true;
         if (attr(v, "showComments")) view.showComments = attr(v, "showComments");
-        views.push(view as unknown as CustomWorkbookViewOptions);
+        views.push(view);
       }
       if (views.length > 0) result.customViews = views;
     }
@@ -485,7 +485,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     // File sharing
     const fileSharingEl = findChild(el, "fileSharing");
     if (fileSharingEl?.attributes) {
-      const fs: Record<string, unknown> = {};
+      const fs: FileSharingOptions = {};
       if (attr(fileSharingEl, "readOnlyRecommended") === "1") fs.readOnlyRecommended = true;
       if (attr(fileSharingEl, "userName")) fs.userName = attr(fileSharingEl, "userName");
       if (attr(fileSharingEl, "reservationPassword"))
@@ -502,7 +502,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     // Web publishing
     const webPublishingEl = findChild(el, "webPublishing");
     if (webPublishingEl?.attributes) {
-      const wp: Record<string, unknown> = {};
+      const wp: WebPublishingOptions = {};
       if (attr(webPublishingEl, "css") === "0") wp.css = false;
       if (attr(webPublishingEl, "thicket") === "0") wp.thicket = false;
       if (attr(webPublishingEl, "longFileNames") === "0") wp.longFileNames = false;
@@ -510,9 +510,10 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (attr(webPublishingEl, "allowPng") === "1") wp.allowPng = true;
       if (attr(webPublishingEl, "targetScreenSize"))
         wp.targetScreenSize = attr(webPublishingEl, "targetScreenSize");
-      if (attrNum(webPublishingEl, "dpi") !== undefined) wp.dpi = attrNum(webPublishingEl, "dpi");
-      if (attrNum(webPublishingEl, "codePage") !== undefined)
-        wp.codePage = attrNum(webPublishingEl, "codePage");
+      const dpi = attrNum(webPublishingEl, "dpi");
+      if (dpi !== undefined) wp.dpi = dpi;
+      const codePage = attrNum(webPublishingEl, "codePage");
+      if (codePage !== undefined) wp.codePage = codePage;
       if (attr(webPublishingEl, "characterSet"))
         wp.characterSet = attr(webPublishingEl, "characterSet");
       result.webPublishing = wp;
@@ -521,7 +522,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     // File recovery
     const fileRecoveryEl = findChild(el, "fileRecoveryPr");
     if (fileRecoveryEl?.attributes) {
-      const frp: Record<string, unknown> = {};
+      const frp: FileRecoveryPropertiesOptions = {};
       if (attr(fileRecoveryEl, "autoRecover") === "0") frp.autoRecover = false;
       if (attr(fileRecoveryEl, "crashSave") === "1") frp.crashSave = true;
       if (attr(fileRecoveryEl, "dataExtractLoad") === "1") frp.dataExtractLoad = true;
@@ -532,7 +533,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     // Workbook properties
     const wbPrEl = findChild(el, "workbookPr");
     if (wbPrEl?.attributes) {
-      const wbPr: Record<string, unknown> = {};
+      const wbPr: WorkbookPropertiesOptions = {};
       if (attr(wbPrEl, "date1904") === "1") wbPr.date1904 = true;
       const dtv = attrNum(wbPrEl, "defaultThemeVersion");
       if (dtv !== undefined) wbPr.defaultThemeVersion = dtv;
@@ -574,15 +575,15 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const objs: WebPublishObjectOptions[] = [];
       for (const wo of wpoEl.elements ?? []) {
         if (wo.name !== "webPublishObject") continue;
-        const obj: Record<string, unknown> = {};
-        const rId = wo.attributes?.["r:id"] as string | undefined;
-        if (rId) obj.rId = rId;
+        const obj: WebPublishObjectOptions = {
+          rId: (wo.attributes?.["r:id"] as string) ?? "",
+        };
         if (attr(wo, "destinationFile")) obj.destinationFile = attr(wo, "destinationFile");
         if (attr(wo, "autoRepublish") === "1") obj.autoRepublish = true;
         if (attr(wo, "title")) obj.title = attr(wo, "title");
         if (attr(wo, "sourceObject")) obj.sourceObject = attr(wo, "sourceObject");
         if (attr(wo, "appName")) obj.appName = attr(wo, "appName");
-        objs.push(obj as unknown as WebPublishObjectOptions);
+        objs.push(obj);
       }
       if (objs.length > 0) result.webPublishObjects = objs;
     }
@@ -593,41 +594,41 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const volTypes: VolTypeOptions[] = [];
       for (const vt of vtEl.elements ?? []) {
         if (vt.name !== "volType") continue;
-        const volType: Record<string, unknown> = {};
-        if (attr(vt, "type")) volType.type = attr(vt, "type") as VolTypeOptions["type"];
+        const volType: VolTypeOptions = {};
+        const typeVal = attr(vt, "type");
+        if (typeVal) volType.type = typeVal as VolTypeOptions["type"];
         const mains: VolMainOptions[] = [];
         for (const m of vt.elements ?? []) {
           if (m.name !== "main") continue;
-          const main: Record<string, unknown> = {};
-          if (attr(m, "first")) main.first = attr(m, "first")!;
+          const main: VolMainOptions = { first: attr(m, "first") ?? "" };
           const topics: VolTopicOptions[] = [];
           for (const tp of m.elements ?? []) {
             if (tp.name !== "tp") continue;
-            const topic: Record<string, unknown> = {};
             const vEl = findChild(tp, "v");
-            if (vEl) topic.value = vEl.elements?.[0]?.text ?? "";
-            if (attr(tp, "t")) topic.valueType = attr(tp, "t");
+            const topic: VolTopicOptions = { value: String(vEl?.elements?.[0]?.text ?? "") };
+            const tVal = attr(tp, "t");
+            if (tVal) topic.valueType = tVal;
             const stps: string[] = [];
             const refs: VolTopicRefOptions[] = [];
             for (const inner of tp.elements ?? []) {
               if (inner.name === "stp") stps.push(String(inner.elements?.[0]?.text ?? ""));
               if (inner.name === "tr") {
-                const ref: Record<string, unknown> = {};
-                if (attr(inner, "r")) ref.reference = attr(inner, "r")!;
-                const sIdx = attrNum(inner, "s");
-                if (sIdx !== undefined) ref.sheetIndex = sIdx;
-                refs.push(ref as unknown as VolTopicRefOptions);
+                const ref: VolTopicRefOptions = {
+                  reference: attr(inner, "r") ?? "",
+                  sheetIndex: attrNum(inner, "s") ?? 0,
+                };
+                refs.push(ref);
               }
             }
             if (stps.length > 0) topic.stringTopics = stps;
             if (refs.length > 0) topic.refs = refs;
-            topics.push(topic as unknown as VolTopicOptions);
+            topics.push(topic);
           }
           if (topics.length > 0) main.topics = topics;
-          mains.push(main as unknown as VolMainOptions);
+          mains.push(main);
         }
         if (mains.length > 0) volType.mains = mains;
-        volTypes.push(volType as unknown as VolTypeOptions);
+        volTypes.push(volType);
       }
       if (volTypes.length > 0) result.volTypes = volTypes;
     }
@@ -637,7 +638,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       result.conformance = attr(el, "conformance") as WorkbookConformance;
     }
 
-    return result as unknown as WorkbookDescriptorOptions;
+    return result as WorkbookDescriptorOptions;
   },
 };
 

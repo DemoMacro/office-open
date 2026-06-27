@@ -920,11 +920,12 @@ function cartesianOfCounts(counts: number[]): number[][] {
 
 // ── Parse helpers ──
 
-function parsePivotArea(el: XmlElement): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
+function parsePivotArea(el: XmlElement): Partial<PivotAreaOptions> {
+  const result: Partial<PivotAreaOptions> = {};
   const field = attrNum(el, "field");
   if (field !== undefined) result.field = field;
-  if (attr(el, "type")) result.type = attr(el, "type");
+  const typeVal = attr(el, "type");
+  if (typeVal) result.type = typeVal as PivotAreaOptions["type"];
   if (attr(el, "dataOnly") === "0") result.dataOnly = false;
   if (attr(el, "labelOnly") === "1") result.labelOnly = true;
   if (attr(el, "grandRow") === "1") result.grandRow = true;
@@ -933,15 +934,16 @@ function parsePivotArea(el: XmlElement): Record<string, unknown> {
   if (attr(el, "outline") === "0") result.outline = false;
   if (attr(el, "offset")) result.offset = attr(el, "offset");
   if (attr(el, "collapsedLevelsAreSubtotals") === "1") result.collapsedLevelsAreSubtotals = true;
-  if (attr(el, "axis")) result.axis = attr(el, "axis");
+  const axisVal = attr(el, "axis");
+  if (axisVal) result.axis = axisVal as PivotAreaOptions["axis"];
   const fp = attrNum(el, "fieldPosition");
   if (fp !== undefined) result.fieldPosition = fp;
   const refsEl = findChild(el, "references");
   if (refsEl) {
-    const refs: Record<string, unknown>[] = [];
+    const refs: Partial<PivotAreaReferenceOptions>[] = [];
     for (const rEl of refsEl.elements ?? []) {
       if (rEl.name !== "reference") continue;
-      const ref: Record<string, unknown> = {};
+      const ref: Partial<PivotAreaReferenceOptions> = {};
       const rField = attrNum(rEl, "field");
       if (rField !== undefined) ref.field = rField;
       const rCount = attrNum(rEl, "count");

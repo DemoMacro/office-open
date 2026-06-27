@@ -188,12 +188,12 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<ExternalLinkOptions> = {};
 
     const bookEl = findChild(el, "externalBook");
     if (bookEl) {
-      const book: Record<string, unknown> = {};
-      if (bookEl.attributes?.["r:id"]) result.bookRId = bookEl.attributes["r:id"];
+      const book: ExternalBookOptions = {};
+      if (bookEl.attributes?.["r:id"]) result.bookRId = String(bookEl.attributes["r:id"]);
 
       // sheetNames
       const sheetNamesEl = findChild(bookEl, "sheetNames");
@@ -210,11 +210,10 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
       // definedNames
       const definedNamesEl = findChild(bookEl, "definedNames");
       if (definedNamesEl) {
-        const dns: Record<string, unknown>[] = [];
+        const dns: ExternalDefinedNameOptions[] = [];
         for (const child of definedNamesEl.elements ?? []) {
           if (child.name !== "definedName") continue;
-          const dn: Record<string, unknown> = {};
-          if (child.attributes?.["name"]) dn.name = String(child.attributes["name"]);
+          const dn: ExternalDefinedNameOptions = { name: String(child.attributes?.["name"] ?? "") };
           if (child.attributes?.["refersTo"]) dn.refersTo = String(child.attributes["refersTo"]);
           if (child.attributes?.["sheetId"] !== undefined)
             dn.sheetId = Number(child.attributes["sheetId"]);
@@ -230,26 +229,27 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
       // sheetDataSet
       const sheetDataSetEl = findChild(bookEl, "sheetDataSet");
       if (sheetDataSetEl) {
-        const sds: Record<string, unknown>[] = [];
+        const sds: ExternalSheetDataOptions[] = [];
         for (const sdChild of sheetDataSetEl.elements ?? []) {
           if (sdChild.name !== "sheetData") continue;
-          const sd: Record<string, unknown> = {};
-          if (sdChild.attributes?.["sheetId"] !== undefined)
-            sd.sheetId = Number(sdChild.attributes["sheetId"]);
+          const sd: ExternalSheetDataOptions = {
+            sheetId: Number(sdChild.attributes?.["sheetId"] ?? 0),
+          };
           if (sdChild.attributes?.["refreshError"]) sd.refreshError = true;
 
-          const rows: Record<string, unknown>[] = [];
+          const rows: ExternalRowOptions[] = [];
           for (const rowChild of sdChild.elements ?? []) {
             if (rowChild.name !== "row") continue;
-            const row: Record<string, unknown> = {};
-            if (rowChild.attributes?.["r"] !== undefined)
-              row.rowNumber = Number(rowChild.attributes["r"]);
+            const row: ExternalRowOptions = {
+              rowNumber: Number(rowChild.attributes?.["r"] ?? 0),
+            };
 
-            const cells: Record<string, unknown>[] = [];
+            const cells: ExternalCellOptions[] = [];
             for (const cellChild of rowChild.elements ?? []) {
               if (cellChild.name !== "cell") continue;
-              const cell: Record<string, unknown> = {};
-              if (cellChild.attributes?.["r"]) cell.reference = String(cellChild.attributes["r"]);
+              const cell: ExternalCellOptions = {
+                reference: String(cellChild.attributes?.["r"] ?? ""),
+              };
               if (cellChild.attributes?.["t"]) cell.type = String(cellChild.attributes["t"]);
               const vEl = findChild(cellChild, "v");
               if (vEl && vEl.elements?.[0]?.text !== undefined) {
@@ -272,16 +272,15 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
     // oleLink
     const oleEl = findChild(el, "oleLink");
     if (oleEl) {
-      const ole: Record<string, unknown> = {};
-      if (oleEl.attributes?.["r:id"]) result.oleRId = oleEl.attributes["r:id"];
+      const ole: OleLinkOptions = {};
+      if (oleEl.attributes?.["r:id"]) result.oleRId = String(oleEl.attributes["r:id"]);
 
       const oleItemsEl = findChild(oleEl, "oleItems");
       if (oleItemsEl) {
-        const items: Record<string, unknown>[] = [];
+        const items: OleItemOptions[] = [];
         for (const child of oleItemsEl.elements ?? []) {
           if (child.name !== "oleItem") continue;
-          const item: Record<string, unknown> = {};
-          if (child.attributes?.["name"]) item.name = String(child.attributes["name"]);
+          const item: OleItemOptions = { name: String(child.attributes?.["name"] ?? "") };
           if (child.attributes?.["advise"]) item.advise = true;
           if (child.attributes?.["prefer"]) item.prefer = true;
           items.push(item);
@@ -292,6 +291,6 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
       result.oleLink = ole;
     }
 
-    return result as unknown as ExternalLinkOptions;
+    return result as ExternalLinkOptions;
   },
 };

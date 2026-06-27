@@ -16,7 +16,7 @@ import {
   presetGeometryDesc,
 } from "@office-open/core";
 import { scene3DDesc, shape3DDesc } from "@office-open/core/drawingml";
-import { attr, attrBool, attrNum, findChild, findDeep, textOf } from "@office-open/xml";
+import { attr, attrBool, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
@@ -68,7 +68,7 @@ export type DrawingChild =
  * based on the graphicData URI.
  */
 export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild | undefined {
-  const graphicData = findDeep(el, "a:graphicData")[0];
+  const graphicData = findFirst(el, "a:graphicData");
   if (!graphicData) return undefined;
 
   const uri = attr(graphicData, "uri") ?? "";
@@ -175,8 +175,8 @@ function readGrpSpLocks(cNvGrpSpPr: Element | undefined): GroupShapeLocksOptions
  * Returns `null` when the drawing has neither wrapper.
  */
 function parseAnchorOrInline(el: Element): AnchorInfo | null {
-  const inline = findDeep(el, "wp:inline")[0];
-  const anchor = inline ? undefined : findDeep(el, "wp:anchor")[0];
+  const inline = findFirst(el, "wp:inline");
+  const anchor = inline ? undefined : findFirst(el, "wp:anchor");
   const parent = inline ?? anchor;
   if (!parent) return null;
 
@@ -284,7 +284,7 @@ export function parseImageRun(
   if (!info) return undefined;
 
   // Get graphic → graphicData → blip
-  const blip = findDeep(el, "a:blip")[0];
+  const blip = findFirst(el, "a:blip");
   if (!blip) return undefined;
 
   const rEmbed = attr(blip, "r:embed");
@@ -314,7 +314,7 @@ export function parseImageRun(
   if (info.graphicFrameLocks !== undefined) imageOpts.graphicFrameLocks = info.graphicFrameLocks;
 
   // Blip-fill crop (pic:blipFill/a:srcRect)
-  const blipFill = findDeep(el, "pic:blipFill")[0];
+  const blipFill = findFirst(el, "pic:blipFill");
   if (blipFill) {
     const srcRect = readSourceRectangle(blipFill);
     if (srcRect) imageOpts.sourceRectangle = srcRect;
@@ -326,7 +326,7 @@ export function parseImageRun(
 
   // Picture shape properties (pic:spPr): outline + fill + effects round-trip
   // via the shared core descriptors (bidirectional).
-  const picSpPr = findDeep(el, "pic:spPr")[0];
+  const picSpPr = findFirst(el, "pic:spPr");
   if (picSpPr) {
     const fill = readShapeFill(picSpPr, ctx);
     if (fill) imageOpts.fill = fill;
@@ -394,7 +394,7 @@ function readSourceRectangle(parent: Element): SourceRectangleOptions | undefine
  * undefined when there is no non-visual properties block.
  */
 function readPicCnvPr(el: Element): NonVisualPropertiesOptions | undefined {
-  const nvPicPr = findDeep(el, "pic:nvPicPr")[0];
+  const nvPicPr = findFirst(el, "pic:nvPicPr");
   if (!nvPicPr) return undefined;
   const result: NonVisualPropertiesOptions = {};
   const cNvPr = findChild(nvPicPr, "pic:cNvPr");
@@ -474,7 +474,7 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): WpsShapeCoreOp
 
   // Text content — w:txbxContent (w namespace, per CT_TxbxContent → w:EG_BlockLevelElts)
   // holds the shape's paragraphs, even when wrapped in wps:txbx.
-  const txbxContent = findDeep(wspEl, "w:txbxContent")[0];
+  const txbxContent = findFirst(wspEl, "w:txbxContent");
   const children: WpsShapeCoreOptions["children"] = [];
   if (txbxContent) {
     for (const child of txbxContent.elements ?? []) {
@@ -602,7 +602,7 @@ function parseWpsChildMediaData(wspEl: Element, ctx: DocxReadContext): WpsMediaD
  * to the same image collapse to one media entry.
  */
 function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData | undefined {
-  const blip = findDeep(picEl, "a:blip")[0];
+  const blip = findFirst(picEl, "a:blip");
   if (!blip) return undefined;
   const rEmbed = attr(blip, "r:embed");
   if (!rEmbed) return undefined;
@@ -645,7 +645,7 @@ function parseWpsShapeDrawing(
   el: Element,
   ctx: DocxReadContext,
 ): { wpsShape: WpsShapeRunOptions } | undefined {
-  const wsp = findDeep(el, "wps:wsp")[0];
+  const wsp = findFirst(el, "wps:wsp");
   if (!wsp) return undefined;
 
   const info = parseAnchorOrInline(el) ?? {};
@@ -673,7 +673,7 @@ function parseWpgGroupDrawing(
   el: Element,
   ctx: DocxReadContext,
 ): { wpgGroup: WpgGroupRunOptions } | undefined {
-  const wgp = findDeep(el, "wpg:wgp")[0];
+  const wgp = findFirst(el, "wpg:wgp");
   if (!wgp) return undefined;
 
   const info = parseAnchorOrInline(el) ?? {};
@@ -823,8 +823,8 @@ function readWrap(anchor: Element): TextWrapping | undefined {
 // ── Common helpers ──────────────────────────────────────────────────────────
 
 function getDrawingExtent(el: Element): { width?: number; height?: number } {
-  const inline = findDeep(el, "wp:inline")[0];
-  const anchor = inline ? undefined : findDeep(el, "wp:anchor")[0];
+  const inline = findFirst(el, "wp:inline");
+  const anchor = inline ? undefined : findFirst(el, "wp:anchor");
   const parent = inline ?? anchor;
   if (!parent) return {};
 
@@ -855,7 +855,7 @@ function lookupRId(map: Map<string, string>, rId: string | undefined): string | 
 }
 
 function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOptions } | undefined {
-  const chartRef = findDeep(el, "c:chart")[0];
+  const chartRef = findFirst(el, "c:chart");
   if (!chartRef) return undefined;
 
   const rId = attr(chartRef, "r:id");
@@ -890,9 +890,9 @@ function parseChartXml(el: Element): Record<string, unknown> | undefined {
   // Title: c:chart → c:title → c:tx → c:rich → a:p → a:r → a:t
   const titleEl = findChild(chart, "c:title");
   if (titleEl) {
-    const rich = findDeep(titleEl, "c:rich")[0];
+    const rich = findFirst(titleEl, "c:rich");
     if (rich) {
-      const t = findDeep(rich, "a:t")[0];
+      const t = findFirst(rich, "a:t");
       if (t) {
         const title = textOf(t);
         if (title) opts.title = title;
@@ -978,7 +978,7 @@ function parseChartXml(el: Element): Record<string, unknown> | undefined {
 function extractStrCache(parent: Element, containerName: string): string[] {
   const container = findChild(parent, containerName);
   if (!container) return [];
-  const cache = findDeep(container, "c:strCache")[0];
+  const cache = findFirst(container, "c:strCache");
   if (!cache) return [];
 
   const values: string[] = [];
@@ -996,7 +996,7 @@ function extractStrCache(parent: Element, containerName: string): string[] {
 function extractNumCache(parent: Element): number[] {
   const valEl = findChild(parent, "c:val");
   if (!valEl) return [];
-  const cache = findDeep(valEl, "c:numCache")[0];
+  const cache = findFirst(valEl, "c:numCache");
   if (!cache) return [];
 
   const values: number[] = [];
@@ -1017,7 +1017,7 @@ function parseSmartArtDrawing(
   el: Element,
   ctx: DocxReadContext,
 ): { smartArt: SmartArtOptions } | undefined {
-  const relIds = findDeep(el, "dgm:relIds")[0];
+  const relIds = findFirst(el, "dgm:relIds");
   if (!relIds) return undefined;
 
   const rId = attr(relIds, "r:dm");
@@ -1072,7 +1072,7 @@ function parseSmartArtDataXml(el: Element): Record<string, unknown> | undefined 
       }
     } else if (type === "node" && modelId) {
       // Extract text: dgm:t → a:p → a:r → a:t
-      const t = findDeep(pt, "a:t")[0];
+      const t = findFirst(pt, "a:t");
       nodeMap.set(modelId, t ? (textOf(t) ?? "") : "");
     }
   }

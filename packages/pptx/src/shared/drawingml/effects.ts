@@ -1,4 +1,4 @@
-import { xsdRectAlignment } from "@office-open/core";
+import { convertPointsToEmu, xsdRectAlignment } from "@office-open/core";
 import {
   createEffectList,
   createScene3D,
@@ -62,6 +62,7 @@ export interface SoftEdgeOptions {
 export interface PPTXBevelOptions {
   width?: number;
   height?: number;
+  preset?: string;
 }
 
 export interface Rotation3DOptions {
@@ -81,6 +82,10 @@ export interface EffectsOptions {
   bevelTop?: PPTXBevelOptions;
   bevelBottom?: PPTXBevelOptions;
   extrusionH?: number;
+  /** Shape depth (a:sp3d/@z) in EMUs. */
+  depth?: number;
+  /** Contour width (a:sp3d/@contourW) in EMUs. */
+  contourWidth?: number;
   material?: "plastic" | "metal" | "matte" | "warmMatte" | "softEdge" | "flat" | "powder";
   lighting?:
     | "flat"
@@ -170,8 +175,9 @@ function toReflection(opts: ReflectionOptions) {
 /** Convert PPTX PPTXBevelOptions to core BevelOptions. */
 function toBevel(opts: PPTXBevelOptions): BevelOptions {
   return {
-    ...(opts.width !== undefined && { w: opts.width * 12700 }),
-    ...(opts.height !== undefined && { h: opts.height * 12700 }),
+    ...(opts.width !== undefined && { w: convertPointsToEmu(opts.width) }),
+    ...(opts.height !== undefined && { h: convertPointsToEmu(opts.height) }),
+    ...(opts.preset !== undefined && { prst: opts.preset as BevelOptions["prst"] }),
   };
 }
 
@@ -217,7 +223,14 @@ export function buildScene3D(options: EffectsOptions): ReturnType<typeof createS
 
 /** Map PPTX EffectsOptions to core Shape3DOptions, or null if not needed. */
 export function buildShape3D(options: EffectsOptions): ReturnType<typeof createShape3D> | null {
-  if (!options.extrusionH && !options.bevelTop && !options.bevelBottom && !options.material)
+  if (
+    !options.extrusionH &&
+    !options.bevelTop &&
+    !options.bevelBottom &&
+    !options.material &&
+    !options.depth &&
+    !options.contourWidth
+  )
     return null;
 
   const shape3dOpts: Shape3DOptions = {
@@ -225,6 +238,8 @@ export function buildShape3D(options: EffectsOptions): ReturnType<typeof createS
     ...(options.bevelBottom ? { bevelB: toBevel(options.bevelBottom) } : {}),
     ...(options.extrusionH !== undefined ? { extrusionH: options.extrusionH } : {}),
     ...(options.material ? { prstMaterial: options.material } : {}),
+    ...(options.depth !== undefined ? { z: options.depth } : {}),
+    ...(options.contourWidth !== undefined ? { contourW: options.contourWidth } : {}),
   };
 
   return createShape3D(shape3dOpts);

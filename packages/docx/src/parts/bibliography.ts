@@ -65,15 +65,7 @@ export interface BibliographyOptions {
 // ── Descriptor ──
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { findChild, textOf } from "@office-open/xml";
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { escapeXml, findChild, textOf } from "@office-open/xml";
 
 const SOURCE_FIELDS: readonly (readonly [string, keyof SourceTypeOptions])[] = [
   ["SourceType", "type"],

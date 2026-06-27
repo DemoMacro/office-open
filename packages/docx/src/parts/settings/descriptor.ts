@@ -10,7 +10,7 @@
 
 import { derivePasswordHash } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, findChild, stringify } from "@office-open/xml";
+import { attr, escapeXml, findChild, stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type {
@@ -33,16 +33,6 @@ import type {
   EndnotePropertiesOptions,
 } from "./settings";
 
-// ── XML string helpers ──
-
-function escapeAttr(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 /** Derive the namespace-prefixed val attribute from the element tag. */
 function valAttr(tag: string): string {
   const ns = tag.split(":")[0];
@@ -58,14 +48,14 @@ function numVal(tag: string, val: number | undefined): string {
 }
 
 function strVal(tag: string, val: string | undefined): string {
-  return val !== undefined ? `<${tag} ${valAttr(tag)}="${escapeAttr(val)}"/>` : "";
+  return val !== undefined ? `<${tag} ${valAttr(tag)}="${escapeXml(val)}"/>` : "";
 }
 
 /** Build attribute string from key-value pairs, skipping undefined. */
 function attrStr(attrs: Record<string, string | number | boolean | undefined>): string {
   const parts: string[] = [];
   for (const [k, v] of Object.entries(attrs)) {
-    if (v !== undefined) parts.push(`${k}="${escapeAttr(String(v))}"`);
+    if (v !== undefined) parts.push(`${k}="${escapeXml(String(v))}"`);
   }
   return parts.join(" ");
 }
@@ -78,7 +68,7 @@ function attrEl(tag: string, attrs: Record<string, string | number | boolean | u
 
 function compatSetting(name: string, val: string | number, uri?: string): string {
   const u = uri ?? "http://schemas.microsoft.com/office/word";
-  return `<w:compatSetting w:name="${escapeAttr(name)}" w:uri="${u}" w:val="${val}"/>`;
+  return `<w:compatSetting w:name="${escapeXml(name)}" w:uri="${u}" w:val="${val}"/>`;
 }
 
 // ── Parse helpers ──

@@ -40,7 +40,7 @@ export type PathAnimationType =
   | "line"
   | "loop";
 
-export type MediaAnimationType = "playAudio" | "playVideo";
+export type MediaAnimationType = "playAudio" | "playVideo" | "play";
 
 export type AnimationCalcMode = "discrete" | "lin" | "fmla";
 

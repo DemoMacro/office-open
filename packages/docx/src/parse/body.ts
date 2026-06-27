@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { attr, findChild, findDeep, textOf } from "@office-open/xml";
+import { attr, findChild, findDeep, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { parseAltChunk } from "@parts/alt-chunk/alt-chunk-parse";
 import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
@@ -110,7 +110,7 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       // Check for textbox (w:pict containing v:textbox)
       const pict = findChild(el, "w:pict");
       if (pict) {
-        const textbox = findDeepElement(pict, "v:textbox");
+        const textbox = findFirst(pict, "v:textbox");
         if (textbox) {
           const textboxOpts = parseTextbox(pict, ctx, parseSectionChildrenElements);
           return { textbox: textboxOpts as SectionChild extends { textbox: infer T } ? T : never };
@@ -173,18 +173,6 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
     default:
       return { rawXml: stringifyElement(el) };
   }
-}
-
-/**
- * Find a deep descendant element by name.
- */
-function findDeepElement(parent: Element, name: string): Element | undefined {
-  for (const child of parent.elements ?? []) {
-    if (child.name === name) return child;
-    const found = findDeepElement(child, name);
-    if (found) return found;
-  }
-  return undefined;
 }
 
 // ── Body parsing with section splitting ───────────────────────────────────────

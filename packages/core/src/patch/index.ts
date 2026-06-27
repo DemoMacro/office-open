@@ -23,9 +23,10 @@ export {
   createTextElementContents,
   patchSpaceAttribute,
   getFirstLevelElements,
+  nextNumericId,
 } from "./xml-patch-utils";
 
-export { appendContentType } from "./content-types-manager";
+export { appendContentType, appendOverride } from "./content-types-manager";
 
 export { getNextRelationshipIndex, appendRelationship } from "./relationship-manager";
 

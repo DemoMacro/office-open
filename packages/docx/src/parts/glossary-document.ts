@@ -107,7 +107,7 @@ export interface GlossaryDocumentOptions {
 // ── Descriptor ──
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, findChild } from "@office-open/xml";
+import { attr, escapeXml, findChild } from "@office-open/xml";
 
 import { parseParagraph } from "../body";
 import type { BodyContext, DocxReadContext } from "../context";
@@ -128,23 +128,15 @@ const GLOSSARY_NS =
   'xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" ' +
   'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"';
 
-function glossaryEscapeAttr(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
   const prParts: string[] = [];
   prParts.push(
-    `<w:name w:val="${glossaryEscapeAttr(part.name)}"${part.decorated ? ' w:decorated="1"' : ""}/>`,
+    `<w:name w:val="${escapeXml(part.name)}"${part.decorated ? ' w:decorated="1"' : ""}/>`,
   );
   if (part.category || part.gallery) {
     const catParts: string[] = [];
     if (part.category) {
-      catParts.push(`<w:name w:val="${glossaryEscapeAttr(part.category)}"/>`);
+      catParts.push(`<w:name w:val="${escapeXml(part.category)}"/>`);
     }
     catParts.push(`<w:gallery w:val="${part.gallery}"/>`);
     prParts.push(`<w:category>${catParts.join("")}</w:category>`);
@@ -159,10 +151,10 @@ function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
     prParts.push(`<w:behaviors>${behaviorXml}</w:behaviors>`);
   }
   if (part.description) {
-    prParts.push(`<w:description w:val="${glossaryEscapeAttr(part.description)}"/>`);
+    prParts.push(`<w:description w:val="${escapeXml(part.description)}"/>`);
   }
   if (part.guid) {
-    prParts.push(`<w:guid w:val="${glossaryEscapeAttr(part.guid)}"/>`);
+    prParts.push(`<w:guid w:val="${escapeXml(part.guid)}"/>`);
   }
   return `<w:docPartPr>${prParts.join("")}</w:docPartPr>`;
 }

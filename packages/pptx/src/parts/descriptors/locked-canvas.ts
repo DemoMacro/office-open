@@ -81,7 +81,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<LockedCanvasDescriptorOptions> = {};
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
     const nvGrFrm = findChild(el, "p:nvGraphicFramePr");
@@ -123,7 +123,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
       const children: LockedCanvasShapeDescriptorOptions[] = [];
       for (const child of lockedCanvas.elements ?? []) {
         if (child.name !== "a:sp") continue;
-        const shape: Record<string, unknown> = {};
+        const shape: Partial<LockedCanvasShapeDescriptorOptions> = {};
 
         const spPr = findChild(child, "a:spPr");
         if (spPr) {
@@ -178,7 +178,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
       if (children.length > 0) result.children = children;
     }
 
-    return result as unknown as LockedCanvasDescriptorOptions;
+    return result as LockedCanvasDescriptorOptions;
   },
 };
 

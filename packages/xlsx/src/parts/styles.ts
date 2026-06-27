@@ -331,7 +331,8 @@ export interface TableStylesInfo {
 
 /** Result of {@link stylesDesc}.parse (xl/styles.xml → structured data). */
 export interface StylesParseResult {
-  customNumFmts?: Record<string, number>;
+  /** Reverse map numFmtId → formatCode, for O(1) lookup in resolveStyle. */
+  customNumFmtById?: Map<number, string>;
   fonts?: FontOptions[];
   fills?: FillOptions[];
   borders?: BorderSideOptions[];
@@ -862,14 +863,14 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
     // numFmts
     const numFmtsEl = findChild(el, "numFmts");
     if (numFmtsEl) {
-      const numFmts: Record<string, number> = {};
+      const numFmtById = new Map<number, string>();
       for (const nf of numFmtsEl.elements ?? []) {
         if (nf.name !== "numFmt") continue;
         const id = attrNum(nf, "numFmtId");
         const code = attr(nf, "formatCode");
-        if (id !== undefined && code) numFmts[code] = id;
+        if (id !== undefined && code) numFmtById.set(id, code);
       }
-      result.customNumFmts = numFmts;
+      result.customNumFmtById = numFmtById;
     }
 
     // fonts
@@ -1082,7 +1083,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions> = {
 // ── Parse helpers ──
 
 function parseFont(el: XmlElement): FontOptions {
-  const result: Record<string, unknown> = {};
+  const result: Partial<FontOptions> = {};
   for (const child of el.elements ?? []) {
     switch (child.name) {
       case "b":
@@ -1132,7 +1133,7 @@ function parseFont(el: XmlElement): FontOptions {
         break;
     }
   }
-  return result as unknown as FontOptions;
+  return result as FontOptions;
 }
 
 function parseFill(el: XmlElement): FillOptions {
@@ -1182,7 +1183,7 @@ function parseFill(el: XmlElement): FillOptions {
 }
 
 function parseBorder(el: XmlElement): BorderSideOptions {
-  const result: Record<string, unknown> = {};
+  const result: BorderSideOptions = {};
   if (attr(el, "diagonalUp") === "1") result.diagonalUp = true;
   if (attr(el, "diagonalDown") === "1") result.diagonalDown = true;
 
@@ -1199,7 +1200,7 @@ function parseBorder(el: XmlElement): BorderSideOptions {
   ] as const) {
     const sideEl = findChild(el, side);
     if (sideEl) {
-      const opts: Record<string, unknown> = {};
+      const opts: BorderOptions = {};
       const style = attr(sideEl, "style");
       if (style) opts.style = style as BorderOptions["style"];
       const color = findChild(sideEl, "color");
@@ -1208,7 +1209,7 @@ function parseBorder(el: XmlElement): BorderSideOptions {
     }
   }
 
-  return result as unknown as BorderSideOptions;
+  return result;
 }
 
 function parseAlignment(el: XmlElement): AlignmentOptions {
@@ -1232,12 +1233,12 @@ function parseAlignment(el: XmlElement): AlignmentOptions {
 }
 
 function parseProtection(el: XmlElement): CellProtectionOptions {
-  const result: Record<string, unknown> = {};
+  const result: Partial<CellProtectionOptions> = {};
   const locked = attr(el, "locked");
   if (locked !== undefined) result.locked = locked !== "0";
   const hidden = attr(el, "hidden");
   if (hidden !== undefined) result.hidden = hidden !== "0";
-  return result as unknown as CellProtectionOptions;
+  return result as CellProtectionOptions;
 }
 
 function parseColorHex(el: XmlElement): string | undefined {

@@ -24,8 +24,8 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<SlideMasterDescriptorOptions> = {};
     result.master = xmlStringify(el);
-    return result as unknown as SlideMasterDescriptorOptions;
+    return result as SlideMasterDescriptorOptions;
   },
 };

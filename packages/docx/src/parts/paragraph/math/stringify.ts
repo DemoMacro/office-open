@@ -98,20 +98,17 @@ export function stringifyMathInput(value: MathInput): string {
 
   if ("limitLower" in value) {
     const opts = value.limitLower;
-    const pr = opts.properties ? "" : ""; // controlProperties rare — skip for now
-    return `<m:limLow>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:lim>${stringifyChildren(opts.limit)}</m:lim></m:limLow>`;
+    return `<m:limLow><m:e>${stringifyChildren(opts.children)}</m:e><m:lim>${stringifyChildren(opts.limit)}</m:lim></m:limLow>`;
   }
 
   if ("limitUpper" in value) {
     const opts = value.limitUpper;
-    const pr = opts.properties ? "" : "";
-    return `<m:limUpp>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:lim>${stringifyChildren(opts.limit)}</m:lim></m:limUpp>`;
+    return `<m:limUpp><m:e>${stringifyChildren(opts.children)}</m:e><m:lim>${stringifyChildren(opts.limit)}</m:lim></m:limUpp>`;
   }
 
   if ("function" in value) {
     const opts = value.function;
-    const pr = opts.properties ? "" : "";
-    return `<m:func>${pr}<m:fName>${stringifyChildren(opts.name)}</m:fName><m:e>${stringifyChildren(opts.children)}</m:e></m:func>`;
+    return `<m:func><m:fName>${stringifyChildren(opts.name)}</m:fName><m:e>${stringifyChildren(opts.children)}</m:e></m:func>`;
   }
 
   if ("matrix" in value) {

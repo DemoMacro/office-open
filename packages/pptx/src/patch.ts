@@ -1,11 +1,13 @@
 import {
   PPTX_NS,
   OoxmlMimeType,
+  appendOverride,
   appendRelationship,
   applyCorePropertiesOverride,
   collectPlaceholderKeys,
   createReplacer,
   getNextRelationshipIndex,
+  nextNumericId,
   replaceHyperlinkPlaceholders,
   strFromU8,
   toJson,
@@ -158,17 +160,9 @@ const nextSlideNumber = (xmlMap: Map<string, Element>): number => {
   return maxN + 1;
 };
 
-/** Largest numeric `id` among existing `<p:sldId>` entries. */
-const maxSldId = (sldIdLst: Element | undefined): number => {
-  let maxId = 255;
-  for (const child of sldIdLst?.elements ?? []) {
-    if (child.name === "p:sldId" && child.attributes) {
-      const id = Number(child.attributes["id"]);
-      if (Number.isFinite(id)) maxId = Math.max(maxId, id);
-    }
-  }
-  return maxId;
-};
+/** Next id for an appended `<p:sldId>` (255 floor → ≥256). */
+const nextSldId = (sldIdLst: Element | undefined): number =>
+  nextNumericId(sldIdLst, "p:sldId", "id", 255);
 
 /** Resolve a relationship `r:id` to its Target via a rels part. */
 const resolveRelTarget = (
@@ -213,22 +207,14 @@ const appendSlideToMap = (
   const sldIdLst = findChild(presRoot, "p:sldIdLst");
   if (sldIdLst) {
     const els = sldIdLst.elements ?? (sldIdLst.elements = []);
-    els.push(
-      makeElement("p:sldId", { id: String(maxSldId(sldIdLst) + 1), "r:id": `rId${newRId}` }),
-    );
+    els.push(makeElement("p:sldId", { id: String(nextSldId(sldIdLst)), "r:id": `rId${newRId}` }));
   }
   appendRelationship(presRels, newRId, SLIDE_REL_TYPE, `slides/slide${newN}.xml`);
 
   // [Content_Types].xml Override
-  const typesRoot = rootElement(xmlMap.get("[Content_Types].xml"), "Types");
-  if (typesRoot) {
-    const els = typesRoot.elements ?? (typesRoot.elements = []);
-    els.push(
-      makeElement("Override", {
-        PartName: `/${slidePath}`,
-        ContentType: SLIDE_PART_CONTENT_TYPE,
-      }),
-    );
+  const contentTypes = xmlMap.get("[Content_Types].xml");
+  if (contentTypes) {
+    appendOverride(contentTypes, `/${slidePath}`, SLIDE_PART_CONTENT_TYPE);
   }
 
   // Slide rels → first slide layout (template must already provide it)
@@ -294,8 +280,12 @@ const findRelByType = (
   return undefined;
 };
 
-/** descriptor.parse helpers ignore their context; this satisfies ReadContext. */
-const STUB_READ_CTX = {} as unknown as ReadContext;
+/** Noop ReadContext: comment-author/comment-list parse touches no relationships/parts/raw media. */
+const STUB_READ_CTX: ReadContext = {
+  resolveRelationship: () => undefined,
+  getPart: () => undefined,
+  getRaw: () => undefined,
+};
 
 /**
  * Append comments to a slide, merging authors into commentAuthors.xml and the
@@ -363,27 +353,12 @@ const appendCommentsToMap = (
   }
 
   // Content types — commentAuthors + commentN Overrides (deduped).
-  const typesRoot = rootElement(xmlMap.get("[Content_Types].xml"), "Types");
-  if (typesRoot) {
-    const els = typesRoot.elements ?? (typesRoot.elements = []);
-    const has = (partName: string): boolean =>
-      els.some((e) => e.name === "Override" && e.attributes?.["PartName"] === partName);
-    if (mergedAuthors.length > 0 && !has("/ppt/commentAuthors.xml")) {
-      els.push(
-        makeElement("Override", {
-          PartName: "/ppt/commentAuthors.xml",
-          ContentType: COMMENT_AUTHORS_CONTENT_TYPE,
-        }),
-      );
+  const contentTypes = xmlMap.get("[Content_Types].xml");
+  if (contentTypes) {
+    if (mergedAuthors.length > 0) {
+      appendOverride(contentTypes, "/ppt/commentAuthors.xml", COMMENT_AUTHORS_CONTENT_TYPE);
     }
-    if (!has(`/${commentPath}`)) {
-      els.push(
-        makeElement("Override", {
-          PartName: `/${commentPath}`,
-          ContentType: COMMENTS_CONTENT_TYPE,
-        }),
-      );
-    }
+    appendOverride(contentTypes, `/${commentPath}`, COMMENTS_CONTENT_TYPE);
   }
 };
 

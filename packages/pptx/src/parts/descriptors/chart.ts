@@ -10,7 +10,7 @@
 
 import { convertPixelsToEmu } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
-import type { ChartSpaceOptions } from "@office-open/core/chart";
+import type { ChartSpaceOptions, ChartType } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringify } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, findDeep, textOf } from "@office-open/xml";
@@ -82,7 +82,7 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<ChartDescriptorOptions> = {};
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");
@@ -104,16 +104,16 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
       }
     }
 
-    return result as unknown as ChartDescriptorOptions;
+    return result as ChartDescriptorOptions;
   },
 };
 
 /** Parse chart XML (c:chartSpace) into chart options. */
-function parseChartXml(el: Element): Record<string, unknown> | undefined {
+function parseChartXml(el: Element): Partial<ChartSpaceOptions> | undefined {
   const chart = findChild(el, "c:chart");
   if (!chart) return undefined;
 
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<ChartSpaceOptions> = {};
 
   // Title
   const titleEl = findChild(chart, "c:title");
@@ -164,7 +164,7 @@ function parseChartXml(el: Element): Record<string, unknown> | undefined {
   }
 
   if (!chartType || !typeElement) return undefined;
-  opts.type = chartType;
+  opts.type = chartType as ChartType;
 
   // Series
   const series: { name: string; values: number[] }[] = [];

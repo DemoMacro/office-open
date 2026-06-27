@@ -104,7 +104,7 @@ export interface WebSettingsOptions {
 
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrBool, attrMeasure, attrNum, findChild } from "@office-open/xml";
+import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { FrameOptions, FramesetSplitbarOptions } from "@parts/frameset";
 
@@ -136,19 +136,11 @@ function wsOnOff(tag: string, val: boolean): string {
 }
 
 function wsStringVal(tag: string, val: string): string {
-  return `<${tag} w:val="${wsEscapeAttr(val)}"/>`;
+  return `<${tag} w:val="${escapeXml(val)}"/>`;
 }
 
 function wsNumVal(tag: string, val: number | UniversalMeasure): string {
   return `<${tag} w:val="${val}"/>`;
-}
-
-function wsEscapeAttr(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 // ── Parse helpers (for descriptor parse path) ──
@@ -362,8 +354,8 @@ function wsDivBorderXml(b: NonNullable<DivOptions["border"]>): string {
   ];
   for (const [tag, side] of sides) {
     if (!side) continue;
-    const attrParts: string[] = [`w:val="${wsEscapeAttr(side.style)}"`];
-    if (side.color) attrParts.push(`w:color="${wsEscapeAttr(side.color)}"`);
+    const attrParts: string[] = [`w:val="${escapeXml(side.style)}"`];
+    if (side.color) attrParts.push(`w:color="${escapeXml(side.color)}"`);
     if (side.size !== undefined) attrParts.push(`w:sz="${side.size}"`);
     parts.push(`<${tag} ${attrParts.join(" ")}/>`);
   }
@@ -422,15 +414,13 @@ export function frameXml(f: FrameOptions): string {
   if (f.size !== undefined) parts.push(wsStringVal("w:sz", f.size));
   if (f.name !== undefined) parts.push(wsStringVal("w:name", f.name));
   if (f.title !== undefined) parts.push(wsStringVal("w:title", f.title));
-  if (f.sourceRId !== undefined)
-    parts.push(`<w:sourceFileName r:id="${wsEscapeAttr(f.sourceRId)}"/>`);
+  if (f.sourceRId !== undefined) parts.push(`<w:sourceFileName r:id="${escapeXml(f.sourceRId)}"/>`);
   if (f.marginWidth !== undefined) parts.push(wsNumVal("w:marW", f.marginWidth));
   if (f.marginHeight !== undefined) parts.push(wsNumVal("w:marH", f.marginHeight));
   if (f.scrollbar !== undefined) parts.push(`<w:scrollbar w:val="${f.scrollbar}"/>`);
   if (f.noResizeAllowed) parts.push("<w:noResizeAllowed/>");
   if (f.linkedToFile) parts.push("<w:linkedToFile/>");
-  if (f.longDescRId !== undefined)
-    parts.push(`<w:longDesc r:id="${wsEscapeAttr(f.longDescRId)}"/>`);
+  if (f.longDescRId !== undefined) parts.push(`<w:longDesc r:id="${escapeXml(f.longDescRId)}"/>`);
   parts.push("</w:frame>");
   return parts.join("");
 }
@@ -456,7 +446,7 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
         // CT_OptimizeForBrowser: CT_OnOff + optional @w:target. Omit w:val when
         // true to match typical Word output; emit w:val="false" only when disabled.
         const valAttr = ob.value === false ? ' w:val="false"' : "";
-        const targetAttr = ob.target ? ` w:target="${wsEscapeAttr(ob.target)}"` : "";
+        const targetAttr = ob.target ? ` w:target="${escapeXml(ob.target)}"` : "";
         p.push(`<w:optimizeForBrowser${valAttr}${targetAttr}/>`);
       }
     }

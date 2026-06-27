@@ -173,14 +173,14 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<ChartsheetDescriptorOptions> = {};
 
     // sheetPr
     const sheetPr = findChild(el, "sheetPr");
     if (sheetPr) {
       if (sheetPr.attributes?.["published"] === "1") result.published = true;
       const tabColor = findChild(sheetPr, "tabColor");
-      if (tabColor?.attributes?.["rgb"]) result.tabColor = tabColor.attributes["rgb"];
+      if (tabColor?.attributes?.["rgb"]) result.tabColor = String(tabColor.attributes["rgb"]);
     }
 
     // sheetView
@@ -190,6 +190,6 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (sv?.attributes?.["zoomToFit"] === "1") result.zoomToFit = true;
     }
 
-    return result as unknown as ChartsheetDescriptorOptions;
+    return result as ChartsheetDescriptorOptions;
   },
 };

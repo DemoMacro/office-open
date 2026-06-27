@@ -71,10 +71,12 @@ function stringifyBackgroundInner(opts: BackgroundDescriptorOptions): string {
 // ── Parse ──
 
 function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundDescriptorOptions {
-  const result: Record<string, unknown> = {};
+  const result: Partial<BackgroundDescriptorOptions> = {};
 
   if (el.attributes?.["p:bwMode"]) {
-    result.blackWhiteMode = el.attributes["p:bwMode"];
+    result.blackWhiteMode = String(
+      el.attributes["p:bwMode"],
+    ) as BackgroundDescriptorOptions["blackWhiteMode"];
   }
 
   const bgPr = findChild(el, "p:bgPr");
@@ -97,5 +99,5 @@ function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundDescriptor
     }
   }
 
-  return result as unknown as BackgroundDescriptorOptions;
+  return result as BackgroundDescriptorOptions;
 }

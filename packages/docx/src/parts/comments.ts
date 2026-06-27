@@ -8,7 +8,7 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum } from "@office-open/xml";
+import { attr, attrNum, escapeXml } from "@office-open/xml";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { CommentsOptions, CommentOptions } from "@parts/paragraph/run/comment-run";
 
@@ -16,16 +16,6 @@ import { parseParagraph } from "../body";
 import type { BodyContext } from "../context";
 import type { DocxReadContext } from "../context";
 import { stringifyParagraphInline } from "./inline";
-
-// ── XML helpers ──
-
-function escapeAttr(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 const COMMENTS_NS =
   'xmlns:aink="http://schemas.microsoft.com/office/drawing/2016/ink" ' +
@@ -68,10 +58,10 @@ function stringifyComment(opts: CommentOptions, ctx: BodyContext): string {
   // w:author is XSD-required (CT_TrackChange); default to empty string when absent.
   const attrs: string[] = [
     `w:id="${opts.id}"`,
-    `w:author="${escapeAttr(opts.author ?? "")}"`,
-    `w:date="${escapeAttr(dateStr)}"`,
+    `w:author="${escapeXml(opts.author ?? "")}"`,
+    `w:date="${escapeXml(dateStr)}"`,
   ];
-  if (opts.initials !== undefined) attrs.push(`w:initials="${escapeAttr(opts.initials)}"`);
+  if (opts.initials !== undefined) attrs.push(`w:initials="${escapeXml(opts.initials)}"`);
 
   const parts: string[] = [];
   for (const child of opts.children) {

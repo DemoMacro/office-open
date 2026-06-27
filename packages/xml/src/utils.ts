@@ -159,6 +159,21 @@ export function findDeep(parent: Element | undefined, name: string): Element[] {
 }
 
 /**
+ * Find the first descendant element with the given name (depth-first pre-order).
+ * Short-circuits at the first match — prefer this over `findDeep(parent, name)[0]`
+ * to avoid traversing the whole subtree and allocating the full results array.
+ */
+export function findFirst(parent: Element | undefined, name: string): Element | undefined {
+  if (!parent) return undefined;
+  for (const child of parent.elements ?? []) {
+    if (child.name === name) return child;
+    const found = findFirst(child, name);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+/**
  * Get the number of direct child elements.
  */
 export function childCount(parent: Element | undefined): number {

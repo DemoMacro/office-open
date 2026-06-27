@@ -46,7 +46,7 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<CalcChainOptions> = {};
     const cells: CalcCell[] = [];
     for (const child of el.elements ?? []) {
       if (child.name !== "c") continue;
@@ -62,6 +62,6 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
       }
     }
     result.cells = cells;
-    return result as unknown as CalcChainOptions;
+    return result as CalcChainOptions;
   },
 };

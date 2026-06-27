@@ -259,7 +259,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Record<string, unknown> = {};
+    const result: Partial<TableOptions> = {};
 
     // Root attributes
     const id = attrNum(el, "id");
@@ -272,7 +272,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     const totalsRowCount = attrNum(el, "totalsRowCount");
     if (totalsRowCount !== undefined) result.totalsRowCount = totalsRowCount;
     if (attr(el, "totalsRowShown") === "0") result.totalsRowShown = false;
-    if (attr(el, "tableType")) result.tableType = attr(el, "tableType");
+    if (attr(el, "tableType")) result.tableType = attr(el, "tableType") as TableType;
     if (attr(el, "insertRowShift") === "1") result.insertRowShift = true;
     if (attr(el, "published") === "1") result.published = true;
 
@@ -283,15 +283,14 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // Table columns
     const colsEl = findChild(el, "tableColumns");
     if (colsEl) {
-      const columns: Record<string, unknown>[] = [];
+      const columns: TableColumnOptions[] = [];
       for (const colEl of colsEl.elements ?? []) {
         if (colEl.name !== "tableColumn") continue;
-        const col: Record<string, unknown> = {};
-        const colId = attrNum(colEl, "id");
-        if (colId !== undefined) col.id = colId;
+        // Column id is derived from position at stringify (i+1); not stored.
+        const col: Partial<TableColumnOptions> = {};
         col.name = attr(colEl, "name") ?? "";
         if (attr(colEl, "totalsRowFunction"))
-          col.totalsRowFunction = attr(colEl, "totalsRowFunction");
+          col.totalsRowFunction = attr(colEl, "totalsRowFunction") as TotalsRowFunction;
         if (attr(colEl, "totalsRowLabel")) col.totalsRowLabel = attr(colEl, "totalsRowLabel");
         const ccfEl = findChild(colEl, "calculatedColumnFormula");
         if (ccfEl) {
@@ -317,7 +316,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         if (attr(colEl, "dataCellStyle")) col.dataCellStyle = attr(colEl, "dataCellStyle");
         if (attr(colEl, "totalsRowCellStyle"))
           col.totalsRowCellStyle = attr(colEl, "totalsRowCellStyle");
-        columns.push(col);
+        columns.push(col as TableColumnOptions);
       }
       result.columns = columns;
     }
@@ -325,7 +324,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // Table style info
     const siEl = findChild(el, "tableStyleInfo");
     if (siEl) {
-      const style: Record<string, unknown> = {};
+      const style: Partial<TableStyleInfoOptions> = {};
       if (attr(siEl, "name")) style.name = attr(siEl, "name");
       if (attr(siEl, "showFirstColumn") === "1") style.showFirstColumn = true;
       if (attr(siEl, "showLastColumn") === "1") style.showLastColumn = true;
@@ -351,6 +350,6 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     if (attr(el, "dataCellStyle")) result.dataCellStyle = attr(el, "dataCellStyle");
     if (attr(el, "totalsRowCellStyle")) result.totalsRowCellStyle = attr(el, "totalsRowCellStyle");
 
-    return result as unknown as TableOptions;
+    return result as TableOptions;
   },
 };

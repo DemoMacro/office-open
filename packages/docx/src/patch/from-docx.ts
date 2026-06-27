@@ -3,11 +3,13 @@ import {
   DOCX_NS,
   OoxmlMimeType,
   appendContentType,
+  appendOverride,
   appendRelationship,
   applyCorePropertiesOverride,
   createReplacer,
   getNextRelationshipIndex,
   getReferencedMedia,
+  nextNumericId,
   replaceImagePlaceholders,
   strFromU8,
   toJson,
@@ -516,17 +518,10 @@ function commentReferenceRun(id: number): Element {
   ).elements![0];
 }
 
-/** Largest `w:id` among existing `<w:comment>` entries (-1 when none). */
-function maxCommentId(commentsPart: Element | undefined): number {
+/** Next continuation id for an appended `<w:comment>` (-1 seed → 0 when none). */
+function nextCommentId(commentsPart: Element | undefined): number {
   const root = commentsPart?.elements?.find((e) => e.name === "w:comments");
-  let max = -1;
-  for (const c of root?.elements ?? []) {
-    if (c.name === "w:comment") {
-      const id = Number(c.attributes?.["w:id"]);
-      if (Number.isFinite(id)) max = Math.max(max, id);
-    }
-  }
-  return max;
+  return nextNumericId(root, "w:comment", "w:id", -1);
 }
 
 /** Assign continuation ids to every requested comment anchor. */
@@ -536,7 +531,7 @@ function buildAssignedComments(
 ): AssignedComment[] {
   if (!comments) return [];
   const raw = zipContent["word/comments.xml"];
-  let nextId = raw ? maxCommentId(toJson(strFromU8(raw))) + 1 : 0;
+  let nextId = raw ? nextCommentId(toJson(strFromU8(raw))) : 0;
   const assigned: AssignedComment[] = [];
   if (comments.placeholders) {
     for (const [key, list] of Object.entries(comments.placeholders)) {
@@ -644,18 +639,8 @@ function mergeCommentsPart(
 
   // Content types — ensure the comments Override exists (deduped). An existing
   // comments part normally already declares it, but defend against incomplete templates.
-  const typesEl = map.get("[Content_Types].xml")?.elements?.find((e) => e.name === "Types");
-  if (typesEl) {
-    const els = typesEl.elements ?? (typesEl.elements = []);
-    if (
-      !els.some((e) => e.name === "Override" && e.attributes?.["PartName"] === "/word/comments.xml")
-    ) {
-      els.push(
-        makeElement("Override", {
-          PartName: "/word/comments.xml",
-          ContentType: COMMENTS_CONTENT_TYPE,
-        }),
-      );
-    }
+  const contentTypes = map.get("[Content_Types].xml");
+  if (contentTypes) {
+    appendOverride(contentTypes, "/word/comments.xml", COMMENTS_CONTENT_TYPE);
   }
 }
