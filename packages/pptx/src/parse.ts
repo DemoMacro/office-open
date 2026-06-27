@@ -30,6 +30,8 @@ export { parseArchive };
 
 import type { SlideLayoutType } from "./parts/slide-layout";
 import type {
+  LayoutDefinition,
+  MasterChild,
   MasterDefinition,
   SlideOptions,
   SlideCommentOptions,
@@ -391,7 +393,7 @@ function parseSlideSections(
  */
 export function parsePresentation(data: DataType): PresentationOptions {
   const pptx = parsePptx(data);
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<PresentationOptions> = {};
   const sectionBySlidePath = parseSlideSections(pptx.presentation, pptx.doc);
 
   // 1. Parse slide size from p:sldSz
@@ -525,26 +527,30 @@ export function parsePresentation(data: DataType): PresentationOptions {
     }
 
     // Layouts belonging to this master
-    const masterLayouts: NonNullable<MasterDefinition["layouts"]>[number][] = [];
+    const masterLayouts: LayoutDefinition[] = [];
     for (const layoutPath of pptx.slideLayouts) {
       if (layoutMasterPaths.get(layoutPath) !== masterPath) continue;
       const layoutEl = pptx.doc.get(layoutPath);
       if (layoutEl) {
         const layoutOpts = slideLayoutDesc.parse(layoutEl, masterReadCtx);
-        const layoutDef: Record<string, unknown> = {
+        const layoutDef: LayoutDefinition = {
           type: (layoutOpts.type ?? "blank") as SlideLayoutType,
         };
         if (layoutOpts.placeholders) layoutDef.placeholders = layoutOpts.placeholders;
-        masterLayouts.push(layoutDef as NonNullable<MasterDefinition["layouts"]>[number]);
+        masterLayouts.push(layoutDef);
       }
     }
 
     const masterName = themeOptions?.name ?? `master${mi + 1}`;
-    const masterDef = {} as Record<string, unknown>;
+    const masterDef: Partial<MasterDefinition> = {};
     masterDef.name = masterName;
     if (themeOptions) masterDef.theme = themeOptions;
     if (hasBackground) masterDef.background = masterBackground;
-    if (masterChildren.length > 0) masterDef.children = masterChildren;
+    // MasterChild (shared) declares only { shape }; parse yields the full
+    // SlideChild union (parts-layer). The shared/parts split prevents unifying
+    // them (SlideChild cannot move to shared — circular dep), so the cast stays
+    // local to this known impedance.
+    if (masterChildren.length > 0) masterDef.children = masterChildren as unknown as MasterChild[];
     if (masterLayouts.length > 0) masterDef.layouts = masterLayouts;
     masterDefs.push(masterDef as MasterDefinition);
   }
@@ -559,8 +565,10 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const nmEl = pptx.doc.get(nmPath);
     if (nmEl) {
       const nmOpts = notesMasterDesc.parse(nmEl, masterReadCtx);
-      if (nmOpts.options) opts.includeNotesMaster = true;
-      if (nmOpts.options) Object.assign(opts, { notesMasterOptions: nmOpts.options });
+      if (nmOpts.options) {
+        opts.includeNotesMaster = true;
+        opts.notesMasterOptions = nmOpts.options;
+      }
     }
   }
 
@@ -589,6 +597,11 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const slideRels = parseSlideRelMap(pptx.doc, slidePath);
     const ctx = new ParseContext(pptx, slideRels);
     const readCtx = new PptxReadContext(ctx);
+    // slideDesc.parse returns SlideDescriptorOptions (internal descriptor type:
+    // 4-variant SlideChild, no layout/master/comments/notes/section). We enrich
+    // it with those public-API fields below and coerce to SlideOptions at push.
+    // Record bridges this descriptor/public impedance — slide.ts itself is a
+    // known stringify≠parse split, so the wrapper stays until that is resolved.
     const slideOpts = slideDesc.parse(slideEl, readCtx) as Record<string, unknown>;
 
     // Resolve layout → master

@@ -7,7 +7,7 @@
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import type { CustomDescriptor, ReadContext } from "../../descriptor";
+import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify } from "../../descriptor";
 import type { ColorTransformOptions } from "./color-transform";
 import type { HslColorOptions } from "./hsl-color";
@@ -224,7 +224,9 @@ const SYSTEM_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SystemCol
 const PRESET_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(PresetColor));
 const SCHEME_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SchemeColor));
 
-export function getColorDescriptor(color: SolidFillOptions): CustomDescriptor<any> {
+export function getColorDescriptor(
+  color: SolidFillOptions,
+): CustomDescriptor<any, WriteContext, SolidFillOptions> {
   if ("hue" in color && "saturation" in color && "luminance" in color) return hslColorDesc;
   if ("r" in color && "g" in color && "b" in color) return scRgbColorDesc;
   const colorValue = (color as { value: string }).value;

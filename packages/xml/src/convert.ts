@@ -4,7 +4,7 @@ import type { Element, Attributes } from "./types";
  * Convert XmlObject (node-xml format) directly to Element (xml-js format).
  * Eliminates the redundant xml() → xml2js() bridge path.
  */
-export function toElement(xmlObject: Record<string, any>): Element {
+export function toElement(xmlObject: Record<string, unknown>): Element {
   const tagName = Object.keys(xmlObject)[0];
   const value = xmlObject[tagName];
 
@@ -44,12 +44,13 @@ export function toElement(xmlObject: Record<string, any>): Element {
     return element;
   }
 
-  if (typeof value === "object") {
-    if (value._attr) {
-      element.attributes = value._attr as Attributes;
+  if (typeof value === "object" && value !== null) {
+    const obj = value as { _attr?: Attributes; _cdata?: string };
+    if (obj._attr) {
+      element.attributes = obj._attr;
     }
-    if (value._cdata) {
-      element.elements = [{ type: "cdata", cdata: String(value._cdata) }];
+    if (obj._cdata) {
+      element.elements = [{ type: "cdata", cdata: String(obj._cdata) }];
     }
   }
 

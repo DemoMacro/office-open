@@ -717,7 +717,12 @@ function stringifyTxBody(opts: TextBodyDescriptorOptions, ctx: WriteContext): st
 function toParagraphDescOpts(opts: ParagraphOptions): ParagraphDescriptorOptions {
   const result: ParagraphDescriptorOptions = {};
   if (opts.text !== undefined) result.text = opts.text;
-  if (opts.children !== undefined) result.children = opts.children as any;
+  // Part-level impedance: ParagraphOptions.children allows `string` shorthand
+  // ((RunOptions|string)[]), but the descriptor layer expects RunOptions[]
+  // (text.ts). Kept as a cast rather than a conversion; the string shorthand is
+  // tolerated downstream. Avoids the viral `any` of the prior `as any`.
+  if (opts.children !== undefined)
+    result.children = opts.children as unknown as ParagraphDescriptorOptions["children"];
   if (opts.properties) result.properties = opts.properties;
   return result;
 }
