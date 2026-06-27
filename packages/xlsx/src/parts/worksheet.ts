@@ -1260,8 +1260,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
   },
 
   parse(el, ctx) {
-    const result: Record<string, unknown> = {};
-    let pageSetUpPrCache: Record<string, unknown> | undefined;
+    const result: Partial<WorksheetOptions> = {};
+    let pageSetUpPrCache: Partial<PageSetupOptions> | undefined;
 
     // Resolve shared strings from context (XlsxReadContext)
     const strings: string[] =
@@ -1270,7 +1270,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Sheet properties
     const sheetPrEl = findChild(el, "sheetPr");
     if (sheetPrEl) {
-      const sp: Record<string, unknown> = {};
+      const sp: SheetPropertiesOptions = {};
       if (attr(sheetPrEl, "syncHorizontal") === "1") sp.syncHorizontal = true;
       if (attr(sheetPrEl, "syncVertical") === "1") sp.syncVertical = true;
       if (attr(sheetPrEl, "syncRef")) sp.syncRef = attr(sheetPrEl, "syncRef");
@@ -1293,7 +1293,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       // the <pageSetup> parse below, which owns result.pageSetup.
       const pageSetUpPr = findChild(sheetPrEl, "pageSetUpPr");
       if (pageSetUpPr) {
-        const psup: Record<string, unknown> = {};
+        const psup: Partial<PageSetupOptions> = {};
         if (attr(pageSetUpPr, "fitToPage") === "1") psup.fitToPage = true;
         if (attr(pageSetUpPr, "autoPageBreaks") === "1") psup.autoPageBreaks = true;
         if (Object.keys(psup).length > 0) pageSetUpPrCache = psup;
@@ -1303,7 +1303,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       // Tab color
       const tabColorEl = findChild(sheetPrEl, "tabColor");
       if (tabColorEl) {
-        const tc: Record<string, unknown> = {};
+        const tc: TabColorOptions = {};
         if (attr(tabColorEl, "rgb")) tc.rgb = attr(tabColorEl, "rgb");
         if (attrNum(tabColorEl, "theme") !== undefined) tc.theme = attrNum(tabColorEl, "theme");
         if (attrNum(tabColorEl, "tint") !== undefined) tc.tint = attrNum(tabColorEl, "tint");
@@ -1318,7 +1318,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     if (sheetViewsEl) {
       const svEl = findChild(sheetViewsEl, "sheetView");
       if (svEl) {
-        const sv: Record<string, unknown> = {};
+        const sv: SheetViewOptions = {};
         if (attr(svEl, "showGridLines") === "0") sv.showGridLines = false;
         if (attr(svEl, "showRowColHeaders") === "0") sv.showRowColHeaders = false;
         if (attr(svEl, "showZeros") === "0") sv.showZeros = false;
@@ -1333,7 +1333,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (attr(svEl, "showOutlineSymbols") === "0") sv.showOutlineSymbols = false;
         if (attr(svEl, "defaultGridColor") === "0") sv.defaultGridColor = false;
         if (attr(svEl, "showWhiteSpace") === "0") sv.showWhiteSpace = false;
-        if (attr(svEl, "view")) sv.view = attr(svEl, "view");
+        const viewVal = attr(svEl, "view");
+        if (viewVal) sv.view = viewVal as SheetViewOptions["view"];
         const colorId = attrNum(svEl, "colorId");
         if (colorId !== undefined) sv.colorId = colorId;
         const zsn = attrNum(svEl, "zoomScaleNormal");
@@ -1347,7 +1348,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         // Freeze pane
         const paneEl = findChild(svEl, "pane");
         if (paneEl && attr(paneEl, "state") === "frozen") {
-          const fp: Record<string, unknown> = {};
+          const fp: FreezePaneOptions = {};
           const ys = attrNum(paneEl, "ySplit");
           if (ys && ys > 0) fp.row = ys;
           const xs = attrNum(paneEl, "xSplit");
@@ -1360,7 +1361,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Sheet format properties
     const sfpEl = findChild(el, "sheetFormatPr");
     if (sfpEl) {
-      const sfp: Record<string, unknown> = {};
+      const sfp: SheetFormatPropertiesOptions = {};
       const bcw = attrNum(sfpEl, "baseColWidth");
       if (bcw !== undefined) sfp.baseColWidth = bcw;
       const dcw = attrNum(sfpEl, "defaultColWidth");
@@ -1380,12 +1381,13 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Columns
     const colsEl = findChild(el, "cols");
     if (colsEl) {
-      const columns: Record<string, unknown>[] = [];
+      const columns: ColumnOptions[] = [];
       for (const colEl of colsEl.elements ?? []) {
         if (colEl.name !== "col") continue;
-        const col: Record<string, unknown> = {};
-        col.min = attrNum(colEl, "min") ?? 0;
-        col.max = attrNum(colEl, "max") ?? 0;
+        const col: ColumnOptions = {
+          min: attrNum(colEl, "min") ?? 0,
+          max: attrNum(colEl, "max") ?? 0,
+        };
         const w = attrNum(colEl, "width");
         if (w !== undefined) col.width = w;
         if (attr(colEl, "hidden") === "1") col.hidden = true;
@@ -1403,7 +1405,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Sheet protection
     const protEl = findChild(el, "sheetProtection");
     if (protEl?.attributes) {
-      const prot: Record<string, unknown> = {};
+      const prot: SheetProtectionOptions = {};
       if (attr(protEl, "password")) prot.password = attr(protEl, "password");
       if (attr(protEl, "algorithmName")) prot.algorithmName = attr(protEl, "algorithmName");
       if (attr(protEl, "hashValue")) prot.hashValue = attr(protEl, "hashValue");
@@ -1431,19 +1433,21 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Protected ranges
     const prEl = findChild(el, "protectedRanges");
     if (prEl) {
-      const ranges: Record<string, unknown>[] = [];
+      const ranges: ProtectedRangeOptions[] = [];
       for (const rEl of prEl.elements ?? []) {
         if (rEl.name !== "protectedRange") continue;
-        const r: Record<string, unknown> = {};
-        r.sqref = attr(rEl, "sqref") ?? "";
-        r.name = attr(rEl, "name") ?? "";
+        const r: ProtectedRangeOptions = {
+          sqref: attr(rEl, "sqref") ?? "",
+          name: attr(rEl, "name") ?? "",
+        };
         if (attr(rEl, "password")) r.password = attr(rEl, "password");
         if (attr(rEl, "algorithmName")) r.algorithmName = attr(rEl, "algorithmName");
         if (attr(rEl, "hashValue")) r.hashValue = attr(rEl, "hashValue");
         if (attr(rEl, "saltValue")) r.saltValue = attr(rEl, "saltValue");
-        if (attrNum(rEl, "spinCount") !== undefined) r.spinCount = attrNum(rEl, "spinCount");
+        const spinCount = attrNum(rEl, "spinCount");
+        if (spinCount !== undefined) r.spinCount = spinCount;
         const sdEl = findChild(rEl, "securityDescriptor");
-        if (sdEl) r.securityDescriptor = textOf(sdEl);
+        if (sdEl) r.securityDescriptor = textOf(sdEl) ?? undefined;
         ranges.push(r);
       }
       if (ranges.length > 0) result.protectedRanges = ranges;
@@ -1458,7 +1462,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Merge cells
     const mcEl = findChild(el, "mergeCells");
     if (mcEl) {
-      const merges: Record<string, unknown>[] = [];
+      const merges: MergeCellOptions[] = [];
       for (const mEl of mcEl.elements ?? []) {
         if (mEl.name !== "mergeCell") continue;
         const ref = attr(mEl, "ref") ?? "";
@@ -1475,20 +1479,23 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Conditional formatting
     const cfEls = el.elements?.filter((e) => e.name === "conditionalFormatting") ?? [];
     if (cfEls.length > 0) {
-      const cfs: Record<string, unknown>[] = [];
+      const cfs: ConditionalFormatOptions[] = [];
       for (const cfEl of cfEls) {
         const sqref = attr(cfEl, "sqref") ?? "";
-        const rules: Record<string, unknown>[] = [];
+        const rules: ConditionalFormatRule[] = [];
         for (const ruleEl of cfEl.elements ?? []) {
           if (ruleEl.name !== "cfRule") continue;
-          const rule: Record<string, unknown> = {};
-          rule.type = attr(ruleEl, "type");
-          rule.priority = attrNum(ruleEl, "priority") ?? 1;
-          if (attr(ruleEl, "operator")) rule.operator = attr(ruleEl, "operator");
+          const rule: ConditionalFormatRule = {
+            type: attr(ruleEl, "type") as ConditionalFormatType,
+            priority: attrNum(ruleEl, "priority") ?? 1,
+          };
+          const opVal = attr(ruleEl, "operator");
+          if (opVal) rule.operator = opVal as ConditionalFormatOperator;
           const dxfId = attrNum(ruleEl, "dxfId");
           if (dxfId !== undefined) rule.dxfId = dxfId;
           if (attr(ruleEl, "stopIfTrue") === "1") rule.stopIfTrue = true;
-          if (attr(ruleEl, "timePeriod")) rule.timePeriod = attr(ruleEl, "timePeriod");
+          const tpVal = attr(ruleEl, "timePeriod");
+          if (tpVal) rule.timePeriod = tpVal as ConditionalFormatRule["timePeriod"];
           const rank = attrNum(ruleEl, "rank");
           if (rank !== undefined) rule.rank = rank;
           if (attr(ruleEl, "equalAverage") === "1") rule.equalAverage = true;
@@ -1496,7 +1503,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           // Color scale
           const csEl = findChild(ruleEl, "colorScale");
           if (csEl) {
-            const cfvo: Record<string, unknown>[] = [];
+            const cfvo: CfvoOptions[] = [];
             const colors: string[] = [];
             for (const child of csEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
@@ -1511,7 +1518,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           // Data bar
           const dbEl = findChild(ruleEl, "dataBar");
           if (dbEl) {
-            const cfvo: Record<string, unknown>[] = [];
+            const cfvo: CfvoOptions[] = [];
             let color = "";
             for (const child of dbEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
@@ -1520,18 +1527,19 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
                 if (rgb) color = rgb.length === 8 ? rgb.slice(2) : rgb;
               }
             }
-            rule.dataBar = { cfvo: cfvo as [any, any], color };
+            rule.dataBar = { cfvo: cfvo as [CfvoOptions, CfvoOptions], color };
           }
 
           // Icon set
           const isEl = findChild(ruleEl, "iconSet");
           if (isEl) {
-            const cfvo: Record<string, unknown>[] = [];
+            const cfvo: CfvoOptions[] = [];
             for (const child of isEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
             }
-            const iconSet: Record<string, unknown> = { cfvo };
-            if (attr(isEl, "iconSet")) iconSet.iconSet = attr(isEl, "iconSet");
+            const iconSet: IconSetOptions = { cfvo };
+            const isVal = attr(isEl, "iconSet");
+            if (isVal) iconSet.iconSet = isVal as IconSetType;
             if (attr(isEl, "showValue") === "0") iconSet.showValue = false;
             if (attr(isEl, "percent") === "0") iconSet.percent = false;
             if (attr(isEl, "reverse") === "1") iconSet.reverse = true;
@@ -1555,13 +1563,14 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Data validations
     const dvEl = findChild(el, "dataValidations");
     if (dvEl) {
-      const dvs: Record<string, unknown>[] = [];
+      const dvs: DataValidationOptions[] = [];
       for (const dEl of dvEl.elements ?? []) {
         if (dEl.name !== "dataValidation") continue;
-        const dv: Record<string, unknown> = {};
-        dv.sqref = attr(dEl, "sqref") ?? "";
-        if (attr(dEl, "type")) dv.type = attr(dEl, "type");
-        if (attr(dEl, "operator")) dv.operator = attr(dEl, "operator");
+        const dv: DataValidationOptions = { sqref: attr(dEl, "sqref") ?? "" };
+        const typeVal = attr(dEl, "type");
+        if (typeVal) dv.type = typeVal as DataValidationType;
+        const opVal = attr(dEl, "operator");
+        if (opVal) dv.operator = opVal as DataValidationOperator;
         if (attr(dEl, "allowBlank") === "1") dv.allowBlank = true;
         if (attr(dEl, "showErrorMessage") === "1") dv.showErrorMessage = true;
         if (attr(dEl, "showInputMessage") === "1") dv.showInputMessage = true;
@@ -1569,8 +1578,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (attr(dEl, "error")) dv.error = attr(dEl, "error");
         if (attr(dEl, "promptTitle")) dv.promptTitle = attr(dEl, "promptTitle");
         if (attr(dEl, "prompt")) dv.prompt = attr(dEl, "prompt");
-        if (attr(dEl, "errorStyle")) dv.errorStyle = attr(dEl, "errorStyle");
-        if (attr(dEl, "imeMode")) dv.imeMode = attr(dEl, "imeMode");
+        const esVal = attr(dEl, "errorStyle");
+        if (esVal) dv.errorStyle = esVal as DataValidationOptions["errorStyle"];
+        const imVal = attr(dEl, "imeMode");
+        if (imVal) dv.imeMode = imVal as DataValidationOptions["imeMode"];
         if (attr(dEl, "showDropDown") === "1") dv.showDropDown = true;
 
         const f1El = findChild(dEl, "formula1");
@@ -1586,15 +1597,15 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Hyperlinks
     const hlEl = findChild(el, "hyperlinks");
     if (hlEl) {
-      const hyperlinks: Record<string, unknown>[] = [];
+      const hyperlinks: HyperlinkOptions[] = [];
       for (const hEl of hlEl.elements ?? []) {
         if (hEl.name !== "hyperlink") continue;
-        const hl: Record<string, unknown> = {};
-        hl.cell = attr(hEl, "ref") ?? "";
         const rId = hEl.attributes?.["r:id"] as string | undefined;
         const location = attr(hEl, "location");
-        if (rId) hl.target = { type: "external", url: rId };
-        else if (location) hl.target = { type: "internal", location };
+        const target: HyperlinkTarget = rId
+          ? { type: "external", url: rId }
+          : { type: "internal", location: location ?? "" };
+        const hl: HyperlinkOptions = { cell: attr(hEl, "ref") ?? "", target };
         if (attr(hEl, "tooltip")) hl.tooltip = attr(hEl, "tooltip");
         if (attr(hEl, "display")) hl.display = attr(hEl, "display");
         hyperlinks.push(hl);
@@ -1605,7 +1616,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Print options
     const poEl = findChild(el, "printOptions");
     if (poEl) {
-      const po: Record<string, unknown> = {};
+      const po: PrintOptions = {};
       if (attr(poEl, "horizontalCentered") === "1") po.horizontalCentered = true;
       if (attr(poEl, "verticalCentered") === "1") po.verticalCentered = true;
       if (attr(poEl, "headings") === "1") po.headings = true;
@@ -1617,21 +1628,23 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Page setup
     const psEl = findChild(el, "pageSetup");
     if (psEl) {
-      const ps: Record<string, unknown> = {};
+      const ps: PageSetupOptions = {};
       const pz = attrNum(psEl, "paperSize");
       if (pz !== undefined) ps.paperSize = pz;
       const ph = attrMeasure(psEl, "paperHeight");
-      if (ph !== undefined) ps.paperHeight = ph;
+      if (ph !== undefined) ps.paperHeight = ph as number | PositiveUniversalMeasure;
       const pw = attrMeasure(psEl, "paperWidth");
-      if (pw !== undefined) ps.paperWidth = pw;
-      if (attr(psEl, "orientation")) ps.orientation = attr(psEl, "orientation");
+      if (pw !== undefined) ps.paperWidth = pw as number | PositiveUniversalMeasure;
+      const orientVal = attr(psEl, "orientation");
+      if (orientVal) ps.orientation = orientVal as PageOrientation;
       const sc = attrNum(psEl, "scale");
       if (sc !== undefined) ps.scale = sc;
       const ftw = attrNum(psEl, "fitToWidth");
       if (ftw !== undefined) ps.fitToWidth = ftw;
       const fth = attrNum(psEl, "fitToHeight");
       if (fth !== undefined) ps.fitToHeight = fth;
-      if (attr(psEl, "pageOrder")) ps.pageOrder = attr(psEl, "pageOrder");
+      const pageOrderVal = attr(psEl, "pageOrder");
+      if (pageOrderVal) ps.pageOrder = pageOrderVal as PageSetupOptions["pageOrder"];
       if (attr(psEl, "useFirstPageNumber") === "1") ps.useFirstPageNumber = true;
       const fpn = attrNum(psEl, "firstPageNumber");
       if (fpn !== undefined) ps.firstPageNumber = fpn;
@@ -1644,7 +1657,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Header/footer
     const hfEl = findChild(el, "headerFooter");
     if (hfEl) {
-      const hf: Record<string, unknown> = {};
+      const hf: HeaderFooterOptions = {};
       if (attr(hfEl, "differentOddEven") === "1") hf.differentOddEven = true;
       if (attr(hfEl, "differentFirst") === "1") hf.differentFirst = true;
       if (attr(hfEl, "scaleWithDoc") === "0") hf.scaleWithDoc = false;
@@ -1667,11 +1680,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Ignored errors
     const ieEl = findChild(el, "ignoredErrors");
     if (ieEl) {
-      const errors: Record<string, unknown>[] = [];
+      const errors: IgnoredErrorOptions[] = [];
       for (const eEl of ieEl.elements ?? []) {
         if (eEl.name !== "ignoredError") continue;
-        const ie: Record<string, unknown> = {};
-        ie.sqref = attr(eEl, "sqref") ?? "";
+        const ie: IgnoredErrorOptions = { sqref: attr(eEl, "sqref") ?? "" };
         if (attr(eEl, "evalError") === "1") ie.evalError = true;
         if (attr(eEl, "twoDigitTextYear") === "1") ie.twoDigitTextYear = true;
         if (attr(eEl, "numberStoredAsText") === "1") ie.numberStoredAsText = true;
@@ -1689,17 +1701,18 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Phonetic properties
     const ppEl = findChild(el, "phoneticPr");
     if (ppEl) {
-      const pp: Record<string, unknown> = {};
-      pp.fontId = attrNum(ppEl, "fontId") ?? 0;
-      if (attr(ppEl, "type")) pp.type = attr(ppEl, "type");
-      if (attr(ppEl, "alignment")) pp.alignment = attr(ppEl, "alignment");
+      const pp: PhoneticPropertiesOptions = { fontId: attrNum(ppEl, "fontId") ?? 0 };
+      const ppType = attr(ppEl, "type");
+      if (ppType) pp.type = ppType as PhoneticPropertiesOptions["type"];
+      const ppAlign = attr(ppEl, "alignment");
+      if (ppAlign) pp.alignment = ppAlign as PhoneticPropertiesOptions["alignment"];
       result.phoneticPr = pp;
     }
 
     // Sheet calc properties
     const scEl = findChild(el, "sheetCalcPr");
     if (scEl) {
-      const sc: Record<string, unknown> = {};
+      const sc: SheetCalculationPropertiesOptions = {};
       if (attr(scEl, "fullCalcOnLoad") === "1") sc.fullCalcOnLoad = true;
       result.sheetCalcPr = sc;
     }
@@ -1707,10 +1720,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Sheet data (rows and cells)
     const sheetDataEl = findChild(el, "sheetData");
     if (sheetDataEl) {
-      const rows: Record<string, unknown>[] = [];
+      const rows: RowOptions[] = [];
       for (const rowEl of sheetDataEl.elements ?? []) {
         if (rowEl.name !== "row") continue;
-        const row: Record<string, unknown> = {};
+        const row: RowOptions = {};
         const rowNumber = attrNum(rowEl, "r");
         if (rowNumber !== undefined) row.rowNumber = rowNumber;
         const ht = attrNum(rowEl, "ht");
@@ -1722,10 +1735,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (attr(rowEl, "thickBot") === "1") row.thickBot = true;
         if (attr(rowEl, "ph") === "1") row.ph = true;
 
-        const cells: Record<string, unknown>[] = [];
+        const cells: CellOptions[] = [];
         for (const cellEl of rowEl.elements ?? []) {
           if (cellEl.name !== "c") continue;
-          const cell: Record<string, unknown> = {};
+          const cell: CellOptions = {};
           const ref = attr(cellEl, "r");
           if (ref) cell.reference = ref;
           const type = attr(cellEl, "t");
@@ -1789,7 +1802,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (rows.length > 0) result.rows = rows;
     }
 
-    return result as unknown as WorksheetOptions;
+    return result as WorksheetOptions;
   },
 };
 
@@ -2909,9 +2922,8 @@ function dateToSerialNumber(date: Date): number {
 
 // ── Parse helpers ──
 
-function parseCfvo(el: XmlElement): Partial<CfvoOptions> {
-  const result: Partial<CfvoOptions> = {};
-  result.type = (attr(el, "type") ?? "num") as CfvoType;
+function parseCfvo(el: XmlElement): CfvoOptions {
+  const result: CfvoOptions = { type: (attr(el, "type") ?? "num") as CfvoType };
   const val = attr(el, "val");
   if (val !== undefined) result.val = isNaN(Number(val)) ? val : Number(val);
   if (attr(el, "gte") === "0") result.gte = false;
