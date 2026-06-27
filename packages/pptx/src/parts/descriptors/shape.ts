@@ -736,7 +736,7 @@ function stringifyNvPicPr(id: number, name: string): string {
 
 /** PPTX uses p:blipFill (not pic:blipFill). */
 function stringifyPptxBlipFill(fileName: string): string {
-  return `<p:blipFill><a:blip r:embed="{image:${escapeXml(fileName)}}" cstate="none"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
+  return `<p:blipFill><a:blip r:embed="{${escapeXml(fileName)}}" cstate="none"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
 }
 
 function stringifyPicSpPr(opts: PictureDescriptorOptions, ctx: WriteContext): string {
