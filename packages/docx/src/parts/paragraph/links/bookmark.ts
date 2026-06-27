@@ -7,6 +7,8 @@
  * @module
  */
 
+import type { RunOptions } from "@parts/paragraph/run/run";
+
 /**
  * ST_DisplacedByCustomXml — whether a range marker is displaced before or
  * after a sibling customXml element. Shared by every CT_MarkupRange derivative
@@ -66,6 +68,62 @@ export interface MoveRangeStartOptions {
   author?: string;
   /** Date of the move (CT_MoveBookmark @w:date). */
   date?: string;
+  /** Displacement relative to a sibling customXml (CT_MarkupRange @w:displacedByCustomXml). */
+  displacedByCustomXml?: DisplacedByCustomXml;
+  /** First column of a table-cell move range scope (CT_BookmarkRange @w:colFirst). */
+  colFirst?: number;
+  /** Last column of a table-cell move range scope (CT_BookmarkRange @w:colLast). */
+  colLast?: number;
+}
+
+/**
+ * A bookmark authored as a single inline paragraph child. The library allocates
+ * the bookmark id and emits the paired bookmarkStart/bookmarkEnd with one shared
+ * id — the caller never touches an id or pairs markers.
+ *
+ * `wrap` is the anchored document content the bookmark range wraps (inline
+ * runs/text, emitted between the markers). Bookmarks are pure markup: they add
+ * no part or relationship, only the two markers in document.xml.
+ *
+ * Reference: wml.xsd CT_Bookmark, CT_BookmarkRange, EG_RangeMarkupElements.
+ */
+export interface BookmarkChildOptions {
+  /** Bookmark name used for reference (CT_Bookmark @w:name, required). */
+  name: string;
+  /** Anchored document content the bookmark range wraps (inline runs/text). */
+  wrap?: (string | RunOptions)[];
+  /** Displacement relative to a sibling customXml (CT_MarkupRange @w:displacedByCustomXml). */
+  displacedByCustomXml?: DisplacedByCustomXml;
+  /** First column of a table-cell bookmark scope (CT_BookmarkRange @w:colFirst). */
+  colFirst?: number;
+  /** Last column of a table-cell bookmark scope (CT_BookmarkRange @w:colLast). */
+  colLast?: number;
+}
+
+/**
+ * A move revision authored as a single inline paragraph child. The library
+ * allocates the range id and the move-run id, then emits the paired range
+ * markers with the moved run between them — the caller never touches an id.
+ *
+ * Used by both the `{ moveFrom }` (source) and `{ moveTo }` (destination)
+ * sugars. `wrap` is the moved content carried by the move run. `author` and
+ * `date` apply to both the range start (CT_MoveBookmark) and the move run
+ * (CT_TrackChange). `name` is required by XSD (CT_Bookmark); the source
+ * (`moveFrom`) and destination (`moveTo`) of one logical move MUST share a name
+ * so Word pairs them as a single move.
+ *
+ * Reference: wml.xsd CT_MoveBookmark, CT_TrackChange, EG_RangeMarkupElements.
+ */
+export interface MoveRangeChildOptions {
+  /** Author of the move (CT_MoveBookmark + move run @w:author, required). */
+  author: string;
+  /** Date of the move (CT_MoveBookmark + move run @w:date, required). */
+  date: string;
+  /** Moved content carried by the move run (inline runs/text). */
+  wrap?: (string | RunOptions)[];
+  /** Move range name (CT_Bookmark @w:name, required). Share it across the
+   * matching `moveFrom`/`moveTo` pair so Word links them into one move. */
+  name: string;
   /** Displacement relative to a sibling customXml (CT_MarkupRange @w:displacedByCustomXml). */
   displacedByCustomXml?: DisplacedByCustomXml;
   /** First column of a table-cell move range scope (CT_BookmarkRange @w:colFirst). */

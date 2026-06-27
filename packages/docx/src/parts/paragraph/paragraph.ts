@@ -11,9 +11,11 @@ import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
 import type {
+  BookmarkChildOptions,
   MarkupRangeOptions,
   BookmarkStartOptions,
   MoveRangeStartOptions,
+  MoveRangeChildOptions,
 } from "./links/bookmark";
 import type { MathInput } from "./math";
 import type { ParagraphPropertiesOptions } from "./properties";
@@ -108,6 +110,7 @@ export type ParagraphChild =
     }
   | { bookmarkStart: BookmarkStartOptions }
   | { bookmarkEnd: MarkupRangeOptions }
+  | { bookmark: BookmarkChildOptions }
   | { wpsShape: WpsShapeRunOptions }
   | { wpgGroup: WpgGroupRunOptions }
   // Proof error markers
@@ -133,6 +136,9 @@ export type ParagraphChild =
   // Move revision text runs
   | { movedFrom: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   | { movedTo: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
+  // Move revision sugar — library allocates range + run ids and pairs markers
+  | { moveFrom: MoveRangeChildOptions }
+  | { moveTo: MoveRangeChildOptions }
   // Custom XML range markers (track changes)
   | { customXmlInsRangeStart: { id: number; author: string; date?: string } }
   | { customXmlInsRangeEnd: number }

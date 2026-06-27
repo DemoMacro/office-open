@@ -24,6 +24,14 @@ const buffer = await generateDocument({
             ],
           },
         },
+        {
+          // `{ bookmark }` sugar — the library allocates the id and pairs the
+          // start/end markers around the wrapped content. No manual id.
+          paragraph: {
+            heading: HeadingLevel.HEADING_2,
+            children: [{ bookmark: { name: "sugarAnchor", wrap: ["A sugared anchor"] } }],
+          },
+        },
         { paragraph: "\n" },
         { paragraph: LOREM_IPSUM },
         {
@@ -58,6 +66,9 @@ const buffer = await generateDocument({
             children: [
               "The bookmark can be seen on page ",
               { pageReference: { bookmarkId: "myAnchorId" } },
+              ". The sugared anchor is on page ",
+              { pageReference: { bookmarkId: "sugarAnchor" } },
+              ".",
             ],
           },
         },

@@ -63,6 +63,36 @@ function maxCommentId(comments: readonly CommentOptions[] | undefined): number {
   return max;
 }
 
+/** Narrows an object to a `{ id: number }` marker without an `as` cast. */
+function isNumericIdMarker(value: unknown): value is { id: number } {
+  return (
+    typeof value === "object" && value !== null && "id" in value && typeof value.id === "number"
+  );
+}
+
+/**
+ * Highest w:id among explicit bookmark + move-range start markers (`range`) and
+ * explicit movedFrom/movedTo runs (`moveRun`) anywhere in the body tree
+ * (paragraphs, tables, textboxes, SDTs, headers/footers nested in sections).
+ * Seeds the markup id allocators so `{ bookmark }` / `{ moveFrom }` / `{ moveTo }`
+ * sugars never collide with ids the caller already assigned. Comment ids live in
+ * their own namespace (comments.nextId) and are intentionally excluded.
+ */
+function collectMaxMarkupIds(value: unknown, acc: { range: number; moveRun: number }): void {
+  if (value === null || value === undefined || typeof value !== "object") return;
+  if (value instanceof Uint8Array || value instanceof Date) return;
+  if (Array.isArray(value)) {
+    for (const item of value) collectMaxMarkupIds(item, acc);
+    return;
+  }
+  const obj = value as Record<string, unknown>;
+  const rangeMarker = obj.bookmarkStart ?? obj.moveFromRangeStart ?? obj.moveToRangeStart;
+  if (isNumericIdMarker(rangeMarker) && rangeMarker.id > acc.range) acc.range = rangeMarker.id;
+  const moveRun = obj.movedFrom ?? obj.movedTo;
+  if (isNumericIdMarker(moveRun) && moveRun.id > acc.moveRun) acc.moveRun = moveRun.id;
+  for (const key of Object.keys(obj)) collectMaxMarkupIds(obj[key], acc);
+}
+
 /**
  * Whether any `{ comment }` sugar child appears anywhere in the body tree
  * (paragraphs, tables, textboxes, SDTs, headers/footers nested in sections).
@@ -135,6 +165,12 @@ export class DocxWriteContext implements WriteContext {
     /** Next auto-allocated comment id (seeded above any explicit comment id). */
     nextId: number;
   };
+  declare public markupIds: {
+    /** Next id for bookmark + move-range markers (CT_MarkupRange) — shared, like Word. */
+    rangeNext: number;
+    /** Next id for movedFrom/movedTo runs (CT_TrackChange). */
+    moveRunNext: number;
+  };
   declare public footNotes: {
     relationships: Relationships;
     notes: Map<number, (ParagraphOptions | string)[]>;
@@ -200,6 +236,12 @@ export class DocxWriteContext implements WriteContext {
       relationships: new Relationships(),
       entries: [],
       nextId: maxCommentId(options.comments?.children) + 1,
+    };
+    const markupSeed = { range: -1, moveRun: -1 };
+    collectMaxMarkupIds(options.sections, markupSeed);
+    this.markupIds = {
+      rangeNext: markupSeed.range + 1,
+      moveRunNext: markupSeed.moveRun + 1,
     };
     this.fileRelationships = new Relationships();
     this.footNotes = { relationships: new Relationships(), notes: new Map() };

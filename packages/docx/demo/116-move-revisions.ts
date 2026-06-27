@@ -147,6 +147,50 @@ const buffer = await generateDocument({
             ],
           },
         },
+
+        { paragraph: "" },
+
+        // 4. Move sugar — the library allocates range + run ids and pairs the
+        //    markers. `{ moveFrom }` bundles moveFromRangeStart + the moved run +
+        //    moveFromRangeEnd; `{ moveTo }` does the same for the destination.
+        {
+          paragraph: {
+            children: [{ bold: true, text: "4. Move Sugar", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "This paragraph had text moved ",
+              {
+                moveFrom: {
+                  name: "sugared-move",
+                  author: REVISION_AUTHOR,
+                  date: REVISION_DATE,
+                  wrap: [{ text: "away from here", italic: true }],
+                },
+              },
+              " to the next paragraph.",
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              "And the text appeared here: ",
+              {
+                moveTo: {
+                  name: "sugared-move",
+                  author: REVISION_AUTHOR,
+                  date: REVISION_DATE,
+                  wrap: [{ text: "away from here", italic: true }],
+                },
+              },
+              ".",
+            ],
+          },
+        },
       ],
     },
   ],

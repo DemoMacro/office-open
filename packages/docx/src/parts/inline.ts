@@ -18,7 +18,13 @@ import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { createDataModel } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
-import type { MarkupRangeOptions, MoveRangeStartOptions } from "@parts/paragraph/links/bookmark";
+import type {
+  BookmarkChildOptions,
+  BookmarkStartOptions,
+  MarkupRangeOptions,
+  MoveRangeChildOptions,
+  MoveRangeStartOptions,
+} from "@parts/paragraph/links/bookmark";
 import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { CommentChildOptions } from "@parts/paragraph/run/comment-run";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
@@ -220,6 +226,15 @@ function buildMarkupRangeAttrs(m: MarkupRangeOptions): string {
   return a.join(" ");
 }
 
+/** Shared attribute string for w:bookmarkStart (CT_Bookmark). */
+function buildBookmarkStartAttrs(bs: BookmarkStartOptions): string {
+  const a: string[] = [`w:id="${bs.id}"`, `w:name="${escapeXml(bs.name)}"`];
+  if (bs.displacedByCustomXml) a.push(`w:displacedByCustomXml="${bs.displacedByCustomXml}"`);
+  if (bs.colFirst !== undefined) a.push(`w:colFirst="${bs.colFirst}"`);
+  if (bs.colLast !== undefined) a.push(`w:colLast="${bs.colLast}"`);
+  return a.join(" ");
+}
+
 /** Shared attribute string for w:moveFromRangeStart / w:moveToRangeStart (CT_MoveBookmark). */
 function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
   const a: string[] = [`w:id="${m.id}"`];
@@ -230,6 +245,19 @@ function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
   if (m.colFirst !== undefined) a.push(`w:colFirst="${m.colFirst}"`);
   if (m.colLast !== undefined) a.push(`w:colLast="${m.colLast}"`);
   return a.join(" ");
+}
+
+/** Stringify inline run/text content — the `wrap` shared by every sugar child. */
+function stringifyInlineWrap(wrap: (string | RunOptions)[] | undefined, ctx: BodyContext): string {
+  const parts: string[] = [];
+  for (const item of wrap ?? []) {
+    parts.push(
+      typeof item === "string"
+        ? stringifyRunInline({ text: item }, ctx)
+        : stringifyRunInline(item, ctx),
+    );
+  }
+  return parts.join("");
 }
 
 /**
@@ -249,21 +277,65 @@ function stringifyCommentChild(c: CommentChildOptions, ctx: BodyContext): string
     children: c.children,
   });
 
-  // Anchored document content emitted between the range markers (inline runs/text).
-  const wrapParts: string[] = [];
-  for (const item of c.wrap ?? []) {
-    wrapParts.push(
-      typeof item === "string"
-        ? stringifyRunInline({ text: item }, ctx)
-        : stringifyRunInline(item, ctx),
-    );
-  }
-
   return (
     `<w:commentRangeStart w:id="${id}"/>` +
-    wrapParts.join("") +
+    stringifyInlineWrap(c.wrap, ctx) +
     `<w:commentRangeEnd w:id="${id}"/>` +
     `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${id}"/></w:r>`
+  );
+}
+
+/**
+ * Expand a `{ bookmark }` sugar child: allocate the bookmark id and emit the
+ * paired bookmarkStart/bookmarkEnd with the anchored content between them.
+ * Bookmarks are pure markup — the only effect is the two markers.
+ */
+function stringifyBookmarkChild(b: BookmarkChildOptions, ctx: BodyContext): string {
+  const id = ctx.file.markupIds.rangeNext++;
+  const startAttrs = buildBookmarkStartAttrs({
+    id,
+    name: b.name,
+    displacedByCustomXml: b.displacedByCustomXml,
+    colFirst: b.colFirst,
+    colLast: b.colLast,
+  });
+  const endAttrs = buildMarkupRangeAttrs({ id, displacedByCustomXml: b.displacedByCustomXml });
+  return `<w:bookmarkStart ${startAttrs}/>${stringifyInlineWrap(b.wrap, ctx)}<w:bookmarkEnd ${endAttrs}/>`;
+}
+
+/**
+ * Expand a `{ moveFrom }` / `{ moveTo }` sugar child: allocate the range id and
+ * the move-run id, then emit the paired range markers with the moved run between
+ * them. The move run (CT_TrackChange) carries the moved content.
+ */
+function stringifyMoveRangeChild(
+  kind: "moveFrom" | "moveTo",
+  opts: MoveRangeChildOptions,
+  ctx: BodyContext,
+): string {
+  const rangeId = ctx.file.markupIds.rangeNext++;
+  const runId = ctx.file.markupIds.moveRunNext++;
+  const isMoveFrom = kind === "moveFrom";
+  const startTag = isMoveFrom ? "w:moveFromRangeStart" : "w:moveToRangeStart";
+  const endTag = isMoveFrom ? "w:moveFromRangeEnd" : "w:moveToRangeEnd";
+  const runTag = isMoveFrom ? "w:moveFrom" : "w:moveTo";
+  const rangeStartAttrs = buildMoveRangeStartAttrs({
+    id: rangeId,
+    name: opts.name,
+    author: opts.author,
+    date: opts.date,
+    displacedByCustomXml: opts.displacedByCustomXml,
+    colFirst: opts.colFirst,
+    colLast: opts.colLast,
+  });
+  const endAttrs = buildMarkupRangeAttrs({
+    id: rangeId,
+    displacedByCustomXml: opts.displacedByCustomXml,
+  });
+  return (
+    `<${startTag} ${rangeStartAttrs}/>` +
+    `<${runTag} w:id="${runId}" w:author="${escapeXml(opts.author)}" w:date="${opts.date}">${stringifyInlineWrap(opts.wrap, ctx)}</${runTag}>` +
+    `<${endTag} ${endAttrs}/>`
   );
 }
 
@@ -317,19 +389,13 @@ export function stringifyChildDispatch(
 
   // Bookmark markers — pure XML
   if ("bookmarkStart" in child) {
-    const bs = child.bookmarkStart;
-    const a: string[] = [`w:id="${bs.id}"`, `w:name="${escapeXml(bs.name)}"`];
-    if (bs.displacedByCustomXml) a.push(`w:displacedByCustomXml="${bs.displacedByCustomXml}"`);
-    if (bs.colFirst !== undefined) a.push(`w:colFirst="${bs.colFirst}"`);
-    if (bs.colLast !== undefined) a.push(`w:colLast="${bs.colLast}"`);
-    return `<w:bookmarkStart ${a.join(" ")}/>`;
+    return `<w:bookmarkStart ${buildBookmarkStartAttrs(child.bookmarkStart)}/>`;
   }
   if ("bookmarkEnd" in child) {
-    const be = child.bookmarkEnd;
-    const a: string[] = [`w:id="${be.id}"`];
-    if (be.displacedByCustomXml) a.push(`w:displacedByCustomXml="${be.displacedByCustomXml}"`);
-    return `<w:bookmarkEnd ${a.join(" ")}/>`;
+    return `<w:bookmarkEnd ${buildMarkupRangeAttrs(child.bookmarkEnd)}/>`;
   }
+  // Bookmark sugar — library allocates the id and pairs start/end.
+  if ("bookmark" in child) return stringifyBookmarkChild(child.bookmark, ctx);
 
   // Symbol run — direct XML output.
   // <w:sym> is a self-closing element, not text: emit it directly so it is
@@ -717,6 +783,9 @@ export function stringifyChildDispatch(
   }
   if ("moveToRangeEnd" in child)
     return `<w:moveToRangeEnd ${buildMarkupRangeAttrs(child.moveToRangeEnd)}/>`;
+  // Move revision sugar — library allocates range + run ids and pairs markers.
+  if ("moveFrom" in child) return stringifyMoveRangeChild("moveFrom", child.moveFrom, ctx);
+  if ("moveTo" in child) return stringifyMoveRangeChild("moveTo", child.moveTo, ctx);
 
   // ── Move revision text runs ──
   if ("movedFrom" in child) {
