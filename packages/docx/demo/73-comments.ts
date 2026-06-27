@@ -142,6 +142,25 @@ const buffer = await generateDocument({
             ],
           },
         },
+        {
+          // `{ comment }` sugar — the library allocates the id, pairs the range
+          // markers + reference, and registers the comment entry. No manual id.
+          paragraph: {
+            children: [
+              "Before comment, ",
+              {
+                comment: {
+                  author: "Sugar Author",
+                  initials: "SA",
+                  date: new Date(),
+                  children: ["Added via the { comment } sugar — no manual id."],
+                  wrap: [{ text: "sugar-wrapped text", bold: true }],
+                },
+              },
+              " after comment.",
+            ],
+          },
+        },
       ],
       properties: {},
     },

@@ -19,6 +19,7 @@ import type { MathInput } from "./math";
 import type { ParagraphPropertiesOptions } from "./properties";
 import type { RunOptions, RunPropertiesOptions } from "./run";
 import type { ChartOptions } from "./run/chart-run";
+import type { CommentChildOptions } from "./run/comment-run";
 import type { FormFieldOptions } from "./run/form-field";
 import type { ImageOptions } from "./run/image-run";
 import type { RubyOptions } from "./run/ruby";
@@ -82,6 +83,7 @@ export type ParagraphChild =
   | { commentRangeStart: MarkupRangeOptions }
   | { commentRangeEnd: MarkupRangeOptions }
   | { commentReference: number }
+  | { comment: CommentChildOptions }
   | { insertion: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   | { deletion: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   | {

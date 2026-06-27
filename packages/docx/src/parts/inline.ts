@@ -20,6 +20,7 @@ import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { MarkupRangeOptions, MoveRangeStartOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { CommentChildOptions } from "@parts/paragraph/run/comment-run";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
@@ -231,6 +232,41 @@ function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
   return a.join(" ");
 }
 
+/**
+ * Expand a `{ comment }` sugar child: allocate the comment id, register the
+ * comment entry (side effect, consumed when word/comments.xml is stringified),
+ * and emit the range markers + anchored content + reference with one shared id.
+ *
+ * The caller never supplies an id — the library owns id allocation and pairing.
+ */
+function stringifyCommentChild(c: CommentChildOptions, ctx: BodyContext): string {
+  const id = ctx.file.comments.nextId++;
+  ctx.file.comments.entries.push({
+    id,
+    author: c.author,
+    initials: c.initials,
+    date: c.date,
+    children: c.children,
+  });
+
+  // Anchored document content emitted between the range markers (inline runs/text).
+  const wrapParts: string[] = [];
+  for (const item of c.wrap ?? []) {
+    wrapParts.push(
+      typeof item === "string"
+        ? stringifyRunInline({ text: item }, ctx)
+        : stringifyRunInline(item, ctx),
+    );
+  }
+
+  return (
+    `<w:commentRangeStart w:id="${id}"/>` +
+    wrapParts.join("") +
+    `<w:commentRangeEnd w:id="${id}"/>` +
+    `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${id}"/></w:r>`
+  );
+}
+
 function runPropertiesXml(child: ParagraphChild): string {
   return stringifyRunProperties(child as RunOptions) ?? "";
 }
@@ -266,6 +302,10 @@ export function stringifyChildDispatch(
       typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
     return `<w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteReference w:id="${id}"${cmf}/></w:r>`;
   }
+
+  // Comment sugar — library allocates the id, emits the range markers +
+  // reference, and registers the comment entry (see stringifyCommentChild).
+  if ("comment" in child) return stringifyCommentChild(child.comment, ctx);
 
   // Comment markers — pure XML
   if ("commentRangeStart" in child)

@@ -30,6 +30,7 @@ import {
 import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 import { HEADER_NAMESPACES, FOOTER_NAMESPACES, stringifyHeaderFooter } from "@parts/header-footer";
+import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 
 import { stringifyDocumentXml, stringifyBodyChild, type BodyContext } from "./body";
 import { DocxWriteContext } from "./context";
@@ -194,6 +195,16 @@ interface XmlifyedFileMapping {
 }
 
 /**
+ * Comments carried by the document: those the caller listed explicitly
+ * (`options.comments`) plus entries registered by `{ comment }` sugar children
+ * during body stringification. Drives both word/comments.xml generation and the
+ * [Content_Types] comments Override, which must stay in sync (OPC consistency).
+ */
+function mergedCommentChildren(ctx: DocxWriteContext): CommentOptions[] {
+  return [...(ctx._options.comments?.children ?? []), ...ctx.comments.entries];
+}
+
+/**
  * Serialize [Content_Types].xml from the part registry, then backfill media/
  * font/embedding `<Default>` entries from the parts actually written.
  *
@@ -215,7 +226,7 @@ function buildContentTypesData(ctx: DocxWriteContext, files: Zippable): string {
     : buildContentTypesFromRegistry(
         new Map<string, boolean | number>([
           ["freshCompile", true],
-          ["hasComments", !!ctx._options.comments?.children?.length],
+          ["hasComments", mergedCommentChildren(ctx).length > 0],
           ["hasBibliography", !!ctx._options.bibliography],
           ["hasGlossary", !!ctx.glossaryOptions],
           ["hasWebSettings", !!ctx.webSettings],
@@ -265,13 +276,14 @@ function xmlifyContext(
   // comments rels, no [Content_Types] Override) when the document carries none.
   // Emitting an empty comments.xml with a dangling relationship is the OPC
   // violation that makes Word reject the package on open.
-  const hasComments = !!ctx._options.comments?.children?.length;
+  const mergedCommentChildrenList = mergedCommentChildren(ctx);
+  const hasComments = mergedCommentChildrenList.length > 0;
   const commentRelationshipCount = hasComments
     ? ctx.comments.relationships.relationshipCount + 1
     : 0;
   const commentCtx = hasComments ? mkCtx({ relationships: ctx.comments.relationships }) : null;
   const commentXmlData = commentCtx
-    ? XML_DECL + commentsDesc.stringify(ctx._options.comments!, commentCtx)
+    ? XML_DECL + commentsDesc.stringify({ children: mergedCommentChildrenList }, commentCtx)
     : "";
 
   const footnoteRelationshipCount = ctx.footNotes.relationships.relationshipCount + 1;

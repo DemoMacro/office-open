@@ -22,6 +22,7 @@ import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { HeaderFooterEntry } from "@parts/header-footer";
 import { Numbering } from "@parts/numbering";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 import type { SettingsOptions } from "@parts/settings/settings";
 import { Styles, extractStyleId } from "@parts/styles";
 import { ExternalStylesFactory } from "@parts/styles/external-styles-factory";
@@ -45,6 +46,48 @@ function mergeById<T extends { id: string }>(
   if (!userStyles || userStyles.length === 0) return factory;
   const userIds = new Set(userStyles.map((s) => s.id));
   return [...factory.filter((s) => !userIds.has(s.id)), ...userStyles];
+}
+
+/**
+ * Highest comment id in an explicit comments list, or -1 when there are none.
+ * Seeds the comment id allocator so auto-allocated ids never collide with ids
+ * the caller already assigned (e.g. round-tripped from an existing document).
+ */
+function maxCommentId(comments: readonly CommentOptions[] | undefined): number {
+  let max = -1;
+  if (comments) {
+    for (const c of comments) {
+      if (c.id > max) max = c.id;
+    }
+  }
+  return max;
+}
+
+/**
+ * Whether any `{ comment }` sugar child appears anywhere in the body tree
+ * (paragraphs, tables, textboxes, SDTs, headers/footers nested in sections).
+ * The document→comments relationship must exist whenever comments.xml will be
+ * generated; since sugar entries are registered during stringify — after the
+ * constructor wires relationships — this pre-scan predicts them so the part and
+ * its relationship stay in sync (OPC consistency). Every `{ comment }` always
+ * stringifies, so the prediction matches the entries actually registered.
+ */
+function bodyContainsCommentSugar(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value !== "object") return false;
+  if (value instanceof Uint8Array || value instanceof Date) return false;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (bodyContainsCommentSugar(item)) return true;
+    }
+    return false;
+  }
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.comment === "object" && obj.comment !== null) return true;
+  for (const key of Object.keys(obj)) {
+    if (bodyContainsCommentSugar(obj[key])) return true;
+  }
+  return false;
 }
 
 /** Interface for document view wrappers — provides relationships access. */
@@ -85,7 +128,13 @@ export class DocxWriteContext implements WriteContext {
   declare public embeddings: EmbeddingCollection;
   declare public altChunks: AltChunkCollection;
   declare public subDocs: SubDocCollection;
-  declare public comments: { relationships: Relationships };
+  declare public comments: {
+    relationships: Relationships;
+    /** Comment entries registered by `{ comment }` sugar children during stringify. */
+    entries: CommentOptions[];
+    /** Next auto-allocated comment id (seeded above any explicit comment id). */
+    nextId: number;
+  };
   declare public footNotes: {
     relationships: Relationships;
     notes: Map<number, (ParagraphOptions | string)[]>;
@@ -147,7 +196,11 @@ export class DocxWriteContext implements WriteContext {
 
     this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
 
-    this.comments = { relationships: new Relationships() };
+    this.comments = {
+      relationships: new Relationships(),
+      entries: [],
+      nextId: maxCommentId(options.comments?.children) + 1,
+    };
     this.fileRelationships = new Relationships();
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };
@@ -425,7 +478,10 @@ export class DocxWriteContext implements WriteContext {
     // produces an orphan comments.xml that Word rejects as an OPC violation
     // (empty part with no [Content_Types] Override when content types are
     // passed through from the source on round-trip).
-    if (this._options.comments?.children?.length) {
+    if (
+      this._options.comments?.children?.length ||
+      bodyContainsCommentSugar(this._options.sections)
+    ) {
       this.document.relationships.addRelationship(
         this._currentRelationshipId++,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
