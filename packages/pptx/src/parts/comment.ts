@@ -3,6 +3,7 @@
  *
  * @module
  */
+import type { UniversalMeasure } from "@office-open/core";
 
 export interface AuthorEntry {
   id: number;
@@ -17,7 +18,7 @@ export interface CommentEntry {
   idx: number;
   date?: string;
   modified?: boolean;
-  x: number;
-  y: number;
+  x: number | UniversalMeasure;
+  y: number | UniversalMeasure;
   text: string;
 }

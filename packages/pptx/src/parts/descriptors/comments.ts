@@ -7,6 +7,7 @@
  * @module
  */
 
+import { convertToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml } from "@office-open/xml";
 import { attr, attrNum, findChild, textOf } from "@office-open/xml";
@@ -60,7 +61,7 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
       const attrs: string[] = [`authorId="${c.authorId}"`, `idx="${c.idx}"`];
       if (c.date != null) attrs.push(`dt="${escapeXml(c.date)}"`);
       parts.push(`<p:cm ${attrs.join(" ")}>`);
-      parts.push(`<p:pos x="${c.x}" y="${c.y}"/>`);
+      parts.push(`<p:pos x="${convertToEmu(c.x)}" y="${convertToEmu(c.y)}"/>`);
       parts.push(`<p:text>${escapeXml(c.text)}</p:text>`);
       // CT_ExtensionListModify.mod lives on <p:extLst>, not <p:cm>.
       if (c.modified !== undefined) {

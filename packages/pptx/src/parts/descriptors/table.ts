@@ -32,7 +32,7 @@ import { paragraphDesc, type ParagraphDescriptorOptions } from "./text";
 export type CellDashStyle = "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
 
 export interface CellBorderDescriptorOptions {
-  width?: number;
+  width?: number | UniversalMeasure;
   color?: string;
   dashStyle?: CellDashStyle;
 }
@@ -364,7 +364,7 @@ function stringifyTcPr(cell: TableCellDescriptorOptions, ctx: PptxWriteContext):
 
 function buildBorderLine(name: string, options: CellBorderDescriptorOptions): string {
   const attrs: string[] = [];
-  if (options.width !== undefined) attrs.push(`w="${options.width}"`);
+  if (options.width !== undefined) attrs.push(`w="${convertToEmu(options.width)}"`);
 
   const children: string[] = [];
   if (options.color) {
