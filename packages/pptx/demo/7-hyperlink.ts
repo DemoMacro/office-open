@@ -11,20 +11,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Hyperlinks in PPTX" },
             fill: "4472C4",
           },
         },
         {
           shape: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 200,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: {
               children: [
                 {

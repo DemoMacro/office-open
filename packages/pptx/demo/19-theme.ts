@@ -34,10 +34,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 300,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "7.9cm",
             textBody: { text: "Custom Theme" },
             geometry: "rect",
             fill: "0F3460",
@@ -45,10 +45,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 100,
-            y: 450,
-            width: 600,
-            height: 100,
+            x: "2.6cm",
+            y: "11.9cm",
+            width: "15.9cm",
+            height: "2.6cm",
             textBody: { text: "Accent2 highlight" },
             geometry: "rect",
             fill: "E94560",

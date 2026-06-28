@@ -29,12 +29,12 @@ const buffer = await generateWorkbook({
       tabColor: "FF4472C4",
       // Chartsheet extensions: pageMargins, pageSetup, headerFooter, sheetProtection
       pageMargins: {
-        left: 0.5,
-        right: 0.5,
-        top: 0.75,
-        bottom: 0.75,
-        header: 0.3,
-        footer: 0.3,
+        left: "1.3cm",
+        right: "1.3cm",
+        top: "1.9cm",
+        bottom: "1.9cm",
+        header: "0.8cm",
+        footer: "0.8cm",
       },
       pageSetup: {
         paperSize: 9, // A4

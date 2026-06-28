@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
-// Example of how to add images to the document - You can use Buffers, UInt8Arrays or Base64 strings
+// Example of how to add images to the document - You can use Buffers, UInt8Arrays or base64 strings
 
 import {
   HorizontalPositionAlign,
@@ -26,8 +26,8 @@ const buffer = await generateDocument({
                   },
                   data: readFileSync("./demo/images/image1.jpeg"),
                   transformation: {
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "jpg",
                 },
@@ -46,8 +46,8 @@ const buffer = await generateDocument({
                     type: "solidFill",
                   },
                   transformation: {
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "png",
                 },
@@ -70,8 +70,8 @@ const buffer = await generateDocument({
                     flip: {
                       vertical: true,
                     },
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "jpg",
                 },
@@ -89,9 +89,9 @@ const buffer = await generateDocument({
                     flip: {
                       horizontal: true,
                     },
-                    height: 150,
+                    height: "4cm",
                     rotation: 225,
-                    width: 150,
+                    width: "4cm",
                   },
                   type: "bmp",
                 },
@@ -110,8 +110,8 @@ const buffer = await generateDocument({
                       horizontal: true,
                       vertical: true,
                     },
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "gif",
                 },
@@ -135,9 +135,9 @@ const buffer = await generateDocument({
                     zIndex: 10,
                   },
                   transformation: {
-                    height: 200,
+                    height: "5.3cm",
                     rotation: 45,
-                    width: 200,
+                    width: "5.3cm",
                   },
                   type: "gif",
                 },
@@ -163,8 +163,8 @@ const buffer = await generateDocument({
                     zIndex: 5,
                   },
                   transformation: {
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "jpg",
                 },
@@ -183,8 +183,8 @@ const buffer = await generateDocument({
                     type: "png",
                   },
                   transformation: {
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "svg",
                 },

@@ -71,8 +71,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
-                    width: 100,
-                    height: 100,
+                    width: "2.6cm",
+                    height: "2.6cm",
                   },
                   type: "gif",
                 },
@@ -143,8 +143,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
-                    width: 100,
-                    height: 100,
+                    width: "2.6cm",
+                    height: "2.6cm",
                   },
                   type: "gif",
                 },
@@ -165,8 +165,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
-                    width: 100,
-                    height: 100,
+                    width: "2.6cm",
+                    height: "2.6cm",
                   },
                   type: "gif",
                 },
@@ -207,10 +207,10 @@ const buffer = await generateDocument({
       properties: {
         page: {
           margin: {
-            bottom: 700,
-            left: 700,
-            right: 700,
-            top: 700,
+            bottom: "1.2cm",
+            left: "1.2cm",
+            right: "1.2cm",
+            top: "1.2cm",
           },
         },
       },

@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Relationships, convertPixelsToEmu } from "@office-open/core";
+import { Relationships, convertToEmu } from "@office-open/core";
 import type { RelationshipType } from "@office-open/core";
 import {
   appPropertiesDesc,
@@ -115,7 +115,7 @@ function buildRels(entries: RelEntry[]): Relationships {
 function resolveSlideSize(size?: SlideSize): { width: number; height: number } {
   if (!size || size === "16:9") return { width: 12192000, height: 6858000 };
   if (size === "4:3") return { width: 9144000, height: 6858000 };
-  return { width: convertPixelsToEmu(size.width), height: convertPixelsToEmu(size.height) };
+  return { width: convertToEmu(size.width), height: convertToEmu(size.height) };
 }
 
 function deriveInitials(name: string): string {
@@ -318,8 +318,8 @@ export function buildCommentData(
         authorId: author.id,
         idx: author.commentCount,
         date: c.date,
-        x: c.x,
-        y: c.y,
+        x: convertToEmu(c.x),
+        y: convertToEmu(c.y),
         text: c.text,
         modified: c.modified,
       });

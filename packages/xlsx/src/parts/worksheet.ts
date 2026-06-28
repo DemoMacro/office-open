@@ -7,8 +7,13 @@
  * @module
  */
 
-import { derivePasswordHash } from "@office-open/core";
-import type { ChartSpaceOptions, PositiveUniversalMeasure } from "@office-open/core";
+import { convertToPt, derivePasswordHash } from "@office-open/core";
+import type {
+  ChartSpaceOptions,
+  DataType,
+  PositiveUniversalMeasure,
+  UniversalMeasure,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, attrsRaw, escapeXml, selfCloseElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -39,7 +44,7 @@ export interface ColumnOptions {
 
 export interface RowOptions {
   cells?: CellOptions[];
-  height?: number;
+  height?: number | UniversalMeasure;
   hidden?: boolean;
   rowNumber?: number;
   /** Spans for the row, e.g. "1:15" (CT_Row @spans) */
@@ -269,7 +274,7 @@ export interface FreezePaneOptions {
 }
 
 export interface WorksheetImageOptions {
-  data: Uint8Array;
+  data: DataType;
   type: "png" | "jpg";
   col: number;
   row: number;
@@ -921,7 +926,7 @@ export interface PhoneticPropertiesOptions {
 
 /** Background image for a worksheet */
 export interface SheetBackgroundImageOptions {
-  data: Uint8Array;
+  data: DataType;
   type: "png" | "jpg";
 }
 
@@ -2005,7 +2010,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     const rowNumber = rowOpts.rowNumber ?? i + 1;
     const rowAttrs: Record<string, string | number | boolean | undefined> = { r: rowNumber };
     if (rowOpts.height !== undefined) {
-      rowAttrs.ht = rowOpts.height;
+      rowAttrs.ht = convertToPt(rowOpts.height);
       rowAttrs.customHeight = 1;
     }
     if (rowOpts.hidden) {

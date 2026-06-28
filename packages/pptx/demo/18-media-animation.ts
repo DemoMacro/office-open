@@ -17,10 +17,10 @@ const options: PresentationOptions = {
         {
           video: {
             id: 100,
-            x: 50,
-            y: 100,
-            width: 400,
-            height: 300,
+            x: "1.3cm",
+            y: "2.6cm",
+            width: "10.6cm",
+            height: "7.9cm",
             data: videoData,
             type: "mp4",
             poster: posterData,
@@ -29,10 +29,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: { text: "Video Auto-Play" },
             fill: "4472C4",
           },
@@ -55,10 +55,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: { text: "Opacity Property Animation" },
             fill: "70AD47",
           },
@@ -66,10 +66,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 2,
-            x: 150,
-            y: 150,
-            width: 200,
-            height: 100,
+            x: "4.0cm",
+            y: "4.0cm",
+            width: "5.3cm",
+            height: "2.6cm",
             textBody: { text: "Fade Me" },
             fill: "FFC000",
           },
@@ -95,10 +95,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: { text: "Text-Level Animation" },
             fill: "5B9BD5",
           },
@@ -116,10 +116,10 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            x: 100,
-            y: 150,
-            width: 300,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "7.9cm",
+            height: "2.6cm",
             fill: "FFF2CC",
           },
         },

@@ -4,7 +4,7 @@
  * @module
  */
 
-import { convertPixelsToEmu, xsdTextAnchor } from "@office-open/core";
+import { convertToEmu, xsdTextAnchor } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
@@ -67,19 +67,19 @@ export interface TableCellDescriptorOptions {
 }
 
 export interface TableRowDescriptorOptions {
-  height?: number;
+  height?: number | UniversalMeasure;
   cells: TableCellDescriptorOptions[];
 }
 
 export interface TableDescriptorOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   rows: TableRowDescriptorOptions[];
-  columnWidths?: number[];
+  columnWidths?: (number | UniversalMeasure)[];
   firstRow?: boolean;
   lastRow?: boolean;
   bandRow?: boolean;
@@ -104,10 +104,11 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     const id = opts.id ?? _nextTableId++;
     const name = opts.name ?? `Table ${id}`;
 
-    const x = convertPixelsToEmu(opts.x ?? 0);
-    const y = convertPixelsToEmu(opts.y ?? 0);
-    const w = convertPixelsToEmu(opts.width ?? 100);
-    const h = convertPixelsToEmu(opts.height ?? 100);
+    const x = convertToEmu(opts.x ?? 0);
+    const y = convertToEmu(opts.y ?? 0);
+    // Default 100px when width/height unspecified
+    const w = convertToEmu(opts.width ?? "100px");
+    const h = convertToEmu(opts.height ?? "100px");
 
     const parts: string[] = [];
 
@@ -127,10 +128,10 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     // a:tblPr
     tblParts.push(stringifyTblPr(opts));
 
-    // a:tblGrid
+    // a:tblGrid — gridCol widths are EMU; numbers stay (already EMU), strings convert.
     const colWidths =
       opts.columnWidths && opts.columnWidths.length > 0
-        ? opts.columnWidths
+        ? opts.columnWidths.map(convertToEmu)
         : Array.from({ length: opts.rows[0]?.cells.length ?? 1 }, () => 0);
     const gridCols = colWidths.map((cw) => `<a:gridCol w="${cw}"/>`).join("");
     tblParts.push(`<a:tblGrid>${gridCols}</a:tblGrid>`);
@@ -265,7 +266,7 @@ function stringifyTblPr(opts: TableDescriptorOptions): string {
 }
 
 function stringifyRow(row: TableRowDescriptorOptions, ctx: PptxWriteContext): string {
-  const h = row.height ?? 0;
+  const h = convertToEmu(row.height ?? 0);
   const cellParts: string[] = [];
   for (const cell of row.cells) {
     cellParts.push(stringifyCell(cell, ctx));

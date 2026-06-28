@@ -18,10 +18,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 0,
-            y: 695,
-            width: 1280,
-            height: 25,
+            x: "0.0cm",
+            y: "18.4cm",
+            width: "33.9cm",
+            height: "0.7cm",
             geometry: "rect",
             fill: "4472C4",
           },
@@ -29,10 +29,10 @@ const options: PresentationOptions = {
       ],
       placeholders: {
         slideNumber: {
-          x: 904,
-          y: 667,
-          width: 288,
-          height: 38,
+          x: "23.9cm",
+          y: "17.6cm",
+          width: "7.6cm",
+          height: "1.0cm",
         },
       },
     },
@@ -50,10 +50,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 0,
-            y: 695,
-            width: 1280,
-            height: 25,
+            x: "0.0cm",
+            y: "18.4cm",
+            width: "33.9cm",
+            height: "0.7cm",
             geometry: "rect",
             fill: "FFC000",
           },
@@ -61,10 +61,10 @@ const options: PresentationOptions = {
       ],
       placeholders: {
         slideNumber: {
-          x: 904,
-          y: 667,
-          width: 288,
-          height: 38,
+          x: "23.9cm",
+          y: "17.6cm",
+          width: "7.6cm",
+          height: "1.0cm",
         },
       },
     },
@@ -76,10 +76,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 200,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: { text: "Slide on Light Master" },
             fill: "4472C4",
           },
@@ -92,10 +92,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 200,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: { text: "Slide on Dark Master" },
             fill: "FFC000",
           },
@@ -108,10 +108,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 200,
-            width: 600,
-            height: 300,
+            x: "2.6cm",
+            y: "5.3cm",
+            width: "15.9cm",
+            height: "7.9cm",
             textBody: { text: "Blank Layout on Light" },
             fill: "E8E8E8",
           },
@@ -124,10 +124,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 200,
-            width: 600,
-            height: 300,
+            x: "2.6cm",
+            y: "5.3cm",
+            width: "15.9cm",
+            height: "7.9cm",
             textBody: { text: "Content Layout on Dark" },
             fill: "2C3E50",
           },

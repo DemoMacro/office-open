@@ -444,11 +444,11 @@ export function stringifyChildDispatch(
   // Image — side effect: media registration (content-deduplicated via core Media)
   if ("image" in child) {
     const opts = child.image;
-    const rawData = toUint8Array(opts.data) as Uint8Array;
+    const rawData = toUint8Array(opts.data, { encoding: "base64" }) as Uint8Array;
 
     let mediaData: MediaData;
     if (opts.type === "svg") {
-      const fallbackData = toUint8Array(opts.fallback.data) as Uint8Array;
+      const fallbackData = toUint8Array(opts.fallback.data, { encoding: "base64" }) as Uint8Array;
       const fallbackType = opts.fallback.type;
       // Register the raster fallback first so its file name is allocated, then
       // build the svg entry referencing it. Dedup applies to both independently.

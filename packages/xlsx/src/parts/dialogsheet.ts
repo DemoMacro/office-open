@@ -8,13 +8,15 @@
  * @module
  */
 
+import type { UniversalMeasure } from "@office-open/core";
+
 export interface DialogsheetPageMargins {
-  left?: number;
-  right?: number;
-  top?: number;
-  bottom?: number;
-  header?: number;
-  footer?: number;
+  left?: number | UniversalMeasure;
+  right?: number | UniversalMeasure;
+  top?: number | UniversalMeasure;
+  bottom?: number | UniversalMeasure;
+  header?: number | UniversalMeasure;
+  footer?: number | UniversalMeasure;
 }
 
 export interface DialogsheetPageSetup {

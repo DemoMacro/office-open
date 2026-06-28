@@ -13,10 +13,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 2,
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Entrance Animations" },
             fill: "4472C4",
           },
@@ -24,10 +24,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 3,
-            x: 50,
-            y: 120,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Appear" },
             fill: "ED7D31",
           },
@@ -35,10 +35,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 4,
-            x: 400,
-            y: 120,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Fly In (from left)" },
             fill: "70AD47",
           },
@@ -46,10 +46,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 5,
-            x: 50,
-            y: 250,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "6.6cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Wipe (down)" },
             fill: "FFC000",
           },
@@ -57,10 +57,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 6,
-            x: 400,
-            y: 250,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "6.6cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Dissolve" },
             fill: "5B9BD5",
           },
@@ -68,10 +68,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 7,
-            x: 50,
-            y: 380,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "10.1cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Zoom In" },
             fill: "BF8F00",
           },
@@ -79,10 +79,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 8,
-            x: 400,
-            y: 380,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "10.1cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Split (horizontal)" },
             fill: "7030A0",
           },
@@ -104,10 +104,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Exit Animations" },
             fill: "C00000",
           },
@@ -115,10 +115,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 2,
-            x: 50,
-            y: 120,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Fade Out" },
             fill: "ED7D31",
           },
@@ -126,10 +126,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 3,
-            x: 400,
-            y: 120,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Fly Out (right)" },
             fill: "70AD47",
           },
@@ -137,10 +137,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 4,
-            x: 50,
-            y: 250,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "6.6cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Wipe Out (up)" },
             fill: "FFC000",
           },
@@ -148,10 +148,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 5,
-            x: 400,
-            y: 250,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "6.6cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Dissolve Out" },
             fill: "5B9BD5",
           },
@@ -159,10 +159,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 6,
-            x: 50,
-            y: 380,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "10.1cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Zoom Out" },
             fill: "BF8F00",
           },
@@ -170,10 +170,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 7,
-            x: 400,
-            y: 380,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "10.1cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Split Out" },
             fill: "7030A0",
           },
@@ -194,10 +194,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Emphasis Animations" },
             fill: "548235",
           },
@@ -205,10 +205,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 2,
-            x: 50,
-            y: 120,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Grow/Shrink" },
             fill: "ED7D31",
           },
@@ -216,10 +216,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 3,
-            x: 400,
-            y: 120,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Spin" },
             fill: "70AD47",
           },
@@ -227,10 +227,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 4,
-            x: 50,
-            y: 250,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "6.6cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Color Change" },
             fill: "FFC000",
           },
@@ -238,10 +238,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 5,
-            x: 400,
-            y: 250,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "6.6cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Transparency" },
             fill: "5B9BD5",
           },
@@ -249,10 +249,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 6,
-            x: 50,
-            y: 380,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "10.1cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Pulse" },
             fill: "BF8F00",
           },
@@ -260,10 +260,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 7,
-            x: 400,
-            y: 380,
-            width: 300,
-            height: 100,
+            x: "10.6cm",
+            y: "10.1cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Bold Flash" },
             fill: "7030A0",
           },
@@ -295,10 +295,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Path Animations" },
             fill: "2F5496",
           },
@@ -306,10 +306,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 2,
-            x: 50,
-            y: 120,
-            width: 200,
-            height: 80,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "2.1cm",
             textBody: { text: "Line Path" },
             fill: "ED7D31",
           },
@@ -317,10 +317,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 3,
-            x: 350,
-            y: 120,
-            width: 200,
-            height: 80,
+            x: "9.3cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "2.1cm",
             textBody: { text: "Arc Path" },
             fill: "70AD47",
           },
@@ -328,10 +328,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 4,
-            x: 50,
-            y: 250,
-            width: 200,
-            height: 80,
+            x: "1.3cm",
+            y: "6.6cm",
+            width: "5.3cm",
+            height: "2.1cm",
             textBody: { text: "Circle Path" },
             fill: "FFC000",
           },
@@ -339,10 +339,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 5,
-            x: 350,
-            y: 250,
-            width: 200,
-            height: 80,
+            x: "9.3cm",
+            y: "6.6cm",
+            width: "5.3cm",
+            height: "2.1cm",
             textBody: { text: "Custom Path" },
             fill: "5B9BD5",
           },
@@ -370,10 +370,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 2,
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Extended: Set / Iterate / Command" },
             fill: "4472C4",
           },
@@ -382,10 +382,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 3,
-            x: 50,
-            y: 120,
-            width: 300,
-            height: 80,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "2.1cm",
             textBody: { text: "Set + Fade" },
             fill: "ED7D31",
           },
@@ -394,10 +394,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 4,
-            x: 50,
-            y: 230,
-            width: 400,
-            height: 80,
+            x: "1.3cm",
+            y: "6.1cm",
+            width: "10.6cm",
+            height: "2.1cm",
             textBody: { text: "Per-character animation" },
             fill: "70AD47",
           },
@@ -406,10 +406,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 5,
-            x: 50,
-            y: 340,
-            width: 300,
-            height: 80,
+            x: "1.3cm",
+            y: "9.0cm",
+            width: "7.9cm",
+            height: "2.1cm",
             textBody: { text: "Command" },
             fill: "FFC000",
           },
@@ -459,10 +459,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 2,
-            x: 50,
-            y: 30,
-            width: 600,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "15.9cm",
+            height: "1.6cm",
             textBody: { text: "Build / Sub-Time / Variant Values" },
             fill: "2F5496",
           },
@@ -471,10 +471,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 3,
-            x: 50,
-            y: 120,
-            width: 300,
-            height: 80,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "2.1cm",
             textBody: { text: "Color From/To" },
             fill: "ED7D31",
           },
@@ -483,10 +483,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 4,
-            x: 400,
-            y: 120,
-            width: 200,
-            height: 80,
+            x: "10.6cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "2.1cm",
             textBody: { text: "Motion From/RCtr" },
             fill: "70AD47",
           },
@@ -495,10 +495,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 5,
-            x: 50,
-            y: 240,
-            width: 300,
-            height: 80,
+            x: "1.3cm",
+            y: "6.3cm",
+            width: "7.9cm",
+            height: "2.1cm",
             textBody: { text: "Variant Int" },
             fill: "5B9BD5",
           },
@@ -507,10 +507,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 6,
-            x: 400,
-            y: 240,
-            width: 300,
-            height: 80,
+            x: "10.6cm",
+            y: "6.3cm",
+            width: "7.9cm",
+            height: "2.1cm",
             textBody: { text: "End Cond / SubTN" },
             fill: "BF8F00",
           },
@@ -519,10 +519,10 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 7,
-            x: 50,
-            y: 360,
-            width: 300,
-            height: 80,
+            x: "1.3cm",
+            y: "9.5cm",
+            width: "7.9cm",
+            height: "2.1cm",
             textBody: { text: "Excl + tmPct" },
             fill: "7030A0",
           },

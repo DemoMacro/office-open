@@ -11,10 +11,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -27,16 +27,16 @@ const options: PresentationOptions = {
         },
         {
           lockedCanvas: {
-            x: 100,
-            y: 120,
-            width: 600,
-            height: 300,
+            x: "2.6cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "7.9cm",
             children: [
               {
-                x: 20,
-                y: 20,
-                width: 250,
-                height: 100,
+                x: "0.5cm",
+                y: "0.5cm",
+                width: "6.6cm",
+                height: "2.6cm",
                 fill: "4472C4",
                 textBody: {
                   children: [
@@ -55,10 +55,10 @@ const options: PresentationOptions = {
                 },
               },
               {
-                x: 300,
-                y: 20,
-                width: 250,
-                height: 100,
+                x: "7.9cm",
+                y: "0.5cm",
+                width: "6.6cm",
+                height: "2.6cm",
                 fill: "ED7D31",
                 textBody: {
                   children: [

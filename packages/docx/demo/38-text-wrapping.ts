@@ -41,11 +41,11 @@ const buffer = await generateDocument({
                   data: imageData,
                   floating: {
                     horizontalPosition: {
-                      offset: 2_014_400,
+                      offset: "5.6cm",
                     },
                     margins: {
-                      bottom: 201_440,
-                      top: 201_440,
+                      bottom: "0.6cm",
+                      top: "0.6cm",
                     },
                     verticalPosition: {
                       offset: 0,
@@ -57,8 +57,8 @@ const buffer = await generateDocument({
                     },
                   },
                   transformation: {
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "gif",
                 },
@@ -82,11 +82,11 @@ const buffer = await generateDocument({
                   data: imageData,
                   floating: {
                     horizontalPosition: {
-                      offset: 2_014_400,
+                      offset: "5.6cm",
                     },
                     margins: {
-                      bottom: 201_440,
-                      top: 201_440,
+                      bottom: "0.6cm",
+                      top: "0.6cm",
                     },
                     verticalPosition: {
                       offset: 0,
@@ -98,8 +98,8 @@ const buffer = await generateDocument({
                     },
                   },
                   transformation: {
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "gif",
                 },
@@ -123,11 +123,11 @@ const buffer = await generateDocument({
                   data: imageData,
                   floating: {
                     horizontalPosition: {
-                      offset: 2_014_400,
+                      offset: "5.6cm",
                     },
                     margins: {
-                      bottom: 201_440,
-                      top: 201_440,
+                      bottom: "0.6cm",
+                      top: "0.6cm",
                     },
                     verticalPosition: {
                       offset: 0,
@@ -139,8 +139,8 @@ const buffer = await generateDocument({
                     },
                   },
                   transformation: {
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "gif",
                 },
@@ -164,11 +164,11 @@ const buffer = await generateDocument({
                   data: imageData,
                   floating: {
                     horizontalPosition: {
-                      offset: 2_014_400,
+                      offset: "5.6cm",
                     },
                     margins: {
-                      bottom: 201_440,
-                      top: 201_440,
+                      bottom: "0.6cm",
+                      top: "0.6cm",
                     },
                     verticalPosition: {
                       offset: 0,
@@ -179,8 +179,8 @@ const buffer = await generateDocument({
                     },
                   },
                   transformation: {
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "gif",
                 },
@@ -204,7 +204,7 @@ const buffer = await generateDocument({
                   data: imageData,
                   floating: {
                     horizontalPosition: {
-                      offset: 2_014_400,
+                      offset: "5.6cm",
                     },
                     verticalPosition: {
                       offset: 0,
@@ -215,8 +215,8 @@ const buffer = await generateDocument({
                     },
                   },
                   transformation: {
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "gif",
                 },
@@ -241,7 +241,7 @@ const buffer = await generateDocument({
                   floating: {
                     behindDocument: true,
                     horizontalPosition: {
-                      offset: 2_014_400,
+                      offset: "5.6cm",
                     },
                     verticalPosition: {
                       offset: 0,
@@ -252,8 +252,8 @@ const buffer = await generateDocument({
                     },
                   },
                   transformation: {
-                    height: 200,
-                    width: 200,
+                    height: "5.3cm",
+                    width: "5.3cm",
                   },
                   type: "gif",
                 },

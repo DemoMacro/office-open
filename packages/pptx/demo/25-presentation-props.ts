@@ -122,10 +122,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 200,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: {
               text: "Presentation Properties Demo",
             },
@@ -137,10 +137,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 200,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: {
               children: [{ children: [{ text: "Slide with full props" }] }],
             },

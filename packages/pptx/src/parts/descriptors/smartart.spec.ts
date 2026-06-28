@@ -57,8 +57,9 @@ describe("smartArtDesc round-trip", () => {
     expect(result.name).toBe("Diagram 200");
     expect(result.x).toBe(0);
     expect(result.y).toBe(0);
-    expect(result.width).toBe(100);
-    expect(result.height).toBe(100);
+    // default 100px = 952500 EMU
+    expect(result.width).toBe(952500);
+    expect(result.height).toBe(952500);
   });
 
   it("registers SmartArt data in context when nodes provided", () => {

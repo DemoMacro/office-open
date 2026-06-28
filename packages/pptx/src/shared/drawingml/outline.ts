@@ -1,3 +1,4 @@
+import type { UniversalMeasure } from "@office-open/core";
 import { createOutline, PresetDash, LineEndType, LineEndWidth } from "@office-open/core/drawingml";
 import type {
   OutlineOptions as CoreOutlineOptions,
@@ -8,7 +9,7 @@ import type {
  * PPTX-specific outline options (backward-compatible API).
  */
 export interface OutlineOptions {
-  width?: number;
+  width?: number | UniversalMeasure;
   color?: string;
   dashStyle?: "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
 }

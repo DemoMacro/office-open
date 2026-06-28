@@ -12,20 +12,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Slide with Comments" },
             fill: "4472C4",
           },
         },
         {
           shape: {
-            x: 50,
-            y: 150,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Content to review" },
             fill: "ED7D31",
           },
@@ -35,15 +35,15 @@ const options: PresentationOptions = {
         {
           author: "Alice Wang",
           text: "The title looks great!",
-          x: 200,
-          y: 50,
+          x: "5.3cm",
+          y: "1.3cm",
           date: "2026-05-15T10:00:00Z",
         },
         {
           author: "Bob Li",
           text: "Consider changing the content color.",
-          x: 300,
-          y: 180,
+          x: "7.9cm",
+          y: "4.8cm",
           initials: "BL",
           date: "2026-05-15T11:00:00Z",
         },
@@ -55,10 +55,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Another Slide" },
             fill: "70AD47",
           },
@@ -68,8 +68,8 @@ const options: PresentationOptions = {
         {
           author: "Alice Wang",
           text: "Please review this slide carefully.",
-          x: 200,
-          y: 50,
+          x: "5.3cm",
+          y: "1.3cm",
           date: "2026-05-15T12:00:00Z",
         },
       ],
@@ -80,10 +80,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "No Comments Here" },
             fill: "FFC000",
           },

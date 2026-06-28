@@ -7,7 +7,8 @@
  *
  * @module
  */
-import { convertPixelsToEmu } from "@office-open/core";
+import { convertEmuToPixels, convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 
 import type { MediaDataTransformation } from "./data";
 
@@ -16,8 +17,8 @@ export interface MediaTransformation {
     top?: number;
     left?: number;
   };
-  width: number;
-  height: number;
+  width: number | UniversalMeasure;
+  height: number | UniversalMeasure;
   flip?: {
     vertical?: boolean;
     horizontal?: boolean;
@@ -25,15 +26,13 @@ export interface MediaTransformation {
   rotation?: number;
 }
 
-export const createTransformation = (options: MediaTransformation): MediaDataTransformation => ({
-  emus: {
-    x: convertPixelsToEmu(options.width),
-    y: convertPixelsToEmu(options.height),
-  },
-  pixels: {
-    x: Math.round(options.width),
-    y: Math.round(options.height),
-  },
-  flip: options.flip,
-  rotation: options.rotation ? options.rotation * 60_000 : undefined,
-});
+export const createTransformation = (options: MediaTransformation): MediaDataTransformation => {
+  const cx = convertToEmu(options.width);
+  const cy = convertToEmu(options.height);
+  return {
+    emus: { x: cx, y: cy },
+    pixels: { x: Math.round(convertEmuToPixels(cx)), y: Math.round(convertEmuToPixels(cy)) },
+    flip: options.flip,
+    rotation: options.rotation ? options.rotation * 60_000 : undefined,
+  };
+};

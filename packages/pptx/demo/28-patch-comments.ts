@@ -12,10 +12,10 @@ const buffer = await generatePresentation({
       children: [
         {
           shape: {
-            x: 80,
-            y: 120,
-            width: 720,
-            height: 80,
+            x: "2.1cm",
+            y: "3.2cm",
+            width: "19.1cm",
+            height: "2.1cm",
             textBody: { children: [{ children: [{ text: "Slide one" }] }] },
           },
         },
@@ -25,10 +25,10 @@ const buffer = await generatePresentation({
       children: [
         {
           shape: {
-            x: 80,
-            y: 120,
-            width: 720,
-            height: 80,
+            x: "2.1cm",
+            y: "3.2cm",
+            width: "19.1cm",
+            height: "2.1cm",
             textBody: { children: [{ children: [{ text: "Slide two" }] }] },
           },
         },
@@ -43,8 +43,8 @@ const patched = await patchPresentation({
   outputType: "nodebuffer",
   data: buffer,
   comments: {
-    0: [{ author: "Alice", text: "Review the opening", x: 100, y: 150 }],
-    1: [{ author: "Bob", text: "Add a chart here", x: 100, y: 150 }],
+    0: [{ author: "Alice", text: "Review the opening", x: "2.6cm", y: "4.0cm" }],
+    1: [{ author: "Bob", text: "Add a chart here", x: "2.6cm", y: "4.0cm" }],
   },
 });
 

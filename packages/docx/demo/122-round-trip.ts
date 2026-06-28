@@ -314,7 +314,7 @@ async function main() {
                     { name: "2025", values: [140, 170, 210, 250] },
                   ],
                   title: "Quarterly Revenue",
-                  transformation: { width: 500, height: 300 },
+                  transformation: { width: "13.2cm", height: "7.9cm" },
                 },
               },
             ],
@@ -339,7 +339,7 @@ async function main() {
                       { text: "Deploy" },
                     ],
                   },
-                  transformation: { width: 450, height: 250 },
+                  transformation: { width: "11.9cm", height: "6.6cm" },
                   layout: "process1",
                   style: "simple1",
                   color: "accent1_2",
@@ -377,7 +377,7 @@ async function main() {
                 image: {
                   type: "png",
                   data: imageData,
-                  transformation: { width: 150, height: 150 },
+                  transformation: { width: "4.0cm", height: "4.0cm" },
                   altText: { name: "Dog", description: "A dog picture", title: "Dog Image" },
                 },
               },
@@ -392,7 +392,7 @@ async function main() {
                 image: {
                   type: "png",
                   data: imageData,
-                  transformation: { width: 100, height: 100 },
+                  transformation: { width: "2.6cm", height: "2.6cm" },
                   floating: {
                     horizontalPosition: { offset: 2000000 },
                     verticalPosition: { offset: 0 },

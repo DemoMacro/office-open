@@ -4,7 +4,6 @@ import {
   customPropertiesDesc,
   parseArchive,
   parseCorePropsElement,
-  convertEmuToPixels,
 } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
@@ -407,7 +406,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
       } else if (cx === 9144000 && cy === 6858000) {
         opts.size = "4:3";
       } else if (cx && cy) {
-        opts.size = { width: convertEmuToPixels(cx), height: convertEmuToPixels(cy) };
+        opts.size = { width: cx, height: cy };
       }
     }
   }

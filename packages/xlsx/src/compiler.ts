@@ -14,6 +14,7 @@ import {
   buildCorePropertiesXmlString,
   compileMapping,
   customPropertiesDesc,
+  toUint8Array,
   type XmlifyedFile,
   type Zippable,
 } from "@office-open/core";
@@ -213,10 +214,11 @@ export function compileWorkbook(
       // Process images
       for (const img of imgOpts) {
         const ext = img.type === "jpg" ? "jpeg" : "png";
-        const entry = ctx.media.addMedia(img.data, ext, (fileName) => ({
+        const rawBytes = toUint8Array(img.data, { encoding: "base64" });
+        const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
           fileName,
           type: ext,
-          data: img.data,
+          data: rawBytes,
           width: 0,
           height: 0,
         }));
@@ -338,10 +340,11 @@ export function compileWorkbook(
     // Background picture
     if (bgImg) {
       const ext = bgImg.type === "jpg" ? "jpeg" : bgImg.type;
-      const entry = ctx.media.addMedia(bgImg.data, ext, (fileName) => ({
+      const rawBytes = toUint8Array(bgImg.data, { encoding: "base64" });
+      const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
         fileName,
         type: ext,
-        data: bgImg.data,
+        data: rawBytes,
         width: 0,
         height: 0,
       }));

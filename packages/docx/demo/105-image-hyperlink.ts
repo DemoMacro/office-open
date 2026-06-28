@@ -51,8 +51,8 @@ const buffer = await generateDocument({
                   },
                   data: readFileSync("./demo/images/cat.jpg"),
                   transformation: {
-                    height: 150,
-                    width: 150,
+                    height: "4.0cm",
+                    width: "4.0cm",
                   },
                   type: "jpg",
                 },
@@ -97,8 +97,8 @@ const buffer = await generateDocument({
                   },
                   data: readFileSync("./demo/images/cat.jpg"),
                   transformation: {
-                    height: 150,
-                    width: 150,
+                    height: "4.0cm",
+                    width: "4.0cm",
                   },
                   type: "jpg",
                 },

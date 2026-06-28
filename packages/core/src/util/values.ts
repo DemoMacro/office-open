@@ -12,18 +12,26 @@
 /**
  * A measurement value with optional sign and unit suffix.
  *
- * Supports units: mm (millimeters), cm (centimeters), in (inches),
- * pt (points), pc (picas), pi (picas).
+ * Supports units: mm (millimeters), cm (centimeters), in (inches), pt (points),
+ * pc (picas), pi (picas), and a project-only px (96 DPI pixels).
  *
- * Pattern: `-?[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)`
+ * px is NOT part of OOXML's ST_UniversalMeasure (whose pattern is
+ * `-?[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)`); it is a project extension so
+ * geometry APIs can accept `"200px"` alongside `"5cm"`. px is converted to EMU
+ * (or TWIP) on input and never written to XML verbatim. Note: Word line spacing
+ * with lineRule="auto" uses a bare multiple (240ths of a line), not a measure,
+ * so px is irrelevant there; spacing before/after and indents accept px and
+ * convert it to twips (1px = 15twip).
  *
  * @example
  * ```typescript
  * const measure: UniversalMeasure = "10.5mm";
+ * const px: UniversalMeasure = "200px";
  * const negative: UniversalMeasure = "-5pt";
  * ```
  */
-export type UniversalMeasure = `${"-" | ""}${number}${"mm" | "cm" | "in" | "pt" | "pc" | "pi"}`;
+export type UniversalMeasure =
+  `${"-" | ""}${number}${"mm" | "cm" | "in" | "pt" | "pc" | "pi" | "px"}`;
 
 /**
  * A positive measurement value with unit suffix.

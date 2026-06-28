@@ -16,10 +16,10 @@ const pres: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 80,
-            y: 120,
-            width: 720,
-            height: 80,
+            x: "2.1cm",
+            y: "3.2cm",
+            width: "19.1cm",
+            height: "2.1cm",
             textBody: {
               children: [
                 {
@@ -40,10 +40,10 @@ const pres: PresentationOptions = {
         },
         {
           shape: {
-            x: 180,
-            y: 220,
-            width: 520,
-            height: 40,
+            x: "4.8cm",
+            y: "5.8cm",
+            width: "13.8cm",
+            height: "1.1cm",
             textBody: {
               children: [
                 {
@@ -62,12 +62,12 @@ const pres: PresentationOptions = {
         },
         {
           connector: {
-            x1: 300,
-            y1: 300,
-            x2: 580,
-            y2: 300,
+            x1: "7.9cm",
+            y1: "7.9cm",
+            x2: "15.3cm",
+            y2: "7.9cm",
             endArrowhead: "triangle",
-            outline: { color: "FFC000", width: 2 },
+            outline: { color: "FFC000", width: "2pt" },
           },
         },
       ],
@@ -78,20 +78,20 @@ const pres: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.3cm",
             textBody: { text: "Table (JSON API)" },
             fill: "4472C4",
           },
         },
         {
           table: {
-            x: 50,
-            y: 100,
-            width: 700,
-            height: 280,
+            x: "1.3cm",
+            y: "2.6cm",
+            width: "18.5cm",
+            height: "7.4cm",
             rows: [
               {
                 cells: [
@@ -171,32 +171,48 @@ const pres: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 20,
-            width: 300,
-            height: 40,
+            x: "1.3cm",
+            y: "0.5cm",
+            width: "7.9cm",
+            height: "1.1cm",
             textBody: { text: "Lines & Connectors" },
             fill: "70AD47",
           },
         },
-        { line: { x1: 50, y1: 80, x2: 800, y2: 80, outline: { color: "4472C4", width: 2 } } },
-        { line: { x1: 50, y1: 100, x2: 400, y2: 300, outline: { color: "ED7D31", width: 3 } } },
+        {
+          line: {
+            x1: "1.3cm",
+            y1: "2.1cm",
+            x2: "21.2cm",
+            y2: "2.1cm",
+            outline: { color: "4472C4", width: "2pt" },
+          },
+        },
+        {
+          line: {
+            x1: "1.3cm",
+            y1: "2.6cm",
+            x2: "10.6cm",
+            y2: "7.9cm",
+            outline: { color: "ED7D31", width: "3pt" },
+          },
+        },
         {
           connector: {
-            x1: 450,
-            y1: 100,
-            x2: 800,
-            y2: 300,
+            x1: "11.9cm",
+            y1: "2.6cm",
+            x2: "21.2cm",
+            y2: "7.9cm",
             endArrowhead: "stealth",
-            outline: { color: "70AD47", width: 2 },
+            outline: { color: "70AD47", width: "2pt" },
           },
         },
         {
           shape: {
-            x: 50,
-            y: 340,
-            width: 350,
-            height: 50,
+            x: "1.3cm",
+            y: "9.0cm",
+            width: "9.3cm",
+            height: "1.3cm",
             textBody: { text: "\u2190 Line        Connector \u2192" },
             fill: "F2F2F2",
           },
@@ -209,47 +225,47 @@ const pres: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 20,
-            width: 400,
-            height: 50,
+            x: "1.3cm",
+            y: "0.5cm",
+            width: "10.6cm",
+            height: "1.3cm",
             textBody: { text: "Group Shapes (JSON)" },
             fill: "7030A0",
           },
         },
         {
           group: {
-            x: 50,
-            y: 90,
-            width: 350,
-            height: 200,
+            x: "1.3cm",
+            y: "2.4cm",
+            width: "9.3cm",
+            height: "5.3cm",
             children: [
               {
                 shape: {
-                  x: 0,
-                  y: 0,
-                  width: 160,
-                  height: 90,
+                  x: "0.0cm",
+                  y: "0.0cm",
+                  width: "4.2cm",
+                  height: "2.4cm",
                   textBody: { text: "A" },
                   fill: "4472C4",
                 },
               },
               {
                 shape: {
-                  x: 190,
-                  y: 0,
-                  width: 160,
-                  height: 90,
+                  x: "5.0cm",
+                  y: "0.0cm",
+                  width: "4.2cm",
+                  height: "2.4cm",
                   textBody: { text: "B" },
                   fill: "ED7D31",
                 },
               },
               {
                 shape: {
-                  x: 0,
-                  y: 110,
-                  width: 350,
-                  height: 90,
+                  x: "0.0cm",
+                  y: "2.9cm",
+                  width: "9.3cm",
+                  height: "2.4cm",
                   textBody: { text: "C (wide)" },
                   fill: "70AD47",
                 },
@@ -259,19 +275,21 @@ const pres: PresentationOptions = {
         },
         {
           group: {
-            x: 450,
-            y: 90,
-            width: 300,
-            height: 200,
+            x: "11.9cm",
+            y: "2.4cm",
+            width: "7.9cm",
+            height: "5.3cm",
             rotation: 15,
             children: [
-              { shape: { x: 0, y: 0, width: 300, height: 200, fill: "FFC000" } },
+              {
+                shape: { x: "0.0cm", y: "0.0cm", width: "7.9cm", height: "5.3cm", fill: "FFC000" },
+              },
               {
                 shape: {
-                  x: 30,
-                  y: 40,
-                  width: 240,
-                  height: 120,
+                  x: "0.8cm",
+                  y: "1.1cm",
+                  width: "6.3cm",
+                  height: "3.2cm",
                   textBody: { text: "Rotated Group" },
                   fill: "FFFFFF",
                 },
@@ -287,10 +305,10 @@ const pres: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 20,
-            width: 600,
-            height: 40,
+            x: "1.3cm",
+            y: "0.5cm",
+            width: "15.9cm",
+            height: "1.1cm",
             textBody: {
               children: [
                 {
@@ -304,10 +322,10 @@ const pres: PresentationOptions = {
         // Bold / Italic / Underline / Color
         {
           shape: {
-            x: 50,
-            y: 80,
-            width: 700,
-            height: 35,
+            x: "1.3cm",
+            y: "2.1cm",
+            width: "18.5cm",
+            height: "0.9cm",
             textBody: {
               children: [
                 {
@@ -331,10 +349,10 @@ const pres: PresentationOptions = {
         // Superscript / Subscript
         {
           shape: {
-            x: 50,
-            y: 130,
-            width: 400,
-            height: 35,
+            x: "1.3cm",
+            y: "3.4cm",
+            width: "10.6cm",
+            height: "0.9cm",
             textBody: {
               children: [
                 {
@@ -354,11 +372,11 @@ const pres: PresentationOptions = {
         // Bullet list (plain-object paragraphs)
         {
           shape: {
-            x: 50,
-            y: 180,
-            width: 300,
-            height: 150,
-            outline: { color: "4472C4", width: 1 },
+            x: "1.3cm",
+            y: "4.8cm",
+            width: "7.9cm",
+            height: "4.0cm",
+            outline: { color: "4472C4", width: "1pt" },
             textBody: {
               children: [
                 {
@@ -380,11 +398,11 @@ const pres: PresentationOptions = {
         // Numbered list
         {
           shape: {
-            x: 380,
-            y: 180,
-            width: 300,
-            height: 150,
-            outline: { color: "ED7D31", width: 1 },
+            x: "10.1cm",
+            y: "4.8cm",
+            width: "7.9cm",
+            height: "4.0cm",
+            outline: { color: "ED7D31", width: "1pt" },
             textBody: {
               children: [
                 {
@@ -406,10 +424,10 @@ const pres: PresentationOptions = {
         // Gradient fill shape
         {
           shape: {
-            x: 50,
-            y: 360,
-            width: 300,
-            height: 100,
+            x: "1.3cm",
+            y: "9.5cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Gradient Fill" },
             fill: {
               type: "gradient",
@@ -423,10 +441,10 @@ const pres: PresentationOptions = {
         // Radial gradient
         {
           shape: {
-            x: 380,
-            y: 360,
-            width: 300,
-            height: 100,
+            x: "10.1cm",
+            y: "9.5cm",
+            width: "7.9cm",
+            height: "2.6cm",
             textBody: { text: "Radial Gradient" },
             fill: {
               type: "gradient",

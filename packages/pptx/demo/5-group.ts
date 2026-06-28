@@ -11,47 +11,47 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Group Shape Demo" },
             fill: "4472C4",
           },
         },
         {
           group: {
-            x: 50,
-            y: 120,
-            width: 300,
-            height: 200,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "5.3cm",
             children: [
               {
                 shape: {
-                  x: 0,
-                  y: 0,
-                  width: 140,
-                  height: 90,
+                  x: "0.0cm",
+                  y: "0.0cm",
+                  width: "3.7cm",
+                  height: "2.4cm",
                   textBody: { text: "Shape A" },
                   fill: "ED7D31",
                 },
               },
               {
                 shape: {
-                  x: 160,
-                  y: 0,
-                  width: 140,
-                  height: 90,
+                  x: "4.2cm",
+                  y: "0.0cm",
+                  width: "3.7cm",
+                  height: "2.4cm",
                   textBody: { text: "Shape B" },
                   fill: "70AD47",
                 },
               },
               {
                 shape: {
-                  x: 0,
-                  y: 110,
-                  width: 300,
-                  height: 90,
+                  x: "0.0cm",
+                  y: "2.9cm",
+                  width: "7.9cm",
+                  height: "2.4cm",
                   textBody: { text: "Shape C (wide)" },
                   fill: "5B9BD5",
                 },
@@ -61,27 +61,27 @@ const options: PresentationOptions = {
         },
         {
           group: {
-            x: 400,
-            y: 120,
-            width: 250,
-            height: 200,
+            x: "10.6cm",
+            y: "3.2cm",
+            width: "6.6cm",
+            height: "5.3cm",
             rotation: 10,
             children: [
               {
                 shape: {
-                  x: 0,
-                  y: 0,
-                  width: 250,
-                  height: 200,
+                  x: "0.0cm",
+                  y: "0.0cm",
+                  width: "6.6cm",
+                  height: "5.3cm",
                   fill: "FFC000",
                 },
               },
               {
                 shape: {
-                  x: 25,
-                  y: 25,
-                  width: 200,
-                  height: 150,
+                  x: "0.7cm",
+                  y: "0.7cm",
+                  width: "5.3cm",
+                  height: "4.0cm",
                   textBody: { text: "Rotated Group" },
                   fill: "FFFFFF",
                 },
@@ -96,44 +96,44 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Nested Groups" },
             fill: "7030A0",
           },
         },
         {
           group: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             children: [
               {
                 group: {
-                  x: 0,
-                  y: 0,
-                  width: 280,
-                  height: 160,
+                  x: "0.0cm",
+                  y: "0.0cm",
+                  width: "7.4cm",
+                  height: "4.2cm",
                   children: [
                     {
                       shape: {
-                        x: 0,
-                        y: 0,
-                        width: 130,
-                        height: 160,
+                        x: "0.0cm",
+                        y: "0.0cm",
+                        width: "3.4cm",
+                        height: "4.2cm",
                         textBody: { text: "Inner A" },
                         fill: "4472C4",
                       },
                     },
                     {
                       shape: {
-                        x: 150,
-                        y: 0,
-                        width: 130,
-                        height: 160,
+                        x: "4.0cm",
+                        y: "0.0cm",
+                        width: "3.4cm",
+                        height: "4.2cm",
                         textBody: { text: "Inner B" },
                         fill: "ED7D31",
                       },
@@ -143,37 +143,37 @@ const options: PresentationOptions = {
               },
               {
                 group: {
-                  x: 300,
-                  y: 0,
-                  width: 300,
-                  height: 350,
+                  x: "7.9cm",
+                  y: "0.0cm",
+                  width: "7.9cm",
+                  height: "9.3cm",
                   children: [
                     {
                       shape: {
-                        x: 0,
-                        y: 0,
-                        width: 300,
-                        height: 160,
+                        x: "0.0cm",
+                        y: "0.0cm",
+                        width: "7.9cm",
+                        height: "4.2cm",
                         textBody: { text: "Right Top" },
                         fill: "70AD47",
                       },
                     },
                     {
                       shape: {
-                        x: 0,
-                        y: 180,
-                        width: 140,
-                        height: 170,
+                        x: "0.0cm",
+                        y: "4.8cm",
+                        width: "3.7cm",
+                        height: "4.5cm",
                         textBody: { text: "RT Bot L" },
                         fill: "FFC000",
                       },
                     },
                     {
                       shape: {
-                        x: 160,
-                        y: 180,
-                        width: 140,
-                        height: 170,
+                        x: "4.2cm",
+                        y: "4.8cm",
+                        width: "3.7cm",
+                        height: "4.5cm",
                         textBody: { text: "RT Bot R" },
                         fill: "5B9BD5",
                       },

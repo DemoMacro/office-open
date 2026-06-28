@@ -17,10 +17,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 200,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: { text: "Introduction - Slide 1" },
           },
         },
@@ -31,10 +31,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 200,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: { text: "Introduction - Slide 2" },
           },
         },
@@ -46,10 +46,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 200,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: { text: "Content - Slide 3" },
           },
         },
@@ -60,10 +60,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 200,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "5.3cm",
             textBody: { text: "Ungrouped Slide 4" },
           },
         },

@@ -21,8 +21,8 @@ const buffer = await generateDocument({
                 wpsShape: {
                   children: ["This is a basic WPS text box with just width and height."],
                   transformation: {
-                    height: 80,
-                    width: 400,
+                    height: "2.1cm",
+                    width: "10.6cm",
                   },
                 },
               },
@@ -56,8 +56,8 @@ const buffer = await generateDocument({
                   },
                   fill: "D6E4F0",
                   transformation: {
-                    height: 80,
-                    width: 400,
+                    height: "2.1cm",
+                    width: "10.6cm",
                   },
                 },
               },
@@ -80,9 +80,9 @@ const buffer = await generateDocument({
                     width: 12_700,
                   },
                   transformation: {
-                    height: 60,
+                    height: "1.6cm",
                     rotation: 15,
-                    width: 300,
+                    width: "7.9cm",
                   },
                 },
               },
@@ -116,8 +116,8 @@ const buffer = await generateDocument({
                     width: 19_050,
                   },
                   transformation: {
-                    height: 70,
-                    width: 350,
+                    height: "1.9cm",
+                    width: "9.3cm",
                   },
                 },
               },
@@ -137,10 +137,10 @@ const buffer = await generateDocument({
                 wpsShape: {
                   bodyProperties: {
                     margins: {
-                      bottom: 72_000,
-                      left: 144_000,
-                      right: 144_000,
-                      top: 72_000,
+                      bottom: "0.2cm",
+                      left: "0.4cm",
+                      right: "0.4cm",
+                      top: "0.2cm",
                     },
                     verticalAnchor: VerticalAnchor.CENTER,
                   },
@@ -152,8 +152,8 @@ const buffer = await generateDocument({
                   },
                   fill: "FFF2CC",
                   transformation: {
-                    height: 120,
-                    width: 400,
+                    height: "3.2cm",
+                    width: "10.6cm",
                   },
                 },
               },
@@ -188,8 +188,8 @@ const buffer = await generateDocument({
                     imageType: "png",
                   },
                   transformation: {
-                    height: 150,
-                    width: 300,
+                    height: "4.0cm",
+                    width: "7.9cm",
                   },
                 },
               },
@@ -238,8 +238,8 @@ const buffer = await generateDocument({
                     ],
                   },
                   transformation: {
-                    height: 100,
-                    width: 300,
+                    height: "2.6cm",
+                    width: "7.9cm",
                   },
                 },
               },

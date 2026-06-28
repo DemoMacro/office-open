@@ -8,7 +8,8 @@
  * @module
  */
 
-import { convertPixelsToEmu } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { createDataModel, type TreeNode } from "@office-open/core/smartart";
 import { attr, findChild, findDeep } from "@office-open/xml";
@@ -23,10 +24,10 @@ import { readPositionFromXfrm } from "./shape";
 export interface SmartArtDescriptorOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   /** Pre-generated SmartArt key (e.g. "smartart_1024"). If omitted, auto-generated. */
   smartArtKey?: string;
   /** Tree nodes for the diagram content. */
@@ -73,10 +74,10 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
       });
     }
 
-    const x = convertPixelsToEmu(opts.x ?? 0);
-    const y = convertPixelsToEmu(opts.y ?? 0);
-    const w = convertPixelsToEmu(opts.width ?? 100);
-    const h = convertPixelsToEmu(opts.height ?? 100);
+    const x = convertToEmu(opts.x ?? 0);
+    const y = convertToEmu(opts.y ?? 0);
+    const w = convertToEmu(opts.width ?? "100px");
+    const h = convertToEmu(opts.height ?? "100px");
 
     const parts: string[] = [];
 

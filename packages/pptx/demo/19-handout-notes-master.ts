@@ -42,10 +42,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 50,
-            width: 600,
-            height: 60,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "15.9cm",
+            height: "1.6cm",
             textBody: { text: "Parameterized Master Demo" },
             fill: "4472C4",
           },
@@ -57,10 +57,10 @@ const options: PresentationOptions = {
       children: [
         {
           smartart: {
-            x: 50,
-            y: 130,
-            width: 600,
-            height: 250,
+            x: "1.3cm",
+            y: "3.4cm",
+            width: "15.9cm",
+            height: "6.6cm",
             nodes: [{ text: "Step 1" }, { text: "Step 2" }, { text: "Step 3" }],
             layout: "default",
             style: "simple1",

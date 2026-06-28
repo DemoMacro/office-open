@@ -1,4 +1,5 @@
-import { convertPositionToEmu } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
 import { buildMasterChildrenXml } from "@parts/slide/coerce";
 import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "@shared/constants";
@@ -8,10 +9,10 @@ import type { MasterChild } from "@shared/file";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 
 export interface MasterPlaceholderPosition {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  x: number | UniversalMeasure;
+  y: number | UniversalMeasure;
+  width: number | UniversalMeasure;
+  height: number | UniversalMeasure;
 }
 
 export interface MasterPlaceholderOptions {
@@ -44,7 +45,12 @@ function resolvePos(
 ): { x: number; y: number; cx: number; cy: number } | null {
   if (opt === false) return null;
   if (opt === undefined || opt === true) return ref;
-  return convertPositionToEmu(opt);
+  return {
+    x: convertToEmu(opt.x),
+    y: convertToEmu(opt.y),
+    cx: convertToEmu(opt.width),
+    cy: convertToEmu(opt.height),
+  };
 }
 
 function phSp(

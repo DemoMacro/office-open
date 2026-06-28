@@ -182,13 +182,13 @@ function parseAnchorOrInline(el: Element): AnchorInfo | null {
 
   const info: AnchorInfo = {};
 
-  // Extent (EMU → pixels)
+  // Extent (EMU)
   const extent = findChild(parent, "wp:extent");
   if (extent) {
     const cxEmu = attrNum(extent, "cx");
     const cyEmu = attrNum(extent, "cy");
-    if (cxEmu !== undefined) info.width = convertEmuToPixels(cxEmu);
-    if (cyEmu !== undefined) info.height = convertEmuToPixels(cyEmu);
+    if (cxEmu !== undefined) info.width = cxEmu;
+    if (cyEmu !== undefined) info.height = cyEmu;
   }
 
   // Effect extent (raw EMUs — round-tripped verbatim, never converted to pixels)
@@ -834,8 +834,8 @@ function getDrawingExtent(el: Element): { width?: number; height?: number } {
   const cxEmu = attrNum(extent, "cx");
   const cyEmu = attrNum(extent, "cy");
   return {
-    ...(cxEmu !== undefined ? { width: convertEmuToPixels(cxEmu) } : {}),
-    ...(cyEmu !== undefined ? { height: convertEmuToPixels(cyEmu) } : {}),
+    ...(cxEmu !== undefined ? { width: cxEmu } : {}),
+    ...(cyEmu !== undefined ? { height: cyEmu } : {}),
   };
 }
 

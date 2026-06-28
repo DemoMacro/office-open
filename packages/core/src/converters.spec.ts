@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { convertInchesToTwip, convertMillimetersToTwip } from "./util/converters";
+import {
+  convertInchesToTwip,
+  convertMillimetersToTwip,
+  convertToEmu,
+  convertUniversalMeasureToEmu,
+  convertUniversalMeasureToTwip,
+  parseUniversalMeasure,
+} from "./util/converters";
 
 describe("convertMillimetersToTwip", () => {
   it("should convert 25.4mm to 1440 twips (1 inch)", () => {
@@ -37,5 +44,27 @@ describe("convertInchesToTwip", () => {
   it("should be consistent with mm conversion", () => {
     // 1 inch = 25.4mm
     expect(convertInchesToTwip(1)).toBe(convertMillimetersToTwip(25.4));
+  });
+});
+
+describe("px unit (project extension, 96 DPI)", () => {
+  it("convertToEmu parses px via UniversalMeasure, number stays EMU", () => {
+    expect(convertToEmu("200px")).toBe(200 * 9525); // 1905000
+    expect(convertToEmu(914400)).toBe(914400); // number is already EMU
+    expect(convertToEmu("1in")).toBe(914400); // other units still work
+  });
+
+  it("convertUniversalMeasureToEmu handles px (1px = 9525 EMU)", () => {
+    expect(convertUniversalMeasureToEmu("200px")).toBe(1905000);
+    expect(convertUniversalMeasureToEmu("1in")).toBe(914400);
+  });
+
+  it("convertUniversalMeasureToTwip handles px (1px = 15twip)", () => {
+    expect(convertUniversalMeasureToTwip("200px")).toBe(3000);
+    expect(convertUniversalMeasureToTwip("1in")).toBe(1440);
+  });
+
+  it("parseUniversalMeasure recognizes px", () => {
+    expect(parseUniversalMeasure("200px")).toEqual({ value: 200, unit: "px" });
   });
 });

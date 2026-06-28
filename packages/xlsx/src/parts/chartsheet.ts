@@ -8,18 +8,20 @@
  * @module
  */
 
+import type { UniversalMeasure } from "@office-open/core";
+import { convertToInch } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, escapeXml, findChild } from "@office-open/xml";
 
 // ── Types ──
 
 export interface ChartsheetPageMargins {
-  left?: number;
-  right?: number;
-  top?: number;
-  bottom?: number;
-  header?: number;
-  footer?: number;
+  left?: number | UniversalMeasure;
+  right?: number | UniversalMeasure;
+  top?: number | UniversalMeasure;
+  bottom?: number | UniversalMeasure;
+  header?: number | UniversalMeasure;
+  footer?: number | UniversalMeasure;
 }
 
 export interface ChartsheetPageSetup {
@@ -129,12 +131,12 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       const pm = opts.pageMargins;
       p.push(
         `<pageMargins${attrs({
-          left: pm.left ?? 0.7,
-          right: pm.right ?? 0.7,
-          top: pm.top ?? 0.75,
-          bottom: pm.bottom ?? 0.75,
-          header: pm.header ?? 0.3,
-          footer: pm.footer ?? 0.3,
+          left: convertToInch(pm.left ?? 0.7),
+          right: convertToInch(pm.right ?? 0.7),
+          top: convertToInch(pm.top ?? 0.75),
+          bottom: convertToInch(pm.bottom ?? 0.75),
+          header: convertToInch(pm.header ?? 0.3),
+          footer: convertToInch(pm.footer ?? 0.3),
         })}/>`,
       );
     }

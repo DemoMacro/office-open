@@ -3,6 +3,7 @@ import type {
   AppPropertiesOptions,
   CorePropertiesOptions,
   CustomPropertyOptions,
+  UniversalMeasure,
 } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
 import type { HandoutMasterOptions } from "@parts/handout-master";
@@ -64,8 +65,10 @@ export interface MasterDefinition extends SlideMasterOptions {
 export interface SlideCommentOptions {
   author: string;
   text: string;
-  x: number;
-  y: number;
+  /** Anchor X in EMU or UniversalMeasure (e.g. "200px", "5cm"). */
+  x: number | UniversalMeasure;
+  /** Anchor Y in EMU or UniversalMeasure (e.g. "50px", "2cm"). */
+  y: number | UniversalMeasure;
   initials?: string;
   date?: string;
   modified?: boolean;

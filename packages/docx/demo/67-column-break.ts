@@ -21,7 +21,7 @@ const buffer = await generateDocument({
       properties: {
         column: {
           count: 2,
-          space: 708,
+          space: "1.2cm",
         },
       },
     },

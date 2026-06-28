@@ -27,7 +27,7 @@ const buffer = await generateWorkbook({
         // Row 4: taller row
         {
           cells: [{ value: "Total", style: { font: { bold: true } } }, { value: 750 }],
-          height: 30,
+          height: "1.1cm",
         },
       ],
       columns: [

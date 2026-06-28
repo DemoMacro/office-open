@@ -11,10 +11,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Slide 1 - Default footer" },
             fill: "4472C4",
           },
@@ -26,10 +26,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Slide 2 - No date" },
             fill: "ED7D31",
           },
@@ -41,10 +41,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Slide 3 - Only slide number" },
             fill: "70AD47",
           },
@@ -56,10 +56,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Slide 4 - No header/footer" },
             fill: "FFC000",
           },

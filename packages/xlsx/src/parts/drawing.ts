@@ -7,6 +7,8 @@
  * @module
  */
 
+import { convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -17,11 +19,11 @@ export interface ImageOptions {
   /** 1-based column */
   col: number;
   /** Column offset in EMU (default 0) */
-  colOffset?: number;
+  colOffset?: number | UniversalMeasure;
   /** 1-based row */
   row: number;
   /** Row offset in EMU (default 0) */
-  rowOffset?: number;
+  rowOffset?: number | UniversalMeasure;
   /** Relationship ID for the image */
   rId: string;
   /** Lock anchor with sheet (default true) */
@@ -34,11 +36,11 @@ export interface ChartAnchorOptions {
   /** 1-based column */
   col: number;
   /** Column offset in EMU (default 0) */
-  colOffset?: number;
+  colOffset?: number | UniversalMeasure;
   /** 1-based row */
   row: number;
   /** Row offset in EMU (default 0) */
-  rowOffset?: number;
+  rowOffset?: number | UniversalMeasure;
   /** Relationship ID for the chart */
   rId: string;
   /** Lock anchor with sheet (default true) */
@@ -69,19 +71,19 @@ export interface DrawingImageOptions {
   /** 1-based column (from marker) */
   col: number;
   /** Column offset in EMU (default 0) */
-  colOffset?: number;
+  colOffset?: number | UniversalMeasure;
   /** 1-based row (from marker) */
   row: number;
   /** Row offset in EMU (default 0) */
-  rowOffset?: number;
+  rowOffset?: number | UniversalMeasure;
   /** To cell column (1-based) for twoCellAnchor. Defaults to col + 1. */
   toCol?: number;
   /** To cell row (1-based) for twoCellAnchor. Defaults to row + 1. */
   toRow?: number;
   /** To cell column offset in EMU. */
-  toColOffset?: number;
+  toColOffset?: number | UniversalMeasure;
   /** To cell row offset in EMU. */
-  toRowOffset?: number;
+  toRowOffset?: number | UniversalMeasure;
   /** Relationship ID for the image */
   rId: string;
   /** Anchor type (default "twoCell"). */
@@ -89,13 +91,13 @@ export interface DrawingImageOptions {
   /** editAs for twoCellAnchor (default "oneCell"). */
   editAs?: EditAsType;
   /** Absolute X in EMU (absoluteAnchor). */
-  absoluteX?: number;
+  absoluteX?: number | UniversalMeasure;
   /** Absolute Y in EMU (absoluteAnchor). */
-  absoluteY?: number;
+  absoluteY?: number | UniversalMeasure;
   /** Image width in EMU (a:ext cx, default 400000). */
-  extentCx?: number;
+  extentCx?: number | UniversalMeasure;
   /** Image height in EMU (a:ext cy, default 300000). */
-  extentCy?: number;
+  extentCy?: number | UniversalMeasure;
   /** Lock anchor with sheet (default true) */
   locksWithSheet?: boolean;
   /** Print with sheet (default true) */
@@ -106,11 +108,11 @@ export interface DrawingChartOptions {
   /** 1-based column */
   col: number;
   /** Column offset in EMU (default 0) */
-  colOffset?: number;
+  colOffset?: number | UniversalMeasure;
   /** 1-based row */
   row: number;
   /** Row offset in EMU (default 0) */
-  rowOffset?: number;
+  rowOffset?: number | UniversalMeasure;
   /** Relationship ID for the chart */
   rId: string;
   /** Lock anchor with sheet (default true) */
@@ -194,8 +196,13 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
 // ── Stringify helpers ──
 
 /** Marker cell (0-based col/row + EMU offsets). */
-function markerXml(col: number, colOff: number, row: number, rowOff: number): string {
-  return `<col>${col - 1}</col><colOff>${colOff}</colOff><row>${row - 1}</row><rowOff>${rowOff}</rowOff>`;
+function markerXml(
+  col: number,
+  colOff: number | UniversalMeasure,
+  row: number,
+  rowOff: number | UniversalMeasure,
+): string {
+  return `<col>${col - 1}</col><colOff>${convertToEmu(colOff)}</colOff><row>${row - 1}</row><rowOff>${convertToEmu(rowOff)}</rowOff>`;
 }
 
 function clientDataXml(img: { locksWithSheet?: boolean; printsWithSheet?: boolean }): string {
@@ -215,14 +222,14 @@ function picXml(rId: string, id: number, cx: number, cy: number): string {
 
 function stringifyImage(img: DrawingImageOptions, id: number): string {
   const anchorType = img.anchorType ?? ANCHOR_TYPES.twoCell;
-  const cx = img.extentCx ?? DEFAULT_EXTENT_CX;
-  const cy = img.extentCy ?? DEFAULT_EXTENT_CY;
+  const cx = convertToEmu(img.extentCx ?? DEFAULT_EXTENT_CX);
+  const cy = convertToEmu(img.extentCy ?? DEFAULT_EXTENT_CY);
   const pic = picXml(img.rId, id, cx, cy);
   const clientData = clientDataXml(img);
 
   if (anchorType === ANCHOR_TYPES.absolute) {
-    const x = img.absoluteX ?? 0;
-    const y = img.absoluteY ?? 0;
+    const x = convertToEmu(img.absoluteX ?? 0);
+    const y = convertToEmu(img.absoluteY ?? 0);
     return (
       `<absoluteAnchor><pos x="${x}" y="${y}"/><ext cx="${cx}" cy="${cy}"/>` +
       `${pic}${clientData}</absoluteAnchor>`
@@ -279,9 +286,9 @@ function readNumChild(el: XmlElement, tag: string): number {
 
 interface Marker {
   col: number;
-  colOffset?: number;
+  colOffset?: number | UniversalMeasure;
   row: number;
-  rowOffset?: number;
+  rowOffset?: number | UniversalMeasure;
 }
 
 function readMarker(el: XmlElement): Marker {

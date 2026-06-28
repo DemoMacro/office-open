@@ -11,10 +11,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Fade Transition" },
             fill: "4472C4",
           },
@@ -26,10 +26,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Push Transition (Right)" },
             fill: "ED7D31",
           },
@@ -41,10 +41,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Wipe Transition (Down)" },
             fill: "70AD47",
           },
@@ -56,10 +56,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Cover Transition (From Right)" },
             fill: "FFC000",
           },
@@ -71,10 +71,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Split Transition" },
             fill: "5B9BD5",
           },
@@ -86,10 +86,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Wheel Transition (4 spokes)" },
             fill: "BF8F00",
           },
@@ -101,10 +101,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Dissolve Transition" },
             fill: "7030A0",
           },
@@ -116,10 +116,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Random Transition" },
             fill: "C00000",
           },
@@ -132,10 +132,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Fade with Sound" },
             fill: "4472C4",
           },
@@ -148,10 +148,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 150,
-            width: 500,
-            height: 100,
+            x: "2.6cm",
+            y: "4.0cm",
+            width: "13.2cm",
+            height: "2.6cm",
             textBody: { text: "Push (Stop Sound)" },
             fill: "ED7D31",
           },

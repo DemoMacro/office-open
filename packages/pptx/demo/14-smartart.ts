@@ -12,10 +12,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -28,10 +28,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 50,
-            y: 120,
-            width: 400,
-            height: 300,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "7.9cm",
             nodes: [
               { text: "Item A", children: [{ text: "Sub A1" }, { text: "Sub A2" }] },
               { text: "Item B", children: [{ text: "Sub B1" }] },
@@ -44,10 +44,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 480,
-            y: 120,
-            width: 400,
-            height: 300,
+            x: "12.7cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "7.9cm",
             nodes: [{ text: "Step 1" }, { text: "Step 2" }, { text: "Step 3" }],
             layout: "list1",
             style: "simple2",
@@ -62,10 +62,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -78,10 +78,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 50,
-            y: 120,
-            width: 850,
-            height: 300,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "22.5cm",
+            height: "7.9cm",
             nodes: [
               { text: "Plan" },
               { text: "Design" },
@@ -100,10 +100,10 @@ const options: PresentationOptions = {
       children: [
         {
           smartart: {
-            x: 50,
-            y: 50,
-            width: 850,
-            height: 350,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "22.5cm",
+            height: "9.3cm",
             nodes: [
               { text: "Phase 1" },
               { text: "Phase 2" },
@@ -121,10 +121,10 @@ const options: PresentationOptions = {
       children: [
         {
           smartart: {
-            x: 50,
-            y: 50,
-            width: 850,
-            height: 350,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "22.5cm",
+            height: "9.3cm",
             nodes: [
               { text: "Start" },
               { text: "Process" },
@@ -144,10 +144,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -160,10 +160,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 50,
-            y: 120,
-            width: 400,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [
               { text: "Research" },
               { text: "Design" },
@@ -177,10 +177,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 480,
-            y: 120,
-            width: 400,
-            height: 350,
+            x: "12.7cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [
               { text: "Plan" },
               { text: "Do" },
@@ -201,10 +201,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -223,10 +223,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 400,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "10.6cm",
             nodes: [
               {
                 text: "CEO",
@@ -253,10 +253,10 @@ const options: PresentationOptions = {
       children: [
         {
           smartart: {
-            x: 50,
-            y: 50,
-            width: 600,
-            height: 400,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "15.9cm",
+            height: "10.6cm",
             nodes: [
               {
                 text: "Root",
@@ -283,10 +283,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -305,10 +305,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 50,
-            y: 120,
-            width: 400,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [{ text: "Set A" }, { text: "Set B" }, { text: "Set C" }],
             layout: "venn1",
             style: "burnt1",
@@ -317,10 +317,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 480,
-            y: 120,
-            width: 400,
-            height: 350,
+            x: "12.7cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [
               { text: "Leads" },
               { text: "Prospects" },
@@ -341,10 +341,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -357,10 +357,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 50,
-            y: 120,
-            width: 400,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [
               { text: "Vision" },
               { text: "Strategy" },
@@ -374,10 +374,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 480,
-            y: 120,
-            width: 400,
-            height: 350,
+            x: "12.7cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [{ text: "All" }, { text: "Most" }, { text: "Some" }, { text: "Few" }],
             layout: "pyramid2",
             style: "cartoon2",
@@ -392,10 +392,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -414,10 +414,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 50,
-            y: 120,
-            width: 400,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [
               { text: "Q1: Plan" },
               { text: "Q2: Execute" },
@@ -431,10 +431,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 480,
-            y: 120,
-            width: 400,
-            height: 350,
+            x: "12.7cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [{ text: "Core" }, { text: "Team" }, { text: "Tools" }, { text: "Process" }],
             layout: "radial1",
             style: "burnt2",
@@ -447,10 +447,10 @@ const options: PresentationOptions = {
       children: [
         {
           smartart: {
-            x: 50,
-            y: 50,
-            width: 400,
-            height: 350,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [{ text: "Input" }, { text: "Process" }, { text: "Output" }],
             layout: "balance1",
             style: "powdery2",
@@ -459,10 +459,10 @@ const options: PresentationOptions = {
         },
         {
           smartart: {
-            x: 480,
-            y: 50,
-            width: 400,
-            height: 350,
+            x: "12.7cm",
+            y: "1.3cm",
+            width: "10.6cm",
+            height: "9.3cm",
             nodes: [{ text: "Part A" }, { text: "Part B" }, { text: "Part C" }, { text: "Part D" }],
             layout: "gear1",
             style: "polished3",

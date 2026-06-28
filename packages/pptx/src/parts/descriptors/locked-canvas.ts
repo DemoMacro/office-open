@@ -6,17 +6,18 @@
  * @module
  */
 
-import { convertEmuToPixels, convertPixelsToEmu } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 
 // ── Types ──
 
 export interface LockedCanvasShapeDescriptorOptions {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   geometry?: string;
   fill?: string;
   textBody?: string;
@@ -25,10 +26,10 @@ export interface LockedCanvasShapeDescriptorOptions {
 export interface LockedCanvasDescriptorOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   children?: LockedCanvasShapeDescriptorOptions[];
 }
 
@@ -46,10 +47,10 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
     const id = opts.id ?? _nextLockedCanvasId++;
     const name = opts.name ?? `Locked Canvas ${id}`;
 
-    const x = convertPixelsToEmu(opts.x ?? 0);
-    const y = convertPixelsToEmu(opts.y ?? 0);
-    const cx = convertPixelsToEmu(opts.width ?? 0);
-    const cy = convertPixelsToEmu(opts.height ?? 0);
+    const x = convertToEmu(opts.x ?? 0);
+    const y = convertToEmu(opts.y ?? 0);
+    const cx = convertToEmu(opts.width ?? 0);
+    const cy = convertToEmu(opts.height ?? 0);
 
     const parts: string[] = [];
 
@@ -101,16 +102,16 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
       const off = findChild(xfrm, "a:off");
       if (off) {
         const x = attrNum(off, "x");
-        if (x !== undefined) result.x = convertEmuToPixels(x);
+        if (x !== undefined) result.x = x;
         const y = attrNum(off, "y");
-        if (y !== undefined) result.y = convertEmuToPixels(y);
+        if (y !== undefined) result.y = y;
       }
       const ext = findChild(xfrm, "a:ext");
       if (ext) {
         const cx = attrNum(ext, "cx");
-        if (cx !== undefined) result.width = convertEmuToPixels(cx);
+        if (cx !== undefined) result.width = cx;
         const cy = attrNum(ext, "cy");
-        if (cy !== undefined) result.height = convertEmuToPixels(cy);
+        if (cy !== undefined) result.height = cy;
       }
     }
 
@@ -132,16 +133,16 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
             const off = findChild(spXfrm, "a:off");
             if (off) {
               const x = attrNum(off, "x");
-              if (x !== undefined) shape.x = convertEmuToPixels(x);
+              if (x !== undefined) shape.x = x;
               const y = attrNum(off, "y");
-              if (y !== undefined) shape.y = convertEmuToPixels(y);
+              if (y !== undefined) shape.y = y;
             }
             const ext = findChild(spXfrm, "a:ext");
             if (ext) {
               const cx = attrNum(ext, "cx");
-              if (cx !== undefined) shape.width = convertEmuToPixels(cx);
+              if (cx !== undefined) shape.width = cx;
               const cy = attrNum(ext, "cy");
-              if (cy !== undefined) shape.height = convertEmuToPixels(cy);
+              if (cy !== undefined) shape.height = cy;
             }
           }
 
@@ -195,10 +196,10 @@ function buildCanvasChildren(children: LockedCanvasShapeDescriptorOptions[] | un
 
     // a:spPr
     const spPrParts: string[] = [];
-    const sx = convertPixelsToEmu(opts.x ?? 0);
-    const sy = convertPixelsToEmu(opts.y ?? 0);
-    const scx = convertPixelsToEmu(opts.width ?? 0);
-    const scy = convertPixelsToEmu(opts.height ?? 0);
+    const sx = convertToEmu(opts.x ?? 0);
+    const sy = convertToEmu(opts.y ?? 0);
+    const scx = convertToEmu(opts.width ?? 0);
+    const scy = convertToEmu(opts.height ?? 0);
     spPrParts.push(`<a:xfrm><a:off x="${sx}" y="${sy}"/><a:ext cx="${scx}" cy="${scy}"/></a:xfrm>`);
     spPrParts.push(`<a:prstGeom prst="${opts.geometry ?? "rect"}"><a:avLst/></a:prstGeom>`);
     if (opts.fill) {

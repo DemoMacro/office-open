@@ -12,10 +12,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 80,
-            y: 120,
-            width: 720,
-            height: 80,
+            x: "2.1cm",
+            y: "3.2cm",
+            width: "19.1cm",
+            height: "2.1cm",
             textBody: { children: [{ children: [{ text: "Hello {{name}}!" }] }] },
           },
         },
@@ -25,10 +25,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 80,
-            y: 120,
-            width: 720,
-            height: 80,
+            x: "2.1cm",
+            y: "3.2cm",
+            width: "19.1cm",
+            height: "2.1cm",
             textBody: { children: [{ children: [{ text: "Original second slide" }] }] },
           },
         },
@@ -55,10 +55,10 @@ const patchedBuffer = await patchPresentation({
         children: [
           {
             shape: {
-              x: 80,
-              y: 120,
-              width: 720,
-              height: 80,
+              x: "2.1cm",
+              y: "3.2cm",
+              width: "19.1cm",
+              height: "2.1cm",
               textBody: { children: [{ children: [{ text: "Replaced second slide" }] }] },
             },
           },
@@ -70,10 +70,10 @@ const patchedBuffer = await patchPresentation({
         children: [
           {
             shape: {
-              x: 80,
-              y: 120,
-              width: 720,
-              height: 80,
+              x: "2.1cm",
+              y: "3.2cm",
+              width: "19.1cm",
+              height: "2.1cm",
               textBody: { children: [{ children: [{ text: "Appended third slide" }] }] },
             },
           },

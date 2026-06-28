@@ -1,4 +1,3 @@
-import type { HeightRule } from "@parts/table";
 /**
  * Frame properties module for paragraph text frames in WordprocessingML documents.
  *
@@ -9,6 +8,8 @@ import type { HeightRule } from "@parts/table";
  *
  * @module
  */
+import type { UniversalMeasure } from "@office-open/core";
+import type { HeightRule } from "@parts/table";
 import type { HorizontalPositionAlign, VerticalPositionAlign } from "@shared/constants";
 
 /**
@@ -61,10 +62,10 @@ interface BaseFrameOptions {
   anchorLock?: boolean;
   /** Drop cap effect type */
   dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
-  /** Frame width in twips */
-  width: number;
-  /** Frame height in twips */
-  height: number;
+  /** Frame width in twips or universal measure (e.g., "1cm", "0.5in") */
+  width: number | UniversalMeasure;
+  /** Frame height in twips or universal measure (e.g., "1cm", "0.5in") */
+  height: number | UniversalMeasure;
   /** Text wrapping behavior around the frame */
   wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
   /** Number of lines for drop cap effect */
@@ -78,10 +79,10 @@ interface BaseFrameOptions {
   };
   /** Spacing between frame and surrounding text in twips */
   space?: {
-    /** Horizontal spacing in twips */
-    horizontal: number;
-    /** Vertical spacing in twips */
-    vertical: number;
+    /** Horizontal spacing in twips or universal measure */
+    horizontal: number | UniversalMeasure;
+    /** Vertical spacing in twips or universal measure */
+    vertical: number | UniversalMeasure;
   };
   /** Height rule determining how frame height is calculated */
   rule?: (typeof HeightRule)[keyof typeof HeightRule];
@@ -95,10 +96,10 @@ export type XYFrameOptions = {
   type: "absolute";
   /** Absolute X and Y coordinates in twips */
   position: {
-    /** Horizontal position in twips from the anchor point */
-    x: number;
-    /** Vertical position in twips from the anchor point */
-    y: number;
+    /** Horizontal position in twips or universal measure from the anchor point */
+    x: number | UniversalMeasure;
+    /** Vertical position in twips or universal measure from the anchor point */
+    y: number | UniversalMeasure;
   };
 } & BaseFrameOptions;
 

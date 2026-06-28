@@ -365,6 +365,16 @@ describe("toUint8Array / base64", () => {
     expect(Array.from(toUint8Array(`data:;base64,${b64}`))).toEqual(Array.from(bytes));
   });
 
+  it("toUint8Array decodes a bare base64 string when encoding is 'base64'", () => {
+    // e.g. readFileSync(...).toString("base64") — no data-URL prefix.
+    expect(Array.from(toUint8Array(b64, { encoding: "base64" }))).toEqual(Array.from(bytes));
+  });
+
+  it("toUint8Array treats a bare base64 string as UTF-8 by default", () => {
+    // No encoding hint + not a data URL → UTF-8 text, so it does NOT decode.
+    expect(toUint8Array(b64)).not.toEqual(bytes);
+  });
+
   it("toUint8Array keeps plain (non-data-URL) strings as UTF-8", () => {
     expect(Array.from(toUint8Array("Hello"))).toEqual([72, 101, 108, 108, 111]);
   });

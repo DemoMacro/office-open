@@ -4,7 +4,8 @@
  * @module
  */
 
-import { convertEmuToPixels, convertPixelsToEmu } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import { effectListDesc, fillDesc } from "@office-open/core/drawingml";
@@ -20,16 +21,16 @@ import { parseChild, stringifyChild } from "./bridge";
 // ── Types ──
 
 export interface GroupShapeDescriptorOptions {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   rotation?: number;
   flipHorizontal?: boolean;
   /** Child coordinate system offset (a:chOff). Defaults to {x,y} when omitted. */
-  childOffset?: { x: number; y: number };
+  childOffset?: { x: number | UniversalMeasure; y: number | UniversalMeasure };
   /** Child coordinate system extent (a:chExt). Defaults to {width,height} when omitted. */
-  childExtent?: { cx: number; cy: number };
+  childExtent?: { cx: number | UniversalMeasure; cy: number | UniversalMeasure };
   /** Group-level fill (EG_FillProperties on grpSpPr). */
   fill?: CoreFillOptions;
   /** Group-level effects (EG_EffectProperties on grpSpPr). */
@@ -51,16 +52,16 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     const id = _nextGroupId++;
     const name = "Group";
 
-    const x = convertPixelsToEmu(opts.x ?? 0);
-    const y = convertPixelsToEmu(opts.y ?? 0);
-    const w = convertPixelsToEmu(opts.width ?? 100);
-    const h = convertPixelsToEmu(opts.height ?? 100);
+    const x = convertToEmu(opts.x ?? 0);
+    const y = convertToEmu(opts.y ?? 0);
+    const w = convertToEmu(opts.width ?? "100px");
+    const h = convertToEmu(opts.height ?? "100px");
 
     // chOff/chExt default to off/ext when the child coordinate system is unchanged.
-    const chOffX = opts.childOffset ? convertPixelsToEmu(opts.childOffset.x) : x;
-    const chOffY = opts.childOffset ? convertPixelsToEmu(opts.childOffset.y) : y;
-    const chExtCx = opts.childExtent ? convertPixelsToEmu(opts.childExtent.cx) : w;
-    const chExtCy = opts.childExtent ? convertPixelsToEmu(opts.childExtent.cy) : h;
+    const chOffX = opts.childOffset ? convertToEmu(opts.childOffset.x) : x;
+    const chOffY = opts.childOffset ? convertToEmu(opts.childOffset.y) : y;
+    const chExtCx = opts.childExtent ? convertToEmu(opts.childExtent.cx) : w;
+    const chExtCy = opts.childExtent ? convertToEmu(opts.childExtent.cy) : h;
 
     const xfrmAttrs: string[] = [];
     if (opts.flipHorizontal) xfrmAttrs.push(' flipH="1"');
@@ -115,23 +116,23 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
         const off = findChild(xfrm, "a:off");
         if (off) {
           const x = attrNum(off, "x");
-          if (x !== undefined) result.x = convertEmuToPixels(x);
+          if (x !== undefined) result.x = x;
           const y = attrNum(off, "y");
-          if (y !== undefined) result.y = convertEmuToPixels(y);
+          if (y !== undefined) result.y = y;
         }
         const ext = findChild(xfrm, "a:ext");
         if (ext) {
           const cx = attrNum(ext, "cx");
-          if (cx !== undefined) result.width = convertEmuToPixels(cx);
+          if (cx !== undefined) result.width = cx;
           const cy = attrNum(ext, "cy");
-          if (cy !== undefined) result.height = convertEmuToPixels(cy);
+          if (cy !== undefined) result.height = cy;
         }
         const chOff = findChild(xfrm, "a:chOff");
         if (chOff) {
           const cox = attrNum(chOff, "x");
           const coy = attrNum(chOff, "y");
           if (cox !== undefined && coy !== undefined) {
-            result.childOffset = { x: convertEmuToPixels(cox), y: convertEmuToPixels(coy) };
+            result.childOffset = { x: cox, y: coy };
           }
         }
         const chExt = findChild(xfrm, "a:chExt");
@@ -139,7 +140,7 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
           const ccx = attrNum(chExt, "cx");
           const ccy = attrNum(chExt, "cy");
           if (ccx !== undefined && ccy !== undefined) {
-            result.childExtent = { cx: convertEmuToPixels(ccx), cy: convertEmuToPixels(ccy) };
+            result.childExtent = { cx: ccx, cy: ccy };
           }
         }
         const rot = attrNum(xfrm, "rot");

@@ -19,10 +19,10 @@ const buffer = await generateDocument({
       ],
       properties: {
         column: {
-          children: [{ space: 720, width: 2880 }, { width: 5760 }],
+          children: [{ space: "1.3cm", width: "5.1cm" }, { width: "10.2cm" }],
           count: 2,
           equalWidth: false,
-          space: 720,
+          space: "1.3cm",
         },
       },
     },

@@ -19,10 +19,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -41,10 +41,10 @@ const options: PresentationOptions = {
         },
         {
           video: {
-            x: 50,
-            y: 100,
-            width: 480,
-            height: 270,
+            x: "1.3cm",
+            y: "2.6cm",
+            width: "12.7cm",
+            height: "7.1cm",
             data: videoData,
             type: "mp4",
             name: "Big Buck Bunny",
@@ -54,10 +54,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 50,
-            y: 390,
-            width: 500,
-            height: 40,
+            x: "1.3cm",
+            y: "10.3cm",
+            width: "13.2cm",
+            height: "1.1cm",
             textBody: {
               children: [
                 {

@@ -3,8 +3,9 @@ import { describe, expect, it } from "vite-plus/test";
 import { createTransformation } from "./media";
 
 describe("createTransformation", () => {
-  it("should convert pixels to EMUs with default values", () => {
-    const result = createTransformation({ width: 100, height: 200 });
+  it("treats numbers as EMU and derives pixels", () => {
+    // number = EMU (native, lossless); pixels derived via 1px = 9525 EMU
+    const result = createTransformation({ width: 952500, height: 1905000 });
 
     expect(result).to.deep.equal({
       emus: {
@@ -30,10 +31,17 @@ describe("createTransformation", () => {
     });
   });
 
-  it("should convert offset from pixels to EMUs", () => {
+  it("converts UniversalMeasure (px) to EMU", () => {
+    const result = createTransformation({ width: "100px", height: "200px" });
+
+    expect(result.emus).to.deep.equal({ x: 952500, y: 1905000 });
+    expect(result.pixels).to.deep.equal({ x: 100, y: 200 });
+  });
+
+  it("converts offset UniversalMeasure to EMU", () => {
     const result = createTransformation({
       height: 50,
-      offset: { left: 10, top: 20 },
+      offset: { left: "10px", top: "20px" },
       width: 100,
     });
 

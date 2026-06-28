@@ -8,7 +8,8 @@
  * @module
  */
 
-import { convertPixelsToEmu } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
 import type { ChartSpaceOptions, ChartType } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
@@ -25,10 +26,10 @@ import { readPositionFromXfrm } from "./shape";
 export interface ChartDescriptorOptions extends ChartSpaceOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   /** Pre-generated chart key (e.g. "chart_2048"). If omitted, auto-generated. */
   chartKey?: string;
 }
@@ -54,10 +55,10 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
       pptxCtx.addChart(chartKey, { key: chartKey, chartSpaceXml: chartXml });
     }
 
-    const x = convertPixelsToEmu(opts.x ?? 0);
-    const y = convertPixelsToEmu(opts.y ?? 0);
-    const w = convertPixelsToEmu(opts.width ?? 100);
-    const h = convertPixelsToEmu(opts.height ?? 100);
+    const x = convertToEmu(opts.x ?? 0);
+    const y = convertToEmu(opts.y ?? 0);
+    const w = convertToEmu(opts.width ?? "100px");
+    const h = convertToEmu(opts.height ?? "100px");
 
     const parts: string[] = [];
 

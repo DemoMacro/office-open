@@ -75,10 +75,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 50,
-            y: 120,
-            width: 120,
-            height: 300,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "3.2cm",
+            height: "7.9cm",
             textBody: {
               vertical: "vert",
               children: [
@@ -93,15 +93,15 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "4472C4", width: 1 },
+            outline: { color: "4472C4", width: "1pt" },
           },
         },
         {
           shape: {
-            x: 200,
-            y: 120,
-            width: 120,
-            height: 300,
+            x: "5.3cm",
+            y: "3.2cm",
+            width: "3.2cm",
+            height: "7.9cm",
             textBody: {
               vertical: "vert270",
               children: [
@@ -111,15 +111,15 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "ED7D31", width: 1 },
+            outline: { color: "ED7D31", width: "1pt" },
           },
         },
         {
           shape: {
-            x: 350,
-            y: 120,
-            width: 120,
-            height: 300,
+            x: "9.3cm",
+            y: "3.2cm",
+            width: "3.2cm",
+            height: "7.9cm",
             textBody: {
               vertical: "horz",
               children: [
@@ -129,7 +129,7 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "70AD47", width: 1 },
+            outline: { color: "70AD47", width: "1pt" },
           },
         },
       ],
@@ -139,10 +139,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 50,
-            width: 600,
-            height: 50,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "15.9cm",
+            height: "1.3cm",
             textBody: { text: "Text Anchor & Auto-Fit" },
             fill: "4472C4",
           },
@@ -150,59 +150,59 @@ const options: PresentationOptions = {
         // Top anchor
         {
           shape: {
-            x: 50,
-            y: 120,
-            width: 200,
-            height: 200,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "5.3cm",
             textBody: { anchor: "top", text: "Top anchored text" },
-            outline: { color: "999999", width: 1 },
+            outline: { color: "999999", width: "1pt" },
           },
         },
         // Center anchor
         {
           shape: {
-            x: 280,
-            y: 120,
-            width: 200,
-            height: 200,
+            x: "7.4cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "5.3cm",
             textBody: { anchor: "center", text: "Center anchored text" },
-            outline: { color: "999999", width: 1 },
+            outline: { color: "999999", width: "1pt" },
           },
         },
         // Bottom anchor
         {
           shape: {
-            x: 510,
-            y: 120,
-            width: 200,
-            height: 200,
+            x: "13.5cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "5.3cm",
             textBody: { anchor: "bottom", text: "Bottom anchored text" },
-            outline: { color: "999999", width: 1 },
+            outline: { color: "999999", width: "1pt" },
           },
         },
         // Auto-fit normal
         {
           shape: {
-            x: 50,
-            y: 350,
-            width: 250,
-            height: 80,
+            x: "1.3cm",
+            y: "9.3cm",
+            width: "6.6cm",
+            height: "2.1cm",
             textBody: {
               autoFit: "normal",
               text: "This is a very long text that should auto-fit to shrink within the shape bounds",
             },
-            outline: { color: "4472C4", width: 1 },
+            outline: { color: "4472C4", width: "1pt" },
           },
         },
         // Auto-fit shape
         {
           shape: {
-            x: 330,
-            y: 350,
-            width: 250,
-            height: 80,
+            x: "8.7cm",
+            y: "9.3cm",
+            width: "6.6cm",
+            height: "2.1cm",
             textBody: { autoFit: "shape", text: "Shape auto-fit text" },
-            outline: { color: "ED7D31", width: 1 },
+            outline: { color: "ED7D31", width: "1pt" },
           },
         },
       ],
@@ -212,10 +212,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 50,
-            width: 600,
-            height: 50,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "15.9cm",
+            height: "1.3cm",
             textBody: { text: "Text Margins & Columns" },
             fill: "4472C4",
           },
@@ -223,11 +223,11 @@ const options: PresentationOptions = {
         // Default margins
         {
           shape: {
-            x: 50,
-            y: 120,
-            width: 350,
-            height: 150,
-            outline: { color: "999999", width: 1 },
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "9.3cm",
+            height: "4.0cm",
+            outline: { color: "999999", width: "1pt" },
             textBody: {
               children: [
                 {
@@ -246,10 +246,10 @@ const options: PresentationOptions = {
         // Wide margins
         {
           shape: {
-            x: 430,
-            y: 120,
-            width: 350,
-            height: 150,
+            x: "11.4cm",
+            y: "3.2cm",
+            width: "9.3cm",
+            height: "4.0cm",
             textBody: {
               margins: { top: 100000, bottom: 100000, left: 200000, right: 200000 },
               children: [
@@ -264,16 +264,16 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "ED7D31", width: 1 },
+            outline: { color: "ED7D31", width: "1pt" },
           },
         },
         // 2 columns
         {
           shape: {
-            x: 50,
-            y: 300,
-            width: 730,
-            height: 150,
+            x: "1.3cm",
+            y: "7.9cm",
+            width: "19.3cm",
+            height: "4.0cm",
             textBody: {
               columns: 2,
               columnSpacing: 12,
@@ -289,7 +289,7 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "70AD47", width: 1 },
+            outline: { color: "70AD47", width: "1pt" },
           },
         },
       ],
@@ -299,20 +299,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 50,
-            width: 600,
-            height: 50,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "15.9cm",
+            height: "1.3cm",
             textBody: { text: "Blip Fill & Gradient Path" },
             fill: "4472C4",
           },
         },
         {
           shape: {
-            x: 50,
-            y: 120,
-            width: 400,
-            height: 200,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "10.6cm",
+            height: "5.3cm",
             textBody: { text: "Image Fill" },
             fill: {
               type: "blip",
@@ -325,10 +325,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 480,
-            y: 120,
-            width: 300,
-            height: 200,
+            x: "12.7cm",
+            y: "3.2cm",
+            width: "7.9cm",
+            height: "5.3cm",
             textBody: { text: "Radial Gradient" },
             fill: {
               type: "gradient",
@@ -347,10 +347,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 50,
-            width: 600,
-            height: 50,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "15.9cm",
+            height: "1.3cm",
             textBody: { text: "Shape Locking" },
             fill: "4472C4",
           },
@@ -358,12 +358,12 @@ const options: PresentationOptions = {
         // Locked shape: cannot select, move, resize, or edit text
         {
           shape: {
-            x: 50,
-            y: 120,
-            width: 350,
-            height: 100,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "9.3cm",
+            height: "2.6cm",
             textBody: { text: "Locked: no select, move, resize, text edit" },
-            outline: { color: "ED7D31", width: 1 },
+            outline: { color: "ED7D31", width: "1pt" },
             locking: {
               noSelect: true,
               noMove: true,
@@ -375,12 +375,12 @@ const options: PresentationOptions = {
         // Aspect-locked shape: can move/resize but ratio is fixed
         {
           shape: {
-            x: 430,
-            y: 120,
-            width: 350,
-            height: 100,
+            x: "11.4cm",
+            y: "3.2cm",
+            width: "9.3cm",
+            height: "2.6cm",
             textBody: { text: "Aspect locked: ratio is fixed" },
-            outline: { color: "70AD47", width: 1 },
+            outline: { color: "70AD47", width: "1pt" },
             locking: {
               noChangeAspect: true,
             },

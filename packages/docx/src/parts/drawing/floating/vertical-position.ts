@@ -8,6 +8,7 @@
  *
  * @module
  */
+import { convertToEmu } from "@office-open/core";
 import { element } from "@office-open/xml";
 
 import { VerticalPositionAlign, VerticalPositionRelativeFrom } from "./floating-position";
@@ -58,7 +59,7 @@ export const createVerticalPosition = ({
   const child = align
     ? `<wp:align>${align}</wp:align>`
     : offset !== undefined
-      ? `<wp:posOffset>${offset}</wp:posOffset>`
+      ? `<wp:posOffset>${convertToEmu(offset)}</wp:posOffset>`
       : `<wp:align>${VerticalPositionAlign.TOP}</wp:align>`;
 
   return element(

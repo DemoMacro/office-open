@@ -10,7 +10,6 @@
 import {
   convertEmuToPixels,
   convertEmuToPoints,
-  convertPixelsToEmu,
   convertPointsToEmu,
   convertToEmu,
   toUint8Array,
@@ -94,10 +93,10 @@ export interface TextBodyDescriptorOptions {
 export interface ShapeDescriptorOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   geometry?: string | PresetGeometryOptions;
   customGeometry?: CustomGeometryOptions;
   fill?: CoreFillOptions;
@@ -131,10 +130,10 @@ export interface ShapeDescriptorOptions {
 export interface PictureDescriptorOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
   effects?: EffectsOptions;
   data: Uint8Array;
@@ -397,20 +396,21 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
     const name = opts.name ?? `Picture ${id}`;
     const fileName = `${name.replace(/\s+/g, "_")}.${opts.type}`;
 
-    // Calculate EMU values for width/height
-    const widthEmu = toEmu(opts.width) ?? 0;
-    const heightEmu = toEmu(opts.height) ?? 0;
-    const widthPixels = typeof opts.width === "number" ? opts.width : 0;
-    const heightPixels = typeof opts.height === "number" ? opts.height : 0;
+    // Geometry: number is already EMU, string is UniversalMeasure → EMU
+    const widthEmu = convertToEmu(opts.width ?? 0);
+    const heightEmu = convertToEmu(opts.height ?? 0);
 
     // Register media with the PPTX context (content-deduplicated)
     const mediaEntry = pptx.addImage(fileName, {
       key: fileName,
       type: opts.type,
       fileName,
-      data: toUint8Array(opts.data),
+      data: toUint8Array(opts.data, { encoding: "base64" }),
       transformation: {
-        pixels: { x: widthPixels, y: heightPixels },
+        pixels: {
+          x: Math.round(convertEmuToPixels(widthEmu)),
+          y: Math.round(convertEmuToPixels(heightEmu)),
+        },
         emus: { x: widthEmu, y: heightEmu },
       },
     });
@@ -450,13 +450,13 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
       if (xfrm) {
         const off = findChild(xfrm, "a:off");
         if (off?.attributes) {
-          result.x = Math.round(convertEmuToPixels(Number(off.attributes["x"] ?? 0)));
-          result.y = Math.round(convertEmuToPixels(Number(off.attributes["y"] ?? 0)));
+          result.x = Number(off.attributes["x"] ?? 0);
+          result.y = Number(off.attributes["y"] ?? 0);
         }
         const ext = findChild(xfrm, "a:ext");
         if (ext?.attributes) {
-          result.width = Math.round(convertEmuToPixels(Number(ext.attributes["cx"] ?? 0)));
-          result.height = Math.round(convertEmuToPixels(Number(ext.attributes["cy"] ?? 0)));
+          result.width = Number(ext.attributes["cx"] ?? 0);
+          result.height = Number(ext.attributes["cy"] ?? 0);
         }
       }
 
@@ -545,13 +545,6 @@ function buildLockAttrs(opts: ShapeLockingOptions): string[] {
 
 // ── Shape helper: p:spPr ──
 
-/** Convert PPTX dimension (pixels or UniversalMeasure) to EMU. */
-function toEmu(val: number | string | undefined): number | undefined {
-  if (val === undefined) return undefined;
-  // PPTX numbers are pixels, strings are UniversalMeasure
-  return typeof val === "string" ? convertToEmu(val) : convertPixelsToEmu(val);
-}
-
 function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string {
   const pptx = ctx as PptxWriteContext;
   const parts: string[] = [];
@@ -567,10 +560,10 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
 
   if (hasTransform) {
     const transformOpts: Transform2DOptions = {
-      x: toEmu(opts.x),
-      y: toEmu(opts.y),
-      width: toEmu(opts.width),
-      height: toEmu(opts.height),
+      x: opts.x,
+      y: opts.y,
+      width: opts.width,
+      height: opts.height,
       flipHorizontal: opts.flipHorizontal,
       rotation: opts.rotation,
     };
@@ -598,7 +591,7 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
     if (fillType === "blip") {
       const blipFill = opts.fill as Extract<CoreFillOptions, { type: "blip" }>;
       if (blipFill.data) {
-        const raw = toUint8Array(blipFill.data);
+        const raw = toUint8Array(blipFill.data, { encoding: "base64" });
         const fileName = `image_blip.${blipFill.imageType ?? "png"}`;
         pptx.addImage(fileName, {
           key: fileName,
@@ -771,10 +764,10 @@ function stringifyPicSpPr(opts: PictureDescriptorOptions, ctx: WriteContext): st
 
   // Transform2D (always present for pictures)
   const transformOpts: Transform2DOptions = {
-    x: toEmu(opts.x),
-    y: toEmu(opts.y),
-    width: toEmu(opts.width),
-    height: toEmu(opts.height),
+    x: opts.x,
+    y: opts.y,
+    width: opts.width,
+    height: opts.height,
   };
   const xfrmXml = stringify(transform2DDesc, transformOpts, ctx);
   if (xfrmXml) parts.push(xfrmXml);
@@ -844,12 +837,10 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOpt
   const xfrm = findChild(spPr, "a:xfrm");
   if (xfrm) {
     const transformOpts = parse(transform2DDesc, xfrm, ctx);
-    if (transformOpts.x !== undefined) result.x = Math.round(convertToEmu(transformOpts.x) / 9525);
-    if (transformOpts.y !== undefined) result.y = Math.round(convertToEmu(transformOpts.y) / 9525);
-    if (transformOpts.width !== undefined)
-      result.width = Math.round(convertToEmu(transformOpts.width) / 9525);
-    if (transformOpts.height !== undefined)
-      result.height = Math.round(convertToEmu(transformOpts.height) / 9525);
+    if (transformOpts.x !== undefined) result.x = transformOpts.x;
+    if (transformOpts.y !== undefined) result.y = transformOpts.y;
+    if (transformOpts.width !== undefined) result.width = transformOpts.width;
+    if (transformOpts.height !== undefined) result.height = transformOpts.height;
     if (transformOpts.flipHorizontal !== undefined)
       result.flipHorizontal = transformOpts.flipHorizontal;
     if (transformOpts.rotation !== undefined) result.rotation = transformOpts.rotation;
@@ -891,22 +882,22 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOpt
   return result;
 }
 
-/** Read x/y/width/height (in pixels) from an a:xfrm element. */
+/** Read x/y/width/height (in EMU) from an a:xfrm element. */
 export function readPositionFromXfrm(xfrm: XmlElement): Record<string, number> {
   const result: Record<string, number> = {};
   const off = findChild(xfrm, "a:off");
   if (off) {
     const x = attrNum(off, "x");
-    if (x !== undefined) result.x = Math.round(convertEmuToPixels(x));
+    if (x !== undefined) result.x = x;
     const y = attrNum(off, "y");
-    if (y !== undefined) result.y = Math.round(convertEmuToPixels(y));
+    if (y !== undefined) result.y = y;
   }
   const ext = findChild(xfrm, "a:ext");
   if (ext) {
     const cx = attrNum(ext, "cx");
-    if (cx !== undefined) result.width = Math.round(convertEmuToPixels(cx));
+    if (cx !== undefined) result.width = cx;
     const cy = attrNum(ext, "cy");
-    if (cy !== undefined) result.height = Math.round(convertEmuToPixels(cy));
+    if (cy !== undefined) result.height = cy;
   }
   return result;
 }

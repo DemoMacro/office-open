@@ -18,8 +18,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/parrots.bmp"),
                   transformation: {
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "bmp",
                 },
@@ -34,8 +34,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/image1.jpeg"),
                   transformation: {
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "jpg",
                 },
@@ -50,8 +50,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/dog.png"),
                   transformation: {
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "png",
                 },
@@ -66,8 +66,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   transformation: {
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "jpg",
                 },
@@ -82,8 +82,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/parrots.bmp"),
                   transformation: {
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "bmp",
                 },
@@ -98,8 +98,8 @@ const buffer = await generateDocument({
                 image: {
                   data: Buffer.from(imageBase64Data, "base64"),
                   transformation: {
-                    height: 100,
-                    width: 100,
+                    height: "2.6cm",
+                    width: "2.6cm",
                   },
                   type: "png",
                 },

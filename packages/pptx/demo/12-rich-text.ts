@@ -12,10 +12,10 @@ const options: PresentationOptions = {
         // Title
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 600,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "15.9cm",
+            height: "1.3cm",
             textBody: {
               children: [
                 {
@@ -36,10 +36,10 @@ const options: PresentationOptions = {
         // Bold + Italic + Underline
         {
           shape: {
-            x: 50,
-            y: 100,
-            width: 600,
-            height: 40,
+            x: "1.3cm",
+            y: "2.6cm",
+            width: "15.9cm",
+            height: "1.1cm",
             textBody: {
               children: [
                 {
@@ -71,10 +71,10 @@ const options: PresentationOptions = {
         // Strikethrough
         {
           shape: {
-            x: 50,
-            y: 150,
-            width: 600,
-            height: 40,
+            x: "1.3cm",
+            y: "4.0cm",
+            width: "15.9cm",
+            height: "1.1cm",
             textBody: {
               children: [
                 {
@@ -100,10 +100,10 @@ const options: PresentationOptions = {
         // Superscript + Subscript
         {
           shape: {
-            x: 50,
-            y: 200,
-            width: 600,
-            height: 40,
+            x: "1.3cm",
+            y: "5.3cm",
+            width: "15.9cm",
+            height: "1.1cm",
             textBody: {
               children: [
                 {
@@ -124,10 +124,10 @@ const options: PresentationOptions = {
         // Character spacing
         {
           shape: {
-            x: 50,
-            y: 250,
-            width: 600,
-            height: 40,
+            x: "1.3cm",
+            y: "6.6cm",
+            width: "15.9cm",
+            height: "1.1cm",
             textBody: {
               children: [
                 {
@@ -153,10 +153,10 @@ const options: PresentationOptions = {
         // Capitalization
         {
           shape: {
-            x: 50,
-            y: 300,
-            width: 600,
-            height: 40,
+            x: "1.3cm",
+            y: "7.9cm",
+            width: "15.9cm",
+            height: "1.1cm",
             textBody: {
               children: [
                 {
@@ -182,10 +182,10 @@ const options: PresentationOptions = {
         // Text color
         {
           shape: {
-            x: 50,
-            y: 350,
-            width: 600,
-            height: 40,
+            x: "1.3cm",
+            y: "9.3cm",
+            width: "15.9cm",
+            height: "1.1cm",
             fill: "333333",
             textBody: {
               children: [
@@ -224,11 +224,11 @@ const options: PresentationOptions = {
         // Alignment demo
         {
           shape: {
-            x: 50,
-            y: 420,
-            width: 600,
-            height: 120,
-            outline: { color: "999999", width: 1 },
+            x: "1.3cm",
+            y: "11.1cm",
+            width: "15.9cm",
+            height: "3.2cm",
+            outline: { color: "999999", width: "1pt" },
             textBody: {
               children: [
                 {
@@ -259,11 +259,11 @@ const options: PresentationOptions = {
         // Bullet & numbering
         {
           shape: {
-            x: 50,
-            y: 710,
-            width: 280,
-            height: 200,
-            outline: { color: "4472C4", width: 1 },
+            x: "1.3cm",
+            y: "18.8cm",
+            width: "7.4cm",
+            height: "5.3cm",
+            outline: { color: "4472C4", width: "1pt" },
             textBody: {
               children: [
                 {
@@ -288,11 +288,11 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 360,
-            y: 710,
-            width: 280,
-            height: 200,
-            outline: { color: "ED7D31", width: 1 },
+            x: "9.5cm",
+            y: "18.8cm",
+            width: "7.4cm",
+            height: "5.3cm",
+            outline: { color: "ED7D31", width: "1pt" },
             textBody: {
               children: [
                 {
@@ -322,11 +322,11 @@ const options: PresentationOptions = {
         // RTL, NoProof, Shadow, Outline
         {
           shape: {
-            x: 660,
-            y: 710,
-            width: 280,
-            height: 200,
-            outline: { color: "70AD47", width: 1 },
+            x: "17.5cm",
+            y: "18.8cm",
+            width: "7.4cm",
+            height: "5.3cm",
+            outline: { color: "70AD47", width: "1pt" },
             textBody: {
               children: [
                 {
@@ -357,11 +357,11 @@ const options: PresentationOptions = {
         // Line spacing demo
         {
           shape: {
-            x: 50,
-            y: 560,
-            width: 280,
-            height: 120,
-            outline: { color: "4472C4", width: 1 },
+            x: "1.3cm",
+            y: "14.8cm",
+            width: "7.4cm",
+            height: "3.2cm",
+            outline: { color: "4472C4", width: "1pt" },
             textBody: {
               children: [
                 {
@@ -383,11 +383,11 @@ const options: PresentationOptions = {
         // Fixed line spacing
         {
           shape: {
-            x: 360,
-            y: 560,
-            width: 280,
-            height: 120,
-            outline: { color: "ED7D31", width: 1 },
+            x: "9.5cm",
+            y: "14.8cm",
+            width: "7.4cm",
+            height: "3.2cm",
+            outline: { color: "ED7D31", width: "1pt" },
             textBody: {
               children: [
                 {

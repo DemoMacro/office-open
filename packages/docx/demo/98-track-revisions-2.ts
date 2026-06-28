@@ -55,7 +55,7 @@ const buffer = await generateDocument({
         },
         {
           table: {
-            columnWidths: [2000, 2000],
+            columnWidths: ["3.5cm", "3.5cm"],
             layout: "fixed",
             rows: [
               {
@@ -158,7 +158,7 @@ const buffer = await generateDocument({
         },
         {
           table: {
-            columnWidths: [2000, 2000],
+            columnWidths: ["3.5cm", "3.5cm"],
             layout: "fixed",
             rows: [
               {
@@ -243,7 +243,7 @@ const buffer = await generateDocument({
         },
         {
           table: {
-            columnWidths: [2000, 2000],
+            columnWidths: ["3.5cm", "3.5cm"],
             layout: "fixed",
             rows: [
               {
@@ -328,7 +328,7 @@ const buffer = await generateDocument({
         },
         {
           table: {
-            columnWidths: [2000, 2000],
+            columnWidths: ["3.5cm", "3.5cm"],
             rows: [
               {
                 cells: [
@@ -363,7 +363,7 @@ const buffer = await generateDocument({
                     children: [{ paragraph: "Cell 2" }],
                   },
                 ],
-                height: { rule: HeightRule.EXACT, value: 600 },
+                height: { rule: HeightRule.EXACT, value: "1.1cm" },
               },
               {
                 cells: [
@@ -401,7 +401,7 @@ const buffer = await generateDocument({
         },
         {
           table: {
-            columnWidths: [2000, 2000],
+            columnWidths: ["3.5cm", "3.5cm"],
             layout: "fixed",
             rows: [
               {
@@ -410,7 +410,7 @@ const buffer = await generateDocument({
                   { children: [{ paragraph: "Cell 1" }] },
                   { children: [{ paragraph: "Cell 2" }] },
                 ],
-                height: { rule: HeightRule.EXACT, value: 600 },
+                height: { rule: HeightRule.EXACT, value: "1.1cm" },
                 revision: {
                   author: REVISION_AUTHOR,
                   cantSplit: false,
@@ -455,7 +455,7 @@ const buffer = await generateDocument({
                 style: BorderStyle.DASHED,
               },
             },
-            columnWidths: [2000, 2000],
+            columnWidths: ["3.5cm", "3.5cm"],
             layout: "fixed",
             revision: {
               author: REVISION_AUTHOR,
@@ -512,14 +512,14 @@ const buffer = await generateDocument({
       properties: {
         page: {
           margin: {
-            bottom: 2440,
-            left: 2440,
-            right: 2440,
-            top: 2440,
+            bottom: "4.3cm",
+            left: "4.3cm",
+            right: "4.3cm",
+            top: "4.3cm",
           },
           size: {
-            height: 11_909,
-            width: 16_834,
+            height: "21cm",
+            width: "29.7cm",
           },
         },
         revision: {
@@ -528,10 +528,10 @@ const buffer = await generateDocument({
           id: 20,
           page: {
             margin: {
-              bottom: 1440,
-              left: 1440,
-              right: 1440,
-              top: 1440,
+              bottom: "2.5cm",
+              left: "2.5cm",
+              right: "2.5cm",
+              top: "2.5cm",
             },
           },
         },

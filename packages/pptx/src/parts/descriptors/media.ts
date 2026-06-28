@@ -7,7 +7,8 @@
  * @module
  */
 
-import { convertPixelsToEmu } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, findChild, findDeep } from "@office-open/xml";
@@ -24,10 +25,10 @@ export type PosterType = "png" | "jpg";
 export interface VideoDescriptorOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   data?: DataType;
   type?: VideoType;
   poster?: DataType;
@@ -37,10 +38,10 @@ export interface VideoDescriptorOptions {
 export interface AudioDescriptorOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   data?: DataType;
   type?: AudioType;
 }
@@ -66,10 +67,10 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
     const mediaFileName = `${name.replace(/\s+/g, "_")}.${opts.type ?? "mp4"}`;
     const posterFileName = `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`;
 
-    const x = convertPixelsToEmu(opts.x ?? 0);
-    const y = convertPixelsToEmu(opts.y ?? 0);
-    const w = convertPixelsToEmu(opts.width ?? 0);
-    const h = convertPixelsToEmu(opts.height ?? 0);
+    const x = convertToEmu(opts.x ?? 0);
+    const y = convertToEmu(opts.y ?? 0);
+    const w = convertToEmu(opts.width ?? 0);
+    const h = convertToEmu(opts.height ?? 0);
 
     const parts: string[] = [];
 
@@ -163,10 +164,10 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
     const name = opts.name ?? `Audio ${id}`;
     const mediaFileName = `${name.replace(/\s+/g, "_")}.${opts.type ?? "mp3"}`;
 
-    const x = convertPixelsToEmu(opts.x ?? 0);
-    const y = convertPixelsToEmu(opts.y ?? 0);
-    const w = convertPixelsToEmu(opts.width ?? 0);
-    const h = convertPixelsToEmu(opts.height ?? 0);
+    const x = convertToEmu(opts.x ?? 0);
+    const y = convertToEmu(opts.y ?? 0);
+    const w = convertToEmu(opts.width ?? 0);
+    const h = convertToEmu(opts.height ?? 0);
 
     const parts: string[] = [];
 

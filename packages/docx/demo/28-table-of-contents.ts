@@ -80,7 +80,7 @@ const buffer = await generateDocument({
         name: "TOC 2",
         paragraph: {
           indent: {
-            left: 240,
+            left: "0.4cm",
           },
         },
         quickFormat: true,

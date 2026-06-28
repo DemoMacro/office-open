@@ -29,8 +29,22 @@ export function isBase64DataURL(input: string): boolean {
   return DATA_URL_RE.test(input);
 }
 
+/** Options for {@link toUint8Array}. */
+export interface ToUint8ArrayOptions {
+  /**
+   * How to interpret a plain (non-data-URL) string input. Data URLs
+   * (`data:...;base64,...`) and binary inputs (Buffer/Uint8Array/ArrayBuffer/
+   * DataView/number[]) are auto-detected and ignore this hint.
+   *
+   * - `"utf8"` (default): UTF-8 text.
+   * - `"base64"`: base64-encoded binary — e.g. an image supplied via
+   *   `readFileSync(...).toString("base64")`.
+   */
+  encoding?: "utf8" | "base64";
+}
+
 /** Normalize any supported binary input to a `Uint8Array`. */
-export function toUint8Array(data: DataType): Uint8Array {
+export function toUint8Array(data: DataType, options?: ToUint8ArrayOptions): Uint8Array {
   if (data instanceof Uint8Array) return data;
   if (data instanceof ArrayBuffer) return new Uint8Array(data);
   if (data instanceof DataView)
@@ -38,6 +52,7 @@ export function toUint8Array(data: DataType): Uint8Array {
   if (typeof data === "string") {
     const match = data.match(DATA_URL_RE);
     if (match) return decodeBase64(data.slice(match[0].length));
+    if (options?.encoding === "base64") return decodeBase64(data);
     return new TextEncoder().encode(data);
   }
   if (Array.isArray(data)) return new Uint8Array(data);

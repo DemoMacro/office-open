@@ -33,20 +33,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Table Demo" },
             fill: "4472C4",
           },
         },
         {
           table: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 250,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "6.6cm",
             rows: [
               {
                 cells: [
@@ -80,10 +80,10 @@ const options: PresentationOptions = {
       children: [
         {
           table: {
-            x: 100,
-            y: 80,
-            width: 500,
-            height: 200,
+            x: "2.6cm",
+            y: "2.1cm",
+            width: "13.2cm",
+            height: "5.3cm",
             rows: [
               {
                 cells: [
@@ -110,23 +110,23 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 600,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "15.9cm",
+            height: "1.3cm",
             textBody: { text: "Vertical Align & Cell Margins" },
             fill: "4472C4",
           },
         },
         {
           table: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 250,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "6.6cm",
             rows: [
               {
-                height: 700000,
+                height: "18520.8cm",
                 cells: [
                   {
                     text: "Top",
@@ -146,7 +146,7 @@ const options: PresentationOptions = {
                 ],
               },
               {
-                height: 500000,
+                height: "13229.2cm",
                 cells: [
                   { text: "Default" },
                   { text: "Wide L/R", margins: { left: 300000, right: 300000 } },
@@ -163,20 +163,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 600,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "15.9cm",
+            height: "1.3cm",
             textBody: { text: "Merged Cells" },
             fill: "4472C4",
           },
         },
         {
           table: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 200,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "5.3cm",
             rows: [
               {
                 cells: [
@@ -215,20 +215,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 600,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "15.9cm",
+            height: "1.3cm",
             textBody: { text: "Custom Table Style" },
             fill: "4472C4",
           },
         },
         {
           table: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 250,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "6.6cm",
             rows: [
               {
                 cells: [{ text: "Product" }, { text: "Q1" }, { text: "Q2" }],

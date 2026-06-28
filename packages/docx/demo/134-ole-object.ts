@@ -87,8 +87,8 @@ const doc: DocumentOptions = {
                       dxaOrig: 5400,
                       dyaOrig: 2700,
                       // Display size for the VML preview shape
-                      width: 360,
-                      height: 180,
+                      width: "9.5cm",
+                      height: "4.8cm",
                       // Preview icon rendered via v:imagedata
                       iconImage: { data: iconPng, type: "png", title: "Excel Sheet" },
                       // Embedded OLE object → word/embeddings/oleObject1.bin

@@ -34,7 +34,7 @@ const buffer = await generateDocument({
               },
             ],
             style: {
-              height: 400,
+              height: "10.6cm",
               visibility: "hidden",
               width: "300pt",
               zIndex: "auto",

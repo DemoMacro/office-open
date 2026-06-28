@@ -12,10 +12,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 50,
-            width: 400,
-            height: 100,
+            x: "1.3cm",
+            y: "1.3cm",
+            width: "10.6cm",
+            height: "2.6cm",
             textBody: { text: "With Outline" },
             geometry: "roundRect",
             fill: "FFFFFF",
@@ -24,10 +24,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 500,
-            y: 50,
-            width: 400,
-            height: 100,
+            x: "13.2cm",
+            y: "1.3cm",
+            width: "10.6cm",
+            height: "2.6cm",
             textBody: { text: "Gradient Fill" },
             fill: {
               type: "gradient",
@@ -55,10 +55,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 200,
-            width: 300,
-            height: 200,
+            x: "2.6cm",
+            y: "5.3cm",
+            width: "7.9cm",
+            height: "5.3cm",
             textBody: { text: "On Gradient BG" },
             fill: "FFFFFF",
             outline: { width: 12700, color: "FFC000" },
@@ -82,10 +82,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 500,
-            height: 80,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "13.2cm",
+            height: "2.1cm",
             textBody: { text: "Background with Shadow Effect" },
             fill: "4472C4",
           },
@@ -107,10 +107,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 100,
-            y: 100,
-            width: 500,
-            height: 80,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "13.2cm",
+            height: "2.1cm",
             textBody: { text: "Background with shadeToTitle" },
             fill: "FFFFFF",
           },

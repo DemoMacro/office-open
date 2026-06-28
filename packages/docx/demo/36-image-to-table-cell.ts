@@ -27,7 +27,7 @@ const buffer = await generateDocument({
                             {
                               image: {
                                 data: imageData,
-                                transformation: { height: 100, width: 100 },
+                                transformation: { height: "2.6cm", width: "2.6cm" },
                                 type: "jpg",
                               },
                             },
@@ -67,7 +67,7 @@ const buffer = await generateDocument({
                               {
                                 image: {
                                   data: imageData,
-                                  transformation: { height: 100, width: 100 },
+                                  transformation: { height: "2.6cm", width: "2.6cm" },
                                   type: "jpg",
                                 },
                               },

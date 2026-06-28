@@ -25,7 +25,7 @@ const doc = await patchDocument({
         {
           image: {
             data: readFileSync("./demo/images/image1.jpeg"),
-            transformation: { height: 100, width: 100 },
+            transformation: { height: "2.6cm", width: "2.6cm" },
             type: "jpg",
           },
         },
@@ -55,7 +55,7 @@ const doc = await patchDocument({
               {
                 image: {
                   data: readFileSync("./demo/images/dog.png"),
-                  transformation: { height: 100, width: 100 },
+                  transformation: { height: "2.6cm", width: "2.6cm" },
                   type: "png",
                 },
               },

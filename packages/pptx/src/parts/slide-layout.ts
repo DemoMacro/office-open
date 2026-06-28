@@ -1,4 +1,5 @@
-import { convertPositionToEmu } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import type { MasterPlaceholderPosition } from "@parts/slide-master";
 import { buildMasterChildrenXml } from "@parts/slide/coerce";
 import type { LayoutDefinition } from "@shared/file";
 
@@ -26,6 +27,14 @@ import { SP_TREE_HEADER } from "@shared/constants";
 // 16:9 reference slide width
 const SW_REF = 12192000;
 const sx = (refX: number, sw: number) => Math.round((refX * sw) / SW_REF);
+
+// Convert a placeholder position (number=EMU | UniversalMeasure) to EMU off/ext.
+const toEmuPos = (pos: MasterPlaceholderPosition) => ({
+  x: convertToEmu(pos.x),
+  y: convertToEmu(pos.y),
+  cx: convertToEmu(pos.width),
+  cy: convertToEmu(pos.height),
+});
 
 // ── Placeholder XML builders ──
 
@@ -314,7 +323,7 @@ export function buildCustomLayoutXml(def: LayoutDefinition): string {
 
   // Content placeholders
   if (ph.title !== false) {
-    const titlePos = ph.title ? convertPositionToEmu(ph.title) : null;
+    const titlePos = ph.title ? toEmuPos(ph.title) : null;
     if (titlePos) {
       shapes.push(
         positionedTitlePlaceholder(nextId++, titlePos.x, titlePos.y, titlePos.cx, titlePos.cy),
@@ -325,12 +334,12 @@ export function buildCustomLayoutXml(def: LayoutDefinition): string {
   }
 
   if (ph.subtitle !== false && ph.subtitle !== undefined) {
-    const subPos = convertPositionToEmu(ph.subtitle);
+    const subPos = toEmuPos(ph.subtitle);
     shapes.push(positionedSubtitlePlaceholder(nextId++, subPos.x, subPos.y, subPos.cx, subPos.cy));
   }
 
   if (ph.body !== false && ph.body !== undefined) {
-    const bodyPos = ph.body ? convertPositionToEmu(ph.body) : null;
+    const bodyPos = ph.body ? toEmuPos(ph.body) : null;
     if (bodyPos) {
       shapes.push(
         positionedBodyPlaceholder(nextId++, 1, bodyPos.x, bodyPos.y, bodyPos.cx, bodyPos.cy),
@@ -342,7 +351,7 @@ export function buildCustomLayoutXml(def: LayoutDefinition): string {
 
   // Footer placeholders
   if (ph.date !== false && ph.date !== undefined) {
-    const datePos = ph.date ? convertPositionToEmu(ph.date) : null;
+    const datePos = ph.date ? toEmuPos(ph.date) : null;
     if (datePos) {
       shapes.push(
         positionedDatePlaceholder(nextId++, datePos.x, datePos.y, datePos.cx, datePos.cy),
@@ -353,7 +362,7 @@ export function buildCustomLayoutXml(def: LayoutDefinition): string {
   }
 
   if (ph.footer !== false && ph.footer !== undefined) {
-    const ftrPos = ph.footer ? convertPositionToEmu(ph.footer) : null;
+    const ftrPos = ph.footer ? toEmuPos(ph.footer) : null;
     if (ftrPos) {
       shapes.push(positionedFooterPlaceholder(nextId++, ftrPos.x, ftrPos.y, ftrPos.cx, ftrPos.cy));
     } else {
@@ -362,7 +371,7 @@ export function buildCustomLayoutXml(def: LayoutDefinition): string {
   }
 
   if (ph.slideNumber !== false && ph.slideNumber !== undefined) {
-    const sldPos = ph.slideNumber ? convertPositionToEmu(ph.slideNumber) : null;
+    const sldPos = ph.slideNumber ? toEmuPos(ph.slideNumber) : null;
     if (sldPos) {
       shapes.push(positionedSldNumPlaceholder(nextId++, sldPos.x, sldPos.y, sldPos.cx, sldPos.cy));
     } else {

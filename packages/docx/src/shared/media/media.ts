@@ -1,5 +1,5 @@
 import type { UniversalMeasure } from "@office-open/core";
-import { convertPixelsToEmu, convertUniversalMeasureToEmu } from "@office-open/core";
+import { convertEmuToPixels, convertToEmu } from "@office-open/core";
 
 /**
  * Media module for WordprocessingML documents.
@@ -17,7 +17,7 @@ import type { MediaDataTransformation } from "./data";
  * Transformation options for media display.
  *
  * Specifies how an image should be transformed when displayed in the document.
- * Width and height can be specified as numbers (in pixels) or as universal measures
+ * Width and height can be specified as numbers (in EMUs) or as universal measures
  * (e.g., "100mm", "2in").
  */
 export interface MediaTransformation {
@@ -26,7 +26,7 @@ export interface MediaTransformation {
     left?: number | UniversalMeasure;
   };
   width: number | UniversalMeasure;
-  /** Display height in pixels or universal measure */
+  /** Display height in EMUs or universal measure */
   height: number | UniversalMeasure;
   /** Optional flip transformations */
   flip?: {
@@ -42,44 +42,32 @@ export interface MediaTransformation {
 }
 
 /**
- * Converts user-facing transformation options (pixels or universal measure) to internal
+ * Converts user-facing transformation options (EMU or universal measure) to internal
  * transformation data (pixels + EMUs).
  *
- * @param options - User-facing transformation in pixels or universal measure
+ * @param options - User-facing transformation in EMU or universal measure
  * @returns Internal transformation data with both pixel and EMU values
  */
-export const createTransformation = (options: MediaTransformation): MediaDataTransformation => ({
-  emus: {
-    x:
-      typeof options.width === "string"
-        ? convertUniversalMeasureToEmu(options.width)
-        : convertPixelsToEmu(options.width),
-    y:
-      typeof options.height === "string"
-        ? convertUniversalMeasureToEmu(options.height)
-        : convertPixelsToEmu(options.height),
-  },
-  flip: options.flip,
-  offset: {
-    emus: {
-      x:
-        typeof options.offset?.left === "string"
-          ? convertUniversalMeasureToEmu(options.offset.left)
-          : convertPixelsToEmu(options.offset?.left ?? 0),
-      y:
-        typeof options.offset?.top === "string"
-          ? convertUniversalMeasureToEmu(options.offset.top)
-          : convertPixelsToEmu(options.offset?.top ?? 0),
+export const createTransformation = (options: MediaTransformation): MediaDataTransformation => {
+  const widthEmu = convertToEmu(options.width);
+  const heightEmu = convertToEmu(options.height);
+  const offsetLeftEmu = convertToEmu(options.offset?.left ?? 0);
+  const offsetTopEmu = convertToEmu(options.offset?.top ?? 0);
+  return {
+    emus: { x: widthEmu, y: heightEmu },
+    flip: options.flip,
+    offset: {
+      emus: { x: offsetLeftEmu, y: offsetTopEmu },
+      pixels: {
+        x: Math.round(convertEmuToPixels(offsetLeftEmu)),
+        y: Math.round(convertEmuToPixels(offsetTopEmu)),
+      },
     },
     pixels: {
-      x: typeof options.offset?.left === "number" ? Math.round(options.offset.left) : 0,
-      y: typeof options.offset?.top === "number" ? Math.round(options.offset.top) : 0,
+      x: Math.round(convertEmuToPixels(widthEmu)),
+      y: Math.round(convertEmuToPixels(heightEmu)),
     },
-  },
-  pixels: {
-    x: typeof options.width === "number" ? Math.round(options.width) : 0,
-    y: typeof options.height === "number" ? Math.round(options.height) : 0,
-  },
-  rotation: options.rotation ? options.rotation * 60_000 : undefined,
-  ...(options.effectExtent ? { effectExtent: options.effectExtent } : {}),
-});
+    rotation: options.rotation ? options.rotation * 60_000 : undefined,
+    ...(options.effectExtent ? { effectExtent: options.effectExtent } : {}),
+  };
+};

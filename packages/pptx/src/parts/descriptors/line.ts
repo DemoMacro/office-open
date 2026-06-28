@@ -4,7 +4,8 @@
  * @module
  */
 
-import { convertEmuToPixels, convertPixelsToEmu, xsdLineEndSize } from "@office-open/core";
+import { convertToEmu, xsdLineEndSize } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import { fillDesc, outlineDesc } from "@office-open/core/drawingml";
@@ -20,10 +21,10 @@ import { toCoreOutlineOptions, readOutlineCompat } from "./shape";
 export interface LineShapeDescriptorOptions {
   id?: number;
   name?: string;
-  x1?: number;
-  y1?: number;
-  x2?: number;
-  y2?: number;
+  x1?: number | UniversalMeasure;
+  y1?: number | UniversalMeasure;
+  x2?: number | UniversalMeasure;
+  y2?: number | UniversalMeasure;
   fill?: FillOptions;
   outline?: OutlineOptions;
 }
@@ -33,10 +34,10 @@ export type ArrowheadType = "triangle" | "stealth" | "diamond" | "oval" | "open"
 export interface ConnectorShapeDescriptorOptions {
   id?: number;
   name?: string;
-  x1?: number;
-  y1?: number;
-  x2?: number;
-  y2?: number;
+  x1?: number | UniversalMeasure;
+  y1?: number | UniversalMeasure;
+  x2?: number | UniversalMeasure;
+  y2?: number | UniversalMeasure;
   fill?: FillOptions;
   outline?: OutlineOptions;
   beginArrowhead?: ArrowheadType;
@@ -59,10 +60,10 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
     const id = opts.id ?? _nextLineId++;
     const name = opts.name ?? `Line ${id}`;
 
-    const x1 = convertPixelsToEmu(opts.x1 ?? 0);
-    const y1 = convertPixelsToEmu(opts.y1 ?? 0);
-    const x2 = convertPixelsToEmu(opts.x2 ?? 100);
-    const y2 = convertPixelsToEmu(opts.y2 ?? 100);
+    const x1 = convertToEmu(opts.x1 ?? 0);
+    const y1 = convertToEmu(opts.y1 ?? 0);
+    const x2 = convertToEmu(opts.x2 ?? "100px");
+    const y2 = convertToEmu(opts.y2 ?? "100px");
 
     const offX = Math.min(x1, x2);
     const offY = Math.min(y1, y2);
@@ -146,10 +147,10 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
           const x2 = flipH ? offX : offX + cx;
           const y2 = flipV ? offY : offY + cy;
 
-          result.x1 = convertEmuToPixels(x1);
-          result.y1 = convertEmuToPixels(y1);
-          result.x2 = convertEmuToPixels(x2);
-          result.y2 = convertEmuToPixels(y2);
+          result.x1 = x1;
+          result.y1 = y1;
+          result.x2 = x2;
+          result.y2 = y2;
         }
       }
 
@@ -193,10 +194,10 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
     const id = opts.id ?? _nextConnectorId++;
     const name = opts.name ?? `Connector ${id}`;
 
-    const x1 = convertPixelsToEmu(opts.x1 ?? 0);
-    const y1 = convertPixelsToEmu(opts.y1 ?? 0);
-    const x2 = convertPixelsToEmu(opts.x2 ?? 100);
-    const y2 = convertPixelsToEmu(opts.y2 ?? 100);
+    const x1 = convertToEmu(opts.x1 ?? 0);
+    const y1 = convertToEmu(opts.y1 ?? 0);
+    const x2 = convertToEmu(opts.x2 ?? "100px");
+    const y2 = convertToEmu(opts.y2 ?? "100px");
 
     const offX = Math.min(x1, x2);
     const offY = Math.min(y1, y2);
@@ -294,10 +295,10 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
           const x2 = flipH ? offX : offX + cx;
           const y2 = flipV ? offY : offY + cy;
 
-          result.x1 = convertEmuToPixels(x1);
-          result.y1 = convertEmuToPixels(y1);
-          result.x2 = convertEmuToPixels(x2);
-          result.y2 = convertEmuToPixels(y2);
+          result.x1 = x1;
+          result.y1 = y1;
+          result.x2 = x2;
+          result.y2 = y2;
         }
       }
 

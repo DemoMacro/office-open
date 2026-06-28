@@ -6,7 +6,8 @@
  * @module
  */
 
-import { convertEmuToPixels, convertPixelsToEmu } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrNum, escapeXml, findChild } from "@office-open/xml";
 
@@ -15,10 +16,10 @@ import { attr, attrBool, attrNum, escapeXml, findChild } from "@office-open/xml"
 export interface OleDescriptorOptions {
   id?: number;
   name?: string;
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: number | UniversalMeasure;
+  y?: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   progId?: string;
   spid?: string;
   showAsIcon?: boolean;
@@ -43,10 +44,10 @@ export const oleDesc: CustomDescriptor<OleDescriptorOptions> = {
     const id = opts.id ?? _nextOleId++;
     const name = opts.name ?? `Object ${id}`;
 
-    const x = convertPixelsToEmu(opts.x ?? 0);
-    const y = convertPixelsToEmu(opts.y ?? 0);
-    const w = convertPixelsToEmu(opts.width ?? 100);
-    const h = convertPixelsToEmu(opts.height ?? 100);
+    const x = convertToEmu(opts.x ?? 0);
+    const y = convertToEmu(opts.y ?? 0);
+    const w = convertToEmu(opts.width ?? "100px");
+    const h = convertToEmu(opts.height ?? "100px");
 
     const parts: string[] = [];
 
@@ -110,22 +111,22 @@ export const oleDesc: CustomDescriptor<OleDescriptorOptions> = {
       }
     }
 
-    // x, y, width, height from p:xfrm (convert EMU to pixels)
+    // x, y, width, height from p:xfrm (in EMU)
     const xfrm = findChild(el, "p:xfrm");
     if (xfrm) {
       const off = findChild(xfrm, "a:off");
       if (off) {
         const x = attrNum(off, "x");
-        if (x !== undefined) result.x = convertEmuToPixels(x);
+        if (x !== undefined) result.x = x;
         const y = attrNum(off, "y");
-        if (y !== undefined) result.y = convertEmuToPixels(y);
+        if (y !== undefined) result.y = y;
       }
       const ext = findChild(xfrm, "a:ext");
       if (ext) {
         const cx = attrNum(ext, "cx");
-        if (cx !== undefined) result.width = convertEmuToPixels(cx);
+        if (cx !== undefined) result.width = cx;
         const cy = attrNum(ext, "cy");
-        if (cy !== undefined) result.height = convertEmuToPixels(cy);
+        if (cy !== undefined) result.height = cy;
       }
     }
 

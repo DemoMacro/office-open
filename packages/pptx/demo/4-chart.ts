@@ -12,20 +12,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Column Chart" },
             fill: "4472C4",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "column",
             title: "Quarterly Sales",
             categories: ["Q1", "Q2", "Q3", "Q4"],
@@ -45,20 +45,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Pie Chart" },
             fill: "ED7D31",
           },
         },
         {
           chart: {
-            x: 100,
-            y: 120,
-            width: 500,
-            height: 350,
+            x: "2.6cm",
+            y: "3.2cm",
+            width: "13.2cm",
+            height: "9.3cm",
             type: "pie",
             title: "Market Share",
             categories: ["Chrome", "Safari", "Firefox", "Edge", "Other"],
@@ -72,20 +72,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Line Chart" },
             fill: "70AD47",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "line",
             title: "Monthly Revenue",
             categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
@@ -103,20 +103,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Scatter Chart" },
             fill: "5B9BD5",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "scatter",
             title: "Height vs Weight",
             categories: ["Person A", "Person B", "Person C", "Person D"],
@@ -130,20 +130,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Area Chart" },
             fill: "FFC000",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "area",
             title: "Revenue Over Time",
             categories: ["Q1", "Q2", "Q3", "Q4"],
@@ -160,20 +160,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Bubble Chart" },
             fill: "7030A0",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "bubble",
             title: "Sales vs Profit (size = Revenue)",
             series: [
@@ -202,20 +202,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Doughnut Chart" },
             fill: "ED7D31",
           },
         },
         {
           chart: {
-            x: 100,
-            y: 120,
-            width: 500,
-            height: 350,
+            x: "2.6cm",
+            y: "3.2cm",
+            width: "13.2cm",
+            height: "9.3cm",
             type: "doughnut",
             title: "Revenue by Region",
             categories: ["North", "South", "East", "West"],
@@ -230,20 +230,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Radar Chart" },
             fill: "70AD47",
           },
         },
         {
           chart: {
-            x: 100,
-            y: 120,
-            width: 500,
-            height: 350,
+            x: "2.6cm",
+            y: "3.2cm",
+            width: "13.2cm",
+            height: "9.3cm",
             type: "radar",
             title: "Team Skills Comparison",
             categories: ["Speed", "Strength", "Agility", "Endurance", "Strategy"],
@@ -261,20 +261,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Stock Chart" },
             fill: "FF0000",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "stock",
             title: "ACME Corp — Daily Stock",
             categories: ["Mon", "Tue", "Wed", "Thu", "Fri"],
@@ -293,20 +293,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "Surface Chart" },
             fill: "5B9BD5",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "surface",
             title: "Temperature Surface",
             categories: ["Jan", "Feb", "Mar", "Apr", "May"],
@@ -325,20 +325,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "3D Column Chart" },
             fill: "4472C4",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "column",
             threeD: true,
             title: "Quarterly Sales (3D)",
@@ -358,20 +358,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "3D Pie Chart" },
             fill: "ED7D31",
           },
         },
         {
           chart: {
-            x: 100,
-            y: 120,
-            width: 500,
-            height: 350,
+            x: "2.6cm",
+            y: "3.2cm",
+            width: "13.2cm",
+            height: "9.3cm",
             type: "pie",
             threeD: true,
             title: "Market Share (3D)",
@@ -386,20 +386,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.6cm",
             textBody: { text: "3D Line Chart" },
             fill: "70AD47",
           },
         },
         {
           chart: {
-            x: 50,
-            y: 120,
-            width: 600,
-            height: 350,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "15.9cm",
+            height: "9.3cm",
             type: "line",
             threeD: true,
             title: "Monthly Revenue (3D)",

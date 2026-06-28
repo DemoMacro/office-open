@@ -11,20 +11,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 60,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.6cm",
             textBody: { text: "Shape Effects Demo" },
             fill: "4472C4",
           },
         },
         {
           shape: {
-            x: 50,
-            y: 120,
-            width: 200,
-            height: 120,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "3.2cm",
             textBody: { text: "Outer Shadow" },
             fill: "ED7D31",
             effects: {
@@ -40,10 +40,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 300,
-            y: 120,
-            width: 200,
-            height: 120,
+            x: "7.9cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "3.2cm",
             textBody: { text: "Glow" },
             fill: "70AD47",
             effects: {
@@ -53,10 +53,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 550,
-            y: 120,
-            width: 200,
-            height: 120,
+            x: "14.6cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "3.2cm",
             textBody: { text: "Reflection" },
             fill: "FFC000",
             effects: {
@@ -72,10 +72,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 50,
-            y: 280,
-            width: 200,
-            height: 120,
+            x: "1.3cm",
+            y: "7.4cm",
+            width: "5.3cm",
+            height: "3.2cm",
             textBody: { text: "Inner Shadow" },
             fill: "5B9BD5",
             effects: {
@@ -91,10 +91,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 300,
-            y: 280,
-            width: 200,
-            height: 120,
+            x: "7.9cm",
+            y: "7.4cm",
+            width: "5.3cm",
+            height: "3.2cm",
             textBody: { text: "Soft Edge" },
             fill: "BF8F00",
             effects: {
@@ -104,10 +104,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 550,
-            y: 280,
-            width: 200,
-            height: 120,
+            x: "14.6cm",
+            y: "7.4cm",
+            width: "5.3cm",
+            height: "3.2cm",
             textBody: { text: "Shadow + Glow" },
             fill: "7030A0",
             effects: {
@@ -129,20 +129,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 500,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "13.2cm",
+            height: "1.3cm",
             textBody: { text: "3D Rotation & Extrusion" },
             fill: "4472C4",
           },
         },
         {
           shape: {
-            x: 50,
-            y: 120,
-            width: 200,
-            height: 200,
+            x: "1.3cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "5.3cm",
             textBody: { text: "X=30 Y=0" },
             fill: "4472C4",
             effects: { rotation3D: { x: 30 } },
@@ -150,10 +150,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 300,
-            y: 120,
-            width: 200,
-            height: 200,
+            x: "7.9cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "5.3cm",
             textBody: { text: "X=0 Y=45" },
             fill: "ED7D31",
             effects: { rotation3D: { y: 45 } },
@@ -161,10 +161,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 550,
-            y: 120,
-            width: 200,
-            height: 200,
+            x: "14.6cm",
+            y: "3.2cm",
+            width: "5.3cm",
+            height: "5.3cm",
             textBody: { text: "X=20 Y=30 Z=10" },
             fill: "70AD47",
             effects: { rotation3D: { x: 20, y: 30, z: 10, perspective: 500 } },
@@ -172,10 +172,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 50,
-            y: 370,
-            width: 200,
-            height: 150,
+            x: "1.3cm",
+            y: "9.8cm",
+            width: "5.3cm",
+            height: "4.0cm",
             textBody: { text: "Extruded" },
             fill: "FFC000",
             effects: {
@@ -187,10 +187,10 @@ const options: PresentationOptions = {
         },
         {
           shape: {
-            x: 300,
-            y: 370,
-            width: 200,
-            height: 150,
+            x: "7.9cm",
+            y: "9.8cm",
+            width: "5.3cm",
+            height: "4.0cm",
             textBody: { text: "Bevel Top" },
             fill: "7030A0",
             effects: {

@@ -61,36 +61,6 @@ export const convertPointsToEmu = (points: number): number => Math.round(points 
 export const convertEmuToPoints = (emus: number): number => emus / 12700;
 
 // ---------------------------------------------------------------------------
-// Position conversion (pixel-based position to EMU coordinates)
-// ---------------------------------------------------------------------------
-
-/** A rectangular position in pixels. */
-export interface PixelPosition {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/** An EMU-based rectangular position. */
-export interface EmuPosition {
-  x: number;
-  y: number;
-  cx: number;
-  cy: number;
-}
-
-/**
- * Converts a pixel-based position to EMU coordinates.
- */
-export const convertPositionToEmu = (pos: PixelPosition): EmuPosition => ({
-  x: convertPixelsToEmu(pos.x),
-  y: convertPixelsToEmu(pos.y),
-  cx: convertPixelsToEmu(pos.width),
-  cy: convertPixelsToEmu(pos.height),
-});
-
-// ---------------------------------------------------------------------------
 // UniversalMeasure → Twips conversion
 // Used when numeric computation is needed (e.g., landscape width/height swap)
 // ---------------------------------------------------------------------------
@@ -98,7 +68,7 @@ export const convertPositionToEmu = (pos: PixelPosition): EmuPosition => ({
 /** Parsed result of a UniversalMeasure string. */
 interface ParsedMeasure {
   value: number;
-  unit: "mm" | "cm" | "in" | "pt" | "pc" | "pi";
+  unit: "mm" | "cm" | "in" | "pt" | "pc" | "pi" | "px";
 }
 
 /**
@@ -115,7 +85,7 @@ interface ParsedMeasure {
  * ```
  */
 export const parseUniversalMeasure = (measure: string): ParsedMeasure => {
-  const match = measure.match(/^(-?[0-9]+(?:\.[0-9]+)?)(mm|cm|in|pt|pc|pi)$/);
+  const match = measure.match(/^(-?[0-9]+(?:\.[0-9]+)?)(mm|cm|in|pt|pc|pi|px)$/);
   if (!match) {
     throw new Error(`Invalid universal measure: '${measure}'`);
   }
@@ -151,6 +121,8 @@ export const convertUniversalMeasureToTwip = (measure: string): number => {
     case "pc":
     case "pi":
       return Math.floor(value * 12 * 20); // 1 pica = 12 points = 240 twips
+    case "px":
+      return Math.round(value * 15); // 1px = 15twip (1in = 1440twip = 96px)
   }
 };
 
@@ -210,27 +182,103 @@ export const convertUniversalMeasureToEmu = (measure: string): number => {
     case "pc":
     case "pi":
       return convertPointsToEmu(value * 12); // 1 pica = 12 points
+    case "px":
+      return convertPixelsToEmu(value); // 1px = 9525 EMU (96 DPI)
   }
 };
 
 /**
  * Converts a measurement value (number or UniversalMeasure) to EMU.
  *
- * If the value is already a number, it is returned as-is (assumed to be in EMU).
- * If the value is a UniversalMeasure string, it is converted to EMU.
+ * Numbers are returned as-is (assumed EMU). Strings are parsed as
+ * UniversalMeasure via {@link convertUniversalMeasureToEmu} — including the
+ * project-only `px` unit (96 DPI). The result is always an EMU number written to
+ * XML, so px never appears verbatim in the document.
  *
- * Useful for accepting both `number` and `UniversalMeasure` inputs in DrawingML
- * where the XSD type is a union (e.g., ST_Coordinate).
+ * Useful for DrawingML fields where the XSD type is a union (e.g., ST_Coordinate).
  *
- * @param val - A numeric EMU value or a universal measure string
+ * @param val - A numeric EMU value, or a UniversalMeasure string (incl. `${n}px`)
  * @returns The value in EMU
  *
  * @example
  * ```typescript
- * convertToEmu(914400);   // 914400 (already EMU)
- * convertToEmu("1in");    // 914400
- * convertToEmu("2.54cm"); // 914400
+ * convertToEmu(914400);    // 914400 (already EMU)
+ * convertToEmu("1in");     // 914400
+ * convertToEmu("2.54cm");  // 914400
+ * convertToEmu("200px");   // 1905000 (200 * 9525)
  * ```
  */
 export const convertToEmu = (val: number | string): number =>
   typeof val === "string" ? convertUniversalMeasureToEmu(val) : val;
+
+// ---------------------------------------------------------------------------
+// UniversalMeasure → Points / Inches conversion
+// Used in SpreadsheetML (row height in points, page margins in inches)
+// ---------------------------------------------------------------------------
+
+/**
+ * Converts a UniversalMeasure string to points (1pt = 1/72 inch).
+ *
+ * Supports units: mm, cm, in, pt, pc (picas, 1pc = 12pt), pi (alias for pc),
+ * px (96 DPI).
+ */
+export const convertUniversalMeasureToPt = (measure: string): number => {
+  const { value, unit } = parseUniversalMeasure(measure);
+  switch (unit) {
+    case "mm":
+      return (value / 25.4) * 72;
+    case "cm":
+      return ((value * 10) / 25.4) * 72;
+    case "in":
+      return value * 72;
+    case "pt":
+      return value;
+    case "pc":
+    case "pi":
+      return value * 12; // 1 pica = 12 points
+    case "px":
+      return (value / 96) * 72; // 1px = 0.75pt (96 DPI)
+  }
+};
+
+/**
+ * Converts a measurement value (number or UniversalMeasure) to points.
+ *
+ * Numbers are returned as-is (assumed to be in points). Strings are parsed as
+ * UniversalMeasure. Useful for SpreadsheetML fields where a number is points.
+ */
+export const convertToPt = (val: number | string): number =>
+  typeof val === "string" ? convertUniversalMeasureToPt(val) : val;
+
+/**
+ * Converts a UniversalMeasure string to inches.
+ *
+ * Supports units: mm, cm, in, pt, pc, pi, px (96 DPI).
+ */
+export const convertUniversalMeasureToInch = (measure: string): number => {
+  const { value, unit } = parseUniversalMeasure(measure);
+  switch (unit) {
+    case "mm":
+      return value / 25.4;
+    case "cm":
+      return (value * 10) / 25.4;
+    case "in":
+      return value;
+    case "pt":
+      return value / 72;
+    case "pc":
+    case "pi":
+      return (value * 12) / 72;
+    case "px":
+      return value / 96;
+  }
+};
+
+/**
+ * Converts a measurement value (number or UniversalMeasure) to inches.
+ *
+ * Numbers are returned as-is (assumed to be in inches). Useful for SpreadsheetML
+ * page-margin fields where a number is inches.
+ */
+export const convertToInch = (val: number | string): number =>
+  typeof val === "string" ? convertUniversalMeasureToInch(val) : val;

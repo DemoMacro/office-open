@@ -12,10 +12,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.3cm",
             textBody: { text: "Lines & Connectors" },
             fill: "4472C4",
           },
@@ -23,41 +23,41 @@ const options: PresentationOptions = {
         // Horizontal line
         {
           line: {
-            x1: 50,
-            y1: 120,
-            x2: 800,
-            y2: 120,
-            outline: { color: "4472C4", width: 2 },
+            x1: "1.3cm",
+            y1: "3.2cm",
+            x2: "21.2cm",
+            y2: "3.2cm",
+            outline: { color: "4472C4", width: "2pt" },
           },
         },
         // Vertical line
         {
           line: {
-            x1: 200,
-            y1: 150,
-            x2: 200,
-            y2: 450,
-            outline: { color: "ED7D31", width: 2 },
+            x1: "5.3cm",
+            y1: "4.0cm",
+            x2: "5.3cm",
+            y2: "11.9cm",
+            outline: { color: "ED7D31", width: "2pt" },
           },
         },
         // Diagonal line
         {
           line: {
-            x1: 250,
-            y1: 150,
-            x2: 750,
-            y2: 450,
-            outline: { color: "70AD47", width: 3 },
+            x1: "6.6cm",
+            y1: "4.0cm",
+            x2: "19.8cm",
+            y2: "11.9cm",
+            outline: { color: "70AD47", width: "3pt" },
           },
         },
         // Reverse diagonal
         {
           line: {
-            x1: 750,
-            y1: 150,
-            x2: 250,
-            y2: 450,
-            outline: { color: "FFC000", width: 2 },
+            x1: "19.8cm",
+            y1: "4.0cm",
+            x2: "6.6cm",
+            y2: "11.9cm",
+            outline: { color: "FFC000", width: "2pt" },
           },
         },
       ],
@@ -67,10 +67,10 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 30,
-            width: 400,
-            height: 50,
+            x: "1.3cm",
+            y: "0.8cm",
+            width: "10.6cm",
+            height: "1.3cm",
             textBody: { text: "Connectors with Arrowheads" },
             fill: "4472C4",
           },
@@ -78,92 +78,92 @@ const options: PresentationOptions = {
         // Left-to-right arrow
         {
           connector: {
-            x1: 50,
-            y1: 130,
-            x2: 400,
-            y2: 130,
+            x1: "1.3cm",
+            y1: "3.4cm",
+            x2: "10.6cm",
+            y2: "3.4cm",
             endArrowhead: "triangle",
-            outline: { color: "4472C4", width: 2 },
+            outline: { color: "4472C4", width: "2pt" },
           },
         },
         // Bidirectional arrow
         {
           connector: {
-            x1: 50,
-            y1: 200,
-            x2: 400,
-            y2: 200,
+            x1: "1.3cm",
+            y1: "5.3cm",
+            x2: "10.6cm",
+            y2: "5.3cm",
             beginArrowhead: "triangle",
             endArrowhead: "triangle",
-            outline: { color: "ED7D31", width: 2 },
+            outline: { color: "ED7D31", width: "2pt" },
           },
         },
         // Stealth arrow
         {
           connector: {
-            x1: 50,
-            y1: 270,
-            x2: 400,
-            y2: 270,
+            x1: "1.3cm",
+            y1: "7.1cm",
+            x2: "10.6cm",
+            y2: "7.1cm",
             endArrowhead: "stealth",
-            outline: { color: "70AD47", width: 2 },
+            outline: { color: "70AD47", width: "2pt" },
           },
         },
         // Diamond end
         {
           connector: {
-            x1: 50,
-            y1: 340,
-            x2: 400,
-            y2: 340,
+            x1: "1.3cm",
+            y1: "9.0cm",
+            x2: "10.6cm",
+            y2: "9.0cm",
             endArrowhead: "diamond",
-            outline: { color: "FFC000", width: 2 },
+            outline: { color: "FFC000", width: "2pt" },
           },
         },
         // Oval end
         {
           connector: {
-            x1: 50,
-            y1: 410,
-            x2: 400,
-            y2: 410,
+            x1: "1.3cm",
+            y1: "10.8cm",
+            x2: "10.6cm",
+            y2: "10.8cm",
             endArrowhead: "oval",
-            outline: { color: "7030A0", width: 2 },
+            outline: { color: "7030A0", width: "2pt" },
           },
         },
         // Open arrow
         {
           connector: {
-            x1: 500,
-            y1: 130,
-            x2: 800,
-            y2: 130,
+            x1: "13.2cm",
+            y1: "3.4cm",
+            x2: "21.2cm",
+            y2: "3.4cm",
             endArrowhead: "open",
-            outline: { color: "C00000", width: 2 },
+            outline: { color: "C00000", width: "2pt" },
           },
         },
         // Diagonal with stealth
         {
           connector: {
-            x1: 500,
-            y1: 200,
-            x2: 800,
-            y2: 350,
+            x1: "13.2cm",
+            y1: "5.3cm",
+            x2: "21.2cm",
+            y2: "9.3cm",
             endArrowhead: "stealth",
-            outline: { color: "4472C4", width: 2 },
+            outline: { color: "4472C4", width: "2pt" },
           },
         },
         // Large arrowhead
         {
           connector: {
-            x1: 500,
-            y1: 410,
-            x2: 800,
-            y2: 410,
+            x1: "13.2cm",
+            y1: "10.8cm",
+            x2: "21.2cm",
+            y2: "10.8cm",
             endArrowhead: "triangle",
             arrowheadWidth: "large",
             arrowheadLength: "large",
-            outline: { color: "ED7D31", width: 2 },
+            outline: { color: "ED7D31", width: "2pt" },
           },
         },
       ],

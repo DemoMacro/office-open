@@ -267,7 +267,10 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
         // Register the image media via the write context, then emit a:blipFill
         // with the returned {fileName} placeholder. The format-package compiler
         // replaces the placeholder with a relationship rId at pack time.
-        const placeholder = ctx.addMedia(toUint8Array(opts.data), opts.imageType);
+        const placeholder = ctx.addMedia(
+          toUint8Array(opts.data, { encoding: "base64" }),
+          opts.imageType,
+        );
         return buildFill(opts, placeholder);
       }
 

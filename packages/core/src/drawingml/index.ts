@@ -122,10 +122,6 @@ export { TileAlignment } from "./blip/tile";
 export { createTransform2D, createGroupTransform2D } from "./transform";
 export type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
 
-// Media transformation
-export { createTransformation } from "./media/transformation";
-export type { MediaTransformation, MediaDataTransformation } from "./media/transformation";
-
 // Table Style
 export {
   createTableStyle,

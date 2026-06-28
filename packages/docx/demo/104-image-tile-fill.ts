@@ -39,8 +39,8 @@ const buffer = await generateDocument({
                 image: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   transformation: {
-                    height: 100,
-                    width: 300,
+                    height: "2.6cm",
+                    width: "7.9cm",
                   },
                   type: "jpg",
                 },
@@ -71,8 +71,8 @@ const buffer = await generateDocument({
                   data: readFileSync("./demo/images/cat.jpg"),
                   tile: { sx: 50, sy: 50 },
                   transformation: {
-                    height: 100,
-                    width: 300,
+                    height: "2.6cm",
+                    width: "7.9cm",
                   },
                   type: "jpg",
                 },
@@ -103,8 +103,8 @@ const buffer = await generateDocument({
                   data: readFileSync("./demo/images/cat.jpg"),
                   tile: { flip: "xy", sx: 50, sy: 50 },
                   transformation: {
-                    height: 100,
-                    width: 300,
+                    height: "2.6cm",
+                    width: "7.9cm",
                   },
                   type: "jpg",
                 },
@@ -135,8 +135,8 @@ const buffer = await generateDocument({
                   data: readFileSync("./demo/images/cat.jpg"),
                   tile: { align: "center", sx: 50, sy: 50 },
                   transformation: {
-                    height: 100,
-                    width: 300,
+                    height: "2.6cm",
+                    width: "7.9cm",
                   },
                   type: "jpg",
                 },

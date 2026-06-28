@@ -18,7 +18,7 @@
  */
 
 import { TargetModeType } from "@office-open/core";
-import { uniqueNumericIdCreator, uniqueId } from "@office-open/core";
+import { convertToEmu, uniqueNumericIdCreator, uniqueId } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import type { FillOptions } from "@office-open/core/drawingml";
 import {
@@ -693,7 +693,7 @@ function stringifyPositionH(opts: HorizontalPositionOptions): string {
   const child = opts.align
     ? `<wp:align>${opts.align}</wp:align>`
     : opts.offset !== undefined
-      ? `<wp:posOffset>${opts.offset}</wp:posOffset>`
+      ? `<wp:posOffset>${convertToEmu(opts.offset)}</wp:posOffset>`
       : "<wp:align>left</wp:align>";
   return `<wp:positionH relativeFrom="${rel}">${child}</wp:positionH>`;
 }
@@ -703,7 +703,7 @@ function stringifyPositionV(opts: VerticalPositionOptions): string {
   const child = opts.align
     ? `<wp:align>${opts.align}</wp:align>`
     : opts.offset !== undefined
-      ? `<wp:posOffset>${opts.offset}</wp:posOffset>`
+      ? `<wp:posOffset>${convertToEmu(opts.offset)}</wp:posOffset>`
       : "<wp:align>top</wp:align>";
   return `<wp:positionV relativeFrom="${rel}">${child}</wp:positionV>`;
 }
@@ -727,10 +727,10 @@ function wrapSquareStr(textWrapping: TextWrapping, margins?: Margins): string {
   const m = margins ?? {};
   const a = [
     `wrapText="${side}"`,
-    ...(m.top != null ? [`distT="${m.top}"`] : []),
-    ...(m.bottom != null ? [`distB="${m.bottom}"`] : []),
-    ...(m.left != null ? [`distL="${m.left}"`] : []),
-    ...(m.right != null ? [`distR="${m.right}"`] : []),
+    ...(m.top != null ? [`distT="${convertToEmu(m.top)}"`] : []),
+    ...(m.bottom != null ? [`distB="${convertToEmu(m.bottom)}"`] : []),
+    ...(m.left != null ? [`distL="${convertToEmu(m.left)}"`] : []),
+    ...(m.right != null ? [`distR="${convertToEmu(m.right)}"`] : []),
   ].join(" ");
   return `<wp:wrapSquare ${a}/>`;
 }
@@ -743,8 +743,8 @@ function wrapTightStr(
 ): string {
   const side = textWrapping.side ?? TextWrappingSide.BOTH_SIDES;
   const a = [`wrapText="${side}"`];
-  if (margins.left != null) a.push(`distL="${margins.left}"`);
-  if (margins.right != null) a.push(`distR="${margins.right}"`);
+  if (margins.left != null) a.push(`distL="${convertToEmu(margins.left)}"`);
+  if (margins.right != null) a.push(`distR="${convertToEmu(margins.right)}"`);
   return `<wp:wrapTight ${a.join(" ")}>${wrapPolygonStr(cx, cy)}</wp:wrapTight>`;
 }
 
@@ -756,16 +756,16 @@ function wrapThroughStr(
 ): string {
   const side = textWrapping.side ?? TextWrappingSide.BOTH_SIDES;
   const a = [`wrapText="${side}"`];
-  if (margins.left != null) a.push(`distL="${margins.left}"`);
-  if (margins.right != null) a.push(`distR="${margins.right}"`);
+  if (margins.left != null) a.push(`distL="${convertToEmu(margins.left)}"`);
+  if (margins.right != null) a.push(`distR="${convertToEmu(margins.right)}"`);
   return `<wp:wrapThrough ${a.join(" ")}>${wrapPolygonStr(cx, cy)}</wp:wrapThrough>`;
 }
 
 function wrapTopAndBottomStr(margins?: Margins): string {
   const m = margins ?? {};
   const a = [
-    ...(m.top != null ? [`distT="${m.top}"`] : []),
-    ...(m.bottom != null ? [`distB="${m.bottom}"`] : []),
+    ...(m.top != null ? [`distT="${convertToEmu(m.top)}"`] : []),
+    ...(m.bottom != null ? [`distB="${convertToEmu(m.bottom)}"`] : []),
   ].join(" ");
   return a ? `<wp:wrapTopAndBottom ${a}/>` : "<wp:wrapTopAndBottom/>";
 }
@@ -859,10 +859,10 @@ function stringifyAnchor(
   };
 
   const attrParts = [
-    `distT="${floating.margins?.top ?? 0}"`,
-    `distB="${floating.margins?.bottom ?? 0}"`,
-    `distL="${floating.margins?.left ?? 0}"`,
-    `distR="${floating.margins?.right ?? 0}"`,
+    `distT="${convertToEmu(floating.margins?.top ?? 0)}"`,
+    `distB="${convertToEmu(floating.margins?.bottom ?? 0)}"`,
+    `distL="${convertToEmu(floating.margins?.left ?? 0)}"`,
+    `distR="${convertToEmu(floating.margins?.right ?? 0)}"`,
     'simplePos="0"',
     `allowOverlap="${floating.allowOverlap ? 1 : 0}"`,
     `behindDoc="${floating.behindDocument ? 1 : 0}"`,

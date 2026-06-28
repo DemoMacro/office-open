@@ -14,20 +14,20 @@ const options: PresentationOptions = {
       children: [
         {
           shape: {
-            x: 50,
-            y: 20,
-            width: 600,
-            height: 40,
+            x: "1.3cm",
+            y: "0.5cm",
+            width: "15.9cm",
+            height: "1.1cm",
             textBody: { text: "OLE Object Demo" },
             fill: "4472C4",
           },
         },
         {
           ole: {
-            x: 100,
-            y: 100,
-            width: 400,
-            height: 300,
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "10.6cm",
+            height: "7.9cm",
             progId: "Excel.Sheet.12",
             spid: "sp1025",
             name: "Embedded Worksheet",
