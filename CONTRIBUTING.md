@@ -158,6 +158,27 @@ Rule: if 3+ properties share the same prefix, nest them under a property that na
 
 Domain names follow the XSD element: `rows` for `w:tr`/`x:row`, `cells` for `w:tc`/`x:c`.
 
+## Measurement Units
+
+Geometry and sizing fields accept **`number`** (the format's native unit) or a **`UniversalMeasure` string** (mm/cm/in/pt/pc/pi; px at 96 DPI on DrawingML fields). The native unit follows the domain:
+
+| Domain                                              | `number` means    | Convert with    |
+| --------------------------------------------------- | ----------------- | --------------- |
+| DrawingML geometry (shapes, images, charts, tables) | EMU               | `convertToEmu`  |
+| Word spacing / indent / font size                   | twip / half-point | `convertToTwip` |
+| xlsx row height                                     | points            | `convertToPt`   |
+| xlsx page margins                                   | inches            | `convertToInch` |
+
+The converters are **polymorphic** — a `number` passes through unchanged, a string is parsed — so a single field accepts both forms.
+
+**Round-trip is lossless.** Parse returns the native unit verbatim (e.g. EMU), and stringify converts any string back to that unit. Never round-trip through pixels: it quantizes to the grid and is irreversible.
+
+### Input convenience, XSD-valid output
+
+`UniversalMeasure` exists for input ergonomics only — the XML we emit must still satisfy its XSD type, so stringify always converts to the integer/unit the schema requires, never writing a raw UM string where a number is mandated.
+
+A field stays plain `number` when its value isn't a geometric length or its XSD type is integer-only — bevel size, 3D angles, rotation, xlsx column width (character units). Don't add `UniversalMeasure` to such fields.
+
 ## Descriptor Pattern
 
 All XML serialization uses the descriptor pattern from `@office-open/core/descriptor`:

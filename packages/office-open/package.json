@@ -1,6 +1,6 @@
 {
   "name": "office-open",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "description": "Unified Office document toolkit — CLI, AI SDK tools, Zod schemas, and all packages in one install",
   "keywords": [
     "ai",
