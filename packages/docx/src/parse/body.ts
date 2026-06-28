@@ -321,7 +321,7 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
 
   const flushToc = (): void => {
     if (!tocBuffer) return;
-    children.push(buildTocChild(tocBuffer));
+    children.push(buildTocChild(tocBuffer, ctx));
     // The TOC field's closing paragraph often also carries a trailing page
     // break (the section break before the first heading). buildTocChild
     // discards the rendered result, so rescue that page break as a standalone
@@ -361,12 +361,48 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
 
 /**
  * Build a structured TOC SectionChild from a captured bare TOC field. Extracts
- * the field instruction (switches → TableOfContentsOptions) and discards the
- * rendered result (separate→end content) — Word regenerates it from headings on
- * open via the dirty flag emitted by stringifyTableOfContents.
+ * the field instruction (switches → TableOfContentsOptions) and preserves the
+ * rendered entries (separate→end paragraphs) structurally so MS Office and WPS
+ * both display the existing TOC. The field is emitted clean (no dirty flag).
  */
-function buildTocChild(els: Element[]): SectionChild {
-  return { toc: parseTocFieldFromElements(els) };
+function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
+  const tocOpts = parseTocFieldFromElements(els);
+  const entries = extractTocEntries(els, ctx);
+  if (entries.length > 0) tocOpts.entries = entries;
+  return { toc: tocOpts };
+}
+
+/**
+ * Collect the TOC field's rendered entries — the paragraphs between the field's
+ * `separate` and `end` markers. Tracks field depth so nested HYPERLINK/PAGEREF
+ * fields inside each entry don't fool the boundary detection.
+ */
+function extractTocEntries(els: Element[], ctx: DocxReadContext): SectionChild[] {
+  const entries: SectionChild[] = [];
+  let depth = 0;
+  let afterSeparate = false;
+  for (const el of els) {
+    const wasAfterSeparate = afterSeparate;
+    const wasDepth = depth;
+    const walk = (node: Element): void => {
+      if (node.name === "w:fldChar") {
+        const type = attr(node, "w:fldCharType");
+        if (type === "begin") depth++;
+        else if (type === "separate" && depth === 1) afterSeparate = true;
+        else if (type === "end") depth--;
+      }
+      for (const c of node.elements ?? []) {
+        if (c.type === "element") walk(c);
+      }
+    };
+    walk(el);
+    // Entry paragraph: entered at the TOC depth (1), past `separate`, and not
+    // the end-closing paragraph (depth still ≥ 1 after walking it).
+    if (wasAfterSeparate && wasDepth === 1 && depth >= 1) {
+      entries.push(parseSectionChild(el, ctx));
+    }
+  }
+  return entries;
 }
 
 /**

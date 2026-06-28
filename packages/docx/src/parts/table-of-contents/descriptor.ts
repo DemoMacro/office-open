@@ -45,9 +45,16 @@ function tocInstructionStr(opts: TableOfContentsOptions): string {
 export function stringifyTableOfContents(
   alias: string = "Table of Contents",
   options: TableOfContentsOptions = {},
+  entriesXml: string = "",
 ): string {
   const instr = tocInstructionStr(options);
   const aliasAttr = alias ? ` w:val="${escapeXml(alias)}"` : "";
+
+  // When the rendered entries are carried (round-trip), emit the field clean so
+  // both MS Office and WPS display the existing TOC without an update prompt.
+  // A freshly generated TOC carries no entries — mark it dirty so the consuming
+  // application builds them from headings on open.
+  const dirtyAttr = entriesXml.length > 0 ? "" : ' w:dirty="1"';
 
   // SDT properties: alias + docPartObj
   const sdtPr =
@@ -56,12 +63,13 @@ export function stringifyTableOfContents(
     `<w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj>` +
     `</w:sdtPr>`;
 
-  // SDT content: begin paragraph (with field instruction) + end paragraph
+  // SDT content: begin paragraph (field instruction) + rendered entries + end paragraph
   const content =
     `<w:sdtContent>` +
-    `<w:p><w:r><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:cstheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cs="Times New Roman"/></w:rPr><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>` +
+    `<w:p><w:r><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:cstheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cs="Times New Roman"/></w:rPr><w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
     `<w:r><w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
     `<w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>` +
+    entriesXml +
     `<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>` +
     `</w:sdtContent>`;
 

@@ -302,7 +302,10 @@ export function stringifyBodyChild(child: SectionChild, ctx: BodyContext): strin
   }
   if ("toc" in child) {
     const { alias, ...options } = child.toc;
-    return stringifyTableOfContents(alias, options);
+    const entriesXml = (options.entries ?? [])
+      .map((entry) => stringifyBodyChild(entry, ctx))
+      .join("");
+    return stringifyTableOfContents(alias, options, entriesXml);
   }
   if ("textbox" in child) {
     return stringifyTextbox(child.textbox, ctx);

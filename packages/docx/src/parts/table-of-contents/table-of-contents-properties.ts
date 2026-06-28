@@ -9,6 +9,8 @@
  * @module
  */
 
+import type { SectionChild } from "@shared/section";
+
 /**
  * Represents a style-to-level mapping for table of contents entries.
  *
@@ -142,4 +144,15 @@ export interface TableOfContentsOptions {
    * \z Hides tab leader and page numbers in web page view (§17.18.102).
    */
   hideTabAndPageNumbersInWebView?: boolean;
+
+  /**
+   * Rendered TOC entries — the paragraph content between the field's `separate`
+   * and `end` markers. Round-tripped structurally (each entry is a TOC-style
+   * paragraph carrying a HYPERLINK field, tab leader, and PAGEREF page number)
+   * so both MS Office and WPS display the existing TOC without regenerating.
+   *
+   * Omit on fresh generation — the field is then emitted `dirty` so the
+   * consuming application builds the entries from headings on open.
+   */
+  entries?: SectionChild[];
 }
