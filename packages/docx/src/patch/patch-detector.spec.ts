@@ -1,8 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-vi.mock("fflate", () => ({
-  strFromU8: vi.fn().mockImplementation((data: Uint8Array) => new TextDecoder().decode(data)),
-  unzipSync: vi.fn(),
-}));
+// Partial mock: keep the real fflate exports (zip/Zip/strFromU8/…) and only
+// stub `unzipSync` so tests control the unzipped entries. A full mock breaks
+// because `@office-open/core` pulls in fflate's `zip` at import time.
+vi.mock("fflate", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("fflate")>();
+  return {
+    ...actual,
+    unzipSync: vi.fn(),
+  };
+});
 import { unzipSync } from "@office-open/core";
 
 import { patchDetector } from "./patch-detector";

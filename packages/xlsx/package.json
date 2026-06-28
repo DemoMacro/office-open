@@ -1,6 +1,6 @@
 {
   "name": "@office-open/xlsx",
-  "version": "0.10.6",
+  "version": "0.10.7",
   "description": "Generate, parse, and patch .xlsx spreadsheets with a declarative TypeScript API",
   "keywords": [
     "excel",
