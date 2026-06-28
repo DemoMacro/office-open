@@ -66,4 +66,22 @@ describe("Media", () => {
     expect(reused.fileName).toBe("image1.png");
     expect(media.array).toHaveLength(1);
   });
+
+  it("deduplicates byte-identical content across distinct buffer objects", () => {
+    const media = new Media<TestEntry>();
+    const first = media.addMedia(
+      new Uint8Array([1, 2, 3]),
+      "png",
+      build(new Uint8Array([1, 2, 3]), "png"),
+    );
+    // A separately-allocated buffer carrying the same bytes (e.g. a re-decoded round-trip input).
+    const second = media.addMedia(
+      new Uint8Array([1, 2, 3]),
+      "png",
+      build(new Uint8Array([1, 2, 3]), "png"),
+    );
+
+    expect(second).toBe(first);
+    expect(media.array).toHaveLength(1);
+  });
 });

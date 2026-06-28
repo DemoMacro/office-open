@@ -84,23 +84,23 @@ await generateWorkbook(options, { compression: { xml: 0, media: 0 } });
 
 | Scenario         | Default sync | Default async | All STORE sync | All STORE async |       hucre |
 | ---------------- | -----------: | ------------: | -------------: | --------------: | ----------: |
-| Simple (3 rows)  |  2,416 ops/s |   1,160 ops/s |   14,593 ops/s |    17,853 ops/s | 1,062 ops/s |
-| Styled rows (20) |  2,446 ops/s |   1,128 ops/s |   15,780 ops/s |    15,544 ops/s | 1,075 ops/s |
-| Table (10x5)     |  2,361 ops/s |   1,195 ops/s |   16,784 ops/s |    16,723 ops/s |   907 ops/s |
+| Simple (3 rows)  |  2,354 ops/s |   1,285 ops/s |   21,893 ops/s |    23,617 ops/s |   927 ops/s |
+| Styled rows (20) |  2,287 ops/s |   1,237 ops/s |   19,237 ops/s |    19,173 ops/s |   906 ops/s |
+| Table (10x5)     |  2,510 ops/s |   1,178 ops/s |   18,479 ops/s |    17,921 ops/s | 1,191 ops/s |
 
 **Large Files — Create + toBuffer**
 
-| Scenario                      | Default sync | Default async | All STORE sync | All STORE async |     hucre |
-| ----------------------------- | -----------: | ------------: | -------------: | --------------: | --------: |
-| 2000 rows + 10 images         |    110 ops/s |      92 ops/s |       86 ops/s |        91 ops/s |  44 ops/s |
-| 200x10 table                  |    853 ops/s |     614 ops/s |    1,142 ops/s |     1,122 ops/s | 258 ops/s |
-| 20 sheets × 100 rows + 20 img |     72 ops/s |      50 ops/s |       63 ops/s |        62 ops/s |  25 ops/s |
+| Scenario                      | Default sync | Default async | All STORE sync | All STORE async |      hucre |
+| ----------------------------- | -----------: | ------------: | -------------: | --------------: | ---------: |
+| 2000 rows + 10 images         |    110 ops/s |     115 ops/s |      137 ops/s |       133 ops/s | 43.7 ops/s |
+| 200x10 table                  |    849 ops/s |     630 ops/s |    1,278 ops/s |     1,219 ops/s |  265 ops/s |
+| 20 sheets × 100 rows + 20 img |   72.8 ops/s |    55.0 ops/s |      101 ops/s |       105 ops/s | 25.7 ops/s |
 
 **Large Data — 100,000 rows × 20 columns (2M cells)**
 
 | Scenario  | Default sync | Default async | All STORE sync | All STORE async |      hucre |
 | --------- | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 100k × 20 |   0.87 ops/s |    0.81 ops/s |     1.02 ops/s |      0.96 ops/s | 0.39 ops/s |
+| 100k × 20 |   0.84 ops/s |    0.86 ops/s |     1.05 ops/s |      0.96 ops/s | 0.40 ops/s |
 
 ## License
 

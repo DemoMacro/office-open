@@ -36,7 +36,11 @@ export const convertOutput = <T extends OutputType>(
 ): OutputByType[T] => {
   switch (type) {
     case "nodebuffer":
-      return Buffer.from(data) as OutputByType[T];
+      // Zero-copy: wrap the zip output's underlying ArrayBuffer as a Buffer
+      // view instead of copying it (~11MB for an image-heavy file) on every
+      // generate(). Safe because the source buffer is freshly allocated and
+      // never mutated after this point.
+      return Buffer.from(data.buffer, data.byteOffset, data.byteLength) as OutputByType[T];
     case "blob":
       return new Blob(
         [(data.buffer as ArrayBuffer).slice(data.byteOffset, data.byteOffset + data.byteLength)],

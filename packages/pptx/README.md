@@ -101,19 +101,19 @@ await generatePresentation(options, { compression: { xml: 0, media: 0 } });
 
 | Scenario           | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | ------------------ | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| Simple (2 shapes)  |  1,684 ops/s |     773 ops/s |    6,061 ops/s |     5,249 ops/s |         181 ops/s |       185 ops/s |
-| Styled shapes (20) |  1,497 ops/s |     745 ops/s |    5,154 ops/s |     4,958 ops/s |         168 ops/s |       170 ops/s |
-| Table (10x5)       |  1,657 ops/s |     729 ops/s |    7,252 ops/s |     6,797 ops/s |         889 ops/s |       999 ops/s |
-| Full featured      |  1,635 ops/s |     714 ops/s |    4,816 ops/s |     4,321 ops/s |          96 ops/s |        94 ops/s |
+| Simple (2 shapes)  |  1,391 ops/s |     693 ops/s |    4,055 ops/s |     4,148 ops/s |         182 ops/s |       187 ops/s |
+| Styled shapes (20) |  1,302 ops/s |     661 ops/s |    4,387 ops/s |     4,030 ops/s |         188 ops/s |       183 ops/s |
+| Table (10x5)       |  1,694 ops/s |     802 ops/s |    7,787 ops/s |     7,891 ops/s |         857 ops/s |       937 ops/s |
+| Full featured      |  1,155 ops/s |     627 ops/s |    2,873 ops/s |     2,821 ops/s |          97 ops/s |        98 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario              | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | --------------------- | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| 30 slides x 20 shapes |    253 ops/s |     139 ops/s |      500 ops/s |       490 ops/s |         119 ops/s |       123 ops/s |
-| 30 slides x 10 images |    320 ops/s |     160 ops/s |      793 ops/s |       795 ops/s |        0.26 ops/s |      0.30 ops/s |
-| 100x10 table          |    641 ops/s |     460 ops/s |      954 ops/s |       891 ops/s |         120 ops/s |       126 ops/s |
-| 50 slides full        |    169 ops/s |      87 ops/s |      326 ops/s |       317 ops/s |        0.90 ops/s |      0.90 ops/s |
+| 30 slides x 20 shapes |    271 ops/s |     144 ops/s |      571 ops/s |       577 ops/s |         119 ops/s |       120 ops/s |
+| 30 slides x 10 images |    130 ops/s |    87.4 ops/s |      173 ops/s |       168 ops/s |        0.32 ops/s |      0.32 ops/s |
+| 100x10 table          |    618 ops/s |     453 ops/s |    1,082 ops/s |     1,039 ops/s |         128 ops/s |       123 ops/s |
+| 50 slides full        |   89.2 ops/s |    60.5 ops/s |      131 ops/s |       129 ops/s |        0.95 ops/s |      0.95 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -121,7 +121,7 @@ await generatePresentation(options, { compression: { xml: 0, media: 0 } });
 
 | Scenario        | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | --------------- | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| 40 slides mixed |    227 ops/s |     124 ops/s |      708 ops/s |       721 ops/s |        0.23 ops/s |      0.22 ops/s |
+| 40 slides mixed |   24.5 ops/s |    22.1 ops/s |     26.3 ops/s |      26.5 ops/s |        0.22 ops/s |      0.23 ops/s |
 
 ## Examples
 
