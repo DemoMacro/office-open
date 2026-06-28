@@ -87,7 +87,7 @@ export interface MoveRangeStartOptions {
  *
  * Reference: wml.xsd CT_Bookmark, CT_BookmarkRange, EG_RangeMarkupElements.
  */
-export interface BookmarkChildOptions {
+export interface BookmarkOptions {
   /** Bookmark name used for reference (CT_Bookmark @w:name, required). */
   name: string;
   /** Anchored document content the bookmark range wraps (inline runs/text). */
@@ -114,7 +114,7 @@ export interface BookmarkChildOptions {
  *
  * Reference: wml.xsd CT_MoveBookmark, CT_TrackChange, EG_RangeMarkupElements.
  */
-export interface MoveRangeChildOptions {
+export interface MoveRangeOptions {
   /** Author of the move (CT_MoveBookmark + move run @w:author, required). */
   author: string;
   /** Date of the move (CT_MoveBookmark + move run @w:date, required). */

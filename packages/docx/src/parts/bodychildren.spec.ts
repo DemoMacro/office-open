@@ -11,7 +11,7 @@ import {
   setBodyParseChild,
   subDocDesc,
 } from "./bodychildren";
-import type { SdtChildOptions } from "./bodychildren";
+import type { SdtBlockOptions } from "./bodychildren";
 import type { CustomXmlBlockDescriptorOptions } from "./bodychildren";
 
 // Register a minimal child parser for SDT/customXml
@@ -42,7 +42,7 @@ const readCtx = {
 
 // ── sdtBlockDesc ──
 
-function roundTripSdt(opts: SdtChildOptions) {
+function roundTripSdt(opts: SdtBlockOptions) {
   const xml = sdtBlockDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements![0];

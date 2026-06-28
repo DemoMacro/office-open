@@ -11,11 +11,11 @@ import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
 import type {
-  BookmarkChildOptions,
+  BookmarkOptions,
   MarkupRangeOptions,
   BookmarkStartOptions,
   MoveRangeStartOptions,
-  MoveRangeChildOptions,
+  MoveRangeOptions,
 } from "./links/bookmark";
 import type { MathInput } from "./math";
 import type { ParagraphPropertiesOptions } from "./properties";
@@ -30,30 +30,6 @@ import type { SmartArtOptions } from "./run/smartart-run";
 import type { SymbolRunOptions } from "./run/symbol-run";
 import type { WpgGroupRunOptions } from "./run/wpg-group-run";
 import type { WpsShapeRunOptions } from "./run/wps-shape-run";
-
-// ── JSON child wrappers ──
-
-/** JSON-friendly wrapper for ChartRun options in paragraph children. */
-export interface ChartChild {
-  chart: ChartOptions;
-}
-
-/** JSON-friendly wrapper for SmartArtRun options in paragraph children. */
-export interface SmartArtChild {
-  smartArt: SmartArtOptions;
-}
-
-/** JSON-friendly wrapper for ImageRun options in paragraph children. */
-export interface ImageChild {
-  image: ImageOptions;
-}
-
-/** JSON-friendly wrapper for Math options in paragraph children. */
-export interface MathChild {
-  math: {
-    children?: MathInput[];
-  };
-}
 
 /** Options for an inline (run-level) structured document tag (CT_SdtRun). */
 export interface SdtRunOptions {
@@ -73,10 +49,10 @@ export interface FootnoteEndnoteReferenceOptions {
 
 /** Discriminated union of all paragraph child types (inline elements, runs, etc.). */
 export type ParagraphChild =
-  | ChartChild
-  | SmartArtChild
-  | ImageChild
-  | MathChild
+  | { chart: ChartOptions }
+  | { smartArt: SmartArtOptions }
+  | { image: ImageOptions }
+  | { math: { children?: MathInput[] } }
   | { symbolRun: SymbolRunOptions }
   | { footnoteReference: number | FootnoteEndnoteReferenceOptions }
   | { endnoteReference: number | FootnoteEndnoteReferenceOptions }
@@ -110,7 +86,7 @@ export type ParagraphChild =
     }
   | { bookmarkStart: BookmarkStartOptions }
   | { bookmarkEnd: MarkupRangeOptions }
-  | { bookmark: BookmarkChildOptions }
+  | { bookmark: BookmarkOptions }
   | { wpsShape: WpsShapeRunOptions }
   | { wpgGroup: WpgGroupRunOptions }
   // Proof error markers
@@ -137,8 +113,8 @@ export type ParagraphChild =
   | { movedFrom: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   | { movedTo: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
   // Move revision sugar — library allocates range + run ids and pairs markers
-  | { moveFrom: MoveRangeChildOptions }
-  | { moveTo: MoveRangeChildOptions }
+  | { moveFrom: MoveRangeOptions }
+  | { moveTo: MoveRangeOptions }
   // Custom XML range markers (track changes)
   | { customXmlInsRangeStart: { id: number; author: string; date?: string } }
   | { customXmlInsRangeEnd: number }

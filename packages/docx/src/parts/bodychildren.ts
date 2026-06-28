@@ -156,7 +156,7 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
 
 // ── SDT (pure string — inline sdtPr + stringify children) ──
 
-export interface SdtChildOptions {
+export interface SdtBlockOptions {
   properties: SdtPropertiesOptions;
   children?: SectionChild[];
   /** Run properties for the SDT end mark (w:sdtEndPr). */
@@ -540,7 +540,7 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
   return result;
 }
 
-export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
+export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -595,7 +595,7 @@ export const sdtBlockDesc: CustomDescriptor<SdtChildOptions, BodyContext> = {
       if (childList.length === 0) childList = undefined;
     }
 
-    return { properties, children: childList, endProperties } as SdtChildOptions;
+    return { properties, children: childList, endProperties } as SdtBlockOptions;
   },
 };
 

@@ -19,10 +19,10 @@ import { createDataModel } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type {
-  BookmarkChildOptions,
+  BookmarkOptions,
   BookmarkStartOptions,
   MarkupRangeOptions,
-  MoveRangeChildOptions,
+  MoveRangeOptions,
   MoveRangeStartOptions,
 } from "@parts/paragraph/links/bookmark";
 import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
@@ -290,7 +290,7 @@ function stringifyCommentChild(c: CommentChildOptions, ctx: BodyContext): string
  * paired bookmarkStart/bookmarkEnd with the anchored content between them.
  * Bookmarks are pure markup — the only effect is the two markers.
  */
-function stringifyBookmarkChild(b: BookmarkChildOptions, ctx: BodyContext): string {
+function stringifyBookmarkChild(b: BookmarkOptions, ctx: BodyContext): string {
   const id = ctx.file.markupIds.rangeNext++;
   const startAttrs = buildBookmarkStartAttrs({
     id,
@@ -310,7 +310,7 @@ function stringifyBookmarkChild(b: BookmarkChildOptions, ctx: BodyContext): stri
  */
 function stringifyMoveRangeChild(
   kind: "moveFrom" | "moveTo",
-  opts: MoveRangeChildOptions,
+  opts: MoveRangeOptions,
   ctx: BodyContext,
 ): string {
   const rangeId = ctx.file.markupIds.rangeNext++;
