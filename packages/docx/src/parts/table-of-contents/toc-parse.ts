@@ -5,12 +5,13 @@
  *
  * @module
  */
-import { attr, children, findChild, textOf } from "@office-open/xml";
+import { attr, children, findChild, findDeep, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type {
   StyleLevel,
   TableOfContentsOptions,
 } from "@parts/table-of-contents/table-of-contents-properties";
+import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext } from "../../context";
 
@@ -24,7 +25,8 @@ import type { DocxReadContext } from "../../context";
  */
 export function parseToc(
   el: Element,
-  _ctx: DocxReadContext,
+  ctx: DocxReadContext,
+  parseChildren?: (elements: Element[], ctx: DocxReadContext) => SectionChild[],
 ):
   | ({
       alias?: string;
@@ -72,6 +74,15 @@ export function parseToc(
           const instruction = textOf(instrText).trim();
           parseTocFieldInstruction(instruction, tocOpts);
         }
+      }
+    }
+    // Rendered entries — the paragraphs between the field's separate and end
+    // markers. Captured structurally so MS Office and WPS both display the
+    // existing TOC instead of regenerating it from headings.
+    if (parseChildren) {
+      const entryEls = selectTocEntryElements(sdtContent.elements ?? []);
+      if (entryEls.length > 0) {
+        tocOpts.entries = parseChildren(entryEls, ctx);
       }
     }
   }
@@ -143,6 +154,42 @@ export function parseTocFieldFromElements(els: Element[]): TableOfContentsOption
   const opts: Record<string, unknown> = {};
   for (const el of els) collectTocInstructions(el, opts);
   return opts as TableOfContentsOptions;
+}
+
+/**
+ * Select the rendered-entry paragraphs of a captured TOC field — the paragraphs
+ * between the field's `separate` and `end` markers. Tracks field depth so a
+ * nested HYPERLINK/PAGEREF field inside an entry doesn't fool the boundary
+ * detection.
+ *
+ * Uses the post-walk `afterSeparate` flag (not a pre-walk snapshot) so an entry
+ * whose paragraph also carries the `separate` marker is still captured, and
+ * requires rendered text (`w:t`) so a paragraph holding only the `separate`
+ * marker isn't mistaken for an entry.
+ */
+export function selectTocEntryElements(els: Element[]): Element[] {
+  const entries: Element[] = [];
+  let depth = 0;
+  let afterSeparate = false;
+  for (const el of els) {
+    const depthBefore = depth;
+    const walk = (node: Element): void => {
+      if (node.name === "w:fldChar") {
+        const type = attr(node, "w:fldCharType");
+        if (type === "begin") depth++;
+        else if (type === "separate" && depth === 1) afterSeparate = true;
+        else if (type === "end") depth--;
+      }
+      for (const c of node.elements ?? []) {
+        if (c.type === "element") walk(c);
+      }
+    };
+    walk(el);
+    if (depthBefore === 1 && afterSeparate && depth >= 1 && findDeep(el, "w:t").length > 0) {
+      entries.push(el);
+    }
+  }
+  return entries;
 }
 
 /** Recursively feed every w:instrText to the TOC instruction parser. */

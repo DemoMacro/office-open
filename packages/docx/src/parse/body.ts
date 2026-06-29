@@ -14,7 +14,11 @@ import type { SectionPropertiesOptions } from "@parts/document/body/section-prop
 import type { MarkupRangeOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
-import { parseToc, parseTocFieldFromElements } from "@parts/table-of-contents/toc-parse";
+import {
+  parseToc,
+  parseTocFieldFromElements,
+  selectTocEntryElements,
+} from "@parts/table-of-contents/toc-parse";
 import { tableDesc } from "@parts/table/descriptor";
 import type { TableOptions } from "@parts/table/table";
 import { parseTextbox } from "@parts/textbox/textbox-parse";
@@ -123,7 +127,7 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       return { table: tableDesc.parse(el, ctx) as TableOptions };
     case "w:sdt": {
       // Try TOC first
-      const tocResult = parseToc(el, ctx);
+      const tocResult = parseToc(el, ctx, parseSectionChildrenElements);
       if (tocResult) {
         return { toc: tocResult };
       }
@@ -368,42 +372,11 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
  */
 function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
   const tocOpts = parseTocFieldFromElements(els);
-  const entries = extractTocEntries(els, ctx);
-  if (entries.length > 0) tocOpts.entries = entries;
-  return { toc: tocOpts };
-}
-
-/**
- * Collect the TOC field's rendered entries — the paragraphs between the field's
- * `separate` and `end` markers. Tracks field depth so nested HYPERLINK/PAGEREF
- * fields inside each entry don't fool the boundary detection.
- */
-function extractTocEntries(els: Element[], ctx: DocxReadContext): SectionChild[] {
-  const entries: SectionChild[] = [];
-  let depth = 0;
-  let afterSeparate = false;
-  for (const el of els) {
-    const wasAfterSeparate = afterSeparate;
-    const wasDepth = depth;
-    const walk = (node: Element): void => {
-      if (node.name === "w:fldChar") {
-        const type = attr(node, "w:fldCharType");
-        if (type === "begin") depth++;
-        else if (type === "separate" && depth === 1) afterSeparate = true;
-        else if (type === "end") depth--;
-      }
-      for (const c of node.elements ?? []) {
-        if (c.type === "element") walk(c);
-      }
-    };
-    walk(el);
-    // Entry paragraph: entered at the TOC depth (1), past `separate`, and not
-    // the end-closing paragraph (depth still ≥ 1 after walking it).
-    if (wasAfterSeparate && wasDepth === 1 && depth >= 1) {
-      entries.push(parseSectionChild(el, ctx));
-    }
+  const entryEls = selectTocEntryElements(els);
+  if (entryEls.length > 0) {
+    tocOpts.entries = entryEls.map((el) => parseSectionChild(el, ctx));
   }
-  return entries;
+  return { toc: tocOpts };
 }
 
 /**

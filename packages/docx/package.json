@@ -1,6 +1,6 @@
 {
   "name": "@office-open/docx",
-  "version": "0.10.7",
+  "version": "0.10.8",
   "description": "Generate, parse, and patch .docx documents with a declarative TypeScript API",
   "keywords": [
     "clippy",

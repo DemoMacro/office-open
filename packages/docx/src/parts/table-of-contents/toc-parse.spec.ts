@@ -2,7 +2,7 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { DocxReadContext } from "../../context";
-import { parseBody } from "../../parse/body";
+import { parseBody, parseSectionChild } from "../../parse/body";
 import { stringifyTableOfContents } from "./descriptor";
 import { parseToc, parseTocFieldFromElements, parseTocFieldInstruction } from "./toc-parse";
 
@@ -74,6 +74,22 @@ describe("parseToc", () => {
     expect(result?.headingStyleRange).toBe("1-3");
     expect(result?.hyperlink).toBe(true);
   });
+
+  it("captures rendered entries inside an SDT-wrapped TOC", () => {
+    const xml = `<w:sdt>
+      <w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent><w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+        <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>Heading One</w:t></w:r></w:p>
+        <w:p><w:pPr><w:pStyle w:val="TOC2"/></w:pPr><w:r><w:t>Heading Two</w:t></w:r></w:p>
+        <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:sdtContent>
+    </w:sdt>`;
+    const result = parseToc(parseXml(xml).elements![0], readCtx, (els, ctx) =>
+      els.map((e) => parseSectionChild(e, ctx)),
+    );
+    expect(result?.entries).toHaveLength(2);
+  });
 });
 
 describe("parseBody TOC page-break rescue", () => {
@@ -130,6 +146,26 @@ describe("parseBody TOC entry preservation", () => {
       | { toc: { entries?: unknown[] } }
       | undefined;
     expect(tocChild?.toc.entries).toBeUndefined();
+  });
+
+  it("captures the first entry when separate shares its paragraph", () => {
+    // Word sometimes emits the `separate` fldChar in the same paragraph as the
+    // first rendered entry (not in the field-head paragraph). The depth tracker
+    // must still capture that entry — not drop it as a non-entry.
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="separate"/></w:r>
+        <w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:r><w:t>Heading Two</w:t></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements![0];
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0].children ?? []).find((c) => "toc" in c) as
+      | { toc: { entries?: unknown[] } }
+      | undefined;
+    expect(tocChild?.toc.entries).toHaveLength(2);
   });
 
   it("keeps a nested HYPERLINK field inside an entry from fooling depth tracking", () => {
