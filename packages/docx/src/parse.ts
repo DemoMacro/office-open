@@ -368,7 +368,7 @@ export function parseDocument(data: DataType): DocumentOptions {
       );
       const children = commentsResult.children;
       if (children && children.length > 0) {
-        opts.comments = { children } as unknown as DocumentOptions["comments"];
+        opts.comments = { children };
       }
     }
   }
@@ -380,7 +380,7 @@ export function parseDocument(data: DataType): DocumentOptions {
       const fnResult = ctx.withPart(docx.partRefs.footnotes, () =>
         footnotesDesc.parse(footnotesEl, ctx),
       );
-      const footnotesMap: Record<string, { children: unknown[] }> = {};
+      const footnotesMap: NonNullable<DocumentOptions["footnotes"]> = {};
       for (const [id, paragraphs] of fnResult.notes) {
         footnotesMap[String(id)] = { children: paragraphs };
       }
@@ -391,11 +391,10 @@ export function parseDocument(data: DataType): DocumentOptions {
         fnResult.separator ||
         fnResult.continuationSeparator
       ) {
-        const fnOpts = footnotesMap as NonNullable<DocumentOptions["footnotes"]>;
-        if (fnResult.separator) fnOpts.separator = fnResult.separator;
+        if (fnResult.separator) footnotesMap.separator = fnResult.separator;
         if (fnResult.continuationSeparator)
-          fnOpts.continuationSeparator = fnResult.continuationSeparator;
-        opts.footnotes = fnOpts;
+          footnotesMap.continuationSeparator = fnResult.continuationSeparator;
+        opts.footnotes = footnotesMap;
       }
     }
   }
@@ -407,7 +406,7 @@ export function parseDocument(data: DataType): DocumentOptions {
       const enResult = ctx.withPart(docx.partRefs.endnotes, () =>
         endnotesDesc.parse(endnotesEl, ctx),
       );
-      const endnotesMap: Record<string, { children: unknown[] }> = {};
+      const endnotesMap: NonNullable<DocumentOptions["endnotes"]> = {};
       for (const [id, paragraphs] of enResult.notes) {
         endnotesMap[String(id)] = { children: paragraphs };
       }
@@ -416,11 +415,10 @@ export function parseDocument(data: DataType): DocumentOptions {
         enResult.separator ||
         enResult.continuationSeparator
       ) {
-        const enOpts = endnotesMap as NonNullable<DocumentOptions["endnotes"]>;
-        if (enResult.separator) enOpts.separator = enResult.separator;
+        if (enResult.separator) endnotesMap.separator = enResult.separator;
         if (enResult.continuationSeparator)
-          enOpts.continuationSeparator = enResult.continuationSeparator;
-        opts.endnotes = enOpts;
+          endnotesMap.continuationSeparator = enResult.continuationSeparator;
+        opts.endnotes = endnotesMap;
       }
     }
   }

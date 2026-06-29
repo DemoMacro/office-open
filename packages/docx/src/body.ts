@@ -66,7 +66,7 @@ import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc }
 import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
-import type { ParagraphChild } from "./parts/paragraph/paragraph";
+import type { ParagraphChild, SdtRunOptions } from "./parts/paragraph/paragraph";
 import { stringifyParagraphProperties, stringifyRunProperties } from "./parts/paragraph/stringify";
 import { replaceRelsWithPlaceholders } from "./util/replace-media-placeholders";
 import { stringifyElement } from "./util/stringify-element";
@@ -973,8 +973,8 @@ function collectRunsText(el: Element): string {
  * other paragraph-level constructs are rare inside these containers and are
  * not handled here.
  */
-function parseContainerChildren(el: Element, ctx: DocxReadContext): unknown[] {
-  const children: unknown[] = [];
+function parseContainerChildren(el: Element, ctx: DocxReadContext): ParagraphChild[] {
+  const children: ParagraphChild[] = [];
   for (const sub of el.elements ?? []) {
     switch (sub.name) {
       case "w:r": {
@@ -983,12 +983,16 @@ function parseContainerChildren(el: Element, ctx: DocxReadContext): unknown[] {
         if (runOpts !== null) children.push(runOpts);
         break;
       }
-      case "w:smartTag":
-        children.push({ smartTag: parseSmartTagInline(sub, ctx) });
+      case "w:smartTag": {
+        const smartTag = parseSmartTagInline(sub, ctx);
+        if (smartTag) children.push({ smartTag });
         break;
-      case "w:customXml":
-        children.push({ customXml: parseCustomXmlInline(sub, ctx) });
+      }
+      case "w:customXml": {
+        const customXml = parseCustomXmlInline(sub, ctx);
+        if (customXml) children.push({ customXml });
         break;
+      }
       default:
         break;
     }
@@ -997,10 +1001,10 @@ function parseContainerChildren(el: Element, ctx: DocxReadContext): unknown[] {
 }
 
 /** Parse a w:smartTag element into its ParagraphChild form. */
-function parseSmartTagInline(el: Element, ctx: DocxReadContext): Partial<SmartTagInlineOptions> {
-  const st: Partial<SmartTagInlineOptions> = {};
+function parseSmartTagInline(el: Element, ctx: DocxReadContext): SmartTagInlineOptions | undefined {
   const element = attr(el, "w:element");
-  if (element) st.element = element;
+  if (!element) return undefined;
+  const st: SmartTagInlineOptions = { element };
   const uri = attr(el, "w:uri");
   if (uri) st.uri = uri;
   const pr = findChild(el, "w:smartTagPr");
@@ -1019,15 +1023,18 @@ function parseSmartTagInline(el: Element, ctx: DocxReadContext): Partial<SmartTa
     if (props.length > 0) st.properties = props;
   }
   const content = parseContainerChildren(el, ctx);
-  if (content.length > 0) st.children = content as (RunOptions | string)[];
+  if (content.length > 0) st.children = content;
   return st;
 }
 
 /** Parse an inline w:customXml element into its ParagraphChild form. */
-function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Partial<CustomXmlInlineOptions> {
-  const cx: Partial<CustomXmlInlineOptions> = {};
+function parseCustomXmlInline(
+  el: Element,
+  ctx: DocxReadContext,
+): CustomXmlInlineOptions | undefined {
   const element = attr(el, "w:element");
-  if (element) cx.element = element;
+  if (!element) return undefined;
+  const cx: CustomXmlInlineOptions = { element };
   const uri = attr(el, "w:uri");
   if (uri) cx.uri = uri;
   const pr = findChild(el, "w:customXmlPr");
@@ -1038,7 +1045,7 @@ function parseCustomXmlInline(el: Element, ctx: DocxReadContext): Partial<Custom
     }
   }
   const content = parseContainerChildren(el, ctx);
-  if (content.length > 0) cx.children = content as (ParagraphChild | string)[];
+  if (content.length > 0) cx.children = content;
   return cx;
 }
 
@@ -1100,8 +1107,11 @@ function runRPrXml(run: Element): string | undefined {
   return rPr ? stringifyElement(rPr) : undefined;
 }
 
-function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadContext): unknown[] {
-  const childList: unknown[] = [];
+function parseRunLevelChildren(
+  elements: Element[] | undefined,
+  ctx: DocxReadContext,
+): ParagraphChild[] {
+  const childList: ParagraphChild[] = [];
 
   // Field accumulator: a field (form field OR plain complex field) spans
   // several w:r elements (begin fldChar → instrText → separate → result → end).
@@ -1442,12 +1452,12 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
       }
       case "w:smartTag": {
         const st = parseSmartTagInline(child, ctx);
-        if (st.element) childList.push({ smartTag: st });
+        if (st) childList.push({ smartTag: st });
         break;
       }
       case "w:customXml": {
         const cx = parseCustomXmlInline(child, ctx);
-        if (cx.element) childList.push({ customXml: cx });
+        if (cx) childList.push({ customXml: cx });
         break;
       }
       // ── Bidirectional containers (reuse the smartTag/customXml child parser) ──
@@ -1456,7 +1466,7 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         if (val) {
           const dir: DirInlineOptions = { val: val as "ltr" | "rtl" };
           const content = parseContainerChildren(child, ctx);
-          if (content.length > 0) dir.children = content as (RunOptions | string)[];
+          if (content.length > 0) dir.children = content;
           childList.push({ dir });
         }
         break;
@@ -1466,14 +1476,21 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         if (val) {
           const bdo: DirInlineOptions = { val: val as "ltr" | "rtl" };
           const content = parseContainerChildren(child, ctx);
-          if (content.length > 0) bdo.children = content as (RunOptions | string)[];
+          if (content.length > 0) bdo.children = content;
           childList.push({ bdo });
         }
         break;
       }
       // ── Ruby annotation (East Asian pronunciation guides) ──
       case "w:ruby": {
-        const ruby: Partial<RubyOptions> = {};
+        const rt = findChild(child, "w:rt");
+        const rubyBase = findChild(child, "w:rubyBase");
+        // text and base are required by CT_Ruby; skip the ruby if either is missing.
+        if (!rt || !rubyBase) break;
+        const ruby: RubyOptions = {
+          text: collectRunsText(rt),
+          base: collectRunsText(rubyBase),
+        };
         const pr = findChild(child, "w:rubyPr");
         if (pr) {
           const alignEl = findChild(pr, "w:rubyAlign");
@@ -1504,20 +1521,20 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
           }
           if (findChild(pr, "w:dirty")) ruby.dirty = true;
         }
-        const rt = findChild(child, "w:rt");
-        if (rt) ruby.text = collectRunsText(rt);
-        const rubyBase = findChild(child, "w:rubyBase");
-        if (rubyBase) ruby.base = collectRunsText(rubyBase);
-        // text and base are required by CT_Ruby; drop if either is missing.
-        if (ruby.text !== undefined && ruby.base !== undefined) {
-          childList.push({ ruby });
-        }
+        childList.push({ ruby });
         break;
       }
       // ── Range markers: proof errors, positional tabs, permissions, revisions ──
       case "w:proofErr": {
         const type = attr(child, "w:type");
-        if (type) childList.push({ proofErr: type });
+        if (
+          type === "spellStart" ||
+          type === "spellEnd" ||
+          type === "gramStart" ||
+          type === "gramEnd"
+        ) {
+          childList.push({ proofErr: type });
+        }
         break;
       }
       case "w:ptab": {
@@ -1617,9 +1634,7 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         const endProperties = sdtEndPr ? parseRunProperties(sdtEndPr) : undefined;
         const sdtContent = findChild(child, "w:sdtContent");
         const sdtChildren = parseRunLevelChildren(sdtContent?.elements, ctx);
-        const sdt: { properties: unknown; children?: unknown[]; endProperties?: unknown } = {
-          properties,
-        };
+        const sdt: SdtRunOptions = { properties };
         if (sdtChildren.length > 0) sdt.children = sdtChildren;
         if (endProperties) sdt.endProperties = endProperties;
         childList.push({ sdt });
@@ -1664,21 +1679,18 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
 
   const childList = parseRunLevelChildren(el.elements, ctx);
 
-  // Simple text optimization
+  // Simple text optimization: a run of text-only children collapses into a
+  // single opts.text (the canonical ParagraphOptions form) instead of a
+  // children array.
   if (childList.length > 0) {
-    const allStrings = childList.every(isTextOnlyRun);
-    if (allStrings) {
-      const combined = childList.map((c) => (c as { text: string }).text).join("");
-      if (combined && Object.keys(opts).length === 0) {
-        return combined as unknown as ParagraphOptions;
-      }
+    if (childList.every(isTextOnlyRun)) {
+      const combined = childList.map((c) => (isTextOnlyRun(c) ? c.text : "")).join("");
       if (combined) {
         opts.text = combined;
         return opts as ParagraphOptions;
       }
     }
-
-    opts.children = childList as (RunOptions | string)[];
+    opts.children = childList;
   }
 
   return opts as ParagraphOptions;

@@ -116,13 +116,13 @@ export type ParagraphChild =
   | { moveFrom: MoveRangeOptions }
   | { moveTo: MoveRangeOptions }
   // Custom XML range markers (track changes)
-  | { customXmlInsRangeStart: { id: number; author: string; date?: string } }
+  | { customXmlInsRangeStart: { id: number; author?: string; date?: string } }
   | { customXmlInsRangeEnd: number }
-  | { customXmlDelRangeStart: { id: number; author: string; date?: string } }
+  | { customXmlDelRangeStart: { id: number; author?: string; date?: string } }
   | { customXmlDelRangeEnd: number }
-  | { customXmlMoveFromRangeStart: { id: number; author: string; date?: string } }
+  | { customXmlMoveFromRangeStart: { id: number; author?: string; date?: string } }
   | { customXmlMoveFromRangeEnd: number }
-  | { customXmlMoveToRangeStart: { id: number; author: string; date?: string } }
+  | { customXmlMoveToRangeStart: { id: number; author?: string; date?: string } }
   | { customXmlMoveToRangeEnd: number }
   // Ruby annotation (East Asian pronunciation guides)
   | { ruby: RubyOptions }
@@ -149,15 +149,15 @@ export type ParagraphChild =
   // Page reference (PAGEREF field)
   | { pageReference: { bookmarkId: string; hyperlink?: boolean; useRelativePosition?: boolean } }
   // Bidirectional text containers
-  | { dir: { val: "ltr" | "rtl"; children?: (RunOptions | string)[] } }
-  | { bdo: { val: "ltr" | "rtl"; children?: (RunOptions | string)[] } }
+  | { dir: { val: "ltr" | "rtl"; children?: (ParagraphChild | string)[] } }
+  | { bdo: { val: "ltr" | "rtl"; children?: (ParagraphChild | string)[] } }
   // Smart tag
   | {
       smartTag: {
         uri?: string;
         element: string;
         properties?: Array<{ uri?: string; name: string; val: string }>;
-        children?: (RunOptions | string)[];
+        children?: (ParagraphChild | string)[];
       };
     }
   // Custom XML run (CT_CustomXmlRun)

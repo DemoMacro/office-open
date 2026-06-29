@@ -806,25 +806,25 @@ export function stringifyChildDispatch(
   // ── Custom XML range markers (track changes) ──
   if ("customXmlInsRangeStart" in child) {
     const o = child.customXmlInsRangeStart;
-    return `<w:customXmlInsRangeStart w:id="${o.id}" w:author="${escapeXml(o.author)}"${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w:customXmlInsRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
   }
   if ("customXmlInsRangeEnd" in child)
     return `<w:customXmlInsRangeEnd w:id="${child.customXmlInsRangeEnd}"/>`;
   if ("customXmlDelRangeStart" in child) {
     const o = child.customXmlDelRangeStart;
-    return `<w:customXmlDelRangeStart w:id="${o.id}" w:author="${escapeXml(o.author)}"${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w:customXmlDelRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
   }
   if ("customXmlDelRangeEnd" in child)
     return `<w:customXmlDelRangeEnd w:id="${child.customXmlDelRangeEnd}"/>`;
   if ("customXmlMoveFromRangeStart" in child) {
     const o = child.customXmlMoveFromRangeStart;
-    return `<w:customXmlMoveFromRangeStart w:id="${o.id}" w:author="${escapeXml(o.author)}"${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w:customXmlMoveFromRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
   }
   if ("customXmlMoveFromRangeEnd" in child)
     return `<w:customXmlMoveFromRangeEnd w:id="${child.customXmlMoveFromRangeEnd}"/>`;
   if ("customXmlMoveToRangeStart" in child) {
     const o = child.customXmlMoveToRangeStart;
-    return `<w:customXmlMoveToRangeStart w:id="${o.id}" w:author="${escapeXml(o.author)}"${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w:customXmlMoveToRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
   }
   if ("customXmlMoveToRangeEnd" in child)
     return `<w:customXmlMoveToRangeEnd w:id="${child.customXmlMoveToRangeEnd}"/>`;
@@ -927,9 +927,18 @@ export function stringifyChildDispatch(
     }
     if (st.children) {
       for (const c of st.children) {
-        parts.push(
-          typeof c === "string" ? stringifyRunInline({ text: c }, ctx) : stringifyRunInline(c, ctx),
-        );
+        if (typeof c === "string") {
+          parts.push(stringifyRunInline({ text: c }, ctx));
+        } else {
+          const jr = stringifyChildDispatch(c, ctx);
+          parts.push(
+            jr !== undefined
+              ? Array.isArray(jr)
+                ? jr.join("")
+                : jr
+              : stringifyRunInline(c as RunOptions, ctx),
+          );
+        }
       }
     }
     return `<w:smartTag ${attrs.join(" ")}>${parts.join("")}</w:smartTag>`;
@@ -987,7 +996,7 @@ export function stringifyChildDispatch(
 
 /** Serialize children of Dir/Bdo containers. */
 function serializeDirChildren(
-  children: (RunOptions | string)[] | undefined,
+  children: (ParagraphChild | string)[] | undefined,
   ctx: BodyContext,
 ): string {
   if (!children) return "";
@@ -996,7 +1005,14 @@ function serializeDirChildren(
     if (typeof c === "string") {
       parts.push(stringifyRunInline({ text: c }, ctx));
     } else {
-      parts.push(stringifyRunInline(c, ctx));
+      const jr = stringifyChildDispatch(c, ctx);
+      parts.push(
+        jr !== undefined
+          ? Array.isArray(jr)
+            ? jr.join("")
+            : jr
+          : stringifyRunInline(c as RunOptions, ctx),
+      );
     }
   }
   return parts.join("");
