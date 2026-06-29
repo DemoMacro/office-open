@@ -320,7 +320,7 @@ function parseDocDefaults(
       // ind/etc. round-trip too.
       const paraDefaults = parseParagraphProperties(pPr, ctx);
       if (Object.keys(paraDefaults).length > 0) {
-        document.paragraph = paraDefaults as unknown as ParagraphStylePropertiesOptions;
+        document.paragraph = paraDefaults;
       }
     }
   }
@@ -400,7 +400,7 @@ function parseStyleElement(
   if (pPr) {
     const paraOpts = parseParagraphProperties(pPr, ctx);
     if (Object.keys(paraOpts).length > 0) {
-      opts.paragraph = paraOpts as unknown as ParagraphStylePropertiesOptions;
+      opts.paragraph = paraOpts;
     }
   }
 
@@ -437,7 +437,7 @@ function parseStyleElement(
     if (cfPPr) {
       const paraOpts = parseParagraphProperties(cfPPr, ctx);
       if (Object.keys(paraOpts).length > 0) {
-        cf.paragraph = paraOpts as unknown as ParagraphStylePropertiesOptions;
+        cf.paragraph = paraOpts;
       }
     }
     const cfRPr = findChild(child, "w:rPr");

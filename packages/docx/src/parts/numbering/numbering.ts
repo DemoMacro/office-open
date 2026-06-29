@@ -13,7 +13,6 @@ import { decimalNumber } from "@office-open/core";
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { AlignmentType } from "@parts/paragraph";
-import type { LevelParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 
 import type { DocxReadContext } from "../../context";
@@ -545,7 +544,7 @@ function parseLevelEl(
   if (pPr) {
     const paraOpts = parseParagraphProperties(pPr, ctx);
     if (Object.keys(paraOpts).length > 0) {
-      style.paragraph = paraOpts as unknown as LevelParagraphStylePropertiesOptions;
+      style.paragraph = paraOpts;
     }
   }
   if (Object.keys(style).length > 0) opts.style = style;
