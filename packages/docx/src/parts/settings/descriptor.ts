@@ -341,7 +341,7 @@ function parseCaptions(el: Element): CaptionsOptions | undefined {
   for (const child of el.elements ?? []) {
     if (child.type !== "element") continue;
     if (child.name === "w:caption") {
-      const c: Record<string, unknown> = { name: attr(child, "w:name") ?? "" };
+      const c: CaptionOptions = { name: attr(child, "w:name") ?? "" };
       const pos = attr(child, "w:pos");
       if (pos) c.pos = pos as CaptionOptions["pos"];
       const chapNum = attr(child, "w:chapNum");
@@ -354,7 +354,7 @@ function parseCaptions(el: Element): CaptionsOptions | undefined {
       if (numFmt) c.numFmt = numFmt;
       const sep = attr(child, "w:sep");
       if (sep) c.sep = sep as CaptionOptions["sep"];
-      captions.push(c as unknown as CaptionOptions);
+      captions.push(c);
     } else if (child.name === "w:autoCaptions") {
       for (const ac of child.elements ?? []) {
         if (ac.name !== "w:autoCaption") continue;
@@ -372,7 +372,7 @@ function parseCaptions(el: Element): CaptionsOptions | undefined {
 
 /** Parse w:odso (CT_Odso). */
 function parseOdso(el: Element): OdsoOptions | undefined {
-  const o: Record<string, unknown> = {};
+  const o: OdsoOptions = {};
   const udl = readStr(findChild(el, "w:udl"), "w:val");
   if (udl) o.udl = udl;
   const table = readStr(findChild(el, "w:table"), "w:val");
@@ -391,7 +391,7 @@ function parseOdso(el: Element): OdsoOptions | undefined {
   const fieldMapData: OdsoFieldMapDataOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.name !== "w:fieldMapData") continue;
-    const fm: Record<string, unknown> = {};
+    const fm: OdsoFieldMapDataOptions = {};
     const t = readStr(findChild(child, "w:type"), "w:val");
     if (t) fm.type = t as OdsoFieldMapDataOptions["type"];
     const n = readStr(findChild(child, "w:name"), "w:val");
@@ -404,7 +404,7 @@ function parseOdso(el: Element): OdsoOptions | undefined {
     if (lid) fm.lid = lid;
     const dyn = readOnOff(findChild(child, "w:dynamicAddress"));
     if (dyn !== undefined) fm.dynamicAddress = dyn;
-    if (Object.keys(fm).length > 0) fieldMapData.push(fm as OdsoFieldMapDataOptions);
+    if (Object.keys(fm).length > 0) fieldMapData.push(fm);
   }
   if (fieldMapData.length > 0) o.fieldMapData = fieldMapData;
   const recipientData: string[] = [];
@@ -416,12 +416,12 @@ function parseOdso(el: Element): OdsoOptions | undefined {
   if (recipientData.length > 0) o.recipientData = recipientData;
   const uniqueTag = readStr(findChild(el, "w:uniqueTag"), "w:val");
   if (uniqueTag) o.uniqueTag = uniqueTag;
-  return Object.keys(o).length > 0 ? (o as OdsoOptions) : undefined;
+  return Object.keys(o).length > 0 ? o : undefined;
 }
 
 /** Parse w:mailMerge (CT_MailMerge). */
 function parseMailMerge(el: Element): MailMergeOptions | undefined {
-  const o: Record<string, unknown> = {};
+  const o: Partial<MailMergeOptions> = {};
   const mdt = readStr(findChild(el, "w:mainDocumentType"), "w:val");
   if (mdt) o.mainDocumentType = mdt as MailMergeOptions["mainDocumentType"];
   const dataType = readStr(findChild(el, "w:dataType"), "w:val");
@@ -471,7 +471,7 @@ function parseMailMerge(el: Element): MailMergeOptions | undefined {
     if (odso) o.odso = odso;
   }
   if (Object.keys(o).length === 0) return undefined;
-  return o as unknown as MailMergeOptions;
+  return o as MailMergeOptions;
 }
 
 // ── Password derivation ──
