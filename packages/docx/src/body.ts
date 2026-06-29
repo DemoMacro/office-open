@@ -1277,16 +1277,22 @@ function parseRunLevelChildren(elements: Element[] | undefined, ctx: DocxReadCon
         const history = attrBool(child, "w:history");
         if (history !== undefined) hl.history = history;
 
-        const linkRuns: unknown[] = [];
+        const linkRuns: (RunOptions | string)[] = [];
         for (const sub of child.elements ?? []) {
           if (sub.name === "w:r") {
             const parsed = parseRun(sub, ctx);
             const runOpts = parsedRunToOptions(parsed);
-            linkRuns.push(runOpts);
+            // parsedRunToOptions returns null for auto-generated/empty runs
+            // (e.g. footnoteRef, pure drawing) and { commentReference } for
+            // pure comment-reference runs; hyperlink children are
+            // (RunOptions | string), so skip both.
+            if (runOpts !== null && !("commentReference" in runOpts)) {
+              linkRuns.push(runOpts);
+            }
           }
         }
         if (linkRuns.length > 0) {
-          hl.children = linkRuns as (RunOptions | string)[];
+          hl.children = linkRuns;
           childList.push({ hyperlink: hl });
         }
         break;

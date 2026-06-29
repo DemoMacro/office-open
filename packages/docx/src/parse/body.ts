@@ -322,10 +322,11 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
   const flushToc = (): void => {
     if (!tocBuffer) return;
     children.push(buildTocChild(tocBuffer, ctx));
-    // The TOC field's closing paragraph often also carries a trailing page
-    // break (the section break before the first heading). buildTocChild
-    // discards the rendered result, so rescue that page break as a standalone
-    // child to avoid silently dropping it on round-trip.
+    // buildTocChild preserves the rendered entries (paragraphs between the
+    // separate and end markers) but not the end-closing paragraph, which often
+    // carries a trailing page break (the section break before the first
+    // heading). Rescue that page break as a standalone child to avoid silently
+    // dropping it on round-trip.
     const lastEl = tocBuffer[tocBuffer.length - 1];
     const pageBreakCount = findDeep(lastEl, "w:br").filter(
       (b) => attr(b, "w:type") === "page",
