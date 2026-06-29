@@ -168,6 +168,27 @@ describe("parseBody TOC entry preservation", () => {
     expect(tocChild?.toc.entries).toHaveLength(2);
   });
 
+  it("captures the first entry when begin+separate share its paragraph", () => {
+    // Word often emits the TOC begin + separate + first rendered entry all in
+    // one paragraph (no separate field-head paragraph). The first entry must
+    // still be captured.
+    const xml = `<w:body>
+      <w:p><w:r><w:t>Contents</w:t></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+        <w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:r><w:t>Heading Two</w:t></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements![0];
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0].children ?? []).find((c) => "toc" in c) as
+      | { toc: { entries?: unknown[] } }
+      | undefined;
+    expect(tocChild?.toc.entries).toHaveLength(2);
+  });
+
   it("keeps a nested HYPERLINK field inside an entry from fooling depth tracking", () => {
     // Real Word TOC entries wrap text+page in a nested HYPERLINK field (and
     // often a PAGEREF). The depth tracker must treat the entry paragraph as one

@@ -157,22 +157,22 @@ export function parseTocFieldFromElements(els: Element[]): TableOfContentsOption
 }
 
 /**
- * Select the rendered-entry paragraphs of a captured TOC field — the paragraphs
- * between the field's `separate` and `end` markers. Tracks field depth so a
- * nested HYPERLINK/PAGEREF field inside an entry doesn't fool the boundary
- * detection.
+ * Select the rendered-entry paragraphs of a captured TOC field. Tracks field
+ * depth so a nested HYPERLINK/PAGEREF field inside an entry doesn't fool the
+ * boundary detection.
  *
- * Uses the post-walk `afterSeparate` flag (not a pre-walk snapshot) so an entry
- * whose paragraph also carries the `separate` marker is still captured, and
- * requires rendered text (`w:t`) so a paragraph holding only the `separate`
- * marker isn't mistaken for an entry.
+ * A paragraph is an entry when, after walking it, the field is past `separate`
+ * and not past `end` (depth ≥ 1) and the paragraph carries rendered text (`w:t`).
+ * This captures an entry whose paragraph also opens the field (`begin`) or holds
+ * the `separate` marker — common when Word emits begin + separate + first entry
+ * in one paragraph — while the `w:t` requirement excludes a pure control
+ * paragraph (field head / separate-only / end).
  */
 export function selectTocEntryElements(els: Element[]): Element[] {
   const entries: Element[] = [];
   let depth = 0;
   let afterSeparate = false;
   for (const el of els) {
-    const depthBefore = depth;
     const walk = (node: Element): void => {
       if (node.name === "w:fldChar") {
         const type = attr(node, "w:fldCharType");
@@ -185,7 +185,7 @@ export function selectTocEntryElements(els: Element[]): Element[] {
       }
     };
     walk(el);
-    if (depthBefore === 1 && afterSeparate && depth >= 1 && findDeep(el, "w:t").length > 0) {
+    if (afterSeparate && depth >= 1 && findDeep(el, "w:t").length > 0) {
       entries.push(el);
     }
   }
