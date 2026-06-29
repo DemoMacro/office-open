@@ -10,7 +10,10 @@
  */
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import type { ParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
+import type {
+  ParagraphPropertiesOptions,
+  ParagraphStylePropertiesOptions,
+} from "@parts/paragraph/properties";
 import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
@@ -241,7 +244,10 @@ interface ParsedStyle {
  */
 export function parseStyleDefinitions(
   el: Element,
-  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  parseParagraphProperties: (
+    el: Element,
+    ctx: DocxReadContext,
+  ) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): StylesOptions | undefined {
   const opts: StylesOptions = {};
@@ -297,7 +303,10 @@ export function parseStyleDefinitions(
 
 function parseDocDefaults(
   el: Element,
-  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  parseParagraphProperties: (
+    el: Element,
+    ctx: DocxReadContext,
+  ) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): DefaultStylesOptions | undefined {
   const document: DocumentDefaultsOptions = {};
@@ -330,7 +339,10 @@ function parseDocDefaults(
 
 function parseStyleElement(
   el: Element,
-  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  parseParagraphProperties: (
+    el: Element,
+    ctx: DocxReadContext,
+  ) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): ParsedStyle | undefined {
   const opts: ParsedStyle = {};

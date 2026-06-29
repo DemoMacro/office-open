@@ -13,6 +13,7 @@ import { decimalNumber } from "@office-open/core";
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { AlignmentType } from "@parts/paragraph";
+import type { ParagraphPropertiesOptions } from "@parts/paragraph/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 
 import type { DocxReadContext } from "../../context";
@@ -393,7 +394,10 @@ function stringifyLevel(opts: LevelsOptions): string {
  */
 export function parseNumberingDefinitions(
   el: Element,
-  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  parseParagraphProperties: (
+    el: Element,
+    ctx: DocxReadContext,
+  ) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): NumberingOptions | undefined {
   const abstractNums = new Map<string, Element>();
@@ -456,7 +460,10 @@ export function parseNumberingDefinitions(
 
 function parseLevelEl(
   el: Element,
-  parseParagraphProperties: (el: Element, ctx: DocxReadContext) => Record<string, unknown>,
+  parseParagraphProperties: (
+    el: Element,
+    ctx: DocxReadContext,
+  ) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): LevelsOptions | undefined {
   const opts: Partial<LevelsOptions> = {};
