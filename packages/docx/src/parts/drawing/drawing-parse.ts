@@ -53,7 +53,7 @@ import type {
   WpsShapeCoreOptions,
 } from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingType } from "./text-wrap";
-import type { TextWrapping } from "./text-wrap";
+import type { TextWrapping, WrapPolygon } from "./text-wrap";
 
 /** Union type for parsed drawing child wrappers. */
 export type DrawingChild =
@@ -800,6 +800,22 @@ function readPosition(
     : undefined;
 }
 
+/** Read wp:wrapPolygon (start + lineTo points) into a WrapPolygon, if present. */
+function readWrapPolygon(el: Element): WrapPolygon | undefined {
+  const poly = findChild(el, "wp:wrapPolygon");
+  if (!poly) return undefined;
+  const points: { x: number; y: number }[] = [];
+  const start = findChild(poly, "wp:start");
+  if (start) points.push({ x: attrNum(start, "x") ?? 0, y: attrNum(start, "y") ?? 0 });
+  for (const child of poly.elements ?? []) {
+    if (child.name === "wp:lineTo") {
+      points.push({ x: attrNum(child, "x") ?? 0, y: attrNum(child, "y") ?? 0 });
+    }
+  }
+  if (points.length === 0) return undefined;
+  return { edited: attrBool(poly, "edited"), points };
+}
+
 /** Map the wp:anchor wrap child element into a TextWrapping ({ type, side? }). */
 function readWrap(anchor: Element): TextWrapping | undefined {
   const WRAP_TYPE: ReadonlyArray<[string, TextWrapping["type"]]> = [
@@ -815,6 +831,11 @@ function readWrap(anchor: Element): TextWrapping | undefined {
     const wrap: TextWrapping = { type };
     const side = attr(el, "wrapText");
     if (side) wrap.side = side as TextWrapping["side"];
+    // wrapTight/wrapThrough carry a contour polygon; preserve it verbatim.
+    if (name === "wrapTight" || name === "wrapThrough") {
+      const polygon = readWrapPolygon(el);
+      if (polygon) wrap.polygon = polygon;
+    }
     return wrap;
   }
   return undefined;

@@ -45,10 +45,29 @@ export const TextWrappingSide = {
 } as const;
 
 /**
+ * A point in a wrap polygon (wrapTight/wrapThrough), in EMUs.
+ */
+export interface WrapPolygonPoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * Wrap polygon for wrapTight/wrapThrough — the contour text wraps around.
+ * Round-tripped verbatim so Word's authored contour is preserved.
+ */
+export interface WrapPolygon {
+  edited?: boolean;
+  points: WrapPolygonPoint[];
+}
+
+/**
  * Options for configuring text wrapping around a drawing.
  */
 export interface TextWrapping {
   type: (typeof TextWrappingType)[keyof typeof TextWrappingType];
   side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
   margins?: Distance;
+  /** Wrap polygon for wrapTight/wrapThrough. Preserves the source contour on round-trip; defaults to the extent rectangle when unset. */
+  polygon?: WrapPolygon;
 }

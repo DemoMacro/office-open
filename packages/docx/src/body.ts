@@ -705,7 +705,12 @@ export function parseParagraphProperties(
     const level = ilvl ? (attrNum(ilvl, "w:val") ?? 0) : 0;
     const numIdEl = findChild(numPr, "w:numId");
     const numId = numIdEl ? attr(numIdEl, "w:val") : undefined;
-    if (numId !== undefined && ctx.numberingCache.size > 0) {
+    if (numId === "0") {
+      // numId=0 is the OOXML reserved value that cancels numbering inherited
+      // from the paragraph style — emit numId=0 verbatim instead of falling
+      // back to a bullet (which would inject ListParagraph + numId=1).
+      opts.numbering = false;
+    } else if (numId !== undefined && ctx.numberingCache.size > 0) {
       const numEl = ctx.docx.numbering;
       if (numEl) {
         let abstractNumId: string | undefined;

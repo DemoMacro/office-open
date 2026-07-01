@@ -74,7 +74,7 @@ import type {
   WpsShapeCoreOptions,
 } from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingSide, TextWrappingType } from "./text-wrap";
-import type { TextWrapping } from "./text-wrap";
+import type { TextWrapping, WrapPolygon } from "./text-wrap";
 
 // Noop context for drawingml descriptors that don't use WriteContext
 const NOOP_CTX: WriteContext = {
@@ -710,7 +710,17 @@ function stringifyPositionV(opts: VerticalPositionOptions): string {
 
 // ── Text wrapping string builders ──
 
-function wrapPolygonStr(cx: number, cy: number): string {
+function wrapPolygonStr(cx: number, cy: number, polygon?: WrapPolygon): string {
+  // Preserve the source contour verbatim when round-tripped.
+  if (polygon?.points.length) {
+    // Emit `edited` only when the source had it — keeps the polygon byte-faithful on round-trip.
+    const editedAttr = polygon.edited !== undefined ? ` edited="${polygon.edited ? 1 : 0}"` : "";
+    const [start, ...rest] = polygon.points;
+    const startStr = `<wp:start x="${start.x}" y="${start.y}"/>`;
+    const lineToStr = rest.map((p) => `<wp:lineTo x="${p.x}" y="${p.y}"/>`).join("");
+    return `<wp:wrapPolygon${editedAttr}>${startStr}${lineToStr}</wp:wrapPolygon>`;
+  }
+  // Default contour: extent rectangle (origin at top-left, y negated).
   return (
     `<wp:wrapPolygon edited="0">` +
     `<wp:start x="0" y="0"/>` +
@@ -745,7 +755,7 @@ function wrapTightStr(
   const a = [`wrapText="${side}"`];
   if (margins.left != null) a.push(`distL="${convertToEmu(margins.left)}"`);
   if (margins.right != null) a.push(`distR="${convertToEmu(margins.right)}"`);
-  return `<wp:wrapTight ${a.join(" ")}>${wrapPolygonStr(cx, cy)}</wp:wrapTight>`;
+  return `<wp:wrapTight ${a.join(" ")}>${wrapPolygonStr(cx, cy, textWrapping.polygon)}</wp:wrapTight>`;
 }
 
 function wrapThroughStr(
@@ -758,7 +768,7 @@ function wrapThroughStr(
   const a = [`wrapText="${side}"`];
   if (margins.left != null) a.push(`distL="${convertToEmu(margins.left)}"`);
   if (margins.right != null) a.push(`distR="${convertToEmu(margins.right)}"`);
-  return `<wp:wrapThrough ${a.join(" ")}>${wrapPolygonStr(cx, cy)}</wp:wrapThrough>`;
+  return `<wp:wrapThrough ${a.join(" ")}>${wrapPolygonStr(cx, cy, textWrapping.polygon)}</wp:wrapThrough>`;
 }
 
 function wrapTopAndBottomStr(margins?: Margins): string {
