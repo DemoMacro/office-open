@@ -49,7 +49,12 @@ import type {
 import { parseFormFieldData } from "@parts/paragraph/run/form-field";
 import type { FormFieldOptions } from "@parts/paragraph/run/form-field";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
-import { breakXml, type BreakOptions, type RunOptions } from "@parts/paragraph/run/run";
+import {
+  breakXml,
+  EMPTY_RUN_ELEMENTS,
+  type BreakOptions,
+  type RunOptions,
+} from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
@@ -74,33 +79,6 @@ import { stringifyElement } from "./util/stringify-element";
 export type { BodyContext } from "./context";
 
 // ── Run ──
-
-/**
- * Mapping from empty child property name to self-closing XML element.
- *
- * These are single-key objects like `{ noBreakHyphen: true }` that map to
- * self-closing XML elements with no attributes.
- *
- * XSD reference: EG_RunInnerContent group in wml.xsd.
- */
-const EMPTY_RUN_ELEMENTS: Record<string, string> = {
-  noBreakHyphen: "<w:noBreakHyphen/>",
-  softHyphen: "<w:softHyphen/>",
-  dayShort: "<w:dayShort/>",
-  monthShort: "<w:monthShort/>",
-  yearShort: "<w:yearShort/>",
-  dayLong: "<w:dayLong/>",
-  monthLong: "<w:monthLong/>",
-  yearLong: "<w:yearLong/>",
-  annotationRef: "<w:annotationRef/>",
-  footnoteRef: "<w:footnoteRef/>",
-  endnoteRef: "<w:endnoteRef/>",
-  separator: "<w:separator/>",
-  continuationSeparator: "<w:continuationSeparator/>",
-  pgNum: "<w:pgNum/>",
-  carriageReturn: "<w:cr/>",
-  lastRenderedPageBreak: "<w:lastRenderedPageBreak/>",
-};
 
 /**
  * Stringify a run (w:r) from pure JSON options.

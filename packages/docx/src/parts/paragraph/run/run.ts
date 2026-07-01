@@ -55,6 +55,33 @@ export function breakXml(breakOpt: number | BreakOptions | undefined): string {
   return count === 1 ? one : one.repeat(count);
 }
 
+/**
+ * Empty EG_RunInnerContent elements — self-closing XML with no attributes.
+ * Shared by the body run stringifier and the inline (footnote/endnote) run
+ * stringifier so both emit them identically. Keyed by the RunOptions child
+ * property name (e.g. `{ separator: true }` → `separator`).
+ *
+ * XSD reference: EG_RunInnerContent group in wml.xsd.
+ */
+export const EMPTY_RUN_ELEMENTS: Record<string, string> = {
+  noBreakHyphen: "<w:noBreakHyphen/>",
+  softHyphen: "<w:softHyphen/>",
+  dayShort: "<w:dayShort/>",
+  monthShort: "<w:monthShort/>",
+  yearShort: "<w:yearShort/>",
+  dayLong: "<w:dayLong/>",
+  monthLong: "<w:monthLong/>",
+  yearLong: "<w:yearLong/>",
+  annotationRef: "<w:annotationRef/>",
+  footnoteRef: "<w:footnoteRef/>",
+  endnoteRef: "<w:endnoteRef/>",
+  separator: "<w:separator/>",
+  continuationSeparator: "<w:continuationSeparator/>",
+  pgNum: "<w:pgNum/>",
+  carriageReturn: "<w:cr/>",
+  lastRenderedPageBreak: "<w:lastRenderedPageBreak/>",
+};
+
 interface RunOptionsBase {
   children?: (
     | (typeof PageNumber)[keyof typeof PageNumber]

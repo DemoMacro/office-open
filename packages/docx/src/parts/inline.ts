@@ -30,7 +30,12 @@ import type { CommentChildOptions } from "@parts/paragraph/run/comment-run";
 import type { ImageOptions } from "@parts/paragraph/run/image-run";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
-import { breakXml, type RunOptions } from "@parts/paragraph/run/run";
+import {
+  breakXml,
+  EMPTY_RUN_ELEMENTS,
+  type BreakOptions,
+  type RunOptions,
+} from "@parts/paragraph/run/run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type {
   ChartMediaData,
@@ -99,8 +104,33 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
     for (const child of opts.children) {
       if (typeof child === "string") {
         parts.push(`<w:t xml:space="preserve">${escapeXml(child)}</w:t>`);
-      } else {
-        // JSON child dispatch
+      } else if (typeof child === "object" && child !== null) {
+        // Bare run-inner elements — emit directly inside this <w:r>. Must run
+        // before stringifyChildDispatch, which wraps paragraph-level children
+        // in their own <w:r> (correct for paragraphs, nested/invalid in a run).
+        if ("tab" in child) {
+          parts.push("<w:tab/>");
+          continue;
+        }
+        if ("pageBreak" in child) {
+          parts.push('<w:br w:type="page"/>');
+          continue;
+        }
+        if ("columnBreak" in child) {
+          parts.push('<w:br w:type="column"/>');
+          continue;
+        }
+        if ("break" in child) {
+          parts.push(breakXml((child as { break: number | BreakOptions }).break));
+          continue;
+        }
+        // Empty run elements — separator, noBreakHyphen, pgNum, etc.
+        const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0]];
+        if (emptyXml) {
+          parts.push(emptyXml);
+          continue;
+        }
+        // JSON child dispatch (images, charts, hyperlinks, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
           if (Array.isArray(jsonResult)) {
