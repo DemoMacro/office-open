@@ -24,6 +24,7 @@ import type {
   RunPropertiesOptions,
   RunOptions,
 } from "@parts/paragraph/run";
+import { parseShading } from "@shared/shading";
 
 import type { DocxReadContext } from "../../../context";
 import { stringifyElement } from "../../../util/stringify-element";
@@ -297,20 +298,6 @@ export function parseBorder(el: Element): Record<string, unknown> {
   if (shadow !== undefined) opts.shadow = shadow;
   const frame = attrBool(el, "w:frame");
   if (frame !== undefined) opts.frame = frame;
-  return opts;
-}
-
-/**
- * Parse a w:shd element into ShadingAttributesProperties.
- */
-export function parseShading(el: Element): Record<string, unknown> {
-  const opts: Record<string, unknown> = {};
-  const fill = colorAttr(el, "w:fill");
-  if (fill) opts.fill = fill;
-  const color = colorAttr(el, "w:color");
-  if (color) opts.color = color;
-  const type = attr(el, "w:val");
-  if (type) opts.type = type;
   return opts;
 }
 

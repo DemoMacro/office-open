@@ -26,7 +26,9 @@
  *
  * @module
  */
-import type { ThemeColor } from "@office-open/core";
+import { ThemeColor } from "@office-open/core";
+import { attr } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 /**
  * Properties for configuring shading.
@@ -119,3 +121,40 @@ export const ShadingType = {
   THIN_VERTICAL_STRIPE: "thinVertStripe",
   VERTICAL_STRIPE: "vertStripe",
 } as const;
+
+const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
+
+/**
+ * Parse a w:shd (CT_Shd) element into ShadingAttributesProperties.
+ *
+ * Reads every CT_Shd attribute (fill/color/val plus the theme* family), so the
+ * result round-trips losslessly — paragraph, table-cell, and run shading all
+ * share this single reader. Returns undefined when the element carries no data.
+ */
+export function parseShading(shd: Element): ShadingAttributesProperties | undefined {
+  const shading: ShadingAttributesProperties = {};
+  const fill = attr(shd, "w:fill");
+  if (fill) shading.fill = fill;
+  const color = attr(shd, "w:color");
+  if (color) shading.color = color;
+  const val = attr(shd, "w:val");
+  if (val) shading.type = val as ShadingAttributesProperties["type"];
+  const themeColor = attr(shd, "w:themeColor");
+  if (themeColor && THEME_COLORS.includes(themeColor)) {
+    shading.themeColor = themeColor as ShadingAttributesProperties["themeColor"];
+  }
+  const themeTint = attr(shd, "w:themeTint");
+  if (themeTint) shading.themeTint = themeTint;
+  const themeShade = attr(shd, "w:themeShade");
+  if (themeShade) shading.themeShade = themeShade;
+  const themeFill = attr(shd, "w:themeFill");
+  if (themeFill && THEME_COLORS.includes(themeFill)) {
+    shading.themeFill = themeFill as ShadingAttributesProperties["themeFill"];
+  }
+  const themeFillTint = attr(shd, "w:themeFillTint");
+  if (themeFillTint) shading.themeFillTint = themeFillTint;
+  const themeFillShade = attr(shd, "w:themeFillShade");
+  if (themeFillShade) shading.themeFillShade = themeFillShade;
+  if (Object.keys(shading).length === 0) return undefined;
+  return shading;
+}

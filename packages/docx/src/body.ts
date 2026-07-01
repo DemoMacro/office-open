@@ -64,7 +64,7 @@ import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
 import type { MediaData } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
-import type { ShadingAttributesProperties } from "@shared/shading";
+import { parseShading } from "@shared/shading";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
@@ -816,14 +816,8 @@ export function parseParagraphProperties(
   // Shading
   const shd = findChild(el, "w:shd");
   if (shd) {
-    const shdObj: ShadingAttributesProperties = {};
-    const fill = attr(shd, "w:fill");
-    if (fill) shdObj.fill = fill;
-    const color = attr(shd, "w:color");
-    if (color) shdObj.color = color;
-    const val = attr(shd, "w:val");
-    if (val) shdObj.type = val as ShadingAttributesProperties["type"];
-    if (Object.keys(shdObj).length > 0) opts.shading = shdObj;
+    const shading = parseShading(shd);
+    if (shading) opts.shading = shading;
   }
 
   // Text alignment

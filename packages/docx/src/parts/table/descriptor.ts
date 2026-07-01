@@ -43,7 +43,7 @@ import { widthFiftiethsToPct } from "@parts/table/table-width";
 import { BorderStyle } from "@shared/border";
 import type { BorderOptions } from "@shared/border";
 import type { SectionChild } from "@shared/section";
-import type { ShadingAttributesProperties } from "@shared/shading";
+import { parseShading, type ShadingAttributesProperties } from "@shared/shading";
 import type { CellMergeAttributes } from "@shared/track-revision";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
 
@@ -304,35 +304,6 @@ function parseCellMargins(marginEl: Element): TableCellMarginOptions | undefined
   }
   if (Object.keys(margins).length === 0) return undefined;
   return margins as TableCellMarginOptions;
-}
-
-/** Parse a w:shd (CT_Shd) element into ShadingAttributesProperties. */
-function parseShading(shd: Element): ShadingAttributesProperties | undefined {
-  const shading: ShadingAttributesProperties = {};
-  const fill = attr(shd, "w:fill");
-  if (fill) shading.fill = fill;
-  const color = attr(shd, "w:color");
-  if (color) shading.color = color;
-  const val = attr(shd, "w:val");
-  if (val) shading.type = val as ShadingAttributesProperties["type"];
-  const themeColor = attr(shd, "w:themeColor");
-  if (themeColor && THEME_COLORS.includes(themeColor)) {
-    shading.themeColor = themeColor as ShadingAttributesProperties["themeColor"];
-  }
-  const themeTint = attr(shd, "w:themeTint");
-  if (themeTint) shading.themeTint = themeTint;
-  const themeShade = attr(shd, "w:themeShade");
-  if (themeShade) shading.themeShade = themeShade;
-  const themeFill = attr(shd, "w:themeFill");
-  if (themeFill && THEME_COLORS.includes(themeFill)) {
-    shading.themeFill = themeFill as ShadingAttributesProperties["themeFill"];
-  }
-  const themeFillTint = attr(shd, "w:themeFillTint");
-  if (themeFillTint) shading.themeFillTint = themeFillTint;
-  const themeFillShade = attr(shd, "w:themeFillShade");
-  if (themeFillShade) shading.themeFillShade = themeFillShade;
-  if (Object.keys(shading).length === 0) return undefined;
-  return shading as ShadingAttributesProperties;
 }
 
 /** Parse a w:cnfStyle (CT_Cnf) element into CnfStyleOptions. */
