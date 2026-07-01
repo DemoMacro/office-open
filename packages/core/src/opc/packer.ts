@@ -30,7 +30,12 @@ export interface XmlifyedFile {
 /** Default DEFLATE level for XML entries (SuperFast, matching MS Office). */
 export const ZIP_DEFLATE_LEVEL = 1;
 
-/** Default level for media entries (STORE — no compression). */
+/** Default DEFLATE level for compressible media (EMF/WMF/BMP/TIFF/SVG). MS
+ *  Office uses CompressionOption.Normal (~zlib 6); SuperFast (1) inflates EMF
+ *  output ~15% (measured against a real Office-generated package). */
+export const ZIP_MEDIA_LEVEL = 6;
+
+/** Level for already-compressed media — STORE (no compression). */
 export const ZIP_STORED_LEVEL = 0;
 
 /**
@@ -44,7 +49,7 @@ const PRECOMPRESSED_MEDIA_EXT = new Set(["jpg", "jpeg", "png", "gif"]);
 /**
  * Resolve the ZIP level for a media entry by file-name extension, matching MS
  * Office: already-compressed raster formats → STORE (0), everything else →
- * DEFLATE (`mediaLevel`, default SuperFast). A `compression.media` override
+ * DEFLATE (`mediaLevel`, default Normal). A `compression.media` override
  * therefore applies only to compressible formats, never forcing DEFLATE onto
  * pre-compressed assets.
  */
@@ -61,7 +66,7 @@ export interface CompressionOptions {
   /**
    * DEFLATE level for compressible media (EMF/WMF/BMP/TIFF/…). Already-compressed
    * formats (PNG/JPEG/GIF) are always STOREd regardless, matching MS Office.
-   * Default: 1 (SuperFast).
+   * Default: 6 (Normal, matching MS Office for EMF/WMF).
    */
   media?: number;
 }
@@ -82,7 +87,7 @@ export interface PackerOptions<T extends OutputType = "nodebuffer"> {
  * Uses fflate Web Workers for non-blocking DEFLATE compression.
  * XML entries use DEFLATE level 1 (SuperFast) by default. Media entries are
  * split by type, matching MS Office: already-compressed formats (PNG/JPEG/GIF)
- * are STOREd, everything else uses the `media` level (default SuperFast).
+ * are STOREd, everything else uses the `media` level (default Normal).
  * Set `{ media: ZIP_STORED_LEVEL }` to STORE all compressible media too.
  */
 export const zipAndConvert = async <T extends OutputType>(
@@ -255,11 +260,7 @@ export const createPacker = <TFile>(options: {
     opts?: PackerOptions<T>,
   ): Promise<OutputByType[T]> => {
     const type = opts?.type ?? ("nodebuffer" as T);
-    const files = compile(
-      file,
-      opts?.overrides ?? [],
-      opts?.compression?.media ?? ZIP_DEFLATE_LEVEL,
-    );
+    const files = compile(file, opts?.overrides ?? [], opts?.compression?.media ?? ZIP_MEDIA_LEVEL);
     return zipAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
 
@@ -280,11 +281,7 @@ export const createPacker = <TFile>(options: {
     opts?: PackerOptions<T>,
   ): OutputByType[T] => {
     const type = opts?.type ?? ("nodebuffer" as T);
-    const files = compile(
-      file,
-      opts?.overrides ?? [],
-      opts?.compression?.media ?? ZIP_DEFLATE_LEVEL,
-    );
+    const files = compile(file, opts?.overrides ?? [], opts?.compression?.media ?? ZIP_MEDIA_LEVEL);
     return zipSyncAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
   };
 
@@ -304,7 +301,7 @@ export const createPacker = <TFile>(options: {
   // ── Stream ──
 
   const toStream = (file: TFile, opts?: PackerOptions) => {
-    const mediaLevel = opts?.compression?.media ?? ZIP_DEFLATE_LEVEL;
+    const mediaLevel = opts?.compression?.media ?? ZIP_MEDIA_LEVEL;
     let files: Zippable;
     try {
       files = compile(file, opts?.overrides ?? [], mediaLevel);
