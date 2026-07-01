@@ -163,7 +163,7 @@ interface XmlifyedFileMapping {
   Document: XmlifyedFile;
   Styles: XmlifyedFile;
   Properties: XmlifyedFile;
-  Numbering: XmlifyedFile;
+  Numbering?: XmlifyedFile;
   Relationships: XmlifyedFile;
   FileRelationships: XmlifyedFile;
   Headers: XmlifyedFile[];
@@ -172,9 +172,9 @@ interface XmlifyedFileMapping {
   FooterRelationships: XmlifyedFile[];
   CustomProperties: XmlifyedFile;
   AppProperties: XmlifyedFile;
-  FootNotes: XmlifyedFile;
+  FootNotes?: XmlifyedFile;
   FootNotesRelationships?: XmlifyedFile;
-  Endnotes: XmlifyedFile;
+  Endnotes?: XmlifyedFile;
   EndnotesRelationships?: XmlifyedFile;
   Settings: XmlifyedFile;
   Comments?: XmlifyedFile;
@@ -422,48 +422,55 @@ function xmlifyContext(
             path: "word/theme/theme1.xml",
           },
         }),
-    Endnotes: {
-      data: (() => {
-        const endnoteCtx = mkCtx({
-          relationships: ctx.endnotes.relationships,
-        });
-        const xmlData =
-          XML_DECL +
-          (endnotesDesc.stringify(
-            {
-              notes: ctx.endnotes.notes,
-              separator: ctx.endnotes.separator,
-              continuationSeparator: ctx.endnotes.continuationSeparator,
-            },
-            endnoteCtx,
-          ) ?? "");
-        const endnoteRelCount = ctx.endnotes.relationships.relationshipCount + 1;
-        const endnoteMedia = findAndReplaceImagePlaceholders(
-          xmlData,
-          ctx.media.array,
-          endnoteRelCount,
-        );
-        if (endnoteMedia.referenced.length > 0) {
-          for (let i = 0; i < endnoteMedia.referenced.length; i++) {
-            ctx.endnotes.relationships.addRelationship(
-              endnoteRelCount + i,
-              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-              `media/${endnoteMedia.referenced[i].fileName}`,
-            );
-          }
-          return replaceNumberingPlaceholders(endnoteMedia.xml, ctx.numbering.concreteNumbering);
+    ...(ctx.hasEndnotes
+      ? {
+          Endnotes: {
+            data: (() => {
+              const endnoteCtx = mkCtx({
+                relationships: ctx.endnotes.relationships,
+              });
+              const xmlData =
+                XML_DECL +
+                (endnotesDesc.stringify(
+                  {
+                    notes: ctx.endnotes.notes,
+                    separator: ctx.endnotes.separator,
+                    continuationSeparator: ctx.endnotes.continuationSeparator,
+                  },
+                  endnoteCtx,
+                ) ?? "");
+              const endnoteRelCount = ctx.endnotes.relationships.relationshipCount + 1;
+              const endnoteMedia = findAndReplaceImagePlaceholders(
+                xmlData,
+                ctx.media.array,
+                endnoteRelCount,
+              );
+              if (endnoteMedia.referenced.length > 0) {
+                for (let i = 0; i < endnoteMedia.referenced.length; i++) {
+                  ctx.endnotes.relationships.addRelationship(
+                    endnoteRelCount + i,
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                    `media/${endnoteMedia.referenced[i].fileName}`,
+                  );
+                }
+                return replaceNumberingPlaceholders(
+                  endnoteMedia.xml,
+                  ctx.numbering.concreteNumbering,
+                );
+              }
+              return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
+            })(),
+            path: "word/endnotes.xml",
+          },
+          EndnotesRelationships:
+            ctx.endnotes.relationships.relationshipCount > 0
+              ? {
+                  data: XML_DECL + ctx.endnotes.relationships.serialize(),
+                  path: "word/_rels/endnotes.xml.rels",
+                }
+              : undefined,
         }
-        return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
-      })(),
-      path: "word/endnotes.xml",
-    },
-    EndnotesRelationships:
-      ctx.endnotes.relationships.relationshipCount > 0
-        ? {
-            data: XML_DECL + ctx.endnotes.relationships.serialize(),
-            path: "word/_rels/endnotes.xml.rels",
-          }
-        : undefined,
+      : {}),
     FileRelationships: {
       data: XML_DECL + ctx.fileRelationships.serialize(),
       path: "_rels/.rels",
@@ -479,20 +486,25 @@ function xmlifyContext(
       XML_DECL,
       "word/_rels/fontTable.xml.rels",
     ),
-    FootNotes: {
-      data: (() => {
-        const xmlData = footnoteMedia.referenced.length > 0 ? footnoteMedia.xml : footnoteXmlData;
-        return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
-      })(),
-      path: "word/footnotes.xml",
-    },
-    FootNotesRelationships:
-      ctx.footNotes.relationships.relationshipCount > 0
-        ? {
-            data: XML_DECL + ctx.footNotes.relationships.serialize(),
-            path: "word/_rels/footnotes.xml.rels",
-          }
-        : undefined,
+    ...(ctx.hasFootnotes
+      ? {
+          FootNotes: {
+            data: (() => {
+              const xmlData =
+                footnoteMedia.referenced.length > 0 ? footnoteMedia.xml : footnoteXmlData;
+              return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
+            })(),
+            path: "word/footnotes.xml",
+          },
+          FootNotesRelationships:
+            ctx.footNotes.relationships.relationshipCount > 0
+              ? {
+                  data: XML_DECL + ctx.footNotes.relationships.serialize(),
+                  path: "word/_rels/footnotes.xml.rels",
+                }
+              : undefined,
+        }
+      : {}),
     FooterRelationships: ctx.footers
       .map((entry, index) => {
         const footerCtx = mkCtx({ relationships: entry.relationships });
@@ -577,10 +589,14 @@ function xmlifyContext(
         path: `word/header${index + 1}.xml`,
       };
     }),
-    Numbering: {
-      data: ctx.numbering.serialize(),
-      path: "word/numbering.xml",
-    },
+    ...(ctx.hasNumbering
+      ? {
+          Numbering: {
+            data: ctx.numbering.serialize(),
+            path: "word/numbering.xml",
+          },
+        }
+      : {}),
     Properties: {
       data: XML_DECL + (corePropertiesDesc.stringify(ctx._options, ctx) ?? ""),
       path: "docProps/core.xml",

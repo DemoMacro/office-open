@@ -198,6 +198,24 @@ export class DocxWriteContext implements WriteContext {
     return this._sectionProperties;
   }
 
+  // Footnotes/endnotes are optional parts. Fresh compile always emits them
+  // (Word ships a separators-only file); round-trip emits them only when the
+  // source package declared the part — otherwise emitting the part + document
+  // relationship without a [Content_Types] Override is an OPC violation that
+  // makes Word reject the package as unreadable content.
+  private readonly _hasFootnotes: boolean;
+  private readonly _hasEndnotes: boolean;
+  private readonly _hasNumbering: boolean;
+  public get hasFootnotes(): boolean {
+    return this._hasFootnotes;
+  }
+  public get hasEndnotes(): boolean {
+    return this._hasEndnotes;
+  }
+  public get hasNumbering(): boolean {
+    return this._hasNumbering;
+  }
+
   // --- WriteContext interface (core descriptor pipeline) ---
 
   public addRelationship(_type: string, _target: string, _mode?: string): string {
@@ -355,6 +373,20 @@ export class DocxWriteContext implements WriteContext {
       }
     }
 
+    // Resolve footnote/endnote presence from the source [Content_Types]: a
+    // round-tripped package only carries these parts when the source declared
+    // them. Fresh compile (no contentTypes) always emits both.
+    const sourceOverrides = options.contentTypes?.overrides ?? [];
+    this._hasFootnotes =
+      !options.contentTypes || sourceOverrides.some((o) => o.partName === "/word/footnotes.xml");
+    this._hasEndnotes =
+      !options.contentTypes || sourceOverrides.some((o) => o.partName === "/word/endnotes.xml");
+    // Numbering follows the source [Content_Types] on round-trip — the part is
+    // optional, and emitting it without a matching Override is an OPC violation.
+    // Fresh compile always emits it (Word ships a default bullet list).
+    this._hasNumbering =
+      !options.contentTypes || sourceOverrides.some((o) => o.partName === "/word/numbering.xml");
+
     this.addDefaultRelationships();
 
     for (const section of options.sections) {
@@ -495,21 +527,27 @@ export class DocxWriteContext implements WriteContext {
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
       "styles.xml",
     );
-    this.document.relationships.addRelationship(
-      this._currentRelationshipId++,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
-      "numbering.xml",
-    );
-    this.document.relationships.addRelationship(
-      this._currentRelationshipId++,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
-      "footnotes.xml",
-    );
-    this.document.relationships.addRelationship(
-      this._currentRelationshipId++,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
-      "endnotes.xml",
-    );
+    if (this._hasNumbering) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
+        "numbering.xml",
+      );
+    }
+    if (this._hasFootnotes) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
+        "footnotes.xml",
+      );
+    }
+    if (this._hasEndnotes) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+        "endnotes.xml",
+      );
+    }
     this.document.relationships.addRelationship(
       this._currentRelationshipId++,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
