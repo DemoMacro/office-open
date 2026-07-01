@@ -342,10 +342,12 @@ export function parseDocument(data: DataType): DocumentOptions {
     opts.settings = settingsDesc.parse(docx.settings, ctx);
   }
 
-  // Web settings
+  // Web settings — preserve the part on round-trip even when it has no
+  // children. Dropping it leaves an orphaned Override in the passthrough
+  // [Content_Types].xml (the part is gone but its Override remains), which is
+  // an OPC violation; keeping presence keeps part + rel + Override in sync.
   if (docx.webSettings) {
-    const wsOpts = webSettingsDesc.parse(docx.webSettings, ctx);
-    if (Object.keys(wsOpts).length > 0) opts.webSettings = wsOpts;
+    opts.webSettings = webSettingsDesc.parse(docx.webSettings, ctx);
   }
 
   // Custom properties
