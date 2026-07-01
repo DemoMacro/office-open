@@ -189,11 +189,6 @@ describe("attrMeasure", () => {
     expect(attrMeasure(el, "w")).toBe("50%");
   });
 
-  it("should keep pct fiftieths verbatim when type is 'pct'", () => {
-    const el: Element = { attributes: { w: "5000" } };
-    expect(attrMeasure(el, "w", "pct")).toBe("5000");
-  });
-
   it("should return undefined for missing attribute", () => {
     expect(attrMeasure({ attributes: {} }, "w")).toBeUndefined();
   });

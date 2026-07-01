@@ -164,18 +164,31 @@ describe("tableDesc round-trip", () => {
     expect(result.columnWidths).toEqual(["25mm", "25mm"]);
   });
 
-  it('preserves pct fiftieths token on parse (w:w="5000" w:type="pct")', () => {
+  it('parses pct fiftieths as percentage (w:w="5000" w:type="pct" → 100)', () => {
     // Word writes 100% width as w:w="5000" w:type="pct" (fiftieths-of-percent).
-    // Parse must keep the raw token — converting it to the number 5000 would let
-    // a later stringify re-emit "5000%", changing the value.
+    // Parse converts to the user-facing percentage (5000 / 50 = 100); stringify
+    // multiplies back (100 * 50 = 5000), keeping round-trip byte-stable.
     const xml =
       '<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
       '<w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr>' +
       '<w:tblGrid><w:gridCol w:w="500"/></w:tblGrid>' +
       "<w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
     const result = tableDesc.parse(parseXml(xml).elements![0], readCtx);
-    expect(result.width?.size).toBe("5000");
+    expect(result.width?.size).toBe(100);
     expect(result.width?.type).toBe("pct");
+  });
+
+  it('round-trips pct width (size:100 → w:w="5000" → size:100)', () => {
+    const xml = tableDesc.stringify(
+      { width: { size: 100, type: "pct" }, rows: [{ cells: [{ children: [] }] }] },
+      writeCtx,
+    )!;
+    // Stringify emits the fiftieths integer (5000 = 100%), never "100%".
+    expect(xml).toContain('w:tblW w:w="5000" w:type="pct"');
+    expect(xml).not.toContain('w:w="100%"');
+    // Parse converts back to the user-facing percentage.
+    const result = tableDesc.parse(parseXml(xml).elements![0], readCtx);
+    expect(result.width).toEqual({ size: 100, type: "pct" });
   });
 
   it("round-trips description", () => {

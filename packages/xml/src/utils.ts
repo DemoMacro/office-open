@@ -91,19 +91,17 @@ export function attrNum(element: Element | undefined, name: string): number | un
  * UniversalMeasure ("5mm") and Percentage ("50%") stay verbatim so they
  * round-trip with the stringify-side value helpers in @office-open/core.
  *
- * Pass the sibling @type for CT_TblWidth with type="pct" — its fiftieths token
- * ("5000") must stay a string, since converting it to 5000 would make a later
- * stringify re-emit "5000%", changing the value.
+ * For CT_TblWidth with type="pct", the fiftieths token ("5000" = 100%) is a
+ * plain numeric token and is returned as the number 5000; the stringify side
+ * emits it verbatim (never "5000%", which is a different XSD branch).
  */
 export function attrMeasure(
   element: Element | undefined,
   name: string,
-  type?: string,
 ): number | string | undefined {
   const v = element?.attributes?.[name];
   if (v === undefined) return undefined;
   const raw = String(v);
-  if (type === "pct") return raw;
   const n = Number(raw);
   return Number.isNaN(n) ? raw : n;
 }

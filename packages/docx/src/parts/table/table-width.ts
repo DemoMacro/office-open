@@ -52,3 +52,27 @@ export interface TableWidthProperties {
   size: number | Percentage | UniversalMeasure;
   type?: (typeof WidthType)[keyof typeof WidthType];
 }
+
+/**
+ * OOXML stores width percentages as fiftieths-of-a-percent integer
+ * (`w:w="5000"`, `w:type="pct"` = 100%). The public API exposes them as plain
+ * percentages (`size: 100` = 100%); these helpers convert at the stringify/parse
+ * boundary so callers never handle the raw 5000 value. A bare number must never
+ * be emitted with a "%" suffix — that is a different XSD branch (`s:ST_Percentage`)
+ * meaning 5000%, which Word treats as `auto` on `tblW`.
+ */
+
+/** Stringify: percentage (`100`, `"50%"`) → OOXML fiftieths integer (`5000`). */
+export const widthPctToFiftieths = (
+  size: number | Percentage | UniversalMeasure,
+): number | Percentage | UniversalMeasure => {
+  if (typeof size === "number") return Math.round(size * 50);
+  if (size.endsWith("%")) return Math.round(Number(size.slice(0, -1)) * 50);
+  return size;
+};
+
+/** Parse: OOXML fiftieths (`5000`) → percentage (`100`) when `type` is `"pct"`. */
+export const widthFiftiethsToPct = (
+  size: number | string | undefined,
+  type: string | undefined,
+): number | string | undefined => (type === "pct" && typeof size === "number" ? size / 50 : size);

@@ -32,7 +32,7 @@ import type {
   TableRowPropertiesOptionsBase,
 } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
-import { WidthType } from "@parts/table/table-width";
+import { WidthType, widthPctToFiftieths } from "@parts/table/table-width";
 import type { ShadingAttributesProperties } from "@shared/shading";
 import type { CellMergeAttributes } from "@shared/track-revision";
 import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
@@ -44,10 +44,10 @@ import { attrParts, borderStr, onOff, shadingStr } from "../paragraph/stringify"
 
 function tableWidthStr(name: string, opts: TableWidthProperties): string {
   const type = opts.type ?? WidthType.AUTO;
-  let w = opts.size;
-  if (type === WidthType.PERCENTAGE && typeof w === "number") {
-    w = `${w}%`;
-  }
+  // pct: user-facing percentage (100 = 100%) → OOXML fiftieths (5000 = 100%); the
+  // emitted @w is always a bare integer, never "N%" (a different XSD branch that
+  // Word treats as auto on tblW).
+  const w = type === WidthType.PERCENTAGE ? widthPctToFiftieths(opts.size) : opts.size;
   const a = attrParts({
     "w:w": w !== undefined ? measurementOrPercentValue(w) : undefined,
     "w:type": type,

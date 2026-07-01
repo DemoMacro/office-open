@@ -39,6 +39,7 @@ import type {
 import type { SdtRowOptions, TableRowOptions } from "@parts/table/table-row/table-row";
 import type { CnfStyleOptions } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
+import { widthFiftiethsToPct } from "@parts/table/table-width";
 import { BorderStyle } from "@shared/border";
 import type { BorderOptions } from "@shared/border";
 import type { SectionChild } from "@shared/section";
@@ -293,7 +294,7 @@ function parseCellMargins(marginEl: Element): TableCellMarginOptions | undefined
     const sideEl = findChild(marginEl, `w:${side}`);
     if (sideEl) {
       const type = attr(sideEl, "w:type");
-      const size = attrMeasure(sideEl, "w:w", type);
+      const size = widthFiftiethsToPct(attrMeasure(sideEl, "w:w"), type);
       if (size !== undefined) {
         margins[side] = (
           type ? { size, type: type as TableWidthProperties["type"] } : { size }
@@ -513,7 +514,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   const tblW = findChild(el, "w:tblW");
   if (tblW) {
     const type = attr(tblW, "w:type");
-    const size = attrMeasure(tblW, "w:w", type);
+    const size = widthFiftiethsToPct(attrMeasure(tblW, "w:w"), type);
     if (size !== undefined || type) {
       opts.width = { size: size ?? 0, ...(type ? { type } : {}) } as TableWidthProperties;
     }
@@ -636,7 +637,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   const tblInd = findChild(el, "w:tblInd");
   if (tblInd) {
     const type = attr(tblInd, "w:type");
-    const size = attrMeasure(tblInd, "w:w", type);
+    const size = widthFiftiethsToPct(attrMeasure(tblInd, "w:w"), type);
     if (size !== undefined) {
       opts.indent = { size, ...(type ? { type } : {}) } as TableWidthProperties;
     }
@@ -669,7 +670,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   const tblCellSpacing = findChild(el, "w:tblCellSpacing");
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
-    const w = attrMeasure(tblCellSpacing, "w:w", type);
+    const w = attrMeasure(tblCellSpacing, "w:w");
     if (w !== undefined)
       opts.cellSpacing = { size: w, ...(type ? { type } : {}) } as TableCellSpacingProperties;
   }
@@ -793,14 +794,14 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
   const wBefore = findChild(el, "w:wBefore");
   if (wBefore) {
     const type = attr(wBefore, "w:type");
-    const size = attrMeasure(wBefore, "w:w", type);
+    const size = widthFiftiethsToPct(attrMeasure(wBefore, "w:w"), type);
     if (size !== undefined)
       opts.widthBefore = { size, ...(type ? { type } : {}) } as TableWidthProperties;
   }
   const wAfter = findChild(el, "w:wAfter");
   if (wAfter) {
     const type = attr(wAfter, "w:type");
-    const size = attrMeasure(wAfter, "w:w", type);
+    const size = widthFiftiethsToPct(attrMeasure(wAfter, "w:w"), type);
     if (size !== undefined)
       opts.widthAfter = { size, ...(type ? { type } : {}) } as TableWidthProperties;
   }
@@ -820,7 +821,7 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
   const tblCellSpacing = findChild(el, "w:tblCellSpacing");
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
-    const w = attrMeasure(tblCellSpacing, "w:w", type);
+    const w = attrMeasure(tblCellSpacing, "w:w");
     if (w !== undefined)
       opts.cellSpacing = { size: w, ...(type ? { type } : {}) } as TableCellSpacingProperties;
   }
@@ -873,7 +874,7 @@ export function parseTableCellPropertiesEl(el: Element): TableCellPropertiesOpti
   const tcW = findChild(el, "w:tcW");
   if (tcW) {
     const type = attr(tcW, "w:type");
-    const size = attrMeasure(tcW, "w:w", type);
+    const size = widthFiftiethsToPct(attrMeasure(tcW, "w:w"), type);
     if (size !== undefined) {
       opts.width = { size, ...(type ? { type } : {}) } as TableWidthProperties;
     }
