@@ -56,6 +56,24 @@ export function stringifyTableOfContents(
   // application builds them from headings on open.
   const dirtyAttr = entriesXml.length > 0 ? "" : ' w:dirty="1"';
 
+  // Word shares the field-head control runs (begin/instr/separate) with the
+  // first rendered entry's paragraph and the field-end run with the last,
+  // rather than emitting standalone control-only paragraphs — those have no
+  // w:t and render as blank lines above and below the TOC. So when entries are
+  // carried we inject head into the first entry paragraph and end into the
+  // last; a freshly generated TOC (no entries) keeps standalone head/end
+  // paragraphs since it is dirty and rebuilt on open.
+  const headRuns =
+    `<w:r><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:cstheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cs="Times New Roman"/></w:rPr><w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
+    `<w:r><w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
+    `<w:r><w:fldChar w:fldCharType="separate"/></w:r>`;
+  const endRun = `<w:r><w:fldChar w:fldCharType="end"/></w:r>`;
+  const endParagraph = `<w:p>${endRun}</w:p>`;
+
+  const body = entriesXml
+    ? injectFieldEnd(injectFieldHead(entriesXml, headRuns), endRun)
+    : `<w:p>${headRuns}</w:p>` + endParagraph;
+
   // SDT properties: alias + docPartObj
   const sdtPr =
     `<w:sdtPr>` +
@@ -63,15 +81,37 @@ export function stringifyTableOfContents(
     `<w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj>` +
     `</w:sdtPr>`;
 
-  // SDT content: begin paragraph (field instruction) + rendered entries + end paragraph
-  const content =
-    `<w:sdtContent>` +
-    `<w:p><w:r><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:cstheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cs="Times New Roman"/></w:rPr><w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
-    `<w:r><w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
-    `<w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>` +
-    entriesXml +
-    `<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>` +
-    `</w:sdtContent>`;
+  const content = `<w:sdtContent>${body}</w:sdtContent>`;
 
   return `<w:sdt>${sdtPr}${content}</w:sdt>`;
+}
+
+/**
+ * Inject the field-head runs into the first `<w:p>` of `entriesXml`, placing
+ * them after the opening tag (and after `<w:pPr>` when present) so the head
+ * shares the first entry's paragraph. Returns `entriesXml` unchanged when no
+ * `<w:p>` is found.
+ */
+function injectFieldHead(entriesXml: string, headRuns: string): string {
+  const pTagStart = entriesXml.search(/<w:p[ >]/);
+  if (pTagStart < 0) return entriesXml;
+  const pTagEnd = entriesXml.indexOf(">", pTagStart) + 1;
+  let injectAt = pTagEnd;
+  if (entriesXml.slice(pTagEnd, pTagEnd + 7) === "<w:pPr>") {
+    const pPrEnd = entriesXml.indexOf("</w:pPr>", pTagEnd);
+    if (pPrEnd >= 0) injectAt = pPrEnd + "</w:pPr>".length;
+  }
+  return entriesXml.slice(0, injectAt) + headRuns + entriesXml.slice(injectAt);
+}
+
+/**
+ * Inject the field-end run into the last `<w:p>` of `entriesXml` (before its
+ * closing `</w:p>`) so the end shares the last entry's paragraph instead of
+ * occupying a standalone control-only paragraph that renders as a blank line.
+ * Returns `entriesXml` unchanged when no `</w:p>` is found.
+ */
+function injectFieldEnd(entriesXml: string, endRun: string): string {
+  const lastClose = entriesXml.lastIndexOf("</w:p>");
+  if (lastClose < 0) return entriesXml;
+  return entriesXml.slice(0, lastClose) + endRun + entriesXml.slice(lastClose);
 }
