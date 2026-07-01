@@ -884,8 +884,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       p.push(attrEl("w:zoom", { "w:percent": opts.zoom.percent ?? 100, "w:val": opts.zoom.val }));
     p.push(onOff("w:removePersonalInformation", opts.removePersonalInformation));
     p.push(onOff("w:removeDateAndTime", opts.removeDateAndTime));
-    p.push(onOff("w:displayBackgroundShape", opts.displayBackgroundShape));
+    // XSD order: doNotDisplayPageBoundaries (5) → displayBackgroundShape (6)
     p.push(onOff("w:doNotDisplayPageBoundaries", opts.doNotDisplayPageBoundaries));
+    p.push(onOff("w:displayBackgroundShape", opts.displayBackgroundShape));
     p.push(onOff("w:printPostScriptOverText", opts.printPostScriptOverText));
     p.push(onOff("w:printFractionalCharacterWidth", opts.printFractionalCharacterWidth));
     p.push(onOff("w:printFormsData", opts.printFormsData));
@@ -993,19 +994,20 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(numVal("w:drawingGridVerticalSpacing", opts.drawingGridVerticalSpacing));
     p.push(numVal("w:displayHorizontalDrawingGridEvery", opts.displayHorizontalDrawingGridEvery));
     p.push(numVal("w:displayVerticalDrawingGridEvery", opts.displayVerticalDrawingGridEvery));
-    p.push(numVal("w:drawingGridHorizontalOrigin", opts.drawingGridHorizontalOrigin));
-    p.push(numVal("w:drawingGridVerticalOrigin", opts.drawingGridVerticalOrigin));
+    // XSD order: doNotUseMarginsForDrawingGridOrigin (55) → origins (56,57)
     p.push(
       onOff("w:doNotUseMarginsForDrawingGridOrigin", opts.doNotUseMarginsForDrawingGridOrigin),
     );
+    p.push(numVal("w:drawingGridHorizontalOrigin", opts.drawingGridHorizontalOrigin));
+    p.push(numVal("w:drawingGridVerticalOrigin", opts.drawingGridVerticalOrigin));
     p.push(onOff("w:doNotShadeFormData", opts.doNotShadeFormData));
+    p.push(onOff("w:noPunctuationKerning", opts.noPunctuationKerning));
 
     // characterSpacingControl — optional (CT_Settings minOccurs=0); emit only when set
     if (opts.characterSpacingControl !== undefined) {
       p.push(strVal("w:characterSpacingControl", opts.characterSpacingControl)!);
     }
 
-    p.push(onOff("w:noPunctuationKerning", opts.noPunctuationKerning));
     p.push(onOff("w:printTwoOnOne", opts.printTwoOnOne));
     p.push(onOff("w:strictFirstAndLastChars", opts.strictFirstAndLastChars));
 
@@ -1072,8 +1074,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       for (const schema of opts.attachedSchema) p.push(strVal("w:attachedSchema", schema)!);
     }
 
-    if (opts.colorSchemeMapping !== undefined)
-      p.push(stringifyColorSchemeMapping(opts.colorSchemeMapping));
+    // XSD order: attachedSchema → themeFontLang → clrSchemeMapping → doNotIncludeSubdocsInStats
     if (opts.themeFontLang !== undefined) {
       const a: Record<string, string> = {};
       if (opts.themeFontLang.val !== undefined) a["w:val"] = opts.themeFontLang.val;
@@ -1081,6 +1082,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (opts.themeFontLang.bidi !== undefined) a["w:bidi"] = opts.themeFontLang.bidi;
       p.push(attrEl("w:themeFontLang", a));
     }
+    if (opts.colorSchemeMapping !== undefined)
+      p.push(stringifyColorSchemeMapping(opts.colorSchemeMapping));
     p.push(onOff("w:doNotIncludeSubdocsInStats", opts.doNotIncludeSubdocsInStats));
     p.push(onOff("w:doNotAutoCompressPictures", opts.doNotAutoCompressPictures));
     if (opts.forceUpgrade !== undefined) p.push("<w:forceUpgrade/>");
@@ -1099,9 +1102,10 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       }
     }
 
-    p.push(onOff("w:doNotEmbedSmartTags", opts.doNotEmbedSmartTags));
+    // XSD order: smartTagType → shapeDefaults → doNotEmbedSmartTags → decimalSymbol
     if (opts.shapeDefaults !== undefined)
       p.push(`<w:shapeDefaults>${opts.shapeDefaults}</w:shapeDefaults>`);
+    p.push(onOff("w:doNotEmbedSmartTags", opts.doNotEmbedSmartTags));
     p.push(strVal("w:decimalSymbol", opts.decimalSymbol));
     p.push(strVal("w:listSeparator", opts.listSeparator));
 
