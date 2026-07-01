@@ -345,6 +345,17 @@ export function parseImageRun(
   const useLocalDpi = readBlipUseLocalDpi(blip);
   if (useLocalDpi !== undefined) imageOpts.useLocalDpi = useLocalDpi;
 
+  // Blip extension: asvg:svgBlip — when present, the a:blip r:embed is the
+  // raster fallback and the SVG part is referenced here. Restructure into an
+  // SvgMediaOptions (vector primary + raster fallback) so stringify re-emits
+  // both branches; otherwise the SVG is dropped on round-trip.
+  const svg = readBlipSvg(blip, ctx);
+  if (svg) {
+    imageOpts.fallback = { type, data: imageData };
+    imageOpts.type = "svg";
+    imageOpts.data = svg.data;
+  }
+
   return { image: imageOpts as unknown as ImageOptions };
 }
 
@@ -361,6 +372,35 @@ function readBlipUseLocalDpi(blip: Element): boolean | undefined {
     if (useLocalDpiEl) {
       const val = useLocalDpiEl.attributes?.["val"];
       return val !== "0";
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Read the `asvg:svgBlip` blip extension. When present, the surrounding
+ * `a:blip` r:embed carries the raster fallback and this extension targets the
+ * vector SVG part. Returns the SVG bytes so the picture round-trips as an
+ * SvgMediaOptions (vector primary + raster fallback); undefined when no SVG
+ * extension exists.
+ */
+function readBlipSvg(
+  blip: Element,
+  ctx: DocxReadContext,
+): { data: Uint8Array; fileName: string } | undefined {
+  const extLst = findChild(blip, "a:extLst");
+  if (!extLst) return undefined;
+  for (const ext of extLst.elements ?? []) {
+    if (ext.type !== "element" || ext.name !== "a:ext") continue;
+    const svgBlip = findChild(ext, "asvg:svgBlip");
+    if (svgBlip) {
+      const rEmbed = attr(svgBlip, "r:embed");
+      if (!rEmbed) return undefined;
+      const svgPath = ctx.resolveRelationship(rEmbed);
+      if (!svgPath) return undefined;
+      const data = ctx.docx.doc.getRaw(svgPath);
+      if (!data) return undefined;
+      return { data, fileName: svgPath.split("/").pop() ?? svgPath };
     }
   }
   return undefined;
@@ -634,6 +674,25 @@ function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData
     if (fill) (result as MediaData & WpgCommonMediaData).fill = fill;
     const ln = findChild(spPr, "a:ln");
     if (ln) (result as MediaData & WpgCommonMediaData).outline = outlineDesc.parse(ln, ctx);
+  }
+  // asvg:svgBlip extension — when present, the a:blip r:embed is the raster
+  // fallback and the vector SVG lives in the extension. Reshape into an
+  // SvgMediaData so stringify re-emits both (vector + fallback); otherwise the
+  // SVG is dropped on round-trip.
+  const svg = readBlipSvg(blip, ctx);
+  if (svg) {
+    return {
+      ...result,
+      type: "svg",
+      data: svg.data,
+      fileName: svg.fileName,
+      fallback: {
+        type: result.type,
+        fileName: result.fileName,
+        data,
+        transformation: result.transformation,
+      },
+    } as MediaData;
   }
   return result;
 }

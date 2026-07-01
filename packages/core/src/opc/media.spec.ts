@@ -84,4 +84,57 @@ describe("Media", () => {
     expect(second).toBe(first);
     expect(media.array).toHaveLength(1);
   });
+
+  it("keeps byte-identical content separate when the type differs", () => {
+    // mc:AlternateContent carries the same image as EMF (Choice) and WMF
+    // (Fallback) — distinct content-types MS Office stores as separate parts.
+    // Byte-identical dedup must not collapse them.
+    const media = new Media<TestEntry>();
+    const bytes = new Uint8Array([1, 2, 3]);
+    const emf = media.addMedia(bytes, "emf", build(bytes, "emf"));
+    const wmf = media.addMedia(bytes, "wmf", build(bytes, "wmf"));
+
+    expect(emf.fileName).toBe("image1.emf");
+    expect(wmf.fileName).toBe("image2.wmf");
+    expect(emf.type).toBe("emf");
+    expect(wmf.type).toBe("wmf");
+    expect(media.array).toHaveLength(2);
+  });
+
+  it("does not overwrite a pinned name held by different bytes", () => {
+    // Two round-trip paths may resolve to the same file name with different
+    // bytes; overwriting would silently drop media. Re-allocate instead.
+    const media = new Media<TestEntry>();
+    const first = media.addMedia(
+      new Uint8Array([1, 2, 3]),
+      "png",
+      build(new Uint8Array([1, 2, 3]), "png"),
+      "image3.png",
+    );
+    const second = media.addMedia(
+      new Uint8Array([9, 9, 9]),
+      "png",
+      build(new Uint8Array([9, 9, 9]), "png"),
+      "image3.png",
+    );
+
+    expect(first.fileName).toBe("image3.png");
+    expect(second.fileName).not.toBe("image3.png");
+    expect(media.array).toHaveLength(2);
+    // The original bytes survive under the pinned name.
+    const survivor = media.array.find((e) => e.fileName === "image3.png");
+    expect(survivor?.data).toEqual(new Uint8Array([1, 2, 3]));
+  });
+
+  it("skips counter-allocated names already taken", () => {
+    // A pinned name occupying image1.png — the counter must skip it for new
+    // bytes (mirrors round-trip where source basenames and the counter share
+    // the imageN.ext namespace).
+    const media = new Media<TestEntry>();
+    media.addMedia(new Uint8Array([1]), "png", build(new Uint8Array([1]), "png"), "image1.png");
+    const auto = media.addMedia(new Uint8Array([2]), "png", build(new Uint8Array([2]), "png"));
+
+    expect(auto.fileName).toBe("image2.png");
+    expect(media.array).toHaveLength(2);
+  });
 });

@@ -63,26 +63,46 @@ export class Media<T extends BaseMediaEntry> {
     fileName?: string,
   ): T {
     // Hot path: the same buffer object referenced repeatedly resolves instantly.
+    // The cached entry must match the requested type — identical bytes registered
+    // under a different type (e.g. EMF bytes also carried as WMF in an
+    // mc:AlternateContent fallback) are distinct resources with different
+    // content-types and must NOT collapse into one part.
     const verifiedName = this.verified.get(data);
-    if (verifiedName !== undefined) return this.map.get(verifiedName)!;
+    if (verifiedName !== undefined) {
+      const existing = this.map.get(verifiedName)!;
+      if (existing.type === type) return existing;
+    }
 
-    const key = this.contentKey(data);
+    // Type-scoped content key: same bytes under different types stay separate.
+    const key = `${type}:${this.contentKey(data)}`;
     const existingName = this.byContent.get(key);
     if (existingName !== undefined) {
       const existing = this.map.get(existingName)!;
-      // Hash hit — confirm the bytes match to exclude a collision, then memoize.
-      if (this.byteEqual(existing.data, data)) {
+      // Hash hit — confirm bytes + type match to exclude a collision, then memoize.
+      if (existing.type === type && this.byteEqual(existing.data, data)) {
         this.verified.set(data, existingName);
         return existing;
       }
     }
 
-    const resolvedName = fileName ?? `image${++this.counter}.${type}`;
-    const entry = build(resolvedName);
-    this.map.set(resolvedName, entry);
-    this.byContent.set(key, resolvedName);
-    this.verified.set(data, resolvedName);
+    // A pinned name may already be taken by different bytes (e.g. a
+    // counter-allocated name colliding with a source basename, or two round-trip
+    // paths resolving to the same name). Re-allocate rather than overwrite —
+    // overwriting would silently drop the prior media's bytes.
+    const resolvedName = fileName ?? this.nextName(type);
+    const finalName = this.map.has(resolvedName) ? this.nextName(type) : resolvedName;
+    const entry = build(finalName);
+    this.map.set(finalName, entry);
+    this.byContent.set(key, finalName);
+    this.verified.set(data, finalName);
     return entry;
+  }
+
+  /** Next sequential `imageN.${type}` that isn't already in use. */
+  private nextName(type: string): string {
+    let name = `image${++this.counter}.${type}`;
+    while (this.map.has(name)) name = `image${++this.counter}.${type}`;
+    return name;
   }
 
   /** "length:hash" content key for `data` (FNV-1a over the raw bytes), memoized. */

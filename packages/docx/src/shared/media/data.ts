@@ -100,7 +100,7 @@ interface RegularMediaData {
 /**
  * SVG image format with fallback support.
  */
-interface SvgMediaData {
+export interface SvgMediaData {
   /** SVG image type */
   type: "svg";
   /**

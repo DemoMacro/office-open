@@ -574,16 +574,28 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
   // pic child (MediaData) — fill/outline ride on the group-child extension
   // (WpgCommonMediaData) so a grouped picture's spPr round-trips verbatim.
   const picData = child as MediaData & { outline?: OutlineOptions; fill?: FillOptions };
+  const isSvg = picData.type === "svg";
+  // a:blip r:embed targets the raster fallback for SVG pictures (what legacy
+  // viewers render); the vector SVG lives in the svgBlip extension below.
+  const blipTarget = isSvg && "fallback" in picData ? picData.fallback.fileName : picData.fileName;
   const picParts: string[] = [];
   picParts.push(stringifyNvPicPr({}, picData.nonVisualProperties));
   const groupBlipParts: string[] = [];
+  const extParts: string[] = [];
   const useLocalDpiExt = buildUseLocalDpiExt(picData.useLocalDpi);
+  if (useLocalDpiExt) extParts.push(useLocalDpiExt);
+  if (isSvg) {
+    extParts.push(
+      `<a:ext uri="${SVG_BLIP_EXT_URI}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="{${escapeXml(
+        picData.fileName,
+      )}}"/></a:ext>`,
+    );
+  }
+  const extLst = extParts.length > 0 ? `<a:extLst>${extParts.join("")}</a:extLst>` : "";
   groupBlipParts.push(
-    useLocalDpiExt
-      ? `<a:blip r:embed="{${escapeXml(
-          picData.fileName,
-        )}}"><a:extLst>${useLocalDpiExt}</a:extLst></a:blip>`
-      : `<a:blip r:embed="{${escapeXml(picData.fileName)}}"/>`,
+    extLst
+      ? `<a:blip r:embed="{${escapeXml(blipTarget)}}">${extLst}</a:blip>`
+      : `<a:blip r:embed="{${escapeXml(blipTarget)}}"/>`,
   );
   const groupSrcRectXml = buildSrcRectXml(picData.sourceRectangle);
   if (groupSrcRectXml) groupBlipParts.push(groupSrcRectXml);
