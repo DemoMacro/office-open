@@ -394,7 +394,7 @@ export function stringifyParagraphProperties(
     parts.push(onOff("w:suppressAutoHyphens", options.suppressAutoHyphens));
   if (options.kinsoku !== undefined) parts.push(onOff("w:kinsoku", options.kinsoku));
   if (options.wordWrap !== undefined) parts.push(onOff("w:wordWrap", options.wordWrap));
-  if (options.overflowPunctuation)
+  if (options.overflowPunctuation !== undefined)
     parts.push(onOff("w:overflowPunct", options.overflowPunctuation));
   if (options.topLinePunct !== undefined) parts.push(onOff("w:topLinePunct", options.topLinePunct));
   if (options.autoSpaceDE !== undefined) parts.push(onOff("w:autoSpaceDE", options.autoSpaceDE));
