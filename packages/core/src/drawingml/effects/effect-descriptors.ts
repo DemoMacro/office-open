@@ -9,6 +9,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
+import { xsdBlendMode, xsdRectAlignment } from "../../util/mappings";
 import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlurEffectOptions, EffectListOptions } from "./effect-list";
@@ -75,7 +76,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
 
     // Fill overlay
     if (opts.fillOverlay) {
-      parts.push(`<a:fillOverlay blend="${escapeXml(opts.fillOverlay.blend)}"/>`);
+      parts.push(`<a:fillOverlay blend="${escapeXml(xsdBlendMode.to(opts.fillOverlay.blend))}"/>`);
     }
 
     // Glow
@@ -114,7 +115,10 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
             sy: opts.outerShadow.scaleY,
             kx: opts.outerShadow.skewX,
             ky: opts.outerShadow.skewY,
-            algn: opts.outerShadow.alignment,
+            algn:
+              opts.outerShadow.alignment !== undefined
+                ? xsdRectAlignment.to(opts.outerShadow.alignment)
+                : undefined,
             rotWithShape: opts.outerShadow.rotWithShape === false ? 0 : undefined,
           },
           opts.outerShadow.color,
@@ -155,7 +159,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (refOpts.scaleY !== undefined) attrParts.push(`sy="${refOpts.scaleY}"`);
       if (refOpts.skewX !== undefined) attrParts.push(`kx="${refOpts.skewX}"`);
       if (refOpts.skewY !== undefined) attrParts.push(`ky="${refOpts.skewY}"`);
-      if (refOpts.alignment !== undefined) attrParts.push(`algn="${refOpts.alignment}"`);
+      if (refOpts.alignment !== undefined)
+        attrParts.push(`algn="${escapeXml(xsdRectAlignment.to(refOpts.alignment))}"`);
       if (refOpts.rotWithShape !== undefined)
         attrParts.push(`rotWithShape="${refOpts.rotWithShape ? 1 : 0}"`);
       const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
@@ -228,8 +233,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (outerShdw.attributes?.["ky"] !== undefined)
         outerOpts.skewY = Number(outerShdw.attributes["ky"]);
       if (outerShdw.attributes?.["algn"] !== undefined)
-        outerOpts.alignment = String(
-          outerShdw.attributes["algn"],
+        outerOpts.alignment = xsdRectAlignment.from(
+          String(outerShdw.attributes["algn"]),
         ) as OuterShadowEffectOptions["alignment"];
       if (outerShdw.attributes?.["rotWithShape"] !== undefined)
         outerOpts.rotWithShape = outerShdw.attributes["rotWithShape"] !== "0";
@@ -243,8 +248,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
     if (fillOverlay) {
       const overlayOpts: Partial<FillOverlayEffectOptions> = {};
       if (fillOverlay.attributes?.["blend"] !== undefined)
-        overlayOpts.blend = String(
-          fillOverlay.attributes["blend"],
+        overlayOpts.blend = xsdBlendMode.from(
+          String(fillOverlay.attributes["blend"]),
         ) as FillOverlayEffectOptions["blend"];
       result.fillOverlay = overlayOpts as FillOverlayEffectOptions;
     }
@@ -295,7 +300,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (reflection.attributes?.["ky"] !== undefined)
         refOpts.skewY = Number(reflection.attributes["ky"]);
       if (reflection.attributes?.["algn"] !== undefined)
-        refOpts.alignment = String(reflection.attributes["algn"]);
+        refOpts.alignment = xsdRectAlignment.from(String(reflection.attributes["algn"]));
       if (reflection.attributes?.["rotWithShape"] !== undefined)
         refOpts.rotWithShape = reflection.attributes["rotWithShape"] !== "0";
       result.reflection = refOpts;

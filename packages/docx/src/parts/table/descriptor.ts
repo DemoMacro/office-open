@@ -670,7 +670,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   const tblCellSpacing = findChild(el, "w:tblCellSpacing");
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
-    const w = attrMeasure(tblCellSpacing, "w:w");
+    const w = widthFiftiethsToPct(attrMeasure(tblCellSpacing, "w:w"), type);
     if (w !== undefined)
       opts.cellSpacing = { size: w, ...(type ? { type } : {}) } as TableCellSpacingProperties;
   }
@@ -821,7 +821,7 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
   const tblCellSpacing = findChild(el, "w:tblCellSpacing");
   if (tblCellSpacing) {
     const type = attr(tblCellSpacing, "w:type");
-    const w = attrMeasure(tblCellSpacing, "w:w");
+    const w = widthFiftiethsToPct(attrMeasure(tblCellSpacing, "w:w"), type);
     if (w !== undefined)
       opts.cellSpacing = { size: w, ...(type ? { type } : {}) } as TableCellSpacingProperties;
   }

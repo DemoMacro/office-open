@@ -42,6 +42,22 @@ describe("effectListDesc", () => {
     expect(result.fillOverlay!.blend).toBe("over");
   });
 
+  it("emits XSD tokens for blend (mult) and alignments (ctr), not full words", () => {
+    const xml = stringify(
+      effectListDesc,
+      {
+        fillOverlay: { blend: "multiply" },
+        outerShadow: { alignment: "center", color: { value: "000000" } },
+        reflection: { alignment: "center" },
+      },
+      {} as any,
+    )!;
+    expect(xml).toContain('blend="mult"');
+    expect(xml).not.toContain('blend="multiply"');
+    expect(xml).toContain('algn="ctr"');
+    expect(xml).not.toContain('algn="center"');
+  });
+
   it("round-trips glow with RGB color", () => {
     const opts: EffectListOptions = {
       glow: { radius: 40000, color: { value: "FF0000" } },

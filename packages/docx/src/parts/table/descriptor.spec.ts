@@ -191,6 +191,26 @@ describe("tableDesc round-trip", () => {
     expect(result.width).toEqual({ size: 100, type: "pct" });
   });
 
+  it('round-trips cellSpacing pct (size:100 → w:w="5000" → size:100)', () => {
+    const xml = tableDesc.stringify(
+      { cellSpacing: { size: 100, type: "pct" }, rows: [{ cells: [{ children: [] }] }] },
+      writeCtx,
+    )!;
+    expect(xml).toContain('w:tblCellSpacing w:w="5000" w:type="pct"');
+    const result = tableDesc.parse(parseXml(xml).elements![0], readCtx);
+    expect(result.cellSpacing).toEqual({ size: 100, type: "pct" });
+  });
+
+  it('round-trips indent pct (size:50 → w:w="2500" → size:50)', () => {
+    const xml = tableDesc.stringify(
+      { indent: { size: 50, type: "pct" }, rows: [{ cells: [{ children: [] }] }] },
+      writeCtx,
+    )!;
+    expect(xml).toContain('w:tblInd w:w="2500" w:type="pct"');
+    const result = tableDesc.parse(parseXml(xml).elements![0], readCtx);
+    expect(result.indent).toEqual({ size: 50, type: "pct" });
+  });
+
   it("round-trips description", () => {
     const result = roundTrip({
       description: "Test table description",

@@ -202,9 +202,12 @@ function cellMergeStr(opts: CellMergeAttributes): string {
 // ── Cell spacing string ──
 
 function cellSpacingStr(opts: TableCellSpacingProperties): string {
+  // CT_TblWidth: pct size is a user-facing percentage (100 = 100%); convert to
+  // fiftieths, matching tableWidthStr. type stays optional (no AUTO default).
+  const w = opts.type === WidthType.PERCENTAGE ? widthPctToFiftieths(opts.size) : opts.size;
   const a = attrParts({
+    "w:w": w !== undefined ? measurementOrPercentValue(w) : undefined,
     "w:type": opts.type,
-    "w:w": measurementOrPercentValue(opts.size),
   });
   return `<w:tblCellSpacing ${a}/>`;
 }

@@ -64,6 +64,19 @@ describe("outlineDesc", () => {
     expect(result.align).toBe("center");
   });
 
+  it("emits XSD tokens (rnd/sng/ctr), not full words, for cap/compoundLine/align", () => {
+    const xml = stringify(
+      outlineDesc,
+      { type: "noFill", cap: "round", compoundLine: "double", align: "center" },
+      {} as any,
+    )!;
+    expect(xml).toContain('cap="rnd"');
+    expect(xml).toContain('cmpd="dbl"');
+    expect(xml).toContain('algn="ctr"');
+    expect(xml).not.toContain('cap="round"');
+    expect(xml).not.toContain('algn="center"');
+  });
+
   it("round-trips preset dash", () => {
     const opts: OutlineOptions = {
       type: "noFill",

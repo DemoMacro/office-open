@@ -11,6 +11,7 @@ import { findChild } from "@office-open/xml";
 import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { convertToEmu } from "../../util/converters";
+import { xsdCompoundLine, xsdLineCap, xsdPenAlignment } from "../../util/mappings";
 import { solidFillDesc } from "../color/color-descriptors";
 import { gradientFillDesc } from "../fill/fill-descriptors";
 import type { DashStop } from "./custom-dash";
@@ -57,9 +58,12 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     // ST_LineWidth is EMU (integer) or a universal measure; normalize so the
     // descriptor path matches createOutline (outline.ts) and stays XSD-valid.
     if (opts.width !== undefined) attrParts.push(`w="${convertToEmu(opts.width)}"`);
-    if (opts.cap !== undefined) attrParts.push(`cap="${escapeXml(opts.cap)}"`);
-    if (opts.compoundLine !== undefined) attrParts.push(`cmpd="${escapeXml(opts.compoundLine)}"`);
-    if (opts.align !== undefined) attrParts.push(`algn="${escapeXml(opts.align)}"`);
+    // Map full-word enums to XSD tokens (rnd/sng/ctr), matching createOutline.
+    if (opts.cap !== undefined) attrParts.push(`cap="${escapeXml(xsdLineCap.to(opts.cap))}"`);
+    if (opts.compoundLine !== undefined)
+      attrParts.push(`cmpd="${escapeXml(xsdCompoundLine.to(opts.compoundLine))}"`);
+    if (opts.align !== undefined)
+      attrParts.push(`algn="${escapeXml(xsdPenAlignment.to(opts.align))}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
 
     // Fill
@@ -103,12 +107,18 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     // Attributes
     if (el.attributes) {
       if (el.attributes["w"] !== undefined) result.width = Number(el.attributes["w"]);
+      // Reverse-map XSD tokens back to full-word enums so the parsed Options
+      // match the user-facing type (round/single/center), not raw tokens.
       if (el.attributes["cap"] !== undefined)
-        result.cap = String(el.attributes["cap"]) as OutlineOptions["cap"];
+        result.cap = xsdLineCap.from(String(el.attributes["cap"])) as OutlineOptions["cap"];
       if (el.attributes["cmpd"] !== undefined)
-        result.compoundLine = String(el.attributes["cmpd"]) as OutlineOptions["compoundLine"];
+        result.compoundLine = xsdCompoundLine.from(
+          String(el.attributes["cmpd"]),
+        ) as OutlineOptions["compoundLine"];
       if (el.attributes["algn"] !== undefined)
-        result.align = String(el.attributes["algn"]) as OutlineOptions["align"];
+        result.align = xsdPenAlignment.from(
+          String(el.attributes["algn"]),
+        ) as OutlineOptions["align"];
     }
 
     // Fill

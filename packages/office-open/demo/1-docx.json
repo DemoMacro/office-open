@@ -181,7 +181,7 @@
         },
         {
           "table": {
-            "width": { "size": 5000, "type": "pct" },
+            "width": { "size": 100, "type": "pct" },
             "rows": [
               {
                 "cells": [

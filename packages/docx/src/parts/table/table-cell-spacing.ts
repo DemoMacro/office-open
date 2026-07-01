@@ -13,14 +13,17 @@ import type { Percentage, UniversalMeasure } from "@office-open/core";
 /**
  * Cell spacing measurement types.
  *
- * w:tblCellSpacing is a CT_TblWidth whose @w:type is ST_TblWidthType; cell
- * spacing only ever uses the nil/dxa subset of that union.
+ * w:tblCellSpacing is a CT_TblWidth (same type as w:tblW/w:tcW/w:tblInd); its
+ * @w:type is ST_TblWidth (nil/pct/dxa/auto). Cell spacing is conventionally dxa,
+ * but pct is supported for parity with the other CT_TblWidth fields.
  */
 export const CellSpacingType = {
   /** Value is in twentieths of a point (dxa) */
   DXA: "dxa",
   /** No (empty) value. */
   NIL: "nil",
+  /** Value is a percentage of the table width (100 = 100%). */
+  PERCENTAGE: "pct",
 } as const;
 
 /**
