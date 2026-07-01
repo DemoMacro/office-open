@@ -1,6 +1,6 @@
 {
   "name": "@office-open/core",
-  "version": "0.10.10",
+  "version": "0.10.11",
   "description": "Shared OOXML infrastructure — XML components, validators, converters, charts, and SmartArt",
   "keywords": [
     "core",

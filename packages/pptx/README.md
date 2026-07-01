@@ -88,7 +88,7 @@ writeFileSync("output.pptx", buffer);
 
 Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher ops/s is better, Windows 11 / Node 24).
 
-**Default** = XML DEFLATE level 1 (SuperFast); media is split by type, matching MS Office PowerPoint — already-compressed formats (PNG/JPEG/GIF) are STOREd, the rest (EMF/WMF/BMP/TIFF/…) use DEFLATE level 1 (verified on a real MS Office file). **All STORE** = no compression (`{ compression: { xml: 0, media: 0 } }`). **PptxGenJS** (async only) defaults to STORE (via JSZip), supports DEFLATE via `compression: true` (applies to ALL entries including images).
+**Default** = XML DEFLATE level 1 (SuperFast); media is split by type, matching MS Office PowerPoint — already-compressed formats (PNG/JPEG/GIF) are STOREd, the rest (EMF/WMF/BMP/TIFF/…) use DEFLATE level 6 / Normal (verified on a real MS Office file). **All STORE** = no compression (`{ compression: { xml: 0, media: 0 } }`). **PptxGenJS** (async only) defaults to STORE (via JSZip), supports DEFLATE via `compression: true` (applies to ALL entries including images).
 
 ```typescript
 // Default (matches MS Office)
@@ -101,19 +101,19 @@ await generatePresentation(options, { compression: { xml: 0, media: 0 } });
 
 | Scenario           | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | ------------------ | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| Simple (2 shapes)  |  1,391 ops/s |     693 ops/s |    4,055 ops/s |     4,148 ops/s |         182 ops/s |       187 ops/s |
-| Styled shapes (20) |  1,302 ops/s |     661 ops/s |    4,387 ops/s |     4,030 ops/s |         188 ops/s |       183 ops/s |
-| Table (10x5)       |  1,694 ops/s |     802 ops/s |    7,787 ops/s |     7,891 ops/s |         857 ops/s |       937 ops/s |
-| Full featured      |  1,155 ops/s |     627 ops/s |    2,873 ops/s |     2,821 ops/s |          97 ops/s |        98 ops/s |
+| Simple (2 shapes)  |  1,176 ops/s |     646 ops/s |    4,345 ops/s |     3,969 ops/s |         185 ops/s |       199 ops/s |
+| Styled shapes (20) |  1,182 ops/s |     660 ops/s |    4,197 ops/s |     4,224 ops/s |         196 ops/s |       194 ops/s |
+| Table (10x5)       |  1,471 ops/s |     716 ops/s |    8,044 ops/s |     7,416 ops/s |         928 ops/s |     1,020 ops/s |
+| Full featured      |  1,033 ops/s |     639 ops/s |    2,924 ops/s |     2,598 ops/s |         107 ops/s |       102 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario              | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | --------------------- | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| 30 slides x 20 shapes |    271 ops/s |     144 ops/s |      571 ops/s |       577 ops/s |         119 ops/s |       120 ops/s |
-| 30 slides x 10 images |    130 ops/s |    87.4 ops/s |      173 ops/s |       168 ops/s |        0.32 ops/s |      0.32 ops/s |
-| 100x10 table          |    618 ops/s |     453 ops/s |    1,082 ops/s |     1,039 ops/s |         128 ops/s |       123 ops/s |
-| 50 slides full        |   89.2 ops/s |    60.5 ops/s |      131 ops/s |       129 ops/s |        0.95 ops/s |      0.95 ops/s |
+| 30 slides x 20 shapes |    255 ops/s |     143 ops/s |      567 ops/s |       547 ops/s |         127 ops/s |       135 ops/s |
+| 30 slides x 10 images |    120 ops/s |    84.4 ops/s |      169 ops/s |       163 ops/s |        0.34 ops/s |      0.34 ops/s |
+| 100x10 table          |    603 ops/s |     446 ops/s |    1,053 ops/s |     1,052 ops/s |         135 ops/s |       121 ops/s |
+| 50 slides full        |   86.7 ops/s |    54.4 ops/s |      126 ops/s |       128 ops/s |        1.01 ops/s |      1.02 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -121,7 +121,7 @@ await generatePresentation(options, { compression: { xml: 0, media: 0 } });
 
 | Scenario        | Default sync | Default async | All STORE sync | All STORE async | PptxGenJS DEFLATE | PptxGenJS STORE |
 | --------------- | -----------: | ------------: | -------------: | --------------: | ----------------: | --------------: |
-| 40 slides mixed |   24.5 ops/s |    22.1 ops/s |     26.3 ops/s |      26.5 ops/s |        0.22 ops/s |      0.23 ops/s |
+| 40 slides mixed |   24.5 ops/s |    22.4 ops/s |     25.3 ops/s |      25.0 ops/s |        0.24 ops/s |      0.24 ops/s |
 
 ## Examples
 
