@@ -270,10 +270,14 @@ export function stringifyParagraph(
  * Dispatches to the appropriate stringifier based on the child type.
  * Pure JSON API — no class instance support.
  */
-export function stringifyBodyChild(child: SectionChild, ctx: BodyContext): string {
+export function stringifyBodyChild(
+  child: SectionChild,
+  ctx: BodyContext,
+  sectionPropertiesXml?: string,
+): string {
   // Plain object dispatch — all via descriptors
   if ("paragraph" in child) {
-    return stringifyParagraph(child.paragraph, ctx);
+    return stringifyParagraph(child.paragraph, ctx, sectionPropertiesXml);
   }
   if ("table" in child) {
     return tableDesc.stringify(child.table, ctx) ?? "";
@@ -495,25 +499,28 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
 
   for (let si = 0; si < sections.length; si++) {
     const section = sections[si];
-
-    // Serialize section children using stringifyBodyChild()
-    if (section.children) {
-      for (const child of section.children) {
-        bodyParts.push(stringifyBodyChild(child, docCtx));
-      }
-    }
-
-    // Section properties — pure function, no XmlComponent instance
+    const children = section.children ?? [];
     const sectPrOpts = bodySections[si];
-    if (sectPrOpts) {
-      const sectPrXml = sectionPropertiesDesc.stringify(sectPrOpts, docCtx) ?? "";
-      if (si < sections.length - 1) {
-        // Non-last section: embed sectPr in a paragraph's pPr
-        bodyParts.push(`<w:p><w:pPr>${sectPrXml}</w:pPr></w:p>`);
-      } else {
-        // Last section: body-level sectPr
-        bodyParts.push(sectPrXml);
-      }
+    const sectPrXml = sectPrOpts ? (sectionPropertiesDesc.stringify(sectPrOpts, docCtx) ?? "") : "";
+    const isLast = si === sections.length - 1;
+
+    // Per OOXML, a non-final section's sectPr lives in the pPr of its LAST
+    // paragraph (the section-break paragraph carries both content and sectPr).
+    // Host it there when possible; fall back to a dedicated break paragraph if
+    // the section is empty or ends in a non-paragraph child. The last section
+    // emits its sectPr at the body level.
+    let sectPrHosted = isLast || !sectPrXml;
+    for (let ci = 0; ci < children.length; ci++) {
+      const inject =
+        !isLast && sectPrXml && ci === children.length - 1 && "paragraph" in children[ci];
+      if (inject) sectPrHosted = true;
+      bodyParts.push(stringifyBodyChild(children[ci], docCtx, inject ? sectPrXml : undefined));
+    }
+    if (!isLast && sectPrXml && !sectPrHosted) {
+      bodyParts.push(`<w:p><w:pPr>${sectPrXml}</w:pPr></w:p>`);
+    }
+    if (isLast && sectPrXml) {
+      bodyParts.push(sectPrXml);
     }
   }
 

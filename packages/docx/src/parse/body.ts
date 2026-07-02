@@ -236,11 +236,13 @@ export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[]
 
   for (let i = 0; i < boundaries.length; i++) {
     const boundary = boundaries[i];
-    // For inline sectPr (inside w:pPr), the containing paragraph was pushed to
-    // bodyChildren. Exclude it — it's a section break marker, not content.
-    // The last boundary uses a body-level sectPr, so no paragraph to exclude.
-    const isInlineSectPr = i < boundaries.length - 1;
-    const endIdx = isInlineSectPr ? Math.max(start, boundary.index - 1) : boundary.index;
+    // A sectPr inside a paragraph's pPr marks that paragraph as the final
+    // content paragraph of its section. Its runs/drawings ARE section content
+    // (e.g. an inline image), so include it in the slice — the paragraph parser
+    // ignores pPr/w:sectPr, and stringify re-injects the sectPr into this same
+    // paragraph's pPr. The last boundary is a body-level sectPr (never in a
+    // paragraph), so boundary.index already points past every real child.
+    const endIdx = boundary.index;
     const sectionElements = bodyChildren.slice(start, endIdx);
     const parsedProps = parseSectionProperties(boundary.sectPr, ctx);
 
