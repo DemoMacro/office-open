@@ -340,14 +340,17 @@ function stringifyDocDefaults(opts: DocumentDefaultsOptions): string {
     );
   }
 
-  // pPrDefault - Word default: spacing after 8pt (160 twips), line 1.16 (278 twips)
+  // pPrDefault - Word default: widow/orphan control on (CT_OnOff default = true),
+  // spacing after 8pt (160 twips), line 1.16 (278 twips)
   const pPr = stringifyParagraphProperties(opts.paragraph).xml;
   if (pPr) {
     children.push(`<w:pPrDefault>${pPr}</w:pPrDefault>`);
   } else {
-    // Match Word's default paragraph properties exactly
+    // Declare widowControl explicitly so the default is self-contained in the XML
+    // (CT_OnOff @val omitted ⇒ true), matching MS Office's default paragraph behavior.
     children.push(
       `<w:pPrDefault><w:pPr>` +
+        `<w:widowControl/>` +
         `<w:spacing w:after="160" w:line="278" w:lineRule="auto"/>` +
         `</w:pPr></w:pPrDefault>`,
     );
@@ -434,7 +437,6 @@ export class DefaultStylesFactory {
       name: "Normal",
       default: true,
       quickFormat: true,
-      paragraph: { widowControl: false },
     });
 
     // heading 1-9 styles with proper formatting
