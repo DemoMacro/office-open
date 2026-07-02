@@ -28,25 +28,25 @@ describe("createPacker", () => {
   describe("compile passthrough", () => {
     it("should default overrides to empty array", async () => {
       await Packer.toString(mockFile);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 1);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6);
     });
 
     it("should pass overrides through", async () => {
       const overrides: XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
       await Packer.toString(mockFile, { overrides });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides, 1);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides, 6);
     });
   });
 
   describe("compression options", () => {
-    it("should default to mediaLevel 1 (DEFLATE) when no options", async () => {
+    it("should default to mediaLevel 6 (Normal) when no options", async () => {
       await Packer.toBuffer(mockFile);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 1);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6);
     });
 
-    it("should pass mediaLevel 1 (default) when only xml option is set", async () => {
+    it("should pass mediaLevel 6 (default) when only xml option is set", async () => {
       await Packer.toBuffer(mockFile, { compression: { xml: 9 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 1);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6);
     });
 
     it("should pass custom mediaLevel", async () => {
