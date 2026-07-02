@@ -39,10 +39,22 @@ export const contentTypesDesc: CustomDescriptor<ContentTypesInput> = {
     const p: string[] = [
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
     ];
+    // OPC Default Extension and Override PartName matching are case-insensitive
+    // (ECMA-376-2 §10.1.2/§10.1.4): a duplicate differing only in case makes
+    // Word reject the package as unreadable content. Dedup case-insensitively
+    // as a last line of defense so no input path can emit a colliding pair.
+    const seenDefault = new Set<string>();
     for (const d of opts.defaults) {
+      const key = d.extension.toLowerCase();
+      if (seenDefault.has(key)) continue;
+      seenDefault.add(key);
       p.push(defaultXml(d.extension, d.contentType));
     }
+    const seenOverride = new Set<string>();
     for (const o of opts.overrides) {
+      const key = o.partName.toLowerCase();
+      if (seenOverride.has(key)) continue;
+      seenOverride.add(key);
       p.push(overrideXml(o.partName, o.contentType));
     }
     p.push("</Types>");
@@ -97,25 +109,27 @@ const STANDARD_DEFAULTS: ContentTypeDefault[] = [
  *
  * Round-tripped packages pass through the source's [Content_Types], which may
  * declare an uppercase extension (e.g. `JPG`) while the media is named `.jpg`.
- * OPC extension matching is case-sensitive, so the media ends up with no
- * content type and Word rejects it as unreadable content. This backfills any
- * missing defaults from the standard set, preserving the case actually used in
- * the media filenames.
+ * OPC extension matching is **case-insensitive** (ECMA-376-2 §10.1.2), so `JPG`
+ * and `jpg` are one key — emitting both yields a duplicate default that Word
+ * rejects as unreadable content. Match existing defaults case-insensitively so
+ * we never add a colliding extension; the media then resolves through the
+ * source's already-declared default.
  */
 export function withMediaDefaults(
   input: ContentTypesInput,
   mediaFileNames: string[],
 ): ContentTypesInput {
-  const have = new Set(input.defaults.map((d) => d.extension));
+  const have = new Set(input.defaults.map((d) => d.extension.toLowerCase()));
   const standard = new Map(STANDARD_DEFAULTS.map((d) => [d.extension, d.contentType]));
   const defaults = [...input.defaults];
   for (const fileName of mediaFileNames) {
     const ext = fileName.slice(fileName.lastIndexOf(".") + 1);
-    if (!ext || have.has(ext)) continue;
-    const contentType = standard.get(ext) ?? standard.get(ext.toLowerCase());
+    const key = ext.toLowerCase();
+    if (!ext || have.has(key)) continue;
+    const contentType = standard.get(key);
     if (contentType) {
       defaults.push({ extension: ext, contentType });
-      have.add(ext);
+      have.add(key);
     }
   }
   return { defaults, overrides: input.overrides };
@@ -141,7 +155,7 @@ export function withAltChunkOverrides(
   altChunks: readonly { path: string; contentType: string }[],
 ): ContentTypesInput {
   const defaults = [...input.defaults];
-  const haveExt = new Set(defaults.map((d) => d.extension));
+  const haveExt = new Set(defaults.map((d) => d.extension.toLowerCase()));
   for (const ac of altChunks) {
     const ext = (ac.path.split(".").pop() ?? "").toLowerCase();
     if (ext && !haveExt.has(ext) && ALTCHUNK_DEFAULTS[ext]) {

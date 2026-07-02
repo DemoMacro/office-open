@@ -22,12 +22,13 @@ export const appendContentType = (
   const els = typesChildren(element);
   if (!els) return;
 
+  // OPC Default Extension matching is case-insensitive (ECMA-376-2 §10.1.2):
+  // an existing `JPG` must block a colliding `jpg`, or Word rejects the package.
   const exist = els.some(
     (el) =>
       el.type === "element" &&
       el.name === "Default" &&
-      el?.attributes?.ContentType === contentType &&
-      el?.attributes?.Extension === extension,
+      String(el?.attributes?.Extension ?? "").toLowerCase() === extension.toLowerCase(),
   );
   if (exist) {
     return;
@@ -52,9 +53,12 @@ export const appendOverride = (element: Element, partName: string, contentType: 
   const els = typesChildren(element);
   if (!els) return;
 
+  // OPC Override PartName matching is case-insensitive (ECMA-376-2 §10.1.4).
   const exists = els.some(
     (el) =>
-      el.type === "element" && el.name === "Override" && el?.attributes?.PartName === partName,
+      el.type === "element" &&
+      el.name === "Override" &&
+      String(el?.attributes?.PartName ?? "").toLowerCase() === partName.toLowerCase(),
   );
   if (exists) return;
 
