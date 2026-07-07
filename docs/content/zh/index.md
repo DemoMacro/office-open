@@ -2,7 +2,7 @@
 prose: true
 seo:
     title: 使用 JavaScript/TypeScript 生成 Office Open XML 文档
-    description: 通过声明式 API 以编程方式创建 .docx、.pptx 和 .xlsx 文件，支持 Node.js 和浏览器。
+    description: 通过声明式 TypeScript API 生成、解析和修补 .docx、.pptx 和 .xlsx 文件。支持 Node.js、浏览器、Deno 和 Bun。
 ---
 
 ::u-page-hero
@@ -46,7 +46,7 @@ bun add office-open
 生成 Office Open XML 文档。
 
 #description
-使用 JSON 或 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件。既适合 AI 代理，也适合传统开发工作流。
+使用 JSON 或 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件。为 AI 代理和传统开发工作流而设计。
 
 #links
 :::u-button
@@ -70,79 +70,42 @@ variant: outline
 :::
 ::
 
-::u-container{.pb-12.xl:pb-24}
-:::u-page-grid
-::::u-page-feature
+::u-page-section
 ---
-icon: i-lucide-braces
+features:
+  - icon: i-lucide-braces
+    title: JSON 与 TypeScript
+    description: 使用纯 JSON 对象或 TypeScript 函数式 API 创建文档。JSON 优先的设计天然适配 AI 代理、LLM 工作流和 Zod 驱动的 schema。
+  - icon: i-lucide-layers
+    title: 丰富内容
+    description: 段落、表格、图片、图表、SmartArt、数学公式、页眉、页脚等。
+  - icon: i-simple-icons-typescript
+    title: 类型安全
+    description: 全面的 TypeScript 类型定义，为每个 API 提供自动补全和类型安全。
+  - icon: i-lucide-monitor
+    title: 跨平台
+    description: 支持 Node.js、浏览器、Deno 和 Bun。可导出为 Buffer、Blob、Base64、流或字符串。
+  - icon: i-lucide-shield-check
+    title: 符合 OOXML 规范
+    description: 输出通过 OOXML XSD 校验，可在 Microsoft Office、WPS Office、LibreOffice 和 Google Workspace 中打开。
+  - icon: i-lucide-package
+    title: 模块化包
+    description: 按需安装 — docx、pptx、xlsx、xml 或 core。统一的 office-open 包还提供 CLI 和 AI SDK 工具。
 ---
-#title{unwrap="p"}
-JSON 与 TypeScript
-
-#description{unwrap="p"}
-使用纯 JSON 对象或 TypeScript 函数式 API 创建文档。JSON 优先的设计使其成为 AI 代理和 LLM 工作流的理想选择。
-::::
-
-::::u-page-feature
----
-icon: i-lucide-layers
----
-#title{unwrap="p"}
-丰富内容
-
-#description{unwrap="p"}
-段落、表格、图片、图表、SmartArt、数学公式、页眉、页脚等。
-::::
-
-::::u-page-feature
----
-icon: i-simple-icons-typescript
----
-#title{unwrap="p"}
-类型安全
-
-#description{unwrap="p"}
-完整的 TypeScript 类型定义，支持自动补全和类型安全。
-::::
-
-::::u-page-feature
----
-icon: i-lucide-monitor
----
-#title{unwrap="p"}
-跨平台
-
-#description{unwrap="p"}
-支持 Node.js 和浏览器。可导出为 Buffer、Blob、Base64、流或字符串。
-::::
-
-::::u-page-feature
----
-icon: i-lucide-shield-check
----
-#title{unwrap="p"}
-符合 OOXML 规范
-
-#description{unwrap="p"}
-生成的文件完全符合 ISO/IEC 29500 Office Open XML 规范。
-::::
-
-::::u-page-feature
----
-icon: i-lucide-package
----
-#title{unwrap="p"}
-模块化包
-
-#description{unwrap="p"}
-按需安装 — docx、pptx、xml 或 core。
-::::
-:::
 ::
 
 ::u-page-section
 ---
 orientation: horizontal
+features:
+  - icon: i-lucide-file-text
+    title: 创建 Word 文档，支持段落、表格、图片和图表
+  - icon: i-lucide-presentation
+    title: 创建 PowerPoint 演示文稿，支持形状、动画和切换效果
+  - icon: i-lucide-table-2
+    title: 创建 Excel 电子表格，支持样式、图表和数据验证
+  - icon: i-lucide-zap
+    title: 高性能，原生 zlib 压缩与流式输出
 ---
 
 :::api-example
@@ -205,40 +168,7 @@ orientation: horizontal
 使用 [JSON]{.text-(--ui-primary)} 或 TypeScript 构建文档
 
 #description
-将文档定义为纯 JSON 对象——非常适合 AI 代理——或使用 TypeScript 函数式 API 获得完整的 IDE 体验。两者均生成有效的 OOXML 标记。
-
-#features
-:::u-page-feature
----
-icon: i-lucide-file-text
----
-#title{unwrap="p"}
-创建 Word 文档，支持段落、表格、图片和图表
-:::
-
-:::u-page-feature
----
-icon: i-lucide-presentation
----
-#title{unwrap="p"}
-创建 PowerPoint 演示文稿，支持形状、动画和切换效果
-:::
-
-:::u-page-feature
----
-icon: i-lucide-table-2
----
-#title{unwrap="p"}
-创建 Excel 电子表格，支持样式、图表和数据验证
-:::
-
-:::u-page-feature
----
-icon: i-lucide-download
----
-#title{unwrap="p"}
-导出为 Buffer、Blob、Base64、流或字符串
-:::
+将文档定义为纯 JSON 对象——零类实例化——或使用 TypeScript 函数式 API 获得完整的 IDE 体验。两者均生成有效的 OOXML 标记。
 
 #links
 :::u-button
@@ -260,12 +190,29 @@ trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---
 :::
+
+:::u-button
+---
+color: neutral
+label: 了解 @office-open/xlsx
+to: /zh/xlsx/quickstart
+trailingIcon: i-lucide-arrow-right
+variant: subtle
+---
+:::
 ::
 
 ::u-page-section
 ---
 orientation: horizontal
 reverse: true
+features:
+  - icon: i-lucide-search
+    title: 读取文档结构、样式和内容
+  - icon: i-lucide-wrench
+    title: 替换模板占位符为新内容
+  - icon: i-lucide-arrow-right-left
+    title: 解析、修改、重新导出一站式流水线
 ---
 
 :::code-group
@@ -332,37 +279,22 @@ const result = await patchWorkbook({
 #description
 将 `.docx`、`.pptx` 和 `.xlsx` 文件解析为结构化对象进行检查，或通过替换 `{{占位符}}` 标记来修补模板。
 
-#features
-:::u-page-feature
----
-icon: i-lucide-search
----
-#title{unwrap="p"}
-读取文档结构、样式和内容
-:::
-
-:::u-page-feature
----
-icon: i-lucide-wrench
----
-#title{unwrap="p"}
-替换模板占位符为新内容
-:::
-
-:::u-page-feature
----
-icon: i-lucide-arrow-right-left
----
-#title{unwrap="p"}
-解析、修改、重新导出一站式流水线
-:::
-
 #links
 :::u-button
 ---
 color: neutral
-label: 了解 @office-open/xlsx
-to: /zh/xlsx/quickstart
+label: 解析文档
+to: /zh/docx/parsing
+trailingIcon: i-lucide-arrow-right
+variant: subtle
+---
+:::
+
+:::u-button
+---
+color: neutral
+label: 修补模板
+to: /zh/docx/patch
 trailingIcon: i-lucide-arrow-right
 variant: subtle
 ---

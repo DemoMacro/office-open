@@ -10,8 +10,8 @@
 
 - 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API, no Office dependency
 - 📐 **Spec-Compliant** — Output validates against OOXML Transitional XSD schemas (ISO/IEC 29500), compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace
-- 🔒 **Fully Typed** — Complete TypeScript definitions with full autocomplete and type safety
-- 🎯 **Pure JSON API** — Define documents as plain JSON objects, zero class instantiation, ideal for AI agents
+- 🔒 **Fully Typed** — Comprehensive TypeScript definitions for autocomplete and type safety across every API
+- 🎯 **Pure JSON API** — Define documents as plain JSON objects, zero class instantiation, designed for AI agents
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
 - ⚡ **High Performance** — Optimized for large documents and batch processing with native zlib compression
@@ -199,7 +199,7 @@ const opts = parseWorkbook(buffer);
 
 ## JSON API
 
-Define documents as plain JSON objects — perfect for AI agents. Zero class instantiation, pure data in and binary out:
+Define documents as plain JSON objects — zero class instantiation, pure data in and binary out:
 
 ```typescript
 import { generateDocumentSync } from "@office-open/docx";
@@ -228,7 +228,7 @@ const buffer = generateDocumentSync({
 
 1. **OOXML Compliance**: Strict adherence to the ISO/IEC 29500 OOXML specification
 2. **Type Safety**: Full TypeScript support with comprehensive types and autocomplete
-3. **Pure JSON API**: Define documents as plain data objects — zero class instantiation, ideal for AI agents
+3. **Pure JSON API**: Define documents as plain data objects — zero class instantiation, designed for AI agents
 4. **Performance First**: Pure string concatenation for XML generation, native zlib compression, no intermediate AST
 5. **Modular Design**: Shared core infrastructure across DOCX, PPTX, and XLSX
 6. **Cross-Platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
