@@ -2,6 +2,18 @@ export default defineNuxtConfig({
   extends: ["docus"],
   modules: ["@nuxtjs/i18n"],
 
+  // Nitro's server-bundle esbuild plugin defaults to target "es2019"
+  // (rollup/index.mjs), which rejects top-level await emitted by some
+  // dependencies bundled under the Vercel preset. Raise it to "es2022"
+  // (TLA is part of ES2022) so the prerenderer stops failing on Vercel.
+  nitro: {
+    esbuild: {
+      options: {
+        target: "es2022",
+      },
+    },
+  },
+
   vite: {
     optimizeDeps: {
       include: [
