@@ -102,7 +102,6 @@ function resolveEntryData(
 function compressOne(
   data: Uint8Array,
   level: number,
-  method: number,
   deflate: DeflateFn,
 ): { compressed: Uint8Array; method: number } {
   if (level === 0) return { compressed: data, method: 0 };
@@ -215,7 +214,7 @@ export function nativeZip(files: Zippable, level: number = 6): Uint8Array {
   for (let i = 0; i < keys.length; i++) {
     const { data, level: entryLevel } = resolveEntryData(files[keys[i]], level);
     const c = crc(data);
-    const { compressed, method } = compressOne(data, entryLevel, 8, _nativeDeflate);
+    const { compressed, method } = compressOne(data, entryLevel, _nativeDeflate);
     entries[i] = {
       filename: textEncoder.encode(keys[i]),
       data: compressed,
