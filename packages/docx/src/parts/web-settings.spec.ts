@@ -11,7 +11,8 @@ const readCtx = {} as unknown as ReadContext;
 function roundTrip(opts: WebSettingsInput) {
   const xml = webSettingsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return webSettingsDesc.parse(el, readCtx) as unknown as WebSettingsInput;
 }
 
@@ -65,9 +66,9 @@ describe("webSettingsDesc round-trip", () => {
       ],
     });
     expect(result.divs).toHaveLength(1);
-    expect(result.divs![0].id).toBe(100);
-    expect(result.divs![0].marginLeft).toBe(720);
-    expect(result.divs![0].blockQuote).toBe(true);
+    expect(result.divs![0]?.id).toBe(100);
+    expect(result.divs![0]?.marginLeft).toBe(720);
+    expect(result.divs![0]?.blockQuote).toBe(true);
   });
 
   it("round-trips empty web settings", () => {

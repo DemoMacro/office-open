@@ -15,7 +15,8 @@ const readCtx = {} as unknown as ReadContext;
 function roundTrip(opts: RelationshipsInput) {
   const xml = relationshipsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return relationshipsDesc.parse(el, readCtx);
 }
 
@@ -31,11 +32,11 @@ describe("relationshipsDesc round-trip", () => {
       ],
     });
     expect(result.relationships).toHaveLength(1);
-    expect(result.relationships[0].id).toBe(1);
-    expect(result.relationships[0].type).toBe(
+    expect(result.relationships[0]?.id).toBe(1);
+    expect(result.relationships[0]?.type).toBe(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
     );
-    expect(result.relationships[0].target).toBe("styles.xml");
+    expect(result.relationships[0]?.target).toBe("styles.xml");
   });
 
   it("round-trips multiple relationships", () => {
@@ -47,9 +48,9 @@ describe("relationshipsDesc round-trip", () => {
       ],
     });
     expect(result.relationships).toHaveLength(3);
-    expect(result.relationships[0].target).toBe("a.xml");
-    expect(result.relationships[1].target).toBe("b.xml");
-    expect(result.relationships[2].target).toBe("c.xml");
+    expect(result.relationships[0]?.target).toBe("a.xml");
+    expect(result.relationships[1]?.target).toBe("b.xml");
+    expect(result.relationships[2]?.target).toBe("c.xml");
   });
 
   it("round-trips relationship with targetMode", () => {
@@ -63,8 +64,8 @@ describe("relationshipsDesc round-trip", () => {
         },
       ],
     });
-    expect(result.relationships[0].targetMode).toBe("External");
-    expect(result.relationships[0].target).toBe("https://example.com");
+    expect(result.relationships[0]?.targetMode).toBe("External");
+    expect(result.relationships[0]?.target).toBe("https://example.com");
   });
 
   it("round-trips empty relationships", () => {
@@ -77,7 +78,7 @@ describe("relationshipsDesc round-trip", () => {
       relationships: [{ id: "rId42", type: "type-x", target: "x.xml" }],
     });
     // parse converts "rId42" -> 42 (numeric extraction)
-    expect(result.relationships[0].type).toBe("type-x");
-    expect(result.relationships[0].target).toBe("x.xml");
+    expect(result.relationships[0]?.type).toBe("type-x");
+    expect(result.relationships[0]?.target).toBe("x.xml");
   });
 });

@@ -135,7 +135,9 @@ const formatChildElement = (child: unknown): Element[] => {
   }
 
   const jsonObj = xml2js(xmlStr, { captureSpacesBetweenElements: true });
-  return [jsonObj.elements![0]];
+  const rootEl = jsonObj.elements?.[0];
+  // xml2js yields a single root element for a well-formed fragment
+  return rootEl ? [rootEl] : [];
 };
 
 const docxReplacer = createReplacer({
@@ -161,7 +163,8 @@ const appendToBody = (root: Element, children: SectionChild[]): void => {
   // Insert before the trailing <w:sectPr>; otherwise at the end.
   let insertAt = els.length;
   for (let i = els.length - 1; i >= 0; i--) {
-    if (els[i].name === "w:sectPr") {
+    const el = els[i];
+    if (el && el.name === "w:sectPr") {
       insertAt = i;
       break;
     }
@@ -423,8 +426,8 @@ export const patchDocument = async <T extends OutputType = OutputType>({
     );
     map.set(key, JSON.parse(newJson) as Element);
 
-    for (let i = 0; i < mediaDatas.length; i++) {
-      const { fileName } = mediaDatas[i];
+    for (const [i, media] of mediaDatas.entries()) {
+      const { fileName } = media;
       appendRelationship(
         relationshipsJson,
         index + i,
@@ -513,9 +516,10 @@ function makeElement(name: string, attributes: Record<string, string> = {}): Ele
 
 /** A `<w:r>` carrying a `<w:commentReference>` (CommentReference run style). */
 function commentReferenceRun(id: number): Element {
+  // xml2js yields a single root <w:r> for this well-formed fragment
   return xml2js(
     `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${id}"/></w:r>`,
-  ).elements![0];
+  ).elements![0]!;
 }
 
 /** Next continuation id for an appended `<w:comment>` (-1 seed → 0 when none). */
@@ -566,7 +570,8 @@ function wrapParagraphComment(json: Element, index: number, commentId: number): 
   const start = makeElement("w:commentRangeStart", { "w:id": String(commentId) });
   const end = makeElement("w:commentRangeEnd", { "w:id": String(commentId) });
   // Insert start after a leading <w:pPr> (or at the head); end + ref at the tail.
-  const insertAt = els.length > 0 && els[0].name === "w:pPr" ? 1 : 0;
+  const first = els[0];
+  const insertAt = first && first.name === "w:pPr" ? 1 : 0;
   els.splice(insertAt, 0, start);
   els.push(end, commentReferenceRun(commentId));
 }
@@ -580,9 +585,9 @@ function wrapPlaceholderComment(json: Element, placeholder: string, commentId: n
   for (const p of body.elements ?? []) {
     if (p.name !== "w:p") continue;
     const els = p.elements ?? [];
-    for (let i = 0; i < els.length; i++) {
-      if (els[i].name !== "w:r") continue;
-      const t = (els[i].elements ?? []).find((e) => e.name === "w:t");
+    for (const [i, el] of els.entries()) {
+      if (el.name !== "w:r") continue;
+      const t = (el.elements ?? []).find((e) => e.name === "w:t");
       const text = t?.elements?.[0]?.text;
       if (typeof text === "string" && text.includes(placeholder)) {
         els.splice(i, 0, makeElement("w:commentRangeStart", { "w:id": String(commentId) }));

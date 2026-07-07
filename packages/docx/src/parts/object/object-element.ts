@@ -166,8 +166,8 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       if (style) {
         const w = style.match(/width:([^;]+)/);
         const h = style.match(/height:([^;]+)/);
-        if (w) result.width = w[1].trim() as UniversalMeasure;
-        if (h) result.height = h[1].trim() as UniversalMeasure;
+        if (w) result.width = (w[1] ?? "").trim() as UniversalMeasure;
+        if (h) result.height = (h[1] ?? "").trim() as UniversalMeasure;
       }
     }
 

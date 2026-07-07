@@ -133,7 +133,7 @@ export function parseTocFieldInstruction(instruction: string, opts: Record<strin
     const stylesWithLevels: StyleLevel[] = [];
     for (let i = 0; i + 1 < parts.length; i += 2) {
       const styleName = parts[i];
-      const level = parseInt(parts[i + 1], 10);
+      const level = parseInt(parts[i + 1] ?? "", 10);
       if (styleName && !Number.isNaN(level)) stylesWithLevels.push({ styleName, level });
     }
     if (stylesWithLevels.length > 0) opts.stylesWithLevels = stylesWithLevels;
@@ -224,7 +224,7 @@ function parseFieldSwitches(text: string): Record<string, string | undefined> {
 
     // Read switch name
     const nameStart = i;
-    while (i < text.length && /[a-zA-Z]/.test(text[i])) i++;
+    while (i < text.length && /[a-zA-Z]/.test(text[i] ?? "")) i++;
     const name = text.slice(nameStart, i);
     if (!name) continue;
 

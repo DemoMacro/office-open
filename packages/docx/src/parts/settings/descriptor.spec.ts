@@ -19,7 +19,8 @@ const readCtx = {
 function roundTrip(opts: SettingsOptions): SettingsOptions {
   const xml = settingsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return settingsDesc.parse(el, readCtx);
 }
 
@@ -75,10 +76,10 @@ describe("settingsDesc round-trip", () => {
     });
     const docVars = result.docVars!;
     expect(docVars).toHaveLength(2);
-    expect(docVars[0].name).toBe("var1");
-    expect(docVars[0].val).toBe("value1");
-    expect(docVars[1].name).toBe("var2");
-    expect(docVars[1].val).toBe("value2");
+    expect(docVars[0]?.name).toBe("var1");
+    expect(docVars[0]?.val).toBe("value1");
+    expect(docVars[1]?.name).toBe("var2");
+    expect(docVars[1]?.val).toBe("value2");
   });
 
   it("round-trips displayBackgroundShape", () => {
@@ -171,7 +172,8 @@ describe("settingsDesc round-trip", () => {
       '<w:defaultTabStop w:val="720"/>' +
       '<wpsCustomData:typoFeatureVersion wpsCustomData:val="1"/>' +
       "</w:settings>";
-    const el = parseXml(src).elements![0];
+    const el = parseXml(src).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const parsed = settingsDesc.parse(el, readCtx);
 
     // Structured read still works.

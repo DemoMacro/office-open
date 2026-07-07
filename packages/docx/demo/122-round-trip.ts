@@ -981,6 +981,7 @@ async function main() {
 
   // Verify customXml (section 15)
   const sec15 = parsed.sections![14];
+  if (!sec15) throw new Error("section 15 not found in parsed document");
   const customXmlChild = sec15.children!.find((c: any) => "customXml" in c) as any;
   assert("customXml element parsed", customXmlChild?.customXml?.element === "myElement");
   assert("customXml uri parsed", customXmlChild?.customXml?.uri === "http://example.com/ns");

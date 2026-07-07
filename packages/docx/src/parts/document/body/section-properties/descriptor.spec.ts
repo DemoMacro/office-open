@@ -18,7 +18,8 @@ const readCtx = {} as unknown as ReadContext;
 function roundTrip(opts: SectionPropertiesOptions) {
   const xml = sectionPropertiesDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return sectionPropertiesDesc.parse(el, readCtx);
 }
 
@@ -57,7 +58,8 @@ describe("sectionPropertiesDesc round-trip", () => {
     const xml =
       '<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
       '<w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/></w:sectPr>';
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const result = sectionPropertiesDesc.parse(el, readCtx);
     expect(result.page!.size!.orientation).toBe("landscape");
     expect(result.page!.size!.width).toBe(12240);
@@ -68,7 +70,8 @@ describe("sectionPropertiesDesc round-trip", () => {
     const xml =
       '<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
       '<w:pgSz w:w="12240" w:h="15840"/></w:sectPr>';
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const result = sectionPropertiesDesc.parse(el, readCtx);
     expect(result.page!.size!.width).toBe(12240);
     expect(result.page!.size!.height).toBe(15840);
@@ -177,9 +180,9 @@ describe("sectionPropertiesDesc round-trip", () => {
       },
     });
     const children = result.column!.children!;
-    expect(children[0].width).toBe("30mm");
-    expect(children[0].space).toBe("2.5mm");
-    expect(children[1].width).toBe("40mm");
+    expect(children[0]?.width).toBe("30mm");
+    expect(children[0]?.space).toBe("2.5mm");
+    expect(children[1]?.width).toBe("40mm");
   });
 
   it("round-trips line numbers", () => {

@@ -50,7 +50,7 @@ export const obfuscate = (buf: Uint8Array, fontKey: string): Uint8Array => {
 
   const bytesToObfuscate = buf.slice(obfuscatedStartOffset, obfuscatedEndOffset);
   const obfuscatedBytes = bytesToObfuscate.map(
-    (byte, i) => byte ^ hexNumbers[i % hexNumbers.length],
+    (byte, i) => byte ^ hexNumbers[i % hexNumbers.length]!,
   );
 
   const out = new Uint8Array(

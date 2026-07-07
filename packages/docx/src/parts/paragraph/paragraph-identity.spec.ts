@@ -19,7 +19,8 @@ describe("paragraph identity attributes parse", () => {
       ' w14:paraId="0A1B2C3D" w14:textId="0E0F0A0B"' +
       ' w:rsidR="00992297" w:rsidRDefault="00112233" w:rsidP="11223344"' +
       ' w:rsidRPr="AABBCCDD" w:rsidDel="DEADBEEF"/>';
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseParagraph(el, readCtx);
     expect(opts.paraId).toBe("0A1B2C3D");
     expect(opts.textId).toBe("0E0F0A0B");
@@ -33,7 +34,8 @@ describe("paragraph identity attributes parse", () => {
   it("reads paragraph attributes alongside run children", () => {
     const xml =
       `<w:p ${NS} w14:paraId="1A2B3C4D" w:rsidR="00FF">` + "<w:r><w:t>hi</w:t></w:r>" + "</w:p>";
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseParagraph(el, readCtx);
     expect(opts.paraId).toBe("1A2B3C4D");
     expect(opts.rsid).toBe("00FF");

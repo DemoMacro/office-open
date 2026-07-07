@@ -12,7 +12,9 @@ const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/m
 
 function parseParagraphXml(inner: string): { children?: unknown[] } {
   const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
-  return parseParagraph(doc.elements![0], readCtx) as { children?: unknown[] };
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
+  return parseParagraph(el, readCtx) as { children?: unknown[] };
 }
 
 function findFormField(opts: {

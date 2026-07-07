@@ -175,7 +175,7 @@ describe("{ comment } child — library allocates id, pairs markers, registers e
 
     const parsed = parseDocument(output);
     expect(parsed.comments?.children).toHaveLength(1);
-    expect(parsed.comments?.children[0].author).toBe("Roundtrip");
-    expect(parsed.comments?.children[0].id).toBe(0);
+    expect(parsed.comments?.children[0]?.author).toBe("Roundtrip");
+    expect(parsed.comments?.children[0]?.id).toBe(0);
   });
 });

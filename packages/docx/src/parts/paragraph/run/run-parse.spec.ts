@@ -11,8 +11,10 @@ const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/m
 function roundTrip(opts: RunPropertiesOptions): RunPropertiesOptions {
   const rPr = stringifyRunProperties(opts)!;
   const doc = parseXml(`<w:r ${W_NS}>${rPr}</w:r>`);
-  const r = doc.elements![0];
-  const rPrEl = r.elements![0];
+  const r = doc.elements?.[0];
+  if (!r) throw new Error("parsed document has no root element");
+  const rPrEl = r.elements?.[0];
+  if (!rPrEl) throw new Error("run has no rPr element");
   return parseRunProperties(rPrEl);
 }
 
@@ -123,7 +125,9 @@ describe("parseRun rsid attributes", () => {
       `<w:r ${W_NS} w:rsidR="00992297" w:rsidRPr="00112233" w:rsidDel="AABBCCDD"><w:t>hi</w:t></w:r>`,
     );
     // parseRun does not use its context for rsid reads.
-    const parsed = parseRun(doc.elements![0], {} as never);
+    const rEl = doc.elements?.[0];
+    if (!rEl) throw new Error("parsed document has no root element");
+    const parsed = parseRun(rEl, {} as never);
     expect(parsed.rsid).toBe("00992297");
     expect(parsed.runPropertiesRsid).toBe("00112233");
     expect(parsed.deletionRsid).toBe("AABBCCDD");
@@ -133,7 +137,9 @@ describe("parseRun rsid attributes", () => {
 describe("parseRun break clear (CT_Br/@w:clear)", () => {
   it("parses w:br/@w:clear into a structured break", () => {
     const doc = parseXml(`<w:r ${W_NS}><w:br w:clear="all"/></w:r>`);
-    const opts = parsedRunToOptions(parseRun(doc.elements![0], {} as never)) as {
+    const brEl = doc.elements?.[0];
+    if (!brEl) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(brEl, {} as never)) as {
       break: { count: number; clear: string };
     };
     expect(opts.break).toEqual({ count: 1, clear: "all" });
@@ -141,7 +147,9 @@ describe("parseRun break clear (CT_Br/@w:clear)", () => {
 
   it("parses a plain line break as a count", () => {
     const doc = parseXml(`<w:r ${W_NS}><w:br/></w:r>`);
-    const opts = parsedRunToOptions(parseRun(doc.elements![0], {} as never)) as {
+    const plainBrEl = doc.elements?.[0];
+    if (!plainBrEl) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(plainBrEl, {} as never)) as {
       break: number;
     };
     expect(opts.break).toBe(1);
@@ -160,7 +168,9 @@ describe("parseRun customMarkFollows (CT_FtnEdnRef)", () => {
     const doc = parseXml(
       `<w:r ${W_NS}><w:footnoteReference w:id="3" w:customMarkFollows="true"/></w:r>`,
     );
-    const opts = parsedRunToOptions(parseRun(doc.elements![0], {} as never)) as {
+    const fnEl = doc.elements?.[0];
+    if (!fnEl) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(fnEl, {} as never)) as {
       footnoteReference: { id: number; customMarkFollows: boolean };
     };
     expect(opts.footnoteReference).toEqual({ id: 3, customMarkFollows: true });
@@ -168,7 +178,9 @@ describe("parseRun customMarkFollows (CT_FtnEdnRef)", () => {
 
   it("parses a plain footnoteReference as a numeric id", () => {
     const doc = parseXml(`<w:r ${W_NS}><w:footnoteReference w:id="5"/></w:r>`);
-    const opts = parsedRunToOptions(parseRun(doc.elements![0], {} as never)) as {
+    const plainFnEl = doc.elements?.[0];
+    if (!plainFnEl) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(plainFnEl, {} as never)) as {
       footnoteReference: number;
     };
     expect(opts.footnoteReference).toBe(5);

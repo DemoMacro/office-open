@@ -30,7 +30,9 @@ const replacer = createReplacer({
       xmlStr = "<w:r/>";
     }
     const jsonObj = xml2js(xmlStr, { captureSpacesBetweenElements: true });
-    return [jsonObj.elements![0]];
+    const rootEl = jsonObj.elements?.[0];
+    if (!rootEl) throw new Error("parsed xml has no root element");
+    return [rootEl];
   },
 });
 
@@ -196,8 +198,8 @@ describe("replacer", () => {
       expect(didFindOccurrence).toBe(true);
       // When keepOriginalStyles is false, the replacement runs should NOT
       // Have the original w:rPr elements copied into them
-      const secondParagraph = element.elements![0].elements![1];
-      const replacementRun = secondParagraph.elements!.find((e) =>
+      const secondParagraph = element.elements?.[0]?.elements?.[1];
+      const replacementRun = secondParagraph?.elements?.find((e) =>
         e.elements?.some((el) => el.elements?.some((t) => t.text === "sweet")),
       );
       // The replacement run should not contain rPr from the original
@@ -224,7 +226,7 @@ describe("replacer", () => {
       });
 
       expect(JSON.stringify(element)).to.contain("sweet");
-      expect(element.elements![0].elements![1].elements).toMatchObject([
+      expect(element.elements?.[0]?.elements?.[1]?.elements).toMatchObject([
         {
           elements: [
             {
@@ -1046,7 +1048,7 @@ describe("replacer", () => {
 
       // Verify the rendered text is correct
       const paragraphs = traverse(json);
-      expect(paragraphs[0].text).to.equal("AXBCYD");
+      expect(paragraphs[0]?.text).to.equal("AXBCYD");
     });
   });
 });

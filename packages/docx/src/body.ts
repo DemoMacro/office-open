@@ -140,7 +140,7 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
 
         // Empty run elements — self-closing XML with no attributes
         // { noBreakHyphen: true } → <w:noBreakHyphen/>, etc.
-        const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0]];
+        const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0] ?? ""];
         if (emptyXml) {
           parts.push(emptyXml);
           continue;
@@ -497,8 +497,7 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
   // <w:body>
   const bodyParts: string[] = [];
 
-  for (let si = 0; si < sections.length; si++) {
-    const section = sections[si];
+  for (const [si, section] of sections.entries()) {
     const children = section.children ?? [];
     const sectPrOpts = bodySections[si];
     const sectPrXml = sectPrOpts ? (sectionPropertiesDesc.stringify(sectPrOpts, docCtx) ?? "") : "";
@@ -510,11 +509,10 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     // the section is empty or ends in a non-paragraph child. The last section
     // emits its sectPr at the body level.
     let sectPrHosted = isLast || !sectPrXml;
-    for (let ci = 0; ci < children.length; ci++) {
-      const inject =
-        !isLast && sectPrXml && ci === children.length - 1 && "paragraph" in children[ci];
+    for (const [ci, child] of children.entries()) {
+      const inject = !isLast && sectPrXml && ci === children.length - 1 && "paragraph" in child;
       if (inject) sectPrHosted = true;
-      bodyParts.push(stringifyBodyChild(children[ci], docCtx, inject ? sectPrXml : undefined));
+      bodyParts.push(stringifyBodyChild(child, docCtx, inject ? sectPrXml : undefined));
     }
     if (!isLast && sectPrXml && !sectPrHosted) {
       bodyParts.push(`<w:p><w:pPr>${sectPrXml}</w:pPr></w:p>`);

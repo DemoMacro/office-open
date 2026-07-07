@@ -22,7 +22,8 @@ const readCtx = {
 function roundTrip(opts: GlossaryDocumentOptions) {
   const xml = glossaryDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return glossaryDesc.parse(el, readCtx);
 }
 
@@ -38,8 +39,8 @@ describe("glossaryDesc round-trip", () => {
       ],
     });
     expect(result.parts).toHaveLength(1);
-    expect(result.parts[0].name).toBe("TestBlock");
-    expect(result.parts[0].gallery).toBe("default");
+    expect(result.parts[0]?.name).toBe("TestBlock");
+    expect(result.parts[0]?.gallery).toBe("default");
   });
 
   it("round-trips category and gallery", () => {
@@ -53,8 +54,8 @@ describe("glossaryDesc round-trip", () => {
         },
       ],
     });
-    expect(result.parts[0].gallery).toBe("coverPg");
-    expect(result.parts[0].category).toBe("Built-In");
+    expect(result.parts[0]?.gallery).toBe("coverPg");
+    expect(result.parts[0]?.category).toBe("Built-In");
   });
 
   it("round-trips types", () => {
@@ -68,7 +69,7 @@ describe("glossaryDesc round-trip", () => {
         },
       ],
     });
-    expect(result.parts[0].types).toEqual(["normal", "autoExp"]);
+    expect(result.parts[0]?.types).toEqual(["normal", "autoExp"]);
   });
 
   it("round-trips behaviors", () => {
@@ -82,7 +83,7 @@ describe("glossaryDesc round-trip", () => {
         },
       ],
     });
-    expect(result.parts[0].behaviors).toEqual(["content", "p"]);
+    expect(result.parts[0]?.behaviors).toEqual(["content", "p"]);
   });
 
   it("round-trips description", () => {
@@ -96,7 +97,7 @@ describe("glossaryDesc round-trip", () => {
         },
       ],
     });
-    expect(result.parts[0].description).toBe("A test building block");
+    expect(result.parts[0]?.description).toBe("A test building block");
   });
 
   it("round-trips guid", () => {
@@ -110,7 +111,7 @@ describe("glossaryDesc round-trip", () => {
         },
       ],
     });
-    expect(result.parts[0].guid).toBe("12345678-ABCD-EF01-2345-6789ABCDEF01");
+    expect(result.parts[0]?.guid).toBe("12345678-ABCD-EF01-2345-6789ABCDEF01");
   });
 
   it("round-trips multiple parts", () => {
@@ -121,8 +122,8 @@ describe("glossaryDesc round-trip", () => {
       ],
     });
     expect(result.parts).toHaveLength(2);
-    expect(result.parts[0].name).toBe("Part1");
-    expect(result.parts[1].name).toBe("Part2");
+    expect(result.parts[0]?.name).toBe("Part1");
+    expect(result.parts[1]?.name).toBe("Part2");
   });
 
   it("round-trips empty parts", () => {

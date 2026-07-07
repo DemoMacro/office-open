@@ -30,7 +30,8 @@ const readCtx = {
 function roundTrip(opts: TableOptions) {
   const xml = tableDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return tableDesc.parse(el, readCtx);
 }
 
@@ -173,7 +174,9 @@ describe("tableDesc round-trip", () => {
       '<w:tblPr><w:tblW w:w="5000" w:type="pct"/></w:tblPr>' +
       '<w:tblGrid><w:gridCol w:w="500"/></w:tblGrid>' +
       "<w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
-    const result = tableDesc.parse(parseXml(xml).elements![0], readCtx);
+    const el176 = parseXml(xml).elements?.[0];
+    if (!el176) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(el176, readCtx);
     expect(result.width?.size).toBe(100);
     expect(result.width?.type).toBe("pct");
   });
@@ -187,7 +190,9 @@ describe("tableDesc round-trip", () => {
     expect(xml).toContain('w:tblW w:w="5000" w:type="pct"');
     expect(xml).not.toContain('w:w="100%"');
     // Parse converts back to the user-facing percentage.
-    const result = tableDesc.parse(parseXml(xml).elements![0], readCtx);
+    const parsedEl = parseXml(xml).elements?.[0];
+    if (!parsedEl) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(parsedEl, readCtx);
     expect(result.width).toEqual({ size: 100, type: "pct" });
   });
 
@@ -197,7 +202,9 @@ describe("tableDesc round-trip", () => {
       writeCtx,
     )!;
     expect(xml).toContain('w:tblCellSpacing w:w="5000" w:type="pct"');
-    const result = tableDesc.parse(parseXml(xml).elements![0], readCtx);
+    const parsedEl = parseXml(xml).elements?.[0];
+    if (!parsedEl) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(parsedEl, readCtx);
     expect(result.cellSpacing).toEqual({ size: 100, type: "pct" });
   });
 
@@ -207,7 +214,9 @@ describe("tableDesc round-trip", () => {
       writeCtx,
     )!;
     expect(xml).toContain('w:tblInd w:w="2500" w:type="pct"');
-    const result = tableDesc.parse(parseXml(xml).elements![0], readCtx);
+    const parsedEl = parseXml(xml).elements?.[0];
+    if (!parsedEl) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(parsedEl, readCtx);
     expect(result.indent).toEqual({ size: 50, type: "pct" });
   });
 
@@ -508,10 +517,11 @@ describe("tableDesc round-trip", () => {
     });
     const cells = (result.rows[0] as TableRowOptions).cells;
     expect(cells).toHaveLength(2);
-    expect("sdt" in cells[1]).toBe(true);
-    if ("sdt" in cells[1]) {
-      expect(cells[1].sdt.properties).toMatchObject({ alias: "CellCtrl", tag: "cell-ctrl" });
-      expect(cells[1].sdt.cells).toHaveLength(1);
+    const cellEntry = cells[1];
+    expect(cellEntry && "sdt" in cellEntry).toBe(true);
+    if (cellEntry && "sdt" in cellEntry) {
+      expect(cellEntry.sdt.properties).toMatchObject({ alias: "CellCtrl", tag: "cell-ctrl" });
+      expect(cellEntry.sdt.cells).toHaveLength(1);
     }
   });
 
@@ -528,10 +538,11 @@ describe("tableDesc round-trip", () => {
       ],
     });
     expect(result.rows).toHaveLength(2);
-    expect("sdt" in result.rows[1]).toBe(true);
-    if ("sdt" in result.rows[1]) {
-      expect(result.rows[1].sdt.properties).toMatchObject({ alias: "RowCtrl", tag: "row-ctrl" });
-      expect(result.rows[1].sdt.rows).toHaveLength(1);
+    const rowEntry = result.rows[1];
+    expect(rowEntry && "sdt" in rowEntry).toBe(true);
+    if (rowEntry && "sdt" in rowEntry) {
+      expect(rowEntry.sdt.properties).toMatchObject({ alias: "RowCtrl", tag: "row-ctrl" });
+      expect(rowEntry.sdt.rows).toHaveLength(1);
     }
   });
 
@@ -555,12 +566,13 @@ describe("tableDesc round-trip", () => {
     });
     const cells = (result.rows[0] as TableRowOptions).cells;
     expect(cells).toHaveLength(2);
-    expect("customXml" in cells[1]).toBe(true);
-    if ("customXml" in cells[1]) {
-      expect(cells[1].customXml.element).toBe("taggedCell");
-      expect(cells[1].customXml.uri).toBe("http://ns");
-      expect(cells[1].customXml.customXmlPr?.attributes).toEqual([{ name: "k", val: "v" }]);
-      expect(cells[1].customXml.children).toHaveLength(1);
+    const cellEntry = cells[1];
+    expect(cellEntry && "customXml" in cellEntry).toBe(true);
+    if (cellEntry && "customXml" in cellEntry) {
+      expect(cellEntry.customXml.element).toBe("taggedCell");
+      expect(cellEntry.customXml.uri).toBe("http://ns");
+      expect(cellEntry.customXml.customXmlPr?.attributes).toEqual([{ name: "k", val: "v" }]);
+      expect(cellEntry.customXml.children).toHaveLength(1);
     }
   });
 
@@ -577,10 +589,11 @@ describe("tableDesc round-trip", () => {
       ],
     });
     expect(result.rows).toHaveLength(2);
-    expect("customXml" in result.rows[1]).toBe(true);
-    if ("customXml" in result.rows[1]) {
-      expect(result.rows[1].customXml.element).toBe("taggedRow");
-      expect(result.rows[1].customXml.children).toHaveLength(1);
+    const rowEntry = result.rows[1];
+    expect(rowEntry && "customXml" in rowEntry).toBe(true);
+    if (rowEntry && "customXml" in rowEntry) {
+      expect(rowEntry.customXml.element).toBe("taggedRow");
+      expect(rowEntry.customXml.children).toHaveLength(1);
     }
   });
 

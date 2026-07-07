@@ -12,7 +12,8 @@ const readCtx = {} as unknown as DocxReadContext;
 function roundTrip(props: Record<string, unknown>): Record<string, unknown> {
   const { xml } = stringifyParagraphProperties(props as never);
   const doc = parseXml(xml!.replace("<w:pPr>", `<w:pPr ${W_NS}>`));
-  const pPr = doc.elements![0];
+  const pPr = doc.elements?.[0];
+  if (!pPr) throw new Error("parsed document has no root element");
   return parseParagraphProperties(pPr, readCtx) as Record<string, unknown>;
 }
 

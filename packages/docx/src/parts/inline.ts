@@ -125,7 +125,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           continue;
         }
         // Empty run elements — separator, noBreakHyphen, pgNum, etc.
-        const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0]];
+        const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0] ?? ""];
         if (emptyXml) {
           parts.push(emptyXml);
           continue;

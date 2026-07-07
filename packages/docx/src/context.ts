@@ -397,7 +397,9 @@ export class DocxWriteContext implements WriteContext {
       for (const key in options.footnotes) {
         // Skip the round-tripped separator markers (they carry no .children).
         if (key === "separator" || key === "continuationSeparator") continue;
-        this.footNotes.notes.set(parseFloat(key), options.footnotes[key].children);
+        const note = options.footnotes[key];
+        if (!note) continue;
+        this.footNotes.notes.set(parseFloat(key), note.children);
       }
       this.footNotes.separator = options.footnotes.separator;
       this.footNotes.continuationSeparator = options.footnotes.continuationSeparator;
@@ -406,7 +408,9 @@ export class DocxWriteContext implements WriteContext {
     if (options.endnotes) {
       for (const key in options.endnotes) {
         if (key === "separator" || key === "continuationSeparator") continue;
-        this.endnotes.notes.set(parseFloat(key), options.endnotes[key].children);
+        const note = options.endnotes[key];
+        if (!note) continue;
+        this.endnotes.notes.set(parseFloat(key), note.children);
       }
       this.endnotes.separator = options.endnotes.separator;
       this.endnotes.continuationSeparator = options.endnotes.continuationSeparator;

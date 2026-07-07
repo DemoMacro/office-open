@@ -234,8 +234,7 @@ export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[]
   const sections: SectionOptions[] = [];
   let start = 0;
 
-  for (let i = 0; i < boundaries.length; i++) {
-    const boundary = boundaries[i];
+  for (const boundary of boundaries) {
     // A sectPr inside a paragraph's pPr marks that paragraph as the final
     // content paragraph of its section. Its runs/drawings ARE section content
     // (e.g. an inline image), so include it in the slice — the paragraph parser

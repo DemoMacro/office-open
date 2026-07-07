@@ -10,7 +10,8 @@ const readCtx = {} as unknown as ReadContext;
 function roundTrip(properties: { name: string; value: string }[]) {
   const xml = customPropertiesDesc.stringify({ properties }, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return customPropertiesDesc.parse(el, readCtx);
 }
 
@@ -18,8 +19,8 @@ describe("customPropertiesDesc round-trip", () => {
   it("round-trips single property", () => {
     const result = roundTrip([{ name: "Category", value: "Finance" }]);
     expect(result.properties).toHaveLength(1);
-    expect(result.properties[0].name).toBe("Category");
-    expect(result.properties[0].value).toBe("Finance");
+    expect(result.properties[0]?.name).toBe("Category");
+    expect(result.properties[0]?.value).toBe("Finance");
   });
 
   it("round-trips multiple properties", () => {
@@ -29,9 +30,9 @@ describe("customPropertiesDesc round-trip", () => {
       { name: "Version", value: "2" },
     ]);
     expect(result.properties).toHaveLength(3);
-    expect(result.properties[0].name).toBe("Department");
-    expect(result.properties[1].name).toBe("Status");
-    expect(result.properties[2].name).toBe("Version");
+    expect(result.properties[0]?.name).toBe("Department");
+    expect(result.properties[1]?.name).toBe("Status");
+    expect(result.properties[2]?.name).toBe("Version");
   });
 
   it("round-trips empty properties", () => {
@@ -41,6 +42,6 @@ describe("customPropertiesDesc round-trip", () => {
 
   it("round-trips special characters in value", () => {
     const result = roundTrip([{ name: "Notes", value: 'A <B> & "C"' }]);
-    expect(result.properties[0].value).toBe('A <B> & "C"');
+    expect(result.properties[0]?.value).toBe('A <B> & "C"');
   });
 });

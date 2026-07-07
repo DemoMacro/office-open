@@ -230,8 +230,7 @@ function findInsertIndex(
   prefixCount: number,
 ): number {
   let colIdx = 0;
-  for (let i = 0; i < cells.length; i++) {
-    const c = cells[i];
+  for (const [i, c] of cells.entries()) {
     if (!isPlainCell(c)) continue; // SDT/customXml-wrapped cells don't occupy grid columns
     const { columnSpan } = getCellSpans(c);
     colIdx += columnSpan;
@@ -253,7 +252,7 @@ function computeVerticalMergeCells(
   const extraMap = new Map<number, { cell: TableCellOptions; columnIndex: number }[]>();
   for (let ri = 0; ri < rows.length - 1; ri++) {
     const row = rows[ri];
-    if (!isPlainRow(row)) continue; // SDT/customXml-wrapped rows don't participate in merge
+    if (!row || !isPlainRow(row)) continue; // SDT/customXml-wrapped rows don't participate in merge
     const cells = row.cells;
     let colIdx = 0;
 
@@ -437,8 +436,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
     const extraCells = computeVerticalMergeCells(opts.rows);
 
     // Rows (a row may be wrapped by a row-level SDT)
-    for (let ri = 0; ri < opts.rows.length; ri++) {
-      const r = opts.rows[ri];
+    for (const [ri, r] of opts.rows.entries()) {
       if ("sdt" in r) {
         const sdt = r.sdt;
         const contentXml = (sdt.rows ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");

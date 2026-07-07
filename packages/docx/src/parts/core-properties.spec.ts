@@ -11,7 +11,8 @@ const readCtx = {} as unknown as ReadContext;
 function roundTrip(opts: CorePropertiesOptions) {
   const xml = corePropertiesDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return corePropertiesDesc.parse(el, readCtx) as Record<string, unknown>;
 }
 

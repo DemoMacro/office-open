@@ -84,7 +84,8 @@ function stringify(opts: DrawingDescriptorOptions) {
 function roundTrip(opts: DrawingDescriptorOptions) {
   const xml = stringify(opts);
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return drawingDesc.parse(el, readCtx);
 }
 
@@ -221,7 +222,8 @@ describe("drawingDesc round-trip", () => {
       },
     });
     const doc = parseXml(xml);
-    const el = doc.elements![0];
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const result = drawingDesc.parse(el, mediaReadCtx) as {
       wpsShape?: { presetGeometry?: { preset?: string } };
     };
@@ -247,7 +249,8 @@ describe("drawingDesc round-trip", () => {
       },
     });
     const doc = parseXml(xml);
-    const el = doc.elements![0];
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const result = drawingDesc.parse(el, mediaReadCtx) as { image?: { floating?: Floating } };
     const floating = result.image?.floating;
     expect(floating).toBeDefined();

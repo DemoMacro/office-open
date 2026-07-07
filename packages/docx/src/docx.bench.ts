@@ -44,6 +44,8 @@ const makeImage = (seed: number, sizeKB: number): Uint8Array => {
   return buf;
 };
 
+// Array.from({ length: N }, ...) always fills N slots, so indexed lookups below
+// are non-undefined; the `!` assertions at each lookup rely on this invariant.
 const SMALL_IMAGES = Array.from({ length: 3 }, (_, i) => makeImage(i, 200));
 const LARGE_IMAGES = Array.from({ length: 20 }, (_, i) => makeImage(i, 500));
 
@@ -75,7 +77,7 @@ const buildSimpleDoc = (): DocumentOptions => ({
             children: [
               {
                 image: {
-                  data: SMALL_IMAGES[0],
+                  data: SMALL_IMAGES[0]!,
                   transformation: { width: 400, height: 300 },
                   type: "jpg",
                 },
@@ -100,7 +102,7 @@ const buildStyledDoc = (): DocumentOptions => ({
             children: [
               {
                 image: {
-                  data: SMALL_IMAGES[1],
+                  data: SMALL_IMAGES[1]!,
                   transformation: { width: 400, height: 300 },
                   type: "jpg",
                 },
@@ -156,7 +158,7 @@ const buildFullFeaturedDoc = (): DocumentOptions => ({
             children: [
               {
                 image: {
-                  data: SMALL_IMAGES[0],
+                  data: SMALL_IMAGES[0]!,
                   transformation: { width: 400, height: 300 },
                   type: "jpg",
                 },
@@ -172,7 +174,7 @@ const buildFullFeaturedDoc = (): DocumentOptions => ({
             children: [
               {
                 image: {
-                  data: SMALL_IMAGES[2],
+                  data: SMALL_IMAGES[2]!,
                   transformation: { width: 400, height: 300 },
                   type: "jpg",
                 },
@@ -207,7 +209,7 @@ const buildSimpleDocCompetitor = () =>
           new ParagraphOrig({
             children: [
               new ImageRunOrig({
-                data: SMALL_IMAGES[0],
+                data: SMALL_IMAGES[0]!,
                 transformation: { width: 400, height: 300 },
                 type: "jpg",
               }),
@@ -238,7 +240,7 @@ const buildStyledDocCompetitor = () =>
           new ParagraphOrig({
             children: [
               new ImageRunOrig({
-                data: SMALL_IMAGES[1],
+                data: SMALL_IMAGES[1]!,
                 transformation: { width: 400, height: 300 },
                 type: "jpg",
               }),
@@ -319,7 +321,7 @@ const buildFullFeaturedDocCompetitor = () =>
           new ParagraphOrig({
             children: [
               new ImageRunOrig({
-                data: SMALL_IMAGES[0],
+                data: SMALL_IMAGES[0]!,
                 transformation: { width: 400, height: 300 },
                 type: "jpg",
               }),
@@ -340,7 +342,7 @@ const buildFullFeaturedDocCompetitor = () =>
           new ParagraphOrig({
             children: [
               new ImageRunOrig({
-                data: SMALL_IMAGES[2],
+                data: SMALL_IMAGES[2]!,
                 transformation: { width: 400, height: 300 },
                 type: "jpg",
               }),
@@ -578,7 +580,7 @@ const buildLargeParagraphsDoc = (): DocumentOptions => ({
                   children: [
                     {
                       image: {
-                        data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length],
+                        data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length]!,
                         transformation: { width: 400, height: 300 },
                         type: "jpg",
                       },
@@ -616,7 +618,7 @@ const buildLargeParagraphsDocCompetitor = () =>
                 new ParagraphOrig({
                   children: [
                     new ImageRunOrig({
-                      data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length],
+                      data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length]!,
                       transformation: { width: 400, height: 300 },
                       type: "jpg",
                     }),
@@ -718,7 +720,7 @@ const buildLargeSectionsDoc = (): DocumentOptions => ({
           children: [
             {
               image: {
-                data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length],
+                data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length]!,
                 transformation: { width: 400, height: 300 },
                 type: "jpg",
               },
@@ -731,7 +733,7 @@ const buildLargeSectionsDoc = (): DocumentOptions => ({
           children: [
             {
               image: {
-                data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length],
+                data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length]!,
                 transformation: { width: 400, height: 300 },
                 type: "jpg",
               },
@@ -795,7 +797,7 @@ const buildLargeSectionsDocCompetitor = () =>
         new ParagraphOrig({
           children: [
             new ImageRunOrig({
-              data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length],
+              data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length]!,
               transformation: { width: 400, height: 300 },
               type: "jpg",
             }),
@@ -804,7 +806,7 @@ const buildLargeSectionsDocCompetitor = () =>
         new ParagraphOrig({
           children: [
             new ImageRunOrig({
-              data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length],
+              data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length]!,
               transformation: { width: 400, height: 300 },
               type: "jpg",
             }),

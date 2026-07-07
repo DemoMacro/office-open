@@ -728,7 +728,8 @@ function wrapPolygonStr(cx: number, cy: number, polygon?: WrapPolygon): string {
     // Emit `edited` only when the source had it — keeps the polygon byte-faithful on round-trip.
     const editedAttr = polygon.edited !== undefined ? ` edited="${polygon.edited ? 1 : 0}"` : "";
     const [start, ...rest] = polygon.points;
-    const startStr = `<wp:start x="${start.x}" y="${start.y}"/>`;
+    // length guard above guarantees `start` exists
+    const startStr = `<wp:start x="${start!.x}" y="${start!.y}"/>`;
     const lineToStr = rest.map((p) => `<wp:lineTo x="${p.x}" y="${p.y}"/>`).join("");
     return `<wp:wrapPolygon${editedAttr}>${startStr}${lineToStr}</wp:wrapPolygon>`;
   }

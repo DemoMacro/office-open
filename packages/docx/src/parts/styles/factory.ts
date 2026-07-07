@@ -524,8 +524,7 @@ export class DefaultStylesFactory {
       },
     ];
 
-    for (let headingIdx = 0; headingIdx < headings.length; headingIdx++) {
-      const h = headings[headingIdx];
+    for (const [headingIdx, h] of headings.entries()) {
       const outlineLvl = h.outlineLvl;
       const headingOverrideOpts = headingOverride(options, headingIdx + 1);
       if (headingOverrideOpts) {

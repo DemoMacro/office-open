@@ -12,7 +12,9 @@ const W14 = 'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"';
 
 function parseParagraphXml(inner: string): { children?: unknown[] } {
   const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
-  return parseParagraph(doc.elements![0], readCtx) as { children?: unknown[] };
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
+  return parseParagraph(el, readCtx) as { children?: unknown[] };
 }
 
 function findInlineSdt(opts: { children?: unknown[] }): Record<string, unknown> | undefined {

@@ -13,7 +13,8 @@ function roundTripFrame(frame: Record<string, unknown>): Record<string, unknown>
   const { xml } = stringifyParagraphProperties({ frame: frame as never });
   // xml is a complete <w:pPr>...</w:pPr>; declare the w: namespace on it
   const doc = parseXml(xml!.replace("<w:pPr>", `<w:pPr ${W_NS}>`));
-  const pPr = doc.elements![0];
+  const pPr = doc.elements?.[0];
+  if (!pPr) throw new Error("parsed document has no root element");
   const opts = parseParagraphProperties(pPr, readCtx);
   return opts.frame as unknown as Record<string, unknown>;
 }

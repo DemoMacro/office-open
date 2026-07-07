@@ -324,11 +324,11 @@ function xmlifyContext(
   );
   // Register footnote media relationships eagerly so the relationshipCount used
   // to gate footnotes.xml.rels reflects the final state (see FootNotesRelationships).
-  for (let i = 0; i < footnoteMedia.referenced.length; i++) {
+  for (const [i, ref] of footnoteMedia.referenced.entries()) {
     ctx.footNotes.relationships.addRelationship(
       footnoteRelationshipCount + i,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-      `media/${footnoteMedia.referenced[i].fileName}`,
+      `media/${ref.fileName}`,
     );
   }
 
@@ -348,11 +348,11 @@ function xmlifyContext(
             path: "word/comments.xml",
           },
           CommentsRelationships: (() => {
-            for (let i = 0; i < commentMedia.referenced.length; i++) {
+            for (const [i, ref] of commentMedia.referenced.entries()) {
               ctx.comments.relationships.addRelationship(
                 commentRelationshipCount + i,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                `media/${commentMedia.referenced[i].fileName}`,
+                `media/${ref.fileName}`,
               );
             }
             return optionalRelsPart(
@@ -383,19 +383,19 @@ function xmlifyContext(
 
           // Build combined replacement entries for charts, smartart, and numbering
           const entries: Array<{ prefix?: string; key: string; value: string }> = [];
-          for (let i = 0; i < chartKeys.length; i++) {
+          for (const [i, key] of chartKeys.entries()) {
             entries.push({
               prefix: "chart:",
-              key: chartKeys[i],
+              key,
               value: formatId(chartOffset, i, "rId"),
             });
           }
           const saPrefixes = ["smartart:", "smartart-lo:", "smartart-qs:", "smartart-cs:"];
-          for (let i = 0; i < smartArtKeys.length; i++) {
+          for (const [i, key] of smartArtKeys.entries()) {
             for (let p = 0; p < saPrefixes.length; p++) {
               entries.push({
                 prefix: saPrefixes[p],
-                key: smartArtKeys[i],
+                key,
                 value: formatId(smartArtOffset + p * smartArtKeys.length, i, "rId"),
               });
             }
@@ -446,11 +446,11 @@ function xmlifyContext(
                 endnoteRelCount,
               );
               if (endnoteMedia.referenced.length > 0) {
-                for (let i = 0; i < endnoteMedia.referenced.length; i++) {
+                for (const [i, ref] of endnoteMedia.referenced.entries()) {
                   ctx.endnotes.relationships.addRelationship(
                     endnoteRelCount + i,
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                    `media/${endnoteMedia.referenced[i].fileName}`,
+                    `media/${ref.fileName}`,
                   );
                 }
                 return replaceNumberingPlaceholders(
@@ -522,11 +522,11 @@ function xmlifyContext(
         );
         footerMediaResults.set(index, footerMedia);
 
-        for (let i = 0; i < footerMedia.referenced.length; i++) {
+        for (const [i, ref] of footerMedia.referenced.entries()) {
           entry.relationships.addRelationship(
             footerRelCount + i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${footerMedia.referenced[i].fileName}`,
+            `media/${ref.fileName}`,
           );
         }
 
@@ -564,11 +564,11 @@ function xmlifyContext(
         );
         headerMediaResults.set(index, headerMedia);
 
-        for (let i = 0; i < headerMedia.referenced.length; i++) {
+        for (const [i, ref] of headerMedia.referenced.entries()) {
           entry.relationships.addRelationship(
             headerRelCount + i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${headerMedia.referenced[i].fileName}`,
+            `media/${ref.fileName}`,
           );
         }
 
@@ -603,18 +603,18 @@ function xmlifyContext(
     },
     Relationships: {
       data: (() => {
-        for (let i = 0; i < documentMedia.referenced.length; i++) {
+        for (const [i, ref] of documentMedia.referenced.entries()) {
           ctx.document.relationships.addRelationship(
             documentRelationshipCount + i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${documentMedia.referenced[i].fileName}`,
+            `media/${ref.fileName}`,
           );
         }
-        for (let i = 0; i < documentEmbeddings.referenced.length; i++) {
+        for (const [i, ref] of documentEmbeddings.referenced.entries()) {
           ctx.document.relationships.addRelationship(
             documentEmbeddingOffset + i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
-            `embeddings/${documentEmbeddings.referenced[i].fileName}`,
+            `embeddings/${ref.fileName}`,
           );
         }
 

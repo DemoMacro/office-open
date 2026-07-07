@@ -45,7 +45,8 @@ const readCtx = {
 function roundTripSdt(opts: SdtBlockOptions) {
   const xml = sdtBlockDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return sdtBlockDesc.parse(el, readCtx);
 }
 
@@ -121,7 +122,7 @@ describe("sdtBlockDesc round-trip", () => {
     });
     expect(result.properties.comboBox).toBeDefined();
     expect(result.properties.comboBox!.items).toHaveLength(2);
-    expect(result.properties.comboBox!.items![0].displayText).toBe("Option A");
+    expect(result.properties.comboBox!.items![0]?.displayText).toBe("Option A");
     expect(result.properties.comboBox!.lastValue).toBe("a");
   });
 
@@ -257,7 +258,8 @@ describe("sdtBlockDesc round-trip", () => {
 function roundTripCustomXml(opts: CustomXmlBlockDescriptorOptions) {
   const xml = customXmlBlockDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return customXmlBlockDesc.parse(el, readCtx);
 }
 
@@ -292,8 +294,8 @@ describe("customXmlBlockDesc round-trip", () => {
     expect(result.customXmlPr).toBeDefined();
     expect(result.customXmlPr!.placeholder).toBe("Enter text");
     expect(result.customXmlPr!.attributes).toHaveLength(2);
-    expect(result.customXmlPr!.attributes![0].name).toBe("attr1");
-    expect(result.customXmlPr!.attributes![1].uri).toBe("http://example.com");
+    expect(result.customXmlPr!.attributes![0]?.name).toBe("attr1");
+    expect(result.customXmlPr!.attributes![1]?.uri).toBe("http://example.com");
   });
 });
 
@@ -329,7 +331,9 @@ describe("altChunkDesc stringify", () => {
   it("parses matchSrc back from w:altChunkPr", () => {
     const xml = `<w:altChunk xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>`;
     const doc = parseXml(xml);
-    const result = altChunkDesc.parse(doc.elements![0], readCtx) as AltChunkOptions;
+    const altChunkEl = doc.elements?.[0];
+    if (!altChunkEl) throw new Error("parsed document has no root element");
+    const result = altChunkDesc.parse(altChunkEl, readCtx) as AltChunkOptions;
     expect(result.matchSource).toBe(true);
   });
 });

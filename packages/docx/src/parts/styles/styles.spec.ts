@@ -34,7 +34,8 @@ describe("parseStyleDefinitions (round-trip)", () => {
     });
 
     const xml = styles.serialize();
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
 
     const para = opts?.paragraphStyles?.[0];
@@ -67,7 +68,8 @@ describe("parseStyleDefinitions (round-trip)", () => {
     });
 
     const xml = styles.serialize();
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
 
     const char = opts?.characterStyles?.[0];
@@ -94,7 +96,8 @@ describe("parseStyleDefinitions (round-trip)", () => {
     });
 
     const xml = styles.serialize();
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
 
     const table = opts?.tableStyles?.[0];
@@ -134,7 +137,8 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(xml).toContain("<w:hidden/>");
     expect(xml).toContain('w:rsid w:val="00992297"');
 
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
     const para = opts?.paragraphStyles?.[0];
     expect(para).toBeDefined();
@@ -163,7 +167,8 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(xml).toContain('w:default="1"');
     expect(xml).toContain('w:customStyle="1"');
 
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
     const char = opts?.characterStyles?.[0];
     expect(char).toBeDefined();
@@ -179,7 +184,8 @@ describe("parseStyleDefinitions (round-trip)", () => {
       '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style>' +
       '<w:style w:type="paragraph" w:styleId="Custom1"><w:name w:val="Custom1"/></w:style>' +
       "</w:styles>";
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
     // All styles (builtin + custom) round-trip structured so HTML renderers
     // can consume attributes directly — no verbatim _raw for builtins anymore.
@@ -194,7 +200,8 @@ describe("parseStyleDefinitions (round-trip)", () => {
       '<w:style w:type="numbering" w:default="1" w:styleId="NoList">' +
       '<w:name w:val="No List"/><w:uiPriority w:val="99"/>' +
       "</w:style></w:styles>";
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
     const num = opts?.numberingStyles?.[0];
     expect(num).toBeDefined();
@@ -212,7 +219,8 @@ describe("parseStyleDefinitions (round-trip)", () => {
       "<w:rPrDefault><w:rPr><w:b/></w:rPr></w:rPrDefault>" +
       '<w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="278"/><w:jc w:val="center"/></w:pPr></w:pPrDefault>' +
       "</w:docDefaults></w:styles>";
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
     const doc = opts?.default?.document;
     expect(doc?.run?.bold).toBe(true);
@@ -320,7 +328,9 @@ describe("styles round-trip (generate → parse → generate)", () => {
       '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/>' +
       '<w:rPr><w:color w:val="00AA00"/></w:rPr></w:style>' +
       "</w:styles>";
-    const parsed = parseStyleDefinitions(parseXml(xml).elements![0], parseParagraphProperties, ctx);
+    const root = parseXml(xml).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
     expect(
       JSON.stringify(parsed?.paragraphStyles?.find((s) => s.id === "Heading1")?.run?.color),
     ).toContain("00AA00");
@@ -329,11 +339,9 @@ describe("styles round-trip (generate → parse → generate)", () => {
       importedStyles: [{ _raw: parsed!.docDefaultsXml! }, { _raw: parsed!.latentStylesXml! }],
       paragraphStyles: parsed!.paragraphStyles,
     });
-    const reParsed = parseStyleDefinitions(
-      parseXml(styles.serialize()).elements![0],
-      parseParagraphProperties,
-      ctx,
-    );
+    const reRoot = parseXml(styles.serialize()).elements?.[0];
+    if (!reRoot) throw new Error("parsed document has no root element");
+    const reParsed = parseStyleDefinitions(reRoot, parseParagraphProperties, ctx);
     expect(
       JSON.stringify(reParsed?.paragraphStyles?.find((s) => s.id === "Heading1")?.run?.color),
     ).toContain("00AA00");

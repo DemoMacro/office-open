@@ -11,7 +11,9 @@ const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/m
 
 function parseParagraphXml(inner: string): { children?: unknown[] } {
   const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
-  return parseParagraph(doc.elements![0], readCtx) as { children?: unknown[] };
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
+  return parseParagraph(el, readCtx) as { children?: unknown[] };
 }
 
 function childrenOf(opts: { children?: unknown[] }): Record<string, unknown>[] {
@@ -22,14 +24,14 @@ describe("range markers parse", () => {
   it("parses proofErr", () => {
     const cs = childrenOf(parseParagraphXml(`<w:proofErr w:type="spellStart"/>`));
     expect(cs).toHaveLength(1);
-    expect(cs[0].proofErr).toBe("spellStart");
+    expect(cs[0]?.proofErr).toBe("spellStart");
   });
 
   it("parses positionalTab (w:ptab)", () => {
     const cs = childrenOf(
       parseParagraphXml(`<w:ptab w:alignment="center" w:leader="dot" w:relativeTo="margin"/>`),
     );
-    expect(cs[0].positionalTab).toEqual({
+    expect(cs[0]?.positionalTab).toEqual({
       alignment: "center",
       leader: "dot",
       relativeTo: "margin",
@@ -43,14 +45,14 @@ describe("range markers parse", () => {
           `<w:permEnd w:id="1"/>`,
       ),
     );
-    expect(cs[0].permStart).toMatchObject({
+    expect(cs[0]?.permStart).toMatchObject({
       id: "1",
       ed: "user1",
       editGroup: "editors",
       colFirst: 0,
       colLast: 1,
     });
-    expect(cs[1].permEnd).toBe("1");
+    expect(cs[1]?.permEnd).toBe("1");
   });
 
   it("parses moveFromRangeStart/End and moveToRangeStart/End", () => {
@@ -62,10 +64,10 @@ describe("range markers parse", () => {
           `<w:moveToRangeEnd w:id="2"/>`,
       ),
     );
-    expect(cs[0].moveFromRangeStart).toEqual({ id: 1, name: "move1", author: "A", date: "2020" });
-    expect(cs[1].moveFromRangeEnd).toEqual({ id: 1 });
-    expect(cs[2].moveToRangeStart).toEqual({ id: 2, name: "move2" });
-    expect(cs[3].moveToRangeEnd).toEqual({ id: 2 });
+    expect(cs[0]?.moveFromRangeStart).toEqual({ id: 1, name: "move1", author: "A", date: "2020" });
+    expect(cs[1]?.moveFromRangeEnd).toEqual({ id: 1 });
+    expect(cs[2]?.moveToRangeStart).toEqual({ id: 2, name: "move2" });
+    expect(cs[3]?.moveToRangeEnd).toEqual({ id: 2 });
   });
 
   it("parses bookmarkStart/End with column scope and displacedByCustomXml", () => {
@@ -75,14 +77,14 @@ describe("range markers parse", () => {
           `<w:bookmarkEnd w:id="1" w:displacedByCustomXml="after"/>`,
       ),
     );
-    expect(cs[0].bookmarkStart).toEqual({
+    expect(cs[0]?.bookmarkStart).toEqual({
       id: 1,
       name: "bm",
       colFirst: 0,
       colLast: 2,
       displacedByCustomXml: "before",
     });
-    expect(cs[1].bookmarkEnd).toEqual({ id: 1, displacedByCustomXml: "after" });
+    expect(cs[1]?.bookmarkEnd).toEqual({ id: 1, displacedByCustomXml: "after" });
   });
 
   it("parses moveFromRangeStart with column scope and displacedByCustomXml", () => {
@@ -91,7 +93,7 @@ describe("range markers parse", () => {
         `<w:moveFromRangeStart w:id="3" w:name="m" w:colFirst="0" w:colLast="1" w:displacedByCustomXml="after"/>`,
       ),
     );
-    expect(cs[0].moveFromRangeStart).toEqual({
+    expect(cs[0]?.moveFromRangeStart).toEqual({
       id: 3,
       name: "m",
       colFirst: 0,
@@ -109,10 +111,10 @@ describe("range markers parse", () => {
           `<w:moveToRangeEnd w:id="3"/>`,
       ),
     );
-    expect(cs[0].commentRangeStart).toEqual({ id: 1, displacedByCustomXml: "before" });
-    expect(cs[1].commentRangeEnd).toEqual({ id: 1, displacedByCustomXml: "after" });
-    expect(cs[2].moveFromRangeEnd).toEqual({ id: 2, displacedByCustomXml: "before" });
-    expect(cs[3].moveToRangeEnd).toEqual({ id: 3 });
+    expect(cs[0]?.commentRangeStart).toEqual({ id: 1, displacedByCustomXml: "before" });
+    expect(cs[1]?.commentRangeEnd).toEqual({ id: 1, displacedByCustomXml: "after" });
+    expect(cs[2]?.moveFromRangeEnd).toEqual({ id: 2, displacedByCustomXml: "before" });
+    expect(cs[3]?.moveToRangeEnd).toEqual({ id: 3 });
   });
 
   it("parses the four customXml range marker pairs", () => {
@@ -124,14 +126,14 @@ describe("range markers parse", () => {
           `<w:customXmlMoveToRangeStart w:id="4" w:author="D" w:date="2021"/><w:customXmlMoveToRangeEnd w:id="4"/>`,
       ),
     );
-    expect(cs[0].customXmlInsRangeStart).toEqual({ id: 1, author: "A", date: "2020" });
-    expect(cs[1].customXmlInsRangeEnd).toBe(1);
-    expect(cs[2].customXmlDelRangeStart).toEqual({ id: 2, author: "B" });
-    expect(cs[3].customXmlDelRangeEnd).toBe(2);
-    expect(cs[4].customXmlMoveFromRangeStart).toEqual({ id: 3 });
-    expect(cs[5].customXmlMoveFromRangeEnd).toBe(3);
-    expect(cs[6].customXmlMoveToRangeStart).toEqual({ id: 4, author: "D", date: "2021" });
-    expect(cs[7].customXmlMoveToRangeEnd).toBe(4);
+    expect(cs[0]?.customXmlInsRangeStart).toEqual({ id: 1, author: "A", date: "2020" });
+    expect(cs[1]?.customXmlInsRangeEnd).toBe(1);
+    expect(cs[2]?.customXmlDelRangeStart).toEqual({ id: 2, author: "B" });
+    expect(cs[3]?.customXmlDelRangeEnd).toBe(2);
+    expect(cs[4]?.customXmlMoveFromRangeStart).toEqual({ id: 3 });
+    expect(cs[5]?.customXmlMoveFromRangeEnd).toBe(3);
+    expect(cs[6]?.customXmlMoveToRangeStart).toEqual({ id: 4, author: "D", date: "2021" });
+    expect(cs[7]?.customXmlMoveToRangeEnd).toBe(4);
   });
 
   it("drops a marker missing its required w:id", () => {
@@ -147,7 +149,7 @@ describe("move revision runs parse", () => {
         `<w:moveFrom w:id="1" w:author="A" w:date="2020"><w:r><w:t>moved text</w:t></w:r></w:moveFrom>`,
       ),
     );
-    expect(cs[0].movedFrom).toMatchObject({
+    expect(cs[0]?.movedFrom).toMatchObject({
       id: 1,
       author: "A",
       date: "2020",
@@ -161,7 +163,7 @@ describe("move revision runs parse", () => {
         `<w:moveTo w:id="2" w:author="B" w:date="2021"><w:r><w:t>target</w:t></w:r></w:moveTo>`,
       ),
     );
-    expect(cs[0].movedTo).toMatchObject({
+    expect(cs[0]?.movedTo).toMatchObject({
       id: 2,
       author: "B",
       date: "2021",

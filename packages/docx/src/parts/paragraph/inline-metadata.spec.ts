@@ -12,7 +12,9 @@ const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/m
 
 function parseParagraphXml(inner: string): { children?: unknown[] } {
   const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
-  return parseParagraph(doc.elements![0], readCtx) as { children?: unknown[] };
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
+  return parseParagraph(el, readCtx) as { children?: unknown[] };
 }
 
 function findChildByKey(
@@ -96,8 +98,8 @@ describe("inline metadata parse", () => {
     const cxOpts = cx!.customXml as Record<string, unknown>;
     const inner = cxOpts.children as Array<Record<string, unknown>>;
     expect(inner).toHaveLength(1);
-    expect(inner[0].smartTag).toMatchObject({ element: "Inner" });
-    expect((inner[0].smartTag as Record<string, unknown>).children).toEqual([{ text: "nested" }]);
+    expect(inner[0]?.smartTag).toMatchObject({ element: "Inner" });
+    expect((inner[0]?.smartTag as Record<string, unknown>).children).toEqual([{ text: "nested" }]);
   });
 
   it("drops a smartTag/customXml missing the required w:element", () => {

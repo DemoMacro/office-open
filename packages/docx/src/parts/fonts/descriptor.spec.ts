@@ -15,7 +15,8 @@ const readCtx = {} as unknown as ReadContext;
 function roundTrip(opts: FontTableInput) {
   const xml = fontTableDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return fontTableDesc.parse(el, readCtx);
 }
 
@@ -25,8 +26,8 @@ describe("fontTableDesc round-trip", () => {
       fonts: [{ name: "Arial", fontKey: "abc-123", data: Buffer.from([]), embedRid: "rId1" }],
     });
     expect(result.fonts).toHaveLength(1);
-    expect(result.fonts[0].name).toBe("Arial");
-    expect(result.fonts[0].fontKey).toBe("abc-123");
+    expect(result.fonts[0]?.name).toBe("Arial");
+    expect(result.fonts[0]?.fontKey).toBe("abc-123");
   });
 
   it("round-trips multiple fonts", () => {
@@ -38,16 +39,16 @@ describe("fontTableDesc round-trip", () => {
       ],
     });
     expect(result.fonts).toHaveLength(3);
-    expect(result.fonts[0].name).toBe("Arial");
-    expect(result.fonts[1].name).toBe("Times New Roman");
-    expect(result.fonts[2].name).toBe("Calibri");
+    expect(result.fonts[0]?.name).toBe("Arial");
+    expect(result.fonts[1]?.name).toBe("Times New Roman");
+    expect(result.fonts[2]?.name).toBe("Calibri");
   });
 
   it("round-trips font with characterSet", () => {
     const result = roundTrip({
       fonts: [{ name: "Wingdings", fontKey: "wd-key", data: Buffer.from([]), characterSet: "02" }],
     });
-    expect(result.fonts[0].characterSet).toBe("02");
+    expect(result.fonts[0]?.characterSet).toBe("02");
   });
 
   it("round-trips font with characterSetName (w:characterSet)", () => {
@@ -62,8 +63,8 @@ describe("fontTableDesc round-trip", () => {
         },
       ],
     });
-    expect(result.fonts[0].characterSet).toBe("02");
-    expect(result.fonts[0].characterSetName).toBe("ISO-8859-1");
+    expect(result.fonts[0]?.characterSet).toBe("02");
+    expect(result.fonts[0]?.characterSetName).toBe("ISO-8859-1");
   });
 
   it("round-trips font key stripping braces", () => {
@@ -72,7 +73,7 @@ describe("fontTableDesc round-trip", () => {
         { name: "TestFont", fontKey: "some-key-value", data: Buffer.from([]), embedRid: "rId1" },
       ],
     });
-    expect(result.fonts[0].fontKey).toBe("some-key-value");
+    expect(result.fonts[0]?.fontKey).toBe("some-key-value");
   });
 
   it("round-trips empty fonts", () => {

@@ -104,7 +104,9 @@ describe("Numbering", () => {
         });
         numbering.createConcreteNumberingInstance("test-reference", 0);
         const referenceConfig = numbering.referenceConfig[0];
+        if (!referenceConfig) throw new Error("referenceConfig not parsed");
         const zeroLevelConfig = referenceConfig[0];
+        if (!zeroLevelConfig) throw new Error("zero level config not parsed");
         expect(zeroLevelConfig.start).to.be.equal(10);
       });
     });
@@ -147,7 +149,8 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     numbering.createConcreteNumberingInstance("decimal-list", 0);
 
     const xml = numbering.serialize();
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
 
     expect(opts).toBeDefined();
@@ -158,6 +161,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     const decimalConfig = opts!.config.find((c) => c.levels[0]?.format === LevelFormat.DECIMAL);
     expect(decimalConfig).toBeDefined();
     const lvl = decimalConfig!.levels[0];
+    if (!lvl) throw new Error("decimal level not parsed");
     expect(lvl.start).toBe(5);
     expect(lvl.format).toBe(LevelFormat.DECIMAL);
     expect(lvl.text).toBe("%1.");

@@ -22,7 +22,8 @@ const readCtx = {
 function roundTrip(opts: CommentsOptions): CommentsOptions {
   const xml = commentsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return commentsDesc.parse(el, readCtx);
 }
 
@@ -32,9 +33,9 @@ describe("commentsDesc round-trip", () => {
       children: [{ id: 1, author: "John", date: "2024-01-15T10:30:00Z", children: [] }],
     });
     expect(result.children).toHaveLength(1);
-    expect(result.children[0].id).toBe(1);
-    expect(result.children[0].author).toBe("John");
-    expect(result.children[0].date).toBe("2024-01-15T10:30:00Z");
+    expect(result.children[0]?.id).toBe(1);
+    expect(result.children[0]?.author).toBe("John");
+    expect(result.children[0]?.date).toBe("2024-01-15T10:30:00Z");
   });
 
   it("round-trips comment with initials", () => {
@@ -43,7 +44,7 @@ describe("commentsDesc round-trip", () => {
         { id: 2, author: "Jane", initials: "JD", date: "2024-02-01T12:00:00Z", children: [] },
       ],
     });
-    expect(result.children[0].initials).toBe("JD");
+    expect(result.children[0]?.initials).toBe("JD");
   });
 
   it("round-trips multiple comments", () => {
@@ -54,8 +55,8 @@ describe("commentsDesc round-trip", () => {
       ],
     });
     expect(result.children).toHaveLength(2);
-    expect(result.children[0].author).toBe("A");
-    expect(result.children[1].author).toBe("B");
+    expect(result.children[0]?.author).toBe("A");
+    expect(result.children[1]?.author).toBe("B");
   });
 
   it("round-trips empty comments", () => {

@@ -113,8 +113,8 @@ export const footnotesDesc: CustomDescriptor<FootnotesData, BodyContext> = {
 
     for (const [id, paragraphs] of data.notes) {
       parts.push(`<w:footnote w:id="${id}">`);
-      for (let i = 0; i < paragraphs.length; i++) {
-        const pXml = stringifyParagraphInline(paragraphs[i], ctx);
+      for (const [i, para] of paragraphs.entries()) {
+        const pXml = stringifyParagraphInline(para, ctx);
         if (i === 0) {
           // Insert footnoteRef after <w:p> or <w:p ...>
           const openIdx = pXml.indexOf(">");

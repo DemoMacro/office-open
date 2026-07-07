@@ -15,7 +15,8 @@ const readCtx = {} as unknown as ReadContext;
 function roundTrip(opts: BibliographyOptions) {
   const xml = bibliographyDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return bibliographyDesc.parse(el, readCtx);
 }
 
@@ -25,9 +26,9 @@ describe("bibliographyDesc round-trip", () => {
       sources: [{ type: "Book", title: "TypeScript in Action", author: "John Doe" }],
     });
     expect(result.sources).toHaveLength(1);
-    expect(result.sources[0].type).toBe("Book");
-    expect(result.sources[0].title).toBe("TypeScript in Action");
-    expect(result.sources[0].author).toBe("John Doe");
+    expect(result.sources[0]?.type).toBe("Book");
+    expect(result.sources[0]?.title).toBe("TypeScript in Action");
+    expect(result.sources[0]?.author).toBe("John Doe");
   });
 
   it("round-trips styleName", () => {
@@ -62,6 +63,7 @@ describe("bibliographyDesc round-trip", () => {
       ],
     });
     const src = result.sources[0];
+    if (!src) throw new Error("source not parsed");
     expect(src.type).toBe("JournalArticle");
     expect(src.title).toBe("Deep Learning");
     expect(src.author).toBe("Jane Smith");
@@ -85,9 +87,9 @@ describe("bibliographyDesc round-trip", () => {
       sources: [{ title: "First" }, { title: "Second" }, { title: "Third" }],
     });
     expect(result.sources).toHaveLength(3);
-    expect(result.sources[0].title).toBe("First");
-    expect(result.sources[1].title).toBe("Second");
-    expect(result.sources[2].title).toBe("Third");
+    expect(result.sources[0]?.title).toBe("First");
+    expect(result.sources[1]?.title).toBe("Second");
+    expect(result.sources[2]?.title).toBe("Third");
   });
 
   it("round-trips empty sources", () => {
@@ -99,6 +101,6 @@ describe("bibliographyDesc round-trip", () => {
     const result = roundTrip({
       sources: [{ title: 'Tom & Jerry "The Movie"' }],
     });
-    expect(result.sources[0].title).toBe('Tom & Jerry "The Movie"');
+    expect(result.sources[0]?.title).toBe('Tom & Jerry "The Movie"');
   });
 });

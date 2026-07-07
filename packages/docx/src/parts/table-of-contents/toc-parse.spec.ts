@@ -50,7 +50,8 @@ describe("parseTocFieldFromElements", () => {
       <w:p><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc1 \\h </w:instrText></w:r></w:p>
       <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
     </w:body>`;
-    const body = parseXml(xml).elements![0];
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
     const opts = parseTocFieldFromElements(body.elements ?? []);
     expect(opts).toEqual({
       headingStyleRange: "1-3",
@@ -69,7 +70,9 @@ describe("parseToc", () => {
         <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
         <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:sdtContent>
     </w:sdt>`;
-    const result = parseToc(parseXml(xml).elements![0], readCtx);
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parseToc(el, readCtx);
     expect(result?.alias).toBe("Contents");
     expect(result?.headingStyleRange).toBe("1-3");
     expect(result?.hyperlink).toBe(true);
@@ -85,9 +88,9 @@ describe("parseToc", () => {
         <w:p><w:pPr><w:pStyle w:val="TOC2"/></w:pPr><w:r><w:t>Heading Two</w:t></w:r></w:p>
         <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:sdtContent>
     </w:sdt>`;
-    const result = parseToc(parseXml(xml).elements![0], readCtx, (els, ctx) =>
-      els.map((e) => parseSectionChild(e, ctx)),
-    );
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parseToc(el, readCtx, (els, ctx) => els.map((e) => parseSectionChild(e, ctx)));
     expect(result?.entries).toHaveLength(2);
   });
 });
@@ -104,9 +107,10 @@ describe("parseBody TOC page-break rescue", () => {
       <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r>
         <w:r><w:br w:type="page"/></w:r></w:p>
     </w:body>`;
-    const body = parseXml(xml).elements![0];
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
     const sections = parseBody(body, readCtx);
-    const json = JSON.stringify(sections[0].children ?? []);
+    const json = JSON.stringify(sections[0]?.children ?? []);
     expect(json).toContain('"toc"');
     expect(json).toContain('"pageBreak"');
   });
@@ -125,9 +129,10 @@ describe("parseBody TOC entry preservation", () => {
       <w:p><w:pPr><w:pStyle w:val="TOC2"/></w:pPr><w:r><w:t>Heading Two</w:t></w:r></w:p>
       <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
     </w:body>`;
-    const body = parseXml(xml).elements![0];
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
     const sections = parseBody(body, readCtx);
-    const tocChild = (sections[0].children ?? []).find((c) => "toc" in c) as
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
     expect(tocChild?.toc.entries).toHaveLength(2);
@@ -140,9 +145,10 @@ describe("parseBody TOC entry preservation", () => {
         <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
       <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
     </w:body>`;
-    const body = parseXml(xml).elements![0];
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
     const sections = parseBody(body, readCtx);
-    const tocChild = (sections[0].children ?? []).find((c) => "toc" in c) as
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
     expect(tocChild?.toc.entries).toBeUndefined();
@@ -160,9 +166,10 @@ describe("parseBody TOC entry preservation", () => {
       <w:p><w:r><w:t>Heading Two</w:t></w:r></w:p>
       <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
     </w:body>`;
-    const body = parseXml(xml).elements![0];
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
     const sections = parseBody(body, readCtx);
-    const tocChild = (sections[0].children ?? []).find((c) => "toc" in c) as
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
     expect(tocChild?.toc.entries).toHaveLength(2);
@@ -181,9 +188,10 @@ describe("parseBody TOC entry preservation", () => {
       <w:p><w:r><w:t>Heading Two</w:t></w:r></w:p>
       <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
     </w:body>`;
-    const body = parseXml(xml).elements![0];
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
     const sections = parseBody(body, readCtx);
-    const tocChild = (sections[0].children ?? []).find((c) => "toc" in c) as
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
     expect(tocChild?.toc.entries).toHaveLength(2);
@@ -205,9 +213,10 @@ describe("parseBody TOC entry preservation", () => {
         <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
       <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
     </w:body>`;
-    const body = parseXml(xml).elements![0];
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
     const sections = parseBody(body, readCtx);
-    const tocChild = (sections[0].children ?? []).find((c) => "toc" in c) as
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
     expect(tocChild?.toc.entries).toHaveLength(1);
