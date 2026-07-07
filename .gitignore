@@ -91,6 +91,9 @@ out
 .nuxt
 dist
 
+# Vercel build output
+.vercel
+
 # Gatsby files
 .cache/
 # Comment in the public line in if this project uses Gatsby and not Next.js
