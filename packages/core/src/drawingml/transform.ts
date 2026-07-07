@@ -1,3 +1,6 @@
+import { element } from "@office-open/xml";
+
+import { convertToEmu } from "../util/converters";
 /**
  * 2D transform for DrawingML shapes.
  *
@@ -8,9 +11,7 @@
  *
  * @module
  */
-import type { UniversalMeasure } from "@office-open/core";
-import { convertToEmu } from "@office-open/core";
-import { element } from "@office-open/xml";
+import type { UniversalMeasure } from "../util/values";
 
 // <xsd:complexType name="CT_Transform2D">
 //     <xsd:sequence>
