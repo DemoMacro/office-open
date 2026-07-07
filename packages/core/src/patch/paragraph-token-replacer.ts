@@ -42,7 +42,11 @@ export function createTokenReplacer(
     let replaceMode: (typeof ReplaceMode)[keyof typeof ReplaceMode] = ReplaceMode.START;
 
     for (const run of renderedParagraph.runs) {
+      const runChildren = paragraphElement.elements?.[run.index]?.elements;
+      if (!runChildren) continue;
       for (const { text, index, start, end } of run.parts) {
+        const partElement = runChildren[index];
+        if (!partElement) continue;
         switch (replaceMode) {
           case ReplaceMode.START: {
             if (startIndex >= start && startIndex <= end) {
@@ -54,7 +58,7 @@ export function createTokenReplacer(
               }
 
               const firstPart = text.replace(partToReplace, replacementText);
-              patchTextElement(paragraphElement.elements![run.index].elements![index], firstPart);
+              patchTextElement(partElement, firstPart);
               replaceMode = ReplaceMode.MIDDLE;
               continue;
             }
@@ -63,14 +67,11 @@ export function createTokenReplacer(
           case ReplaceMode.MIDDLE: {
             if (endIndex <= end) {
               const lastPart = text.substring(endIndex - start + 1);
-              patchTextElement(paragraphElement.elements![run.index].elements![index], lastPart);
-              const currentElement = paragraphElement.elements![run.index].elements![index];
-              paragraphElement.elements![run.index].elements![index] = preserveSpace
-                ? patchSpaceAttribute(currentElement)
-                : currentElement;
+              patchTextElement(partElement, lastPart);
+              runChildren[index] = preserveSpace ? patchSpaceAttribute(partElement) : partElement;
               replaceMode = ReplaceMode.END;
             } else {
-              patchTextElement(paragraphElement.elements![run.index].elements![index], "");
+              patchTextElement(partElement, "");
             }
             break;
           }

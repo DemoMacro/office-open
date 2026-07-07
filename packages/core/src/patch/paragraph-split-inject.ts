@@ -22,19 +22,19 @@ export function createSplitInject(
 ) {
   const preserveSpace = options?.preserveSpace ?? true;
   const findRunElementIndexWithToken = (paragraphElement: Element, token: string): number => {
-    for (let i = 0; i < (paragraphElement.elements ?? []).length; i++) {
-      const element = paragraphElement.elements![i];
+    for (const [i, element] of (paragraphElement.elements ?? []).entries()) {
       if (element.type === "element" && element.name === ns.run) {
         const textElement = (element.elements ?? []).filter(
           (e) => e.type === "element" && e.name === ns.text,
         );
 
         for (const text of textElement) {
-          if (!text.elements?.[0]) {
+          const firstChild = text.elements?.[0];
+          if (!firstChild) {
             continue;
           }
 
-          if ((text.elements[0].text as string).includes(token)) {
+          if ((firstChild.text as string).includes(token)) {
             return i;
           }
         }

@@ -46,7 +46,7 @@ export const createDataModel = (
 
   pointStrs.push(stringifyDocPoint(layout, style, color));
 
-  for (let i = 0; i < nodes.length; i++) {
+  for (const [i, node] of nodes.entries()) {
     const walk = (node: TreeNode, parentUuid: string, srcOrd: number): void => {
       const nodeUuid = uuid();
       const parTransUuid = uuid();
@@ -70,12 +70,12 @@ export const createDataModel = (
       );
 
       if (node.children) {
-        for (let j = 0; j < node.children.length; j++) {
-          walk(node.children[j], nodeUuid, j);
+        for (const [j, child] of node.children.entries()) {
+          walk(child, nodeUuid, j);
         }
       }
     };
-    walk(nodes[i], "0", i);
+    walk(node, "0", i);
   }
 
   return stringifyDataModel(pointStrs, connectionStrs);

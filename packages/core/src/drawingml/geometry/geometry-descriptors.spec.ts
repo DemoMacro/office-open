@@ -10,7 +10,8 @@ function roundTrip<T>(desc: any, opts: T): T {
   const xml = stringify(desc, opts, {} as any);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return parse(desc, el, {} as any);
 }
 
@@ -31,8 +32,8 @@ describe("presetGeometryDesc", () => {
     expect(result.preset).toBe("roundRect");
     expect(result.adjustmentValues).toBeDefined();
     expect(result.adjustmentValues).toHaveLength(1);
-    expect(result.adjustmentValues![0].name).toBe("adj");
-    expect(result.adjustmentValues![0].formula).toBe("val 16667");
+    expect(result.adjustmentValues?.[0]?.name).toBe("adj");
+    expect(result.adjustmentValues?.[0]?.formula).toBe("val 16667");
   });
 
   it("round-trips preset geometry with multiple adjustment values", () => {
@@ -66,9 +67,9 @@ describe("customGeometryDesc", () => {
     const result = roundTrip(customGeometryDesc, opts);
     expect(result.pathList).toBeDefined();
     expect(result.pathList).toHaveLength(1);
-    expect(result.pathList![0].commands).toHaveLength(4);
-    expect(result.pathList![0].commands![0].command).toBe("moveTo");
-    expect(result.pathList![0].commands![3].command).toBe("close");
+    expect(result.pathList?.[0]?.commands).toHaveLength(4);
+    expect(result.pathList?.[0]?.commands?.[0]?.command).toBe("moveTo");
+    expect(result.pathList?.[0]?.commands?.[3]?.command).toBe("close");
   });
 
   it("round-trips custom geometry with all features", () => {
@@ -106,7 +107,7 @@ describe("customGeometryDesc", () => {
     expect(result.adjustmentValues).toHaveLength(1);
     expect(result.guides).toHaveLength(1);
     expect(result.adjustHandles).toHaveLength(1);
-    expect(result.adjustHandles![0].type).toBe("xy");
+    expect(result.adjustHandles?.[0]?.type).toBe("xy");
     expect(result.connectionSites).toHaveLength(1);
     expect(result.textRectangle).toEqual({
       left: "10000",
@@ -115,8 +116,8 @@ describe("customGeometryDesc", () => {
       bottom: "90000",
     });
     expect(result.pathList).toHaveLength(1);
-    expect(result.pathList![0].w).toBe(100000);
-    expect(result.pathList![0].h).toBe(100000);
+    expect(result.pathList?.[0]?.w).toBe(100000);
+    expect(result.pathList?.[0]?.h).toBe(100000);
   });
 
   it("round-trips custom geometry with arc and bezier commands", () => {
@@ -152,11 +153,11 @@ describe("customGeometryDesc", () => {
       ],
     };
     const result = roundTrip(customGeometryDesc, opts);
-    const cmds = result.pathList![0].commands!;
-    expect(cmds[0].command).toBe("moveTo");
-    expect(cmds[1].command).toBe("arcTo");
-    expect(cmds[2].command).toBe("quadBezTo");
-    expect(cmds[3].command).toBe("cubicBezTo");
+    const cmds = result.pathList?.[0]?.commands;
+    expect(cmds?.[0]?.command).toBe("moveTo");
+    expect(cmds?.[1]?.command).toBe("arcTo");
+    expect(cmds?.[2]?.command).toBe("quadBezTo");
+    expect(cmds?.[3]?.command).toBe("cubicBezTo");
   });
 
   it("round-trips custom geometry with polar adjust handle", () => {
@@ -177,6 +178,6 @@ describe("customGeometryDesc", () => {
     };
     const result = roundTrip(customGeometryDesc, opts);
     expect(result.adjustHandles).toHaveLength(1);
-    expect(result.adjustHandles![0].type).toBe("polar");
+    expect(result.adjustHandles?.[0]?.type).toBe("polar");
   });
 });

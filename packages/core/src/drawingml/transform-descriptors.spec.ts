@@ -9,7 +9,8 @@ function roundTrip<T>(desc: any, opts: T): T {
   const xml = stringify(desc, opts, {} as any);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return parse(desc, el, {} as any);
 }
 
@@ -62,7 +63,8 @@ describe("transform2DDesc", () => {
     const xml =
       '<a:xfrm xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
       '<a:off x="5mm" y="10mm"/></a:xfrm>';
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const result = parse(transform2DDesc, el, {} as never);
     expect(result.x).toBe("5mm");
     expect(result.y).toBe("10mm");

@@ -325,8 +325,9 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
       const sf = findChild(child, "a:solidFill");
       if (sf) fills.push(parse(solidFillDesc, sf, ctx) as SolidFillOptions);
     }
-    if (fills.length >= 2) {
-      result.duotone = { color1: fills[0], color2: fills[1] };
+    const [color1, color2] = fills;
+    if (color1 && color2) {
+      result.duotone = { color1, color2 };
     }
   }
 

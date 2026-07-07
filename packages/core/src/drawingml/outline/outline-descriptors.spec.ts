@@ -9,7 +9,8 @@ function roundTrip(opts: OutlineOptions): OutlineOptions {
   const xml = stringify(outlineDesc, opts, {} as any);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return parse(outlineDesc, el, {} as any);
 }
 
@@ -45,8 +46,8 @@ describe("outlineDesc", () => {
     expect(result.type).toBe("gradFill");
     expect(result.gradientFill).toBeDefined();
     expect(result.gradientFill!.stops).toHaveLength(2);
-    expect(result.gradientFill!.stops[0].position).toBe(0);
-    expect(result.gradientFill!.stops[1].position).toBe(100000);
+    expect(result.gradientFill?.stops?.[0]?.position).toBe(0);
+    expect(result.gradientFill?.stops?.[1]?.position).toBe(100000);
   });
 
   it("round-trips width, cap, compoundLine, align", () => {
@@ -97,8 +98,8 @@ describe("outlineDesc", () => {
     const result = roundTrip(opts);
     expect(result.customDash).toBeDefined();
     expect(result.customDash).toHaveLength(2);
-    expect(result.customDash![0].d).toBe("100000");
-    expect(result.customDash![0].sp).toBe("50000");
+    expect(result.customDash?.[0]?.d).toBe("100000");
+    expect(result.customDash?.[0]?.sp).toBe("50000");
   });
 
   it("round-trips join styles", () => {

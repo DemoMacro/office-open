@@ -36,8 +36,8 @@ export const enumDecode = (map: Record<string, string>) => {
 
 function invertRecord(map: Record<string, string>): Record<string, string> {
   const result: Record<string, string> = {};
-  for (const key of Object.keys(map)) {
-    result[map[key]] = key;
+  for (const [key, value] of Object.entries(map)) {
+    result[value] = key;
   }
   return result;
 }

@@ -89,7 +89,11 @@ export const parseUniversalMeasure = (measure: string): ParsedMeasure => {
   if (!match) {
     throw new Error(`Invalid universal measure: '${measure}'`);
   }
-  return { value: parseFloat(match[1]), unit: match[2] as ParsedMeasure["unit"] };
+  const [, value, unit] = match;
+  if (value === undefined || unit === undefined) {
+    throw new Error(`Invalid universal measure: '${measure}'`);
+  }
+  return { value: parseFloat(value), unit: unit as ParsedMeasure["unit"] };
 };
 
 /**

@@ -17,7 +17,8 @@ function roundTrip<T>(desc: any, opts: T): T {
   const xml = stringify(desc, opts, {} as any);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return parse(desc, el, {} as any);
 }
 
@@ -102,8 +103,8 @@ describe("diagramExtensionListDesc", () => {
     };
     const result = roundTrip(diagramExtensionListDesc, opts);
     expect(result.extensions).toHaveLength(2);
-    expect(result.extensions?.[0].uri).toBe("ext1");
-    expect(result.extensions?.[1].uri).toBe("ext2");
+    expect(result.extensions?.[0]?.uri).toBe("ext1");
+    expect(result.extensions?.[1]?.uri).toBe("ext2");
   });
 
   it("returns undefined extensions when empty", () => {

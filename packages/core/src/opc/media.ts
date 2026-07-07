@@ -110,8 +110,8 @@ export class Media<T extends BaseMediaEntry> {
     const cached = hashKeyCache.get(data);
     if (cached !== undefined) return cached;
     let hash = 0x811c9dc5;
-    for (let i = 0; i < data.length; i++) {
-      hash ^= data[i];
+    for (const byte of data) {
+      hash ^= byte;
       hash = Math.imul(hash, 0x01000193);
     }
     const key = `${data.length}:${(hash >>> 0).toString(16)}`;

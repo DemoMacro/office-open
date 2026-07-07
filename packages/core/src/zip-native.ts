@@ -23,7 +23,11 @@ for (let i = 0; i < 256; i++) {
 
 function computeCrc32(data: Uint8Array): number {
   let crc = -1;
-  for (let i = 0; i < data.length; i++) crc = CRC_TABLE[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
+  // CRC_TABLE is a fixed 256-entry lookup; the index is masked to [0,255], so the
+  // access is guaranteed in-bounds — the `!` is a compile-time narrow, not a runtime check.
+  for (const byte of data) {
+    crc = CRC_TABLE[(crc ^ byte) & 0xff]! ^ (crc >>> 8);
+  }
   return ~crc;
 }
 
@@ -125,13 +129,13 @@ async function compressOneAsync(
 
 function writeZipBuffer(entries: Entry[]): Uint8Array {
   let totalSize = 0;
-  for (let i = 0; i < entries.length; i++) {
-    totalSize += 30 + entries[i].filename.length + entries[i].data.length;
+  for (const e of entries) {
+    totalSize += 30 + e.filename.length + e.data.length;
   }
   const cdOffset = totalSize;
   let cdSize = 0;
-  for (let i = 0; i < entries.length; i++) {
-    cdSize += 46 + entries[i].filename.length;
+  for (const e of entries) {
+    cdSize += 46 + e.filename.length;
   }
   totalSize += cdSize + 22;
 
@@ -139,8 +143,7 @@ function writeZipBuffer(entries: Entry[]): Uint8Array {
   let offset = 0;
 
   // Local file headers + data
-  for (let i = 0; i < entries.length; i++) {
-    const e = entries[i];
+  for (const e of entries) {
     e.localOffset = offset;
     wU32(buf, offset, 0x04034b50); // signature
     wU16(buf, offset + 4, 20); // version needed
@@ -163,8 +166,7 @@ function writeZipBuffer(entries: Entry[]): Uint8Array {
   }
 
   // Central directory
-  for (let i = 0; i < entries.length; i++) {
-    const e = entries[i];
+  for (const e of entries) {
     wU32(buf, offset, 0x02014b50); // signature
     wU16(buf, offset + 4, 20); // version made by
     wU16(buf, offset + 6, 20); // version needed
@@ -208,21 +210,22 @@ const textEncoder = new TextEncoder();
 export function nativeZip(files: Zippable, level: number = 6): Uint8Array {
   if (!_nativeDeflate) throw new Error("Native deflate not available");
   const crc = _nativeCrc32 ?? computeCrc32;
-  const keys = Object.keys(files);
-  const entries: Entry[] = Array.from({ length: keys.length });
+  const entries: Entry[] = [];
 
-  for (let i = 0; i < keys.length; i++) {
-    const { data, level: entryLevel } = resolveEntryData(files[keys[i]], level);
+  for (const key of Object.keys(files)) {
+    const raw = files[key];
+    if (raw === undefined) continue; // Object.keys guarantees presence; guard narrows the type
+    const { data, level: entryLevel } = resolveEntryData(raw, level);
     const c = crc(data);
     const { compressed, method } = compressOne(data, entryLevel, _nativeDeflate);
-    entries[i] = {
-      filename: textEncoder.encode(keys[i]),
+    entries.push({
+      filename: textEncoder.encode(key),
       data: compressed,
       uncompressedSize: data.length,
       crc: c,
       method,
       localOffset: 0,
-    };
+    });
   }
 
   return writeZipBuffer(entries);
@@ -231,21 +234,22 @@ export function nativeZip(files: Zippable, level: number = 6): Uint8Array {
 export async function nativeZipAsync(files: Zippable, level: number = 6): Promise<Uint8Array> {
   if (!_nativeDeflateAsync) throw new Error("Native async deflate not available");
   const crc = _nativeCrc32 ?? computeCrc32;
-  const keys = Object.keys(files);
-  const entries: Entry[] = Array.from({ length: keys.length });
+  const entries: Entry[] = [];
 
-  for (let i = 0; i < keys.length; i++) {
-    const { data, level: entryLevel } = resolveEntryData(files[keys[i]], level);
+  for (const key of Object.keys(files)) {
+    const raw = files[key];
+    if (raw === undefined) continue; // Object.keys guarantees presence; guard narrows the type
+    const { data, level: entryLevel } = resolveEntryData(raw, level);
     const c = crc(data);
     const { compressed, method } = await compressOneAsync(data, entryLevel, _nativeDeflateAsync);
-    entries[i] = {
-      filename: textEncoder.encode(keys[i]),
+    entries.push({
+      filename: textEncoder.encode(key),
       data: compressed,
       uncompressedSize: data.length,
       crc: c,
       method,
       localOffset: 0,
-    };
+    });
   }
 
   return writeZipBuffer(entries);

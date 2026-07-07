@@ -54,8 +54,7 @@ export function createRunRenderer(ns: XmlNamespaceConfig) {
     let currentRunStringLength = 0;
 
     const runs: RenderedRunNode[] = [];
-    for (let i = 0; i < node.element.elements.length; i++) {
-      const element = node.element.elements[i];
+    for (const [i, element] of node.element.elements.entries()) {
       if (element.name === ns.run) {
         const renderedRunNode = renderRunNode(element, i, currentRunStringLength);
         currentRunStringLength += renderedRunNode.text.length;
@@ -91,15 +90,17 @@ export function createRunRenderer(ns: XmlNamespaceConfig) {
     let currentTextStringIndex = currentRunStringIndex;
 
     const parts: IParts[] = [];
-    for (let i = 0; i < node.elements.length; i++) {
-      const element = node.elements[i];
-      if (element.name === ns.text && element.elements && element.elements.length > 0) {
-        const text = element.elements[0].text ?? "";
-        const textStr = String(text);
-        const partStart = currentTextStringIndex;
-        currentTextStringIndex += textStr.length;
-        parts.push({ end: currentTextStringIndex - 1, index: i, start: partStart, text: textStr });
-      }
+    for (const [i, element] of node.elements.entries()) {
+      if (element.name !== ns.text) continue;
+      const textChildren = element.elements;
+      if (!textChildren || textChildren.length === 0) continue;
+      const firstChild = textChildren[0];
+      if (!firstChild) continue;
+      const text = firstChild.text ?? "";
+      const textStr = String(text);
+      const partStart = currentTextStringIndex;
+      currentTextStringIndex += textStr.length;
+      parts.push({ end: currentTextStringIndex - 1, index: i, start: partStart, text: textStr });
     }
 
     const text = parts.reduce((acc, curr) => acc + curr.text, "");

@@ -9,7 +9,8 @@ function roundTrip(opts: ThemeOptions): ThemeOptions {
   const xml = stringify(themeDesc, opts, {} as any);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return parse(themeDesc, el, {} as any);
 }
 

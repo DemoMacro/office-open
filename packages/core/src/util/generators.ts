@@ -29,7 +29,8 @@ export const uniqueId = (): string => {
   const bytes = new Uint8Array(21);
   crypto.getRandomValues(bytes);
   let id = "";
-  for (let i = 0; i < 21; i++) id += URL_ALPHABET[bytes[i] & 63];
+  // URL_ALPHABET has 64 entries; the index is masked to [0,63], so the access is in-bounds.
+  for (const byte of bytes) id += URL_ALPHABET[byte & 63]!;
   return id.toLowerCase();
 };
 

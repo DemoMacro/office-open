@@ -331,8 +331,8 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     parts.push(chartTypeHeader(opts));
 
     const categories = opts.categories ?? [];
-    for (let i = 0; i < opts.series.length; i++) {
-      parts.push(stringifySeries(i, opts.series[i], categories, opts.type));
+    for (const [i, series] of opts.series.entries()) {
+      parts.push(stringifySeries(i, series, categories, opts.type));
     }
 
     parts.push(chartTypeFooter(opts));

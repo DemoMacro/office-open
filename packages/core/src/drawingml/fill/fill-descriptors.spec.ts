@@ -11,7 +11,8 @@ function roundTripFill(opts: FillOptions): FillOptions {
   const xml = stringify(fillDesc, opts, {} as any);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return parse(fillDesc, el, {} as any);
 }
 
@@ -23,7 +24,8 @@ function roundTripGradient(opts: GradientFillOptions): GradientFillOptions {
   const xml = stringify(gradientFillDesc, opts, {} as any);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return parse(gradientFillDesc, el, {} as any);
 }
 
@@ -31,7 +33,8 @@ function roundTripPattern(opts: PatternFillOptions): PatternFillOptions {
   const xml = stringify(patternFillDesc, opts, {} as any);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return parse(patternFillDesc, el, {} as any);
 }
 
@@ -76,8 +79,8 @@ describe("fillDesc", () => {
       const options = result.options as Record<string, unknown>;
       const stops = options.stops as Record<string, unknown>[];
       expect(stops).toHaveLength(2);
-      expect(stops[0].position).toBe(0);
-      expect(stops[1].position).toBe(100000);
+      expect(stops[0]?.position).toBe(0);
+      expect(stops[1]?.position).toBe(100000);
     } else {
       expect.fail("expected options in gradient fill result");
     }
@@ -113,9 +116,9 @@ describe("gradientFillDesc", () => {
     };
     const result = roundTripGradient(opts);
     expect(result.stops).toHaveLength(3);
-    expect(result.stops[0].position).toBe(0);
-    expect(result.stops[1].position).toBe(50000);
-    expect(result.stops[2].position).toBe(100000);
+    expect(result.stops[0]?.position).toBe(0);
+    expect(result.stops[1]?.position).toBe(50000);
+    expect(result.stops[2]?.position).toBe(100000);
     expect(result.shade).toBeDefined();
     if (result.shade && "angle" in result.shade) {
       expect(result.shade.angle).toBe(5400000);
@@ -152,7 +155,7 @@ describe("gradientFillDesc", () => {
     };
     const result = roundTripGradient(opts);
     expect(result.stops).toHaveLength(2);
-    expect(result.stops[0].color).toEqual({
+    expect(result.stops[0]?.color).toEqual({
       hue: 120000,
       saturation: 100000,
       luminance: 50000,
@@ -199,7 +202,8 @@ describe("fillDesc blip fill (parse)", () => {
 
   it("parses a:blipFill, bridging r:embed to binary media", () => {
     const xml = `<a:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const result = parse(fillDesc, el, mockReadCtx()) as Record<string, unknown>;
     expect(result.type).toBe("blip");
     expect(result.imageType).toBe("png");
@@ -208,7 +212,8 @@ describe("fillDesc blip fill (parse)", () => {
 
   it("preserves blip fill structure (dpi, rotWithShape)", () => {
     const xml = `<a:blipFill dpi="150" rotWithShape="1"><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const result = parse(fillDesc, el, mockReadCtx()) as Record<string, unknown>;
     expect(result.type).toBe("blip");
     expect(result.dpi).toBe(150);
@@ -217,7 +222,8 @@ describe("fillDesc blip fill (parse)", () => {
 
   it("infers image type from path extension (jpg)", () => {
     const xml = `<a:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const ctx = mockReadCtx({
       resolveRelationship: (rId) => (rId === "rId2" ? "media/photo.jpeg" : undefined),
       getRaw: (path) => (path === "media/photo.jpeg" ? new Uint8Array([9]) : undefined),
@@ -228,7 +234,8 @@ describe("fillDesc blip fill (parse)", () => {
 
   it("falls back to none when media cannot be resolved", () => {
     const xml = `<a:blipFill><a:blip r:embed="missing"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
-    const el = parseXml(xml).elements![0];
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     const result = parse(fillDesc, el, mockReadCtx()) as Record<string, unknown>;
     expect(result.type).toBe("none");
   });

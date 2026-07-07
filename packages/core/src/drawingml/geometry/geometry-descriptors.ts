@@ -164,16 +164,18 @@ function readPathCommand(tag: string, el: XmlElement): PathCommand | undefined {
         .filter((c) => c.name === "a:pt")
         .map(readAdjustPoint)
         .filter((p): p is AdjustPoint => p !== undefined);
-      if (points.length < 2) return undefined;
-      return { command: "quadBezTo", points: [points[0], points[1]] };
+      const [p0, p1] = points;
+      if (!p0 || !p1) return undefined;
+      return { command: "quadBezTo", points: [p0, p1] };
     }
     case "a:cubicBezTo": {
       const points = (el.elements ?? [])
         .filter((c) => c.name === "a:pt")
         .map(readAdjustPoint)
         .filter((p): p is AdjustPoint => p !== undefined);
-      if (points.length < 3) return undefined;
-      return { command: "cubicBezTo", points: [points[0], points[1], points[2]] };
+      const [p0, p1, p2] = points;
+      if (!p0 || !p1 || !p2) return undefined;
+      return { command: "cubicBezTo", points: [p0, p1, p2] };
     }
     case "a:close":
       return { command: "close" };

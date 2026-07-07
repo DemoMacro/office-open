@@ -18,7 +18,9 @@ function replacePlaceholders(xml: string, map: Map<string, string>): string {
   const parts: string[] = [];
   let last = 0;
   for (const m of xml.matchAll(PLACEHOLDER_RE)) {
-    const replacement = map.get(m[1]);
+    const key = m[1];
+    if (key === undefined) continue;
+    const replacement = map.get(key);
     if (replacement !== undefined) {
       parts.push(xml.substring(last, m.index!), replacement);
       last = m.index! + m[0].length;
@@ -59,8 +61,8 @@ export function replaceImagePlaceholders(
 ): string {
   if (mediaData.length === 0) return xml;
   const map = new Map<string, string>();
-  for (let i = 0; i < mediaData.length; i++) {
-    map.set(mediaData[i].fileName, formatId(offset, i, idFormat));
+  for (const [i, item] of mediaData.entries()) {
+    map.set(item.fileName, formatId(offset, i, idFormat));
   }
   return replacePlaceholders(xml, map);
 }
@@ -90,8 +92,8 @@ export function findAndReplaceImagePlaceholders(
   }
   // Build fileName → mediaItem lookup
   const itemMap = new Map<string, { fileName: string }>();
-  for (let i = 0; i < mediaArray.length; i++) {
-    itemMap.set(mediaArray[i].fileName, mediaArray[i]);
+  for (const item of mediaArray) {
+    itemMap.set(item.fileName, item);
   }
 
   const referenced: { fileName: string }[] = [];
@@ -101,6 +103,7 @@ export function findAndReplaceImagePlaceholders(
 
   for (const m of xml.matchAll(PLACEHOLDER_RE)) {
     const key = m[1];
+    if (key === undefined) continue;
     const item = itemMap.get(key);
     if (item !== undefined) {
       if (!replaceMap.has(key)) {
@@ -249,8 +252,8 @@ export function replaceMediaPlaceholders(
 ): string {
   if (mediaData.length === 0) return xml;
   const map = new Map<string, string>();
-  for (let i = 0; i < mediaData.length; i++) {
-    map.set(`media:${mediaData[i].fileName}`, formatId(offset, i, "rId"));
+  for (const [i, item] of mediaData.entries()) {
+    map.set(`media:${item.fileName}`, formatId(offset, i, "rId"));
   }
   return replacePlaceholders(xml, map);
 }
@@ -263,8 +266,8 @@ export function replaceVideoPlaceholders(
 ): string {
   if (mediaData.length === 0) return xml;
   const map = new Map<string, string>();
-  for (let i = 0; i < mediaData.length; i++) {
-    map.set(`video:${mediaData[i].fileName}`, formatId(offset, i, "rId"));
+  for (const [i, item] of mediaData.entries()) {
+    map.set(`video:${item.fileName}`, formatId(offset, i, "rId"));
   }
   return replacePlaceholders(xml, map);
 }
@@ -313,8 +316,8 @@ export function replaceHyperlinkPlaceholders(
 ): string {
   if (hyperlinks.length === 0) return xml;
   const map = new Map<string, string>();
-  for (let i = 0; i < hyperlinks.length; i++) {
-    map.set(`hlink:${hyperlinks[i].key}`, formatId(offset, i, "rId"));
+  for (const [i, h] of hyperlinks.entries()) {
+    map.set(`hlink:${h.key}`, formatId(offset, i, "rId"));
   }
   return replacePlaceholders(xml, map);
 }

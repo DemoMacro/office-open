@@ -38,8 +38,8 @@ export function encodeBase64(bytes: Uint8Array): string {
   if (typeof toBase64 === "function") return toBase64.call(bytes);
   if (typeof Buffer !== "undefined") return Buffer.from(bytes).toString("base64");
   let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
   }
   return btoa(binary);
 }

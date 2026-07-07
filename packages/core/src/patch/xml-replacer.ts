@@ -83,6 +83,7 @@ export function createReplacer(config: ReplacerConfig) {
           const index = findRunElementIndexWithToken(paragraphElement, SPLIT_TOKEN);
 
           const runElementToBeReplaced = paragraphElement.elements![index];
+          if (!runElementToBeReplaced) break;
           const { left, right } = splitRunElement(runElementToBeReplaced, SPLIT_TOKEN);
 
           let newRunElements = textJson;
@@ -129,8 +130,11 @@ const goToElementFromPath = (json: Element, path: readonly number[]): Element =>
   let element = json;
   for (let i = 1; i < path.length; i++) {
     const index = path[i];
+    if (index === undefined) break;
     const nextElements = element.elements!;
-    element = nextElements[index];
+    const next = nextElements[index];
+    if (!next) break;
+    element = next;
   }
   return element;
 };
@@ -138,4 +142,5 @@ const goToElementFromPath = (json: Element, path: readonly number[]): Element =>
 const goToParentElementFromPath = (json: Element, path: readonly number[]): Element =>
   goToElementFromPath(json, path.slice(0, -1));
 
-const getLastElementIndexFromPath = (path: readonly number[]): number => path[path.length - 1];
+// pathToParagraph is built by the renderer and always non-empty; the `!` is a contract narrow.
+const getLastElementIndexFromPath = (path: readonly number[]): number => path[path.length - 1]!;
