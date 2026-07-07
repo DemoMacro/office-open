@@ -21,7 +21,8 @@ const readCtx = {
 function roundTrip(opts: CommentsDocOptions) {
   const xml = commentsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return commentsDesc.parse(el, readCtx);
 }
 
@@ -44,12 +45,12 @@ describe("commentsDesc round-trip", () => {
     const comments = result.comments!;
 
     expect(comments).toHaveLength(2);
-    expect(comments[0].cell).toBe("A1");
-    expect(comments[0].author).toBe("Alice");
-    expect(comments[0].text).toBe("Hello world");
-    expect(comments[1].cell).toBe("B2");
-    expect(comments[1].author).toBe("Bob");
-    expect(comments[1].text).toBe("Another comment");
+    expect(comments[0]?.cell).toBe("A1");
+    expect(comments[0]?.author).toBe("Alice");
+    expect(comments[0]?.text).toBe("Hello world");
+    expect(comments[1]?.cell).toBe("B2");
+    expect(comments[1]?.author).toBe("Bob");
+    expect(comments[1]?.text).toBe("Another comment");
   });
 
   it("round-trips multiple authors correctly", () => {
@@ -65,9 +66,9 @@ describe("commentsDesc round-trip", () => {
 
     expect(comments).toHaveLength(3);
     // Authors are deduplicated in the XML, but parse resolves them back
-    expect(comments[0].author).toBe("Alice");
-    expect(comments[1].author).toBe("Bob");
-    expect(comments[2].author).toBe("Alice");
+    expect(comments[0]?.author).toBe("Alice");
+    expect(comments[1]?.author).toBe("Bob");
+    expect(comments[2]?.author).toBe("Alice");
   });
 
   it("round-trips special characters in text", () => {
@@ -77,7 +78,7 @@ describe("commentsDesc round-trip", () => {
     const result = roundTrip(opts);
     const comments = result.comments!;
 
-    expect(comments[0].text).toBe('<b>&"quotes"');
+    expect(comments[0]?.text).toBe('<b>&"quotes"');
   });
 
   it("round-trips single author with no text", () => {
@@ -88,8 +89,8 @@ describe("commentsDesc round-trip", () => {
     const comments = result.comments!;
 
     expect(comments).toHaveLength(1);
-    expect(comments[0].cell).toBe("C3");
-    expect(comments[0].author).toBe("Empty");
+    expect(comments[0]?.cell).toBe("C3");
+    expect(comments[0]?.author).toBe("Empty");
   });
 
   it("round-trips rich text runs with per-run formatting", () => {
@@ -123,7 +124,7 @@ describe("commentsDesc round-trip", () => {
       ],
     };
     const result = roundTrip(opts);
-    const text = result.comments![0].text;
+    const text = result.comments![0]?.text;
 
     expect(typeof text).toBe("object");
     expect(text).not.toBeNull();
@@ -157,7 +158,7 @@ describe("commentsDesc round-trip", () => {
       ],
     };
     const result = roundTrip(opts);
-    const pr = result.comments![0].commentPr!;
+    const pr = result.comments![0]?.commentPr!;
     expect(pr.locked).toBe(false);
     expect(pr.print).toBe(false);
     expect(pr.textHAlign).toBe("center");

@@ -21,7 +21,8 @@ const readCtx = {
 function roundTrip(opts: TableOptions) {
   const xml = tableDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return tableDesc.parse(el, readCtx);
 }
 
@@ -42,8 +43,8 @@ describe("tableDesc round-trip", () => {
     expect(result.ref).toBe("A1:D4");
     const columns = result.columns!;
     expect(columns).toHaveLength(2);
-    expect(columns[0].name).toBe("Col1");
-    expect(columns[1].name).toBe("Col2");
+    expect(columns[0]?.name).toBe("Col1");
+    expect(columns[1]?.name).toBe("Col2");
   });
 
   it("round-trips table with name", () => {
@@ -83,7 +84,7 @@ describe("tableDesc round-trip", () => {
     const result = roundTrip(opts);
     const columns = result.columns!;
 
-    expect(columns[1].totalsRowFunction).toBe("sum");
+    expect(columns[1]?.totalsRowFunction).toBe("sum");
   });
 
   it("round-trips column with calculatedColumnFormula", () => {
@@ -96,7 +97,7 @@ describe("tableDesc round-trip", () => {
     const result = roundTrip(opts);
     const columns = result.columns!;
 
-    expect(columns[2].calculatedColumnFormula).toBe("A+B");
+    expect(columns[2]?.calculatedColumnFormula).toBe("A+B");
   });
 
   it("round-trips table with style", () => {
@@ -173,7 +174,7 @@ describe("tableDesc round-trip", () => {
     const result = roundTrip(opts);
     const columns = result.columns!;
 
-    expect(columns[0].totalsRowLabel).toBe("Total");
+    expect(columns[0]?.totalsRowLabel).toBe("Total");
   });
 
   it("round-trips totalsRowShown=false", () => {

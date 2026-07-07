@@ -28,7 +28,8 @@ interface PivotTableParseResult extends PivotTableDescriptorOptions {
 function roundTrip(opts: PivotTableDescriptorOptions) {
   const xml = pivotTableDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return pivotTableDesc.parse(el, readCtx) as unknown as PivotTableParseResult;
 }
 
@@ -67,9 +68,9 @@ describe("pivotTableDesc round-trip", () => {
     const pivotFields = result.pivotFields!;
     expect(pivotFields).toHaveLength(3);
     // Region is axisRow
-    expect(pivotFields[0].axis).toBe("axisRow");
+    expect(pivotFields[0]?.axis).toBe("axisRow");
     // Sales is dataField
-    expect(pivotFields[2].axis).toBeUndefined();
+    expect(pivotFields[2]?.axis).toBeUndefined();
   });
 
   it("round-trips pivot with custom name", () => {
@@ -106,10 +107,10 @@ describe("pivotTableDesc round-trip", () => {
 
     const dataFields = result.dataFields!;
     expect(dataFields).toHaveLength(2);
-    expect(dataFields[0].name).toBe("Avg Sales");
-    expect(dataFields[0].subtotal).toBe("average");
-    expect(dataFields[1].name).toBe("Count");
-    expect(dataFields[1].subtotal).toBe("count");
+    expect(dataFields[0]?.name).toBe("Avg Sales");
+    expect(dataFields[0]?.subtotal).toBe("average");
+    expect(dataFields[1]?.name).toBe("Count");
+    expect(dataFields[1]?.subtotal).toBe("count");
   });
 
   it("round-trips pivot with columns", () => {
@@ -126,7 +127,7 @@ describe("pivotTableDesc round-trip", () => {
     const result = roundTrip(opts);
 
     const pivotFields = result.pivotFields!;
-    expect(pivotFields[1].axis).toBe("axisCol");
+    expect(pivotFields[1]?.axis).toBe("axisCol");
   });
 
   it("round-trips pivot with style", () => {
@@ -158,7 +159,7 @@ describe("pivotTableDesc round-trip", () => {
     const result = roundTrip(opts);
 
     const pivotFields = result.pivotFields!;
-    expect(pivotFields[0].axis).toBe("axisRow");
-    expect(pivotFields[1].axis).toBe("axisRow");
+    expect(pivotFields[0]?.axis).toBe("axisRow");
+    expect(pivotFields[1]?.axis).toBe("axisRow");
   });
 });

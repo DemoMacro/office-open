@@ -249,7 +249,8 @@ describe("Worksheet", () => {
       );
       expect(xml).toContain('paperWidth="210mm"');
       expect(xml).toContain('paperHeight="297mm"');
-      const el = parseXml(xml).elements![0];
+      const el = parseXml(xml).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
       const result = worksheetDesc.parse(el, {} as unknown as ReadContext);
       expect(result.pageSetup?.paperWidth).toBe("210mm");
       expect(result.pageSetup?.paperHeight).toBe("297mm");
@@ -429,7 +430,8 @@ describe("Worksheet", () => {
     function roundTrip(opts: WorksheetOptions) {
       const xml = buildWorksheetXml(opts, {});
       const doc = parseXml(xml);
-      const el = doc.elements![0];
+      const el = doc.elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
       return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
     }
 
@@ -476,7 +478,8 @@ describe("Worksheet", () => {
     function roundTrip(opts: WorksheetOptions) {
       const xml = buildWorksheetXml(opts, {});
       const doc = parseXml(xml);
-      const el = doc.elements![0];
+      const el = doc.elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
       return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
     }
 

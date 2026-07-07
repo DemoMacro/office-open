@@ -272,7 +272,7 @@ function stringifyPivotCacheDef(
   p.push(`<cacheFields count="${fieldNames.length}">`);
 
   for (let i = 0; i < fieldNames.length; i++) {
-    const fieldName = fieldNames[i];
+    const fieldName = fieldNames[i] ?? "";
     const numeric = isNumericField(sourceData.records, i);
     const uniqueVals = collectUniqueValues(sourceData.records, i);
 
@@ -656,7 +656,7 @@ function stringifyPivotCacheRecords(sourceData: PivotSourceData): string {
       } else if (numericFields[i]) {
         p.push(`<n v="${val}"/>`);
       } else {
-        p.push(`<x v="${fieldIndexMaps[i].get(String(val)) ?? 0}"/>`);
+        p.push(`<x v="${fieldIndexMaps[i]?.get(String(val)) ?? 0}"/>`);
       }
     }
     p.push("</r>");

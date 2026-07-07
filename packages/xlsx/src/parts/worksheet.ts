@@ -1473,8 +1473,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         const ref = attr(mEl, "ref") ?? "";
         const parts = ref.split(":");
         if (parts.length === 2) {
-          const from = parseCellRef(parts[0]);
-          const to = parseCellRef(parts[1]);
+          const from = parseCellRef(parts[0] ?? "");
+          const to = parseCellRef(parts[1] ?? "");
           if (from && to) merges.push({ from, to });
         }
       }
@@ -2005,8 +2005,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 
   // Sheet data (rows + cells) — the hot path
   p.push("<sheetData>");
-  for (let i = 0; i < rows.length; i++) {
-    const rowOpts = rows[i];
+  for (const [i, rowOpts] of rows.entries()) {
     const rowNumber = rowOpts.rowNumber ?? i + 1;
     const rowAttrs: Record<string, string | number | boolean | undefined> = { r: rowNumber };
     if (rowOpts.height !== undefined) {
@@ -2024,8 +2023,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 
     if (rowOpts.cells) {
       p.push(`<row${attrsRaw(rowAttrs)}>`);
-      for (let j = 0; j < rowOpts.cells.length; j++) {
-        const cell = rowOpts.cells[j];
+      for (const [j, cell] of rowOpts.cells.entries()) {
         const ref = cell.reference ?? defaultCellRef(rowNumber, j + 1);
         const cellStr = buildCellString(ref, cell, sharedStrings, styles);
         if (cellStr) p.push(cellStr);
@@ -2390,8 +2388,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   if (conditionalFormats.length > 0) {
     for (const cf of conditionalFormats) {
       p.push(`<conditionalFormatting sqref="${cf.sqref}">`);
-      for (let ri = 0; ri < cf.rules.length; ri++) {
-        const rule = cf.rules[ri];
+      for (const [ri, rule] of cf.rules.entries()) {
         const ruleAttrs: Record<string, string | number | boolean | undefined> = {
           type: rule.type,
           priority: rule.priority ?? ri + 1,
@@ -2938,8 +2935,8 @@ function parseCfvo(el: XmlElement): CfvoOptions {
 function parseCellRef(ref: string): { row: number; col: number } | undefined {
   const match = ref.match(/^([A-Z]+)(\d+)$/);
   if (!match) return undefined;
-  const colStr = match[1];
-  const row = parseInt(match[2], 10);
+  const colStr = match[1] ?? "";
+  const row = parseInt(match[2] ?? "0", 10);
   let col = 0;
   for (let i = 0; i < colStr.length; i++) {
     col = col * 26 + (colStr.charCodeAt(i) - 64);

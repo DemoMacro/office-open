@@ -12,7 +12,9 @@ const writeCtx = {} as unknown as WriteContext;
 const readCtx = {} as unknown as ReadContext;
 
 function parseRoot(xml: string) {
-  return parseXml(xml).elements![0];
+  const el = parseXml(xml).elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
+  return el;
 }
 
 describe("revisionHeadersDesc round-trip", () => {
@@ -70,7 +72,7 @@ describe("revisionHeadersDesc round-trip", () => {
       parseRoot(revisionHeadersDesc.stringify(opts, writeCtx)!),
       readCtx,
     );
-    expect(result.headers[0].reviewed).toEqual([3, 7]);
+    expect(result.headers[0]?.reviewed).toEqual([3, 7]);
   });
 });
 
@@ -117,8 +119,8 @@ describe("revisionLogDesc round-trip", () => {
       readCtx,
     );
     expect(result.revisions).toHaveLength(1);
-    expect(result.revisions[0].type).toBe("cellChange");
-    const d = result.revisions[0].data as { rId: number; sheetId: number; newCellXml: string };
+    expect(result.revisions[0]?.type).toBe("cellChange");
+    const d = result.revisions[0]?.data as { rId: number; sheetId: number; newCellXml: string };
     expect(d.rId).toBe(1);
     expect(d.sheetId).toBe(1);
     expect(d.newCellXml).toContain("<t>foo</t>");
@@ -209,6 +211,7 @@ describe("revisionLogDesc round-trip", () => {
       readCtx,
     );
     const entry = result.revisions[0];
+    if (!entry) throw new Error("expected definedName revision");
     expect(entry.type).toBe("definedName");
     if (entry.type !== "definedName") return;
     const d = entry.data;
@@ -271,12 +274,12 @@ describe("revision end-to-end round-trip", () => {
     });
     const parsed = parseWorkbook(buffer);
     expect(parsed.revisionLog).toBeDefined();
-    expect(parsed.revisionLog!.headers.headers[0].userName).toBe("Alice");
-    expect(parsed.revisionLog!.headers.headers[0].rId).toBe("rId1");
+    expect(parsed.revisionLog!.headers.headers[0]?.userName).toBe("Alice");
+    expect(parsed.revisionLog!.headers.headers[0]?.rId).toBe("rId1");
     expect(parsed.revisionLog!.logs).toHaveLength(1);
-    expect(parsed.revisionLog!.logs[0].revisions).toHaveLength(2);
-    expect(parsed.revisionLog!.logs[0].revisions[0].type).toBe("cellChange");
-    expect(parsed.revisionLog!.logs[0].revisions[1].type).toBe("comment");
+    expect(parsed.revisionLog!.logs[0]?.revisions).toHaveLength(2);
+    expect(parsed.revisionLog!.logs[0]?.revisions[0]?.type).toBe("cellChange");
+    expect(parsed.revisionLog!.logs[0]?.revisions[1]?.type).toBe("comment");
     expect(parsed.revisionLog!.users?.users?.[0]?.name).toBe("Alice");
   });
 });

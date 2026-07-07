@@ -276,8 +276,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
 
   // Parse worksheets using descriptor pipeline
   const worksheets: WorksheetOptions[] = [];
-  for (let i = 0; i < xlsx.worksheets.length; i++) {
-    const wsPath = xlsx.worksheets[i];
+  for (const [i, wsPath] of xlsx.worksheets.entries()) {
     const wsEl = xlsx.doc.get(wsPath);
     if (!wsEl) continue;
 
@@ -367,8 +366,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   const chartsheetPaths = xlsx.doc.keys("xl/chartsheets/").filter((k) => k.endsWith(".xml"));
   if (chartsheetPaths.length > 0) {
     const chartsheets: ChartsheetOptions[] = [];
-    for (let i = 0; i < chartsheetPaths.length; i++) {
-      const csEl = xlsx.doc.get(chartsheetPaths[i]);
+    for (const [i, csPath] of chartsheetPaths.entries()) {
+      const csEl = xlsx.doc.get(csPath);
       if (!csEl) continue;
       const csData = chartsheetDesc.parse(csEl, readContext);
       if (sheetNames[worksheets.length + i]) csData.name = sheetNames[worksheets.length + i];

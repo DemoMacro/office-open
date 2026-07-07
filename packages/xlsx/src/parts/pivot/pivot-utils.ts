@@ -866,7 +866,7 @@ export function collectUniqueValues(
     const key = val instanceof Date ? val.toISOString() : String(val);
     if (!seen.has(key)) {
       seen.add(key);
-      result.push(val);
+      result.push(val ?? null);
     }
   }
   return result;

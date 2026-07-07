@@ -21,7 +21,8 @@ const readCtx = {
 function roundTrip(opts: ExternalLinkOptions) {
   const xml = externalLinkDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return externalLinkDesc.parse(el, readCtx) as unknown as ExternalLinkOptions;
 }
 
@@ -55,8 +56,8 @@ describe("externalLinkDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.externalBook?.definedNames).toHaveLength(2);
-    expect(result.externalBook?.definedNames![0].name).toBe("MyRange");
-    expect(result.externalBook?.definedNames![0].refersTo).toBe("Sheet1!$A$1:$B$10");
+    expect(result.externalBook?.definedNames![0]?.name).toBe("MyRange");
+    expect(result.externalBook?.definedNames![0]?.refersTo).toBe("Sheet1!$A$1:$B$10");
   });
 
   it("round-trips external book with sheet data", () => {
@@ -81,9 +82,9 @@ describe("externalLinkDesc round-trip", () => {
     };
     const result = roundTrip(opts);
 
-    const rows = result.externalBook?.sheetDataSet![0].rows!;
+    const rows = result.externalBook?.sheetDataSet![0]?.rows!;
     expect(rows).toHaveLength(1);
-    expect(rows[0].rowNumber).toBe(1);
+    expect(rows[0]?.rowNumber).toBe(1);
   });
 
   it("round-trips OLE link", () => {
@@ -99,6 +100,6 @@ describe("externalLinkDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.oleLink?.oleItems).toHaveLength(2);
-    expect(result.oleLink?.oleItems![0].name).toBe("Item1");
+    expect(result.oleLink?.oleItems![0]?.name).toBe("Item1");
   });
 });

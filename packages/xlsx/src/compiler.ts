@@ -145,8 +145,7 @@ export function compileWorkbook(
 
   const wsContext: WorksheetContext = { sharedStrings: ctx.sharedStrings, styles: ctx.styles };
 
-  for (let i = 0; i < worksheetConfigs.length; i++) {
-    const wsOpts = worksheetConfigs[i];
+  for (const [i, wsOpts] of worksheetConfigs.entries()) {
     const imgOpts = wsOpts.images ?? [];
     const chartOpts = wsOpts.charts ?? [];
     const hlOpts = wsOpts.hyperlinks ?? [];
@@ -158,12 +157,10 @@ export function compileWorkbook(
     // Collect formula cells for calcChain
     const sheetIdx = i + 1;
     const wsRows = wsOpts.rows ?? [];
-    for (let ri = 0; ri < wsRows.length; ri++) {
-      const rowOpts = wsRows[ri];
+    for (const [ri, rowOpts] of wsRows.entries()) {
       const rowNumber = rowOpts.rowNumber ?? ri + 1;
       if (!rowOpts.cells) continue;
-      for (let ci = 0; ci < rowOpts.cells.length; ci++) {
-        const cell = rowOpts.cells[ci];
+      for (const [ci, cell] of rowOpts.cells.entries()) {
         if (!cell.formula) continue;
         const ref = cell.reference ?? columnToLetter(ci + 1) + rowNumber;
         calcCells.push({
@@ -370,8 +367,10 @@ export function compileWorkbook(
           (ws) => (ws.name ?? `Sheet${worksheetConfigs.indexOf(ws) + 1}`) === sourceSheet,
         );
         if (sourceWsIdx === -1) continue;
+        const sourceWs = worksheetConfigs[sourceWsIdx];
+        if (!sourceWs) continue;
 
-        const sourceRows = worksheetConfigs[sourceWsIdx].rows ?? [];
+        const sourceRows = sourceWs.rows ?? [];
         const sourceData = extractPivotSourceData(sourceRows, pt.source);
 
         // Deduplicate pivot caches by source reference
@@ -546,9 +545,7 @@ export function compileWorkbook(
   }
 
   // Chartsheets — chart-only sheets
-  for (let i = 0; i < chartsheetConfigs.length; i++) {
-    const csOpts = chartsheetConfigs[i];
-
+  for (const [i, csOpts] of chartsheetConfigs.entries()) {
     // Register chart in the charts collection
     const chartDef = csOpts.chart;
     const csChartGlobalIdx = ctx.charts.array.length;
@@ -661,6 +658,7 @@ export function compileWorkbook(
 
       // Create the rels file for this external link
       const elOpts = extLinks[ei];
+      if (!elOpts) continue;
       let bookRId: string | undefined;
       if (elOpts.externalBook?.target) {
         const elRels = new Relationships();
@@ -722,8 +720,7 @@ export function compileWorkbook(
   };
 
   // Charts — AFTER worksheets so charts are registered
-  for (let i = 0; i < ctx.charts.array.length; i++) {
-    const chartData = ctx.charts.array[i];
+  for (const [i, chartData] of ctx.charts.array.entries()) {
     mapping[`Chart${i}`] = {
       data: XML_DECL + chartData.chartSpaceXml,
       path: `xl/charts/chart${i + 1}.xml`,
@@ -770,9 +767,9 @@ export function compileWorkbook(
 
     // One revision log per header entry, plus revisionHeaders.xml.rels pointing to each.
     const revHeadersRels = new Relationships();
-    for (let i = 0; i < rl.logs.length; i++) {
+    for (const [i, log] of rl.logs.entries()) {
       mapping[`RevisionLog${i}`] = {
-        data: XML_DECL + (revisionLogDesc.stringify(rl.logs[i], ctx) ?? ""),
+        data: XML_DECL + (revisionLogDesc.stringify(log, ctx) ?? ""),
         path: `xl/revisions/revision${i + 1}.xml`,
       };
       ctx.contentTypes.addRevisionLog(i + 1);
@@ -900,10 +897,10 @@ function extractPivotSourceData(rows: RowOptions[], sourceRef: string): PivotSou
     return { fieldNames: [], records: [] };
   }
 
-  const startRow = parseInt(startMatch[2], 10) - 1;
-  const endRow = endMatch ? parseInt(endMatch[2], 10) - 1 : startRow;
-  const startCol = colLetterToIndex(startMatch[1]);
-  const endCol = endMatch ? colLetterToIndex(endMatch[1]) : startCol;
+  const startRow = parseInt(startMatch[2] ?? "1", 10) - 1;
+  const endRow = endMatch ? parseInt(endMatch[2] ?? "1", 10) - 1 : startRow;
+  const startCol = colLetterToIndex(startMatch[1] ?? "A");
+  const endCol = endMatch ? colLetterToIndex(endMatch[1] ?? "A") : startCol;
   const colCount = endCol - startCol + 1;
 
   // First row is headers
@@ -971,8 +968,8 @@ function renderPivotSheetData(
     const locMatch = location.match(/^([A-Z]+)(\d+)$/);
     if (!locMatch) continue;
 
-    const startCol = colLetterToIndex(locMatch[1]);
-    const startRow = parseInt(locMatch[2], 10);
+    const startCol = colLetterToIndex(locMatch[1] ?? "A");
+    const startRow = parseInt(locMatch[2] ?? "1", 10);
     const rowFieldNames = pt.rows;
     const dataFields = pt.data;
 
@@ -1008,10 +1005,10 @@ function renderPivotSheetData(
         };
         groupMap.set(groupKey, group);
       }
-      for (let di = 0; di < dataFieldIndices.length; di++) {
-        const val = record[dataFieldIndices[di]];
+      for (const [di, fi] of dataFieldIndices.entries()) {
+        const val = record[fi];
         if (typeof val === "number") {
-          group.values[di].push(val);
+          group.values[di]?.push(val);
         }
       }
     }
@@ -1034,8 +1031,8 @@ function renderPivotSheetData(
     if (colFieldIndices.length > 0 && !colFieldIndices.some((idx) => idx === -1)) {
       // --- Cross-tab layout (with column fields) ---
       // Unique column values for the first column field
-      const colUniqueVals = collectUniqueValues(sourceData.records, colFieldIndices[0]).map((v) =>
-        typeof v === "string" || typeof v === "number" ? String(v) : String(v ?? ""),
+      const colUniqueVals = collectUniqueValues(sourceData.records, colFieldIndices[0] ?? 0).map(
+        (v) => (typeof v === "string" || typeof v === "number" ? String(v) : String(v ?? "")),
       );
 
       // Build cross-tab map: rowKey → colKey → aggregated values per data field
@@ -1063,11 +1060,11 @@ function renderPivotSheetData(
           colValues = dataFieldIndices.map(() => []);
           entry.colData.set(colKey, colValues);
         }
-        for (let di = 0; di < dataFieldIndices.length; di++) {
-          const val = record[dataFieldIndices[di]];
+        for (const [di, fi] of dataFieldIndices.entries()) {
+          const val = record[fi];
           if (typeof val === "number") {
-            colValues[di].push(val);
-            entry.rowTotals[di].push(val);
+            colValues[di]?.push(val);
+            entry.rowTotals[di]?.push(val);
           }
         }
       }
@@ -1094,7 +1091,8 @@ function renderPivotSheetData(
       // Last header cell: data field name (e.g., "Total Revenue")
       {
         const cellRef = colIndexToLetter(startCol + headerCells.length) + startRow;
-        const df0 = dataFields[0];
+        // Pivot layout requires at least one data field, so index 0 always exists.
+        const df0 = dataFields[0]!;
         const subtotal = df0.summarize ?? "sum";
         const dfName = df0.name ?? `${subtotal === "sum" ? "Sum" : subtotal} of ${df0.field}`;
         const strIdx = sharedStrings.register(dfName);
@@ -1107,27 +1105,26 @@ function renderPivotSheetData(
       for (const [, entry] of crossTabMap) {
         const cells: string[] = [];
         // Row label
-        for (let ri = 0; ri < entry.rowKeys.length; ri++) {
+        for (const [ri, rowKey] of entry.rowKeys.entries()) {
           const cellRef = colIndexToLetter(startCol + ri) + currentRow;
-          const strIdx = sharedStrings.register(String(entry.rowKeys[ri]));
+          const strIdx = sharedStrings.register(String(rowKey));
           cells.push(`<c r="${cellRef}" t="s"><v>${strIdx}</v></c>`);
         }
         // Column values for each unique column value
-        for (let ci = 0; ci < numColVals; ci++) {
-          const colKey = colUniqueVals[ci];
+        for (const [ci, colKey] of colUniqueVals.entries()) {
           const colValues = entry.colData.get(colKey);
           const colOffset = rowFieldNames.length + ci;
           const cellRef = colIndexToLetter(startCol + colOffset) + currentRow;
-          const subtotal = dataFields[0].summarize ?? "sum";
-          const result = colValues ? aggregate(colValues[0], subtotal) : 0;
+          const subtotal = dataFields[0]!.summarize ?? "sum";
+          const result = colValues ? aggregate(colValues[0] ?? [], subtotal) : 0;
           cells.push(`<c r="${cellRef}"><v>${result}</v></c>`);
         }
         // Row total (last column)
         {
           const colOffset = rowFieldNames.length + numColVals;
           const cellRef = colIndexToLetter(startCol + colOffset) + currentRow;
-          const subtotal = dataFields[0].summarize ?? "sum";
-          const result = aggregate(entry.rowTotals[0], subtotal);
+          const subtotal = dataFields[0]!.summarize ?? "sum";
+          const result = aggregate(entry.rowTotals[0] ?? [], subtotal);
           cells.push(`<c r="${cellRef}"><v>${result}</v></c>`);
         }
         addCells(currentRow, cells);
@@ -1140,14 +1137,14 @@ function renderPivotSheetData(
       gtCells.push(
         `<c r="${colIndexToLetter(startCol)}${currentRow}" t="s"><v>${gtStrIdx}</v></c>`,
       );
-      for (let ci = 0; ci < numColVals; ci++) {
-        const colKey = colUniqueVals[ci];
-        const subtotal = dataFields[0].summarize ?? "sum";
+      for (const [ci, colKey] of colUniqueVals.entries()) {
+        const subtotal = dataFields[0]!.summarize ?? "sum";
         const colAllValues: number[] = [];
+        const dfIdx0 = dataFieldIndices[0];
         for (const record of sourceData.records) {
           const recColKey = colFieldIndices.map((fi) => String(record[fi])).join("|");
-          if (recColKey === colKey) {
-            const val = record[dataFieldIndices[0]];
+          if (recColKey === colKey && dfIdx0 !== undefined) {
+            const val = record[dfIdx0];
             if (typeof val === "number") colAllValues.push(val);
           }
         }
@@ -1158,9 +1155,10 @@ function renderPivotSheetData(
       }
       // Grand total (bottom-right)
       {
-        const subtotal = dataFields[0].summarize ?? "sum";
+        const subtotal = dataFields[0]!.summarize ?? "sum";
+        const dfIdx0 = dataFieldIndices[0];
         const allValues = sourceData.records
-          .map((r) => r[dataFieldIndices[0]])
+          .map((r) => (dfIdx0 !== undefined ? r[dfIdx0] : undefined))
           .filter((v): v is number => typeof v === "number");
         const colOffset = rowFieldNames.length + numColVals;
         const cellRef = colIndexToLetter(startCol + colOffset) + currentRow;
@@ -1194,16 +1192,16 @@ function renderPivotSheetData(
       let currentRow = startRow + 1;
       for (const [, group] of groupMap) {
         const cells: string[] = [];
-        for (let ri = 0; ri < group.keys.length; ri++) {
+        for (const [ri, key] of group.keys.entries()) {
           const cellRef = colIndexToLetter(startCol + ri) + currentRow;
-          const strIdx = sharedStrings.register(String(group.keys[ri]));
+          const strIdx = sharedStrings.register(String(key));
           cells.push(`<c r="${cellRef}" t="s"><v>${strIdx}</v></c>`);
         }
-        for (let di = 0; di < dataFields.length; di++) {
+        for (const [di, df] of dataFields.entries()) {
           const colOffset = rowFieldNames.length + di;
           const cellRef = colIndexToLetter(startCol + colOffset) + currentRow;
-          const subtotal = dataFields[di].summarize ?? "sum";
-          const result = aggregate(group.values[di], subtotal);
+          const subtotal = df.summarize ?? "sum";
+          const result = aggregate(group.values[di] ?? [], subtotal);
           cells.push(`<c r="${cellRef}"><v>${result}</v></c>`);
         }
         addCells(currentRow, cells);
@@ -1216,12 +1214,13 @@ function renderPivotSheetData(
       gtCells.push(
         `<c r="${colIndexToLetter(startCol)}${currentRow}" t="s"><v>${gtStrIdx}</v></c>`,
       );
-      for (let di = 0; di < dataFields.length; di++) {
+      for (const [di, df] of dataFields.entries()) {
         const colOffset = rowFieldNames.length + di;
         const cellRef = colIndexToLetter(startCol + colOffset) + currentRow;
-        const subtotal = dataFields[di].summarize ?? "sum";
+        const subtotal = df.summarize ?? "sum";
+        const dfIdx = dataFieldIndices[di];
         const allValues = sourceData.records
-          .map((r) => r[dataFieldIndices[di]])
+          .map((r) => (dfIdx !== undefined ? r[dfIdx] : undefined))
           .filter((v): v is number => typeof v === "number");
         const result = aggregate(allValues, subtotal);
         gtCells.push(`<c r="${cellRef}"><v>${result}</v></c>`);

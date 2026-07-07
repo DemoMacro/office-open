@@ -884,7 +884,7 @@ function buildRowItems(sd: PivotSourceData, rowIndices: number[]): string {
   }
 
   if (rowIndices.length === 1) {
-    const count = allUniqueCounts[0];
+    const count = allUniqueCounts[0] ?? 0;
     const parts: string[] = [`<rowItems count="${count + 1}">`];
     for (let i = 0; i < count; i++) parts.push(`<i><x v="${i}"/></i>`);
     parts.push(`<i t="grand"><x/></i>`);
@@ -937,13 +937,12 @@ function buildColItems(
 function buildDataFields(dataFields: PivotDataField[], dataFieldIndices: number[]): string {
   if (dataFields.length === 0) return '<dataFields count="0"/>';
   const parts: string[] = [`<dataFields count="${dataFields.length}">`];
-  for (let i = 0; i < dataFields.length; i++) {
-    const df = dataFields[i];
+  for (const [i, df] of dataFields.entries()) {
     const subtotal = df.summarize ?? "sum";
     const name = df.name ?? `${subtotal === "sum" ? "Sum" : subtotal} of ${df.field}`;
     const dfAttrs: string[] = [
       `name="${escapeXml(name)}"`,
-      `fld="${dataFieldIndices[i]}"`,
+      `fld="${dataFieldIndices[i] ?? 0}"`,
       `subtotal="${subtotal}"`,
     ];
     if (df.showDataAs) dfAttrs.push(`showDataAs="${df.showDataAs}"`);
@@ -962,21 +961,23 @@ function computeLocationRef(
   colFieldIndices: number[],
   dataFields: PivotDataField[],
 ): string {
-  const startCell = location.split(":")[0];
+  const startCell = location.split(":")[0] ?? location;
   const match = startCell.match(/^([A-Z]+)(\d+)$/);
   if (!match) return location;
-  const startCol = match[1];
-  const startRow = parseInt(match[2], 10);
+  const startCol = match[1] ?? "";
+  const startRow = parseInt(match[2] ?? "0", 10);
 
   let rowCount = 1;
-  if (rowFieldIndices.length > 0) {
-    rowCount += collectUniqueValues(sd.records, rowFieldIndices[0]).length;
+  const rowFieldIndex0 = rowFieldIndices[0];
+  if (rowFieldIndex0 !== undefined) {
+    rowCount += collectUniqueValues(sd.records, rowFieldIndex0).length;
   }
   rowCount += 1;
 
   let colCount = Math.max(rowFieldIndices.length, 1);
-  if (colFieldIndices.length > 0) {
-    colCount += collectUniqueValues(sd.records, colFieldIndices[0]).length;
+  const colFieldIndex0 = colFieldIndices[0];
+  if (colFieldIndex0 !== undefined) {
+    colCount += collectUniqueValues(sd.records, colFieldIndex0).length;
   } else if (dataFields.length > 1) {
     colCount += dataFields.length - 1;
   }

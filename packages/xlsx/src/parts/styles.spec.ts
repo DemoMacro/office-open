@@ -155,7 +155,8 @@ describe("Styles", () => {
     function roundTripStyles(styles: Styles): StylesParseResult {
       const xml = stylesDesc.stringify({ styles }, undefined as unknown as WriteContext)!;
       const doc = parseXml(xml);
-      const el = doc.elements![0];
+      const el = doc.elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
       return stylesDesc.parse(
         el,
         undefined as unknown as ReadContext,
@@ -207,8 +208,8 @@ describe("Styles", () => {
       expect(grad!.gradientTop).toBe(20);
       expect(grad!.gradientBottom).toBe(80);
       expect(grad!.stops).toHaveLength(2);
-      expect(grad!.stops![0].color).toBe("FF0000");
-      expect(grad!.stops![1].color).toBe("0000FF");
+      expect(grad!.stops![0]?.color).toBe("FF0000");
+      expect(grad!.stops![1]?.color).toBe("0000FF");
     });
   });
 });

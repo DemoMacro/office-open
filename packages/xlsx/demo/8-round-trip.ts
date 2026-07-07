@@ -153,12 +153,13 @@ console.log("\n--- parseWorkbook (high-level) ---");
 const parsed = parseWorkbook(buffer);
 
 assert("2 worksheets parsed", parsed.worksheets!.length === 2);
-assert("sheet 1 name", parsed.worksheets![0].name === "Data");
-assert("sheet 2 name", parsed.worksheets![1].name === "Numbers");
+assert("sheet 1 name", parsed.worksheets![0]?.name === "Data");
+assert("sheet 2 name", parsed.worksheets![1]?.name === "Numbers");
 assert("title preserved", parsed.title === "Round Trip Test");
 assert("creator preserved", parsed.creator === "XLSX Parser");
 
 const sheet1 = parsed.worksheets![0];
+if (!sheet1) throw new Error("expected sheet 1 to be parsed");
 assert("sheet 1 has 4 rows", sheet1.rows!.length === 4);
 assert("sheet 1 has columns", sheet1.columns!.length === 1);
 assert("sheet 1 has mergeCells", sheet1.mergeCells!.length === 1);

@@ -228,7 +228,8 @@ const LARGE_ROWS_OPTS = {
         cells: row.map((v) => ({ value: v })),
       })),
       images: Array.from({ length: 10 }, (_, i) => ({
-        data: LARGE_IMAGES[i],
+        // LARGE_IMAGES has 20 entries; i < 10, so the index is always in range.
+        data: LARGE_IMAGES[i]!,
         type: "jpg" as const,
         col: 5,
         row: i * 200,
@@ -259,7 +260,8 @@ const LARGE_SHEETS_OPTS = {
     })),
     images: [
       {
-        data: LARGE_IMAGES[si % LARGE_IMAGES.length],
+        // LARGE_IMAGES has 20 entries; si % 20 is always in range.
+        data: LARGE_IMAGES[si % LARGE_IMAGES.length]!,
         type: "jpg" as const,
         col: 3,
         row: 50,
@@ -310,7 +312,8 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
             name: "Sheet1",
             rows: LARGE_ROWS,
             images: Array.from({ length: 10 }, (_, i) => ({
-              data: LARGE_IMAGES[i],
+              // LARGE_IMAGES has 20 entries; i < 10, so the index is always in range.
+              data: LARGE_IMAGES[i]!,
               type: "jpeg" as const,
               anchor: { from: { row: i * 200, col: 5 } },
               altText: `Image ${i + 1}`,
@@ -408,7 +411,8 @@ describe("XLSX: Large Files — Create + toBuffer", () => {
         ]),
         images: [
           {
-            data: LARGE_IMAGES[si % LARGE_IMAGES.length],
+            // LARGE_IMAGES has 20 entries; si % 20 is always in range.
+            data: LARGE_IMAGES[si % LARGE_IMAGES.length]!,
             type: "jpeg" as const,
             anchor: { from: { row: 50, col: 3 } },
             altText: `Image for sheet ${si + 1}`,

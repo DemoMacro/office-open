@@ -194,8 +194,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
 
     // tableColumns (required)
     p.push(`<tableColumns count="${o.columns.length}">`);
-    for (let i = 0; i < o.columns.length; i++) {
-      const col = o.columns[i];
+    for (const [i, col] of o.columns.entries()) {
       const colAttrs: Record<string, string | number | boolean | undefined> = {
         id: i + 1,
         name: col.name,

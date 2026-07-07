@@ -390,12 +390,13 @@ export class Styles {
   private styleExtensions?: StyleExtensionOptions[];
 
   public constructor() {
-    // Pre-register default font/fill/border keys
-    this.fontKeys.set(fontKey(this.fonts[0]), 0);
-    this.fillKeys.set(fillKey(this.fills[0]), 0);
-    this.fillKeys.set(fillKey(this.fills[1]), 1);
-    this.borderKeys.set(borderKey(this.borders[0]), 0);
-    this.cellXfKeys.set(this.cellXfKey(this.cellXfs[0]), 0);
+    // Pre-register default font/fill/border keys. These arrays are seeded
+    // inline above, so index 0/1 always exist.
+    this.fontKeys.set(fontKey(this.fonts[0]!), 0);
+    this.fillKeys.set(fillKey(this.fills[0]!), 0);
+    this.fillKeys.set(fillKey(this.fills[1]!), 1);
+    this.borderKeys.set(borderKey(this.borders[0]!), 0);
+    this.cellXfKeys.set(this.cellXfKey(this.cellXfs[0]!), 0);
   }
 
   /**

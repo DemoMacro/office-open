@@ -19,7 +19,8 @@ const readCtx = {
 function roundTrip(opts: DrawingOptions) {
   const xml = drawingDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return drawingDesc.parse(el, readCtx);
 }
 
@@ -37,9 +38,9 @@ describe("drawingDesc round-trip", () => {
     const images = result.images!;
 
     expect(images).toHaveLength(1);
-    expect(images[0].col).toBe(2);
-    expect(images[0].row).toBe(3);
-    expect(images[0].rId).toBe("rId1");
+    expect(images[0]?.col).toBe(2);
+    expect(images[0]?.row).toBe(3);
+    expect(images[0]?.rId).toBe("rId1");
   });
 
   it("round-trips image with offsets", () => {
@@ -49,8 +50,8 @@ describe("drawingDesc round-trip", () => {
     const result = roundTrip(opts);
     const images = result.images!;
 
-    expect(images[0].colOffset).toBe(50000);
-    expect(images[0].rowOffset).toBe(25000);
+    expect(images[0]?.colOffset).toBe(50000);
+    expect(images[0]?.rowOffset).toBe(25000);
   });
 
   it("round-trips image locksWithSheet and printsWithSheet", () => {
@@ -60,8 +61,8 @@ describe("drawingDesc round-trip", () => {
     const result = roundTrip(opts);
     const images = result.images!;
 
-    expect(images[0].locksWithSheet).toBe(false);
-    expect(images[0].printsWithSheet).toBe(false);
+    expect(images[0]?.locksWithSheet).toBe(false);
+    expect(images[0]?.printsWithSheet).toBe(false);
   });
 
   it("round-trips multiple images", () => {
@@ -75,8 +76,8 @@ describe("drawingDesc round-trip", () => {
     const images = result.images!;
 
     expect(images).toHaveLength(2);
-    expect(images[1].col).toBe(5);
-    expect(images[1].row).toBe(10);
+    expect(images[1]?.col).toBe(5);
+    expect(images[1]?.row).toBe(10);
   });
 
   it("round-trips chart", () => {
@@ -87,7 +88,7 @@ describe("drawingDesc round-trip", () => {
     const charts = result.charts!;
 
     expect(charts).toHaveLength(1);
-    expect(charts[0].rId).toBe("rId3");
+    expect(charts[0]?.rId).toBe("rId3");
   });
 
   it("round-trips chart with offsets", () => {
@@ -97,10 +98,10 @@ describe("drawingDesc round-trip", () => {
     const result = roundTrip(opts);
     const charts = result.charts!;
 
-    expect(charts[0].col).toBe(3);
-    expect(charts[0].row).toBe(5);
-    expect(charts[0].colOffset).toBe(10000);
-    expect(charts[0].rowOffset).toBe(20000);
+    expect(charts[0]?.col).toBe(3);
+    expect(charts[0]?.row).toBe(5);
+    expect(charts[0]?.colOffset).toBe(10000);
+    expect(charts[0]?.rowOffset).toBe(20000);
   });
 
   it("round-trips mixed images and charts", () => {

@@ -21,7 +21,8 @@ const readCtx = {
 function roundTrip(opts: CalcChainOptions) {
   const xml = calcChainDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return calcChainDesc.parse(el, readCtx) as unknown as CalcChainOptions;
 }
 
@@ -35,9 +36,9 @@ describe("calcChainDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.cells).toHaveLength(1);
-    expect(result.cells![0].reference).toBe("A1");
-    expect(result.cells![0].sheetIndex).toBe(1);
-    expect(result.cells![0].array).toBeUndefined();
+    expect(result.cells![0]?.reference).toBe("A1");
+    expect(result.cells![0]?.sheetIndex).toBe(1);
+    expect(result.cells![0]?.array).toBeUndefined();
   });
 
   it("round-trips cell with array formula flag", () => {
@@ -46,7 +47,7 @@ describe("calcChainDesc round-trip", () => {
     };
     const result = roundTrip(opts);
 
-    expect(result.cells![0].array).toBe(true);
+    expect(result.cells![0]?.array).toBe(true);
   });
 
   it("round-trips multiple cells across sheets", () => {
@@ -60,10 +61,10 @@ describe("calcChainDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.cells).toHaveLength(3);
-    expect(result.cells![0].reference).toBe("A1");
-    expect(result.cells![0].sheetIndex).toBe(1);
-    expect(result.cells![2].reference).toBe("A1");
-    expect(result.cells![2].sheetIndex).toBe(2);
-    expect(result.cells![2].array).toBe(true);
+    expect(result.cells![0]?.reference).toBe("A1");
+    expect(result.cells![0]?.sheetIndex).toBe(1);
+    expect(result.cells![2]?.reference).toBe("A1");
+    expect(result.cells![2]?.sheetIndex).toBe(2);
+    expect(result.cells![2]?.array).toBe(true);
   });
 });

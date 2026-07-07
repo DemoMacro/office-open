@@ -152,6 +152,7 @@ export class XlsxReadContext implements ReadContext {
     const { cellXfs, fonts, fills, borders, customNumFmtById } = ps;
     if (!cellXfs || styleIndex >= cellXfs.length) return undefined;
     const xf = cellXfs[styleIndex];
+    if (!xf) return undefined;
     const result: StyleOptions = {};
 
     const fontId = xf.fontId;

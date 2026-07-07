@@ -42,21 +42,21 @@ describe("parseWorkbook round-trip", () => {
     };
 
     const parsed = await roundTrip(opts);
-    const rows = parsed.worksheets![0].rows!;
-    const a1 = rows[0].cells![0];
-    const a2 = rows[0].cells![1];
+    const rows = parsed.worksheets![0]?.rows!;
+    const a1 = rows[0]?.cells![0];
+    const a2 = rows[0]?.cells![1];
 
     // Resolved style objects must be present (not just raw indices).
-    expect(a1.style).toBeDefined();
-    expect(a2.style).toBeDefined();
-    expect(a1.style!.font?.bold).toBe(true);
-    expect(a2.style!.font?.italic).toBe(true);
+    expect(a1?.style).toBeDefined();
+    expect(a2?.style).toBeDefined();
+    expect(a1?.style!.font?.bold).toBe(true);
+    expect(a2?.style!.font?.italic).toBe(true);
 
     // And the formatting survives a second generate→parse cycle intact.
     const reparsed = await roundTrip(parsed);
-    const r2 = reparsed.worksheets![0].rows![0].cells!;
-    expect(r2[0].style!.font?.bold).toBe(true);
-    expect(r2[1].style!.font?.italic).toBe(true);
+    const r2 = reparsed.worksheets![0]?.rows![0]?.cells!;
+    expect(r2[0]?.style!.font?.bold).toBe(true);
+    expect(r2[1]?.style!.font?.italic).toBe(true);
   });
 
   it("round-trips dxfs from options through the workbook", async () => {
@@ -88,6 +88,6 @@ describe("parseWorkbook round-trip", () => {
     expect(parsed.externalLinks).toHaveLength(1);
     // The target lives in xl/externalLinks/_rels/externalLink1.xml.rels, not in
     // the externalLink XML body — this asserts the rels file is actually read.
-    expect(parsed.externalLinks![0].externalBook?.target).toBe("external/source.xlsx");
+    expect(parsed.externalLinks![0]?.externalBook?.target).toBe("external/source.xlsx");
   });
 });

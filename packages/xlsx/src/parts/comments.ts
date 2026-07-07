@@ -112,8 +112,7 @@ export const vmlNotesDesc: CustomDescriptor<CommentsDocOptions> = {
       "</v:shapetype>",
     ];
 
-    for (let i = 0; i < opts.comments.length; i++) {
-      const c = opts.comments[i];
+    for (const [i, c] of opts.comments.entries()) {
       const { col, row } = cellRefToVmlCoords(c.cell);
       const anchor = `${col}, 0, ${row}, 0, ${col + 2}, 0, ${row + 2}, 0`;
       p.push(

@@ -24,14 +24,16 @@ const readCtx = {
 function roundTripDef(opts: PivotCacheDefDescriptorOptions) {
   const xml = pivotCacheDefDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return pivotCacheDefDesc.parse(el, readCtx);
 }
 
 function roundTripRecords(opts: PivotCacheRecordsDescriptorOptions) {
   const xml = pivotCacheRecordsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return pivotCacheRecordsDesc.parse(el, readCtx);
 }
 
@@ -61,8 +63,8 @@ describe("pivotCacheDefDesc round-trip", () => {
 
     const fields = result.cacheFields!;
     expect(fields).toHaveLength(2);
-    expect(fields[0].name).toBe("Name");
-    expect(fields[1].name).toBe("Amount");
+    expect(fields[0]?.name).toBe("Name");
+    expect(fields[1]?.name).toBe("Amount");
   });
 
   it("round-trips cache fields with shared items", () => {
@@ -76,12 +78,12 @@ describe("pivotCacheDefDesc round-trip", () => {
 
     const fields = result.cacheFields!;
     // "Name" field has string shared items
-    const nameItems = fields[0].sharedItems!;
+    const nameItems = fields[0]?.sharedItems!;
     expect(nameItems).toContain("Alice");
     expect(nameItems).toContain("Bob");
 
     // "Amount" field has numeric shared items
-    const amountItems = fields[1].sharedItems!;
+    const amountItems = fields[1]?.sharedItems!;
     expect(amountItems).toContain(100);
     expect(amountItems).toContain(200);
   });
@@ -104,11 +106,11 @@ describe("pivotCacheRecordsDesc round-trip", () => {
 
     // First record: string index + number
     expect(records[0]).toHaveLength(2);
-    expect(records[0][0].type).toBe("string");
-    expect(records[0][1]).toEqual({ type: "number", v: 100 });
+    expect(records[0]?.[0]?.type).toBe("string");
+    expect(records[0]?.[1]).toEqual({ type: "number", v: 100 });
 
     // Second record
     expect(records[1]).toHaveLength(2);
-    expect(records[1][1]).toEqual({ type: "number", v: 200 });
+    expect(records[1]?.[1]).toEqual({ type: "number", v: 200 });
   });
 });

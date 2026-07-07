@@ -109,7 +109,7 @@ const toExcelSerial = (date: Date): number => (date.getTime() - EXCEL_EPOCH_MS) 
 /** Human-readable form for string-substitution (mixed-text) fallback. */
 const toDisplayString = (value: Exclude<ScalarValue, string>): string => {
   if (typeof value === "boolean") return value ? "TRUE" : "FALSE";
-  if (value instanceof Date) return value.toISOString().split("T")[0];
+  if (value instanceof Date) return value.toISOString().split("T")[0] ?? "";
   return String(value);
 };
 
@@ -635,8 +635,8 @@ function insertLegacyDrawing(wsRoot: Element, rId: string): void {
     "webPublishItems",
   ]);
   let insertAt = els.length;
-  for (let i = 0; i < els.length; i++) {
-    if (afterLegacy.has(localName(els[i]))) {
+  for (const [i, el] of els.entries()) {
+    if (afterLegacy.has(localName(el))) {
       insertAt = i;
       break;
     }

@@ -21,7 +21,8 @@ const readCtx = {
 function roundTrip(opts: WorkbookDescriptorOptions) {
   const xml = workbookDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return workbookDesc.parse(el, readCtx) as unknown as WorkbookDescriptorOptions;
 }
 
@@ -38,10 +39,10 @@ describe("workbookDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.sheets).toHaveLength(2);
-    expect(result.sheets[0].name).toBe("Sheet1");
-    expect(result.sheets[0].sheetId).toBe(1);
-    expect(result.sheets[0].rId).toBe("rId1");
-    expect(result.sheets[1].name).toBe("Sheet2");
+    expect(result.sheets[0]?.name).toBe("Sheet1");
+    expect(result.sheets[0]?.sheetId).toBe(1);
+    expect(result.sheets[0]?.rId).toBe("rId1");
+    expect(result.sheets[1]?.name).toBe("Sheet2");
   });
 
   it("round-trips sheet with hidden state", () => {
@@ -50,7 +51,7 @@ describe("workbookDesc round-trip", () => {
     };
     const result = roundTrip(opts);
 
-    expect(result.sheets[0].state).toBe("hidden");
+    expect(result.sheets[0]?.state).toBe("hidden");
   });
 
   it("round-trips workbook protection", () => {
@@ -122,8 +123,8 @@ describe("workbookDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.pivotCaches).toHaveLength(2);
-    expect(result.pivotCaches![0].cacheId).toBe(1);
-    expect(result.pivotCaches![1].rId).toBe("rId6");
+    expect(result.pivotCaches![0]?.cacheId).toBe(1);
+    expect(result.pivotCaches![1]?.rId).toBe("rId6");
   });
 
   it("round-trips function groups", () => {
