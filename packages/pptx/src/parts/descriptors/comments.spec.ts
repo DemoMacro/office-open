@@ -22,7 +22,8 @@ describe("commentAuthorsDesc round-trip", () => {
   function roundTrip(authors: AuthorEntry[]) {
     const xml = commentAuthorsDesc.stringify(authors, writeCtx)!;
     const doc = parseXml(xml);
-    const el = doc.elements![0];
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     return commentAuthorsDesc.parse(el, readCtx) as AuthorEntry[];
   }
 
@@ -31,11 +32,11 @@ describe("commentAuthorsDesc round-trip", () => {
     const result = roundTrip(authors);
 
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe(0);
-    expect(result[0].name).toBe("Alice");
-    expect(result[0].initials).toBe("A");
-    expect(result[0].clrIdx).toBe(0);
-    expect(result[0].lastIdx).toBe(0);
+    expect(result[0]?.id).toBe(0);
+    expect(result[0]?.name).toBe("Alice");
+    expect(result[0]?.initials).toBe("A");
+    expect(result[0]?.clrIdx).toBe(0);
+    expect(result[0]?.lastIdx).toBe(0);
   });
 
   it("round-trips multiple authors", () => {
@@ -46,10 +47,10 @@ describe("commentAuthorsDesc round-trip", () => {
     const result = roundTrip(authors);
 
     expect(result).toHaveLength(2);
-    expect(result[0].name).toBe("Alice");
-    expect(result[1].name).toBe("Bob");
-    expect(result[1].id).toBe(1);
-    expect(result[1].clrIdx).toBe(1);
+    expect(result[0]?.name).toBe("Alice");
+    expect(result[1]?.name).toBe("Bob");
+    expect(result[1]?.id).toBe(1);
+    expect(result[1]?.clrIdx).toBe(1);
   });
 });
 
@@ -59,7 +60,8 @@ describe("slideCommentsDesc round-trip", () => {
   function roundTrip(comments: CommentEntry[]) {
     const xml = slideCommentsDesc.stringify(comments, writeCtx)!;
     const doc = parseXml(xml);
-    const el = doc.elements![0];
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     return slideCommentsDesc.parse(el, readCtx) as CommentEntry[];
   }
 
@@ -68,11 +70,11 @@ describe("slideCommentsDesc round-trip", () => {
     const result = roundTrip(comments);
 
     expect(result).toHaveLength(1);
-    expect(result[0].authorId).toBe(0);
-    expect(result[0].idx).toBe(1);
-    expect(result[0].x).toBe(100);
-    expect(result[0].y).toBe(200);
-    expect(result[0].text).toBe("Hello");
+    expect(result[0]?.authorId).toBe(0);
+    expect(result[0]?.idx).toBe(1);
+    expect(result[0]?.x).toBe(100);
+    expect(result[0]?.y).toBe(200);
+    expect(result[0]?.text).toBe("Hello");
   });
 
   it("round-trips comment with date", () => {
@@ -81,7 +83,7 @@ describe("slideCommentsDesc round-trip", () => {
     ];
     const result = roundTrip(comments);
 
-    expect(result[0].date).toBe("2024-01-15T10:30:00Z");
+    expect(result[0]?.date).toBe("2024-01-15T10:30:00Z");
   });
 
   it("round-trips comment with modified flag", () => {
@@ -90,7 +92,7 @@ describe("slideCommentsDesc round-trip", () => {
     ];
     const result = roundTrip(comments);
 
-    expect(result[0].modified).toBe(true);
+    expect(result[0]?.modified).toBe(true);
   });
 
   it("round-trips multiple comments", () => {
@@ -101,8 +103,8 @@ describe("slideCommentsDesc round-trip", () => {
     const result = roundTrip(comments);
 
     expect(result).toHaveLength(2);
-    expect(result[1].authorId).toBe(1);
-    expect(result[1].text).toBe("Second");
+    expect(result[1]?.authorId).toBe(1);
+    expect(result[1]?.text).toBe("Second");
   });
 
   it("round-trips special characters in text", () => {
@@ -111,6 +113,6 @@ describe("slideCommentsDesc round-trip", () => {
     ];
     const result = roundTrip(comments);
 
-    expect(result[0].text).toBe('<Tag> & "quotes"');
+    expect(result[0]?.text).toBe('<Tag> & "quotes"');
   });
 });

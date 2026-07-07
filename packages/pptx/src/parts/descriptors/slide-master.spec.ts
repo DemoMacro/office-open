@@ -16,7 +16,8 @@ function roundTrip(opts: SlideMasterDescriptorOptions) {
   const xml = slideMasterDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return slideMasterDesc.parse(el, readCtx);
 }
 
@@ -41,8 +42,8 @@ describe("slideMasterDesc round-trip", () => {
     // root p:sldMaster tag is stripped — the result starts with p:cSld.
     const doc2 = parseXml(result.master);
     expect(doc2.elements).toBeDefined();
-    expect(doc2.elements!.length).toBe(1);
-    expect(doc2.elements![0].name).toBe("p:cSld");
+    expect(doc2.elements?.length).toBe(1);
+    expect(doc2.elements?.[0]?.name).toBe("p:cSld");
   });
 
   it("round-trips a slide master with nested content", () => {

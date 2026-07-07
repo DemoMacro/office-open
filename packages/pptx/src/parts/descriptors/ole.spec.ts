@@ -21,7 +21,8 @@ const readCtx = {
 function roundTrip(opts: OleDescriptorOptions) {
   const xml = oleDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return oleDesc.parse(el, readCtx);
 }
 

@@ -342,11 +342,11 @@ function parseDuration(val: string): number | undefined {
   if (val.startsWith("PT")) {
     let ms = 0;
     const sMatch = val.match(/(\d+\.?\d*)S/);
-    if (sMatch) ms += Math.round(parseFloat(sMatch[1]) * 1000);
+    if (sMatch) ms += Math.round(parseFloat(sMatch[1] ?? "") * 1000);
     const mMatch = val.match(/(\d+\.?\d*)M/);
-    if (mMatch) ms += Math.round(parseFloat(mMatch[1]) * 60000);
+    if (mMatch) ms += Math.round(parseFloat(mMatch[1] ?? "") * 60000);
     const hMatch = val.match(/(\d+\.?\d*)H/);
-    if (hMatch) ms += Math.round(parseFloat(hMatch[1]) * 3600000);
+    if (hMatch) ms += Math.round(parseFloat(hMatch[1] ?? "") * 3600000);
     return ms;
   }
   if (val === "indefinite") return undefined;

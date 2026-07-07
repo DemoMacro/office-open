@@ -19,7 +19,8 @@ const readCtx = {
 function roundTrip(opts: TableStylesDescriptorOptions) {
   const xml = tableStylesDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return tableStylesDesc.parse(el, readCtx);
 }
 
@@ -79,6 +80,7 @@ describe("tableStylesDesc round-trip", () => {
     expect(result.opts!.styles).toHaveLength(1);
 
     const s = result.opts!.styles![0];
+    if (!s) throw new Error("missing style");
     expect(s.styleId).toBe("{TEST-ID}");
     expect(s.styleName).toBe("Test Style");
 
@@ -112,6 +114,7 @@ describe("tableStylesDesc round-trip", () => {
     const result = roundTrip(opts);
     expect(result.opts!.styles).toHaveLength(1);
     const s = result.opts!.styles![0];
+    if (!s) throw new Error("missing style");
     expect(s.styleId).toBe("{MIN-ID}");
     expect(s.regions).toBeUndefined();
   });

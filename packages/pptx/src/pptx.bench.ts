@@ -22,10 +22,14 @@ const makeImage = (seed: number, sizeKB: number): Uint8Array => {
 };
 
 const SMALL_IMAGES = Array.from({ length: 3 }, (_, i) => makeImage(i, 200));
+// SMALL_IMAGES has exactly 3 entries; indices 0..2 are always valid.
+const smallImage = (i: number) => SMALL_IMAGES[i]!;
 const SMALL_IMAGES_BASE64 = SMALL_IMAGES.map(
   (img) => `data:image/jpeg;base64,${Buffer.from(img).toString("base64")}`,
 );
 const LARGE_IMAGES = Array.from({ length: 20 }, (_, i) => makeImage(i, 500));
+// Lookup helper: index is masked modulo LARGE_IMAGES.length, so the entry always exists.
+const largeImage = (i: number) => LARGE_IMAGES[i % LARGE_IMAGES.length]!;
 const LARGE_IMAGES_BASE64 = LARGE_IMAGES.map(
   (img) => `data:image/jpeg;base64,${Buffer.from(img).toString("base64")}`,
 );
@@ -76,7 +80,7 @@ const buildSimplePres = (): PresentationOptions => ({
             y: 100,
             width: 300,
             height: 200,
-            data: SMALL_IMAGES[0],
+            data: smallImage(0),
             type: "jpg",
           },
         },
@@ -122,7 +126,7 @@ const buildStyledPres = (): PresentationOptions => ({
             y: 100,
             width: 300,
             height: 200,
-            data: SMALL_IMAGES[1],
+            data: smallImage(1),
             type: "jpg",
           },
         },
@@ -212,7 +216,7 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
             y: 100,
             width: 300,
             height: 200,
-            data: SMALL_IMAGES[0],
+            data: smallImage(0),
             type: "jpg",
           },
         } satisfies SlideChild,
@@ -222,7 +226,7 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
             y: 350,
             width: 300,
             height: 200,
-            data: SMALL_IMAGES[2],
+            data: smallImage(2),
             type: "jpg",
           },
         } satisfies SlideChild,
@@ -601,6 +605,9 @@ const LARGE_SHAPES = Array.from({ length: 600 }, (_, i) => ({
   fill: i % 4 === 0 ? "4472C4" : undefined,
 }));
 
+// Lookup helper: index is masked modulo LARGE_SHAPES.length, so the entry always exists.
+const shapeAt = (index: number) => LARGE_SHAPES[index % LARGE_SHAPES.length]!;
+
 const LARGE_TABLE_ROWS = Array.from({ length: 100 }, (_, rowIdx) => ({
   cells: Array.from({ length: 10 }, (_, colIdx) => ({
     text: `R${rowIdx + 1}C${colIdx + 1} data content for stress test`,
@@ -611,7 +618,7 @@ const LARGE_TABLE_ROWS = Array.from({ length: 100 }, (_, rowIdx) => ({
 const build30Slides20Shapes = (): PresentationOptions => ({
   slides: Array.from({ length: 30 }, (_, si) => ({
     children: Array.from({ length: 20 }, (_, shi) => {
-      const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
+      const s = shapeAt(si * 20 + shi);
       return {
         shape: {
           x: 50 + (shi % 4) * 230,
@@ -680,7 +687,7 @@ const build50SlidesFull = (): PresentationOptions => ({
         },
       },
       ...Array.from({ length: 10 }, (_, j) => {
-        const s = LARGE_SHAPES[(si * 10 + j) % LARGE_SHAPES.length];
+        const s = shapeAt(si * 10 + j);
         return {
           shape: {
             x: 50 + (j % 3) * 300,
@@ -706,7 +713,7 @@ const build50SlidesFull = (): PresentationOptions => ({
           y: 600,
           width: 350,
           height: 250,
-          data: LARGE_IMAGES[(si * 2 + pi) % LARGE_IMAGES.length],
+          data: largeImage(si * 2 + pi),
           type: "jpg",
         },
       })),
@@ -730,7 +737,7 @@ const build30Slides10Images = (): PresentationOptions => ({
     children: [
       // 2 shapes per slide
       ...Array.from({ length: 2 }, (_, shi) => {
-        const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
+        const s = shapeAt(si * 2 + shi);
         return {
           shape: {
             x: 50 + shi * 400,
@@ -756,7 +763,7 @@ const build30Slides10Images = (): PresentationOptions => ({
           y: 200 + Math.floor(pi / 5) * 140,
           width: 150,
           height: 110,
-          data: LARGE_IMAGES[(si * 10 + pi) % LARGE_IMAGES.length],
+          data: largeImage(si * 10 + pi),
           type: "jpg",
         },
       })),
@@ -810,7 +817,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
       for (let si = 0; si < 30; si++) {
         const slide = pptx.addSlide();
         for (let shi = 0; shi < 20; shi++) {
-          const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
+          const s = shapeAt(si * 20 + shi);
           slide.addText(
             [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
@@ -835,7 +842,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
       for (let si = 0; si < 30; si++) {
         const slide = pptx.addSlide();
         for (let shi = 0; shi < 20; shi++) {
-          const s = LARGE_SHAPES[(si * 20 + shi) % LARGE_SHAPES.length];
+          const s = shapeAt(si * 20 + shi);
           slide.addText(
             [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
@@ -898,7 +905,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
       for (let si = 0; si < 30; si++) {
         const slide = pptx.addSlide();
         for (let shi = 0; shi < 2; shi++) {
-          const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
+          const s = shapeAt(si * 2 + shi);
           slide.addText(
             [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
@@ -932,7 +939,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
       for (let si = 0; si < 30; si++) {
         const slide = pptx.addSlide();
         for (let shi = 0; shi < 2; shi++) {
-          const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
+          const s = shapeAt(si * 2 + shi);
           slide.addText(
             [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
@@ -1089,7 +1096,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
           { x: 1, y: 0.5, w: 8, h: 0.6, fill: { color: "4472C4" }, align: "center" },
         );
         for (let j = 0; j < 10; j++) {
-          const s = LARGE_SHAPES[(si * 10 + j) % LARGE_SHAPES.length];
+          const s = shapeAt(si * 10 + j);
           slide.addText(
             [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: 14 } }],
             {
@@ -1141,7 +1148,7 @@ describe("PPTX: Large Files — Create + toBuffer", () => {
           { x: 1, y: 0.5, w: 8, h: 0.6, fill: { color: "4472C4" }, align: "center" },
         );
         for (let j = 0; j < 10; j++) {
-          const s = LARGE_SHAPES[(si * 10 + j) % LARGE_SHAPES.length];
+          const s = shapeAt(si * 10 + j);
           slide.addText(
             [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: 14 } }],
             {
@@ -1197,7 +1204,7 @@ const buildMixed100MbPres = (): PresentationOptions => ({
     children: [
       // 2 shapes
       ...Array.from({ length: 2 }, (_, shi) => {
-        const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
+        const s = shapeAt(si * 2 + shi);
         return {
           shape: {
             x: 50 + shi * 380,
@@ -1296,7 +1303,7 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
         const slide = pptx.addSlide();
         // 2 shapes
         for (let shi = 0; shi < 2; shi++) {
-          const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
+          const s = shapeAt(si * 2 + shi);
           slide.addText(
             [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {
@@ -1342,7 +1349,7 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
         const slide = pptx.addSlide();
         // 2 shapes
         for (let shi = 0; shi < 2; shi++) {
-          const s = LARGE_SHAPES[(si * 2 + shi) % LARGE_SHAPES.length];
+          const s = shapeAt(si * 2 + shi);
           slide.addText(
             [{ text: s.text, options: { bold: s.bold, italic: s.italic, fontSize: s.size } }],
             {

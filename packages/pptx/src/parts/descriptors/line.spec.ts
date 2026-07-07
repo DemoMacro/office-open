@@ -16,7 +16,8 @@ function roundTripLine(opts: LineShapeDescriptorOptions) {
   const xml = lineShapeDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return lineShapeDesc.parse(el, readCtx);
 }
 
@@ -24,7 +25,8 @@ function roundTripConnector(opts: ConnectorShapeDescriptorOptions) {
   const xml = connectorShapeDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return connectorShapeDesc.parse(el, readCtx);
 }
 

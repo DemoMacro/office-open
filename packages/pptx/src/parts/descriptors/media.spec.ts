@@ -20,7 +20,8 @@ function roundTripVideo(opts: VideoDescriptorOptions) {
   const xml = videoDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return videoDesc.parse(el, readCtx);
 }
 
@@ -28,7 +29,8 @@ function roundTripAudio(opts: AudioDescriptorOptions) {
   const xml = audioDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return audioDesc.parse(el, readCtx);
 }
 

@@ -842,8 +842,7 @@ export class SlideTiming {
     const mediaStateNodes: string[] = [];
     let clickGroupDelay = 0;
 
-    for (let i = 0; i < entries.length; i++) {
-      const entry = entries[i];
+    for (const [i, entry] of entries.entries()) {
       const { spid, options } = entry;
 
       const nodeType =
@@ -1003,7 +1002,7 @@ export class SlideTiming {
           buildXml(
             "p:subTnLst",
             undefined,
-            options.subTimeNodes.map((subOpts) => {
+            options.subTimeNodes.map((subOpts: AnimationOptions) => {
               const subId = id++;
               return buildXml("p:par", undefined, [
                 buildXml(

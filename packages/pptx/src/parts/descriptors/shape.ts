@@ -1006,8 +1006,9 @@ function readTxBody(txBody: XmlElement, ctx: ReadContext): TextBodyDescriptorOpt
     }
   }
 
-  if (paragraphs.length === 1 && paragraphs[0].text && !paragraphs[0].properties) {
-    result.text = paragraphs[0].text;
+  const [onlyPara] = paragraphs;
+  if (paragraphs.length === 1 && onlyPara?.text && !onlyPara?.properties) {
+    result.text = onlyPara.text;
   } else if (paragraphs.length > 0) {
     result.children = paragraphs.map((p) => {
       if (p.text) return p.text;

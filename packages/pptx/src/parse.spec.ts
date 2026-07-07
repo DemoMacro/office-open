@@ -114,12 +114,14 @@ describe("parsePresentation", () => {
     expect(result.masters).to.exist;
     expect(result.masters!.length).to.equal(2);
     // Master name is derived from theme name
-    expect(result.slides![0].master).to.equal("Light");
-    expect(result.slides![1].master).to.equal("Dark");
-    expect(result.masters![0].name).to.equal("Light");
-    expect(result.masters![1].name).to.equal("Dark");
-    expect(result.masters![0].theme?.name).to.equal("Light");
-    expect(result.masters![1].theme?.name).to.equal("Dark");
+    const [slide0, slide1] = result.slides!;
+    const [master0, master1] = result.masters!;
+    expect(slide0?.master).to.equal("Light");
+    expect(slide1?.master).to.equal("Dark");
+    expect(master0?.name).to.equal("Light");
+    expect(master1?.name).to.equal("Dark");
+    expect(master0?.theme?.name).to.equal("Light");
+    expect(master1?.theme?.name).to.equal("Dark");
   });
 
   it("parses table styles (default id always present)", async () => {
@@ -160,8 +162,8 @@ describe("parsePresentation", () => {
     expect(parsed.tableStyles).to.exist;
     expect(parsed.tableStyles!.defaultStyleId).toBe(defaultStyleId);
     expect(parsed.tableStyles!.styles).toHaveLength(1);
-    expect(parsed.tableStyles!.styles![0].styleId).toBe(defaultStyleId);
-    expect(parsed.tableStyles!.styles![0].styleName).toBe("Custom Style");
+    expect(parsed.tableStyles!.styles?.[0]?.styleId).toBe(defaultStyleId);
+    expect(parsed.tableStyles!.styles?.[0]?.styleName).toBe("Custom Style");
   });
 
   it("round-trips multi-master structure", async () => {
@@ -194,8 +196,9 @@ describe("parsePresentation", () => {
     expect(parsed2.slides!.length).to.equal(2);
     expect(parsed2.masters!.length).to.equal(2);
     // Master name derived from theme name, not original master name
-    expect(parsed2.slides![0].master).to.equal("Theme One");
-    expect(parsed2.slides![1].master).to.equal("Theme Two");
+    const [p2slide0, p2slide1] = parsed2.slides!;
+    expect(p2slide0?.master).to.equal("Theme One");
+    expect(p2slide1?.master).to.equal("Theme Two");
   });
 
   it("round-trips slide sections (p14:sectionLst)", async () => {

@@ -120,9 +120,11 @@ function resolveSlideSize(size?: SlideSize): { width: number; height: number } {
 
 function deriveInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
-  return parts.length >= 2
-    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-    : name.slice(0, 2).toUpperCase();
+  if (parts.length < 2) return name.slice(0, 2).toUpperCase();
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  if (!first || !last) return name.slice(0, 2).toUpperCase();
+  return (first.charAt(0) + last.charAt(0)).toUpperCase();
 }
 
 function buildMasterMap(
@@ -133,8 +135,8 @@ function buildMasterMap(
   const defs = masterDefs.length > 0 ? masterDefs : [{} as MasterDefinition];
   const slideMasterLookup = new Map<number, number>();
 
-  for (let si = 0; si < slides.length; si++) {
-    const masterName = slides[si].master;
+  for (const [si, slide] of slides.entries()) {
+    const masterName = slide.master;
     if (masterName === undefined) {
       slideMasterLookup.set(si, 0);
       continue;
@@ -146,8 +148,7 @@ function buildMasterMap(
   let globalLayoutIndex = 0;
   const masters: MasterInfo[] = [];
 
-  for (let mi = 0; mi < defs.length; mi++) {
-    const def = defs[mi];
+  for (const [mi, def] of defs.entries()) {
     const name = def.name ?? `master${mi + 1}`;
 
     const layoutDefs = def.layouts;
@@ -159,9 +160,9 @@ function buildMasterMap(
     } else {
       const seen = new Set<string>();
       const keys: string[] = [];
-      for (let si = 0; si < slides.length; si++) {
+      for (const [si, slide] of slides.entries()) {
         if (slideMasterLookup.get(si) === mi) {
-          const lt = slides[si].layout ?? "blank";
+          const lt = slide.layout ?? "blank";
           if (!seen.has(lt)) {
             seen.add(lt);
             keys.push(lt);
@@ -178,8 +179,7 @@ function buildMasterMap(
     const layouts: LayoutInfo[] = [];
     const layoutRels: Relationships[] = [];
 
-    for (let li = 0; li < layoutKeys.length; li++) {
-      const key = layoutKeys[li];
+    for (const [li, key] of layoutKeys.entries()) {
       const layoutDef = layoutDefs?.[li];
       const slideLayoutType = (layoutDef?.type ?? key) as SlideLayoutType;
       layouts.push({
@@ -203,11 +203,11 @@ function buildMasterMap(
     }
 
     const masterRelsEntries: RelEntry[] = [];
-    for (let li = 0; li < layouts.length; li++) {
+    for (const [li, layout] of layouts.entries()) {
       masterRelsEntries.push({
         id: li + 1,
         type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-        target: `../slideLayouts/slideLayout${layouts[li].index + 1}.xml`,
+        target: `../slideLayouts/slideLayout${layout.index + 1}.xml`,
       });
     }
     masterRelsEntries.push({
@@ -235,7 +235,9 @@ function findLayoutForSlide(
   slides: SlideOptions[],
   slideIndex: number,
 ): LayoutInfo {
-  const opts = slides[slideIndex];
+  // slideIndex is caller-bounded by slides.length; masters is built by buildMasterMap
+  // with non-empty layouts — these indexed accesses are contract narrows, not runtime checks.
+  const opts = slides[slideIndex]!;
   const mi =
     opts.master !== undefined
       ? Math.max(
@@ -243,10 +245,10 @@ function findLayoutForSlide(
           masters.findIndex((m) => m.name === opts.master),
         )
       : 0;
-  const master = masters[mi];
+  const master = masters[mi]!;
   const layoutKey = opts.layout ?? "blank";
   const li = master.layouts.find((l) => l.key === layoutKey);
-  return li ?? master.layouts[0];
+  return li ?? master.layouts[0]!;
 }
 
 function buildSlideRels(masters: MasterInfo[], slides: SlideOptions[]): Relationships[] {
@@ -293,8 +295,8 @@ export function buildCommentData(
 
   const perSlide: (CommentEntry[] | undefined)[] = Array.from({ length: slides.length });
 
-  for (let i = 0; i < slides.length; i++) {
-    const slideComments = slides[i].comments;
+  for (const [i, slide] of slides.entries()) {
+    const slideComments = slide.comments;
     if (!slideComments || slideComments.length === 0) continue;
 
     const commentEntries: CommentEntry[] = [];
@@ -347,17 +349,17 @@ function initContentTypes(slides: SlideOptions[], includeHandout: boolean): Cont
   let hasComments = false;
   let notesSlideIdx = 0;
   let slideSyncIdx = 0;
-  for (let i = 0; i < slides.length; i++) {
+  for (const [i, slide] of slides.entries()) {
     ct.addSlide(i + 1);
-    if (slides[i].notes) {
+    if (slide.notes) {
       ct.addNotesSlide(notesSlideIdx + 1);
       notesSlideIdx++;
     }
-    if (slides[i].comments && slides[i].comments!.length > 0) {
+    if (slide.comments && slide.comments.length > 0) {
       ct.addComments(i + 1);
       hasComments = true;
     }
-    if (slides[i].slideSync) {
+    if (slide.slideSync) {
       ct.addSlideSyncPr(slideSyncIdx + 1);
       slideSyncIdx++;
     }
@@ -606,9 +608,9 @@ export function compilePresentation(
   const notesTexts: string[] = [];
   const notesSlideIndexMap = new Map<number, number>();
   let notesIdx = 0;
-  for (let i = 0; i < slides.length; i++) {
-    if (slides[i].notes) {
-      notesTexts.push(slides[i].notes!);
+  for (const [i, slide] of slides.entries()) {
+    if (slide.notes) {
+      notesTexts.push(slide.notes);
       notesSlideIndexMap.set(i, notesIdx++);
     }
   }
@@ -616,9 +618,9 @@ export function compilePresentation(
   const slideSyncOptionsList: SlideSyncOptions[] = [];
   const slideSyncIndexMap = new Map<number, number>();
   let syncIdx = 0;
-  for (let i = 0; i < slides.length; i++) {
-    if (slides[i].slideSync) {
-      slideSyncOptionsList.push(slides[i].slideSync!);
+  for (const [i, slide] of slides.entries()) {
+    if (slide.slideSync) {
+      slideSyncOptionsList.push(slide.slideSync);
       slideSyncIndexMap.set(i, syncIdx++);
     }
   }
@@ -633,8 +635,8 @@ export function compilePresentation(
   // without a section name are left ungrouped (absent from p14:sectionLst).
   const sectionOrder: string[] = [];
   const sectionIndices = new Map<string, number[]>();
-  for (let i = 0; i < slides.length; i++) {
-    const name = slides[i].section;
+  for (const [i, slide] of slides.entries()) {
+    const name = slide.section;
     if (!name) continue;
     let arr = sectionIndices.get(name);
     if (!arr) {
@@ -732,26 +734,25 @@ export function compilePresentation(
   };
 
   // Slide Masters
-  for (let mi = 0; mi < masters.length; mi++) {
+  for (const [mi, masterInfo] of masters.entries()) {
     mapping[`SlideMaster${mi}`] = {
-      data: XML_DECL + (slideMasterDesc.stringify({ master: masters[mi].master }, descCtx) ?? ""),
+      data: XML_DECL + (slideMasterDesc.stringify({ master: masterInfo.master }, descCtx) ?? ""),
       path: `ppt/slideMasters/slideMaster${mi + 1}.xml`,
     };
     mapping[`SlideMasterRels${mi}`] = {
-      data: XML_DECL + masterRels[mi].serialize(),
+      data: XML_DECL + masterRels[mi]!.serialize(),
       path: `ppt/slideMasters/_rels/slideMaster${mi + 1}.xml.rels`,
     };
   }
 
   // Slide Layouts
-  for (let li = 0; li < allLayouts.length; li++) {
+  for (const [li, layoutInfo] of allLayouts.entries()) {
     mapping[`SlideLayout${li}`] = {
-      data:
-        XML_DECL + (slideLayoutDesc.stringify({ layout: allLayouts[li].layout }, descCtx) ?? ""),
+      data: XML_DECL + (slideLayoutDesc.stringify({ layout: layoutInfo.layout }, descCtx) ?? ""),
       path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
     };
     mapping[`SlideLayoutRels${li}`] = {
-      data: XML_DECL + allLayoutRels[li].serialize(),
+      data: XML_DECL + allLayoutRels[li]!.serialize(),
       path: `ppt/slideLayouts/_rels/slideLayout${li + 1}.xml.rels`,
     };
   }
@@ -845,11 +846,11 @@ export function compilePresentation(
   const presentationXml = presBody ? XML_DECL + presBody : "";
   const mediaData = getReferencedMedia(presentationXml, media.array);
   const presImageOffset = presRels.relationshipCount + 1;
-  for (let idx = 0; idx < mediaData.length; idx++) {
+  for (const [idx, mediaItem] of mediaData.entries()) {
     presRels.addRelationship(
       presImageOffset + idx,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-      `../media/${mediaData[idx].fileName}`,
+      `../media/${mediaItem.fileName}`,
     );
   }
   const replacedPresentationXml = replaceImagePlaceholders(
@@ -868,17 +869,18 @@ export function compilePresentation(
   };
 
   // Slides
-  for (let i = 0; i < slides.length; i++) {
-    const slideXml = stringifySlide(slides[i], descCtx);
+  for (const [i, slide] of slides.entries()) {
+    const slideXml = stringifySlide(slide, descCtx);
 
     const slideMediaData = getReferencedMedia(slideXml, media.array);
     const currentSlideRels = slideRels[i];
+    if (!currentSlideRels) continue; // slideRels is built one-per-slide in lockstep with slides
     const slideImageOffset = currentSlideRels.relationshipCount + 1;
-    for (let idx = 0; idx < slideMediaData.length; idx++) {
+    for (const [idx, mediaItem] of slideMediaData.entries()) {
       currentSlideRels.addRelationship(
         slideImageOffset + idx,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-        `../media/${slideMediaData[idx].fileName}`,
+        `../media/${mediaItem.fileName}`,
       );
     }
 
@@ -898,11 +900,11 @@ export function compilePresentation(
           allChartKeys,
           slideChartOffset,
         );
-        for (let ci = 0; ci < allChartKeys.length; ci++) {
+        for (const [ci, chartKey] of allChartKeys.entries()) {
           currentSlideRels.addRelationship(
             slideChartOffset + ci,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
-            `../charts/chart${getChartGlobalIndex(allChartKeys[ci], charts.array, descCtx.charts) + 1}.xml`,
+            `../charts/chart${getChartGlobalIndex(chartKey, charts.array, descCtx.charts) + 1}.xml`,
           );
         }
       }
@@ -919,24 +921,27 @@ export function compilePresentation(
         ];
         const saOffset = currentSlideRels.relationshipCount + 1;
         replacedSlideXml = replaceSmartArtPlaceholders(replacedSlideXml, allSaKeys, saOffset);
-        const saGlobalStart = computeSmartArtGlobalStart(
-          allSaKeys[0],
-          smartArts.array,
-          descCtx.smartArts,
-        );
-        addSmartArtRelationships(
-          allSaKeys,
-          (id, type, target) => {
-            currentSlideRels.addRelationship(id, type, target);
-          },
-          saOffset,
-          saGlobalStart,
-          {
-            pathPrefix: "../",
-            styleRelType:
-              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramQuickStyle",
-          },
-        );
+        const firstSaKey = allSaKeys[0];
+        if (firstSaKey !== undefined) {
+          const saGlobalStart = computeSmartArtGlobalStart(
+            firstSaKey,
+            smartArts.array,
+            descCtx.smartArts,
+          );
+          addSmartArtRelationships(
+            allSaKeys,
+            (id, type, target) => {
+              currentSlideRels.addRelationship(id, type, target);
+            },
+            saOffset,
+            saGlobalStart,
+            {
+              pathPrefix: "../",
+              styleRelType:
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramQuickStyle",
+            },
+          );
+        }
       }
 
       // Hyperlinks
@@ -946,11 +951,11 @@ export function compilePresentation(
         const slideHlinks = hyperlinks.array.filter((h) => slideHlinkKeySet.has(h.key));
         const hlinkOffset = currentSlideRels.relationshipCount + 1;
         replacedSlideXml = replaceHyperlinkPlaceholders(replacedSlideXml, slideHlinks, hlinkOffset);
-        for (let hi = 0; hi < slideHlinks.length; hi++) {
+        for (const [hi, hlink] of slideHlinks.entries()) {
           currentSlideRels.addRelationship(
             hlinkOffset + hi,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            slideHlinks[hi].url,
+            hlink.url,
             "External",
           );
         }
@@ -964,18 +969,18 @@ export function compilePresentation(
         const videoOffset = mediaOffset + slideMediaRefs.length;
         replacedSlideXml = replaceMediaPlaceholders(replacedSlideXml, slideMediaRefs, mediaOffset);
         replacedSlideXml = replaceVideoPlaceholders(replacedSlideXml, slideVideoRefs, videoOffset);
-        for (let mi = 0; mi < slideMediaRefs.length; mi++) {
+        for (const [mi, mediaRef] of slideMediaRefs.entries()) {
           currentSlideRels.addRelationship(
             mediaOffset + mi,
             "http://schemas.microsoft.com/office/2007/relationships/media",
-            `../media/${slideMediaRefs[mi].fileName}`,
+            `../media/${mediaRef.fileName}`,
           );
         }
-        for (let vi = 0; vi < slideVideoRefs.length; vi++) {
+        for (const [vi, videoRef] of slideVideoRefs.entries()) {
           currentSlideRels.addRelationship(
             videoOffset + vi,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video",
-            `../media/${slideVideoRefs[vi].fileName}`,
+            `../media/${videoRef.fileName}`,
           );
         }
       }
@@ -1056,8 +1061,8 @@ export function compilePresentation(
     })),
     ...descCtx.charts.map((c) => ({ key: c.key, xml: c.chartSpaceXml })),
   ];
-  for (let i = 0; i < allCharts.length; i++) {
-    files[`ppt/charts/chart${i + 1}.xml`] = encoder.encode(allCharts[i].xml);
+  for (const [i, chart] of allCharts.entries()) {
+    files[`ppt/charts/chart${i + 1}.xml`] = encoder.encode(chart.xml);
   }
 
   // SmartArt parts
@@ -1077,8 +1082,7 @@ export function compilePresentation(
       color: s.color,
     })),
   ];
-  for (let i = 0; i < allSmartArts.length; i++) {
-    const sa = allSmartArts[i];
+  for (const [i, sa] of allSmartArts.entries()) {
     files[`ppt/diagrams/data${i + 1}.xml`] = encoder.encode(sa.dataModelXml);
     files[`ppt/diagrams/layout${i + 1}.xml`] = encoder.encode(getLayoutXml(sa.layout));
     files[`ppt/diagrams/quickStyle${i + 1}.xml`] = encoder.encode(getStyleXml(sa.style));
@@ -1138,9 +1142,9 @@ export function compilePresentation(
   }
 
   // Slide sync properties
-  for (let i = 0; i < slideSyncOptionsList.length; i++) {
+  for (const [i, syncOpts] of slideSyncOptionsList.entries()) {
     files[`ppt/slideSyncPr/slideSyncPr${i + 1}.xml`] = encoder.encode(
-      XML_DECL + (slideSyncDesc.stringify(slideSyncOptionsList[i], descCtx) ?? ""),
+      XML_DECL + (slideSyncDesc.stringify(syncOpts, descCtx) ?? ""),
     );
   }
 

@@ -138,8 +138,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
 
     // a:tr[] — with border distribution
     const rowCount = opts.rows.length;
-    for (let ri = 0; ri < rowCount; ri++) {
-      const row = opts.rows[ri];
+    for (const [ri, row] of opts.rows.entries()) {
       const cells = distributeBorders(row, ri, rowCount, opts.borders);
       tblParts.push(stringifyRow({ ...row, cells }, pptxCtx));
     }
@@ -351,9 +350,9 @@ function stringifyTcPr(cell: TableCellDescriptorOptions, ctx: PptxWriteContext):
 
   if (parts.length === 0) return "<a:tcPr/>";
 
-  const firstIsAttr = !parts[0].startsWith("<");
-  if (firstIsAttr) {
-    const attrStr = parts[0];
+  const first = parts[0];
+  if (first !== undefined && !first.startsWith("<")) {
+    const attrStr = first;
     const children = parts.slice(1);
     if (children.length === 0) return `<a:tcPr ${attrStr}/>`;
     return `<a:tcPr ${attrStr}>${children.join("")}</a:tcPr>`;
@@ -434,11 +433,13 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
     }
 
     if (paragraphs.length === 1) {
-      const p = paragraphs[0];
-      if (p.text && !p.children) {
-        result.text = p.text;
-      } else {
-        result.children = [p];
+      const [p] = paragraphs;
+      if (p) {
+        if (p.text && !p.children) {
+          result.text = p.text;
+        } else {
+          result.children = [p];
+        }
       }
     } else if (paragraphs.length > 0) {
       result.children = paragraphs;

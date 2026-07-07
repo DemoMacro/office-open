@@ -21,7 +21,8 @@ const readCtx = {
 function roundTrip(opts: LockedCanvasDescriptorOptions) {
   const xml = lockedCanvasDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return lockedCanvasDesc.parse(el, readCtx);
 }
 
@@ -83,7 +84,8 @@ describe("lockedCanvasDesc round-trip", () => {
     expect(result.children).toBeDefined();
     expect(result.children).toHaveLength(2);
 
-    const child1 = result.children![0];
+    const [child1, child2] = result.children ?? [];
+    if (!child1 || !child2) throw new Error("expected two children");
     expect(child1.x).toBe(5);
     expect(child1.y).toBe(10);
     expect(child1.width).toBe(100);
@@ -91,7 +93,6 @@ describe("lockedCanvasDesc round-trip", () => {
     expect(child1.geometry).toBe("ellipse");
     expect(child1.fill).toBe("FF0000");
 
-    const child2 = result.children![1];
     expect(child2.x).toBe(120);
     expect(child2.y).toBe(10);
     expect(child2.width).toBe(80);
@@ -136,7 +137,7 @@ describe("lockedCanvasDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.children).toHaveLength(1);
-    expect(result.children![0].geometry).toBe("rect");
+    expect(result.children?.[0]?.geometry).toBe("rect");
   });
 
   it("round-trips EMU conversion correctly", () => {

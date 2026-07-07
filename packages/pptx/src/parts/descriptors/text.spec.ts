@@ -34,7 +34,8 @@ describe("runPropertiesDesc round-trip", () => {
   function roundTrip(opts: RunPropertiesOptions) {
     const xml = runPropertiesDesc.stringify(opts, writeCtx)!;
     const doc = parseXml(xml);
-    const el = doc.elements![0];
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     return runPropertiesDesc.parse(el, readCtx);
   }
 
@@ -159,7 +160,8 @@ describe("textRunDesc round-trip", () => {
   function roundTrip(opts: RunOptions) {
     const xml = textRunDesc.stringify(opts, writeCtx)!;
     const doc = parseXml(xml);
-    const el = doc.elements![0];
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     return textRunDesc.parse(el, readCtx);
   }
 
@@ -189,7 +191,8 @@ describe("paragraphDesc round-trip", () => {
   function roundTrip(opts: ParagraphDescriptorOptions) {
     const xml = paragraphDesc.stringify(opts, writeCtx)!;
     const doc = parseXml(xml);
-    const el = doc.elements![0];
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
     return paragraphDesc.parse(el, readCtx);
   }
 
@@ -207,10 +210,11 @@ describe("paragraphDesc round-trip", () => {
     });
     const children = result.children!;
     expect(children).toHaveLength(2);
-    expect(children[0].text).toBe("Hello ");
-    expect(children[0].bold).toBe(true);
-    expect(children[1].text).toBe("World");
-    expect(children[1].italic).toBe(true);
+    const [child1, child2] = children;
+    expect(child1?.text).toBe("Hello ");
+    expect(child1?.bold).toBe(true);
+    expect(child2?.text).toBe("World");
+    expect(child2?.italic).toBe(true);
   });
 
   it("round-trips alignment", () => {
@@ -301,7 +305,8 @@ describe("paragraphDesc round-trip", () => {
     const props = result.properties!;
     expect(props.alignment).toBe("right");
     const children = result.children!;
-    expect(children[0].text).toBe("Right-aligned run");
+    const [first] = children;
+    expect(first?.text).toBe("Right-aligned run");
   });
 
   it("round-trips single run with run properties", () => {
@@ -312,7 +317,8 @@ describe("paragraphDesc round-trip", () => {
     });
     const children = result.children!;
     expect(children).toHaveLength(1);
-    expect(children[0].text).toBe("Bold");
-    expect(children[0].bold).toBe(true);
+    const [first] = children;
+    expect(first?.text).toBe("Bold");
+    expect(first?.bold).toBe(true);
   });
 });

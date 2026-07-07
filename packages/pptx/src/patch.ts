@@ -107,7 +107,8 @@ const pptxReplacer = createReplacer({
   formatChild: (child: unknown): Element[] => {
     const runOpts = (typeof child === "string" ? { text: child } : child) as RunOptions;
     const xmlStr = textRunDesc.stringify(runOpts, currentPatchCtx) ?? "<a:r/>";
-    return [xml2js(xmlStr, { captureSpacesBetweenElements: true }).elements![0]];
+    const root = xml2js(xmlStr, { captureSpacesBetweenElements: true }).elements?.[0];
+    return root ? [root] : [];
   },
   preserveSpace: false,
 });
@@ -468,8 +469,8 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
     const resolved = replaceHyperlinkPlaceholders(targetXml, targetHlinks, offset);
     xmlMap.set(targetPath, toJson(resolved));
 
-    for (let i = 0; i < targetHlinks.length; i++) {
-      appendRelationship(relsJson, offset + i, HYPERLINK_REL_TYPE, targetHlinks[i].url, "External");
+    for (const [i, hlink] of targetHlinks.entries()) {
+      appendRelationship(relsJson, offset + i, HYPERLINK_REL_TYPE, hlink.url, "External");
     }
   }
 

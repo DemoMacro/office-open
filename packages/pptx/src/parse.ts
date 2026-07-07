@@ -491,8 +491,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   const masterCount = pptx.slideMasters.length;
   const masterDefs: MasterDefinition[] = [];
   const masterReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
-  for (let mi = 0; mi < masterCount; mi++) {
-    const masterPath = pptx.slideMasters[mi];
+  for (const [mi, masterPath] of pptx.slideMasters.entries()) {
     const masterEl = pptx.doc.get(masterPath);
     if (!masterEl) continue;
 
@@ -588,8 +587,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
 
   // 7. Parse slides with layout and master references
   const result: SlideOptions[] = [];
-  for (let si = 0; si < pptx.slides.length; si++) {
-    const slidePath = pptx.slides[si];
+  for (const slidePath of pptx.slides) {
     const slideEl = pptx.doc.get(slidePath);
     if (!slideEl) continue;
 

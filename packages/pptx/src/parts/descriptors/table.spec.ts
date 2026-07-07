@@ -29,7 +29,8 @@ function roundTrip(opts: TableDescriptorOptions) {
   const writeCtx = new MockWriteContext() as unknown as WriteContext;
   const xml = tableDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return tableDesc.parse(el, readCtx);
 }
 
@@ -45,10 +46,11 @@ describe("tableDesc round-trip", () => {
     const rows = result.rows!;
 
     expect(rows).toHaveLength(2);
-    const row0Cells = rows[0].cells!;
+    const [row0] = rows;
+    const row0Cells = row0?.cells!;
     expect(row0Cells).toHaveLength(2);
-    expect(row0Cells[0].text).toBe("A1");
-    expect(row0Cells[1].text).toBe("B1");
+    expect(row0Cells[0]?.text).toBe("A1");
+    expect(row0Cells[1]?.text).toBe("B1");
   });
 
   it("round-trips table with position", () => {
@@ -86,8 +88,9 @@ describe("tableDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     const rows = result.rows!;
+    const [row0] = rows;
 
-    expect(rows[0].height).toBe(500);
+    expect(row0?.height).toBe(500);
   });
 
   it("round-trips cell with fill", () => {
@@ -100,7 +103,8 @@ describe("tableDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     const rows = result.rows!;
-    const cell = rows[0].cells![0];
+    const cell = rows[0]?.cells?.[0];
+    if (!cell) throw new Error("missing cell");
     const fill = cell.fill! as { type: string; color: { value: string } };
 
     expect(fill.type).toBe("solid");
@@ -125,7 +129,8 @@ describe("tableDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     const rows = result.rows!;
-    const cell = rows[0].cells![0];
+    const cell = rows[0]?.cells?.[0];
+    if (!cell) throw new Error("missing cell");
     const borders = cell.borders!;
     const top = borders.top!;
 
@@ -139,7 +144,8 @@ describe("tableDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     const rows = result.rows!;
-    const cell = rows[0].cells![0];
+    const cell = rows[0]?.cells?.[0];
+    if (!cell) throw new Error("missing cell");
 
     expect(cell.verticalAlign).toBe("center");
   });
@@ -187,7 +193,7 @@ describe("tableDesc round-trip", () => {
     // Parse reads them back from those edge cells.
     const result = roundTrip(opts);
     const rows = result.rows!;
-    const firstRowFirstCell = rows[0].cells![0] as Record<string, unknown>;
+    const firstRowFirstCell = (rows[0]?.cells?.[0] ?? undefined) as Record<string, unknown>;
     const cellBorders = firstRowFirstCell.borders as Record<string, Record<string, unknown>>;
 
     // Top-left cell gets top + left borders
@@ -213,7 +219,8 @@ describe("tableDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     const rows = result.rows!;
-    const cell = rows[0].cells![0];
+    const cell = rows[0]?.cells?.[0];
+    if (!cell) throw new Error("missing cell");
     const margins = cell.margins!;
 
     expect(margins.top).toBe(1000);
@@ -236,7 +243,9 @@ describe("tableDesc round-trip", () => {
       ],
     };
     const result = roundTrip(opts);
-    const margins = result.rows![0].cells![0].margins!;
+    const cell = result.rows![0]?.cells?.[0];
+    if (!cell) throw new Error("missing cell");
+    const margins = cell.margins!;
     expect(margins.top).toBe("1mm");
     expect(margins.left).toBe("2.5mm");
   });

@@ -29,7 +29,8 @@ function roundTrip(opts: ShapeDescriptorOptions) {
   const writeCtx = new MockWriteContext() as unknown as WriteContext;
   const xml = shapeDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return shapeDesc.parse(el, readCtx);
 }
 
@@ -246,9 +247,10 @@ describe("shapeDesc round-trip", () => {
     // First paragraph has 2 runs — not simplified to text shorthand
     const para0 = children[0] as { children: Record<string, unknown>[] };
     expect(para0.children).toHaveLength(2);
-    expect(para0.children[0].text).toBe("Hello ");
-    expect(para0.children[1].text).toBe("Bold");
-    expect(para0.children[1].bold).toBe(true);
+    const [run0, run1] = para0.children;
+    expect(run0?.text).toBe("Hello ");
+    expect(run1?.text).toBe("Bold");
+    expect(run1?.bold).toBe(true);
     // Second paragraph simplified to text shorthand since single run with no properties
     expect(children[1]).toBe("World");
   });

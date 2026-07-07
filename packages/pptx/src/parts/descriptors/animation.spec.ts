@@ -20,7 +20,8 @@ function roundTrip(opts: TimingDescriptorOptions) {
   const xml = timingDesc.stringify(opts, writeCtx)!;
   if (!xml) return { entries: [] };
   const doc = parseXml(xml);
-  const el = doc.elements![0];
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
   return timingDesc.parse(el, readCtx);
 }
 
@@ -42,10 +43,11 @@ describe("timingDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     expect(result.entries).toHaveLength(1);
-    expect(result.entries[0].spid).toBe(2);
-    expect(result.entries[0].options.type).toBe("fade");
-    expect(result.entries[0].options.trigger).toBe("onClick");
-    expect(result.entries[0].options.duration).toBe(500);
+    const [entry] = result.entries;
+    expect(entry?.spid).toBe(2);
+    expect(entry?.options.type).toBe("fade");
+    expect(entry?.options.trigger).toBe("onClick");
+    expect(entry?.options.duration).toBe(500);
   });
 
   it("round-trips appear animation", () => {
@@ -59,8 +61,9 @@ describe("timingDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     expect(result.entries).toHaveLength(1);
-    expect(result.entries[0].options.type).toBe("appear");
-    expect(result.entries[0].options.trigger).toBe("withPrevious");
+    const [entry] = result.entries;
+    expect(entry?.options.type).toBe("appear");
+    expect(entry?.options.trigger).toBe("withPrevious");
   });
 
   it("round-trips animation with direction", () => {
@@ -73,8 +76,9 @@ describe("timingDesc round-trip", () => {
       ],
     };
     const result = roundTrip(opts);
-    expect(result.entries[0].options.type).toBe("wipe");
-    expect(result.entries[0].options.direction).toBe("left");
-    expect(result.entries[0].options.duration).toBe(700);
+    const [entry] = result.entries;
+    expect(entry?.options.type).toBe("wipe");
+    expect(entry?.options.direction).toBe("left");
+    expect(entry?.options.duration).toBe(700);
   });
 });
