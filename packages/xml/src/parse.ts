@@ -63,7 +63,7 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
       if (ignoreText) continue;
       if (text.length > 0) {
         if (captureSpaces || text.trim().length > 0 || isPreserveContext(stack)) {
-          addField(stack[stack.length - 1], "text", text);
+          addField(peek(stack), "text", text);
         }
       }
       continue;
@@ -84,10 +84,10 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
           if (!result.declaration) {
             result.declaration = {};
           }
-          const attrs = parseAttributes(xmlMatch[1]);
+          const attrs = parseAttributes(xmlMatch[1] ?? "");
           if (nativeTypeAttributes) {
-            for (const key of Object.keys(attrs)) {
-              attrs[key] = nativeTypeValue(attrs[key]) as string;
+            for (const [key, v] of Object.entries(attrs)) {
+              attrs[key] = nativeTypeValue(v) as string;
             }
           }
           result.declaration.attributes = attrs;
@@ -103,8 +103,8 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
       const comment = xmlString.slice(i + 3, end);
       i = end + 3;
       if (!ignoreComment) {
-        if (trim) addField(stack[stack.length - 1], "comment", comment.trim());
-        else addField(stack[stack.length - 1], "comment", comment);
+        if (trim) addField(peek(stack), "comment", comment.trim());
+        else addField(peek(stack), "comment", comment);
       }
       continue;
     }
@@ -116,8 +116,8 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
       const cdata = xmlString.slice(i + 8, end);
       i = end + 3;
       if (!ignoreCdata) {
-        if (trim) addField(stack[stack.length - 1], "cdata", cdata.trim());
-        else addField(stack[stack.length - 1], "cdata", cdata);
+        if (trim) addField(peek(stack), "cdata", cdata.trim());
+        else addField(peek(stack), "cdata", cdata);
       }
       continue;
     }
@@ -129,7 +129,7 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
       const doctype = xmlString.slice(i + 9, end).trim();
       i = end + 1;
       if (!ignoreDoctype) {
-        addField(stack[stack.length - 1], "doctype", doctype);
+        addField(peek(stack), "doctype", doctype);
       }
       continue;
     }
@@ -152,8 +152,8 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
     pos = attributes.pos;
 
     if (nativeTypeAttributes) {
-      for (const key of Object.keys(attributes.attrs)) {
-        attributes.attrs[key] = nativeTypeValue(attributes.attrs[key]) as string;
+      for (const [key, v] of Object.entries(attributes.attrs)) {
+        attributes.attrs[key] = nativeTypeValue(v) as string;
       }
     }
 
@@ -169,7 +169,7 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
       element.attributes = attributes.attrs;
     }
 
-    const parent = stack[stack.length - 1];
+    const parent = peek(stack);
     if (!parent.elements) {
       parent.elements = [];
     }
@@ -279,6 +279,18 @@ export function parseAttributes(str: string): Record<string, string> {
   return result;
 }
 
+/**
+ * Top of the parse stack. The stack is guaranteed non-empty — the result root
+ * is pushed at init and push/pop stay balanced across well-formed input — so
+ * this is a compile-time narrow (one non-null assertion) rather than a runtime
+ * check: it must not add a throw path that changes how `parse` surfaces
+ * malformed documents. Centralising the access keeps that single `!` off the
+ * read sites, matching the "wrap indexed access behind a helper" pattern.
+ */
+function peek(stack: Element[]): Element {
+  return stack[stack.length - 1]!;
+}
+
 function addField(parent: Element, type: string, value: string) {
   if (!parent.elements) {
     parent.elements = [];
@@ -302,7 +314,9 @@ function addField(parent: Element, type: string, value: string) {
 /** True when the nearest ancestor with an explicit xml:space sets "preserve". */
 function isPreserveContext(stack: Element[]): boolean {
   for (let i = stack.length - 1; i >= 0; i--) {
-    const space = stack[i].attributes?.["xml:space"];
+    const node = stack[i];
+    if (!node) continue;
+    const space = node.attributes?.["xml:space"];
     if (space !== undefined) return space === "preserve";
   }
   return false;

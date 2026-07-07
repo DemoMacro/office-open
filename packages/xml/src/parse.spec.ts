@@ -23,9 +23,9 @@ describe("xml2js (parse)", () => {
 
   it("parses nested elements", () => {
     const result = xml2js("<w:p><w:r><w:t>Hello</w:t></w:r></w:p>", { compact: false });
-    expect(result.elements?.[0].name).toBe("w:p");
-    expect(result.elements?.[0].elements?.[0].name).toBe("w:r");
-    expect(result.elements?.[0].elements?.[0].elements?.[0].name).toBe("w:t");
+    expect(result.elements?.[0]?.name).toBe("w:p");
+    expect(result.elements?.[0]?.elements?.[0]?.name).toBe("w:r");
+    expect(result.elements?.[0]?.elements?.[0]?.elements?.[0]?.name).toBe("w:t");
   });
 
   it("parses XML declaration", () => {
@@ -44,9 +44,9 @@ describe("xml2js (parse)", () => {
 
   it("ignores whitespace between elements by default", () => {
     const result = xml2js("<root>\n  <a>1</a>\n  <b>2</b>\n</root>", { compact: false });
-    expect(result.elements?.[0].elements?.length).toBe(2);
+    expect(result.elements?.[0]?.elements?.length).toBe(2);
     // No whitespace text nodes
-    expect(result.elements?.[0].elements?.every((e: any) => e.type === "element")).toBe(true);
+    expect(result.elements?.[0]?.elements?.every((e: any) => e.type === "element")).toBe(true);
   });
 
   it("captures spaces between elements when option is set", () => {
@@ -55,7 +55,7 @@ describe("xml2js (parse)", () => {
       captureSpacesBetweenElements: true,
     });
     // Should have text nodes for whitespace
-    expect(result.elements?.[0].elements?.some((e: any) => e.type === "text")).toBe(true);
+    expect(result.elements?.[0]?.elements?.some((e: any) => e.type === "text")).toBe(true);
   });
 
   it("parses self-closing tags", () => {
@@ -65,12 +65,12 @@ describe("xml2js (parse)", () => {
 
   it("parses CDATA sections", () => {
     const result = xml2js("<root><![CDATA[data]]></root>", { compact: false });
-    expect(result.elements?.[0].elements?.[0]).toEqual({ type: "cdata", cdata: "data" });
+    expect(result.elements?.[0]?.elements?.[0]).toEqual({ type: "cdata", cdata: "data" });
   });
 
   it("parses comments", () => {
     const result = xml2js("<root><!-- comment --><a>1</a></root>", { compact: false });
-    expect(result.elements?.[0].elements?.[0]).toEqual({
+    expect(result.elements?.[0]?.elements?.[0]).toEqual({
       type: "comment",
       comment: " comment ",
     });
@@ -78,19 +78,19 @@ describe("xml2js (parse)", () => {
 
   it("parses attributes with single quotes", () => {
     const result = xml2js("<root attr='value'/>", { compact: false });
-    expect(result.elements?.[0].attributes).toEqual({ attr: "value" });
+    expect(result.elements?.[0]?.attributes).toEqual({ attr: "value" });
   });
 
   it("parses empty element", () => {
     const result = xml2js("<root></root>", { compact: false });
-    expect(result.elements?.[0].name).toBe("root");
+    expect(result.elements?.[0]?.name).toBe("root");
     // xml-js does not set elements for empty non-self-closing tags
-    expect(result.elements?.[0].elements).toBeUndefined();
+    expect(result.elements?.[0]?.elements).toBeUndefined();
   });
 
   it("parses mixed content (text + elements)", () => {
     const result = xml2js("<root>text<a>1</a>more</root>", { compact: false });
-    const children = result.elements?.[0].elements;
+    const children = result.elements?.[0]?.elements;
     expect(children?.[0]).toEqual({ type: "text", text: "text" });
     expect(children?.[1]?.name).toBe("a");
     expect(children?.[2]).toEqual({ type: "text", text: "more" });
@@ -101,21 +101,21 @@ describe("xml2js (parse)", () => {
       '<w:p w:val="1" xml:space="preserve"><w:r><w:t xml:space="preserve">Hello</w:t></w:r></w:p>',
       { compact: false },
     );
-    expect(result.elements?.[0].name).toBe("w:p");
-    expect(result.elements?.[0].attributes?.["w:val"]).toBe("1");
-    expect(result.elements?.[0].attributes?.["xml:space"]).toBe("preserve");
+    expect(result.elements?.[0]?.name).toBe("w:p");
+    expect(result.elements?.[0]?.attributes?.["w:val"]).toBe("1");
+    expect(result.elements?.[0]?.attributes?.["xml:space"]).toBe("preserve");
   });
 });
 
 describe("parse (custom)", () => {
   it("preserves leading/trailing spaces in text nodes that have content", () => {
     const result = parse('<w:instrText xml:space="preserve"> PAGE </w:instrText>');
-    expect(result.elements?.[0].elements?.[0]).toEqual({ type: "text", text: " PAGE " });
+    expect(result.elements?.[0]?.elements?.[0]).toEqual({ type: "text", text: " PAGE " });
   });
 
   it("drops pure-whitespace text nodes (indentation) by default", () => {
     const result = parse("<root>\n  <a>1</a>\n</root>");
-    const children = result.elements?.[0].elements ?? [];
+    const children = result.elements?.[0]?.elements ?? [];
     expect(children.every((e) => e.type === "element")).toBe(true);
   });
 
@@ -123,30 +123,30 @@ describe("parse (custom)", () => {
     const result = parse("<root>\n  <a>1</a>\n</root>", {
       captureSpacesBetweenElements: true,
     });
-    const children = result.elements?.[0].elements ?? [];
+    const children = result.elements?.[0]?.elements ?? [];
     expect(children.some((e) => e.type === "text")).toBe(true);
   });
 
   it("unescapes attribute values (& < > \" ')", () => {
     const result = parse('<r a="x&lt;y&amp;z&quot;q&apos;w"/>');
-    expect(result.elements?.[0].attributes?.a).toBe("x<y&z\"q'w");
+    expect(result.elements?.[0]?.attributes?.a).toBe("x<y&z\"q'w");
   });
 
   it("decodes decimal and hex numeric character references", () => {
     const result = parse("<r>a&#65;b&#x42;c</r>");
-    expect(result.elements?.[0].elements?.[0]).toEqual({ type: "text", text: "aAbBc" });
+    expect(result.elements?.[0]?.elements?.[0]).toEqual({ type: "text", text: "aAbBc" });
   });
 
   it("reassembles a CDATA section split on `]]>` into a single node", () => {
     // writeCdata serializes `a]]>b` as two adjacent CDATA sections.
     const result = parse("<r><![CDATA[a]]]]><![CDATA[>b]]></r>");
-    const cdatas = (result.elements?.[0].elements ?? []).filter((e) => e.type === "cdata");
+    const cdatas = (result.elements?.[0]?.elements ?? []).filter((e) => e.type === "cdata");
     expect(cdatas).toHaveLength(1);
     expect((cdatas[0] as { cdata?: string }).cdata).toBe("a]]>b");
   });
 
   it("preserves a whitespace-only text node under xml:space=preserve", () => {
     const result = parse('<w:t xml:space="preserve"> </w:t>');
-    expect(result.elements?.[0].elements?.[0]).toEqual({ type: "text", text: " " });
+    expect(result.elements?.[0]?.elements?.[0]).toEqual({ type: "text", text: " " });
   });
 });

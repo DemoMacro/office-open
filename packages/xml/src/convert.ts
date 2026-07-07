@@ -6,6 +6,9 @@ import type { Element, Attributes } from "./types";
  */
 export function toElement(xmlObject: Record<string, unknown>): Element {
   const tagName = Object.keys(xmlObject)[0];
+  if (!tagName) {
+    return { type: "element", name: "" };
+  }
   const value = xmlObject[tagName];
 
   const element: Element = {

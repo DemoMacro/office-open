@@ -1,6 +1,20 @@
 import type { Element } from "./types";
 
 /**
+ * A readonly array guaranteed to have at least one element. Use with
+ * {@link isNonEmpty} to narrow `T[]` so indexed access (e.g. `arr[0]`)
+ * returns `T` instead of `T | undefined` under `noUncheckedIndexedAccess`.
+ */
+export type NonEmptyArray<T> = readonly [T, ...ReadonlyArray<T>];
+
+/**
+ * User-defined type guard narrowing an array to {@link NonEmptyArray}.
+ * Prefer this over a bare `arr.length > 0` check, which TypeScript does
+ * not reliably narrow into a non-empty tuple at the read site.
+ */
+export const isNonEmpty = <T>(arr: readonly T[]): arr is NonEmptyArray<T> => arr.length > 0;
+
+/**
  * Find the first direct child element with the given name.
  */
 export function findChild(parent: Element | undefined, name: string): Element | undefined {

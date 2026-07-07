@@ -46,11 +46,9 @@ export function escapeXml(str: string): string {
  */
 export function attrs(record: Record<string, string | number | boolean | undefined>): string {
   const parts: string[] = [];
-  const keys = Object.keys(record);
-  for (let i = 0; i < keys.length; i++) {
-    const v = record[keys[i]];
+  for (const [key, v] of Object.entries(record)) {
     if (v !== undefined) {
-      parts.push(` ${keys[i]}="${typeof v === "string" ? escapeXml(v) : v}"`);
+      parts.push(` ${key}="${typeof v === "string" ? escapeXml(v) : v}"`);
     }
   }
   return parts.join("");

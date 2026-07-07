@@ -33,8 +33,11 @@ export function xml(
 
   const items = Array.isArray(input) ? input : [input];
   for (let i = 0; i < items.length; i++) {
-    const keys = Object.keys(items[i]);
-    parts.push(formatElement(keys[0], items[i][keys[0]], opts.indent, 0));
+    const item = items[i];
+    if (!item) continue;
+    const key = Object.keys(item)[0];
+    if (!key) continue;
+    parts.push(formatElement(key, item[key], opts.indent, 0));
     if (opts.indent && i < items.length - 1) parts.push("\n");
   }
 
@@ -112,14 +115,17 @@ function formatElement(name: string, values: unknown, indent: string, depth: num
             }
           } else if (value && typeof value === "object") {
             const childKeys = Object.keys(value);
-            elemParts.push(
-              formatElement(
-                childKeys[0],
-                (value as Record<string, unknown>)[childKeys[0]],
-                indent,
-                depth + 1,
-              ),
-            );
+            const childKey = childKeys[0];
+            if (childKey) {
+              elemParts.push(
+                formatElement(
+                  childKey,
+                  (value as Record<string, unknown>)[childKey],
+                  indent,
+                  depth + 1,
+                ),
+              );
+            }
           } else if (value != null) {
             textParts.push(escapeXml(String(value)));
           }

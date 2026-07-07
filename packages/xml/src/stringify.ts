@@ -144,6 +144,7 @@ function writeElements(
   const parts: string[] = [];
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
+    if (!element) continue;
     const isFirst = firstLine && i === 0;
     switch (element.type) {
       case "element":
