@@ -2,6 +2,8 @@ import { xml2js, js2xml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { unzipSync, zipSync, strFromU8, strToU8, type Zippable } from "fflate";
 
+import { hasNativeInflate, nativeUnzip } from "./zip-native";
+
 const XML_PARSE_OPTIONS = {
   nativeTypeAttributes: true,
   captureSpacesBetweenElements: true,
@@ -19,7 +21,15 @@ export class ParsedArchive {
   private readonly wrapperCache = new Map<string, Element>();
 
   public constructor(data: Uint8Array) {
-    this.zip = new Map(Object.entries(unzipSync(data)));
+    // Native inflate is the fast path; on any failure (unsupported ZIP variant
+    // or corruption) fall back to fflate unzipSync, the reference implementation.
+    let unzipped: Record<string, Uint8Array>;
+    try {
+      unzipped = hasNativeInflate() ? nativeUnzip(data) : unzipSync(data);
+    } catch {
+      unzipped = unzipSync(data);
+    }
+    this.zip = new Map(Object.entries(unzipped));
   }
 
   /** Read an XML part as an Element tree. */
