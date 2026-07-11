@@ -2044,31 +2044,39 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 
   // Row breaks (after sheetCalcPr per XSD sequence)
   if (rowBreaks.length > 0) {
+    let manualCount = 0;
     const brkParts = rowBreaks.map((b) => {
       const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
       if (b.min !== undefined) bAttrs.min = b.min;
       if (b.max !== undefined) bAttrs.max = b.max;
-      if (b.manual) bAttrs.man = 1;
+      if (b.manual) {
+        bAttrs.man = 1;
+        manualCount++;
+      }
       if (b.pivot) bAttrs.pt = 1;
       return `<brk${attrs(bAttrs)}/>`;
     });
     p.push(
-      `<rowBreaks count="${rowBreaks.length}" manualBreakCount="${rowBreaks.filter((b) => b.manual).length}">${brkParts.join("")}</rowBreaks>`,
+      `<rowBreaks count="${rowBreaks.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</rowBreaks>`,
     );
   }
 
   // Column breaks
   if (colBreaks.length > 0) {
+    let manualCount = 0;
     const brkParts = colBreaks.map((b) => {
       const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
       if (b.min !== undefined) bAttrs.min = b.min;
       if (b.max !== undefined) bAttrs.max = b.max;
-      if (b.manual) bAttrs.man = 1;
+      if (b.manual) {
+        bAttrs.man = 1;
+        manualCount++;
+      }
       if (b.pivot) bAttrs.pt = 1;
       return `<brk${attrs(bAttrs)}/>`;
     });
     p.push(
-      `<colBreaks count="${colBreaks.length}" manualBreakCount="${colBreaks.filter((b) => b.manual).length}">${brkParts.join("")}</colBreaks>`,
+      `<colBreaks count="${colBreaks.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</colBreaks>`,
     );
   }
 

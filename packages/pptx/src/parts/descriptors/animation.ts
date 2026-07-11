@@ -5,7 +5,7 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { AnimationEntry } from "@shared/animation/timing";
 import { SlideTiming } from "@shared/animation/timing";
@@ -294,7 +294,7 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
 }
 
 function extractTargetShapeId(el: XmlElement): number | undefined {
-  const cBhvr = findDeep(el, "p:cBhvr")[0];
+  const cBhvr = findFirst(el, "p:cBhvr");
   if (!cBhvr) return undefined;
 
   const tgtEl = findChild(cBhvr, "p:tgtEl");
@@ -304,25 +304,6 @@ function extractTargetShapeId(el: XmlElement): number | undefined {
   if (!spTgt) return undefined;
 
   return attrNum(spTgt, "spid");
-}
-
-function findDeep(parent: XmlElement, name: string): XmlElement[] {
-  const results: XmlElement[] = [];
-
-  function walk(el: XmlElement): void {
-    if (el.name === name) {
-      results.push(el);
-      return;
-    }
-    for (const child of el.elements ?? []) {
-      walk(child);
-    }
-  }
-
-  for (const child of parent.elements ?? []) {
-    walk(child);
-  }
-  return results;
 }
 
 function readSubDuration(sub: XmlElement, opts: Record<string, unknown>): void {

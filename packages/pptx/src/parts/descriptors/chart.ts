@@ -14,7 +14,7 @@ import { chartSpaceDesc } from "@office-open/core/chart";
 import type { ChartSpaceOptions, ChartType } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringify } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild, findDeep, textOf } from "@office-open/xml";
+import { attr, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
@@ -102,7 +102,7 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
     if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
 
     // Chart data via c:chart → r:id → resolve relationship
-    const chartRef = findDeep(el, "c:chart")[0];
+    const chartRef = findFirst(el, "c:chart");
     if (chartRef) {
       const rId = attr(chartRef, "r:id");
       if (rId) {
@@ -131,9 +131,9 @@ function parseChartXml(el: Element): Partial<ChartSpaceOptions> | undefined {
   // Title
   const titleEl = findChild(chart, "c:title");
   if (titleEl) {
-    const rich = findDeep(titleEl, "c:rich")[0];
+    const rich = findFirst(titleEl, "c:rich");
     if (rich) {
-      const t = findDeep(rich, "a:t")[0];
+      const t = findFirst(rich, "a:t");
       if (t) {
         const title = textOf(t);
         if (title) opts.title = title;

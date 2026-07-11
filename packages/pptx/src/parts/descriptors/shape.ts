@@ -38,7 +38,7 @@ import type {
   CustomGeometryOptions,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { attrMeasure, findChild, findDeep, escapeXml, attrNum, attr } from "@office-open/xml";
+import { attrMeasure, findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
 import type {
   EffectsOptions,
   ReflectionOptions,
@@ -469,7 +469,7 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
     }
 
     // Image data from p:blipFill → a:blip → r:embed
-    const blip = findDeep(el, "a:blip")[0];
+    const blip = findFirst(el, "a:blip");
     if (blip) {
       const rEmbed = attr(blip, "r:embed");
       if (rEmbed) {

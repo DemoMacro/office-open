@@ -12,7 +12,7 @@ import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { createDataModel, type TreeNode } from "@office-open/core/smartart";
-import { attr, findChild, findDeep } from "@office-open/xml";
+import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
@@ -120,7 +120,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
     }
 
     // SmartArt data via dgm:relIds → r:dm
-    const relIds = findDeep(el, "dgm:relIds")[0];
+    const relIds = findFirst(el, "dgm:relIds");
     if (relIds) {
       const rId = attr(relIds, "r:dm");
       if (rId) {
@@ -176,7 +176,7 @@ function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtDescripto
 
     // Node — extract text
     if (ptType === "node" && modelId) {
-      const t = findDeep(pt, "a:t")[0];
+      const t = findFirst(pt, "a:t");
       const text = t ? extractText(t) : "";
       nodeMap.set(modelId, text);
     }

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { attr, children, findChild, findDeep, textOf } from "@office-open/xml";
+import { attr, children, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type {
   StyleLevel,
@@ -185,7 +185,7 @@ export function selectTocEntryElements(els: Element[]): Element[] {
       }
     };
     walk(el);
-    if (afterSeparate && depth >= 1 && findDeep(el, "w:t").length > 0) {
+    if (afterSeparate && depth >= 1 && findFirst(el, "w:t") !== undefined) {
       entries.push(el);
     }
   }

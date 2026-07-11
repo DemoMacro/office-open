@@ -13,9 +13,6 @@ export { parse, stringify } from "./runtime";
 // Context
 export type { ReadContext, WriteContext } from "./context";
 
-// OOXML Helpers
-export { boolDecode, boolEncode, enumDecode, enumEncode } from "./helpers";
-
 // Field consistency auditing — declared field sets + round-trip drift diff.
 export { checkOrder, diffTagSets, roundTripFields } from "./field-consistency";
 export type { FieldConsistencyReport, OrderViolation, RoundTripResult } from "./field-consistency";

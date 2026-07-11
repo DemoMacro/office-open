@@ -8,7 +8,7 @@
  */
 
 import type { ReadContext } from "@office-open/core/descriptor";
-import { attr, findChild, findDeep } from "@office-open/xml";
+import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 
@@ -153,7 +153,7 @@ function detectMediaType(el: XmlElement): "video" | "audio" | undefined {
 
 /** Dispatch p:graphicFrame to chart/smartart/table descriptor. */
 function parseGraphicFrameChild(el: XmlElement, ctx: ReadContext): LegacySlideChild | undefined {
-  const graphicData = findDeep(el, "a:graphicData")[0];
+  const graphicData = findFirst(el, "a:graphicData");
   if (!graphicData) return undefined;
 
   const uri = attr(graphicData, "uri") ?? "";

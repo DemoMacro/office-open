@@ -333,9 +333,10 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
     // heading). Rescue that page break as a standalone child to avoid silently
     // dropping it on round-trip.
     const lastEl = tocBuffer[tocBuffer.length - 1];
-    const pageBreakCount = findDeep(lastEl, "w:br").filter(
-      (b) => attr(b, "w:type") === "page",
-    ).length;
+    let pageBreakCount = 0;
+    for (const br of findDeep(lastEl, "w:br")) {
+      if (attr(br, "w:type") === "page") pageBreakCount++;
+    }
     for (let i = 0; i < pageBreakCount; i++) {
       children.push({ paragraph: { children: [{ pageBreak: true }] } });
     }

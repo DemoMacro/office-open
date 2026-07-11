@@ -11,7 +11,7 @@ import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild, findDeep } from "@office-open/xml";
+import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
 import { readPositionFromXfrm } from "./shape";
@@ -121,9 +121,9 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
     }
 
     // Media data from a:videoFile (r:link) or p14:media (r:embed)
-    const videoFileEl = findDeep(el, "a:videoFile")[0];
+    const videoFileEl = findFirst(el, "a:videoFile");
     const rLink = videoFileEl ? attr(videoFileEl, "r:link") : undefined;
-    const p14media = !videoFileEl ? findDeep(el, "p14:media")[0] : undefined;
+    const p14media = !videoFileEl ? findFirst(el, "p14:media") : undefined;
     const rEmbed = p14media ? attr(p14media, "r:embed") : undefined;
     const mediaRef = rLink ?? rEmbed;
     if (mediaRef) {
@@ -219,9 +219,9 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
     }
 
     // Media data from a:audioFile (r:link) or p14:media (r:embed)
-    const audioFileEl = findDeep(el, "a:audioFile")[0];
+    const audioFileEl = findFirst(el, "a:audioFile");
     const rLink = audioFileEl ? attr(audioFileEl, "r:link") : undefined;
-    const p14media = !audioFileEl ? findDeep(el, "p14:media")[0] : undefined;
+    const p14media = !audioFileEl ? findFirst(el, "p14:media") : undefined;
     const rEmbed = p14media ? attr(p14media, "r:embed") : undefined;
     const mediaRef = rLink ?? rEmbed;
     if (mediaRef) {

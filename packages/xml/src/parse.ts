@@ -86,8 +86,8 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
           }
           const attrs = parseAttributes(xmlMatch[1] ?? "");
           if (nativeTypeAttributes) {
-            for (const [key, v] of Object.entries(attrs)) {
-              attrs[key] = nativeTypeValue(v) as string;
+            for (const key in attrs) {
+              attrs[key] = nativeTypeValue(attrs[key] as string) as string;
             }
           }
           result.declaration.attributes = attrs;
@@ -152,8 +152,8 @@ export function parse(xmlString: string, options?: Xml2JsOptions): Element {
     pos = attributes.pos;
 
     if (nativeTypeAttributes) {
-      for (const [key, v] of Object.entries(attributes.attrs)) {
-        attributes.attrs[key] = nativeTypeValue(v) as string;
+      for (const key in attributes.attrs) {
+        attributes.attrs[key] = nativeTypeValue(attributes.attrs[key] as string) as string;
       }
     }
 

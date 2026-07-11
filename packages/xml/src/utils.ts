@@ -51,7 +51,11 @@ export function textOf(element: Element | undefined): string {
   if (!element) return "";
   if (element.text !== undefined && typeof element.text === "string") return element.text;
   if (element.elements && element.elements.length > 0) {
-    return element.elements.map((e) => (typeof e.text === "string" ? e.text : "")).join("");
+    let text = "";
+    for (const e of element.elements) {
+      if (typeof e.text === "string") text += e.text;
+    }
+    return text;
   }
   return "";
 }
@@ -162,12 +166,16 @@ export function hasChild(parent: Element | undefined, name: string): boolean {
  */
 export function findDeep(parent: Element | undefined, name: string): Element[] {
   const result: Element[] = [];
-  if (!parent) return result;
+  collectDeep(parent, name, result);
+  return result;
+}
+
+function collectDeep(parent: Element | undefined, name: string, result: Element[]): void {
+  if (!parent) return;
   for (const child of parent.elements ?? []) {
     if (child.name === name) result.push(child);
-    for (const found of findDeep(child, name)) result.push(found);
+    collectDeep(child, name, result);
   }
-  return result;
 }
 
 /**
