@@ -85,6 +85,18 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
   parse(el, _ctx) {
     const result: Partial<ChartDescriptorOptions> = {};
 
+    // id + name from p:nvGraphicFramePr/p:cNvPr
+    const nvGfxFramePr = findChild(el, "p:nvGraphicFramePr");
+    if (nvGfxFramePr) {
+      const cNvPr = findChild(nvGfxFramePr, "p:cNvPr");
+      if (cNvPr) {
+        const id = attrNum(cNvPr, "id");
+        if (id !== undefined) result.id = id;
+        const name = attr(cNvPr, "name");
+        if (name) result.name = name;
+      }
+    }
+
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");
     if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));

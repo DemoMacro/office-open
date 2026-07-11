@@ -63,7 +63,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     // Side-effect: register hyperlink
     let hyperlinkKey: string | undefined;
     if (opts.hyperlink) {
-      hyperlinkKey = `hlink_${nextHyperlinkId++}`;
+      hyperlinkKey = opts.hyperlink.referenceId ?? `hlink_${nextHyperlinkId++}`;
       ctx.addHyperlink(hyperlinkKey, opts.hyperlink.url, opts.hyperlink.tooltip);
     }
 
@@ -150,10 +150,14 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
   parse(el, _ctx) {
     const result: Mutable<RunPropertiesOptions> = {};
 
+    // nativeTypeAttributes (opc parser) coerces "1"/"0" to numbers, so a strict
+    // `=== "1"` check silently fails; normalize via String() before comparing.
+    const isOn = (raw: unknown): boolean => String(raw) === "1";
+
     if (el.attributes) {
       if (el.attributes["sz"] !== undefined) result.size = Number(el.attributes["sz"]) / 100;
-      if (el.attributes["b"] !== undefined) result.bold = el.attributes["b"] === "1";
-      if (el.attributes["i"] !== undefined) result.italic = el.attributes["i"] === "1";
+      if (el.attributes["b"] !== undefined) result.bold = isOn(el.attributes["b"]);
+      if (el.attributes["i"] !== undefined) result.italic = isOn(el.attributes["i"]);
       if (el.attributes["u"] !== undefined)
         result.underline = xsdUnderlineStyle.from(
           String(el.attributes["u"]),
@@ -170,14 +174,14 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
           String(el.attributes["cap"]),
         ) as RunPropertiesOptions["capitalization"];
       if (el.attributes["spc"] !== undefined) result.spacing = Number(el.attributes["spc"]);
-      if (el.attributes["noProof"] !== undefined) result.noProof = el.attributes["noProof"] === "1";
-      if (el.attributes["dirty"] !== undefined) result.dirty = el.attributes["dirty"] === "1";
+      if (el.attributes["noProof"] !== undefined) result.noProof = isOn(el.attributes["noProof"]);
+      if (el.attributes["dirty"] !== undefined) result.dirty = isOn(el.attributes["dirty"]);
       if (el.attributes["kumimoji"] !== undefined)
-        result.kumimoji = el.attributes["kumimoji"] === "1";
+        result.kumimoji = isOn(el.attributes["kumimoji"]);
       if (el.attributes["altLang"] !== undefined)
         result.alternateLanguage = String(el.attributes["altLang"]);
       if (el.attributes["normalizeH"] !== undefined)
-        result.normalizeHeight = el.attributes["normalizeH"] === "1";
+        result.normalizeHeight = isOn(el.attributes["normalizeH"]);
       if (el.attributes["bmk"] !== undefined) result.bookmarkMark = String(el.attributes["bmk"]);
       if (el.attributes["smtId"] !== undefined) result.smartTagId = String(el.attributes["smtId"]);
     }
@@ -209,8 +213,13 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
       const hl: Mutable<HyperlinkOptions> = {};
       const rId = hlinkClick.attributes?.["r:id"];
       if (rId) {
-        const url = _ctx.resolveRelationship(String(rId));
+        const ridStr = String(rId);
+        const url = _ctx.resolveRelationship(ridStr);
         if (url) hl.url = url;
+        // Preserve the placeholder key (e.g. "{hlink:hlink_1}") so re-stringify
+        // reuses it instead of allocating a new hlink_N counter value.
+        const m = ridStr.match(/^\{hlink:(.+)\}$/);
+        if (m) hl.referenceId = m[1];
       }
       if (hlinkClick.attributes?.["tooltip"]) hl.tooltip = String(hlinkClick.attributes["tooltip"]);
       if (hlinkClick.attributes?.["action"]) hl.action = String(hlinkClick.attributes["action"]);
@@ -222,7 +231,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
 
     // RTL
     const rtl = findChild(el, "a:rtl");
-    if (rtl) result.rightToLeft = rtl.attributes?.["val"] === "1";
+    if (rtl) result.rightToLeft = isOn(rtl.attributes?.["val"]);
 
     return result as RunPropertiesOptions;
   },

@@ -9,8 +9,10 @@ import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
+import type { TransitionDirection } from "@shared/transition";
 
 import { timingDesc } from "./animation";
+import { backgroundDesc, type BackgroundDescriptorOptions } from "./background";
 import { parseChild } from "./bridge";
 import { shapeDesc, pictureDesc } from "./shape";
 import type {
@@ -54,11 +56,6 @@ export type SlideChild =
   | { text: TextBodyDescriptorOptions }
   | { contentPart: { rId: string } };
 
-export interface BackgroundDescriptorOptions {
-  color?: string;
-  transparency?: number;
-}
-
 export interface TransitionDescriptorOptions {
   type?:
     | "none"
@@ -71,6 +68,7 @@ export interface TransitionDescriptorOptions {
     | "dissolve"
     | "wheel"
     | "random";
+  direction?: TransitionDirection;
   speed?: "slow" | "medium" | "fast";
   advanceOnClick?: boolean;
   advanceAfterMs?: number;
@@ -106,7 +104,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     parts.push("<p:cSld>");
 
     if (opts.background) {
-      parts.push(stringifyBackground(opts.background));
+      parts.push(backgroundDesc.stringify(opts.background, ctx) ?? "");
     }
 
     // p:spTree — shape tree
@@ -187,7 +185,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     if (cSld) {
       // Background
       const bg = findChild(cSld, "p:bg");
-      if (bg) result.background = readBackground(bg);
+      if (bg) result.background = backgroundDesc.parse(bg, _ctx);
 
       // Shape tree
       const spTree = findChild(cSld, "p:spTree");
@@ -283,38 +281,6 @@ function stringifySlideChild(child: SlideChild, ctx: WriteContext): string | und
   return undefined;
 }
 
-// ── Background helpers ──
-
-function stringifyBackground(opts: BackgroundDescriptorOptions): string {
-  if (opts.color) {
-    const alphaAttr =
-      opts.transparency !== undefined
-        ? `><a:srgbClr val="${opts.color.replace("#", "")}"><a:alpha val="${Math.round((100 - opts.transparency) * 1000)}"/></a:srgbClr></p:bgPr`
-        : `><a:solidFill><a:srgbClr val="${opts.color.replace("#", "")}"/></a:solidFill></p:bgPr`;
-    return `<p:bg><p:bgPr${alphaAttr}></p:bg>`;
-  }
-  return "<p:bg/>";
-}
-
-function readBackground(bg: XmlElement): BackgroundDescriptorOptions {
-  const result: BackgroundDescriptorOptions = {};
-  const bgPr = findChild(bg, "p:bgPr");
-  if (bgPr) {
-    const solidFill = findChild(bgPr, "a:solidFill");
-    if (solidFill) {
-      const srgbClr = findChild(solidFill, "a:srgbClr");
-      if (srgbClr?.attributes?.["val"]) {
-        result.color = String(srgbClr.attributes["val"]);
-        const alpha = findChild(srgbClr, "a:alpha");
-        if (alpha?.attributes?.["val"]) {
-          result.transparency = 100 - Number(alpha.attributes["val"]) / 1000;
-        }
-      }
-    }
-  }
-  return result;
-}
-
 // ── Transition helpers ──
 
 function stringifyTransition(opts: TransitionDescriptorOptions): string {
@@ -341,6 +307,20 @@ function stringifyTransition(opts: TransitionDescriptorOptions): string {
   return body ? `<p:transition${attrStr}>${body}</p:transition>` : `<p:transition${attrStr}/>`;
 }
 
+// Reverse of DIRECTION_MAP in @shared/transition (dir attribute → semantic direction).
+const XML_DIR_TO_DIRECTION: Record<string, TransitionDirection> = {
+  l: "left",
+  r: "right",
+  u: "up",
+  d: "down",
+  lu: "leftUp",
+  ru: "rightUp",
+  ld: "leftDown",
+  rd: "rightDown",
+  out: "out",
+  in: "in",
+};
+
 function readTransition(el: XmlElement): TransitionDescriptorOptions {
   const result: TransitionDescriptorOptions = {};
 
@@ -363,6 +343,17 @@ function readTransition(el: XmlElement): TransitionDescriptorOptions {
   else if (findChild(el, "p:dissolve")) result.type = "dissolve";
   else if (findChild(el, "p:wheel")) result.type = "wheel";
   else if (findChild(el, "p:random")) result.type = "random";
+
+  // Direction (dir attribute on directional children: cover/pull/push/wipe)
+  const dirEl =
+    findChild(el, "p:cover") ??
+    findChild(el, "p:pull") ??
+    findChild(el, "p:push") ??
+    findChild(el, "p:wipe");
+  if (dirEl?.attributes?.["dir"] !== undefined) {
+    const direction = XML_DIR_TO_DIRECTION[String(dirEl.attributes["dir"])];
+    if (direction) result.direction = direction;
+  }
 
   return result;
 }

@@ -29,6 +29,8 @@ export const TextCapitalization = {
 
 export interface HyperlinkOptions {
   url: string;
+  /** Internal placeholder key ("{hlink:N}" → "N"); preserved across parse → stringify. */
+  referenceId?: string;
   tooltip?: string;
   action?: string;
   highlightClick?: boolean;

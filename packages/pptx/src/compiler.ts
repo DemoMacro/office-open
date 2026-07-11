@@ -186,9 +186,11 @@ function buildMasterMap(
         key,
         index: globalLayoutIndex,
         masterIndex: mi,
-        layout: layoutDef
-          ? buildCustomLayoutXml(layoutDef)
-          : buildLayoutXml(slideLayoutType, slideWidth),
+        layout: layoutDef?.layout
+          ? layoutDef.layout
+          : layoutDef
+            ? buildCustomLayoutXml(layoutDef)
+            : buildLayoutXml(slideLayoutType, slideWidth),
       });
       layoutRels.push(
         buildRels([

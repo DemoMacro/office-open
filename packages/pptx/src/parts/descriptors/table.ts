@@ -479,9 +479,15 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
     if (marB !== undefined) margins.bottom = marB as number | UniversalMeasure;
     if (Object.keys(margins).length > 0) result.margins = margins;
 
-    // Fill — use full fillDesc for all fill types
-    const fillResult = parse(fillDesc, tcPr, ctx);
-    if (fillResult && Object.keys(fillResult).length > 0) result.fill = fillResult;
+    // Fill — guard against fillDesc returning { type: "none" } for a tcPr with
+    // no fill child, which would spuriously emit <a:noFill/> on re-stringify.
+    const fillChild =
+      findChild(tcPr, "a:solidFill") ||
+      findChild(tcPr, "a:noFill") ||
+      findChild(tcPr, "a:gradFill") ||
+      findChild(tcPr, "a:pattFill") ||
+      findChild(tcPr, "a:blipFill");
+    if (fillChild) result.fill = parse(fillDesc, tcPr, ctx);
 
     // Cell borders
     const borders: TableBordersDescriptorOptions = {};

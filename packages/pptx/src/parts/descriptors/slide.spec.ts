@@ -51,19 +51,17 @@ describe("slideDesc round-trip", () => {
     expect(result.showMasterPhAnim).toBe(false);
   });
 
-  it("round-trips background with color (no transparency)", () => {
+  it("round-trips background with solid fill", () => {
     const opts: SlideDescriptorOptions = {
-      background: { color: "FF5733" },
+      background: { fill: { type: "solid", color: "FF5733" } },
     };
     const result = roundTrip(opts);
 
     expect(result.background).toBeDefined();
-    expect(result.background!.color).toBe("FF5733");
+    const fill = result.background!.fill as { type: string; color: { value: string } };
+    expect(fill.type).toBe("solid");
+    expect(fill.color.value).toBe("FF5733");
   });
-
-  // Note: background with transparency is lossy — stringifyBackground outputs
-  // a:srgbClr directly under p:bgPr when transparency is set, but readBackground
-  // expects a:solidFill wrapper. This is a known round-trip inconsistency.
 
   it("round-trips transition fade", () => {
     const opts: SlideDescriptorOptions = {

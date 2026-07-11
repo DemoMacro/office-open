@@ -154,8 +154,15 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
         }
       }
 
-      const fillResult = parse(fillDesc, spPr, _ctx);
-      if (fillResult && Object.keys(fillResult).length > 0) result.fill = fillResult;
+      // Only parse fill when a fill child exists — fillDesc returns
+      // { type: "none" } for an empty spPr, which would spuriously emit <a:noFill/>.
+      const fillChild =
+        findChild(spPr, "a:solidFill") ||
+        findChild(spPr, "a:noFill") ||
+        findChild(spPr, "a:gradFill") ||
+        findChild(spPr, "a:pattFill") ||
+        findChild(spPr, "a:blipFill");
+      if (fillChild) result.fill = parse(fillDesc, spPr, _ctx);
       const ln = findChild(spPr, "a:ln");
       if (ln) result.outline = readOutlineCompat(ln);
     }
@@ -302,8 +309,15 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
         }
       }
 
-      const fillResult = parse(fillDesc, spPr, _ctx);
-      if (fillResult && Object.keys(fillResult).length > 0) result.fill = fillResult;
+      // Only parse fill when a fill child exists — fillDesc returns
+      // { type: "none" } for an empty spPr, which would spuriously emit <a:noFill/>.
+      const fillChild =
+        findChild(spPr, "a:solidFill") ||
+        findChild(spPr, "a:noFill") ||
+        findChild(spPr, "a:gradFill") ||
+        findChild(spPr, "a:pattFill") ||
+        findChild(spPr, "a:blipFill");
+      if (fillChild) result.fill = parse(fillDesc, spPr, _ctx);
       const ln = findChild(spPr, "a:ln");
       if (ln) result.outline = readOutlineCompat(ln);
 

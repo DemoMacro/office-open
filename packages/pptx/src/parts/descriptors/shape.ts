@@ -863,10 +863,16 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOpt
     }
   }
 
-  // Fill
-  const fillResult = parse(fillDesc, spPr, ctx);
-  if (fillResult && Object.keys(fillResult).length > 0) {
-    result.fill = fillResult as ShapeDescriptorOptions["fill"];
+  // Fill — guard against fillDesc returning { type: "none" } for an empty spPr,
+  // which would spuriously emit <a:noFill/> on re-stringify.
+  const fillChild =
+    findChild(spPr, "a:solidFill") ||
+    findChild(spPr, "a:noFill") ||
+    findChild(spPr, "a:gradFill") ||
+    findChild(spPr, "a:pattFill") ||
+    findChild(spPr, "a:blipFill");
+  if (fillChild) {
+    result.fill = parse(fillDesc, spPr, ctx) as ShapeDescriptorOptions["fill"];
   }
 
   // Outline

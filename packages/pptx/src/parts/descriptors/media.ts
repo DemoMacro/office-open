@@ -11,7 +11,7 @@ import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, findChild, findDeep } from "@office-open/xml";
+import { attr, attrNum, findChild, findDeep } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
 import { readPositionFromXfrm } from "./shape";
@@ -108,11 +108,13 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
       if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
     }
 
-    // Name from p:nvPicPr → a:cNvPr or p:cNvPr
+    // id + name from p:nvPicPr → a:cNvPr or p:cNvPr
     const nvPicPr = findChild(el, "p:nvPicPr");
     if (nvPicPr) {
       const cNvPr = findChild(nvPicPr, "a:cNvPr") ?? findChild(nvPicPr, "p:cNvPr");
       if (cNvPr) {
+        const id = attrNum(cNvPr, "id");
+        if (id !== undefined) result.id = id;
         const name = attr(cNvPr, "name");
         if (name) result.name = name;
       }
@@ -129,8 +131,10 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
       if (mediaPath) {
         const data = _ctx.getRaw(mediaPath);
         if (data) result.data = data;
-        result.type = mediaTypeFromPath(mediaPath, "video");
       }
+      // Fall back to the placeholder reference (e.g. "{media:foo.mp4}") when the
+      // relationship isn't registered, so the type survives a round-trip.
+      result.type = mediaTypeFromPath(mediaPath ?? mediaRef, "video");
     }
 
     // Poster from blipFill
@@ -202,11 +206,13 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
       if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
     }
 
-    // Name from p:nvPicPr
+    // id + name from p:nvPicPr
     const nvPicPr = findChild(el, "p:nvPicPr");
     if (nvPicPr) {
       const cNvPr = findChild(nvPicPr, "a:cNvPr") ?? findChild(nvPicPr, "p:cNvPr");
       if (cNvPr) {
+        const id = attrNum(cNvPr, "id");
+        if (id !== undefined) result.id = id;
         const name = attr(cNvPr, "name");
         if (name) result.name = name;
       }
@@ -223,8 +229,10 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
       if (mediaPath) {
         const data = _ctx.getRaw(mediaPath);
         if (data) result.data = data;
-        result.type = mediaTypeFromPath(mediaPath, "audio");
       }
+      // Fall back to the placeholder reference (e.g. "{media:foo.wav}") when the
+      // relationship isn't registered, so the type survives a round-trip.
+      result.type = mediaTypeFromPath(mediaPath ?? mediaRef, "audio");
     }
 
     return result as AudioDescriptorOptions;
@@ -236,7 +244,9 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
 function mediaTypeFromPath(path: string, kind: "video"): VideoType;
 function mediaTypeFromPath(path: string, kind: "audio"): AudioType;
 function mediaTypeFromPath(path: string, kind: "video" | "audio"): VideoType | AudioType {
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  // Tolerate placeholder wrappers like "{media:foo.wav}" — extract the last
+  // alphanumeric extension token rather than a trailing fragment with "}".
+  const ext = path.match(/\.([a-z0-9]+)\b/i)?.[1]?.toLowerCase() ?? "";
   if (kind === "video") {
     if (["mp4", "mov", "wmv", "avi"].includes(ext)) return ext as VideoType;
     return "mp4";

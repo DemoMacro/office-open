@@ -10,7 +10,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import { effectListDesc, fillDesc } from "@office-open/core/drawingml";
 import type { FillOptions as CoreFillOptions } from "@office-open/core/drawingml";
-import { attrBool, attrNum, findChild } from "@office-open/xml";
+import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 import { toEffectListOptions, type EffectsOptions } from "@shared/drawingml/effects";
@@ -21,6 +21,8 @@ import { parseChild, stringifyChild } from "./bridge";
 // ── Types ──
 
 export interface GroupShapeDescriptorOptions {
+  id?: number;
+  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -49,8 +51,8 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
 
   stringify(opts, ctx) {
     const descCtx = ctx as PptxWriteContext;
-    const id = _nextGroupId++;
-    const name = "Group";
+    const id = opts.id ?? _nextGroupId++;
+    const name = opts.name ?? "Group";
 
     const x = convertToEmu(opts.x ?? 0);
     const y = convertToEmu(opts.y ?? 0);
@@ -109,6 +111,18 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
   parse(el, ctx) {
     const result: Partial<GroupShapeDescriptorOptions> = {};
 
+    // id + name from p:nvGrpSpPr/p:cNvPr
+    const nvGrpSpPr = findChild(el, "p:nvGrpSpPr");
+    if (nvGrpSpPr) {
+      const cNvPr = findChild(nvGrpSpPr, "p:cNvPr");
+      if (cNvPr) {
+        const id = attrNum(cNvPr, "id");
+        if (id !== undefined) result.id = id;
+        const name = attr(cNvPr, "name");
+        if (name) result.name = name;
+      }
+    }
+
     const grpSpPr = findChild(el, "p:grpSpPr");
     if (grpSpPr) {
       const xfrm = findChild(grpSpPr, "a:xfrm");
@@ -147,9 +161,16 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
         if (rot !== undefined) result.rotation = rot;
         if (attrBool(xfrm, "flipH")) result.flipHorizontal = true;
       }
-      const fillResult = parse(fillDesc, grpSpPr, ctx);
-      if (fillResult && Object.keys(fillResult).length > 0) {
-        result.fill = fillResult as GroupShapeDescriptorOptions["fill"];
+      // Guard: fillDesc returns { type: "none" } for a grpSpPr with no fill child,
+      // which would spuriously emit <a:noFill/> on re-stringify.
+      const fillChild =
+        findChild(grpSpPr, "a:solidFill") ||
+        findChild(grpSpPr, "a:noFill") ||
+        findChild(grpSpPr, "a:gradFill") ||
+        findChild(grpSpPr, "a:pattFill") ||
+        findChild(grpSpPr, "a:blipFill");
+      if (fillChild) {
+        result.fill = parse(fillDesc, grpSpPr, ctx) as GroupShapeDescriptorOptions["fill"];
       }
       const effectLst = findChild(grpSpPr, "a:effectLst");
       if (effectLst) {

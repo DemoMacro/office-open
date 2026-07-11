@@ -54,6 +54,8 @@ export interface LayoutDefinition {
   matchingName?: string;
   placeholders?: LayoutPlaceholderOptions;
   children?: MasterChild[];
+  /** Original layout XML (minus declaration), preserved verbatim for round-trip. */
+  layout?: string;
 }
 
 export interface MasterDefinition extends SlideMasterOptions {
