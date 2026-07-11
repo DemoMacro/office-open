@@ -2,7 +2,7 @@
  * Table (w:tbl) descriptor for DOCX.
  *
  * Stringifies pure JSON TableOptions into XML using direct string
- * concatenation — zero IXmlableObject, zero xml(), zero BaseXmlComponent.
+ * concatenation — no intermediate object tree, no xml() pipeline.
  *
  * @module
  */

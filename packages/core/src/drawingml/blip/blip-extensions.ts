@@ -33,7 +33,7 @@ const createSvgBlip = (svgReferenceId: string): string =>
  * @returns An XML string representing the extension element
  * @internal
  */
-const createExtention = (svgReferenceId: string): string =>
+const createExtension = (svgReferenceId: string): string =>
   element("a:ext", { uri: "{96DAC541-7B7A-43D3-8B79-37D633B846F1}" }, [
     createSvgBlip(svgReferenceId),
   ]);
@@ -56,5 +56,5 @@ const createExtention = (svgReferenceId: string): string =>
  * @param svgReferenceId - The reference ID for the SVG image
  * @returns An XML string representing the extension list
  */
-export const createExtentionList = (svgReferenceId: string): string =>
-  element("a:extLst", undefined, [createExtention(svgReferenceId)]);
+export const createExtensionList = (svgReferenceId: string): string =>
+  element("a:extLst", undefined, [createExtension(svgReferenceId)]);

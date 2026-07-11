@@ -12,7 +12,7 @@ import { element } from "@office-open/xml";
 
 import { createBlipEffects } from "./blip-effects";
 import type { BlipEffectsOptions } from "./blip-effects";
-import { createExtentionList } from "./blip-extentions";
+import { createExtensionList } from "./blip-extensions";
 
 /**
  * Options for creating a blip element.
@@ -78,7 +78,7 @@ export const createBlip = (options: BlipOptions, blipEffects?: BlipEffectsOption
   }
 
   if (options.type === "svg" && options.fallbackFileName) {
-    children.push(createExtentionList(options.referenceId));
+    children.push(createExtensionList(options.referenceId));
   }
 
   return element(

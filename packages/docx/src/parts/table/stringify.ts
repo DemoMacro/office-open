@@ -3,7 +3,7 @@
  *
  * Replaces `buildTableProperties() + xml()`, `buildTableRowProperties() + xml()`,
  * `buildTableCellProperties() + xml()`, and `new TablePropertyExceptions().toXml()`
- * with direct string concatenation — zero IXmlableObject allocation.
+ * with direct string concatenation — no intermediate object tree.
  *
  * @module
  */

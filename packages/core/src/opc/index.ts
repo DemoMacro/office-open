@@ -7,7 +7,6 @@ export type { DefaultAttributes, OverrideAttributes } from "./content-types";
 // Core properties (OPC metadata)
 export {
   parseCorePropsElement,
-  buildCorePropertiesXml,
   buildCorePropertiesXmlString,
   type CorePropertiesOptions,
 } from "./core";

@@ -5,7 +5,7 @@
  * serialize paragraph/run content. Includes JSON child dispatch for all
  * ParagraphChild variants (image, chart, hyperlink, etc.).
  *
- * Pure string concatenation — zero IXmlableObject, zero BaseXmlComponent.
+ * Pure string concatenation — no intermediate object tree.
  *
  * @module
  */

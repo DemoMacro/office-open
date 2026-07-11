@@ -2,7 +2,7 @@
  * Body-level stringification for DOCX documents.
  *
  * Converts pure JSON options to XML strings for document body content.
- * Pure string concatenation — zero IXmlableObject, zero BaseXmlComponent.
+ * Pure string concatenation — no intermediate object tree.
  *
  * @module
  */
@@ -163,7 +163,7 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
             parts.push(jsonResult);
           }
         } else {
-          // Fallback: treat as IXmlableObject-like — should not happen in JSON path
+          // Fallback: treat as an object-tree-like value — should not happen in JSON path
           throw new Error(`Unsupported run child type: ${Object.keys(child).join(", ")}`);
         }
       }
@@ -198,7 +198,7 @@ export function stringifyParagraph(
   const resolved: ParagraphOptions = typeof opts === "string" ? { text: opts } : opts;
   const parts: string[] = [];
 
-  // Build paragraph properties — direct string output, zero IXmlableObject allocation
+  // Build paragraph properties — direct string output, no intermediate object tree
   const props = stringifyParagraphProperties(resolved);
 
   // Register numbering references

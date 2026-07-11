@@ -552,7 +552,7 @@ export class Styles {
 
   /**
    * Zero-allocation fast path: directly concatenate XML string.
-   * Bypasses the IXmlableObject intermediate tree entirely.
+   * Bypasses the intermediate object tree entirely.
    */
   /** Serialize to xl/styles.xml content (without XML declaration). */
   public serialize(): string {

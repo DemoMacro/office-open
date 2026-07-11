@@ -110,7 +110,7 @@ export { createBlipFill } from "./blip/blip-fill";
 export type { BlipFillOptions } from "./blip/blip-fill";
 export { createBlipEffects } from "./blip/blip-effects";
 export type { BlipEffectsOptions } from "./blip/blip-effects";
-export { createExtentionList } from "./blip/blip-extentions";
+export { createExtensionList } from "./blip/blip-extensions";
 export { createSourceRectangle } from "./blip/source-rectangle";
 export type { SourceRectangleOptions } from "./blip/source-rectangle";
 export { stringifyStretch } from "./blip/stretch";

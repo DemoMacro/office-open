@@ -1817,7 +1817,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
  * Build the complete worksheet XML string.
  *
  * Zero-allocation fast path: directly concatenates XML string,
- * bypassing the IXmlableObject intermediate tree entirely.
+ * bypassing the intermediate object tree entirely.
  */
 export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext): string {
   const sharedStrings = ctx.sharedStrings;

@@ -2,8 +2,8 @@
  * Direct XML string builders for paragraph and run properties.
  *
  * Replaces `buildParagraphProperties() + xml()` and `buildRunProperties() + xml()`
- * with direct string concatenation — zero intermediate IXmlableObject allocation,
- * zero recursive xml() traversal. Follows PPTX/XLSX pattern.
+ * with direct string concatenation — no intermediate object-tree allocation,
+ * no recursive xml() traversal. Follows PPTX/XLSX pattern.
  *
  * @module
  */
@@ -286,7 +286,7 @@ export interface StringifyPPrResult {
 }
 
 /**
- * Build `<w:pPr>` XML string directly from options — zero IXmlableObject allocation.
+ * Build `<w:pPr>` XML string directly from options — no intermediate object tree.
  *
  * Replaces `buildParagraphProperties() + xml()` with a single-pass string builder.
  */
@@ -619,7 +619,7 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
 }
 
 /**
- * Build `<w:rPr>` XML string directly from options — zero IXmlableObject allocation.
+ * Build `<w:rPr>` XML string directly from options — no intermediate object tree.
  *
  * Replaces `buildRunProperties() + xml()` with a single-pass string builder.
  */

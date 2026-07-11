@@ -3,8 +3,8 @@ import { escapeXml } from "./escape";
 const DEFAULT_INDENT = "    ";
 
 /**
- * Serialize IXmlableObject to XML string.
- * @deprecated Use `stringify` (Element → string) instead. This IXmlableObject path
+ * Serialize a Record-based XML object tree to an XML string.
+ * @deprecated Use `stringify` (Element → string) instead. This object-tree path
  * will be removed once the Descriptor migration is complete.
  */
 export function xml(
@@ -65,7 +65,7 @@ function normalizeOptions(options?: boolean | string | XmlInputOptions): {
 }
 
 /**
- * Single-pass XML formatter: directly converts IXmlableObject to string,
+ * Single-pass XML formatter: directly converts a Record-based XML object to string,
  * eliminating the intermediate ResolvedElement tree.
  */
 function formatElement(name: string, values: unknown, indent: string, depth: number): string {
