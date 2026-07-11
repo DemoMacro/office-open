@@ -5,13 +5,13 @@ export default defineConfig({
   pack: {
     entry: [
       "src/index.ts",
-      "src/util/values.ts",
       "src/theme/index.ts",
       "src/smartart/index.ts",
       "src/chart/index.ts",
       "src/drawingml/index.ts",
       "src/descriptor/index.ts",
       "src/patch/index.ts",
+      "src/util/index.ts",
     ],
     plugins: [nodePolyfills()],
     shims: true,

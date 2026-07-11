@@ -7,7 +7,7 @@ import {
   convertUniversalMeasureToEmu,
   convertUniversalMeasureToTwip,
   parseUniversalMeasure,
-} from "./util/converters";
+} from "./converters";
 
 describe("convertMillimetersToTwip", () => {
   it("should convert 25.4mm to 1440 twips (1 inch)", () => {

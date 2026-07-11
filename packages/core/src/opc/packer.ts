@@ -15,9 +15,9 @@ import {
   zipSync,
 } from "fflate";
 
-import { hasNativeDeflate, nativeZip, nativeZipAsync } from "../zip-native";
 import { convertOutput } from "./output";
 import type { OutputByType, OutputType } from "./output";
+import { hasNativeDeflate, nativeZip, nativeZipAsync } from "./zip-native";
 
 export type { Zippable, ZipOptions } from "fflate";
 export { strFromU8, unzipSync } from "fflate";

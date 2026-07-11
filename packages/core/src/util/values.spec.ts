@@ -1,172 +1,461 @@
+import { describe, expect, it } from "vite-plus/test";
+
 import {
   dateTimeValue,
+  decimalNumber,
+  eighthPointMeasureValue,
   hexColorValue,
   hpsMeasureValue,
   longHexNumber,
   measurementOrPercentValue,
   percentageValue,
+  pointMeasureValue,
   positiveUniversalMeasureValue,
   shortHexNumber,
   signedHpsMeasureValue,
   signedTwipsMeasureValue,
   twipsMeasureValue,
+  uCharHexNumber,
   universalMeasureValue,
   unsignedDecimalNumber,
-} from "@office-open/core";
-import { describe, expect, it } from "vite-plus/test";
+  ThemeColor,
+  ThemeFont,
+} from "./values";
 
-describe("values", () => {
+describe("decimalNumber", () => {
+  it("should floor a positive float", () => {
+    expect(decimalNumber(10.7)).toBe(10);
+  });
+
+  it("should floor a negative float", () => {
+    expect(decimalNumber(-5.3)).toBe(-6);
+  });
+
+  it("should pass through an integer", () => {
+    expect(decimalNumber(42)).toBe(42);
+  });
+
+  it("should handle zero", () => {
+    expect(decimalNumber(0)).toBe(0);
+  });
+
+  it("should throw on NaN", () => {
+    expect(() => decimalNumber(NaN)).toThrow("Invalid value 'NaN'");
+  });
+});
+
+describe("unsignedDecimalNumber", () => {
+  it("should floor a positive float", () => {
+    expect(unsignedDecimalNumber(10.7)).toBe(10);
+  });
+
+  it("should throw on negative value", () => {
+    expect(() => unsignedDecimalNumber(-5)).toThrow("Must be a positive integer");
+  });
+
+  it("should accept zero", () => {
+    expect(unsignedDecimalNumber(0)).toBe(0);
+  });
+});
+
+describe("longHexNumber", () => {
+  it("should accept a valid 8-char hex string", () => {
+    expect(longHexNumber("ABCD1234")).toBe("ABCD1234");
+  });
+
+  it("should accept lowercase", () => {
+    expect(longHexNumber("abcd1234")).toBe("abcd1234");
+  });
+
+  it("should throw on wrong length", () => {
+    expect(() => longHexNumber("ABC")).toThrow("Expected 8 digit hex value");
+  });
+
+  it("should throw on invalid chars", () => {
+    expect(() => longHexNumber("GHIJ1234")).toThrow("Expected 8 digit hex value");
+  });
+});
+
+describe("shortHexNumber", () => {
+  it("should accept a valid 4-char hex string", () => {
+    expect(shortHexNumber("AB12")).toBe("AB12");
+  });
+
+  it("should throw on wrong length", () => {
+    expect(() => shortHexNumber("ABC")).toThrow("Expected 4 digit hex value");
+  });
+});
+
+describe("uCharHexNumber", () => {
+  it("should accept a valid 2-char hex string", () => {
+    expect(uCharHexNumber("FF")).toBe("FF");
+  });
+
+  it("should throw on wrong length", () => {
+    expect(() => uCharHexNumber("FFF")).toThrow("Expected 2 digit hex value");
+  });
+});
+
+describe("hexColorValue", () => {
+  it("should accept 'auto'", () => {
+    expect(hexColorValue("auto")).toBe("auto");
+  });
+
+  it("should accept 6-char hex", () => {
+    expect(hexColorValue("FF0000")).toBe("FF0000");
+  });
+
+  it("should strip # prefix", () => {
+    expect(hexColorValue("#00FF00")).toBe("00FF00");
+  });
+
+  it("should throw on invalid hex", () => {
+    expect(() => hexColorValue("GG0000")).toThrow();
+  });
+
+  it("should throw on wrong length hex", () => {
+    expect(() => hexColorValue("FFF")).toThrow();
+  });
+});
+
+describe("universalMeasureValue", () => {
+  it("should normalize mm", () => {
+    expect(universalMeasureValue("10.500mm")).toBe("10.5mm");
+  });
+
+  it("should normalize cm", () => {
+    expect(universalMeasureValue("2cm")).toBe("2cm");
+  });
+
+  it("should normalize in", () => {
+    expect(universalMeasureValue("1.5in")).toBe("1.5in");
+  });
+
+  it("should normalize pt", () => {
+    expect(universalMeasureValue("12pt")).toBe("12pt");
+  });
+
+  it("should normalize pc", () => {
+    expect(universalMeasureValue("3pc")).toBe("3pc");
+  });
+
+  it("should normalize pi", () => {
+    expect(universalMeasureValue("1pi")).toBe("1pi");
+  });
+
+  it("should preserve negative values", () => {
+    expect(universalMeasureValue("-5mm")).toBe("-5mm");
+  });
+});
+
+describe("positiveUniversalMeasureValue", () => {
+  it("should accept positive values", () => {
+    expect(positiveUniversalMeasureValue("10mm")).toBe("10mm");
+  });
+
+  it("should throw on negative values", () => {
+    expect(() => positiveUniversalMeasureValue("-5mm")).toThrow("Expected a positive number");
+  });
+});
+
+describe("signedTwipsMeasureValue", () => {
+  it("should pass through universal measure string", () => {
+    expect(signedTwipsMeasureValue("10mm")).toBe("10mm");
+  });
+
+  it("should floor a numeric value", () => {
+    expect(signedTwipsMeasureValue(1440.7)).toBe(1440);
+  });
+
+  it("should accept negative numbers", () => {
+    expect(signedTwipsMeasureValue(-100)).toBe(-100);
+  });
+});
+
+describe("hpsMeasureValue", () => {
+  it("should pass through positive universal measure", () => {
+    expect(hpsMeasureValue("12pt")).toBe("12pt");
+  });
+
+  it("should validate positive number", () => {
+    expect(hpsMeasureValue(24)).toBe(24);
+  });
+
+  it("should throw on negative number", () => {
+    expect(() => hpsMeasureValue(-1)).toThrow();
+  });
+});
+
+describe("signedHpsMeasureValue", () => {
+  it("should pass through universal measure", () => {
+    expect(signedHpsMeasureValue("6pt")).toBe("6pt");
+  });
+
+  it("should floor a number", () => {
+    expect(signedHpsMeasureValue(12.5)).toBe(12);
+  });
+
+  it("should accept negative numbers", () => {
+    expect(signedHpsMeasureValue(-6)).toBe(-6);
+  });
+});
+
+describe("twipsMeasureValue", () => {
+  it("should pass through positive universal measure", () => {
+    expect(twipsMeasureValue("25.4mm")).toBe("25.4mm");
+  });
+
+  it("should validate positive number", () => {
+    expect(twipsMeasureValue(1440)).toBe(1440);
+  });
+
+  it("should throw on negative number", () => {
+    expect(() => twipsMeasureValue(-1)).toThrow();
+  });
+});
+
+describe("percentageValue", () => {
+  it("should normalize percentage", () => {
+    expect(percentageValue("50.000%")).toBe("50%");
+  });
+
+  it("should handle integer percentage", () => {
+    expect(percentageValue("100%")).toBe("100%");
+  });
+
+  it("should handle negative percentage", () => {
+    expect(percentageValue("-10.5%")).toBe("-10.5%");
+  });
+});
+
+describe("measurementOrPercentValue", () => {
+  it("should floor a number", () => {
+    expect(measurementOrPercentValue(100.5)).toBe(100);
+  });
+
+  it("should normalize a percentage", () => {
+    expect(measurementOrPercentValue("50%")).toBe("50%");
+  });
+
+  it("should normalize a universal measure", () => {
+    expect(measurementOrPercentValue("10mm")).toBe("10mm");
+  });
+});
+
+describe("eighthPointMeasureValue", () => {
+  it("should validate positive integer", () => {
+    expect(eighthPointMeasureValue(16)).toBe(16);
+  });
+
+  it("should floor float", () => {
+    expect(eighthPointMeasureValue(16.7)).toBe(16);
+  });
+
+  it("should throw on negative", () => {
+    expect(() => eighthPointMeasureValue(-1)).toThrow();
+  });
+});
+
+describe("pointMeasureValue", () => {
+  it("should validate positive integer", () => {
+    expect(pointMeasureValue(12)).toBe(12);
+  });
+
+  it("should throw on negative", () => {
+    expect(() => pointMeasureValue(-1)).toThrow();
+  });
+});
+
+describe("ThemeColor", () => {
+  it("should have all 17 ST_ThemeColor values", () => {
+    const values = Object.values(ThemeColor);
+    expect(values).toHaveLength(17);
+  });
+
+  it("should include required values per XSD", () => {
+    expect(ThemeColor.DARK1).toBe("dark1");
+    expect(ThemeColor.LIGHT1).toBe("light1");
+    expect(ThemeColor.ACCENT1).toBe("accent1");
+    expect(ThemeColor.HYPERLINK).toBe("hyperlink");
+    expect(ThemeColor.FOLLOWED_HYPERLINK).toBe("followedHyperlink");
+    expect(ThemeColor.NONE).toBe("none");
+    expect(ThemeColor.BACKGROUND1).toBe("background1");
+    expect(ThemeColor.TEXT1).toBe("text1");
+  });
+});
+
+describe("ThemeFont", () => {
+  it("should have all 8 ST_Theme values", () => {
+    const values = Object.values(ThemeFont);
+    expect(values).toHaveLength(8);
+  });
+
+  it("should include required values per XSD", () => {
+    expect(ThemeFont.MAJOR_ASCII).toBe("majorAscii");
+    expect(ThemeFont.MAJOR_H_ANSI).toBe("majorHAnsi");
+    expect(ThemeFont.MAJOR_EAST_ASIA).toBe("majorEastAsia");
+    expect(ThemeFont.MAJOR_BIDI).toBe("majorBidi");
+    expect(ThemeFont.MINOR_ASCII).toBe("minorAscii");
+    expect(ThemeFont.MINOR_H_ANSI).toBe("minorHAnsi");
+    expect(ThemeFont.MINOR_EAST_ASIA).toBe("minorEastAsia");
+    expect(ThemeFont.MINOR_BIDI).toBe("minorBidi");
+  });
+});
+
+// ── Additional input cases (merged from the former top-level values.spec.ts) ──
+// These exercise a complementary set of inputs for the same validators.
+describe("values — additional input cases", () => {
   describe("universalMeasureValue", () => {
     it("should allow valid values", () => {
       // "-?[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)"
-      expect(universalMeasureValue("-9mm")).to.eq("-9mm");
-      expect(universalMeasureValue("-0.5in")).to.eq("-0.5in");
-      expect(universalMeasureValue("20.pt")).to.eq("20pt");
-      expect(universalMeasureValue("5.22pc")).to.eq("5.22pc");
-      expect(universalMeasureValue("100 pi")).to.eq("100pi");
+      expect(universalMeasureValue("-9mm")).toBe("-9mm");
+      expect(universalMeasureValue("-0.5in")).toBe("-0.5in");
+      expect(universalMeasureValue("20.pt")).toBe("20pt");
+      expect(universalMeasureValue("5.22pc")).toBe("5.22pc");
+      expect(universalMeasureValue("100 pi")).toBe("100pi");
     });
   });
 
   describe("positiveUniversalMeasureValue", () => {
     it("should allow valid values", () => {
       // "[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)"
-      expect(positiveUniversalMeasureValue("9mm")).to.eq("9mm");
-      expect(positiveUniversalMeasureValue("0.5in")).to.eq("0.5in");
-      expect(positiveUniversalMeasureValue("20.pt")).to.eq("20pt");
-      expect(positiveUniversalMeasureValue("5.22pc")).to.eq("5.22pc");
-      expect(positiveUniversalMeasureValue("100 pi")).to.eq("100pi");
+      expect(positiveUniversalMeasureValue("9mm")).toBe("9mm");
+      expect(positiveUniversalMeasureValue("0.5in")).toBe("0.5in");
+      expect(positiveUniversalMeasureValue("20.pt")).toBe("20pt");
+      expect(positiveUniversalMeasureValue("5.22pc")).toBe("5.22pc");
+      expect(positiveUniversalMeasureValue("100 pi")).toBe("100pi");
     });
     it("should throw on invalid values", () => {
-      expect(() => positiveUniversalMeasureValue("-9mm")).to.throw();
-      expect(() => positiveUniversalMeasureValue("-0.5in")).to.throw();
+      expect(() => positiveUniversalMeasureValue("-9mm")).toThrow();
+      expect(() => positiveUniversalMeasureValue("-0.5in")).toThrow();
     });
   });
 
   describe("longHexNumber", () => {
     it("should allow valid values", () => {
-      expect(longHexNumber("112233FF")).to.eq("112233FF");
+      expect(longHexNumber("112233FF")).toBe("112233FF");
     });
     it("should throw on invalid values", () => {
-      expect(() => longHexNumber("112233GG")).to.throw();
-      expect(() => longHexNumber("112233F")).to.throw();
-      expect(() => longHexNumber("112233FFF")).to.throw();
+      expect(() => longHexNumber("112233GG")).toThrow();
+      expect(() => longHexNumber("112233F")).toThrow();
+      expect(() => longHexNumber("112233FFF")).toThrow();
     });
   });
 
   describe("shortHexNumber", () => {
     it("should allow valid values", () => {
-      expect(shortHexNumber("1122")).to.eq("1122");
-      expect(shortHexNumber("FFFF")).to.eq("FFFF");
+      expect(shortHexNumber("1122")).toBe("1122");
+      expect(shortHexNumber("FFFF")).toBe("FFFF");
     });
     it("should throw on invalid values", () => {
-      expect(() => shortHexNumber("11")).to.throw();
-      expect(() => shortHexNumber("112233")).to.throw();
+      expect(() => shortHexNumber("11")).toThrow();
+      expect(() => shortHexNumber("112233")).toThrow();
       /* Cspell:disable-next-line */
-      expect(() => shortHexNumber("FFFG")).to.throw();
+      expect(() => shortHexNumber("FFFG")).toThrow();
     });
   });
 
   describe("hexColorValue", () => {
     it("should allow valid values", () => {
-      expect(hexColorValue("auto")).to.eq("auto");
-      expect(hexColorValue("FF0000")).to.eq("FF0000");
-      expect(hexColorValue("aabbcc")).to.eq("aabbcc");
-      expect(hexColorValue("#BEEFEE")).to.eq("BEEFEE");
-      expect(hexColorValue("abcdef")).to.eq("abcdef");
+      expect(hexColorValue("auto")).toBe("auto");
+      expect(hexColorValue("FF0000")).toBe("FF0000");
+      expect(hexColorValue("aabbcc")).toBe("aabbcc");
+      expect(hexColorValue("#BEEFEE")).toBe("BEEFEE");
+      expect(hexColorValue("abcdef")).toBe("abcdef");
     });
     it("should throw on invalid values", () => {
-      expect(() => hexColorValue("foo")).to.throw();
-      expect(() => hexColorValue("fff")).to.throw();
-      expect(() => hexColorValue("a")).to.throw();
-      expect(() => hexColorValue("abcde")).to.throw();
-      expect(() => hexColorValue("---")).to.throw();
-      expect(() => hexColorValue("brown")).to.throw();
+      expect(() => hexColorValue("foo")).toThrow();
+      expect(() => hexColorValue("fff")).toThrow();
+      expect(() => hexColorValue("a")).toThrow();
+      expect(() => hexColorValue("abcde")).toThrow();
+      expect(() => hexColorValue("---")).toThrow();
+      expect(() => hexColorValue("brown")).toThrow();
     });
   });
 
   describe("unsignedDecimalNumber", () => {
     it("should allow valid values", () => {
-      expect(unsignedDecimalNumber(1243)).to.eq(1243);
-      expect(unsignedDecimalNumber(12.43)).to.eq(12);
-      expect(unsignedDecimalNumber(1e10)).to.eq(1e10);
+      expect(unsignedDecimalNumber(1243)).toBe(1243);
+      expect(unsignedDecimalNumber(12.43)).toBe(12);
+      expect(unsignedDecimalNumber(1e10)).toBe(1e10);
     });
     it("should throw on invalid values", () => {
-      expect(() => unsignedDecimalNumber(NaN)).to.throw();
-      expect(() => unsignedDecimalNumber(-10)).to.throw();
+      expect(() => unsignedDecimalNumber(NaN)).toThrow();
+      expect(() => unsignedDecimalNumber(-10)).toThrow();
     });
   });
 
   describe("signedTwipsMeasureValue", () => {
     it("should allow valid values", () => {
-      expect(signedTwipsMeasureValue(1243)).to.eq(1243);
-      expect(signedTwipsMeasureValue("-5mm")).to.eq("-5mm");
-      expect(signedTwipsMeasureValue("10.in")).to.eq("10in");
+      expect(signedTwipsMeasureValue(1243)).toBe(1243);
+      expect(signedTwipsMeasureValue("-5mm")).toBe("-5mm");
+      expect(signedTwipsMeasureValue("10.in")).toBe("10in");
     });
     it("should throw on invalid values", () => {
-      expect(() => signedTwipsMeasureValue(NaN)).to.throw();
+      expect(() => signedTwipsMeasureValue(NaN)).toThrow();
     });
   });
 
   describe("twipsMeasureValue", () => {
     it("should allow valid values", () => {
-      expect(twipsMeasureValue(1243)).to.eq(1243);
-      expect(twipsMeasureValue("5mm")).to.eq("5mm");
-      expect(twipsMeasureValue("10.in")).to.eq("10in");
+      expect(twipsMeasureValue(1243)).toBe(1243);
+      expect(twipsMeasureValue("5mm")).toBe("5mm");
+      expect(twipsMeasureValue("10.in")).toBe("10in");
     });
     it("should throw on invalid values", () => {
-      expect(() => twipsMeasureValue(-12)).to.throw();
-      expect(() => twipsMeasureValue(NaN)).to.throw();
-      expect(() => twipsMeasureValue("-5mm")).to.throw();
+      expect(() => twipsMeasureValue(-12)).toThrow();
+      expect(() => twipsMeasureValue(NaN)).toThrow();
+      expect(() => twipsMeasureValue("-5mm")).toThrow();
     });
   });
 
   describe("hpsMeasureValue", () => {
     it("should allow valid values", () => {
-      expect(hpsMeasureValue(1243)).to.eq(1243);
-      expect(hpsMeasureValue("5mm")).to.eq("5mm");
+      expect(hpsMeasureValue(1243)).toBe(1243);
+      expect(hpsMeasureValue("5mm")).toBe("5mm");
     });
     it("should throw on invalid values", () => {
-      expect(() => hpsMeasureValue(NaN)).to.throw();
-      expect(() => hpsMeasureValue("-5mm")).to.throw();
+      expect(() => hpsMeasureValue(NaN)).toThrow();
+      expect(() => hpsMeasureValue("-5mm")).toThrow();
     });
   });
 
   describe("signedHpsMeasureValue", () => {
     it("should allow valid values", () => {
-      expect(signedHpsMeasureValue(1243)).to.eq(1243);
-      expect(signedHpsMeasureValue(-1243)).to.eq(-1243);
-      expect(signedHpsMeasureValue("5mm")).to.eq("5mm");
-      expect(signedHpsMeasureValue("-5mm")).to.eq("-5mm");
+      expect(signedHpsMeasureValue(1243)).toBe(1243);
+      expect(signedHpsMeasureValue(-1243)).toBe(-1243);
+      expect(signedHpsMeasureValue("5mm")).toBe("5mm");
+      expect(signedHpsMeasureValue("-5mm")).toBe("-5mm");
     });
     it("should throw on invalid values", () => {
-      expect(() => hpsMeasureValue(NaN)).to.throw();
+      expect(() => hpsMeasureValue(NaN)).toThrow();
     });
   });
 
   describe("percentageValue", () => {
     it("should allow valid values", () => {
-      expect(percentageValue("0%")).to.eq("0%");
-      expect(percentageValue("-20%")).to.eq("-20%");
-      expect(percentageValue("100%")).to.eq("100%");
-      expect(percentageValue("1000%")).to.eq("1000%");
+      expect(percentageValue("0%")).toBe("0%");
+      expect(percentageValue("-20%")).toBe("-20%");
+      expect(percentageValue("100%")).toBe("100%");
+      expect(percentageValue("1000%")).toBe("1000%");
     });
   });
 
   describe("measurementOrPercentValue", () => {
     it("should allow valid values", () => {
-      expect(measurementOrPercentValue(1243)).to.eq(1243);
-      expect(measurementOrPercentValue(-1243)).to.eq(-1243);
-      expect(measurementOrPercentValue("10%")).to.eq("10%");
-      expect(measurementOrPercentValue("5mm")).to.eq("5mm");
+      expect(measurementOrPercentValue(1243)).toBe(1243);
+      expect(measurementOrPercentValue(-1243)).toBe(-1243);
+      expect(measurementOrPercentValue("10%")).toBe("10%");
+      expect(measurementOrPercentValue("5mm")).toBe("5mm");
     });
     it("should throw on invalid values", () => {
-      expect(() => measurementOrPercentValue(NaN)).to.throw();
+      expect(() => measurementOrPercentValue(NaN)).toThrow();
     });
   });
 
   describe("dateTimeValue", () => {
     it("should allow valid values", () => {
-      expect(dateTimeValue(new Date())).to.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:.\d+)?Z/);
+      expect(dateTimeValue(new Date())).toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:.\d+)?Z/);
     });
   });
 });

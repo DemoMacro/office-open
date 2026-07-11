@@ -35,10 +35,6 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
-    "./util/values": {
-      "types": "./dist/util/values.d.mts",
-      "import": "./dist/util/values.mjs"
-    },
     "./smartart": {
       "types": "./dist/smartart/index.d.mts",
       "import": "./dist/smartart/index.mjs"
@@ -62,6 +58,10 @@
     "./theme": {
       "types": "./dist/theme/index.d.mts",
       "import": "./dist/theme/index.mjs"
+    },
+    "./util": {
+      "types": "./dist/util/index.d.mts",
+      "import": "./dist/util/index.mjs"
     }
   },
   "scripts": {

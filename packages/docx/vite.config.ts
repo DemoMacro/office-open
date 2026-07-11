@@ -7,7 +7,15 @@ const src = path.resolve("src");
 
 export default defineConfig({
   pack: {
-    entry: ["src/index.ts", "src/generate.ts", "src/parse.ts", "src/patch/index.ts"],
+    entry: [
+      "src/index.ts",
+      "src/generate.ts",
+      "src/parse.ts",
+      "src/patch/index.ts",
+      "src/chart.ts",
+      "src/drawingml.ts",
+      "src/smartart.ts",
+    ],
     plugins: [nodePolyfills()],
     shims: true,
   },

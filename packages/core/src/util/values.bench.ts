@@ -1,13 +1,8 @@
 import { element } from "@office-open/xml";
 import { describe, bench } from "vite-plus/test";
 
-import { uniqueId, uniqueUuid, hashedId, uniqueNumericIdCreator } from "./util/generators";
-import {
-  decimalNumber,
-  hexColorValue,
-  hpsMeasureValue,
-  universalMeasureValue,
-} from "./util/values";
+import { uniqueId, uniqueUuid, hashedId, uniqueNumericIdCreator } from "./generators";
+import { decimalNumber, hexColorValue, hpsMeasureValue, universalMeasureValue } from "./values";
 
 describe("values validators", () => {
   bench("decimalNumber", () => {
