@@ -77,15 +77,16 @@ gen(); // → 1, 2, 3, ...
 
 ## Exports
 
-| Path                          | Contents                                                                  |
-| ----------------------------- | ------------------------------------------------------------------------- |
-| `@office-open/core`           | Descriptors, validators, converters, ID generators, OPC, password hashing |
-| `@office-open/core/values`    | Validators + ThemeColor/ThemeFont only                                    |
-| `@office-open/core/chart`     | Chart types, series data, chart collection, title                         |
-| `@office-open/core/smartart`  | SmartArt data model, tree-to-model, definitions                           |
-| `@office-open/core/drawingml` | DrawingML fills, outlines, effects, geometry, text body                   |
-| `@office-open/core/patch`     | Template patching utilities (replacer, traverser, token replacer)         |
-| `@office-open/core/theme`     | Theme definitions and color schemes                                       |
+| Path                           | Contents                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `@office-open/core`            | Descriptors, validators, converters, ID generators, OPC, password hashing |
+| `@office-open/core/descriptor` | Descriptor runtime (`CustomDescriptor`, `stringify`, `parse`, contexts)   |
+| `@office-open/core/util`       | Validators, converters, ID generators, mappings, crypto, base64           |
+| `@office-open/core/chart`      | Chart types, series data, chart collection, title                         |
+| `@office-open/core/smartart`   | SmartArt data model, tree-to-model, definitions                           |
+| `@office-open/core/drawingml`  | DrawingML fills, outlines, effects, geometry, text body                   |
+| `@office-open/core/patch`      | Template patching utilities (replacer, traverser, token replacer)         |
+| `@office-open/core/theme`      | Theme definitions and color schemes                                       |
 
 ## License
 

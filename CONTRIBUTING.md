@@ -215,7 +215,7 @@ return `<p:spPr>${parts.join("")}</p:spPr>`;
 
 ## XSD Value Mapping
 
-When XSD uses abbreviations, mapping is centralized in `packages/core/src/xsd-mappings.ts`. The mapping is bidirectional:
+When XSD uses abbreviations, mapping is centralized in `packages/core/src/util/mappings.ts`. Each mapping is a `bidi()` helper exposing `.to()` (user value → XSD value) and `.from()` (XSD value → user value). The mapping is bidirectional:
 
 - **Generation** (Options → XML): user-friendly → XSD abbreviated
 - **Parsing** (XML → Options): XSD abbreviated → user-friendly
