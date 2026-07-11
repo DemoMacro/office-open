@@ -18,7 +18,7 @@
  * @property author - Name of the author who made the change
  * @property date - Date and time when the change was made (ISO 8601 format)
  */
-export interface ChangedAttributesProperties {
+export interface ChangedProperties {
   /** Unique identifier for this change (must be unique within the document) */
   id: number;
   /** Name of the author who made the change */

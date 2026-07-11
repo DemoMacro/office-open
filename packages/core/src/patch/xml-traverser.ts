@@ -1,14 +1,14 @@
 /**
  * XML traverser for searching paragraph content in OOXML documents.
  *
- * Parameterised by `XmlNamespaceConfig` so it works for both DOCX and PPTX.
+ * Parameterised by `XmlNamespaceOptions` so it works for both DOCX and PPTX.
  */
 import type { Element } from "@office-open/xml";
 
 import { createRunRenderer, type ElementWrapper, type RenderedParagraphNode } from "./run-renderer";
-import type { XmlNamespaceConfig } from "./xml-namespace";
+import type { XmlNamespaceOptions } from "./xml-namespace";
 
-export function createTraverser(ns: XmlNamespaceConfig) {
+export function createTraverser(ns: XmlNamespaceOptions) {
   const renderParagraphNode = createRunRenderer(ns);
 
   const traverse = (node: Element): readonly RenderedParagraphNode[] => {

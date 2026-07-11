@@ -154,7 +154,7 @@ export const LineJoin = {
 /**
  * Attributes for configuring outline properties.
  */
-export interface OutlineAttributes {
+export interface OutlineProperties {
   /** Line width in EMUs (English Metric Units) or universal measure (e.g., "1pt", "2mm") */
   width?: number | UniversalMeasure;
   /** Line cap style */
@@ -207,7 +207,7 @@ export interface OutlineFillProperties {
  *
  * Combines outline attributes with fill properties.
  */
-export type OutlineOptions = OutlineAttributes & OutlineFillProperties;
+export type OutlineOptions = OutlineProperties & OutlineFillProperties;
 
 /**
  * Creates the fill child element for an outline.

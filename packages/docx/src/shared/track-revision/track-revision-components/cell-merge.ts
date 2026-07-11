@@ -4,7 +4,7 @@
  * @module
  */
 
-import type { ChangedAttributesProperties } from "../track-revision";
+import type { ChangedProperties } from "../track-revision";
 
 /**
  * Vertical merge revision types.
@@ -20,7 +20,7 @@ export const VerticalMergeRevisionType = {
   RESTART: "restart",
 } as const;
 
-export type CellMergeAttributes = ChangedAttributesProperties & {
+export type CellMergeAttributes = ChangedProperties & {
   verticalMerge?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
   verticalMergeOriginal?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
 };

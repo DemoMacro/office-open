@@ -9,7 +9,7 @@
  * @module
  */
 
-export interface DefaultAttributes {
+export interface DefaultProperties {
   contentType: string;
   extension?: string;
 }
@@ -22,7 +22,7 @@ export const createDefault = (contentType: string, extension?: string): string =
     ? `<Default ContentType="${contentType}" Extension="${extension}"/>`
     : `<Default ContentType="${contentType}"/>`;
 
-export interface OverrideAttributes {
+export interface OverrideProperties {
   contentType: string;
   partName?: string;
 }

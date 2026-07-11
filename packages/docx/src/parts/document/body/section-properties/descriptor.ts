@@ -14,15 +14,15 @@ import { twipsMeasureValue } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrMeasure, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import type { ColumnAttributes } from "@parts/document/body/section-properties/properties/column";
-import type { ColumnsAttributes } from "@parts/document/body/section-properties/properties/columns";
+import type { ColumnProperties } from "@parts/document/body/section-properties/properties/column";
+import type { ColumnsProperties } from "@parts/document/body/section-properties/properties/columns";
 import type {
   EndnotePropertiesOptions,
   FootnotePropertiesOptions,
 } from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
 import type { PageBordersOptions } from "@parts/document/body/section-properties/properties/page-borders";
 import { PageNumberSeparator } from "@parts/document/body/section-properties/properties/page-number";
-import type { PageNumberTypeAttributes } from "@parts/document/body/section-properties/properties/page-number";
+import type { PageNumberTypeProperties } from "@parts/document/body/section-properties/properties/page-number";
 import type {
   SectionPropertiesChangeOptions,
   SectionPropertiesOptions,
@@ -104,7 +104,7 @@ function lineNumberXml(opts: NonNullable<SectionPropertiesOptions["lineNumbers"]
   return attrs.length ? `<w:lnNumType ${attrs.join(" ")}/>` : "<w:lnNumType/>";
 }
 
-function pageNumberXml(opts: NonNullable<PageNumberTypeAttributes>): string {
+function pageNumberXml(opts: NonNullable<PageNumberTypeProperties>): string {
   const attrs: string[] = [];
   if (opts.start !== undefined) attrs.push(`w:start="${opts.start}"`);
   if (opts.formatType !== undefined) attrs.push(`w:fmt="${opts.formatType}"`);
@@ -130,10 +130,10 @@ function columnsXml(opts: NonNullable<SectionPropertiesOptions["column"]>): stri
 
   const attrStr = attrs.join(" ");
 
-  // Custom width columns — children are ColumnAttributes (Column class implements this interface)
+  // Custom width columns — children are ColumnProperties (Column class implements this interface)
   if (!opts.equalWidth && opts.children) {
     const colParts: string[] = [];
-    for (const col of opts.children as readonly ColumnAttributes[]) {
+    for (const col of opts.children as readonly ColumnProperties[]) {
       const colAttrs: string[] = [`w:w="${twipsMeasureValue(col.width)}"`];
       if (col.space !== undefined) colAttrs.push(`w:space="${twipsMeasureValue(col.space)}"`);
       colParts.push(`<w:col ${colAttrs.join(" ")}/>`);
@@ -402,16 +402,16 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     // Page number type
     const pgNumType = findChild(el, "w:pgNumType");
     if (pgNumType) {
-      const pageNumbers: PageNumberTypeAttributes = {};
+      const pageNumbers: PageNumberTypeProperties = {};
       const start = attrNum(pgNumType, "w:start");
       if (start !== undefined) pageNumbers.start = start;
       const fmt = attr(pgNumType, "w:fmt");
       if (fmt && PAGE_NUMBER_FORMATS.includes(fmt)) {
-        pageNumbers.formatType = fmt as PageNumberTypeAttributes["formatType"];
+        pageNumbers.formatType = fmt as PageNumberTypeProperties["formatType"];
       }
       const chapSep = attr(pgNumType, "w:chapSep");
       if (chapSep && PAGE_NUMBER_SEPARATORS.includes(chapSep)) {
-        pageNumbers.separator = chapSep as PageNumberTypeAttributes["separator"];
+        pageNumbers.separator = chapSep as PageNumberTypeProperties["separator"];
       }
       const chapStyle = attrNum(pgNumType, "w:chapStyle");
       if (chapStyle !== undefined) pageNumbers.chapStyle = chapStyle;
@@ -424,23 +424,23 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Columns
   const cols = findChild(el, "w:cols");
   if (cols) {
-    const column: ColumnsAttributes = {};
+    const column: ColumnsProperties = {};
     const count = attrNum(cols, "w:num");
     if (count !== undefined) column.count = count;
     const space = attrMeasure(cols, "w:space");
-    if (space !== undefined) column.space = space as ColumnsAttributes["space"];
+    if (space !== undefined) column.space = space as ColumnsProperties["space"];
     const separate = attrBool(cols, "w:sep");
     if (separate !== undefined) column.separate = separate;
     const equalWidth = attrBool(cols, "w:equalWidth");
     if (equalWidth !== undefined) column.equalWidth = equalWidth;
-    const colChildren: ColumnAttributes[] = [];
+    const colChildren: ColumnProperties[] = [];
     for (const colEl of cols.elements ?? []) {
       if (colEl.name !== "w:col") continue;
       const width = attrMeasure(colEl, "w:w");
       if (width === undefined) continue;
-      const colAttr: ColumnAttributes = { width: width as ColumnAttributes["width"] };
+      const colAttr: ColumnProperties = { width: width as ColumnProperties["width"] };
       const colSpace = attrMeasure(colEl, "w:space");
-      if (colSpace !== undefined) colAttr.space = colSpace as ColumnAttributes["space"];
+      if (colSpace !== undefined) colAttr.space = colSpace as ColumnProperties["space"];
       colChildren.push(colAttr);
     }
     if (colChildren.length > 0) column.children = colChildren;

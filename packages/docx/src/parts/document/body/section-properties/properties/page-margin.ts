@@ -23,7 +23,7 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@office-open/co
  * @property footer - Footer margin (distance from bottom of page to footer)
  * @property gutter - Gutter margin for binding
  */
-export interface PageMarginAttributes {
+export interface PageMarginProperties {
   /** Top margin in twips or universal measure */
   top?: number | UniversalMeasure;
   /** Right margin in twips or universal measure */

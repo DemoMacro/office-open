@@ -42,7 +42,7 @@ export const LineNumberRestartFormat = {
   CONTINUOUS: "continuous",
 } as const;
 
-export interface LineNumberAttributes {
+export interface LineNumberProperties {
   /**
    * Specifies the line number increments to be displayed in the current document.
    *
@@ -131,7 +131,7 @@ export const createLineNumberType = ({
   start,
   restart,
   distance,
-}: LineNumberAttributes): string =>
+}: LineNumberProperties): string =>
   element("w:lnNumType", {
     "w:countBy": countBy === undefined ? undefined : decimalNumber(countBy),
     "w:distance": distance === undefined ? undefined : twipsMeasureValue(distance),

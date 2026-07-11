@@ -1,11 +1,11 @@
 /**
  * Run renderer for extracting text content from OOXML paragraph structures.
  *
- * Parameterised by `XmlNamespaceConfig` so it works for both DOCX and PPTX.
+ * Parameterised by `XmlNamespaceOptions` so it works for both DOCX and PPTX.
  */
 import type { Element } from "@office-open/xml";
 
-import type { XmlNamespaceConfig } from "./xml-namespace";
+import type { XmlNamespaceOptions } from "./xml-namespace";
 
 export interface ElementWrapper {
   element: Element;
@@ -36,7 +36,7 @@ export type RenderedRunNode = {
   index: number;
 } & StartAndEnd;
 
-export function createRunRenderer(ns: XmlNamespaceConfig) {
+export function createRunRenderer(ns: XmlNamespaceOptions) {
   const renderParagraphNode = (node: ElementWrapper): RenderedParagraphNode => {
     if (node.element.name !== ns.paragraph) {
       throw new Error(`Invalid node type: ${node.element.name}`);

@@ -8,8 +8,8 @@
  * @module
  */
 
-import type { ShadingAttributesProperties } from "@shared/shading";
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ShadingProperties } from "@shared/shading";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { AlignmentType } from "../../paragraph";
 import type { TableCellSpacingProperties } from "../table-cell-spacing";
@@ -30,7 +30,7 @@ export interface TablePropertyExOptions {
   indent?: TableWidthProperties;
   layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
   borders?: TableBordersOptions;
-  shading?: ShadingAttributesProperties;
+  shading?: ShadingProperties;
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   cellMargin?: TableCellMarginOptions;
   tableLook?: TableLookOptions;
@@ -41,4 +41,4 @@ export interface TablePropertyExOptions {
 
 // CT_TblPrExChange = CT_TrackChange + tblPrEx (CT_TblPrExBase, minOccurs=1).
 export type TablePropertyExChangeOptions = Omit<TablePropertyExOptions, "tblPrExChange"> &
-  ChangedAttributesProperties;
+  ChangedProperties;

@@ -43,9 +43,9 @@ import { widthFiftiethsToPct } from "@parts/table/table-width";
 import { BorderStyle } from "@shared/border";
 import type { BorderOptions } from "@shared/border";
 import type { SectionChild } from "@shared/section";
-import { parseShading, type ShadingAttributesProperties } from "@shared/shading";
+import { parseShading, type ShadingProperties } from "@shared/shading";
 import type { CellMergeAttributes } from "@shared/track-revision";
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { BodyContext, DocxReadContext } from "../../context";
 import {
@@ -66,8 +66,8 @@ const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
 const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
 
 /** Parse track-change attributes (id/author/date) from w:ins/w:del/w:cellIns/w:cellDel. */
-function parseChangeAttrs(el: Element): Partial<ChangedAttributesProperties> {
-  const change: Partial<ChangedAttributesProperties> = {};
+function parseChangeAttrs(el: Element): Partial<ChangedProperties> {
+  const change: Partial<ChangedProperties> = {};
   const id = attrNum(el, "w:id");
   if (id !== undefined) change.id = id;
   const author = attr(el, "w:author");
@@ -350,7 +350,7 @@ function parseTablePropertyExceptions(el: Element): TablePropertyExOptions {
   if (base.indent !== undefined) opts.indent = base.indent as TableWidthProperties;
   if (base.layout !== undefined) opts.layout = base.layout as TablePropertyExOptions["layout"];
   if (base.borders !== undefined) opts.borders = base.borders as TableBordersOptions;
-  if (base.shading !== undefined) opts.shading = base.shading as ShadingAttributesProperties;
+  if (base.shading !== undefined) opts.shading = base.shading as ShadingProperties;
   if (base.alignment !== undefined) {
     opts.alignment = base.alignment as TablePropertyExOptions["alignment"];
   }
@@ -797,9 +797,9 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
 
   // insertion / deletion (track changes)
   const ins = findChild(el, "w:ins");
-  if (ins) opts.insertion = parseChangeAttrs(ins) as ChangedAttributesProperties;
+  if (ins) opts.insertion = parseChangeAttrs(ins) as ChangedProperties;
   const del = findChild(el, "w:del");
-  if (del) opts.deletion = parseChangeAttrs(del) as ChangedAttributesProperties;
+  if (del) opts.deletion = parseChangeAttrs(del) as ChangedProperties;
 
   // Revision (w:trPrChange)
   const trPrChange = findChild(el, "w:trPrChange");
@@ -964,9 +964,9 @@ export function parseTableCellPropertiesEl(el: Element): TableCellPropertiesOpti
 
   // insertion / deletion (track changes)
   const cellIns = findChild(el, "w:cellIns");
-  if (cellIns) opts.insertion = parseChangeAttrs(cellIns) as ChangedAttributesProperties;
+  if (cellIns) opts.insertion = parseChangeAttrs(cellIns) as ChangedProperties;
   const cellDel = findChild(el, "w:cellDel");
-  if (cellDel) opts.deletion = parseChangeAttrs(cellDel) as ChangedAttributesProperties;
+  if (cellDel) opts.deletion = parseChangeAttrs(cellDel) as ChangedProperties;
 
   // Revision (w:tcPrChange)
   const tcPrChange = findChild(el, "w:tcPrChange");

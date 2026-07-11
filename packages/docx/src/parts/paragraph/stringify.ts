@@ -20,7 +20,7 @@ import {
 } from "@office-open/core";
 import { escapeXml } from "@office-open/xml";
 import type { CnfConditionalOptions } from "@parts/paragraph/formatting/cnf-style";
-import type { IndentAttributesProperties } from "@parts/paragraph/formatting/indent";
+import type { IndentProperties } from "@parts/paragraph/formatting/indent";
 import type { SpacingProperties } from "@parts/paragraph/formatting/spacing";
 import type { TabStopDefinition } from "@parts/paragraph/formatting/tab-stop";
 import type { FrameOptions } from "@parts/paragraph/frame/frame-properties";
@@ -33,10 +33,10 @@ import type {
   RunPropertiesChangeOptions,
   RunPropertiesOptions,
 } from "@parts/paragraph/run/properties";
-import type { FontAttributesProperties } from "@parts/paragraph/run/run-fonts";
+import type { FontProperties } from "@parts/paragraph/run/run-fonts";
 import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
-import type { ShadingAttributesProperties } from "@shared/shading";
+import type { ShadingProperties } from "@shared/shading";
 
 // ── Inline helpers ──
 
@@ -73,7 +73,7 @@ export function borderStr(name: string, opts: BorderOptions): string {
 
 // ── Shading ──
 
-export function shadingStr(opts: ShadingAttributesProperties): string {
+export function shadingStr(opts: ShadingProperties): string {
   const a = attrParts({
     "w:val": opts.type ?? "clear",
     "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
@@ -110,7 +110,7 @@ function spacingStr(opts: SpacingProperties): string {
 
 // ── Indent ──
 
-function indentStr(opts: IndentAttributesProperties): string {
+function indentStr(opts: IndentProperties): string {
   const a = attrParts({
     "w:start": opts.start !== undefined ? signedTwipsMeasureValue(opts.start) : undefined,
     "w:startChars": opts.startChars !== undefined ? decimalNumber(opts.startChars) : undefined,
@@ -222,7 +222,7 @@ function colorStr(colorOrOptions: string | ColorOptions): string {
   return `<w:color ${a}/>`;
 }
 
-function runFontsStr(nameOrAttrs: string | FontAttributesProperties, hint?: string): string {
+function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): string {
   if (typeof nameOrAttrs === "string") {
     const a = attrParts({
       "w:ascii": nameOrAttrs,

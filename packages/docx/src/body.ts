@@ -30,7 +30,7 @@ import { parseDrawingRun } from "@parts/drawing/drawing-parse";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
 import { objectDesc, type ObjectElementOptions } from "@parts/object";
 import type { BordersOptions } from "@parts/paragraph/formatting/border";
-import type { IndentAttributesProperties } from "@parts/paragraph/formatting/indent";
+import type { IndentProperties } from "@parts/paragraph/formatting/indent";
 import { LineRuleType } from "@parts/paragraph/formatting/spacing";
 import type { SpacingProperties } from "@parts/paragraph/formatting/spacing";
 import { HeadingLevel } from "@parts/paragraph/formatting/style";
@@ -652,30 +652,29 @@ export function parseParagraphProperties(
   // UniversalMeasure round-trips. *Chars are ST_DecimalNumber (pure number).
   const ind = findChild(el, "w:ind");
   if (ind) {
-    const indentObj: IndentAttributesProperties = {};
+    const indentObj: IndentProperties = {};
     const left = attrMeasure(ind, "w:left");
-    if (left !== undefined) indentObj.left = left as IndentAttributesProperties["left"];
+    if (left !== undefined) indentObj.left = left as IndentProperties["left"];
     const leftChars = attrNum(ind, "w:leftChars");
     if (leftChars !== undefined) indentObj.leftChars = leftChars;
     const right = attrMeasure(ind, "w:right");
-    if (right !== undefined) indentObj.right = right as IndentAttributesProperties["right"];
+    if (right !== undefined) indentObj.right = right as IndentProperties["right"];
     const rightChars = attrNum(ind, "w:rightChars");
     if (rightChars !== undefined) indentObj.rightChars = rightChars;
     const start = attrMeasure(ind, "w:start");
-    if (start !== undefined) indentObj.start = start as IndentAttributesProperties["start"];
+    if (start !== undefined) indentObj.start = start as IndentProperties["start"];
     const startChars = attrNum(ind, "w:startChars");
     if (startChars !== undefined) indentObj.startChars = startChars;
     const end = attrMeasure(ind, "w:end");
-    if (end !== undefined) indentObj.end = end as IndentAttributesProperties["end"];
+    if (end !== undefined) indentObj.end = end as IndentProperties["end"];
     const endChars = attrNum(ind, "w:endChars");
     if (endChars !== undefined) indentObj.endChars = endChars;
     const hanging = attrMeasure(ind, "w:hanging");
-    if (hanging !== undefined) indentObj.hanging = hanging as IndentAttributesProperties["hanging"];
+    if (hanging !== undefined) indentObj.hanging = hanging as IndentProperties["hanging"];
     const hangingChars = attrNum(ind, "w:hangingChars");
     if (hangingChars !== undefined) indentObj.hangingChars = hangingChars;
     const firstLine = attrMeasure(ind, "w:firstLine");
-    if (firstLine !== undefined)
-      indentObj.firstLine = firstLine as IndentAttributesProperties["firstLine"];
+    if (firstLine !== undefined) indentObj.firstLine = firstLine as IndentProperties["firstLine"];
     const firstLineChars = attrNum(ind, "w:firstLineChars");
     if (firstLineChars !== undefined) indentObj.firstLineChars = firstLineChars;
     if (Object.keys(indentObj).length > 0) opts.indent = indentObj;

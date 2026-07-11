@@ -23,7 +23,7 @@ import type { PositiveUniversalMeasure } from "@office-open/core";
  * @property width - Column width in twips or universal measure
  * @property space - Space after column in twips or universal measure (default: 0)
  */
-export interface ColumnAttributes {
+export interface ColumnProperties {
   /** Column width in twips or universal measure */
   width: number | PositiveUniversalMeasure;
   /** Space after column in twips or universal measure (default: 0) */

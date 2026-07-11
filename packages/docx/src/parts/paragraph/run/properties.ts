@@ -11,14 +11,14 @@
  */
 import type { UniversalMeasure } from "@office-open/core";
 import type { BorderOptions } from "@shared/border";
-import type { ShadingAttributesProperties } from "@shared/shading";
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ShadingProperties } from "@shared/shading";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { EastAsianLayoutOptions } from "./east-asian-layout";
 import type { EmphasisMarkType } from "./emphasis-mark";
 import type { ColorOptions } from "./formatting";
 import type { LanguageOptions } from "./language";
-import type { FontAttributesProperties } from "./run-fonts";
+import type { FontProperties } from "./run-fonts";
 import type { UnderlineType } from "./underline";
 
 interface RunFontReference {
@@ -128,12 +128,12 @@ export interface RunStylePropertiesOptions {
   doubleStrike?: boolean;
   subScript?: boolean;
   superScript?: boolean;
-  font?: string | RunFontReference | FontAttributesProperties;
+  font?: string | RunFontReference | FontProperties;
   highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
   /** Complex-script highlight color (w:highlightCs). Independent from {@link highlight}. */
   highlightComplexScript?: string;
   characterSpacing?: number | UniversalMeasure;
-  shading?: ShadingAttributesProperties;
+  shading?: ShadingProperties;
   emboss?: boolean;
   imprint?: boolean;
   revision?: RunPropertiesChangeOptions;
@@ -176,9 +176,9 @@ export type RunPropertiesOptions = {
  *
  * Used for revision tracking when run properties have been modified.
  */
-export type RunPropertiesChangeOptions = {} & RunPropertiesOptions & ChangedAttributesProperties;
+export type RunPropertiesChangeOptions = {} & RunPropertiesOptions & ChangedProperties;
 
 export type ParagraphRunPropertiesOptions = {
-  insertion?: ChangedAttributesProperties;
-  deletion?: ChangedAttributesProperties;
+  insertion?: ChangedProperties;
+  deletion?: ChangedProperties;
 } & RunPropertiesOptions;

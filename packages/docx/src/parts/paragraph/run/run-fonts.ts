@@ -24,7 +24,7 @@ import type { ThemeFont } from "@office-open/core";
  * @property eastAsiaTheme - Theme font for East Asian characters
  * @property cstheme - Theme font for complex script characters
  */
-export interface FontAttributesProperties {
+export interface FontProperties {
   /** Font for ASCII characters (0x00-0x7F) */
   ascii?: string;
   /** Font for complex script characters */

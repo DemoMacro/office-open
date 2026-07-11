@@ -8,12 +8,12 @@ import type { Element } from "@office-open/xml";
 
 import { createSplitInject } from "./paragraph-split-inject";
 import { createTokenReplacer } from "./paragraph-token-replacer";
-import type { XmlNamespaceConfig } from "./xml-namespace";
+import type { XmlNamespaceOptions } from "./xml-namespace";
 import { createTextElementContents } from "./xml-patch-utils";
 import { createTraverser } from "./xml-traverser";
 
-export interface ReplacerConfig {
-  ns: XmlNamespaceConfig;
+export interface ReplacerOptions {
+  ns: XmlNamespaceOptions;
   formatChild: (child: unknown, context: unknown) => Element[];
   preserveSpace?: boolean;
 }
@@ -25,7 +25,7 @@ interface ReplacerResult {
 
 const SPLIT_TOKEN = "\u0275";
 
-export function createReplacer(config: ReplacerConfig) {
+export function createReplacer(config: ReplacerOptions) {
   const { ns, formatChild } = config;
   const { findLocationOfText } = createTraverser(ns);
 

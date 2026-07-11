@@ -49,7 +49,7 @@ export const PageNumberSeparator = {
  * @property formatType - Number format (decimal, roman, letter, etc.)
  * @property separator - Separator between chapter and page number
  */
-export interface PageNumberTypeAttributes {
+export interface PageNumberTypeProperties {
   /** Starting page number for the section */
   start?: number;
   /** Number format (decimal, roman, letter, etc., default: decimal) */
@@ -92,7 +92,7 @@ export const createPageNumberType = ({
   formatType,
   separator,
   chapStyle,
-}: PageNumberTypeAttributes): string =>
+}: PageNumberTypeProperties): string =>
   element("w:pgNumType", {
     "w:chapStyle": chapStyle === undefined ? undefined : decimalNumber(chapStyle),
     "w:fmt": formatType,

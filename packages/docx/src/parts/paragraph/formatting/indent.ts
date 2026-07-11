@@ -15,7 +15,7 @@ import type { PositiveUniversalMeasure, UniversalMeasure } from "@office-open/co
  *
  * Values can be specified as numbers (in twips) or as universal measures (e.g., "1in", "2.5cm").
  */
-export interface IndentAttributesProperties {
+export interface IndentProperties {
   start?: number | UniversalMeasure;
   startChars?: number;
   end?: number | UniversalMeasure;

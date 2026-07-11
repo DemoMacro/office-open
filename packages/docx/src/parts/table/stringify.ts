@@ -33,9 +33,9 @@ import type {
 } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { WidthType, widthPctToFiftieths } from "@parts/table/table-width";
-import type { ShadingAttributesProperties } from "@shared/shading";
+import type { ShadingProperties } from "@shared/shading";
 import type { CellMergeAttributes } from "@shared/track-revision";
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 import type { TableVerticalAlign } from "@shared/vertical-align";
 
 import { attrParts, borderStr, onOff, shadingStr } from "../paragraph/stringify";
@@ -176,7 +176,7 @@ function cnfStyleStr(opts: CnfStyleOptions): string {
 
 // ── Change/revision attribute string ──
 
-function changeAttrStr(tag: string, opts: ChangedAttributesProperties): string {
+function changeAttrStr(tag: string, opts: ChangedProperties): string {
   const a = attrParts({ "w:author": opts.author, "w:date": opts.date, "w:id": opts.id });
   return `<${tag} ${a}/>`;
 }
@@ -220,7 +220,7 @@ export interface TablePropertiesOptionsBase {
   layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
   borders?: TableBordersOptions;
   float?: TableFloatOptions;
-  shading?: ShadingAttributesProperties;
+  shading?: ShadingProperties;
   style?: string;
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   cellMargin?: TableCellMarginOptions;
@@ -233,7 +233,7 @@ export interface TablePropertiesOptionsBase {
   description?: string;
 }
 
-export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedAttributesProperties;
+export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedProperties;
 
 export type TablePropertiesOptions = {
   revision?: TablePropertiesChangeOptions;
@@ -339,12 +339,11 @@ export function stringifyTableProperties(options: TablePropertiesOptions): strin
 
 // ── Row properties types ──
 
-export type TableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
-  ChangedAttributesProperties;
+export type TableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase & ChangedProperties;
 
 export type TableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
-  insertion?: ChangedAttributesProperties;
-  deletion?: ChangedAttributesProperties;
+  insertion?: ChangedProperties;
+  deletion?: ChangedProperties;
   revision?: TableRowPropertiesChangeOptions;
   includeIfEmpty?: boolean;
 };
@@ -443,7 +442,7 @@ export function stringifyTableRowProperties(
 
 export interface TableCellPropertiesOptionsBase {
   cnfStyle?: CnfStyleOptions;
-  shading?: ShadingAttributesProperties;
+  shading?: ShadingProperties;
   margins?: TableCellMarginOptions;
   verticalAlign?: TableVerticalAlign;
   textDirection?: (typeof TextDirection)[keyof typeof TextDirection];
@@ -457,13 +456,12 @@ export interface TableCellPropertiesOptionsBase {
   fitText?: boolean;
   hideMark?: boolean;
   headers?: string[];
-  insertion?: ChangedAttributesProperties;
-  deletion?: ChangedAttributesProperties;
+  insertion?: ChangedProperties;
+  deletion?: ChangedProperties;
   cellMerge?: CellMergeAttributes;
 }
 
-export type TableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
-  ChangedAttributesProperties;
+export type TableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase & ChangedProperties;
 
 export type TableCellPropertiesOptions = {
   revision?: TableCellPropertiesChangeOptions;

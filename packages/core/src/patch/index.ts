@@ -2,11 +2,11 @@
 
 // Namespace configs
 export { DOCX_NS, PPTX_NS } from "./xml-namespace";
-export type { XmlNamespaceConfig } from "./xml-namespace";
+export type { XmlNamespaceOptions } from "./xml-namespace";
 
 // Core replacer (the main entry point for patch operations)
 export { createReplacer } from "./xml-replacer";
-export type { ReplacerConfig } from "./xml-replacer";
+export type { ReplacerOptions } from "./xml-replacer";
 
 // Lower-level building blocks (used by patchers + specs)
 export { createRunRenderer } from "./run-renderer";

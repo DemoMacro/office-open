@@ -1,4 +1,4 @@
-import type { ShadingAttributesProperties } from "@shared/shading";
+import type { ShadingProperties } from "@shared/shading";
 /**
  * Table cell properties module for WordprocessingML documents.
  *
@@ -10,7 +10,7 @@ import type { ShadingAttributesProperties } from "@shared/shading";
  * @module
  */
 import type { CellMergeAttributes } from "@shared/track-revision";
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 import type { TableVerticalAlign } from "@shared/vertical-align";
 
 import type { TableCellMarginOptions } from "../table-properties/table-cell-margin";
@@ -22,7 +22,7 @@ export interface TableCellPropertiesOptionsBase {
   /** Conditional formatting style (cnfStyle) */
   cnfStyle?: CnfStyleOptions;
   /** Shading (background color/pattern) for the cell */
-  shading?: ShadingAttributesProperties;
+  shading?: ShadingProperties;
   /** Cell margins (padding) for the cell content */
   margins?: TableCellMarginOptions;
   /** Vertical alignment of content within the cell */
@@ -49,8 +49,8 @@ export interface TableCellPropertiesOptionsBase {
   hideMark?: boolean;
   /** Header cells associated with this cell (headers) */
   headers?: string[];
-  insertion?: ChangedAttributesProperties;
-  deletion?: ChangedAttributesProperties;
+  insertion?: ChangedProperties;
+  deletion?: ChangedProperties;
   cellMerge?: CellMergeAttributes;
 }
 
@@ -64,5 +64,4 @@ export type TableCellPropertiesOptions = {
   includeIfEmpty?: boolean;
 } & TableCellPropertiesOptionsBase;
 
-export type TableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase &
-  ChangedAttributesProperties;
+export type TableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase & ChangedProperties;

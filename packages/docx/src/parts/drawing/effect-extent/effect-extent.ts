@@ -12,7 +12,7 @@
 /**
  * Attributes for effect extent.
  */
-export interface EffectExtentAttributes {
+export interface EffectExtentProperties {
   /**
    * ## Additional Extent on Top Edge
    *
@@ -77,6 +77,6 @@ export const buildEffectExtentObj = ({
   right,
   bottom,
   left,
-}: EffectExtentAttributes): Readonly<Record<string, unknown>> => ({
+}: EffectExtentProperties): Readonly<Record<string, unknown>> => ({
   "wp:effectExtent": { _attr: { t: top, r: right, b: bottom, l: left } },
 });

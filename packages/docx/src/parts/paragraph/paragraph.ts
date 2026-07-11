@@ -8,7 +8,7 @@
 
 import type { CustomXmlRunOptions } from "@parts/custom-xml";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type {
   BookmarkOptions,
@@ -62,8 +62,8 @@ export type ParagraphChild =
   | { commentRangeEnd: MarkupRangeOptions }
   | { commentReference: number }
   | { comment: CommentChildOptions }
-  | { insertion: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
-  | { deletion: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
+  | { insertion: ChangedProperties & { children: (RunOptions | string)[] } }
+  | { deletion: ChangedProperties & { children: (RunOptions | string)[] } }
   | {
       hyperlink: {
         link?: string;
@@ -110,8 +110,8 @@ export type ParagraphChild =
   | { moveToRangeStart: MoveRangeStartOptions }
   | { moveToRangeEnd: MarkupRangeOptions }
   // Move revision text runs
-  | { movedFrom: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
-  | { movedTo: ChangedAttributesProperties & { children: (RunOptions | string)[] } }
+  | { movedFrom: ChangedProperties & { children: (RunOptions | string)[] } }
+  | { movedTo: ChangedProperties & { children: (RunOptions | string)[] } }
   // Move revision sugar — library allocates range + run ids and pairs markers
   | { moveFrom: MoveRangeOptions }
   | { moveTo: MoveRangeOptions }

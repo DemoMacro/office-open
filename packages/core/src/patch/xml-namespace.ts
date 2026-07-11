@@ -5,21 +5,21 @@
  * DOCX (`w:*`) and PPTX (`a:*`) documents.
  */
 
-export interface XmlNamespaceConfig {
+export interface XmlNamespaceOptions {
   paragraph: string;
   run: string;
   text: string;
   runProperties: string;
 }
 
-export const DOCX_NS: XmlNamespaceConfig = {
+export const DOCX_NS: XmlNamespaceOptions = {
   paragraph: "w:p",
   run: "w:r",
   text: "w:t",
   runProperties: "w:rPr",
 };
 
-export const PPTX_NS: XmlNamespaceConfig = {
+export const PPTX_NS: XmlNamespaceOptions = {
   paragraph: "a:p",
   run: "a:r",
   text: "a:t",

@@ -1,4 +1,4 @@
-import type { ShadingAttributesProperties } from "@shared/shading";
+import type { ShadingProperties } from "@shared/shading";
 /**
  * Table properties module for WordprocessingML documents.
  *
@@ -44,7 +44,7 @@ import type { ShadingAttributesProperties } from "@shared/shading";
  *
  * @module
  */
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { AlignmentType } from "../../paragraph";
 import type { TableCellSpacingProperties } from "../table-cell-spacing";
@@ -61,7 +61,7 @@ export interface TablePropertiesOptionsBase {
   layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
   borders?: TableBordersOptions;
   float?: TableFloatOptions;
-  shading?: ShadingAttributesProperties;
+  shading?: ShadingProperties;
   style?: string;
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   cellMargin?: TableCellMarginOptions;
@@ -78,7 +78,7 @@ export interface TablePropertiesOptionsBase {
   description?: string;
 }
 
-export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedAttributesProperties;
+export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedProperties;
 
 /**
  * Options for configuring table properties.

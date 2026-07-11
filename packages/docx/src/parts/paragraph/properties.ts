@@ -1,4 +1,4 @@
-import type { ShadingAttributesProperties } from "@shared/shading";
+import type { ShadingProperties } from "@shared/shading";
 /**
  * Paragraph properties types for WordprocessingML documents.
  *
@@ -6,12 +6,12 @@ import type { ShadingAttributesProperties } from "@shared/shading";
  *
  * @module
  */
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { AlignmentType } from "./formatting/alignment";
 import type { BordersOptions } from "./formatting/border";
 import type { CnfConditionalOptions } from "./formatting/cnf-style";
-import type { IndentAttributesProperties } from "./formatting/indent";
+import type { IndentProperties } from "./formatting/indent";
 import type { SpacingProperties } from "./formatting/spacing";
 import type { HeadingLevel } from "./formatting/style";
 import type { TabStopDefinition } from "./formatting/tab-stop";
@@ -83,7 +83,7 @@ export interface LevelParagraphStylePropertiesOptions {
   /** Position in twips for a left-aligned tab stop */
   leftTabStop?: number;
   /** Indentation settings for the paragraph */
-  indent?: IndentAttributesProperties;
+  indent?: IndentProperties;
   /** Spacing before/after paragraph and between lines */
   spacing?: SpacingProperties;
   /**
@@ -147,7 +147,7 @@ export type ParagraphStylePropertiesOptions = {
   /** Border settings for the paragraph */
   border?: BordersOptions;
   /** Background shading/fill color for the paragraph */
-  shading?: ShadingAttributesProperties;
+  shading?: ShadingProperties;
   /** Numbering configuration for lists, or false to remove numbering */
   numbering?:
     | {
@@ -191,8 +191,7 @@ export type ParagraphPropertiesOptionsBase = {
   run?: ParagraphRunOptions;
 } & ParagraphStylePropertiesOptions;
 
-export type ParagraphPropertiesChangeOptions = ChangedAttributesProperties &
-  ParagraphPropertiesOptionsBase;
+export type ParagraphPropertiesChangeOptions = ChangedProperties & ParagraphPropertiesOptionsBase;
 
 /**
  * Options for configuring paragraph properties.

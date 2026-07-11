@@ -48,7 +48,7 @@
  * @module
  */
 import type { PositiveUniversalMeasure } from "@office-open/core";
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { AlignmentType } from "../../paragraph";
 import type { TableCellSpacingProperties } from "../table-cell-spacing";
@@ -135,11 +135,10 @@ export interface TableRowPropertiesOptionsBase {
  * @see {@link TableRowProperties}
  */
 export type TableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
-  insertion?: ChangedAttributesProperties;
-  deletion?: ChangedAttributesProperties;
+  insertion?: ChangedProperties;
+  deletion?: ChangedProperties;
   revision?: TableRowPropertiesChangeOptions;
   includeIfEmpty?: boolean;
 };
 
-export type TableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase &
-  ChangedAttributesProperties;
+export type TableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase & ChangedProperties;

@@ -1,11 +1,11 @@
 /**
  * Paragraph split and inject utilities for run-level text replacement.
  *
- * Parameterised by `XmlNamespaceConfig` so it works for both DOCX and PPTX.
+ * Parameterised by `XmlNamespaceOptions` so it works for both DOCX and PPTX.
  */
 import type { Element } from "@office-open/xml";
 
-import type { XmlNamespaceConfig } from "./xml-namespace";
+import type { XmlNamespaceOptions } from "./xml-namespace";
 import { patchSpaceAttribute } from "./xml-patch-utils";
 
 export class TokenNotFoundError extends Error {
@@ -16,7 +16,7 @@ export class TokenNotFoundError extends Error {
 }
 
 export function createSplitInject(
-  ns: XmlNamespaceConfig,
+  ns: XmlNamespaceOptions,
   createTextElementContents: (text: string) => Element[],
   options?: { readonly preserveSpace?: boolean },
 ) {

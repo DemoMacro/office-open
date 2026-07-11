@@ -42,7 +42,7 @@ export const DocumentGridType = {
   SNAP_TO_CHARS: "snapToChars",
 } as const;
 
-export interface DocGridAttributesProperties {
+export interface DocGridProperties {
   /**
    * Specifies the type of the current document grid, which defines the grid behavior.
    *
@@ -102,11 +102,7 @@ export interface DocGridAttributesProperties {
  * ```
  * @returns
  */
-export const createDocumentGrid = ({
-  type,
-  linePitch,
-  charSpace,
-}: DocGridAttributesProperties): string =>
+export const createDocumentGrid = ({ type, linePitch, charSpace }: DocGridProperties): string =>
   element("w:docGrid", {
     "w:charSpace": charSpace ? decimalNumber(charSpace) : undefined,
     "w:linePitch": decimalNumber(linePitch),

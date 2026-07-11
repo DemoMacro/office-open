@@ -33,7 +33,7 @@ export const PageOrientation = {
   LANDSCAPE: "landscape",
 } as const;
 
-export interface PageSizeAttributes {
+export interface PageSizeProperties {
   /**
    * ## Page Width
    *

@@ -8,7 +8,7 @@
 
 import type { PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomXmlRowOptions } from "@parts/custom-xml";
-import type { ShadingAttributesProperties } from "@shared/shading";
+import type { ShadingProperties } from "@shared/shading";
 
 import type { AlignmentType } from "../paragraph";
 import type { TableGridChangeOptions } from "./grid";
@@ -59,5 +59,5 @@ export interface TableOptions {
   description?: string;
   revision?: TablePropertiesChangeOptions;
   /** Table-level shading (w:shd). */
-  shading?: ShadingAttributesProperties;
+  shading?: ShadingProperties;
 }

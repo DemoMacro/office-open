@@ -9,21 +9,21 @@
  * @module
  */
 import type { HeaderFooterEntry } from "@parts/header-footer";
-import type { ChangedAttributesProperties } from "@shared/track-revision/track-revision";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 import type { SectionVerticalAlign } from "@shared/vertical-align";
 
-import type { ColumnsAttributes } from "./properties/columns";
-import type { DocGridAttributesProperties } from "./properties/doc-grid";
+import type { ColumnsProperties } from "./properties/columns";
+import type { DocGridProperties } from "./properties/doc-grid";
 import type {
   EndnotePropertiesOptions,
   FootnotePropertiesOptions,
 } from "./properties/footnote-endnote-properties";
-import type { LineNumberAttributes } from "./properties/line-number";
+import type { LineNumberProperties } from "./properties/line-number";
 import type { PageBordersOptions } from "./properties/page-borders";
-import type { PageMarginAttributes } from "./properties/page-margin";
-import type { PageNumberTypeAttributes } from "./properties/page-number";
+import type { PageMarginProperties } from "./properties/page-margin";
+import type { PageNumberTypeProperties } from "./properties/page-number";
 import { PageOrientation } from "./properties/page-size";
-import type { PageSizeAttributes } from "./properties/page-size";
+import type { PageSizeProperties } from "./properties/page-size";
 import { PageTextDirectionType } from "./properties/page-text-direction";
 import type { SectionType } from "./properties/section-type";
 
@@ -43,19 +43,19 @@ export interface SectionPropertiesOptionsBase {
   rsid?: string;
   sectionRsid?: string;
   page?: {
-    size?: PageSizeAttributes;
-    margin?: PageMarginAttributes;
-    pageNumbers?: PageNumberTypeAttributes;
+    size?: PageSizeProperties;
+    margin?: PageMarginProperties;
+    pageNumbers?: PageNumberTypeProperties;
     borders?: PageBordersOptions;
     textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
   };
-  grid?: DocGridAttributesProperties;
+  grid?: DocGridProperties;
   headerWrapperGroup?: HeaderFooterGroup<HeaderFooterEntry>;
   footerWrapperGroup?: HeaderFooterGroup<HeaderFooterEntry>;
-  lineNumbers?: LineNumberAttributes;
+  lineNumbers?: LineNumberProperties;
   titlePage?: boolean;
   verticalAlign?: SectionVerticalAlign;
-  column?: ColumnsAttributes;
+  column?: ColumnsProperties;
   type?: (typeof SectionType)[keyof typeof SectionType];
   noEndnote?: boolean;
   formProtection?: boolean;
@@ -70,8 +70,7 @@ export interface SectionPropertiesOptionsBase {
   printerSettingsId?: string;
 }
 
-export type SectionPropertiesChangeOptions = ChangedAttributesProperties &
-  SectionPropertiesOptionsBase;
+export type SectionPropertiesChangeOptions = ChangedProperties & SectionPropertiesOptionsBase;
 
 export type SectionPropertiesOptions = {
   revision?: SectionPropertiesChangeOptions;

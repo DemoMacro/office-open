@@ -9,15 +9,15 @@
  */
 import type { PositiveUniversalMeasure } from "@office-open/core";
 
-import type { ColumnAttributes } from "./column";
+import type { ColumnProperties } from "./column";
 
 /**
  * Options for configuring column layout in a section.
  */
-export interface ColumnsAttributes {
+export interface ColumnsProperties {
   space?: number | PositiveUniversalMeasure;
   count?: number;
   separate?: boolean;
   equalWidth?: boolean;
-  children?: ColumnAttributes[];
+  children?: ColumnProperties[];
 }
