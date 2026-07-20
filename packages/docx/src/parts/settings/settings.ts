@@ -174,6 +174,12 @@ export interface SettingsOptions {
   decimalSymbol?: string;
   /** List separator character */
   listSeparator?: string;
+  /** Word 2010 document identifier (w14:docId/@w14:val, e.g. "1A190769") */
+  w14DocId?: string;
+  /** Track chart references by document (w15:chartTrackingRefBased) */
+  w15ChartTrackingRefBased?: boolean;
+  /** Word 2013 document identifier (w15:docId/@w15:val, GUID format) */
+  w15DocId?: string;
   /** Click and type paragraph style name */
   clickAndTypeStyle?: string;
   /** Summary length percentage (0-100) */

@@ -1055,7 +1055,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // Compatibility — optional (CT_Settings minOccurs=0); emit only when configured
     const compatXml = stringifyCompatibility({
       ...opts.compatibility,
-      version: opts.compatibility?.version ?? opts.compatibilityModeVersion,
+      version: opts.compatibility?.version ?? opts.compatibilityModeVersion ?? 15,
     });
     if (compatXml) p.push(compatXml);
 
@@ -1108,6 +1108,13 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w:doNotEmbedSmartTags", opts.doNotEmbedSmartTags));
     p.push(strVal("w:decimalSymbol", opts.decimalSymbol));
     p.push(strVal("w:listSeparator", opts.listSeparator));
+
+    // Word 2010/2013 document identifiers — CT_Settings trailing sequence
+    // (decimalSymbol → listSeparator → w14:docId → w15:chartTrackingRefBased → w15:docId).
+    // Preserved verbatim for round-trip fidelity; val attribute is namespace-scoped.
+    if (opts.w14DocId !== undefined) p.push(strVal("w14:docId", opts.w14DocId));
+    if (opts.w15ChartTrackingRefBased) p.push(`<w15:chartTrackingRefBased/>`);
+    if (opts.w15DocId !== undefined) p.push(strVal("w15:docId", opts.w15DocId));
 
     const body = p.join("");
     return `<w:settings ${SETTINGS_NS}>${body}</w:settings>`;
@@ -1551,6 +1558,13 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     if (decimalSymbol) opts.decimalSymbol = decimalSymbol;
     const listSeparator = readStr(findChild(el, "w:listSeparator"), "w:val");
     if (listSeparator) opts.listSeparator = listSeparator;
+
+    // Word 2010/2013 document identifiers — preserve for round-trip fidelity
+    const w14DocId = readStr(findChild(el, "w14:docId"), "w14:val");
+    if (w14DocId) opts.w14DocId = w14DocId;
+    if (findChild(el, "w15:chartTrackingRefBased")) opts.w15ChartTrackingRefBased = true;
+    const w15DocId = readStr(findChild(el, "w15:docId"), "w15:val");
+    if (w15DocId) opts.w15DocId = w15DocId;
 
     return opts as unknown as SettingsOptions;
   },

@@ -42,6 +42,7 @@ import {
   buildContentTypesFromRegistry,
   withAltChunkOverrides,
   withMediaDefaults,
+  ensureCustomPropertiesOverride,
   fontTableDesc,
   webSettingsDesc,
   commentsDesc,
@@ -222,7 +223,7 @@ function buildContentTypesData(ctx: DocxWriteContext, files: Zippable): string {
   // regenerates altChunk part paths — realign the afchunk Overrides to the
   // freshly written parts (else O5/O6).
   const base = ctx._options.contentTypes
-    ? withAltChunkOverrides(ctx._options.contentTypes, altChunks)
+    ? ensureCustomPropertiesOverride(withAltChunkOverrides(ctx._options.contentTypes, altChunks))
     : buildContentTypesFromRegistry(
         new Map<string, boolean | number>([
           ["freshCompile", true],

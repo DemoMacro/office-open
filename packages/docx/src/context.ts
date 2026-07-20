@@ -269,7 +269,7 @@ export class DocxWriteContext implements WriteContext {
       compatibility: options.compatibility,
       compatibilityModeVersion: options.compatabilityModeVersion,
       defaultTabStop: options.defaultTabStop,
-      evenAndOddHeaders: options.evenAndOddHeaderAndFooters ? true : false,
+      evenAndOddHeaders: options.evenAndOddHeaderAndFooters || undefined,
       characterSpacingControl: options.characterSpacingControl,
       hyphenation: {
         autoHyphenation: options.hyphenation?.autoHyphenation,

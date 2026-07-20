@@ -171,6 +171,31 @@ export function withAltChunkOverrides(
   return { defaults, overrides };
 }
 
+const CUSTOM_PROPERTIES_PART_NAME = "/docProps/custom.xml";
+const CUSTOM_PROPERTIES_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.custom-properties+xml";
+
+/**
+ * Ensure the docProps/custom.xml Override exists on a round-tripped package.
+ * The custom-properties part is always written (even when empty), but a source
+ * [Content_Types] may omit its Override — the part then resolves only through
+ * the generic `application/xml` Default, which Word rejects as unreadable
+ * content (OPC O5). Mirror the unconditional part emission by forcing the
+ * Override whenever it is missing.
+ */
+export function ensureCustomPropertiesOverride(input: ContentTypesInput): ContentTypesInput {
+  if (input.overrides.some((o) => o.partName.toLowerCase() === CUSTOM_PROPERTIES_PART_NAME)) {
+    return input;
+  }
+  return {
+    ...input,
+    overrides: [
+      ...input.overrides,
+      { partName: CUSTOM_PROPERTIES_PART_NAME, contentType: CUSTOM_PROPERTIES_CONTENT_TYPE },
+    ],
+  };
+}
+
 /**
  * Build [Content_Types].xml for a fresh DOCX compile, driven by the part
  * registry. Static parts (document/styles/…/comments/headers/…) come from
