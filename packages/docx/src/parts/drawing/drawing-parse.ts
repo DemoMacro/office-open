@@ -334,6 +334,27 @@ export function parseImageRun(
     if (ln) imageOpts.outline = outlineDesc.parse(ln, ctx);
     const effectLst = findChild(picSpPr, "a:effectLst");
     if (effectLst) imageOpts.effects = effectListDesc.parse(effectLst, ctx);
+    // Rotation/flip live on pic:spPr/a:xfrm (ST_Angle in 1/60000 deg). Convert
+    // to degrees to match the MediaTransformation API — createTransformation
+    // multiplies back by 60_000 on stringify, so integer-degree rotation stays
+    // lossless across round-trip.
+    const xfrm = findChild(picSpPr, "a:xfrm");
+    if (xfrm) {
+      const transform = imageOpts.transformation as {
+        rotation?: number;
+        flip?: { horizontal?: boolean; vertical?: boolean };
+      };
+      const rot = attrNum(xfrm, "rot");
+      if (rot !== undefined) transform.rotation = rot / 60_000;
+      const flipH = attrBool(xfrm, "flipH");
+      const flipV = attrBool(xfrm, "flipV");
+      if (flipH !== undefined || flipV !== undefined) {
+        transform.flip = {
+          ...(flipH !== undefined ? { horizontal: flipH } : {}),
+          ...(flipV !== undefined ? { vertical: flipV } : {}),
+        };
+      }
+    }
   }
 
   // Blip recolor effects (a:lum/a:hsl/a:tint/...) under a:blip — image

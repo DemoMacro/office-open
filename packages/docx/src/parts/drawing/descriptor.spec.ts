@@ -267,4 +267,21 @@ describe("drawingDesc round-trip", () => {
     expect(floating!.wrap?.type).toBe(TextWrappingType.SQUARE);
     expect(floating!.wrap?.side).toBe("left");
   });
+
+  it("round-trips image rotation via pic:spPr/a:xfrm/@rot", () => {
+    // parseImageRun must read pic:spPr/a:xfrm/@rot (ST_Angle, 1/60000 deg) and
+    // convert to degrees — otherwise rotated images lose orientation on round-trip.
+    const base = makeImageMediaData();
+    const xml = stringify({
+      mediaData: { ...base, transformation: { ...base.transformation, rotation: 16200000 } },
+    });
+    expect(xml).toContain('rot="16200000"');
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      image?: { transformation?: { rotation?: number } };
+    };
+    // 16200000 / 60000 = 270 degrees
+    expect(result.image?.transformation?.rotation).toBe(270);
+  });
 });
