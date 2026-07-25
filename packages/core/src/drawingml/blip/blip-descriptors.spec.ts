@@ -1,7 +1,13 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
-import { stringify, parse } from "../../descriptor";
+import {
+  stringify,
+  parse,
+  type CustomDescriptor,
+  type ReadContext,
+  type WriteContext,
+} from "../../descriptor";
 import type { BlipOptions } from "./blip";
 import {
   blipDesc,
@@ -10,16 +16,17 @@ import {
   sourceRectangleDesc,
   stretchDesc,
 } from "./blip-descriptors";
+import type { BlipEffectsOptions } from "./blip-effects";
 import type { SourceRectangleOptions } from "./source-rectangle";
 import type { TileOptions } from "./tile";
 
-function roundTrip<T>(desc: any, opts: T): T {
-  const xml = stringify(desc, opts, {} as any);
+function roundTrip<T>(desc: CustomDescriptor<T>, opts: T): T {
+  const xml = stringify(desc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(desc, el, {} as any);
+  return parse(desc, el, {} as ReadContext);
 }
 
 describe("tileDesc", () => {
@@ -76,14 +83,14 @@ describe("stretchDesc", () => {
 
 describe("blipDesc", () => {
   it("round-trips blip with referenceId", () => {
-    type BlipFull = BlipOptions & { blipEffects?: any };
+    type BlipFull = BlipOptions & { blipEffects?: BlipEffectsOptions };
     const opts: BlipFull = { referenceId: "image1.png" };
     const result = roundTrip(blipDesc, opts);
     expect(result.referenceId).toBe("image1.png");
   });
 
   it("round-trips blip with grayscale effect", () => {
-    type BlipFull = BlipOptions & { blipEffects?: any };
+    type BlipFull = BlipOptions & { blipEffects?: BlipEffectsOptions };
     const opts: BlipFull = {
       referenceId: "img.png",
       blipEffects: { grayscale: true },
@@ -95,15 +102,15 @@ describe("blipDesc", () => {
   });
 
   it("round-trips blip with luminance effect", () => {
-    type BlipFull = BlipOptions & { blipEffects?: any };
+    type BlipFull = BlipOptions & { blipEffects?: BlipEffectsOptions };
     const opts: BlipFull = {
       referenceId: "img.png",
       blipEffects: { luminance: { bright: 20, contrast: 10 } },
     };
     const result = roundTrip(blipDesc, opts);
     expect(result.blipEffects!.luminance).toBeDefined();
-    expect(result.blipEffects!.luminance.bright).toBe(20);
-    expect(result.blipEffects!.luminance.contrast).toBe(10);
+    expect(result.blipEffects!.luminance?.bright).toBe(20);
+    expect(result.blipEffects!.luminance?.contrast).toBe(10);
   });
 });
 
@@ -111,7 +118,7 @@ describe("blipFillDesc", () => {
   it("round-trips blip fill with referenceId", () => {
     type BlipFillFull = {
       referenceId?: string;
-      blipEffects?: any;
+      blipEffects?: BlipEffectsOptions;
       dpi?: number;
       rotWithShape?: boolean;
       sourceRectangle?: SourceRectangleOptions;
@@ -131,7 +138,7 @@ describe("blipFillDesc", () => {
   it("round-trips blip fill with source rectangle", () => {
     type BlipFillFull = {
       referenceId?: string;
-      blipEffects?: any;
+      blipEffects?: BlipEffectsOptions;
       sourceRectangle?: SourceRectangleOptions;
       tile?: TileOptions;
     };
@@ -146,7 +153,11 @@ describe("blipFillDesc", () => {
   });
 
   it("round-trips blip fill with tile", () => {
-    type BlipFillFull = { referenceId?: string; blipEffects?: any; tile?: TileOptions };
+    type BlipFillFull = {
+      referenceId?: string;
+      blipEffects?: BlipEffectsOptions;
+      tile?: TileOptions;
+    };
     const opts: BlipFillFull = {
       referenceId: "img.png",
       tile: { tx: 100, ty: 200, sx: 50000, sy: 50000 },

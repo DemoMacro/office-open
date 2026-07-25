@@ -1,17 +1,17 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
-import { stringify, parse } from "../../descriptor";
+import { stringify, parse, type ReadContext, type WriteContext } from "../../descriptor";
 import { effectListDesc } from "./effect-descriptors";
 import type { EffectListOptions } from "./effect-list";
 
 function roundTrip(opts: EffectListOptions): EffectListOptions {
-  const xml = stringify(effectListDesc, opts, {} as any);
+  const xml = stringify(effectListDesc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(effectListDesc, el, {} as any);
+  return parse(effectListDesc, el, {} as ReadContext);
 }
 
 describe("effectListDesc", () => {
@@ -51,7 +51,7 @@ describe("effectListDesc", () => {
         outerShadow: { alignment: "center", color: { value: "000000" } },
         reflection: { alignment: "center" },
       },
-      {} as any,
+      {} as WriteContext,
     )!;
     expect(xml).toContain('blend="mult"');
     expect(xml).not.toContain('blend="multiply"');

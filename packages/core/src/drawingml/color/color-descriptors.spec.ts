@@ -1,7 +1,13 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
-import { stringify, parse } from "../../descriptor";
+import {
+  stringify,
+  parse,
+  type CustomDescriptor,
+  type ReadContext,
+  type WriteContext,
+} from "../../descriptor";
 import {
   rgbColorDesc,
   schemeColorDesc,
@@ -19,13 +25,13 @@ import type { SchemeColorOptions } from "./scheme-color";
 import type { SolidFillOptions } from "./solid-fill";
 import type { SystemColorOptions } from "./system-color";
 
-function roundTrip<T>(desc: any, opts: T): T {
-  const xml = stringify(desc, opts, {} as any);
+function roundTrip<T>(desc: CustomDescriptor<T>, opts: T): T {
+  const xml = stringify(desc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(desc, el, {} as any);
+  return parse(desc, el, {} as ReadContext);
 }
 
 describe("rgbColorDesc", () => {
@@ -113,14 +119,14 @@ describe("solidFillDesc", () => {
 
   it("round-trips solidFill with scheme color", () => {
     const opts: SolidFillOptions = { value: "accent1", transforms: { tint: 50000 } };
-    const result = roundTrip(solidFillDesc, opts);
+    const result = roundTrip(solidFillDesc, opts) as SchemeColorOptions;
     expect(result.value).toBe("accent1");
     expect(result.transforms!.tint).toBe(50000);
   });
 
   it("round-trips solidFill with HSL color", () => {
     const opts: SolidFillOptions = { hue: 240000, saturation: 80000, luminance: 60000 };
-    const result = roundTrip(solidFillDesc, opts);
+    const result = roundTrip(solidFillDesc, opts) as HslColorOptions;
     expect(result.hue).toBe(240000);
     expect(result.saturation).toBe(80000);
     expect(result.luminance).toBe(60000);
@@ -128,7 +134,7 @@ describe("solidFillDesc", () => {
 
   it("round-trips solidFill with system color", () => {
     const opts: SolidFillOptions = { value: "windowText", lastClr: "000000" };
-    const result = roundTrip(solidFillDesc, opts);
+    const result = roundTrip(solidFillDesc, opts) as SystemColorOptions;
     expect(result.value).toBe("windowText");
     expect(result.lastClr).toBe("000000");
   });

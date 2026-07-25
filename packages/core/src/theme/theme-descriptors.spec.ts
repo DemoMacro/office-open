@@ -1,17 +1,17 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
-import { stringify, parse } from "../descriptor";
+import { stringify, parse, type ReadContext, type WriteContext } from "../descriptor";
 import { themeDesc } from "./theme-descriptors";
 import type { ThemeOptions } from "./theme-options";
 
 function roundTrip(opts: ThemeOptions): ThemeOptions {
-  const xml = stringify(themeDesc, opts, {} as any);
+  const xml = stringify(themeDesc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(themeDesc, el, {} as any);
+  return parse(themeDesc, el, {} as ReadContext);
 }
 
 describe("themeDesc", () => {

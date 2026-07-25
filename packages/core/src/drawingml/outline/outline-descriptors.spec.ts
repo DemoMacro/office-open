@@ -1,17 +1,17 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
-import { stringify, parse } from "../../descriptor";
+import { stringify, parse, type ReadContext, type WriteContext } from "../../descriptor";
 import type { OutlineOptions } from "./outline";
 import { outlineDesc } from "./outline-descriptors";
 
 function roundTrip(opts: OutlineOptions): OutlineOptions {
-  const xml = stringify(outlineDesc, opts, {} as any);
+  const xml = stringify(outlineDesc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(outlineDesc, el, {} as any);
+  return parse(outlineDesc, el, {} as ReadContext);
 }
 
 describe("outlineDesc", () => {
@@ -69,7 +69,7 @@ describe("outlineDesc", () => {
     const xml = stringify(
       outlineDesc,
       { type: "noFill", cap: "round", compoundLine: "double", align: "center" },
-      {} as any,
+      {} as WriteContext,
     )!;
     expect(xml).toContain('cap="rnd"');
     expect(xml).toContain('cmpd="dbl"');

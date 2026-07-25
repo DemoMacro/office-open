@@ -8,12 +8,12 @@ import type { GradientFillOptions } from "./gradient-fill";
 import type { PatternFillOptions } from "./pattern-fill";
 
 function roundTripFill(opts: FillOptions): FillOptions {
-  const xml = stringify(fillDesc, opts, {} as any);
+  const xml = stringify(fillDesc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(fillDesc, el, {} as any);
+  return parse(fillDesc, el, {} as ReadContext);
 }
 
 function roundTripFillAsRecord(opts: FillOptions): Record<string, unknown> {
@@ -21,21 +21,21 @@ function roundTripFillAsRecord(opts: FillOptions): Record<string, unknown> {
 }
 
 function roundTripGradient(opts: GradientFillOptions): GradientFillOptions {
-  const xml = stringify(gradientFillDesc, opts, {} as any);
+  const xml = stringify(gradientFillDesc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(gradientFillDesc, el, {} as any);
+  return parse(gradientFillDesc, el, {} as ReadContext);
 }
 
 function roundTripPattern(opts: PatternFillOptions): PatternFillOptions {
-  const xml = stringify(patternFillDesc, opts, {} as any);
+  const xml = stringify(patternFillDesc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(patternFillDesc, el, {} as any);
+  return parse(patternFillDesc, el, {} as ReadContext);
 }
 
 describe("fillDesc", () => {

@@ -1,19 +1,25 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
-import { stringify, parse } from "../../descriptor";
+import {
+  stringify,
+  parse,
+  type CustomDescriptor,
+  type ReadContext,
+  type WriteContext,
+} from "../../descriptor";
 import type { BevelOptions } from "./bevel";
 import type { Scene3DOptions } from "./scene-3d";
 import type { Shape3DOptions } from "./shape-3d";
 import { bevelDesc, shape3DDesc, scene3DDesc } from "./three-d-descriptors";
 
-function roundTrip<T>(desc: any, opts: T): T {
-  const xml = stringify(desc, opts, {} as any);
+function roundTrip<T>(desc: CustomDescriptor<T>, opts: T): T {
+  const xml = stringify(desc, opts, {} as WriteContext);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parse(desc, el, {} as any);
+  return parse(desc, el, {} as ReadContext);
 }
 
 describe("bevelDesc", () => {
