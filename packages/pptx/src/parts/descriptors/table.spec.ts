@@ -47,7 +47,7 @@ describe("tableDesc round-trip", () => {
 
     expect(rows).toHaveLength(2);
     const [row0] = rows;
-    const row0Cells = row0?.cells!;
+    const row0Cells = row0!.cells!;
     expect(row0Cells).toHaveLength(2);
     expect(row0Cells[0]?.text).toBe("A1");
     expect(row0Cells[1]?.text).toBe("B1");

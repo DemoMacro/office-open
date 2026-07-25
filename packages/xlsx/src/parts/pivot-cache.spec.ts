@@ -78,12 +78,12 @@ describe("pivotCacheDefDesc round-trip", () => {
 
     const fields = result.cacheFields!;
     // "Name" field has string shared items
-    const nameItems = fields[0]?.sharedItems!;
+    const nameItems = fields[0]!.sharedItems!;
     expect(nameItems).toContain("Alice");
     expect(nameItems).toContain("Bob");
 
     // "Amount" field has numeric shared items
-    const amountItems = fields[1]?.sharedItems!;
+    const amountItems = fields[1]!.sharedItems!;
     expect(amountItems).toContain(100);
     expect(amountItems).toContain(200);
   });

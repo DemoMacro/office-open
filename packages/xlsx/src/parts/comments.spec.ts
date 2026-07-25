@@ -158,7 +158,7 @@ describe("commentsDesc round-trip", () => {
       ],
     };
     const result = roundTrip(opts);
-    const pr = result.comments![0]?.commentPr!;
+    const pr = result.comments![0]!.commentPr!;
     expect(pr.locked).toBe(false);
     expect(pr.print).toBe(false);
     expect(pr.textHAlign).toBe("center");

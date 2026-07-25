@@ -99,7 +99,7 @@ describe("inline metadata parse", () => {
     const inner = cxOpts.children as Array<Record<string, unknown>>;
     expect(inner).toHaveLength(1);
     expect(inner[0]?.smartTag).toMatchObject({ element: "Inner" });
-    expect((inner[0]?.smartTag as Record<string, unknown>).children).toEqual([{ text: "nested" }]);
+    expect((inner[0]!.smartTag as Record<string, unknown>).children).toEqual([{ text: "nested" }]);
   });
 
   it("drops a smartTag/customXml missing the required w:element", () => {

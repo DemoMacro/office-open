@@ -82,7 +82,7 @@ describe("externalLinkDesc round-trip", () => {
     };
     const result = roundTrip(opts);
 
-    const rows = result.externalBook?.sheetDataSet![0]?.rows!;
+    const rows = result.externalBook!.sheetDataSet![0]!.rows!;
     expect(rows).toHaveLength(1);
     expect(rows[0]?.rowNumber).toBe(1);
   });
