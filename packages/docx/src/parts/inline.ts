@@ -556,7 +556,7 @@ export function stringifyChildDispatch(
       type: "chart",
     };
 
-    // Register chart
+    // Register chart — pass all ChartSpaceOptions fields through
     const chartXml = chartSpaceDesc.stringify(
       {
         categories: opts.categories,
@@ -566,6 +566,7 @@ export function stringifyChildDispatch(
         title: opts.title,
         type: opts.type,
         threeD: opts.threeD,
+        view3D: opts.view3D,
       },
       ctx.file,
     );

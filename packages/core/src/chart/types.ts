@@ -7,10 +7,19 @@
  * @module
  */
 
+// ── Series common (CT_Ser shared children) ──
+
+/** Fields shared by every chart series type (name + optional decorations). */
+export interface ChartSeriesCommon {
+  name: string;
+  trendlines?: readonly TrendlineOptions[];
+  errorBars?: ErrorBarOptions;
+  dataLabels?: DataLabelsOptions;
+}
+
 // ── BubbleSeriesData ──
 
-export interface BubbleSeriesData {
-  name: string;
+export interface BubbleSeriesData extends ChartSeriesCommon {
   xValues: readonly number[];
   yValues: readonly number[];
   bubbleSize: readonly number[];
@@ -29,6 +38,12 @@ export const TrendlineType = {
 
 export type TrendlineType = (typeof TrendlineType)[keyof typeof TrendlineType];
 
+/** Trendline label formatting (CT_TrendlineLbl — all children optional). */
+export interface TrendlineLabelOptions {
+  /** Number format applied to the trendline label (c:numFmt formatCode). */
+  numberFormat?: string;
+}
+
 export interface TrendlineOptions {
   type?: TrendlineType;
   name?: string;
@@ -39,6 +54,8 @@ export interface TrendlineOptions {
   intercept?: number;
   dispRSqr?: boolean;
   dispEq?: boolean;
+  /** Per-trendline label formatting (emitted as c:trendlineLbl). */
+  label?: TrendlineLabelOptions;
 }
 
 // ── Error bars ──
@@ -74,6 +91,11 @@ export interface ErrorBarOptions {
   barType?: ErrorBarType;
   valueType?: ErrorValueType;
   value?: number;
+  noEndCap?: boolean;
+  /** Custom plus error value (emitted as c:plus > c:numLit). */
+  plusValue?: number;
+  /** Custom minus error value (emitted as c:minus > c:numLit). */
+  minusValue?: number;
 }
 
 // ── Data labels ──
@@ -92,6 +114,17 @@ export const DataLabelPosition = {
 
 export type DataLabelPosition = (typeof DataLabelPosition)[keyof typeof DataLabelPosition];
 
+/** Single data-point label override (CT_DLbl). */
+export interface DataLabelOptions {
+  /** Series point index this label applies to (c:idx, required). */
+  index: number;
+  /** Drop the label for this point (c:delete). */
+  delete?: boolean;
+  position?: DataLabelPosition;
+  /** Number format override (c:numFmt inside EG_DLblShared). */
+  numberFormat?: string;
+}
+
 export interface DataLabelsOptions {
   position?: DataLabelPosition;
   showVal?: boolean;
@@ -99,17 +132,19 @@ export interface DataLabelsOptions {
   showSerName?: boolean;
   showPercent?: boolean;
   showBubbleSize?: boolean;
+  showLegendKey?: boolean;
   showLeaderLines?: boolean;
+  separator?: string;
+  /** Per-point label overrides (c:dLbl, emitted before the shared settings). */
+  labels?: readonly DataLabelOptions[];
+  /** Emit a c:leaderLines element for default-styled leader lines. */
+  leaderLines?: boolean;
 }
 
 // ── Chart series ──
 
-export interface ChartSeriesData {
-  name: string;
+export interface ChartSeriesData extends ChartSeriesCommon {
   values: readonly number[];
-  trendlines?: readonly TrendlineOptions[];
-  errorBars?: ErrorBarOptions;
-  dataLabels?: DataLabelsOptions;
 }
 
 // ── Chart types ──
@@ -139,6 +174,7 @@ export interface ChartSpaceOptions {
   showLegend?: boolean;
   style?: number;
   threeD?: boolean;
+  view3D?: View3DOptions;
 }
 
 // ── 3D view ──
@@ -153,6 +189,8 @@ export type TimeUnit = (typeof TimeUnit)[keyof typeof TimeUnit];
 
 export interface View3DOptions {
   rotX?: number;
+  /** Height percentage of the chart (XSD CT_HPercent). */
+  hPercent?: number;
   rotY?: number;
   depthPercent?: number;
   rAngAx?: boolean;
