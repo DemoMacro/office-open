@@ -6,6 +6,14 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
+import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
+import type { BackgroundDescriptorOptions } from "@parts/descriptors/background";
+import type { ColorMapOverrideOptions } from "@parts/descriptors/color-map-override";
+import type {
+  ControlDescriptorOptions,
+  HeaderFooterDescriptorOptions,
+  TransitionDescriptorOptions,
+} from "@parts/descriptors/slide";
 import type { HandoutMasterOptions } from "@parts/handout-master";
 import type { NotesMasterOptions } from "@parts/notes-master";
 import type {
@@ -49,12 +57,27 @@ export interface LayoutPlaceholderOptions {
 }
 
 export interface LayoutDefinition {
-  type?: SlideLayoutType;
+  // Layout identity (p:sldLayout attributes)
+  type?: SlideLayoutType | string;
   name?: string;
   matchingName?: string;
+  preserve?: boolean;
+  userDrawn?: boolean;
+  showMasterSp?: boolean;
+  showMasterPhAnim?: boolean;
+  // Structured cSld content (round-trip, mirrors SlideDescriptorOptions)
+  children?: SlideChild[];
+  background?: BackgroundDescriptorOptions;
+  headerFooter?: HeaderFooterDescriptorOptions;
+  controls?: ControlDescriptorOptions[];
+  customerData?: { rId: string }[];
+  // Child slide elements
+  colorMapOverride?: ColorMapOverrideOptions;
+  transition?: TransitionDescriptorOptions;
+  timing?: TimingDescriptorOptions;
+  // Fresh API (placeholder-template generation)
   placeholders?: LayoutPlaceholderOptions;
-  children?: MasterChild[];
-  /** Original layout XML (minus declaration), preserved verbatim for round-trip. */
+  /** @deprecated Verbatim layout XML — no longer consumed by stringify. Kept for backward compat. */
   layout?: string;
 }
 

@@ -283,7 +283,7 @@ function stringifySlideChild(child: SlideChild, ctx: WriteContext): string | und
 
 // ── Transition helpers ──
 
-function stringifyTransition(opts: TransitionDescriptorOptions): string {
+export function stringifyTransition(opts: TransitionDescriptorOptions): string {
   const parts: string[] = [];
 
   if (opts.type === "none") return "";
@@ -321,7 +321,7 @@ const XML_DIR_TO_DIRECTION: Record<string, TransitionDirection> = {
   in: "in",
 };
 
-function readTransition(el: XmlElement): TransitionDescriptorOptions {
+export function readTransition(el: XmlElement): TransitionDescriptorOptions {
   const result: TransitionDescriptorOptions = {};
 
   if (el.attributes) {

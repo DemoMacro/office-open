@@ -42,6 +42,7 @@ import { SP_TREE_HEADER } from "@shared/constants";
 import {
   type PresentationOptions,
   type MasterDefinition,
+  type LayoutDefinition,
   type SlideOptions,
   type SlideSize,
 } from "@shared/file";
@@ -61,7 +62,7 @@ import { notesMasterDesc } from "./parts/descriptors/notes-master";
 import { notesSlideDesc } from "./parts/descriptors/notes-slide";
 import { presentationDesc } from "./parts/descriptors/presentation";
 import { presPropsDesc } from "./parts/descriptors/presentation-properties";
-import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
+import { parseLayoutDef, slideLayoutDesc } from "./parts/descriptors/slide-layout";
 import { slideMasterDesc } from "./parts/descriptors/slide-master";
 import { slideSyncDesc } from "./parts/descriptors/slide-sync";
 import { tableStylesDesc } from "./parts/descriptors/table-styles";
@@ -85,7 +86,7 @@ interface LayoutInfo {
   key: string;
   index: number;
   masterIndex: number;
-  layout: string;
+  def: LayoutDefinition;
 }
 
 interface MasterInfo {
@@ -96,6 +97,42 @@ interface MasterInfo {
   layouts: LayoutInfo[];
   masterRels: Relationships;
   layoutRels: Relationships[];
+}
+
+/**
+ * Resolve a layout definition to its structured form for stringify.
+ *
+ * Structured defs (round-trip parse, or user-provided shapes/bg/transition/etc)
+ * pass through unchanged. Fresh template / custom / deprecated-verbatim layouts
+ * are built to XML then parsed back to structure, so every layout is emitted via
+ * slideLayoutDesc.stringify uniformly.
+ */
+function resolveLayoutDef(
+  layoutDef: LayoutDefinition | undefined,
+  slideLayoutType: SlideLayoutType,
+  slideWidth: number,
+): LayoutDefinition {
+  if (layoutDef && hasStructuredLayoutContent(layoutDef)) return layoutDef;
+  const xml = layoutDef?.layout
+    ? layoutDef.layout
+    : layoutDef
+      ? buildCustomLayoutXml(layoutDef)
+      : buildLayoutXml(slideLayoutType, slideWidth);
+  return parseLayoutDef(xml);
+}
+
+/** True when a def carries structured content that must drive stringify directly. */
+function hasStructuredLayoutContent(def: LayoutDefinition): boolean {
+  return (
+    (def.children !== undefined && def.children.length > 0) ||
+    def.background !== undefined ||
+    def.transition !== undefined ||
+    def.timing !== undefined ||
+    def.headerFooter !== undefined ||
+    def.colorMapOverride !== undefined ||
+    (def.controls !== undefined && def.controls.length > 0) ||
+    (def.customerData !== undefined && def.customerData.length > 0)
+  );
 }
 
 interface XmlifyedFileMapping {
@@ -186,11 +223,7 @@ function buildMasterMap(
         key,
         index: globalLayoutIndex,
         masterIndex: mi,
-        layout: layoutDef?.layout
-          ? layoutDef.layout
-          : layoutDef
-            ? buildCustomLayoutXml(layoutDef)
-            : buildLayoutXml(slideLayoutType, slideWidth),
+        def: resolveLayoutDef(layoutDef, slideLayoutType, slideWidth),
       });
       layoutRels.push(
         buildRels([
@@ -753,7 +786,7 @@ export function compilePresentation(
   // Slide Layouts
   for (const [li, layoutInfo] of allLayouts.entries()) {
     mapping[`SlideLayout${li}`] = {
-      data: XML_DECL + (slideLayoutDesc.stringify({ layout: layoutInfo.layout }, descCtx) ?? ""),
+      data: XML_DECL + (slideLayoutDesc.stringify(layoutInfo.def, descCtx) ?? ""),
       path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
     };
     mapping[`SlideLayoutRels${li}`] = {

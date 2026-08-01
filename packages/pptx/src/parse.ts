@@ -530,19 +530,9 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (layoutMasterPaths.get(layoutPath) !== masterPath) continue;
       const layoutEl = pptx.doc.get(layoutPath);
       if (layoutEl) {
-        const layoutOpts = slideLayoutDesc.parse(layoutEl, masterReadCtx);
-        const layoutDef: LayoutDefinition = {
-          type: (layoutOpts.type ?? "blank") as SlideLayoutType,
-        };
-        if (layoutOpts.placeholders) layoutDef.placeholders = layoutOpts.placeholders;
-        // Preserve the original layout XML (minus the XML declaration) so that
-        // re-generation reuses it verbatim instead of rebuilding from type,
-        // which may select a different placeholder template.
-        const layoutRaw = pptx.doc.getRaw(layoutPath);
-        if (layoutRaw) {
-          layoutDef.layout = new TextDecoder().decode(layoutRaw).replace(/^<\?xml[^>]*\?>\s*/, "");
-        }
-        masterLayouts.push(layoutDef);
+        // Fully structured def (children/background/clrMapOvr/transition/...).
+        // The compiler re-stringifies from structure, so edits survive round-trip.
+        masterLayouts.push(slideLayoutDesc.parse(layoutEl, masterReadCtx));
       }
     }
 

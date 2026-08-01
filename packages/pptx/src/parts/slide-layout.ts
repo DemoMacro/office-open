@@ -20,7 +20,7 @@ export type SlideLayoutType =
   | "vertTx"
   | "vertTitleAndTx";
 
-const NS = `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"`;
+export const NS = `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"`;
 
 import { SP_TREE_HEADER } from "@shared/constants";
 
@@ -315,7 +315,7 @@ function positionedSldNumPlaceholder(
 
 export function buildCustomLayoutXml(def: LayoutDefinition): string {
   const ph = def.placeholders ?? {};
-  const layoutType = def.type ?? "blank";
+  const layoutType = (def.type ?? "blank") as SlideLayoutType;
   const displayName = def.name ?? LAYOUT_DEFS[layoutType]?.name ?? layoutType;
 
   const shapes: string[] = [];
