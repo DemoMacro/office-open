@@ -663,6 +663,9 @@ export function compilePresentation(
   };
   const fileRels = buildFileRels(hasCustomProperties);
   const media = descCtx.mediaCollection;
+  // Register a [Content_Types] Default for each media extension encountered
+  // (gif/bmp/emf/wmf/svg/video/audio…) so non-png/jpeg/mp4 media is valid OPC.
+  for (const m of media.array) contentTypes.addMediaDefault(m.fileName);
   const charts = new ChartCollection();
   const smartArts = new SmartArtCollection();
   const hyperlinks = new HyperlinkCollection();

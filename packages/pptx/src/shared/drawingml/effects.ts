@@ -1,4 +1,4 @@
-import { convertPointsToEmu, xsdRectAlignment } from "@office-open/core";
+import { xsdRectAlignment } from "@office-open/core";
 import {
   createEffectList,
   createScene3D,
@@ -60,7 +60,9 @@ export interface SoftEdgeOptions {
 }
 
 export interface PPTXBevelOptions {
+  /** Bevel width (a:bevelT/@w) in EMUs — unified EMU convention, no quantization. */
   width?: number;
+  /** Bevel height (a:bevelT/@h) in EMUs. */
   height?: number;
   preset?: string;
 }
@@ -172,11 +174,11 @@ function toReflection(opts: ReflectionOptions) {
   return result;
 }
 
-/** Convert PPTX PPTXBevelOptions to core BevelOptions. */
+/** Convert PPTX PPTXBevelOptions to core BevelOptions. Width/height are EMUs. */
 function toBevel(opts: PPTXBevelOptions): BevelOptions {
   return {
-    ...(opts.width !== undefined && { w: convertPointsToEmu(opts.width) }),
-    ...(opts.height !== undefined && { h: convertPointsToEmu(opts.height) }),
+    ...(opts.width !== undefined && { w: opts.width }),
+    ...(opts.height !== undefined && { h: opts.height }),
     ...(opts.preset !== undefined && { prst: opts.preset as BevelOptions["prst"] }),
   };
 }

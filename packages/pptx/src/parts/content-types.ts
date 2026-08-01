@@ -77,13 +77,48 @@ function formatEntry(e: ContentEntry): string {
   return `<Override ContentType="${escapeXml(e.contentType)}" PartName="${escapeXml(e.key)}"/>`;
 }
 
-const STATIC_XML =
-  `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
-  STATIC_ENTRIES.map(formatEntry).join("");
+/** Extensions already covered by STATIC_ENTRIES Default entries. */
+const STATIC_DEFAULT_EXTENSIONS = new Set(
+  STATIC_ENTRIES.filter((e) => e.type === "Default").map((e) => e.key),
+);
+
+/** MIME type per media file extension, for dynamic [Content_Types] Default
+ * registration. Static entries (png/jpeg/jpg/mp4) are skipped to avoid dupes. */
+const MEDIA_CONTENT_TYPES: Record<string, string> = {
+  gif: "image/gif",
+  bmp: "image/bmp",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  ico: "image/x-icon",
+  emf: "image/x-emf",
+  wmf: "image/x-wmf",
+  svg: "image/svg+xml",
+  mov: "video/quicktime",
+  wmv: "video/x-ms-wmv",
+  avi: "video/x-msvideo",
+  mpg: "video/mpeg",
+  mpeg: "video/mpeg",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  wma: "audio/x-ms-wma",
+  aac: "audio/aac",
+};
 
 /** Pure data builder for [Content_Types].xml entries. */
 export class ContentTypes {
   private entries: ContentEntry[] = [];
+  private mediaDefaults = new Map<string, string>();
+
+  /** Register a Default content type for a media file's extension, unless the
+   * extension is already covered by the static defaults (png/jpeg/jpg/mp4). */
+  public addMediaDefault(fileName: string): void {
+    const dot = fileName.lastIndexOf(".");
+    if (dot < 0) return;
+    const ext = fileName.slice(dot + 1).toLowerCase();
+    if (STATIC_DEFAULT_EXTENSIONS.has(ext) || this.mediaDefaults.has(ext)) return;
+    const mime = MEDIA_CONTENT_TYPES[ext];
+    if (mime) this.mediaDefaults.set(ext, mime);
+  }
 
   public addSlide(index: number): void {
     this.entries.push({
@@ -223,9 +258,22 @@ export class ContentTypes {
     }
   }
 
-  /** Serialize to [Content_Types].xml string. */
+  /** Serialize to [Content_Types].xml string. Defaults precede Overrides. */
   public serialize(): string {
-    const parts: string[] = [STATIC_XML];
+    const parts: string[] = [
+      `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">`,
+    ];
+    // Defaults: static (rels/xml/png/jpeg/jpg/mp4) + dynamic media extensions
+    for (const e of STATIC_ENTRIES) {
+      if (e.type === "Default") parts.push(formatEntry(e));
+    }
+    for (const [ext, mime] of this.mediaDefaults) {
+      parts.push(formatEntry({ type: "Default", contentType: mime, key: ext }));
+    }
+    // Overrides: static + dynamic
+    for (const e of STATIC_ENTRIES) {
+      if (e.type === "Override") parts.push(formatEntry(e));
+    }
     for (const e of this.entries) {
       parts.push(formatEntry(e));
     }

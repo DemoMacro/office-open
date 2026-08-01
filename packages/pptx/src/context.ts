@@ -68,7 +68,6 @@ export class PptxWriteContext implements WriteContext {
   private _charts = new Map<string, ChartEntry>();
   private _smartArts = new Map<string, SmartArtEntry>();
   private _hyperlinks = new Map<string, HyperlinkEntry>();
-  private _contentTypes = new Map<string, string>();
   private _nextRelId = 1;
   private _nextChartId = 1;
   private _nextSmartArtId = 1;
@@ -114,10 +113,6 @@ export class PptxWriteContext implements WriteContext {
     this._hyperlinks.set(key, { key, url, tooltip });
   }
 
-  public addContentType(extension: string, contentType: string): void {
-    this._contentTypes.set(extension, contentType);
-  }
-
   public nextChartKey(): string {
     return `chart_${this._nextChartId++}`;
   }
@@ -147,10 +142,6 @@ export class PptxWriteContext implements WriteContext {
 
   public get hyperlinks(): HyperlinkEntry[] {
     return [...this._hyperlinks.values()];
-  }
-
-  public get contentTypes(): ReadonlyMap<string, string> {
-    return this._contentTypes;
   }
 }
 

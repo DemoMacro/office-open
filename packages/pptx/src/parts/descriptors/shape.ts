@@ -9,8 +9,6 @@
 
 import {
   convertEmuToPixels,
-  convertEmuToPoints,
-  convertPointsToEmu,
   convertToEmu,
   toUint8Array,
   xsdRectAlignment,
@@ -255,16 +253,16 @@ function toShape3DOptions(opts: EffectsOptions): Shape3DOptions | undefined {
     ...(opts.bevelTop
       ? {
           bevelT: {
-            w: convertPointsToEmu(opts.bevelTop.width!),
-            h: convertPointsToEmu(opts.bevelTop.height!),
+            w: opts.bevelTop.width!,
+            h: opts.bevelTop.height!,
           },
         }
       : {}),
     ...(opts.bevelBottom
       ? {
           bevelB: {
-            w: convertPointsToEmu(opts.bevelBottom.width!),
-            h: convertPointsToEmu(opts.bevelBottom.height!),
+            w: opts.bevelBottom.width!,
+            h: opts.bevelBottom.height!,
           },
         }
       : {}),
@@ -1210,8 +1208,8 @@ function readEffectsFromSpPr(spPr: XmlElement): EffectsOptions | undefined {
       const bevel: PPTXBevelOptions = {};
       const w = attrNum(bevelT, "w");
       const h = attrNum(bevelT, "h");
-      if (w !== undefined) bevel.width = Math.round(convertEmuToPoints(w));
-      if (h !== undefined) bevel.height = Math.round(convertEmuToPoints(h));
+      if (w !== undefined) bevel.width = w;
+      if (h !== undefined) bevel.height = h;
       const prst = attr(bevelT, "prst");
       if (prst) bevel.preset = prst;
       if (Object.keys(bevel).length > 0) opts.bevelTop = bevel;
@@ -1221,8 +1219,8 @@ function readEffectsFromSpPr(spPr: XmlElement): EffectsOptions | undefined {
       const bevel: PPTXBevelOptions = {};
       const w = attrNum(bevelB, "w");
       const h = attrNum(bevelB, "h");
-      if (w !== undefined) bevel.width = Math.round(convertEmuToPoints(w));
-      if (h !== undefined) bevel.height = Math.round(convertEmuToPoints(h));
+      if (w !== undefined) bevel.width = w;
+      if (h !== undefined) bevel.height = h;
       const prst = attr(bevelB, "prst");
       if (prst) bevel.preset = prst;
       if (Object.keys(bevel).length > 0) opts.bevelBottom = bevel;
