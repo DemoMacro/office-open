@@ -6,7 +6,7 @@ import { parseParagraphProperties } from "../../body";
 import type { DocxReadContext } from "../../context";
 import { generateDocumentSync } from "../../generate";
 import { parseDocument } from "../../parse";
-import { DefaultStylesFactory } from "./factory";
+import { DefaultStylesFactory, stringifyDocDefaults } from "./factory";
 import { parseStyleDefinitions, Styles } from "./styles";
 
 // Style pPr and docDefaults pPr carry no numPr, so an empty read context
@@ -345,5 +345,52 @@ describe("styles round-trip (generate → parse → generate)", () => {
     expect(
       JSON.stringify(reParsed?.paragraphStyles?.find((s) => s.id === "Heading1")?.run?.color),
     ).toContain("00AA00");
+  });
+
+  it("treats an empty <w:pPrDefault/> as explicit null (no spacing injection)", () => {
+    // ECMA-376: an empty pPrDefault suppresses Word's default spacing, whereas a
+    // missing pPrDefault is application-defined. parse must distinguish them, and
+    // stringify must round-trip the empty tag without injecting after=160.
+    const xml =
+      '<?xml version="1.0"?><w:styles>' +
+      "<w:docDefaults><w:rPrDefault><w:rPr/></w:rPrDefault><w:pPrDefault/></w:docDefaults>" +
+      '<w:latentStyles w:defLockedState="0" w:count="1"/>' +
+      "</w:styles>";
+    const root = parseXml(xml).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
+    expect(parsed?.default?.document?.paragraph).toBeNull();
+    const rexml = stringifyDocDefaults(parsed!.default!.document!, false);
+    expect(rexml).toContain("<w:pPrDefault/>");
+    expect(rexml).not.toContain('after="160"');
+  });
+
+  it("omits pPrDefault when the source has none (round-trip)", () => {
+    const xml =
+      '<?xml version="1.0"?><w:styles>' +
+      "<w:docDefaults><w:rPrDefault><w:rPr><w:b/></w:rPr></w:rPrDefault></w:docDefaults>" +
+      '<w:latentStyles w:defLockedState="0" w:count="1"/>' +
+      "</w:styles>";
+    const root = parseXml(xml).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
+    expect(parsed?.default?.document?.paragraph).toBeUndefined();
+    // injectDefaults=false → the absent element is not emitted on round-trip
+    const rexml = stringifyDocDefaults(parsed!.default!.document!, false);
+    expect(rexml).not.toContain("pPrDefault");
+  });
+
+  it("reflects visual-editor edits to default.document on generate", () => {
+    // Fresh doc → parse → editor overrides default paragraph spacing → generate
+    // must reflect the edit (not the original verbatim docDefaults).
+    const fresh = generateDocumentSync({
+      sections: [{ children: [{ paragraph: { children: [{ text: "x" }] } }] }],
+    });
+    const parsed = parseDocument(fresh);
+    parsed.styles!.default!.document!.paragraph = { spacing: { after: 0 } };
+    const regenerated = parseDocument(generateDocumentSync(parsed));
+    const docDefaultsXml = regenerated.styles!.docDefaultsXml!;
+    expect(docDefaultsXml).toContain('w:after="0"');
+    expect(docDefaultsXml).not.toContain('w:after="160"');
   });
 });

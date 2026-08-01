@@ -311,12 +311,18 @@ function parseDocDefaults(
 ): DefaultStylesOptions | undefined {
   const document: DocumentDefaultsOptions = {};
 
+  // null = explicit empty default element (`<w:rPrDefault/>` or
+  // `<w:rPrDefault><w:rPr/></w:rPrDefault>`); distinguishes "no defaults declared"
+  // (Word suppresses its own) from a missing element (Word injects application
+  // defaults). See ECMA-376 CT_DocDefaults.
   const rPrDefault = findChild(el, "w:rPrDefault");
   if (rPrDefault) {
     const rPr = findChild(rPrDefault, "w:rPr");
     if (rPr) {
       const runDefaults = parseRunProperties(rPr);
-      if (Object.keys(runDefaults).length > 0) document.run = runDefaults;
+      document.run = Object.keys(runDefaults).length > 0 ? runDefaults : null;
+    } else {
+      document.run = null;
     }
   }
 
@@ -328,9 +334,9 @@ function parseDocDefaults(
       // stringifyParagraphProperties) instead of only reading spacing, so jc/
       // ind/etc. round-trip too.
       const paraDefaults = parseParagraphProperties(pPr, ctx);
-      if (Object.keys(paraDefaults).length > 0) {
-        document.paragraph = paraDefaults;
-      }
+      document.paragraph = Object.keys(paraDefaults).length > 0 ? paraDefaults : null;
+    } else {
+      document.paragraph = null;
     }
   }
 

@@ -26,7 +26,7 @@ import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 import type { SettingsOptions } from "@parts/settings/settings";
 import { Styles, extractStyleId } from "@parts/styles";
 import { ExternalStylesFactory } from "@parts/styles/external-styles-factory";
-import { DefaultStylesFactory } from "@parts/styles/factory";
+import { DefaultStylesFactory, stringifyDocDefaults } from "@parts/styles/factory";
 import { SubDocCollection } from "@parts/sub-doc/sub-doc-collection";
 import type { WebSettingsOptions } from "@parts/web-settings";
 import { EmbeddingCollection } from "@shared/embeddings/embeddings";
@@ -326,13 +326,17 @@ export class DocxWriteContext implements WriteContext {
     } else if (options.styles) {
       const s = options.styles;
       if (s.roundTripped) {
-        // Round-trip origin (parseStyleDefinitions): parsed structured
-        // builtin/custom styles win. The factory only supplies docDefaults +
-        // latentStyles verbatim defaults; parsed docDefaultsXml/latentStylesXml
-        // override when present. No factory builtin rebuild — parsed builtins
+        // Round-trip origin (parseStyleDefinitions): structured default.document
+        // wins so the visual editor can edit default run/paragraph properties
+        // and have them take effect on generate. docDefaultsXml verbatim is only
+        // a fallback for older parses without default.document or a completely
+        // empty <w:docDefaults/>. No factory builtin rebuild — parsed builtins
         // already carry the source document's customizations.
         const f = new DefaultStylesFactory().newInstance({});
-        const docDefaults = s.docDefaultsXml ?? f.importedStyles?.[0]?._raw ?? "";
+        const docDefaults =
+          s.default?.document !== undefined
+            ? stringifyDocDefaults(s.default.document, false)
+            : (s.docDefaultsXml ?? f.importedStyles?.[0]?._raw ?? "");
         const latentStyles = s.latentStylesXml ?? f.importedStyles?.[1]?._raw ?? "";
         this.styles = new Styles({
           importedStyles: [{ _raw: docDefaults }, { _raw: latentStyles }],

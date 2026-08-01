@@ -58,8 +58,8 @@ export interface DefaultStylesOptions {
 }
 
 export interface DocumentDefaultsOptions {
-  paragraph?: ParagraphStylePropertiesOptions;
-  run?: RunStylePropertiesOptions;
+  paragraph?: ParagraphStylePropertiesOptions | null;
+  run?: RunStylePropertiesOptions | null;
 }
 
 export interface StyleOptions {
@@ -319,41 +319,60 @@ function headingOverride(
   }
 }
 
-/** Build `<w:docDefaults>` XML matching Word's default settings. */
-function stringifyDocDefaults(opts: DocumentDefaultsOptions): string {
+/** Word's default `<w:rPrDefault>` — theme fonts, kern, 11pt, ligatures. Injected
+ *  for fresh documents (no structured docDefaults provided) to mirror Word's
+ *  Normal.dotx. On round-trip the structured form is used instead. */
+const WORD_DEFAULT_RPR_DEFAULT =
+  `<w:rPrDefault><w:rPr>` +
+  `<w:rFonts w:asciiTheme="minorHAnsi" w:eastAsiaTheme="minorEastAsia" w:hAnsiTheme="minorHAnsi" w:cstheme="minorBidi"/>` +
+  `<w:kern w:val="2"/>` +
+  `<w:sz w:val="22"/><w:szCs w:val="24"/>` +
+  `<w:lang w:val="en-US" w:eastAsia="zh-CN" w:bidi="ar-SA"/>` +
+  `<w14:ligatures w14:val="standardContextual"/>` +
+  `</w:rPr></w:rPrDefault>`;
+
+/** Word's default `<w:pPrDefault>` — widow/orphan control + 8pt after / 1.16 line.
+ *  Injected for fresh documents only. */
+const WORD_DEFAULT_PPR_DEFAULT =
+  `<w:pPrDefault><w:pPr>` +
+  `<w:widowControl/>` +
+  `<w:spacing w:after="160" w:line="278" w:lineRule="auto"/>` +
+  `</w:pPr></w:pPrDefault>`;
+
+/**
+ * Build `<w:docDefaults>` XML from a structured {@link DocumentDefaultsOptions}.
+ *
+ * Three states per run/paragraph:
+ *  - object → structured child element
+ *  - null   → explicit empty tag (`<w:pPrDefault/>`) — the source declared "no
+ *             defaults here", so Word does NOT inject its own spacing. Distinct
+ *             from absence (ECMA-376: empty pPrDefault suppresses default
+ *             spacing; a missing pPrDefault is application-defined).
+ *  - undefined → field is missing. On fresh generation (`injectDefaults`) we
+ *                mirror Word's Normal.dotx; on round-trip we omit the element
+ *                to preserve the source's "this default category is absent".
+ */
+export function stringifyDocDefaults(opts: DocumentDefaultsOptions, injectDefaults = true): string {
   const children: string[] = [];
 
-  // rPrDefault - Word default: Calibri 11pt (22 half-points), theme fonts
-  const rPr = stringifyRunProperties(opts.run);
-  if (rPr) {
-    children.push(`<w:rPrDefault>${rPr}</w:rPrDefault>`);
-  } else {
-    // Match Word's default run properties exactly
-    children.push(
-      `<w:rPrDefault><w:rPr>` +
-        `<w:rFonts w:asciiTheme="minorHAnsi" w:eastAsiaTheme="minorEastAsia" w:hAnsiTheme="minorHAnsi" w:cstheme="minorBidi"/>` +
-        `<w:kern w:val="2"/>` +
-        `<w:sz w:val="22"/><w:szCs w:val="24"/>` +
-        `<w:lang w:val="en-US" w:eastAsia="zh-CN" w:bidi="ar-SA"/>` +
-        `<w14:ligatures w14:val="standardContextual"/>` +
-        `</w:rPr></w:rPrDefault>`,
-    );
+  // rPrDefault
+  if (opts.run) {
+    const rPr = stringifyRunProperties(opts.run);
+    children.push(rPr ? `<w:rPrDefault>${rPr}</w:rPrDefault>` : `<w:rPrDefault/>`);
+  } else if (opts.run === null) {
+    children.push(`<w:rPrDefault/>`);
+  } else if (injectDefaults) {
+    children.push(WORD_DEFAULT_RPR_DEFAULT);
   }
 
-  // pPrDefault - Word default: widow/orphan control on (CT_OnOff default = true),
-  // spacing after 8pt (160 twips), line 1.16 (278 twips)
-  const pPr = stringifyParagraphProperties(opts.paragraph).xml;
-  if (pPr) {
-    children.push(`<w:pPrDefault>${pPr}</w:pPrDefault>`);
-  } else {
-    // Declare widowControl explicitly so the default is self-contained in the XML
-    // (CT_OnOff @val omitted ⇒ true), matching MS Office's default paragraph behavior.
-    children.push(
-      `<w:pPrDefault><w:pPr>` +
-        `<w:widowControl/>` +
-        `<w:spacing w:after="160" w:line="278" w:lineRule="auto"/>` +
-        `</w:pPr></w:pPrDefault>`,
-    );
+  // pPrDefault
+  if (opts.paragraph) {
+    const pPr = stringifyParagraphProperties(opts.paragraph).xml;
+    children.push(pPr ? `<w:pPrDefault>${pPr}</w:pPrDefault>` : `<w:pPrDefault/>`);
+  } else if (opts.paragraph === null) {
+    children.push(`<w:pPrDefault/>`);
+  } else if (injectDefaults) {
+    children.push(WORD_DEFAULT_PPR_DEFAULT);
   }
 
   return `<w:docDefaults>${children.join("")}</w:docDefaults>`;
