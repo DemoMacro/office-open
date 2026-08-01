@@ -151,7 +151,9 @@ function footnotePrXml(
   if (opts.pos !== undefined) parts.push(`<w:pos w:val="${opts.pos}"/>`);
   if (opts.formatType !== undefined || opts.format !== undefined) {
     const fmtAttrs: string[] = [];
-    if (opts.formatType !== undefined) fmtAttrs.push(`w:fmt="${opts.formatType}"`);
+    // CT_NumFmt uses w:val (required) for the format type; w:fmt belongs to
+    // CT_PageNumber (pgNumType). w:format is the optional free-form override.
+    if (opts.formatType !== undefined) fmtAttrs.push(`w:val="${opts.formatType}"`);
     if (opts.format !== undefined) fmtAttrs.push(`w:format="${opts.format}"`);
     parts.push(`<w:numFmt ${fmtAttrs.join(" ")}/>`);
   }
@@ -360,10 +362,14 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (val) opts[optKey] = val;
   }
 
+  // Page properties — pgSz, pgMar, pgNumType are independent per CT_SectPr
+  // (each minOccurs=0). Do not gate pgMar/pgNumType on pgSz: a sectPr that
+  // omits <w:pgSz> must still round-trip its margins and page-number type.
+  const page: Record<string, unknown> = {};
+
   // Page size
   const pgSz = findChild(el, "w:pgSz");
   if (pgSz) {
-    const page: Record<string, unknown> = {};
     const size: Record<string, unknown> = {};
     const w = attrNum(pgSz, "w:w");
     const h = attrNum(pgSz, "w:h");
@@ -379,47 +385,47 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     const code = attrNum(pgSz, "w:code");
     if (code !== undefined) size.code = code;
     if (Object.keys(size).length > 0) page.size = size;
-
-    // Page margins
-    const pgMar = findChild(el, "w:pgMar");
-    if (pgMar) {
-      const margin: Record<string, unknown> = {};
-      for (const [a, o] of [
-        ["w:top", "top"],
-        ["w:right", "right"],
-        ["w:bottom", "bottom"],
-        ["w:left", "left"],
-        ["w:header", "header"],
-        ["w:footer", "footer"],
-        ["w:gutter", "gutter"],
-      ] as const) {
-        const val = attrNum(pgMar, a);
-        if (val !== undefined) margin[o] = val;
-      }
-      if (Object.keys(margin).length > 0) page.margin = margin;
-    }
-
-    // Page number type
-    const pgNumType = findChild(el, "w:pgNumType");
-    if (pgNumType) {
-      const pageNumbers: PageNumberTypeProperties = {};
-      const start = attrNum(pgNumType, "w:start");
-      if (start !== undefined) pageNumbers.start = start;
-      const fmt = attr(pgNumType, "w:fmt");
-      if (fmt && PAGE_NUMBER_FORMATS.includes(fmt)) {
-        pageNumbers.formatType = fmt as PageNumberTypeProperties["formatType"];
-      }
-      const chapSep = attr(pgNumType, "w:chapSep");
-      if (chapSep && PAGE_NUMBER_SEPARATORS.includes(chapSep)) {
-        pageNumbers.separator = chapSep as PageNumberTypeProperties["separator"];
-      }
-      const chapStyle = attrNum(pgNumType, "w:chapStyle");
-      if (chapStyle !== undefined) pageNumbers.chapStyle = chapStyle;
-      if (Object.keys(pageNumbers).length > 0) page.pageNumbers = pageNumbers;
-    }
-
-    if (Object.keys(page).length > 0) opts.page = page;
   }
+
+  // Page margins
+  const pgMar = findChild(el, "w:pgMar");
+  if (pgMar) {
+    const margin: Record<string, unknown> = {};
+    for (const [a, o] of [
+      ["w:top", "top"],
+      ["w:right", "right"],
+      ["w:bottom", "bottom"],
+      ["w:left", "left"],
+      ["w:header", "header"],
+      ["w:footer", "footer"],
+      ["w:gutter", "gutter"],
+    ] as const) {
+      const val = attrNum(pgMar, a);
+      if (val !== undefined) margin[o] = val;
+    }
+    if (Object.keys(margin).length > 0) page.margin = margin;
+  }
+
+  // Page number type
+  const pgNumType = findChild(el, "w:pgNumType");
+  if (pgNumType) {
+    const pageNumbers: PageNumberTypeProperties = {};
+    const start = attrNum(pgNumType, "w:start");
+    if (start !== undefined) pageNumbers.start = start;
+    const fmt = attr(pgNumType, "w:fmt");
+    if (fmt && PAGE_NUMBER_FORMATS.includes(fmt)) {
+      pageNumbers.formatType = fmt as PageNumberTypeProperties["formatType"];
+    }
+    const chapSep = attr(pgNumType, "w:chapSep");
+    if (chapSep && PAGE_NUMBER_SEPARATORS.includes(chapSep)) {
+      pageNumbers.separator = chapSep as PageNumberTypeProperties["separator"];
+    }
+    const chapStyle = attrNum(pgNumType, "w:chapStyle");
+    if (chapStyle !== undefined) pageNumbers.chapStyle = chapStyle;
+    if (Object.keys(pageNumbers).length > 0) page.pageNumbers = pageNumbers;
+  }
+
+  if (Object.keys(page).length > 0) opts.page = page;
 
   // Columns
   const cols = findChild(el, "w:cols");
@@ -623,7 +629,8 @@ function parseNotePropertiesEl(el: Element): Record<string, unknown> {
 
   const numFmt = findChild(el, "w:numFmt");
   if (numFmt) {
-    const fmt = attr(numFmt, "w:fmt");
+    // CT_NumFmt: w:val (format type) + w:format (optional override).
+    const fmt = attr(numFmt, "w:val");
     if (fmt) opts.formatType = fmt;
     const format = attr(numFmt, "w:format");
     if (format) opts.format = format;

@@ -352,8 +352,11 @@ function stringifyLevel(opts: LevelsOptions): string {
   if (opts.format) children.push(`<w:numFmt w:val="${opts.format}"/>`);
   if (opts.lvlRestart !== undefined)
     children.push(`<w:lvlRestart w:val="${decimalNumber(opts.lvlRestart)}"/>`);
-  if (opts.suffix) children.push(`<w:suff w:val="${opts.suffix}"/>`);
+  if (opts.paragraphStyle !== undefined)
+    children.push(`<w:pStyle w:val="${opts.paragraphStyle}"/>`);
+  // CT_Lvl sequence: pStyle → isLgl → suff (XSD). isLgl must precede suff.
   if (opts.isLegalNumberingStyle) children.push("<w:isLgl/>");
+  if (opts.suffix) children.push(`<w:suff w:val="${opts.suffix}"/>`);
   if (opts.text !== undefined || opts.textNull) {
     const lvlTextAttrs: string[] = [];
     if (opts.text !== undefined) lvlTextAttrs.push(`w:val="${opts.text}"`);
@@ -493,6 +496,12 @@ function parseLevelEl(
   if (suff) {
     const val = attr(suff, "w:val");
     if (val) opts.suffix = val as LevelsOptions["suffix"];
+  }
+
+  const pStyle = findChild(el, "w:pStyle");
+  if (pStyle) {
+    const val = attr(pStyle, "w:val");
+    if (val) opts.paragraphStyle = val;
   }
 
   if (findChild(el, "w:isLgl")) opts.isLegalNumberingStyle = true;

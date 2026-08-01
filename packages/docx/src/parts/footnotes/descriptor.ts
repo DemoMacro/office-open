@@ -116,12 +116,19 @@ export const footnotesDesc: CustomDescriptor<FootnotesData, BodyContext> = {
       for (const [i, para] of paragraphs.entries()) {
         const pXml = stringifyParagraphInline(para, ctx);
         if (i === 0) {
-          // Insert footnoteRef after <w:p> or <w:p ...>
-          const openIdx = pXml.indexOf(">");
-          if (openIdx !== -1) {
-            parts.push(pXml.slice(0, openIdx + 1) + FOOTNOTE_REF_RUN + pXml.slice(openIdx + 1));
+          // footnoteRef goes after the paragraph open tag, but after <w:pPr>
+          // when present — CT_P requires pPr to be the first child.
+          const pPrEnd = pXml.indexOf("</w:pPr>");
+          if (pPrEnd !== -1) {
+            const at = pPrEnd + "</w:pPr>".length;
+            parts.push(pXml.slice(0, at) + FOOTNOTE_REF_RUN + pXml.slice(at));
           } else {
-            parts.push(pXml);
+            const openIdx = pXml.indexOf(">");
+            if (openIdx !== -1) {
+              parts.push(pXml.slice(0, openIdx + 1) + FOOTNOTE_REF_RUN + pXml.slice(openIdx + 1));
+            } else {
+              parts.push(pXml);
+            }
           }
         } else {
           parts.push(pXml);

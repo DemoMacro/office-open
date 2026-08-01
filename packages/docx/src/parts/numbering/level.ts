@@ -198,6 +198,8 @@ export interface LevelsOptions {
   isLegalNumberingStyle?: boolean;
   /** Restart numbering after this level (0-based level index). */
   lvlRestart?: number;
+  /** Paragraph style ID this level is linked to (CT_Lvl pStyle). */
+  paragraphStyle?: string;
   /** Picture bullet ID reference. */
   lvlPicBulletId?: number;
   /** Template code for the level. */
