@@ -130,14 +130,15 @@ export class SharedStrings {
 
   /** Return a serializable snapshot for the descriptor. */
   public toDescriptorOptions(): { entries: SstEntry[]; uniqueCount: number } {
-    return { entries: this.entries, uniqueCount: this.indexMap.size };
+    // uniqueCount = number of <si> entries (plain + rich), matching parse.
+    return { entries: this.entries, uniqueCount: this.entries.length };
   }
 
   /** Serialize to xl/sharedStrings.xml content (without XML declaration). */
   public serialize(): string {
     const p: string[] = [
       '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
-      ` count="${this.entries.length}" uniqueCount="${this.indexMap.size}">`,
+      ` count="${this.entries.length}" uniqueCount="${this.entries.length}">`,
     ];
     for (const entry of this.entries) {
       if (typeof entry === "string") {
