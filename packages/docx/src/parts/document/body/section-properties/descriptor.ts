@@ -294,8 +294,11 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
     parts.push(`<w:printerSettings r:id="${opts.printerSettingsId}"/>`);
   }
 
-  // Document grid
-  parts.push(docGridXml(linePitch, charSpace, gridType));
+  // Document grid (omit when absent — Word's default. Emitting a grid would
+  // activate line-snapping and distort spacing, especially in CJK builds.)
+  if (opts.grid) {
+    parts.push(docGridXml(linePitch, charSpace, gridType));
+  }
 
   // Revision (sectPrChange)
   if (opts.revision) {

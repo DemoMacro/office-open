@@ -26,9 +26,9 @@ function roundTrip(opts: SectionPropertiesOptions) {
 describe("sectionPropertiesDesc round-trip", () => {
   it("round-trips default section (empty opts)", () => {
     const result = roundTrip({});
-    // Grid defaults are always present
-    expect(result.grid).toBeDefined();
-    expect(result.grid!.linePitch).toBe(312);
+    // No docGrid injected when source omitted — emitting one would activate the
+    // CJK line grid and distort spacing.
+    expect(result.grid).toBeUndefined();
   });
 
   it("round-trips page size", () => {
