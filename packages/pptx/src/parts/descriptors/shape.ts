@@ -106,6 +106,10 @@ export interface ShapeDescriptorOptions {
   locking?: ShapeLockingOptions;
   placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
   placeholderIndex?: number;
+  /** CT_Placeholder @sz — sizing hint (default "full"). */
+  placeholderSize?: "full" | "half" | "quarter";
+  /** CT_Placeholder @orient — orientation hint (default "horz"). */
+  placeholderOrientation?: "horz" | "vert";
   useBackgroundFill?: boolean;
   isPhoto?: boolean;
   userDrawn?: boolean;
@@ -359,6 +363,9 @@ export const shapeDesc: CustomDescriptor<ShapeDescriptorOptions> = {
       if (parsed.name !== undefined) result.name = parsed.name;
       if (parsed.placeholder !== undefined) result.placeholder = parsed.placeholder;
       if (parsed.placeholderIndex !== undefined) result.placeholderIndex = parsed.placeholderIndex;
+      if (parsed.placeholderSize !== undefined) result.placeholderSize = parsed.placeholderSize;
+      if (parsed.placeholderOrientation !== undefined)
+        result.placeholderOrientation = parsed.placeholderOrientation;
       if (parsed.hasCustomPrompt !== undefined) result.hasCustomPrompt = parsed.hasCustomPrompt;
       if (parsed.isPhoto !== undefined) result.isPhoto = parsed.isPhoto;
       if (parsed.userDrawn !== undefined) result.userDrawn = parsed.userDrawn;
@@ -498,6 +505,9 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeDescriptorOptions)
   if (opts.placeholder) {
     const phAttrs: string[] = [`type="${opts.placeholder}"`];
     if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
+    if (opts.placeholderSize !== undefined) phAttrs.push(`sz="${opts.placeholderSize}"`);
+    if (opts.placeholderOrientation !== undefined)
+      phAttrs.push(`orient="${opts.placeholderOrientation}"`);
     if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
     nvPrContent = `<p:nvPr><p:ph ${phAttrs.join(" ")}/></p:nvPr>`;
   } else if (opts.isPhoto || opts.userDrawn) {
@@ -812,6 +822,12 @@ export function readNvSpPr(nvSpPr: XmlElement): ShapeDescriptorOptions {
         result.placeholder = String(ph.attributes["type"]) as ShapeDescriptorOptions["placeholder"];
       if (ph.attributes["idx"] !== undefined)
         result.placeholderIndex = Number(ph.attributes["idx"]);
+      if (ph.attributes["sz"] !== undefined)
+        result.placeholderSize = ph.attributes["sz"] as ShapeDescriptorOptions["placeholderSize"];
+      if (ph.attributes["orient"] !== undefined)
+        result.placeholderOrientation = ph.attributes[
+          "orient"
+        ] as ShapeDescriptorOptions["placeholderOrientation"];
       if (ph.attributes["hasCustomPrompt"] !== undefined)
         result.hasCustomPrompt = ph.attributes["hasCustomPrompt"] === "1";
     }
