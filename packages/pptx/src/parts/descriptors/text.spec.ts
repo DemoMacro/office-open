@@ -208,7 +208,7 @@ describe("paragraphDesc round-trip", () => {
         { text: "World", italic: true },
       ],
     });
-    const children = result.children!;
+    const children = result.children! as RunOptions[];
     expect(children).toHaveLength(2);
     const [child1, child2] = children;
     expect(child1?.text).toBe("Hello ");
@@ -304,7 +304,7 @@ describe("paragraphDesc round-trip", () => {
     });
     const props = result.properties!;
     expect(props.alignment).toBe("right");
-    const children = result.children!;
+    const children = result.children! as RunOptions[];
     const [first] = children;
     expect(first?.text).toBe("Right-aligned run");
   });
@@ -315,7 +315,7 @@ describe("paragraphDesc round-trip", () => {
     const result = roundTrip({
       children: [{ text: "Bold", bold: true }],
     });
-    const children = result.children!;
+    const children = result.children! as RunOptions[];
     expect(children).toHaveLength(1);
     const [first] = children;
     expect(first?.text).toBe("Bold");

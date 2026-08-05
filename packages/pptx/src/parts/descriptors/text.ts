@@ -5,7 +5,7 @@
  */
 
 import { xsdStrikeStyle, xsdTextAlign, xsdTextCaps, xsdUnderlineStyle } from "@office-open/core";
-import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import { effectListDesc, fillDesc, outlineDesc } from "@office-open/core/drawingml";
 import { escapeXml, findChild } from "@office-open/xml";
@@ -30,6 +30,7 @@ import type {
   HyperlinkOptions,
   RunPropertiesOptions,
 } from "@shared/shape/paragraph/run-properties";
+import type { TextFieldOptions } from "@shared/shape/paragraph/text-field";
 
 import type { PptxWriteContext } from "../../context";
 
@@ -45,7 +46,7 @@ type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
 export interface ParagraphDescriptorOptions {
   text?: string;
   properties?: ParagraphPropertiesOptions;
-  children?: RunOptions[];
+  children?: (RunOptions | TextFieldOptions)[];
 }
 
 // ── Hyperlink ID counter (module-scoped) ──
@@ -443,10 +444,14 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       parts.push(textRunDesc.stringify({ text: opts.text }, ctx) ?? "");
     }
 
-    // Children (text runs)
+    // Children (text runs + fields)
     if (opts.children) {
       for (const child of opts.children) {
-        parts.push(textRunDesc.stringify(child, ctx) ?? "");
+        if (isTextField(child)) {
+          parts.push(stringifyTextField(child, ctx));
+        } else {
+          parts.push(textRunDesc.stringify(child, ctx) ?? "");
+        }
       }
     }
 
@@ -465,29 +470,62 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       result.properties = readParagraphProperties(pPr) as ParagraphPropertiesOptions;
     }
 
-    // Text runs
-    const runs: RunOptions[] = [];
+    // Collect runs and fields in document order.
+    const children: (RunOptions | TextFieldOptions)[] = [];
     for (const child of el.elements ?? []) {
       if (child.name === "a:r") {
-        const runOpts = textRunDesc.parse(child, ctx) as RunOptions;
-        runs.push(runOpts);
+        children.push(textRunDesc.parse(child, ctx) as RunOptions);
+      } else if (child.name === "a:fld") {
+        children.push(readTextField(child, ctx));
       }
     }
 
-    const [onlyRun] = runs;
+    const [onlyRun] = children;
     if (
-      onlyRun &&
-      runs.length === 1 &&
+      onlyRun !== undefined &&
+      !isTextField(onlyRun) &&
+      children.length === 1 &&
       !result.properties &&
       onlyRun.text !== undefined &&
       Object.keys(onlyRun).length === 1
     ) {
       // Single run with no paragraph properties and only text -> use text shorthand
       result.text = onlyRun.text;
-    } else if (runs.length > 0) {
-      result.children = runs;
+    } else if (children.length > 0) {
+      result.children = children;
     }
 
     return result as ParagraphDescriptorOptions;
   },
 };
+
+// ── Text field (a:fld) helpers ──
+
+function isTextField(child: RunOptions | TextFieldOptions): child is TextFieldOptions {
+  return typeof (child as TextFieldOptions).type === "string";
+}
+
+function stringifyTextField(opts: TextFieldOptions, ctx: WriteContext): string {
+  // id is a required GUID on CT_TextField; fall back to a nil UUID so a
+  // user-authored field still produces valid OOXML.
+  const id = opts.id ?? "{00000000-0000-0000-0000-000000000000}";
+  const rPr = opts.properties ? (runPropertiesDesc.stringify(opts.properties, ctx) ?? "") : "";
+  const t = opts.text !== undefined ? `<a:t>${escapeXml(opts.text)}</a:t>` : "";
+  return `<a:fld id="${id}" type="${opts.type}">${rPr}${t}</a:fld>`;
+}
+
+function readTextField(el: XmlElement, ctx: ReadContext): TextFieldOptions {
+  const result: TextFieldOptions = { type: String(el.attributes?.["type"] ?? "") };
+  const id = el.attributes?.["id"];
+  if (id !== undefined) result.id = String(id);
+  const rPr = findChild(el, "a:rPr");
+  if (rPr) result.properties = runPropertiesDesc.parse(rPr, ctx) as RunPropertiesOptions;
+  const t = findChild(el, "a:t");
+  if (t) {
+    result.text = (t.elements ?? [])
+      .filter((e) => e.type === "text")
+      .map((e) => e.text ?? "")
+      .join("");
+  }
+  return result;
+}
