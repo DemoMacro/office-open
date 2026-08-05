@@ -10,6 +10,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 import type { TransitionDirection } from "@shared/transition";
+import { DIRECTION_MAP } from "@shared/transition";
 
 import { timingDesc } from "./animation";
 import { backgroundDesc, type BackgroundDescriptorOptions } from "./background";
@@ -69,6 +70,8 @@ export interface TransitionDescriptorOptions {
     | "wheel"
     | "random";
   direction?: TransitionDirection;
+  orient?: "horz" | "vert";
+  spokes?: number;
   speed?: "slow" | "medium" | "fast";
   advanceOnClick?: boolean;
   advanceAfterMs?: number;
@@ -287,14 +290,18 @@ export function stringifyTransition(opts: TransitionDescriptorOptions): string {
   const parts: string[] = [];
 
   if (opts.type === "none") return "";
+  const dir = opts.direction ? DIRECTION_MAP[opts.direction] : undefined;
+  const dirAttr = dir ? ` dir="${dir}"` : "";
   if (opts.type === "fade") parts.push("<p:fade/>");
-  else if (opts.type === "push") parts.push('<p:push dir="l"/>');
-  else if (opts.type === "wipe") parts.push('<p:wipe dir="d"/>');
-  else if (opts.type === "split") parts.push('<p:split orient="horz"/>');
-  else if (opts.type === "cover") parts.push('<p:cover dir="l"/>');
-  else if (opts.type === "pull") parts.push('<p:pull dir="l"/>');
+  else if (opts.type === "push") parts.push(`<p:push${dirAttr}/>`);
+  else if (opts.type === "wipe") parts.push(`<p:wipe${dirAttr}/>`);
+  else if (opts.type === "split")
+    parts.push(`<p:split${opts.orient ? ` orient="${opts.orient}"` : ""}/>`);
+  else if (opts.type === "cover") parts.push(`<p:cover${dirAttr}/>`);
+  else if (opts.type === "pull") parts.push(`<p:pull${dirAttr}/>`);
   else if (opts.type === "dissolve") parts.push("<p:dissolve/>");
-  else if (opts.type === "wheel") parts.push('<p:wheel spokes="4"/>');
+  else if (opts.type === "wheel")
+    parts.push(`<p:wheel${opts.spokes !== undefined ? ` spokes="${opts.spokes}"` : ""}/>`);
   else if (opts.type === "random") parts.push("<p:random/>");
 
   const attrs: string[] = [];
@@ -353,6 +360,18 @@ export function readTransition(el: XmlElement): TransitionDescriptorOptions {
   if (dirEl?.attributes?.["dir"] !== undefined) {
     const direction = XML_DIR_TO_DIRECTION[String(dirEl.attributes["dir"])];
     if (direction) result.direction = direction;
+  }
+
+  // Split orientation.
+  const splitEl = findChild(el, "p:split");
+  if (splitEl?.attributes?.["orient"] !== undefined) {
+    result.orient = splitEl.attributes["orient"] as "horz" | "vert";
+  }
+
+  // Wheel spokes.
+  const wheelEl = findChild(el, "p:wheel");
+  if (wheelEl?.attributes?.["spokes"] !== undefined) {
+    result.spokes = Number(wheelEl.attributes["spokes"]);
   }
 
   return result;

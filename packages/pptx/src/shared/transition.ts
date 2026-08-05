@@ -39,7 +39,7 @@ export type TransitionDirection =
   | "out"
   | "in";
 
-const DIRECTION_MAP: Record<TransitionDirection, string> = {
+export const DIRECTION_MAP: Record<TransitionDirection, string> = {
   left: "l",
   up: "u",
   right: "r",
