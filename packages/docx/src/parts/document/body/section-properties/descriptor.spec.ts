@@ -4,6 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { BodyContext } from "../../../../context";
 import { sectionPropertiesDesc } from "./descriptor";
+import type { DocGridProperties } from "./properties/doc-grid";
 import type { SectionPropertiesOptions } from "./section-properties";
 
 const writeCtx = {
@@ -24,11 +25,22 @@ function roundTrip(opts: SectionPropertiesOptions) {
 }
 
 describe("sectionPropertiesDesc round-trip", () => {
-  it("round-trips default section (empty opts)", () => {
+  it("fresh section emits Word's CJK default line grid", () => {
+    // opts.grid undefined → stringify emits the default (linePitch 312, type
+    // "lines"); parse reads it back as a grid object.
     const result = roundTrip({});
-    // No docGrid injected when source omitted — emitting one would activate the
-    // CJK line grid and distort spacing.
-    expect(result.grid).toBeUndefined();
+    expect(result.grid).toBeDefined();
+    expect((result.grid as DocGridProperties).linePitch).toBe(312);
+  });
+
+  it("parses source without w:docGrid as explicit off (preserve fidelity)", () => {
+    // A parsed source that has no w:docGrid must round-trip as grid=false so
+    // stringify omits the element instead of injecting a default CJK grid.
+    const xml = `<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/><w:cols w:space="720"/></w:sectPr>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = sectionPropertiesDesc.parse(el, readCtx);
+    expect(result.grid).toBe(false);
   });
 
   it("round-trips page size", () => {
@@ -199,9 +211,10 @@ describe("sectionPropertiesDesc round-trip", () => {
       grid: { linePitch: 240, charSpace: 100, type: "lines" },
     });
     expect(result.grid).toBeDefined();
-    expect(result.grid!.linePitch).toBe(240);
-    expect(result.grid!.charSpace).toBe(100);
-    expect(result.grid!.type).toBe("lines");
+    const grid = result.grid as DocGridProperties;
+    expect(grid.linePitch).toBe(240);
+    expect(grid.charSpace).toBe(100);
+    expect(grid.type).toBe("lines");
   });
 
   it("round-trips page numbers", () => {

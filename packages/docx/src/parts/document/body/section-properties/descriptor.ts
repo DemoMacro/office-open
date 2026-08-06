@@ -16,6 +16,7 @@ import { attr, attrBool, attrMeasure, attrNum, findChild } from "@office-open/xm
 import type { Element } from "@office-open/xml";
 import type { ColumnProperties } from "@parts/document/body/section-properties/properties/column";
 import type { ColumnsProperties } from "@parts/document/body/section-properties/properties/columns";
+import type { DocGridProperties } from "@parts/document/body/section-properties/properties/doc-grid";
 import type {
   EndnotePropertiesOptions,
   FootnotePropertiesOptions,
@@ -233,7 +234,11 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
     textDirection,
   } = opts.page ?? {};
 
-  const { linePitch = 312, charSpace = 0, type: gridType = "lines" } = opts.grid ?? {};
+  const {
+    linePitch = 312,
+    charSpace = 0,
+    type: gridType = "lines",
+  } = typeof opts.grid === "object" ? opts.grid : {};
 
   // Footnote/endnote properties
   if (opts.footnotePr) parts.push(footnotePrXml("w:footnotePr", opts.footnotePr));
@@ -294,9 +299,12 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
     parts.push(`<w:printerSettings r:id="${opts.printerSettingsId}"/>`);
   }
 
-  // Document grid (omit when absent — Word's default. Emitting a grid would
-  // activate line-snapping and distort spacing, especially in CJK builds.)
-  if (opts.grid) {
+  // Document grid — three states:
+  //  - undefined (fresh, unset): emit Word's CJK default line grid (linePitch
+  //    312, type "lines") so generated docs match East Asian line-snapping.
+  //  - object: emit provided values (round-trip fidelity).
+  //  - false (explicit off, e.g. parsed source had no w:docGrid): omit.
+  if (opts.grid !== false) {
     parts.push(docGridXml(linePitch, charSpace, gridType));
   }
 
@@ -478,17 +486,21 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (child) opts[optKey] = attrBool(child, "w:val") ?? true;
   }
 
-  // Document grid
+  // Document grid — three-state: object (source had w:docGrid → preserve),
+  // false (source had none → explicit off so stringify omits it), undefined
+  // (fresh generation, stringify emits the CJK default line grid).
   const docGrid = findChild(el, "w:docGrid");
   if (docGrid) {
-    const grid: Record<string, unknown> = {};
+    const grid: Partial<DocGridProperties> = {};
     const type = attr(docGrid, "w:type");
-    if (type) grid.type = type;
+    if (type) grid.type = type as DocGridProperties["type"];
     const linePitch = attrNum(docGrid, "w:linePitch");
     if (linePitch !== undefined) grid.linePitch = linePitch;
     const charSpace = attrNum(docGrid, "w:charSpace");
     if (charSpace !== undefined) grid.charSpace = charSpace;
-    if (Object.keys(grid).length > 0) opts.grid = grid;
+    opts.grid = grid as DocGridProperties;
+  } else {
+    opts.grid = false;
   }
 
   // Line numbers

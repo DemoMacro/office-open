@@ -49,7 +49,13 @@ export interface SectionPropertiesOptionsBase {
     borders?: PageBordersOptions;
     textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
   };
-  grid?: DocGridProperties;
+  /**
+   * Document grid. Three states: omitted (fresh generation emits Word's CJK
+   * default line grid — linePitch 312, type "lines"); a DocGridProperties object
+   * (emits provided values, e.g. from a parsed source); or false (explicit off —
+   * a parsed source with no w:docGrid is preserved by emitting nothing).
+   */
+  grid?: DocGridProperties | false;
   headerWrapperGroup?: HeaderFooterGroup<HeaderFooterEntry>;
   footerWrapperGroup?: HeaderFooterGroup<HeaderFooterEntry>;
   lineNumbers?: LineNumberProperties;
