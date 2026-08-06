@@ -11,6 +11,8 @@ export type BulletCharOptions = {
   char?: string;
   color?: string;
   size?: number;
+  /** a:buFont @typeface — bullet font (defaults to Arial on fresh bullet emit). */
+  font?: string;
 };
 
 export type BulletAutoNumOptions = {
@@ -19,6 +21,8 @@ export type BulletAutoNumOptions = {
   startAt?: number;
   color?: string;
   size?: number;
+  /** a:buFont @typeface — bullet font (defaults to Arial on fresh bullet emit). */
+  font?: string;
 };
 
 export type BulletNoneOption = {

@@ -6,7 +6,7 @@
 
 import { derivePasswordHash, uniqueUuid } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
+import { attr, attrNum, escapeXml, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type {
   PresentationPartOptions,
@@ -194,7 +194,13 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
     }
   }
 
-  parts.push(DEFAULT_TEXT_STYLE_XML);
+  // Default text style — fresh emits PowerPoint's default 9-level style; a
+  // parsed source preserves its raw XML; false omits the element.
+  if (opts.defaultTextStyle === false) {
+    // omit
+  } else {
+    parts.push(opts.defaultTextStyle ?? DEFAULT_TEXT_STYLE_XML);
+  }
 
   // modifyVerifier
   if (opts.modifyVerifier) {
@@ -448,6 +454,15 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
       kinsoku.push(entry);
     }
     result.kinsoku = kinsoku;
+  }
+
+  // Default text style — preserve the source raw XML so it round-trips; a
+  // source with no p:defaultTextStyle marks false so stringify omits it.
+  const defaultTextStyle = findChild(el, "p:defaultTextStyle");
+  if (defaultTextStyle) {
+    result.defaultTextStyle = `<p:defaultTextStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">${stringify(defaultTextStyle)}</p:defaultTextStyle>`;
+  } else {
+    result.defaultTextStyle = false;
   }
 
   return result as PresentationPartOptions;

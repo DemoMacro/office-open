@@ -43,10 +43,21 @@ export type { HyperlinkOptions, RunPropertiesOptions };
 /** Strip `readonly` from all properties. */
 type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
 
+export interface BreakOptions {
+  /** Marks a soft line break (a:br) within a paragraph's children. */
+  break: true;
+  properties?: RunPropertiesOptions;
+}
+
 export interface ParagraphDescriptorOptions {
   text?: string;
   properties?: ParagraphPropertiesOptions;
-  children?: (RunOptions | TextFieldOptions)[];
+  children?: (RunOptions | TextFieldOptions | BreakOptions)[];
+  /**
+   * End-paragraph run properties (a:endParaRPr). Fresh paragraphs emit a
+   * default lang marker; a parsed source preserves its value; false omits it.
+   */
+  endParagraphProperties?: RunPropertiesOptions | false;
 }
 
 // ── Hyperlink ID counter (module-scoped) ──
@@ -330,7 +341,7 @@ function stringifyBullet(options: BulletOptions): string[] {
   }
 
   parts.push(
-    '<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>',
+    `<a:buFont typeface="${options.font ?? "Arial"}" panose="020B0604020202020204" pitchFamily="34" charset="0"/>`,
   );
 
   if (options.type === "char") {
@@ -395,6 +406,8 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
     if (buChar) {
       const bullet: Mutable<BulletCharOptions> = { type: "char" };
       if (buChar.attributes?.["char"]) bullet.char = String(buChar.attributes["char"]);
+      const buFont = findChild(el, "a:buFont");
+      if (buFont?.attributes?.["typeface"]) bullet.font = String(buFont.attributes["typeface"]);
       const buClr = findChild(el, "a:buClr");
       if (buClr) {
         const srgb = findChild(buClr, "a:srgbClr");
@@ -408,6 +421,8 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
       const buAutoNum = findChild(el, "a:buAutoNum")!;
       const bullet: Mutable<BulletAutoNumOptions> = { type: "autoNum" };
       if (buAutoNum.attributes?.["type"]) bullet.format = String(buAutoNum.attributes["type"]);
+      const buFont = findChild(el, "a:buFont");
+      if (buFont?.attributes?.["typeface"]) bullet.font = String(buFont.attributes["typeface"]);
       if (buAutoNum.attributes?.["startAt"] !== undefined)
         bullet.startAt = Number(buAutoNum.attributes["startAt"]);
       const buClr = findChild(el, "a:buClr");
@@ -444,18 +459,27 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       parts.push(textRunDesc.stringify({ text: opts.text }, ctx) ?? "");
     }
 
-    // Children (text runs + fields)
+    // Children (text runs + fields + line breaks)
     if (opts.children) {
       for (const child of opts.children) {
         if (isTextField(child)) {
           parts.push(stringifyTextField(child, ctx));
+        } else if (isBreak(child)) {
+          parts.push(stringifyBreak(child, ctx));
         } else {
           parts.push(textRunDesc.stringify(child, ctx) ?? "");
         }
       }
     }
 
-    parts.push('<a:endParaRPr lang="en-US"/>');
+    // End-paragraph run properties — fresh emits a default lang marker; a
+    // parsed source preserves its value; false omits the element.
+    if (opts.endParagraphProperties === false) {
+      // omit
+    } else {
+      const epr = opts.endParagraphProperties ?? { lang: "en-US" };
+      parts.push(stringifyEndParaRPr(epr, ctx));
+    }
 
     const body = parts.join("");
     return body ? `<a:p>${body}</a:p>` : "<a:p/>";
@@ -470,13 +494,15 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       result.properties = readParagraphProperties(pPr) as ParagraphPropertiesOptions;
     }
 
-    // Collect runs and fields in document order.
-    const children: (RunOptions | TextFieldOptions)[] = [];
+    // Collect runs, fields, and breaks in document order.
+    const children: (RunOptions | TextFieldOptions | BreakOptions)[] = [];
     for (const child of el.elements ?? []) {
       if (child.name === "a:r") {
         children.push(textRunDesc.parse(child, ctx) as RunOptions);
       } else if (child.name === "a:fld") {
         children.push(readTextField(child, ctx));
+      } else if (child.name === "a:br") {
+        children.push(readBreak(child, ctx));
       }
     }
 
@@ -484,6 +510,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
     if (
       onlyRun !== undefined &&
       !isTextField(onlyRun) &&
+      !isBreak(onlyRun) &&
       children.length === 1 &&
       !result.properties &&
       onlyRun.text !== undefined &&
@@ -495,14 +522,52 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       result.children = children;
     }
 
+    // End-paragraph run properties — preserve source value, or mark false so
+    // stringify omits it (fresh paragraphs re-emit the default lang marker).
+    const endParaRPr = findChild(el, "a:endParaRPr");
+    if (endParaRPr) {
+      result.endParagraphProperties = runPropertiesDesc.parse(
+        endParaRPr,
+        ctx,
+      ) as RunPropertiesOptions;
+    } else {
+      result.endParagraphProperties = false;
+    }
+
     return result as ParagraphDescriptorOptions;
   },
 };
 
 // ── Text field (a:fld) helpers ──
 
-function isTextField(child: RunOptions | TextFieldOptions): child is TextFieldOptions {
+function isTextField(
+  child: RunOptions | TextFieldOptions | BreakOptions,
+): child is TextFieldOptions {
   return typeof (child as TextFieldOptions).type === "string";
+}
+
+function isBreak(child: RunOptions | TextFieldOptions | BreakOptions): child is BreakOptions {
+  return (child as BreakOptions).break === true;
+}
+
+function stringifyBreak(opts: BreakOptions, ctx: WriteContext): string {
+  const rPr = opts.properties ? (runPropertiesDesc.stringify(opts.properties, ctx) ?? "") : "";
+  return rPr ? `<a:br>${rPr}</a:br>` : "<a:br/>";
+}
+
+function readBreak(el: XmlElement, ctx: ReadContext): BreakOptions {
+  const result = { break: true } as Mutable<BreakOptions>;
+  const rPr = findChild(el, "a:rPr");
+  if (rPr) result.properties = runPropertiesDesc.parse(rPr, ctx) as RunPropertiesOptions;
+  return result as BreakOptions;
+}
+
+// a:endParaRPr has the same CT_TextCharacterProperties shape as a:rPr; reuse
+// runPropertiesDesc and relabel the emitted tag.
+function stringifyEndParaRPr(opts: RunPropertiesOptions, ctx: WriteContext): string {
+  const rPr = runPropertiesDesc.stringify(opts, ctx) ?? "";
+  if (!rPr) return "<a:endParaRPr/>";
+  return rPr.replaceAll("<a:rPr", "<a:endParaRPr").replaceAll("</a:rPr>", "</a:endParaRPr>");
 }
 
 function stringifyTextField(opts: TextFieldOptions, ctx: WriteContext): string {

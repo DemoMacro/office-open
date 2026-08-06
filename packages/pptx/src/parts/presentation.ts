@@ -107,6 +107,12 @@ export interface PresentationPartOptions {
   embeddedFonts?: EmbeddedFontOptions[];
   customShows?: CustomShowOptions[];
   kinsoku?: KinsokuOptions[];
+  /**
+   * Default text style (p:defaultTextStyle) as raw inner XML. Fresh emits
+   * PowerPoint's default 9-level style; a parsed source preserves its value;
+   * false omits the element.
+   */
+  defaultTextStyle?: string | false;
   customerData?: CustomerDataOptions;
   /** Slide sections (p14:sectionLst); slides are grouped by name. */
   sections?: PresentationSectionGroup[];

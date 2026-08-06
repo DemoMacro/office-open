@@ -80,6 +80,10 @@ export interface TextBodyDescriptorOptions {
     | "wordArtVertRtl";
   anchor?: "top" | "center" | "bottom" | "justify" | "distribute";
   autoFit?: "normal" | "shape" | "none";
+  /** normAutofit @fontScale — scale applied to fit text (ST_TextFontScale, percent*1000). */
+  autoFitFontScale?: number;
+  /** normAutofit @lnSpcReduction — line-space reduction (ST_TextSpacingPercent, percent*1000). */
+  autoFitLineSpaceReduction?: number;
   wrap?: "square" | "none";
   margins?: TextBodyMarginsDescriptorOptions;
   marginTop?: number | UniversalMeasure;
@@ -581,10 +585,12 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
 
   // Geometry: EG_Geometry choice — customGeometry takes precedence, else presetGeometry.
   // A bare string normalizes to { preset }; an object preserves adjustmentValues.
+  // A placeholder inherits geometry from layout/master, so only emit prstGeom
+  // when explicitly set; non-placeholder shapes get the default "rect".
   if (opts.customGeometry) {
     const xml = stringify(customGeometryDesc, opts.customGeometry, ctx);
     if (xml) parts.push(xml);
-  } else {
+  } else if (opts.geometry !== undefined || !opts.placeholder) {
     const geom =
       typeof opts.geometry === "string" || opts.geometry === undefined
         ? { preset: opts.geometry ?? "rect" }
@@ -612,7 +618,9 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
     }
     const fillXml = stringify(fillDesc, opts.fill, ctx);
     if (fillXml) parts.push(fillXml);
-  } else {
+  } else if (!opts.placeholder) {
+    // A placeholder inherits fill from layout/master; only emit noFill for
+    // non-placeholder shapes so the placeholder can inherit the layout fill.
     parts.push("<a:noFill/>");
   }
 
@@ -731,8 +739,15 @@ function toParagraphDescOpts(opts: ParagraphOptions): ParagraphDescriptorOptions
 function stringifyBodyPr(opts: TextBodyDescriptorOptions): string {
   const bodyPrChildren: string[] = [];
 
-  if (opts.autoFit === "normal") bodyPrChildren.push("<a:normAutofit/>");
-  else if (opts.autoFit === "shape") bodyPrChildren.push("<a:spAutoFit/>");
+  if (opts.autoFit === "normal") {
+    const naAttrs: string[] = [];
+    if (opts.autoFitFontScale !== undefined) naAttrs.push(`fontScale="${opts.autoFitFontScale}"`);
+    if (opts.autoFitLineSpaceReduction !== undefined)
+      naAttrs.push(`lnSpcReduction="${opts.autoFitLineSpaceReduction}"`);
+    bodyPrChildren.push(
+      naAttrs.length ? `<a:normAutofit ${naAttrs.join(" ")}/>` : "<a:normAutofit/>",
+    );
+  } else if (opts.autoFit === "shape") bodyPrChildren.push("<a:spAutoFit/>");
   else if (opts.autoFit === "none") bodyPrChildren.push("<a:noAutofit/>");
 
   const attrs: string[] = [];
@@ -1010,8 +1025,14 @@ function readTxBody(txBody: XmlElement, ctx: ReadContext): TextBodyDescriptorOpt
     const marB = attrMeasure(bodyPr, "marB");
     if (marB !== undefined) result.marginBottom = marB as number | UniversalMeasure;
 
-    if (findChild(bodyPr, "a:normAutofit")) result.autoFit = "normal";
-    else if (findChild(bodyPr, "a:spAutoFit")) result.autoFit = "shape";
+    const normAutofit = findChild(bodyPr, "a:normAutofit");
+    if (normAutofit) {
+      result.autoFit = "normal";
+      const fontScale = attrNum(normAutofit, "fontScale");
+      if (fontScale !== undefined) result.autoFitFontScale = fontScale;
+      const lnSpcReduction = attrNum(normAutofit, "lnSpcReduction");
+      if (lnSpcReduction !== undefined) result.autoFitLineSpaceReduction = lnSpcReduction;
+    } else if (findChild(bodyPr, "a:spAutoFit")) result.autoFit = "shape";
     else if (findChild(bodyPr, "a:noAutofit")) result.autoFit = "none";
   }
 
