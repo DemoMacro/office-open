@@ -163,7 +163,7 @@ const pres: PresentationOptions = {
           },
         },
       ],
-      transition: { type: "push", speed: "med", direction: "left" },
+      transition: { type: "push", speed: "medium", direction: "left" },
     },
 
     // ── Slide 3: Lines, connectors, and mixed children ──

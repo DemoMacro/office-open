@@ -54,7 +54,7 @@ export const DIRECTION_MAP: Record<TransitionDirection, string> = {
 
 export interface TransitionOptions {
   type?: TransitionType;
-  speed?: "slow" | "med" | "fast";
+  speed?: "slow" | "medium" | "fast";
   advanceOnClick?: boolean;
   advanceAfterTime?: number;
   direction?: TransitionDirection;
@@ -103,7 +103,9 @@ function buildTransitionElement(
 
 export function buildTransition(options: TransitionOptions): string {
   const attrParts: string[] = [];
-  if (options.speed) attrParts.push(`spd="${options.speed}"`);
+  if (options.speed)
+    // OOXML ST_TransitionSpeed uses "med"; the friendly API token is "medium".
+    attrParts.push(`spd="${options.speed === "medium" ? "med" : options.speed}"`);
   if (options.advanceOnClick !== undefined)
     attrParts.push(`advClick="${options.advanceOnClick ? 1 : 0}"`);
   if (options.advanceAfterTime !== undefined) attrParts.push(`advTm="${options.advanceAfterTime}"`);

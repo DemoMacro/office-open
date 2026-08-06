@@ -354,7 +354,7 @@ const slides: SlideOptions[] = [
         },
       },
     ],
-    transition: { type: "push", speed: "med", direction: "left" },
+    transition: { type: "push", speed: "medium", direction: "left" },
   },
 
   // ── Slide 3: Chart (column) ──
@@ -1019,7 +1019,7 @@ const slides: SlideOptions[] = [
 
   // ── Slide 17: More Transitions + Emphasis Animation ──
   {
-    transition: { type: "cover", direction: "right", speed: "med" },
+    transition: { type: "cover", direction: "right", speed: "medium" },
     children: [
       {
         shape: {

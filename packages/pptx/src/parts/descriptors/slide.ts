@@ -9,8 +9,8 @@ import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
-import type { TransitionDirection } from "@shared/transition";
-import { DIRECTION_MAP } from "@shared/transition";
+import type { TransitionDirection, TransitionType } from "@shared/transition";
+import { buildTransition } from "@shared/transition";
 
 import { timingDesc } from "./animation";
 import { backgroundDesc, type BackgroundDescriptorOptions } from "./background";
@@ -58,21 +58,12 @@ export type SlideChild =
   | { contentPart: { rId: string } };
 
 export interface TransitionDescriptorOptions {
-  type?:
-    | "none"
-    | "fade"
-    | "push"
-    | "wipe"
-    | "split"
-    | "cover"
-    | "pull"
-    | "dissolve"
-    | "wheel"
-    | "random";
+  type?: TransitionType | "none";
   direction?: TransitionDirection;
   orient?: "horz" | "vert";
   spokes?: number;
   speed?: "slow" | "medium" | "fast";
+  thruBlk?: boolean;
   advanceOnClick?: boolean;
   advanceAfterMs?: number;
 }
@@ -287,31 +278,17 @@ function stringifySlideChild(child: SlideChild, ctx: WriteContext): string | und
 // ── Transition helpers ──
 
 export function stringifyTransition(opts: TransitionDescriptorOptions): string {
-  const parts: string[] = [];
-
-  if (opts.type === "none") return "";
-  const dir = opts.direction ? DIRECTION_MAP[opts.direction] : undefined;
-  const dirAttr = dir ? ` dir="${dir}"` : "";
-  if (opts.type === "fade") parts.push("<p:fade/>");
-  else if (opts.type === "push") parts.push(`<p:push${dirAttr}/>`);
-  else if (opts.type === "wipe") parts.push(`<p:wipe${dirAttr}/>`);
-  else if (opts.type === "split")
-    parts.push(`<p:split${opts.orient ? ` orient="${opts.orient}"` : ""}/>`);
-  else if (opts.type === "cover") parts.push(`<p:cover${dirAttr}/>`);
-  else if (opts.type === "pull") parts.push(`<p:pull${dirAttr}/>`);
-  else if (opts.type === "dissolve") parts.push("<p:dissolve/>");
-  else if (opts.type === "wheel")
-    parts.push(`<p:wheel${opts.spokes !== undefined ? ` spokes="${opts.spokes}"` : ""}/>`);
-  else if (opts.type === "random") parts.push("<p:random/>");
-
-  const attrs: string[] = [];
-  if (opts.speed) attrs.push(`spd="${opts.speed}"`);
-  if (opts.advanceOnClick !== undefined) attrs.push(`advClick="${opts.advanceOnClick ? 1 : 0}"`);
-  if (opts.advanceAfterMs !== undefined) attrs.push(`advTm="${opts.advanceAfterMs}"`);
-
-  const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-  const body = parts.join("");
-  return body ? `<p:transition${attrStr}>${body}</p:transition>` : `<p:transition${attrStr}/>`;
+  if (opts.type === "none" || opts.type === undefined) return "";
+  return buildTransition({
+    type: opts.type,
+    direction: opts.direction,
+    orient: opts.orient,
+    spokes: opts.spokes,
+    thruBlk: opts.thruBlk,
+    speed: opts.speed,
+    advanceOnClick: opts.advanceOnClick,
+    advanceAfterTime: opts.advanceAfterMs,
+  });
 }
 
 // Reverse of DIRECTION_MAP in @shared/transition (dir attribute → semantic direction).
@@ -328,50 +305,62 @@ const XML_DIR_TO_DIRECTION: Record<string, TransitionDirection> = {
   in: "in",
 };
 
+// All transitional transition element names (EG_SlideTransition). Used to
+// detect the type from the matching child and read its attributes generically,
+// so every supported transition round-trips without a per-type branch.
+const TRANSITION_ELEMENT_TYPES = [
+  "fade",
+  "push",
+  "wipe",
+  "split",
+  "blinds",
+  "checker",
+  "comb",
+  "randomBar",
+  "cover",
+  "pull",
+  "strips",
+  "wheel",
+  "zoom",
+  "circle",
+  "dissolve",
+  "diamond",
+  "newsflash",
+  "plus",
+  "wedge",
+  "random",
+  "cut",
+] as const;
+
 export function readTransition(el: XmlElement): TransitionDescriptorOptions {
   const result: TransitionDescriptorOptions = {};
 
   if (el.attributes) {
     if (el.attributes["spd"] !== undefined)
-      result.speed = el.attributes["spd"] as "slow" | "medium" | "fast";
+      result.speed =
+        el.attributes["spd"] === "med" ? "medium" : (el.attributes["spd"] as "slow" | "fast");
     if (el.attributes["advClick"] !== undefined)
       result.advanceOnClick = el.attributes["advClick"] === "1";
     if (el.attributes["advTm"] !== undefined)
       result.advanceAfterMs = Number(el.attributes["advTm"]);
   }
 
-  // Detect transition type from child elements
-  if (findChild(el, "p:fade")) result.type = "fade";
-  else if (findChild(el, "p:push")) result.type = "push";
-  else if (findChild(el, "p:wipe")) result.type = "wipe";
-  else if (findChild(el, "p:split")) result.type = "split";
-  else if (findChild(el, "p:cover")) result.type = "cover";
-  else if (findChild(el, "p:pull")) result.type = "pull";
-  else if (findChild(el, "p:dissolve")) result.type = "dissolve";
-  else if (findChild(el, "p:wheel")) result.type = "wheel";
-  else if (findChild(el, "p:random")) result.type = "random";
-
-  // Direction (dir attribute on directional children: cover/pull/push/wipe)
-  const dirEl =
-    findChild(el, "p:cover") ??
-    findChild(el, "p:pull") ??
-    findChild(el, "p:push") ??
-    findChild(el, "p:wipe");
-  if (dirEl?.attributes?.["dir"] !== undefined) {
-    const direction = XML_DIR_TO_DIRECTION[String(dirEl.attributes["dir"])];
-    if (direction) result.direction = direction;
-  }
-
-  // Split orientation.
-  const splitEl = findChild(el, "p:split");
-  if (splitEl?.attributes?.["orient"] !== undefined) {
-    result.orient = splitEl.attributes["orient"] as "horz" | "vert";
-  }
-
-  // Wheel spokes.
-  const wheelEl = findChild(el, "p:wheel");
-  if (wheelEl?.attributes?.["spokes"] !== undefined) {
-    result.spokes = Number(wheelEl.attributes["spokes"]);
+  // Detect transition type from the first matching child, then read its
+  // attributes (dir/orient/spokes/thruBlk) in one pass.
+  for (const t of TRANSITION_ELEMENT_TYPES) {
+    const child = findChild(el, `p:${t}`);
+    if (!child) continue;
+    result.type = t;
+    const attrs = child.attributes ?? {};
+    const dir = attrs["dir"];
+    if (dir !== undefined) {
+      const direction = XML_DIR_TO_DIRECTION[String(dir)];
+      if (direction) result.direction = direction;
+    }
+    if (attrs["orient"] !== undefined) result.orient = attrs["orient"] as "horz" | "vert";
+    if (attrs["spokes"] !== undefined) result.spokes = Number(attrs["spokes"]);
+    if (attrs["thruBlk"] !== undefined) result.thruBlk = attrs["thruBlk"] === "1";
+    break;
   }
 
   return result;

@@ -20,7 +20,7 @@ const options: PresentationOptions = {
           },
         },
       ],
-      transition: { type: "fade", speed: "med" },
+      transition: { type: "fade", speed: "medium" },
     },
     {
       children: [
@@ -141,7 +141,7 @@ const options: PresentationOptions = {
           },
         },
       ],
-      transition: { type: "fade", speed: "med", startSound: { rId: "rId1", loop: true } },
+      transition: { type: "fade", speed: "medium", startSound: { rId: "rId1", loop: true } },
     },
     // Transition with stop previous sound
     {
