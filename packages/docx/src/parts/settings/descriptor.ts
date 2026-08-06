@@ -740,6 +740,14 @@ function stringifyColorSchemeMapping(
 
 // ── Compatibility ──
 
+/** MS Office default compatSettings for a fresh Word 2013+ document. */
+const FRESH_COMPATIBILITY: CompatibilityOptions = {
+  version: 15,
+  overrideTableStyleFontSizeAndJustification: true,
+  enableOpenTypeFeatures: true,
+  doNotFlipMirrorIndents: true,
+};
+
 function stringifyCompatibility(opts: CompatibilityOptions): string {
   const p: string[] = [];
   // Individual compat on/off elements (XSD order)
@@ -1052,12 +1060,21 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     if (opts.footnotePr !== undefined) p.push(stringifyFootnotePr(opts.footnotePr));
     if (opts.endnotePr !== undefined) p.push(stringifyEndnotePr(opts.endnotePr));
 
-    // Compatibility — optional (CT_Settings minOccurs=0); emit only when configured
-    const compatXml = stringifyCompatibility({
-      ...opts.compatibility,
-      version: opts.compatibility?.version ?? opts.compatibilityModeVersion ?? 15,
-    });
-    if (compatXml) p.push(compatXml);
+    // Compatibility — tri-state:
+    //   undefined → fresh MS Office defaults (4 compatSettings)
+    //   object    → user-specified fields (version defaults to 15)
+    //   false     → omit <w:compat> entirely
+    if (opts.compatibility !== false) {
+      const compatOpts =
+        opts.compatibility === undefined
+          ? FRESH_COMPATIBILITY
+          : {
+              ...opts.compatibility,
+              version: opts.compatibility.version ?? opts.compatibilityModeVersion ?? 15,
+            };
+      const compatXml = stringifyCompatibility(compatOpts);
+      if (compatXml) p.push(compatXml);
+    }
 
     // docVars
     if (opts.docVars?.length) {
@@ -1425,12 +1442,11 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (en) opts.endnotePr = en;
     }
 
-    // compatibility (CT_Compat: on/off flags + compatSetting entries)
+    // compatibility — tri-state: object when <w:compat> holds content, false
+    // when absent (prevents fresh defaults from being injected on round-trip).
     const compatEl = findChild(el, "w:compat");
-    if (compatEl) {
-      const compat = parseCompatibility(compatEl);
-      if (compat) opts.compatibility = compat;
-    }
+    const compat = compatEl ? parseCompatibility(compatEl) : undefined;
+    opts.compatibility = compat ?? false;
 
     // docVars → w:docVars/w:docVar
     const docVarsEl = findChild(el, "w:docVars");

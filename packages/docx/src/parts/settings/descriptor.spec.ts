@@ -3,7 +3,7 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import { settingsDesc } from "./descriptor";
-import type { SettingsOptions } from "./settings";
+import type { CompatibilityOptions, SettingsOptions } from "./settings";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -64,7 +64,31 @@ describe("settingsDesc round-trip", () => {
 
   it("round-trips compatibility version via compatSetting", () => {
     const result = roundTrip({ compatibility: { version: 15 } });
-    expect(result.compatibility?.version).toBe(15);
+    expect((result.compatibility as CompatibilityOptions).version).toBe(15);
+  });
+
+  it("emits MS Office default compatSettings for fresh documents", () => {
+    const xml = settingsDesc.stringify({}, writeCtx)!;
+    expect(xml).toContain(
+      'w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"',
+    );
+    expect(xml).toContain('w:name="overrideTableStyleFontSizeAndJustification"');
+    expect(xml).toContain('w:name="enableOpenTypeFeatures"');
+    expect(xml).toContain('w:name="doNotFlipMirrorIndents"');
+  });
+
+  it("omits <w:compat> when compatibility is false", () => {
+    const xml = settingsDesc.stringify({ compatibility: false }, writeCtx)!;
+    expect(xml).not.toContain("<w:compat>");
+    expect(roundTrip({ compatibility: false }).compatibility).toBe(false);
+  });
+
+  it("emits only user-specified compat fields without merging fresh defaults", () => {
+    const xml = settingsDesc.stringify({ compatibility: { version: 14 } }, writeCtx)!;
+    expect(xml).toContain("compatibilityMode");
+    expect(xml).toContain('w:val="14"');
+    expect(xml).not.toContain("enableOpenTypeFeatures");
+    expect(xml).not.toContain("doNotFlipMirrorIndents");
   });
 
   it("round-trips docVars", () => {
@@ -121,7 +145,7 @@ describe("settingsDesc round-trip", () => {
         compatSettings: [{ name: "differentiateMultirowTableHeaders", val: "1" }],
       },
     });
-    expect(result.compatibility?.compatSettings).toEqual([
+    expect((result.compatibility as CompatibilityOptions).compatSettings).toEqual([
       {
         name: "differentiateMultirowTableHeaders",
         val: "1",

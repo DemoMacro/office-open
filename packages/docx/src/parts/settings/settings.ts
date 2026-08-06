@@ -46,8 +46,14 @@ export interface SettingsOptions {
   revisionView?: RevisionViewOptions;
   /** Update fields when document is opened */
   updateFields?: boolean;
-  /** Compatibility settings for older Word versions */
-  compatibility?: CompatibilityOptions;
+  /**
+   * Compatibility settings for older Word versions.
+   *
+   * Tri-state: omit (undefined) to emit the MS Office default compatSettings
+   * for fresh documents; pass an object for explicit control; set `false` to
+   * omit `<w:compat>` entirely.
+   */
+  compatibility?: CompatibilityOptions | false;
   /** Default distance between tab stops in twips */
   defaultTabStop?: number;
   /** Hyphenation settings */
