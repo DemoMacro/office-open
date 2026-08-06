@@ -821,7 +821,7 @@ function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   if (opts.calcPr) {
     const cp = opts.calcPr;
     const cpAttrs: string[] = [];
-    cpAttrs.push(`calcId="${cp.calcId ?? 162913}"`);
+    cpAttrs.push(`calcId="${cp.calcId ?? 191029}"`);
     if (cp.calcMode) cpAttrs.push(`calcMode="${escapeXml(cp.calcMode)}"`);
     if (cp.fullCalcOnLoad) cpAttrs.push('fullCalcOnLoad="1"');
     if (cp.calcOnSave === false) cpAttrs.push('calcOnSave="0"');
@@ -837,7 +837,7 @@ function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     if (cp.calcCompleted) cpAttrs.push('calcCompleted="1"');
     parts.push(`<calcPr ${cpAttrs.join(" ")}/>`);
   } else {
-    parts.push('<calcPr calcId="162913"/>');
+    parts.push('<calcPr calcId="191029" fullCalcOnLoad="1"/>');
   }
 
   // Custom workbook views (after calcPr, before pivotCaches per XSD)

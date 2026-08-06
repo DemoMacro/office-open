@@ -289,9 +289,12 @@ describe("Worksheet", () => {
   });
 
   describe("sheetView", () => {
-    it("defaults to tabSelected=1", () => {
+    it("omits tabSelected unless explicitly set", () => {
+      // Only the active sheet carries tabSelected (Excel uses workbookView
+      // activeTab); omit it by default so multi-sheet output doesn't mark
+      // every sheet active.
       const xml = buildWorksheetXml({ rows: [{ cells: [{ value: "A" }] }] }, {});
-      expect(xml).toContain('tabSelected="1"');
+      expect(xml).not.toContain("tabSelected");
     });
 
     it("omits default attributes", () => {

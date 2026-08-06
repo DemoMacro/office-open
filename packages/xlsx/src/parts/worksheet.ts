@@ -7,7 +7,7 @@
  * @module
  */
 
-import { convertToPt, derivePasswordHash } from "@office-open/core";
+import { convertToInch, convertToPt, derivePasswordHash } from "@office-open/core";
 import type {
   ChartSpaceOptions,
   DataType,
@@ -1121,6 +1121,20 @@ export interface WorksheetOptions {
   oleObjects?: OleObjectOptions[];
   /** Web publish items (CT_WebPublishItems) */
   webPublishItems?: WebPublishItemOptions[];
+  /** Page margins in inches (CT_PageMargins) */
+  pageMargins?: PageMarginsOptions;
+  /** Cell range dimension (CT_Dimension @ref); auto-computed when omitted */
+  dimension?: string;
+}
+
+/** Page margins in inches (CT_PageMargins). Numbers are inches; strings are UniversalMeasure. */
+export interface PageMarginsOptions {
+  left?: number | UniversalMeasure;
+  right?: number | UniversalMeasure;
+  top?: number | UniversalMeasure;
+  bottom?: number | UniversalMeasure;
+  header?: number | UniversalMeasure;
+  footer?: number | UniversalMeasure;
 }
 
 /** Sheet calc properties (CT_SheetCalcPr) */
@@ -1381,6 +1395,32 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const olc = attrNum(sfpEl, "outlineLevelCol");
       if (olc !== undefined) sfp.outlineLevelCol = olc;
       result.sheetFormatPr = sfp;
+    }
+
+    // Dimension
+    const dimensionEl = findChild(el, "dimension");
+    if (dimensionEl) {
+      const ref = attr(dimensionEl, "ref");
+      if (ref) result.dimension = ref;
+    }
+
+    // Page margins
+    const pageMarginsEl = findChild(el, "pageMargins");
+    if (pageMarginsEl) {
+      const pm: PageMarginsOptions = {};
+      const pmL = attrNum(pageMarginsEl, "left");
+      if (pmL !== undefined) pm.left = pmL;
+      const pmR = attrNum(pageMarginsEl, "right");
+      if (pmR !== undefined) pm.right = pmR;
+      const pmT = attrNum(pageMarginsEl, "top");
+      if (pmT !== undefined) pm.top = pmT;
+      const pmB = attrNum(pageMarginsEl, "bottom");
+      if (pmB !== undefined) pm.bottom = pmB;
+      const pmH = attrNum(pageMarginsEl, "header");
+      if (pmH !== undefined) pm.header = pmH;
+      const pmF = attrNum(pageMarginsEl, "footer");
+      if (pmF !== undefined) pm.footer = pmF;
+      result.pageMargins = pm;
     }
 
     // Columns
@@ -1918,7 +1958,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   for (const row of rows) {
     if (row.cells && row.cells.length > maxCol) maxCol = row.cells.length;
   }
-  if (maxRow > 0 && maxCol > 0) {
+  if (opts.dimension) {
+    p.push(`<dimension ref="${opts.dimension}"/>`);
+  } else if (maxRow > 0 && maxCol > 0) {
     const dimRef = `A1:${defaultCellRef(maxRow, maxCol)}`;
     p.push(`<dimension ref="${dimRef}"/>`);
   }
@@ -1968,7 +2010,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (sfp.outlineLevelCol !== undefined) sfpAttrs.outlineLevelCol = sfp.outlineLevelCol;
     p.push(`<sheetFormatPr${attrs(sfpAttrs)}/>`);
   } else {
-    p.push('<sheetFormatPr defaultRowHeight="15"/>');
+    p.push('<sheetFormatPr baseColWidth="10" defaultRowHeight="15"/>');
   }
 
   // Column definitions
@@ -2535,7 +2577,21 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push(selfCloseElement("printOptions", attrs(poAttrs)));
   }
 
-  p.push('<pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/>');
+  if (opts.pageMargins) {
+    const pm = opts.pageMargins;
+    p.push(
+      `<pageMargins${attrs({
+        left: convertToInch(pm.left ?? 0.75),
+        right: convertToInch(pm.right ?? 0.75),
+        top: convertToInch(pm.top ?? 1),
+        bottom: convertToInch(pm.bottom ?? 1),
+        header: convertToInch(pm.header ?? 0.5),
+        footer: convertToInch(pm.footer ?? 0.5),
+      })}/>`,
+    );
+  } else {
+    p.push('<pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/>');
+  }
 
   // Page setup
   if (opts.pageSetup) {
@@ -2746,7 +2802,8 @@ function buildSheetViewAttrs(sv?: SheetViewOptions): string {
     workbookViewId: 0,
   };
   if (sv?.tabSelected !== undefined) svMap.tabSelected = sv.tabSelected ? 1 : 0;
-  else svMap.tabSelected = 1;
+  // Omit tabSelected otherwise: only the active sheet carries it (Excel uses
+  // workbookView activeTab), so injecting it on every sheet marks all active.
   if (sv?.showGridLines === false) svMap.showGridLines = 0;
   if (sv?.showRowColHeaders === false) svMap.showRowColHeaders = 0;
   if (sv?.showZeros === false) svMap.showZeros = 0;
