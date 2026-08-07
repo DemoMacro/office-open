@@ -4,9 +4,19 @@
  * @module
  */
 
+import type { ChartSeriesData, BubbleSeriesData } from "./types";
+
+/** Original chart data for generating embedded Excel workbook */
+export interface ChartOriginalData {
+  categories: readonly string[];
+  series: readonly ChartSeriesData[] | readonly BubbleSeriesData[];
+}
+
 export interface ChartData {
   key: string;
   chartSpaceXml: string;
+  /** Original chart data for generating embedded Excel workbook (enables chart editing in Word) */
+  chartData?: ChartOriginalData;
 }
 
 export class ChartCollection {

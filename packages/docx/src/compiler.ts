@@ -21,12 +21,14 @@ import {
   replaceNumberingPlaceholders,
 } from "@office-open/core";
 import type { XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
+import { buildEmbeddedWorkbookOptions } from "@office-open/core/chart";
 import {
   DEFAULT_DRAWING_XML,
   getColorXml,
   getLayoutXml,
   getStyleXml,
 } from "@office-open/core/smartart";
+import { generateWorkbookSync } from "@office-open/xlsx";
 import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 import { HEADER_NAMESPACES, FOOTER_NAMESPACES, stringifyHeaderFooter } from "@parts/header-footer";
@@ -678,10 +680,49 @@ function xmlifyContext(
       : {}),
     ...(ctx.charts.array.length > 0
       ? {
-          Charts: ctx.charts.array.map((chartData, i) => ({
-            data: XML_DECL + chartData.chartSpaceXml,
-            path: `word/charts/chart${i + 1}.xml`,
-          })),
+          Charts: ctx.charts.array.map((chartData, i) => {
+            // Replace externalData placeholder with actual rId
+            let chartXml = chartData.chartSpaceXml;
+            if (chartData.chartData) {
+              chartXml = chartXml.replace(`{chartData:${chartData.key}}`, "rId1");
+            }
+            return {
+              data: XML_DECL + chartXml,
+              path: `word/charts/chart${i + 1}.xml`,
+            };
+          }),
+          // Generate embedded Excel workbook for each chart with data
+          ChartEmbeddings: ctx.charts.array
+            .filter((chartData) => chartData.chartData)
+            .map((chartData, i) => {
+              // Build workbook options from chart data
+              const workbookOptions = buildEmbeddedWorkbookOptions({
+                categories: chartData.chartData!.categories,
+                series: chartData.chartData!.series,
+              });
+              // Generate xlsx using @office-open/xlsx
+              const xlsxData = generateWorkbookSync(workbookOptions, { type: "uint8array" });
+              return {
+                data: xlsxData,
+                path: `word/embeddings/Workbook${i + 1}.xlsx`,
+              };
+            }),
+          // Generate chart relationship files
+          // Note: use the same workbookIndex counter to ensure chart-to-workbook mapping is correct
+          ChartRelationships: (() => {
+            let workbookIndex = 0;
+            return ctx.charts.array
+              .map((chartData, chartIndex) => {
+                if (!chartData.chartData) return null;
+                workbookIndex++;
+                const relsXml = `${XML_DECL}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/package" Target="../embeddings/Workbook${workbookIndex}.xlsx"/></Relationships>`;
+                return {
+                  data: relsXml,
+                  path: `word/charts/_rels/chart${chartIndex + 1}.xml.rels`,
+                };
+              })
+              .filter((item): item is { data: string; path: string } => item !== null);
+          })(),
         }
       : {}),
     ...(ctx.smartArts.array.length > 0

@@ -626,6 +626,15 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
     parts.push("</c:chart>");
 
+    
+    // External data reference (enables chart editing in Word)
+    // Uses placeholder that will be replaced with actual rId during compilation
+    if (opts.chartKey) {
+      parts.push(
+        `<c:externalData xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="{chartData:${opts.chartKey}}"><c:autoUpdate val="0"/></c:externalData>`,
+      );
+    }
+
     // SpPr and txPr
     parts.push(noFillSpPr());
     parts.push(chartTxPr());

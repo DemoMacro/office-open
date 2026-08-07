@@ -567,12 +567,18 @@ export function stringifyChildDispatch(
         type: opts.type,
         threeD: opts.threeD,
         view3D: opts.view3D,
+        chartKey, // Add chartKey for externalData reference
       },
       ctx.file,
     );
     ctx.file.charts.addChart(chartKey, {
       key: chartKey,
       chartSpaceXml: chartXml ?? "",
+      // Store original data for generating embedded Excel workbook
+      chartData: {
+        categories: opts.categories ?? [],
+        series: opts.series,
+      },
     });
 
     const drawingXml = drawingDesc.stringify(
