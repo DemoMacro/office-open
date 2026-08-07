@@ -175,6 +175,8 @@ export interface ChartSpaceOptions {
   style?: number;
   threeD?: boolean;
   view3D?: View3DOptions;
+  /** Chart key for externalData reference (enables chart editing in Word) */
+  chartKey?: string;
 }
 
 // ── 3D view ──

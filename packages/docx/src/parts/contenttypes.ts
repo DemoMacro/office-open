@@ -102,6 +102,10 @@ const STANDARD_DEFAULTS: ContentTypeDefault[] = [
     extension: "bin",
     contentType: "application/vnd.openxmlformats-officedocument.oleObject",
   },
+  {
+    extension: "xlsx",
+    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  },
 ];
 
 /**
