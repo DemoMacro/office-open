@@ -709,5 +709,14 @@ describe("Worksheet", () => {
       expect(result.ext).toContain('<ext uri="{xxx}">');
       expect(result.ext).toContain("x:foo");
     });
+
+    it("round-trips drawingHF (header/footer drawing offsets)", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        drawingHF: { rId: "rId5", lho: 3, che: 4, rff: 5 },
+      };
+      const result = roundTrip(opts);
+      expect(result.drawingHF).toEqual({ rId: "rId5", lho: 3, che: 4, rff: 5 });
+    });
   });
 });

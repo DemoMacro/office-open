@@ -1051,6 +1051,27 @@ export interface DrawingHfOptions {
   rff?: number;
 }
 
+const DRAWING_HF_OFFSET_KEYS = [
+  "lho",
+  "lhe",
+  "lhf",
+  "cho",
+  "che",
+  "chf",
+  "rho",
+  "rhe",
+  "rhf",
+  "lfo",
+  "lfe",
+  "lff",
+  "cfo",
+  "cfe",
+  "cff",
+  "rfo",
+  "rfe",
+  "rff",
+] as const satisfies readonly (keyof DrawingHfOptions)[];
+
 export interface WorksheetOptions {
   name?: string;
   rows?: RowOptions[];
@@ -2096,6 +2117,20 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         items.push(wpi);
       }
       if (items.length > 0) result.webPublishItems = items;
+    }
+
+    // Drawing in header/footer (CT_DrawingHF — r:id + 18 header/footer offsets)
+    const drawingHfEl = findChild(el, "drawingHF");
+    if (drawingHfEl) {
+      const rId = attr(drawingHfEl, "r:id");
+      if (rId !== undefined) {
+        const dhf: DrawingHfOptions = { rId };
+        for (const key of DRAWING_HF_OFFSET_KEYS) {
+          const v = attrNum(drawingHfEl, key);
+          if (v !== undefined) dhf[key] = v;
+        }
+        result.drawingHF = dhf;
+      }
     }
 
     // Extension list (CT_ExtensionList — verbatim inner XML, open-ended content)
