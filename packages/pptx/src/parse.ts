@@ -10,7 +10,7 @@ import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
-import { attr, attrNum, findChild, stringify } from "@office-open/xml";
+import { attr, attrNum, findChild } from "@office-open/xml";
 
 import { PptxReadContext, ParseContext } from "./context";
 import { backgroundDesc } from "./parts/descriptors/background";
@@ -22,6 +22,7 @@ import { presPropsDesc } from "./parts/descriptors/presentation-properties";
 import { slideDesc } from "./parts/descriptors/slide";
 import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
 import { tableStylesDesc } from "./parts/descriptors/table-styles";
+import { parseTextListStyle } from "./parts/descriptors/text-list-style";
 import { viewPropsDesc } from "./parts/descriptors/view-properties";
 import { parseColorMap, parseHeaderFooter } from "./parts/handout-master";
 import type { SlideChild } from "./parts/slide/slide-child";
@@ -541,14 +542,9 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const masterColorMap = parseColorMap(findChild(masterEl, "p:clrMap"));
     const masterHeaderFooter = parseHeaderFooter(findChild(masterEl, "p:hf"));
 
-    // Text styles (p:txStyles) — verbatim round-trip; title/body/other typography.
-    // stringify() emits children only, so re-wrap the element. xmlns:a is declared
-    // on the master root, so the wrapper needs no namespace of its own (matches
-    // DEFAULT_TX_STYLES in slide-master.ts).
+    // Text styles (p:txStyles) — structured title/body/other typography.
     const txStylesEl = findChild(masterEl, "p:txStyles");
-    const masterTextStyles = txStylesEl
-      ? `<p:txStyles>${stringify(txStylesEl)}</p:txStyles>`
-      : undefined;
+    const masterTextStyles = txStylesEl ? parseTextListStyle(txStylesEl) : undefined;
 
     const masterName = themeOptions?.name ?? `master${mi + 1}`;
     const masterDef: Partial<MasterDefinition> = {};

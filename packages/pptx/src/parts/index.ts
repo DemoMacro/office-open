@@ -20,6 +20,14 @@ export {
   type MasterPlaceholderOptions,
   type MasterPlaceholderPosition,
 } from "./slide-master";
+export {
+  DEFAULT_TEXT_LIST_STYLE,
+  type TextListStyleOptions,
+  type TextListStyleGroupOptions,
+  type TextListStyleLevelOptions,
+  type TextListStyleBulletOptions,
+  type TextListStyleRunOptions,
+} from "./descriptors/text-list-style";
 export { buildLayoutXml, buildCustomLayoutXml, type SlideLayoutType } from "./slide-layout";
 export { buildNotesMasterXml } from "./notes-master";
 export { buildHandoutMasterXml } from "./handout-master";

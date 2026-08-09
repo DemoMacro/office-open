@@ -1,11 +1,13 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
-import { findChild, parse as parseXml, stringify } from "@office-open/xml";
+import { findChild, parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import { parseColorMap, parseHeaderFooter } from "../handout-master";
 import { buildSlideMasterXml } from "../slide-master";
 import type { SlideMasterDescriptorOptions } from "./slide-master";
 import { slideMasterDesc } from "./slide-master";
+import type { TextListStyleOptions } from "./text-list-style";
+import { parseTextListStyle } from "./text-list-style";
 
 const writeCtx = {} as unknown as WriteContext;
 const readCtx = {
@@ -114,35 +116,36 @@ describe("slide-master textStyles round-trip", () => {
     expect(xml).toContain('sz="4400"'); // title lvl1 default size
   });
 
-  it("custom textStyles is emitted verbatim, replacing the default", () => {
-    const custom =
-      '<p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="9000"/></a:lvl1pPr></p:titleStyle>' +
-      "<p:bodyStyle><a:lvl1pPr/></p:bodyStyle>" +
-      "<p:otherStyle><a:lvl1pPr/></p:otherStyle></p:txStyles>";
+  it("structured custom textStyles is emitted, replacing the default", () => {
+    const custom: TextListStyleOptions = {
+      title: { levels: [{ defaultRun: { size: 9000 } }] },
+      body: { levels: [{}] },
+      other: { levels: [{}] },
+    };
     const xml = buildSlideMasterXml(0, undefined, { textStyles: custom });
-    expect(xml).toContain(custom);
+    expect(xml).toContain('sz="9000"');
     // The default title size must NOT appear once a custom block is supplied.
     expect(xml).not.toContain('sz="4400"');
   });
 
-  it("round-trips a parsed master's txStyles verbatim (parse.ts extraction)", () => {
+  it("round-trips a parsed master's txStyles structured (parse.ts extraction)", () => {
     // Source master carries custom title typography (sz 9999 marker).
-    const source =
-      '<p:txStyles><p:titleStyle><a:lvl1pPr><a:defRPr sz="9999"/></a:lvl1pPr></p:titleStyle>' +
-      "<p:bodyStyle><a:lvl1pPr/></p:bodyStyle>" +
-      "<p:otherStyle><a:lvl1pPr/></p:otherStyle></p:txStyles>";
+    const source: TextListStyleOptions = {
+      title: { levels: [{ defaultRun: { size: 9999 } }] },
+      body: { levels: [{}] },
+      other: { levels: [{}] },
+    };
     const masterXml = buildSlideMasterXml(0, undefined, { textStyles: source });
 
-    // Mirror parse.ts extraction: findChild + stringify(children) + re-wrap.
+    // Mirror parse.ts extraction: findChild + parseTextListStyle.
     const el = parseXml(masterXml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const txStylesEl = findChild(el, "p:txStyles");
     expect(txStylesEl).toBeDefined();
-    const extracted = `<p:txStyles>${stringify(txStylesEl!)}</p:txStyles>`;
+    const extracted = parseTextListStyle(txStylesEl!);
 
-    // Re-emit via buildSlideMasterXml: the extracted block is spliced verbatim.
+    // Re-emit via buildSlideMasterXml: the structured styles survive intact.
     const reEmitted = buildSlideMasterXml(0, undefined, { textStyles: extracted });
-    expect(reEmitted).toContain(extracted);
     expect(reEmitted).toContain('sz="9999"');
     expect(reEmitted).not.toContain('sz="4400"');
   });
