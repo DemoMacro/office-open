@@ -1956,6 +1956,39 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       }
     }
 
+    // Custom sheet views (CT_CustomSheetViews — attribute bag per saved view)
+    const csvListEl = findChild(el, "customSheetViews");
+    if (csvListEl) {
+      const views: CustomSheetViewOptions[] = [];
+      for (const vEl of csvListEl.elements ?? []) {
+        if (vEl.name !== "customSheetView") continue;
+        const guid = attr(vEl, "guid");
+        if (guid === undefined) continue;
+        const view: CustomSheetViewOptions = { guid };
+        const scale = attrNum(vEl, "scale");
+        if (scale !== undefined) view.scale = scale;
+        if (attr(vEl, "showPageBreaks") === "1") view.showPageBreaks = true;
+        if (attr(vEl, "showFormulas") === "1") view.showFormulas = true;
+        if (attr(vEl, "showGridLines") === "0") view.showGridLines = false;
+        if (attr(vEl, "showRowCol") === "0") view.showRowColHeaders = false;
+        if (attr(vEl, "outlineSymbols") === "0") view.outlineSymbols = false;
+        if (attr(vEl, "zeroValues") === "0") view.zeroValues = false;
+        if (attr(vEl, "fitToPage") === "1") view.fitToPage = true;
+        if (attr(vEl, "printArea") === "1") view.printArea = true;
+        if (attr(vEl, "filter") === "1") view.filter = true;
+        if (attr(vEl, "showAutoFilter") === "1") view.showAutoFilter = true;
+        if (attr(vEl, "hiddenRows") === "1") view.hiddenRows = true;
+        if (attr(vEl, "hiddenColumns") === "1") view.hiddenColumns = true;
+        const state = attr(vEl, "state");
+        if (state !== undefined) view.state = state as CustomSheetViewOptions["state"];
+        if (attr(vEl, "filterUnique") === "1") view.filterUnique = true;
+        const viewType = attr(vEl, "view");
+        if (viewType !== undefined) view.view = viewType as CustomSheetViewOptions["view"];
+        views.push(view);
+      }
+      if (views.length > 0) result.customSheetViews = views;
+    }
+
     return result as WorksheetOptions;
   },
 };

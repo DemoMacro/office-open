@@ -619,5 +619,38 @@ describe("Worksheet", () => {
         ],
       });
     });
+
+    it("round-trips customSheetViews", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        customSheetViews: [
+          {
+            guid: "A1B2C3",
+            scale: 90,
+            showPageBreaks: true,
+            showGridLines: false,
+            showRowColHeaders: false,
+            fitToPage: true,
+            filter: true,
+            state: "hidden",
+            view: "pageBreakPreview",
+          },
+        ],
+      };
+      const result = roundTrip(opts);
+      expect(result.customSheetViews).toEqual([
+        {
+          guid: "A1B2C3",
+          scale: 90,
+          showPageBreaks: true,
+          showGridLines: false,
+          showRowColHeaders: false,
+          fitToPage: true,
+          filter: true,
+          state: "hidden",
+          view: "pageBreakPreview",
+        },
+      ]);
+    });
   });
 });
