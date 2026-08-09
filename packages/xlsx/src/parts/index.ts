@@ -82,6 +82,7 @@ export type {
   FileRecoveryPropertiesOptions,
   WebPublishingOptions,
   FileSharingOptions,
+  DefinedNameOptions,
 } from "./workbook";
 export type {
   ExternalLinkOptions,

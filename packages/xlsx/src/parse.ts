@@ -272,6 +272,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (wbData.workbookPr) opts.workbookPr = wbData.workbookPr;
     if (wbData.volTypes) opts.volTypes = wbData.volTypes;
     if (wbData.webPublishObjects) opts.webPublishObjects = wbData.webPublishObjects;
+    if (wbData.definedNames) opts.definedNames = wbData.definedNames;
   }
 
   // Parse worksheets using descriptor pipeline

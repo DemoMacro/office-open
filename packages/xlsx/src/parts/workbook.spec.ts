@@ -158,4 +158,54 @@ describe("workbookDesc round-trip", () => {
     expect(result.fileRecoveryPr?.autoRecover).toBe(false);
     expect(result.fileRecoveryPr?.crashSave).toBe(true);
   });
+
+  it("round-trips defined names with full attribute set", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      definedNames: [
+        {
+          name: "TaxRate",
+          value: "0.2",
+          comment: "VAT rate",
+          localSheetId: 0,
+          hidden: true,
+          functionGroupId: 1,
+        },
+        {
+          name: "Total",
+          value: "SUM(Sheet1!A1:A10)",
+          customMenu: "Run Total",
+          description: "Sum of sales",
+          shortcutKey: "t",
+          publishToServer: true,
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const dns = result.definedNames!;
+    expect(dns).toHaveLength(2);
+    expect(dns[0]?.name).toBe("TaxRate");
+    expect(dns[0]?.value).toBe("0.2");
+    expect(dns[0]?.comment).toBe("VAT rate");
+    expect(dns[0]?.localSheetId).toBe(0);
+    expect(dns[0]?.hidden).toBe(true);
+    expect(dns[0]?.functionGroupId).toBe(1);
+    expect(dns[1]?.name).toBe("Total");
+    expect(dns[1]?.value).toBe("SUM(Sheet1!A1:A10)");
+    expect(dns[1]?.customMenu).toBe("Run Total");
+    expect(dns[1]?.publishToServer).toBe(true);
+  });
+
+  it("emits definedNames after externalReferences and before calcPr (XSD sequence)", () => {
+    const xml = workbookDesc.stringify(
+      {
+        sheets: [{ name: "S", sheetId: 1, rId: "rId1" }],
+        definedNames: [{ name: "X", value: "1" }],
+        calcPr: { calcId: 1 },
+      },
+      writeCtx,
+    )!;
+    expect(xml.indexOf("<definedNames>")).toBeLessThan(xml.indexOf("<calcPr"));
+    expect(xml.indexOf("EXTERNAL_REFS")).toBeLessThan(xml.indexOf("<definedNames>"));
+  });
 });

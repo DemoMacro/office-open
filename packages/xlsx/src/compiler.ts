@@ -639,6 +639,7 @@ export function compileWorkbook(
         fileSharing: options.fileSharing,
         volTypes: options.volTypes,
         webPublishObjects: options.webPublishObjects,
+        definedNames: options.definedNames,
       },
       ctx,
     ) ?? "";

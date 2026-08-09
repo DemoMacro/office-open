@@ -27,6 +27,7 @@ import type {
   CustomWorkbookViewOptions,
   VolTypeOptions,
   WebPublishObjectOptions,
+  DefinedNameOptions,
 } from "@parts/workbook";
 
 import type { CalcCell } from "./calc-chain";
@@ -68,6 +69,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   volTypes?: VolTypeOptions[];
   /** Web publish objects (CT_WebPublishItems) */
   webPublishObjects?: WebPublishObjectOptions[];
+  /** Defined names — named ranges, constants, formulas (CT_DefinedNames) */
+  definedNames?: DefinedNameOptions[];
   /** Workbook view (CT_BookView) — parse-only; compiler does not round-trip this field */
   bookView?: WorkbookViewOptions;
   /** Calculation properties (CT_CalcPr) — parse-only */

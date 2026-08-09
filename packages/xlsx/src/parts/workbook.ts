@@ -312,6 +312,47 @@ export interface WorkbookViewOptions {
 
 // ── Descriptor Types ──
 
+/**
+ * A named range, constant, or formula (CT_DefinedName, sml.xsd:4317).
+ *
+ * The element text holds the formula or reference (ST_Formula); the
+ * attributes carry metadata (scope, visibility, function metadata).
+ */
+export interface DefinedNameOptions {
+  /** Formula or reference (element text), e.g. "Sheet1!$A$1" or "SUM(Sheet1!A1:A10)" */
+  value: string;
+  /** Name (required) */
+  name: string;
+  /** Comment (CT_DefinedName @comment) */
+  comment?: string;
+  /** Custom menu text (CT_DefinedName @customMenu) */
+  customMenu?: string;
+  /** Description (CT_DefinedName @description) */
+  description?: string;
+  /** Help text (CT_DefinedName @help) */
+  help?: string;
+  /** Status bar text (CT_DefinedName @statusBar) */
+  statusBar?: string;
+  /** Local scope: 0-based sheet index; omit for workbook scope (CT_DefinedName @localSheetId) */
+  localSheetId?: number;
+  /** Hidden from the name manager (default false) */
+  hidden?: boolean;
+  /** User-defined function (default false) */
+  function?: boolean;
+  /** VBA procedure (default false) */
+  vbProcedure?: boolean;
+  /** XLM macro (default false) */
+  xlm?: boolean;
+  /** Function group ID (CT_DefinedName @functionGroupId) */
+  functionGroupId?: number;
+  /** Shortcut key (CT_DefinedName @shortcutKey) */
+  shortcutKey?: string;
+  /** Publish to SharePoint server (default false) */
+  publishToServer?: boolean;
+  /** Workbook parameter (default false) */
+  workbookParameter?: boolean;
+}
+
 export interface WorkbookDescriptorOptions {
   sheets: SheetDefinition[];
   pivotCaches?: PivotCacheReference[];
@@ -326,6 +367,8 @@ export interface WorkbookDescriptorOptions {
   bookView?: WorkbookViewOptions;
   volTypes?: VolTypeOptions[];
   webPublishObjects?: WebPublishObjectOptions[];
+  /** Defined names (CT_DefinedNames) — named ranges, constants, formulas */
+  definedNames?: DefinedNameOptions[];
   conformance?: WorkbookConformance;
 }
 
@@ -633,6 +676,35 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (volTypes.length > 0) result.volTypes = volTypes;
     }
 
+    // Defined names (CT_DefinedNames — simpleContent ST_Formula + 14 attrs)
+    const definedNamesEl = findChild(el, "definedNames");
+    if (definedNamesEl) {
+      const names: DefinedNameOptions[] = [];
+      for (const d of definedNamesEl.elements ?? []) {
+        if (d.name !== "definedName") continue;
+        const value = (d.elements ?? []).map((e) => e.text ?? "").join("");
+        const dn: DefinedNameOptions = { name: attr(d, "name") ?? "", value };
+        if (attr(d, "comment") !== undefined) dn.comment = attr(d, "comment");
+        if (attr(d, "customMenu") !== undefined) dn.customMenu = attr(d, "customMenu");
+        if (attr(d, "description") !== undefined) dn.description = attr(d, "description");
+        if (attr(d, "help") !== undefined) dn.help = attr(d, "help");
+        if (attr(d, "statusBar") !== undefined) dn.statusBar = attr(d, "statusBar");
+        const localSheetId = attrNum(d, "localSheetId");
+        if (localSheetId !== undefined) dn.localSheetId = localSheetId;
+        if (attr(d, "hidden") === "1") dn.hidden = true;
+        if (attr(d, "function") === "1") dn.function = true;
+        if (attr(d, "vbProcedure") === "1") dn.vbProcedure = true;
+        if (attr(d, "xlm") === "1") dn.xlm = true;
+        const functionGroupId = attrNum(d, "functionGroupId");
+        if (functionGroupId !== undefined) dn.functionGroupId = functionGroupId;
+        if (attr(d, "shortcutKey") !== undefined) dn.shortcutKey = attr(d, "shortcutKey");
+        if (attr(d, "publishToServer") === "1") dn.publishToServer = true;
+        if (attr(d, "workbookParameter") === "1") dn.workbookParameter = true;
+        names.push(dn);
+      }
+      if (names.length > 0) result.definedNames = names;
+    }
+
     // Conformance
     if (el.attributes?.["conformance"]) {
       result.conformance = attr(el, "conformance") as WorkbookConformance;
@@ -816,6 +888,31 @@ function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
 
   // externalReferences placeholder — compiler injects the XML here if needed
   parts.push("<!--EXTERNAL_REFS-->");
+
+  // Defined names (after externalReferences, before calcPr per XSD sequence)
+  if (opts.definedNames && opts.definedNames.length > 0) {
+    const dnParts: string[] = ["<definedNames>"];
+    for (const dn of opts.definedNames) {
+      const dnAttrs: string[] = [`name="${escapeXml(dn.name)}"`];
+      if (dn.comment !== undefined) dnAttrs.push(`comment="${escapeXml(dn.comment)}"`);
+      if (dn.customMenu !== undefined) dnAttrs.push(`customMenu="${escapeXml(dn.customMenu)}"`);
+      if (dn.description !== undefined) dnAttrs.push(`description="${escapeXml(dn.description)}"`);
+      if (dn.help !== undefined) dnAttrs.push(`help="${escapeXml(dn.help)}"`);
+      if (dn.statusBar !== undefined) dnAttrs.push(`statusBar="${escapeXml(dn.statusBar)}"`);
+      if (dn.localSheetId !== undefined) dnAttrs.push(`localSheetId="${dn.localSheetId}"`);
+      if (dn.hidden) dnAttrs.push('hidden="1"');
+      if (dn.function) dnAttrs.push('function="1"');
+      if (dn.vbProcedure) dnAttrs.push('vbProcedure="1"');
+      if (dn.xlm) dnAttrs.push('xlm="1"');
+      if (dn.functionGroupId !== undefined) dnAttrs.push(`functionGroupId="${dn.functionGroupId}"`);
+      if (dn.shortcutKey !== undefined) dnAttrs.push(`shortcutKey="${escapeXml(dn.shortcutKey)}"`);
+      if (dn.publishToServer) dnAttrs.push('publishToServer="1"');
+      if (dn.workbookParameter) dnAttrs.push('workbookParameter="1"');
+      dnParts.push(`<definedName ${dnAttrs.join(" ")}>${escapeXml(dn.value)}</definedName>`);
+    }
+    dnParts.push("</definedNames>");
+    parts.push(dnParts.join(""));
+  }
 
   // Calculation properties
   if (opts.calcPr) {
