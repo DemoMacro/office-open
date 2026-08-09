@@ -17,6 +17,7 @@ import type { ParagraphPropertiesOptions } from "@parts/paragraph/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 
 import type { DocxReadContext } from "../../context";
+import { stringifyElement } from "../../util/stringify-element";
 import { stringifyParagraphProperties, stringifyRunProperties } from "../paragraph/stringify";
 import { LevelFormat } from "./level";
 import type { LevelsOptions } from "./level";
@@ -36,7 +37,10 @@ export interface NumberingOptions {
   /** Picture bullet definitions for numbering (w:numPicBullet) */
   numPicBullets?: {
     numPicBulletId: number;
+    /** Verbatim w:pict element XML (CT_Picture) */
     pict?: string;
+    /** Verbatim w:drawing element XML (CT_Drawing) — alternative to pict */
+    drawing?: string;
   }[];
 }
 
@@ -156,7 +160,7 @@ export class Numbering {
   private abstractNumUniqueNumericId = uniqueNumericIdCreator();
   private concreteNumUniqueNumericId = uniqueNumericIdCreator(1);
   private _numIdMacAtCleanup?: number;
-  private _numPicBullets?: { numPicBulletId: number; pict?: string }[];
+  private _numPicBullets?: { numPicBulletId: number; pict?: string; drawing?: string }[];
 
   public constructor(options: NumberingOptions) {
     this._numIdMacAtCleanup = options.numIdMacAtCleanup;
@@ -198,9 +202,10 @@ export class Numbering {
     // numPicBullet elements come first (XSD order)
     if (this._numPicBullets) {
       for (const bullet of this._numPicBullets) {
-        if (bullet.pict) {
+        const inner = bullet.pict ?? bullet.drawing;
+        if (inner) {
           parts.push(
-            `<w:numPicBullet w:numPicBulletId="${bullet.numPicBulletId}">${bullet.pict}</w:numPicBullet>`,
+            `<w:numPicBullet w:numPicBulletId="${bullet.numPicBulletId}">${inner}</w:numPicBullet>`,
           );
         } else {
           parts.push(`<w:numPicBullet w:numPicBulletId="${bullet.numPicBulletId}"/>`);
@@ -403,6 +408,25 @@ export function parseNumberingDefinitions(
   ) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): NumberingOptions | undefined {
+  // Picture bullets (w:numPicBullet — choice of w:pict | w:drawing)
+  const numPicBullets: NonNullable<NumberingOptions["numPicBullets"]> = [];
+  for (const child of el.elements ?? []) {
+    if (child.name !== "w:numPicBullet") continue;
+    const id = attrNum(child, "w:numPicBulletId");
+    const bullet: { numPicBulletId: number; pict?: string; drawing?: string } = {
+      numPicBulletId: id ?? 0,
+    };
+    const pictEl = findChild(child, "w:pict");
+    if (pictEl) bullet.pict = stringifyElement(pictEl);
+    const drawingEl = findChild(child, "w:drawing");
+    if (drawingEl) bullet.drawing = stringifyElement(drawingEl);
+    numPicBullets.push(bullet);
+  }
+
+  // numIdMacAtCleanup (w:numIdMacAtCleanup)
+  const cleanupEl = findChild(el, "w:numIdMacAtCleanup");
+  const numIdMacAtCleanup = cleanupEl ? attrNum(cleanupEl, "w:val") : undefined;
+
   const abstractNums = new Map<string, Element>();
   for (const child of el.elements ?? []) {
     if (child.name !== "w:abstractNum") continue;
@@ -453,12 +477,32 @@ export function parseNumberingDefinitions(
         const v = attr(tmplEl, "w:val");
         if (v) extraOptions.tmpl = v;
       }
+      const nameEl = findChild(abstractEl, "w:name");
+      if (nameEl) {
+        const v = attr(nameEl, "w:val");
+        if (v) extraOptions.name = v;
+      }
+      const styleLinkEl = findChild(abstractEl, "w:styleLink");
+      if (styleLinkEl) {
+        const v = attr(styleLinkEl, "w:val");
+        if (v) extraOptions.styleLink = v;
+      }
+      const numStyleLinkEl = findChild(abstractEl, "w:numStyleLink");
+      if (numStyleLinkEl) {
+        const v = attr(numStyleLinkEl, "w:val");
+        if (v) extraOptions.numStyleLink = v;
+      }
       configs.push({ reference: `list_${numId}`, levels, extraOptions });
     }
   }
 
-  if (configs.length === 0) return undefined;
-  return { config: configs };
+  if (configs.length === 0 && numPicBullets.length === 0 && numIdMacAtCleanup === undefined) {
+    return undefined;
+  }
+  const result: NumberingOptions = { config: configs };
+  if (numPicBullets.length > 0) result.numPicBullets = numPicBullets;
+  if (numIdMacAtCleanup !== undefined) result.numIdMacAtCleanup = numIdMacAtCleanup;
+  return result;
 }
 
 function parseLevelEl(

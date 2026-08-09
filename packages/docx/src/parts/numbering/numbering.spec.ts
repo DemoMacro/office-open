@@ -179,4 +179,60 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect(typeof runFont === "string" ? runFont : runFont?.ascii).toBe("Arial");
     expect(lvl.style?.paragraph?.indent).toEqual({ left: 720, hanging: 360 });
   });
+
+  it("round-trips numPicBullets (pict) and numIdMacAtCleanup", () => {
+    const numbering = new Numbering({
+      config: [],
+      numPicBullets: [{ numPicBulletId: 3, pict: "<w:pict><v:shape/></w:pict>" }],
+      numIdMacAtCleanup: 9,
+    });
+    const xml = numbering.serialize();
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    expect(opts?.numPicBullets).toHaveLength(1);
+    expect(opts?.numPicBullets?.[0]?.numPicBulletId).toBe(3);
+    expect(opts?.numPicBullets?.[0]?.pict).toContain("<w:pict");
+    expect(opts?.numPicBullets?.[0]?.pict).toContain("v:shape");
+    expect(opts?.numPicBullets?.[0]?.drawing).toBeUndefined();
+    expect(opts?.numIdMacAtCleanup).toBe(9);
+  });
+
+  it("round-trips numPicBullet with drawing choice", () => {
+    const numbering = new Numbering({
+      config: [],
+      numPicBullets: [{ numPicBulletId: 5, drawing: "<w:drawing><wp:inline/></w:drawing>" }],
+    });
+    const xml = numbering.serialize();
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    expect(opts?.numPicBullets?.[0]?.numPicBulletId).toBe(5);
+    expect(opts?.numPicBullets?.[0]?.drawing).toContain("<w:drawing");
+    expect(opts?.numPicBullets?.[0]?.pict).toBeUndefined();
+  });
+
+  it("round-trips abstractNum name, styleLink, numStyleLink", () => {
+    const numbering = new Numbering({
+      config: [
+        {
+          reference: "linked-list",
+          levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }],
+          extraOptions: { name: "My List", styleLink: "ListStyle", numStyleLink: "NumStyle" },
+        },
+      ],
+    });
+    numbering.createConcreteNumberingInstance("linked-list", 0);
+    const xml = numbering.serialize();
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    const linked = opts?.config.find((c) => c.extraOptions?.name === "My List");
+    expect(linked).toBeDefined();
+    expect(linked?.extraOptions?.styleLink).toBe("ListStyle");
+    expect(linked?.extraOptions?.numStyleLink).toBe("NumStyle");
+  });
 });
