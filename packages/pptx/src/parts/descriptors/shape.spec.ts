@@ -65,6 +65,22 @@ describe("shapeDesc round-trip", () => {
     expect(textBody.text).toBe("Hello");
   });
 
+  it("omits p:txBody for a textBody-less shape (e.g. sldImg placeholder)", () => {
+    // txBody is optional in CT_Shape. A shape without textBody — like the notes
+    // slide-image placeholder — must round-trip without a spurious empty body.
+    const writeCtx = new MockWriteContext() as unknown as WriteContext;
+    const xml = shapeDesc.stringify(
+      { id: 2, name: "Picture", x: 0, y: 0, width: 100, height: 100 },
+      writeCtx,
+    )!;
+    expect(xml).not.toContain("<p:txBody");
+
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = shapeDesc.parse(el, readCtx);
+    expect(result.textBody).toBeUndefined();
+  });
+
   it("round-trips shape with solidFill", () => {
     const result = roundTrip({
       x: 0,

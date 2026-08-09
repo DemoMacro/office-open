@@ -335,8 +335,12 @@ export const shapeDesc: CustomDescriptor<ShapeDescriptorOptions> = {
       if (styleXml) parts.push(styleXml);
     }
 
-    // ── p:txBody ──
-    parts.push(stringifyTxBody(opts.textBody ?? {}, ctx));
+    // ── p:txBody (optional in CT_Shape; omitted when absent so txBody-less
+    // shapes like the notes sldImg placeholder round-trip without a spurious
+    // empty body. Parse only sets textBody when a p:txBody element exists.)
+    if (opts.textBody !== undefined) {
+      parts.push(stringifyTxBody(opts.textBody, ctx));
+    }
 
     // ── Root attributes ──
     const spAttrs: string[] = [];
