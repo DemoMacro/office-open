@@ -1861,6 +1861,38 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (breaks.length > 0) result.colBreaks = breaks;
     }
 
+    // Custom properties (CT_CustomProperties — customPr name + r:id)
+    const customPropsEl = findChild(el, "customProperties");
+    if (customPropsEl) {
+      const props: CustomPropertyOptions[] = [];
+      for (const cpEl of customPropsEl.elements ?? []) {
+        if (cpEl.name !== "customPr") continue;
+        const name = attr(cpEl, "name");
+        const rId = cpEl.attributes?.["r:id"] as string | undefined;
+        if (name !== undefined && rId !== undefined) props.push({ name, rId });
+      }
+      if (props.length > 0) result.customProperties = props;
+    }
+
+    // Cell watches (CT_CellWatches — cellWatch @r)
+    const cellWatchesEl = findChild(el, "cellWatches");
+    if (cellWatchesEl) {
+      const watches: CellWatchOptions[] = [];
+      for (const cwEl of cellWatchesEl.elements ?? []) {
+        if (cwEl.name !== "cellWatch") continue;
+        const r = attr(cwEl, "r");
+        if (r) watches.push({ r });
+      }
+      if (watches.length > 0) result.cellWatches = watches;
+    }
+
+    // Legacy drawing header/footer (CT_LegacyDrawing @r:id)
+    const legacyHFEl = findChild(el, "legacyDrawingHF");
+    if (legacyHFEl) {
+      const rId = legacyHFEl.attributes?.["r:id"] as string | undefined;
+      if (rId) result.legacyDrawingHF = rId;
+    }
+
     return result as WorksheetOptions;
   },
 };

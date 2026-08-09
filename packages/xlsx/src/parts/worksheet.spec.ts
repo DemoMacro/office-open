@@ -542,5 +542,24 @@ describe("Worksheet", () => {
       ]);
       expect(result.colBreaks).toEqual([{ id: 3, manual: true }]);
     });
+
+    it("round-trips customProperties, cellWatches, legacyDrawingHF", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        customProperties: [
+          { name: "MyProp", rId: "rId1" },
+          { name: "Other", rId: "rId2" },
+        ],
+        cellWatches: [{ r: "A1" }, { r: "B2" }],
+        legacyDrawingHF: "rId3",
+      };
+      const result = roundTrip(opts);
+      expect(result.customProperties).toEqual([
+        { name: "MyProp", rId: "rId1" },
+        { name: "Other", rId: "rId2" },
+      ]);
+      expect(result.cellWatches).toEqual([{ r: "A1" }, { r: "B2" }]);
+      expect(result.legacyDrawingHF).toBe("rId3");
+    });
   });
 });
