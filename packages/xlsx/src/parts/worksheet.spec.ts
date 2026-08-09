@@ -509,4 +509,38 @@ describe("Worksheet", () => {
       expect(result.pageSetup?.fitToPage).toBe(true);
     });
   });
+
+  describe("rowBreaks/colBreaks round-trip", () => {
+    const readCtx = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+      sharedStrings: [],
+    } as unknown as ReadContext;
+
+    function roundTrip(opts: WorksheetOptions) {
+      const xml = buildWorksheetXml(opts, {});
+      const doc = parseXml(xml);
+      const el = doc.elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
+    }
+
+    it("round-trips row and column page breaks", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        rowBreaks: [
+          { id: 5, manual: true },
+          { id: 10, min: 1, max: 100 },
+        ],
+        colBreaks: [{ id: 3, manual: true }],
+      };
+      const result = roundTrip(opts);
+      expect(result.rowBreaks).toEqual([
+        { id: 5, manual: true },
+        { id: 10, min: 1, max: 100 },
+      ]);
+      expect(result.colBreaks).toEqual([{ id: 3, manual: true }]);
+    });
+  });
 });

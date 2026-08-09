@@ -1847,9 +1847,42 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (rows.length > 0) result.rows = rows;
     }
 
+    // Row breaks (CT_PageBreak — after sheetData per XSD sequence)
+    const rowBreaksEl = findChild(el, "rowBreaks");
+    if (rowBreaksEl) {
+      const breaks = parsePageBreaks(rowBreaksEl);
+      if (breaks.length > 0) result.rowBreaks = breaks;
+    }
+
+    // Column breaks (CT_PageBreak)
+    const colBreaksEl = findChild(el, "colBreaks");
+    if (colBreaksEl) {
+      const breaks = parsePageBreaks(colBreaksEl);
+      if (breaks.length > 0) result.colBreaks = breaks;
+    }
+
     return result as WorksheetOptions;
   },
 };
+
+/** Parse a CT_PageBreak (w:rowBreaks / w:colBreaks) into break entries. */
+function parsePageBreaks(el: XmlElement): PageBreakOptions[] {
+  const breaks: PageBreakOptions[] = [];
+  for (const brkEl of el.elements ?? []) {
+    if (brkEl.name !== "brk") continue;
+    const id = attrNum(brkEl, "id");
+    if (id === undefined) continue;
+    const b: PageBreakOptions = { id };
+    const min = attrNum(brkEl, "min");
+    if (min !== undefined) b.min = min;
+    const max = attrNum(brkEl, "max");
+    if (max !== undefined) b.max = max;
+    if (attr(brkEl, "man") === "1") b.manual = true;
+    if (attr(brkEl, "pt") === "1") b.pivot = true;
+    breaks.push(b);
+  }
+  return breaks;
+}
 
 // ── Stringify implementation ──
 
