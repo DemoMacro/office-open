@@ -1893,6 +1893,29 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (rId) result.legacyDrawingHF = rId;
     }
 
+    // Data consolidation (CT_DataConsolidate — function/labels/link + dataRefs)
+    const dcEl = findChild(el, "dataConsolidate");
+    if (dcEl) {
+      const dc: DataConsolidateOptions = {};
+      const fn = attr(dcEl, "function");
+      if (fn) dc.function = fn as DataConsolidateOptions["function"];
+      if (attr(dcEl, "topLabels") === "1") dc.topLabels = true;
+      if (attr(dcEl, "leftLabels") === "1") dc.leftLabels = true;
+      if (attr(dcEl, "startLabels") === "1") dc.startLabels = true;
+      if (attr(dcEl, "link") === "1") dc.link = true;
+      const refsEl = findChild(dcEl, "dataRefs");
+      if (refsEl) {
+        const refs: string[] = [];
+        for (const refEl of refsEl.elements ?? []) {
+          if (refEl.name !== "dataRef") continue;
+          const r = attr(refEl, "ref");
+          if (r) refs.push(r);
+        }
+        if (refs.length > 0) dc.refs = refs;
+      }
+      if (Object.keys(dc).length > 0) result.dataConsolidate = dc;
+    }
+
     return result as WorksheetOptions;
   },
 };

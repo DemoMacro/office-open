@@ -561,5 +561,26 @@ describe("Worksheet", () => {
       expect(result.cellWatches).toEqual([{ r: "A1" }, { r: "B2" }]);
       expect(result.legacyDrawingHF).toBe("rId3");
     });
+
+    it("round-trips dataConsolidate", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        dataConsolidate: {
+          function: "average",
+          topLabels: true,
+          leftLabels: true,
+          link: true,
+          refs: ["Sheet1!A1:B2", "Sheet2!A1:B2"],
+        },
+      };
+      const result = roundTrip(opts);
+      expect(result.dataConsolidate).toEqual({
+        function: "average",
+        topLabels: true,
+        leftLabels: true,
+        link: true,
+        refs: ["Sheet1!A1:B2", "Sheet2!A1:B2"],
+      });
+    });
   });
 });
