@@ -59,7 +59,7 @@ import { commentAuthorsDesc, slideCommentsDesc } from "./parts/descriptors/comme
 import { contentTypesDesc } from "./parts/descriptors/content-types";
 import { handoutMasterDesc } from "./parts/descriptors/handout-master";
 import { notesMasterDesc } from "./parts/descriptors/notes-master";
-import { notesSlideDesc } from "./parts/descriptors/notes-slide";
+import { notesSlideDesc, type NotesSlideDescriptorOptions } from "./parts/descriptors/notes-slide";
 import { presentationDesc } from "./parts/descriptors/presentation";
 import { presPropsDesc } from "./parts/descriptors/presentation-properties";
 import { parseLayoutDef, slideLayoutDesc } from "./parts/descriptors/slide-layout";
@@ -640,12 +640,12 @@ export function compilePresentation(
   const slideRels = buildSlideRels(masters, slides);
   const { authors: commentAuthorEntries, perSlide: slideCommentEntries } = buildCommentData(slides);
 
-  const notesTexts: string[] = [];
+  const notesOptions: NotesSlideDescriptorOptions[] = [];
   const notesSlideIndexMap = new Map<number, number>();
   let notesIdx = 0;
   for (const [i, slide] of slides.entries()) {
     if (slide.notes) {
-      notesTexts.push(slide.notes);
+      notesOptions.push(typeof slide.notes === "string" ? { text: slide.notes } : slide.notes);
       notesSlideIndexMap.set(i, notesIdx++);
     }
   }
@@ -803,7 +803,7 @@ export function compilePresentation(
   }
 
   // Notes Master
-  if (notesTexts.length > 0) {
+  if (notesOptions.length > 0) {
     const notesMasterRId = presRels.relationshipCount + 1;
     presRels.addRelationship(
       notesMasterRId,
@@ -845,7 +845,7 @@ export function compilePresentation(
       "handoutMasters/handoutMaster1.xml",
     );
     presOptions.handoutMasterRId = handoutMasterRId;
-    const handoutMasterThemeIndex = themes.length + (notesTexts.length > 0 ? 2 : 1);
+    const handoutMasterThemeIndex = themes.length + (notesOptions.length > 0 ? 2 : 1);
     mapping["HandoutMaster"] = {
       data:
         XML_DECL +
@@ -1158,9 +1158,9 @@ export function compilePresentation(
   for (const [slideIdx, notesIdx] of notesSlideIndexMap) {
     notesSlideToSlide.set(notesIdx, slideIdx);
   }
-  for (let i = 0; i < notesTexts.length; i++) {
+  for (let i = 0; i < notesOptions.length; i++) {
     files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = encoder.encode(
-      XML_DECL + (notesSlideDesc.stringify({ text: notesTexts[i] }, descCtx) ?? ""),
+      XML_DECL + (notesSlideDesc.stringify(notesOptions[i]!, descCtx) ?? ""),
     );
     const slideIdx = notesSlideToSlide.get(i) ?? 0;
     const nsRels = new Relationships();

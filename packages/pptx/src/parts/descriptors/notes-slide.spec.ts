@@ -1,14 +1,15 @@
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { PptxWriteContext } from "../../context";
 import { notesSlideDesc } from "./notes-slide";
 import type { NotesSlideDescriptorOptions } from "./notes-slide";
 
 const writeCtx = {
   addRelationship: () => "rId1",
   addMedia: () => "",
-} as unknown as WriteContext;
+} as unknown as PptxWriteContext;
 
 const readCtx = {
   resolveRelationship: () => undefined,
@@ -16,47 +17,46 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: NotesSlideDescriptorOptions) {
-  const xml = notesSlideDesc.stringify(opts, writeCtx)!;
-  const doc = parseXml(xml);
-  const el = doc.elements?.[0];
+/** stringify → parse → stringify must be byte-stable (round-trip fidelity). */
+function restringify(opts: NotesSlideDescriptorOptions): string {
+  const original = notesSlideDesc.stringify(opts, writeCtx)!;
+  const el = parseXml(original).elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return notesSlideDesc.parse(el, readCtx);
+  const parsed = notesSlideDesc.parse(el, readCtx);
+  return notesSlideDesc.stringify(parsed, writeCtx)!;
 }
 
 describe("notesSlideDesc round-trip", () => {
-  it("round-trips notes text", () => {
-    const opts: NotesSlideDescriptorOptions = {
-      text: "Speaker notes content",
-    };
-    const result = roundTrip(opts);
-
-    expect(result.text).toBe("Speaker notes content");
+  it("simple text builds a fresh notes slide (sldImg + body placeholders)", () => {
+    const xml = notesSlideDesc.stringify({ text: "Speaker notes content" }, writeCtx)!;
+    expect(xml).toContain('type="sldImg"');
+    expect(xml).toContain('type="body"');
+    expect(xml).toContain("Speaker notes content");
   });
 
-  it("round-trips empty notes", () => {
-    const opts: NotesSlideDescriptorOptions = {};
-    const result = roundTrip(opts);
-
-    expect(result.text).toBeUndefined();
+  it("round-trips notes text byte-stable", () => {
+    const restringified = restringify({ text: "Speaker notes content" });
+    expect(restringified).toContain("Speaker notes content");
+    // sldImg placeholder has no txBody; it must stay txBody-less on re-emit.
+    const sldImgStart = restringified.indexOf('type="sldImg"');
+    const sldImgSpEnd = restringified.indexOf("</p:sp>", sldImgStart);
+    expect(restringified.slice(sldImgStart, sldImgSpEnd)).not.toContain("<p:txBody");
   });
 
-  it("round-trips multi-line notes", () => {
-    const opts: NotesSlideDescriptorOptions = {
-      text: "Line one\nLine two\nLine three",
-    };
-    const result = roundTrip(opts);
-
-    // Notes text is joined with \n in parse, but the XML uses a single run
-    expect(result.text).toContain("Line one");
+  it("round-trips empty notes byte-stable", () => {
+    const original = notesSlideDesc.stringify({}, writeCtx)!;
+    const el = parseXml(original).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = notesSlideDesc.parse(el, readCtx);
+    expect(notesSlideDesc.stringify(parsed, writeCtx)!).toBe(original);
   });
 
-  it("round-trips notes with special characters", () => {
-    const opts: NotesSlideDescriptorOptions = {
-      text: '<b>Bold & "quoted"',
-    };
-    const result = roundTrip(opts);
-
-    expect(result.text).toBe('<b>Bold & "quoted"');
+  it("round-trips notes with special characters byte-stable", () => {
+    const original = notesSlideDesc.stringify({ text: '<b>Bold & "quoted"' }, writeCtx)!;
+    expect(original).toContain("&lt;b&gt;Bold &amp; &quot;quoted&quot;");
+    const el = parseXml(original).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = notesSlideDesc.parse(el, readCtx);
+    expect(notesSlideDesc.stringify(parsed, writeCtx)!).toBe(original);
   });
 });

@@ -661,7 +661,14 @@ export function parsePresentation(data: DataType): PresentationOptions {
       const notesEl = pptx.doc.get(relPath);
       if (!notesEl) continue;
       const notesData = notesSlideDesc.parse(notesEl, readCtx);
-      if (notesData.text) slideOpts.notes = notesData.text;
+      if (
+        notesData.children ||
+        notesData.text ||
+        notesData.background ||
+        notesData.colorMapOverride
+      ) {
+        slideOpts.notes = notesData;
+      }
       break;
     }
 

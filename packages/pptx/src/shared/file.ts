@@ -9,6 +9,7 @@ import type { BackgroundOptions } from "@parts/background";
 import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
 import type { BackgroundDescriptorOptions } from "@parts/descriptors/background";
 import type { ColorMapOverrideOptions } from "@parts/descriptors/color-map-override";
+import type { NotesSlideDescriptorOptions } from "@parts/descriptors/notes-slide";
 import type {
   ControlDescriptorOptions,
   HeaderFooterDescriptorOptions,
@@ -107,7 +108,8 @@ export interface SlideAnimation {
 export interface SlideOptions {
   children?: SlideChild[];
   background?: BackgroundOptions;
-  notes?: string;
+  /** Speaker notes — plain text shorthand, or a structured notes-slide object. */
+  notes?: string | NotesSlideDescriptorOptions;
   transition?: TransitionOptions;
   headerFooter?: SlideHeaderFooterOptions;
   comments?: SlideCommentOptions[];

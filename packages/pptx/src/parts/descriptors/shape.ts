@@ -737,6 +737,8 @@ function toParagraphDescOpts(opts: ParagraphOptions): ParagraphDescriptorOptions
   if (opts.children !== undefined)
     result.children = opts.children as unknown as ParagraphDescriptorOptions["children"];
   if (opts.properties) result.properties = opts.properties;
+  if (opts.endParagraphProperties !== undefined)
+    result.endParagraphProperties = opts.endParagraphProperties;
   return result;
 }
 

@@ -155,7 +155,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
 
     if (attrParts.length === 0 && parts.length === 0) return "";
 
-    if (parts.length === 0) return `<a:rPr ${attrStr}/>`;
+    if (parts.length === 0) return `<a:rPr${attrStr}/>`;
     return `<a:rPr${attrStr}>${parts.join("")}</a:rPr>`;
   },
 

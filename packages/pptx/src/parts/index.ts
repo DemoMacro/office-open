@@ -32,6 +32,7 @@ export { buildLayoutXml, buildCustomLayoutXml, type SlideLayoutType } from "./sl
 export { buildNotesMasterXml } from "./notes-master";
 export { buildHandoutMasterXml } from "./handout-master";
 export { buildNotesSlideXml, type NotesSlideOptions } from "./notes-slide";
+export { type NotesSlideDescriptorOptions } from "./descriptors/notes-slide";
 export type { ChartOptions } from "./chart-frame";
 export type { SmartArtOptions } from "./smartart";
 export type { LockedCanvasFrameOptions } from "./locked-canvas-frame";
