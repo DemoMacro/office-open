@@ -10,7 +10,7 @@ import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild, stringify } from "@office-open/xml";
 
 import { PptxReadContext, ParseContext } from "./context";
 import { backgroundDesc } from "./parts/descriptors/background";
@@ -541,6 +541,15 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const masterColorMap = parseColorMap(findChild(masterEl, "p:clrMap"));
     const masterHeaderFooter = parseHeaderFooter(findChild(masterEl, "p:hf"));
 
+    // Text styles (p:txStyles) — verbatim round-trip; title/body/other typography.
+    // stringify() emits children only, so re-wrap the element. xmlns:a is declared
+    // on the master root, so the wrapper needs no namespace of its own (matches
+    // DEFAULT_TX_STYLES in slide-master.ts).
+    const txStylesEl = findChild(masterEl, "p:txStyles");
+    const masterTextStyles = txStylesEl
+      ? `<p:txStyles>${stringify(txStylesEl)}</p:txStyles>`
+      : undefined;
+
     const masterName = themeOptions?.name ?? `master${mi + 1}`;
     const masterDef: Partial<MasterDefinition> = {};
     masterDef.name = masterName;
@@ -554,6 +563,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
     if (masterLayouts.length > 0) masterDef.layouts = masterLayouts;
     if (masterColorMap) masterDef.colorMap = masterColorMap;
     if (masterHeaderFooter) masterDef.headerFooter = masterHeaderFooter;
+    if (masterTextStyles) masterDef.textStyles = masterTextStyles;
     masterDefs.push(masterDef as MasterDefinition);
   }
 
