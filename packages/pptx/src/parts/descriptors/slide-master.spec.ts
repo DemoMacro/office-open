@@ -1,9 +1,11 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
-import { parse as parseXml } from "@office-open/xml";
+import { findChild, parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { slideMasterDesc } from "./slide-master";
+import { parseColorMap, parseHeaderFooter } from "../handout-master";
+import { buildSlideMasterXml } from "../slide-master";
 import type { SlideMasterDescriptorOptions } from "./slide-master";
+import { slideMasterDesc } from "./slide-master";
 
 const writeCtx = {} as unknown as WriteContext;
 const readCtx = {
@@ -61,5 +63,42 @@ describe("slideMasterDesc round-trip", () => {
     // Verify the color survived round-trip
     expect(result.master).toContain("4472C4");
     expect(result.master).toContain("srgbClr");
+  });
+});
+
+describe("slide-master colorMap/headerFooter round-trip", () => {
+  it("emits custom colorMap and headerFooter, parseable back", () => {
+    const xml = buildSlideMasterXml(0, undefined, {
+      colorMap: { bg1: "dk1", tx1: "lt1" },
+      headerFooter: { date: true, footer: true },
+    });
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+
+    const clrMap = parseColorMap(findChild(el, "p:clrMap"));
+    expect(clrMap?.bg1).toBe("dk1");
+    expect(clrMap?.tx1).toBe("lt1");
+    // Untouched keys keep the standard defaults.
+    expect(clrMap?.bg2).toBe("lt2");
+
+    const hf = parseHeaderFooter(findChild(el, "p:hf"));
+    expect(hf?.date).toBe(true);
+    expect(hf?.footer).toBe(true);
+    expect(hf?.header).toBe(false);
+    expect(hf?.slideNumber).toBe(false);
+  });
+
+  it("emits standard defaults when colorMap/headerFooter are undefined", () => {
+    const xml = buildSlideMasterXml(0, undefined, undefined);
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+
+    const clrMap = parseColorMap(findChild(el, "p:clrMap"));
+    expect(clrMap?.bg1).toBe("lt1");
+    expect(clrMap?.tx1).toBe("dk1");
+
+    const hf = parseHeaderFooter(findChild(el, "p:hf"));
+    expect(hf?.date).toBe(false);
+    expect(hf?.slideNumber).toBe(false);
   });
 });

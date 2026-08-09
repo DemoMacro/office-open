@@ -1,6 +1,7 @@
+import { attr, type Element } from "@office-open/xml";
 import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "@shared/constants";
 
-/** Color map entry for handout/notes master */
+/** Color map entry for handout/notes/slide master */
 export interface ColorMapOptions {
   bg1?: string;
   tx1?: string;
@@ -63,7 +64,7 @@ const HANDOUT_MASTER_XML = `<p:handoutMaster xmlns:a="http://schemas.openxmlform
   <p:hf dt="0" hdr="0" ftr="0" sldNum="0"/>
 </p:handoutMaster>`;
 
-function buildColorMapAttrs(opts?: ColorMapOptions): string {
+export function buildColorMapAttrs(opts?: ColorMapOptions): string {
   if (!opts) return DEFAULT_COLOR_MAP;
   const defaults: Required<ColorMapOptions> = {
     bg1: "lt1",
@@ -85,9 +86,50 @@ function buildColorMapAttrs(opts?: ColorMapOptions): string {
     .join(" ");
 }
 
-function buildHfAttrs(opts?: HeaderFooterOptions): string {
+export function buildHfAttrs(opts?: HeaderFooterOptions): string {
   if (!opts) return 'dt="0" hdr="0" ftr="0" sldNum="0"';
   return `dt="${opts.date ? 1 : 0}" hdr="${opts.header ? 1 : 0}" ftr="${opts.footer ? 1 : 0}" sldNum="${opts.slideNumber ? 1 : 0}"`;
+}
+
+export const COLOR_MAP_KEYS: (keyof ColorMapOptions)[] = [
+  "bg1",
+  "tx1",
+  "bg2",
+  "tx2",
+  "accent1",
+  "accent2",
+  "accent3",
+  "accent4",
+  "accent5",
+  "accent6",
+  "hlink",
+  "folHlink",
+];
+
+/** Parse a p:clrMap element into ColorMapOptions (undefined when empty/absent). */
+export function parseColorMap(el: Element | undefined): ColorMapOptions | undefined {
+  if (!el) return undefined;
+  const colorMap: ColorMapOptions = {};
+  for (const key of COLOR_MAP_KEYS) {
+    const v = attr(el, key);
+    if (v !== undefined) colorMap[key] = v;
+  }
+  return Object.keys(colorMap).length > 0 ? colorMap : undefined;
+}
+
+/** Parse a p:hf element into HeaderFooterOptions (undefined when empty/absent). */
+export function parseHeaderFooter(el: Element | undefined): HeaderFooterOptions | undefined {
+  if (!el) return undefined;
+  const headerFooter: HeaderFooterOptions = {};
+  const dt = attr(el, "dt");
+  if (dt !== undefined) headerFooter.date = dt === "1";
+  const hdr = attr(el, "hdr");
+  if (hdr !== undefined) headerFooter.header = hdr === "1";
+  const ftr = attr(el, "ftr");
+  if (ftr !== undefined) headerFooter.footer = ftr === "1";
+  const sldNum = attr(el, "sldNum");
+  if (sldNum !== undefined) headerFooter.slideNumber = sldNum === "1";
+  return Object.keys(headerFooter).length > 0 ? headerFooter : undefined;
 }
 
 export function buildHandoutMasterXml(options?: HandoutMasterOptions): string {

@@ -23,6 +23,7 @@ import { slideDesc } from "./parts/descriptors/slide";
 import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
 import { tableStylesDesc } from "./parts/descriptors/table-styles";
 import { viewPropsDesc } from "./parts/descriptors/view-properties";
+import { parseColorMap, parseHeaderFooter } from "./parts/handout-master";
 import type { SlideChild } from "./parts/slide/slide-child";
 
 export { parseArchive };
@@ -536,6 +537,10 @@ export function parsePresentation(data: DataType): PresentationOptions {
       }
     }
 
+    // Color map + header/footer (EG_TopLevelSlide siblings of cSld)
+    const masterColorMap = parseColorMap(findChild(masterEl, "p:clrMap"));
+    const masterHeaderFooter = parseHeaderFooter(findChild(masterEl, "p:hf"));
+
     const masterName = themeOptions?.name ?? `master${mi + 1}`;
     const masterDef: Partial<MasterDefinition> = {};
     masterDef.name = masterName;
@@ -547,6 +552,8 @@ export function parsePresentation(data: DataType): PresentationOptions {
     // local to this known impedance.
     if (masterChildren.length > 0) masterDef.children = masterChildren as unknown as MasterChild[];
     if (masterLayouts.length > 0) masterDef.layouts = masterLayouts;
+    if (masterColorMap) masterDef.colorMap = masterColorMap;
+    if (masterHeaderFooter) masterDef.headerFooter = masterHeaderFooter;
     masterDefs.push(masterDef as MasterDefinition);
   }
 

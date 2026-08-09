@@ -1,7 +1,12 @@
 import type { UniversalMeasure } from "@office-open/core";
-import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "@shared/constants";
+import { SP_TREE_HEADER } from "@shared/constants";
 
-import type { ColorMapOptions, HeaderFooterOptions } from "./handout-master";
+import {
+  buildColorMapAttrs,
+  buildHfAttrs,
+  type ColorMapOptions,
+  type HeaderFooterOptions,
+} from "./handout-master";
 
 export type { ColorMapOptions, HeaderFooterOptions };
 
@@ -28,33 +33,6 @@ export interface NotesMasterOptions {
 const DEFAULT_LEVEL_MARGINS = [
   0, 457200, 914400, 1371600, 1828800, 2286000, 2743200, 3200400, 3657600,
 ];
-
-function buildColorMapAttrs(opts?: ColorMapOptions): string {
-  if (!opts) return DEFAULT_COLOR_MAP;
-  const defaults: Required<ColorMapOptions> = {
-    bg1: "lt1",
-    tx1: "dk1",
-    bg2: "lt2",
-    tx2: "dk2",
-    accent1: "accent1",
-    accent2: "accent2",
-    accent3: "accent3",
-    accent4: "accent4",
-    accent5: "accent5",
-    accent6: "accent6",
-    hlink: "hlink",
-    folHlink: "folHlink",
-  };
-  const merged = { ...defaults, ...opts };
-  return Object.entries(merged)
-    .map(([k, v]) => `${k}="${v}"`)
-    .join(" ");
-}
-
-function buildHfAttrs(opts?: HeaderFooterOptions): string {
-  if (!opts) return 'dt="0" hdr="0" ftr="0" sldNum="0"';
-  return `dt="${opts.date ? 1 : 0}" hdr="${opts.header ? 1 : 0}" ftr="${opts.footer ? 1 : 0}" sldNum="${opts.slideNumber ? 1 : 0}"`;
-}
 
 function buildNotesStyleXml(levels?: NotesLevelProperties[]): string {
   const parts: string[] = ["<p:notesStyle>"];

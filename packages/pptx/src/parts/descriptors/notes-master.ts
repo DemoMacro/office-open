@@ -7,34 +7,15 @@
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrMeasure, findChild } from "@office-open/xml";
+import { parseColorMap, parseHeaderFooter } from "@parts/handout-master";
 import { buildNotesMasterXml } from "@parts/notes-master";
-import type {
-  NotesMasterOptions,
-  NotesLevelProperties,
-  ColorMapOptions,
-  HeaderFooterOptions,
-} from "@parts/notes-master";
+import type { NotesMasterOptions, NotesLevelProperties } from "@parts/notes-master";
 
 // ── Types ──
 
 export interface NotesMasterDescriptorOptions {
   options?: NotesMasterOptions;
 }
-
-const COLOR_MAP_KEYS: (keyof ColorMapOptions)[] = [
-  "bg1",
-  "tx1",
-  "bg2",
-  "tx2",
-  "accent1",
-  "accent2",
-  "accent3",
-  "accent4",
-  "accent5",
-  "accent6",
-  "hlink",
-  "folHlink",
-];
 
 const LEVEL_TAGS = [
   "a:lvl1pPr",
@@ -61,31 +42,11 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
     const result: Partial<NotesMasterDescriptorOptions> = {};
     const options: Partial<NotesMasterOptions> = {};
 
-    // colorMap
-    const clrMap = findChild(el, "p:clrMap");
-    if (clrMap) {
-      const colorMap: Partial<ColorMapOptions> = {};
-      for (const key of COLOR_MAP_KEYS) {
-        const v = attr(clrMap, key);
-        if (v !== undefined) colorMap[key] = v;
-      }
-      if (Object.keys(colorMap).length > 0) options.colorMap = colorMap;
-    }
+    const colorMap = parseColorMap(findChild(el, "p:clrMap"));
+    if (colorMap) options.colorMap = colorMap;
 
-    // headerFooter
-    const hf = findChild(el, "p:hf");
-    if (hf) {
-      const headerFooter: Partial<HeaderFooterOptions> = {};
-      const dt = attr(hf, "dt");
-      if (dt !== undefined) headerFooter.date = dt === "1";
-      const hdr = attr(hf, "hdr");
-      if (hdr !== undefined) headerFooter.header = hdr === "1";
-      const ftr = attr(hf, "ftr");
-      if (ftr !== undefined) headerFooter.footer = ftr === "1";
-      const sldNum = attr(hf, "sldNum");
-      if (sldNum !== undefined) headerFooter.slideNumber = sldNum === "1";
-      if (Object.keys(headerFooter).length > 0) options.headerFooter = headerFooter;
-    }
+    const headerFooter = parseHeaderFooter(findChild(el, "p:hf"));
+    if (headerFooter) options.headerFooter = headerFooter;
 
     // notesStyle
     const notesStyle = findChild(el, "p:notesStyle");
