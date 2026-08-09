@@ -652,5 +652,62 @@ describe("Worksheet", () => {
         },
       ]);
     });
+
+    it("round-trips oleObjects and controls", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        oleObjects: [
+          {
+            shapeId: 1,
+            progId: "Excel.Sheet.12",
+            rId: "rId1",
+            objectPr: { locked: false, print: false, disabled: true, macro: "Module1.Run" },
+          },
+        ],
+        controls: [{ shapeId: 2, rId: "rId2", name: "Button1", locked: false, linkedCell: "A1" }],
+      };
+      const result = roundTrip(opts);
+      expect(result.oleObjects).toEqual([
+        {
+          shapeId: 1,
+          progId: "Excel.Sheet.12",
+          rId: "rId1",
+          objectPr: { locked: false, print: false, disabled: true, macro: "Module1.Run" },
+        },
+      ]);
+      expect(result.controls).toEqual([
+        { shapeId: 2, rId: "rId2", name: "Button1", locked: false, linkedCell: "A1" },
+      ]);
+    });
+
+    it("round-trips webPublishItems and ext", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        webPublishItems: [
+          {
+            id: 1,
+            divId: "div1",
+            sourceType: "range",
+            destinationFile: "out.htm",
+            title: "Report",
+            autoRepublish: true,
+          },
+        ],
+        ext: '<ext uri="{xxx}"><x:foo xmlns:x="x"/></ext>',
+      };
+      const result = roundTrip(opts);
+      expect(result.webPublishItems).toEqual([
+        {
+          id: 1,
+          divId: "div1",
+          sourceType: "range",
+          destinationFile: "out.htm",
+          title: "Report",
+          autoRepublish: true,
+        },
+      ]);
+      expect(result.ext).toContain('<ext uri="{xxx}">');
+      expect(result.ext).toContain("x:foo");
+    });
   });
 });

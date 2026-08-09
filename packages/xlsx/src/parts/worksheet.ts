@@ -17,7 +17,7 @@ import type {
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, attrsRaw, escapeXml, selfCloseElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, attr, attrMeasure, attrNum, textOf } from "@office-open/xml";
+import { findChild, attr, attrMeasure, attrNum, stringify, textOf } from "@office-open/xml";
 
 import type { XlsxReadContext } from "../context";
 import type { PivotTableOptions } from "./pivot";
@@ -1987,6 +1987,122 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         views.push(view);
       }
       if (views.length > 0) result.customSheetViews = views;
+    }
+
+    // OLE objects (CT_OleObjects — oleObject attrs + optional objectPr child)
+    const oleObjsEl = findChild(el, "oleObjects");
+    if (oleObjsEl) {
+      const oleObjects: OleObjectOptions[] = [];
+      for (const ooEl of oleObjsEl.elements ?? []) {
+        if (ooEl.name !== "oleObject") continue;
+        const shapeId = attrNum(ooEl, "shapeId");
+        if (shapeId === undefined) continue;
+        const oo: OleObjectOptions = { shapeId };
+        const progId = attr(ooEl, "progId");
+        if (progId !== undefined) oo.progId = progId;
+        const dvAspect = attr(ooEl, "dvAspect");
+        if (dvAspect !== undefined) oo.dvAspect = dvAspect as OleObjectOptions["dvAspect"];
+        const link = attr(ooEl, "link");
+        if (link !== undefined) oo.link = link;
+        const oleUpdate = attr(ooEl, "oleUpdate");
+        if (oleUpdate !== undefined) oo.oleUpdate = oleUpdate as OleObjectOptions["oleUpdate"];
+        if (attr(ooEl, "autoLoad") === "1") oo.autoLoad = true;
+        const ooRid = attr(ooEl, "r:id");
+        if (ooRid !== undefined) oo.rId = ooRid;
+        const oprEl = findChild(ooEl, "objectPr");
+        if (oprEl) {
+          const opr: OleObjectPropertiesOptions = {};
+          if (attr(oprEl, "locked") === "0") opr.locked = false;
+          if (attr(oprEl, "defaultSize") === "0") opr.defaultSize = false;
+          if (attr(oprEl, "print") === "0") opr.print = false;
+          if (attr(oprEl, "disabled") === "1") opr.disabled = true;
+          if (attr(oprEl, "uiObject") === "1") opr.uiObject = true;
+          if (attr(oprEl, "autoFill") === "0") opr.autoFill = false;
+          if (attr(oprEl, "autoLine") === "0") opr.autoLine = false;
+          if (attr(oprEl, "autoPict") === "0") opr.autoPict = false;
+          const macro = attr(oprEl, "macro");
+          if (macro !== undefined) opr.macro = macro;
+          const altText = attr(oprEl, "altText");
+          if (altText !== undefined) opr.altText = altText;
+          if (attr(oprEl, "dde") === "1") opr.dde = true;
+          const oprRid = attr(oprEl, "r:id");
+          if (oprRid !== undefined) opr.rId = oprRid;
+          if (Object.keys(opr).length > 0) oo.objectPr = opr;
+        }
+        oleObjects.push(oo);
+      }
+      if (oleObjects.length > 0) result.oleObjects = oleObjects;
+    }
+
+    // Controls (CT_Controls — control attrs + optional controlPr child)
+    const controlsEl = findChild(el, "controls");
+    if (controlsEl) {
+      const controls: ControlOptions[] = [];
+      for (const cEl of controlsEl.elements ?? []) {
+        if (cEl.name !== "control") continue;
+        const shapeId = attrNum(cEl, "shapeId");
+        const cRid = attr(cEl, "r:id");
+        if (shapeId === undefined || cRid === undefined) continue;
+        const c: ControlOptions = { shapeId, rId: cRid };
+        const name = attr(cEl, "name");
+        if (name !== undefined) c.name = name;
+        const prEl = findChild(cEl, "controlPr");
+        if (prEl) {
+          if (attr(prEl, "locked") === "0") c.locked = false;
+          if (attr(prEl, "uiObject") === "1") c.uiObject = true;
+          if (attr(prEl, "recalcAlways") === "1") c.recalcAlways = true;
+          const linkedCell = attr(prEl, "linkedCell");
+          if (linkedCell !== undefined) c.linkedCell = linkedCell;
+          const listFillRange = attr(prEl, "listFillRange");
+          if (listFillRange !== undefined) c.listFillRange = listFillRange;
+          const cf = attr(prEl, "cf");
+          if (cf !== undefined) c.cf = cf;
+        }
+        controls.push(c);
+      }
+      if (controls.length > 0) result.controls = controls;
+    }
+
+    // Web publish items (CT_WebPublishItems — attribute bag per item)
+    const wpEl = findChild(el, "webPublishItems");
+    if (wpEl) {
+      const items: WebPublishItemOptions[] = [];
+      for (const wpiEl of wpEl.elements ?? []) {
+        if (wpiEl.name !== "webPublishItem") continue;
+        const id = attrNum(wpiEl, "id");
+        const divId = attr(wpiEl, "divId");
+        const sourceType = attr(wpiEl, "sourceType");
+        const destinationFile = attr(wpiEl, "destinationFile");
+        if (
+          id === undefined ||
+          divId === undefined ||
+          sourceType === undefined ||
+          destinationFile === undefined
+        )
+          continue;
+        const wpi: WebPublishItemOptions = {
+          id,
+          divId,
+          sourceType: sourceType as WebPublishItemOptions["sourceType"],
+          destinationFile,
+        };
+        const sourceRef = attr(wpiEl, "sourceRef");
+        if (sourceRef !== undefined) wpi.sourceRef = sourceRef;
+        const sourceObject = attr(wpiEl, "sourceObject");
+        if (sourceObject !== undefined) wpi.sourceObject = sourceObject;
+        const title = attr(wpiEl, "title");
+        if (title !== undefined) wpi.title = title;
+        if (attr(wpiEl, "autoRepublish") === "1") wpi.autoRepublish = true;
+        items.push(wpi);
+      }
+      if (items.length > 0) result.webPublishItems = items;
+    }
+
+    // Extension list (CT_ExtensionList — verbatim inner XML, open-ended content)
+    const extLstEl = findChild(el, "extLst");
+    if (extLstEl) {
+      const inner = stringify(extLstEl);
+      if (inner) result.ext = inner;
     }
 
     return result as WorksheetOptions;
