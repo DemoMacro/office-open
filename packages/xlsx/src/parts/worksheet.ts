@@ -1916,6 +1916,46 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (Object.keys(dc).length > 0) result.dataConsolidate = dc;
     }
 
+    // What-if scenarios (CT_Scenarios — current/show + scenario/inputCells)
+    const scenariosEl = findChild(el, "scenarios");
+    if (scenariosEl) {
+      const scenarios: ScenarioDefinition[] = [];
+      for (const scEl of scenariosEl.elements ?? []) {
+        if (scEl.name !== "scenario") continue;
+        const name = attr(scEl, "name");
+        if (name === undefined) continue;
+        const scenario: ScenarioDefinition = { name, inputCells: [] };
+        const count = attrNum(scEl, "count");
+        if (count !== undefined) scenario.count = count;
+        const user = attr(scEl, "user");
+        if (user !== undefined) scenario.user = user;
+        const comment = attr(scEl, "comment");
+        if (comment !== undefined) scenario.comment = comment;
+        if (attr(scEl, "hidden") === "1") scenario.hidden = true;
+        if (attr(scEl, "locked") === "1") scenario.locked = true;
+        for (const icEl of scEl.elements ?? []) {
+          if (icEl.name !== "inputCells") continue;
+          const r = attr(icEl, "r");
+          const valRaw = attr(icEl, "val");
+          if (r === undefined || valRaw === undefined) continue;
+          const num = Number(valRaw);
+          const cell: ScenarioCellOptions = { r, val: String(num) === valRaw ? num : valRaw };
+          if (attr(icEl, "deleted") === "1") cell.deleted = true;
+          if (attr(icEl, "undone") === "1") cell.undone = true;
+          scenario.inputCells.push(cell);
+        }
+        scenarios.push(scenario);
+      }
+      if (scenarios.length > 0) {
+        const so: ScenarioOptions = { scenarios };
+        const current = attrNum(scenariosEl, "current");
+        if (current !== undefined) so.current = current;
+        const show = attrNum(scenariosEl, "show");
+        if (show !== undefined) so.show = show;
+        result.scenarios = so;
+      }
+    }
+
     return result as WorksheetOptions;
   },
 };

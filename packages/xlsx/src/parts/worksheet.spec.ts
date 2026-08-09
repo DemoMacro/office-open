@@ -582,5 +582,42 @@ describe("Worksheet", () => {
         refs: ["Sheet1!A1:B2", "Sheet2!A1:B2"],
       });
     });
+
+    it("round-trips scenarios (what-if analysis)", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        scenarios: {
+          current: 0,
+          scenarios: [
+            {
+              name: "Best Case",
+              count: 2,
+              user: "analyst",
+              comment: "Optimistic forecast",
+              inputCells: [
+                { r: "B2", val: 100 },
+                { r: "B3", val: "q1" },
+              ],
+            },
+          ],
+        },
+      };
+      const result = roundTrip(opts);
+      expect(result.scenarios).toEqual({
+        current: 0,
+        scenarios: [
+          {
+            name: "Best Case",
+            count: 2,
+            user: "analyst",
+            comment: "Optimistic forecast",
+            inputCells: [
+              { r: "B2", val: 100 },
+              { r: "B3", val: "q1" },
+            ],
+          },
+        ],
+      });
+    });
   });
 });
