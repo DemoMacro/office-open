@@ -1522,7 +1522,146 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Auto filter
     const afEl = findChild(el, "autoFilter");
     if (afEl) {
-      result.autoFilter = attr(afEl, "ref") ?? "";
+      const af: AutoFilterOptions = { ref: attr(afEl, "ref") ?? "" };
+      for (const child of afEl.elements ?? []) {
+        if (child.name === "filterColumn") {
+          const colId = attrNum(child, "colId") ?? 0;
+          const hiddenButton = String(attr(child, "hiddenButton")) === "1";
+          const showButtonOff = String(attr(child, "showButton")) === "0";
+          for (const fc of child.elements ?? []) {
+            if (fc.name === "top10") {
+              af.top10 ??= [];
+              const t: Top10FilterOptions = { colId, val: attrNum(fc, "val") ?? 0 };
+              if (String(attr(fc, "top")) === "0") t.top = false;
+              if (String(attr(fc, "percent")) === "1") t.percent = true;
+              const fv = attrNum(fc, "filterVal");
+              if (fv !== undefined) t.filterVal = fv;
+              if (hiddenButton) t.hiddenButton = true;
+              if (showButtonOff) t.showButton = false;
+              af.top10.push(t);
+            } else if (fc.name === "customFilters") {
+              af.customFilters ??= [];
+              const cf: CustomFilterOptions = { colId };
+              if (String(attr(fc, "and")) === "1") cf.and = true;
+              const cfs = (fc.elements ?? []).filter((e) => e.name === "customFilter");
+              const first = cfs[0];
+              if (first) {
+                const op = attr(first, "operator");
+                if (op) cf.operator = op as CustomFilterOptions["operator"];
+                const v = attr(first, "val");
+                if (v !== undefined) cf.val = v;
+              }
+              const second = cfs[1];
+              if (second) {
+                const v2 = attr(second, "val");
+                if (v2 !== undefined) cf.val2 = v2;
+              }
+              if (hiddenButton) cf.hiddenButton = true;
+              if (showButtonOff) cf.showButton = false;
+              af.customFilters.push(cf);
+            } else if (fc.name === "filters") {
+              // CT_Filters holds filter[] + dateGroupItem[]
+              const fi: FilterItemsOptions = { colId };
+              if (String(attr(fc, "blank")) === "1") fi.blank = true;
+              const cal = attr(fc, "calendarType");
+              if (cal) fi.calendarType = cal;
+              const values: string[] = [];
+              for (const f of fc.elements ?? []) {
+                if (f.name === "filter") {
+                  const v = attr(f, "val");
+                  if (v !== undefined) values.push(v);
+                } else if (f.name === "dateGroupItem") {
+                  af.dateGroupItems ??= [];
+                  const dg: DateGroupFilterOptions = {
+                    colId,
+                    dateTimeGrouping: attr(
+                      f,
+                      "dateTimeGrouping",
+                    ) as DateGroupFilterOptions["dateTimeGrouping"],
+                  };
+                  const y = attrNum(f, "year");
+                  if (y !== undefined) dg.year = y;
+                  const mo = attrNum(f, "month");
+                  if (mo !== undefined) dg.month = mo;
+                  const d = attrNum(f, "day");
+                  if (d !== undefined) dg.day = d;
+                  const h = attrNum(f, "hour");
+                  if (h !== undefined) dg.hour = h;
+                  const mi = attrNum(f, "minute");
+                  if (mi !== undefined) dg.minute = mi;
+                  const s = attrNum(f, "second");
+                  if (s !== undefined) dg.second = s;
+                  af.dateGroupItems.push(dg);
+                }
+              }
+              if (values.length > 0) fi.values = values;
+              af.filters ??= [];
+              af.filters.push(fi);
+            } else if (fc.name === "colorFilter") {
+              af.colorFilters ??= [];
+              const cf2: ColorFilterOptions = { colId };
+              const dxfId = attrNum(fc, "dxfId");
+              if (dxfId !== undefined) cf2.dxfId = dxfId;
+              if (String(attr(fc, "cellColor")) === "0") cf2.cellColor = false;
+              af.colorFilters.push(cf2);
+            } else if (fc.name === "iconFilter") {
+              af.iconFilters ??= [];
+              const if_: IconFilterOptions = { colId, iconSet: attrNum(fc, "iconSet") ?? 0 };
+              const iconId = attrNum(fc, "iconId");
+              if (iconId !== undefined) if_.iconId = iconId;
+              af.iconFilters.push(if_);
+            } else if (fc.name === "dynamicFilter") {
+              af.dynamicFilters ??= [];
+              const df: DynamicFilterOptions = {
+                colId,
+                type: attr(fc, "type") as DynamicFilterOptions["type"],
+              };
+              const v = attrNum(fc, "val");
+              if (v !== undefined) df.val = v;
+              const mv = attrNum(fc, "maxVal");
+              if (mv !== undefined) df.maxVal = mv;
+              const vi = attr(fc, "valIso");
+              if (vi) df.valIso = vi;
+              const mvi = attr(fc, "maxValIso");
+              if (mvi) df.maxValIso = mvi;
+              af.dynamicFilters.push(df);
+            }
+          }
+        } else if (child.name === "sortState") {
+          const ss: SortStateOptions = {};
+          if (String(attr(child, "columnSort")) === "1") ss.columnSort = true;
+          if (String(attr(child, "caseSensitive")) === "1") ss.caseSensitive = true;
+          const sm = attr(child, "sortMethod");
+          if (sm) ss.sortMethod = sm as SortStateOptions["sortMethod"];
+          af.sortState = ss;
+          for (const sc of child.elements ?? []) {
+            if (sc.name !== "sortCondition") continue;
+            af.sort ??= [];
+            const cond: SortCondition = { ref: attr(sc, "ref") ?? "" };
+            if (String(attr(sc, "descending")) === "1") cond.descending = true;
+            const sb = attr(sc, "sortBy");
+            if (sb) cond.sortBy = sb as SortCondition["sortBy"];
+            const cl = attr(sc, "customList");
+            if (cl) cond.customList = cl;
+            const ii = attrNum(sc, "iconId");
+            if (ii !== undefined) cond.iconId = ii;
+            af.sort.push(cond);
+          }
+        }
+      }
+      // Ref-only autoFilter round-trips as the shorthand string (matches the
+      // generate API); structured object only when filter columns/sort exist.
+      const hasFilters =
+        af.top10 !== undefined ||
+        af.customFilters !== undefined ||
+        af.filters !== undefined ||
+        af.colorFilters !== undefined ||
+        af.iconFilters !== undefined ||
+        af.dynamicFilters !== undefined ||
+        af.dateGroupItems !== undefined ||
+        af.sortState !== undefined ||
+        af.sort !== undefined;
+      result.autoFilter = hasFilters ? af : af.ref;
     }
 
     // Merge cells
@@ -2714,7 +2853,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         if (dg.minute !== undefined) dgAttrs.minute = dg.minute;
         if (dg.second !== undefined) dgAttrs.second = dg.second;
         inner.push(
-          `<filterColumn colId="${dg.colId}"><dateGroupItem${attrs(dgAttrs)}/></filterColumn>`,
+          `<filterColumn colId="${dg.colId}"><filters><dateGroupItem${attrs(dgAttrs)}/></filters></filterColumn>`,
         );
       }
       if (inner.length > 0) {

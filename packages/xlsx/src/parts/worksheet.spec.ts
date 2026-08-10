@@ -4,7 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { buildWorksheetXml } from "./worksheet";
 import { worksheetDesc } from "./worksheet";
-import type { WorksheetOptions } from "./worksheet";
+import type { AutoFilterOptions, WorksheetOptions } from "./worksheet";
 
 describe("Worksheet", () => {
   describe("sheetProtection", () => {
@@ -419,6 +419,125 @@ describe("Worksheet", () => {
       expect(xml).toContain('<sortState ref="A1:D10">');
       expect(xml).toContain('ref="B1"');
       expect(xml).toContain('descending="1"');
+    });
+  });
+
+  describe("autoFilter round-trip", () => {
+    const readCtx = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+      sharedStrings: [],
+    } as unknown as ReadContext;
+
+    function roundTrip(opts: WorksheetOptions) {
+      const xml = buildWorksheetXml(opts, {});
+      // nativeTypeAttributes mirrors the real xlsx parse path (ParsedArchive.get
+      // coerces "1"/"0" to numbers), so boolean reads are exercised under coercion.
+      const doc = parseXml(xml, { nativeTypeAttributes: true });
+      const el = doc.elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
+    }
+
+    it("round-trips ref-only autoFilter as shorthand string", () => {
+      const result = roundTrip({
+        autoFilter: "A1:D10",
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      expect(result.autoFilter).toBe("A1:D10");
+    });
+
+    it("round-trips top10 filter", () => {
+      const result = roundTrip({
+        autoFilter: { ref: "A1:D10", top10: [{ colId: 2, val: 5, percent: true }] },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      const af = result.autoFilter as AutoFilterOptions;
+      expect(af.top10).toEqual([{ colId: 2, val: 5, percent: true }]);
+    });
+
+    it("round-trips customFilters with two operands joined by AND", () => {
+      const result = roundTrip({
+        autoFilter: {
+          ref: "A1:D10",
+          customFilters: [
+            { colId: 1, operator: "greaterThan", val: "100", val2: "200", and: true },
+          ],
+        },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      const af = result.autoFilter as AutoFilterOptions;
+      expect(af.customFilters).toEqual([
+        { colId: 1, operator: "greaterThan", val: "100", val2: "200", and: true },
+      ]);
+    });
+
+    it("round-trips filters with values", () => {
+      const result = roundTrip({
+        autoFilter: { ref: "A1:D10", filters: [{ colId: 0, values: ["a", "b"] }] },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      const af = result.autoFilter as AutoFilterOptions;
+      expect(af.filters).toEqual([{ colId: 0, values: ["a", "b"] }]);
+    });
+
+    it("round-trips dateGroupItems wrapped in filters", () => {
+      const result = roundTrip({
+        autoFilter: {
+          ref: "A1:D10",
+          dateGroupItems: [{ colId: 2, dateTimeGrouping: "year", year: 2020, month: 3 }],
+        },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      const af = result.autoFilter as AutoFilterOptions;
+      expect(af.dateGroupItems).toEqual([
+        { colId: 2, dateTimeGrouping: "year", year: 2020, month: 3 },
+      ]);
+    });
+
+    it("round-trips colorFilter", () => {
+      const result = roundTrip({
+        autoFilter: { ref: "A1:D10", colorFilters: [{ colId: 1, dxfId: 2, cellColor: false }] },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      const af = result.autoFilter as AutoFilterOptions;
+      expect(af.colorFilters).toEqual([{ colId: 1, dxfId: 2, cellColor: false }]);
+    });
+
+    it("round-trips iconFilter", () => {
+      const result = roundTrip({
+        autoFilter: { ref: "A1:D10", iconFilters: [{ colId: 3, iconSet: 4, iconId: 2 }] },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      const af = result.autoFilter as AutoFilterOptions;
+      expect(af.iconFilters).toEqual([{ colId: 3, iconSet: 4, iconId: 2 }]);
+    });
+
+    it("round-trips dynamicFilter", () => {
+      const result = roundTrip({
+        autoFilter: {
+          ref: "A1:D10",
+          dynamicFilters: [{ colId: 0, type: "aboveAverage", val: 42 }],
+        },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      const af = result.autoFilter as AutoFilterOptions;
+      expect(af.dynamicFilters).toEqual([{ colId: 0, type: "aboveAverage", val: 42 }]);
+    });
+
+    it("round-trips sortState with conditions", () => {
+      const result = roundTrip({
+        autoFilter: {
+          ref: "A1:D10",
+          sortState: { caseSensitive: true, sortMethod: "pinYin" },
+          sort: [{ ref: "B1", descending: true }],
+        },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      const af = result.autoFilter as AutoFilterOptions;
+      expect(af.sortState).toEqual({ caseSensitive: true, sortMethod: "pinYin" });
+      expect(af.sort).toEqual([{ ref: "B1", descending: true }]);
     });
   });
 
