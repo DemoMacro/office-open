@@ -50,8 +50,14 @@ import type {
   OfPieType,
   SplitType,
   ColorMapOverrideOptions,
+  ColorSchemeIndex,
   ProtectionOptions,
   ExternalDataOptions,
+  HeaderFooterOptions,
+  PageMarginsOptions,
+  PageSetupOptions,
+  PrintSettingsOptions,
+  PageSetupOrientation,
 } from "./types";
 
 // ── Mutable build type for read results (readonly properties not assignable) ──
@@ -408,12 +414,42 @@ function stringifyDataTable(opts: DataTableOptions): string {
   return `<c:dTable>${parts.join("")}</c:dTable>`;
 }
 
+const COLOR_MAP_KEYS = [
+  "bg1",
+  "tx1",
+  "bg2",
+  "tx2",
+  "accent1",
+  "accent2",
+  "accent3",
+  "accent4",
+  "accent5",
+  "accent6",
+  "hlink",
+  "folHlink",
+] as const;
+
+const COLOR_MAP_IDENTITY: Required<ColorMapOverrideOptions> = {
+  bg1: "lt1",
+  tx1: "dk1",
+  bg2: "lt2",
+  tx2: "dk2",
+  accent1: "accent1",
+  accent2: "accent2",
+  accent3: "accent3",
+  accent4: "accent4",
+  accent5: "accent5",
+  accent6: "accent6",
+  hlink: "hlink",
+  folHlink: "folHlink",
+};
+
 function stringifyColorMapOverride(opts: ColorMapOverrideOptions): string {
-  if (opts.kind === "master") return "<c:clrMapOvr><a:masterClrMapping/></c:clrMapOvr>";
-  const attrs = Object.entries(opts.mapping)
-    .map(([k, v]) => `${k}="${escapeXml(String(v))}"`)
-    .join(" ");
-  return `<c:clrMapOvr><a:overrideClrMapping${attrs ? " " + attrs : ""}/></c:clrMapOvr>`;
+  // CT_ColorMapping: 12 ST_ColorSchemeIndex attributes, all XSD use="required".
+  // Merge caller overrides onto the identity mapping so emission is always complete.
+  const merged = { ...COLOR_MAP_IDENTITY, ...opts };
+  const attrs = COLOR_MAP_KEYS.map((k) => `${k}="${escapeXml(merged[k])}"`).join(" ");
+  return `<c:clrMapOvr ${attrs}/>`;
 }
 
 function stringifyProtection(opts: ProtectionOptions): string {
@@ -423,7 +459,8 @@ function stringifyProtection(opts: ProtectionOptions): string {
   if (opts.data !== undefined) parts.push(`<c:data val="${opts.data ? 1 : 0}"/>`);
   if (opts.formatting !== undefined) parts.push(`<c:formatting val="${opts.formatting ? 1 : 0}"/>`);
   if (opts.selection !== undefined) parts.push(`<c:selection val="${opts.selection ? 1 : 0}"/>`);
-  if (opts.objects !== undefined) parts.push(`<c:objects val="${opts.objects ? 1 : 0}"/>`);
+  if (opts.userInterface !== undefined)
+    parts.push(`<c:userInterface val="${opts.userInterface ? 1 : 0}"/>`);
   return `<c:protection>${parts.join("")}</c:protection>`;
 }
 
@@ -431,6 +468,70 @@ function stringifyExternalData(opts: ExternalDataOptions): string {
   const auto =
     opts.autoUpdate !== undefined ? `<c:autoUpdate val="${opts.autoUpdate ? 1 : 0}"/>` : "";
   return `<c:externalData r:id="${escapeXml(opts.relationshipId)}">${auto}</c:externalData>`;
+}
+
+function stringifyHeaderFooter(opts: HeaderFooterOptions): string {
+  const parts: string[] = [];
+  if (opts.oddHeader !== undefined)
+    parts.push(`<c:oddHeader>${escapeXml(opts.oddHeader)}</c:oddHeader>`);
+  if (opts.oddFooter !== undefined)
+    parts.push(`<c:oddFooter>${escapeXml(opts.oddFooter)}</c:oddFooter>`);
+  if (opts.evenHeader !== undefined)
+    parts.push(`<c:evenHeader>${escapeXml(opts.evenHeader)}</c:evenHeader>`);
+  if (opts.evenFooter !== undefined)
+    parts.push(`<c:evenFooter>${escapeXml(opts.evenFooter)}</c:evenFooter>`);
+  if (opts.firstHeader !== undefined)
+    parts.push(`<c:firstHeader>${escapeXml(opts.firstHeader)}</c:firstHeader>`);
+  if (opts.firstFooter !== undefined)
+    parts.push(`<c:firstFooter>${escapeXml(opts.firstFooter)}</c:firstFooter>`);
+  const attrs: string[] = [];
+  if (opts.alignWithMargins !== undefined)
+    attrs.push(`alignWithMargins="${opts.alignWithMargins ? 1 : 0}"`);
+  if (opts.differentOddEven !== undefined)
+    attrs.push(`differentOddEven="${opts.differentOddEven ? 1 : 0}"`);
+  if (opts.differentFirst !== undefined)
+    attrs.push(`differentFirst="${opts.differentFirst ? 1 : 0}"`);
+  const attrStr = attrs.length ? " " + attrs.join(" ") : "";
+  return `<c:headerFooter${attrStr}>${parts.join("")}</c:headerFooter>`;
+}
+
+function stringifyPageMargins(opts: PageMarginsOptions): string {
+  // CT_PageMargins attributes are all XSD use="required". Fill Office default
+  // margins (inches) for any the caller omits so emission is always schema-valid.
+  const l = opts.left ?? 0.7;
+  const r = opts.right ?? 0.7;
+  const t = opts.top ?? 0.75;
+  const b = opts.bottom ?? 0.75;
+  const header = opts.header ?? 0.3;
+  const footer = opts.footer ?? 0.3;
+  return `<c:pageMargins l="${l}" r="${r}" t="${t}" b="${b}" header="${header}" footer="${footer}"/>`;
+}
+
+function stringifyPageSetup(opts: PageSetupOptions): string {
+  const attrs: string[] = [];
+  if (opts.paperSize !== undefined) attrs.push(`paperSize="${opts.paperSize}"`);
+  if (opts.paperHeight !== undefined) attrs.push(`paperHeight="${escapeXml(opts.paperHeight)}"`);
+  if (opts.paperWidth !== undefined) attrs.push(`paperWidth="${escapeXml(opts.paperWidth)}"`);
+  if (opts.firstPageNumber !== undefined) attrs.push(`firstPageNumber="${opts.firstPageNumber}"`);
+  if (opts.orientation !== undefined) attrs.push(`orientation="${opts.orientation}"`);
+  if (opts.blackAndWhite !== undefined) attrs.push(`blackAndWhite="${opts.blackAndWhite ? 1 : 0}"`);
+  if (opts.draft !== undefined) attrs.push(`draft="${opts.draft ? 1 : 0}"`);
+  if (opts.useFirstPageNumber !== undefined)
+    attrs.push(`useFirstPageNumber="${opts.useFirstPageNumber ? 1 : 0}"`);
+  if (opts.horizontalDpi !== undefined) attrs.push(`horizontalDpi="${opts.horizontalDpi}"`);
+  if (opts.verticalDpi !== undefined) attrs.push(`verticalDpi="${opts.verticalDpi}"`);
+  if (opts.copies !== undefined) attrs.push(`copies="${opts.copies}"`);
+  return `<c:pageSetup ${attrs.join(" ")}/>`;
+}
+
+function stringifyPrintSettings(opts: PrintSettingsOptions): string {
+  const parts: string[] = [];
+  if (opts.headerFooter) parts.push(stringifyHeaderFooter(opts.headerFooter));
+  if (opts.pageMargins) parts.push(stringifyPageMargins(opts.pageMargins));
+  if (opts.pageSetup) parts.push(stringifyPageSetup(opts.pageSetup));
+  if (opts.legacyDrawingId !== undefined)
+    parts.push(`<c:legacyDrawingHF r:id="${escapeXml(opts.legacyDrawingId)}"/>`);
+  return `<c:printSettings>${parts.join("")}</c:printSettings>`;
 }
 
 function chartTypeHeader(opts: ChartSpaceOptions): string {
@@ -464,6 +565,11 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
     case "bubble":
       headerParts.push(valEl("c:varyColors", 1));
       break;
+    case "surface":
+      // EG_SurfaceChartShared head: wireframe precedes ser.
+      if (opts.wireframe !== undefined)
+        headerParts.push(`<c:wireframe${boolVal(opts.wireframe)}/>`);
+      break;
   }
 
   return `<${tag}>${headerParts.join("")}`;
@@ -473,57 +579,79 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
   const tag = opts.threeD ? CHART_TYPE_TAGS_3D[opts.type] : CHART_TYPE_TAGS[opts.type];
   const parts: string[] = [];
 
-  // CT_xxxChart type-specific scalar fields (between ser and axId)
-  if (opts.type === "column" || opts.type === "bar") {
-    if (opts.gapWidth !== undefined) parts.push(valEl("c:gapWidth", opts.gapWidth));
-    if (opts.threeD) {
-      if (opts.gapDepth !== undefined) parts.push(valEl("c:gapDepth", opts.gapDepth));
-    } else if (opts.overlap !== undefined) {
-      parts.push(valEl("c:overlap", opts.overlap));
-    }
-  } else if (opts.type === "pie" || opts.type === "doughnut") {
-    if (opts.firstSliceAngle !== undefined)
-      parts.push(valEl("c:firstSliceAng", opts.firstSliceAngle));
-    if (opts.holeSize !== undefined) parts.push(valEl("c:holeSize", opts.holeSize));
-  } else if (opts.type === "bubble") {
-    if (opts.bubbleScale !== undefined) parts.push(valEl("c:bubbleScale", opts.bubbleScale));
-    if (opts.showNegativeBubbles !== undefined)
-      parts.push(`<c:showNegBubbles${boolVal(opts.showNegativeBubbles)}/>`);
-    if (opts.sizeRepresents !== undefined)
-      parts.push(valEl("c:sizeRepresents", opts.sizeRepresents));
-  } else if (opts.type === "surface") {
-    if (opts.wireframe !== undefined) parts.push(`<c:wireframe${boolVal(opts.wireframe)}/>`);
-  } else if (opts.type === "ofPie") {
-    if (opts.gapWidth !== undefined) parts.push(valEl("c:gapWidth", opts.gapWidth));
-    if (opts.splitType !== undefined) parts.push(valEl("c:splitType", opts.splitType));
-    if (opts.splitPosition !== undefined) parts.push(valEl("c:splitPos", opts.splitPosition));
-    if (opts.customSplitPoints?.length) {
-      const pts = opts.customSplitPoints.map((p) => valEl("c:secondPiePt", p)).join("");
-      parts.push(`<c:custSplit>${pts}</c:custSplit>`);
-    }
-    if (opts.secondPieSize !== undefined) parts.push(valEl("c:secondPieSize", opts.secondPieSize));
-    if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
-  }
-
-  // CT_xxxChart decorations (CT_ChartLines containers, after scalars per XSD)
-  if (opts.type === "line") {
-    if (opts.threeD) {
+  // Type-specific children between ser and axId, in XSD document order.
+  // Group-tail elements (dropLines for line/area) lead because they sit inside
+  // EG_*ChartShared right after ser/dLbls, before the outer-type decorations.
+  switch (opts.type) {
+    case "column":
+    case "bar":
+      if (opts.gapWidth !== undefined) parts.push(valEl("c:gapWidth", opts.gapWidth));
+      if (opts.threeD) {
+        // CT_Bar3DChart: gapWidth → gapDepth → shape
+        if (opts.gapDepth !== undefined) parts.push(valEl("c:gapDepth", opts.gapDepth));
+      } else {
+        // CT_BarChart: gapWidth → overlap → serLines
+        if (opts.overlap !== undefined) parts.push(valEl("c:overlap", opts.overlap));
+        if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
+      }
+      break;
+    case "line":
+      // EG_LineChartShared tail: dropLines (after ser/dLbls)
       if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
-    } else {
+      if (!opts.threeD) {
+        // CT_LineChart: dropLines → hiLowLines → upDownBars → marker → smooth
+        if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
+        if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
+      } else if (opts.gapDepth !== undefined) {
+        // CT_Line3DChart: dropLines → gapDepth
+        parts.push(valEl("c:gapDepth", opts.gapDepth));
+      }
+      break;
+    case "area":
+      // EG_AreaChartShared tail: dropLines
+      if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
+      if (opts.threeD && opts.gapDepth !== undefined)
+        parts.push(valEl("c:gapDepth", opts.gapDepth));
+      break;
+    case "stock":
+      // CT_StockChart: dropLines → hiLowLines → upDownBars
+      if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
       if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
       if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
-      if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
-    }
-  } else if (opts.type === "area") {
-    if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
-    if (opts.threeD && opts.seriesLines) parts.push(emptyEl("c:serLines"));
-  } else if (opts.type === "stock") {
-    if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
-    if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
-    if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
-    if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
-  } else if ((opts.type === "column" || opts.type === "bar") && !opts.threeD) {
-    if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
+      break;
+    case "pie":
+      // CT_PieChart: firstSliceAng (no holeSize)
+      if (opts.firstSliceAngle !== undefined)
+        parts.push(valEl("c:firstSliceAng", opts.firstSliceAngle));
+      break;
+    case "doughnut":
+      // CT_DoughnutChart: firstSliceAng → holeSize
+      if (opts.firstSliceAngle !== undefined)
+        parts.push(valEl("c:firstSliceAng", opts.firstSliceAngle));
+      if (opts.holeSize !== undefined) parts.push(valEl("c:holeSize", opts.holeSize));
+      break;
+    case "bubble":
+      // CT_BubbleChart: bubbleScale → showNegBubbles → sizeRepresents
+      if (opts.bubbleScale !== undefined) parts.push(valEl("c:bubbleScale", opts.bubbleScale));
+      if (opts.showNegativeBubbles !== undefined)
+        parts.push(`<c:showNegBubbles${boolVal(opts.showNegativeBubbles)}/>`);
+      if (opts.sizeRepresents !== undefined)
+        parts.push(valEl("c:sizeRepresents", opts.sizeRepresents));
+      break;
+    case "ofPie":
+      // CT_OfPieChart: gapWidth → splitType → splitPos → custSplit → secondPieSize → serLines
+      if (opts.gapWidth !== undefined) parts.push(valEl("c:gapWidth", opts.gapWidth));
+      if (opts.splitType !== undefined) parts.push(valEl("c:splitType", opts.splitType));
+      if (opts.splitPosition !== undefined) parts.push(valEl("c:splitPos", opts.splitPosition));
+      if (opts.customSplitPoints?.length) {
+        const pts = opts.customSplitPoints.map((p) => valEl("c:secondPiePt", p)).join("");
+        parts.push(`<c:custSplit>${pts}</c:custSplit>`);
+      }
+      if (opts.secondPieSize !== undefined)
+        parts.push(valEl("c:secondPieSize", opts.secondPieSize));
+      if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
+      break;
+    // surface: wireframe emitted in chartTypeHeader (EG_SurfaceChartShared head); no footer children.
   }
 
   // Axes (pie/doughnut have none)
@@ -1216,17 +1344,13 @@ function readDataTable(plotArea: XmlElement | undefined): DataTableOptions | und
 
 function readColorMapOverride(el: XmlElement): ColorMapOverrideOptions | undefined {
   const clrMapOvr = findChild(el, "c:clrMapOvr");
-  if (!clrMapOvr) return undefined;
-  if (findChild(clrMapOvr, "a:masterClrMapping")) return { kind: "master" };
-  const override = findChild(clrMapOvr, "a:overrideClrMapping");
-  if (override?.attributes) {
-    const mapping: Record<string, string> = {};
-    for (const [k, v] of Object.entries(override.attributes)) {
-      if (typeof v === "string") mapping[k] = v;
-    }
-    return { kind: "override", mapping };
+  if (!clrMapOvr?.attributes) return undefined;
+  const opts: ColorMapOverrideOptions = {};
+  for (const k of COLOR_MAP_KEYS) {
+    const v = clrMapOvr.attributes[k];
+    if (v !== undefined) opts[k] = v as ColorSchemeIndex;
   }
-  return undefined;
+  return Object.keys(opts).length ? opts : undefined;
 }
 
 function readProtection(el: XmlElement): ProtectionOptions | undefined {
@@ -1247,8 +1371,8 @@ function readProtection(el: XmlElement): ProtectionOptions | undefined {
   if (formatting !== undefined) opts.formatting = formatting;
   const selection = readFlag("c:selection");
   if (selection !== undefined) opts.selection = selection;
-  const objects = readFlag("c:objects");
-  if (objects !== undefined) opts.objects = objects;
+  const userInterface = readFlag("c:userInterface");
+  if (userInterface !== undefined) opts.userInterface = userInterface;
   return Object.keys(opts).length ? opts : undefined;
 }
 
@@ -1264,6 +1388,119 @@ function readExternalData(el: XmlElement): ExternalDataOptions | undefined {
     if (v !== undefined) opts.autoUpdate = v !== "0" && v !== "false";
   }
   return opts;
+}
+
+// ── Print settings read (CT_PrintSettings) ──
+
+function readHeaderFooter(ps: XmlElement): HeaderFooterOptions | undefined {
+  const hf = findChild(ps, "c:headerFooter");
+  if (!hf) return undefined;
+  const opts: HeaderFooterOptions = {};
+  const readStr = (tag: string): string | undefined => {
+    const child = findChild(hf, tag);
+    return child ? textOf(child) : undefined;
+  };
+  const oh = readStr("c:oddHeader");
+  if (oh !== undefined) opts.oddHeader = oh;
+  const of = readStr("c:oddFooter");
+  if (of !== undefined) opts.oddFooter = of;
+  const eh = readStr("c:evenHeader");
+  if (eh !== undefined) opts.evenHeader = eh;
+  const ef = readStr("c:evenFooter");
+  if (ef !== undefined) opts.evenFooter = ef;
+  const fh = readStr("c:firstHeader");
+  if (fh !== undefined) opts.firstHeader = fh;
+  const ff = readStr("c:firstFooter");
+  if (ff !== undefined) opts.firstFooter = ff;
+  const readFlag = (name: string): boolean | undefined => {
+    const v = attr(hf, name);
+    return v === undefined ? undefined : v !== "0" && v !== "false";
+  };
+  const alignWithMargins = readFlag("alignWithMargins");
+  if (alignWithMargins !== undefined) opts.alignWithMargins = alignWithMargins;
+  const differentOddEven = readFlag("differentOddEven");
+  if (differentOddEven !== undefined) opts.differentOddEven = differentOddEven;
+  const differentFirst = readFlag("differentFirst");
+  if (differentFirst !== undefined) opts.differentFirst = differentFirst;
+  return Object.keys(opts).length ? opts : undefined;
+}
+
+function readPageMargins(ps: XmlElement): PageMarginsOptions | undefined {
+  const pm = findChild(ps, "c:pageMargins");
+  if (!pm) return undefined;
+  const opts: PageMarginsOptions = {};
+  const readNum = (name: string): number | undefined => {
+    const v = attr(pm, name);
+    return v === undefined ? undefined : Number(v);
+  };
+  const left = readNum("l");
+  if (left !== undefined) opts.left = left;
+  const right = readNum("r");
+  if (right !== undefined) opts.right = right;
+  const top = readNum("t");
+  if (top !== undefined) opts.top = top;
+  const bottom = readNum("b");
+  if (bottom !== undefined) opts.bottom = bottom;
+  const header = readNum("header");
+  if (header !== undefined) opts.header = header;
+  const footer = readNum("footer");
+  if (footer !== undefined) opts.footer = footer;
+  return Object.keys(opts).length ? opts : undefined;
+}
+
+function readPageSetup(ps: XmlElement): PageSetupOptions | undefined {
+  const pg = findChild(ps, "c:pageSetup");
+  if (!pg) return undefined;
+  const opts: PageSetupOptions = {};
+  const readNum = (name: string): number | undefined => {
+    const v = attr(pg, name);
+    return v === undefined ? undefined : Number(v);
+  };
+  const readFlag = (name: string): boolean | undefined => {
+    const v = attr(pg, name);
+    return v === undefined ? undefined : v !== "0" && v !== "false";
+  };
+  const paperSize = readNum("paperSize");
+  if (paperSize !== undefined) opts.paperSize = paperSize;
+  const paperHeight = attr(pg, "paperHeight");
+  if (paperHeight !== undefined) opts.paperHeight = paperHeight;
+  const paperWidth = attr(pg, "paperWidth");
+  if (paperWidth !== undefined) opts.paperWidth = paperWidth;
+  const firstPageNumber = readNum("firstPageNumber");
+  if (firstPageNumber !== undefined) opts.firstPageNumber = firstPageNumber;
+  const orientation = attr(pg, "orientation");
+  if (orientation !== undefined) opts.orientation = orientation as PageSetupOrientation;
+  const blackAndWhite = readFlag("blackAndWhite");
+  if (blackAndWhite !== undefined) opts.blackAndWhite = blackAndWhite;
+  const draft = readFlag("draft");
+  if (draft !== undefined) opts.draft = draft;
+  const useFirstPageNumber = readFlag("useFirstPageNumber");
+  if (useFirstPageNumber !== undefined) opts.useFirstPageNumber = useFirstPageNumber;
+  const horizontalDpi = readNum("horizontalDpi");
+  if (horizontalDpi !== undefined) opts.horizontalDpi = horizontalDpi;
+  const verticalDpi = readNum("verticalDpi");
+  if (verticalDpi !== undefined) opts.verticalDpi = verticalDpi;
+  const copies = readNum("copies");
+  if (copies !== undefined) opts.copies = copies;
+  return Object.keys(opts).length ? opts : undefined;
+}
+
+function readPrintSettings(el: XmlElement): PrintSettingsOptions | undefined {
+  const ps = findChild(el, "c:printSettings");
+  if (!ps) return undefined;
+  const opts: PrintSettingsOptions = {};
+  const headerFooter = readHeaderFooter(ps);
+  if (headerFooter) opts.headerFooter = headerFooter;
+  const pageMargins = readPageMargins(ps);
+  if (pageMargins) opts.pageMargins = pageMargins;
+  const pageSetup = readPageSetup(ps);
+  if (pageSetup) opts.pageSetup = pageSetup;
+  const legacyDrawingHF = findChild(ps, "c:legacyDrawingHF");
+  if (legacyDrawingHF) {
+    const rId = attr(legacyDrawingHF, "r:id");
+    if (rId !== undefined) opts.legacyDrawingId = rId;
+  }
+  return Object.keys(opts).length ? opts : undefined;
 }
 
 // ── Axis read (CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx) ──
@@ -1483,8 +1720,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     parts.push(noFillSpPr());
     parts.push(chartTxPr());
 
-    // CT_ChartSpace: txPr → externalData → (printSettings) → (userShapes)
+    // CT_ChartSpace: txPr → externalData → printSettings → (userShapes)
     if (opts.externalData) parts.push(stringifyExternalData(opts.externalData));
+    if (opts.printSettings) parts.push(stringifyPrintSettings(opts.printSettings));
 
     parts.push("</c:chartSpace>");
 
@@ -1646,6 +1884,8 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // CT_ChartSpace tail: externalData (after c:txPr)
     const externalData = readExternalData(el);
     if (externalData) result.externalData = externalData;
+    const printSettings = readPrintSettings(el);
+    if (printSettings) result.printSettings = printSettings;
 
     return result as ChartSpaceOptions;
   },

@@ -967,13 +967,18 @@ describe("chartSpaceDesc", () => {
       type: "column",
       categories: ["A", "B"],
       series: [{ name: "S", values: [1, 2] }],
-      colorMapOverride: { kind: "override", mapping: { bg1: "lt1", tx1: "dk1" } },
+      colorMapOverride: { bg1: "dk1", tx1: "lt1" },
       protection: { chartObject: true, selection: false },
       externalData: { relationshipId: "rId1", autoUpdate: true },
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
-    expect(xml).toContain("<c:clrMapOvr><a:overrideClrMapping");
-    expect(xml).toContain('bg1="lt1"');
+    // CT_ColorMapping carries 12 ST_ColorSchemeIndex attributes (all required);
+    // keys the caller omits fall back to the identity mapping.
+    expect(xml).toContain("<c:clrMapOvr ");
+    expect(xml).toContain('bg1="dk1"');
+    expect(xml).toContain('tx1="lt1"');
+    expect(xml).toContain('bg2="lt2"');
+    expect(xml).toContain('accent1="accent1"');
     expect(xml).toContain("<c:protection>");
     expect(xml).toContain('<c:chartObject val="1"/>');
     expect(xml).toContain('<c:selection val="0"/>');
@@ -982,24 +987,63 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     expect(result.colorMapOverride).toEqual({
-      kind: "override",
-      mapping: { bg1: "lt1", tx1: "dk1" },
+      bg1: "dk1",
+      tx1: "lt1",
+      bg2: "lt2",
+      tx2: "dk2",
+      accent1: "accent1",
+      accent2: "accent2",
+      accent3: "accent3",
+      accent4: "accent4",
+      accent5: "accent5",
+      accent6: "accent6",
+      hlink: "hlink",
+      folHlink: "folHlink",
     });
     expect(result.protection).toEqual({ chartObject: true, selection: false });
     expect(result.externalData).toEqual({ relationshipId: "rId1", autoUpdate: true });
   });
 
-  it("round-trips master color mapping override", () => {
+  it("round-trips print settings (header/footer, margins, page setup)", () => {
     const opts: ChartSpaceOptions = {
-      type: "line",
-      categories: ["A"],
-      series: [{ name: "S", values: [1] }],
-      colorMapOverride: { kind: "master" },
+      type: "column",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      printSettings: {
+        headerFooter: {
+          oddHeader: "Header Text",
+          oddFooter: "Footer Text",
+          differentOddEven: true,
+        },
+        pageMargins: {
+          left: 0.7,
+          right: 0.7,
+          top: 0.75,
+          bottom: 0.75,
+          header: 0.3,
+          footer: 0.3,
+        },
+        pageSetup: { orientation: "landscape", paperSize: 9, horizontalDpi: 300, copies: 2 },
+      },
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
-    expect(xml).toContain("<c:clrMapOvr><a:masterClrMapping/></c:clrMapOvr>");
+    expect(xml).toContain("<c:printSettings>");
+    expect(xml).toContain('<c:headerFooter differentOddEven="1">');
+    expect(xml).toContain("<c:oddHeader>Header Text</c:oddHeader>");
+    expect(xml).toContain("<c:pageMargins ");
+    expect(xml).toContain('l="0.7"');
+    expect(xml).toContain('t="0.75"');
+    expect(xml).toContain('header="0.3"');
+    expect(xml).toContain('orientation="landscape"');
+    expect(xml).toContain('paperSize="9"');
 
     const result = roundTrip(opts);
-    expect(result.colorMapOverride).toEqual({ kind: "master" });
+    expect(result.printSettings?.headerFooter?.oddHeader).toBe("Header Text");
+    expect(result.printSettings?.headerFooter?.differentOddEven).toBe(true);
+    expect(result.printSettings?.pageMargins?.left).toBe(0.7);
+    expect(result.printSettings?.pageMargins?.top).toBe(0.75);
+    expect(result.printSettings?.pageSetup?.orientation).toBe("landscape");
+    expect(result.printSettings?.pageSetup?.paperSize).toBe(9);
+    expect(result.printSettings?.pageSetup?.copies).toBe(2);
   });
 });

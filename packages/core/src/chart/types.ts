@@ -230,6 +230,8 @@ export interface ChartSpaceOptions {
   protection?: ProtectionOptions;
   /** External linked workbook (c:externalData, after c:txPr). */
   externalData?: ExternalDataOptions;
+  /** Print settings (c:printSettings, after c:externalData). */
+  printSettings?: PrintSettingsOptions;
 }
 
 // ── 3D view ──
@@ -431,10 +433,39 @@ export interface DataTableOptions {
 
 // ── ChartSpace-level containers (CT_ChartSpace) ──
 
-/** Theme color mapping override (EG_ColorOverride). */
-export type ColorMapOverrideOptions =
-  | { kind: "master" }
-  | { kind: "override"; mapping: Record<string, string> };
+export type ColorSchemeIndex =
+  | "dk1"
+  | "lt1"
+  | "dk2"
+  | "lt2"
+  | "accent1"
+  | "accent2"
+  | "accent3"
+  | "accent4"
+  | "accent5"
+  | "accent6"
+  | "hlink"
+  | "folHlink";
+
+/**
+ * Theme color mapping override (a:CT_ColorMapping — 12 ST_ColorSchemeIndex
+ * attributes, all XSD-required). Omitted keys fall back to the identity
+ * mapping on serialization so emission is always schema-valid.
+ */
+export interface ColorMapOverrideOptions {
+  bg1?: ColorSchemeIndex;
+  tx1?: ColorSchemeIndex;
+  bg2?: ColorSchemeIndex;
+  tx2?: ColorSchemeIndex;
+  accent1?: ColorSchemeIndex;
+  accent2?: ColorSchemeIndex;
+  accent3?: ColorSchemeIndex;
+  accent4?: ColorSchemeIndex;
+  accent5?: ColorSchemeIndex;
+  accent6?: ColorSchemeIndex;
+  hlink?: ColorSchemeIndex;
+  folHlink?: ColorSchemeIndex;
+}
 
 /** Chart protection flags (CT_Protection). */
 export interface ProtectionOptions {
@@ -442,13 +473,66 @@ export interface ProtectionOptions {
   data?: boolean;
   formatting?: boolean;
   selection?: boolean;
-  objects?: boolean;
+  userInterface?: boolean;
 }
 
 /** External linked workbook reference (CT_ExternalData). */
 export interface ExternalDataOptions {
   relationshipId: string;
   autoUpdate?: boolean;
+}
+
+// ── Print settings (CT_PrintSettings) ──
+
+/** Print-time header/footer text (CT_HeaderFooter). */
+export interface HeaderFooterOptions {
+  oddHeader?: string;
+  oddFooter?: string;
+  evenHeader?: string;
+  evenFooter?: string;
+  firstHeader?: string;
+  firstFooter?: string;
+  alignWithMargins?: boolean;
+  differentOddEven?: boolean;
+  differentFirst?: boolean;
+}
+
+/** Print page margins in inches (CT_PageMargins, all XSD-required). */
+export interface PageMarginsOptions {
+  left?: number;
+  right?: number;
+  top?: number;
+  bottom?: number;
+  header?: number;
+  footer?: number;
+}
+
+export type PageSetupOrientation = "default" | "portrait" | "landscape";
+
+/** Print page setup (CT_PageSetup). */
+export interface PageSetupOptions {
+  paperSize?: number;
+  /** Paper height as a UniversalMeasure string (mm/cm/in/...). */
+  paperHeight?: string;
+  /** Paper width as a UniversalMeasure string. */
+  paperWidth?: string;
+  firstPageNumber?: number;
+  orientation?: PageSetupOrientation;
+  blackAndWhite?: boolean;
+  draft?: boolean;
+  useFirstPageNumber?: boolean;
+  horizontalDpi?: number;
+  verticalDpi?: number;
+  copies?: number;
+}
+
+/** Print settings (CT_PrintSettings). */
+export interface PrintSettingsOptions {
+  headerFooter?: HeaderFooterOptions;
+  pageMargins?: PageMarginsOptions;
+  pageSetup?: PageSetupOptions;
+  /** Legacy VML drawing relationship id (c:legacyDrawingHF r:id). */
+  legacyDrawingId?: string;
 }
 
 // ── ofPie chart (bar-of-pie / pie-of-pie, CT_OfPieChart) ──
