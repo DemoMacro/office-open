@@ -799,9 +799,7 @@ export function compilePresentation(
 
   // Notes Master
   if (notesOptions.length > 0) {
-    const notesMasterRId = presRels.relationshipCount + 1;
-    presRels.addRelationship(
-      notesMasterRId,
+    const notesMasterRId = presRels.add(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
       "notesMasters/notesMaster1.xml",
     );
@@ -832,9 +830,7 @@ export function compilePresentation(
 
   // Handout Master
   if (includeHandout) {
-    const handoutMasterRId = presRels.relationshipCount + 1;
-    presRels.addRelationship(
-      handoutMasterRId,
+    const handoutMasterRId = presRels.add(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster",
       "handoutMasters/handoutMaster1.xml",
     );
@@ -865,8 +861,7 @@ export function compilePresentation(
 
   // Comment Authors
   if (commentAuthorEntries) {
-    presRels.addRelationship(
-      presRels.relationshipCount + 1,
+    presRels.add(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors",
       "commentAuthors.xml",
     );
@@ -1023,8 +1018,7 @@ export function compilePresentation(
     };
 
     if (slideCommentEntries[i]) {
-      currentSlideRels.addRelationship(
-        currentSlideRels.relationshipCount + 1,
+      currentSlideRels.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
         `../comments/comment${i + 1}.xml`,
       );
@@ -1032,8 +1026,7 @@ export function compilePresentation(
 
     const notesSlideIndex = notesSlideIndexMap.get(i);
     if (notesSlideIndex !== undefined) {
-      currentSlideRels.addRelationship(
-        currentSlideRels.relationshipCount + 1,
+      currentSlideRels.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
         `../notesSlides/notesSlide${notesSlideIndex + 1}.xml`,
       );
@@ -1041,8 +1034,7 @@ export function compilePresentation(
 
     const slideSyncIndex = slideSyncIndexMap.get(i);
     if (slideSyncIndex !== undefined) {
-      currentSlideRels.addRelationship(
-        currentSlideRels.relationshipCount + 1,
+      currentSlideRels.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideSyncProperties",
         `../slideSyncPr/slideSyncPr${slideSyncIndex + 1}.xml`,
       );

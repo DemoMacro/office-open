@@ -34,9 +34,7 @@ export class XlsxWriteContext implements WriteContext {
   // ── WriteContext stubs (core interface) ──
 
   public addRelationship(type: RelationshipType, target: string, _mode?: string): string {
-    const id = this.workbookRels.relationshipCount + 1;
-    this.workbookRels.addRelationship(id, type, target);
-    return `rId${id}`;
+    return `rId${this.workbookRels.add(type, target)}`;
   }
 
   public addMedia(_data: Uint8Array, _type: string): string {

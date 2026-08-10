@@ -97,6 +97,23 @@ export class Relationships {
     this.entries.push({ id: `rId${id}`, type, target, targetMode });
   }
 
+  /**
+   * Register a relationship with an auto-allocated sequential id and return
+   * the numeric id. Prefer this over the `relationshipCount + 1` +
+   * `addRelationship` pair at every call site that wants the next id; reach
+   * for `addRelationship` directly only when the id is externally determined
+   * (a contiguous batch pre-computed from an offset, a fixed rId1, …).
+   */
+  public add(
+    type: RelationshipType,
+    target: string,
+    targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
+  ): number {
+    const id = this.entries.length + 1;
+    this.entries.push({ id: `rId${id}`, type, target, targetMode });
+    return id;
+  }
+
   public get relationshipCount(): number {
     return this.entries.length;
   }
