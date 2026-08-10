@@ -163,6 +163,41 @@ describe("paragraphDesc round-trip", () => {
     expect(anBullet.startAt).toBe(1);
   });
 
+  it("round-trips bullet color/size/font follows-text and points variants", () => {
+    const r = roundTrip({
+      text: "x",
+      properties: {
+        bullet: {
+          type: "char",
+          char: "•",
+          colorFollowsText: true,
+          sizePoints: 1200,
+          fontFollowsText: true,
+        },
+      },
+    });
+    const b = r.properties?.bullet as {
+      type: string;
+      colorFollowsText?: boolean;
+      sizePoints?: number;
+      fontFollowsText?: boolean;
+    };
+    expect(b.type).toBe("char");
+    expect(b.colorFollowsText).toBe(true);
+    expect(b.sizePoints).toBe(1200);
+    expect(b.fontFollowsText).toBe(true);
+  });
+
+  it("round-trips a picture bullet (a:buBlip)", () => {
+    const r = roundTrip({
+      text: "y",
+      properties: { bullet: { type: "picture", embed: "rId2" } },
+    });
+    const b = r.properties?.bullet as { type: string; embed?: string };
+    expect(b.type).toBe("picture");
+    expect(b.embed).toBe("rId2");
+  });
+
   it("preserves single-run formatting (no text-shorthand collapse)", () => {
     const r = roundTrip({ children: [{ text: "Bold", bold: true }] });
     const children = r.children! as RunOptions[];

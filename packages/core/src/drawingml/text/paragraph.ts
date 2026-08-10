@@ -21,6 +21,8 @@ import type {
   BulletAutoNumOptions,
   BulletCharOptions,
   BulletOptions,
+  BulletPictureOptions,
+  BulletStyleOptions,
   ParagraphPropertiesOptions,
   RunOptions,
   RunPropertiesOptions,
@@ -90,24 +92,44 @@ function stringifyBullet(options: BulletOptions): string[] {
     return parts;
   }
 
-  if (options.color) {
+  // Color: buClrTx | buClr
+  if (options.colorFollowsText) {
+    parts.push("<a:buClrTx/>");
+  } else if (options.color) {
     parts.push(`<a:buClr><a:srgbClr val="${options.color.replace("#", "")}"/></a:buClr>`);
   }
 
-  if (options.size !== undefined) {
+  // Size: buSzTx | buSzPts | buSzPct
+  if (options.sizeFollowsText) {
+    parts.push("<a:buSzTx/>");
+  } else if (options.sizePoints !== undefined) {
+    parts.push(`<a:buSzPts val="${options.sizePoints}"/>`);
+  } else if (options.size !== undefined) {
     parts.push(`<a:buSzPct val="${options.size}%"/>`);
   }
 
-  parts.push(
-    `<a:buFont typeface="${options.font ?? "Arial"}" panose="020B0604020202020204" pitchFamily="34" charset="0"/>`,
-  );
+  // Font: buFontTx | buFont. Fresh char/autoNum bullets default to Arial.
+  if (options.fontFollowsText) {
+    parts.push("<a:buFontTx/>");
+  } else if (options.font !== undefined) {
+    parts.push(
+      `<a:buFont typeface="${options.font}" panose="020B0604020202020204" pitchFamily="34" charset="0"/>`,
+    );
+  } else if (options.type === "char" || options.type === "autoNum") {
+    parts.push(
+      `<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>`,
+    );
+  }
 
+  // Bullet type: buChar | buAutoNum | buBlip
   if (options.type === "char") {
     parts.push(`<a:buChar char="${escapeXml(options.char ?? "•")}"/>`);
   } else if (options.type === "autoNum") {
     const buAttrs: string[] = [`type="${options.format ?? "arabicPeriod"}"`];
     if (options.startAt !== undefined) buAttrs.push(`startAt="${options.startAt}"`);
     parts.push(`<a:buAutoNum ${buAttrs.join(" ")}/>`);
+  } else if (options.type === "picture") {
+    parts.push(`<a:buBlip r:embed="${options.embed}"/>`);
   }
 
   return parts;
@@ -159,39 +181,58 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
   // Bullets
   if (findChild(el, "a:buNone")) {
     result.bullet = { type: "none" };
-  } else if (findChild(el, "a:buChar") || findChild(el, "a:buAutoNum")) {
+  } else {
     const buChar = findChild(el, "a:buChar");
-    if (buChar) {
-      const bullet: Mutable<BulletCharOptions> = { type: "char" };
-      if (buChar.attributes?.["char"]) bullet.char = String(buChar.attributes["char"]);
-      const buFont = findChild(el, "a:buFont");
-      if (buFont?.attributes?.["typeface"]) bullet.font = String(buFont.attributes["typeface"]);
-      const buClr = findChild(el, "a:buClr");
-      if (buClr) {
-        const srgb = findChild(buClr, "a:srgbClr");
-        if (srgb?.attributes?.["val"]) bullet.color = String(srgb.attributes["val"]);
+    const buAutoNum = findChild(el, "a:buAutoNum");
+    const buBlip = findChild(el, "a:buBlip");
+    if (buChar || buAutoNum || buBlip) {
+      // Shared color/size/font style — each dimension is a choice.
+      const style: Mutable<BulletStyleOptions> = {};
+      if (findChild(el, "a:buClrTx")) {
+        style.colorFollowsText = true;
+      } else {
+        const buClr = findChild(el, "a:buClr");
+        if (buClr) {
+          const srgb = findChild(buClr, "a:srgbClr");
+          if (srgb?.attributes?.["val"]) style.color = String(srgb.attributes["val"]);
+        }
       }
-      const buSz = findChild(el, "a:buSzPct");
-      if (buSz?.attributes?.["val"])
-        bullet.size = Number(String(buSz.attributes["val"]).replace("%", ""));
-      result.bullet = bullet as BulletCharOptions;
-    } else {
-      const buAutoNum = findChild(el, "a:buAutoNum")!;
-      const bullet: Mutable<BulletAutoNumOptions> = { type: "autoNum" };
-      if (buAutoNum.attributes?.["type"]) bullet.format = String(buAutoNum.attributes["type"]);
-      const buFont = findChild(el, "a:buFont");
-      if (buFont?.attributes?.["typeface"]) bullet.font = String(buFont.attributes["typeface"]);
-      if (buAutoNum.attributes?.["startAt"] !== undefined)
-        bullet.startAt = Number(buAutoNum.attributes["startAt"]);
-      const buClr = findChild(el, "a:buClr");
-      if (buClr) {
-        const srgb = findChild(buClr, "a:srgbClr");
-        if (srgb?.attributes?.["val"]) bullet.color = String(srgb.attributes["val"]);
+      if (findChild(el, "a:buSzTx")) {
+        style.sizeFollowsText = true;
+      } else {
+        const buSzPts = findChild(el, "a:buSzPts");
+        if (buSzPts?.attributes?.["val"]) {
+          style.sizePoints = Number(buSzPts.attributes["val"]);
+        } else {
+          const buSzPct = findChild(el, "a:buSzPct");
+          if (buSzPct?.attributes?.["val"])
+            style.size = Number(String(buSzPct.attributes["val"]).replace("%", ""));
+        }
       }
-      const buSz = findChild(el, "a:buSzPct");
-      if (buSz?.attributes?.["val"])
-        bullet.size = Number(String(buSz.attributes["val"]).replace("%", ""));
-      result.bullet = bullet as BulletAutoNumOptions;
+      if (findChild(el, "a:buFontTx")) {
+        style.fontFollowsText = true;
+      } else {
+        const buFont = findChild(el, "a:buFont");
+        if (buFont?.attributes?.["typeface"]) style.font = String(buFont.attributes["typeface"]);
+      }
+
+      if (buBlip) {
+        result.bullet = {
+          type: "picture",
+          embed: String(buBlip.attributes?.["r:embed"] ?? ""),
+          ...style,
+        } as BulletPictureOptions;
+      } else if (buChar) {
+        const bullet: Mutable<BulletCharOptions> = { type: "char", ...style };
+        if (buChar.attributes?.["char"]) bullet.char = String(buChar.attributes["char"]);
+        result.bullet = bullet as BulletCharOptions;
+      } else {
+        const bullet: Mutable<BulletAutoNumOptions> = { type: "autoNum", ...style };
+        if (buAutoNum!.attributes?.["type"]) bullet.format = String(buAutoNum!.attributes["type"]);
+        if (buAutoNum!.attributes?.["startAt"] !== undefined)
+          bullet.startAt = Number(buAutoNum!.attributes["startAt"]);
+        result.bullet = bullet as BulletAutoNumOptions;
+      }
     }
   }
 

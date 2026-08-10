@@ -84,28 +84,49 @@ export interface RunOptions extends RunPropertiesOptions {
 
 // ── Bullets ──
 
-export type BulletCharOptions = {
-  type: "char";
-  char?: string;
+/** Shared bullet color/size/font styling (EG_TextBulletColorSizeFont). Each
+ * dimension is a choice: an explicit value, a "follows text" toggle, or unset. */
+export type BulletStyleOptions = {
+  /** a:buClr > a:srgbClr — explicit bullet color (hex, no #). */
   color?: string;
+  /** a:buClrTx — bullet color follows the text run color. */
+  colorFollowsText?: boolean;
+  /** a:buSzPct @val — bullet size as a percentage of the text size. */
   size?: number;
-  /** a:buFont @typeface — bullet font (defaults to Arial on fresh bullet emit). */
+  /** a:buSzTx — bullet size follows the text run size. */
+  sizeFollowsText?: boolean;
+  /** a:buSzPts @val — bullet size in hundredths of a point. */
+  sizePoints?: number;
+  /** a:buFont @typeface — bullet font (defaults to Arial on fresh char/autoNum). */
   font?: string;
+  /** a:buFontTx — bullet font follows the text run font. */
+  fontFollowsText?: boolean;
 };
 
-export type BulletAutoNumOptions = {
+export type BulletCharOptions = BulletStyleOptions & {
+  type: "char";
+  char?: string;
+};
+
+export type BulletAutoNumOptions = BulletStyleOptions & {
   type: "autoNum";
   format?: string;
   startAt?: number;
-  color?: string;
-  size?: number;
-  /** a:buFont @typeface — bullet font (defaults to Arial on fresh bullet emit). */
-  font?: string;
+};
+
+/** Picture bullet (a:buBlip r:embed). `embed` is the image relationship id. */
+export type BulletPictureOptions = BulletStyleOptions & {
+  type: "picture";
+  embed: string;
 };
 
 export type BulletNoneOption = { type: "none" };
 
-export type BulletOptions = BulletCharOptions | BulletAutoNumOptions | BulletNoneOption;
+export type BulletOptions =
+  | BulletCharOptions
+  | BulletAutoNumOptions
+  | BulletPictureOptions
+  | BulletNoneOption;
 
 // ── Paragraph properties (a:pPr) ──
 
