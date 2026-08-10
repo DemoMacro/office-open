@@ -30,7 +30,7 @@ Full standards in [CONTRIBUTING.md](./CONTRIBUTING.md). Quick reference:
 
 - **Naming**: `<part>Desc` descriptors, `<Part>Options` interfaces, `stringify*()` / `parse*()` / `patch*()` helpers
 - **Properties**: full English words (camelCase); OOXML attribute tokens (`id`/`idx`/`numFmt`/`fontId`/…) preserved verbatim; reference elements → `*Reference`; never compound abbreviations like `lnIdx` → `lineReferenceIndex` — see [CONTRIBUTING.md#property-naming](./CONTRIBUTING.md#property-naming)
-- **Constants**: `as const` objects, SCREAMING_SNAKE_CASE keys, lowercase values
+- **Enums**: string literal unions by default; `as const` objects (SCREAMING_SNAKE_CASE keys, lowercase values) only when values are referenced at runtime
 - **Files**: kebab-case, no `I` prefix on interfaces, no `readonly` on Options properties
 - **Loops**: `for...of` default, `.map()` only when returning a new array
 - **XML generation**: string concatenation via template literals, no intermediate object trees

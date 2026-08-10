@@ -101,22 +101,26 @@ Use **camelCase**. Follow the appropriate prefix convention:
 | `build*`     | Build lookup tables or composite XML | `buildContentTypes()`, `buildTransition()`         |
 | `compile*`   | Top-level compilation entry          | `compileDocument()`, `compilePresentation()`       |
 
-### Constants (Enumerated Types)
+### Enumerated Types
 
-Use `as const` objects (not TypeScript `enum`). Keys use **SCREAMING_SNAKE_CASE**. Values use **lowercase full English words**.
+Prefer **string literal unions** for enumerated option types. They are pure types (no runtime object), keep the call site self-documenting (`position: "b"`), and have no runtime cost. Map XSD abbreviations to full words in JSDoc, not via a value object.
 
 ```typescript
-export const AlignmentType = {
-  START: "start", // XSD: "start"
-  CENTER: "center", // XSD: "center"
-} as const;
+// Preferred: string literal union
+export type AxisPosition = "b" | "l" | "r" | "t";
 
-// When XSD uses abbreviations — map to full words
-export const TextAlignment = {
-  LEFT: "left", // XSD: "l"
-  CENTER: "center", // XSD: "ctr"
-} as const;
+/** XSD ST_TickMark: cross / in / none / out */
+export type AxisTickMark = "cross" | "in" | "none" | "out";
 ```
+
+Use an `as const` object **only when the values are referenced at runtime** — iteration, `Record<Enum, T>` lookup keys, or `Enum.KEY` access in demos/tests. The runtime object must justify itself; a pure option-field type stays a string union. Keys then use **SCREAMING_SNAKE_CASE**, values **lowercase full English words**.
+
+```typescript
+// Justified: consumed as Record keys / iterated at runtime
+const CHART_TYPE_TAGS: Record<ChartType, string> = { column: "c:barChart", ... };
+```
+
+Do **not** use TypeScript `enum`. Historical `as const` enumerated option types in docx/pptx/xlsx are migrated to string unions opportunistically when touched; the chart module is fully migrated.
 
 ### Property Naming
 

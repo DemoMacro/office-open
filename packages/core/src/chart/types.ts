@@ -43,16 +43,7 @@ export interface BubbleSeriesData extends ChartSeriesCommon {
 
 // ── Trendline ──
 
-export const TrendlineType = {
-  EXP: "exp",
-  LINEAR: "linear",
-  LOG: "log",
-  MOVING_AVG: "movingAvg",
-  POLY: "poly",
-  POWER: "power",
-} as const;
-
-export type TrendlineType = (typeof TrendlineType)[keyof typeof TrendlineType];
+export type TrendlineType = "exp" | "linear" | "log" | "movingAvg" | "poly" | "power";
 
 /** Trendline label formatting (CT_TrendlineLbl — all children optional). */
 export interface TrendlineLabelOptions {
@@ -76,31 +67,11 @@ export interface TrendlineOptions {
 
 // ── Error bars ──
 
-export const ErrorBarDirection = {
-  BOTH: "both",
-  X: "x",
-  Y: "y",
-} as const;
+export type ErrorBarDirection = "both" | "x" | "y";
 
-export type ErrorBarDirection = (typeof ErrorBarDirection)[keyof typeof ErrorBarDirection];
+export type ErrorBarType = "both" | "minus" | "plus";
 
-export const ErrorBarType = {
-  BOTH: "both",
-  MINUS: "minus",
-  PLUS: "plus",
-} as const;
-
-export type ErrorBarType = (typeof ErrorBarType)[keyof typeof ErrorBarType];
-
-export const ErrorValueType = {
-  CUST: "cust",
-  FIXED: "fixedVal",
-  PERCENTAGE: "percentage",
-  STD_DEV: "stdDev",
-  STD_ERR: "stdErr",
-} as const;
-
-export type ErrorValueType = (typeof ErrorValueType)[keyof typeof ErrorValueType];
+export type ErrorValueType = "cust" | "fixedVal" | "percentage" | "stdDev" | "stdErr";
 
 export interface ErrorBarOptions {
   direction?: ErrorBarDirection;
@@ -116,19 +87,16 @@ export interface ErrorBarOptions {
 
 // ── Data labels ──
 
-export const DataLabelPosition = {
-  BEST_FIT: "bestFit",
-  B: "b",
-  CTRL: "ctr",
-  IN_BASE: "inBase",
-  IN_END: "inEnd",
-  L: "l",
-  OUT_END: "outEnd",
-  R: "r",
-  T: "t",
-} as const;
-
-export type DataLabelPosition = (typeof DataLabelPosition)[keyof typeof DataLabelPosition];
+export type DataLabelPosition =
+  | "bestFit"
+  | "b"
+  | "ctr"
+  | "inBase"
+  | "inEnd"
+  | "l"
+  | "outEnd"
+  | "r"
+  | "t";
 
 /** Single data-point label override (CT_DLbl). */
 export interface DataLabelOptions {
@@ -256,13 +224,7 @@ export interface ChartSpaceOptions {
 
 // ── 3D view ──
 
-export const TimeUnit = {
-  DAYS: "days",
-  MONTHS: "months",
-  YEARS: "years",
-} as const;
-
-export type TimeUnit = (typeof TimeUnit)[keyof typeof TimeUnit];
+export type TimeUnit = "days" | "months" | "years";
 
 export interface View3DOptions {
   rotX?: number;
@@ -276,77 +238,32 @@ export interface View3DOptions {
 
 // ── Chart axes (EG_AxShared + CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx) ──
 
-export const AxisKind = {
-  CATEGORY: "category",
-  VALUE: "value",
-  DATE: "date",
-  SERIES: "series",
-} as const;
-export type AxisKind = (typeof AxisKind)[keyof typeof AxisKind];
+export type AxisKind = "category" | "value" | "date" | "series";
 
-export const AxisPosition = {
-  BOTTOM: "b",
-  LEFT: "l",
-  RIGHT: "r",
-  TOP: "t",
-} as const;
-export type AxisPosition = (typeof AxisPosition)[keyof typeof AxisPosition];
+export type AxisPosition = "b" | "l" | "r" | "t";
 
-export const AxisTickMark = {
-  CROSS: "cross",
-  IN: "in",
-  NONE: "none",
-  OUT: "out",
-} as const;
-export type AxisTickMark = (typeof AxisTickMark)[keyof typeof AxisTickMark];
+export type AxisTickMark = "cross" | "in" | "none" | "out";
 
-export const AxisTickLabelPosition = {
-  HIGH: "high",
-  LOW: "low",
-  NEXT_TO: "nextTo",
-  NONE: "none",
-} as const;
-export type AxisTickLabelPosition =
-  (typeof AxisTickLabelPosition)[keyof typeof AxisTickLabelPosition];
+export type AxisTickLabelPosition = "high" | "low" | "nextTo" | "none";
 
-export const AxisCrosses = {
-  AUTO_ZERO: "autoZero",
-  MAX: "max",
-  MIN: "min",
-} as const;
-export type AxisCrosses = (typeof AxisCrosses)[keyof typeof AxisCrosses];
+export type AxisCrosses = "autoZero" | "max" | "min";
 
-export const AxisCrossBetween = {
-  BETWEEN: "between",
-  MID_CATEGORY: "midCat",
-} as const;
-export type AxisCrossBetween = (typeof AxisCrossBetween)[keyof typeof AxisCrossBetween];
+export type AxisCrossBetween = "between" | "midCat";
 
-export const AxisOrientation = {
-  MIN_MAX: "minMax",
-  MAX_MIN: "maxMin",
-} as const;
-export type AxisOrientation = (typeof AxisOrientation)[keyof typeof AxisOrientation];
+export type AxisOrientation = "minMax" | "maxMin";
 
-export const AxisLabelAlignment = {
-  CENTER: "ctr",
-  LEFT: "l",
-  RIGHT: "r",
-} as const;
-export type AxisLabelAlignment = (typeof AxisLabelAlignment)[keyof typeof AxisLabelAlignment];
+export type AxisLabelAlignment = "ctr" | "l" | "r";
 
-export const BuiltInDisplayUnit = {
-  HUNDREDS: "hundreds",
-  THOUSANDS: "thousands",
-  TEN_THOUSANDS: "tenThousands",
-  HUNDRED_THOUSANDS: "hundredThousands",
-  MILLIONS: "millions",
-  TEN_MILLIONS: "tenMillions",
-  HUNDRED_MILLIONS: "hundredMillions",
-  BILLIONS: "billions",
-  TRILLIONS: "trillions",
-} as const;
-export type BuiltInDisplayUnit = (typeof BuiltInDisplayUnit)[keyof typeof BuiltInDisplayUnit];
+export type BuiltInDisplayUnit =
+  | "hundreds"
+  | "thousands"
+  | "tenThousands"
+  | "hundredThousands"
+  | "millions"
+  | "tenMillions"
+  | "hundredMillions"
+  | "billions"
+  | "trillions";
 
 /** Axis scale bounds and orientation (CT_Scaling). */
 export interface AxisScalingOptions {
@@ -416,20 +333,18 @@ export interface AxisOptions {
 
 // ── Series marker / data point / picture options (CT_Marker/CT_DPt/CT_PictureOptions) ──
 
-export const MarkerSymbol = {
-  CIRCLE: "circle",
-  DASH: "dash",
-  DIAMOND: "diamond",
-  DOT: "dot",
-  NONE: "none",
-  PICTURE: "picture",
-  PLUS: "plus",
-  SQUARE: "square",
-  STAR: "star",
-  TRIANGLE: "triangle",
-  X: "x",
-} as const;
-export type MarkerSymbol = (typeof MarkerSymbol)[keyof typeof MarkerSymbol];
+export type MarkerSymbol =
+  | "circle"
+  | "dash"
+  | "diamond"
+  | "dot"
+  | "none"
+  | "picture"
+  | "plus"
+  | "square"
+  | "star"
+  | "triangle"
+  | "x";
 
 /** Line/scatter/radar point marker (CT_Marker). */
 export interface MarkerOptions {
@@ -451,13 +366,7 @@ export interface DataPointOptions {
   pictureOptions?: PictureOptionsOptions;
 }
 
-export const PictureFormat = {
-  STACK: "stack",
-  SCALE: "scale",
-  STACK_SCALE: "stackScale",
-  STRETCH: "stretch",
-} as const;
-export type PictureFormat = (typeof PictureFormat)[keyof typeof PictureFormat];
+export type PictureFormat = "stack" | "scale" | "stackScale" | "stretch";
 
 /** Picture-fill options for bar/area series (CT_PictureOptions). */
 export interface PictureOptionsOptions {
@@ -469,29 +378,13 @@ export interface PictureOptionsOptions {
   pictureStackUnit?: number;
 }
 
-export const BarShape = {
-  CONE: "cone",
-  CONE_TO_MAX: "coneToMax",
-  BOX: "box",
-  CYLINDER: "cylinder",
-  PYRAMID: "pyramid",
-  PYRAMID_TO_MAX: "pyramidToMax",
-} as const;
-export type BarShape = (typeof BarShape)[keyof typeof BarShape];
+export type BarShape = "cone" | "coneToMax" | "box" | "cylinder" | "pyramid" | "pyramidToMax";
 
 // ── Plot-area layout + 3D surfaces (CT_ManualLayout / CT_Layout / CT_Surface) ──
 
-export const LayoutTarget = {
-  INNER: "inner",
-  OUTER: "outer",
-} as const;
-export type LayoutTarget = (typeof LayoutTarget)[keyof typeof LayoutTarget];
+export type LayoutTarget = "inner" | "outer";
 
-export const LayoutMode = {
-  EDGE: "edge",
-  FACTOR: "factor",
-} as const;
-export type LayoutMode = (typeof LayoutMode)[keyof typeof LayoutMode];
+export type LayoutMode = "edge" | "factor";
 
 /** Manual plot-area layout (CT_ManualLayout). Field order follows the XSD. */
 export interface ManualLayoutOptions {
@@ -514,18 +407,9 @@ export interface SurfaceOptions {
 
 // ── Chart-level scalars (CT_Chart tail + CT_xxxChart type-specific heads) ──
 
-export const DisplayBlanksAs = {
-  GAP: "gap",
-  SPAN: "span",
-  ZERO: "zero",
-} as const;
-export type DisplayBlanksAs = (typeof DisplayBlanksAs)[keyof typeof DisplayBlanksAs];
+export type DisplayBlanksAs = "gap" | "span" | "zero";
 
-export const SizeRepresents = {
-  AREA: "area",
-  WIDTH: "w",
-} as const;
-export type SizeRepresents = (typeof SizeRepresents)[keyof typeof SizeRepresents];
+export type SizeRepresents = "area" | "w";
 
 /** Plot-area data table (CT_DTable). */
 export interface DataTableOptions {
