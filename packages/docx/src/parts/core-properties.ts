@@ -1,4 +1,3 @@
-import type { BibliographyOptions } from "@parts/bibliography";
 /**
  * Core Properties module for WordprocessingML documents.
  *
@@ -9,7 +8,8 @@ import type { BibliographyOptions } from "@parts/bibliography";
  *
  * @module
  */
-import type { ContentTypesInput } from "@parts/contenttypes";
+import type { ContentTypesInput } from "@office-open/core";
+import type { BibliographyOptions } from "@parts/bibliography";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { CommentsOptions } from "@parts/paragraph/run/comment-run";

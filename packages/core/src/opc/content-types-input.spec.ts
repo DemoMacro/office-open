@@ -111,4 +111,28 @@ describe("deriveContentTypes", () => {
     expect(xml).toContain('<Default Extension="png"');
     expect(xml).toContain('<Default Extension="rels"');
   });
+
+  it("merges explicit overrides for data-driven parts (altChunks, sub-documents)", () => {
+    // altChunk paths are not in the registry and carry a per-file content type.
+    const input = deriveContentTypes(["word/afchunks/chunk1.html", "word/document.xml"], {
+      resolve,
+      mediaContentTypes: MEDIA,
+      overrides: [{ path: "word/afchunks/chunk1.html", contentType: "text/html" }],
+    });
+    const partNames = input.overrides.map((o) => o.partName);
+    expect(partNames).toContain("/word/afchunks/chunk1.html");
+    expect(
+      input.overrides.find((o) => o.partName === "/word/afchunks/chunk1.html")?.contentType,
+    ).toBe("text/html");
+  });
+
+  it("lets an explicit override take precedence over a resolver match for the same path", () => {
+    const input = deriveContentTypes(["ppt/presentation.xml"], {
+      resolve,
+      mediaContentTypes: MEDIA,
+      overrides: [{ path: "ppt/presentation.xml", contentType: "application/custom+xml" }],
+    });
+    expect(input.overrides).toHaveLength(1);
+    expect(input.overrides[0]!.contentType).toBe("application/custom+xml");
+  });
 });

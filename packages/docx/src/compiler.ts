@@ -11,7 +11,10 @@
 
 import {
   addSmartArtRelationships,
+  contentTypesDesc,
   createThemeXml,
+  deriveContentTypes,
+  DOCX_PARTS,
   findAndReplaceImagePlaceholders,
   formatId,
   hasPlaceholders,
@@ -19,6 +22,7 @@ import {
   optionalRelsPart,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
+  resolverFromRegistry,
 } from "@office-open/core";
 import type { XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
 import {
@@ -38,11 +42,6 @@ import {
   corePropertiesDesc,
   customPropertiesDesc,
   appPropertiesDesc,
-  contentTypesDesc,
-  buildContentTypesFromRegistry,
-  withAltChunkOverrides,
-  withMediaDefaults,
-  ensureCustomPropertiesOverride,
   fontTableDesc,
   webSettingsDesc,
   commentsDesc,
@@ -58,6 +57,27 @@ const encoder = new TextEncoder();
 
 /** XML declaration prepended to every OOXML part. */
 const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+
+/** DOCX part path → content type, derived from the part registry. */
+const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
+
+/** Extension → MIME for media/font/embedding Default entries. Declared only
+ * for extensions actually present in the package. */
+const DOCX_MEDIA_CONTENT_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  bmp: "image/bmp",
+  gif: "image/gif",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  emf: "image/x-emf",
+  wmf: "image/x-wmf",
+  ico: "image/x-icon",
+  svg: "image/svg+xml",
+  odttf: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
+  bin: "application/vnd.openxmlformats-officedocument.oleObject",
+};
 
 /** Extended context for header/footer formatted view caching. */
 type DocxContext = BodyContext & {
@@ -214,39 +234,36 @@ function mergedCommentChildren(ctx: DocxWriteContext): CommentOptions[] {
  * inside its object literal, where ContentTypes would evaluate before the
  * later-defined header/footer/font parts have registered their media.
  */
+/**
+ * Derive [Content_Types].xml from the parts actually written to the package.
+ *
+ * The file set is the single source of truth: every part the resolver knows
+ * becomes an Override, every other file falls through to an extension Default,
+ * and altChunk/sub-document parts — whose content type is data-driven, not
+ * path-determinable — are injected as explicit overrides.
+ *
+ * Round-trip no longer passes the source [Content_Types] through: the compiler
+ * regenerates every part path (altChunks get a fresh uniqueId), so deriving
+ * from the written files is what keeps declarations and parts in sync.
+ */
 function buildContentTypesData(ctx: DocxWriteContext, files: Zippable): string {
-  const altChunks = ctx.altChunks.array.map((ac) => ({
-    path: `/word/${ac.path}`,
-    contentType: ac.contentType ?? "application/xhtml+xml",
-  }));
-  // Round-trip passes the source [Content_Types] through, but the compiler
-  // regenerates altChunk part paths — realign the afchunk Overrides to the
-  // freshly written parts (else O5/O6).
-  const base = ctx._options.contentTypes
-    ? ensureCustomPropertiesOverride(withAltChunkOverrides(ctx._options.contentTypes, altChunks))
-    : buildContentTypesFromRegistry(
-        new Map<string, boolean | number>([
-          ["freshCompile", true],
-          ["hasComments", mergedCommentChildren(ctx).length > 0],
-          ["hasBibliography", !!ctx._options.bibliography],
-          ["hasGlossary", !!ctx.glossaryOptions],
-          ["hasWebSettings", !!ctx.webSettings],
-          ["headerCount", ctx.headers.length],
-          ["footerCount", ctx.footers.length],
-          ["chartCount", ctx.charts.array.length],
-          ["smartArtCount", ctx.smartArts.array.length],
-        ]),
-        {
-          altChunks,
-          subDocs: ctx.subDocs.array.map((sd) => ({ path: `/word/${sd.path}` })),
-        },
-      );
-  // Backfill <Default> extensions from every part actually written to the
-  // package — the parts on disk are the single source of truth, so media/font/
-  // embedding defaults can never drift from what the package contains (e.g. a
-  // font written via the fallback path when `odttfPath` is unset).
-  const withMedia = withMediaDefaults(base, Object.keys(files));
-  return XML_DECL + (contentTypesDesc.stringify(withMedia, ctx) ?? "");
+  const overrides = [
+    ...ctx.altChunks.array.map((ac) => ({
+      path: `word/${ac.path}`,
+      contentType: ac.contentType ?? "application/xhtml+xml",
+    })),
+    ...ctx.subDocs.array.map((sd) => ({
+      path: `word/${sd.path}`,
+      contentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+    })),
+  ];
+  const input = deriveContentTypes(Object.keys(files), {
+    resolve: DOCX_CONTENT_TYPE_RESOLVER,
+    mediaContentTypes: DOCX_MEDIA_CONTENT_TYPES,
+    overrides,
+  });
+  return XML_DECL + (contentTypesDesc.stringify(input, ctx) ?? "");
 }
 
 function xmlifyContext(

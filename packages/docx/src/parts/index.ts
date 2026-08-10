@@ -27,7 +27,6 @@ export * from "./bibliography";
 export * from "./glossary-document";
 export * from "./object";
 export * from "./comments";
-export * from "./contenttypes";
 export * from "./inline";
 export * from "./bodychildren";
 export * from "./core-properties";

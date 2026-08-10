@@ -127,6 +127,12 @@ export interface DeriveContentTypesOptions {
   mediaContentTypes: Readonly<Record<string, string>>;
   /** Always-present Default entries. Defaults to rels + xml. */
   baseDefaults?: ContentTypeDefault[];
+  /** Per-file Overrides for parts whose content type is data-driven and not
+   * path-determinable — docx altChunks carry a caller-supplied MIME, and
+   * sub-documents live at an arbitrary path. Each path is normalized to a
+   * leading slash and takes precedence over a resolver match for the same
+   * path. */
+  overrides?: ReadonlyArray<{ path: string; contentType: string }>;
 }
 
 function extensionOf(path: string): string | undefined {
@@ -150,13 +156,16 @@ export function deriveContentTypes(
 ): ContentTypesInput {
   const defaults: ContentTypeDefault[] = [...(options.baseDefaults ?? BASE_DEFAULTS)];
   const seenExt = new Set(defaults.map((d) => d.extension.toLowerCase()));
-  const overrides: ContentTypeOverride[] = [];
+  // Keyed by lowercased PartName so explicit `overrides` entries (altChunks,
+  // sub-documents) take precedence over a resolver match for the same path.
+  const overrideMap = new Map<string, ContentTypeOverride>();
 
   for (const path of filePaths) {
     if (path === "[Content_Types].xml") continue;
     const partType = options.resolve(path);
     if (partType) {
-      overrides.push({ partName: withLeadingSlash(path), contentType: partType });
+      const partName = withLeadingSlash(path);
+      overrideMap.set(partName.toLowerCase(), { partName, contentType: partType });
       continue;
     }
     const ext = extensionOf(path);
@@ -169,5 +178,9 @@ export function deriveContentTypes(
       seenExt.add(key);
     }
   }
-  return { defaults, overrides };
+  for (const extra of options.overrides ?? []) {
+    const partName = withLeadingSlash(extra.path);
+    overrideMap.set(partName.toLowerCase(), { partName, contentType: extra.contentType });
+  }
+  return { defaults, overrides: [...overrideMap.values()] };
 }
