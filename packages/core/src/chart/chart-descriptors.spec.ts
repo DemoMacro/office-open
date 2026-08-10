@@ -394,4 +394,332 @@ describe("chartSpaceDesc", () => {
     const result = roundTrip(opts);
     expect((result.series[0] as ChartSeriesData).dataLabels?.leaderLines).toBe(true);
   });
+
+  // ── Axes (EG_AxShared + CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx) ──
+
+  it("emits and parses back default axes for a column chart", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+    };
+    const result = roundTrip(opts);
+    expect(result.axes).toBeDefined();
+    expect(result.axes).toHaveLength(2);
+    expect(result.axes?.[0]?.kind).toBe("category");
+    expect(result.axes?.[1]?.kind).toBe("value");
+  });
+
+  it("round-trips default axes byte-stably (parse re-emits identical XML)", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+    };
+    const xml1 = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    const result = roundTrip(opts);
+    const xml2 = stringify(chartSpaceDesc, result, {} as WriteContext);
+    expect(xml2).toBe(xml1);
+  });
+
+  it("round-trips custom value axis (gridlines/units/tickMarks/dispUnits/scaling/crossesAt)", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      axes: [
+        {
+          kind: "category",
+          id: 10,
+          crossAxisId: 20,
+          position: "b",
+          crosses: "autoZero",
+          majorGridlines: true,
+          labelOffset: 100,
+        },
+        {
+          kind: "value",
+          id: 20,
+          crossAxisId: 10,
+          position: "l",
+          numberFormat: "0.0",
+          majorUnit: 5,
+          minorUnit: 1,
+          majorTickMark: "out",
+          minorTickMark: "in",
+          tickLabelPosition: "low",
+          crossBetween: "between",
+          crossesAt: 0,
+          majorGridlines: true,
+          minorGridlines: true,
+          scaling: { orientation: "minMax", min: 0, max: 10, logBase: 10 },
+          displayUnits: { builtInUnit: "thousands", label: true },
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:majorGridlines/>");
+    expect(xml).toContain("<c:minorGridlines/>");
+    expect(xml).toContain('c:majorUnit val="5"');
+    expect(xml).toContain('c:minorUnit val="1"');
+    expect(xml).toContain('c:majorTickMark val="out"');
+    expect(xml).toContain('c:tickLblPos val="low"');
+    expect(xml).toContain('c:crossBetween val="between"');
+    expect(xml).toContain('c:crossesAt val="0"');
+    expect(xml).toContain('c:logBase val="10"');
+    expect(xml).toContain("<c:dispUnits>");
+    expect(xml).toContain('c:builtInUnit val="thousands"');
+    expect(xml).toContain("<c:dispUnitsLbl/>");
+
+    const result = roundTrip(opts);
+    const value = result.axes?.find((a) => a.kind === "value");
+    expect(value?.majorUnit).toBe(5);
+    expect(value?.minorUnit).toBe(1);
+    expect(value?.majorTickMark).toBe("out");
+    expect(value?.minorTickMark).toBe("in");
+    expect(value?.tickLabelPosition).toBe("low");
+    expect(value?.crossBetween).toBe("between");
+    expect(value?.crossesAt).toBe(0);
+    expect(value?.scaling?.logBase).toBe(10);
+    expect(value?.scaling?.min).toBe(0);
+    expect(value?.scaling?.max).toBe(10);
+    expect(value?.displayUnits?.builtInUnit).toBe("thousands");
+    expect(value?.displayUnits?.label).toBe(true);
+    const category = result.axes?.find((a) => a.kind === "category");
+    expect(category?.majorGridlines).toBe(true);
+  });
+
+  it("round-trips a date axis (baseTimeUnit/units/timeUnits)", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+      axes: [
+        {
+          kind: "date",
+          id: 10,
+          crossAxisId: 20,
+          position: "b",
+          crosses: "autoZero",
+          baseTimeUnit: "days",
+          majorUnit: 30,
+          majorTimeUnit: "months",
+          minorUnit: 7,
+          minorTimeUnit: "days",
+        },
+        { kind: "value", id: 20, crossAxisId: 10, position: "l", crosses: "autoZero" },
+      ],
+    };
+    const result = roundTrip(opts);
+    const date = result.axes?.find((a) => a.kind === "date");
+    expect(date?.baseTimeUnit).toBe("days");
+    expect(date?.majorUnit).toBe(30);
+    expect(date?.majorTimeUnit).toBe("months");
+    expect(date?.minorUnit).toBe(7);
+    expect(date?.minorTimeUnit).toBe("days");
+  });
+
+  it("emits custom display unit via custUnit", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+      axes: [
+        { kind: "category", id: 10, crossAxisId: 20, position: "b", crosses: "autoZero" },
+        {
+          kind: "value",
+          id: 20,
+          crossAxisId: 10,
+          position: "l",
+          crosses: "autoZero",
+          displayUnits: { customUnit: 50 },
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('c:custUnit val="50"');
+  });
+
+  // ── Series enhancements (marker/dPt/invertIfNegative/smooth/explosion/pictureOptions/shape) ──
+
+  it("round-trips line series marker and smooth", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2], marker: { symbol: "circle", size: 7 }, smooth: true }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('c:symbol val="circle"');
+    expect(xml).toContain('c:size val="7"');
+    expect(xml).toContain("<c:smooth/>");
+
+    const result = roundTrip(opts);
+    const ser = result.series[0] as ChartSeriesData;
+    expect(ser.marker?.symbol).toBe("circle");
+    expect(ser.marker?.size).toBe(7);
+    expect(ser.smooth).toBe(true);
+  });
+
+  it("round-trips 3D bar series invertIfNegative, pictureOptions, and shape", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      threeD: true,
+      categories: ["A", "B"],
+      series: [
+        {
+          name: "S",
+          values: [1, -2],
+          invertIfNegative: true,
+          pictureOptions: {
+            applyToFront: true,
+            pictureFormat: "stretch",
+            pictureStackUnit: 5,
+          },
+          shape: "cylinder",
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const ser = result.series[0] as ChartSeriesData;
+    expect(ser.invertIfNegative).toBe(true);
+    expect(ser.pictureOptions?.applyToFront).toBe(true);
+    expect(ser.pictureOptions?.pictureFormat).toBe("stretch");
+    expect(ser.pictureOptions?.pictureStackUnit).toBe(5);
+    expect(ser.shape).toBe("cylinder");
+  });
+
+  it("round-trips pie series explosion and per-point data overrides", () => {
+    const opts: ChartSpaceOptions = {
+      type: "pie",
+      categories: ["A", "B", "C"],
+      series: [
+        {
+          name: "S",
+          values: [1, 2, 3],
+          explosion: 10,
+          dataPoints: [
+            { index: 0, explosion: 30 },
+            { index: 1, invertIfNegative: false },
+          ],
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('c:explosion val="10"');
+    expect(xml).toContain("<c:dPt>");
+    expect(xml).toContain('c:idx val="0"');
+
+    const result = roundTrip(opts);
+    const ser = result.series[0] as ChartSeriesData;
+    expect(ser.explosion).toBe(10);
+    expect(ser.dataPoints).toHaveLength(2);
+    expect(ser.dataPoints?.[0]?.index).toBe(0);
+    expect(ser.dataPoints?.[0]?.explosion).toBe(30);
+    expect(ser.dataPoints?.[1]?.invertIfNegative).toBe(false);
+  });
+
+  it("round-trips a data-point marker override", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [
+        {
+          name: "S",
+          values: [1, 2],
+          dataPoints: [{ index: 1, marker: { symbol: "star", size: 10 } }],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const ser = result.series[0] as ChartSeriesData;
+    expect(ser.dataPoints?.[0]?.marker?.symbol).toBe("star");
+    expect(ser.dataPoints?.[0]?.marker?.size).toBe(10);
+  });
+
+  it("series with enhancements is byte-stable on round-trip", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [
+        {
+          name: "S",
+          values: [1, 2],
+          marker: { symbol: "diamond" },
+          smooth: false,
+          dataPoints: [{ index: 0, explosion: 5 }],
+        },
+      ],
+    };
+    const xml1 = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    const result = roundTrip(opts);
+    const xml2 = stringify(chartSpaceDesc, result, {} as WriteContext);
+    expect(xml2).toBe(xml1);
+  });
+
+  it("round-trips 3D walls/floor thickness", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      threeD: true,
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      floor: { thickness: 25 },
+      sideWall: { thickness: 30 },
+      backWall: { thickness: 35 },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:floor><c:thickness val="25"/></c:floor>');
+    expect(xml).toContain('<c:sideWall><c:thickness val="30"/></c:sideWall>');
+    expect(xml).toContain('<c:backWall><c:thickness val="35"/></c:backWall>');
+
+    const result = roundTrip(opts);
+    expect(result.floor?.thickness).toBe(25);
+    expect(result.sideWall?.thickness).toBe(30);
+    expect(result.backWall?.thickness).toBe(35);
+  });
+
+  it("round-trips plot-area manual layout", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      plotAreaLayout: {
+        layoutTarget: "inner",
+        xMode: "edge",
+        yMode: "edge",
+        wMode: "edge",
+        hMode: "edge",
+        x: 0.1,
+        y: 0.2,
+        w: 0.7,
+        h: 0.6,
+      },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:layout><c:manualLayout>");
+    expect(xml).toContain('c:layoutTarget val="inner"');
+    expect(xml).toContain('c:x val="0.1"');
+    expect(xml).toContain('c:h val="0.6"');
+
+    const result = roundTrip(opts);
+    expect(result.plotAreaLayout?.layoutTarget).toBe("inner");
+    expect(result.plotAreaLayout?.xMode).toBe("edge");
+    expect(result.plotAreaLayout?.x).toBeCloseTo(0.1);
+    expect(result.plotAreaLayout?.h).toBeCloseTo(0.6);
+  });
+
+  it("3D walls and manual layout are byte-stable on round-trip", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      threeD: true,
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      floor: { thickness: 25 },
+      backWall: { thickness: 35 },
+      plotAreaLayout: { layoutTarget: "inner", x: 0.1, y: 0.2 },
+    };
+    const xml1 = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    const result = roundTrip(opts);
+    const xml2 = stringify(chartSpaceDesc, result, {} as WriteContext);
+    expect(xml2).toBe(xml1);
+  });
 });

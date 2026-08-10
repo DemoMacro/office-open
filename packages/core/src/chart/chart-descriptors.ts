@@ -20,6 +20,30 @@ import type {
   TrendlineLabelOptions,
   TrendlineOptions,
   View3DOptions,
+  AxisOptions,
+  AxisKind,
+  AxisScalingOptions,
+  AxisPosition,
+  AxisTickMark,
+  AxisTickLabelPosition,
+  AxisCrosses,
+  AxisCrossBetween,
+  AxisOrientation,
+  AxisLabelAlignment,
+  BuiltInDisplayUnit,
+  DisplayUnitsOptions,
+  TimeUnit,
+  MarkerOptions,
+  MarkerSymbol,
+  DataPointOptions,
+  PictureOptionsOptions,
+  PictureFormat,
+  BarShape,
+  ChartSeriesCommon,
+  ManualLayoutOptions,
+  SurfaceOptions,
+  LayoutTarget,
+  LayoutMode,
 } from "./types";
 
 // ── Mutable build type for read results (readonly properties not assignable) ──
@@ -193,6 +217,129 @@ function stringifyView3D(opts: View3DOptions): string {
   return `<c:view3D>${parts.join("")}</c:view3D>`;
 }
 
+// ── Plot-area layout XML (CT_Layout > CT_ManualLayout) ──
+
+function stringifyLayout(manualLayout: ManualLayoutOptions | undefined): string {
+  if (!manualLayout) return emptyEl("c:layout");
+  const parts: string[] = [];
+  if (manualLayout.layoutTarget !== undefined)
+    parts.push(valEl("c:layoutTarget", manualLayout.layoutTarget));
+  if (manualLayout.xMode !== undefined) parts.push(valEl("c:xMode", manualLayout.xMode));
+  if (manualLayout.yMode !== undefined) parts.push(valEl("c:yMode", manualLayout.yMode));
+  if (manualLayout.wMode !== undefined) parts.push(valEl("c:wMode", manualLayout.wMode));
+  if (manualLayout.hMode !== undefined) parts.push(valEl("c:hMode", manualLayout.hMode));
+  if (manualLayout.x !== undefined) parts.push(valEl("c:x", manualLayout.x));
+  if (manualLayout.y !== undefined) parts.push(valEl("c:y", manualLayout.y));
+  if (manualLayout.w !== undefined) parts.push(valEl("c:w", manualLayout.w));
+  if (manualLayout.h !== undefined) parts.push(valEl("c:h", manualLayout.h));
+  return `<c:layout><c:manualLayout>${parts.join("")}</c:manualLayout></c:layout>`;
+}
+
+// ── 3D wall/floor surface XML (CT_Surface) ──
+
+function stringifySurface(
+  tag: "c:floor" | "c:sideWall" | "c:backWall",
+  opts: SurfaceOptions | undefined,
+): string {
+  if (!opts) return "";
+  const parts: string[] = [];
+  if (opts.thickness !== undefined) parts.push(valEl("c:thickness", opts.thickness));
+  return parts.length ? `<${tag}>${parts.join("")}</${tag}>` : `<${tag}/>`;
+}
+
+// ── Axis XML (EG_AxShared + CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx) ──
+
+const AXIS_TAG: Record<AxisKind, string> = {
+  category: "c:catAx",
+  value: "c:valAx",
+  date: "c:dateAx",
+  series: "c:serAx",
+};
+
+function stringifyScaling(opts: AxisScalingOptions | undefined): string {
+  if (!opts) return emptyEl("c:scaling");
+  const parts: string[] = [];
+  if (opts.logBase !== undefined) parts.push(valEl("c:logBase", opts.logBase));
+  if (opts.orientation !== undefined) parts.push(valEl("c:orientation", opts.orientation));
+  if (opts.max !== undefined) parts.push(valEl("c:max", opts.max));
+  if (opts.min !== undefined) parts.push(valEl("c:min", opts.min));
+  return `<c:scaling>${parts.join("")}</c:scaling>`;
+}
+
+function stringifyAxisTitle(title: string): string {
+  // Same c:rich run shape as the chart title so parse reuses readTitleText.
+  return `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>`;
+}
+
+function stringifyDisplayUnits(opts: DisplayUnitsOptions): string {
+  const parts: string[] = [];
+  if (opts.customUnit !== undefined) parts.push(valEl("c:custUnit", opts.customUnit));
+  else if (opts.builtInUnit !== undefined) parts.push(valEl("c:builtInUnit", opts.builtInUnit));
+  if (opts.label) parts.push(emptyEl("c:dispUnitsLbl"));
+  return `<c:dispUnits>${parts.join("")}</c:dispUnits>`;
+}
+
+/**
+ * Serialize an axis. Field order follows the XSD content model exactly:
+ * EG_AxShared (axId…crosses/crossesAt), then the kind-specific tail from
+ * CT_CatAx / CT_DateAx / CT_SerAx / CT_ValAx.
+ */
+function stringifyAxis(opts: AxisOptions): string {
+  const parts: string[] = [];
+  parts.push(valEl("c:axId", opts.id));
+  parts.push(stringifyScaling(opts.scaling));
+  if (opts.delete !== undefined) parts.push(`<c:delete${boolVal(opts.delete)}/>`);
+  if (opts.position !== undefined) parts.push(valEl("c:axPos", opts.position));
+  if (opts.majorGridlines) parts.push(emptyEl("c:majorGridlines"));
+  if (opts.minorGridlines) parts.push(emptyEl("c:minorGridlines"));
+  if (opts.title !== undefined) parts.push(stringifyAxisTitle(opts.title));
+  if (opts.numberFormat !== undefined)
+    parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="1"/>`);
+  if (opts.majorTickMark !== undefined) parts.push(valEl("c:majorTickMark", opts.majorTickMark));
+  if (opts.minorTickMark !== undefined) parts.push(valEl("c:minorTickMark", opts.minorTickMark));
+  if (opts.tickLabelPosition !== undefined)
+    parts.push(valEl("c:tickLblPos", opts.tickLabelPosition));
+  parts.push(valEl("c:crossAx", opts.crossAxisId));
+  // XSD choice: crosses XOR crossesAt
+  if (opts.crossesAt !== undefined) parts.push(valEl("c:crossesAt", opts.crossesAt));
+  else if (opts.crosses !== undefined) parts.push(valEl("c:crosses", opts.crosses));
+
+  switch (opts.kind) {
+    case "category":
+      if (opts.auto !== undefined) parts.push(`<c:auto${boolVal(opts.auto)}/>`);
+      if (opts.labelAlignment !== undefined) parts.push(valEl("c:lblAlgn", opts.labelAlignment));
+      if (opts.labelOffset !== undefined) parts.push(valEl("c:lblOffset", opts.labelOffset));
+      if (opts.tickLabelSkip !== undefined) parts.push(valEl("c:tickLblSkip", opts.tickLabelSkip));
+      if (opts.tickMarkSkip !== undefined) parts.push(valEl("c:tickMarkSkip", opts.tickMarkSkip));
+      if (opts.noMultiLevelLabel !== undefined)
+        parts.push(`<c:noMultiLvlLbl${boolVal(opts.noMultiLevelLabel)}/>`);
+      break;
+    case "date":
+      if (opts.auto !== undefined) parts.push(`<c:auto${boolVal(opts.auto)}/>`);
+      if (opts.labelOffset !== undefined) parts.push(valEl("c:lblOffset", opts.labelOffset));
+      if (opts.baseTimeUnit !== undefined) parts.push(valEl("c:baseTimeUnit", opts.baseTimeUnit));
+      if (opts.majorUnit !== undefined) parts.push(valEl("c:majorUnit", opts.majorUnit));
+      if (opts.majorTimeUnit !== undefined)
+        parts.push(valEl("c:majorTimeUnit", opts.majorTimeUnit));
+      if (opts.minorUnit !== undefined) parts.push(valEl("c:minorUnit", opts.minorUnit));
+      if (opts.minorTimeUnit !== undefined)
+        parts.push(valEl("c:minorTimeUnit", opts.minorTimeUnit));
+      break;
+    case "series":
+      if (opts.tickLabelSkip !== undefined) parts.push(valEl("c:tickLblSkip", opts.tickLabelSkip));
+      if (opts.tickMarkSkip !== undefined) parts.push(valEl("c:tickMarkSkip", opts.tickMarkSkip));
+      break;
+    case "value":
+      if (opts.crossBetween !== undefined) parts.push(valEl("c:crossBetween", opts.crossBetween));
+      if (opts.majorUnit !== undefined) parts.push(valEl("c:majorUnit", opts.majorUnit));
+      if (opts.minorUnit !== undefined) parts.push(valEl("c:minorUnit", opts.minorUnit));
+      if (opts.displayUnits) parts.push(stringifyDisplayUnits(opts.displayUnits));
+      break;
+  }
+  const tag = AXIS_TAG[opts.kind];
+  return `<${tag}>${parts.join("")}</${tag}>`;
+}
+
 // ── Series data XML builders ──
 
 function stringifyStrRef(values: readonly string[]): string {
@@ -249,6 +396,38 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
   return `${axIds.join("")}</${tag}>`;
 }
 
+// ── Series sub-elements (CT_Marker / CT_DPt / CT_PictureOptions) ──
+
+function stringifyMarker(opts: MarkerOptions): string {
+  const parts: string[] = [];
+  if (opts.symbol !== undefined) parts.push(valEl("c:symbol", opts.symbol));
+  if (opts.size !== undefined) parts.push(valEl("c:size", opts.size));
+  return `<c:marker>${parts.join("")}</c:marker>`;
+}
+
+function stringifyPictureOptions(opts: PictureOptionsOptions): string {
+  const parts: string[] = [];
+  if (opts.applyToFront !== undefined) parts.push(`<c:applyToFront${boolVal(opts.applyToFront)}/>`);
+  if (opts.applyToSides !== undefined) parts.push(`<c:applyToSides${boolVal(opts.applyToSides)}/>`);
+  if (opts.applyToEnd !== undefined) parts.push(`<c:applyToEnd${boolVal(opts.applyToEnd)}/>`);
+  if (opts.pictureFormat !== undefined) parts.push(valEl("c:pictureFormat", opts.pictureFormat));
+  if (opts.pictureStackUnit !== undefined)
+    parts.push(valEl("c:pictureStackUnit", opts.pictureStackUnit));
+  return `<c:pictureOptions>${parts.join("")}</c:pictureOptions>`;
+}
+
+function stringifyDataPoint(opts: DataPointOptions): string {
+  // CT_DPt: idx → invertIfNegative → marker → bubble3D → explosion → spPr → pictureOptions
+  const parts: string[] = [valEl("c:idx", opts.index)];
+  if (opts.invertIfNegative !== undefined)
+    parts.push(`<c:invertIfNegative${boolVal(opts.invertIfNegative)}/>`);
+  if (opts.marker) parts.push(stringifyMarker(opts.marker));
+  if (opts.bubble3D !== undefined) parts.push(`<c:bubble3D${boolVal(opts.bubble3D)}/>`);
+  if (opts.explosion !== undefined) parts.push(valEl("c:explosion", opts.explosion));
+  if (opts.pictureOptions) parts.push(stringifyPictureOptions(opts.pictureOptions));
+  return `<c:dPt>${parts.join("")}</c:dPt>`;
+}
+
 // ── Series XML ──
 
 function stringifySeries(
@@ -258,22 +437,41 @@ function stringifySeries(
   chartType: ChartType,
 ): string {
   const parts: string[] = [];
+  const s = series as ChartSeriesData;
 
+  // EG_SerShared: idx, order, tx, spPr
   parts.push(valEl("c:idx", index));
   parts.push(valEl("c:order", index));
-
-  // Series name (c:tx -> c:strRef)
   parts.push(`<c:tx>${stringifyStrRef([series.name])}</c:tx>`);
   parts.push(emptyEl("c:spPr"));
 
-  // Per-series enhancements (XSD order: dLbls → trendline → errBars → cat/val)
-  const s = series as ChartSeriesData;
+  // type-specific head before dPt (per CT_xxxSer content model)
+  if (chartType === "line" || chartType === "scatter" || chartType === "radar") {
+    if (s.marker) parts.push(stringifyMarker(s.marker));
+  } else if (chartType === "column" || chartType === "bar") {
+    if (s.invertIfNegative !== undefined)
+      parts.push(`<c:invertIfNegative${boolVal(s.invertIfNegative)}/>`);
+    if (s.pictureOptions) parts.push(stringifyPictureOptions(s.pictureOptions));
+  } else if (chartType === "area") {
+    if (s.pictureOptions) parts.push(stringifyPictureOptions(s.pictureOptions));
+  } else if (chartType === "bubble") {
+    if (s.invertIfNegative !== undefined)
+      parts.push(`<c:invertIfNegative${boolVal(s.invertIfNegative)}/>`);
+  } else if (chartType === "pie" || chartType === "doughnut") {
+    if (s.explosion !== undefined) parts.push(valEl("c:explosion", s.explosion));
+  }
+
+  // shared decorations (XSD order: dPt → dLbls → trendline → errBars)
+  if (s.dataPoints) {
+    for (const dp of s.dataPoints) parts.push(stringifyDataPoint(dp));
+  }
   if (s.dataLabels) parts.push(stringifyDataLabels(s.dataLabels));
   if (s.trendlines) {
     for (const tl of s.trendlines) parts.push(stringifyTrendline(tl));
   }
   if (s.errorBars) parts.push(stringifyErrBars(s.errorBars));
 
+  // data references (type-specific element names)
   if (chartType === "bubble") {
     const bs = series as BubbleSeriesData;
     parts.push(`<c:xVal>${stringifyNumRef(bs.xValues)}</c:xVal>`);
@@ -285,6 +483,17 @@ function stringifySeries(
   } else {
     parts.push(`<c:cat>${stringifyStrRef(categories)}</c:cat>`);
     parts.push(`<c:val>${stringifyNumRef(s.values)}</c:val>`);
+  }
+
+  // type-specific tail after data references
+  if ((chartType === "line" || chartType === "scatter") && s.smooth !== undefined) {
+    parts.push(`<c:smooth${boolVal(s.smooth)}/>`);
+  }
+  if ((chartType === "column" || chartType === "bar") && s.shape !== undefined) {
+    parts.push(valEl("c:shape", s.shape));
+  }
+  if (chartType === "bubble" && s.bubble3D !== undefined) {
+    parts.push(`<c:bubble3D${boolVal(s.bubble3D)}/>`);
   }
 
   return `<c:ser>${parts.join("")}</c:ser>`;
@@ -314,41 +523,73 @@ function chartTxPr(): string {
 
 // ── Axes XML ──
 
-function stringifyAxes(chartType: ChartType, threeD?: boolean): string {
-  if (NO_AXES_TYPES.has(chartType)) return "";
+/** Default bottom category axis (c:catAx) for generated charts. */
+function categoryAxis(id: number, crossAxisId: number): AxisOptions {
+  return {
+    kind: "category",
+    id,
+    crossAxisId,
+    scaling: { orientation: "minMax" },
+    delete: false,
+    position: "b",
+    crosses: "autoZero",
+    auto: true,
+    labelOffset: 100,
+    noMultiLevelLabel: false,
+  };
+}
 
-  const parts: string[] = [];
+/** Default left value axis (c:valAx). */
+function valueAxis(id: number, crossAxisId: number): AxisOptions {
+  return {
+    kind: "value",
+    id,
+    crossAxisId,
+    scaling: { orientation: "minMax" },
+    delete: false,
+    position: "l",
+    numberFormat: "General",
+    crosses: "autoZero",
+  };
+}
 
+/** Default series axis (c:serAx) for surface charts. */
+function seriesAxis(id: number, crossAxisId: number): AxisOptions {
+  return {
+    kind: "series",
+    id,
+    crossAxisId,
+    scaling: { orientation: "minMax" },
+    delete: false,
+    position: "b",
+    numberFormat: "General",
+    crosses: "autoZero",
+    tickLabelSkip: 1,
+  };
+}
+
+/** Sensible default axes derived from chart type, matching prior hardcoded output. */
+function defaultAxesFor(chartType: ChartType, threeD?: boolean): readonly AxisOptions[] {
+  if (NO_AXES_TYPES.has(chartType)) return [];
   if (chartType === "scatter" || chartType === "bubble") {
-    parts.push(valAxXml(10, 20));
-    parts.push(valAxXml(20, 10));
-  } else if (chartType === "stock" || chartType === "surface") {
-    parts.push(catAxXml(10, 20));
-    parts.push(valAxXml(20, 10));
-    if (chartType === "surface") {
-      parts.push(serAxXml(30, 10));
-    }
-  } else {
-    parts.push(catAxXml(10, 20));
-    parts.push(valAxXml(20, 10));
-    if (threeD) {
-      parts.push(catAxXml(30, 10));
-    }
+    return [valueAxis(10, 20), valueAxis(20, 10)];
   }
-
-  return parts.join("");
+  if (chartType === "surface") {
+    return [categoryAxis(10, 20), valueAxis(20, 10), seriesAxis(30, 10)];
+  }
+  if (chartType === "stock") {
+    return [categoryAxis(10, 20), valueAxis(20, 10)];
+  }
+  if (threeD) {
+    return [categoryAxis(10, 20), valueAxis(20, 10), categoryAxis(30, 10)];
+  }
+  return [categoryAxis(10, 20), valueAxis(20, 10)];
 }
 
-function catAxXml(axId: number, crossAx: number): string {
-  return `<c:catAx><c:axId ${attrVal("val", axId)}/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:crossAx ${attrVal("val", crossAx)}/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>`;
-}
-
-function valAxXml(axId: number, crossAx: number): string {
-  return `<c:valAx><c:axId ${attrVal("val", axId)}/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:numFmt formatCode="General" sourceLinked="1"/><c:spPr/><c:crossAx ${attrVal("val", crossAx)}/><c:crosses val="autoZero"/></c:valAx>`;
-}
-
-function serAxXml(axId: number, crossAx: number): string {
-  return `<c:serAx><c:axId ${attrVal("val", axId)}/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:numFmt formatCode="General" sourceLinked="1"/><c:spPr/><c:crossAx ${attrVal("val", crossAx)}/><c:crosses val="autoZero"/><c:tickLblSkip val="1"/></c:serAx>`;
+/** Provided axes override defaults; otherwise defaults are derived from chart type. */
+function stringifyAxes(opts: ChartSpaceOptions): string {
+  const axes = opts.axes ?? defaultAxesFor(opts.type, opts.threeD);
+  return axes.map(stringifyAxis).join("");
 }
 
 // ── Read helpers ──
@@ -362,7 +603,8 @@ function readStrCache(el: XmlElement): string[] {
   for (const pt of strCache.elements) {
     if (pt.name === "c:pt" && pt.elements) {
       const v = pt.elements.find((c) => c.name === "c:v");
-      if (v?.text !== undefined) result.push(String(v.text));
+      const text = v ? textOf(v) : "";
+      if (text !== "") result.push(text);
     }
   }
   return result;
@@ -377,7 +619,8 @@ function readNumCache(el: XmlElement): number[] {
   for (const pt of numCache.elements) {
     if (pt.name === "c:pt" && pt.elements) {
       const v = pt.elements.find((c) => c.name === "c:v");
-      if (v?.text !== undefined) result.push(Number(v.text));
+      const text = v ? textOf(v) : "";
+      if (text !== "") result.push(Number(text));
     }
   }
   return result;
@@ -400,8 +643,9 @@ function readTitleText(titleEl: XmlElement): string | undefined {
           for (const r of sub.elements) {
             if (r.name === "a:r" && r.elements) {
               for (const t of r.elements) {
-                if (t.name === "a:t" && t.text !== undefined) {
-                  return String(t.text);
+                if (t.name === "a:t") {
+                  const text = textOf(t);
+                  if (text) return text;
                 }
               }
             }
@@ -544,6 +788,81 @@ function readDataLabels(serEl: XmlElement): DataLabelsOptions | undefined {
   return opts;
 }
 
+function readMarker(parent: XmlElement): MarkerOptions | undefined {
+  const el = findChild(parent, "c:marker");
+  if (!el) return undefined;
+  const opts: MarkerOptions = {};
+  const symbol = readValStr(el, "c:symbol");
+  if (symbol) opts.symbol = symbol as MarkerSymbol;
+  const size = readValNum(el, "c:size");
+  if (size !== undefined) opts.size = size;
+  return Object.keys(opts).length ? opts : undefined;
+}
+
+function readPictureOptions(parent: XmlElement): PictureOptionsOptions | undefined {
+  const el = findChild(parent, "c:pictureOptions");
+  if (!el) return undefined;
+  const opts: PictureOptionsOptions = {};
+  const front = readBoolAttr(el, "c:applyToFront");
+  if (front !== undefined) opts.applyToFront = front;
+  const sides = readBoolAttr(el, "c:applyToSides");
+  if (sides !== undefined) opts.applyToSides = sides;
+  const end = readBoolAttr(el, "c:applyToEnd");
+  if (end !== undefined) opts.applyToEnd = end;
+  const fmt = readValStr(el, "c:pictureFormat");
+  if (fmt) opts.pictureFormat = fmt as PictureFormat;
+  const stack = readValNum(el, "c:pictureStackUnit");
+  if (stack !== undefined) opts.pictureStackUnit = stack;
+  return Object.keys(opts).length ? opts : undefined;
+}
+
+function readDataPoints(serEl: XmlElement): DataPointOptions[] | undefined {
+  const els = children(serEl, "c:dPt");
+  if (els.length === 0) return undefined;
+  return els.map((el): DataPointOptions => {
+    const dp: DataPointOptions = { index: readValNum(el, "c:idx") ?? 0 };
+    const invertIfNegative = readBoolAttr(el, "c:invertIfNegative");
+    if (invertIfNegative !== undefined) dp.invertIfNegative = invertIfNegative;
+    const marker = readMarker(el);
+    if (marker) dp.marker = marker;
+    const bubble3D = readBoolAttr(el, "c:bubble3D");
+    if (bubble3D !== undefined) dp.bubble3D = bubble3D;
+    const explosion = readValNum(el, "c:explosion");
+    if (explosion !== undefined) dp.explosion = explosion;
+    const pictureOptions = readPictureOptions(el);
+    if (pictureOptions) dp.pictureOptions = pictureOptions;
+    return dp;
+  });
+}
+
+/** Read shared ser enhancement fields (CT_Ser children beyond EG_SerShared). */
+function readSeriesCommon(serEl: XmlElement): Partial<ChartSeriesCommon> {
+  const common: Partial<ChartSeriesCommon> = {};
+  const trendlines = readTrendlines(serEl);
+  if (trendlines) common.trendlines = trendlines;
+  const errorBars = readErrBars(serEl);
+  if (errorBars) common.errorBars = errorBars;
+  const dataLabels = readDataLabels(serEl);
+  if (dataLabels) common.dataLabels = dataLabels;
+  const dataPoints = readDataPoints(serEl);
+  if (dataPoints) common.dataPoints = dataPoints;
+  const marker = readMarker(serEl);
+  if (marker) common.marker = marker;
+  const invertIfNegative = readBoolAttr(serEl, "c:invertIfNegative");
+  if (invertIfNegative !== undefined) common.invertIfNegative = invertIfNegative;
+  const smooth = readBoolAttr(serEl, "c:smooth");
+  if (smooth !== undefined) common.smooth = smooth;
+  const explosion = readValNum(serEl, "c:explosion");
+  if (explosion !== undefined) common.explosion = explosion;
+  const pictureOptions = readPictureOptions(serEl);
+  if (pictureOptions) common.pictureOptions = pictureOptions;
+  const shape = readValStr(serEl, "c:shape");
+  if (shape) common.shape = shape as BarShape;
+  const bubble3D = readBoolAttr(serEl, "c:bubble3D");
+  if (bubble3D !== undefined) common.bubble3D = bubble3D;
+  return common;
+}
+
 function readView3D(chartEl: XmlElement): View3DOptions | undefined {
   const v3d = findChild(chartEl, "c:view3D");
   if (!v3d) return undefined;
@@ -561,6 +880,179 @@ function readView3D(chartEl: XmlElement): View3DOptions | undefined {
   const perspective = readValNum(v3d, "c:perspective");
   if (perspective !== undefined) opts.perspective = perspective;
   return opts;
+}
+
+// ── Plot-area layout read (CT_Layout > CT_ManualLayout) ──
+
+function readManualLayout(layoutEl: XmlElement | undefined): ManualLayoutOptions | undefined {
+  if (!layoutEl) return undefined;
+  const ml = findChild(layoutEl, "c:manualLayout");
+  if (!ml) return undefined;
+  const opts: ManualLayoutOptions = {};
+  const layoutTarget = readValStr(ml, "c:layoutTarget");
+  if (layoutTarget) opts.layoutTarget = layoutTarget as LayoutTarget;
+  const xMode = readValStr(ml, "c:xMode");
+  if (xMode) opts.xMode = xMode as LayoutMode;
+  const yMode = readValStr(ml, "c:yMode");
+  if (yMode) opts.yMode = yMode as LayoutMode;
+  const wMode = readValStr(ml, "c:wMode");
+  if (wMode) opts.wMode = wMode as LayoutMode;
+  const hMode = readValStr(ml, "c:hMode");
+  if (hMode) opts.hMode = hMode as LayoutMode;
+  const x = readValNum(ml, "c:x");
+  if (x !== undefined) opts.x = x;
+  const y = readValNum(ml, "c:y");
+  if (y !== undefined) opts.y = y;
+  const w = readValNum(ml, "c:w");
+  if (w !== undefined) opts.w = w;
+  const h = readValNum(ml, "c:h");
+  if (h !== undefined) opts.h = h;
+  return Object.keys(opts).length ? opts : undefined;
+}
+
+// ── 3D wall/floor surface read (CT_Surface) ──
+
+function readSurface(
+  chartEl: XmlElement,
+  tag: "c:floor" | "c:sideWall" | "c:backWall",
+): SurfaceOptions | undefined {
+  const el = findChild(chartEl, tag);
+  if (!el) return undefined;
+  const thickness = readValStr(el, "c:thickness");
+  if (thickness === undefined) return undefined;
+  return { thickness: thickness.endsWith("%") ? thickness : Number(thickness) };
+}
+
+// ── Axis read (CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx) ──
+
+const AXIS_KIND_BY_TAG: Record<string, AxisKind> = {
+  "c:catAx": "category",
+  "c:valAx": "value",
+  "c:dateAx": "date",
+  "c:serAx": "series",
+};
+
+function readAxis(el: XmlElement, kind: AxisKind): AxisOptions {
+  const result: AxisOptions = {
+    kind,
+    id: readValNum(el, "c:axId") ?? 0,
+    crossAxisId: readValNum(el, "c:crossAx") ?? 0,
+  };
+
+  const scalingEl = findChild(el, "c:scaling");
+  if (scalingEl) {
+    const scaling: AxisScalingOptions = {};
+    const logBase = readValNum(scalingEl, "c:logBase");
+    if (logBase !== undefined) scaling.logBase = logBase;
+    const orientation = readValStr(scalingEl, "c:orientation");
+    if (orientation) scaling.orientation = orientation as AxisOrientation;
+    const max = readValNum(scalingEl, "c:max");
+    if (max !== undefined) scaling.max = max;
+    const min = readValNum(scalingEl, "c:min");
+    if (min !== undefined) scaling.min = min;
+    if (logBase !== undefined || orientation || max !== undefined || min !== undefined) {
+      result.scaling = scaling;
+    }
+  }
+
+  const del = readBoolAttr(el, "c:delete");
+  if (del !== undefined) result.delete = del;
+  const pos = readValStr(el, "c:axPos");
+  if (pos) result.position = pos as AxisPosition;
+  if (findChild(el, "c:majorGridlines")) result.majorGridlines = true;
+  if (findChild(el, "c:minorGridlines")) result.minorGridlines = true;
+  const titleEl = findChild(el, "c:title");
+  if (titleEl) {
+    const titleText = readTitleText(titleEl);
+    if (titleText !== undefined) result.title = titleText;
+  }
+  const numFmtEl = findChild(el, "c:numFmt");
+  if (numFmtEl) {
+    const formatCode = attr(numFmtEl, "formatCode");
+    if (formatCode) result.numberFormat = formatCode;
+  }
+  const majorTickMark = readValStr(el, "c:majorTickMark");
+  if (majorTickMark) result.majorTickMark = majorTickMark as AxisTickMark;
+  const minorTickMark = readValStr(el, "c:minorTickMark");
+  if (minorTickMark) result.minorTickMark = minorTickMark as AxisTickMark;
+  const tickLblPos = readValStr(el, "c:tickLblPos");
+  if (tickLblPos) result.tickLabelPosition = tickLblPos as AxisTickLabelPosition;
+  const crossesAt = readValNum(el, "c:crossesAt");
+  if (crossesAt !== undefined) result.crossesAt = crossesAt;
+  else {
+    const crosses = readValStr(el, "c:crosses");
+    if (crosses) result.crosses = crosses as AxisCrosses;
+  }
+
+  // kind-specific tail (mirrors stringifyAxis switch order)
+  if (kind === "category" || kind === "date") {
+    const auto = readBoolAttr(el, "c:auto");
+    if (auto !== undefined) result.auto = auto;
+  }
+  if (kind === "category") {
+    const lblAlgn = readValStr(el, "c:lblAlgn");
+    if (lblAlgn) result.labelAlignment = lblAlgn as AxisLabelAlignment;
+  }
+  if (kind === "category" || kind === "date") {
+    const lblOffsetEl = findChild(el, "c:lblOffset");
+    if (lblOffsetEl) {
+      const v = attr(lblOffsetEl, "val");
+      if (v !== undefined) result.labelOffset = v.endsWith("%") ? v : Number(v);
+    }
+  }
+  if (kind === "category" || kind === "series") {
+    const tickLblSkip = readValNum(el, "c:tickLblSkip");
+    if (tickLblSkip !== undefined) result.tickLabelSkip = tickLblSkip;
+    const tickMarkSkip = readValNum(el, "c:tickMarkSkip");
+    if (tickMarkSkip !== undefined) result.tickMarkSkip = tickMarkSkip;
+  }
+  if (kind === "category") {
+    const noMulti = readBoolAttr(el, "c:noMultiLvlLbl");
+    if (noMulti !== undefined) result.noMultiLevelLabel = noMulti;
+  }
+  if (kind === "date") {
+    const baseTimeUnit = readValStr(el, "c:baseTimeUnit");
+    if (baseTimeUnit) result.baseTimeUnit = baseTimeUnit as TimeUnit;
+    const majorTimeUnit = readValStr(el, "c:majorTimeUnit");
+    if (majorTimeUnit) result.majorTimeUnit = majorTimeUnit as TimeUnit;
+    const minorTimeUnit = readValStr(el, "c:minorTimeUnit");
+    if (minorTimeUnit) result.minorTimeUnit = minorTimeUnit as TimeUnit;
+  }
+  if (kind === "date" || kind === "value") {
+    const majorUnit = readValNum(el, "c:majorUnit");
+    if (majorUnit !== undefined) result.majorUnit = majorUnit;
+    const minorUnit = readValNum(el, "c:minorUnit");
+    if (minorUnit !== undefined) result.minorUnit = minorUnit;
+  }
+  if (kind === "value") {
+    const crossBetween = readValStr(el, "c:crossBetween");
+    if (crossBetween) result.crossBetween = crossBetween as AxisCrossBetween;
+    const dispUnitsEl = findChild(el, "c:dispUnits");
+    if (dispUnitsEl) {
+      const displayUnits: DisplayUnitsOptions = {};
+      const customUnit = readValNum(dispUnitsEl, "c:custUnit");
+      if (customUnit !== undefined) displayUnits.customUnit = customUnit;
+      const builtInUnit = readValStr(dispUnitsEl, "c:builtInUnit");
+      if (builtInUnit) displayUnits.builtInUnit = builtInUnit as BuiltInDisplayUnit;
+      if (findChild(dispUnitsEl, "c:dispUnitsLbl")) displayUnits.label = true;
+      if (customUnit !== undefined || builtInUnit || displayUnits.label) {
+        result.displayUnits = displayUnits;
+      }
+    }
+  }
+  return result;
+}
+
+/** Read all axis elements (c:catAx/c:valAx/c:dateAx/c:serAx) under plotArea. */
+function readAxes(plotArea: XmlElement | undefined): AxisOptions[] | undefined {
+  if (!plotArea?.elements) return undefined;
+  const axes: AxisOptions[] = [];
+  for (const child of plotArea.elements) {
+    if (!child.name) continue;
+    const kind = AXIS_KIND_BY_TAG[child.name];
+    if (kind) axes.push(readAxis(child, kind));
+  }
+  return axes.length > 0 ? axes : undefined;
 }
 
 // ── Main descriptor ──
@@ -601,8 +1093,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       parts.push(stringifyView3D(opts.view3D));
     }
 
+    // 3D walls and floor (CT_Chart: view3D → floor → sideWall → backWall → plotArea)
+    parts.push(stringifySurface("c:floor", opts.floor));
+    parts.push(stringifySurface("c:sideWall", opts.sideWall));
+    parts.push(stringifySurface("c:backWall", opts.backWall));
+
     // c:plotArea
-    parts.push("<c:plotArea><c:layout/>");
+    parts.push(`<c:plotArea>${stringifyLayout(opts.plotAreaLayout)}`);
 
     // Chart type element (header + series + footer)
     parts.push(chartTypeHeader(opts));
@@ -615,7 +1112,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     parts.push(chartTypeFooter(opts));
 
     // Axes
-    parts.push(stringifyAxes(opts.type, opts.threeD));
+    parts.push(stringifyAxes(opts));
 
     parts.push("</c:plotArea>");
 
@@ -659,9 +1156,20 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     const view3D = readView3D(chart);
     if (view3D) result.view3D = view3D;
 
+    // 3D walls and floor
+    const floor = readSurface(chart, "c:floor");
+    if (floor) result.floor = floor;
+    const sideWall = readSurface(chart, "c:sideWall");
+    if (sideWall) result.sideWall = sideWall;
+    const backWall = readSurface(chart, "c:backWall");
+    if (backWall) result.backWall = backWall;
+
     // Plot area — detect chart type
     const plotArea = findChild(chart, "c:plotArea");
     if (plotArea?.elements) {
+      // plot-area manual layout (CT_Layout > CT_ManualLayout)
+      const manualLayout = readManualLayout(findChild(plotArea, "c:layout"));
+      if (manualLayout) result.plotAreaLayout = manualLayout;
       let detectedType: ChartType | undefined;
       let threeD = false;
       let chartTypeEl: XmlElement | undefined;
@@ -704,6 +1212,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
               xValues: xVal ? readNumCache(xVal) : [],
               yValues: yVal ? readNumCache(yVal) : [],
               bubbleSize: bubbleSize ? readNumCache(bubbleSize) : [],
+              ...readSeriesCommon(serEl),
             });
           }
           result.series = bubbleSeries as BubbleSeriesData[];
@@ -724,17 +1233,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
             const valEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
             const values = valEl ? readNumCache(valEl) : [];
 
-            const ser: ChartSeriesData = { name, values };
-
-            // Read series enhancements
-            const trendlines = readTrendlines(serEl);
-            if (trendlines) ser.trendlines = trendlines;
-            const errorBars = readErrBars(serEl);
-            if (errorBars) ser.errorBars = errorBars;
-            const dataLabels = readDataLabels(serEl);
-            if (dataLabels) ser.dataLabels = dataLabels;
-
-            chartSeries.push(ser);
+            chartSeries.push({ name, values, ...readSeriesCommon(serEl) });
           }
 
           result.series = chartSeries as ChartSeriesData[];
@@ -742,6 +1241,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
         }
       }
     }
+
+    // Axes
+    const axes = readAxes(plotArea);
+    if (axes) result.axes = axes;
 
     // Legend — default is true, only set if explicitly absent
     const legend = findChild(chart, "c:legend");
