@@ -244,6 +244,11 @@ export const PPTX_PARTS = {
       presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
+      path: "docProps/custom.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
+      presence: { kind: "conditional", flag: "has custom properties" },
+    },
+    {
       // theme1 backs the slide master (static); theme2/theme3 back the
       // notes/handout masters when present — all share the theme+xml type.
       path: "ppt/theme/theme${i}.xml",
@@ -380,6 +385,11 @@ export const XLSX_PARTS = {
       path: "docProps/app.xml",
       contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml",
       presence: { kind: "conditional", flag: "freshCompile" },
+    },
+    {
+      path: "docProps/custom.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
+      presence: { kind: "conditional", flag: "has custom properties" },
     },
     {
       path: "xl/styles.xml",

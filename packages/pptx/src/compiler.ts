@@ -27,12 +27,15 @@ import {
   replaceSmartArtPlaceholders,
   replaceVideoPlaceholders,
   addSmartArtRelationships,
+  contentTypesDesc,
+  deriveContentTypes,
+  resolverFromRegistry,
+  PPTX_PARTS,
 } from "@office-open/core";
 import type { XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
-import { ContentTypes } from "@parts/content-types";
 import type { PresentationPartOptions, PresentationSectionGroup } from "@parts/presentation";
 import { buildCustomLayoutXml, buildLayoutXml, type SlideLayoutType } from "@parts/slide-layout";
 import { buildSlideMasterXml } from "@parts/slide-master";
@@ -56,7 +59,6 @@ import { timingDesc } from "./parts/descriptors/animation";
 import { backgroundDesc } from "./parts/descriptors/background";
 import { stringifyChild } from "./parts/descriptors/bridge";
 import { commentAuthorsDesc, slideCommentsDesc } from "./parts/descriptors/comments";
-import { contentTypesDesc } from "./parts/descriptors/content-types";
 import { handoutMasterDesc } from "./parts/descriptors/handout-master";
 import { notesMasterDesc } from "./parts/descriptors/notes-master";
 import { notesSlideDesc, type NotesSlideDescriptorOptions } from "./parts/descriptors/notes-slide";
@@ -379,31 +381,36 @@ export function buildCommentData(
   return { authors, perSlide };
 }
 
-function initContentTypes(slides: SlideOptions[], includeHandout: boolean): ContentTypes {
-  const ct = new ContentTypes();
-  let hasComments = false;
-  let notesSlideIdx = 0;
-  let slideSyncIdx = 0;
-  for (const [i, slide] of slides.entries()) {
-    ct.addSlide(i + 1);
-    if (slide.notes) {
-      ct.addNotesSlide(notesSlideIdx + 1);
-      notesSlideIdx++;
-    }
-    if (slide.comments && slide.comments.length > 0) {
-      ct.addComments(i + 1);
-      hasComments = true;
-    }
-    if (slide.slideSync) {
-      ct.addSlideSyncPr(slideSyncIdx + 1);
-      slideSyncIdx++;
-    }
-  }
-  if (notesSlideIdx > 0) ct.addNotesMaster();
-  if (hasComments) ct.addCommentAuthors();
-  if (includeHandout) ct.addHandoutMaster();
-  return ct;
-}
+/** PPTX part path → content type, derived from the part registry. Matches
+ * actual file paths, so dense (slides) and sparse (slide-indexed comments)
+ * naming are both handled. */
+const PPTX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(PPTX_PARTS);
+
+/** Extension → MIME for media Default entries (image/video/audio). Declared
+ * only for extensions actually present in the package. */
+const PPTX_MEDIA_CONTENT_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  gif: "image/gif",
+  bmp: "image/bmp",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  ico: "image/x-icon",
+  emf: "image/x-emf",
+  wmf: "image/x-wmf",
+  svg: "image/svg+xml",
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  wmv: "video/x-ms-wmv",
+  avi: "video/x-msvideo",
+  mpg: "video/mpeg",
+  mpeg: "video/mpeg",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+  wma: "audio/x-ms-wma",
+  aac: "audio/aac",
+};
 
 function buildFileRels(hasCustomProperties: boolean): Relationships {
   const entries: RelEntry[] = [
@@ -663,8 +670,6 @@ export function compilePresentation(
   // ── Mutable state ──
 
   const hasCustomProperties = !!options.customProperties && options.customProperties.length > 0;
-  const contentTypes = initContentTypes(slides, includeHandout);
-  if (hasCustomProperties) contentTypes.addCustomProperties();
   const presRels = initPresRels(masters, slides.length);
   // Group slides into p14:sections by name (first-occurrence order); slides
   // without a section name are left ungrouped (absent from p14:sectionLst).
@@ -696,9 +701,6 @@ export function compilePresentation(
   };
   const fileRels = buildFileRels(hasCustomProperties);
   const media = descCtx.mediaCollection;
-  // Register a [Content_Types] Default for each media extension encountered
-  // (gif/bmp/emf/wmf/svg/video/audio…) so non-png/jpeg/mp4 media is valid OPC.
-  for (const m of media.array) contentTypes.addMediaDefault(m.fileName);
   const charts = new ChartCollection();
   const smartArts = new SmartArtCollection();
   const hyperlinks = new HyperlinkCollection();
@@ -795,13 +797,6 @@ export function compilePresentation(
     };
   }
 
-  // Register content types
-  for (let i = 0; i < allLayouts.length; i++) contentTypes.addSlideLayout(i + 1);
-  for (let mi = 0; mi < masters.length; mi++) {
-    contentTypes.addSlideMaster(mi + 1);
-    contentTypes.addTheme(mi + 1);
-  }
-
   // Notes Master
   if (notesOptions.length > 0) {
     const notesMasterRId = presRels.relationshipCount + 1;
@@ -823,7 +818,6 @@ export function compilePresentation(
       data: XML_DECL + notesMasterThemeXml,
       path: `ppt/theme/theme${notesMasterThemeIndex}.xml`,
     };
-    contentTypes.addTheme(notesMasterThemeIndex);
     const notesMasterRels = new Relationships();
     notesMasterRels.addRelationship(
       1,
@@ -857,7 +851,6 @@ export function compilePresentation(
       data: XML_DECL + handoutMasterThemeXml,
       path: `ppt/theme/theme${handoutMasterThemeIndex}.xml`,
     };
-    contentTypes.addTheme(handoutMasterThemeIndex);
     const handoutMasterRels = new Relationships();
     handoutMasterRels.addRelationship(
       1,
@@ -1061,33 +1054,6 @@ export function compilePresentation(
     };
   }
 
-  // Content Types — charts + smartarts
-  const chartCountFromXmlComponents = charts.array.length;
-  for (let i = 0; i < chartCountFromXmlComponents; i++) contentTypes.addChart(i + 1);
-  for (let i = 0; i < descCtx.charts.length; i++)
-    contentTypes.addChart(chartCountFromXmlComponents + i + 1);
-
-  const saCountFromXmlComponents = smartArts.array.length;
-  for (let i = 0; i < saCountFromXmlComponents; i++) {
-    contentTypes.addDiagramData(i + 1);
-    contentTypes.addDiagramLayout(i + 1);
-    contentTypes.addDiagramStyle(i + 1);
-    contentTypes.addDiagramColors(i + 1);
-    contentTypes.addDiagramDrawing(i + 1);
-  }
-  for (let i = 0; i < descCtx.smartArts.length; i++) {
-    const idx = saCountFromXmlComponents + i + 1;
-    contentTypes.addDiagramData(idx);
-    contentTypes.addDiagramLayout(idx);
-    contentTypes.addDiagramStyle(idx);
-    contentTypes.addDiagramColors(idx);
-    contentTypes.addDiagramDrawing(idx);
-  }
-  mapping["ContentTypes"] = {
-    data: XML_DECL + (contentTypesDesc.stringify({ builder: contentTypes }, descCtx) ?? ""),
-    path: "[Content_Types].xml",
-  };
-
   // Compile mapping to Zippable
   const files = compileMapping(mapping, overrides);
 
@@ -1220,6 +1186,18 @@ export function compilePresentation(
       ];
     }
   }
+
+  // Derive [Content_Types].xml from the actual parts written — the file set is
+  // the single source of truth, so declarations cannot drift from what is on
+  // disk, and sparse/index-based names (slide-keyed comments) are handled
+  // naturally because emission follows the files.
+  const contentTypesInput = deriveContentTypes(Object.keys(files), {
+    resolve: PPTX_CONTENT_TYPE_RESOLVER,
+    mediaContentTypes: PPTX_MEDIA_CONTENT_TYPES,
+  });
+  files["[Content_Types].xml"] = encoder.encode(
+    XML_DECL + (contentTypesDesc.stringify(contentTypesInput, descCtx) ?? ""),
+  );
 
   return files;
 }

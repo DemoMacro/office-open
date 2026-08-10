@@ -12,7 +12,6 @@ export type {
   ViewWrapper,
 } from "./presentation";
 export type { CorePropertiesOptions } from "@office-open/core";
-export { ContentTypes } from "./content-types";
 export { type SlideChild } from "./slide/slide-child";
 export {
   buildSlideMasterXml,

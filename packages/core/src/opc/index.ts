@@ -66,3 +66,13 @@ export {
   type PackagePartRegistry,
 } from "./part-registry";
 export { buildContentTypeOverrides, type ContentTypeOverrideEntry } from "./content-type-overrides";
+export {
+  contentTypesDesc,
+  resolverFromRegistry,
+  deriveContentTypes,
+  type ContentTypeDefault,
+  type ContentTypeOverride,
+  type ContentTypesInput,
+  type PartContentTypeResolver,
+  type DeriveContentTypesOptions,
+} from "./content-types-input";
