@@ -97,6 +97,7 @@ function createPatchContext(
     stringifyChild: () => "",
     addRelationship: () => "",
     addMedia: () => "",
+    addHyperlink: () => {},
   };
 }
 
@@ -321,6 +322,7 @@ export const patchDocument = async <T extends OutputType = OutputType>({
         stringifyChild: () => "",
         addRelationship: () => "",
         addMedia: () => "",
+        addHyperlink: () => {},
       };
       contexts.set(key, context);
 

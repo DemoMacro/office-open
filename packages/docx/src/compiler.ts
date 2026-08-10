@@ -279,6 +279,8 @@ function xmlifyContext(
     addRelationship: (type: string, target: string, mode?: string) =>
       ctx.addRelationship(type, target, mode),
     addMedia: (data: Uint8Array, type: string) => ctx.addMedia(data, type),
+    addHyperlink: (key: string, url: string, tooltip?: string) =>
+      ctx.addHyperlink(key, url, tooltip),
   });
 
   const documentRelationshipCount = ctx.document.relationships.relationshipCount + 1;

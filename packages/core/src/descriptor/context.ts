@@ -12,6 +12,12 @@ export interface WriteContext {
   addRelationship(type: string, target: string, mode?: string): string;
   /** Add a media file and return its reference. */
   addMedia(data: Uint8Array, type: string): string;
+  /**
+   * Register a DrawingML text hyperlink (a:hlinkClick on runs). Formats that
+   * don't emit DrawingML text hyperlinks (DOCX uses w:hyperlink) implement
+   * this as a no-op.
+   */
+  addHyperlink(key: string, url: string, tooltip?: string): void;
 }
 
 /** Context passed during parse (parse path). */

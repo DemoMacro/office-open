@@ -231,6 +231,8 @@ export * from "./effects/effect-descriptors";
 export * from "./locking/locking-descriptors";
 export * from "./geometry/geometry-descriptors";
 export * from "./transform-descriptors";
+export * from "./shape-properties-desc";
+export * from "./text";
 export * from "./three-d/three-d-descriptors";
 export * from "./blip/blip-descriptors";
 export * from "./diagram/diagram-descriptors";

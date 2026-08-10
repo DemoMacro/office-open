@@ -42,6 +42,10 @@ export class XlsxWriteContext implements WriteContext {
     return "";
   }
 
+  public addHyperlink(_key: string, _url: string, _tooltip?: string): void {
+    // Stub — drawing shape hyperlinks land here once xlsx shapes are added.
+  }
+
   /**
    * Register a differential format and return its dxfId.
    */

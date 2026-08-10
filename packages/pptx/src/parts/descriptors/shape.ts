@@ -16,7 +16,7 @@ import {
 } from "@office-open/core";
 import type { ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
-import { stringify, parse } from "@office-open/core/descriptor";
+import { parse } from "@office-open/core/descriptor";
 import {
   transform2DDesc,
   fillDesc,
@@ -25,17 +25,19 @@ import {
   outlineDesc,
   shapeLockingDesc,
   effectListDesc,
-  scene3DDesc,
-  shape3DDesc,
+  shapePropertiesDesc,
+  createBodyProperties,
+  parseBodyProperties,
+  VerticalAnchor,
 } from "@office-open/core/drawingml";
 import type {
-  Transform2DOptions,
   FillOptions as CoreFillOptions,
   PresetGeometryOptions,
   CustomGeometryOptions,
+  BodyPropertiesOptions,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { attrMeasure, findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
+import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
 import {
   toEffectListOptions,
   toScene3DOptions,
@@ -414,101 +416,55 @@ function buildLockAttrs(opts: ShapeLockingOptions): string[] {
 
 function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string {
   const pptx = ctx as PptxWriteContext;
-  const parts: string[] = [];
 
-  // Transform2D
-  const hasTransform =
-    opts.x !== undefined ||
-    opts.y !== undefined ||
-    opts.width !== undefined ||
-    opts.height !== undefined ||
-    opts.flipHorizontal !== undefined ||
-    opts.rotation !== undefined;
+  // Blip fill: pre-register via addImage so the deduped canonical keeps the
+  // pptx-local fileName (image_blip.<type>). shapePropertiesDesc's fillDesc
+  // re-registers via addMedia, deduped to the same canonical.
+  if (opts.fill && typeof opts.fill !== "string" && opts.fill.type === "blip" && opts.fill.data) {
+    const blipFill = opts.fill;
+    const raw = toUint8Array(blipFill.data, { encoding: "base64" });
+    const fileName = `image_blip.${blipFill.imageType ?? "png"}`;
+    pptx.addImage(fileName, {
+      key: fileName,
+      data: raw,
+      fileName,
+      type: (blipFill.imageType ?? "png") as MediaEntry["type"],
+      transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+    });
+  }
 
-  if (hasTransform) {
-    const transformOpts: Transform2DOptions = {
+  // Placeholder shapes inherit geometry/fill from layout/master; only emit
+  // them when explicitly set. Non-placeholder shapes default to rect geometry
+  // and noFill.
+  const isPlaceholder = !!opts.placeholder;
+  const geometry = opts.customGeometry
+    ? undefined
+    : isPlaceholder
+      ? opts.geometry
+      : (opts.geometry ?? "rect");
+  const fill = isPlaceholder ? opts.fill : (opts.fill ?? ({ type: "none" } as const));
+
+  const spPrContent = shapePropertiesDesc.stringify(
+    {
       x: opts.x,
       y: opts.y,
       width: opts.width,
       height: opts.height,
       flipHorizontal: opts.flipHorizontal,
       rotation: opts.rotation,
-    };
-    const xml = stringify(transform2DDesc, transformOpts, ctx);
-    if (xml) parts.push(xml);
-  }
+      customGeometry: opts.customGeometry,
+      geometry,
+      fill,
+      outline: opts.outline ? toCoreOutlineOptions(opts.outline) : undefined,
+      effects: opts.effects ? toEffectListOptions(opts.effects) : undefined,
+      scene3d: opts.effects ? toScene3DOptions(opts.effects) : undefined,
+      shape3d: opts.effects ? toShape3DOptions(opts.effects) : undefined,
+    },
+    ctx,
+  );
 
-  // Geometry: EG_Geometry choice — customGeometry takes precedence, else presetGeometry.
-  // A bare string normalizes to { preset }; an object preserves adjustmentValues.
-  // A placeholder inherits geometry from layout/master, so only emit prstGeom
-  // when explicitly set; non-placeholder shapes get the default "rect".
-  if (opts.customGeometry) {
-    const xml = stringify(customGeometryDesc, opts.customGeometry, ctx);
-    if (xml) parts.push(xml);
-  } else if (opts.geometry !== undefined || !opts.placeholder) {
-    const geom =
-      typeof opts.geometry === "string" || opts.geometry === undefined
-        ? { preset: opts.geometry ?? "rect" }
-        : opts.geometry;
-    const xml = stringify(presetGeometryDesc, geom, ctx);
-    if (xml) parts.push(xml);
-  }
-
-  // Fill (with blipFill media registration side effect)
-  if (opts.fill) {
-    const fillType = typeof opts.fill === "string" ? "solid" : opts.fill.type;
-    if (fillType === "blip") {
-      const blipFill = opts.fill as Extract<CoreFillOptions, { type: "blip" }>;
-      if (blipFill.data) {
-        const raw = toUint8Array(blipFill.data, { encoding: "base64" });
-        const fileName = `image_blip.${blipFill.imageType ?? "png"}`;
-        pptx.addImage(fileName, {
-          key: fileName,
-          data: raw,
-          fileName,
-          type: (blipFill.imageType ?? "png") as MediaEntry["type"],
-          transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
-        });
-      }
-    }
-    const fillXml = stringify(fillDesc, opts.fill, ctx);
-    if (fillXml) parts.push(fillXml);
-  } else if (!opts.placeholder) {
-    // A placeholder inherits fill from layout/master; only emit noFill for
-    // non-placeholder shapes so the placeholder can inherit the layout fill.
-    parts.push("<a:noFill/>");
-  }
-
-  // Outline
-  if (opts.outline) {
-    const coreOutline = toCoreOutlineOptions(opts.outline);
-    const outlineXml = stringify(outlineDesc, coreOutline, ctx);
-    if (outlineXml) parts.push(outlineXml);
-  }
-
-  // Effects
-  if (opts.effects) {
-    const effectListOpts = toEffectListOptions(opts.effects);
-    if (effectListOpts) {
-      const xml = stringify(effectListDesc, effectListOpts, ctx);
-      if (xml) parts.push(xml);
-    }
-
-    const scene3DOpts = toScene3DOptions(opts.effects);
-    if (scene3DOpts) {
-      const xml = stringify(scene3DDesc, scene3DOpts, ctx);
-      if (xml) parts.push(xml);
-    }
-
-    const shape3DOpts = toShape3DOptions(opts.effects);
-    if (shape3DOpts) {
-      const xml = stringify(shape3DDesc, shape3DOpts, ctx);
-      if (xml) parts.push(xml);
-    }
-  }
-
-  if (parts.length === 0) return "<p:spPr/>";
-  return `<p:spPr>${parts.join("")}</p:spPr>`;
+  if (!spPrContent) return "<p:spPr/>";
+  return `<p:spPr>${spPrContent}</p:spPr>`;
 }
 
 // ── Shape helper: p:style ──
@@ -594,38 +550,32 @@ function toParagraphDescOpts(opts: ParagraphOptions): ParagraphDescriptorOptions
 }
 
 function stringifyBodyPr(opts: TextBodyDescriptorOptions): string {
-  const bodyPrChildren: string[] = [];
-
+  const bodyOpts: BodyPropertiesOptions = {};
+  if (opts.vertical) bodyOpts.vert = opts.vertical;
+  if (opts.anchor) bodyOpts.anchor = xsdTextAnchor.to(opts.anchor) as VerticalAnchor;
+  if (opts.wrap) bodyOpts.wrap = opts.wrap;
+  if (opts.margins) {
+    bodyOpts.margins = {};
+    if (opts.margins.top !== undefined) bodyOpts.margins.top = opts.margins.top;
+    if (opts.margins.bottom !== undefined) bodyOpts.margins.bottom = opts.margins.bottom;
+    if (opts.margins.left !== undefined) bodyOpts.margins.left = opts.margins.left;
+    if (opts.margins.right !== undefined) bodyOpts.margins.right = opts.margins.right;
+  }
+  if (opts.columns !== undefined) bodyOpts.numCol = opts.columns;
+  if (opts.columnSpacing !== undefined) bodyOpts.spcCol = opts.columnSpacing * 100;
+  // marginTop/marginBottom (marT/marB) have no XSD counterpart on
+  // CT_TextBodyProperties — dropped (Office ignores them anyway).
   if (opts.autoFit === "normal") {
-    const naAttrs: string[] = [];
-    if (opts.autoFitFontScale !== undefined) naAttrs.push(`fontScale="${opts.autoFitFontScale}"`);
+    bodyOpts.normAutofit = {};
+    if (opts.autoFitFontScale !== undefined) bodyOpts.normAutofit.fontScale = opts.autoFitFontScale;
     if (opts.autoFitLineSpaceReduction !== undefined)
-      naAttrs.push(`lnSpcReduction="${opts.autoFitLineSpaceReduction}"`);
-    bodyPrChildren.push(
-      naAttrs.length ? `<a:normAutofit ${naAttrs.join(" ")}/>` : "<a:normAutofit/>",
-    );
-  } else if (opts.autoFit === "shape") bodyPrChildren.push("<a:spAutoFit/>");
-  else if (opts.autoFit === "none") bodyPrChildren.push("<a:noAutofit/>");
-
-  const attrs: string[] = [];
-  if (opts.vertical) attrs.push(`vert="${opts.vertical}"`);
-  if (opts.anchor) attrs.push(`anchor="${xsdTextAnchor.to(opts.anchor)}"`);
-  if (opts.wrap) attrs.push(`wrap="${opts.wrap}"`);
-  if (opts.margins?.top !== undefined) attrs.push(`tIns="${opts.margins.top}"`);
-  if (opts.margins?.bottom !== undefined) attrs.push(`bIns="${opts.margins.bottom}"`);
-  if (opts.margins?.left !== undefined) attrs.push(`lIns="${opts.margins.left}"`);
-  if (opts.margins?.right !== undefined) attrs.push(`rIns="${opts.margins.right}"`);
-  if (opts.columns !== undefined) attrs.push(`numCol="${opts.columns}"`);
-  if (opts.columnSpacing !== undefined) attrs.push(`spcCol="${opts.columnSpacing * 100}"`);
-  if (opts.marginTop !== undefined) attrs.push(`marT="${opts.marginTop}"`);
-  if (opts.marginBottom !== undefined) attrs.push(`marB="${opts.marginBottom}"`);
-
-  const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-  const children = bodyPrChildren.join("");
-
-  if (!children && !attrStr) return "<a:bodyPr/>";
-  if (!children) return `<a:bodyPr${attrStr}/>`;
-  return `<a:bodyPr${attrStr}>${children}</a:bodyPr>`;
+      bodyOpts.normAutofit.lnSpcReduction = opts.autoFitLineSpaceReduction;
+  } else if (opts.autoFit === "shape") {
+    bodyOpts.spAutoFit = true;
+  } else if (opts.autoFit === "none") {
+    bodyOpts.noAutoFit = true;
+  }
+  return createBodyProperties(bodyOpts);
 }
 
 // ── Picture helpers ──
@@ -640,33 +590,20 @@ function stringifyPptxBlipFill(fileName: string): string {
 }
 
 function stringifyPicSpPr(opts: PictureDescriptorOptions, ctx: WriteContext): string {
-  const parts: string[] = [];
-
-  // Transform2D (always present for pictures)
-  const transformOpts: Transform2DOptions = {
-    x: opts.x,
-    y: opts.y,
-    width: opts.width,
-    height: opts.height,
-  };
-  const xfrmXml = stringify(transform2DDesc, transformOpts, ctx);
-  if (xfrmXml) parts.push(xfrmXml);
-
-  // PresetGeometry (always rect for pictures)
-  const geomXml = stringify(presetGeometryDesc, { preset: "rect" }, ctx);
-  if (geomXml) parts.push(geomXml);
-
-  // Effects (e.g. shadow/reflection on the picture)
-  if (opts.effects) {
-    const effectListOpts = toEffectListOptions(opts.effects);
-    if (effectListOpts) {
-      const fxXml = stringify(effectListDesc, effectListOpts, ctx);
-      if (fxXml) parts.push(fxXml);
-    }
-  }
-
-  if (parts.length === 0) return "<p:spPr/>";
-  return `<p:spPr>${parts.join("")}</p:spPr>`;
+  const spPrContent = shapePropertiesDesc.stringify(
+    {
+      x: opts.x,
+      y: opts.y,
+      width: opts.width,
+      height: opts.height,
+      // Pictures always use a rect preset geometry.
+      geometry: "rect",
+      effects: opts.effects ? toEffectListOptions(opts.effects) : undefined,
+    },
+    ctx,
+  );
+  if (!spPrContent) return "<p:spPr/>";
+  return `<p:spPr>${spPrContent}</p:spPr>`;
 }
 
 // ── Read helpers ──
@@ -856,41 +793,29 @@ function readTxBody(txBody: XmlElement, ctx: ReadContext): TextBodyDescriptorOpt
   // a:bodyPr
   const bodyPr = findChild(txBody, "a:bodyPr");
   if (bodyPr) {
-    const attrs = bodyPr.attributes ?? {};
-    if (attrs["vert"] !== undefined)
-      result.vertical = String(attrs["vert"]) as TextBodyDescriptorOptions["vertical"];
-    if (attrs["anchor"] !== undefined)
+    const bodyOpts = parseBodyProperties(bodyPr, ctx);
+    if (bodyOpts.vert) result.vertical = bodyOpts.vert as TextBodyDescriptorOptions["vertical"];
+    if (bodyOpts.anchor)
       result.anchor = xsdTextAnchor.from(
-        String(attrs["anchor"]),
+        String(bodyOpts.anchor),
       ) as TextBodyDescriptorOptions["anchor"];
-    if (attrs["wrap"] !== undefined)
-      result.wrap = String(attrs["wrap"]) as TextBodyDescriptorOptions["wrap"];
+    if (bodyOpts.wrap) result.wrap = bodyOpts.wrap as TextBodyDescriptorOptions["wrap"];
     const insMargins: TextBodyMarginsDescriptorOptions = {};
-    const tIns = attrMeasure(bodyPr, "tIns");
-    if (tIns !== undefined) insMargins.top = tIns as number | UniversalMeasure;
-    const bIns = attrMeasure(bodyPr, "bIns");
-    if (bIns !== undefined) insMargins.bottom = bIns as number | UniversalMeasure;
-    const lIns = attrMeasure(bodyPr, "lIns");
-    if (lIns !== undefined) insMargins.left = lIns as number | UniversalMeasure;
-    const rIns = attrMeasure(bodyPr, "rIns");
-    if (rIns !== undefined) insMargins.right = rIns as number | UniversalMeasure;
+    if (bodyOpts.tIns !== undefined) insMargins.top = bodyOpts.tIns as number | UniversalMeasure;
+    if (bodyOpts.bIns !== undefined) insMargins.bottom = bodyOpts.bIns as number | UniversalMeasure;
+    if (bodyOpts.lIns !== undefined) insMargins.left = bodyOpts.lIns as number | UniversalMeasure;
+    if (bodyOpts.rIns !== undefined) insMargins.right = bodyOpts.rIns as number | UniversalMeasure;
     if (Object.keys(insMargins).length > 0) result.margins = { ...result.margins, ...insMargins };
-    if (attrs["numCol"] !== undefined) result.columns = Number(attrs["numCol"]);
-    if (attrs["spcCol"] !== undefined) result.columnSpacing = Number(attrs["spcCol"]) / 100;
-    const marT = attrMeasure(bodyPr, "marT");
-    if (marT !== undefined) result.marginTop = marT as number | UniversalMeasure;
-    const marB = attrMeasure(bodyPr, "marB");
-    if (marB !== undefined) result.marginBottom = marB as number | UniversalMeasure;
-
-    const normAutofit = findChild(bodyPr, "a:normAutofit");
-    if (normAutofit) {
+    if (bodyOpts.numCol !== undefined) result.columns = bodyOpts.numCol;
+    if (bodyOpts.spcCol !== undefined) result.columnSpacing = Number(bodyOpts.spcCol) / 100;
+    if (bodyOpts.normAutofit) {
       result.autoFit = "normal";
-      const fontScale = attrNum(normAutofit, "fontScale");
-      if (fontScale !== undefined) result.autoFitFontScale = fontScale;
-      const lnSpcReduction = attrNum(normAutofit, "lnSpcReduction");
-      if (lnSpcReduction !== undefined) result.autoFitLineSpaceReduction = lnSpcReduction;
-    } else if (findChild(bodyPr, "a:spAutoFit")) result.autoFit = "shape";
-    else if (findChild(bodyPr, "a:noAutofit")) result.autoFit = "none";
+      if (bodyOpts.normAutofit.fontScale !== undefined)
+        result.autoFitFontScale = bodyOpts.normAutofit.fontScale;
+      if (bodyOpts.normAutofit.lnSpcReduction !== undefined)
+        result.autoFitLineSpaceReduction = bodyOpts.normAutofit.lnSpcReduction;
+    } else if (bodyOpts.spAutoFit) result.autoFit = "shape";
+    else if (bodyOpts.noAutoFit) result.autoFit = "none";
   }
 
   // Paragraphs — use paragraphDesc

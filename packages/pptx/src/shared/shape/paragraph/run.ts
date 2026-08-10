@@ -1,10 +1,7 @@
 /**
- * Run options type for PPTX text runs.
+ * Run options type — re-exported from core DrawingML.
  *
  * @module
  */
-import type { RunPropertiesOptions } from "./run-properties";
 
-export interface RunOptions extends RunPropertiesOptions {
-  text?: string;
-}
+export type { RunOptions } from "@office-open/core/drawingml";

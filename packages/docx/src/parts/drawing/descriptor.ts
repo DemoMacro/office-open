@@ -31,15 +31,7 @@ import type {
 import {
   calculateEffectExtent,
   createColorElement,
-  createEffectDag,
-  customGeometryDesc,
-  effectListDesc,
-  fillDesc,
-  outlineDesc,
-  presetGeometryDesc,
-  scene3DDesc,
-  shape3DDesc,
-  transform2DDesc,
+  shapePropertiesDesc,
 } from "@office-open/core/drawingml";
 import { escapeXml } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
@@ -82,6 +74,7 @@ import type { TextWrapping, WrapPolygon } from "./text-wrap";
 const NOOP_CTX: WriteContext = {
   addRelationship: () => "",
   addMedia: () => "",
+  addHyperlink: () => {},
 };
 
 // ── Options ──
@@ -337,32 +330,24 @@ function stringifyShapeProps(
   fill?: FillOptions,
   effects?: EffectListOptions,
 ): string {
-  const parts: string[] = [];
-
-  // Transform
-  parts.push(
-    transform2DDesc.stringify(
-      {
-        x: transform.offset?.emus?.x ?? 0,
-        y: transform.offset?.emus?.y ?? 0,
-        width: transform.emus.x,
-        height: transform.emus.y,
-        flipHorizontal: transform.flip?.horizontal,
-        flipVertical: transform.flip?.vertical,
-        rotation: transform.rotation,
-      },
-      NOOP_CTX,
-    ) ?? "",
+  const spPr = shapePropertiesDesc.stringify(
+    {
+      x: transform.offset?.emus?.x ?? 0,
+      y: transform.offset?.emus?.y ?? 0,
+      width: transform.emus.x,
+      height: transform.emus.y,
+      flipHorizontal: transform.flip?.horizontal,
+      flipVertical: transform.flip?.vertical,
+      rotation: transform.rotation,
+      // Pictures always use a rect preset geometry.
+      geometry: "rect",
+      fill,
+      outline,
+      effects,
+    },
+    NOOP_CTX,
   );
-
-  // Geometry (always rect — preset geometry variations not used for pic)
-  parts.push('<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>');
-
-  if (fill) parts.push(fillDesc.stringify(fill, NOOP_CTX) ?? "");
-  if (outline) parts.push(outlineDesc.stringify(outline, NOOP_CTX) ?? "");
-  if (effects) parts.push(effectListDesc.stringify(effects, NOOP_CTX) ?? "");
-
-  return `<pic:spPr bwMode="auto">${parts.join("")}</pic:spPr>`;
+  return `<pic:spPr bwMode="auto">${spPr ?? ""}</pic:spPr>`;
 }
 
 // ── Non-visual picture properties (pic:nvPicPr) ──
@@ -384,27 +369,6 @@ function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: NonVisualPropertiesOption
 
 // ── WPS shape (pure string, no class instances) ──
 
-function stringifyGroupTransform2D(
-  transform: MediaDataTransformation,
-  childOffset?: ChildOffset,
-  childExtent?: ChildExtent,
-): string {
-  const attrs: string[] = [];
-  if (transform.flip?.horizontal !== undefined) attrs.push(`flipH="${transform.flip.horizontal}"`);
-  if (transform.flip?.vertical !== undefined) attrs.push(`flipV="${transform.flip.vertical}"`);
-  if (transform.rotation !== undefined) attrs.push(`rot="${transform.rotation}"`);
-  const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-
-  const off = `<a:off x="${transform.offset?.emus?.x ?? 0}" y="${transform.offset?.emus?.y ?? 0}"/>`;
-  const ext = `<a:ext cx="${transform.emus.x}" cy="${transform.emus.y}"/>`;
-  const childOffsetXml = childOffset ? `<a:chOff x="${childOffset.x}" y="${childOffset.y}"/>` : "";
-  const childExtentXml = childExtent
-    ? `<a:chExt cx="${childExtent.cx}" cy="${childExtent.cy}"/>`
-    : "";
-
-  return `<a:xfrm${attrStr}>${off}${ext}${childOffsetXml}${childExtentXml}</a:xfrm>`;
-}
-
 /** WpsShape options for stringification (extends WpsShapeCoreOptions with transformation). */
 interface WpsStringifyOptions extends WpsShapeCoreOptions {
   transformation: MediaDataTransformation;
@@ -412,9 +376,8 @@ interface WpsStringifyOptions extends WpsShapeCoreOptions {
 
 function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string {
   const transform = opts.transformation;
-  const spPrParts: string[] = [];
-  spPrParts.push(
-    transform2DDesc.stringify(
+  const spPrContent =
+    shapePropertiesDesc.stringify(
       {
         x: transform.offset?.emus?.x ?? 0,
         y: transform.offset?.emus?.y ?? 0,
@@ -423,26 +386,18 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
         flipHorizontal: transform.flip?.horizontal,
         flipVertical: transform.flip?.vertical,
         rotation: transform.rotation,
+        customGeometry: opts.customGeometry,
+        // WPS shapes always carry geometry — default to rect when none specified.
+        geometry: opts.customGeometry ? undefined : (opts.presetGeometry ?? "rect"),
+        fill: opts.fill,
+        outline: opts.outline,
+        effectDag: opts.effectDag,
+        effects: opts.effects,
+        scene3d: opts.scene3d,
+        shape3d: opts.shape3d,
       },
-      NOOP_CTX,
-    ) ?? "",
-  );
-  if (opts.customGeometry) {
-    spPrParts.push(customGeometryDesc.stringify(opts.customGeometry, NOOP_CTX) ?? "");
-  } else if (opts.presetGeometry) {
-    spPrParts.push(presetGeometryDesc.stringify(opts.presetGeometry, NOOP_CTX) ?? "");
-  } else {
-    spPrParts.push('<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>');
-  }
-  if (opts.fill) spPrParts.push(fillDesc.stringify(opts.fill, ctx) ?? "");
-  if (opts.outline) spPrParts.push(outlineDesc.stringify(opts.outline, NOOP_CTX) ?? "");
-  if (opts.effectDag) {
-    spPrParts.push(createEffectDag(opts.effectDag));
-  } else if (opts.effects) {
-    spPrParts.push(effectListDesc.stringify(opts.effects, NOOP_CTX) ?? "");
-  }
-  if (opts.scene3d) spPrParts.push(scene3DDesc.stringify(opts.scene3d, NOOP_CTX) ?? "");
-  if (opts.shape3d) spPrParts.push(shape3DDesc.stringify(opts.shape3d, NOOP_CTX) ?? "");
+      ctx,
+    ) ?? "";
 
   // Non-visual shape properties — default txBox="1"
   const cNvSpPr = opts.nonVisualProperties
@@ -464,7 +419,7 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   return (
     "<wps:wsp>" +
     cNvSpPr +
-    `<wps:spPr bwMode="auto">${spPrParts.join("")}</wps:spPr>` +
+    `<wps:spPr bwMode="auto">${spPrContent}</wps:spPr>` +
     styleXml +
     txbxXml +
     stringifyBodyPr(opts.bodyProperties) +
@@ -536,10 +491,25 @@ function stringifyWpgGroup(
   ctx: BodyContext,
 ): string {
   const transform = opts.transformation;
-  const grpSpPrParts: string[] = [];
-  grpSpPrParts.push(stringifyGroupTransform2D(transform, opts.childOffset, opts.childExtent));
-  if (opts.fill) grpSpPrParts.push(fillDesc.stringify(opts.fill, ctx) ?? "");
-  if (opts.effects) grpSpPrParts.push(effectListDesc.stringify(opts.effects, NOOP_CTX) ?? "");
+  const grpSpPrContent =
+    shapePropertiesDesc.stringify(
+      {
+        x: transform.offset?.emus?.x ?? 0,
+        y: transform.offset?.emus?.y ?? 0,
+        width: transform.emus.x,
+        height: transform.emus.y,
+        flipHorizontal: transform.flip?.horizontal,
+        flipVertical: transform.flip?.vertical,
+        rotation: transform.rotation,
+        childOffsetX: opts.childOffset?.x,
+        childOffsetY: opts.childOffset?.y,
+        childExtentWidth: opts.childExtent?.cx,
+        childExtentHeight: opts.childExtent?.cy,
+        fill: opts.fill,
+        effects: opts.effects,
+      },
+      ctx,
+    ) ?? "";
 
   // Children — wps shapes, nested wpg groups, or pic elements
   const childXml = opts.children.map((child) => stringifyGroupChild(child, ctx)).join("");
@@ -547,7 +517,7 @@ function stringifyWpgGroup(
   return (
     "<wpg:wgp>" +
     stringifyCnvGrpSpPr(opts.groupShapeLocks) +
-    `<wpg:grpSpPr>${grpSpPrParts.join("")}</wpg:grpSpPr>` +
+    `<wpg:grpSpPr>${grpSpPrContent}</wpg:grpSpPr>` +
     childXml +
     "</wpg:wgp>"
   );
@@ -612,17 +582,30 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
  * structure as the top-level group, wrapped in wpg:grpSp with a cNvPr id/name.
  */
 function stringifyNestedGroup(grp: WpgMediaData, ctx: BodyContext): string {
-  const grpSpPrParts: string[] = [];
-  grpSpPrParts.push(
-    stringifyGroupTransform2D(grp.transformation, grp.childOffset, grp.childExtent),
-  );
-  if (grp.fill) grpSpPrParts.push(fillDesc.stringify(grp.fill, ctx) ?? "");
-  if (grp.effects) grpSpPrParts.push(effectListDesc.stringify(grp.effects, NOOP_CTX) ?? "");
+  const grpSpPrContent =
+    shapePropertiesDesc.stringify(
+      {
+        x: grp.transformation.offset?.emus?.x ?? 0,
+        y: grp.transformation.offset?.emus?.y ?? 0,
+        width: grp.transformation.emus.x,
+        height: grp.transformation.emus.y,
+        flipHorizontal: grp.transformation.flip?.horizontal,
+        flipVertical: grp.transformation.flip?.vertical,
+        rotation: grp.transformation.rotation,
+        childOffsetX: grp.childOffset?.x,
+        childOffsetY: grp.childOffset?.y,
+        childExtentWidth: grp.childExtent?.cx,
+        childExtentHeight: grp.childExtent?.cy,
+        fill: grp.fill,
+        effects: grp.effects,
+      },
+      ctx,
+    ) ?? "";
   return (
     "<wpg:grpSp>" +
     '<wpg:cNvPr id="0" name=""/>' +
     stringifyCnvGrpSpPr(grp.groupShapeLocks) +
-    `<wpg:grpSpPr>${grpSpPrParts.join("")}</wpg:grpSpPr>` +
+    `<wpg:grpSpPr>${grpSpPrContent}</wpg:grpSpPr>` +
     grp.children.map((c) => stringifyGroupChild(c, ctx)).join("") +
     "</wpg:grpSp>"
   );

@@ -238,6 +238,10 @@ export class DocxWriteContext implements WriteContext {
     return `{${entry.fileName}}`;
   }
 
+  public addHyperlink(_key: string, _url: string, _tooltip?: string): void {
+    // DrawingML text hyperlinks are not emitted by DOCX; text boxes use w:hyperlink.
+  }
+
   // --- Internal tracking ---
   private _headers: HeaderFooterEntry[] = [];
   private _footers: HeaderFooterEntry[] = [];
