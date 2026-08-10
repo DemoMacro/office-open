@@ -808,4 +808,67 @@ describe("chartSpaceDesc", () => {
     const xml = stringify(chartSpaceDesc, result, {} as WriteContext);
     expect(xml).toContain("<c:wireframe/>");
   });
+
+  it("round-trips line chart high-low lines, up/down bars, and drop lines", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      highLowLines: true,
+      upDownBars: true,
+      upDownBarsGapWidth: 150,
+      dropLines: true,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:hiLowLines/>");
+    expect(xml).toContain("<c:upDownBars>");
+    expect(xml).toContain('c:gapWidth val="150"');
+    expect(xml).toContain("<c:upBars/>");
+    expect(xml).toContain("<c:downBars/>");
+    expect(xml).toContain("<c:dropLines/>");
+
+    const result = roundTrip(opts);
+    expect(result.highLowLines).toBe(true);
+    expect(result.upDownBars).toBe(true);
+    expect(result.upDownBarsGapWidth).toBe(150);
+    expect(result.dropLines).toBe(true);
+  });
+
+  it("round-trips area chart drop lines", () => {
+    const opts: ChartSpaceOptions = {
+      type: "area",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      dropLines: true,
+    };
+    const result = roundTrip(opts);
+    expect(result.dropLines).toBe(true);
+    const xml = stringify(chartSpaceDesc, result, {} as WriteContext);
+    expect(xml).toContain("<c:dropLines/>");
+  });
+
+  it("round-trips plot-area data table", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      dataTable: {
+        showHorizontalBorder: true,
+        showVerticalBorder: false,
+        showOutline: true,
+        showLegendKeys: true,
+      },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:showHorzBorder/>");
+    expect(xml).toContain('<c:showVertBorder val="0"/>');
+    expect(xml).toContain("<c:showOutline/>");
+    expect(xml).toContain("<c:showKeys/>");
+
+    const result = roundTrip(opts);
+    expect(result.dataTable?.showHorizontalBorder).toBe(true);
+    expect(result.dataTable?.showVerticalBorder).toBe(false);
+    expect(result.dataTable?.showOutline).toBe(true);
+    expect(result.dataTable?.showLegendKeys).toBe(true);
+  });
 });

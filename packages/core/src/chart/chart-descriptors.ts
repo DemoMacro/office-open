@@ -46,6 +46,7 @@ import type {
   LayoutMode,
   DisplayBlanksAs,
   SizeRepresents,
+  DataTableOptions,
 } from "./types";
 
 // ── Mutable build type for read results (readonly properties not assignable) ──
@@ -356,6 +357,27 @@ function stringifyNumRef(values: readonly number[]): string {
 
 // ── Chart type header XML ──
 
+function stringifyUpDownBars(gapWidth: number | undefined): string {
+  // CT_UpDownBars: gapWidth? → upBars → downBars (CT_ChartLines, presence-only)
+  const inner: string[] = [];
+  if (gapWidth !== undefined) inner.push(valEl("c:gapWidth", gapWidth));
+  inner.push(emptyEl("c:upBars"));
+  inner.push(emptyEl("c:downBars"));
+  return `<c:upDownBars>${inner.join("")}</c:upDownBars>`;
+}
+
+function stringifyDataTable(opts: DataTableOptions): string {
+  // CT_DTable: showHorzBorder → showVertBorder → showOutline → showKeys
+  const parts: string[] = [];
+  if (opts.showHorizontalBorder !== undefined)
+    parts.push(`<c:showHorzBorder${boolVal(opts.showHorizontalBorder)}/>`);
+  if (opts.showVerticalBorder !== undefined)
+    parts.push(`<c:showVertBorder${boolVal(opts.showVerticalBorder)}/>`);
+  if (opts.showOutline !== undefined) parts.push(`<c:showOutline${boolVal(opts.showOutline)}/>`);
+  if (opts.showLegendKeys !== undefined) parts.push(`<c:showKeys${boolVal(opts.showLegendKeys)}/>`);
+  return `<c:dTable>${parts.join("")}</c:dTable>`;
+}
+
 function chartTypeHeader(opts: ChartSpaceOptions): string {
   const tag = opts.threeD ? CHART_TYPE_TAGS_3D[opts.type] : CHART_TYPE_TAGS[opts.type];
   if (!tag) throw new Error(`Unsupported chart type: ${opts.type}`);
@@ -412,6 +434,27 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
       parts.push(valEl("c:sizeRepresents", opts.sizeRepresents));
   } else if (opts.type === "surface") {
     if (opts.wireframe !== undefined) parts.push(`<c:wireframe${boolVal(opts.wireframe)}/>`);
+  }
+
+  // CT_xxxChart decorations (CT_ChartLines containers, after scalars per XSD)
+  if (opts.type === "line") {
+    if (opts.threeD) {
+      if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
+    } else {
+      if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
+      if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
+      if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
+    }
+  } else if (opts.type === "area") {
+    if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
+    if (opts.threeD && opts.seriesLines) parts.push(emptyEl("c:serLines"));
+  } else if (opts.type === "stock") {
+    if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
+    if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
+    if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
+    if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
+  } else if ((opts.type === "column" || opts.type === "bar") && !opts.threeD) {
+    if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
   }
 
   // Axes (pie/doughnut have none)
@@ -988,6 +1031,61 @@ function readChartTypeScalars(
   }
 }
 
+// ── Chart-type decoration read (CT_ChartLines containers) ──
+
+function readChartTypeDecorations(
+  chartTypeEl: XmlElement | undefined,
+  type: ChartType,
+  threeD: boolean,
+  result: MutableChartSpaceResult,
+): void {
+  if (!chartTypeEl) return;
+  const readUpDownBars = (el: XmlElement) => {
+    result.upDownBars = true;
+    const gw = readValNum(el, "c:gapWidth");
+    if (gw !== undefined) result.upDownBarsGapWidth = gw;
+  };
+  if (type === "line") {
+    if (threeD) {
+      if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
+    } else {
+      if (findChild(chartTypeEl, "c:hiLowLines")) result.highLowLines = true;
+      const upDownBars = findChild(chartTypeEl, "c:upDownBars");
+      if (upDownBars) readUpDownBars(upDownBars);
+      if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
+    }
+  } else if (type === "area") {
+    if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
+    if (threeD && findChild(chartTypeEl, "c:serLines")) result.seriesLines = true;
+  } else if (type === "stock") {
+    if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
+    if (findChild(chartTypeEl, "c:hiLowLines")) result.highLowLines = true;
+    const upDownBars = findChild(chartTypeEl, "c:upDownBars");
+    if (upDownBars) readUpDownBars(upDownBars);
+    if (findChild(chartTypeEl, "c:serLines")) result.seriesLines = true;
+  } else if ((type === "column" || type === "bar") && !threeD) {
+    if (findChild(chartTypeEl, "c:serLines")) result.seriesLines = true;
+  }
+}
+
+// ── Plot-area data table read (CT_DTable) ──
+
+function readDataTable(plotArea: XmlElement | undefined): DataTableOptions | undefined {
+  if (!plotArea) return undefined;
+  const dTable = findChild(plotArea, "c:dTable");
+  if (!dTable) return undefined;
+  const opts: DataTableOptions = {};
+  const horz = readBoolAttr(dTable, "c:showHorzBorder");
+  if (horz !== undefined) opts.showHorizontalBorder = horz;
+  const vert = readBoolAttr(dTable, "c:showVertBorder");
+  if (vert !== undefined) opts.showVerticalBorder = vert;
+  const outline = readBoolAttr(dTable, "c:showOutline");
+  if (outline !== undefined) opts.showOutline = outline;
+  const keys = readBoolAttr(dTable, "c:showKeys");
+  if (keys !== undefined) opts.showLegendKeys = keys;
+  return Object.keys(opts).length ? opts : undefined;
+}
+
 // ── Axis read (CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx) ──
 
 const AXIS_KIND_BY_TAG: Record<string, AxisKind> = {
@@ -1179,6 +1277,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // Axes
     parts.push(stringifyAxes(opts));
 
+    // Data table (CT_PlotArea: axes → dTable → spPr)
+    if (opts.dataTable) parts.push(stringifyDataTable(opts.dataTable));
+
     parts.push("</c:plotArea>");
 
     // Legend
@@ -1242,6 +1343,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       // plot-area manual layout (CT_Layout > CT_ManualLayout)
       const manualLayout = readManualLayout(findChild(plotArea, "c:layout"));
       if (manualLayout) result.plotAreaLayout = manualLayout;
+      // plot-area data table (CT_PlotArea tail)
+      const dataTable = readDataTable(plotArea);
+      if (dataTable) result.dataTable = dataTable;
       let detectedType: ChartType | undefined;
       let threeD = false;
       let chartTypeEl: XmlElement | undefined;
@@ -1268,6 +1372,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
         result.type = detectedType;
         if (threeD) result.threeD = true;
         readChartTypeScalars(chartTypeEl, detectedType, threeD, result);
+        readChartTypeDecorations(chartTypeEl, detectedType, threeD, result);
       }
 
       // Extract series data (c:ser are children of the chart-type element, not plotArea)

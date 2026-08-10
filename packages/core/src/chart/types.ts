@@ -229,6 +229,18 @@ export interface ChartSpaceOptions {
   sizeRepresents?: SizeRepresents;
   /** Surface chart wireframe rendering (c:wireframe). */
   wireframe?: boolean;
+  /** High-low lines (c:hiLowLines, line/stock 2D). */
+  highLowLines?: boolean;
+  /** Up/down bars container (c:upDownBars, line/stock 2D). */
+  upDownBars?: boolean;
+  /** Gap width inside the up/down bars container (c:upDownBars > c:gapWidth). */
+  upDownBarsGapWidth?: number;
+  /** Drop lines (c:dropLines, line/area/stock). */
+  dropLines?: boolean;
+  /** Series lines (c:serLines, stock / 2D bar / 3D area). */
+  seriesLines?: boolean;
+  /** Plot-area data table (c:dTable). */
+  dataTable?: DataTableOptions;
 }
 
 // ── 3D view ──
@@ -503,3 +515,11 @@ export const SizeRepresents = {
   WIDTH: "w",
 } as const;
 export type SizeRepresents = (typeof SizeRepresents)[keyof typeof SizeRepresents];
+
+/** Plot-area data table (CT_DTable). */
+export interface DataTableOptions {
+  showHorizontalBorder?: boolean;
+  showVerticalBorder?: boolean;
+  showOutline?: boolean;
+  showLegendKeys?: boolean;
+}
