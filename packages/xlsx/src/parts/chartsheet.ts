@@ -11,7 +11,7 @@
 import type { UniversalMeasure } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attrs, escapeXml, findChild } from "@office-open/xml";
+import { attrs, attr, attrNum, escapeXml, findChild, textOf } from "@office-open/xml";
 
 // ── Types ──
 
@@ -70,6 +70,8 @@ export interface ChartsheetOptions {
   sheetProtection?: ChartsheetProtectionOptions;
   /** Published to server (CT_ChartsheetPr @published) */
   published?: boolean;
+  /** VBA code name (CT_ChartsheetPr @codeName) */
+  codeName?: string;
   /** Zoom to fit (CT_ChartsheetView @zoomToFit) */
   zoomToFit?: boolean;
   /** Chart definition (type, title, series, etc.) */
@@ -103,11 +105,13 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     ];
 
     // sheetPr (optional)
-    if (opts.tabColor || opts.published) {
+    if (opts.tabColor || opts.published || opts.codeName) {
       const prAttrs: string[] = [];
       if (opts.tabColor) prAttrs.push(`<tabColor${attrs({ rgb: opts.tabColor })}/>`);
-      const spAttr = opts.published ? ' published="1"' : "";
-      p.push(`<sheetPr${spAttr}>${prAttrs.join("")}</sheetPr>`);
+      const spAttrs: string[] = [];
+      if (opts.published) spAttrs.push(' published="1"');
+      if (opts.codeName) spAttrs.push(` codeName="${escapeXml(opts.codeName)}"`);
+      p.push(`<sheetPr${spAttrs.join("")}>${prAttrs.join("")}</sheetPr>`);
     }
 
     // sheetViews (required)
@@ -177,19 +181,83 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
   parse(el, _ctx) {
     const result: Partial<ChartsheetDescriptorOptions> = {};
 
+    // nativeTypeAttributes (xlsx parse path) coerces "1"/"0" to numbers, so
+    // boolean attribute checks use String() coercion.
     // sheetPr
     const sheetPr = findChild(el, "sheetPr");
     if (sheetPr) {
-      if (sheetPr.attributes?.["published"] === "1") result.published = true;
+      if (String(attr(sheetPr, "published")) === "1") result.published = true;
+      if (attr(sheetPr, "codeName")) result.codeName = attr(sheetPr, "codeName");
       const tabColor = findChild(sheetPr, "tabColor");
-      if (tabColor?.attributes?.["rgb"]) result.tabColor = String(tabColor.attributes["rgb"]);
+      if (tabColor) {
+        const rgb = attr(tabColor, "rgb");
+        if (rgb) result.tabColor = String(rgb);
+      }
     }
 
-    // sheetView
+    // sheetViews
     const sheetViews = findChild(el, "sheetViews");
     if (sheetViews) {
       const sv = findChild(sheetViews, "sheetView");
-      if (sv?.attributes?.["zoomToFit"] === "1") result.zoomToFit = true;
+      if (sv && String(attr(sv, "zoomToFit")) === "1") result.zoomToFit = true;
+    }
+
+    // sheetProtection
+    const sheetProtectionEl = findChild(el, "sheetProtection");
+    if (sheetProtectionEl) {
+      const sp: Partial<ChartsheetProtectionOptions> = {};
+      if (String(attr(sheetProtectionEl, "content")) === "1") sp.content = true;
+      if (String(attr(sheetProtectionEl, "objects")) === "1") sp.objects = true;
+      result.sheetProtection = sp;
+    }
+
+    // pageMargins
+    const pageMarginsEl = findChild(el, "pageMargins");
+    if (pageMarginsEl) {
+      const pm: Partial<ChartsheetPageMargins> = {};
+      const ml = attrNum(pageMarginsEl, "left");
+      if (ml !== undefined) pm.left = ml;
+      const mr = attrNum(pageMarginsEl, "right");
+      if (mr !== undefined) pm.right = mr;
+      const mt = attrNum(pageMarginsEl, "top");
+      if (mt !== undefined) pm.top = mt;
+      const mb = attrNum(pageMarginsEl, "bottom");
+      if (mb !== undefined) pm.bottom = mb;
+      const mh = attrNum(pageMarginsEl, "header");
+      if (mh !== undefined) pm.header = mh;
+      const mf = attrNum(pageMarginsEl, "footer");
+      if (mf !== undefined) pm.footer = mf;
+      result.pageMargins = pm;
+    }
+
+    // pageSetup
+    const pageSetupEl = findChild(el, "pageSetup");
+    if (pageSetupEl) {
+      const ps: Partial<ChartsheetPageSetup> = {};
+      const pz = attrNum(pageSetupEl, "paperSize");
+      if (pz !== undefined) ps.paperSize = pz;
+      const orient = attr(pageSetupEl, "orientation");
+      if (orient) ps.orientation = orient;
+      const hdpi = attrNum(pageSetupEl, "horizontalDpi");
+      if (hdpi !== undefined) ps.horizontalDpi = hdpi;
+      const vdpi = attrNum(pageSetupEl, "verticalDpi");
+      if (vdpi !== undefined) ps.verticalDpi = vdpi;
+      const copies = attrNum(pageSetupEl, "copies");
+      if (copies !== undefined) ps.copies = copies;
+      result.pageSetup = ps;
+    }
+
+    // headerFooter
+    const headerFooterEl = findChild(el, "headerFooter");
+    if (headerFooterEl) {
+      const hf: Partial<ChartsheetHeaderFooterOptions> = {};
+      if (String(attr(headerFooterEl, "differentFirst")) === "1") hf.differentFirst = true;
+      if (String(attr(headerFooterEl, "differentOddEven")) === "1") hf.differentOddEven = true;
+      const oh = findChild(headerFooterEl, "oddHeader");
+      if (oh) hf.oddHeader = textOf(oh);
+      const of2 = findChild(headerFooterEl, "oddFooter");
+      if (of2) hf.oddFooter = textOf(of2);
+      result.headerFooter = hf;
     }
 
     return result as ChartsheetDescriptorOptions;
