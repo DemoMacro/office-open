@@ -98,20 +98,20 @@ export const pivotCacheDefDesc: CustomDescriptor<
     const result: Partial<PivotCacheDefParseResult> = {};
 
     // Root element attributes
-    if (attr(el, "invalid") === "1") result.invalid = true;
-    if (attr(el, "saveData") === "0") result.saveData = false;
-    if (attr(el, "optimizeMemory") === "1") result.optimizeMemory = true;
-    if (attr(el, "enableRefresh") === "0") result.enableRefresh = false;
+    if (String(attr(el, "invalid")) === "1") result.invalid = true;
+    if (String(attr(el, "saveData")) === "0") result.saveData = false;
+    if (String(attr(el, "optimizeMemory")) === "1") result.optimizeMemory = true;
+    if (String(attr(el, "enableRefresh")) === "0") result.enableRefresh = false;
     if (attr(el, "refreshedBy")) result.refreshedBy = attr(el, "refreshedBy");
     const rd = attrNum(el, "refreshedDate");
     if (rd !== undefined) result.refreshedDate = rd;
     if (attr(el, "refreshedDateIso")) result.refreshedDateIso = attr(el, "refreshedDateIso");
-    if (attr(el, "backgroundQuery") === "1") result.backgroundQuery = true;
+    if (String(attr(el, "backgroundQuery")) === "1") result.backgroundQuery = true;
     const mil = attrNum(el, "missingItemsLimit");
     if (mil !== undefined) result.missingItemsLimit = mil;
-    if (attr(el, "upgradeOnRefresh") === "1") result.upgradeOnRefresh = true;
-    if (attr(el, "supportSubquery") === "1") result.supportSubquery = true;
-    if (attr(el, "supportAdvancedDrill") === "1") result.supportAdvancedDrill = true;
+    if (String(attr(el, "upgradeOnRefresh")) === "1") result.upgradeOnRefresh = true;
+    if (String(attr(el, "supportSubquery")) === "1") result.supportSubquery = true;
+    if (String(attr(el, "supportAdvancedDrill")) === "1") result.supportAdvancedDrill = true;
     const recordCount = attrNum(el, "recordCount");
     if (recordCount !== undefined) result.recordCount = recordCount;
 

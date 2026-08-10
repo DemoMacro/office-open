@@ -219,8 +219,8 @@ function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
 
 function parseAnchor(el: XmlElement): ObjectAnchorOptions {
   return {
-    moveWithCells: attr(el, "moveWithCells") === "1",
-    sizeWithCells: attr(el, "sizeWithCells") === "1",
+    moveWithCells: String(attr(el, "moveWithCells")) === "1",
+    sizeWithCells: String(attr(el, "sizeWithCells")) === "1",
   };
 }
 

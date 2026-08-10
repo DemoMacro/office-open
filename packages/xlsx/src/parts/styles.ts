@@ -1088,8 +1088,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (xfId !== undefined) style.xfId = xfId;
         const builtinId = attrNum(cs, "builtinId");
         if (builtinId !== undefined) style.builtinId = builtinId;
-        if (attr(cs, "customBuiltin") === "1") style.customBuiltin = true;
-        if (attr(cs, "hidden") === "1") style.hidden = true;
+        if (String(attr(cs, "customBuiltin")) === "1") style.customBuiltin = true;
+        if (String(attr(cs, "hidden")) === "1") style.hidden = true;
         const iLevel = attrNum(cs, "iLevel");
         if (iLevel !== undefined) style.iLevel = iLevel;
         styles.push(style as CustomCellStyleOptions);
@@ -1132,7 +1132,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (tse.name !== "tableStyle") continue;
         const style: Partial<CustomTableStyleOptions> = {};
         if (attr(tse, "name")) style.name = attr(tse, "name");
-        if (attr(tse, "pivot") === "1") style.pivot = true;
+        if (String(attr(tse, "pivot")) === "1") style.pivot = true;
         const elements: TableStyleElementOptions[] = [];
         for (const tsee of tse.elements ?? []) {
           if (tsee.name !== "tableStyleElement") continue;
@@ -1140,7 +1140,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
           if (attr(tsee, "type")) elOpts.type = attr(tsee, "type") as TableStyleElementType;
           const dxfId = attrNum(tsee, "dxfId");
           if (dxfId !== undefined) elOpts.dxfId = dxfId;
-          if (attr(tsee, "button") === "1") elOpts.button = true;
+          if (String(attr(tsee, "button")) === "1") elOpts.button = true;
           elements.push(elOpts as TableStyleElementOptions);
         }
         if (elements.length > 0) style.elements = elements;
@@ -1302,8 +1302,8 @@ function parseFill(el: XmlElement): FillOptions {
 
 function parseBorder(el: XmlElement): BorderSideOptions {
   const result: BorderSideOptions = {};
-  if (attr(el, "diagonalUp") === "1") result.diagonalUp = true;
-  if (attr(el, "diagonalDown") === "1") result.diagonalDown = true;
+  if (String(attr(el, "diagonalUp")) === "1") result.diagonalUp = true;
+  if (String(attr(el, "diagonalDown")) === "1") result.diagonalDown = true;
 
   for (const side of [
     "left",
@@ -1336,15 +1336,15 @@ function parseAlignment(el: XmlElement): AlignmentOptions {
   if (h) result.horizontal = h as AlignmentOptions["horizontal"];
   const v = attr(el, "vertical");
   if (v) result.vertical = v as AlignmentOptions["vertical"];
-  if (attr(el, "wrapText") === "1") result.wrapText = true;
+  if (String(attr(el, "wrapText")) === "1") result.wrapText = true;
   const rotation = attrNum(el, "textRotation");
   if (rotation !== undefined) result.textRotation = rotation;
   const indent = attrNum(el, "indent");
   if (indent !== undefined) result.indent = indent;
   const relativeIndent = attrNum(el, "relativeIndent");
   if (relativeIndent !== undefined) result.relativeIndent = relativeIndent;
-  if (attr(el, "justifyLastLine") === "1") result.justifyLastLine = true;
-  if (attr(el, "shrinkToFit") === "1") result.shrinkToFit = true;
+  if (String(attr(el, "justifyLastLine")) === "1") result.justifyLastLine = true;
+  if (String(attr(el, "shrinkToFit")) === "1") result.shrinkToFit = true;
   const readingOrder = attrNum(el, "readingOrder");
   if (readingOrder !== undefined) result.readingOrder = readingOrder;
   return result;

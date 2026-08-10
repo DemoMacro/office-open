@@ -1311,22 +1311,22 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const sheetPrEl = findChild(el, "sheetPr");
     if (sheetPrEl) {
       const sp: SheetPropertiesOptions = {};
-      if (attr(sheetPrEl, "syncHorizontal") === "1") sp.syncHorizontal = true;
-      if (attr(sheetPrEl, "syncVertical") === "1") sp.syncVertical = true;
+      if (String(attr(sheetPrEl, "syncHorizontal")) === "1") sp.syncHorizontal = true;
+      if (String(attr(sheetPrEl, "syncVertical")) === "1") sp.syncVertical = true;
       if (attr(sheetPrEl, "syncRef")) sp.syncRef = attr(sheetPrEl, "syncRef");
-      if (attr(sheetPrEl, "transitionEvaluation") === "1") sp.transitionEvaluation = true;
-      if (attr(sheetPrEl, "transitionEntry") === "1") sp.transitionEntry = true;
-      if (attr(sheetPrEl, "published") === "1") sp.published = true;
-      if (attr(sheetPrEl, "filterMode") === "1") sp.filterMode = true;
-      if (attr(sheetPrEl, "enableFormatConditionsCalculation") === "1")
+      if (String(attr(sheetPrEl, "transitionEvaluation")) === "1") sp.transitionEvaluation = true;
+      if (String(attr(sheetPrEl, "transitionEntry")) === "1") sp.transitionEntry = true;
+      if (String(attr(sheetPrEl, "published")) === "1") sp.published = true;
+      if (String(attr(sheetPrEl, "filterMode")) === "1") sp.filterMode = true;
+      if (String(attr(sheetPrEl, "enableFormatConditionsCalculation")) === "1")
         sp.enableFormatConditionsCalculation = true;
 
       const outlinePr = findChild(sheetPrEl, "outlinePr");
       if (outlinePr) {
-        if (attr(outlinePr, "applyStyles") === "1") sp.outlineApplyStyles = true;
-        if (attr(outlinePr, "showOutlineSymbols") === "0") sp.outlineShowSymbols = false;
-        if (attr(outlinePr, "summaryBelow") === "0") sp.outlineSummaryBelow = false;
-        if (attr(outlinePr, "summaryRight") === "0") sp.outlineSummaryRight = false;
+        if (String(attr(outlinePr, "applyStyles")) === "1") sp.outlineApplyStyles = true;
+        if (String(attr(outlinePr, "showOutlineSymbols")) === "0") sp.outlineShowSymbols = false;
+        if (String(attr(outlinePr, "summaryBelow")) === "0") sp.outlineSummaryBelow = false;
+        if (String(attr(outlinePr, "summaryRight")) === "0") sp.outlineSummaryRight = false;
       }
 
       // pageSetUpPr (inside sheetPr) — stash on result.pageSetup; merged into
@@ -1334,8 +1334,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const pageSetUpPr = findChild(sheetPrEl, "pageSetUpPr");
       if (pageSetUpPr) {
         const psup: Partial<PageSetupOptions> = {};
-        if (attr(pageSetUpPr, "fitToPage") === "1") psup.fitToPage = true;
-        if (attr(pageSetUpPr, "autoPageBreaks") === "1") psup.autoPageBreaks = true;
+        if (String(attr(pageSetUpPr, "fitToPage")) === "1") psup.fitToPage = true;
+        if (String(attr(pageSetUpPr, "autoPageBreaks")) === "1") psup.autoPageBreaks = true;
         if (Object.keys(psup).length > 0) pageSetUpPrCache = psup;
       }
       if (Object.keys(sp).length > 0) result.sheetPr = sp;
@@ -1359,20 +1359,20 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const svEl = findChild(sheetViewsEl, "sheetView");
       if (svEl) {
         const sv: SheetViewOptions = {};
-        if (attr(svEl, "showGridLines") === "0") sv.showGridLines = false;
-        if (attr(svEl, "showRowColHeaders") === "0") sv.showRowColHeaders = false;
-        if (attr(svEl, "showZeros") === "0") sv.showZeros = false;
+        if (String(attr(svEl, "showGridLines")) === "0") sv.showGridLines = false;
+        if (String(attr(svEl, "showRowColHeaders")) === "0") sv.showRowColHeaders = false;
+        if (String(attr(svEl, "showZeros")) === "0") sv.showZeros = false;
         const zs = attrNum(svEl, "zoomScale");
         if (zs !== undefined) sv.zoomScale = zs;
         if (attr(svEl, "tabSelected") !== undefined)
           sv.tabSelected = attr(svEl, "tabSelected") !== "0";
-        if (attr(svEl, "rightToLeft") === "1") sv.rightToLeft = true;
-        if (attr(svEl, "windowProtection") === "1") sv.windowProtection = true;
-        if (attr(svEl, "showFormulas") === "1") sv.showFormulas = true;
-        if (attr(svEl, "showRuler") === "0") sv.showRuler = false;
-        if (attr(svEl, "showOutlineSymbols") === "0") sv.showOutlineSymbols = false;
-        if (attr(svEl, "defaultGridColor") === "0") sv.defaultGridColor = false;
-        if (attr(svEl, "showWhiteSpace") === "0") sv.showWhiteSpace = false;
+        if (String(attr(svEl, "rightToLeft")) === "1") sv.rightToLeft = true;
+        if (String(attr(svEl, "windowProtection")) === "1") sv.windowProtection = true;
+        if (String(attr(svEl, "showFormulas")) === "1") sv.showFormulas = true;
+        if (String(attr(svEl, "showRuler")) === "0") sv.showRuler = false;
+        if (String(attr(svEl, "showOutlineSymbols")) === "0") sv.showOutlineSymbols = false;
+        if (String(attr(svEl, "defaultGridColor")) === "0") sv.defaultGridColor = false;
+        if (String(attr(svEl, "showWhiteSpace")) === "0") sv.showWhiteSpace = false;
         const viewVal = attr(svEl, "view");
         if (viewVal) sv.view = viewVal as SheetViewOptions["view"];
         const colorId = attrNum(svEl, "colorId");
@@ -1408,9 +1408,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (dcw !== undefined) sfp.defaultColWidth = dcw;
       const drh = attrNum(sfpEl, "defaultRowHeight");
       if (drh !== undefined) sfp.defaultRowHeight = drh;
-      if (attr(sfpEl, "zeroHeight") === "1") sfp.zeroHeight = true;
-      if (attr(sfpEl, "thickTop") === "1") sfp.thickTop = true;
-      if (attr(sfpEl, "thickBottom") === "1") sfp.thickBottom = true;
+      if (String(attr(sfpEl, "zeroHeight")) === "1") sfp.zeroHeight = true;
+      if (String(attr(sfpEl, "thickTop")) === "1") sfp.thickTop = true;
+      if (String(attr(sfpEl, "thickBottom")) === "1") sfp.thickBottom = true;
       const olr = attrNum(sfpEl, "outlineLevelRow");
       if (olr !== undefined) sfp.outlineLevelRow = olr;
       const olc = attrNum(sfpEl, "outlineLevelCol");
@@ -1456,13 +1456,13 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         };
         const w = attrNum(colEl, "width");
         if (w !== undefined) col.width = w;
-        if (attr(colEl, "hidden") === "1") col.hidden = true;
-        if (attr(colEl, "customWidth") === "1") col.customWidth = true;
+        if (String(attr(colEl, "hidden")) === "1") col.hidden = true;
+        if (String(attr(colEl, "customWidth")) === "1") col.customWidth = true;
         const ol = attrNum(colEl, "outlineLevel");
         if (ol !== undefined) col.outlineLevel = ol;
-        if (attr(colEl, "collapsed") === "1") col.collapsed = true;
-        if (attr(colEl, "bestFit") === "1") col.bestFit = true;
-        if (attr(colEl, "phonetic") === "1") col.phonetic = true;
+        if (String(attr(colEl, "collapsed")) === "1") col.collapsed = true;
+        if (String(attr(colEl, "bestFit")) === "1") col.bestFit = true;
+        if (String(attr(colEl, "phonetic")) === "1") col.phonetic = true;
         columns.push(col);
       }
       if (columns.length > 0) result.columns = columns;
@@ -1477,22 +1477,22 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (attr(protEl, "hashValue")) prot.hashValue = attr(protEl, "hashValue");
       if (attr(protEl, "saltValue")) prot.saltValue = attr(protEl, "saltValue");
       if (attrNum(protEl, "spinCount") !== undefined) prot.spinCount = attrNum(protEl, "spinCount");
-      if (attr(protEl, "sheet") === "1") prot.sheet = true;
-      if (attr(protEl, "objects") === "1") prot.objects = true;
-      if (attr(protEl, "scenarios") === "1") prot.scenarios = true;
-      if (attr(protEl, "formatCells") === "0") prot.formatCells = false;
-      if (attr(protEl, "formatColumns") === "0") prot.formatColumns = false;
-      if (attr(protEl, "formatRows") === "0") prot.formatRows = false;
-      if (attr(protEl, "insertColumns") === "0") prot.insertColumns = false;
-      if (attr(protEl, "insertRows") === "0") prot.insertRows = false;
-      if (attr(protEl, "insertHyperlinks") === "0") prot.insertHyperlinks = false;
-      if (attr(protEl, "deleteColumns") === "0") prot.deleteColumns = false;
-      if (attr(protEl, "deleteRows") === "0") prot.deleteRows = false;
-      if (attr(protEl, "selectLockedCells") === "1") prot.selectLockedCells = true;
-      if (attr(protEl, "sort") === "0") prot.sort = false;
-      if (attr(protEl, "autoFilter") === "0") prot.autoFilter = false;
-      if (attr(protEl, "pivotTables") === "0") prot.pivotTables = false;
-      if (attr(protEl, "selectUnlockedCells") === "1") prot.selectUnlockedCells = true;
+      if (String(attr(protEl, "sheet")) === "1") prot.sheet = true;
+      if (String(attr(protEl, "objects")) === "1") prot.objects = true;
+      if (String(attr(protEl, "scenarios")) === "1") prot.scenarios = true;
+      if (String(attr(protEl, "formatCells")) === "0") prot.formatCells = false;
+      if (String(attr(protEl, "formatColumns")) === "0") prot.formatColumns = false;
+      if (String(attr(protEl, "formatRows")) === "0") prot.formatRows = false;
+      if (String(attr(protEl, "insertColumns")) === "0") prot.insertColumns = false;
+      if (String(attr(protEl, "insertRows")) === "0") prot.insertRows = false;
+      if (String(attr(protEl, "insertHyperlinks")) === "0") prot.insertHyperlinks = false;
+      if (String(attr(protEl, "deleteColumns")) === "0") prot.deleteColumns = false;
+      if (String(attr(protEl, "deleteRows")) === "0") prot.deleteRows = false;
+      if (String(attr(protEl, "selectLockedCells")) === "1") prot.selectLockedCells = true;
+      if (String(attr(protEl, "sort")) === "0") prot.sort = false;
+      if (String(attr(protEl, "autoFilter")) === "0") prot.autoFilter = false;
+      if (String(attr(protEl, "pivotTables")) === "0") prot.pivotTables = false;
+      if (String(attr(protEl, "selectUnlockedCells")) === "1") prot.selectUnlockedCells = true;
       result.protection = prot;
     }
 
@@ -1559,12 +1559,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (opVal) rule.operator = opVal as ConditionalFormatOperator;
           const dxfId = attrNum(ruleEl, "dxfId");
           if (dxfId !== undefined) rule.dxfId = dxfId;
-          if (attr(ruleEl, "stopIfTrue") === "1") rule.stopIfTrue = true;
+          if (String(attr(ruleEl, "stopIfTrue")) === "1") rule.stopIfTrue = true;
           const tpVal = attr(ruleEl, "timePeriod");
           if (tpVal) rule.timePeriod = tpVal as ConditionalFormatRule["timePeriod"];
           const rank = attrNum(ruleEl, "rank");
           if (rank !== undefined) rule.rank = rank;
-          if (attr(ruleEl, "equalAverage") === "1") rule.equalAverage = true;
+          if (String(attr(ruleEl, "equalAverage")) === "1") rule.equalAverage = true;
 
           // Color scale
           const csEl = findChild(ruleEl, "colorScale");
@@ -1606,9 +1606,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
             const iconSet: IconSetOptions = { cfvo };
             const isVal = attr(isEl, "iconSet");
             if (isVal) iconSet.iconSet = isVal as IconSetType;
-            if (attr(isEl, "showValue") === "0") iconSet.showValue = false;
-            if (attr(isEl, "percent") === "0") iconSet.percent = false;
-            if (attr(isEl, "reverse") === "1") iconSet.reverse = true;
+            if (String(attr(isEl, "showValue")) === "0") iconSet.showValue = false;
+            if (String(attr(isEl, "percent")) === "0") iconSet.percent = false;
+            if (String(attr(isEl, "reverse")) === "1") iconSet.reverse = true;
             rule.iconSet = iconSet;
           }
 
@@ -1637,9 +1637,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (typeVal) dv.type = typeVal as DataValidationType;
         const opVal = attr(dEl, "operator");
         if (opVal) dv.operator = opVal as DataValidationOperator;
-        if (attr(dEl, "allowBlank") === "1") dv.allowBlank = true;
-        if (attr(dEl, "showErrorMessage") === "1") dv.showErrorMessage = true;
-        if (attr(dEl, "showInputMessage") === "1") dv.showInputMessage = true;
+        if (String(attr(dEl, "allowBlank")) === "1") dv.allowBlank = true;
+        if (String(attr(dEl, "showErrorMessage")) === "1") dv.showErrorMessage = true;
+        if (String(attr(dEl, "showInputMessage")) === "1") dv.showInputMessage = true;
         if (attr(dEl, "errorTitle")) dv.errorTitle = attr(dEl, "errorTitle");
         if (attr(dEl, "error")) dv.error = attr(dEl, "error");
         if (attr(dEl, "promptTitle")) dv.promptTitle = attr(dEl, "promptTitle");
@@ -1648,7 +1648,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (esVal) dv.errorStyle = esVal as DataValidationOptions["errorStyle"];
         const imVal = attr(dEl, "imeMode");
         if (imVal) dv.imeMode = imVal as DataValidationOptions["imeMode"];
-        if (attr(dEl, "showDropDown") === "1") dv.showDropDown = true;
+        if (String(attr(dEl, "showDropDown")) === "1") dv.showDropDown = true;
 
         const f1El = findChild(dEl, "formula1");
         if (f1El) dv.formula1 = textOf(f1El);
@@ -1683,11 +1683,11 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const poEl = findChild(el, "printOptions");
     if (poEl) {
       const po: PrintOptions = {};
-      if (attr(poEl, "horizontalCentered") === "1") po.horizontalCentered = true;
-      if (attr(poEl, "verticalCentered") === "1") po.verticalCentered = true;
-      if (attr(poEl, "headings") === "1") po.headings = true;
-      if (attr(poEl, "gridLines") === "1") po.gridLines = true;
-      if (attr(poEl, "gridLinesSet") === "0") po.gridLinesSet = false;
+      if (String(attr(poEl, "horizontalCentered")) === "1") po.horizontalCentered = true;
+      if (String(attr(poEl, "verticalCentered")) === "1") po.verticalCentered = true;
+      if (String(attr(poEl, "headings")) === "1") po.headings = true;
+      if (String(attr(poEl, "gridLines")) === "1") po.gridLines = true;
+      if (String(attr(poEl, "gridLinesSet")) === "0") po.gridLinesSet = false;
       result.printOptions = po;
     }
 
@@ -1711,7 +1711,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (fth !== undefined) ps.fitToHeight = fth;
       const pageOrderVal = attr(psEl, "pageOrder");
       if (pageOrderVal) ps.pageOrder = pageOrderVal as PageSetupOptions["pageOrder"];
-      if (attr(psEl, "useFirstPageNumber") === "1") ps.useFirstPageNumber = true;
+      if (String(attr(psEl, "useFirstPageNumber")) === "1") ps.useFirstPageNumber = true;
       const fpn = attrNum(psEl, "firstPageNumber");
       if (fpn !== undefined) ps.firstPageNumber = fpn;
       if (pageSetUpPrCache) Object.assign(ps, pageSetUpPrCache);
@@ -1724,10 +1724,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const hfEl = findChild(el, "headerFooter");
     if (hfEl) {
       const hf: HeaderFooterOptions = {};
-      if (attr(hfEl, "differentOddEven") === "1") hf.differentOddEven = true;
-      if (attr(hfEl, "differentFirst") === "1") hf.differentFirst = true;
-      if (attr(hfEl, "scaleWithDoc") === "0") hf.scaleWithDoc = false;
-      if (attr(hfEl, "alignWithMargins") === "0") hf.alignWithMargins = false;
+      if (String(attr(hfEl, "differentOddEven")) === "1") hf.differentOddEven = true;
+      if (String(attr(hfEl, "differentFirst")) === "1") hf.differentFirst = true;
+      if (String(attr(hfEl, "scaleWithDoc")) === "0") hf.scaleWithDoc = false;
+      if (String(attr(hfEl, "alignWithMargins")) === "0") hf.alignWithMargins = false;
       const oh = findChild(hfEl, "oddHeader");
       if (oh) hf.oddHeader = textOf(oh);
       const of2 = findChild(hfEl, "oddFooter");
@@ -1750,15 +1750,15 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       for (const eEl of ieEl.elements ?? []) {
         if (eEl.name !== "ignoredError") continue;
         const ie: IgnoredErrorOptions = { sqref: attr(eEl, "sqref") ?? "" };
-        if (attr(eEl, "evalError") === "1") ie.evalError = true;
-        if (attr(eEl, "twoDigitTextYear") === "1") ie.twoDigitTextYear = true;
-        if (attr(eEl, "numberStoredAsText") === "1") ie.numberStoredAsText = true;
-        if (attr(eEl, "formula") === "1") ie.formula = true;
-        if (attr(eEl, "formulaRange") === "1") ie.formulaRange = true;
-        if (attr(eEl, "unlockedFormula") === "1") ie.unlockedFormula = true;
-        if (attr(eEl, "emptyCellReference") === "1") ie.emptyCellReference = true;
-        if (attr(eEl, "listDataValidation") === "1") ie.listDataValidation = true;
-        if (attr(eEl, "calculatedColumn") === "1") ie.calculatedColumn = true;
+        if (String(attr(eEl, "evalError")) === "1") ie.evalError = true;
+        if (String(attr(eEl, "twoDigitTextYear")) === "1") ie.twoDigitTextYear = true;
+        if (String(attr(eEl, "numberStoredAsText")) === "1") ie.numberStoredAsText = true;
+        if (String(attr(eEl, "formula")) === "1") ie.formula = true;
+        if (String(attr(eEl, "formulaRange")) === "1") ie.formulaRange = true;
+        if (String(attr(eEl, "unlockedFormula")) === "1") ie.unlockedFormula = true;
+        if (String(attr(eEl, "emptyCellReference")) === "1") ie.emptyCellReference = true;
+        if (String(attr(eEl, "listDataValidation")) === "1") ie.listDataValidation = true;
+        if (String(attr(eEl, "calculatedColumn")) === "1") ie.calculatedColumn = true;
         errors.push(ie);
       }
       result.ignoredErrors = errors;
@@ -1779,7 +1779,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const scEl = findChild(el, "sheetCalcPr");
     if (scEl) {
       const sc: SheetCalculationPropertiesOptions = {};
-      if (attr(scEl, "fullCalcOnLoad") === "1") sc.fullCalcOnLoad = true;
+      if (String(attr(scEl, "fullCalcOnLoad")) === "1") sc.fullCalcOnLoad = true;
       result.sheetCalcPr = sc;
     }
 
@@ -1794,12 +1794,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (rowNumber !== undefined) row.rowNumber = rowNumber;
         const ht = attrNum(rowEl, "ht");
         if (ht !== undefined) row.height = ht;
-        if (attr(rowEl, "hidden") === "1") row.hidden = true;
+        if (String(attr(rowEl, "hidden")) === "1") row.hidden = true;
         if (attr(rowEl, "spans")) row.spans = attr(rowEl, "spans");
-        if (attr(rowEl, "customFormat") === "1") row.customFormat = true;
-        if (attr(rowEl, "thickTop") === "1") row.thickTop = true;
-        if (attr(rowEl, "thickBot") === "1") row.thickBot = true;
-        if (attr(rowEl, "ph") === "1") row.ph = true;
+        if (String(attr(rowEl, "customFormat")) === "1") row.customFormat = true;
+        if (String(attr(rowEl, "thickTop")) === "1") row.thickTop = true;
+        if (String(attr(rowEl, "thickBot")) === "1") row.thickBot = true;
+        if (String(attr(rowEl, "ph")) === "1") row.ph = true;
 
         const cells: CellOptions[] = [];
         for (const cellEl of rowEl.elements ?? []) {
@@ -1853,9 +1853,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
             if (fRef) formula.reference = fRef;
             const fSi = attrNum(fEl, "si");
             if (fSi !== undefined) formula.sharedIndex = fSi;
-            if (attr(fEl, "aca") === "1") formula.aca = true;
-            if (attr(fEl, "ca") === "1") formula.ca = true;
-            if (attr(fEl, "bx") === "1") formula.bx = true;
+            if (String(attr(fEl, "aca")) === "1") formula.aca = true;
+            if (String(attr(fEl, "ca")) === "1") formula.ca = true;
+            if (String(attr(fEl, "bx")) === "1") formula.bx = true;
             cell.formula = formula;
           }
 
@@ -1920,10 +1920,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const dc: DataConsolidateOptions = {};
       const fn = attr(dcEl, "function");
       if (fn) dc.function = fn as DataConsolidateOptions["function"];
-      if (attr(dcEl, "topLabels") === "1") dc.topLabels = true;
-      if (attr(dcEl, "leftLabels") === "1") dc.leftLabels = true;
-      if (attr(dcEl, "startLabels") === "1") dc.startLabels = true;
-      if (attr(dcEl, "link") === "1") dc.link = true;
+      if (String(attr(dcEl, "topLabels")) === "1") dc.topLabels = true;
+      if (String(attr(dcEl, "leftLabels")) === "1") dc.leftLabels = true;
+      if (String(attr(dcEl, "startLabels")) === "1") dc.startLabels = true;
+      if (String(attr(dcEl, "link")) === "1") dc.link = true;
       const refsEl = findChild(dcEl, "dataRefs");
       if (refsEl) {
         const refs: string[] = [];
@@ -1952,8 +1952,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (user !== undefined) scenario.user = user;
         const comment = attr(scEl, "comment");
         if (comment !== undefined) scenario.comment = comment;
-        if (attr(scEl, "hidden") === "1") scenario.hidden = true;
-        if (attr(scEl, "locked") === "1") scenario.locked = true;
+        if (String(attr(scEl, "hidden")) === "1") scenario.hidden = true;
+        if (String(attr(scEl, "locked")) === "1") scenario.locked = true;
         for (const icEl of scEl.elements ?? []) {
           if (icEl.name !== "inputCells") continue;
           const r = attr(icEl, "r");
@@ -1961,8 +1961,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (r === undefined || valRaw === undefined) continue;
           const num = Number(valRaw);
           const cell: ScenarioCellOptions = { r, val: String(num) === valRaw ? num : valRaw };
-          if (attr(icEl, "deleted") === "1") cell.deleted = true;
-          if (attr(icEl, "undone") === "1") cell.undone = true;
+          if (String(attr(icEl, "deleted")) === "1") cell.deleted = true;
+          if (String(attr(icEl, "undone")) === "1") cell.undone = true;
           scenario.inputCells.push(cell);
         }
         scenarios.push(scenario);
@@ -1988,21 +1988,21 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         const view: CustomSheetViewOptions = { guid };
         const scale = attrNum(vEl, "scale");
         if (scale !== undefined) view.scale = scale;
-        if (attr(vEl, "showPageBreaks") === "1") view.showPageBreaks = true;
-        if (attr(vEl, "showFormulas") === "1") view.showFormulas = true;
-        if (attr(vEl, "showGridLines") === "0") view.showGridLines = false;
-        if (attr(vEl, "showRowCol") === "0") view.showRowColHeaders = false;
-        if (attr(vEl, "outlineSymbols") === "0") view.outlineSymbols = false;
-        if (attr(vEl, "zeroValues") === "0") view.zeroValues = false;
-        if (attr(vEl, "fitToPage") === "1") view.fitToPage = true;
-        if (attr(vEl, "printArea") === "1") view.printArea = true;
-        if (attr(vEl, "filter") === "1") view.filter = true;
-        if (attr(vEl, "showAutoFilter") === "1") view.showAutoFilter = true;
-        if (attr(vEl, "hiddenRows") === "1") view.hiddenRows = true;
-        if (attr(vEl, "hiddenColumns") === "1") view.hiddenColumns = true;
+        if (String(attr(vEl, "showPageBreaks")) === "1") view.showPageBreaks = true;
+        if (String(attr(vEl, "showFormulas")) === "1") view.showFormulas = true;
+        if (String(attr(vEl, "showGridLines")) === "0") view.showGridLines = false;
+        if (String(attr(vEl, "showRowCol")) === "0") view.showRowColHeaders = false;
+        if (String(attr(vEl, "outlineSymbols")) === "0") view.outlineSymbols = false;
+        if (String(attr(vEl, "zeroValues")) === "0") view.zeroValues = false;
+        if (String(attr(vEl, "fitToPage")) === "1") view.fitToPage = true;
+        if (String(attr(vEl, "printArea")) === "1") view.printArea = true;
+        if (String(attr(vEl, "filter")) === "1") view.filter = true;
+        if (String(attr(vEl, "showAutoFilter")) === "1") view.showAutoFilter = true;
+        if (String(attr(vEl, "hiddenRows")) === "1") view.hiddenRows = true;
+        if (String(attr(vEl, "hiddenColumns")) === "1") view.hiddenColumns = true;
         const state = attr(vEl, "state");
         if (state !== undefined) view.state = state as CustomSheetViewOptions["state"];
-        if (attr(vEl, "filterUnique") === "1") view.filterUnique = true;
+        if (String(attr(vEl, "filterUnique")) === "1") view.filterUnique = true;
         const viewType = attr(vEl, "view");
         if (viewType !== undefined) view.view = viewType as CustomSheetViewOptions["view"];
         views.push(view);
@@ -2027,25 +2027,25 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (link !== undefined) oo.link = link;
         const oleUpdate = attr(ooEl, "oleUpdate");
         if (oleUpdate !== undefined) oo.oleUpdate = oleUpdate as OleObjectOptions["oleUpdate"];
-        if (attr(ooEl, "autoLoad") === "1") oo.autoLoad = true;
+        if (String(attr(ooEl, "autoLoad")) === "1") oo.autoLoad = true;
         const ooRid = attr(ooEl, "r:id");
         if (ooRid !== undefined) oo.rId = ooRid;
         const oprEl = findChild(ooEl, "objectPr");
         if (oprEl) {
           const opr: OleObjectPropertiesOptions = {};
-          if (attr(oprEl, "locked") === "0") opr.locked = false;
-          if (attr(oprEl, "defaultSize") === "0") opr.defaultSize = false;
-          if (attr(oprEl, "print") === "0") opr.print = false;
-          if (attr(oprEl, "disabled") === "1") opr.disabled = true;
-          if (attr(oprEl, "uiObject") === "1") opr.uiObject = true;
-          if (attr(oprEl, "autoFill") === "0") opr.autoFill = false;
-          if (attr(oprEl, "autoLine") === "0") opr.autoLine = false;
-          if (attr(oprEl, "autoPict") === "0") opr.autoPict = false;
+          if (String(attr(oprEl, "locked")) === "0") opr.locked = false;
+          if (String(attr(oprEl, "defaultSize")) === "0") opr.defaultSize = false;
+          if (String(attr(oprEl, "print")) === "0") opr.print = false;
+          if (String(attr(oprEl, "disabled")) === "1") opr.disabled = true;
+          if (String(attr(oprEl, "uiObject")) === "1") opr.uiObject = true;
+          if (String(attr(oprEl, "autoFill")) === "0") opr.autoFill = false;
+          if (String(attr(oprEl, "autoLine")) === "0") opr.autoLine = false;
+          if (String(attr(oprEl, "autoPict")) === "0") opr.autoPict = false;
           const macro = attr(oprEl, "macro");
           if (macro !== undefined) opr.macro = macro;
           const altText = attr(oprEl, "altText");
           if (altText !== undefined) opr.altText = altText;
-          if (attr(oprEl, "dde") === "1") opr.dde = true;
+          if (String(attr(oprEl, "dde")) === "1") opr.dde = true;
           const oprRid = attr(oprEl, "r:id");
           if (oprRid !== undefined) opr.rId = oprRid;
           if (Object.keys(opr).length > 0) oo.objectPr = opr;
@@ -2069,9 +2069,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (name !== undefined) c.name = name;
         const prEl = findChild(cEl, "controlPr");
         if (prEl) {
-          if (attr(prEl, "locked") === "0") c.locked = false;
-          if (attr(prEl, "uiObject") === "1") c.uiObject = true;
-          if (attr(prEl, "recalcAlways") === "1") c.recalcAlways = true;
+          if (String(attr(prEl, "locked")) === "0") c.locked = false;
+          if (String(attr(prEl, "uiObject")) === "1") c.uiObject = true;
+          if (String(attr(prEl, "recalcAlways")) === "1") c.recalcAlways = true;
           const linkedCell = attr(prEl, "linkedCell");
           if (linkedCell !== undefined) c.linkedCell = linkedCell;
           const listFillRange = attr(prEl, "listFillRange");
@@ -2113,7 +2113,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (sourceObject !== undefined) wpi.sourceObject = sourceObject;
         const title = attr(wpiEl, "title");
         if (title !== undefined) wpi.title = title;
-        if (attr(wpiEl, "autoRepublish") === "1") wpi.autoRepublish = true;
+        if (String(attr(wpiEl, "autoRepublish")) === "1") wpi.autoRepublish = true;
         items.push(wpi);
       }
       if (items.length > 0) result.webPublishItems = items;
@@ -2156,8 +2156,8 @@ function parsePageBreaks(el: XmlElement): PageBreakOptions[] {
     if (min !== undefined) b.min = min;
     const max = attrNum(brkEl, "max");
     if (max !== undefined) b.max = max;
-    if (attr(brkEl, "man") === "1") b.manual = true;
-    if (attr(brkEl, "pt") === "1") b.pivot = true;
+    if (String(attr(brkEl, "man")) === "1") b.manual = true;
+    if (String(attr(brkEl, "pt")) === "1") b.pivot = true;
     breaks.push(b);
   }
   return breaks;
@@ -3305,7 +3305,7 @@ function parseCfvo(el: XmlElement): CfvoOptions {
   const result: CfvoOptions = { type: (attr(el, "type") ?? "num") as CfvoType };
   const val = attr(el, "val");
   if (val !== undefined) result.val = isNaN(Number(val)) ? val : Number(val);
-  if (attr(el, "gte") === "0") result.gte = false;
+  if (String(attr(el, "gte")) === "0") result.gte = false;
   return result;
 }
 
