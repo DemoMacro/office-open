@@ -434,20 +434,24 @@ export function parseNumberingDefinitions(
     if (id !== undefined) abstractNums.set(id, child);
   }
 
-  const numToAbstract = new Map<string, string>();
+  // Concrete num instances: numId → abstractId + the num element. The element
+  // is kept so its lvlOverride/startOverride can be read — a concrete num may
+  // re-pin a level's start, and dropping the override silently reverts the
+  // list's restart numbering on round-trip.
+  const numEntries: { numId: string; abstractId: string; numEl: Element }[] = [];
   for (const child of el.elements ?? []) {
     if (child.name !== "w:num") continue;
     const numId = attr(child, "w:numId");
     const abstractRef = findChild(child, "w:abstractNumId");
     const abstractId = abstractRef ? attr(abstractRef, "w:val") : undefined;
     if (numId !== undefined && abstractId !== undefined) {
-      numToAbstract.set(numId, abstractId);
+      numEntries.push({ numId, abstractId, numEl: child });
     }
   }
 
   const configs: NumberingOptions["config"] = [];
 
-  for (const [numId, abstractId] of numToAbstract) {
+  for (const { numId, abstractId, numEl } of numEntries) {
     const abstractEl = abstractNums.get(abstractId);
     if (!abstractEl) continue;
 
@@ -491,6 +495,20 @@ export function parseNumberingDefinitions(
       if (numStyleLinkEl) {
         const v = attr(numStyleLinkEl, "w:val");
         if (v) extraOptions.numStyleLink = v;
+      }
+      // Apply per-instance level start overrides. The abstract level defines
+      // the default start; a concrete num may re-pin it via lvlOverride, and
+      // dropping it silently reverts the list's restart numbering.
+      for (const overrideEl of numEl.elements ?? []) {
+        if (overrideEl.name !== "w:lvlOverride") continue;
+        const ilvl = attrNum(overrideEl, "w:ilvl");
+        if (ilvl === undefined) continue;
+        const startOverrideEl = findChild(overrideEl, "w:startOverride");
+        if (!startOverrideEl) continue;
+        const val = attrNum(startOverrideEl, "w:val");
+        if (val === undefined) continue;
+        const level = levels.find((l) => l.level === ilvl);
+        if (level) level.start = val;
       }
       configs.push({ reference: `list_${numId}`, levels, extraOptions });
     }

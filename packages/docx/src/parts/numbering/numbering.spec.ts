@@ -235,4 +235,29 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect(linked?.extraOptions?.styleLink).toBe("ListStyle");
     expect(linked?.extraOptions?.numStyleLink).toBe("NumStyle");
   });
+
+  it("applies per-instance lvlOverride/startOverride over the abstract level start", () => {
+    // abstract level 0 starts at 1; the concrete num re-pins it to 3 via
+    // lvlOverride. parse must apply the override or the list's restart
+    // numbering is silently lost on round-trip.
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:multiLevelType w:val="hybridMultilevel"/>' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1">' +
+      '<w:abstractNumId w:val="0"/>' +
+      '<w:lvlOverride w:ilvl="0"><w:startOverride w:val="3"/></w:lvlOverride>' +
+      "</w:num>" +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    const config = opts?.config[0];
+    expect(config).toBeDefined();
+    expect(config!.levels[0]?.start).toBe(3);
+  });
 });
