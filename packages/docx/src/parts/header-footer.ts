@@ -19,6 +19,16 @@ import { DocumentAttributeNamespaces } from "./document/document-attributes";
 import type { DocumentAttributeNamespace } from "./document/document-attributes";
 
 /**
+ * Reference to a header or footer from a section — just the relationship id
+ * needed to emit `<w:headerReference r:id="...">`. Parse fills only this;
+ * the full header/footer entry (with children/relationships) is the
+ * generate-side shape ({@link HeaderFooterEntry}).
+ */
+export interface HeaderFooterReference {
+  referenceId: number;
+}
+
+/**
  * Simple data structure for a header or footer entry.
  *
  * Replaces HeaderWrapper/FooterWrapper — holds children, relationships,
@@ -26,10 +36,9 @@ import type { DocumentAttributeNamespace } from "./document/document-attributes"
  *
  * Children are raw SectionChild objects (plain JSON or class instances).
  */
-export interface HeaderFooterEntry {
+export interface HeaderFooterEntry extends HeaderFooterReference {
   children: SectionChild[];
   relationships: Relationships;
-  referenceId: number;
 }
 
 /**

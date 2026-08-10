@@ -8,7 +8,7 @@
  *
  * @module
  */
-import type { HeaderFooterEntry } from "@parts/header-footer";
+import type { HeaderFooterReference } from "@parts/header-footer";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 import type { SectionVerticalAlign } from "@shared/vertical-align";
 
@@ -56,8 +56,8 @@ export interface SectionPropertiesOptionsBase {
    * a parsed source with no w:docGrid is preserved by emitting nothing).
    */
   grid?: DocGridProperties | false;
-  headerWrapperGroup?: HeaderFooterGroup<HeaderFooterEntry>;
-  footerWrapperGroup?: HeaderFooterGroup<HeaderFooterEntry>;
+  headerWrapperGroup?: HeaderFooterGroup<HeaderFooterReference>;
+  footerWrapperGroup?: HeaderFooterGroup<HeaderFooterReference>;
   lineNumbers?: LineNumberProperties;
   titlePage?: boolean;
   verticalAlign?: SectionVerticalAlign;

@@ -28,6 +28,7 @@ import { PageNumberSeparator } from "@parts/document/body/section-properties/pro
 import type { PageNumberTypeProperties } from "@parts/document/body/section-properties/properties/page-number";
 import type { PageSizeProperties } from "@parts/document/body/section-properties/properties/page-size";
 import type {
+  HeaderFooterGroup,
   SectionPropertiesChangeOptions,
   SectionPropertiesOptions,
 } from "@parts/document/body/section-properties/section-properties";
@@ -35,7 +36,7 @@ import {
   sectionMarginDefaults,
   sectionPageSizeDefaults,
 } from "@parts/document/body/section-properties/section-properties";
-import type { HeaderFooterEntry } from "@parts/header-footer";
+import type { HeaderFooterReference } from "@parts/header-footer";
 import type { BorderOptions } from "@shared/border";
 import { NumberFormat } from "@shared/constants";
 import type { BodyContext } from "@shared/index";
@@ -190,7 +191,11 @@ function pageBordersXml(opts: NonNullable<PageBordersOptions>): string {
 function appendHeaderFooterRefs(
   parts: string[],
   type: "w:headerReference" | "w:footerReference",
-  group?: { default?: HeaderFooterEntry; first?: HeaderFooterEntry; even?: HeaderFooterEntry },
+  group?: {
+    default?: HeaderFooterReference;
+    first?: HeaderFooterReference;
+    even?: HeaderFooterReference;
+  },
 ): void {
   if (!group) return;
   if (group.default) parts.push(headerFooterRefXml(type, group.default.referenceId, "default"));
@@ -524,28 +529,27 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Page borders
   const pgBorders = findChild(el, "w:pgBorders");
   if (pgBorders) {
-    const borders: Record<string, unknown> = {};
+    const borders: Partial<PageBordersOptions> = {};
     for (const side of ["top", "left", "bottom", "right"] as const) {
       const sideEl = findChild(pgBorders, `w:${side}`);
-      if (sideEl) {
-        const b: Record<string, unknown> = {};
-        const val = attr(sideEl, "w:val");
-        if (val) b.style = val;
-        const color = attr(sideEl, "w:color");
-        if (color) b.color = color;
-        const sz = attrNum(sideEl, "w:sz");
-        if (sz !== undefined) b.size = sz;
-        const space = attrNum(sideEl, "w:space");
-        if (space !== undefined) b.space = space;
-        borders[side] = b;
-      }
+      if (!sideEl) continue;
+      const val = attr(sideEl, "w:val");
+      if (!val) continue; // CT_Border/@val is XSD-required
+      const b: BorderOptions = { style: val as BorderOptions["style"] };
+      const color = attr(sideEl, "w:color");
+      if (color) b.color = color;
+      const sz = attrNum(sideEl, "w:sz");
+      if (sz !== undefined) b.size = sz;
+      const space = attrNum(sideEl, "w:space");
+      if (space !== undefined) b.space = space;
+      borders[side] = b;
     }
     const display = attr(pgBorders, "w:display");
-    if (display) borders.display = display;
+    if (display) borders.display = display as PageBordersOptions["display"];
     const offsetFrom = attr(pgBorders, "w:offsetFrom");
-    if (offsetFrom) borders.offsetFrom = offsetFrom;
+    if (offsetFrom) borders.offsetFrom = offsetFrom as PageBordersOptions["offsetFrom"];
     const zOrder = attr(pgBorders, "w:zOrder");
-    if (zOrder) borders.zOrder = zOrder;
+    if (zOrder) borders.zOrder = zOrder as PageBordersOptions["zOrder"];
     if (Object.keys(borders).length > 0) {
       const page: NonNullable<SectionPropertiesOptions["page"]> = opts.page ?? {};
       page.borders = borders;
@@ -580,7 +584,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Endnote properties
   const endnotePr = findChild(el, "w:endnotePr");
   if (endnotePr) {
-    opts.endnotePr = parseNotePropertiesEl(endnotePr);
+    opts.endnotePr = parseNotePropertiesEl(endnotePr) as EndnotePropertiesOptions;
   }
 
   // Paper source
@@ -602,17 +606,17 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   }
 
   // Header/footer references
-  const headerGroup: Record<string, unknown> = {};
-  const footerGroup: Record<string, unknown> = {};
+  const headerGroup: HeaderFooterGroup<HeaderFooterReference> = {};
+  const footerGroup: HeaderFooterGroup<HeaderFooterReference> = {};
   for (const child of el.elements ?? []) {
+    const type = attr(child, "w:type") as "default" | "first" | "even" | undefined;
+    const rId = attr(child, "r:id");
+    if (!type || !rId) continue;
+    const referenceId = parseInt(rId.replace("rId", ""), 10);
     if (child.name === "w:headerReference") {
-      const type = attr(child, "w:type");
-      const rId = attr(child, "r:id");
-      if (type && rId) headerGroup[type] = { referenceId: parseInt(rId.replace("rId", ""), 10) };
+      headerGroup[type] = { referenceId };
     } else if (child.name === "w:footerReference") {
-      const type = attr(child, "w:type");
-      const rId = attr(child, "r:id");
-      if (type && rId) footerGroup[type] = { referenceId: parseInt(rId.replace("rId", ""), 10) };
+      footerGroup[type] = { referenceId };
     }
   }
   if (Object.keys(headerGroup).length > 0) opts.headerWrapperGroup = headerGroup;
@@ -636,20 +640,20 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   return opts;
 }
 
-function parseNotePropertiesEl(el: Element): Record<string, unknown> {
-  const opts: Record<string, unknown> = {};
+function parseNotePropertiesEl(el: Element): FootnotePropertiesOptions {
+  const opts: FootnotePropertiesOptions = {};
 
   const posEl = findChild(el, "w:pos");
   if (posEl) {
     const val = attr(posEl, "w:val");
-    if (val) opts.pos = val;
+    if (val) opts.pos = val as FootnotePropertiesOptions["pos"];
   }
 
   const numFmt = findChild(el, "w:numFmt");
   if (numFmt) {
     // CT_NumFmt: w:val (format type) + w:format (optional override).
     const fmt = attr(numFmt, "w:val");
-    if (fmt) opts.formatType = fmt;
+    if (fmt) opts.formatType = fmt as FootnotePropertiesOptions["formatType"];
     const format = attr(numFmt, "w:format");
     if (format) opts.format = format;
   }
@@ -663,7 +667,7 @@ function parseNotePropertiesEl(el: Element): Record<string, unknown> {
   const numRestart = findChild(el, "w:numRestart");
   if (numRestart) {
     const val = attr(numRestart, "w:val");
-    if (val) opts.numRestart = val;
+    if (val) opts.numRestart = val as FootnotePropertiesOptions["numRestart"];
   }
 
   return opts;
