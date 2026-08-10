@@ -21,9 +21,12 @@ import type {
   EndnotePropertiesOptions,
   FootnotePropertiesOptions,
 } from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
+import type { LineNumberProperties } from "@parts/document/body/section-properties/properties/line-number";
 import type { PageBordersOptions } from "@parts/document/body/section-properties/properties/page-borders";
+import type { PageMarginProperties } from "@parts/document/body/section-properties/properties/page-margin";
 import { PageNumberSeparator } from "@parts/document/body/section-properties/properties/page-number";
 import type { PageNumberTypeProperties } from "@parts/document/body/section-properties/properties/page-number";
+import type { PageSizeProperties } from "@parts/document/body/section-properties/properties/page-size";
 import type {
   SectionPropertiesChangeOptions,
   SectionPropertiesOptions,
@@ -376,12 +379,12 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Page properties — pgSz, pgMar, pgNumType are independent per CT_SectPr
   // (each minOccurs=0). Do not gate pgMar/pgNumType on pgSz: a sectPr that
   // omits <w:pgSz> must still round-trip its margins and page-number type.
-  const page: Record<string, unknown> = {};
+  const page: NonNullable<SectionPropertiesOptions["page"]> = {};
 
   // Page size
   const pgSz = findChild(el, "w:pgSz");
   if (pgSz) {
-    const size: Record<string, unknown> = {};
+    const size: PageSizeProperties = {};
     const w = attrNum(pgSz, "w:w");
     const h = attrNum(pgSz, "w:h");
     const orient = attr(pgSz, "w:orient");
@@ -392,7 +395,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
       if (w !== undefined) size.width = w;
       if (h !== undefined) size.height = h;
     }
-    if (orient) size.orientation = orient;
+    if (orient) size.orientation = orient as PageSizeProperties["orientation"];
     const code = attrNum(pgSz, "w:code");
     if (code !== undefined) size.code = code;
     if (Object.keys(size).length > 0) page.size = size;
@@ -401,7 +404,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Page margins
   const pgMar = findChild(el, "w:pgMar");
   if (pgMar) {
-    const margin: Record<string, unknown> = {};
+    const margin: PageMarginProperties = {};
     for (const [a, o] of [
       ["w:top", "top"],
       ["w:right", "right"],
@@ -506,13 +509,13 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Line numbers
   const lnNumType = findChild(el, "w:lnNumType");
   if (lnNumType) {
-    const lineNumbers: Record<string, unknown> = {};
+    const lineNumbers: LineNumberProperties = {};
     const countBy = attrNum(lnNumType, "w:countBy");
     if (countBy !== undefined) lineNumbers.countBy = countBy;
     const start = attrNum(lnNumType, "w:start");
     if (start !== undefined) lineNumbers.start = start;
     const restart = attr(lnNumType, "w:restart");
-    if (restart) lineNumbers.restart = restart;
+    if (restart) lineNumbers.restart = restart as LineNumberProperties["restart"];
     const distance = attrNum(lnNumType, "w:distance");
     if (distance !== undefined) lineNumbers.distance = distance;
     if (Object.keys(lineNumbers).length > 0) opts.lineNumbers = lineNumbers;
@@ -544,7 +547,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     const zOrder = attr(pgBorders, "w:zOrder");
     if (zOrder) borders.zOrder = zOrder;
     if (Object.keys(borders).length > 0) {
-      const page = (opts.page ?? {}) as Record<string, unknown>;
+      const page: NonNullable<SectionPropertiesOptions["page"]> = opts.page ?? {};
       page.borders = borders;
       opts.page = page;
     }
@@ -562,8 +565,8 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   if (textDirection) {
     const val = attr(textDirection, "w:val");
     if (val) {
-      const page = (opts.page ?? {}) as Record<string, unknown>;
-      page.textDirection = val;
+      const page: NonNullable<SectionPropertiesOptions["page"]> = opts.page ?? {};
+      page.textDirection = val as NonNullable<SectionPropertiesOptions["page"]>["textDirection"];
       opts.page = page;
     }
   }
@@ -583,7 +586,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Paper source
   const paperSrc = findChild(el, "w:paperSrc");
   if (paperSrc) {
-    const ps: Record<string, unknown> = {};
+    const ps: NonNullable<SectionPropertiesOptions["paperSrc"]> = {};
     const first = attrNum(paperSrc, "w:first");
     if (first !== undefined) ps.first = first;
     const other = attrNum(paperSrc, "w:other");
