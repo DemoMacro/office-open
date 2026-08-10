@@ -13,6 +13,10 @@ import {
   appPropertiesDesc,
   buildCorePropertiesXmlString,
   compileMapping,
+  contentTypesDesc,
+  deriveContentTypes,
+  resolverFromRegistry,
+  XLSX_PARTS,
   customPropertiesDesc,
   toUint8Array,
   type XmlifyedFile,
@@ -46,6 +50,31 @@ import { columnToLetter } from "@util/index";
 import { XlsxWriteContext } from "./context";
 
 const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+
+/** XLSX part path → content type, derived from the part registry. Matches
+ * actual file paths, so the dense/sequential xlsx part naming is handled. */
+const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
+
+/** Extension → MIME for image and VML Default entries. Declared only for
+ * extensions actually present in the package. VML backs legacy comment
+ * anchors (xl/drawings/vmlDrawing${i}.vml). */
+const XLSX_MEDIA_CONTENT_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  gif: "image/gif",
+  bmp: "image/bmp",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  ico: "image/x-icon",
+  emf: "image/x-emf",
+  wmf: "image/x-wmf",
+  svg: "image/svg+xml",
+  vml: "application/vnd.openxmlformats-officedocument.vmlDrawing",
+};
+
+/** UTF-8 encoder for serializing the derived [Content_Types].xml into the package. */
+const encoder = new TextEncoder();
 
 /**
  * Compile workbook options into a Zippable structure.
@@ -90,15 +119,6 @@ export function compileWorkbook(
     data: XML_DECL + fileRels.serialize(),
     path: "_rels/.rels",
   };
-
-  // Register base content types
-  for (let i = 0; i < worksheetConfigs.length; i++) {
-    ctx.contentTypes.addWorksheet(i + 1);
-  }
-  ctx.contentTypes.addStyles();
-  ctx.contentTypes.addSharedStrings();
-  ctx.contentTypes.addTheme();
-  if (hasCustomProperties) ctx.contentTypes.addCustomProperties();
 
   // Register predefined DXFs before worksheets use styles
   for (const dxf of options.dxfs ?? []) {
@@ -289,8 +309,6 @@ export function compileWorkbook(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
         `../drawings/drawing${drawingIdx}.xml`,
       );
-
-      ctx.contentTypes.addDrawing(drawingIdx);
     }
 
     // Comments
@@ -330,10 +348,6 @@ export function compileWorkbook(
       const closingTag = "</worksheet>";
       sheetXml =
         sheetXml.slice(0, -closingTag.length) + `<legacyDrawing r:id="rId${vmlRid}"/>` + closingTag;
-
-      // Register content types
-      ctx.contentTypes.addComments(commentsIdx);
-      ctx.contentTypes.addVmlDrawing();
     }
 
     // Background picture
@@ -427,10 +441,6 @@ export function compileWorkbook(
             path: `xl/pivotCache/pivotCacheRecords${cacheIdx}.xml`,
           };
 
-          // Content types
-          ctx.contentTypes.addPivotCacheDefinition(cacheIdx);
-          ctx.contentTypes.addPivotCacheRecords(cacheIdx);
-
           // Register in workbook
           const wbPivotRid = ctx.workbookRels.relationshipCount + 1;
           ctx.workbookRels.addRelationship(
@@ -468,8 +478,6 @@ export function compileWorkbook(
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable",
           `../pivotTables/pivotTable${pivotIdx}.xml`,
         );
-
-        ctx.contentTypes.addPivotTable(pivotIdx);
       }
     }
 
@@ -499,8 +507,6 @@ export function compileWorkbook(
 
         wsTableParts.push({ rId: `rId${tblRid}` });
         allTableParts.push({ rId: `rId${tblRid}` });
-
-        ctx.contentTypes.addTable(tableIdx);
       }
     }
 
@@ -614,7 +620,6 @@ export function compileWorkbook(
       data: XML_DECL + csDrawingRels.serialize(),
       path: `xl/drawings/_rels/drawing${csDrawingIdx}.xml.rels`,
     };
-    ctx.contentTypes.addDrawing(csDrawingIdx);
 
     mapping[`ChartsheetRels${i}`] = {
       data: XML_DECL + csRels.serialize(),
@@ -624,7 +629,6 @@ export function compileWorkbook(
       data: XML_DECL + chartsheetDesc.stringify({ ...csOpts, drawingRId: "rId1" }, ctx),
       path: `xl/chartsheets/sheet${i + 1}.xml`,
     };
-    ctx.contentTypes.addChartsheet(i + 1);
   }
 
   // Workbook XML (via descriptor)
@@ -685,7 +689,6 @@ export function compileWorkbook(
       };
 
       extRefs.push({ rId: `rId${elRid}` });
-      ctx.contentTypes.addExternalLink(elIdx);
     }
 
     // Inject externalReferences into workbook XML
@@ -728,7 +731,6 @@ export function compileWorkbook(
       data: XML_DECL + chartData.chartSpaceXml,
       path: `xl/charts/chart${i + 1}.xml`,
     };
-    ctx.contentTypes.addChart(i + 1);
   }
 
   // Calculation chain — auto-generated from formula cells
@@ -737,7 +739,6 @@ export function compileWorkbook(
       data: calcChainDesc.stringify({ cells: calcCells }, ctx) ?? "",
       path: "xl/calcChain.xml",
     };
-    ctx.contentTypes.addCalcChain();
     const calcChainRid = ctx.workbookRels.relationshipCount + 1;
     ctx.workbookRels.addRelationship(
       calcChainRid,
@@ -761,7 +762,6 @@ export function compileWorkbook(
       data: XML_DECL + (revisionHeadersDesc.stringify(rl.headers, ctx) ?? ""),
       path: "xl/revisionHeaders.xml",
     };
-    ctx.contentTypes.addRevisionHeaders();
     ctx.workbookRels.addRelationship(
       ctx.workbookRels.relationshipCount + 1,
       REV_HEADERS_REL,
@@ -775,7 +775,6 @@ export function compileWorkbook(
         data: XML_DECL + (revisionLogDesc.stringify(log, ctx) ?? ""),
         path: `xl/revisions/revision${i + 1}.xml`,
       };
-      ctx.contentTypes.addRevisionLog(i + 1);
       revHeadersRels.addRelationship(i + 1, REV_LOG_REL, `revisions/revision${i + 1}.xml`);
     }
     mapping["RevisionHeadersRels"] = {
@@ -788,7 +787,6 @@ export function compileWorkbook(
       const usersXml = usersDesc.stringify(rl.users, ctx);
       if (usersXml) {
         mapping["Users"] = { data: XML_DECL + usersXml, path: "xl/users.xml" };
-        ctx.contentTypes.addUsers();
         ctx.workbookRels.addRelationship(
           ctx.workbookRels.relationshipCount + 1,
           USERS_REL,
@@ -805,29 +803,24 @@ export function compileWorkbook(
     path: "xl/_rels/workbook.xml.rels",
   };
 
-  // Register image content types
-  const imageExts = new Set<string>();
-  for (const img of ctx.media.array) {
-    const ext = img.fileName.endsWith(".png") ? "png" : "jpeg";
-    if (!imageExts.has(ext)) {
-      imageExts.add(ext);
-      ctx.contentTypes.addImageType(ext as "png" | "jpeg");
-    }
-  }
-
-  // Content Types — must be last
-  mapping["ContentTypes"] = {
-    data: XML_DECL + ctx.contentTypes.serialize(),
-    path: "[Content_Types].xml",
-  };
-
   // Convert mapping to Zippable
   const mediaFiles: Array<{ data: Uint8Array; path: string }> = [];
   for (const img of ctx.media.array) {
     mediaFiles.push({ data: img.data, path: `xl/media/${img.fileName}` });
   }
 
-  return compileMapping(mapping, overrides, mediaFiles, mediaLevel);
+  const files = compileMapping(mapping, overrides, mediaFiles, mediaLevel);
+  // Derive [Content_Types].xml from the actual parts written — the file set is
+  // the single source of truth, so content-type declarations cannot drift from
+  // what is written. Sparse/index-based naming is handled naturally.
+  const contentTypesInput = deriveContentTypes(Object.keys(files), {
+    resolve: XLSX_CONTENT_TYPE_RESOLVER,
+    mediaContentTypes: XLSX_MEDIA_CONTENT_TYPES,
+  });
+  files["[Content_Types].xml"] = encoder.encode(
+    XML_DECL + (contentTypesDesc.stringify(contentTypesInput, ctx) ?? ""),
+  );
+  return files;
 }
 
 // ── Pure helper functions ──

@@ -7,7 +7,6 @@
 import { ChartCollection, Relationships, type RelationshipType } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
-import { ContentTypes } from "@parts/content-types";
 import { SharedStrings } from "@parts/shared-strings";
 import { Styles } from "@parts/styles";
 import type { DxfOptions, StyleOptions, StylesParseResult } from "@parts/styles";
@@ -29,7 +28,6 @@ export class XlsxWriteContext implements WriteContext {
   styles = new Styles();
   media = new Media<MediaData>();
   charts = new ChartCollection();
-  contentTypes = new ContentTypes();
   workbookRels = new Relationships();
   pivotCacheRefs: PivotCacheReference[] = [];
 
