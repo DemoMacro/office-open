@@ -61,7 +61,7 @@ const XSD_CONFIGS: XsdConfig[] = [
     label: "pml",
     description: "PresentationML (pptx)",
     prefix: "p:",
-    searchDirs: ["packages/pptx/src"],
+    searchDirs: ["packages/pptx/src", "packages/core/src"],
     searchMode: "prefix",
   },
   {
