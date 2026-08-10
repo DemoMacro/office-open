@@ -198,6 +198,22 @@ describe("paragraphDesc round-trip", () => {
     expect(b.embed).toBe("rId2");
   });
 
+  it("round-trips tab stops (a:tabLst)", () => {
+    const r = roundTrip({
+      text: "x",
+      properties: {
+        tabStops: [
+          { position: 914400, alignment: "l" },
+          { position: 4572000, alignment: "dec" },
+        ],
+      },
+    });
+    expect(r.properties?.tabStops).toEqual([
+      { position: 914400, alignment: "l" },
+      { position: 4572000, alignment: "dec" },
+    ]);
+  });
+
   it("preserves single-run formatting (no text-shorthand collapse)", () => {
     const r = roundTrip({ children: [{ text: "Bold", bold: true }] });
     const children = r.children! as RunOptions[];

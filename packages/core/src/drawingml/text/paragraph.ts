@@ -26,7 +26,9 @@ import type {
   ParagraphPropertiesOptions,
   RunOptions,
   RunPropertiesOptions,
+  TabStopOptions,
   TextAlignment,
+  TextTabAlignment,
   TextFieldOptions,
   BreakOptions,
 } from "./types";
@@ -64,17 +66,22 @@ function stringifyParagraphProperties(options: ParagraphPropertiesOptions): stri
     children.push(`<a:lnSpc><a:spcPts val="${options.lineSpacingPoints * 100}"/></a:lnSpc>`);
   }
 
-  // Margins
-  if (options.marginBottom !== undefined || options.marginTop !== undefined) {
-    children.push(`<a:spcAft><a:spcPts val="${options.marginBottom ?? 0}"/></a:spcAft>`);
-  }
+  // Spacing before/after (XSD CT_TextParagraphProperties order: spcBef, spcAft)
   if (options.marginTop !== undefined) {
     children.push(`<a:spcBef><a:spcPts val="${options.marginTop}"/></a:spcBef>`);
+  }
+  if (options.marginBottom !== undefined || options.marginTop !== undefined) {
+    children.push(`<a:spcAft><a:spcPts val="${options.marginBottom ?? 0}"/></a:spcAft>`);
   }
 
   // Bullets
   if (options.bullet) {
     children.push(...stringifyBullet(options.bullet));
+  }
+
+  // Tab stops (after bullets, before defRPr)
+  if (options.tabStops && options.tabStops.length > 0) {
+    children.push(stringifyTabStops(options.tabStops));
   }
 
   if (attrs.length === 0 && children.length === 0) return "";
@@ -133,6 +140,16 @@ function stringifyBullet(options: BulletOptions): string[] {
   }
 
   return parts;
+}
+
+function stringifyTabStops(stops: TabStopOptions[]): string {
+  const tabs = stops.map((t) => {
+    const attrs: string[] = [];
+    if (t.position !== undefined) attrs.push(`pos="${t.position}"`);
+    if (t.alignment) attrs.push(`algn="${t.alignment}"`);
+    return `<a:tab${attrs.length ? " " + attrs.join(" ") : ""}/>`;
+  });
+  return `<a:tabLst>${tabs.join("")}</a:tabLst>`;
 }
 
 function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOptions> {
@@ -234,6 +251,22 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
         result.bullet = bullet as BulletAutoNumOptions;
       }
     }
+  }
+
+  // Tab stops (after bullets, before defRPr)
+  const tabLst = findChild(el, "a:tabLst");
+  if (tabLst) {
+    const tabs: TabStopOptions[] = [];
+    for (const child of tabLst.elements ?? []) {
+      if (child.name === "a:tab") {
+        const tab: Mutable<TabStopOptions> = {};
+        if (child.attributes?.["pos"] !== undefined) tab.position = Number(child.attributes["pos"]);
+        if (child.attributes?.["algn"] !== undefined)
+          tab.alignment = child.attributes["algn"] as TextTabAlignment;
+        tabs.push(tab);
+      }
+    }
+    if (tabs.length > 0) result.tabStops = tabs;
   }
 
   return result as ParagraphPropertiesOptions;

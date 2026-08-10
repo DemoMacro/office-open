@@ -128,6 +128,17 @@ export type BulletOptions =
   | BulletPictureOptions
   | BulletNoneOption;
 
+// ── Tab stops (a:tabLst) ──
+
+export type TextTabAlignment = "l" | "ctr" | "r" | "dec";
+
+export interface TabStopOptions {
+  /** a:tab @pos — tab stop position in EMU. */
+  position?: number;
+  /** a:tab @algn — tab alignment (l/ctr/r/dec). */
+  alignment?: TextTabAlignment;
+}
+
 // ── Paragraph properties (a:pPr) ──
 
 export interface ParagraphPropertiesOptions {
@@ -141,6 +152,8 @@ export interface ParagraphPropertiesOptions {
   marginIndent?: number;
   marginRight?: number;
   defTabSize?: number;
+  /** a:tabLst — explicit tab stops (emitted after bullets, before defRPr). */
+  tabStops?: TabStopOptions[];
   fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
 }
 
