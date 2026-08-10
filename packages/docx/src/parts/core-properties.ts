@@ -154,80 +154,17 @@ export interface DocumentOptions extends CorePropertiesOptions {
 // ── Descriptor ──
 
 import type { CorePropertiesOptions } from "@office-open/core";
+import { buildCorePropertiesXmlString, parseCorePropsElement } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { escapeXml } from "@office-open/xml";
 
 export const corePropertiesDesc: CustomDescriptor<CorePropertiesOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    const now = new Date().toISOString();
-    const p: string[] = [
-      '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"' +
-        ' xmlns:dc="http://purl.org/dc/elements/1.1/"' +
-        ' xmlns:dcterms="http://purl.org/dc/terms/"' +
-        ' xmlns:dcmitype="http://purl.org/dc/dcmitype/"' +
-        ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
-    ];
-    // Emit in CT_CoreProperties xsd:all schema order: created, creator,
-    // description, keywords, lastModifiedBy, lastPrinted, modified, revision,
-    // subject, title. created/modified default to now for fresh documents.
-    p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`);
-    if (opts.creator) p.push(`<dc:creator>${escapeXml(opts.creator)}</dc:creator>`);
-    if (opts.description) p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
-    if (opts.keywords) p.push(`<cp:keywords>${escapeXml(opts.keywords)}</cp:keywords>`);
-    if (opts.lastModifiedBy)
-      p.push(`<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy)}</cp:lastModifiedBy>`);
-    if (opts.lastPrinted) p.push(`<cp:lastPrinted>${escapeXml(opts.lastPrinted)}</cp:lastPrinted>`);
-    p.push(
-      `<dcterms:modified xsi:type="dcterms:W3CDTF">${opts.modified ?? now}</dcterms:modified>`,
-    );
-    if (opts.revision !== undefined) p.push(`<cp:revision>${opts.revision}</cp:revision>`);
-    if (opts.subject) p.push(`<dc:subject>${escapeXml(opts.subject)}</dc:subject>`);
-    if (opts.title) p.push(`<dc:title>${escapeXml(opts.title)}</dc:title>`);
-    p.push("</cp:coreProperties>");
-    return p.join("");
+    return buildCorePropertiesXmlString(opts);
   },
 
   parse(el, _ctx) {
-    const result: CorePropertiesOptions = {};
-    for (const child of el.elements ?? []) {
-      if (typeof child.name !== "string") continue;
-      const text = child.elements?.[0]?.text;
-      if (typeof text !== "string") continue;
-      switch (child.name) {
-        case "dc:title":
-          result.title = text;
-          break;
-        case "dc:subject":
-          result.subject = text;
-          break;
-        case "dc:creator":
-          result.creator = text;
-          break;
-        case "cp:keywords":
-          result.keywords = text;
-          break;
-        case "dc:description":
-          result.description = text;
-          break;
-        case "cp:lastModifiedBy":
-          result.lastModifiedBy = text;
-          break;
-        case "cp:revision":
-          result.revision = Number(text);
-          break;
-        case "cp:lastPrinted":
-          result.lastPrinted = text;
-          break;
-        case "dcterms:created":
-          result.created = text;
-          break;
-        case "dcterms:modified":
-          result.modified = text;
-          break;
-      }
-    }
-    return result;
+    return parseCorePropsElement(el);
   },
 };

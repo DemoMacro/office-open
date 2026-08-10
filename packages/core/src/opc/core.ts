@@ -81,9 +81,8 @@ export function buildCorePropertiesXmlString(opts: CorePropertiesOptions): strin
   if (opts.keywords) p.push(`<cp:keywords>${escapeXml(opts.keywords)}</cp:keywords>`);
   if (opts.description) p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
   if (opts.lastPrinted) p.push(`<cp:lastPrinted>${escapeXml(opts.lastPrinted)}</cp:lastPrinted>`);
-  p.push(
-    `<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy || opts.creator || "Unknown")}</cp:lastModifiedBy>`,
-  );
+  if (opts.lastModifiedBy)
+    p.push(`<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy)}</cp:lastModifiedBy>`);
   if (opts.revision !== undefined) p.push(`<cp:revision>${opts.revision}</cp:revision>`);
 
   const now = new Date().toISOString();
