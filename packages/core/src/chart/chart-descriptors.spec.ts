@@ -722,4 +722,90 @@ describe("chartSpaceDesc", () => {
     const xml2 = stringify(chartSpaceDesc, result, {} as WriteContext);
     expect(xml2).toBe(xml1);
   });
+
+  it("round-trips bar gap width and overlap", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      gapWidth: 75,
+      overlap: -20,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('c:gapWidth val="75"');
+    expect(xml).toContain('c:overlap val="-20"');
+
+    const result = roundTrip(opts);
+    expect(result.gapWidth).toBe(75);
+    expect(result.overlap).toBe(-20);
+  });
+
+  it("round-trips pie first-slice angle and doughnut hole size", () => {
+    const opts: ChartSpaceOptions = {
+      type: "doughnut",
+      categories: ["A", "B", "C"],
+      series: [{ name: "S", values: [1, 2, 3] }],
+      firstSliceAngle: 90,
+      holeSize: 60,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('c:firstSliceAng val="90"');
+    expect(xml).toContain('c:holeSize val="60"');
+
+    const result = roundTrip(opts);
+    expect(result.firstSliceAngle).toBe(90);
+    expect(result.holeSize).toBe(60);
+  });
+
+  it("round-trips bubble scale and negative-bubble options", () => {
+    const opts: ChartSpaceOptions = {
+      type: "bubble",
+      series: [{ name: "S", xValues: [1], yValues: [2], bubbleSize: [3] }],
+      bubbleScale: 80,
+      showNegativeBubbles: true,
+      sizeRepresents: "w",
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('c:bubbleScale val="80"');
+    expect(xml).toContain("<c:showNegBubbles/>");
+    expect(xml).toContain('c:sizeRepresents val="w"');
+
+    const result = roundTrip(opts);
+    expect(result.bubbleScale).toBe(80);
+    expect(result.showNegativeBubbles).toBe(true);
+    expect(result.sizeRepresents).toBe("w");
+  });
+
+  it("round-trips CT_Chart tail display options", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      plotVisOnly: false,
+      displayBlanksAs: "span",
+      showDataLabelsOverMax: true,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:plotVisOnly val="0"/>');
+    expect(xml).toContain('c:dispBlanksAs val="span"');
+    expect(xml).toContain("<c:showDLblsOverMax/>");
+
+    const result = roundTrip(opts);
+    expect(result.plotVisOnly).toBe(false);
+    expect(result.displayBlanksAs).toBe("span");
+    expect(result.showDataLabelsOverMax).toBe(true);
+  });
+
+  it("round-trips surface wireframe", () => {
+    const opts: ChartSpaceOptions = {
+      type: "surface",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      wireframe: true,
+    };
+    const result = roundTrip(opts);
+    expect(result.wireframe).toBe(true);
+    const xml = stringify(chartSpaceDesc, result, {} as WriteContext);
+    expect(xml).toContain("<c:wireframe/>");
+  });
 });

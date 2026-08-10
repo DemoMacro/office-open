@@ -205,6 +205,30 @@ export interface ChartSpaceOptions {
   sideWall?: SurfaceOptions;
   /** 3D back wall (c:backWall). */
   backWall?: SurfaceOptions;
+  /** Plot visible cells only (c:plotVisOnly, defaults to true when omitted). */
+  plotVisOnly?: boolean;
+  /** How blank cells are plotted (c:dispBlanksAs). */
+  displayBlanksAs?: DisplayBlanksAs;
+  /** Show data labels over the chart maximum (c:showDLblsOverMax). */
+  showDataLabelsOverMax?: boolean;
+  /** Bar/column gap width as percent of width (c:gapWidth). */
+  gapWidth?: number;
+  /** Bar/column overlap as percent (c:overlap, 2D only). */
+  overlap?: number;
+  /** 3D bar/column gap depth as percent (c:gapDepth). */
+  gapDepth?: number;
+  /** Pie/doughnut first slice angle in degrees (c:firstSliceAng). */
+  firstSliceAngle?: number;
+  /** Pie/doughnut doughnut hole size as percent (c:holeSize). */
+  holeSize?: number;
+  /** Bubble scale as percent of default size (c:bubbleScale). */
+  bubbleScale?: number;
+  /** Show negative-value bubbles (c:showNegBubbles). */
+  showNegativeBubbles?: boolean;
+  /** What the bubble size represents (c:sizeRepresents). */
+  sizeRepresents?: SizeRepresents;
+  /** Surface chart wireframe rendering (c:wireframe). */
+  wireframe?: boolean;
 }
 
 // ── 3D view ──
@@ -464,3 +488,18 @@ export interface SurfaceOptions {
   /** Surface thickness — plain number or percentage string ("N%"). */
   thickness?: number | string;
 }
+
+// ── Chart-level scalars (CT_Chart tail + CT_xxxChart type-specific heads) ──
+
+export const DisplayBlanksAs = {
+  GAP: "gap",
+  SPAN: "span",
+  ZERO: "zero",
+} as const;
+export type DisplayBlanksAs = (typeof DisplayBlanksAs)[keyof typeof DisplayBlanksAs];
+
+export const SizeRepresents = {
+  AREA: "area",
+  WIDTH: "w",
+} as const;
+export type SizeRepresents = (typeof SizeRepresents)[keyof typeof SizeRepresents];

@@ -44,6 +44,8 @@ import type {
   SurfaceOptions,
   LayoutTarget,
   LayoutMode,
+  DisplayBlanksAs,
+  SizeRepresents,
 } from "./types";
 
 // ── Mutable build type for read results (readonly properties not assignable) ──
@@ -388,12 +390,38 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
 
 function chartTypeFooter(opts: ChartSpaceOptions): string {
   const tag = opts.threeD ? CHART_TYPE_TAGS_3D[opts.type] : CHART_TYPE_TAGS[opts.type];
-  // Pie and doughnut have no axId
-  if (NO_AXES_TYPES.has(opts.type)) return `</${tag}>`;
-  const axIds: string[] = [valEl("c:axId", 10), valEl("c:axId", 20)];
-  // 3D charts and surface charts need a third axis
-  if (opts.threeD || opts.type === "surface") axIds.push(valEl("c:axId", 30));
-  return `${axIds.join("")}</${tag}>`;
+  const parts: string[] = [];
+
+  // CT_xxxChart type-specific scalar fields (between ser and axId)
+  if (opts.type === "column" || opts.type === "bar") {
+    if (opts.gapWidth !== undefined) parts.push(valEl("c:gapWidth", opts.gapWidth));
+    if (opts.threeD) {
+      if (opts.gapDepth !== undefined) parts.push(valEl("c:gapDepth", opts.gapDepth));
+    } else if (opts.overlap !== undefined) {
+      parts.push(valEl("c:overlap", opts.overlap));
+    }
+  } else if (opts.type === "pie" || opts.type === "doughnut") {
+    if (opts.firstSliceAngle !== undefined)
+      parts.push(valEl("c:firstSliceAng", opts.firstSliceAngle));
+    if (opts.holeSize !== undefined) parts.push(valEl("c:holeSize", opts.holeSize));
+  } else if (opts.type === "bubble") {
+    if (opts.bubbleScale !== undefined) parts.push(valEl("c:bubbleScale", opts.bubbleScale));
+    if (opts.showNegativeBubbles !== undefined)
+      parts.push(`<c:showNegBubbles${boolVal(opts.showNegativeBubbles)}/>`);
+    if (opts.sizeRepresents !== undefined)
+      parts.push(valEl("c:sizeRepresents", opts.sizeRepresents));
+  } else if (opts.type === "surface") {
+    if (opts.wireframe !== undefined) parts.push(`<c:wireframe${boolVal(opts.wireframe)}/>`);
+  }
+
+  // Axes (pie/doughnut have none)
+  if (!NO_AXES_TYPES.has(opts.type)) {
+    parts.push(valEl("c:axId", 10));
+    parts.push(valEl("c:axId", 20));
+    if (opts.threeD || opts.type === "surface") parts.push(valEl("c:axId", 30));
+  }
+
+  return `${parts.join("")}</${tag}>`;
 }
 
 // ── Series sub-elements (CT_Marker / CT_DPt / CT_PictureOptions) ──
@@ -923,6 +951,43 @@ function readSurface(
   return { thickness: thickness.endsWith("%") ? thickness : Number(thickness) };
 }
 
+// ── Chart-type scalar read (CT_xxxChart fields between ser and axId) ──
+
+function readChartTypeScalars(
+  chartTypeEl: XmlElement | undefined,
+  type: ChartType,
+  threeD: boolean,
+  result: MutableChartSpaceResult,
+): void {
+  if (!chartTypeEl) return;
+  if (type === "column" || type === "bar") {
+    const gapWidth = readValNum(chartTypeEl, "c:gapWidth");
+    if (gapWidth !== undefined) result.gapWidth = gapWidth;
+    if (threeD) {
+      const gapDepth = readValNum(chartTypeEl, "c:gapDepth");
+      if (gapDepth !== undefined) result.gapDepth = gapDepth;
+    } else {
+      const overlap = readValNum(chartTypeEl, "c:overlap");
+      if (overlap !== undefined) result.overlap = overlap;
+    }
+  } else if (type === "pie" || type === "doughnut") {
+    const firstSliceAng = readValNum(chartTypeEl, "c:firstSliceAng");
+    if (firstSliceAng !== undefined) result.firstSliceAngle = firstSliceAng;
+    const holeSize = readValNum(chartTypeEl, "c:holeSize");
+    if (holeSize !== undefined) result.holeSize = holeSize;
+  } else if (type === "bubble") {
+    const bubbleScale = readValNum(chartTypeEl, "c:bubbleScale");
+    if (bubbleScale !== undefined) result.bubbleScale = bubbleScale;
+    const showNeg = readBoolAttr(chartTypeEl, "c:showNegBubbles");
+    if (showNeg !== undefined) result.showNegativeBubbles = showNeg;
+    const sizeRep = readValStr(chartTypeEl, "c:sizeRepresents");
+    if (sizeRep) result.sizeRepresents = sizeRep as SizeRepresents;
+  } else if (type === "surface") {
+    const wireframe = readBoolAttr(chartTypeEl, "c:wireframe");
+    if (wireframe !== undefined) result.wireframe = wireframe;
+  }
+}
+
 // ── Axis read (CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx) ──
 
 const AXIS_KIND_BY_TAG: Record<string, AxisKind> = {
@@ -1121,6 +1186,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       parts.push(stringifyLegend());
     }
 
+    // CT_Chart tail: plotVisOnly → dispBlanksAs → showDLblsOverMax
+    parts.push(`<c:plotVisOnly${boolVal(opts.plotVisOnly ?? true)}/>`);
+    if (opts.displayBlanksAs !== undefined)
+      parts.push(valEl("c:dispBlanksAs", opts.displayBlanksAs));
+    if (opts.showDataLabelsOverMax !== undefined)
+      parts.push(`<c:showDLblsOverMax${boolVal(opts.showDataLabelsOverMax)}/>`);
+
     parts.push("</c:chart>");
 
     // SpPr and txPr
@@ -1195,6 +1267,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       if (detectedType) {
         result.type = detectedType;
         if (threeD) result.threeD = true;
+        readChartTypeScalars(chartTypeEl, detectedType, threeD, result);
       }
 
       // Extract series data (c:ser are children of the chart-type element, not plotArea)
@@ -1251,6 +1324,14 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (!legend) {
       result.showLegend = false;
     }
+
+    // CT_Chart tail: plotVisOnly, dispBlanksAs, showDLblsOverMax
+    const plotVisOnly = readBoolAttr(chart, "c:plotVisOnly");
+    if (plotVisOnly !== undefined) result.plotVisOnly = plotVisOnly;
+    const dispBlanksAs = readValStr(chart, "c:dispBlanksAs");
+    if (dispBlanksAs) result.displayBlanksAs = dispBlanksAs as DisplayBlanksAs;
+    const showDLblsOverMax = readBoolAttr(chart, "c:showDLblsOverMax");
+    if (showDLblsOverMax !== undefined) result.showDataLabelsOverMax = showDLblsOverMax;
 
     return result as ChartSpaceOptions;
   },
