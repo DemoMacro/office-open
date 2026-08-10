@@ -361,6 +361,27 @@ export interface FileVersionOptions {
   rupBuild?: number;
 }
 
+/** ST_SmartTagShow — smart tag display policy (CT_SmartTagPr/@show). */
+export type SmartTagShow = "all" | "none" | "noIndicator";
+
+/** CT_SmartTagPr — workbook-level smart tag embed and display policy. */
+export interface SmartTagPropertiesOptions {
+  /** Embed smart tag data into the workbook (default false). */
+  embed?: boolean;
+  /** Smart tag display policy (default "all"). */
+  show?: SmartTagShow;
+}
+
+/** CT_SmartTagType — a recognized smart tag namespace registered at workbook level. */
+export interface SmartTagTypeOptions {
+  /** Namespace URI identifying the smart tag recognizer. */
+  namespaceUri?: string;
+  /** Smart tag name within the namespace. */
+  name?: string;
+  /** Optional URL for more information about the smart tag. */
+  url?: string;
+}
+
 export interface WorkbookDescriptorOptions {
   /** CT_FileVersion — Excel version stamp; fresh compiles emit Excel 2007 defaults. */
   fileVersion?: FileVersionOptions;
@@ -368,6 +389,10 @@ export interface WorkbookDescriptorOptions {
   pivotCaches?: PivotCacheReference[];
   protection?: WorkbookProtectionOptions;
   customViews?: CustomWorkbookViewOptions[];
+  /** CT_SmartTagPr — workbook-level smart tag embed/display policy. */
+  smartTagPr?: SmartTagPropertiesOptions;
+  /** CT_SmartTagTypes — recognized smart tag namespaces (smartTagType[]). */
+  smartTagTypes?: SmartTagTypeOptions[];
   fileRecoveryPr?: FileRecoveryPropertiesOptions;
   functionGroups?: string[];
   webPublishing?: WebPublishingOptions;
@@ -731,6 +756,34 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (names.length > 0) result.definedNames = names;
     }
 
+    // Smart tag properties (CT_SmartTagPr)
+    const smartTagPrEl = findChild(el, "smartTagPr");
+    if (smartTagPrEl?.attributes) {
+      const stp: SmartTagPropertiesOptions = {};
+      if (String(attr(smartTagPrEl, "embed")) === "1") stp.embed = true;
+      const show = attr(smartTagPrEl, "show");
+      if (show && show !== "all") stp.show = show as SmartTagShow;
+      result.smartTagPr = stp;
+    }
+
+    // Smart tag types (CT_SmartTagTypes → smartTagType[])
+    const smartTagTypesEl = findChild(el, "smartTagTypes");
+    if (smartTagTypesEl) {
+      const types: SmartTagTypeOptions[] = [];
+      for (const t of smartTagTypesEl.elements ?? []) {
+        if (t.name !== "smartTagType") continue;
+        const type: SmartTagTypeOptions = {};
+        const ns = attr(t, "namespaceUri");
+        if (ns) type.namespaceUri = ns;
+        const n = attr(t, "name");
+        if (n) type.name = n;
+        const u = attr(t, "url");
+        if (u) type.url = u;
+        types.push(type);
+      }
+      if (types.length > 0) result.smartTagTypes = types;
+    }
+
     // Conformance
     if (el.attributes?.["conformance"]) {
       result.conformance = attr(el, "conformance") as WorkbookConformance;
@@ -1019,7 +1072,32 @@ function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     parts.push("</pivotCaches>");
   }
 
-  // Web publishing (after pivotCaches, before fileRecoveryPr per XSD sequence)
+  // Smart tag properties (after pivotCaches, before smartTagTypes per XSD sequence)
+  if (opts.smartTagPr) {
+    const stp = opts.smartTagPr;
+    const stpAttrs: string[] = [];
+    if (stp.embed) stpAttrs.push('embed="1"');
+    if (stp.show && stp.show !== "all") stpAttrs.push(`show="${stp.show}"`);
+    if (stpAttrs.length > 0) {
+      parts.push(`<smartTagPr ${stpAttrs.join(" ")}/>`);
+    }
+  }
+
+  // Smart tag types (after smartTagPr, before webPublishing per XSD sequence)
+  if (opts.smartTagTypes && opts.smartTagTypes.length > 0) {
+    const sttParts: string[] = ["<smartTagTypes>"];
+    for (const stt of opts.smartTagTypes) {
+      const sttAttrs: string[] = [];
+      if (stt.namespaceUri) sttAttrs.push(`namespaceUri="${escapeXml(stt.namespaceUri)}"`);
+      if (stt.name) sttAttrs.push(`name="${escapeXml(stt.name)}"`);
+      if (stt.url) sttAttrs.push(`url="${escapeXml(stt.url)}"`);
+      sttParts.push(`<smartTagType ${sttAttrs.join(" ")}/>`);
+    }
+    sttParts.push("</smartTagTypes>");
+    parts.push(sttParts.join(""));
+  }
+
+  // Web publishing (after smartTagTypes, before fileRecoveryPr per XSD sequence)
   if (opts.webPublishing) {
     const wp = opts.webPublishing;
     const wpAttrs: string[] = [];

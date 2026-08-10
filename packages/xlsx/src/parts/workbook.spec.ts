@@ -60,6 +60,41 @@ describe("workbookDesc round-trip", () => {
     });
   });
 
+  it("round-trips smartTagPr and smartTagTypes", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      smartTagPr: { embed: true, show: "noIndicator" },
+      smartTagTypes: [
+        {
+          namespaceUri: "http://schemas.example.com/addr",
+          name: "Address",
+          url: "http://example.com",
+        },
+        { namespaceUri: "http://schemas.example.com/date", name: "Date" },
+      ],
+    };
+    const result = roundTrip(opts);
+
+    expect(result.smartTagPr).toEqual({ embed: true, show: "noIndicator" });
+    expect(result.smartTagTypes).toEqual([
+      {
+        namespaceUri: "http://schemas.example.com/addr",
+        name: "Address",
+        url: "http://example.com",
+      },
+      { namespaceUri: "http://schemas.example.com/date", name: "Date" },
+    ]);
+  });
+
+  it("omits smartTagPr/smartTagTypes when absent (defaults not emitted)", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+    };
+    const result = roundTrip(opts);
+    expect(result.smartTagPr).toBeUndefined();
+    expect(result.smartTagTypes).toBeUndefined();
+  });
+
   it("round-trips sheet with hidden state", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Hidden", sheetId: 1, rId: "rId1", state: "hidden" }],

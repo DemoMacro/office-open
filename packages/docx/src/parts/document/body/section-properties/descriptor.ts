@@ -360,7 +360,7 @@ export function stringifySectionPropertiesXml(opts: SectionPropertiesOptions): s
 
 /** Parse a w:sectPr element into SectionPropertiesOptions. */
 export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<SectionPropertiesOptions> = {};
 
   // rsid attributes on w:sectPr element
   for (const [attrName, optKey] of [
@@ -468,7 +468,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   const type = findChild(el, "w:type");
   if (type) {
     const val = attr(type, "w:val");
-    if (val) opts.type = val;
+    if (val) opts.type = val as SectionPropertiesOptions["type"];
   }
 
   // Title page
@@ -554,7 +554,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   const vAlign = findChild(el, "w:vAlign");
   if (vAlign) {
     const val = attr(vAlign, "w:val");
-    if (val) opts.verticalAlign = val;
+    if (val) opts.verticalAlign = val as SectionPropertiesOptions["verticalAlign"];
   }
 
   // Text direction
@@ -618,7 +618,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Revision (w:sectPrChange) — symmetric with stringifySectionPropertiesChange
   const sectPrChange = findChild(el, "w:sectPrChange");
   if (sectPrChange) {
-    const rev: Record<string, unknown> = {};
+    const rev: Partial<SectionPropertiesChangeOptions> = {};
     const author = attr(sectPrChange, "w:author");
     if (author) rev.author = author;
     const revDate = attr(sectPrChange, "w:date");
@@ -627,10 +627,10 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (revId !== undefined) rev.id = revId;
     const innerSectPr = findChild(sectPrChange, "w:sectPr");
     if (innerSectPr) Object.assign(rev, parseSectionPropertiesEl(innerSectPr));
-    if (Object.keys(rev).length > 0) opts.revision = rev;
+    if (Object.keys(rev).length > 0) opts.revision = rev as SectionPropertiesChangeOptions;
   }
 
-  return opts as unknown as SectionPropertiesOptions;
+  return opts;
 }
 
 function parseNotePropertiesEl(el: Element): Record<string, unknown> {
