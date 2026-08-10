@@ -18,6 +18,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, attrsRaw, escapeXml, selfCloseElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, attr, attrMeasure, attrNum, stringify, textOf } from "@office-open/xml";
+import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
 import type { XlsxReadContext } from "../context";
 import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
@@ -3034,20 +3035,6 @@ function buildPivotSelectionXml(_ps: PivotSelectionOptions): string {
   return "";
 }
 
-function hashPassword(password: string): string {
-  let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    const c = password.charCodeAt(i);
-    hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
-    hash ^= c;
-    hash = hash & 0x4000 ? hash ^ 0x1 : hash;
-  }
-  hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
-  hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
-  hash ^= password.length;
-  return hash.toString(16).toUpperCase().padStart(4, "0");
-}
-
 function buildFormulaString(fOpts: FormulaOptions): string {
   const fAttrs: Record<string, string | number | boolean | undefined> = {};
   if (fOpts.type && fOpts.type !== FormulaType.NORMAL) fAttrs.t = fOpts.type;
@@ -3162,23 +3149,6 @@ function buildCellString(
 
 function defaultCellRef(row: number, col: number): string {
   return columnToLetter(col) + row;
-}
-
-function columnToLetter(col: number): string {
-  let result = "";
-  let n = col;
-  while (n > 0) {
-    const remainder = (n - 1) % 26;
-    result = String.fromCharCode(65 + remainder) + result;
-    n = Math.floor((n - 1) / 26);
-  }
-  return result;
-}
-
-function dateToSerialNumber(date: Date): number {
-  const epoch = new Date(1899, 11, 30);
-  const msPerDay = 86400000;
-  return (date.getTime() - epoch.getTime()) / msPerDay;
 }
 
 // ── Parse helpers ──

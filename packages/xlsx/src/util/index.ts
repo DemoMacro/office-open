@@ -25,3 +25,21 @@ export function dateToSerialNumber(date: Date): number {
   const diff = date.getTime() - epoch.getTime();
   return diff / msPerDay;
 }
+
+/**
+ * Legacy 16-bit XOR password hash used by xlsx sheet/workbook protection
+ * (the pre-Agile encryption hash). Shared by worksheet and workbook parts.
+ */
+export function hashPassword(password: string): string {
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const c = password.charCodeAt(i);
+    hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
+    hash ^= c;
+    hash = hash & 0x4000 ? hash ^ 0x1 : hash;
+  }
+  hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
+  hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
+  hash ^= password.length;
+  return hash.toString(16).toUpperCase().padStart(4, "0");
+}

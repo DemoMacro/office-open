@@ -7,6 +7,7 @@
 import { derivePasswordHash } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild, attr, attrNum, escapeXml } from "@office-open/xml";
+import { hashPassword } from "@util/index";
 
 export interface SheetDefinition {
   name: string;
@@ -1087,19 +1088,4 @@ export function buildExternalReferencesXml(refs: { rId: string }[]): string {
   }
   p.push("</externalReferences>");
   return p.join("");
-}
-
-/** Legacy Excel password hash (XOR-based) */
-function hashPassword(password: string): string {
-  let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    const c = password.charCodeAt(i);
-    hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
-    hash ^= c;
-    hash = hash & 0x4000 ? hash ^ 0x1 : hash;
-  }
-  hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
-  hash = ((hash >> 14) & 1) + ((hash << 1) & 0x7fff);
-  hash ^= password.length;
-  return hash.toString(16).toUpperCase().padStart(4, "0");
 }

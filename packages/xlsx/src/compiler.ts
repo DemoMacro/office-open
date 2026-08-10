@@ -41,6 +41,7 @@ import type { TablePartReference, SheetDefinition } from "@parts/workbook";
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
 import { buildWorksheetXml, type WorksheetContext } from "@parts/worksheet";
 import type { RowOptions, WorksheetOptions } from "@parts/worksheet";
+import { columnToLetter } from "@util/index";
 
 import { XlsxWriteContext } from "./context";
 
@@ -1256,17 +1257,6 @@ function colIndexToLetter(col: number): string {
     n--;
     result = String.fromCharCode(65 + (n % 26)) + result;
     n = Math.floor(n / 26);
-  }
-  return result;
-}
-
-function columnToLetter(col: number): string {
-  let result = "";
-  let n = col;
-  while (n > 0) {
-    const remainder = (n - 1) % 26;
-    result = String.fromCharCode(65 + remainder) + result;
-    n = Math.floor((n - 1) / 26);
   }
   return result;
 }
