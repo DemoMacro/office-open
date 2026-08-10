@@ -29,7 +29,6 @@ export * from "./object";
 export * from "./comments";
 export * from "./contenttypes";
 export * from "./inline";
-export * from "./relationships";
 export * from "./bodychildren";
 export * from "./core-properties";
 export * from "./custom-properties";
