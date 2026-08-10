@@ -354,6 +354,29 @@ function stringifyStrRef(values: readonly string[]): string {
   return `<c:strRef><c:f/><c:strCache><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:strCache></c:strRef>`;
 }
 
+function stringifyStrLit(values: readonly string[]): string {
+  const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v)}</c:v></c:pt>`).join("");
+  return `<c:strLit><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:strLit>`;
+}
+
+function stringifyMultiLvlStrRef(levels: readonly (readonly string[])[]): string {
+  const ptCount = levels.reduce((max, lvl) => Math.max(max, lvl.length), 0);
+  const lvls = levels
+    .map((lvl) => {
+      const pts = lvl.map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v)}</c:v></c:pt>`).join("");
+      return `<c:lvl>${pts}</c:lvl>`;
+    })
+    .join("");
+  return `<c:multiLvlStrRef><c:f/><c:multiLvlStrCache><c:ptCount ${attrVal("val", ptCount)}/>${lvls}</c:multiLvlStrCache></c:multiLvlStrRef>`;
+}
+
+// CT_AxDataSource choice (c:cat / c:xVal slot): exactly one of multi-level/literal/reference.
+function stringifyCategorySource(opts: ChartSpaceOptions): string {
+  if (opts.multiLevelCategories) return stringifyMultiLvlStrRef(opts.multiLevelCategories);
+  if (opts.categoryLabels) return stringifyStrLit(opts.categoryLabels);
+  return stringifyStrRef(opts.categories ?? []);
+}
+
 function stringifyNumRef(values: readonly number[]): string {
   const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join("");
   return `<c:numRef><c:f/><c:numCache><c:formatCode>General</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
@@ -522,9 +545,10 @@ function stringifyDataPoint(opts: DataPointOptions): string {
 function stringifySeries(
   index: number,
   series: ChartSeriesData | BubbleSeriesData,
-  categories: readonly string[],
-  chartType: ChartType,
+  opts: ChartSpaceOptions,
 ): string {
+  const chartType = opts.type;
+  const categories = opts.categories ?? [];
   const parts: string[] = [];
   const s = series as ChartSeriesData;
 
@@ -570,7 +594,7 @@ function stringifySeries(
     parts.push(`<c:xVal>${stringifyStrRef(categories)}</c:xVal>`);
     parts.push(`<c:yVal>${stringifyNumRef(s.values)}</c:yVal>`);
   } else {
-    parts.push(`<c:cat>${stringifyStrRef(categories)}</c:cat>`);
+    parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
     parts.push(`<c:val>${stringifyNumRef(s.values)}</c:val>`);
   }
 
@@ -697,6 +721,41 @@ function readStrCache(el: XmlElement): string[] {
     }
   }
   return result;
+}
+
+function readStrLit(el: XmlElement): string[] | undefined {
+  const strLit = findChild(el, "c:strLit");
+  if (!strLit) return undefined;
+  const result: string[] = [];
+  for (const pt of strLit.elements ?? []) {
+    if (pt.name === "c:pt") {
+      const v = findChild(pt, "c:v");
+      const text = v ? textOf(v) : "";
+      if (text !== "") result.push(text);
+    }
+  }
+  return result;
+}
+
+function readMultiLvlStrCache(el: XmlElement): string[][] | undefined {
+  const ref = findChild(el, "c:multiLvlStrRef");
+  if (!ref) return undefined;
+  const cache = findChild(ref, "c:multiLvlStrCache");
+  if (!cache) return [];
+  const levels: string[][] = [];
+  for (const lvl of cache.elements ?? []) {
+    if (lvl.name !== "c:lvl") continue;
+    const level: string[] = [];
+    for (const pt of lvl.elements ?? []) {
+      if (pt.name === "c:pt") {
+        const v = findChild(pt, "c:v");
+        const text = v ? textOf(v) : "";
+        if (text !== "") level.push(text);
+      }
+    }
+    levels.push(level);
+  }
+  return levels;
 }
 
 function readNumCache(el: XmlElement): number[] {
@@ -1306,9 +1365,8 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // Chart type element (header + series + footer)
     parts.push(chartTypeHeader(opts));
 
-    const categories = opts.categories ?? [];
     for (const [i, series] of opts.series.entries()) {
-      parts.push(stringifySeries(i, series, categories, opts.type));
+      parts.push(stringifySeries(i, series, opts));
     }
 
     parts.push(chartTypeFooter(opts));
@@ -1440,10 +1498,23 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
           for (const serEl of seriesEls) {
             const name = readSeriesName(serEl);
 
-            // Read categories from first series
-            if (!categories) {
+            // Read categories from first series (c:cat may be strRef/strLit/multiLvlStrRef)
+            if (!categories && !result.multiLevelCategories && !result.categoryLabels) {
               const catEl = findChild(serEl, "c:cat") ?? findChild(serEl, "c:xVal");
-              if (catEl) categories = readStrCache(catEl);
+              if (catEl) {
+                const multi = readMultiLvlStrCache(catEl);
+                if (multi) {
+                  result.multiLevelCategories = multi;
+                } else {
+                  const lit = readStrLit(catEl);
+                  if (lit) {
+                    result.categoryLabels = lit;
+                    categories = lit;
+                  } else {
+                    categories = readStrCache(catEl);
+                  }
+                }
+              }
             }
 
             // Read values

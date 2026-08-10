@@ -155,6 +155,10 @@ export interface ChartSpaceOptions {
   title?: string;
   type: ChartType;
   categories?: readonly string[];
+  /** Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef). */
+  multiLevelCategories?: readonly (readonly string[])[];
+  /** Literal category labels, emitted as c:strLit (c:cat > c:strLit). */
+  categoryLabels?: readonly string[];
   series: readonly ChartSeriesData[] | readonly BubbleSeriesData[];
   showLegend?: boolean;
   style?: number;

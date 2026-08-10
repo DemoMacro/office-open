@@ -922,4 +922,43 @@ describe("chartSpaceDesc", () => {
     expect(result.customSplitPoints).toEqual([2, 4]);
     expect(result.secondPieSize).toBe("75%");
   });
+
+  it("round-trips multi-level category labels", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      multiLevelCategories: [
+        ["Q1", "Q1", "Q2", "Q2"],
+        ["Jan", "Feb", "Mar", "Apr"],
+      ],
+      series: [{ name: "S", values: [10, 20, 30, 40] }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:multiLvlStrRef>");
+    expect(xml).toContain("<c:multiLvlStrCache>");
+    expect(xml).toContain('c:ptCount val="4"');
+    expect(xml).toContain("<c:lvl>");
+    expect(xml).not.toContain("<c:cat><c:strRef>");
+
+    const result = roundTrip(opts);
+    expect(result.multiLevelCategories).toEqual([
+      ["Q1", "Q1", "Q2", "Q2"],
+      ["Jan", "Feb", "Mar", "Apr"],
+    ]);
+    expect(result.categories).toBeUndefined();
+  });
+
+  it("round-trips literal category labels as c:strLit", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categoryLabels: ["Alpha", "Beta", "Gamma"],
+      series: [{ name: "S", values: [1, 2, 3] }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:strLit>");
+    expect(xml).toContain('c:ptCount val="3"');
+    expect(xml).not.toContain("<c:cat><c:strRef>");
+
+    const result = roundTrip(opts);
+    expect(result.categoryLabels).toEqual(["Alpha", "Beta", "Gamma"]);
+  });
 });
