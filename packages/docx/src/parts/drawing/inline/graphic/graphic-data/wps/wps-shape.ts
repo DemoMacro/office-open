@@ -1,6 +1,12 @@
 import type {
+  CustomGeometryOptions,
+  EffectDagOptions,
+  EffectListOptions,
   FillOptions,
+  OutlineOptions,
   PresetGeometryOptions,
+  Scene3DOptions,
+  Shape3DOptions,
   SolidFillOptions,
 } from "@office-open/core/drawingml";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
@@ -13,12 +19,6 @@ import type { ParagraphOptions } from "@parts/paragraph/paragraph";
  */
 import type { MediaDataTransformation } from "@shared/media";
 
-import type { CustomGeometryOptions } from "../pic/custom-geometry/custom-geometry";
-import type { EffectDagOptions } from "../pic/effects/effect-dag";
-import type { EffectListOptions } from "../pic/effects/effect-list";
-import type { OutlineOptions } from "../pic/outline/outline";
-import type { Scene3DOptions } from "../pic/three-d/scene-3d";
-import type { Shape3DOptions } from "../pic/three-d/shape-3d";
 import type { BodyPropertiesOptions } from "./body-properties";
 import type { NonVisualShapePropertiesOptions } from "./non-visual-shape-properties";
 

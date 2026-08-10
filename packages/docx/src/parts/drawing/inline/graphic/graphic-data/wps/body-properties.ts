@@ -11,14 +11,15 @@
 import type { UniversalMeasure } from "@office-open/core";
 import { convertToEmu } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
-import { scene3DDesc, shape3DDesc } from "@office-open/core/drawingml";
+import {
+  createScene3D,
+  createShape3D,
+  scene3DDesc,
+  shape3DDesc,
+} from "@office-open/core/drawingml";
+import type { Scene3DOptions, Shape3DOptions } from "@office-open/core/drawingml";
 import { attr, attrBool, attrMeasure, attrNum, element, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-
-import type { Scene3DOptions } from "../pic/three-d/scene-3d";
-import { createScene3D } from "../pic/three-d/scene-3d";
-import type { Shape3DOptions } from "../pic/three-d/shape-3d";
-import { createShape3D } from "../pic/three-d/shape-3d";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import type { FillOptions } from "@office-open/core/drawingml";
+import type { EffectListOptions, FillOptions } from "@office-open/core/drawingml";
 /**
  * WPG group shape types for WordprocessingML documents.
  *
@@ -7,8 +7,6 @@ import type { FillOptions } from "@office-open/core/drawingml";
  * @module
  */
 import type { MediaDataTransformation } from "@shared/media";
-
-import type { EffectListOptions } from "../pic/effects/effect-list";
 
 export type GroupChild = unknown;
 

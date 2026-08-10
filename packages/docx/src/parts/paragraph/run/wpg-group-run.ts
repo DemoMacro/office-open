@@ -3,7 +3,7 @@
  *
  * @module
  */
-import type { FillOptions } from "@office-open/core/drawingml";
+import type { EffectListOptions, FillOptions } from "@office-open/core/drawingml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
@@ -11,7 +11,6 @@ import type { GroupChildMediaData, MediaTransformation } from "@shared/media";
 
 import type { Floating } from "../../drawing";
 import type { GraphicFrameLocksOptions, GroupShapeLocksOptions } from "../../drawing/descriptor";
-import type { EffectListOptions } from "../../drawing/inline/graphic/graphic-data/pic/effects/effect-list";
 import type {
   ChildOffset,
   ChildExtent,

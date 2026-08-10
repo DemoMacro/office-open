@@ -1,5 +1,12 @@
 import type { DataType } from "@office-open/core";
-import type { FillOptions } from "@office-open/core/drawingml";
+import type {
+  BlipEffectsOptions,
+  EffectListOptions,
+  FillOptions,
+  OutlineOptions,
+  SourceRectangleOptions,
+  TileOptions,
+} from "@office-open/core/drawingml";
 /**
  * ImageRun types for WordprocessingML documents.
  *
@@ -17,11 +24,6 @@ import type { MediaData, NonVisualPropertiesOptions } from "@shared/media/data";
 
 import type { Floating } from "../../drawing";
 import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
-import type { BlipEffectsOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/blip-effects";
-import type { SourceRectangleOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
-import type { TileOptions } from "../../drawing/inline/graphic/graphic-data/pic/blip/tile";
-import type { EffectListOptions } from "../../drawing/inline/graphic/graphic-data/pic/effects/effect-list";
-import type { OutlineOptions } from "../../drawing/inline/graphic/graphic-data/pic/outline/outline";
 
 /**
  * Core options for image configuration.

@@ -1,8 +1,10 @@
-import type { FillOptions } from "@office-open/core/drawingml";
+import type {
+  EffectListOptions,
+  FillOptions,
+  OutlineOptions,
+  SourceRectangleOptions,
+} from "@office-open/core/drawingml";
 import type { GroupShapeLocksOptions } from "@parts/drawing/descriptor";
-import type { SourceRectangleOptions } from "@parts/drawing/inline/graphic/graphic-data/pic/blip/source-rectangle";
-import type { EffectListOptions } from "@parts/drawing/inline/graphic/graphic-data/pic/effects/effect-list";
-import type { OutlineOptions } from "@parts/drawing/inline/graphic/graphic-data/pic/outline/outline";
 import type {
   ChildExtent,
   ChildOffset,

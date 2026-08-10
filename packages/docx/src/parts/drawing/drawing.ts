@@ -3,14 +3,16 @@
  *
  * @module
  */
-import type { FillOptions } from "@office-open/core/drawingml";
+import type {
+  BlipEffectsOptions,
+  EffectListOptions,
+  FillOptions,
+  OutlineOptions,
+  TileOptions,
+} from "@office-open/core/drawingml";
 
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import type { Floating } from "./floating";
-import type { BlipEffectsOptions } from "./inline/graphic/graphic-data/pic/blip/blip-effects";
-import type { TileOptions } from "./inline/graphic/graphic-data/pic/blip/tile";
-import type { EffectListOptions } from "./inline/graphic/graphic-data/pic/effects/effect-list";
-import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/outline/outline";
 
 /**
  * Distance options for drawing elements.

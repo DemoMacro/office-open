@@ -16,6 +16,7 @@ import {
   presetGeometryDesc,
 } from "@office-open/core";
 import { scene3DDesc, shape3DDesc } from "@office-open/core/drawingml";
+import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
@@ -43,7 +44,6 @@ import type {
   Margins,
   VerticalPositionOptions,
 } from "./floating";
-import type { SourceRectangleOptions } from "./inline/graphic/graphic-data/pic/blip/source-rectangle";
 import type { ChildOffset, ChildExtent } from "./inline/graphic/graphic-data/wpg/wpg-group";
 import { parseBodyProperties } from "./inline/graphic/graphic-data/wps/body-properties";
 import type { NonVisualShapePropertiesOptions } from "./inline/graphic/graphic-data/wps/non-visual-shape-properties";

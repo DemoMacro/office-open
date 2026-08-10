@@ -20,7 +20,14 @@
 import { TargetModeType } from "@office-open/core";
 import { convertToEmu, uniqueNumericIdCreator, uniqueId } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
-import type { FillOptions } from "@office-open/core/drawingml";
+import type {
+  BlipEffectsOptions,
+  EffectListOptions,
+  FillOptions,
+  OutlineOptions,
+  SourceRectangleOptions,
+  TileOptions,
+} from "@office-open/core/drawingml";
 import {
   calculateEffectExtent,
   createColorElement,
@@ -56,11 +63,6 @@ import { parseDrawingRun } from "./drawing-parse";
 import type { Floating, HorizontalPositionOptions, VerticalPositionOptions } from "./floating";
 import type { Margins } from "./floating";
 import { HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom } from "./floating";
-import type { BlipEffectsOptions } from "./inline/graphic/graphic-data/pic/blip/blip-effects";
-import type { SourceRectangleOptions } from "./inline/graphic/graphic-data/pic/blip/source-rectangle";
-import type { TileOptions } from "./inline/graphic/graphic-data/pic/blip/tile";
-import type { EffectListOptions } from "./inline/graphic/graphic-data/pic/effects/effect-list";
-import type { OutlineOptions } from "./inline/graphic/graphic-data/pic/outline/outline";
 import type { ChildOffset, ChildExtent } from "./inline/graphic/graphic-data/wpg/wpg-group";
 // wpg/wps types only
 import {
