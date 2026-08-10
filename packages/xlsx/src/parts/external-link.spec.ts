@@ -20,7 +20,10 @@ const readCtx = {
 
 function roundTrip(opts: ExternalLinkOptions) {
   const xml = externalLinkDesc.stringify(opts, writeCtx)!;
-  const doc = parseXml(xml);
+  // nativeTypeAttributes mirrors the real xlsx parse path (ParsedArchive.get
+  // coerces "1"/"0" to numbers), so reads are exercised against numeric
+  // coercion rather than a permissive non-coerced parse.
+  const doc = parseXml(xml, { nativeTypeAttributes: true });
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
   return externalLinkDesc.parse(el, readCtx) as unknown as ExternalLinkOptions;
@@ -101,5 +104,24 @@ describe("externalLinkDesc round-trip", () => {
 
     expect(result.oleLink?.oleItems).toHaveLength(2);
     expect(result.oleLink?.oleItems![0]?.name).toBe("Item1");
+  });
+
+  it("round-trips boolean flags under nativeTypeAttributes coercion", () => {
+    const opts: ExternalLinkOptions = {
+      externalBook: {
+        sheetNames: ["S1"],
+        definedNames: [{ name: "N1", publishToServer: true, vbProcedure: true }],
+        sheetDataSet: [{ sheetId: 1, refreshError: true }],
+      },
+      oleLink: { oleItems: [{ name: "I1", advise: true, prefer: true }] },
+    };
+    const result = roundTrip(opts);
+
+    const dn = result.externalBook?.definedNames![0]!;
+    expect(dn.publishToServer).toBe(true);
+    expect(dn.vbProcedure).toBe(true);
+    expect(result.externalBook?.sheetDataSet![0]?.refreshError).toBe(true);
+    expect(result.oleLink?.oleItems![0]?.advise).toBe(true);
+    expect(result.oleLink?.oleItems![0]?.prefer).toBe(true);
   });
 });
