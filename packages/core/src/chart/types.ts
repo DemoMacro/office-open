@@ -232,6 +232,18 @@ export interface ChartSpaceOptions {
   externalData?: ExternalDataOptions;
   /** Print settings (c:printSettings, after c:externalData). */
   printSettings?: PrintSettingsOptions;
+  /** Pivot chart source (c:pivotSource, after clrMapOvr, before protection). */
+  pivotSource?: PivotSourceOptions;
+  /** Pivot chart per-series formats (c:pivotFmts, after autoTitleDeleted). */
+  pivotFormats?: readonly PivotFormatOptions[];
+  /** Surface chart color bands (c:bandFmts, after ser in surface charts). */
+  bandFormats?: readonly BandFormatOptions[];
+  /** Legend position (c:legendPos, defaults to "r" when legend is shown). */
+  legendPosition?: LegendPosition;
+  /** Legend entry overrides (c:legendEntry, inside c:legend). */
+  legendEntries?: readonly LegendEntryOptions[];
+  /** User-drawn shapes relationship id (c:userShapes r:id, after printSettings). */
+  userShapes?: string;
 }
 
 // ── 3D view ──
@@ -540,3 +552,35 @@ export interface PrintSettingsOptions {
 export type OfPieType = "pie" | "bar";
 
 export type SplitType = "auto" | "cust" | "percent" | "pos" | "val";
+
+// ── Pivot chart (CT_PivotSource / CT_PivotFmts) ──
+
+/** Pivot chart source (CT_PivotSource: name + fmtId, both required). */
+export interface PivotSourceOptions {
+  name: string;
+  formatId: number;
+}
+
+/** Per-series pivot format override (CT_PivotFmt). */
+export interface PivotFormatOptions {
+  index: number;
+  marker?: MarkerOptions;
+}
+
+// ── Surface band formats (CT_BandFmts) ──
+
+/** Surface chart color band format (CT_BandFmt: idx). */
+export interface BandFormatOptions {
+  index: number;
+}
+
+// ── Legend entries (CT_Legend / CT_LegendEntry) ──
+
+export type LegendPosition = "b" | "tr" | "l" | "r" | "t";
+
+/** Legend entry override (CT_LegendEntry: idx + delete | txPr). */
+export interface LegendEntryOptions {
+  index: number;
+  /** Hide this legend entry (c:delete). */
+  delete?: boolean;
+}

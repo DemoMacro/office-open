@@ -58,6 +58,11 @@ import type {
   PageSetupOptions,
   PrintSettingsOptions,
   PageSetupOrientation,
+  PivotSourceOptions,
+  PivotFormatOptions,
+  BandFormatOptions,
+  LegendEntryOptions,
+  LegendPosition,
 } from "./types";
 
 // ── Mutable build type for read results (readonly properties not assignable) ──
@@ -651,7 +656,10 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
         parts.push(valEl("c:secondPieSize", opts.secondPieSize));
       if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
       break;
-    // surface: wireframe emitted in chartTypeHeader (EG_SurfaceChartShared head); no footer children.
+    case "surface":
+      // EG_SurfaceChartShared tail: bandFmts (after ser, before axId)
+      if (opts.bandFormats?.length) parts.push(stringifyBandFormats(opts.bandFormats));
+      break;
   }
 
   // Axes (pie/doughnut have none)
@@ -776,8 +784,41 @@ function stringifyTitle(title: string): string {
 
 // ── Legend XML ──
 
-function stringifyLegend(): string {
-  return `<c:legend><c:legendPos val="b"/><c:layout/><c:overlay val="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr><c:txPr><a:bodyPr rot="0" spcFirstLastPara="1" vertOverflow="ellipsis" vert="horz" wrap="square" anchor="ctr" anchorCtr="1"/><a:lstStyle/><a:p><a:pPr><a:defRPr/></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr></c:legend>`;
+const LEGEND_TXPR =
+  '<c:txPr><a:bodyPr rot="0" spcFirstLastPara="1" vertOverflow="ellipsis" vert="horz" wrap="square" anchor="ctr" anchorCtr="1"/><a:lstStyle/><a:p><a:pPr><a:defRPr/></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr>';
+
+function stringifyLegendEntry(entry: LegendEntryOptions): string {
+  // CT_LegendEntry: idx → choice(delete | EG_LegendEntryData[txPr]). Non-delete
+  // entries require a txPr model (chart txPr wiring is a follow-up), so only
+  // delete entries are emitted here.
+  if (!entry.delete) return "";
+  return `<c:legendEntry><c:idx val="${entry.index}"/><c:delete val="1"/></c:legendEntry>`;
+}
+
+function stringifyLegend(opts: ChartSpaceOptions): string {
+  const pos = opts.legendPosition ?? "b";
+  const entries = (opts.legendEntries ?? []).map(stringifyLegendEntry).join("");
+  return `<c:legend><c:legendPos val="${pos}"/>${entries}<c:layout/><c:overlay val="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr>${LEGEND_TXPR}</c:legend>`;
+}
+
+function stringifyPivotSource(opts: PivotSourceOptions): string {
+  return `<c:pivotSource><c:name>${escapeXml(opts.name)}</c:name><c:fmtId val="${opts.formatId}"/></c:pivotSource>`;
+}
+
+function stringifyPivotFormats(formats: readonly PivotFormatOptions[]): string {
+  const inner = formats
+    .map((f) => {
+      let entry = `<c:idx val="${f.index}"/>`;
+      if (f.marker) entry += stringifyMarker(f.marker);
+      return `<c:pivotFmt>${entry}</c:pivotFmt>`;
+    })
+    .join("");
+  return `<c:pivotFmts>${inner}</c:pivotFmts>`;
+}
+
+function stringifyBandFormats(formats: readonly BandFormatOptions[]): string {
+  const inner = formats.map((f) => `<c:bandFmt><c:idx val="${f.index}"/></c:bandFmt>`).join("");
+  return `<c:bandFmts>${inner}</c:bandFmts>`;
 }
 
 // ── Shared boilerplate ──
@@ -1261,6 +1302,8 @@ function readChartTypeScalars(
   } else if (type === "surface") {
     const wireframe = readBoolAttr(chartTypeEl, "c:wireframe");
     if (wireframe !== undefined) result.wireframe = wireframe;
+    const bandFormats = readBandFormats(chartTypeEl);
+    if (bandFormats) result.bandFormats = bandFormats;
   } else if (type === "ofPie") {
     const ofPieType = readValStr(chartTypeEl, "c:ofPieType");
     if (ofPieType) result.ofPieType = ofPieType as OfPieType;
@@ -1388,6 +1431,75 @@ function readExternalData(el: XmlElement): ExternalDataOptions | undefined {
     if (v !== undefined) opts.autoUpdate = v !== "0" && v !== "false";
   }
   return opts;
+}
+
+function readPivotSource(el: XmlElement): PivotSourceOptions | undefined {
+  const ps = findChild(el, "c:pivotSource");
+  if (!ps) return undefined;
+  const nameEl = findChild(ps, "c:name");
+  const fmtIdEl = findChild(ps, "c:fmtId");
+  if (!nameEl || !fmtIdEl) return undefined;
+  return { name: textOf(nameEl) ?? "", formatId: Number(attr(fmtIdEl, "val")) };
+}
+
+function readPivotFormats(chart: XmlElement): PivotFormatOptions[] | undefined {
+  const pf = findChild(chart, "c:pivotFmts");
+  if (!pf) return undefined;
+  const result: PivotFormatOptions[] = [];
+  for (const fmt of children(pf, "c:pivotFmt")) {
+    const idxEl = findChild(fmt, "c:idx");
+    if (!idxEl) continue;
+    const opt: PivotFormatOptions = { index: Number(attr(idxEl, "val")) };
+    const marker = readMarker(fmt);
+    if (marker) opt.marker = marker;
+    result.push(opt);
+  }
+  return result.length ? result : undefined;
+}
+
+function readBandFormats(chartTypeEl: XmlElement): BandFormatOptions[] | undefined {
+  const bf = findChild(chartTypeEl, "c:bandFmts");
+  if (!bf) return undefined;
+  const result: BandFormatOptions[] = [];
+  for (const fmt of children(bf, "c:bandFmt")) {
+    const idxEl = findChild(fmt, "c:idx");
+    if (idxEl) result.push({ index: Number(attr(idxEl, "val")) });
+  }
+  return result.length ? result : undefined;
+}
+
+function readLegendEntries(legend: XmlElement): LegendEntryOptions[] | undefined {
+  const entries = children(legend, "c:legendEntry");
+  if (!entries.length) return undefined;
+  const result: LegendEntryOptions[] = [];
+  for (const entry of entries) {
+    const idxEl = findChild(entry, "c:idx");
+    if (!idxEl) continue;
+    const deleteEl = findChild(entry, "c:delete");
+    if (!deleteEl) continue; // non-delete entries (txPr) need chart txPr wiring
+    const v = attr(deleteEl, "val");
+    result.push({
+      index: Number(attr(idxEl, "val")),
+      delete: v === undefined ? true : v !== "0",
+    });
+  }
+  return result.length ? result : undefined;
+}
+
+function readLegend(
+  chart: XmlElement,
+): { position?: LegendPosition; entries?: LegendEntryOptions[] } | undefined {
+  const legend = findChild(chart, "c:legend");
+  if (!legend) return undefined;
+  const result: { position?: LegendPosition; entries?: LegendEntryOptions[] } = {};
+  const posEl = findChild(legend, "c:legendPos");
+  if (posEl) {
+    const v = attr(posEl, "val");
+    if (v) result.position = v as LegendPosition;
+  }
+  const entries = readLegendEntries(legend);
+  if (entries) result.entries = entries;
+  return Object.keys(result).length ? result : undefined;
 }
 
 // ── Print settings read (CT_PrintSettings) ──
@@ -1658,8 +1770,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       parts.push(valEl("c:style", opts.style));
     }
 
-    // CT_ChartSpace: style → clrMapOvr → protection → chart
+    // CT_ChartSpace: style → clrMapOvr → pivotSource → protection → chart
     if (opts.colorMapOverride) parts.push(stringifyColorMapOverride(opts.colorMapOverride));
+    if (opts.pivotSource) parts.push(stringifyPivotSource(opts.pivotSource));
     if (opts.protection) parts.push(stringifyProtection(opts.protection));
 
     // c:chart container
@@ -1671,6 +1784,8 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     }
 
     parts.push(valEl("c:autoTitleDeleted", 0));
+    // CT_Chart: autoTitleDeleted → pivotFmts → view3D
+    if (opts.pivotFormats?.length) parts.push(stringifyPivotFormats(opts.pivotFormats));
 
     // 3D view (before plotArea per CT_Chart sequence)
     if (opts.view3D) {
@@ -1704,7 +1819,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
     // Legend
     if (opts.showLegend !== false) {
-      parts.push(stringifyLegend());
+      parts.push(stringifyLegend(opts));
     }
 
     // CT_Chart tail: plotVisOnly → dispBlanksAs → showDLblsOverMax
@@ -1723,6 +1838,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // CT_ChartSpace: txPr → externalData → printSettings → (userShapes)
     if (opts.externalData) parts.push(stringifyExternalData(opts.externalData));
     if (opts.printSettings) parts.push(stringifyPrintSettings(opts.printSettings));
+    // CT_ChartSpace: printSettings → userShapes → extLst
+    if (opts.userShapes !== undefined)
+      parts.push(`<c:userShapes r:id="${escapeXml(opts.userShapes)}"/>`);
 
     parts.push("</c:chartSpace>");
 
@@ -1743,6 +1861,8 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (colorMapOverride) result.colorMapOverride = colorMapOverride;
     const protection = readProtection(el);
     if (protection) result.protection = protection;
+    const pivotSource = readPivotSource(el);
+    if (pivotSource) result.pivotSource = pivotSource;
 
     // Chart container
     const chart = findChild(el, "c:chart");
@@ -1756,6 +1876,8 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     }
 
     // 3D view (before plotArea per CT_Chart sequence)
+    const pivotFormats = readPivotFormats(chart);
+    if (pivotFormats) result.pivotFormats = pivotFormats;
     const view3D = readView3D(chart);
     if (view3D) result.view3D = view3D;
 
@@ -1871,6 +1993,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     const legend = findChild(chart, "c:legend");
     if (!legend) {
       result.showLegend = false;
+    } else {
+      const legendData = readLegend(chart);
+      if (legendData?.position) result.legendPosition = legendData.position;
+      if (legendData?.entries) result.legendEntries = legendData.entries;
     }
 
     // CT_Chart tail: plotVisOnly, dispBlanksAs, showDLblsOverMax
@@ -1886,6 +2012,11 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (externalData) result.externalData = externalData;
     const printSettings = readPrintSettings(el);
     if (printSettings) result.printSettings = printSettings;
+    const userShapesEl = findChild(el, "c:userShapes");
+    if (userShapesEl) {
+      const rid = attr(userShapesEl, "r:id");
+      if (rid !== undefined) result.userShapes = rid;
+    }
 
     return result as ChartSpaceOptions;
   },

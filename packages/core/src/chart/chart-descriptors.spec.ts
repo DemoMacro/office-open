@@ -1046,4 +1046,60 @@ describe("chartSpaceDesc", () => {
     expect(result.printSettings?.pageSetup?.paperSize).toBe(9);
     expect(result.printSettings?.pageSetup?.copies).toBe(2);
   });
+
+  it("round-trips pivot source, pivot formats, and user shapes", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      pivotSource: { name: "PivotTable1", formatId: 42 },
+      pivotFormats: [{ index: 0, marker: { symbol: "circle", size: 7 } }],
+      userShapes: "rId9",
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:pivotSource><c:name>PivotTable1</c:name><c:fmtId val="42"/>');
+    expect(xml).toContain('<c:pivotFmt><c:idx val="0"/>');
+    expect(xml).toContain('<c:userShapes r:id="rId9"/>');
+
+    const result = roundTrip(opts);
+    expect(result.pivotSource).toEqual({ name: "PivotTable1", formatId: 42 });
+    expect(result.pivotFormats).toEqual([{ index: 0, marker: { symbol: "circle", size: 7 } }]);
+    expect(result.userShapes).toBe("rId9");
+  });
+
+  it("round-trips surface band formats", () => {
+    const opts: ChartSpaceOptions = {
+      type: "surface",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      bandFormats: [{ index: 0 }, { index: 1 }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:bandFmts>");
+    expect(xml).toContain('<c:bandFmt><c:idx val="0"/>');
+    expect(xml).toContain('<c:bandFmt><c:idx val="1"/>');
+
+    const result = roundTrip(opts);
+    expect(result.bandFormats).toEqual([{ index: 0 }, { index: 1 }]);
+  });
+
+  it("round-trips legend position and deleted entries", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [
+        { name: "Visible", values: [1, 2] },
+        { name: "Hidden", values: [3, 4] },
+      ],
+      legendPosition: "t",
+      legendEntries: [{ index: 1, delete: true }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:legendPos val="t"/>');
+    expect(xml).toContain('<c:legendEntry><c:idx val="1"/><c:delete val="1"/>');
+
+    const result = roundTrip(opts);
+    expect(result.legendPosition).toBe("t");
+    expect(result.legendEntries).toEqual([{ index: 1, delete: true }]);
+  });
 });
