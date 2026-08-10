@@ -87,12 +87,16 @@ export interface TableOptions {
   name?: string;
   /** Display name (required by XSD, defaults to name if not set) */
   displayName: string;
+  /** Table comment (CT_Table @comment) */
+  comment?: string;
   /** Data range, e.g. "A1:D10" */
   ref: string;
   /** Column definitions */
   columns: TableColumnOptions[];
   /** Number of header rows (default: 1) */
   headerRowCount?: number;
+  /** Insert row allowed (CT_Table @insertRow) */
+  insertRow?: boolean;
   /** Number of totals rows (default: 0) */
   totalsRowCount?: number;
   /** Whether to show totals row (default: true when totalsRowCount > 0) */
@@ -125,6 +129,8 @@ export interface TableOptions {
   dataCellStyle?: string;
   /** Totals row cell style name */
   totalsRowCellStyle?: string;
+  /** Query table connection ID (CT_Table @connectionId) */
+  connectionId?: number;
 }
 
 // ── Helper ──
@@ -153,12 +159,14 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       displayName: o.displayName,
       ref: o.ref,
     };
+    if (o.comment) rootAttrs.comment = o.comment;
     if (o.tableType && o.tableType !== "worksheet") {
       rootAttrs.tableType = o.tableType;
     }
     if (o.headerRowCount !== undefined && o.headerRowCount !== 1) {
       rootAttrs.headerRowCount = o.headerRowCount;
     }
+    if (o.insertRow) rootAttrs.insertRow = 1;
     if (o.totalsRowCount !== undefined && o.totalsRowCount > 0) {
       rootAttrs.totalsRowCount = o.totalsRowCount;
     }
@@ -167,6 +175,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     }
     if (o.insertRowShift) rootAttrs.insertRowShift = 1;
     if (o.published) rootAttrs.published = 1;
+    if (o.connectionId !== undefined) rootAttrs.connectionId = o.connectionId;
     if (o.headerRowDxfId !== undefined) rootAttrs.headerRowDxfId = o.headerRowDxfId;
     if (o.dataDxfId !== undefined) rootAttrs.dataDxfId = o.dataDxfId;
     if (o.totalsRowDxfId !== undefined) rootAttrs.totalsRowDxfId = o.totalsRowDxfId;
@@ -260,20 +269,25 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
   parse(el, _ctx) {
     const result: Partial<TableOptions> = {};
 
-    // Root attributes
+    // Root attributes. nativeTypeAttributes (xlsx parse path) coerces "1"/"0"
+    // to numbers, so boolean attribute checks use String() coercion.
     const id = attrNum(el, "id");
     if (id !== undefined) result.id = id;
     if (attr(el, "name")) result.name = attr(el, "name");
     if (attr(el, "displayName")) result.displayName = attr(el, "displayName");
+    if (attr(el, "comment")) result.comment = attr(el, "comment");
     if (attr(el, "ref")) result.ref = attr(el, "ref");
     const headerRowCount = attrNum(el, "headerRowCount");
     if (headerRowCount !== undefined) result.headerRowCount = headerRowCount;
+    if (String(attr(el, "insertRow")) === "1") result.insertRow = true;
     const totalsRowCount = attrNum(el, "totalsRowCount");
     if (totalsRowCount !== undefined) result.totalsRowCount = totalsRowCount;
-    if (attr(el, "totalsRowShown") === "0") result.totalsRowShown = false;
+    if (String(attr(el, "totalsRowShown")) === "0") result.totalsRowShown = false;
     if (attr(el, "tableType")) result.tableType = attr(el, "tableType") as TableType;
-    if (attr(el, "insertRowShift") === "1") result.insertRowShift = true;
-    if (attr(el, "published") === "1") result.published = true;
+    if (String(attr(el, "insertRowShift")) === "1") result.insertRowShift = true;
+    if (String(attr(el, "published")) === "1") result.published = true;
+    const connectionId = attrNum(el, "connectionId");
+    if (connectionId !== undefined) result.connectionId = connectionId;
 
     // Auto filter
     const afEl = findChild(el, "autoFilter");
@@ -294,12 +308,12 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         const ccfEl = findChild(colEl, "calculatedColumnFormula");
         if (ccfEl) {
           col.calculatedColumnFormula = textOf(ccfEl);
-          if (attr(ccfEl, "array") === "1") col.calculatedColumnFormulaArray = true;
+          if (String(attr(ccfEl, "array")) === "1") col.calculatedColumnFormulaArray = true;
         }
         const trfEl = findChild(colEl, "totalsRowFormula");
         if (trfEl) {
           col.totalsRowFormula = textOf(trfEl);
-          if (attr(trfEl, "array") === "1") col.totalsRowFormulaArray = true;
+          if (String(attr(trfEl, "array")) === "1") col.totalsRowFormulaArray = true;
         }
         if (attr(colEl, "uniqueName")) col.uniqueName = attr(colEl, "uniqueName");
         const qtfId = attrNum(colEl, "queryTableFieldId");
@@ -325,10 +339,10 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     if (siEl) {
       const style: Partial<TableStyleInfoOptions> = {};
       if (attr(siEl, "name")) style.name = attr(siEl, "name");
-      if (attr(siEl, "showFirstColumn") === "1") style.showFirstColumn = true;
-      if (attr(siEl, "showLastColumn") === "1") style.showLastColumn = true;
-      if (attr(siEl, "showRowStripes") === "1") style.showRowStripes = true;
-      if (attr(siEl, "showColumnStripes") === "1") style.showColumnStripes = true;
+      if (String(attr(siEl, "showFirstColumn")) === "1") style.showFirstColumn = true;
+      if (String(attr(siEl, "showLastColumn")) === "1") style.showLastColumn = true;
+      if (String(attr(siEl, "showRowStripes")) === "1") style.showRowStripes = true;
+      if (String(attr(siEl, "showColumnStripes")) === "1") style.showColumnStripes = true;
       result.style = style;
     }
 

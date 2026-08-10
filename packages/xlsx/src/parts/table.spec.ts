@@ -20,7 +20,10 @@ const readCtx = {
 
 function roundTrip(opts: TableOptions) {
   const xml = tableDesc.stringify(opts, writeCtx)!;
-  const doc = parseXml(xml);
+  // nativeTypeAttributes mirrors the real xlsx parse path (ParsedArchive.get
+  // coerces "1"/"0" to numbers), so boolean attribute reads are exercised
+  // against numeric coercion rather than a permissive non-coerced parse.
+  const doc = parseXml(xml, { nativeTypeAttributes: true });
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
   return tableDesc.parse(el, readCtx);
@@ -189,5 +192,44 @@ describe("tableDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.totalsRowShown).toBe(false);
+  });
+
+  it("round-trips comment, insertRow, connectionId attributes", () => {
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "T1",
+      comment: "Source table",
+      ref: "A1:B5",
+      insertRow: true,
+      connectionId: 42,
+      columns: [{ name: "X" }],
+    };
+    const result = roundTrip(opts);
+
+    expect(result.comment).toBe("Source table");
+    expect(result.insertRow).toBe(true);
+    expect(result.connectionId).toBe(42);
+  });
+
+  it("round-trips all tableStyleInfo boolean flags under nativeTypeAttributes coercion", () => {
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "T1",
+      ref: "A1:B5",
+      columns: [{ name: "X" }],
+      style: {
+        name: "TableStyleMedium2",
+        showFirstColumn: true,
+        showLastColumn: true,
+        showColumnStripes: true,
+      },
+    };
+    const result = roundTrip(opts);
+    const style = result.style!;
+
+    // "1" coerces to number 1 on the real parse path; String() guard recovers it
+    expect(style.showFirstColumn).toBe(true);
+    expect(style.showLastColumn).toBe(true);
+    expect(style.showColumnStripes).toBe(true);
   });
 });
