@@ -314,6 +314,10 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
         wsOpts.images = drawingData.images as unknown as WorksheetImageOptions[];
       if (drawingData.charts)
         wsOpts.charts = drawingData.charts as unknown as WorksheetChartOptions[];
+      // Shapes/connectors/groups pass through unchanged (no media bridge).
+      if (drawingData.shapes) wsOpts.shapes = drawingData.shapes;
+      if (drawingData.connectors) wsOpts.connectors = drawingData.connectors;
+      if (drawingData.groups) wsOpts.groups = drawingData.groups;
       break;
     }
 

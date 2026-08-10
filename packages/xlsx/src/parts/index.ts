@@ -55,6 +55,13 @@ export {
   type DrawingOptions,
   type DrawingImageOptions,
   type DrawingChartOptions,
+  type DrawingShapeOptions,
+  type DrawingConnectorOptions,
+  type DrawingGroupOptions,
+  type DrawingContentPartOptions,
+  type GroupShapeChildOptions,
+  type GroupConnectorChildOptions,
+  type DrawingAnchorOptions,
   type AnchorType,
   type EditAsType,
 } from "./drawing";

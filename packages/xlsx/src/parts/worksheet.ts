@@ -22,6 +22,7 @@ import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
 import type { XlsxReadContext } from "../context";
 import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
+import type { DrawingConnectorOptions, DrawingGroupOptions, DrawingShapeOptions } from "./drawing";
 import type { PivotTableOptions } from "./pivot";
 import { buildRstXml } from "./shared-strings";
 import type { SharedStrings } from "./shared-strings";
@@ -1089,6 +1090,12 @@ export interface WorksheetOptions {
   autoFilter?: string | AutoFilterOptions;
   images?: WorksheetImageOptions[];
   charts?: WorksheetChartOptions[];
+  /** Anchored shapes (xdr:sp): geometry + optional text body. */
+  shapes?: DrawingShapeOptions[];
+  /** Anchored connectors (xdr:cxnSp): line/arrow geometry. */
+  connectors?: DrawingConnectorOptions[];
+  /** Anchored groups (xdr:grpSp): group transform + nested children. */
+  groups?: DrawingGroupOptions[];
   dataValidations?: DataValidationOptions[];
   /** Disable data validation prompts (CT_DataValidations @disablePrompts) */
   dataValidationsDisablePrompts?: boolean;

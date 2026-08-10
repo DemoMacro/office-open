@@ -8,6 +8,7 @@ import type { DrawingOptions } from "./drawing";
 const writeCtx = {
   addRelationship: () => "rId1",
   addMedia: () => "",
+  addHyperlink: () => {},
 } as unknown as WriteContext;
 
 const readCtx = {
@@ -113,5 +114,133 @@ describe("drawingDesc round-trip", () => {
 
     expect(result.images).toHaveLength(1);
     expect(result.charts).toHaveLength(1);
+  });
+});
+
+describe("drawingDesc — anchored shapes", () => {
+  it("round-trips a shape with geometry and text body", () => {
+    const opts: DrawingOptions = {
+      shapes: [
+        {
+          col: 2,
+          row: 3,
+          name: "TextBox 1",
+          spPr: { x: 100, y: 200, width: 1000, height: 500, geometry: "rect" },
+          textBody: { paragraphs: [{ text: "Hello" }] },
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const shape = result.shapes![0]!;
+
+    expect(result.shapes).toHaveLength(1);
+    expect(shape.col).toBe(2);
+    expect(shape.row).toBe(3);
+    expect(shape.name).toBe("TextBox 1");
+    expect(shape.spPr).toMatchObject({ x: 100, y: 200, width: 1000, height: 500 });
+    expect(shape.spPr.geometry).toMatchObject({ preset: "rect" });
+    expect(shape.textBody?.paragraphs).toHaveLength(1);
+  });
+
+  it("round-trips shape macro and textlink attributes", () => {
+    const opts: DrawingOptions = {
+      shapes: [{ col: 1, row: 1, spPr: { geometry: "rect" }, macro: "Click()", textlink: "rId1" }],
+    };
+    const result = roundTrip(opts);
+    expect(result.shapes![0]?.macro).toBe("Click()");
+    expect(result.shapes![0]?.textlink).toBe("rId1");
+  });
+
+  it("round-trips a oneCellAnchor shape with extent", () => {
+    const opts: DrawingOptions = {
+      shapes: [
+        {
+          col: 1,
+          row: 1,
+          anchorType: "oneCell",
+          extentCx: 2000,
+          extentCy: 1000,
+          spPr: { geometry: "ellipse" },
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const shape = result.shapes![0]!;
+    expect(shape.anchorType).toBe("oneCell");
+    expect(shape.extentCx).toBe(2000);
+    expect(shape.extentCy).toBe(1000);
+  });
+});
+
+describe("drawingDesc — anchored connectors", () => {
+  it("round-trips a connector with line geometry", () => {
+    const opts: DrawingOptions = {
+      connectors: [
+        {
+          col: 1,
+          row: 1,
+          toCol: 5,
+          toRow: 5,
+          name: "Arrow 1",
+          spPr: { geometry: "line" },
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const conn = result.connectors![0]!;
+    expect(result.connectors).toHaveLength(1);
+    expect(conn.name).toBe("Arrow 1");
+    expect(conn.toCol).toBe(5);
+    expect(conn.spPr.geometry).toMatchObject({ preset: "line" });
+  });
+});
+
+describe("drawingDesc — anchored groups", () => {
+  it("round-trips a group with nested shapes and connectors", () => {
+    const opts: DrawingOptions = {
+      groups: [
+        {
+          col: 1,
+          row: 1,
+          toCol: 10,
+          toRow: 10,
+          name: "Group 1",
+          grpSpPr: {
+            x: 0,
+            y: 0,
+            width: 5000,
+            height: 5000,
+            childOffsetX: 0,
+            childOffsetY: 0,
+            childExtentWidth: 5000,
+            childExtentHeight: 5000,
+          },
+          shapes: [{ name: "Child 1", spPr: { geometry: "rect" } }],
+          connectors: [{ name: "Child Line", spPr: { geometry: "line" } }],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const group = result.groups![0]!;
+    expect(result.groups).toHaveLength(1);
+    expect(group.name).toBe("Group 1");
+    expect(group.grpSpPr.childExtentWidth).toBe(5000);
+    expect(group.shapes).toHaveLength(1);
+    expect(group.shapes![0]?.name).toBe("Child 1");
+    expect(group.connectors).toHaveLength(1);
+    expect(group.connectors![0]?.name).toBe("Child Line");
+  });
+});
+
+describe("drawingDesc — anchored content parts", () => {
+  it("round-trips a content part reference", () => {
+    const opts: DrawingOptions = {
+      contentParts: [{ col: 1, row: 1, toCol: 3, toRow: 3, rId: "rId9" }],
+    };
+    const result = roundTrip(opts);
+    const cp = result.contentParts![0]!;
+    expect(result.contentParts).toHaveLength(1);
+    expect(cp.rId).toBe("rId9");
+    expect(cp.toCol).toBe(3);
   });
 });

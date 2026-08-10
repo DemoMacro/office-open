@@ -170,6 +170,9 @@ export function compileWorkbook(
   for (const [i, wsOpts] of worksheetConfigs.entries()) {
     const imgOpts = wsOpts.images ?? [];
     const chartOpts = wsOpts.charts ?? [];
+    const shapeOpts = wsOpts.shapes ?? [];
+    const connectorOpts = wsOpts.connectors ?? [];
+    const groupOpts = wsOpts.groups ?? [];
     const hlOpts = wsOpts.hyperlinks ?? [];
     const sheetName = wsOpts.name ?? `Sheet${i + 1}`;
 
@@ -193,7 +196,12 @@ export function compileWorkbook(
       }
     }
 
-    const hasMedia = imgOpts.length > 0 || chartOpts.length > 0;
+    const hasMedia =
+      imgOpts.length > 0 ||
+      chartOpts.length > 0 ||
+      shapeOpts.length > 0 ||
+      connectorOpts.length > 0 ||
+      groupOpts.length > 0;
     const hasExternalHyperlinks = hlOpts.some((h) => h.target.type === "external");
     const commentOpts = wsOpts.comments ?? [];
     const hasComments = commentOpts.length > 0;
@@ -282,7 +290,13 @@ export function compileWorkbook(
 
       // Generate drawing XML (via descriptor)
       const drawingXml = drawingDesc.stringify(
-        { images: drawingImages, charts: drawingCharts },
+        {
+          images: drawingImages,
+          charts: drawingCharts,
+          shapes: shapeOpts,
+          connectors: connectorOpts,
+          groups: groupOpts,
+        },
         ctx,
       );
       const drawingIdx = i + 1;
