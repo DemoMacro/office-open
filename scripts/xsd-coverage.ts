@@ -488,6 +488,16 @@ function extractUsedElements(config: XsdConfig): Set<string> {
       while ((m = elementHelpersRe.exec(src)) !== null) {
         found.add(m[2]);
       }
+
+      // Pattern 9: any quoted prefixed name — onOff("w:b", ...), or a name in a
+      // record/lookup. Small element-emitting helpers (onOff, valEl, etc.) have a
+      // dynamic-template body, so the call-site literal is the only trace of which
+      // element it emits. Over-extraction is harmless: found is intersected with
+      // the XSD element list, so non-element names (w:val, a:rgb) are ignored.
+      const quotedPrefixedRe = /"([a-z]+):([a-zA-Z][a-zA-Z0-9]*)"/g;
+      while ((m = quotedPrefixedRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
     }
   }
 
