@@ -329,7 +329,7 @@ describe("shapeDesc round-trip", () => {
   it("round-trips shape reflection effect with all fields", () => {
     // CT_ReflectionEffect has 14 attrs; parse must read all (was dropping
     // stPos/endPos/fadeDir/sx/sy/kx/ky/algn/rotWithShape) and invert the
-    // unit scaling applied by toReflectionCore.
+    // unit scaling applied by the shared reflection bridge.
     const result = roundTrip({
       x: 0,
       y: 0,

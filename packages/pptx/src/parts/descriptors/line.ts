@@ -12,9 +12,9 @@ import { fillDesc, outlineDesc } from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 import type { FillOptions } from "@shared/drawingml/fill";
-import type { OutlineOptions } from "@shared/drawingml/outline";
+import { toCoreOutlineOptions, type OutlineOptions } from "@shared/drawingml/outline";
 
-import { toCoreOutlineOptions, readOutlineCompat } from "./shape";
+import { readOutlineCompat } from "./shape";
 
 // ── Types ──
 

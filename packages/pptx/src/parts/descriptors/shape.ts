@@ -31,21 +31,23 @@ import {
 import type {
   Transform2DOptions,
   FillOptions as CoreFillOptions,
-  OutlineOptions as CoreOutlineOptions,
   PresetGeometryOptions,
   CustomGeometryOptions,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { attrMeasure, findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
-import type {
-  EffectsOptions,
-  ReflectionOptions,
-  ShadowOptions,
-  GlowOptions,
-  PPTXBevelOptions,
-  Rotation3DOptions,
+import {
+  toEffectListOptions,
+  toScene3DOptions,
+  toShape3DOptions,
+  type EffectsOptions,
+  type ReflectionOptions,
+  type ShadowOptions,
+  type GlowOptions,
+  type PPTXBevelOptions,
+  type Rotation3DOptions,
 } from "@shared/drawingml/effects";
-import type { OutlineOptions } from "@shared/drawingml/outline";
+import { toCoreOutlineOptions, type OutlineOptions } from "@shared/drawingml/outline";
 import type { ParagraphOptions } from "@shared/shape/paragraph/paragraph";
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
@@ -159,157 +161,6 @@ export function resetShapeIdCounter(value = 2): void {
 /** Reset picture ID counter (useful for tests). */
 export function resetPictureIdCounter(value = 100): void {
   _nextPictureId = value;
-}
-
-// ── PPTX effects bridge ──
-
-import type {
-  EffectListOptions,
-  Scene3DOptions,
-  Shape3DOptions,
-} from "@office-open/core/drawingml";
-
-function toColor(color?: string, alpha?: number) {
-  if (!color) return { value: "000000", alpha: (alpha ?? 40) * 1000 };
-  return { value: color.replace("#", ""), alpha: (alpha ?? 40) * 1000 };
-}
-
-/** Map PPTX EffectsOptions to core EffectListOptions. */
-function toEffectListOptions(opts: EffectsOptions): EffectListOptions | undefined {
-  const hasEffects =
-    opts.outerShadow || opts.innerShadow || opts.glow || opts.reflection || opts.softEdge;
-  if (!hasEffects) return undefined;
-
-  return {
-    outerShadow: opts.outerShadow
-      ? {
-          blurRadius: opts.outerShadow.blur,
-          distance: opts.outerShadow.distance,
-          direction: opts.outerShadow.direction,
-          rotWithShape: opts.outerShadow.rotateWithShape === false ? false : undefined,
-          color: toColor(opts.outerShadow.color, opts.outerShadow.alpha),
-        }
-      : undefined,
-    innerShadow: opts.innerShadow
-      ? {
-          blurRadius: opts.innerShadow.blur,
-          distance: opts.innerShadow.distance,
-          direction: opts.innerShadow.direction,
-          color: toColor(opts.innerShadow.color, opts.innerShadow.alpha),
-        }
-      : undefined,
-    glow: opts.glow
-      ? {
-          radius: opts.glow.radius ?? 152400,
-          color: toColor(opts.glow.color, opts.glow.alpha),
-        }
-      : undefined,
-    reflection: opts.reflection ? toReflectionCore(opts.reflection) : undefined,
-    softEdge: opts.softEdge ? (opts.softEdge.radius ?? 50800) : undefined,
-  };
-}
-
-function toReflectionCore(opts: ReflectionOptions) {
-  const result: Record<string, number | string> = {};
-  if (opts.blurRadius !== undefined) result.blurRadius = opts.blurRadius;
-  if (opts.distance !== undefined) result.distance = opts.distance;
-  if (opts.direction !== undefined) result.direction = opts.direction;
-  if (opts.startAlpha !== undefined) result.startAlpha = opts.startAlpha * 1000;
-  if (opts.startPosition !== undefined) result.startPosition = opts.startPosition * 1000;
-  if (opts.endAlpha !== undefined) result.endAlpha = opts.endAlpha * 1000;
-  if (opts.endPosition !== undefined) result.endPosition = opts.endPosition * 1000;
-  if (opts.fadeDirection !== undefined) result.fadeDirection = opts.fadeDirection * 60000;
-  if (opts.scaleX !== undefined) result.scaleX = opts.scaleX * 1000;
-  if (opts.scaleY !== undefined) result.scaleY = opts.scaleY * 1000;
-  if (opts.skewX !== undefined) result.skewX = opts.skewX * 60000;
-  if (opts.skewY !== undefined) result.skewY = opts.skewY * 60000;
-  if (opts.alignment !== undefined) result.alignment = opts.alignment;
-  if (opts.rotateWithShape === false) result.rotWithShape = 0;
-  return result;
-}
-
-/** Map PPTX EffectsOptions to core Scene3DOptions. */
-function toScene3DOptions(opts: EffectsOptions): Scene3DOptions | undefined {
-  if (!opts.rotation3D && !opts.lighting) return undefined;
-
-  const cameraPreset = opts.rotation3D?.perspective
-    ? "legacyPerspectiveFront"
-    : "orthographicFront";
-  const cameraOpts = {
-    preset: cameraPreset,
-    ...(opts.rotation3D?.perspective && { fov: opts.rotation3D.perspective }),
-    ...(opts.rotation3D && {
-      rotation: {
-        lat: (opts.rotation3D.x ?? 0) * 60000,
-        lon: (opts.rotation3D.y ?? 0) * 60000,
-        rev: (opts.rotation3D.z ?? 0) * 60000,
-      },
-    }),
-  };
-
-  return {
-    camera: cameraOpts as Scene3DOptions["camera"],
-    lightRig: { rig: opts.lighting ?? "threePt", direction: "t" },
-  };
-}
-
-/** Map PPTX EffectsOptions to core Shape3DOptions. */
-function toShape3DOptions(opts: EffectsOptions): Shape3DOptions | undefined {
-  if (!opts.extrusionH && !opts.bevelTop && !opts.bevelBottom && !opts.material) return undefined;
-
-  return {
-    ...(opts.bevelTop
-      ? {
-          bevelT: {
-            w: opts.bevelTop.width!,
-            h: opts.bevelTop.height!,
-          },
-        }
-      : {}),
-    ...(opts.bevelBottom
-      ? {
-          bevelB: {
-            w: opts.bevelBottom.width!,
-            h: opts.bevelBottom.height!,
-          },
-        }
-      : {}),
-    ...(opts.extrusionH !== undefined ? { extrusionH: opts.extrusionH } : {}),
-    ...(opts.material ? { prstMaterial: opts.material } : {}),
-  };
-}
-
-// ── PPTX outline bridge ──
-
-const DASH_STYLE_MAP = {
-  solid: "solid",
-  dash: "dash",
-  dashDot: "dashDot",
-  lgDash: "lgDash",
-  sysDot: "sysDot",
-  sysDash: "sysDash",
-} as const;
-
-export function toCoreOutlineOptions(opts: OutlineOptions): CoreOutlineOptions {
-  const result: CoreOutlineOptions = {
-    width: opts.width,
-  };
-  if (opts.color) {
-    result.type = "solidFill";
-    result.color = { value: opts.color.replace("#", "") };
-  } else {
-    result.type = "noFill";
-  }
-  if (opts.dashStyle) {
-    result.dash =
-      (
-        DASH_STYLE_MAP as Record<
-          string,
-          "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash"
-        >
-      )[opts.dashStyle] ?? "solid";
-  }
-  return result;
 }
 
 // ── Shape (p:sp) descriptor ──
@@ -1161,8 +1012,8 @@ export function readEffectList(effectLst: XmlElement): EffectsOptions | undefine
         break;
       }
       case "a:reflection": {
-        // CT_ReflectionEffect has 14 attrs; toReflectionCore writes them all
-        // (with unit scaling). Invert each scale on read.
+        // CT_ReflectionEffect has 14 attrs; the shared effects bridge writes
+        // them all (with unit scaling). Invert each scale on read.
         const reflection: ReflectionOptions = {};
         const blurRad = attrNum(child, "blurRad");
         if (blurRad !== undefined) reflection.blurRadius = blurRad;

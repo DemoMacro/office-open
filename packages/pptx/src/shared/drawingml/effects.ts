@@ -198,9 +198,9 @@ export function toEffectListOptions(opts: EffectsOptions): EffectListOptions | u
   };
 }
 
-/** Map PPTX EffectsOptions to core Scene3DOptions, or null if not needed. */
-export function buildScene3D(options: EffectsOptions): ReturnType<typeof createScene3D> | null {
-  if (!options.rotation3D && !options.lighting) return null;
+/** Map PPTX EffectsOptions to core Scene3DOptions, or undefined if not needed. */
+export function toScene3DOptions(options: EffectsOptions): Scene3DOptions | undefined {
+  if (!options.rotation3D && !options.lighting) return undefined;
 
   const cameraPreset = options.rotation3D?.perspective
     ? "legacyPerspectiveFront"
@@ -217,14 +217,14 @@ export function buildScene3D(options: EffectsOptions): ReturnType<typeof createS
     }),
   };
 
-  return createScene3D({
+  return {
     camera: cameraOpts as Scene3DOptions["camera"],
     lightRig: { rig: options.lighting ?? "threePt", direction: "t" },
-  });
+  };
 }
 
-/** Map PPTX EffectsOptions to core Shape3DOptions, or null if not needed. */
-export function buildShape3D(options: EffectsOptions): ReturnType<typeof createShape3D> | null {
+/** Map PPTX EffectsOptions to core Shape3DOptions, or undefined if not needed. */
+export function toShape3DOptions(options: EffectsOptions): Shape3DOptions | undefined {
   if (
     !options.extrusionH &&
     !options.bevelTop &&
@@ -233,9 +233,9 @@ export function buildShape3D(options: EffectsOptions): ReturnType<typeof createS
     !options.depth &&
     !options.contourWidth
   )
-    return null;
+    return undefined;
 
-  const shape3dOpts: Shape3DOptions = {
+  return {
     ...(options.bevelTop ? { bevelT: toBevel(options.bevelTop) } : {}),
     ...(options.bevelBottom ? { bevelB: toBevel(options.bevelBottom) } : {}),
     ...(options.extrusionH !== undefined ? { extrusionH: options.extrusionH } : {}),
@@ -243,8 +243,18 @@ export function buildShape3D(options: EffectsOptions): ReturnType<typeof createS
     ...(options.depth !== undefined ? { z: options.depth } : {}),
     ...(options.contourWidth !== undefined ? { contourW: options.contourWidth } : {}),
   };
+}
 
-  return createShape3D(shape3dOpts);
+/** Build a:scene3d XML from PPTX EffectsOptions, or null if not needed. */
+export function buildScene3D(options: EffectsOptions): ReturnType<typeof createScene3D> | null {
+  const opts = toScene3DOptions(options);
+  return opts ? createScene3D(opts) : null;
+}
+
+/** Build a:sp3d XML from PPTX EffectsOptions, or null if not needed. */
+export function buildShape3D(options: EffectsOptions): ReturnType<typeof createShape3D> | null {
+  const opts = toShape3DOptions(options);
+  return opts ? createShape3D(opts) : null;
 }
 
 /** Create a:effectLst from PPTX simplified EffectsOptions. */

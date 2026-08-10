@@ -42,6 +42,21 @@ function toCoreLineEnd(type: string, width?: string, length?: string): CoreLineE
 }
 
 /**
+ * Map PPTX simplified OutlineOptions to core OutlineOptions (without arrowheads).
+ */
+export function toCoreOutlineOptions(options: OutlineOptions = {}): CoreOutlineOptions {
+  return {
+    width: options.width,
+    ...(options.color
+      ? { type: "solidFill" as const, color: { value: options.color.replace("#", "") } }
+      : { type: "noFill" as const }),
+    ...(options.dashStyle && {
+      dash: DASH_STYLE_MAP[options.dashStyle] ?? "solid",
+    }),
+  };
+}
+
+/**
  * Creates an outline element using pptx's simplified API.
  */
 export const createOutlineCompat = (
@@ -54,13 +69,7 @@ export const createOutlineCompat = (
   },
 ) =>
   createOutline({
-    width: options.width,
-    ...(options.color
-      ? { type: "solidFill" as const, color: { value: options.color.replace("#", "") } }
-      : { type: "noFill" as const }),
-    ...(options.dashStyle && {
-      dash: DASH_STYLE_MAP[options.dashStyle] ?? "solid",
-    }),
+    ...toCoreOutlineOptions(options),
     ...(arrowheads?.endType
       ? { headEnd: toCoreLineEnd(arrowheads.endType, arrowheads.width, arrowheads.length) }
       : {}),
