@@ -308,50 +308,26 @@ function readFileStripped(filePath: string): string {
 // ── XSD Parsing ──
 
 /**
- * Deprecated/removed OOXML elements to exclude from coverage analysis.
- * These are features Microsoft has removed from Office or disabled by default.
+ * Elements excluded from coverage analysis.
+ *
+ * A round-trip library must preserve every element the format defines, so
+ * formerly "deprecated" features (smart tags, DDE) are no longer excluded —
+ * they count as implemented where present and as a gap where missing. Keep
+ * this set empty unless an element is genuinely unmeasurable.
  */
-const DEPRECATED_ELEMENTS = new Set([
-  // Smart Tags (removed Office 2010)
-  "cellSmartTag",
-  "cellSmartTagPr",
-  "cellSmartTags",
-  "smartTagPr",
-  "smartTagType",
-  "smartTagTypes",
-  "smartTags",
-  // DDE (disabled by default, security risk)
-  "ddeLink",
-  "ddeItems",
-  "ddeItem",
-  "values", // CT_DdeValues — DDE-specific
-  "val", // CT_DdeValue — DDE-specific element (not attribute)
-]);
+const DEPRECATED_ELEMENTS = new Set<string>([]);
 
 /** Elements only deprecated in SML (val appears in dml-chart, pml too) */
-const DEPRECATED_ELEMENTS_SML_ONLY = new Set(["val"]);
+const DEPRECATED_ELEMENTS_SML_ONLY = new Set<string>([]);
 
 /**
- * Deprecated/removed OOXML attributes to exclude from coverage analysis.
+ * Attributes excluded from coverage analysis.
+ *
+ * See {@link DEPRECATED_ELEMENTS}: smart-tag/DDE attributes are no longer
+ * excluded. Generic names that cannot be attributed reliably are handled by
+ * {@link UNTRACKABLE_ATTRS} instead.
  */
-const DEPRECATED_ATTRIBUTES = new Set([
-  // Smart Tags (removed Office 2010)
-  "xmlBased",
-  "namespaceUri",
-  // DDE (disabled by default, security risk)
-  "ddeService",
-  "ddeTopic",
-  "ole",
-  "preferPic",
-  // OLAP-only attributes
-  "bc",
-  "fc",
-  "in",
-  "st",
-  "un",
-  "ct",
-  "fi",
-]);
+const DEPRECATED_ATTRIBUTES = new Set<string>([]);
 
 /**
  * Attribute names too generic to reliably track in source code.
@@ -533,14 +509,16 @@ function extractUsedElements(config: XsdConfig): Set<string> {
     }
   }
 
-  // For each dynamic file, extract string literal values that could be element names
+  // For each dynamic file, extract string literal values that could be element names.
+  // Element local names in these XSDs are all lowercase-initial (sp, graphicFrame,
+  // pieChart), so requiring a lowercase first char filters capitalized noise (error
+  // messages like "Expected"/"Cannot") while keeping real element tokens.
   if (dynamicFiles.size > 0) {
-    const strLitRe = /"([a-zA-Z][a-zA-Z0-9]+)"/g;
+    const strLitRe = /"([a-z][a-zA-Z0-9]+)"/g;
     for (const file of dynamicFiles) {
       const src = readFileStripped(file);
       let m: RegExpExecArray | null;
       while ((m = strLitRe.exec(src)) !== null) {
-        // Only add names that look like XML element names (not JS identifiers like "string", "number")
         found.add(m[1]);
       }
     }
