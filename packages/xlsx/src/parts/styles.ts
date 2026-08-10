@@ -291,6 +291,52 @@ export interface CellXfEntry {
   protection?: CellProtectionOptions;
 }
 
+/**
+ * Named cell-style template — a cellStyleXfs entry (CT_Xf in the cellStyleXfs
+ * context). Structured (font/fill/border/numFmt definitions, not indices) so
+ * the compiler can re-register each definition against its rebuilt tables when
+ * round-tripping; cellStyle.xfId references stay stable because entries keep
+ * their source order. Alignment/protection and the applyXxx flags are preserved
+ * verbatim (named-style fidelity), unlike cellXfs which derives applyXxx.
+ */
+export interface CellStyleXfOptions {
+  font?: FontOptions;
+  fill?: FillOptions;
+  border?: BorderSideOptions;
+  numFmt?: string;
+  alignment?: AlignmentOptions;
+  protection?: CellProtectionOptions;
+  quotePrefix?: boolean;
+  pivotButton?: boolean;
+  applyNumberFormat?: boolean;
+  applyFont?: boolean;
+  applyFill?: boolean;
+  applyBorder?: boolean;
+  applyAlignment?: boolean;
+  applyProtection?: boolean;
+}
+
+/**
+ * Internal cellStyleXfs storage — font/fill/border/numFmt indices after
+ * re-registration against the accumulator, plus the verbatim CT_Xf flags.
+ */
+interface CellStyleXfEntry {
+  fontId: number;
+  fillId: number;
+  borderId: number;
+  numFmtId: number;
+  alignment?: AlignmentOptions;
+  protection?: CellProtectionOptions;
+  quotePrefix?: boolean;
+  pivotButton?: boolean;
+  applyNumberFormat?: boolean;
+  applyFont?: boolean;
+  applyFill?: boolean;
+  applyBorder?: boolean;
+  applyAlignment?: boolean;
+  applyProtection?: boolean;
+}
+
 /** Snapshot of Styles internal state for descriptor-based XML generation. */
 export interface StylesState {
   customNumFmts: ReadonlyMap<string, number>;
@@ -336,7 +382,7 @@ export interface StylesParseResult {
   fonts?: FontOptions[];
   fills?: FillOptions[];
   borders?: BorderSideOptions[];
-  cellStyleXfs?: IndexedXfEntry[];
+  cellStyleXfs?: CellStyleXfOptions[];
   cellXfs?: IndexedXfEntry[];
   customCellStyles?: CustomCellStyleOptions[];
   dxfs?: DxfOptions[];
@@ -379,6 +425,11 @@ export class Styles {
     { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // default xf (index 0)
   ];
   private cellXfKeys = new Map<string, number>();
+
+  /** Named cell-style templates (cellStyleXfs); index 0 is the Normal style. */
+  private cellStyleXfs: CellStyleXfEntry[] = [
+    { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // Normal (index 0)
+  ];
 
   private dxfs: DxfOptions[] = [];
 
@@ -458,6 +509,32 @@ export class Styles {
 
   public setCustomCellStyles(styles: CustomCellStyleOptions[]): void {
     this.customCellStyles = styles;
+  }
+
+  /**
+   * Set named cell-style templates (cellStyleXfs). Each entry's font/fill/
+   * border/numFmt definitions are re-registered (deduplicated) so indices track
+   * the rebuilt tables. Entries keep source order, keeping cellStyle.xfId
+   * references stable (oldIndex === newIndex). Alignment/protection and the
+   * applyXxx flags are preserved verbatim for named-style fidelity.
+   */
+  public setCellStyleXfs(entries: CellStyleXfOptions[]): void {
+    this.cellStyleXfs = entries.map((entry) => ({
+      fontId: this.registerFont(entry.font),
+      fillId: this.registerFill(entry.fill),
+      borderId: this.registerBorder(entry.border),
+      numFmtId: this.registerNumFmt(entry.numFmt),
+      alignment: entry.alignment,
+      protection: entry.protection,
+      quotePrefix: entry.quotePrefix,
+      pivotButton: entry.pivotButton,
+      applyNumberFormat: entry.applyNumberFormat,
+      applyFont: entry.applyFont,
+      applyFill: entry.applyFill,
+      applyBorder: entry.applyBorder,
+      applyAlignment: entry.applyAlignment,
+      applyProtection: entry.applyProtection,
+    }));
   }
 
   /**
@@ -620,10 +697,29 @@ export class Styles {
     }
     p.push("</borders>");
 
-    // cellStyleXfs
-    p.push(
-      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>',
-    );
+    // cellStyleXfs — named-style templates; applyXxx preserved verbatim (not derived)
+    p.push(`<cellStyleXfs count="${this.cellStyleXfs.length}">`);
+    for (const xf of this.cellStyleXfs) {
+      const xAttrs: Record<string, string | number | boolean | undefined> = {
+        numFmtId: xf.numFmtId,
+        fontId: xf.fontId,
+        fillId: xf.fillId,
+        borderId: xf.borderId,
+      };
+      if (xf.applyNumberFormat) xAttrs.applyNumberFormat = 1;
+      if (xf.applyFont) xAttrs.applyFont = 1;
+      if (xf.applyFill) xAttrs.applyFill = 1;
+      if (xf.applyBorder) xAttrs.applyBorder = 1;
+      if (xf.applyAlignment) xAttrs.applyAlignment = 1;
+      if (xf.applyProtection) xAttrs.applyProtection = 1;
+      if (xf.quotePrefix) xAttrs.quotePrefix = 1;
+      if (xf.pivotButton) xAttrs.pivotButton = 1;
+      const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
+      const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
+      const inner = alignStr + protStr;
+      p.push(inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`);
+    }
+    p.push("</cellStyleXfs>");
 
     // cellXfs
     p.push(`<cellXfs count="${this.cellXfs.length}">`);
@@ -861,10 +957,16 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
   parse(el, _ctx) {
     const result: StylesParseResult = {};
 
+    // numFmtById / fonts / fills / borders are hoisted so the cellStyleXfs
+    // section can resolve index references into font/fill/border/numFmt defs.
+    const numFmtById = new Map<number, string>();
+    const fonts: FontOptions[] = [];
+    const fills: FillOptions[] = [];
+    const borders: BorderSideOptions[] = [];
+
     // numFmts
     const numFmtsEl = findChild(el, "numFmts");
     if (numFmtsEl) {
-      const numFmtById = new Map<number, string>();
       for (const nf of numFmtsEl.elements ?? []) {
         if (nf.name !== "numFmt") continue;
         const id = attrNum(nf, "numFmtId");
@@ -877,7 +979,6 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     // fonts
     const fontsEl = findChild(el, "fonts");
     if (fontsEl) {
-      const fonts: FontOptions[] = [];
       for (const f of fontsEl.elements ?? []) {
         if (f.name !== "font") continue;
         fonts.push(parseFont(f));
@@ -888,7 +989,6 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     // fills
     const fillsEl = findChild(el, "fills");
     if (fillsEl) {
-      const fills: FillOptions[] = [];
       for (const f of fillsEl.elements ?? []) {
         if (f.name !== "fill") continue;
         fills.push(parseFill(f));
@@ -899,7 +999,6 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     // borders
     const bordersEl = findChild(el, "borders");
     if (bordersEl) {
-      const borders: BorderSideOptions[] = [];
       for (const b of bordersEl.elements ?? []) {
         if (b.name !== "border") continue;
         borders.push(parseBorder(b));
@@ -907,22 +1006,39 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
       result.borders = borders;
     }
 
-    // cellStyleXfs
+    // cellStyleXfs — resolve indices into font/fill/border/numFmt definitions.
+    // nativeTypeAttributes (xlsx parse path) coerces "1"/"0" to numbers, so the
+    // boolean applyXxx/quotePrefix/pivotButton checks use String() coercion.
     const cellStyleXfsEl = findChild(el, "cellStyleXfs");
     if (cellStyleXfsEl) {
-      const xfs: IndexedXfEntry[] = [];
+      const xfs: CellStyleXfOptions[] = [];
       for (const xf of cellStyleXfsEl.elements ?? []) {
         if (xf.name !== "xf") continue;
-        const style: IndexedXfEntry = {};
+        const entry: CellStyleXfOptions = {};
         const fontId = attrNum(xf, "fontId");
         const fillId = attrNum(xf, "fillId");
         const borderId = attrNum(xf, "borderId");
         const numFmtId = attrNum(xf, "numFmtId");
-        if (fontId !== undefined) style.fontId = fontId;
-        if (fillId !== undefined) style.fillId = fillId;
-        if (borderId !== undefined) style.borderId = borderId;
-        if (numFmtId !== undefined) style.numFmtId = numFmtId;
-        xfs.push(style);
+        if (fontId !== undefined && fontId < fonts.length) entry.font = fonts[fontId];
+        if (fillId !== undefined && fillId < fills.length) entry.fill = fills[fillId];
+        if (borderId !== undefined && borderId < borders.length) entry.border = borders[borderId];
+        if (numFmtId !== undefined) {
+          const code = numFmtById.get(numFmtId);
+          if (code !== undefined) entry.numFmt = code;
+        }
+        const alignmentEl = findChild(xf, "alignment");
+        if (alignmentEl) entry.alignment = parseAlignment(alignmentEl);
+        const protectionEl = findChild(xf, "protection");
+        if (protectionEl) entry.protection = parseProtection(protectionEl);
+        if (String(attr(xf, "applyNumberFormat")) === "1") entry.applyNumberFormat = true;
+        if (String(attr(xf, "applyFont")) === "1") entry.applyFont = true;
+        if (String(attr(xf, "applyFill")) === "1") entry.applyFill = true;
+        if (String(attr(xf, "applyBorder")) === "1") entry.applyBorder = true;
+        if (String(attr(xf, "applyAlignment")) === "1") entry.applyAlignment = true;
+        if (String(attr(xf, "applyProtection")) === "1") entry.applyProtection = true;
+        if (String(attr(xf, "quotePrefix")) === "1") entry.quotePrefix = true;
+        if (String(attr(xf, "pivotButton")) === "1") entry.pivotButton = true;
+        xfs.push(entry);
       }
       result.cellStyleXfs = xfs;
     }
@@ -951,8 +1067,9 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (numFmtId > 0) style.numFmtId = numFmtId;
         if (alignment) style.alignment = alignment;
         if (protection) style.protection = protection;
-        if (attr(xf, "quotePrefix") === "1") style.quotePrefix = true;
-        if (attr(xf, "pivotButton") === "1") style.pivotButton = true;
+        // nativeTypeAttributes (xlsx parse path) coerces "1"/"0" to numbers
+        if (String(attr(xf, "quotePrefix")) === "1") style.quotePrefix = true;
+        if (String(attr(xf, "pivotButton")) === "1") style.pivotButton = true;
 
         xfs.push(style);
       }

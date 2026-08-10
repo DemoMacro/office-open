@@ -211,5 +211,73 @@ describe("Styles", () => {
       expect(grad!.stops![0]?.color).toBe("FF0000");
       expect(grad!.stops![1]?.color).toBe("0000FF");
     });
+
+    it("round-trips cellStyleXfs with a custom named style (numFmt/font/fill/applyXxx/alignment)", () => {
+      // Source styles.xml with Normal + a custom "Note" named-style template.
+      // nativeTypeAttributes mirrors the real xlsx parse path (coerces "1"→1),
+      // so the applyXxx boolean checks must survive numeric coercion.
+      const xml = `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="1"><numFmt numFmtId="164" formatCode="0.000"/></numFmts>
+<fonts count="2">
+  <font><sz val="11"/><name val="Calibri"/></font>
+  <font><b/><sz val="11"/><color rgb="FFFF0000"/><name val="Calibri"/></font>
+</fonts>
+<fills count="3">
+  <fill><patternFill patternType="none"/></fill>
+  <fill><patternFill patternType="gray125"/></fill>
+  <fill><patternFill patternType="solid"><fgColor rgb="FFFFFF00"/><bgColor indexed="64"/></patternFill></fill>
+</fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="2">
+  <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
+  <xf numFmtId="164" fontId="1" fillId="2" borderId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+</cellStyleXfs>
+<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellXfs>
+</styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+
+      // parse resolves indices into structured numFmt/font/fill definitions
+      expect(parsed.cellStyleXfs).toHaveLength(2);
+      // Normal template resolves to the default font/fill/border definitions
+      const normal = parsed.cellStyleXfs![0]!;
+      expect(normal.font?.font).toBe("Calibri");
+      expect(normal.fill?.patternType).toBe("none");
+      expect(normal.applyFont).toBeUndefined();
+      const note = parsed.cellStyleXfs![1]!;
+      expect(note.numFmt).toBe("0.000");
+      expect(note.font?.bold).toBe(true);
+      expect(note.fill?.patternType).toBe("solid");
+      expect(note.applyNumberFormat).toBe(true);
+      expect(note.applyFont).toBe(true);
+      expect(note.applyFill).toBe(true);
+      expect(note.applyAlignment).toBe(true);
+      expect(note.alignment?.horizontal).toBe("center");
+
+      // setCellStyleXfs re-registers definitions; indices remap (fonts[0] and
+      // fills[0..1] match the seeded defaults, so Note keeps fontId=1, fillId=2).
+      const styles = new Styles();
+      styles.setCellStyleXfs(parsed.cellStyleXfs!);
+      const out = styles.serialize();
+      expect(out).toContain("<numFmts");
+      expect(out).toContain('cellStyleXfs count="2"');
+      expect(out).toContain(
+        'numFmtId="164" fontId="1" fillId="2" borderId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyAlignment="1"',
+      );
+      expect(out).toContain('<alignment horizontal="center"/>');
+
+      // serialize → parse is structurally equivalent (remap loses no fields)
+      const el2 = parseXml(out, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el2) throw new Error("re-serialized document has no root element");
+      const reparsed = stylesDesc.parse(el2, undefined as unknown as ReadContext);
+      const note2 = reparsed.cellStyleXfs![1]!;
+      expect(note2.numFmt).toBe("0.000");
+      expect(note2.font?.bold).toBe(true);
+      expect(note2.fill?.patternType).toBe("solid");
+      expect(note2.applyFont).toBe(true);
+      expect(note2.applyAlignment).toBe(true);
+      expect(note2.alignment?.horizontal).toBe("center");
+    });
   });
 });

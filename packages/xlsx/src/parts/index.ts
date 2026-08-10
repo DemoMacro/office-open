@@ -15,6 +15,7 @@ export type {
   AlignmentOptions,
   CustomTableStyleOptions,
   CustomCellStyleOptions,
+  CellStyleXfOptions,
   StyleExtensionOptions,
 } from "./styles";
 export { worksheetDesc, stringifyWorksheet, buildWorksheetXml } from "./worksheet";

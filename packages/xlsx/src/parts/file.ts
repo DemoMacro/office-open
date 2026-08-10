@@ -10,6 +10,7 @@ import type {
   CustomPropertyOptions,
 } from "@office-open/core";
 import type {
+  CellStyleXfOptions,
   ColorsOptions,
   CustomCellStyleOptions,
   CustomTableStyleOptions,
@@ -49,6 +50,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   tableStyles?: CustomTableStyleOptions[];
   /** Custom named cell styles (CT_CellStyles) */
   cellStyles?: CustomCellStyleOptions[];
+  /** Named cell-style templates (CT_CellStyleXfs) — definitions referenced by cellStyles */
+  cellStyleXfs?: CellStyleXfOptions[];
   /** Style sheet extensions (CT_ExtensionList on styleSheet) */
   styleExtensions?: StyleExtensionOptions[];
   /** Workbook-level protection */

@@ -249,6 +249,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (parsedStyles.dxfs) opts.dxfs = parsedStyles.dxfs;
     if (parsedStyles.colors) opts.colors = parsedStyles.colors;
     if (parsedStyles.customCellStyles) opts.cellStyles = parsedStyles.customCellStyles;
+    if (parsedStyles.cellStyleXfs) opts.cellStyleXfs = parsedStyles.cellStyleXfs;
     if (parsedStyles.styleExtensions) opts.styleExtensions = parsedStyles.styleExtensions;
     if (parsedStyles.tableStylesInfo?.tableStyles)
       opts.tableStyles = parsedStyles.tableStylesInfo.tableStyles;
