@@ -4,6 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { tableDesc } from "./table";
 import type { TableOptions } from "./table";
+import type { AutoFilterOptions } from "./worksheet";
 
 // ── Minimal context stubs ──
 
@@ -231,5 +232,38 @@ describe("tableDesc round-trip", () => {
     expect(style.showFirstColumn).toBe(true);
     expect(style.showLastColumn).toBe(true);
     expect(style.showColumnStripes).toBe(true);
+  });
+
+  it("round-trips ref-only autoFilter as shorthand string", () => {
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "T1",
+      ref: "A1:B5",
+      autoFilter: "A1:B4",
+      columns: [{ name: "X" }],
+    };
+    const result = roundTrip(opts);
+
+    expect(result.autoFilter).toBe("A1:B4");
+  });
+
+  it("round-trips structured autoFilter with filter columns and sort state", () => {
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "T1",
+      ref: "A1:B5",
+      autoFilter: {
+        ref: "A1:B4",
+        customFilters: [{ colId: 0, operator: "equal", val: "yes" }],
+        sort: [{ ref: "A1", descending: true }],
+      },
+      columns: [{ name: "X" }],
+    };
+    const result = roundTrip(opts);
+    const af = result.autoFilter as AutoFilterOptions;
+
+    expect(af.ref).toBe("A1:B4");
+    expect(af.customFilters).toEqual([{ colId: 0, operator: "equal", val: "yes" }]);
+    expect(af.sort).toEqual([{ ref: "A1", descending: true }]);
   });
 });

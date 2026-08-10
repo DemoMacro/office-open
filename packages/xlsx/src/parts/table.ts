@@ -9,6 +9,9 @@
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild, attr, attrNum, textOf, escapeXml } from "@office-open/xml";
 
+import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
+import type { AutoFilterOptions } from "./worksheet";
+
 // ── Totals row function (ST_TotalsRowFunction) ──
 
 export const TotalsRowFunction = {
@@ -105,8 +108,8 @@ export interface TableOptions {
   tableType?: TableType;
   /** Table style */
   style?: TableStyleInfoOptions;
-  /** Auto-filter reference (defaults to ref) */
-  autoFilter?: string;
+  /** Auto-filter (ref shorthand or structured filter columns/sort state) */
+  autoFilter?: string | AutoFilterOptions;
   /** Insert row shifts existing rows (CT_Table @insertRowShift) */
   insertRowShift?: boolean;
   /** Published to server (CT_Table @published) */
@@ -198,7 +201,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
 
     // autoFilter (optional, before tableColumns per XSD sequence)
     if (o.autoFilter !== undefined) {
-      p.push(`<autoFilter ref="${escapeXml(o.autoFilter)}"/>`);
+      p.push(stringifyAutoFilter(o.autoFilter));
     }
 
     // tableColumns (required)
@@ -291,7 +294,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
 
     // Auto filter
     const afEl = findChild(el, "autoFilter");
-    if (afEl) result.autoFilter = attr(afEl, "ref") ?? "";
+    if (afEl) result.autoFilter = parseAutoFilter(afEl);
 
     // Table columns
     const colsEl = findChild(el, "tableColumns");
