@@ -47,6 +47,8 @@ import type {
   DisplayBlanksAs,
   SizeRepresents,
   DataTableOptions,
+  OfPieType,
+  SplitType,
 } from "./types";
 
 // ── Mutable build type for read results (readonly properties not assignable) ──
@@ -69,6 +71,7 @@ const CHART_TYPE_TAGS: Record<string, string> = {
   radar: "c:radarChart",
   stock: "c:stockChart",
   surface: "c:surfaceChart",
+  ofPie: "c:ofPieChart",
 };
 
 const CHART_TYPE_TAGS_3D: Record<string, string> = {
@@ -79,7 +82,7 @@ const CHART_TYPE_TAGS_3D: Record<string, string> = {
   area: "c:area3DChart",
 };
 
-const NO_AXES_TYPES = new Set(["pie", "doughnut"]);
+const NO_AXES_TYPES = new Set(["pie", "doughnut", "ofPie"]);
 
 // ── XML tag → chart type reverse mapping (for read) ──
 
@@ -99,6 +102,7 @@ const TAG_TO_CHART_TYPE: Record<string, { type: ChartType; threeD?: boolean }> =
   "c:stockChart": { type: "stock" },
   "c:surfaceChart": { type: "surface" },
   "c:surface3DChart": { type: "surface", threeD: true },
+  "c:ofPieChart": { type: "ofPie" },
 };
 
 // ── String helpers ──
@@ -400,6 +404,10 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
     case "radar":
       headerParts.push(valEl("c:radarStyle", "standard"));
       break;
+    case "ofPie":
+      headerParts.push(valEl("c:ofPieType", opts.ofPieType ?? "pie"));
+      headerParts.push(valEl("c:varyColors", 1));
+      break;
     case "pie":
     case "doughnut":
     case "bubble":
@@ -434,6 +442,16 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
       parts.push(valEl("c:sizeRepresents", opts.sizeRepresents));
   } else if (opts.type === "surface") {
     if (opts.wireframe !== undefined) parts.push(`<c:wireframe${boolVal(opts.wireframe)}/>`);
+  } else if (opts.type === "ofPie") {
+    if (opts.gapWidth !== undefined) parts.push(valEl("c:gapWidth", opts.gapWidth));
+    if (opts.splitType !== undefined) parts.push(valEl("c:splitType", opts.splitType));
+    if (opts.splitPosition !== undefined) parts.push(valEl("c:splitPos", opts.splitPosition));
+    if (opts.customSplitPoints?.length) {
+      const pts = opts.customSplitPoints.map((p) => valEl("c:secondPiePt", p)).join("");
+      parts.push(`<c:custSplit>${pts}</c:custSplit>`);
+    }
+    if (opts.secondPieSize !== undefined) parts.push(valEl("c:secondPieSize", opts.secondPieSize));
+    if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
   }
 
   // CT_xxxChart decorations (CT_ChartLines containers, after scalars per XSD)
@@ -528,7 +546,7 @@ function stringifySeries(
   } else if (chartType === "bubble") {
     if (s.invertIfNegative !== undefined)
       parts.push(`<c:invertIfNegative${boolVal(s.invertIfNegative)}/>`);
-  } else if (chartType === "pie" || chartType === "doughnut") {
+  } else if (chartType === "pie" || chartType === "doughnut" || chartType === "ofPie") {
     if (s.explosion !== undefined) parts.push(valEl("c:explosion", s.explosion));
   }
 
@@ -1028,6 +1046,27 @@ function readChartTypeScalars(
   } else if (type === "surface") {
     const wireframe = readBoolAttr(chartTypeEl, "c:wireframe");
     if (wireframe !== undefined) result.wireframe = wireframe;
+  } else if (type === "ofPie") {
+    const ofPieType = readValStr(chartTypeEl, "c:ofPieType");
+    if (ofPieType) result.ofPieType = ofPieType as OfPieType;
+    const gapWidth = readValNum(chartTypeEl, "c:gapWidth");
+    if (gapWidth !== undefined) result.gapWidth = gapWidth;
+    const splitType = readValStr(chartTypeEl, "c:splitType");
+    if (splitType) result.splitType = splitType as SplitType;
+    const splitPos = readValNum(chartTypeEl, "c:splitPos");
+    if (splitPos !== undefined) result.splitPosition = splitPos;
+    const custSplit = findChild(chartTypeEl, "c:custSplit");
+    if (custSplit) {
+      const pts = children(custSplit, "c:secondPiePt")
+        .map((el) => attr(el, "val"))
+        .filter((v): v is string => v !== undefined)
+        .map(Number);
+      if (pts.length) result.customSplitPoints = pts;
+    }
+    const secondPieSize = readValStr(chartTypeEl, "c:secondPieSize");
+    if (secondPieSize !== undefined)
+      result.secondPieSize = secondPieSize.endsWith("%") ? secondPieSize : Number(secondPieSize);
+    if (findChild(chartTypeEl, "c:serLines")) result.seriesLines = true;
   }
 }
 

@@ -871,4 +871,55 @@ describe("chartSpaceDesc", () => {
     expect(result.dataTable?.showOutline).toBe(true);
     expect(result.dataTable?.showLegendKeys).toBe(true);
   });
+
+  it("round-trips ofPie chart with split and second pie size", () => {
+    const opts: ChartSpaceOptions = {
+      type: "ofPie",
+      ofPieType: "bar",
+      categories: ["A", "B", "C", "D"],
+      series: [{ name: "S", values: [10, 20, 30, 40] }],
+      gapWidth: 100,
+      splitType: "pos",
+      splitPosition: 2,
+      secondPieSize: 75,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:ofPieChart>");
+    expect(xml).toContain('c:ofPieType val="bar"');
+    expect(xml).toContain('c:gapWidth val="100"');
+    expect(xml).toContain('c:splitType val="pos"');
+    expect(xml).toContain('c:splitPos val="2"');
+    expect(xml).toContain('c:secondPieSize val="75"');
+    expect(xml).not.toContain("<c:catAx");
+
+    const result = roundTrip(opts);
+    expect(result.type).toBe("ofPie");
+    expect(result.ofPieType).toBe("bar");
+    expect(result.gapWidth).toBe(100);
+    expect(result.splitType).toBe("pos");
+    expect(result.splitPosition).toBe(2);
+    expect(result.secondPieSize).toBe(75);
+  });
+
+  it("round-trips ofPie custom split points and percent second pie size", () => {
+    const opts: ChartSpaceOptions = {
+      type: "ofPie",
+      categories: ["A", "B", "C", "D", "E"],
+      series: [{ name: "S", values: [1, 2, 3, 4, 5] }],
+      splitType: "cust",
+      customSplitPoints: [2, 4],
+      secondPieSize: "75%",
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('c:ofPieType val="pie"');
+    expect(xml).toContain("<c:custSplit>");
+    expect(xml).toContain('c:secondPiePt val="2"');
+    expect(xml).toContain('c:secondPiePt val="4"');
+    expect(xml).toContain('c:secondPieSize val="75%"');
+
+    const result = roundTrip(opts);
+    expect(result.splitType).toBe("cust");
+    expect(result.customSplitPoints).toEqual([2, 4]);
+    expect(result.secondPieSize).toBe("75%");
+  });
 });

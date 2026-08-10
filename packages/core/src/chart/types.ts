@@ -176,7 +176,8 @@ export type ChartType =
   | "doughnut"
   | "radar"
   | "stock"
-  | "surface";
+  | "surface"
+  | "ofPie";
 
 export type AxisChartType = Exclude<ChartType, "bubble">;
 
@@ -241,6 +242,16 @@ export interface ChartSpaceOptions {
   seriesLines?: boolean;
   /** Plot-area data table (c:dTable). */
   dataTable?: DataTableOptions;
+  /** ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default "pie"). */
+  ofPieType?: OfPieType;
+  /** ofPie split behavior (c:splitType, default "auto"). */
+  splitType?: SplitType;
+  /** ofPie split position (c:splitPos, used with splitType pos/val). */
+  splitPosition?: number;
+  /** ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType "cust"). */
+  customSplitPoints?: readonly number[];
+  /** ofPie second-pie size — number (5–200) or percent string (c:secondPieSize). */
+  secondPieSize?: number | string;
 }
 
 // ── 3D view ──
@@ -523,3 +534,9 @@ export interface DataTableOptions {
   showOutline?: boolean;
   showLegendKeys?: boolean;
 }
+
+// ── ofPie chart (bar-of-pie / pie-of-pie, CT_OfPieChart) ──
+
+export type OfPieType = "pie" | "bar";
+
+export type SplitType = "auto" | "cust" | "percent" | "pos" | "val";
