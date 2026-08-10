@@ -49,6 +49,9 @@ import type {
   DataTableOptions,
   OfPieType,
   SplitType,
+  ColorMapOverrideOptions,
+  ProtectionOptions,
+  ExternalDataOptions,
 } from "./types";
 
 // ── Mutable build type for read results (readonly properties not assignable) ──
@@ -403,6 +406,31 @@ function stringifyDataTable(opts: DataTableOptions): string {
   if (opts.showOutline !== undefined) parts.push(`<c:showOutline${boolVal(opts.showOutline)}/>`);
   if (opts.showLegendKeys !== undefined) parts.push(`<c:showKeys${boolVal(opts.showLegendKeys)}/>`);
   return `<c:dTable>${parts.join("")}</c:dTable>`;
+}
+
+function stringifyColorMapOverride(opts: ColorMapOverrideOptions): string {
+  if (opts.kind === "master") return "<c:clrMapOvr><a:masterClrMapping/></c:clrMapOvr>";
+  const attrs = Object.entries(opts.mapping)
+    .map(([k, v]) => `${k}="${escapeXml(String(v))}"`)
+    .join(" ");
+  return `<c:clrMapOvr><a:overrideClrMapping${attrs ? " " + attrs : ""}/></c:clrMapOvr>`;
+}
+
+function stringifyProtection(opts: ProtectionOptions): string {
+  const parts: string[] = [];
+  if (opts.chartObject !== undefined)
+    parts.push(`<c:chartObject val="${opts.chartObject ? 1 : 0}"/>`);
+  if (opts.data !== undefined) parts.push(`<c:data val="${opts.data ? 1 : 0}"/>`);
+  if (opts.formatting !== undefined) parts.push(`<c:formatting val="${opts.formatting ? 1 : 0}"/>`);
+  if (opts.selection !== undefined) parts.push(`<c:selection val="${opts.selection ? 1 : 0}"/>`);
+  if (opts.objects !== undefined) parts.push(`<c:objects val="${opts.objects ? 1 : 0}"/>`);
+  return `<c:protection>${parts.join("")}</c:protection>`;
+}
+
+function stringifyExternalData(opts: ExternalDataOptions): string {
+  const auto =
+    opts.autoUpdate !== undefined ? `<c:autoUpdate val="${opts.autoUpdate ? 1 : 0}"/>` : "";
+  return `<c:externalData r:id="${escapeXml(opts.relationshipId)}">${auto}</c:externalData>`;
 }
 
 function chartTypeHeader(opts: ChartSpaceOptions): string {
@@ -1184,6 +1212,60 @@ function readDataTable(plotArea: XmlElement | undefined): DataTableOptions | und
   return Object.keys(opts).length ? opts : undefined;
 }
 
+// ── ChartSpace-level read (CT_ChartSpace children) ──
+
+function readColorMapOverride(el: XmlElement): ColorMapOverrideOptions | undefined {
+  const clrMapOvr = findChild(el, "c:clrMapOvr");
+  if (!clrMapOvr) return undefined;
+  if (findChild(clrMapOvr, "a:masterClrMapping")) return { kind: "master" };
+  const override = findChild(clrMapOvr, "a:overrideClrMapping");
+  if (override?.attributes) {
+    const mapping: Record<string, string> = {};
+    for (const [k, v] of Object.entries(override.attributes)) {
+      if (typeof v === "string") mapping[k] = v;
+    }
+    return { kind: "override", mapping };
+  }
+  return undefined;
+}
+
+function readProtection(el: XmlElement): ProtectionOptions | undefined {
+  const protection = findChild(el, "c:protection");
+  if (!protection) return undefined;
+  const opts: ProtectionOptions = {};
+  const readFlag = (tag: string): boolean | undefined => {
+    const child = findChild(protection, tag);
+    if (!child) return undefined;
+    const v = attr(child, "val");
+    return v === undefined ? undefined : v !== "0" && v !== "false";
+  };
+  const chartObject = readFlag("c:chartObject");
+  if (chartObject !== undefined) opts.chartObject = chartObject;
+  const data = readFlag("c:data");
+  if (data !== undefined) opts.data = data;
+  const formatting = readFlag("c:formatting");
+  if (formatting !== undefined) opts.formatting = formatting;
+  const selection = readFlag("c:selection");
+  if (selection !== undefined) opts.selection = selection;
+  const objects = readFlag("c:objects");
+  if (objects !== undefined) opts.objects = objects;
+  return Object.keys(opts).length ? opts : undefined;
+}
+
+function readExternalData(el: XmlElement): ExternalDataOptions | undefined {
+  const externalData = findChild(el, "c:externalData");
+  if (!externalData) return undefined;
+  const relationshipId = attr(externalData, "r:id");
+  if (relationshipId === undefined) return undefined;
+  const opts: ExternalDataOptions = { relationshipId };
+  const autoUpdateEl = findChild(externalData, "c:autoUpdate");
+  if (autoUpdateEl) {
+    const v = attr(autoUpdateEl, "val");
+    if (v !== undefined) opts.autoUpdate = v !== "0" && v !== "false";
+  }
+  return opts;
+}
+
 // ── Axis read (CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx) ──
 
 const AXIS_KIND_BY_TAG: Record<string, AxisKind> = {
@@ -1339,6 +1421,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       parts.push(valEl("c:style", opts.style));
     }
 
+    // CT_ChartSpace: style → clrMapOvr → protection → chart
+    if (opts.colorMapOverride) parts.push(stringifyColorMapOverride(opts.colorMapOverride));
+    if (opts.protection) parts.push(stringifyProtection(opts.protection));
+
     // c:chart container
     parts.push("<c:chart>");
 
@@ -1397,6 +1483,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     parts.push(noFillSpPr());
     parts.push(chartTxPr());
 
+    // CT_ChartSpace: txPr → externalData → (printSettings) → (userShapes)
+    if (opts.externalData) parts.push(stringifyExternalData(opts.externalData));
+
     parts.push("</c:chartSpace>");
 
     return parts.join("");
@@ -1410,6 +1499,12 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (styleEl?.attributes?.["val"] !== undefined) {
       result.style = Number(styleEl.attributes["val"]);
     }
+
+    // CT_ChartSpace: clrMapOvr + protection (before c:chart)
+    const colorMapOverride = readColorMapOverride(el);
+    if (colorMapOverride) result.colorMapOverride = colorMapOverride;
+    const protection = readProtection(el);
+    if (protection) result.protection = protection;
 
     // Chart container
     const chart = findChild(el, "c:chart");
@@ -1547,6 +1642,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (dispBlanksAs) result.displayBlanksAs = dispBlanksAs as DisplayBlanksAs;
     const showDLblsOverMax = readBoolAttr(chart, "c:showDLblsOverMax");
     if (showDLblsOverMax !== undefined) result.showDataLabelsOverMax = showDLblsOverMax;
+
+    // CT_ChartSpace tail: externalData (after c:txPr)
+    const externalData = readExternalData(el);
+    if (externalData) result.externalData = externalData;
 
     return result as ChartSpaceOptions;
   },

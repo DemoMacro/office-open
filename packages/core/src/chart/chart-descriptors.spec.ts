@@ -961,4 +961,45 @@ describe("chartSpaceDesc", () => {
     const result = roundTrip(opts);
     expect(result.categoryLabels).toEqual(["Alpha", "Beta", "Gamma"]);
   });
+
+  it("round-trips chartSpace color map override, protection, and external data", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      colorMapOverride: { kind: "override", mapping: { bg1: "lt1", tx1: "dk1" } },
+      protection: { chartObject: true, selection: false },
+      externalData: { relationshipId: "rId1", autoUpdate: true },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:clrMapOvr><a:overrideClrMapping");
+    expect(xml).toContain('bg1="lt1"');
+    expect(xml).toContain("<c:protection>");
+    expect(xml).toContain('<c:chartObject val="1"/>');
+    expect(xml).toContain('<c:selection val="0"/>');
+    expect(xml).toContain('<c:externalData r:id="rId1">');
+    expect(xml).toContain('<c:autoUpdate val="1"/>');
+
+    const result = roundTrip(opts);
+    expect(result.colorMapOverride).toEqual({
+      kind: "override",
+      mapping: { bg1: "lt1", tx1: "dk1" },
+    });
+    expect(result.protection).toEqual({ chartObject: true, selection: false });
+    expect(result.externalData).toEqual({ relationshipId: "rId1", autoUpdate: true });
+  });
+
+  it("round-trips master color mapping override", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+      colorMapOverride: { kind: "master" },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:clrMapOvr><a:masterClrMapping/></c:clrMapOvr>");
+
+    const result = roundTrip(opts);
+    expect(result.colorMapOverride).toEqual({ kind: "master" });
+  });
 });

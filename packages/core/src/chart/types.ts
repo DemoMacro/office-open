@@ -224,6 +224,12 @@ export interface ChartSpaceOptions {
   customSplitPoints?: readonly number[];
   /** ofPie second-pie size — number (5–200) or percent string (c:secondPieSize). */
   secondPieSize?: number | string;
+  /** Theme color mapping override (c:clrMapOvr, before c:chart). */
+  colorMapOverride?: ColorMapOverrideOptions;
+  /** Chart protection (c:protection, before c:chart). */
+  protection?: ProtectionOptions;
+  /** External linked workbook (c:externalData, after c:txPr). */
+  externalData?: ExternalDataOptions;
 }
 
 // ── 3D view ──
@@ -421,6 +427,28 @@ export interface DataTableOptions {
   showVerticalBorder?: boolean;
   showOutline?: boolean;
   showLegendKeys?: boolean;
+}
+
+// ── ChartSpace-level containers (CT_ChartSpace) ──
+
+/** Theme color mapping override (EG_ColorOverride). */
+export type ColorMapOverrideOptions =
+  | { kind: "master" }
+  | { kind: "override"; mapping: Record<string, string> };
+
+/** Chart protection flags (CT_Protection). */
+export interface ProtectionOptions {
+  chartObject?: boolean;
+  data?: boolean;
+  formatting?: boolean;
+  selection?: boolean;
+  objects?: boolean;
+}
+
+/** External linked workbook reference (CT_ExternalData). */
+export interface ExternalDataOptions {
+  relationshipId: string;
+  autoUpdate?: boolean;
 }
 
 // ── ofPie chart (bar-of-pie / pie-of-pie, CT_OfPieChart) ──
