@@ -664,7 +664,8 @@ function firstChildXml(el: XmlElement | null, name: string): string | undefined 
 function parseBool(el: XmlElement, name: string): boolean | undefined {
   const v = attr(el, name);
   if (v === undefined) return undefined;
-  return v === "1" || v === "true";
+  // nativeTypeAttributes (xlsx parse path) coerces "1" to number 1.
+  return String(v) === "1" || v === "true";
 }
 
 function parseEntry(el: XmlElement): RevisionEntry | undefined {
@@ -907,7 +908,8 @@ export const revisionLogDesc: CustomDescriptor<RevisionLogOptions> = {
 
 function readBool(el: XmlElement, name: string, set: (v: boolean) => void): void {
   const raw = attr(el, name);
-  if (raw === "1" || raw === "true") set(true);
+  // nativeTypeAttributes (xlsx parse path) coerces "1" to number 1.
+  if (String(raw) === "1" || raw === "true") set(true);
 }
 
 function readNum(el: XmlElement, name: string, set: (v: number) => void): void {

@@ -12,7 +12,9 @@ const writeCtx = {} as unknown as WriteContext;
 const readCtx = {} as unknown as ReadContext;
 
 function parseRoot(xml: string) {
-  const el = parseXml(xml).elements?.[0];
+  // nativeTypeAttributes mirrors the real xlsx parse path (ParsedArchive.get
+  // coerces "1"/"0" to numbers), so boolean reads are exercised under coercion.
+  const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
   return el;
 }
@@ -51,6 +53,30 @@ describe("revisionHeadersDesc round-trip", () => {
       maxSheetId: 1,
       sheetIds: [1],
     });
+  });
+
+  it("round-trips boolean root flags under nativeTypeAttributes coercion", () => {
+    const opts: RevisionHeadersOptions = {
+      guid: "{A}",
+      diskRevisions: true,
+      trackRevisions: true,
+      history: true,
+      keepChangeHistory: true,
+      protected: true,
+      headers: [
+        { guid: "{B}", dateTime: "t", userName: "U", rId: "rId1", maxSheetId: 1, sheetIds: [1] },
+      ],
+    };
+    const result = revisionHeadersDesc.parse(
+      parseRoot(revisionHeadersDesc.stringify(opts, writeCtx)!),
+      readCtx,
+    );
+    // "1" coerces to number 1 on the real parse path; String() guard recovers it
+    expect(result.diskRevisions).toBe(true);
+    expect(result.trackRevisions).toBe(true);
+    expect(result.history).toBe(true);
+    expect(result.keepChangeHistory).toBe(true);
+    expect(result.protected).toBe(true);
   });
 
   it("round-trips reviewed revision ids", () => {
