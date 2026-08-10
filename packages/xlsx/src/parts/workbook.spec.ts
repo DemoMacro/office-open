@@ -45,6 +45,21 @@ describe("workbookDesc round-trip", () => {
     expect(result.sheets[1]?.name).toBe("Sheet2");
   });
 
+  it("round-trips fileVersion", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      fileVersion: { appName: "xl", lastEdited: 8, lowestEdited: 7, rupBuild: 12345 },
+    };
+    const result = roundTrip(opts);
+
+    expect(result.fileVersion).toEqual({
+      appName: "xl",
+      lastEdited: 8,
+      lowestEdited: 7,
+      rupBuild: 12345,
+    });
+  });
+
   it("round-trips sheet with hidden state", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Hidden", sheetId: 1, rId: "rId1", state: "hidden" }],

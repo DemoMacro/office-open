@@ -354,7 +354,16 @@ export interface DefinedNameOptions {
   workbookParameter?: boolean;
 }
 
+export interface FileVersionOptions {
+  appName?: string;
+  lastEdited?: number;
+  lowestEdited?: number;
+  rupBuild?: number;
+}
+
 export interface WorkbookDescriptorOptions {
+  /** CT_FileVersion — Excel version stamp; fresh compiles emit Excel 2007 defaults. */
+  fileVersion?: FileVersionOptions;
   sheets: SheetDefinition[];
   pivotCaches?: PivotCacheReference[];
   protection?: WorkbookProtectionOptions;
@@ -384,6 +393,21 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
 
   parse(el, _ctx) {
     const result: Partial<WorkbookDescriptorOptions> = {};
+
+    // File version (CT_Workbook first child) — Excel version stamp
+    const fileVersionEl = findChild(el, "fileVersion");
+    if (fileVersionEl) {
+      const fv: FileVersionOptions = {};
+      const appName = attr(fileVersionEl, "appName");
+      if (appName) fv.appName = appName;
+      const lastEdited = attrNum(fileVersionEl, "lastEdited");
+      if (lastEdited !== undefined) fv.lastEdited = lastEdited;
+      const lowestEdited = attrNum(fileVersionEl, "lowestEdited");
+      if (lowestEdited !== undefined) fv.lowestEdited = lowestEdited;
+      const rupBuild = attrNum(fileVersionEl, "rupBuild");
+      if (rupBuild !== undefined) fv.rupBuild = rupBuild;
+      result.fileVersion = fv;
+    }
 
     // Sheets
     const sheetsEl = findChild(el, "sheets");
@@ -730,8 +754,21 @@ function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
       ' xmlns:xr6="http://schemas.microsoft.com/office/spreadsheetml/2016/revision6"' +
       ' xmlns:xr10="http://schemas.microsoft.com/office/spreadsheetml/2016/revision10"' +
       ` xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"${confAttr}>`,
-    '<fileVersion appName="xl" lastEdited="7" lowestEdited="6" rupBuild="29929"/>',
   ];
+
+  // File version (CT_Workbook first child). Fresh compiles emit Excel 2007
+  // defaults; a round-tripped source carries its own version stamp through.
+  const fv = opts.fileVersion;
+  if (fv) {
+    const fvAttrs: string[] = [];
+    if (fv.appName) fvAttrs.push(`appName="${fv.appName}"`);
+    if (fv.lastEdited !== undefined) fvAttrs.push(`lastEdited="${fv.lastEdited}"`);
+    if (fv.lowestEdited !== undefined) fvAttrs.push(`lowestEdited="${fv.lowestEdited}"`);
+    if (fv.rupBuild !== undefined) fvAttrs.push(`rupBuild="${fv.rupBuild}"`);
+    parts.push(`<fileVersion ${fvAttrs.join(" ")}/>`);
+  } else {
+    parts.push('<fileVersion appName="xl" lastEdited="7" lowestEdited="6" rupBuild="29929"/>');
+  }
 
   // File sharing (after fileVersion, before workbookPr per XSD sequence)
   if (opts.fileSharing) {
