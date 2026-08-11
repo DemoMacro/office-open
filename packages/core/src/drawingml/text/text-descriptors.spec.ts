@@ -136,6 +136,23 @@ describe("paragraphDesc round-trip", () => {
     expect(children[1]?.italic).toBe(true);
   });
 
+  it("stringifies a string child as a text-only run", () => {
+    const xml = paragraphDesc.stringify({ children: ["hi", "there"] }, writeCtx)!;
+    expect(xml).toContain("<a:t>hi</a:t>");
+    expect(xml).toContain("<a:t>there</a:t>");
+  });
+
+  it("round-trips mixed string and run children", () => {
+    const r = roundTrip({
+      children: ["lead ", { text: "run", bold: true }],
+    });
+    const children = r.children! as RunOptions[];
+    expect(children).toHaveLength(2);
+    expect(children[0]?.text).toBe("lead ");
+    expect(children[1]?.text).toBe("run");
+    expect(children[1]?.bold).toBe(true);
+  });
+
   it("round-trips alignment/indentLevel/lineSpacing", () => {
     const r = roundTrip({
       text: "x",

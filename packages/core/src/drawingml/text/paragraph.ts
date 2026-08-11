@@ -37,7 +37,7 @@ import type {
 export interface ParagraphDescriptorOptions {
   text?: string;
   properties?: ParagraphPropertiesOptions;
-  children?: (RunOptions | TextFieldOptions | BreakOptions)[];
+  children?: (RunOptions | TextFieldOptions | BreakOptions | string)[];
   /**
    * End-paragraph run properties (a:endParaRPr). Fresh paragraphs emit a
    * default lang marker; a parsed source preserves its value; false omits it.
@@ -291,10 +291,13 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       parts.push(textRunDesc.stringify({ text: opts.text }, ctx) ?? "");
     }
 
-    // Children (text runs + fields + line breaks)
+    // Children (text runs + fields + line breaks; a bare string is shorthand
+    // for a single text-only run).
     if (opts.children) {
       for (const child of opts.children) {
-        if (isTextField(child)) {
+        if (typeof child === "string") {
+          parts.push(textRunDesc.stringify({ text: child }, ctx) ?? "");
+        } else if (isTextField(child)) {
           parts.push(stringifyTextField(child, ctx));
         } else if (isBreak(child)) {
           parts.push(stringifyBreak(child, ctx));
