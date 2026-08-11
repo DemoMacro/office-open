@@ -3,9 +3,12 @@
  * shared by pptx/xlsx) ↔ WordprocessingML paragraph (w:p, docx).
  *
  * pptx and xlsx already model text as the core `a:p` shape, so this adapter only
- * bridges docx's w:p to/from that shared model. It lives in the docx package
- * (w:p is docx-native and docx already depends on core) — no aggregate layer,
- * no extra dependency edge.
+ * bridges docx's w:p to/from that shared model. It lives in the aggregate
+ * office-open convert layer alongside the other cross-format converters
+ * (picture/shape/...): cross-format code references multiple format packages,
+ * and the aggregate package is the single place that already depends on all of
+ * them, so converters stay dependency-cycle-free. Single-format users never need
+ * cross-format conversion.
  *
  * Round-trip is lossy by design, mirroring MS Office paste between apps.
  *
@@ -45,8 +48,7 @@ import type {
   RunOptions as DrawingRunOptions,
   RunPropertiesOptions as DrawingRunProperties,
 } from "@office-open/core";
-
-import type { ParagraphOptions, RunOptions } from "../../parts/paragraph";
+import type { ParagraphOptions, RunOptions } from "@office-open/docx";
 
 // ── unit factors ──
 

@@ -5,3 +5,4 @@
  * @module
  */
 export * from "./picture";
+export * from "./text";
