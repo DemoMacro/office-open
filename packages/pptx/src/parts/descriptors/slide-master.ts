@@ -90,11 +90,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     // p:spTree — standard placeholders (scaled to slide width) + custom children.
     parts.push("<p:spTree>");
     parts.push(SP_TREE_HEADER);
-    const { xml: placeholderXml, nextId } = buildPlaceholderShapes(
-      opts.placeholders,
-      ctx.slideWidth,
-      ctx,
-    );
+    const { xml: placeholderXml, nextId } = buildPlaceholderShapes(opts.placeholders, ctx);
     if (placeholderXml) parts.push(placeholderXml);
     // Children carry explicit cNvPr ids (starting after the placeholders) so they
     // never collide with the module-level shape id counter or the placeholders.

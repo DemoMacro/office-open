@@ -16,6 +16,7 @@ import type { MasterChild } from "@shared/file";
 import type { PlaceholderDefinition } from "@shared/placeholder";
 import type { ShapeStyleOptions } from "@shared/shape/shape";
 
+import type { PptxWriteContext } from "../context";
 import type { ColorMapOptions, HeaderFooterOptions } from "./handout-master";
 
 export interface MasterPlaceholderPosition {
@@ -221,10 +222,10 @@ export interface PlaceholderEmitResult {
  */
 export function buildPlaceholderShapes(
   placeholders: MasterPlaceholderOptions | undefined,
-  slideWidth: number,
-  ctx: WriteContext,
+  ctx: PptxWriteContext,
 ): PlaceholderEmitResult {
   const ph = placeholders ?? {};
+  const slideWidth = ctx.slideWidth;
   const shapes: string[] = [];
   let nextId = 2;
 
