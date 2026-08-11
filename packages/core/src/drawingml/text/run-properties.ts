@@ -9,8 +9,9 @@
  */
 
 import { findChild } from "@office-open/xml";
+import type { Element as XmlElement } from "@office-open/xml";
 
-import type { CustomDescriptor } from "../../descriptor";
+import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { parse, stringify } from "../../descriptor";
 import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "../../util/mappings";
 import { effectListDesc } from "../effects/effect-descriptors";
@@ -33,15 +34,48 @@ export type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
 
 let nextHyperlinkId = 1;
 
+function buildHyperlinkElement(tag: string, hl: HyperlinkOptions, key: string): string {
+  const attrs: string[] = [`r:id="{hlink:${key}}"`];
+  if (hl.tooltip) attrs.push(`tooltip="${hl.tooltip}"`);
+  if (hl.action) attrs.push(`action="${hl.action}"`);
+  if (hl.highlightClick) attrs.push('highlightClick="1"');
+  if (hl.endSound) attrs.push('endSnd="1"');
+  if (hl.invalidUrl) attrs.push('invalidUrl="1"');
+  return `<${tag} ${attrs.join(" ")}/>`;
+}
+
+function readHyperlink(el: XmlElement, ctx: ReadContext): HyperlinkOptions {
+  const hl: Mutable<HyperlinkOptions> = {};
+  const rId = el.attributes?.["r:id"];
+  if (rId) {
+    const ridStr = String(rId);
+    const url = ctx.resolveRelationship(ridStr);
+    if (url) hl.url = url;
+    const m = ridStr.match(/^\{hlink:(.+)\}$/);
+    if (m) hl.referenceId = m[1];
+  }
+  if (el.attributes?.["tooltip"]) hl.tooltip = String(el.attributes["tooltip"]);
+  if (el.attributes?.["action"]) hl.action = String(el.attributes["action"]);
+  if (el.attributes?.["highlightClick"]) hl.highlightClick = true;
+  if (el.attributes?.["endSnd"]) hl.endSound = true;
+  if (el.attributes?.["invalidUrl"]) hl.invalidUrl = true;
+  return hl as HyperlinkOptions;
+}
+
 export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    // Side-effect: register hyperlink
+    // Side-effect: register hyperlinks (click + hover)
     let hyperlinkKey: string | undefined;
     if (opts.hyperlink) {
       hyperlinkKey = opts.hyperlink.referenceId ?? `hlink_${nextHyperlinkId++}`;
       ctx.addHyperlink(hyperlinkKey, opts.hyperlink.url, opts.hyperlink.tooltip);
+    }
+    let mouseoverKey: string | undefined;
+    if (opts.mouseoverHyperlink) {
+      mouseoverKey = opts.mouseoverHyperlink.referenceId ?? `hlink_${nextHyperlinkId++}`;
+      ctx.addHyperlink(mouseoverKey, opts.mouseoverHyperlink.url, opts.mouseoverHyperlink.tooltip);
     }
 
     const attrParts: string[] = [];
@@ -104,14 +138,10 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     }
 
     if (opts.hyperlink && hyperlinkKey) {
-      const hl = opts.hyperlink;
-      const hlAttrs: string[] = [`r:id="{hlink:${hyperlinkKey}}"`];
-      if (hl.tooltip) hlAttrs.push(`tooltip="${hl.tooltip}"`);
-      if (hl.action) hlAttrs.push(`action="${hl.action}"`);
-      if (hl.highlightClick) hlAttrs.push('highlightClick="1"');
-      if (hl.endSound) hlAttrs.push('endSnd="1"');
-      if (hl.invalidUrl) hlAttrs.push('invalidUrl="1"');
-      parts.push(`<a:hlinkClick ${hlAttrs.join(" ")}/>`);
+      parts.push(buildHyperlinkElement("a:hlinkClick", opts.hyperlink, hyperlinkKey));
+    }
+    if (opts.mouseoverHyperlink && mouseoverKey) {
+      parts.push(buildHyperlinkElement("a:hlinkMouseOver", opts.mouseoverHyperlink, mouseoverKey));
     }
 
     if (opts.rightToLeft !== undefined) {
@@ -184,27 +214,11 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     const latin = findChild(el, "a:latin");
     if (latin?.attributes?.["typeface"]) result.font = String(latin.attributes["typeface"]);
 
-    // Hyperlink
+    // Hyperlinks (click + hover)
     const hlinkClick = findChild(el, "a:hlinkClick");
-    if (hlinkClick) {
-      const hl: Mutable<HyperlinkOptions> = {};
-      const rId = hlinkClick.attributes?.["r:id"];
-      if (rId) {
-        const ridStr = String(rId);
-        const url = _ctx.resolveRelationship(ridStr);
-        if (url) hl.url = url;
-        // Preserve the placeholder key (e.g. "{hlink:hlink_1}") so re-stringify
-        // reuses it instead of allocating a new hlink_N counter value.
-        const m = ridStr.match(/^\{hlink:(.+)\}$/);
-        if (m) hl.referenceId = m[1];
-      }
-      if (hlinkClick.attributes?.["tooltip"]) hl.tooltip = String(hlinkClick.attributes["tooltip"]);
-      if (hlinkClick.attributes?.["action"]) hl.action = String(hlinkClick.attributes["action"]);
-      if (hlinkClick.attributes?.["highlightClick"]) hl.highlightClick = true;
-      if (hlinkClick.attributes?.["endSnd"]) hl.endSound = true;
-      if (hlinkClick.attributes?.["invalidUrl"]) hl.invalidUrl = true;
-      result.hyperlink = hl as HyperlinkOptions;
-    }
+    if (hlinkClick) result.hyperlink = readHyperlink(hlinkClick, _ctx);
+    const hlinkMouseOver = findChild(el, "a:hlinkMouseOver");
+    if (hlinkMouseOver) result.mouseoverHyperlink = readHyperlink(hlinkMouseOver, _ctx);
 
     // RTL
     const rtl = findChild(el, "a:rtl");

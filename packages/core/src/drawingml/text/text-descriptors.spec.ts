@@ -75,6 +75,14 @@ describe("runPropertiesDesc round-trip", () => {
     expect(fill.type).toBe("solid");
     expect(fill.color.value).toBe("FF0000");
   });
+
+  it("round-trips hover hyperlink (a:hlinkMouseOver)", () => {
+    const r = roundTrip({
+      mouseoverHyperlink: { url: "https://example.org", tooltip: "Hover tip" },
+    });
+    expect(r.mouseoverHyperlink).toBeDefined();
+    expect(r.mouseoverHyperlink?.tooltip).toBe("Hover tip");
+  });
 });
 
 // ── textRunDesc ──

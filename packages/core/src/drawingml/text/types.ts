@@ -60,6 +60,8 @@ export interface RunPropertiesOptions {
   lang?: string;
   fill?: FillOptions;
   hyperlink?: HyperlinkOptions;
+  /** a:hlinkMouseOver — hover hyperlink (CT_Hyperlink). */
+  mouseoverHyperlink?: HyperlinkOptions;
   strike?: (typeof StrikeStyle)[keyof typeof StrikeStyle];
   baseline?: number;
   spacing?: number;
