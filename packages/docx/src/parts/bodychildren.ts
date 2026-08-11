@@ -563,7 +563,7 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
     } else if (opts.children && opts.children.length > 0) {
       const contentParts: string[] = [];
       for (const child of opts.children) {
-        contentParts.push(ctx.stringifyChild(child, ctx));
+        contentParts.push(ctx.stringifyChild(child));
       }
       const contentBody = contentParts.join("");
       parts.push(contentBody ? `<w:sdtContent>${contentBody}</w:sdtContent>` : "<w:sdtContent/>");
@@ -652,7 +652,7 @@ export const customXmlBlockDesc: CustomDescriptor<CustomXmlBlockDescriptorOption
     const contentParts: string[] = [];
     if (opts.children) {
       for (const child of opts.children) {
-        contentParts.push(ctx.stringifyChild(child, ctx));
+        contentParts.push(ctx.stringifyChild(child));
       }
     }
     return stringifyCustomXmlShell(opts, contentParts.join(""));

@@ -166,7 +166,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
     const partsXml = opts.parts
       .map((part) => {
         const bodyContent = ((part.children ?? []) as SectionChild[])
-          .map((child) => ctx.stringifyChild(child, ctx))
+          .map((child) => ctx.stringifyChild(child))
           .join("");
 
         return `<w:docPart>${docPartPrXml(part)}<w:docPartBody>${bodyContent}</w:docPartBody></w:docPart>`;

@@ -140,8 +140,12 @@ export interface BodyContext extends WriteContext {
   file: DocxWriteContext;
   /** Current view wrapper for relationship access. */
   viewWrapper: { relationships: Relationships };
-  /** Stringify a body-level child element — injected to break circular imports. */
-  stringifyChild: (child: SectionChild, ctx: BodyContext) => string;
+  /**
+   * Stringify a body-level child element — injected to break circular imports.
+   * Bound to its owning context via closure at injection time, so callers pass
+   * only the child.
+   */
+  stringifyChild: (child: SectionChild) => string;
 }
 
 // ── DocxWriteContext ──

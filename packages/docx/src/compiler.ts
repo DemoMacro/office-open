@@ -271,17 +271,23 @@ function xmlifyContext(
   headerFormattedViews: Map<number, string>,
   footerFormattedViews: Map<number, string>,
 ): XmlifyedFileMapping {
-  const mkCtx = (viewWrapper: DocxContext["viewWrapper"] = ctx.document): DocxContext => ({
-    fileData: ctx,
-    file: ctx,
-    viewWrapper,
-    stringifyChild: stringifyBodyChild,
-    addRelationship: (type: string, target: string, mode?: string) =>
-      ctx.addRelationship(type, target, mode),
-    addMedia: (data: Uint8Array, type: string) => ctx.addMedia(data, type),
-    addHyperlink: (key: string, url: string, tooltip?: string) =>
-      ctx.addHyperlink(key, url, tooltip),
-  });
+  const mkCtx = (viewWrapper: DocxContext["viewWrapper"] = ctx.document): DocxContext => {
+    const bodyCtx: DocxContext = {
+      fileData: ctx,
+      file: ctx,
+      viewWrapper,
+      addRelationship: (type: string, target: string, mode?: string) =>
+        ctx.addRelationship(type, target, mode),
+      addMedia: (data: Uint8Array, type: string) => ctx.addMedia(data, type),
+      addHyperlink: (key: string, url: string, tooltip?: string) =>
+        ctx.addHyperlink(key, url, tooltip),
+      // Assigned after the literal: stringifyBodyChild needs this context, which
+      // is only bound once the literal finishes initializing.
+      stringifyChild: undefined as unknown as DocxContext["stringifyChild"],
+    };
+    bodyCtx.stringifyChild = (child) => stringifyBodyChild(child, bodyCtx);
+    return bodyCtx;
+  };
 
   const documentRelationshipCount = ctx.document.relationships.relationshipCount + 1;
   // Per-part media-replacement results shared between the .rels pass and the
