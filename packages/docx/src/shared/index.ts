@@ -6,6 +6,7 @@
 
 export * from "./border";
 export * from "./constants";
+export * from "./convert";
 export * from "./media";
 export * from "./section";
 export * from "./shading";
