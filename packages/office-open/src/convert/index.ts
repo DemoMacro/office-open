@@ -5,4 +5,7 @@
  * @module
  */
 export * from "./picture";
+export * from "./shape";
+export * from "./connector";
+export * from "./group";
 export * from "./text";

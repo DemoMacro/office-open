@@ -16,25 +16,11 @@
  *
  * @module
  */
-import { convertToEmu, type UniversalMeasure } from "@office-open/core";
 import type { ImageOptions } from "@office-open/docx";
 import type { PictureOptions } from "@office-open/pptx";
 import type { WorksheetImageOptions } from "@office-open/xlsx";
 
-/** Heuristic default column width in EMU (8.43 chars ≈ 64 px at 96 DPI). */
-const DEFAULT_COL_EMU = 609600;
-/** Heuristic default row height in EMU (15 pt). */
-const DEFAULT_ROW_EMU = 190500;
-
-/** Coerce a coordinate (EMU number or universal measure) to raw EMU. */
-function toEmu(value: number | UniversalMeasure | undefined, fallback = 0): number {
-  return value === undefined ? fallback : convertToEmu(value);
-}
-
-/** Convert a raw EMU offset to a 1-based cell index. */
-function emuToCell(emus: number, cellEmu: number): number {
-  return Math.floor(emus / cellEmu) + 1;
-}
+import { DEFAULT_COL_EMU, DEFAULT_ROW_EMU, emuToCell, toEmu } from "./position";
 
 // ── → docx ──
 
