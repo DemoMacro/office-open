@@ -15,6 +15,8 @@ export interface TableCellOptions {
     bottom?: CellBorderOptions;
     left?: CellBorderOptions;
     right?: CellBorderOptions;
+    diagonalTopLeftToBottomRight?: CellBorderOptions;
+    diagonalBottomLeftToTopRight?: CellBorderOptions;
   };
   columnSpan?: number;
   rowSpan?: number;

@@ -42,6 +42,10 @@ export interface TableBordersDescriptorOptions {
   bottom?: CellBorderDescriptorOptions;
   left?: CellBorderDescriptorOptions;
   right?: CellBorderDescriptorOptions;
+  /** a:lnTlToBr — top-left to bottom-right diagonal (cell tcPr only). */
+  diagonalTopLeftToBottomRight?: CellBorderDescriptorOptions;
+  /** a:lnBlToTr — bottom-left to top-right diagonal (cell tcPr only). */
+  diagonalBottomLeftToTopRight?: CellBorderDescriptorOptions;
 }
 
 export interface CellMarginsDescriptorOptions {
@@ -341,6 +345,10 @@ function stringifyTcPr(cell: TableCellDescriptorOptions, ctx: PptxWriteContext):
     if (cell.borders.right) parts.push(buildBorderLine("a:lnR", cell.borders.right));
     if (cell.borders.top) parts.push(buildBorderLine("a:lnT", cell.borders.top));
     if (cell.borders.bottom) parts.push(buildBorderLine("a:lnB", cell.borders.bottom));
+    if (cell.borders.diagonalTopLeftToBottomRight)
+      parts.push(buildBorderLine("a:lnTlToBr", cell.borders.diagonalTopLeftToBottomRight));
+    if (cell.borders.diagonalBottomLeftToTopRight)
+      parts.push(buildBorderLine("a:lnBlToTr", cell.borders.diagonalBottomLeftToTopRight));
   }
 
   if (cell.fill !== undefined) {
@@ -496,6 +504,8 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
       ["a:lnR", "right"],
       ["a:lnT", "top"],
       ["a:lnB", "bottom"],
+      ["a:lnTlToBr", "diagonalTopLeftToBottomRight"],
+      ["a:lnBlToTr", "diagonalBottomLeftToTopRight"],
     ] as const) {
       const borderEl = findChild(tcPr, elName);
       if (borderEl) {

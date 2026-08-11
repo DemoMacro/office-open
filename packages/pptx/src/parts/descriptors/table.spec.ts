@@ -138,6 +138,35 @@ describe("tableDesc round-trip", () => {
     expect(top.color).toBe("000000");
   });
 
+  it("round-trips cell with diagonal borders", () => {
+    const opts: TableDescriptorOptions = {
+      rows: [
+        {
+          cells: [
+            {
+              text: "Crossed",
+              borders: {
+                diagonalTopLeftToBottomRight: { width: 12700, color: "C00000" },
+                diagonalBottomLeftToTopRight: { width: 9525, color: "000000" },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const cell = result.rows![0]?.cells?.[0];
+    if (!cell) throw new Error("missing cell");
+    expect(cell.borders?.diagonalTopLeftToBottomRight).toEqual({
+      width: 12700,
+      color: "C00000",
+    });
+    expect(cell.borders?.diagonalBottomLeftToTopRight).toEqual({
+      width: 9525,
+      color: "000000",
+    });
+  });
+
   it("round-trips cell with verticalAlign", () => {
     const opts: TableDescriptorOptions = {
       rows: [{ cells: [{ text: "Center", verticalAlign: "center" }] }],
