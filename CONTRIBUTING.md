@@ -62,7 +62,7 @@ parts/document/body.ts      — complex part (subdirectory)
 shared/shape/shape.ts       — graphic-object types AND descriptor, co-located
 ```
 
-Types and their `<part>Desc` descriptor are always co-located. Graphic-object descriptors (shape/picture/connector/group) sit with their types under `shared/<domain>/` (`shared/shape/`, `shared/table/`), not in a separate `parts/descriptors/`. Whole-part descriptors (presentation, slide-master) stay under `parts/`. Judge part complexity by element/line count — xlsx `worksheet`/`workbook`/`styles`/`table`/`drawing` are complex enough to be subdirectories, matching the docx baseline.
+Two co-location patterns: **docx/xlsx** put each part's types and `<part>Desc` descriptor together in `parts/<part>/` (complex) or `parts/<part>.ts` (simple); **pptx** keeps descriptors in a dedicated `parts/descriptors/` layer with public types in `shared/<domain>/`. Both are acceptable — pick one per package and stay consistent within it. Complex parts are subdirectories: xlsx `worksheet`/`workbook`/`styles`/`pivot-table`/`revision-log`/`drawing` are large enough to warrant subdirectories, matching the docx baseline.
 
 ### Descriptors
 
