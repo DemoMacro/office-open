@@ -9,11 +9,13 @@ import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import { effectListDesc, fillDesc } from "@office-open/core/drawingml";
-import type { FillOptions as CoreFillOptions } from "@office-open/core/drawingml";
+import type {
+  FillOptions as CoreFillOptions,
+  EffectListOptions,
+} from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
-import { toEffectListOptions, type EffectsOptions } from "@shared/drawingml/effects";
 
 import type { PptxWriteContext } from "../../context";
 import { parseChild, stringifyChild } from "./bridge";
@@ -36,7 +38,7 @@ export interface GroupShapeDescriptorOptions {
   /** Group-level fill (EG_FillProperties on grpSpPr). */
   fill?: CoreFillOptions;
   /** Group-level effects (EG_EffectProperties on grpSpPr). */
-  effects?: EffectsOptions;
+  effects?: EffectListOptions;
   children?: LegacySlideChild[];
 }
 
@@ -80,11 +82,8 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
       if (fillXml) grpSpPrParts.push(fillXml);
     }
     if (opts.effects) {
-      const effectListOpts = toEffectListOptions(opts.effects);
-      if (effectListOpts) {
-        const fxXml = stringify(effectListDesc, effectListOpts, descCtx);
-        if (fxXml) grpSpPrParts.push(fxXml);
-      }
+      const fxXml = stringify(effectListDesc, opts.effects, descCtx);
+      if (fxXml) grpSpPrParts.push(fxXml);
     }
 
     const parts: string[] = [];

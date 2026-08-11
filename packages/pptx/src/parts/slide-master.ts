@@ -3,6 +3,7 @@ import type { UniversalMeasure } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawingml";
 import type { ShapePropertiesOptions } from "@office-open/core/drawingml";
+import { createEffectList } from "@office-open/core/drawingml";
 import type { BackgroundOptions } from "@parts/background";
 import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
 import type {
@@ -10,7 +11,6 @@ import type {
   TransitionDescriptorOptions,
 } from "@parts/descriptors/slide";
 import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
-import { createPptxEffectList } from "@shared/drawingml/effects";
 import { buildFill } from "@shared/drawingml/fill";
 import type { MasterChild } from "@shared/file";
 import type { PlaceholderDefinition } from "@shared/placeholder";
@@ -298,8 +298,7 @@ export function buildBackgroundXml(bg?: BackgroundOptions): string {
   const fillXml = buildFill(bg.fill ?? { type: "none" });
   let effectsXml = "";
   if (bg.effects) {
-    const el = createPptxEffectList(bg.effects);
-    if (el) effectsXml = el;
+    effectsXml = createEffectList(bg.effects);
   }
   return `<p:bg${bgAttrs.join("")}><p:bgPr${bgPrAttrs.join("")}>${fillXml}${effectsXml}</p:bgPr></p:bg>`;
 }

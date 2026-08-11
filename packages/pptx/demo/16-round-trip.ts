@@ -178,13 +178,12 @@ const slides: SlideOptions[] = [
           outline: { type: "solidFill", color: { value: "2F5496" }, width: 12700 },
           effects: {
             outerShadow: {
-              blur: 50800,
+              blurRadius: 50800,
               distance: 38100,
               direction: 2700000,
-              color: "000000",
-              alpha: 40,
+              color: { value: "000000", transforms: { alpha: 40000 } },
             },
-            glow: { radius: 76200, color: "4472C4", alpha: 50 },
+            glow: { radius: 76200, color: { value: "4472C4", transforms: { alpha: 50000 } } },
           },
         },
       },
@@ -268,12 +267,14 @@ const slides: SlideOptions[] = [
           textBody: { text: "3D" },
           geometry: "roundRect",
           fill: "70AD47",
-          effects: {
-            rotation3D: { x: 20, y: 10, z: 5 },
-            bevelTop: { width: 8, height: 8 },
-            extrusionH: 30000,
-            material: "plastic",
+          scene3d: {
+            camera: {
+              preset: "orthographicFront",
+              rotation: { lat: 1200000, lon: 600000, rev: 300000 },
+            },
+            lightRig: { rig: "threePt", direction: "t" },
           },
+          shape3d: { bevelT: { w: 8, h: 8 }, extrusionH: 30000, prstMaterial: "plastic" },
         },
       },
       // Alignment + line spacing + super/subscript
@@ -770,11 +771,10 @@ const slides: SlideOptions[] = [
           textBody: { text: "Inner Shadow" },
           effects: {
             innerShadow: {
-              blur: 40000,
+              blurRadius: 40000,
               distance: 30000,
               direction: 5400000,
-              color: "000000",
-              alpha: 40,
+              color: { value: "000000", transforms: { alpha: 40000 } },
             },
           },
         },
@@ -793,7 +793,7 @@ const slides: SlideOptions[] = [
               blurRadius: 6350,
               distance: 38100,
               direction: 5400000,
-              startAlpha: 90,
+              startAlpha: 90000,
               endAlpha: 0,
             },
           },
@@ -808,7 +808,7 @@ const slides: SlideOptions[] = [
           height: "4.0cm",
           fill: "70AD47",
           textBody: { text: "Soft Edge" },
-          effects: { softEdge: { radius: 50800 } },
+          effects: { softEdge: 50800 },
         },
       },
       // Multiple effects combined
@@ -823,14 +823,13 @@ const slides: SlideOptions[] = [
           textBody: { text: "Combined" },
           effects: {
             outerShadow: {
-              blur: 38100,
+              blurRadius: 38100,
               distance: 25400,
               direction: 5400000,
-              color: "000000",
-              alpha: 50,
+              color: { value: "000000", transforms: { alpha: 50000 } },
             },
-            reflection: { startAlpha: 80, endAlpha: 0 },
-            glow: { radius: 50000, color: "ED7D31", alpha: 40 },
+            reflection: { startAlpha: 80000, endAlpha: 0 },
+            glow: { radius: 50000, color: { value: "ED7D31", transforms: { alpha: 40000 } } },
           },
         },
       },

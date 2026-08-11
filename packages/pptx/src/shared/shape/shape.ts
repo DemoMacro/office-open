@@ -3,6 +3,9 @@ import type {
   PresetGeometryOptions,
   CustomGeometryOptions,
   OutlineOptions,
+  EffectListOptions,
+  Scene3DOptions,
+  Shape3DOptions,
 } from "@office-open/core/drawingml";
 /**
  * Shape options type for PPTX.
@@ -10,7 +13,6 @@ import type {
  * @module
  */
 import type { AnimationOptions } from "@shared/animation/types";
-import type { EffectsOptions } from "@shared/drawingml/effects";
 import type { ShapePropertiesOptions } from "@shared/drawingml/shape-properties";
 
 import type { TextBodyOptions } from "./text-body";
@@ -33,7 +35,9 @@ export interface ShapeOptions {
   customGeometry?: CustomGeometryOptions;
   fill?: ShapePropertiesOptions["fill"];
   outline?: OutlineOptions;
-  effects?: EffectsOptions;
+  effects?: EffectListOptions;
+  scene3d?: Scene3DOptions;
+  shape3d?: Shape3DOptions;
   flipHorizontal?: boolean;
   rotation?: number;
   textBody?: TextBodyOptions;

@@ -6,21 +6,22 @@
 
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { parse as coreParse } from "@office-open/core/descriptor";
-import { fillDesc } from "@office-open/core/drawingml";
+import {
+  createEffectList,
+  effectListDesc,
+  fillDesc,
+  type EffectListOptions,
+} from "@office-open/core/drawingml";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { createPptxEffectList } from "@shared/drawingml/effects";
-import type { EffectsOptions } from "@shared/drawingml/effects";
 import { buildFill } from "@shared/drawingml/fill";
 import type { FillOptions } from "@shared/drawingml/fill";
-
-import { readEffectList } from "./shape";
 
 // ── Types ──
 
 export interface BackgroundDescriptorOptions {
   fill?: FillOptions;
-  effects?: EffectsOptions;
+  effects?: EffectListOptions;
   shadeToTitle?: boolean;
   blackWhiteMode?:
     | "clr"
@@ -61,8 +62,7 @@ function stringifyBackgroundInner(opts: BackgroundDescriptorOptions): string {
 
   let effectsXml = "";
   if (opts.effects) {
-    const el = createPptxEffectList(opts.effects);
-    if (el) effectsXml = el;
+    effectsXml = createEffectList(opts.effects);
   }
 
   return `<p:bg${bgAttrs.join("")}><p:bgPr${bgPrAttrs.join("")}>${fillXml}${effectsXml}</p:bgPr></p:bg>`;
@@ -94,8 +94,8 @@ function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundDescriptor
     // Effects (a:effectLst)
     const effectLst = findChild(bgPr, "a:effectLst");
     if (effectLst) {
-      const effects = readEffectList(effectLst);
-      if (effects) result.effects = effects;
+      const effects = coreParse(effectListDesc, effectLst, ctx);
+      if (effects && Object.keys(effects).length > 0) result.effects = effects;
     }
   }
 

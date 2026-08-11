@@ -1,4 +1,5 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { ReflectionEffectOptions } from "@office-open/core/drawingml";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it, beforeEach } from "vite-plus/test";
 
@@ -332,9 +333,8 @@ describe("shapeDesc round-trip", () => {
   });
 
   it("round-trips shape reflection effect with all fields", () => {
-    // CT_ReflectionEffect has 14 attrs; parse must read all (was dropping
-    // stPos/endPos/fadeDir/sx/sy/kx/ky/algn/rotWithShape) and invert the
-    // unit scaling applied by the shared reflection bridge.
+    // CT_ReflectionEffect has 14 attrs; core reflectionDesc reads all and
+    // stores XSD-native values (percentages *1000, angles *60000).
     const result = roundTrip({
       x: 0,
       y: 0,
@@ -345,34 +345,34 @@ describe("shapeDesc round-trip", () => {
           blurRadius: 12700,
           distance: 50000,
           direction: 5400000,
-          startAlpha: 60,
-          startPosition: 10,
+          startAlpha: 60000,
+          startPosition: 10000,
           endAlpha: 0,
-          endPosition: 90,
-          fadeDirection: 90,
-          scaleX: 50,
-          scaleY: 75,
-          skewX: 45,
-          skewY: 30,
+          endPosition: 90000,
+          fadeDirection: 5400000,
+          scaleX: 50000,
+          scaleY: 75000,
+          skewX: 2700000,
+          skewY: 1800000,
           alignment: "bottomLeft",
-          rotateWithShape: false,
+          rotWithShape: false,
         },
       },
     });
-    const reflection = result.effects!.reflection!;
+    const reflection = result.effects!.reflection as ReflectionEffectOptions;
     expect(reflection.blurRadius).toBe(12700);
     expect(reflection.distance).toBe(50000);
     expect(reflection.direction).toBe(5400000);
-    expect(reflection.startAlpha).toBe(60);
-    expect(reflection.startPosition).toBe(10);
+    expect(reflection.startAlpha).toBe(60000);
+    expect(reflection.startPosition).toBe(10000);
     expect(reflection.endAlpha).toBe(0);
-    expect(reflection.endPosition).toBe(90);
-    expect(reflection.fadeDirection).toBe(90);
-    expect(reflection.scaleX).toBe(50);
-    expect(reflection.scaleY).toBe(75);
-    expect(reflection.skewX).toBe(45);
-    expect(reflection.skewY).toBe(30);
+    expect(reflection.endPosition).toBe(90000);
+    expect(reflection.fadeDirection).toBe(5400000);
+    expect(reflection.scaleX).toBe(50000);
+    expect(reflection.scaleY).toBe(75000);
+    expect(reflection.skewX).toBe(2700000);
+    expect(reflection.skewY).toBe(1800000);
     expect(reflection.alignment).toBe("bottomLeft");
-    expect(reflection.rotateWithShape).toBe(false);
+    expect(reflection.rotWithShape).toBe(false);
   });
 });

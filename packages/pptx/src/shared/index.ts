@@ -60,15 +60,6 @@ export {
 export type { Transform2DOptions } from "./drawingml/transform-2d";
 export { stringifyPresetGeometry } from "@office-open/core/drawingml";
 export type { ShapePropertiesOptions } from "./drawingml/shape-properties";
-export {
-  createPptxEffectList,
-  ReflectionAlignment,
-  type EffectsOptions,
-  type ShadowOptions,
-  type GlowOptions,
-  type ReflectionOptions,
-  type SoftEdgeOptions,
-} from "./drawingml/effects";
 
 // Shape types
 export type { ShapeOptions } from "./shape/shape";

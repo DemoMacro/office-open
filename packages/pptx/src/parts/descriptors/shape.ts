@@ -7,13 +7,7 @@
  * @module
  */
 
-import {
-  convertEmuToPixels,
-  convertToEmu,
-  toUint8Array,
-  xsdRectAlignment,
-  xsdTextAnchor,
-} from "@office-open/core";
+import { convertEmuToPixels, convertToEmu, toUint8Array, xsdTextAnchor } from "@office-open/core";
 import type { ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { parse } from "@office-open/core/descriptor";
@@ -25,6 +19,8 @@ import {
   outlineDesc,
   shapeLockingDesc,
   effectListDesc,
+  scene3DDesc,
+  shape3DDesc,
   shapePropertiesDesc,
   createBodyProperties,
   parseBodyProperties,
@@ -36,20 +32,12 @@ import type {
   CustomGeometryOptions,
   BodyPropertiesOptions,
   OutlineOptions,
+  EffectListOptions,
+  Scene3DOptions,
+  Shape3DOptions,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
-import {
-  toEffectListOptions,
-  toScene3DOptions,
-  toShape3DOptions,
-  type EffectsOptions,
-  type ReflectionOptions,
-  type ShadowOptions,
-  type GlowOptions,
-  type PPTXBevelOptions,
-  type Rotation3DOptions,
-} from "@shared/drawingml/effects";
 import type { ParagraphOptions } from "@shared/shape/paragraph/paragraph";
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
@@ -107,7 +95,9 @@ export interface ShapeDescriptorOptions {
   customGeometry?: CustomGeometryOptions;
   fill?: CoreFillOptions;
   outline?: OutlineOptions;
-  effects?: EffectsOptions;
+  effects?: EffectListOptions;
+  scene3d?: Scene3DOptions;
+  shape3d?: Shape3DOptions;
   flipHorizontal?: boolean;
   rotation?: number;
   textBody?: TextBodyDescriptorOptions;
@@ -145,7 +135,7 @@ export interface PictureDescriptorOptions {
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
-  effects?: EffectsOptions;
+  effects?: EffectListOptions;
   data: Uint8Array;
   type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
 }
@@ -330,7 +320,7 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
       const effectLst = findChild(spPr, "a:effectLst");
       if (effectLst) {
         const effects = parse(effectListDesc, effectLst, ctx);
-        if (effects) result.effects = effects as EffectsOptions;
+        if (effects) result.effects = effects;
       }
     }
 
@@ -456,9 +446,9 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
       geometry,
       fill,
       outline: opts.outline,
-      effects: opts.effects ? toEffectListOptions(opts.effects) : undefined,
-      scene3d: opts.effects ? toScene3DOptions(opts.effects) : undefined,
-      shape3d: opts.effects ? toShape3DOptions(opts.effects) : undefined,
+      effects: opts.effects,
+      scene3d: opts.scene3d,
+      shape3d: opts.shape3d,
     },
     ctx,
   );
@@ -598,7 +588,7 @@ function stringifyPicSpPr(opts: PictureDescriptorOptions, ctx: WriteContext): st
       height: opts.height,
       // Pictures always use a rect preset geometry.
       geometry: "rect",
-      effects: opts.effects ? toEffectListOptions(opts.effects) : undefined,
+      effects: opts.effects,
     },
     ctx,
   );
@@ -704,9 +694,22 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOpt
     result.outline = parse(outlineDesc, ln, ctx);
   }
 
-  // Effects
-  const effects = readEffectsFromSpPr(spPr);
-  if (effects) result.effects = effects as ShapeDescriptorOptions["effects"];
+  // Effects (2D effect list, 3D scene, 3D shape properties)
+  const effectLst = findChild(spPr, "a:effectLst");
+  if (effectLst) {
+    const effects = parse(effectListDesc, effectLst, ctx);
+    if (effects) result.effects = effects;
+  }
+  const scene3d = findChild(spPr, "a:scene3d");
+  if (scene3d) {
+    const scene = parse(scene3DDesc, scene3d, ctx);
+    if (scene) result.scene3d = scene;
+  }
+  const sp3d = findChild(spPr, "a:sp3d");
+  if (sp3d) {
+    const shape3d = parse(shape3DDesc, sp3d, ctx);
+    if (shape3d) result.shape3d = shape3d;
+  }
 
   return result;
 }
@@ -849,195 +852,4 @@ function imageTypeFromPath(path: string): "png" | "jpg" | "gif" | "bmp" | "emf" 
     default:
       return "png";
   }
-}
-
-// ── Effects parsing ──
-
-/** Extract color and alpha from an effect element's child color element. */
-function extractColorFromElement(el: XmlElement): { color?: string; alpha?: number } | undefined {
-  for (const child of el.elements ?? []) {
-    if (child.name === "a:srgbClr") {
-      const color = child.attributes?.["val"] ? String(child.attributes["val"]) : undefined;
-      let alpha: number | undefined;
-      for (const transform of child.elements ?? []) {
-        if (transform.name === "a:alpha") {
-          const val = attrNum(transform, "val");
-          if (val !== undefined) alpha = Math.round(val / 1000);
-        }
-      }
-      return { color, alpha };
-    }
-  }
-  return undefined;
-}
-
-/** Parse 2D effects (a:effectLst) into PPTX EffectsOptions fields. */
-export function readEffectList(effectLst: XmlElement): EffectsOptions | undefined {
-  const opts: EffectsOptions = {};
-  for (const child of effectLst.elements ?? []) {
-    if (!child.name) continue;
-    switch (child.name) {
-      case "a:outerShdw": {
-        const shadow: ShadowOptions = {};
-        const blurRad = attrNum(child, "blurRad");
-        if (blurRad !== undefined) shadow.blur = blurRad;
-        const dist = attrNum(child, "dist");
-        if (dist !== undefined) shadow.distance = dist;
-        const dir = attrNum(child, "dir");
-        if (dir !== undefined) shadow.direction = dir;
-        const color = extractColorFromElement(child);
-        if (color) {
-          if (color.color) shadow.color = color.color;
-          if (color.alpha !== undefined) shadow.alpha = color.alpha;
-        }
-        opts.outerShadow = shadow;
-        break;
-      }
-      case "a:innerShdw": {
-        const shadow: ShadowOptions = {};
-        const blurRad = attrNum(child, "blurRad");
-        if (blurRad !== undefined) shadow.blur = blurRad;
-        const dist = attrNum(child, "dist");
-        if (dist !== undefined) shadow.distance = dist;
-        const dir = attrNum(child, "dir");
-        if (dir !== undefined) shadow.direction = dir;
-        const color = extractColorFromElement(child);
-        if (color) {
-          if (color.color) shadow.color = color.color;
-          if (color.alpha !== undefined) shadow.alpha = color.alpha;
-        }
-        opts.innerShadow = shadow;
-        break;
-      }
-      case "a:glow": {
-        const glow: GlowOptions = {};
-        const rad = attrNum(child, "rad");
-        if (rad !== undefined) glow.radius = rad;
-        const color = extractColorFromElement(child);
-        if (color) {
-          if (color.color) glow.color = color.color;
-          if (color.alpha !== undefined) glow.alpha = color.alpha;
-        }
-        opts.glow = glow;
-        break;
-      }
-      case "a:reflection": {
-        // CT_ReflectionEffect has 14 attrs; the shared effects bridge writes
-        // them all (with unit scaling). Invert each scale on read.
-        const reflection: ReflectionOptions = {};
-        const blurRad = attrNum(child, "blurRad");
-        if (blurRad !== undefined) reflection.blurRadius = blurRad;
-        const dist = attrNum(child, "dist");
-        if (dist !== undefined) reflection.distance = dist;
-        const dir = attrNum(child, "dir");
-        if (dir !== undefined) reflection.direction = dir;
-        const stA = attrNum(child, "stA");
-        if (stA !== undefined) reflection.startAlpha = stA / 1000;
-        const stPos = attrNum(child, "stPos");
-        if (stPos !== undefined) reflection.startPosition = stPos / 1000;
-        const endA = attrNum(child, "endA");
-        if (endA !== undefined) reflection.endAlpha = endA / 1000;
-        const endPos = attrNum(child, "endPos");
-        if (endPos !== undefined) reflection.endPosition = endPos / 1000;
-        const fadeDir = attrNum(child, "fadeDir");
-        if (fadeDir !== undefined) reflection.fadeDirection = fadeDir / 60000;
-        const sx = attrNum(child, "sx");
-        if (sx !== undefined) reflection.scaleX = sx / 1000;
-        const sy = attrNum(child, "sy");
-        if (sy !== undefined) reflection.scaleY = sy / 1000;
-        const kx = attrNum(child, "kx");
-        if (kx !== undefined) reflection.skewX = kx / 60000;
-        const ky = attrNum(child, "ky");
-        if (ky !== undefined) reflection.skewY = ky / 60000;
-        const algn = attr(child, "algn");
-        if (algn)
-          reflection.alignment = xsdRectAlignment.from(algn) as ReflectionOptions["alignment"];
-        const rotWithShape = attr(child, "rotWithShape");
-        if (rotWithShape !== undefined) reflection.rotateWithShape = rotWithShape !== "0";
-        opts.reflection = reflection;
-        break;
-      }
-      case "a:softEdge": {
-        const rad = attrNum(child, "rad");
-        if (rad !== undefined) opts.softEdge = { radius: rad };
-        break;
-      }
-    }
-  }
-  return Object.keys(opts).length > 0 ? opts : undefined;
-}
-
-/** Parse effects from p:spPr (2D effects, 3D scene, 3D shape props). */
-function readEffectsFromSpPr(spPr: XmlElement): EffectsOptions | undefined {
-  const opts: EffectsOptions = {};
-
-  // 2D effects from a:effectLst
-  const effectLst = findChild(spPr, "a:effectLst");
-  if (effectLst) {
-    const effectOpts = readEffectList(effectLst);
-    if (effectOpts) Object.assign(opts, effectOpts);
-  }
-
-  // 3D scene (rotation3D, lighting) from a:scene3d
-  const scene3d = findChild(spPr, "a:scene3d");
-  if (scene3d) {
-    const camera = findChild(scene3d, "a:camera");
-    if (camera) {
-      const rot = findChild(camera, "a:rot");
-      if (rot) {
-        const rotation3d: Rotation3DOptions = {};
-        const lat = attrNum(rot, "lat");
-        const lon = attrNum(rot, "lon");
-        const rev = attrNum(rot, "rev");
-        if (lat !== undefined) rotation3d.x = Math.round(lat / 60000);
-        if (lon !== undefined) rotation3d.y = Math.round(lon / 60000);
-        if (rev !== undefined) rotation3d.z = Math.round(rev / 60000);
-        const fov = attrNum(camera, "fov");
-        if (fov !== undefined) rotation3d.perspective = fov;
-        if (Object.keys(rotation3d).length > 0) opts.rotation3D = rotation3d;
-      }
-    }
-    const lightRig = findChild(scene3d, "a:lightRig");
-    if (lightRig) {
-      const rig = attr(lightRig, "rig");
-      if (rig) opts.lighting = rig as EffectsOptions["lighting"];
-    }
-  }
-
-  // 3D shape properties (bevel, extrusion, material) from a:sp3d
-  const sp3d = findChild(spPr, "a:sp3d");
-  if (sp3d) {
-    const bevelT = findChild(sp3d, "a:bevelT");
-    if (bevelT) {
-      const bevel: PPTXBevelOptions = {};
-      const w = attrNum(bevelT, "w");
-      const h = attrNum(bevelT, "h");
-      if (w !== undefined) bevel.width = w;
-      if (h !== undefined) bevel.height = h;
-      const prst = attr(bevelT, "prst");
-      if (prst) bevel.preset = prst;
-      if (Object.keys(bevel).length > 0) opts.bevelTop = bevel;
-    }
-    const bevelB = findChild(sp3d, "a:bevelB");
-    if (bevelB) {
-      const bevel: PPTXBevelOptions = {};
-      const w = attrNum(bevelB, "w");
-      const h = attrNum(bevelB, "h");
-      if (w !== undefined) bevel.width = w;
-      if (h !== undefined) bevel.height = h;
-      const prst = attr(bevelB, "prst");
-      if (prst) bevel.preset = prst;
-      if (Object.keys(bevel).length > 0) opts.bevelBottom = bevel;
-    }
-    const z = attrNum(sp3d, "z");
-    if (z !== undefined) opts.depth = z;
-    const contourW = attrNum(sp3d, "contourW");
-    if (contourW !== undefined) opts.contourWidth = contourW;
-    const extrusionH = attrNum(sp3d, "extrusionH");
-    if (extrusionH !== undefined) opts.extrusionH = extrusionH;
-    const prstMaterial = attr(sp3d, "prstMaterial");
-    if (prstMaterial) opts.material = prstMaterial as EffectsOptions["material"];
-  }
-
-  return Object.keys(opts).length > 0 ? opts : undefined;
 }

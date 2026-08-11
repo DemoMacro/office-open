@@ -2,9 +2,9 @@ import type {
   PresetGeometryOptions,
   CustomGeometryOptions,
   OutlineOptions,
+  EffectListOptions,
 } from "@office-open/core/drawingml";
 
-import type { EffectsOptions } from "./effects";
 /**
  * Shape properties options type for PPTX.
  *
@@ -29,6 +29,6 @@ export interface ShapePropertiesOptions {
   customGeometry?: CustomGeometryOptions;
   fill?: FillOptions;
   outline?: OutlineOptions;
-  effects?: EffectsOptions;
+  effects?: EffectListOptions;
   connectionSites?: ConnectionSiteOptions[];
 }

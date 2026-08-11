@@ -71,11 +71,10 @@ const options: PresentationOptions = {
         fill: "1B2A4A",
         effects: {
           outerShadow: {
-            blur: 50800,
+            blurRadius: 50800,
             distance: 38100,
             direction: 2700000,
-            color: "000000",
-            alpha: 50,
+            color: { value: "000000", transforms: { alpha: 50000 } },
           },
         },
       },
