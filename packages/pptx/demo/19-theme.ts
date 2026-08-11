@@ -10,7 +10,7 @@ const options: PresentationOptions = {
     {
       theme: {
         name: "Brand Theme",
-        colors: {
+        colorScheme: {
           dark1: "1A1A2E",
           light1: "FFFFFF",
           dark2: "16213E",
@@ -22,9 +22,9 @@ const options: PresentationOptions = {
           accent5: "8D99AE",
           accent6: "EDF2F4",
         },
-        fonts: {
-          majorFont: "Segoe UI",
-          minorFont: "Segoe UI",
+        fontScheme: {
+          majorFont: { latin: { typeface: "Segoe UI" } },
+          minorFont: { latin: { typeface: "Segoe UI" } },
         },
       },
     },

@@ -6,7 +6,7 @@
 import type { ColorSchemeOptions } from "./theme-options";
 
 /** Office 2016+ default theme colors (hex without #). */
-export const DEFAULT_COLORS: Required<ColorSchemeOptions> = {
+export const DEFAULT_COLORS: Required<Omit<ColorSchemeOptions, "name">> = {
   dark1: "000000",
   light1: "FFFFFF",
   dark2: "44546A",

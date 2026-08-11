@@ -1,36 +1,45 @@
 /**
  * Theme XML generation — pure function with caching.
  *
- * Replaces the DefaultTheme class with a functionally equivalent
- * pure function. Caches by serialized options key.
+ * Fresh output (no options) returns a pre-computed default. Simple customizations
+ * (colorScheme / fontScheme only) are cached by serialized key. Complex
+ * customizations (formatScheme / objectDefaults / extraColorSchemes) bypass the
+ * cache — they are rare (round-trip produces a different theme each time) and
+ * require a WriteContext for nested descriptors.
  *
  * @module
  */
+import type { WriteContext } from "../descriptor";
 import { buildThemeXml } from "./build-theme-xml";
 import type { ThemeOptions } from "./theme-options";
 
 // Pre-computed default theme XML — zero allocation for the common case.
 const DEFAULT_XML = buildThemeXml();
 
-// Cache for customized themes, keyed by serialized options.
+// Cache for simple customizations, keyed by serialized options.
 const customCache = new Map<string, string>();
 
-function themeKey(o: ThemeOptions): string {
-  const c = o.colors;
-  const f = o.fonts;
-  return `n${o.name ?? ""}c${c?.dark1 ?? ""}${c?.light1 ?? ""}${c?.dark2 ?? ""}${c?.light2 ?? ""}${c?.accent1 ?? ""}${c?.accent2 ?? ""}${c?.accent3 ?? ""}${c?.accent4 ?? ""}${c?.accent5 ?? ""}${c?.accent6 ?? ""}${c?.hyperlink ?? ""}${c?.followedHyperlink ?? ""}f${f?.majorFont ?? ""}${f?.minorFont ?? ""}${f?.majorFontAsian ?? ""}${f?.minorFontAsian ?? ""}`;
+function isSimpleCustomization(opts: ThemeOptions): boolean {
+  return !opts.formatScheme && !opts.objectDefaults && !opts.extraColorSchemes;
+}
+
+function simpleKey(o: ThemeOptions): string {
+  return `${o.name ?? ""}|${JSON.stringify(o.colorScheme)}|${JSON.stringify(o.fontScheme)}`;
 }
 
 /**
  * Generate theme XML string from options.
- * Returns cached default when no options provided.
+ * Returns the cached default when no options are provided.
  */
-export function createThemeXml(options?: ThemeOptions): string {
+export function createThemeXml(options?: ThemeOptions, ctx?: WriteContext): string {
   if (!options) return DEFAULT_XML;
-  const key = themeKey(options);
-  const cached = customCache.get(key);
-  if (cached) return cached;
-  const built = buildThemeXml(options);
-  customCache.set(key, built);
-  return built;
+  if (isSimpleCustomization(options)) {
+    const key = simpleKey(options);
+    const cached = customCache.get(key);
+    if (cached) return cached;
+    const built = buildThemeXml(options);
+    customCache.set(key, built);
+    return built;
+  }
+  return buildThemeXml(options, ctx);
 }

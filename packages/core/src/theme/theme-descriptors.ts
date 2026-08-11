@@ -1,5 +1,9 @@
 /**
- * Theme descriptors — bidirectional mapping between ThemeOptions and theme XML.
+ * Theme descriptor — bidirectional mapping between ThemeOptions and theme XML.
+ *
+ * stringify delegates to buildThemeXml (structured driver). parse reads the full
+ * CT_BaseStyles surface: colorScheme, fontScheme, formatScheme, objectDefaults,
+ * and extraClrSchemeLst — so every part round-trips.
  *
  * @module
  */
@@ -9,89 +13,42 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
 import { buildThemeXml } from "./build-theme-xml";
-import type { ColorSchemeOptions, FontSchemeOptions, ThemeOptions } from "./theme-options";
+import { parseColorScheme } from "./color-scheme";
+import { parseExtraColorSchemes } from "./extra-color-scheme";
+import { parseFontScheme } from "./font-scheme";
+import { parseObjectDefaults } from "./object-defaults";
+import { parseFormatScheme } from "./style-matrix";
+import type { ThemeOptions } from "./theme-options";
 
-/** Mutable version for building read results. */
-type Mutable<T> = { -readonly [P in keyof T]?: T[P] };
-
-/** Color scheme XML tag → ThemeOptions.colors key mapping. */
-const COLOR_TAGS: ReadonlyArray<{
-  tag: string;
-  key: keyof ColorSchemeOptions & string;
-}> = [
-  { tag: "a:dk1", key: "dark1" },
-  { tag: "a:lt1", key: "light1" },
-  { tag: "a:dk2", key: "dark2" },
-  { tag: "a:lt2", key: "light2" },
-  { tag: "a:accent1", key: "accent1" },
-  { tag: "a:accent2", key: "accent2" },
-  { tag: "a:accent3", key: "accent3" },
-  { tag: "a:accent4", key: "accent4" },
-  { tag: "a:accent5", key: "accent5" },
-  { tag: "a:accent6", key: "accent6" },
-  { tag: "a:hlink", key: "hyperlink" },
-  { tag: "a:folHlink", key: "followedHyperlink" },
-];
-
-/** Read the hex color value from a color element (a:dk1/a:lt1 may be sysClr or srgbClr). */
-function readColorValue(el: XmlElement | undefined): string | undefined {
-  if (!el) return undefined;
-  const srgb = findChild(el, "a:srgbClr");
-  if (srgb) return String(srgb.attributes?.["val"] ?? "");
-  const sysClr = findChild(el, "a:sysClr");
-  if (sysClr) return String(sysClr.attributes?.["lastClr"] ?? "");
-  return undefined;
-}
-
-export const themeDesc: CustomDescriptor<ThemeOptions> = {
+export const themeDesc: CustomDescriptor<ThemeOptions, WriteContext, ThemeOptions> = {
   kind: "custom",
 
-  stringify(opts: ThemeOptions, _ctx: WriteContext): string | undefined {
-    return buildThemeXml(opts);
+  stringify(opts: ThemeOptions, ctx: WriteContext): string | undefined {
+    return buildThemeXml(opts, ctx);
   },
 
-  parse(el: XmlElement, _ctx: ReadContext) {
-    const result: Mutable<ThemeOptions> = {};
+  parse(el: XmlElement, ctx: ReadContext): ThemeOptions {
+    const result: Partial<ThemeOptions> = {};
 
-    // Theme name
     const name = el.attributes?.["name"];
     if (name) result.name = String(name);
 
-    // Navigate to themeElements > clrScheme
     const themeElements = findChild(el, "a:themeElements");
-    const clrScheme = themeElements ? findChild(themeElements, "a:clrScheme") : undefined;
-
-    if (clrScheme) {
-      const colors: Mutable<ColorSchemeOptions> = {};
-      for (const { tag, key } of COLOR_TAGS) {
-        const child = findChild(clrScheme, tag);
-        const value = readColorValue(child);
-        if (value) colors[key] = value;
-      }
-      if (Object.keys(colors).length > 0) {
-        result.colors = colors;
-      }
+    if (themeElements) {
+      const colorScheme = parseColorScheme(findChild(themeElements, "a:clrScheme"));
+      if (colorScheme) result.colorScheme = colorScheme;
+      const fontScheme = parseFontScheme(findChild(themeElements, "a:fontScheme"));
+      if (fontScheme) result.fontScheme = fontScheme;
+      const formatScheme = parseFormatScheme(findChild(themeElements, "a:fmtScheme"), ctx);
+      if (formatScheme) result.formatScheme = formatScheme;
     }
 
-    // Navigate to themeElements > fontScheme
-    const fontScheme = themeElements ? findChild(themeElements, "a:fontScheme") : undefined;
-    if (fontScheme) {
-      const majorFontEl = findChild(fontScheme, "a:majorFont");
-      const minorFontEl = findChild(fontScheme, "a:minorFont");
-      const majorLatin = majorFontEl ? findChild(majorFontEl, "a:latin") : undefined;
-      const minorLatin = minorFontEl ? findChild(minorFontEl, "a:latin") : undefined;
+    const objectDefaults = parseObjectDefaults(findChild(el, "a:objectDefaults"), ctx);
+    if (objectDefaults) result.objectDefaults = objectDefaults;
 
-      const majorTypeface = majorLatin?.attributes?.["typeface"];
-      const minorTypeface = minorLatin?.attributes?.["typeface"];
+    const extraColorSchemes = parseExtraColorSchemes(findChild(el, "a:extraClrSchemeLst"));
+    if (extraColorSchemes) result.extraColorSchemes = extraColorSchemes;
 
-      if (majorTypeface || minorTypeface) {
-        const fonts: Mutable<FontSchemeOptions> = {};
-        if (majorTypeface) fonts.majorFont = String(majorTypeface);
-        if (minorTypeface) fonts.minorFont = String(minorTypeface);
-        result.fonts = fonts;
-      }
-    }
-
-    return result;
+    return result as ThemeOptions;
   },
 };

@@ -134,7 +134,6 @@ export {
   type TableCellStyleOptions,
   type TableCellBorderOptions,
   type ThemeableLineStyleOptions,
-  type StyleMatrixReferenceOptions,
   type TableStyleRegion,
   type OnOffStyleType,
 } from "./table-style";

@@ -1,10 +1,59 @@
 /**
- * Theme options for OOXML documents.
+ * Theme options for OOXML documents — full CT_BaseStyles structure.
+ *
+ * Mirrors a:theme (CT_BaseStyles + objectDefaults + extraClrSchemeLst) so every
+ * part of a theme round-trips: color scheme, font scheme, format (style) matrix,
+ * object defaults, and extra color schemes.
  *
  * @module
  */
 
-/** Color scheme — 12 theme colors (hex without #). */
+import type {
+  BodyPropertiesOptions,
+  EffectListOptions,
+  FillOptions,
+  OutlineOptions,
+  Scene3DOptions,
+  Shape3DOptions,
+  ShapePropertiesOptions,
+  SolidFillOptions,
+  TextListStyleOptions,
+} from "../drawingml";
+
+/** Single font slot — a:latin / a:ea / a:cs / a:sym (CT_TextFont). */
+export interface TextFontOptions {
+  typeface: string;
+  panose?: string;
+  pitchFamily?: number;
+  charset?: number;
+}
+
+/** Supplemental font for a script range (CT_SupplementalFont). */
+export interface SupplementalFontOptions {
+  script: string;
+  typeface: string;
+}
+
+/** Major or minor font collection (CT_FontCollection). */
+export interface FontCollectionOptions {
+  latin?: TextFontOptions;
+  /** East-asian font (a:ea). */
+  eastAsian?: TextFontOptions;
+  /** Complex-script font (a:cs). */
+  complexScript?: TextFontOptions;
+  /** Symbol font (a:sym). */
+  symbol?: TextFontOptions;
+  supplementalFonts?: SupplementalFontOptions[];
+}
+
+/** Font scheme (CT_FontScheme). */
+export interface FontSchemeOptions {
+  majorFont?: FontCollectionOptions;
+  minorFont?: FontCollectionOptions;
+  name?: string;
+}
+
+/** Color scheme — 12 theme colors as hex without # (CT_ColorScheme). */
 export interface ColorSchemeOptions {
   dark1?: string;
   light1?: string;
@@ -18,19 +67,99 @@ export interface ColorSchemeOptions {
   accent6?: string;
   hyperlink?: string;
   followedHyperlink?: string;
+  /** clrScheme/@name (defaults to the theme name). */
+  name?: string;
 }
 
-/** Font scheme — 4 font slots (latin + east-asian for major/minor). */
-export interface FontSchemeOptions {
-  majorFont?: string;
-  minorFont?: string;
-  majorFontAsian?: string;
-  minorFontAsian?: string;
+/** Reference into the theme style matrix — a:lnRef / a:fillRef / a:effectRef. */
+export interface StyleMatrixReferenceOptions {
+  /** Index into the style matrix list (idx attribute). */
+  index: number;
+  /** Color component (EG_ColorChoice). */
+  color?: SolidFillOptions;
 }
 
-/** Theme customization options. */
+/** Font reference — a:fontRef (CT_FontReference). */
+export interface FontReferenceOptions {
+  /** Font collection (idx attribute: ST_FontCollectionIndex). */
+  collection: "major" | "minor" | "none";
+  color?: SolidFillOptions;
+}
+
+/** Shape style — a:style (CT_ShapeStyle). */
+export interface ShapeStyleOptions {
+  lineReference: StyleMatrixReferenceOptions;
+  fillReference: StyleMatrixReferenceOptions;
+  effectReference: StyleMatrixReferenceOptions;
+  fontReference: FontReferenceOptions;
+}
+
+/** Effect style entry — a:effectStyle (CT_EffectStyleItem). */
+export interface EffectStyleOptions {
+  effects?: EffectListOptions;
+  scene3d?: Scene3DOptions;
+  shape3d?: Shape3DOptions;
+}
+
+/** Format scheme / style matrix — a:fmtScheme (CT_StyleMatrix). */
+export interface FormatSchemeOptions {
+  /** Fill style list (fillStyleLst, ≥3 entries). */
+  fillStyles: FillOptions[];
+  /** Line style list (lnStyleLst, ≥3 entries). */
+  lineStyles: OutlineOptions[];
+  /** Effect style list (effectStyleLst, ≥3 entries). */
+  effectStyles: EffectStyleOptions[];
+  /** Background fill style list (bgFillStyleLst, ≥3 entries). */
+  backgroundFillStyles: FillOptions[];
+  name?: string;
+}
+
+/** Default shape/line/text definition (CT_DefaultShapeDefinition: spDef/lnDef/txDef). */
+export interface DefaultShapeDefinitionOptions {
+  shapeProperties?: ShapePropertiesOptions;
+  bodyProperties?: BodyPropertiesOptions;
+  listStyle?: TextListStyleOptions;
+  shapeStyle?: ShapeStyleOptions;
+}
+
+/** Object defaults — a:objectDefaults (CT_ObjectStyleDefaults). */
+export interface ObjectDefaultsOptions {
+  /** Shape default (spDef). */
+  shapeDefault?: DefaultShapeDefinitionOptions;
+  /** Line/connector default (lnDef). */
+  lineDefault?: DefaultShapeDefinitionOptions;
+  /** Text default (txDef). */
+  textDefault?: DefaultShapeDefinitionOptions;
+}
+
+/** Color mapping — 12 scheme-slot remappings (CT_ColorMapping: clrMap). */
+export interface ColorMappingOptions {
+  background1: string;
+  text1: string;
+  background2: string;
+  text2: string;
+  accent1: string;
+  accent2: string;
+  accent3: string;
+  accent4: string;
+  accent5: string;
+  accent6: string;
+  hyperlink: string;
+  followedHyperlink: string;
+}
+
+/** Extra color scheme (CT_ExtraColorScheme). */
+export interface ExtraColorSchemeOptions {
+  colorScheme: ColorSchemeOptions;
+  colorMap?: ColorMappingOptions;
+}
+
+/** Theme customization options (a:theme). */
 export interface ThemeOptions {
   name?: string;
-  colors?: ColorSchemeOptions;
-  fonts?: FontSchemeOptions;
+  colorScheme?: ColorSchemeOptions;
+  fontScheme?: FontSchemeOptions;
+  formatScheme?: FormatSchemeOptions;
+  objectDefaults?: ObjectDefaultsOptions;
+  extraColorSchemes?: ExtraColorSchemeOptions[];
 }

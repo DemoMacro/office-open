@@ -2,6 +2,7 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
 import { stringify, parse, type ReadContext, type WriteContext } from "../descriptor";
+import { buildThemeXml } from "./build-theme-xml";
 import { themeDesc } from "./theme-descriptors";
 import type { ThemeOptions } from "./theme-options";
 
@@ -16,14 +17,13 @@ function roundTrip(opts: ThemeOptions): ThemeOptions {
 
 describe("themeDesc", () => {
   it("round-trips theme name", () => {
-    const opts: ThemeOptions = { name: "Office Theme" };
-    const result = roundTrip(opts);
+    const result = roundTrip({ name: "Office Theme" });
     expect(result.name).toBe("Office Theme");
   });
 
   it("round-trips color scheme", () => {
     const opts: ThemeOptions = {
-      colors: {
+      colorScheme: {
         dark1: "000000",
         light1: "FFFFFF",
         dark2: "1F2937",
@@ -39,32 +39,64 @@ describe("themeDesc", () => {
       },
     };
     const result = roundTrip(opts);
-    expect(result.colors?.dark1).toBe("000000");
-    expect(result.colors?.accent1).toBe("2563EB");
-    expect(result.colors?.hyperlink).toBe("2563EB");
+    expect(result.colorScheme?.dark1).toBe("000000");
+    expect(result.colorScheme?.accent1).toBe("2563EB");
+    expect(result.colorScheme?.hyperlink).toBe("2563EB");
   });
 
-  it("round-trips font scheme", () => {
+  it("round-trips font scheme with font collections", () => {
     const opts: ThemeOptions = {
-      fonts: {
-        majorFont: "Calibri Light",
-        minorFont: "Calibri",
+      fontScheme: {
+        majorFont: { latin: { typeface: "Calibri Light" } },
+        minorFont: { latin: { typeface: "Calibri" } },
       },
     };
     const result = roundTrip(opts);
-    expect(result.fonts?.majorFont).toBe("Calibri Light");
-    expect(result.fonts?.minorFont).toBe("Calibri");
+    expect(result.fontScheme?.majorFont?.latin?.typeface).toBe("Calibri Light");
+    expect(result.fontScheme?.minorFont?.latin?.typeface).toBe("Calibri");
+  });
+
+  it("round-trips east-asian and complex-script fonts", () => {
+    const opts: ThemeOptions = {
+      fontScheme: {
+        majorFont: {
+          latin: { typeface: "Calibri Light" },
+          eastAsian: { typeface: "微软雅黑" },
+          complexScript: { typeface: "Times New Roman" },
+        },
+      },
+    };
+    const result = roundTrip(opts);
+    expect(result.fontScheme?.majorFont?.eastAsian?.typeface).toBe("微软雅黑");
+    expect(result.fontScheme?.majorFont?.complexScript?.typeface).toBe("Times New Roman");
+  });
+
+  it("parses default theme with full format scheme", () => {
+    const freshXml = buildThemeXml();
+    const doc = parseXml(freshXml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("no root element");
+    const result = parse(themeDesc, el, {} as ReadContext);
+    expect(result.colorScheme?.accent1).toBe("4472C4");
+    expect(result.fontScheme?.majorFont?.latin?.typeface).toBe("Calibri Light");
+    expect(result.formatScheme?.fillStyles).toHaveLength(3);
+    expect(result.formatScheme?.lineStyles).toHaveLength(3);
+    expect(result.formatScheme?.effectStyles).toHaveLength(3);
+    expect(result.formatScheme?.backgroundFillStyles).toHaveLength(3);
   });
 
   it("round-trips full theme", () => {
     const opts: ThemeOptions = {
       name: "Custom Theme",
-      colors: { accent1: "FF0000", dark1: "000000" },
-      fonts: { majorFont: "Arial", minorFont: "Verdana" },
+      colorScheme: { accent1: "FF0000", dark1: "000000" },
+      fontScheme: {
+        majorFont: { latin: { typeface: "Arial" } },
+        minorFont: { latin: { typeface: "Verdana" } },
+      },
     };
     const result = roundTrip(opts);
     expect(result.name).toBe("Custom Theme");
-    expect(result.colors?.accent1).toBe("FF0000");
-    expect(result.fonts?.majorFont).toBe("Arial");
+    expect(result.colorScheme?.accent1).toBe("FF0000");
+    expect(result.fontScheme?.majorFont?.latin?.typeface).toBe("Arial");
   });
 });
