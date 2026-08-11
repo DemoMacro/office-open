@@ -13,6 +13,7 @@ export default defineConfig({
       "src/generate.ts",
       "src/schemas/index.ts",
       "src/ai/index.ts",
+      "src/convert/index.ts",
       "src/cli.ts",
     ],
     plugins: [nodePolyfills()],

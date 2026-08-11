@@ -21,6 +21,7 @@ export type {
 export { worksheetDesc, stringifyWorksheet, buildWorksheetXml } from "./worksheet";
 export type {
   WorksheetOptions,
+  WorksheetImageOptions,
   WorksheetContext,
   RowOptions,
   CellOptions,

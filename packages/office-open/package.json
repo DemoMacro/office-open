@@ -73,6 +73,10 @@
     "./schemas": {
       "types": "./dist/schemas/index.d.mts",
       "import": "./dist/schemas/index.mjs"
+    },
+    "./convert": {
+      "types": "./dist/convert/index.d.mts",
+      "import": "./dist/convert/index.mjs"
     }
   },
   "scripts": {
