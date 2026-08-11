@@ -11,7 +11,7 @@ import { findChild } from "@office-open/xml";
 import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { convertToEmu } from "../../util/converters";
-import { xsdCompoundLine, xsdLineCap, xsdPenAlignment } from "../../util/mappings";
+import { xsdCompoundLine, xsdLineCap, xsdLineEndSize, xsdPenAlignment } from "../../util/mappings";
 import { solidFillDesc } from "../color/color-descriptors";
 import { gradientFillDesc } from "../fill/fill-descriptors";
 import type { DashStop } from "./custom-dash";
@@ -23,8 +23,8 @@ import type { OutlineOptions } from "./outline";
 function stringifyLineEnd(tag: string, opts: LineEndOptions): string {
   const parts: string[] = [];
   if (opts.type) parts.push(`type="${escapeXml(opts.type)}"`);
-  if (opts.width) parts.push(`w="${escapeXml(opts.width)}"`);
-  if (opts.length) parts.push(`len="${escapeXml(opts.length)}"`);
+  if (opts.width) parts.push(`w="${escapeXml(xsdLineEndSize.to(opts.width))}"`);
+  if (opts.length) parts.push(`len="${escapeXml(xsdLineEndSize.to(opts.length))}"`);
   const attrStr = parts.length ? " " + parts.join(" ") : "";
   return `<${tag}${attrStr}/>`;
 }
@@ -33,9 +33,10 @@ function readLineEnd(el: XmlElement): LineEndOptions {
   const result: Partial<LineEndOptions> = {};
   if (el.attributes?.["type"])
     result.type = String(el.attributes["type"]) as LineEndOptions["type"];
-  if (el.attributes?.["w"]) result.width = String(el.attributes["w"]) as LineEndOptions["width"];
+  if (el.attributes?.["w"])
+    result.width = xsdLineEndSize.from(String(el.attributes["w"])) as LineEndOptions["width"];
   if (el.attributes?.["len"])
-    result.length = String(el.attributes["len"]) as LineEndOptions["length"];
+    result.length = xsdLineEndSize.from(String(el.attributes["len"])) as LineEndOptions["length"];
   return result as LineEndOptions;
 }
 
