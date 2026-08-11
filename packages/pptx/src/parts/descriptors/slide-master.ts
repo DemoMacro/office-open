@@ -15,17 +15,16 @@
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild } from "@office-open/xml";
-import type { Element as XmlElement } from "@office-open/xml";
 import {
   buildBackgroundXml,
   buildPlaceholderShapes,
   type MasterPlaceholderOptions,
-  type MasterPlaceholderPosition,
   type SlideMasterOptions,
 } from "@parts/slide-master";
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 import type { MasterChild } from "@shared/file";
+import { extractPlaceholderDefinition } from "@shared/placeholder";
 
 import type { PptxWriteContext } from "../../context";
 import {
@@ -94,6 +93,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     const { xml: placeholderXml, nextId } = buildPlaceholderShapes(
       opts.placeholders,
       ctx.slideWidth,
+      ctx,
     );
     if (placeholderXml) parts.push(placeholderXml);
     // Children carry explicit cNvPr ids (starting after the placeholders) so they
@@ -189,9 +189,9 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
         for (const child of spTree.elements ?? []) {
           if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
           if (child.name === "p:sp") {
-            const ph = extractMasterPlaceholder(child);
+            const ph = extractPlaceholderDefinition(child, ctx, PH_TYPE_TO_KEY);
             if (ph) {
-              placeholders[ph.key] = ph.pos;
+              placeholders[ph.key as keyof MasterPlaceholderOptions] = ph.def;
               continue;
             }
           }
@@ -277,37 +277,3 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     return result as SlideMasterDescriptorOptions;
   },
 };
-
-/**
- * Read a placeholder's logical key and position (or `false` when hidden) from a
- * p:sp element. Returns undefined for non-placeholder shapes or unpositioned ones.
- */
-function extractMasterPlaceholder(
-  spEl: XmlElement,
-): { key: keyof MasterPlaceholderOptions; pos: MasterPlaceholderPosition | false } | undefined {
-  const nvSpPr = findChild(spEl, "p:nvSpPr");
-  const nvPr = nvSpPr ? findChild(nvSpPr, "p:nvPr") : undefined;
-  const ph = nvPr ? findChild(nvPr, "p:ph") : undefined;
-  if (!ph) return undefined;
-
-  const phType = attr(ph, "type");
-  const key = phType ? PH_TYPE_TO_KEY[phType] : undefined;
-  if (!key) return undefined;
-
-  if (attr(ph, "sz") === "0") return { key, pos: false };
-
-  const spPr = findChild(spEl, "p:spPr");
-  const xfrm = spPr ? findChild(spPr, "a:xfrm") : undefined;
-  if (!xfrm) return undefined;
-  const off = findChild(xfrm, "a:off");
-  const ext = findChild(xfrm, "a:ext");
-  if (!off || !ext) return undefined;
-  const x = attrNum(off, "x");
-  const y = attrNum(off, "y");
-  const width = attrNum(ext, "cx");
-  const height = attrNum(ext, "cy");
-  if (x === undefined || y === undefined || width === undefined || height === undefined) {
-    return undefined;
-  }
-  return { key, pos: { x, y, width, height } };
-}

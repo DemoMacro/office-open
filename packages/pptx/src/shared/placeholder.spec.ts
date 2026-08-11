@@ -73,3 +73,52 @@ describe("resolvePlaceholder", () => {
     expect(resolvePlaceholder("title", undefined, master)).toEqual({});
   });
 });
+
+describe("resolvePlaceholder facets", () => {
+  it("inherits geometry facet from layout", () => {
+    const layout: LayoutDefinition = {
+      placeholders: { title: { x: 1, y: 2, width: 3, height: 4, geometry: "ellipse" } },
+    };
+    expect(resolvePlaceholder("title", layout, undefined).facets?.geometry).toBe("ellipse");
+  });
+
+  it("inherits style facet from master", () => {
+    const master: MasterDefinition = {
+      placeholders: {
+        title: { x: 1, y: 2, width: 3, height: 4, style: { fillReference: { index: 2 } } },
+      },
+    };
+    expect(resolvePlaceholder("title", undefined, master).facets?.style?.fillReference?.index).toBe(
+      2,
+    );
+  });
+
+  it("layout facets override master per-facet; master fills gaps layout omits", () => {
+    const layout: LayoutDefinition = {
+      placeholders: { title: { x: 1, y: 2, width: 3, height: 4, geometry: "ellipse" } },
+    };
+    const master: MasterDefinition = {
+      placeholders: {
+        title: {
+          x: 10,
+          y: 20,
+          width: 30,
+          height: 40,
+          geometry: "rect",
+          style: { fillReference: { index: 1 } },
+        },
+      },
+    };
+    const result = resolvePlaceholder("title", layout, master);
+    expect(result.position?.x).toBe(1);
+    expect(result.facets?.geometry).toBe("ellipse");
+    expect(result.facets?.style?.fillReference?.index).toBe(1);
+  });
+
+  it("returns no facets when neither layer defines them (position only)", () => {
+    const layout: LayoutDefinition = {
+      placeholders: { title: { x: 1, y: 2, width: 3, height: 4 } },
+    };
+    expect(resolvePlaceholder("title", layout, undefined).facets).toBeUndefined();
+  });
+});

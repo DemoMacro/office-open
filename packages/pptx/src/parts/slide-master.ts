@@ -1,5 +1,8 @@
 import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
+import type { WriteContext } from "@office-open/core/descriptor";
+import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawingml";
+import type { ShapePropertiesOptions } from "@office-open/core/drawingml";
 import type { BackgroundOptions } from "@parts/background";
 import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
 import type {
@@ -10,6 +13,8 @@ import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
 import { createPptxEffectList } from "@shared/drawingml/effects";
 import { buildFill } from "@shared/drawingml/fill";
 import type { MasterChild } from "@shared/file";
+import type { PlaceholderDefinition } from "@shared/placeholder";
+import type { ShapeStyleOptions } from "@shared/shape/shape";
 
 import type { ColorMapOptions, HeaderFooterOptions } from "./handout-master";
 
@@ -21,11 +26,11 @@ export interface MasterPlaceholderPosition {
 }
 
 export interface MasterPlaceholderOptions {
-  title?: boolean | MasterPlaceholderPosition;
-  body?: boolean | MasterPlaceholderPosition;
-  date?: boolean | MasterPlaceholderPosition;
-  footer?: boolean | MasterPlaceholderPosition;
-  slideNumber?: boolean | MasterPlaceholderPosition;
+  title?: boolean | PlaceholderDefinition;
+  body?: boolean | PlaceholderDefinition;
+  date?: boolean | PlaceholderDefinition;
+  footer?: boolean | PlaceholderDefinition;
+  slideNumber?: boolean | PlaceholderDefinition;
 }
 
 export interface SlideMasterOptions {
@@ -54,11 +59,14 @@ export interface SlideMasterOptions {
   controls?: ControlDescriptorOptions[];
 }
 
-// ── Placeholder emit helpers (fresh-generate path) ──
+// ── Placeholder emit helpers (fresh-generate + round-trip path) ──
 //
 // The master carries up to five standard placeholders (title/body/date/footer/
 // slideNumber). Fresh generation scales their reference positions to the slide
-// width; round-trip supplies explicit EMU positions parsed from spTree.
+// width; round-trip supplies explicit EMU positions parsed from spTree. Both
+// paths now flow through shapePropertiesDesc/textBodyDesc so custom facets
+// (geometry/fill/outline/effects/textBody/style) round-trip losslessly while
+// the default layout stays byte-equivalent with MS Office's master output.
 
 // Reference positions (16:9 master, slideWidth = 12192000 EMU)
 export const SW_REF = 12192000;
@@ -70,7 +78,10 @@ const REF_DATE = { x: 838200, y: 6356350, cx: 2743200, cy: 365125 };
 const REF_FOOTER = { x: 4038600, y: 6356350, cx: 4114800, cy: 365125 };
 const REF_SLDNUM = { x: 8610600, y: 6356350, cx: 2743200, cy: 365125 };
 
-/** Resolve a placeholder option into a concrete EMU rect, or null when hidden. */
+/**
+ * Resolve a placeholder option into a concrete EMU position, or null when
+ * hidden. Legacy helper kept for callers that only need the rect.
+ */
 export function resolvePos(
   opt: boolean | MasterPlaceholderPosition | undefined,
   ref: { x: number; y: number; cx: number; cy: number },
@@ -88,18 +99,103 @@ export function resolvePos(
   };
 }
 
-/** Emit one placeholder <p:sp> with the given geometry and txBody content. */
-export function phSp(
+/**
+ * Resolve a placeholder option into a full definition (EMU position + carried
+ * facets), or null when hidden. Fresh input (undefined/true) takes the
+ * reference position; an explicit definition preserves its facets for emit.
+ */
+function resolveDef(
+  opt: boolean | PlaceholderDefinition | undefined,
+  ref: { x: number; y: number; cx: number; cy: number },
+  slideWidth: number,
+): PlaceholderDefinition | null {
+  if (opt === false) return null;
+  const def: Partial<PlaceholderDefinition> = {};
+  if (opt === undefined || opt === true) {
+    def.x = sx(ref.x, slideWidth);
+    def.y = ref.y;
+    def.width = sx(ref.cx, slideWidth);
+    def.height = ref.cy;
+  } else {
+    def.x = convertToEmu(opt.x);
+    def.y = convertToEmu(opt.y);
+    def.width = convertToEmu(opt.width);
+    def.height = convertToEmu(opt.height);
+    copyFacets(opt, def);
+  }
+  return def as PlaceholderDefinition;
+}
+
+function copyFacets(src: PlaceholderDefinition, dst: Partial<PlaceholderDefinition>): void {
+  if (src.geometry !== undefined) dst.geometry = src.geometry;
+  if (src.customGeometry !== undefined) dst.customGeometry = src.customGeometry;
+  if (src.fill !== undefined) dst.fill = src.fill;
+  if (src.outline !== undefined) dst.outline = src.outline;
+  if (src.effects !== undefined) dst.effects = src.effects;
+  if (src.scene3d !== undefined) dst.scene3d = src.scene3d;
+  if (src.shape3d !== undefined) dst.shape3d = src.shape3d;
+  if (src.textBody !== undefined) dst.textBody = src.textBody;
+  if (src.style !== undefined) dst.style = src.style;
+}
+
+/** Emit one placeholder <p:sp> from a full definition (position + facets). */
+function phSp(
   id: number,
   name: string,
   phAttrs: string,
-  x: number,
-  y: number,
-  cx: number,
-  cy: number,
-  bodyContent: string,
+  def: PlaceholderDefinition,
+  defaultBody: string,
+  ctx: WriteContext,
 ): string {
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody>${bodyContent}</p:txBody></p:sp>`;
+  // p:spPr — xfrm + geometry (defaults to rect, the placeholder standard) +
+  // any inherited fill/outline/effects/3D facets.
+  const spPrContent = shapePropertiesDesc.stringify(
+    {
+      x: def.x,
+      y: def.y,
+      width: def.width,
+      height: def.height,
+      geometry: def.customGeometry ? undefined : (def.geometry ?? "rect"),
+      customGeometry: def.customGeometry,
+      fill: def.fill,
+      outline: def.outline,
+      effects: def.effects,
+      scene3d: def.scene3d,
+      shape3d: def.shape3d,
+    } as ShapePropertiesOptions,
+    ctx,
+  );
+  const spPr = spPrContent ? `<p:spPr>${spPrContent}</p:spPr>` : "<p:spPr/>";
+
+  const styleXml = def.style ? stringifyPlaceholderStyle(def.style) : "";
+  const bodyContent = def.textBody ? textBodyDesc.stringify(def.textBody, ctx) : defaultBody;
+
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr>${spPr}${styleXml}<p:txBody>${bodyContent}</p:txBody></p:sp>`;
+}
+
+function stringifyPlaceholderStyle(style: ShapeStyleOptions): string {
+  const parts: string[] = [];
+  if (style.lineReference) {
+    const c = style.lineReference.color ? `<a:srgbClr val="${style.lineReference.color}"/>` : "";
+    parts.push(`<a:lnRef idx="${style.lineReference.index}">${c}</a:lnRef>`);
+  }
+  if (style.fillReference) {
+    const c = style.fillReference.color ? `<a:srgbClr val="${style.fillReference.color}"/>` : "";
+    parts.push(`<a:fillRef idx="${style.fillReference.index}">${c}</a:fillRef>`);
+  }
+  if (style.effectReference) {
+    const c = style.effectReference.color
+      ? `<a:srgbClr val="${style.effectReference.color}"/>`
+      : "";
+    parts.push(`<a:effectRef idx="${style.effectReference.index}">${c}</a:effectRef>`);
+  }
+  if (style.fontReference) {
+    const c = style.fontReference.color
+      ? `<a:solidFill><a:srgbClr val="${style.fontReference.color}"/></a:solidFill>`
+      : "";
+    parts.push(`<a:fontRef idx="${style.fontReference.index}">${c}</a:fontRef>`);
+  }
+  return parts.length > 0 ? `<p:style>${parts.join("")}</p:style>` : "";
 }
 
 export const BODY_DEFAULT = `<a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p>`;
@@ -126,87 +222,62 @@ export interface PlaceholderEmitResult {
 export function buildPlaceholderShapes(
   placeholders: MasterPlaceholderOptions | undefined,
   slideWidth: number,
+  ctx: WriteContext,
 ): PlaceholderEmitResult {
   const ph = placeholders ?? {};
   const shapes: string[] = [];
   let nextId = 2;
 
-  const titlePos = resolvePos(ph.title, REF_TITLE, slideWidth);
-  if (titlePos) {
+  const titleDef = resolveDef(ph.title, REF_TITLE, slideWidth);
+  if (titleDef) {
+    shapes.push(phSp(nextId++, "Title Placeholder 1", 'type="title"', titleDef, BODY_DEFAULT, ctx));
+  }
+
+  const bodyDef = resolveDef(ph.body, REF_BODY, slideWidth);
+  if (bodyDef) {
     shapes.push(
-      phSp(
-        nextId++,
-        "Title Placeholder 1",
-        'type="title"',
-        titlePos.x,
-        titlePos.y,
-        titlePos.cx,
-        titlePos.cy,
-        BODY_DEFAULT,
-      ),
+      phSp(nextId++, "Text Placeholder 2", 'type="body" idx="1"', bodyDef, BODY_DEFAULT, ctx),
     );
   }
 
-  const bodyPos = resolvePos(ph.body, REF_BODY, slideWidth);
-  if (bodyPos) {
-    shapes.push(
-      phSp(
-        nextId++,
-        "Text Placeholder 2",
-        'type="body" idx="1"',
-        bodyPos.x,
-        bodyPos.y,
-        bodyPos.cx,
-        bodyPos.cy,
-        BODY_DEFAULT,
-      ),
-    );
-  }
-
-  const datePos = resolvePos(ph.date, REF_DATE, slideWidth);
-  if (datePos) {
+  const dateDef = resolveDef(ph.date, REF_DATE, slideWidth);
+  if (dateDef) {
     shapes.push(
       phSp(
         nextId++,
         "Date Placeholder 3",
         'type="dt" sz="half" idx="2"',
-        datePos.x,
-        datePos.y,
-        datePos.cx,
-        datePos.cy,
+        dateDef,
         footerBody("l", "datetimeFigureOut", "{5BCAD085-E8A6-8845-BD4E-CB4CCA059FC4}", "1/27/13"),
+        ctx,
       ),
     );
   }
 
-  const footerPos = resolvePos(ph.footer, REF_FOOTER, slideWidth);
-  if (footerPos) {
+  const footerDef = resolveDef(ph.footer, REF_FOOTER, slideWidth);
+  if (footerDef) {
     shapes.push(
       phSp(
         nextId++,
         "Footer Placeholder 4",
         'type="ftr" sz="quarter" idx="3"',
-        footerPos.x,
-        footerPos.y,
-        footerPos.cx,
-        footerPos.cy,
+        footerDef,
         footerBody("ctr", "", "", ""),
+        ctx,
       ),
     );
   }
 
-  const sldNumPos = resolvePos(ph.slideNumber, REF_SLDNUM, slideWidth);
-  if (sldNumPos) {
+  const sldNumDef = resolveDef(ph.slideNumber, REF_SLDNUM, slideWidth);
+  if (sldNumDef) {
     shapes.push(
       phSp(
         nextId++,
         "Slide Number Placeholder 5",
         'type="sldNum" sz="quarter" idx="4"',
-        sldNumPos.x,
-        sldNumPos.y,
-        sldNumPos.cx,
-        sldNumPos.cy,
+        sldNumDef,
         footerBody("r", "slidenum", "{C1FF6DA9-008F-8B48-92A6-B652298478BF}", "‹#›"),
+        ctx,
       ),
     );
   }

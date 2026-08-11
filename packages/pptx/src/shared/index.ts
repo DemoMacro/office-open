@@ -158,7 +158,11 @@ export type { TreeNode } from "@office-open/core/smartart";
 // Placeholder inheritance
 export {
   resolvePlaceholder,
+  extractPlaceholderDefinition,
   PLACEHOLDER_TYPE_TO_KEY,
+  type PlaceholderDefinition,
+  type PlaceholderFacets,
+  type PlaceholderPosition,
   type ResolvedPlaceholder,
 } from "./placeholder";
 

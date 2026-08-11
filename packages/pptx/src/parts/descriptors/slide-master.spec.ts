@@ -105,6 +105,54 @@ describe("slideMasterDesc round-trip", () => {
   });
 });
 
+describe("slide-master placeholder facets round-trip", () => {
+  it("round-trips a non-rect geometry facet", () => {
+    const result = roundTrip({
+      placeholders: {
+        title: { x: 100, y: 100, width: 200, height: 200, geometry: "ellipse" },
+      },
+    });
+    const title = result.placeholders?.title as { geometry?: { preset?: string } };
+    expect(title.geometry?.preset).toBe("ellipse");
+  });
+
+  it("round-trips a shape style facet", () => {
+    const result = roundTrip({
+      placeholders: {
+        title: {
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 200,
+          style: { fillReference: { index: 2 } },
+        },
+      },
+    });
+    const title = result.placeholders?.title as { style?: { fillReference?: { index: number } } };
+    expect(title.style?.fillReference?.index).toBe(2);
+  });
+
+  it("round-trips a fill facet on a placeholder", () => {
+    const result = roundTrip({
+      placeholders: {
+        body: { x: 100, y: 100, width: 200, height: 200, fill: { type: "solid", color: "FF0000" } },
+      },
+    });
+    const body = result.placeholders?.body as {
+      fill?: { type: string; color?: { value: string } };
+    };
+    expect(body.fill?.type).toBe("solid");
+    expect(body.fill?.color?.value).toBe("FF0000");
+  });
+
+  it("does not carry the default rect geometry as a facet", () => {
+    // rect is the placeholder default — extraction omits it so the fresh emit
+    // path stays byte-equivalent with MS Office's master output.
+    const result = roundTrip({ placeholders: { title: true } });
+    expect((result.placeholders?.title as { geometry?: string })?.geometry).toBeUndefined();
+  });
+});
+
 describe("slide-master colorMap/headerFooter round-trip", () => {
   it("emits custom colorMap and headerFooter, parseable back", () => {
     const el = parseXml(

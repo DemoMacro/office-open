@@ -31,13 +31,14 @@ import type {
   HtmlPublishPropertiesOptions,
 } from "@parts/presentation-properties";
 import type { SlideLayoutType } from "@parts/slide-layout";
-import type { MasterPlaceholderPosition, SlideMasterOptions } from "@parts/slide-master";
+import type { SlideMasterOptions } from "@parts/slide-master";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
 import type { ViewPropertiesOptions } from "@parts/view-properties";
 import type { AnimationOptions } from "@shared/animation/types";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
+import type { PlaceholderDefinition } from "@shared/placeholder";
 import type { ShapeOptions } from "@shared/shape/shape";
 import type { ThemeOptions } from "@shared/theme";
 import type { TransitionOptions } from "@shared/transition";
@@ -49,12 +50,12 @@ export type MasterChild = { shape: ShapeOptions };
 export type SlideSize = "16:9" | "4:3" | { width: number; height: number };
 
 export interface LayoutPlaceholderOptions {
-  title?: MasterPlaceholderPosition | false;
-  body?: MasterPlaceholderPosition | false;
-  subtitle?: MasterPlaceholderPosition | false;
-  date?: MasterPlaceholderPosition | false;
-  footer?: MasterPlaceholderPosition | false;
-  slideNumber?: MasterPlaceholderPosition | false;
+  title?: PlaceholderDefinition | false;
+  body?: PlaceholderDefinition | false;
+  subtitle?: PlaceholderDefinition | false;
+  date?: PlaceholderDefinition | false;
+  footer?: PlaceholderDefinition | false;
+  slideNumber?: PlaceholderDefinition | false;
 }
 
 export interface LayoutDefinition {

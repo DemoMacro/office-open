@@ -11,12 +11,11 @@
 
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, parse as parseXml } from "@office-open/xml";
-import type { Element as XmlElement } from "@office-open/xml";
 import { NS } from "@parts/slide-layout";
-import type { MasterPlaceholderPosition } from "@parts/slide-master";
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 import type { LayoutDefinition, LayoutPlaceholderOptions } from "@shared/file";
+import { extractPlaceholderDefinition } from "@shared/placeholder";
 
 import type { PptxWriteContext } from "../../context";
 import { timingDesc } from "./animation";
@@ -189,8 +188,8 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
           const parsed = parseChild(child, ctx);
           if (parsed !== undefined) children.push(parsed);
           if (child.name === "p:sp") {
-            const ph = extractPlaceholderPosition(child);
-            if (ph) placeholders[ph.key] = ph.pos;
+            const ph = extractPlaceholderDefinition(child, ctx, PH_TYPE_TO_KEY);
+            if (ph) placeholders[ph.key as keyof LayoutPlaceholderOptions] = ph.def;
           }
         }
         if (children.length > 0) result.children = children;
@@ -262,40 +261,6 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     return result as LayoutDefinition;
   },
 };
-
-/**
- * Read a placeholder's logical key and position (or `false` when hidden) from a
- * p:sp element. Returns undefined for non-placeholder shapes or unpositioned ones.
- */
-function extractPlaceholderPosition(
-  spEl: XmlElement,
-): { key: keyof LayoutPlaceholderOptions; pos: MasterPlaceholderPosition | false } | undefined {
-  const nvSpPr = findChild(spEl, "p:nvSpPr");
-  const nvPr = nvSpPr ? findChild(nvSpPr, "p:nvPr") : undefined;
-  const ph = nvPr ? findChild(nvPr, "p:ph") : undefined;
-  if (!ph) return undefined;
-
-  const phType = attr(ph, "type");
-  const key = phType ? PH_TYPE_TO_KEY[phType] : undefined;
-  if (!key) return undefined;
-
-  if (attr(ph, "sz") === "0") return { key, pos: false };
-
-  const spPr = findChild(spEl, "p:spPr");
-  const xfrm = spPr ? findChild(spPr, "a:xfrm") : undefined;
-  if (!xfrm) return undefined;
-  const off = findChild(xfrm, "a:off");
-  const ext = findChild(xfrm, "a:ext");
-  if (!off || !ext) return undefined;
-  const x = attrNum(off, "x");
-  const y = attrNum(off, "y");
-  const width = attrNum(ext, "cx");
-  const height = attrNum(ext, "cy");
-  if (x === undefined || y === undefined || width === undefined || height === undefined) {
-    return undefined;
-  }
-  return { key, pos: { x, y, width, height } };
-}
 
 // ── Template parsing (compiler generate-path) ──
 
