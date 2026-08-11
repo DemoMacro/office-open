@@ -214,9 +214,13 @@
             "y1": 200,
             "x2": 550,
             "y2": 200,
-            "beginArrowhead": "oval",
-            "endArrowhead": "triangle",
-            "outline": { "color": "FFC000", "width": 2 }
+            "outline": {
+              "type": "solidFill",
+              "color": { "value": "FFC000" },
+              "width": 2,
+              "headEnd": { "type": "triangle" },
+              "tailEnd": { "type": "oval" }
+            }
           }
         },
         {
@@ -225,8 +229,12 @@
             "y1": 200,
             "x2": 550,
             "y2": 380,
-            "endArrowhead": "triangle",
-            "outline": { "color": "FFC000", "width": 2 }
+            "outline": {
+              "type": "solidFill",
+              "color": { "value": "FFC000" },
+              "width": 2,
+              "headEnd": { "type": "triangle" }
+            }
           }
         }
       ]

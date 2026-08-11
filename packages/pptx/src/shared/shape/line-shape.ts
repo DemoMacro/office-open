@@ -17,8 +17,6 @@ export interface LineShapeOptions {
   outline?: OutlineOptions;
 }
 
-export type ArrowheadType = "triangle" | "stealth" | "diamond" | "oval" | "open" | "none";
-
 export interface ConnectorShapeOptions {
   id?: number;
   name?: string;
@@ -28,10 +26,6 @@ export interface ConnectorShapeOptions {
   y2?: number | UniversalMeasure;
   fill?: FillOptions;
   outline?: OutlineOptions;
-  beginArrowhead?: ArrowheadType;
-  endArrowhead?: ArrowheadType;
-  arrowheadWidth?: "small" | "medium" | "large";
-  arrowheadLength?: "small" | "medium" | "large";
   /** a:cxnSpLocks — connector locking (inside p:cNvCxnSpPr). */
   locking?: ConnectorLockingOptions;
   /** a:stCxn — start endpoint glued to a shape connection site. */

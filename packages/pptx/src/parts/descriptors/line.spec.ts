@@ -117,14 +117,15 @@ describe("connectorShapeDesc round-trip", () => {
       y1: 0,
       x2: 100,
       y2: 0,
-      endArrowhead: "triangle",
-      beginArrowhead: "open",
+      outline: {
+        headEnd: { type: "triangle" },
+        tailEnd: { type: "arrow" },
+      },
     };
     const result = roundTripConnector(opts);
 
-    // "triangle" maps identity; "open" -> "arrow" in XML, reversed back to "open" on parse
-    expect(result.endArrowhead).toBe("triangle");
-    expect(result.beginArrowhead).toBe("open");
+    expect(result.outline?.headEnd?.type).toBe("triangle");
+    expect(result.outline?.tailEnd?.type).toBe("arrow");
   });
 
   it("round-trips connector with outline", () => {
