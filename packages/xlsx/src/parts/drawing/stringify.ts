@@ -24,11 +24,11 @@ import { escapeXml } from "@office-open/xml";
 import type {
   DrawingAnchorOptions,
   DrawingContentPartOptions,
-  DrawingConnectorOptions,
-  DrawingGroupOptions,
-  DrawingImageOptions,
+  ConnectorOptions,
+  GroupOptions,
+  PictureOptions,
   DrawingChartOptions,
-  DrawingShapeOptions,
+  ShapeOptions,
 } from "./types";
 import { ANCHOR_TYPES, EDIT_AS_TYPES } from "./types";
 
@@ -103,7 +103,7 @@ function picXml(rId: string, id: number, cx: number, cy: number, ctx: WriteConte
   );
 }
 
-export function stringifyImage(img: DrawingImageOptions, id: number, ctx: WriteContext): string {
+export function stringifyImage(img: PictureOptions, id: number, ctx: WriteContext): string {
   const cx = convertToEmu(img.extentCx ?? DEFAULT_EXTENT_CX);
   const cy = convertToEmu(img.extentCy ?? DEFAULT_EXTENT_CY);
   const pic = picXml(img.rId, id, cx, cy, ctx);
@@ -171,7 +171,7 @@ function buildConnectorContent(
   return `<cxnSp${attrs}><nvCxnSpPr><cNvPr id="${id}" name="${escapeXml(name)}"/>${cNvCxnSpPr}</nvCxnSpPr><spPr>${spPrXml}</spPr></cxnSp>`;
 }
 
-export function stringifyShape(shape: DrawingShapeOptions, id: number, ctx: WriteContext): string {
+export function stringifyShape(shape: ShapeOptions, id: number, ctx: WriteContext): string {
   const xml = buildShapeContent(
     shape.name ?? `Shape ${id}`,
     id,
@@ -183,11 +183,7 @@ export function stringifyShape(shape: DrawingShapeOptions, id: number, ctx: Writ
   return wrapAnchor(shape, `${xml}${clientDataXml(shape)}`);
 }
 
-export function stringifyConnector(
-  conn: DrawingConnectorOptions,
-  id: number,
-  ctx: WriteContext,
-): string {
+export function stringifyConnector(conn: ConnectorOptions, id: number, ctx: WriteContext): string {
   const xml = buildConnectorContent(
     conn.name ?? `Connector ${id}`,
     id,
@@ -205,7 +201,7 @@ export function stringifyContentPart(cp: DrawingContentPartOptions): string {
 
 /** Build xdr:grpSp content and return the next available cNvPr id. */
 export function buildGroup(
-  grp: DrawingGroupOptions,
+  grp: GroupOptions,
   id: number,
   ctx: WriteContext,
 ): { xml: string; nextId: number } {

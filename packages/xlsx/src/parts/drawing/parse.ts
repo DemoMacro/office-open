@@ -24,10 +24,10 @@ import type {
   DrawingAnchorOptions,
   DrawingChartOptions,
   DrawingContentPartOptions,
-  DrawingConnectorOptions,
-  DrawingGroupOptions,
-  DrawingImageOptions,
-  DrawingShapeOptions,
+  ConnectorOptions,
+  GroupOptions,
+  PictureOptions,
+  ShapeOptions,
   GroupConnectorChildOptions,
   GroupShapeChildOptions,
 } from "./types";
@@ -135,8 +135,8 @@ export function parseImageAnchor(
   anchor: XmlElement,
   pic: XmlElement,
   name: string,
-): DrawingImageOptions {
-  const result: DrawingImageOptions = {
+): PictureOptions {
+  const result: PictureOptions = {
     col: 1,
     row: 1,
     rId: readPicRId(pic) ?? "",
@@ -209,8 +209,8 @@ export function parseShapeAnchor(
   sp: XmlElement,
   name: string,
   ctx: ReadContext,
-): DrawingShapeOptions {
-  const result = { col: 1, row: 1, spPr: {} } as DrawingShapeOptions;
+): ShapeOptions {
+  const result = { col: 1, row: 1, spPr: {} } as ShapeOptions;
   readAnchorFields(anchor, name, result);
 
   const cNvName = readCNvName(sp, "nvSpPr");
@@ -264,8 +264,8 @@ export function parseConnectorAnchor(
   cxnSp: XmlElement,
   name: string,
   ctx: ReadContext,
-): DrawingConnectorOptions {
-  const result = { col: 1, row: 1, spPr: {} } as DrawingConnectorOptions;
+): ConnectorOptions {
+  const result = { col: 1, row: 1, spPr: {} } as ConnectorOptions;
   readAnchorFields(anchor, name, result);
 
   const cNvName = readCNvName(cxnSp, "nvCxnSpPr");
@@ -285,8 +285,8 @@ export function parseGroupAnchor(
   grpSp: XmlElement,
   name: string,
   ctx: ReadContext,
-): DrawingGroupOptions {
-  const result = { col: 1, row: 1, grpSpPr: {} } as DrawingGroupOptions;
+): GroupOptions {
+  const result = { col: 1, row: 1, grpSpPr: {} } as GroupOptions;
   readAnchorFields(anchor, name, result);
 
   const cNvName = readCNvName(grpSp, "nvGrpSpPr");

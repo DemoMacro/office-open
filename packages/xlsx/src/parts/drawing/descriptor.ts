@@ -35,11 +35,11 @@ import {
 import type {
   DrawingChartOptions,
   DrawingContentPartOptions,
-  DrawingConnectorOptions,
-  DrawingGroupOptions,
-  DrawingImageOptions,
+  ConnectorOptions,
+  GroupOptions,
+  PictureOptions,
   DrawingOptions,
-  DrawingShapeOptions,
+  ShapeOptions,
 } from "./types";
 
 // ── Descriptor ──
@@ -98,11 +98,11 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
 
   parse(el, ctx) {
     const result: Partial<DrawingOptions> = {};
-    const images: DrawingImageOptions[] = [];
+    const images: PictureOptions[] = [];
     const charts: DrawingChartOptions[] = [];
-    const shapes: DrawingShapeOptions[] = [];
-    const connectors: DrawingConnectorOptions[] = [];
-    const groups: DrawingGroupOptions[] = [];
+    const shapes: ShapeOptions[] = [];
+    const connectors: ConnectorOptions[] = [];
+    const groups: GroupOptions[] = [];
     const contentParts: DrawingContentPartOptions[] = [];
 
     for (const anchor of el.elements ?? []) {

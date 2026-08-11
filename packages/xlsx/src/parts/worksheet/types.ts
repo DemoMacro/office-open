@@ -10,7 +10,7 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 
-import type { DrawingConnectorOptions, DrawingGroupOptions, DrawingShapeOptions } from "../drawing";
+import type { ConnectorOptions, GroupOptions, ShapeOptions } from "../drawing";
 import type { PivotTableOptions } from "../pivot";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles, StyleOptions } from "../styles";
@@ -1057,11 +1057,11 @@ export interface WorksheetOptions {
   images?: WorksheetImageOptions[];
   charts?: WorksheetChartOptions[];
   /** Anchored shapes (xdr:sp): geometry + optional text body. */
-  shapes?: DrawingShapeOptions[];
+  shapes?: ShapeOptions[];
   /** Anchored connectors (xdr:cxnSp): line/arrow geometry. */
-  connectors?: DrawingConnectorOptions[];
+  connectors?: ConnectorOptions[];
   /** Anchored groups (xdr:grpSp): group transform + nested children. */
-  groups?: DrawingGroupOptions[];
+  groups?: GroupOptions[];
   dataValidations?: DataValidationOptions[];
   /** Disable data validation prompts (CT_DataValidations @disablePrompts) */
   dataValidationsDisablePrompts?: boolean;

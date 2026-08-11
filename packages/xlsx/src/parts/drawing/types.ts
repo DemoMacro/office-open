@@ -106,7 +106,7 @@ export interface DrawingAnchorOptions {
   printsWithSheet?: boolean;
 }
 
-export interface DrawingImageOptions extends DrawingAnchorOptions {
+export interface PictureOptions extends DrawingAnchorOptions {
   /** Relationship ID for the image */
   rId: string;
 }
@@ -129,7 +129,7 @@ export interface DrawingChartOptions {
 }
 
 /** Anchored shape (xdr:sp): geometry + optional text body. */
-export interface DrawingShapeOptions extends DrawingAnchorOptions {
+export interface ShapeOptions extends DrawingAnchorOptions {
   /** Shape name (cNvPr name). Defaults to "Shape <id>". */
   name?: string;
   /** Shape properties (a:CT_ShapeProperties). */
@@ -143,7 +143,7 @@ export interface DrawingShapeOptions extends DrawingAnchorOptions {
 }
 
 /** Anchored connector (xdr:cxnSp): line/arrow geometry via spPr. */
-export interface DrawingConnectorOptions extends DrawingAnchorOptions {
+export interface ConnectorOptions extends DrawingAnchorOptions {
   /** Connector name. Defaults to "Connector <id>". */
   name?: string;
   /** Shape properties (a:CT_ShapeProperties, typically prstGeom="line"). */
@@ -181,7 +181,7 @@ export interface GroupConnectorChildOptions {
 }
 
 /** Anchored group (xdr:grpSp): group transform + nested shapes/connectors. */
-export interface DrawingGroupOptions extends DrawingAnchorOptions {
+export interface GroupOptions extends DrawingAnchorOptions {
   /** Group name. Defaults to "Group <id>". */
   name?: string;
   /** Group shape properties (a:CT_GroupShapeProperties: group xfrm + fill/ln). */
@@ -199,10 +199,10 @@ export interface DrawingContentPartOptions extends DrawingAnchorOptions {
 }
 
 export interface DrawingOptions {
-  images?: DrawingImageOptions[];
+  images?: PictureOptions[];
   charts?: DrawingChartOptions[];
-  shapes?: DrawingShapeOptions[];
-  connectors?: DrawingConnectorOptions[];
-  groups?: DrawingGroupOptions[];
+  shapes?: ShapeOptions[];
+  connectors?: ConnectorOptions[];
+  groups?: GroupOptions[];
   contentParts?: DrawingContentPartOptions[];
 }
