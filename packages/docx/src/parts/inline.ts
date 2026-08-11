@@ -42,8 +42,8 @@ import type {
   GroupChildMediaData,
   MediaData,
   SmartArtMediaData,
-  WpgMediaData,
-  WpsMediaData,
+  GroupMediaData,
+  ShapeMediaData,
 } from "@shared/media";
 import { createTransformation } from "@shared/media";
 import type { NonVisualPropertiesOptions } from "@shared/media/data";
@@ -625,7 +625,7 @@ export function stringifyChildDispatch(
   // WPS Shape (WordProcessing Shape) — side effect: blip fill media registration
   if ("wpsShape" in child) {
     const opts = child.wpsShape;
-    const mediaData: WpsMediaData = {
+    const mediaData: ShapeMediaData = {
       data: opts,
       transformation: createTransformation(opts.transformation),
       type: "wps",
@@ -649,7 +649,7 @@ export function stringifyChildDispatch(
   // WPG Group (WordProcessing Group) — group of shapes/pictures
   if ("wpgGroup" in child) {
     const opts = child.wpgGroup;
-    const mediaData: WpgMediaData = {
+    const mediaData: GroupMediaData = {
       children: opts.children,
       transformation: createTransformation(opts.transformation),
       childOffset: opts.childOffset,

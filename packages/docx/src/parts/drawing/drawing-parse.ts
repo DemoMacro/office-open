@@ -28,9 +28,9 @@ import type {
   GroupChildMediaData,
   MediaData,
   MediaDataTransformation,
-  WpgCommonMediaData,
-  WpgMediaData,
-  WpsMediaData,
+  GroupCommonMediaData,
+  GroupMediaData,
+  ShapeMediaData,
 } from "@shared/media";
 import type { NonVisualPropertiesOptions } from "@shared/media/data";
 
@@ -644,10 +644,10 @@ function readChildTransformation(spPr: Element | undefined): MediaDataTransforma
 }
 
 /**
- * Parse a `wps:wsp` nested inside a wpg group into a {@link WpsMediaData} child
+ * Parse a `wps:wsp` nested inside a wpg group into a {@link ShapeMediaData} child
  * (its transformation kept as EMU via {@link readChildTransformation}).
  */
-function parseWpsChildMediaData(wspEl: Element, ctx: DocxReadContext): WpsMediaData | undefined {
+function parseWpsChildMediaData(wspEl: Element, ctx: DocxReadContext): ShapeMediaData | undefined {
   const data = parseWpsShapeCore(wspEl, ctx);
   const spPr = findChild(wspEl, "wps:spPr");
   return {
@@ -688,13 +688,13 @@ function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData
   }
   const cNvPr = readPicCnvPr(picEl);
   if (cNvPr) result.nonVisualProperties = cNvPr;
-  // Grouped picture spPr (fill/outline) rides on WpgCommonMediaData so it
+  // Grouped picture spPr (fill/outline) rides on GroupCommonMediaData so it
   // round-trips through stringifyGroupChild → stringifyShapeProps.
   if (spPr) {
     const fill = readShapeFill(spPr, ctx);
-    if (fill) (result as MediaData & WpgCommonMediaData).fill = fill;
+    if (fill) (result as MediaData & GroupCommonMediaData).fill = fill;
     const ln = findChild(spPr, "a:ln");
-    if (ln) (result as MediaData & WpgCommonMediaData).outline = outlineDesc.parse(ln, ctx);
+    if (ln) (result as MediaData & GroupCommonMediaData).outline = outlineDesc.parse(ln, ctx);
   }
   // asvg:svgBlip extension — when present, the a:blip r:embed is the raster
   // fallback and the vector SVG lives in the extension. Reshape into an
@@ -834,14 +834,14 @@ function parseGroupChild(el: Element, ctx: DocxReadContext): GroupChildMediaData
 }
 
 /**
- * Parse a nested wpg:grpSp (CT_WordprocessingGroup) into a WpgMediaData child.
+ * Parse a nested wpg:grpSp (CT_WordprocessingGroup) into a GroupMediaData child.
  * Mirrors the top-level group: grpSpPr transform + chOff/chExt + fill, with its
  * own children (which may nest further groups).
  */
-function parseNestedGroup(grpSpEl: Element, ctx: DocxReadContext): WpgMediaData {
+function parseNestedGroup(grpSpEl: Element, ctx: DocxReadContext): GroupMediaData {
   const grpSpPr = findChild(grpSpEl, "wpg:grpSpPr");
   const { childOffset, childExtent } = readGroupCoords(grpSpPr);
-  const result: WpgMediaData = {
+  const result: GroupMediaData = {
     type: "wpg",
     transformation: readChildTransformation(grpSpPr),
     children: parseGroupChildren(grpSpEl, ctx),

@@ -43,8 +43,8 @@ import type {
   MediaData,
   MediaDataTransformation,
   SmartArtMediaData,
-  WpgMediaData,
-  WpsMediaData,
+  GroupMediaData,
+  ShapeMediaData,
 } from "@shared/media";
 import type { NonVisualPropertiesOptions } from "@shared/media/data";
 
@@ -529,7 +529,7 @@ function stringifyWpgGroup(
  */
 function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): string {
   if (child.type === "wps") {
-    const wpsData = child as WpsMediaData & { outline?: OutlineOptions; fill?: FillOptions };
+    const wpsData = child as ShapeMediaData & { outline?: OutlineOptions; fill?: FillOptions };
     return stringifyWpsShape(
       {
         ...wpsData.data,
@@ -541,10 +541,10 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
     );
   }
   if (child.type === "wpg") {
-    return stringifyNestedGroup(child as WpgMediaData, ctx);
+    return stringifyNestedGroup(child as GroupMediaData, ctx);
   }
   // pic child (MediaData) — fill/outline ride on the group-child extension
-  // (WpgCommonMediaData) so a grouped picture's spPr round-trips verbatim.
+  // (GroupCommonMediaData) so a grouped picture's spPr round-trips verbatim.
   const picData = child as MediaData & { outline?: OutlineOptions; fill?: FillOptions };
   const isSvg = picData.type === "svg";
   // a:blip r:embed targets the raster fallback for SVG pictures (what legacy
@@ -581,7 +581,7 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
  * Stringify a nested wpg:grpSp (CT_WordprocessingGroup) group child. Same
  * structure as the top-level group, wrapped in wpg:grpSp with a cNvPr id/name.
  */
-function stringifyNestedGroup(grp: WpgMediaData, ctx: BodyContext): string {
+function stringifyNestedGroup(grp: GroupMediaData, ctx: BodyContext): string {
   const grpSpPrContent =
     shapePropertiesDesc.stringify(
       {
@@ -641,7 +641,7 @@ function stringifyGraphicDataContent(
   }
 
   if (mediaData.type === "wps") {
-    const md = mediaData as WpsMediaData;
+    const md = mediaData as ShapeMediaData;
     const wpsXml = stringifyWpsShape(
       {
         ...md.data,
@@ -655,7 +655,7 @@ function stringifyGraphicDataContent(
   }
 
   if (mediaData.type === "wpg") {
-    const md = mediaData as WpgMediaData;
+    const md = mediaData as GroupMediaData;
     const wpgXml = stringifyWpgGroup(
       {
         children: md.children,

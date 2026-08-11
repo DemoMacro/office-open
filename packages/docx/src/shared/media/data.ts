@@ -112,20 +112,21 @@ export interface SvgMediaData {
   fallback: RegularMediaData & CoreMediaData;
 }
 
-export interface WpsMediaData {
+export interface ShapeMediaData {
   type: "wps";
   transformation: MediaDataTransformation;
   data: WpsShapeCoreOptions;
 }
 
-export interface WpgCommonMediaData {
+export interface GroupCommonMediaData {
   outline?: OutlineOptions;
   fill?: FillOptions;
 }
 
-export type GroupChildMediaData = (WpsMediaData | MediaData | WpgMediaData) & WpgCommonMediaData;
+export type GroupChildMediaData = (ShapeMediaData | MediaData | GroupMediaData) &
+  GroupCommonMediaData;
 
-export interface WpgMediaData {
+export interface GroupMediaData {
   type: "wpg";
   transformation: MediaDataTransformation;
   children: GroupChildMediaData[];
@@ -161,8 +162,8 @@ export interface SmartArtMediaData {
 
 export type ExtendedMediaData =
   | MediaData
-  | WpsMediaData
-  | WpgMediaData
+  | ShapeMediaData
+  | GroupMediaData
   | ChartMediaData
   | SmartArtMediaData;
 
