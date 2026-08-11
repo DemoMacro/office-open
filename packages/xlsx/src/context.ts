@@ -23,6 +23,12 @@ import type { XlsxDocument } from "./parse";
  * Holds mutable state that accumulates during the compile phase:
  * shared strings, styles, media, charts, content types, and relationships.
  */
+export interface HyperlinkEntry {
+  key: string;
+  url: string;
+  tooltip?: string;
+}
+
 export class XlsxWriteContext implements WriteContext {
   sharedStrings = new SharedStrings();
   styles = new Styles();
@@ -30,20 +36,30 @@ export class XlsxWriteContext implements WriteContext {
   charts = new ChartCollection();
   workbookRels = new Relationships();
   pivotCacheRefs: PivotCacheReference[] = [];
+  private _hyperlinks = new Map<string, HyperlinkEntry>();
 
-  // ── WriteContext stubs (core interface) ──
+  // ── WriteContext interface (core descriptor pipeline) ──
 
   public addRelationship(type: RelationshipType, target: string, _mode?: string): string {
     return `rId${this.workbookRels.add(type, target)}`;
   }
 
-  public addMedia(_data: Uint8Array, _type: string): string {
-    // Stub — XLSX media registration goes through Media.addMedia() in compiler.
-    return "";
+  public addMedia(data: Uint8Array, type: string): string {
+    // Reached by DrawingML blip fills (drawing shape picture fill) via fillDesc.
+    // Image anchors still register through ctx.media directly in the compiler
+    // because they carry pixel dimensions; both land in the same collection.
+    const entry = this.media.addMedia(data, type, (fileName) => ({
+      fileName,
+      type,
+      data,
+      width: 0,
+      height: 0,
+    }));
+    return `{${entry.fileName}}`;
   }
 
-  public addHyperlink(_key: string, _url: string, _tooltip?: string): void {
-    // Stub — drawing shape hyperlinks land here once xlsx shapes are added.
+  public addHyperlink(key: string, url: string, tooltip?: string): void {
+    this._hyperlinks.set(key, { key, url, tooltip });
   }
 
   /**
@@ -51,6 +67,11 @@ export class XlsxWriteContext implements WriteContext {
    */
   public registerDxf(opts: DxfOptions): number {
     return this.styles.registerDxf(opts);
+  }
+
+  /** DrawingML text hyperlinks registered by drawing shape runs (placeholder key → entry). */
+  public get hyperlinks(): HyperlinkEntry[] {
+    return [...this._hyperlinks.values()];
   }
 }
 

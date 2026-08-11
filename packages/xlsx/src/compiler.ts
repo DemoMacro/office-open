@@ -288,7 +288,9 @@ export function compileWorkbook(
         globalChartIdx++;
       }
 
-      // Generate drawing XML (via descriptor)
+      // Generate drawing XML (via descriptor). Snapshot the hyperlink registry
+      // first so only runs stringified for this sheet's drawing resolve here.
+      const hyperlinkBase = ctx.hyperlinks.length;
       const drawingXml = drawingDesc.stringify(
         {
           images: drawingImages,
@@ -299,9 +301,24 @@ export function compileWorkbook(
         },
         ctx,
       );
+      // Resolve drawing shape text-hyperlink placeholders ({hlink:key} → real
+      // rId) and register each as an External hyperlink relationship.
+      let resolvedDrawingXml = drawingXml!;
+      for (const h of ctx.hyperlinks.slice(hyperlinkBase)) {
+        drawingRels.addRelationship(
+          rid,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+          h.url,
+          "External",
+        );
+        resolvedDrawingXml = resolvedDrawingXml
+          .split(`r:id="{hlink:${h.key}}"`)
+          .join(`r:id="rId${rid}"`);
+        rid++;
+      }
       const drawingIdx = i + 1;
       mapping[`Drawing${i}`] = {
-        data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${drawingXml}`,
+        data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${resolvedDrawingXml}`,
         path: `xl/drawings/drawing${drawingIdx}.xml`,
       };
 

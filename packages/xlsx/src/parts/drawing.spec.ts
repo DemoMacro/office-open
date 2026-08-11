@@ -1,7 +1,9 @@
+import { unzipSync } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { generateWorkbook } from "../generate";
 import { drawingDesc } from "./drawing";
 import type { DrawingOptions } from "./drawing";
 
@@ -142,6 +144,45 @@ describe("drawingDesc — anchored shapes", () => {
     expect(shape.textBody?.paragraphs).toHaveLength(1);
   });
 
+  it("registers drawing shape text-hyperlink runs via ctx.addHyperlink", () => {
+    const registered: Array<{ key: string; url: string; tooltip?: string }> = [];
+    const ctx = {
+      addRelationship: () => "rId1",
+      addMedia: () => "",
+      addHyperlink: (key: string, url: string, tooltip?: string) => {
+        registered.push({ key, url, tooltip });
+      },
+    } as unknown as WriteContext;
+
+    const opts: DrawingOptions = {
+      shapes: [
+        {
+          col: 0,
+          row: 0,
+          spPr: { geometry: "rect" },
+          textBody: {
+            paragraphs: [
+              {
+                children: [
+                  { text: "Link", hyperlink: { url: "https://example.com", tooltip: "Example" } },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const xml = drawingDesc.stringify(opts, ctx)!;
+
+    // The DrawingML text hyperlink is registered through ctx.addHyperlink with a
+    // placeholder key; the compiler resolves {hlink:key} → a real rId later.
+    expect(registered).toHaveLength(1);
+    expect(registered[0]?.url).toBe("https://example.com");
+    expect(registered[0]?.tooltip).toBe("Example");
+    expect(xml).toContain("a:hlinkClick");
+    expect(xml).toContain(`r:id="{hlink:${registered[0]?.key}}"`);
+  });
+
   it("round-trips shape macro and textlink attributes", () => {
     const opts: DrawingOptions = {
       shapes: [{ col: 1, row: 1, spPr: { geometry: "rect" }, macro: "Click()", textlink: "rId1" }],
@@ -264,5 +305,52 @@ describe("drawingDesc — anchored content parts", () => {
     expect(result.contentParts).toHaveLength(1);
     expect(cp.rId).toBe("rId9");
     expect(cp.toCol).toBe(3);
+  });
+});
+
+describe("drawing shape hyperlink — compiler resolution", () => {
+  it("resolves {hlink:key} placeholders to real rIds and emits External hyperlink rels", async () => {
+    const buffer = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet1",
+            shapes: [
+              {
+                col: 0,
+                row: 0,
+                spPr: { geometry: "rect" },
+                textBody: {
+                  paragraphs: [
+                    {
+                      children: [
+                        {
+                          text: "Link",
+                          hyperlink: { url: "https://example.com", tooltip: "Example" },
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    const unzipped = unzipSync(buffer);
+    const drawingXml = new TextDecoder().decode(unzipped["xl/drawings/drawing1.xml"]);
+    const drawingRels = new TextDecoder().decode(unzipped["xl/drawings/_rels/drawing1.xml.rels"]);
+
+    // Placeholder replaced with a real rId on the drawing shape's a:hlinkClick.
+    expect(drawingXml).toContain("a:hlinkClick");
+    expect(drawingXml).not.toContain("{hlink:");
+    expect(drawingXml).toMatch(/r:id="rId\d+"/);
+    // External hyperlink relationship emitted on the drawing rels.
+    expect(drawingRels).toContain("/relationships/hyperlink");
+    expect(drawingRels).toContain('TargetMode="External"');
+    expect(drawingRels).toContain("https://example.com");
   });
 });
