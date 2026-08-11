@@ -228,7 +228,7 @@ const options: PresentationOptions = {
             y: "11.1cm",
             width: "15.9cm",
             height: "3.2cm",
-            outline: { color: "999999", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
             textBody: {
               children: [
                 {
@@ -263,7 +263,7 @@ const options: PresentationOptions = {
             y: "18.8cm",
             width: "7.4cm",
             height: "5.3cm",
-            outline: { color: "4472C4", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
             textBody: {
               children: [
                 {
@@ -292,7 +292,7 @@ const options: PresentationOptions = {
             y: "18.8cm",
             width: "7.4cm",
             height: "5.3cm",
-            outline: { color: "ED7D31", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
             textBody: {
               children: [
                 {
@@ -326,7 +326,7 @@ const options: PresentationOptions = {
             y: "18.8cm",
             width: "7.4cm",
             height: "5.3cm",
-            outline: { color: "70AD47", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
             textBody: {
               children: [
                 {
@@ -361,7 +361,7 @@ const options: PresentationOptions = {
             y: "14.8cm",
             width: "7.4cm",
             height: "3.2cm",
-            outline: { color: "4472C4", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
             textBody: {
               children: [
                 {
@@ -387,7 +387,7 @@ const options: PresentationOptions = {
             y: "14.8cm",
             width: "7.4cm",
             height: "3.2cm",
-            outline: { color: "ED7D31", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
             textBody: {
               children: [
                 {

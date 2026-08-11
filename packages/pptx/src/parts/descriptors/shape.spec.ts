@@ -179,10 +179,15 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      outline: { color: "000000", width: 12700 },
+      outline: { type: "solidFill", color: { value: "000000" }, width: 12700 },
     });
-    const outline = result.outline!;
-    expect(outline.color).toBe("000000");
+    const outline = result.outline as {
+      type: string;
+      color: { value: string };
+      width: number;
+    };
+    expect(outline.type).toBe("solidFill");
+    expect(outline.color.value).toBe("000000");
     expect(outline.width).toBe(12700);
   });
 

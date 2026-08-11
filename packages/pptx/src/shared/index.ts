@@ -14,10 +14,7 @@ export {
 } from "./file";
 
 // DrawingML — re-exports from core
-export {
-  createOutline,
-  type OutlineOptions as CoreOutlineOptions,
-} from "@office-open/core/drawingml";
+export { createOutline, type OutlineOptions } from "@office-open/core/drawingml";
 export {
   createGradientFill,
   createGradientStop,
@@ -58,7 +55,6 @@ export {
   type FillOptions,
   type GradientStopOptions,
 } from "./drawingml/fill";
-export { type OutlineOptions } from "./drawingml/outline";
 
 // DrawingML — local types
 export type { Transform2DOptions } from "./drawingml/transform-2d";

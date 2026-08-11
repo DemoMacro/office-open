@@ -175,7 +175,7 @@ const slides: SlideOptions[] = [
           textBody: { text: "Shadow + Glow" },
           geometry: "roundRect",
           fill: "4472C4",
-          outline: { color: "2F5496", width: 12700 },
+          outline: { type: "solidFill", color: { value: "2F5496" }, width: 12700 },
           effects: {
             outerShadow: {
               blur: 50800,
@@ -239,7 +239,7 @@ const slides: SlideOptions[] = [
           y: "7.1cm",
           width: "9.0cm",
           height: "4.2cm",
-          outline: { color: "4472C4", width: 12700, dashStyle: "dash" },
+          outline: { type: "solidFill", color: { value: "4472C4" }, width: 12700, dash: "dash" },
           textBody: {
             children: [
               {
@@ -442,7 +442,7 @@ const slides: SlideOptions[] = [
           y1: "2.6cm",
           x2: "19.8cm",
           y2: "2.6cm",
-          outline: { color: "4472C4", width: 25400 },
+          outline: { type: "solidFill", color: { value: "4472C4" }, width: 25400 },
         },
       },
       {
@@ -453,7 +453,7 @@ const slides: SlideOptions[] = [
           y2: "9.3cm",
           beginArrowhead: "oval",
           endArrowhead: "triangle",
-          outline: { color: "ED7D31", width: 25400 },
+          outline: { type: "solidFill", color: { value: "ED7D31" }, width: 25400 },
         },
       },
     ],
@@ -710,7 +710,7 @@ const slides: SlideOptions[] = [
           width: "5.3cm",
           height: "4.0cm",
           fill: { type: "none" },
-          outline: { color: "ED7D31", width: 25400 },
+          outline: { type: "solidFill", color: { value: "ED7D31" }, width: 25400 },
           textBody: { text: "No Fill" },
         },
       },
@@ -1278,7 +1278,7 @@ const slides: SlideOptions[] = [
           width: "5.3cm",
           height: "7.9cm",
           fill: "F2F2F2",
-          outline: { color: "4472C4", width: 12700 },
+          outline: { type: "solidFill", color: { value: "4472C4" }, width: 12700 },
           textBody: { text: "Anchored Bottom", anchor: "bottom" },
         },
       },

@@ -3,8 +3,8 @@ import type {
   ConnectorLockingOptions,
   UniversalMeasure,
 } from "@office-open/core";
+import type { OutlineOptions } from "@office-open/core/drawingml";
 import type { FillOptions } from "@shared/drawingml/fill";
-import type { OutlineOptions } from "@shared/drawingml/outline";
 
 export interface LineShapeOptions {
   id?: number;

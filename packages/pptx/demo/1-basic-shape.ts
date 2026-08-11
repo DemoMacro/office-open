@@ -93,7 +93,7 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "4472C4", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
           },
         },
         {
@@ -111,7 +111,7 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "ED7D31", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
           },
         },
         {
@@ -129,7 +129,7 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "70AD47", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
           },
         },
       ],
@@ -155,7 +155,7 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { anchor: "top", text: "Top anchored text" },
-            outline: { color: "999999", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },
         // Center anchor
@@ -166,7 +166,7 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { anchor: "center", text: "Center anchored text" },
-            outline: { color: "999999", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },
         // Bottom anchor
@@ -177,7 +177,7 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { anchor: "bottom", text: "Bottom anchored text" },
-            outline: { color: "999999", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },
         // Auto-fit normal
@@ -191,7 +191,7 @@ const options: PresentationOptions = {
               autoFit: "normal",
               text: "This is a very long text that should auto-fit to shrink within the shape bounds",
             },
-            outline: { color: "4472C4", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
           },
         },
         // Auto-fit shape
@@ -202,7 +202,7 @@ const options: PresentationOptions = {
             width: "6.6cm",
             height: "2.1cm",
             textBody: { autoFit: "shape", text: "Shape auto-fit text" },
-            outline: { color: "ED7D31", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
           },
         },
       ],
@@ -227,7 +227,7 @@ const options: PresentationOptions = {
             y: "3.2cm",
             width: "9.3cm",
             height: "4.0cm",
-            outline: { color: "999999", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
             textBody: {
               children: [
                 {
@@ -264,7 +264,7 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "ED7D31", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
           },
         },
         // 2 columns
@@ -289,7 +289,7 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { color: "70AD47", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
           },
         },
       ],
@@ -363,7 +363,7 @@ const options: PresentationOptions = {
             width: "9.3cm",
             height: "2.6cm",
             textBody: { text: "Locked: no select, move, resize, text edit" },
-            outline: { color: "ED7D31", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
             locking: {
               noSelect: true,
               noMove: true,
@@ -380,7 +380,7 @@ const options: PresentationOptions = {
             width: "9.3cm",
             height: "2.6cm",
             textBody: { text: "Aspect locked: ratio is fixed" },
-            outline: { color: "70AD47", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
             locking: {
               noChangeAspect: true,
             },

@@ -1,5 +1,9 @@
 import type { ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
-import type { PresetGeometryOptions, CustomGeometryOptions } from "@office-open/core/drawingml";
+import type {
+  PresetGeometryOptions,
+  CustomGeometryOptions,
+  OutlineOptions,
+} from "@office-open/core/drawingml";
 /**
  * Shape options type for PPTX.
  *
@@ -7,7 +11,6 @@ import type { PresetGeometryOptions, CustomGeometryOptions } from "@office-open/
  */
 import type { AnimationOptions } from "@shared/animation/types";
 import type { EffectsOptions } from "@shared/drawingml/effects";
-import type { OutlineOptions } from "@shared/drawingml/outline";
 import type { ShapePropertiesOptions } from "@shared/drawingml/shape-properties";
 
 import type { TextBodyOptions } from "./text-body";

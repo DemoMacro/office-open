@@ -35,6 +35,7 @@ import type {
   PresetGeometryOptions,
   CustomGeometryOptions,
   BodyPropertiesOptions,
+  OutlineOptions,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
@@ -49,7 +50,6 @@ import {
   type PPTXBevelOptions,
   type Rotation3DOptions,
 } from "@shared/drawingml/effects";
-import { toCoreOutlineOptions, type OutlineOptions } from "@shared/drawingml/outline";
 import type { ParagraphOptions } from "@shared/shape/paragraph/paragraph";
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
@@ -455,7 +455,7 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
       customGeometry: opts.customGeometry,
       geometry,
       fill,
-      outline: opts.outline ? toCoreOutlineOptions(opts.outline) : undefined,
+      outline: opts.outline,
       effects: opts.effects ? toEffectListOptions(opts.effects) : undefined,
       scene3d: opts.effects ? toScene3DOptions(opts.effects) : undefined,
       shape3d: opts.effects ? toShape3DOptions(opts.effects) : undefined,
@@ -701,7 +701,7 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOpt
   // Outline
   const ln = findChild(spPr, "a:ln");
   if (ln) {
-    result.outline = readOutlineCompat(ln);
+    result.outline = parse(outlineDesc, ln, ctx);
   }
 
   // Effects
@@ -728,21 +728,6 @@ export function readPositionFromXfrm(xfrm: XmlElement): Record<string, number> {
     const cy = attrNum(ext, "cy");
     if (cy !== undefined) result.height = cy;
   }
-  return result;
-}
-
-export function readOutlineCompat(ln: XmlElement): OutlineOptions {
-  const coreOpts = parse(outlineDesc, ln, {} as ReadContext);
-  const result: OutlineOptions = {};
-
-  if (coreOpts.width !== undefined) result.width = coreOpts.width as number;
-  if (coreOpts.dash) result.dashStyle = coreOpts.dash as OutlineOptions["dashStyle"];
-
-  if (coreOpts.type === "solidFill" && coreOpts.color) {
-    const c = coreOpts.color as { value?: string };
-    result.color = c.value ?? "";
-  }
-
   return result;
 }
 

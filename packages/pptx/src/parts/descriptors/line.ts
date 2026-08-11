@@ -18,13 +18,11 @@ import {
 import type {
   EndpointConnectionOptions,
   ConnectorLockingOptions,
+  OutlineOptions,
 } from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 import type { FillOptions } from "@shared/drawingml/fill";
-import { toCoreOutlineOptions, type OutlineOptions } from "@shared/drawingml/outline";
-
-import { readOutlineCompat } from "./shape";
 
 // ── Types ──
 
@@ -114,8 +112,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
 
     // Outline
     if (opts.outline) {
-      const coreOutline = toCoreOutlineOptions(opts.outline);
-      const outlineXml = stringify(outlineDesc, coreOutline, ctx);
+      const outlineXml = stringify(outlineDesc, opts.outline, ctx);
       if (outlineXml) spPrParts.push(outlineXml);
     }
 
@@ -180,7 +177,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
         findChild(spPr, "a:blipFill");
       if (fillChild) result.fill = parse(fillDesc, spPr, _ctx);
       const ln = findChild(spPr, "a:ln");
-      if (ln) result.outline = readOutlineCompat(ln);
+      if (ln) result.outline = parse(outlineDesc, ln, _ctx);
     }
 
     return result as LineShapeDescriptorOptions;
@@ -267,7 +264,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
     }
 
     // Outline with arrowheads
-    const coreOutline = opts.outline ? toCoreOutlineOptions(opts.outline) : {};
+    const coreOutline = opts.outline ? { ...opts.outline } : {};
     const hasArrowheads = opts.beginArrowhead || opts.endArrowhead;
 
     if (opts.outline || hasArrowheads) {
@@ -367,7 +364,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
         findChild(spPr, "a:blipFill");
       if (fillChild) result.fill = parse(fillDesc, spPr, _ctx);
       const ln = findChild(spPr, "a:ln");
-      if (ln) result.outline = readOutlineCompat(ln);
+      if (ln) result.outline = parse(outlineDesc, ln, _ctx);
 
       // Arrowheads from outline
       if (ln) {

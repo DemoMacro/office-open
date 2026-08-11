@@ -19,7 +19,7 @@ const options: PresentationOptions = {
             textBody: { text: "With Outline" },
             geometry: "roundRect",
             fill: "FFFFFF",
-            outline: { width: 25400, color: "4472C4", dashStyle: "dash" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: 25400, dash: "dash" },
           },
         },
         {
@@ -61,7 +61,7 @@ const options: PresentationOptions = {
             height: "5.3cm",
             textBody: { text: "On Gradient BG" },
             fill: "FFFFFF",
-            outline: { width: 12700, color: "FFC000" },
+            outline: { type: "solidFill", color: { value: "FFC000" }, width: 12700 },
           },
         },
       ],

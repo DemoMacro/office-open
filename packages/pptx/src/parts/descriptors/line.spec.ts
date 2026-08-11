@@ -80,7 +80,7 @@ describe("lineShapeDesc round-trip", () => {
   it("round-trips line with outline", () => {
     const opts: LineShapeDescriptorOptions = {
       id: 4,
-      outline: { width: 2, color: "FF0000" },
+      outline: { type: "solidFill", color: { value: "FF0000" }, width: 2 },
     };
     const result = roundTripLine(opts);
 
@@ -130,7 +130,7 @@ describe("connectorShapeDesc round-trip", () => {
   it("round-trips connector with outline", () => {
     const opts: ConnectorShapeDescriptorOptions = {
       id: 22,
-      outline: { width: 3, color: "00FF00" },
+      outline: { type: "solidFill", color: { value: "00FF00" }, width: 3 },
     };
     const result = roundTripConnector(opts);
 

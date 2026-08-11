@@ -1,4 +1,8 @@
-import type { PresetGeometryOptions, CustomGeometryOptions } from "@office-open/core/drawingml";
+import type {
+  PresetGeometryOptions,
+  CustomGeometryOptions,
+  OutlineOptions,
+} from "@office-open/core/drawingml";
 
 import type { EffectsOptions } from "./effects";
 /**
@@ -7,7 +11,6 @@ import type { EffectsOptions } from "./effects";
  * @module
  */
 import type { FillOptions } from "./fill";
-import type { OutlineOptions } from "./outline";
 
 export interface ConnectionSiteOptions {
   x: number;

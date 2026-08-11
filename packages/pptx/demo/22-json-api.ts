@@ -67,7 +67,7 @@ const pres: PresentationOptions = {
             x2: "15.3cm",
             y2: "7.9cm",
             endArrowhead: "triangle",
-            outline: { color: "FFC000", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "FFC000" }, width: "2pt" },
           },
         },
       ],
@@ -185,7 +185,7 @@ const pres: PresentationOptions = {
             y1: "2.1cm",
             x2: "21.2cm",
             y2: "2.1cm",
-            outline: { color: "4472C4", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "2pt" },
           },
         },
         {
@@ -194,7 +194,7 @@ const pres: PresentationOptions = {
             y1: "2.6cm",
             x2: "10.6cm",
             y2: "7.9cm",
-            outline: { color: "ED7D31", width: "3pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "3pt" },
           },
         },
         {
@@ -204,7 +204,7 @@ const pres: PresentationOptions = {
             x2: "21.2cm",
             y2: "7.9cm",
             endArrowhead: "stealth",
-            outline: { color: "70AD47", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "70AD47" }, width: "2pt" },
           },
         },
         {
@@ -376,7 +376,7 @@ const pres: PresentationOptions = {
             y: "4.8cm",
             width: "7.9cm",
             height: "4.0cm",
-            outline: { color: "4472C4", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
             textBody: {
               children: [
                 {
@@ -402,7 +402,7 @@ const pres: PresentationOptions = {
             y: "4.8cm",
             width: "7.9cm",
             height: "4.0cm",
-            outline: { color: "ED7D31", width: "1pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
             textBody: {
               children: [
                 {

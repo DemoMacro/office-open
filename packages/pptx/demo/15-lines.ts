@@ -27,7 +27,7 @@ const options: PresentationOptions = {
             y1: "3.2cm",
             x2: "21.2cm",
             y2: "3.2cm",
-            outline: { color: "4472C4", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "2pt" },
           },
         },
         // Vertical line
@@ -37,7 +37,7 @@ const options: PresentationOptions = {
             y1: "4.0cm",
             x2: "5.3cm",
             y2: "11.9cm",
-            outline: { color: "ED7D31", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "2pt" },
           },
         },
         // Diagonal line
@@ -47,7 +47,7 @@ const options: PresentationOptions = {
             y1: "4.0cm",
             x2: "19.8cm",
             y2: "11.9cm",
-            outline: { color: "70AD47", width: "3pt" },
+            outline: { type: "solidFill", color: { value: "70AD47" }, width: "3pt" },
           },
         },
         // Reverse diagonal
@@ -57,7 +57,7 @@ const options: PresentationOptions = {
             y1: "4.0cm",
             x2: "6.6cm",
             y2: "11.9cm",
-            outline: { color: "FFC000", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "FFC000" }, width: "2pt" },
           },
         },
       ],
@@ -83,7 +83,7 @@ const options: PresentationOptions = {
             x2: "10.6cm",
             y2: "3.4cm",
             endArrowhead: "triangle",
-            outline: { color: "4472C4", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "2pt" },
           },
         },
         // Bidirectional arrow
@@ -95,7 +95,7 @@ const options: PresentationOptions = {
             y2: "5.3cm",
             beginArrowhead: "triangle",
             endArrowhead: "triangle",
-            outline: { color: "ED7D31", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "2pt" },
           },
         },
         // Stealth arrow
@@ -106,7 +106,7 @@ const options: PresentationOptions = {
             x2: "10.6cm",
             y2: "7.1cm",
             endArrowhead: "stealth",
-            outline: { color: "70AD47", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "70AD47" }, width: "2pt" },
           },
         },
         // Diamond end
@@ -117,7 +117,7 @@ const options: PresentationOptions = {
             x2: "10.6cm",
             y2: "9.0cm",
             endArrowhead: "diamond",
-            outline: { color: "FFC000", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "FFC000" }, width: "2pt" },
           },
         },
         // Oval end
@@ -128,7 +128,7 @@ const options: PresentationOptions = {
             x2: "10.6cm",
             y2: "10.8cm",
             endArrowhead: "oval",
-            outline: { color: "7030A0", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "7030A0" }, width: "2pt" },
           },
         },
         // Open arrow
@@ -139,7 +139,7 @@ const options: PresentationOptions = {
             x2: "21.2cm",
             y2: "3.4cm",
             endArrowhead: "open",
-            outline: { color: "C00000", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "C00000" }, width: "2pt" },
           },
         },
         // Diagonal with stealth
@@ -150,7 +150,7 @@ const options: PresentationOptions = {
             x2: "21.2cm",
             y2: "9.3cm",
             endArrowhead: "stealth",
-            outline: { color: "4472C4", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: "2pt" },
           },
         },
         // Large arrowhead
@@ -163,7 +163,7 @@ const options: PresentationOptions = {
             endArrowhead: "triangle",
             arrowheadWidth: "large",
             arrowheadLength: "large",
-            outline: { color: "ED7D31", width: "2pt" },
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "2pt" },
           },
         },
       ],
