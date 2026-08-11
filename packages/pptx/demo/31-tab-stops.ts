@@ -28,7 +28,7 @@ const options: PresentationOptions = {
             width: "18cm",
             height: "5cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: {
                     tabStops: [

@@ -7,7 +7,7 @@
  * @module
  */
 
-import { convertEmuToPixels, convertToEmu, toUint8Array, xsdTextAnchor } from "@office-open/core";
+import { convertEmuToPixels, convertToEmu, toUint8Array } from "@office-open/core";
 import type { ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { parse } from "@office-open/core/descriptor";
@@ -22,15 +22,13 @@ import {
   scene3DDesc,
   shape3DDesc,
   shapePropertiesDesc,
-  createBodyProperties,
-  parseBodyProperties,
-  VerticalAnchor,
+  textBodyDesc,
 } from "@office-open/core/drawingml";
 import type {
   FillOptions as CoreFillOptions,
   PresetGeometryOptions,
   CustomGeometryOptions,
-  BodyPropertiesOptions,
+  TextBodyOptions,
   OutlineOptions,
   EffectListOptions,
   Scene3DOptions,
@@ -38,10 +36,8 @@ import type {
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
-import type { ParagraphOptions } from "@shared/shape/paragraph/paragraph";
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
-import { paragraphDesc, type ParagraphDescriptorOptions } from "./text";
 
 // ── Types ──
 
@@ -50,38 +46,6 @@ export interface ShapeStyleDescriptorOptions {
   fillReference?: { index: number; color?: string };
   effectReference?: { index: number; color?: string };
   fontReference?: { index: number; color?: string };
-}
-
-export interface TextBodyMarginsDescriptorOptions {
-  top?: number | UniversalMeasure;
-  bottom?: number | UniversalMeasure;
-  left?: number | UniversalMeasure;
-  right?: number | UniversalMeasure;
-}
-
-export interface TextBodyDescriptorOptions {
-  text?: string;
-  children?: (ParagraphOptions | string)[];
-  vertical?:
-    | "horz"
-    | "vert"
-    | "vert270"
-    | "wordArtVert"
-    | "eaVert"
-    | "mongolianVert"
-    | "wordArtVertRtl";
-  anchor?: "top" | "center" | "bottom" | "justify" | "distribute";
-  autoFit?: "normal" | "shape" | "none";
-  /** normAutofit @fontScale — scale applied to fit text (ST_TextFontScale, percent*1000). */
-  autoFitFontScale?: number;
-  /** normAutofit @lnSpcReduction — line-space reduction (ST_TextSpacingPercent, percent*1000). */
-  autoFitLineSpaceReduction?: number;
-  wrap?: "square" | "none";
-  margins?: TextBodyMarginsDescriptorOptions;
-  marginTop?: number | UniversalMeasure;
-  marginBottom?: number | UniversalMeasure;
-  columns?: number;
-  columnSpacing?: number;
 }
 
 export interface ShapeDescriptorOptions {
@@ -100,7 +64,7 @@ export interface ShapeDescriptorOptions {
   shape3d?: Shape3DOptions;
   flipHorizontal?: boolean;
   rotation?: number;
-  textBody?: TextBodyDescriptorOptions;
+  textBody?: TextBodyOptions;
   locking?: ShapeLockingOptions;
   placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
   placeholderIndex?: number;
@@ -182,7 +146,7 @@ export const shapeDesc: CustomDescriptor<ShapeDescriptorOptions> = {
     // shapes like the notes sldImg placeholder round-trip without a spurious
     // empty body. Parse only sets textBody when a p:txBody element exists.)
     if (opts.textBody !== undefined) {
-      parts.push(stringifyTxBody(opts.textBody, ctx));
+      parts.push(`<p:txBody>${textBodyDesc.stringify(opts.textBody, ctx) ?? ""}</p:txBody>`);
     }
 
     // ── Root attributes ──
@@ -235,7 +199,7 @@ export const shapeDesc: CustomDescriptor<ShapeDescriptorOptions> = {
 
     // p:txBody
     const txBody = findChild(el, "p:txBody");
-    if (txBody) result.textBody = readTxBody(txBody, ctx);
+    if (txBody) result.textBody = textBodyDesc.parse(txBody, ctx);
 
     return result;
   },
@@ -491,83 +455,6 @@ function stringifyStyle(style: ShapeStyleDescriptorOptions): string | undefined 
   return `<p:style>${parts.join("")}</p:style>`;
 }
 
-// ── Shape helper: p:txBody ──
-
-function stringifyTxBody(opts: TextBodyDescriptorOptions, ctx: WriteContext): string {
-  const parts: string[] = [];
-
-  // a:bodyPr
-  parts.push(stringifyBodyPr(opts));
-
-  // a:lstStyle
-  parts.push("<a:lstStyle/>");
-
-  // Paragraphs — use paragraphDesc from text.ts
-  if (opts.children && opts.children.length > 0) {
-    for (const p of opts.children) {
-      if (typeof p === "string") {
-        const xml = paragraphDesc.stringify({ text: p }, ctx);
-        parts.push(xml ?? "<a:p/>");
-      } else {
-        const xml = paragraphDesc.stringify(toParagraphDescOpts(p), ctx);
-        parts.push(xml ?? "<a:p/>");
-      }
-    }
-  } else if (opts.text !== undefined) {
-    const xml = paragraphDesc.stringify({ text: opts.text }, ctx);
-    parts.push(xml ?? "<a:p/>");
-  } else {
-    parts.push("<a:p/>");
-  }
-
-  return `<p:txBody>${parts.join("")}</p:txBody>`;
-}
-
-/** Convert ParagraphOptions to ParagraphDescriptorOptions. */
-function toParagraphDescOpts(opts: ParagraphOptions): ParagraphDescriptorOptions {
-  const result: ParagraphDescriptorOptions = {};
-  if (opts.text !== undefined) result.text = opts.text;
-  // Part-level impedance: ParagraphOptions.children allows `string` shorthand
-  // ((RunOptions|string)[]), but the descriptor layer expects RunOptions[]
-  // (text.ts). Kept as a cast rather than a conversion; the string shorthand is
-  // tolerated downstream. Avoids the viral `any` of the prior `as any`.
-  if (opts.children !== undefined)
-    result.children = opts.children as unknown as ParagraphDescriptorOptions["children"];
-  if (opts.properties) result.properties = opts.properties;
-  if (opts.endParagraphProperties !== undefined)
-    result.endParagraphProperties = opts.endParagraphProperties;
-  return result;
-}
-
-function stringifyBodyPr(opts: TextBodyDescriptorOptions): string {
-  const bodyOpts: BodyPropertiesOptions = {};
-  if (opts.vertical) bodyOpts.vert = opts.vertical;
-  if (opts.anchor) bodyOpts.anchor = xsdTextAnchor.to(opts.anchor) as VerticalAnchor;
-  if (opts.wrap) bodyOpts.wrap = opts.wrap;
-  if (opts.margins) {
-    bodyOpts.margins = {};
-    if (opts.margins.top !== undefined) bodyOpts.margins.top = opts.margins.top;
-    if (opts.margins.bottom !== undefined) bodyOpts.margins.bottom = opts.margins.bottom;
-    if (opts.margins.left !== undefined) bodyOpts.margins.left = opts.margins.left;
-    if (opts.margins.right !== undefined) bodyOpts.margins.right = opts.margins.right;
-  }
-  if (opts.columns !== undefined) bodyOpts.numCol = opts.columns;
-  if (opts.columnSpacing !== undefined) bodyOpts.spcCol = opts.columnSpacing * 100;
-  // marginTop/marginBottom (marT/marB) have no XSD counterpart on
-  // CT_TextBodyProperties — dropped (Office ignores them anyway).
-  if (opts.autoFit === "normal") {
-    bodyOpts.normAutofit = {};
-    if (opts.autoFitFontScale !== undefined) bodyOpts.normAutofit.fontScale = opts.autoFitFontScale;
-    if (opts.autoFitLineSpaceReduction !== undefined)
-      bodyOpts.normAutofit.lnSpcReduction = opts.autoFitLineSpaceReduction;
-  } else if (opts.autoFit === "shape") {
-    bodyOpts.spAutoFit = true;
-  } else if (opts.autoFit === "none") {
-    bodyOpts.noAutoFit = true;
-  }
-  return createBodyProperties(bodyOpts);
-}
-
 // ── Picture helpers ──
 
 function stringifyNvPicPr(id: number, name: string): string {
@@ -770,61 +657,6 @@ function readStyle(styleEl: XmlElement): ShapeStyleDescriptorOptions {
       if (srgbClr?.attributes?.["val"])
         result.fontReference.color = String(srgbClr.attributes["val"]);
     }
-  }
-
-  return result;
-}
-
-function readTxBody(txBody: XmlElement, ctx: ReadContext): TextBodyDescriptorOptions {
-  const result: TextBodyDescriptorOptions = {};
-
-  // a:bodyPr
-  const bodyPr = findChild(txBody, "a:bodyPr");
-  if (bodyPr) {
-    const bodyOpts = parseBodyProperties(bodyPr, ctx);
-    if (bodyOpts.vert) result.vertical = bodyOpts.vert as TextBodyDescriptorOptions["vertical"];
-    if (bodyOpts.anchor)
-      result.anchor = xsdTextAnchor.from(
-        String(bodyOpts.anchor),
-      ) as TextBodyDescriptorOptions["anchor"];
-    if (bodyOpts.wrap) result.wrap = bodyOpts.wrap as TextBodyDescriptorOptions["wrap"];
-    const insMargins: TextBodyMarginsDescriptorOptions = {};
-    if (bodyOpts.tIns !== undefined) insMargins.top = bodyOpts.tIns as number | UniversalMeasure;
-    if (bodyOpts.bIns !== undefined) insMargins.bottom = bodyOpts.bIns as number | UniversalMeasure;
-    if (bodyOpts.lIns !== undefined) insMargins.left = bodyOpts.lIns as number | UniversalMeasure;
-    if (bodyOpts.rIns !== undefined) insMargins.right = bodyOpts.rIns as number | UniversalMeasure;
-    if (Object.keys(insMargins).length > 0) result.margins = { ...result.margins, ...insMargins };
-    if (bodyOpts.numCol !== undefined) result.columns = bodyOpts.numCol;
-    if (bodyOpts.spcCol !== undefined) result.columnSpacing = Number(bodyOpts.spcCol) / 100;
-    if (bodyOpts.normAutofit) {
-      result.autoFit = "normal";
-      if (bodyOpts.normAutofit.fontScale !== undefined)
-        result.autoFitFontScale = bodyOpts.normAutofit.fontScale;
-      if (bodyOpts.normAutofit.lnSpcReduction !== undefined)
-        result.autoFitLineSpaceReduction = bodyOpts.normAutofit.lnSpcReduction;
-    } else if (bodyOpts.spAutoFit) result.autoFit = "shape";
-    else if (bodyOpts.noAutoFit) result.autoFit = "none";
-  }
-
-  // Paragraphs — use paragraphDesc
-  const paragraphs: ParagraphDescriptorOptions[] = [];
-  if (txBody.elements) {
-    for (const child of txBody.elements) {
-      if (child.name === "a:p") {
-        const para = paragraphDesc.parse(child, ctx);
-        paragraphs.push(para as ParagraphDescriptorOptions);
-      }
-    }
-  }
-
-  const [onlyPara] = paragraphs;
-  if (paragraphs.length === 1 && onlyPara?.text && !onlyPara?.properties) {
-    result.text = onlyPara.text;
-  } else if (paragraphs.length > 0) {
-    result.children = paragraphs.map((p) => {
-      if (p.text) return p.text;
-      return p as ParagraphOptions;
-    });
   }
 
   return result;

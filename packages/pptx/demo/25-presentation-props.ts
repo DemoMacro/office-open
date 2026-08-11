@@ -142,7 +142,7 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "5.3cm",
             textBody: {
-              children: [{ children: [{ text: "Slide with full props" }] }],
+              paragraphs: [{ children: [{ text: "Slide with full props" }] }],
             },
           },
         },

@@ -61,22 +61,21 @@ export type { Transform2DOptions } from "./drawingml/transform-2d";
 export { stringifyPresetGeometry } from "@office-open/core/drawingml";
 export type { ShapePropertiesOptions } from "./drawingml/shape-properties";
 
-// Shape types
+// Shape types — text/run types re-exported from core DrawingML
 export type { ShapeOptions } from "./shape/shape";
-export type { TextBodyOptions } from "./shape/text-body";
-export type { ParagraphOptions } from "./shape/paragraph/paragraph";
-export type { RunOptions } from "./shape/paragraph/run";
+export type {
+  TextBodyOptions,
+  ParagraphDescriptorOptions,
+  RunOptions,
+} from "@office-open/core/drawingml";
 export {
   UnderlineStyle,
   StrikeStyle,
   TextCapitalization,
   type RunPropertiesOptions,
   type HyperlinkOptions,
-} from "./shape/paragraph/run-properties";
-export type {
-  TextAlignment,
-  ParagraphPropertiesOptions,
-} from "./shape/paragraph/paragraph-properties";
+} from "@office-open/core/drawingml";
+export type { TextAlignment, ParagraphPropertiesOptions } from "@office-open/core/drawingml";
 export type { GroupShapeOptions } from "./shape/group-shape";
 export type { LineShapeOptions, ConnectorShapeOptions } from "./shape/line-shape";
 

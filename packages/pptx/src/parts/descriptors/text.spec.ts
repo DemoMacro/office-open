@@ -1,7 +1,6 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { RunOptions, RunPropertiesOptions } from "@office-open/core/drawingml";
 import { parse as parseXml } from "@office-open/xml";
-import type { RunOptions } from "@shared/shape/paragraph/run";
-import type { RunPropertiesOptions } from "@shared/shape/paragraph/run-properties";
 import { describe, expect, it } from "vite-plus/test";
 
 import { runPropertiesDesc, textRunDesc, paragraphDesc } from "./text";

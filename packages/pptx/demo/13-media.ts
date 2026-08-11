@@ -24,7 +24,7 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.3cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
                   children: [
@@ -59,7 +59,7 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [

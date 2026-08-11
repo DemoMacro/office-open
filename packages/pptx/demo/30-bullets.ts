@@ -28,7 +28,7 @@ const options: PresentationOptions = {
             width: "18cm",
             height: "12cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: {
                     bullet: { type: "char", char: "•", color: "FF0000", size: 120 },

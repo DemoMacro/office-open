@@ -2,6 +2,7 @@ import type { ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
 import type {
   PresetGeometryOptions,
   CustomGeometryOptions,
+  TextBodyOptions,
   OutlineOptions,
   EffectListOptions,
   Scene3DOptions,
@@ -14,8 +15,6 @@ import type {
  */
 import type { AnimationOptions } from "@shared/animation/types";
 import type { ShapePropertiesOptions } from "@shared/drawingml/shape-properties";
-
-import type { TextBodyOptions } from "./text-body";
 
 export interface ShapeStyleOptions {
   lineReference?: { index: number; color?: string };

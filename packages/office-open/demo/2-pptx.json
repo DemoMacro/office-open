@@ -13,7 +13,7 @@
             "width": 720,
             "height": 80,
             "textBody": {
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [
@@ -37,7 +37,7 @@
             "width": 460,
             "height": 40,
             "textBody": {
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [
@@ -63,7 +63,7 @@
             "width": 820,
             "height": 60,
             "textBody": {
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [
@@ -88,8 +88,7 @@
             "width": 200,
             "height": 140,
             "textBody": {
-              "text": "Solid",
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [{ "text": "Solid Fill", "fontSize": 20, "fill": "FFFFFF" }]
@@ -106,8 +105,7 @@
             "width": 200,
             "height": 140,
             "textBody": {
-              "text": "Gradient",
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [{ "text": "Gradient Fill", "fontSize": 20, "fill": "FFFFFF" }]
@@ -130,8 +128,7 @@
             "width": 200,
             "height": 140,
             "textBody": {
-              "text": "No Fill",
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [{ "text": "No Fill", "fontSize": 20, "fill": "4472C4" }]
@@ -161,7 +158,7 @@
             "width": 820,
             "height": 60,
             "textBody": {
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [
@@ -248,7 +245,7 @@
             "width": 820,
             "height": 60,
             "textBody": {
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [
@@ -280,8 +277,7 @@
                   "width": 180,
                   "height": 120,
                   "textBody": {
-                    "text": "Shape A",
-                    "children": [
+                    "paragraphs": [
                       {
                         "properties": { "alignment": "center" },
                         "children": [
@@ -300,8 +296,7 @@
                   "width": 180,
                   "height": 120,
                   "textBody": {
-                    "text": "Shape B",
-                    "children": [
+                    "paragraphs": [
                       {
                         "properties": { "alignment": "center" },
                         "children": [
@@ -320,8 +315,7 @@
                   "width": 390,
                   "height": 120,
                   "textBody": {
-                    "text": "Wide Shape",
-                    "children": [
+                    "paragraphs": [
                       {
                         "properties": { "alignment": "center" },
                         "children": [
@@ -348,7 +342,7 @@
             "width": 820,
             "height": 60,
             "textBody": {
-              "children": [
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [
@@ -373,8 +367,8 @@
             "width": 550,
             "height": 200,
             "textBody": {
-              "anchor": "center",
-              "children": [
+              "bodyProperties": { "anchor": "ctr" },
+              "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
                   "children": [

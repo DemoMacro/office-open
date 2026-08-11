@@ -18,7 +18,7 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "3cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   children: [
                     {

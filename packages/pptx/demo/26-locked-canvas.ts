@@ -16,7 +16,7 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.3cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
                   children: [{ text: "Locked Canvas Demo", size: 32, bold: true }],
@@ -39,7 +39,7 @@ const options: PresentationOptions = {
                 height: "2.6cm",
                 fill: "4472C4",
                 textBody: {
-                  children: [
+                  paragraphs: [
                     {
                       properties: { alignment: "center", bullet: { type: "none" } },
                       children: [
@@ -61,7 +61,7 @@ const options: PresentationOptions = {
                 height: "2.6cm",
                 fill: "ED7D31",
                 textBody: {
-                  children: [
+                  paragraphs: [
                     {
                       properties: { alignment: "center", bullet: { type: "none" } },
                       children: [

@@ -21,7 +21,7 @@ const pres: PresentationOptions = {
             width: "19.1cm",
             height: "2.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
                   children: [
@@ -45,7 +45,7 @@ const pres: PresentationOptions = {
             width: "13.8cm",
             height: "1.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
                   children: [
@@ -318,7 +318,7 @@ const pres: PresentationOptions = {
             width: "15.9cm",
             height: "1.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
                   children: [{ text: "Rich Text (Plain Objects)", size: 28, bold: true }],
@@ -335,7 +335,7 @@ const pres: PresentationOptions = {
             width: "18.5cm",
             height: "0.9cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -362,7 +362,7 @@ const pres: PresentationOptions = {
             width: "10.6cm",
             height: "0.9cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -386,7 +386,7 @@ const pres: PresentationOptions = {
             height: "4.0cm",
             outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "char", char: "\u25CF" } },
                   children: [{ text: "First point" }],
@@ -412,7 +412,7 @@ const pres: PresentationOptions = {
             height: "4.0cm",
             outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
                   children: [{ text: "Step one" }],

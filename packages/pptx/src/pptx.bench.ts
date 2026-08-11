@@ -103,7 +103,7 @@ const buildStyledPres = (): PresentationOptions => ({
                 height: 200,
                 fill: s.bold ? "4472C4" : undefined,
                 textBody: {
-                  children: [
+                  paragraphs: [
                     {
                       properties: { bullet: { type: "none" } },
                       children: [
@@ -165,8 +165,7 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
             width: 800,
             height: 60,
             textBody: {
-              text: "Title Slide",
-              children: [
+              paragraphs: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
                   children: [
@@ -193,7 +192,7 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
                 height: 200,
                 fill: s.bold ? "4472C4" : undefined,
                 textBody: {
-                  children: [
+                  paragraphs: [
                     {
                       properties: { bullet: { type: "none" } },
                       children: [
@@ -627,7 +626,7 @@ const build30Slides20Shapes = (): PresentationOptions => ({
           height: 80,
           fill: s.fill,
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { bullet: { type: "none" } },
                 children: [
@@ -677,7 +676,7 @@ const build50SlidesFull = (): PresentationOptions => ({
           height: 60,
           fill: "4472C4",
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { alignment: "center", bullet: { type: "none" } },
                 children: [{ text: `Slide ${si + 1} Title`, size: 28, bold: true }],
@@ -696,7 +695,7 @@ const build50SlidesFull = (): PresentationOptions => ({
             height: 90,
             fill: s.fill,
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [{ text: s.text, bold: s.bold, italic: s.italic, size: 14 }],
@@ -746,7 +745,7 @@ const build30Slides10Images = (): PresentationOptions => ({
             height: 80,
             fill: s.fill,
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [{ text: s.text, bold: s.bold, italic: s.italic, size: 14 }],
@@ -1213,7 +1212,7 @@ const buildMixed100MbPres = (): PresentationOptions => ({
             height: 80,
             fill: s.fill,
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [

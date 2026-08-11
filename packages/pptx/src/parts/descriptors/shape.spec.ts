@@ -63,7 +63,7 @@ describe("shapeDesc round-trip", () => {
       textBody: { text: "Hello" },
     });
     const textBody = result.textBody!;
-    expect(textBody.text).toBe("Hello");
+    expect((textBody.paragraphs?.[0] as { text?: string })?.text).toBe("Hello");
   });
 
   it("omits p:txBody for a textBody-less shape (e.g. sldImg placeholder)", () => {
@@ -250,31 +250,32 @@ describe("shapeDesc round-trip", () => {
     expect(result.hasCustomPrompt).toBe(true);
   });
 
-  it("round-trips shape with textBody children", () => {
+  it("round-trips shape with textBody paragraphs", () => {
     const result = roundTrip({
       x: 0,
       y: 0,
       width: 200,
       height: 100,
       textBody: {
-        children: [
+        paragraphs: [
           { children: [{ text: "Hello " }, { text: "Bold", bold: true }] },
           { children: [{ text: "World" }] },
         ],
       },
     });
     const textBody = result.textBody!;
-    const children = textBody.children! as Record<string, unknown>[];
-    expect(children).toHaveLength(2);
+    const paragraphs = textBody.paragraphs!;
+    expect(paragraphs).toHaveLength(2);
     // First paragraph has 2 runs — not simplified to text shorthand
-    const para0 = children[0] as { children: Record<string, unknown>[] };
+    const para0 = paragraphs[0] as { children: Record<string, unknown>[] };
     expect(para0.children).toHaveLength(2);
     const [run0, run1] = para0.children;
     expect(run0?.text).toBe("Hello ");
     expect(run1?.text).toBe("Bold");
     expect(run1?.bold).toBe(true);
-    // Second paragraph simplified to text shorthand since single run with no properties
-    expect(children[1]).toBe("World");
+    // Second paragraph: single run, no properties → text shorthand
+    const para1 = paragraphs[1] as { text?: string };
+    expect(para1.text).toBe("World");
   });
 
   it("round-trips shape with textBody vertical", () => {
@@ -283,10 +284,10 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      textBody: { text: "Vertical", vertical: "vert" },
+      textBody: { text: "Vertical", bodyProperties: { vert: "vert" } },
     });
     const textBody = result.textBody!;
-    expect(textBody.vertical).toBe("vert");
+    expect(textBody.bodyProperties?.vert).toBe("vert");
   });
 
   it("round-trips shape with textBody anchor", () => {
@@ -295,22 +296,22 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      textBody: { text: "Centered", anchor: "center" },
+      textBody: { text: "Centered", bodyProperties: { anchor: "ctr" } },
     });
     const textBody = result.textBody!;
-    expect(textBody.anchor).toBe("center");
+    expect(textBody.bodyProperties?.anchor).toBe("ctr");
   });
 
-  it("round-trips shape with textBody autoFit", () => {
+  it("round-trips shape with textBody autofit", () => {
     const result = roundTrip({
       x: 0,
       y: 0,
       width: 100,
       height: 100,
-      textBody: { text: "Auto", autoFit: "normal" },
+      textBody: { text: "Auto", bodyProperties: { normAutofit: {} } },
     });
     const textBody = result.textBody!;
-    expect(textBody.autoFit).toBe("normal");
+    expect(textBody.bodyProperties?.normAutofit).toEqual({});
   });
 
   it("round-trips shape with textBody margins", () => {
@@ -321,15 +322,15 @@ describe("shapeDesc round-trip", () => {
       height: 100,
       textBody: {
         text: "Margins",
-        margins: { top: 1000, bottom: 2000, left: 3000, right: 4000 },
+        bodyProperties: { margins: { top: 1000, bottom: 2000, left: 3000, right: 4000 } },
       },
     });
     const textBody = result.textBody!;
-    const margins = textBody.margins!;
-    expect(margins.top).toBe(1000);
-    expect(margins.bottom).toBe(2000);
-    expect(margins.left).toBe(3000);
-    expect(margins.right).toBe(4000);
+    const bodyProperties = textBody.bodyProperties!;
+    expect(bodyProperties.tIns).toBe(1000);
+    expect(bodyProperties.bIns).toBe(2000);
+    expect(bodyProperties.lIns).toBe(3000);
+    expect(bodyProperties.rIns).toBe(4000);
   });
 
   it("round-trips shape reflection effect with all fields", () => {

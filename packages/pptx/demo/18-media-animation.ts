@@ -107,7 +107,7 @@ const options: PresentationOptions = {
           shape: {
             id: 2,
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   children: [{ text: "Hello " }],
                 },

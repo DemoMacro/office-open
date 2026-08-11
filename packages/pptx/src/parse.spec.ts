@@ -93,8 +93,7 @@ describe("parsePresentation", () => {
               width: 600,
               height: 400,
               textBody: {
-                text: "Dark slide",
-                children: [
+                paragraphs: [
                   {
                     properties: { bullet: { type: "none" } },
                     children: [{ text: "Dark slide", fill: "FFFFFF" }],

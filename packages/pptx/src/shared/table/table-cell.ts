@@ -1,14 +1,14 @@
 import type { UniversalMeasure } from "@office-open/core";
+import type { ParagraphDescriptorOptions } from "@office-open/core/drawingml";
 
 import type { FillOptions } from "../drawingml/fill";
-import type { ParagraphOptions } from "../shape/paragraph/paragraph";
 import type { CellBorderOptions } from "./table-cell-properties";
 
 export type VerticalAlignment = "top" | "center" | "bottom" | "justify" | "distribute";
 
 export interface TableCellOptions {
   text?: string;
-  children?: (ParagraphOptions | string)[];
+  children?: (ParagraphDescriptorOptions | string)[];
   fill?: FillOptions;
   borders?: {
     top?: CellBorderOptions;

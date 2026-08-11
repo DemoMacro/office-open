@@ -17,7 +17,7 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.3cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { alignment: "center", bullet: { type: "none" } },
                   children: [
@@ -41,7 +41,7 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -76,7 +76,7 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -105,7 +105,7 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -129,7 +129,7 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -158,7 +158,7 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.1cm",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -188,7 +188,7 @@ const options: PresentationOptions = {
             height: "1.1cm",
             fill: "333333",
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -230,7 +230,7 @@ const options: PresentationOptions = {
             height: "3.2cm",
             outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { alignment: "left", bullet: { type: "none" } },
                   children: [{ text: "Left aligned text", size: 16 }],
@@ -265,7 +265,7 @@ const options: PresentationOptions = {
             height: "5.3cm",
             outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "char", char: "\u25CF" } },
                   children: [{ text: "Bullet Point 1" }],
@@ -294,7 +294,7 @@ const options: PresentationOptions = {
             height: "5.3cm",
             outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "autoNum", format: "arabicPeriod" } },
                   children: [{ text: "First item" }],
@@ -328,7 +328,7 @@ const options: PresentationOptions = {
             height: "5.3cm",
             outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   children: [{ text: "Normal text", size: 16 }],
                 },
@@ -363,7 +363,7 @@ const options: PresentationOptions = {
             height: "3.2cm",
             outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { lineSpacing: 100, bullet: { type: "none" } },
                   children: [{ text: "Single spacing (1.0)", size: 14 }],
@@ -389,7 +389,7 @@ const options: PresentationOptions = {
             height: "3.2cm",
             outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { lineSpacingPoints: 14, bullet: { type: "none" } },
                   children: [{ text: "Exactly 14pt", size: 14 }],

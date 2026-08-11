@@ -1,5 +1,5 @@
 import type { UniversalMeasure } from "@office-open/core";
-import type { TextBodyOptions } from "@shared/shape/text-body";
+import type { TextBodyOptions } from "@office-open/core/drawingml";
 
 export interface LockedCanvasShapeOptions {
   x?: number | UniversalMeasure;

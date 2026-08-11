@@ -80,8 +80,8 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              vertical: "vert",
-              children: [
+              bodyProperties: { vert: "vert" },
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -103,8 +103,8 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              vertical: "vert270",
-              children: [
+              bodyProperties: { vert: "vert270" },
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [{ text: "Rotated 270 (bottom to top)", size: 14 }],
@@ -121,8 +121,8 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              vertical: "horz",
-              children: [
+              bodyProperties: { vert: "horz" },
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [{ text: "Horizontal (default)", size: 14 }],
@@ -154,7 +154,7 @@ const options: PresentationOptions = {
             y: "3.2cm",
             width: "5.3cm",
             height: "5.3cm",
-            textBody: { anchor: "top", text: "Top anchored text" },
+            textBody: { bodyProperties: { anchor: "t" }, text: "Top anchored text" },
             outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },
@@ -165,7 +165,7 @@ const options: PresentationOptions = {
             y: "3.2cm",
             width: "5.3cm",
             height: "5.3cm",
-            textBody: { anchor: "center", text: "Center anchored text" },
+            textBody: { bodyProperties: { anchor: "ctr" }, text: "Center anchored text" },
             outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },
@@ -176,7 +176,7 @@ const options: PresentationOptions = {
             y: "3.2cm",
             width: "5.3cm",
             height: "5.3cm",
-            textBody: { anchor: "bottom", text: "Bottom anchored text" },
+            textBody: { bodyProperties: { anchor: "b" }, text: "Bottom anchored text" },
             outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },
@@ -188,7 +188,7 @@ const options: PresentationOptions = {
             width: "6.6cm",
             height: "2.1cm",
             textBody: {
-              autoFit: "normal",
+              bodyProperties: { normAutofit: {} },
               text: "This is a very long text that should auto-fit to shrink within the shape bounds",
             },
             outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
@@ -201,7 +201,7 @@ const options: PresentationOptions = {
             y: "9.3cm",
             width: "6.6cm",
             height: "2.1cm",
-            textBody: { autoFit: "shape", text: "Shape auto-fit text" },
+            textBody: { bodyProperties: { spAutoFit: true }, text: "Shape auto-fit text" },
             outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
           },
         },
@@ -229,7 +229,7 @@ const options: PresentationOptions = {
             height: "4.0cm",
             outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
             textBody: {
-              children: [
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -251,8 +251,10 @@ const options: PresentationOptions = {
             width: "9.3cm",
             height: "4.0cm",
             textBody: {
-              margins: { top: 100000, bottom: 100000, left: 200000, right: 200000 },
-              children: [
+              bodyProperties: {
+                margins: { top: 100000, bottom: 100000, left: 200000, right: 200000 },
+              },
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [
@@ -275,9 +277,8 @@ const options: PresentationOptions = {
             width: "19.3cm",
             height: "4.0cm",
             textBody: {
-              columns: 2,
-              columnSpacing: 12,
-              children: [
+              bodyProperties: { numCol: 2, spcCol: 1200 },
+              paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
                   children: [

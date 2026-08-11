@@ -116,7 +116,7 @@ export interface BodyPropertiesOptions {
   spcCol?: number | UniversalMeasure;
   rtlCol?: boolean;
   fromWordArt?: boolean;
-  anchor?: (typeof VerticalAnchor)[keyof typeof VerticalAnchor];
+  anchor?: `${VerticalAnchor}`;
   anchorCtr?: boolean;
   forceAA?: boolean;
   upright?: boolean;

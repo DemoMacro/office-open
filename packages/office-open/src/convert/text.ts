@@ -156,6 +156,11 @@ function drawingToDocxChildren(
 ): NonNullable<ParagraphOptions["children"]> {
   const out: NonNullable<ParagraphOptions["children"]> = [];
   for (const child of children) {
+    // String shorthand (core children allow bare strings) → one text run.
+    if (typeof child === "string") {
+      out.push({ text: child });
+      continue;
+    }
     // Soft break (a:br) → a run carrying w:br (count collapses to 1).
     if (typeof child === "object" && child !== null && "break" in child) {
       out.push({ break: 1 });

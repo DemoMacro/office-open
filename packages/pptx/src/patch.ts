@@ -22,13 +22,13 @@ import type {
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
+import type { RunOptions } from "@office-open/core/drawingml";
 import { findChild, js2xml, xml2js } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import { commentAuthorsDesc, slideCommentsDesc } from "@parts/descriptors/comments";
 import { textRunDesc } from "@parts/descriptors/text";
 import type { SlideCommentOptions, SlideOptions } from "@shared/file";
-import type { RunOptions } from "@shared/shape/paragraph/run";
 
 import { buildCommentData, stringifySlide } from "./compiler";
 import { PptxWriteContext } from "./context";

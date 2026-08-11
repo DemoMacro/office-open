@@ -154,7 +154,7 @@ const slides: SlideOptions[] = [
           height: "1.6cm",
           fill: "1B2A4A",
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { alignment: "center", bullet: { type: "none" } },
                 children: [
@@ -214,7 +214,7 @@ const slides: SlideOptions[] = [
           width: "6.6cm",
           height: "3.4cm",
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { bullet: { type: "none" } },
                 children: [
@@ -240,7 +240,7 @@ const slides: SlideOptions[] = [
           height: "4.2cm",
           outline: { type: "solidFill", color: { value: "4472C4" }, width: 12700, dash: "dash" },
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { bullet: { type: "char", char: "\u25CF", color: "4472C4" } },
                 children: [{ text: "Bullet point one" }],
@@ -285,7 +285,7 @@ const slides: SlideOptions[] = [
           width: "10.1cm",
           height: "4.2cm",
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { alignment: "center", bullet: { type: "none" }, lineSpacing: 1.5 },
                 children: [
@@ -532,7 +532,7 @@ const slides: SlideOptions[] = [
           width: "13.2cm",
           height: "2.1cm",
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { alignment: "center", bullet: { type: "none" } },
                 children: [
@@ -654,7 +654,7 @@ const slides: SlideOptions[] = [
           height: "10.6cm",
           fill: "2D4A7A",
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { bullet: { type: "none" } },
                 children: [{ text: "Dark theme slide", fill: "FFFFFF", size: 24 }],
@@ -1001,7 +1001,7 @@ const slides: SlideOptions[] = [
           width: "15.9cm",
           height: "1.6cm",
           textBody: {
-            children: [
+            paragraphs: [
               {
                 properties: { bullet: { type: "none" } },
                 children: [
@@ -1270,7 +1270,7 @@ const slides: SlideOptions[] = [
           width: "2.6cm",
           height: "7.9cm",
           fill: "4472C4",
-          textBody: { text: "Vertical", vertical: "vert" },
+          textBody: { bodyProperties: { vert: "vert" }, text: "Vertical" },
         },
       },
       // Anchor bottom
@@ -1282,7 +1282,7 @@ const slides: SlideOptions[] = [
           height: "7.9cm",
           fill: "F2F2F2",
           outline: { type: "solidFill", color: { value: "4472C4" }, width: 12700 },
-          textBody: { text: "Anchored Bottom", anchor: "bottom" },
+          textBody: { bodyProperties: { anchor: "b" }, text: "Anchored Bottom" },
         },
       },
       // AutoFit shrink
@@ -1293,7 +1293,10 @@ const slides: SlideOptions[] = [
           width: "5.3cm",
           height: "2.6cm",
           fill: "E8F0FE",
-          textBody: { text: "AutoFit Shrink Text To Fit Shape", autoFit: "normal" },
+          textBody: {
+            bodyProperties: { normAutofit: {} },
+            text: "AutoFit Shrink Text To Fit Shape",
+          },
         },
       },
       // Flip horizontal

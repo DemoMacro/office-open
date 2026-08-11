@@ -5,6 +5,7 @@
  */
 
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
+import type { TextBodyOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
@@ -16,11 +17,7 @@ import { timingDesc } from "./animation";
 import { backgroundDesc, type BackgroundDescriptorOptions } from "./background";
 import { parseChild } from "./bridge";
 import { shapeDesc, pictureDesc } from "./shape";
-import type {
-  ShapeDescriptorOptions,
-  PictureDescriptorOptions,
-  TextBodyDescriptorOptions,
-} from "./shape";
+import type { ShapeDescriptorOptions, PictureDescriptorOptions } from "./shape";
 
 // ── Types ──
 
@@ -54,7 +51,7 @@ export interface SlideDescriptorOptions {
 export type SlideChild =
   | { shape: ShapeDescriptorOptions }
   | { picture: PictureDescriptorOptions }
-  | { text: TextBodyDescriptorOptions }
+  | { text: TextBodyOptions }
   | { contentPart: { rId: string } };
 
 export interface TransitionDescriptorOptions {

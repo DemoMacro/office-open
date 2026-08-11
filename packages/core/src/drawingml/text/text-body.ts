@@ -66,7 +66,13 @@ export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
     if (bodyPr) result.bodyProperties = parseBodyProperties(bodyPr, ctx);
 
     const lstStyle = findChild(el, "a:lstStyle");
-    if (lstStyle) result.listStyle = textListStyleDesc.parse(lstStyle, ctx);
+    if (lstStyle) {
+      const parsed = textListStyleDesc.parse(lstStyle, ctx);
+      // An empty <a:lstStyle/> parses to all-undefined groups; skip it so
+      // stringify re-emits the self-closing form (matches MS Office byte layout
+      // for bare text bodies).
+      if (parsed.title || parsed.body || parsed.other) result.listStyle = parsed;
+    }
 
     const paragraphs: ParagraphDescriptorOptions[] = [];
     for (const child of el.elements ?? []) {
