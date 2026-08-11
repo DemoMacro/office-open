@@ -155,5 +155,12 @@ export { SmartArtCollection, type SmartArtData } from "@office-open/core/smartar
 export { createDataModel } from "@office-open/core/smartart";
 export type { TreeNode } from "@office-open/core/smartart";
 
+// Placeholder inheritance
+export {
+  resolvePlaceholder,
+  PLACEHOLDER_TYPE_TO_KEY,
+  type ResolvedPlaceholder,
+} from "./placeholder";
+
 // Slide types — re-export from parts
 export type { SlideChild } from "@parts/slide/slide-child";
