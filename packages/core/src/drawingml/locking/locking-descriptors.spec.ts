@@ -13,12 +13,14 @@ import type {
   PictureLockingOptions,
   GroupLockingOptions,
   GraphicFrameLockingOptions,
+  ConnectorLockingOptions,
 } from "./locking";
 import {
   shapeLockingDesc,
   pictureLockingDesc,
   groupLockingDesc,
   graphicFrameLockingDesc,
+  connectorLockingDesc,
 } from "./locking-descriptors";
 
 function roundTrip<T>(desc: CustomDescriptor<T>, opts: T): T {
@@ -97,5 +99,21 @@ describe("graphicFrameLockingDesc", () => {
     expect(result.noGrp).toBe(true);
     expect(result.noDrilldown).toBe(true);
     expect(result.noSelect).toBe(false);
+  });
+});
+
+describe("connectorLockingDesc", () => {
+  it("round-trips connector locking (base AG_Locking, no extras)", () => {
+    const opts: ConnectorLockingOptions = {
+      noGrp: true,
+      noSelect: false,
+      noChangeArrowheads: true,
+      noChangeShapeType: true,
+    };
+    const result = roundTrip(connectorLockingDesc, opts);
+    expect(result.noGrp).toBe(true);
+    expect(result.noSelect).toBe(false);
+    expect(result.noChangeArrowheads).toBe(true);
+    expect(result.noChangeShapeType).toBe(true);
   });
 });

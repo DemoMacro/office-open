@@ -1,4 +1,8 @@
-import type { UniversalMeasure } from "@office-open/core";
+import type {
+  EndpointConnectionOptions,
+  ConnectorLockingOptions,
+  UniversalMeasure,
+} from "@office-open/core";
 import type { FillOptions } from "@shared/drawingml/fill";
 import type { OutlineOptions } from "@shared/drawingml/outline";
 
@@ -28,4 +32,10 @@ export interface ConnectorShapeOptions {
   endArrowhead?: ArrowheadType;
   arrowheadWidth?: "small" | "medium" | "large";
   arrowheadLength?: "small" | "medium" | "large";
+  /** a:cxnSpLocks — connector locking (inside p:cNvCxnSpPr). */
+  locking?: ConnectorLockingOptions;
+  /** a:stCxn — start endpoint glued to a shape connection site. */
+  startConnection?: EndpointConnectionOptions;
+  /** a:endCxn — end endpoint glued to a shape connection site. */
+  endConnection?: EndpointConnectionOptions;
 }

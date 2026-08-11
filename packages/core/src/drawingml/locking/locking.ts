@@ -71,6 +71,10 @@ export interface GraphicFrameLockingOptions {
   noResize?: boolean;
 }
 
+// ── Connector locking (CT_ConnectorLocking = AG_Locking, no extras) ──
+
+export type ConnectorLockingOptions = BaseLockingOptions;
+
 // ── Factory functions ──
 
 function toFlatAttrs(opts: Readonly<Record<string, boolean | undefined>>): Record<string, boolean> {
@@ -97,4 +101,8 @@ export function createGroupLocking(opts: GroupLockingOptions): string {
 
 export function createGraphicFrameLocking(opts: GraphicFrameLockingOptions): string {
   return element("a:graphicFrameLocks", toFlatAttrs(opts as Record<string, boolean | undefined>));
+}
+
+export function createConnectorLocking(opts: ConnectorLockingOptions): string {
+  return element("a:cxnSpLocks", toFlatAttrs(opts as Record<string, boolean | undefined>));
 }

@@ -8,7 +8,17 @@ import { convertToEmu, xsdLineEndSize } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
-import { fillDesc, outlineDesc } from "@office-open/core/drawingml";
+import {
+  connectorLockingDesc,
+  fillDesc,
+  outlineDesc,
+  parseEndpointConnection,
+  stringifyEndpointConnection,
+} from "@office-open/core/drawingml";
+import type {
+  EndpointConnectionOptions,
+  ConnectorLockingOptions,
+} from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 import type { FillOptions } from "@shared/drawingml/fill";
@@ -44,6 +54,12 @@ export interface ConnectorShapeDescriptorOptions {
   endArrowhead?: ArrowheadType;
   arrowheadWidth?: "small" | "medium" | "large";
   arrowheadLength?: "small" | "medium" | "large";
+  /** a:cxnSpLocks — connector locking (inside p:cNvCxnSpPr). */
+  locking?: ConnectorLockingOptions;
+  /** a:stCxn — start endpoint glued to a shape connection site. */
+  startConnection?: EndpointConnectionOptions;
+  /** a:endCxn — end endpoint glued to a shape connection site. */
+  endConnection?: EndpointConnectionOptions;
 }
 
 // ── ID counters ──
@@ -211,9 +227,23 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
 
     const parts: string[] = [];
 
-    // p:nvCxnSpPr
+    // p:nvCxnSpPr — cNvCxnSpPr holds optional cxnSpLocks/stCxn/endCxn.
+    const cNvCxnSpPrInner: string[] = [];
+    if (opts.locking) {
+      const locks = stringify(connectorLockingDesc, opts.locking, ctx);
+      if (locks) cNvCxnSpPrInner.push(locks);
+    }
+    if (opts.startConnection) {
+      cNvCxnSpPrInner.push(stringifyEndpointConnection("stCxn", opts.startConnection));
+    }
+    if (opts.endConnection) {
+      cNvCxnSpPrInner.push(stringifyEndpointConnection("endCxn", opts.endConnection));
+    }
+    const cNvCxnSpPr = cNvCxnSpPrInner.length
+      ? `<p:cNvCxnSpPr>${cNvCxnSpPrInner.join("")}</p:cNvCxnSpPr>`
+      : "<p:cNvCxnSpPr/>";
     parts.push(
-      `<p:nvCxnSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/><p:cNvCxnSpPr/><p:nvPr/></p:nvCxnSpPr>`,
+      `<p:nvCxnSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/>${cNvCxnSpPr}<p:nvPr/></p:nvCxnSpPr>`,
     );
 
     // p:spPr
@@ -269,7 +299,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
   parse(el, _ctx) {
     const result: Partial<ConnectorShapeDescriptorOptions> = {};
 
-    // p:nvCxnSpPr → id, name
+    // p:nvCxnSpPr → id, name, and optional cNvCxnSpPr (locks + connections)
     const nvCxnSpPr = findChild(el, "p:nvCxnSpPr");
     if (nvCxnSpPr) {
       const cNvPr = findChild(nvCxnSpPr, "p:cNvPr");
@@ -278,6 +308,24 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
         if (id !== undefined) result.id = id;
         const name = attr(cNvPr, "name");
         if (name) result.name = name;
+      }
+      const cNvCxnSpPr = findChild(nvCxnSpPr, "p:cNvCxnSpPr");
+      if (cNvCxnSpPr) {
+        const cxnSpLocks = findChild(cNvCxnSpPr, "a:cxnSpLocks");
+        if (cxnSpLocks) {
+          const locks = parse(connectorLockingDesc, cxnSpLocks, _ctx);
+          if (locks && Object.keys(locks).length > 0) result.locking = locks;
+        }
+        const stCxn = findChild(cNvCxnSpPr, "a:stCxn");
+        if (stCxn) {
+          const conn = parseEndpointConnection(stCxn);
+          if (conn) result.startConnection = conn;
+        }
+        const endCxn = findChild(cNvCxnSpPr, "a:endCxn");
+        if (endCxn) {
+          const conn = parseEndpointConnection(endCxn);
+          if (conn) result.endConnection = conn;
+        }
       }
     }
 

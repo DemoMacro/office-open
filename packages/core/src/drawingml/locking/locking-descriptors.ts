@@ -9,6 +9,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { CustomDescriptor } from "../../descriptor";
 import type {
   BaseLockingOptions,
+  ConnectorLockingOptions,
   GraphicFrameLockingOptions,
   GroupLockingOptions,
   PictureLockingOptions,
@@ -121,5 +122,22 @@ export const graphicFrameLockingDesc: CustomDescriptor<GraphicFrameLockingOption
   parse(el, _ctx) {
     const allKeys = [...BASE_LOCKING_KEYS, ...FRAME_EXTRA_KEYS];
     return readLockingAttrs(el, allKeys);
+  },
+};
+
+// ── Connector locking descriptor (CT_ConnectorLocking = AG_Locking) ──
+
+export const connectorLockingDesc: CustomDescriptor<ConnectorLockingOptions> = {
+  kind: "custom",
+  stringify(opts, _ctx) {
+    const attrStr = stringifyLockingAttrs(
+      opts as Record<string, boolean | undefined>,
+      BASE_LOCKING_KEYS,
+    );
+    if (!attrStr) return undefined;
+    return `<a:cxnSpLocks${attrStr}/>`;
+  },
+  parse(el, _ctx) {
+    return readLockingAttrs(el, BASE_LOCKING_KEYS) as ConnectorLockingOptions;
   },
 };

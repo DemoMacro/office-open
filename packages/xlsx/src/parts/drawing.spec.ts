@@ -193,6 +193,28 @@ describe("drawingDesc — anchored connectors", () => {
     expect(conn.toCol).toBe(5);
     expect(conn.spPr.geometry).toMatchObject({ preset: "line" });
   });
+
+  it("round-trips connector locking and endpoint connections", () => {
+    const opts: DrawingOptions = {
+      connectors: [
+        {
+          col: 1,
+          row: 1,
+          toCol: 5,
+          toRow: 5,
+          spPr: { geometry: "line" },
+          locking: { noAdjustHandles: true, noChangeShapeType: true },
+          startConnection: { id: 1, index: 0 },
+          endConnection: { id: 2, index: 3 },
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const conn = result.connectors![0]!;
+    expect(conn.locking).toEqual({ noAdjustHandles: true, noChangeShapeType: true });
+    expect(conn.startConnection).toEqual({ id: 1, index: 0 });
+    expect(conn.endConnection).toEqual({ id: 2, index: 3 });
+  });
 });
 
 describe("drawingDesc — anchored groups", () => {

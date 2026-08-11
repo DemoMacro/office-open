@@ -11,8 +11,16 @@
 import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
-import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawingml";
+import {
+  connectorLockingDesc,
+  parseEndpointConnection,
+  shapePropertiesDesc,
+  stringifyEndpointConnection,
+  textBodyDesc,
+} from "@office-open/core/drawingml";
 import type {
+  EndpointConnectionOptions,
+  ConnectorLockingOptions,
   GroupTransform2DOptions,
   ShapePropertiesOptions,
   TextBodyOptions,
@@ -154,6 +162,12 @@ export interface DrawingConnectorOptions extends DrawingAnchorOptions {
   spPr: ShapePropertiesOptions;
   /** macro attribute (CT_Connector). */
   macro?: string;
+  /** a:cxnSpLocks — connector locking (inside cNvCxnSpPr). */
+  locking?: ConnectorLockingOptions;
+  /** a:stCxn — start endpoint glued to a shape connection site. */
+  startConnection?: EndpointConnectionOptions;
+  /** a:endCxn — end endpoint glued to a shape connection site. */
+  endConnection?: EndpointConnectionOptions;
 }
 
 /** Shape nested inside a group (no anchor — positioned via spPr.xfrm). */
@@ -170,6 +184,12 @@ export interface GroupConnectorChildOptions {
   name?: string;
   spPr: ShapePropertiesOptions;
   macro?: string;
+  /** a:cxnSpLocks — connector locking (inside cNvCxnSpPr). */
+  locking?: ConnectorLockingOptions;
+  /** a:stCxn — start endpoint glued to a shape connection site. */
+  startConnection?: EndpointConnectionOptions;
+  /** a:endCxn — end endpoint glued to a shape connection site. */
+  endConnection?: EndpointConnectionOptions;
 }
 
 /** Anchored group (xdr:grpSp): group transform + nested shapes/connectors. */
@@ -428,9 +448,28 @@ function buildConnectorContent(
   spPr: ShapePropertiesOptions,
   ctx: WriteContext,
   attrs = "",
+  connector?: {
+    locking?: ConnectorLockingOptions;
+    startConnection?: EndpointConnectionOptions;
+    endConnection?: EndpointConnectionOptions;
+  },
 ): string {
   const spPrXml = shapePropertiesDesc.stringify(spPr, ctx) ?? "";
-  return `<cxnSp${attrs}><nvCxnSpPr><cNvPr id="${id}" name="${escapeXml(name)}"/><cNvCxnSpPr/></nvCxnSpPr><spPr>${spPrXml}</spPr></cxnSp>`;
+  const cNvCxnSpPrInner: string[] = [];
+  if (connector?.locking) {
+    const locks = connectorLockingDesc.stringify(connector.locking, ctx);
+    if (locks) cNvCxnSpPrInner.push(locks);
+  }
+  if (connector?.startConnection) {
+    cNvCxnSpPrInner.push(stringifyEndpointConnection("stCxn", connector.startConnection));
+  }
+  if (connector?.endConnection) {
+    cNvCxnSpPrInner.push(stringifyEndpointConnection("endCxn", connector.endConnection));
+  }
+  const cNvCxnSpPr = cNvCxnSpPrInner.length
+    ? `<cNvCxnSpPr>${cNvCxnSpPrInner.join("")}</cNvCxnSpPr>`
+    : "<cNvCxnSpPr/>";
+  return `<cxnSp${attrs}><nvCxnSpPr><cNvPr id="${id}" name="${escapeXml(name)}"/>${cNvCxnSpPr}</nvCxnSpPr><spPr>${spPrXml}</spPr></cxnSp>`;
 }
 
 function stringifyShape(shape: DrawingShapeOptions, id: number, ctx: WriteContext): string {
@@ -452,6 +491,7 @@ function stringifyConnector(conn: DrawingConnectorOptions, id: number, ctx: Writ
     conn.spPr,
     ctx,
     macroTextlinkAttrs(conn),
+    conn,
   );
   return wrapAnchor(conn, `${xml}${clientDataXml(conn)}`);
 }
@@ -490,6 +530,7 @@ function buildGroup(
         childConn.spPr,
         ctx,
         macroTextlinkAttrs(childConn),
+        childConn,
       ),
     );
     childId++;
@@ -698,6 +739,37 @@ function parseShapeAnchor(
   return result;
 }
 
+/** Read cNvCxnSpPr children (cxnSpLocks/stCxn/endCxn) onto a connector target. */
+function readConnectorNonVisual(
+  target: {
+    locking?: ConnectorLockingOptions;
+    startConnection?: EndpointConnectionOptions;
+    endConnection?: EndpointConnectionOptions;
+  },
+  cxnSp: XmlElement,
+  ctx: ReadContext,
+): void {
+  const nvCxnSpPr = findChild(cxnSp, "nvCxnSpPr");
+  if (!nvCxnSpPr) return;
+  const cNvCxnSpPr = findChild(nvCxnSpPr, "cNvCxnSpPr");
+  if (!cNvCxnSpPr) return;
+  const cxnSpLocks = findChild(cNvCxnSpPr, "a:cxnSpLocks");
+  if (cxnSpLocks) {
+    const locks = connectorLockingDesc.parse(cxnSpLocks, ctx);
+    if (locks && Object.keys(locks).length > 0) target.locking = locks;
+  }
+  const stCxn = findChild(cNvCxnSpPr, "a:stCxn");
+  if (stCxn) {
+    const conn = parseEndpointConnection(stCxn);
+    if (conn) target.startConnection = conn;
+  }
+  const endCxn = findChild(cNvCxnSpPr, "a:endCxn");
+  if (endCxn) {
+    const conn = parseEndpointConnection(endCxn);
+    if (conn) target.endConnection = conn;
+  }
+}
+
 function parseConnectorAnchor(
   anchor: XmlElement,
   cxnSp: XmlElement,
@@ -714,6 +786,8 @@ function parseConnectorAnchor(
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
 
   if (cxnSp.attributes?.["macro"] !== undefined) result.macro = String(cxnSp.attributes["macro"]);
+
+  readConnectorNonVisual(result, cxnSp, ctx);
   return result;
 }
 
@@ -760,6 +834,7 @@ function parseGroupAnchor(
       if (childName !== undefined) childConn.name = childName;
       if (child.attributes?.["macro"] !== undefined)
         childConn.macro = String(child.attributes["macro"]);
+      readConnectorNonVisual(childConn, child, ctx);
       childConnectors.push(childConn);
     }
   }

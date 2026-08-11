@@ -145,11 +145,18 @@ export {
   createPictureLocking,
   createGroupLocking,
   createGraphicFrameLocking,
+  createConnectorLocking,
   type ShapeLockingOptions,
   type PictureLockingOptions,
   type GroupLockingOptions,
   type GraphicFrameLockingOptions,
+  type ConnectorLockingOptions,
 } from "./locking";
+export {
+  stringifyEndpointConnection,
+  parseEndpointConnection,
+  type EndpointConnectionOptions,
+} from "./connection";
 
 // Diagram (SmartArt dgm: elements)
 export {
