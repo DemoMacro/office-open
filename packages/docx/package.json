@@ -39,30 +39,6 @@
     ".": {
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
-    },
-    "./generate": {
-      "types": "./dist/generate.d.mts",
-      "import": "./dist/generate.mjs"
-    },
-    "./parse": {
-      "types": "./dist/parse.d.mts",
-      "import": "./dist/parse.mjs"
-    },
-    "./patch": {
-      "types": "./dist/patch/index.d.mts",
-      "import": "./dist/patch/index.mjs"
-    },
-    "./chart": {
-      "types": "./dist/chart.d.mts",
-      "import": "./dist/chart.mjs"
-    },
-    "./drawingml": {
-      "types": "./dist/drawingml.d.mts",
-      "import": "./dist/drawingml.mjs"
-    },
-    "./smartart": {
-      "types": "./dist/smartart.d.mts",
-      "import": "./dist/smartart.mjs"
     }
   },
   "scripts": {
