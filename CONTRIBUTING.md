@@ -58,9 +58,11 @@ Use **kebab-case** for all file and directory names.
 
 ```
 parts/settings.ts           — simple part (single file)
-parts/document/body.ts      — complex part (directory)
-shared/run.ts               — shared types
+parts/document/body.ts      — complex part (subdirectory)
+shared/shape/shape.ts       — graphic-object types AND descriptor, co-located
 ```
+
+Types and their `<part>Desc` descriptor are always co-located. Graphic-object descriptors (shape/picture/connector/group) sit with their types under `shared/<domain>/` (`shared/shape/`, `shared/table/`), not in a separate `parts/descriptors/`. Whole-part descriptors (presentation, slide-master) stay under `parts/`. Judge part complexity by element/line count — xlsx `worksheet`/`workbook`/`styles`/`table`/`drawing` are complex enough to be subdirectories, matching the docx baseline.
 
 ### Descriptors
 
@@ -142,6 +144,14 @@ effectReference → a:effectRef  fontReference    → a:fontRef
 
 **Read/write symmetry:** the same OOXML concept uses the same property name on both the write `Options` and the parse output — `fontId` on both `CellXfEntry` and `IndexedXfEntry`, never `fontId` on one and `fontIdx` on the other.
 
+### Cross-Package Naming
+
+The same concept uses the **same name in every package** — picture/shape/connector/group share one `*Options` name across docx/pptx/xlsx (`PictureOptions` everywhere, not per-package `DrawingDescriptorOptions`/`PictureDescriptorOptions`/`DrawingImageOptions`).
+
+- **No grouping prefixes** (`Model`/`Content`/`Element`/`Universal`). `UniversalMeasure` is the XSD `ST_UniversalMeasure` type, kept as-is — not a precedent.
+- **Tables are the exception**: each package's `TableOptions` models a genuinely different thing (`w:tbl` flow / `a:tbl` graphic / xlsx cell-range), so the name stays but each carries a JSDoc boundary note; cross-format goes through `core/table/` `TableGrid` ([Cross-Format Conversion](#cross-format-conversion)).
+- **Renames are non-breaking**: keep the old name as a `@deprecated` alias until the next major release.
+
 ## Options Interface Design
 
 ### Flat vs Nested
@@ -190,6 +200,17 @@ All XML serialization uses the descriptor pattern from `@office-open/core/descri
 - **`CustomDescriptor<T>`** — every descriptor is custom: hand-written `stringify()` + `parse()` for the part
 
 Each descriptor is **bidirectional**: has both `stringify()` and `parse()`.
+
+## Cross-Format Conversion
+
+Cross-format copy works at the `Options` layer — **no unified document model**.
+
+- **Similar structures** (picture/shape/connector/group): package-to-package functions translate one package's `Options` to another, reusing `core/drawingml/` for shared parts (spPr/fill/outline/effects) and mapping only container/positioning (`wps:`/`a:sp`/`xdr:sp`; inline vs x/y vs cell anchor).
+- **Tables**: three packages model tables fundamentally differently, so the concept owns a prefix-free intermediate in its own core domain (`core/table/` `TableGrid`/`TableRow`/`TableCell`); each package provides `from<Pkg>Table`/`to<Pkg>Table` adapters, reducing N² pairwise to N. Mirrors `core/chart/`.
+- **Text**: `a:p` is shared in `core/drawingml/text/`; docx bridges `a:p ↔ w:p` (font ×100↔×2 half-points, `srgbClr`↔`w:color`, typeface↔`rFonts`, hyperlinks).
+- **Charts**: unified via `core/chart/`; cross-format is only packaging.
+
+Conversion functions are per-package pure functions (`to*`/`convert*`/`from*`), exported from `@office-open/<pkg>` — never core, to keep `format → core` one-directional. **Fidelity** matches MS Office paste: table structure/merge/border/font/alignment high-fidelity; multi-paragraph text ↔ single cell, and formulas/validation, lossy.
 
 ## XML Generation
 

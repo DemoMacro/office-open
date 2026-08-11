@@ -6,7 +6,7 @@ You are a senior TypeScript developer.
 
 ## Architecture
 
-- **Packages**: `core/` (descriptor runtime, DrawingML, chart/smartart, OPC), `xml/` (XML parsing/serialization), `docx/`, `pptx/`, `xlsx/`. Each format package mirrors the same `src/` layout (`parts/`, `shared/`, `compiler.ts`, `context.ts`, `generate.ts`, `parse.ts`, `patch.ts`, `index.ts`). Full layout and conventions in [CONTRIBUTING.md](./CONTRIBUTING.md).
+- **Packages**: `core/` (shared OOXML domains — descriptor runtime, `drawingml/`, `chart/`, smartart, OPC), `xml/`, `docx/`, `pptx/`, `xlsx/`. The three format packages are peers: same `src/` layout (`parts/`, `shared/`, `compiler.ts`, `context.ts`, `generate.ts`, `parse.ts`, `patch.ts`, `index.ts`) and same `*Options` names for shared concepts. Cross-format copy reuses `core`'s shared domains + package-to-package conversion functions — **no unified document-model layer**; where a concept's XML is structurally broken across packages (tables), it owns a prefix-free intermediate in its own core domain (`core/table/` `TableGrid`), mirroring `core/chart/`. Full layout and conventions in [CONTRIBUTING.md](./CONTRIBUTING.md).
 - **Parts**: one module per OOXML XML part; types and the `<part>Desc` descriptor are co-located. Simple parts are a single file (`parts/settings.ts`), complex parts are a directory (`parts/document/`). Cross-part shared types live in `shared/`.
 - **Descriptor pattern**: every part is a `CustomDescriptor<T>` with hand-written `stringify(opts, ctx)` + `parse(el, ctx)` (bidirectional). Runtime at `packages/core/src/descriptor/`.
 - **OOXML XSD** (`ooxml-schemas/transitional/`) is the golden source of truth — `wml.xsd` (DOCX), `pml.xsd` (PPTX), `sml.xsd` (XLSX), `dml-main.xsd` (DrawingML). Always validate XML output against it.
@@ -28,7 +28,7 @@ Geometry/sizing fields take **`number`** (the format's native unit — EMU for D
 
 Full standards in [CONTRIBUTING.md](./CONTRIBUTING.md). Quick reference:
 
-- **Naming**: `<part>Desc` descriptors, `<Part>Options` interfaces, `stringify*()` / `parse*()` / `patch*()` helpers
+- **Naming**: `<part>Desc` descriptors, `<Part>Options` interfaces, `stringify*()` / `parse*()` / `patch*()` helpers. The same concept shares one `*Options` name across packages (`PictureOptions` in docx/pptx/xlsx); no `Model`/`Content`/`Element` prefixes (`UniversalMeasure` is XSD `ST_UniversalMeasure`, not a precedent); renames use `@deprecated` aliases — see [CONTRIBUTING.md#cross-package-naming](./CONTRIBUTING.md#cross-package-naming)
 - **Properties**: full English words (camelCase); OOXML attribute tokens (`id`/`idx`/`numFmt`/`fontId`/…) preserved verbatim; reference elements → `*Reference`; never compound abbreviations like `lnIdx` → `lineReferenceIndex` — see [CONTRIBUTING.md#property-naming](./CONTRIBUTING.md#property-naming)
 - **Enums**: string literal unions by default; `as const` objects (SCREAMING_SNAKE_CASE keys, lowercase values) only when values are referenced at runtime
 - **Files**: kebab-case, no `I` prefix on interfaces, no `readonly` on Options properties
@@ -41,3 +41,4 @@ Full standards in [CONTRIBUTING.md](./CONTRIBUTING.md). Quick reference:
 - No features beyond what was asked. No speculative abstractions.
 - Touch only what you must. Match existing style.
 - Transform tasks into verifiable goals. Loop until verified.
+- Convention changes (structure/naming/cross-format) land in CLAUDE.md and CONTRIBUTING.md **before** code — docs are the target-state spec.

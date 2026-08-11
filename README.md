@@ -14,6 +14,7 @@
 - 🎯 **Pure JSON API** — Define documents as plain JSON objects, zero class instantiation, designed for AI agents
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
+- 🔀 **Cross-Format Copy** — Convert pictures, shapes, tables, and text between .docx, .pptx, and .xlsx; each format keeps its native types, conversions reuse shared `core` domains
 - ⚡ **High Performance** — Optimized for large documents and batch processing with native zlib compression
 - 🌐 **Cross-Platform** — Node.js, browsers, Deno, Bun. Export to Buffer, Blob, Base64, stream, or string
 
@@ -230,7 +231,7 @@ const buffer = generateDocumentSync({
 2. **Type Safety**: Full TypeScript support with comprehensive types and autocomplete
 3. **Pure JSON API**: Define documents as plain data objects — zero class instantiation, designed for AI agents
 4. **Performance First**: Pure string concatenation for XML generation, native zlib compression, no intermediate AST
-5. **Modular Design**: Shared core infrastructure across DOCX, PPTX, and XLSX
+5. **Modular Design**: Shared `core` domains across DOCX, PPTX, XLSX; cross-format copy reuses them via per-package conversions — no unified model layer
 6. **Cross-Platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
 
 ## Development
