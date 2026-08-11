@@ -1,87 +1,124 @@
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { findChild, parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { PptxWriteContext } from "../../context";
 import { parseColorMap, parseHeaderFooter } from "../handout-master";
-import { buildSlideMasterXml } from "../slide-master";
 import type { SlideMasterDescriptorOptions } from "./slide-master";
 import { slideMasterDesc } from "./slide-master";
 import type { TextListStyleOptions } from "./text-list-style";
 import { parseTextListStyle } from "./text-list-style";
 
-const writeCtx = {} as unknown as WriteContext;
 const readCtx = {
   resolveRelationship: () => undefined,
   getPart: () => undefined,
   getRaw: () => undefined,
-} as unknown as ReadContext;
+} as const;
 
-function roundTrip(opts: SlideMasterDescriptorOptions) {
-  const xml = slideMasterDesc.stringify(opts, writeCtx);
+function makeWriteCtx() {
+  const ctx = new PptxWriteContext();
+  ctx.slideWidth = 12192000;
+  return ctx;
+}
+
+function freshXml(opts: SlideMasterDescriptorOptions = {}, ctx = makeWriteCtx()): string {
+  const xml = slideMasterDesc.stringify(opts, ctx);
   if (!xml) throw new Error("stringify returned undefined");
-  const doc = parseXml(xml);
-  const el = doc.elements?.[0];
+  return xml;
+}
+
+function roundTrip(opts: SlideMasterDescriptorOptions): SlideMasterDescriptorOptions {
+  const xml = freshXml(opts);
+  const el = parseXml(xml).elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
   return slideMasterDesc.parse(el, readCtx);
 }
 
-describe("slideMasterDesc round-trip", () => {
-  it("round-trips a minimal slide master XML", () => {
-    const masterXml =
-      '<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
-      '<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name="root"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
-      '<p:grpSpPr><a:xfrm xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
-      "</p:spTree></p:cSld></p:sldMaster>";
-
-    const opts: SlideMasterDescriptorOptions = { master: masterXml };
-    const result = roundTrip(opts);
-
-    // The master property should contain a valid XML string
-    expect(result.master).toBeDefined();
-    expect(typeof result.master).toBe("string");
-    expect(result.master.length).toBeGreaterThan(0);
-
-    // Re-parse the round-tripped master to verify it's valid XML.
-    // Note: xmlStringify(el) serializes child elements only, so the
-    // root p:sldMaster tag is stripped — the result starts with p:cSld.
-    const doc2 = parseXml(result.master);
-    expect(doc2.elements).toBeDefined();
-    expect(doc2.elements?.length).toBe(1);
-    expect(doc2.elements?.[0]?.name).toBe("p:cSld");
+describe("slideMasterDesc fresh emit", () => {
+  it("emits the standard structure (bgRef/spTree/clrMap/sldLayoutIdLst/hf/txStyles)", () => {
+    const xml = freshXml();
+    expect(xml).toContain("<p:sldMaster");
+    expect(xml).toContain('<p:bgRef idx="1001">'); // MS Office default background
+    expect(xml).toContain("<p:spTree>");
+    expect(xml).toContain("<p:clrMap ");
+    expect(xml).toContain("<p:sldLayoutIdLst>");
+    expect(xml).toContain("<p:hf ");
+    expect(xml).toContain("<p:txStyles>");
   });
 
-  it("round-trips a slide master with nested content", () => {
-    const masterXml =
-      '<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
-      '<p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="4472C4"/></a:solidFill></p:bgPr></p:bg>' +
-      '<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name="root"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
-      '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
-      "</p:spTree></p:cSld></p:sldMaster>";
+  it("emits the @preserve attribute only when requested", () => {
+    expect(freshXml()).not.toContain("preserve=");
+    expect(freshXml({ preserve: true })).toContain('preserve="1"');
+  });
+});
 
-    const opts: SlideMasterDescriptorOptions = { master: masterXml };
-    const result = roundTrip(opts);
+describe("slideMasterDesc round-trip", () => {
+  it("round-trips placeholders (positions derived from spTree)", () => {
+    const result = roundTrip({ placeholders: { title: true, body: true } });
+    expect(result.placeholders).toBeDefined();
+    const title = result.placeholders?.title;
+    const body = result.placeholders?.body;
+    expect(typeof title).toBe("object");
+    expect(typeof body).toBe("object");
+    // title position (EMU) at the reference slide width survives
+    expect((title as { x: number }).x).toBe(838200);
+    expect((body as { x: number }).x).toBe(838200);
+  });
 
-    expect(result.master).toBeDefined();
-    // Verify the color survived round-trip
-    expect(result.master).toContain("4472C4");
-    expect(result.master).toContain("srgbClr");
+  it('round-trips a hidden placeholder (sz="0")', () => {
+    // A round-tripped master with a hidden date placeholder parses to false.
+    const xml =
+      '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
+      '<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+      '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>' +
+      '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
+      '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Date"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr>' +
+      '<p:nvPr><p:ph type="dt" sz="0" idx="2"/></p:nvPr></p:nvSpPr>' +
+      "<p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>" +
+      '</p:spTree></p:cSld><p:clrMap bg1="lt1"/></p:sldMaster>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = slideMasterDesc.parse(el, readCtx);
+    expect(result.placeholders?.date).toBe(false);
+  });
+
+  it("round-trips preserve attribute", () => {
+    expect(roundTrip({ preserve: true }).preserve).toBe(true);
+    expect(roundTrip({}).preserve).toBeUndefined();
+  });
+
+  it("round-trips slideLayoutIds", () => {
+    const ids = [
+      { id: 2147483649, relationshipId: "rId1" },
+      { id: 2147483650, relationshipId: "rId2" },
+    ];
+    expect(roundTrip({ slideLayoutIds: ids }).slideLayoutIds).toEqual(ids);
+  });
+
+  it("round-trips custom children shapes", () => {
+    const result = roundTrip({
+      children: [{ shape: { x: 100, y: 100, width: 200, height: 200, fill: "FF0000" } }],
+    });
+    expect(result.children?.length).toBe(1);
   });
 });
 
 describe("slide-master colorMap/headerFooter round-trip", () => {
   it("emits custom colorMap and headerFooter, parseable back", () => {
-    const xml = buildSlideMasterXml(0, undefined, {
-      colorMap: { bg1: "dk1", tx1: "lt1" },
-      headerFooter: { date: true, footer: true },
-    });
-    const el = parseXml(xml).elements?.[0];
+    const el = parseXml(
+      freshXml({
+        colorMap: { bg1: "dk1", tx1: "lt1" },
+        headerFooter: { date: true, footer: true },
+      }),
+    ).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
 
     const clrMap = parseColorMap(findChild(el, "p:clrMap"));
     expect(clrMap?.bg1).toBe("dk1");
     expect(clrMap?.tx1).toBe("lt1");
-    // Untouched keys keep the standard defaults.
-    expect(clrMap?.bg2).toBe("lt2");
+    expect(clrMap?.bg2).toBe("lt2"); // untouched keys keep standard defaults
 
     const hf = parseHeaderFooter(findChild(el, "p:hf"));
     expect(hf?.date).toBe(true);
@@ -91,8 +128,7 @@ describe("slide-master colorMap/headerFooter round-trip", () => {
   });
 
   it("emits standard defaults when colorMap/headerFooter are undefined", () => {
-    const xml = buildSlideMasterXml(0, undefined, undefined);
-    const el = parseXml(xml).elements?.[0];
+    const el = parseXml(freshXml()).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
 
     const clrMap = parseColorMap(findChild(el, "p:clrMap"));
@@ -107,9 +143,8 @@ describe("slide-master colorMap/headerFooter round-trip", () => {
 
 describe("slide-master textStyles round-trip", () => {
   it("fresh master emits the default txStyles block", () => {
-    const xml = buildSlideMasterXml(0, undefined, undefined);
+    const xml = freshXml();
     expect(xml).toContain("<p:txStyles>");
-    // Standard MS Office default markers across the three style groups.
     expect(xml).toContain("<p:titleStyle>");
     expect(xml).toContain("<p:bodyStyle>");
     expect(xml).toContain("<p:otherStyle>");
@@ -122,30 +157,22 @@ describe("slide-master textStyles round-trip", () => {
       body: { levels: [{}] },
       other: { levels: [{}] },
     };
-    const xml = buildSlideMasterXml(0, undefined, { textStyles: custom });
+    const xml = freshXml({ textStyles: custom });
     expect(xml).toContain('sz="9000"');
-    // The default title size must NOT appear once a custom block is supplied.
     expect(xml).not.toContain('sz="4400"');
   });
 
-  it("round-trips a parsed master's txStyles structured (parse.ts extraction)", () => {
-    // Source master carries custom title typography (sz 9999 marker).
+  it("round-trips a parsed master's txStyles structured", () => {
     const source: TextListStyleOptions = {
       title: { levels: [{ defaultRun: { size: 9999 } }] },
       body: { levels: [{}] },
       other: { levels: [{}] },
     };
-    const masterXml = buildSlideMasterXml(0, undefined, { textStyles: source });
-
-    // Mirror parse.ts extraction: findChild + parseTextListStyle.
-    const el = parseXml(masterXml).elements?.[0];
+    const el = parseXml(freshXml({ textStyles: source })).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
-    const txStylesEl = findChild(el, "p:txStyles");
-    expect(txStylesEl).toBeDefined();
-    const extracted = parseTextListStyle(txStylesEl!);
+    const extracted = parseTextListStyle(findChild(el, "p:txStyles")!);
 
-    // Re-emit via buildSlideMasterXml: the structured styles survive intact.
-    const reEmitted = buildSlideMasterXml(0, undefined, { textStyles: extracted });
+    const reEmitted = freshXml({ textStyles: extracted });
     expect(reEmitted).toContain('sz="9999"');
     expect(reEmitted).not.toContain('sz="4400"');
   });

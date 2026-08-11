@@ -10,7 +10,7 @@ const options: PresentationOptions = {
     {
       name: "light",
       theme: {
-        colors: {
+        colorScheme: {
           accent1: "4472C4",
           accent2: "ED7D31",
         },
@@ -39,7 +39,7 @@ const options: PresentationOptions = {
     {
       name: "dark",
       theme: {
-        colors: {
+        colorScheme: {
           accent1: "FFC000",
           accent2: "70AD47",
         },

@@ -1,24 +1,17 @@
 import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
-import {
-  DEFAULT_TEXT_LIST_STYLE,
-  stringifyTextListStyle,
-  type TextListStyleOptions,
-} from "@parts/descriptors/text-list-style";
-import { buildMasterChildrenXml } from "@parts/slide/coerce";
-import { SP_TREE_HEADER } from "@shared/constants";
+import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
+import type {
+  ControlDescriptorOptions,
+  TransitionDescriptorOptions,
+} from "@parts/descriptors/slide";
+import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
 import { createPptxEffectList } from "@shared/drawingml/effects";
 import { buildFill } from "@shared/drawingml/fill";
 import type { MasterChild } from "@shared/file";
-import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 
-import {
-  buildColorMapAttrs,
-  buildHfAttrs,
-  type ColorMapOptions,
-  type HeaderFooterOptions,
-} from "./handout-master";
+import type { ColorMapOptions, HeaderFooterOptions } from "./handout-master";
 
 export interface MasterPlaceholderPosition {
   x: number | UniversalMeasure;
@@ -49,10 +42,26 @@ export interface SlideMasterOptions {
    * carry their own so custom typography (fonts, indents, bullets) survives.
    */
   textStyles?: TextListStyleOptions;
+  /** @preserve — keep this master even when no slide references it. */
+  preserve?: boolean;
+  /** p:transition — slide-transition defaults inherited by slides. */
+  transition?: TransitionDescriptorOptions;
+  /** p:timing — animation timeline. */
+  timing?: TimingDescriptorOptions;
+  /** cSld/custDataLst — relationship references to customer data parts. */
+  customerData?: { rId: string }[];
+  /** cSld/controls — embedded controls (ActiveX/legacy). */
+  controls?: ControlDescriptorOptions[];
 }
 
+// ── Placeholder emit helpers (fresh-generate path) ──
+//
+// The master carries up to five standard placeholders (title/body/date/footer/
+// slideNumber). Fresh generation scales their reference positions to the slide
+// width; round-trip supplies explicit EMU positions parsed from spTree.
+
 // Reference positions (16:9 master, slideWidth = 12192000 EMU)
-const SW_REF = 12192000;
+export const SW_REF = 12192000;
 const sx = (refX: number, sw: number) => Math.round((refX * sw) / SW_REF);
 
 const REF_TITLE = { x: 838200, y: 365125, cx: 10515600, cy: 1325563 };
@@ -61,12 +70,16 @@ const REF_DATE = { x: 838200, y: 6356350, cx: 2743200, cy: 365125 };
 const REF_FOOTER = { x: 4038600, y: 6356350, cx: 4114800, cy: 365125 };
 const REF_SLDNUM = { x: 8610600, y: 6356350, cx: 2743200, cy: 365125 };
 
-function resolvePos(
+/** Resolve a placeholder option into a concrete EMU rect, or null when hidden. */
+export function resolvePos(
   opt: boolean | MasterPlaceholderPosition | undefined,
   ref: { x: number; y: number; cx: number; cy: number },
+  slideWidth: number,
 ): { x: number; y: number; cx: number; cy: number } | null {
   if (opt === false) return null;
-  if (opt === undefined || opt === true) return ref;
+  if (opt === undefined || opt === true) {
+    return { x: sx(ref.x, slideWidth), y: ref.y, cx: sx(ref.cx, slideWidth), cy: ref.cy };
+  }
   return {
     x: convertToEmu(opt.x),
     y: convertToEmu(opt.y),
@@ -75,7 +88,8 @@ function resolvePos(
   };
 }
 
-function phSp(
+/** Emit one placeholder <p:sp> with the given geometry and txBody content. */
+export function phSp(
   id: number,
   name: string,
   phAttrs: string,
@@ -88,9 +102,9 @@ function phSp(
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr><p:txBody>${bodyContent}</p:txBody></p:sp>`;
 }
 
-const BODY_DEFAULT = `<a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p>`;
+export const BODY_DEFAULT = `<a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p>`;
 
-function footerBody(algn: string, fldType: string, fldId: string, fldText: string): string {
+export function footerBody(algn: string, fldType: string, fldId: string, fldText: string): string {
   const fld =
     fldType && fldId
       ? `<a:fld id="${fldId}" type="${fldType}"><a:rPr lang="en-US" smtClean="0"/><a:t>${fldText}</a:t></a:fld>`
@@ -98,52 +112,26 @@ function footerBody(algn: string, fldType: string, fldId: string, fldText: strin
   return `<a:bodyPr/><a:lstStyle><a:lvl1pPr algn="${algn}"><a:defRPr sz="1200"><a:solidFill><a:schemeClr val="tx1"><a:tint val="75000"/></a:schemeClr></a:solidFill></a:defRPr></a:lvl1pPr></a:lstStyle><a:p>${fld}<a:endParaRPr lang="en-US"/></a:p>`;
 }
 
-function buildBackgroundXml(bg?: BackgroundOptions): string {
-  if (!bg) return '<p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>';
-  const bgAttrs: string[] = [];
-  if (bg.blackWhiteMode) bgAttrs.push(` p:bwMode="${bg.blackWhiteMode}"`);
-  const bgPrAttrs: string[] = [];
-  if (bg.shadeToTitle) bgPrAttrs.push(' shadeToTitle="1"');
-  const fillXml = buildFill(bg.fill ?? { type: "none" });
-  let effectsXml = "";
-  if (bg.effects) {
-    const el = createPptxEffectList(bg.effects);
-    if (el) effectsXml = el;
-  }
-  return `<p:bg${bgAttrs.join("")}><p:bgPr${bgPrAttrs.join("")}>${fillXml}${effectsXml}</p:bgPr></p:bg>`;
+export interface PlaceholderEmitResult {
+  /** Concatenated placeholder <p:sp> XML (empty when all hidden). */
+  xml: string;
+  /** Next free cNvPr id after the emitted placeholders (children start here). */
+  nextId: number;
 }
 
-export function buildSlideMasterXml(
-  layoutCount: number,
-  _headerFooter?: SlideHeaderFooterOptions,
-  masterOptions?: SlideMasterOptions,
-  slideWidth: number = SW_REF,
-  masterIndex: number = 0,
-): string {
-  const hfXml = `<p:hf ${buildHfAttrs(masterOptions?.headerFooter)}/>`;
-  const ph = masterOptions?.placeholders ?? {};
-
-  // Layout IDs must be globally unique across all masters.
-  // Master ID = 2147483648 + masterIndex * 12; layouts start at masterId + 1.
-  const layoutIdBase = 2147483648 + masterIndex * 12 + 1;
-  const layoutIdEntries: string[] = [];
-  for (let i = 0; i < layoutCount; i++) {
-    layoutIdEntries.push(`<p:sldLayoutId id="${layoutIdBase + i}" r:id="rId${i + 1}"/>`);
-  }
-
-  // Scaled reference positions (x/cx scaled, y/cy fixed)
-  const sRef = (r: { x: number; y: number; cx: number; cy: number }) => ({
-    x: sx(r.x, slideWidth),
-    y: r.y,
-    cx: sx(r.cx, slideWidth),
-    cy: r.cy,
-  });
-
-  // Build placeholders
+/**
+ * Emit the master's standard placeholders in XSD order (title → body → date →
+ * footer → slideNumber). Returns the concatenated XML and the next free id.
+ */
+export function buildPlaceholderShapes(
+  placeholders: MasterPlaceholderOptions | undefined,
+  slideWidth: number,
+): PlaceholderEmitResult {
+  const ph = placeholders ?? {};
   const shapes: string[] = [];
   let nextId = 2;
 
-  const titlePos = resolvePos(ph.title, sRef(REF_TITLE));
+  const titlePos = resolvePos(ph.title, REF_TITLE, slideWidth);
   if (titlePos) {
     shapes.push(
       phSp(
@@ -159,7 +147,7 @@ export function buildSlideMasterXml(
     );
   }
 
-  const bodyPos = resolvePos(ph.body, sRef(REF_BODY));
+  const bodyPos = resolvePos(ph.body, REF_BODY, slideWidth);
   if (bodyPos) {
     shapes.push(
       phSp(
@@ -175,7 +163,7 @@ export function buildSlideMasterXml(
     );
   }
 
-  const datePos = resolvePos(ph.date, sRef(REF_DATE));
+  const datePos = resolvePos(ph.date, REF_DATE, slideWidth);
   if (datePos) {
     shapes.push(
       phSp(
@@ -191,7 +179,7 @@ export function buildSlideMasterXml(
     );
   }
 
-  const footerPos = resolvePos(ph.footer, sRef(REF_FOOTER));
+  const footerPos = resolvePos(ph.footer, REF_FOOTER, slideWidth);
   if (footerPos) {
     shapes.push(
       phSp(
@@ -207,7 +195,7 @@ export function buildSlideMasterXml(
     );
   }
 
-  const sldNumPos = resolvePos(ph.slideNumber, sRef(REF_SLDNUM));
+  const sldNumPos = resolvePos(ph.slideNumber, REF_SLDNUM, slideWidth);
   if (sldNumPos) {
     shapes.push(
       phSp(
@@ -223,15 +211,23 @@ export function buildSlideMasterXml(
     );
   }
 
-  // Custom children shapes — shift ids to avoid conflicts with placeholder ids
-  const childrenXml = buildMasterChildrenXml(masterOptions?.children);
-  if (childrenXml) {
-    const offset = nextId - 1;
-    shapes.push(childrenXml.replace(/ id="(\d+)"/g, (_, n) => ` id="${parseInt(n) + offset}"`));
+  return { xml: shapes.join(""), nextId };
+}
+
+// ── Background ──
+
+/** Emit p:bg. Undefined background emits the MS Office default bgRef idx="1001". */
+export function buildBackgroundXml(bg?: BackgroundOptions): string {
+  if (!bg) return '<p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>';
+  const bgAttrs: string[] = [];
+  if (bg.blackWhiteMode) bgAttrs.push(` p:bwMode="${bg.blackWhiteMode}"`);
+  const bgPrAttrs: string[] = [];
+  if (bg.shadeToTitle) bgPrAttrs.push(' shadeToTitle="1"');
+  const fillXml = buildFill(bg.fill ?? { type: "none" });
+  let effectsXml = "";
+  if (bg.effects) {
+    const el = createPptxEffectList(bg.effects);
+    if (el) effectsXml = el;
   }
-
-  // Background
-  const bgXml = buildBackgroundXml(masterOptions?.background);
-
-  return `<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld>${bgXml}<p:spTree>${SP_TREE_HEADER}${shapes.join("")}</p:spTree></p:cSld><p:clrMap ${buildColorMapAttrs(masterOptions?.colorMap)}/><p:sldLayoutIdLst>${layoutIdEntries.join("")}</p:sldLayoutIdLst>${hfXml}<p:txStyles>${stringifyTextListStyle(masterOptions?.textStyles ?? DEFAULT_TEXT_LIST_STYLE)}</p:txStyles></p:sldMaster>`;
+  return `<p:bg${bgAttrs.join("")}><p:bgPr${bgPrAttrs.join("")}>${fillXml}${effectsXml}</p:bgPr></p:bg>`;
 }

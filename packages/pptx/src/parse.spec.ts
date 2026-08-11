@@ -66,11 +66,11 @@ describe("parsePresentation", () => {
     const masters: MasterDefinition[] = [
       {
         name: "light",
-        theme: { name: "Light", colors: { dark1: "333333" } },
+        theme: { name: "Light", colorScheme: { dark1: "333333" } },
       },
       {
         name: "dark",
-        theme: { name: "Dark", colors: { dark1: "FFFFFF" } },
+        theme: { name: "Dark", colorScheme: { dark1: "FFFFFF" } },
       },
     ];
 

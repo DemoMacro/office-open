@@ -1,7 +1,8 @@
 import { parse as parseXml } from "@office-open/xml";
-import { buildSlideMasterXml } from "@parts/slide-master";
 import { describe, expect, it } from "vite-plus/test";
 
+import { PptxWriteContext } from "../../context";
+import { slideMasterDesc } from "./slide-master";
 import {
   DEFAULT_TEXT_LIST_STYLE,
   parseTextListStyle,
@@ -10,10 +11,12 @@ import {
 
 describe("text-list-style master emit contract", () => {
   it("fresh master txStyles equals the structured default stringify", () => {
-    // buildSlideMasterXml must emit stringifyTextListStyle(DEFAULT_TEXT_LIST_STYLE)
+    // slideMasterDesc must emit stringifyTextListStyle(DEFAULT_TEXT_LIST_STYLE)
     // — no divergent hardcoded constant. Byte-stability of the fresh master
     // output (and thus the 16-round-trip fidelity gate) depends on this.
-    const master = buildSlideMasterXml(0, undefined, undefined);
+    const writeCtx = new PptxWriteContext();
+    writeCtx.slideWidth = 12192000;
+    const master = slideMasterDesc.stringify({}, writeCtx)!;
     const start = master.indexOf("<p:txStyles>");
     const end = master.indexOf("</p:txStyles>", start) + "</p:txStyles>".length;
     const emittedBlock = master.slice(start, end);

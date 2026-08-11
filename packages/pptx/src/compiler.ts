@@ -38,7 +38,6 @@ import { SmartArtCollection } from "@office-open/core/smartart";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import type { PresentationPartOptions, PresentationSectionGroup } from "@parts/presentation";
 import { buildCustomLayoutXml, buildLayoutXml, type SlideLayoutType } from "@parts/slide-layout";
-import { buildSlideMasterXml } from "@parts/slide-master";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
 import { getColorXml, getLayoutXml, getStyleXml, DEFAULT_DRAWING_XML } from "@parts/smartart";
 import { SP_TREE_HEADER } from "@shared/constants";
@@ -170,7 +169,11 @@ function buildMasterMap(
   masterDefs: MasterDefinition[],
   slides: SlideOptions[],
   slideWidth: number,
+  ctx: PptxWriteContext,
 ): MasterInfo[] {
+  // Master placeholder positions scale to the slide width — record it on the
+  // shared context so slideMasterDesc.stringify can read it.
+  ctx.slideWidth = slideWidth;
   const defs = masterDefs.length > 0 ? masterDefs : [{} as MasterDefinition];
   const slideMasterLookup = new Map<number, number>();
 
@@ -211,9 +214,31 @@ function buildMasterMap(
       layoutKeys = keys.length > 0 ? keys : ["blank"];
     }
 
-    const hf = slides.find((s) => s.headerFooter)?.headerFooter;
-    const master = buildSlideMasterXml(layoutKeys.length, hf, def, slideWidth, mi);
-    const theme = createThemeXml(def.theme);
+    // Layout id + rId pairs — rId order matches masterRels below.
+    const layoutIdBase = 2147483648 + mi * 12 + 1;
+    const slideLayoutIds = layoutKeys.map((_, li) => ({
+      id: layoutIdBase + li,
+      relationshipId: `rId${li + 1}`,
+    }));
+    const master =
+      slideMasterDesc.stringify(
+        {
+          background: def.background,
+          children: def.children,
+          placeholders: def.placeholders,
+          colorMap: def.colorMap,
+          headerFooter: def.headerFooter,
+          textStyles: def.textStyles,
+          preserve: def.preserve,
+          transition: def.transition,
+          timing: def.timing,
+          customerData: def.customerData,
+          controls: def.controls,
+          slideLayoutIds,
+        },
+        ctx,
+      ) ?? "";
+    const theme = createThemeXml(def.theme, ctx);
 
     const layouts: LayoutInfo[] = [];
     const layoutRels: Relationships[] = [];
@@ -639,7 +664,7 @@ export function compilePresentation(
 
   // ── Pure structural computations ──
 
-  const masters = buildMasterMap(masterDefs, slides, sz.width);
+  const masters = buildMasterMap(masterDefs, slides, sz.width, descCtx);
   const allLayouts = masters.flatMap((m) => m.layouts);
   const allLayoutRels = masters.flatMap((m) => m.layoutRels);
   const themes = masters.map((m) => m.theme);
@@ -776,7 +801,7 @@ export function compilePresentation(
   // Slide Masters
   for (const [mi, masterInfo] of masters.entries()) {
     mapping[`SlideMaster${mi}`] = {
-      data: XML_DECL + (slideMasterDesc.stringify({ master: masterInfo.master }, descCtx) ?? ""),
+      data: XML_DECL + masterInfo.master,
       path: `ppt/slideMasters/slideMaster${mi + 1}.xml`,
     };
     mapping[`SlideMasterRels${mi}`] = {

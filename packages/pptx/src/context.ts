@@ -72,6 +72,14 @@ export class PptxWriteContext implements WriteContext {
   private _nextChartId = 1;
   private _nextSmartArtId = 1;
 
+  /**
+   * Slide width in EMU — the master's standard placeholder positions are scaled
+   * to this width. Set by the compiler from the presentation size; defaults to
+   * the 16:9 width (12192000 EMU) so patch/deserialize paths that never touch
+   * the master still have a sane value.
+   */
+  public slideWidth = 12192000;
+
   // ── WriteContext stubs (core interface) ──
 
   public addRelationship(_type: string, _target: string, _mode?: string): string {

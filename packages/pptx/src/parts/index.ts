@@ -14,7 +14,6 @@ export type {
 export type { CorePropertiesOptions } from "@office-open/core";
 export { type SlideChild } from "./slide/slide-child";
 export {
-  buildSlideMasterXml,
   type SlideMasterOptions,
   type MasterPlaceholderOptions,
   type MasterPlaceholderPosition,
