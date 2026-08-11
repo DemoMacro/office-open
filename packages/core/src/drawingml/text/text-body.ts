@@ -21,7 +21,10 @@ import type { ParagraphDescriptorOptions } from "./paragraph";
 export interface TextBodyOptions {
   bodyProperties?: BodyPropertiesOptions;
   listStyle?: TextListStyleOptions;
-  paragraphs?: ParagraphDescriptorOptions[];
+  /** Single-paragraph shorthand; expands to one paragraph on stringify. */
+  text?: string;
+  /** Paragraph list; string entries expand to a one-run paragraph. */
+  paragraphs?: (ParagraphDescriptorOptions | string)[];
 }
 
 export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
@@ -40,10 +43,14 @@ export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
         : "<a:lstStyle/>",
     );
 
-    // a:p[] — CT_TextBody requires at least one paragraph.
-    if (opts.paragraphs && opts.paragraphs.length > 0) {
-      for (const p of opts.paragraphs) {
-        parts.push(paragraphDesc.stringify(p, ctx) ?? "<a:p/>");
+    // a:p[] — CT_TextBody requires at least one paragraph. `text` is a
+    // single-paragraph shorthand; `paragraphs` accepts string entries that
+    // each expand to a one-run paragraph.
+    const paragraphs = opts.paragraphs ?? (opts.text !== undefined ? [{ text: opts.text }] : []);
+    if (paragraphs.length > 0) {
+      for (const p of paragraphs) {
+        const para = typeof p === "string" ? { children: [p] } : p;
+        parts.push(paragraphDesc.stringify(para, ctx) ?? "<a:p/>");
       }
     } else {
       parts.push("<a:p/>");

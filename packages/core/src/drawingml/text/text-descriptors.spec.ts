@@ -301,7 +301,7 @@ describe("textBodyDesc round-trip", () => {
     if (!el) throw new Error("no root");
     const r = textBodyDesc.parse(el, readCtx);
     expect(r.bodyProperties?.wrap).toBe("square");
-    expect(r.paragraphs?.[0]?.text).toBe("Hi");
+    expect((r.paragraphs?.[0] as { text?: string })?.text).toBe("Hi");
   });
 
   it("emits empty bodyPr/lstStyle and one a:p when bare", () => {
@@ -309,6 +309,17 @@ describe("textBodyDesc round-trip", () => {
     expect(inner).toContain("<a:bodyPr");
     expect(inner).toContain("<a:lstStyle");
     expect(inner).toContain("<a:p");
+  });
+
+  it("expands text shorthand to a single paragraph", () => {
+    const inner = textBodyDesc.stringify({ text: "Hi" }, writeCtx)!;
+    expect(inner).toContain("<a:t>Hi</a:t>");
+  });
+
+  it("expands string paragraphs entries to one-run paragraphs", () => {
+    const inner = textBodyDesc.stringify({ paragraphs: ["A", "B"] }, writeCtx)!;
+    expect(inner).toContain("<a:t>A</a:t>");
+    expect(inner).toContain("<a:t>B</a:t>");
   });
 });
 
