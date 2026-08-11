@@ -1,9 +1,6 @@
 import type { UniversalMeasure } from "@office-open/core";
-import { createOutline, PresetDash, LineEndType, LineEndWidth } from "@office-open/core/drawingml";
-import type {
-  OutlineOptions as CoreOutlineOptions,
-  LineEndOptions as CoreLineEndOptions,
-} from "@office-open/core/drawingml";
+import { PresetDash } from "@office-open/core/drawingml";
+import type { OutlineOptions as CoreOutlineOptions } from "@office-open/core/drawingml";
 
 /**
  * PPTX-specific outline options (backward-compatible API).
@@ -25,22 +22,6 @@ const DASH_STYLE_MAP: Record<string, (typeof PresetDash)[keyof typeof PresetDash
   sysDash: "sysDash",
 };
 
-const ARROWHEAD_MAP: Record<string, (typeof LineEndType)[keyof typeof LineEndType]> = {
-  triangle: "triangle",
-  stealth: "stealth",
-  diamond: "diamond",
-  oval: "oval",
-  open: "arrow",
-};
-
-function toCoreLineEnd(type: string, width?: string, length?: string): CoreLineEndOptions {
-  return {
-    type: ARROWHEAD_MAP[type] ?? "triangle",
-    ...(width ? { width: width as (typeof LineEndWidth)[keyof typeof LineEndWidth] } : {}),
-    ...(length ? { length: length as (typeof LineEndWidth)[keyof typeof LineEndWidth] } : {}),
-  };
-}
-
 /**
  * Map PPTX simplified OutlineOptions to core OutlineOptions (without arrowheads).
  */
@@ -55,25 +36,3 @@ export function toCoreOutlineOptions(options: OutlineOptions = {}): CoreOutlineO
     }),
   };
 }
-
-/**
- * Creates an outline element using pptx's simplified API.
- */
-export const createOutlineCompat = (
-  options: OutlineOptions = {},
-  arrowheads?: {
-    beginType?: string;
-    endType?: string;
-    width?: string;
-    length?: string;
-  },
-) =>
-  createOutline({
-    ...toCoreOutlineOptions(options),
-    ...(arrowheads?.endType
-      ? { headEnd: toCoreLineEnd(arrowheads.endType, arrowheads.width, arrowheads.length) }
-      : {}),
-    ...(arrowheads?.beginType
-      ? { tailEnd: toCoreLineEnd(arrowheads.beginType, arrowheads.width, arrowheads.length) }
-      : {}),
-  } satisfies CoreOutlineOptions);

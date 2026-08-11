@@ -1,8 +1,6 @@
 import { xsdRectAlignment } from "@office-open/core";
 import {
   createEffectList,
-  createScene3D,
-  createShape3D,
   type EffectListOptions,
   type Scene3DOptions,
   type Shape3DOptions,
@@ -243,18 +241,6 @@ export function toShape3DOptions(options: EffectsOptions): Shape3DOptions | unde
     ...(options.depth !== undefined ? { z: options.depth } : {}),
     ...(options.contourWidth !== undefined ? { contourW: options.contourWidth } : {}),
   };
-}
-
-/** Build a:scene3d XML from PPTX EffectsOptions, or null if not needed. */
-export function buildScene3D(options: EffectsOptions): ReturnType<typeof createScene3D> | null {
-  const opts = toScene3DOptions(options);
-  return opts ? createScene3D(opts) : null;
-}
-
-/** Build a:sp3d XML from PPTX EffectsOptions, or null if not needed. */
-export function buildShape3D(options: EffectsOptions): ReturnType<typeof createShape3D> | null {
-  const opts = toShape3DOptions(options);
-  return opts ? createShape3D(opts) : null;
 }
 
 /** Create a:effectLst from PPTX simplified EffectsOptions. */

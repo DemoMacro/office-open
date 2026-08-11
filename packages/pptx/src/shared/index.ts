@@ -58,7 +58,7 @@ export {
   type FillOptions,
   type GradientStopOptions,
 } from "./drawingml/fill";
-export { createOutlineCompat, type OutlineOptions } from "./drawingml/outline";
+export { type OutlineOptions } from "./drawingml/outline";
 
 // DrawingML — local types
 export type { Transform2DOptions } from "./drawingml/transform-2d";
