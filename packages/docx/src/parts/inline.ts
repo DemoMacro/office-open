@@ -3,7 +3,7 @@
  *
  * Used by table.ts, comments.ts, body.ts, and other descriptors that need to
  * serialize paragraph/run content. Includes JSON child dispatch for all
- * ParagraphChild variants (image, chart, hyperlink, etc.).
+ * ParagraphChild variants (picture, chart, hyperlink, etc.).
  *
  * Pure string concatenation — no intermediate object tree.
  *

@@ -351,7 +351,7 @@ String shorthand: `fill: "4472C4"` is equivalent to the above.
 
 ## Charts
 
-Charts are created via `@office-open/core` and embedded in slides.
+Charts use the pptx `ChartOptions` (which extends core's `ChartSpaceOptions`) and are embedded in slides as `{ chart: ChartOptions }`.
 
 ## Lines & Connectors
 
@@ -375,18 +375,22 @@ Charts are created via `@office-open/core` and embedded in slides.
   "y1": 130,
   "x2": 400,
   "y2": 130,
-  "outline": { "color": "4472C4", "width": 2 },
-  "endArrowhead": "triangle",
-  "beginArrowhead": "triangle"
+  "outline": {
+    "color": "4472C4",
+    "width": 2,
+    "headEnd": { "type": "triangle" },
+    "tailEnd": { "type": "triangle" }
+  }
 }
 ```
 
-| Property          | Type     | Values                                                             |
-| ----------------- | -------- | ------------------------------------------------------------------ |
-| `beginArrowhead`  | `string` | `"triangle"` \| `"stealth"` \| `"diamond"` \| `"oval"` \| `"open"` |
-| `endArrowhead`    | `string` | Same as above                                                      |
-| `arrowheadWidth`  | `string` | `"sm"` \| `"med"` \| `"lg"`                                        |
-| `arrowheadLength` | `string` | `"sm"` \| `"med"` \| `"lg"`                                        |
+Arrowheads live inside `outline.headEnd` / `outline.tailEnd` (each a `LineEndOptions`):
+
+| Property | Type     | Values                                                                          |
+| -------- | -------- | ------------------------------------------------------------------------------- |
+| `type`   | `string` | `"none"` \| `"triangle"` \| `"stealth"` \| `"diamond"` \| `"oval"` \| `"arrow"` |
+| `width`  | `string` | `"sm"` \| `"med"` \| `"lg"`                                                     |
+| `length` | `string` | `"sm"` \| `"med"` \| `"lg"`                                                     |
 
 ## Group Shapes
 

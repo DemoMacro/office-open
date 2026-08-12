@@ -25,7 +25,7 @@ DocumentOptions
   "bold": true,
   "italic": true,
   "underline": { "type": "single", "color": "FF0000" },
-  "strike": "single",
+  "strike": true,
   "doubleStrike": true,
   "subScript": true,
   "superScript": true,
@@ -46,22 +46,23 @@ DocumentOptions
 }
 ```
 
-| Property           | Type                             | Description                                                                          |
-| ------------------ | -------------------------------- | ------------------------------------------------------------------------------------ |
-| `text`             | `string`                         | Plain text content                                                                   |
-| `bold`             | `boolean`                        | Bold formatting                                                                      |
-| `italic`           | `boolean`                        | Italic formatting                                                                    |
-| `underline`        | `{ type, color? }`               | Underline style. Types: `"single"`, `"double"`, `"wave"`, `"dash"`, `"dotted"`, etc. |
-| `strike`           | `"single" \| "double" \| "none"` | Strikethrough                                                                        |
-| `size`             | `number`                         | Font size in points (12 = 12pt)                                                      |
-| `color`            | `string`                         | Hex color without `#`                                                                |
-| `font`             | `string`                         | Font family name                                                                     |
-| `highlight`        | `string`                         | Word highlight color name                                                            |
-| `shading`          | `{ type, fill }`                 | Background shading                                                                   |
-| `characterSpacing` | `number`                         | Character spacing in twips                                                           |
-| `break`            | `number`                         | Number of line breaks                                                                |
-| `tab`              | `{ type, position }`             | Tab stop                                                                             |
-| `children`         | `array`                          | Mixed content: strings, PageNumber tokens, Math elements, CommentReference, etc.     |
+| Property           | Type                 | Description                                                                          |
+| ------------------ | -------------------- | ------------------------------------------------------------------------------------ |
+| `text`             | `string`             | Plain text content                                                                   |
+| `bold`             | `boolean`            | Bold formatting                                                                      |
+| `italic`           | `boolean`            | Italic formatting                                                                    |
+| `underline`        | `{ type, color? }`   | Underline style. Types: `"single"`, `"double"`, `"wave"`, `"dash"`, `"dotted"`, etc. |
+| `strike`           | `boolean`            | Strikethrough                                                                        |
+| `doubleStrike`     | `boolean`            | Double strikethrough                                                                 |
+| `size`             | `number`             | Font size in points (12 = 12pt)                                                      |
+| `color`            | `string`             | Hex color without `#`                                                                |
+| `font`             | `string`             | Font family name                                                                     |
+| `highlight`        | `string`             | Word highlight color name                                                            |
+| `shading`          | `{ type, fill }`     | Background shading                                                                   |
+| `characterSpacing` | `number`             | Character spacing in twips                                                           |
+| `break`            | `number`             | Number of line breaks                                                                |
+| `tab`              | `{ type, position }` | Tab stop                                                                             |
+| `children`         | `array`              | Mixed content: strings, PageNumber tokens, Math elements, CommentReference, etc.     |
 
 ### Paragraph Options
 
@@ -174,7 +175,7 @@ DocumentOptions
 }
 ```
 
-Supported types: `"jpg"`, `"png"`, `"gif"`, `"bmp"`, `"svg"`, `"emf"`, `"wmf"`, `"tiff"`.
+Supported types: `"jpg"`, `"png"`, `"gif"`, `"bmp"`, `"tif"`, `"ico"`, `"emf"`, `"wmf"`. SVG uses the `{ type: "svg", fallback }` form.
 
 ## Tables
 
@@ -437,33 +438,34 @@ Used in TextRun children as a string — displays the page number where the refe
 }
 ```
 
-## Shapes (WpsShapeRun)
+## Shapes
 
 ```json
 {
-  "children": [{ "alignment": "center", "children": [{ "text": "Shape text" }] }],
-  "customGeometry": {
-    "pathList": [
-      {
-        "w": 100000,
-        "h": 100000,
-        "commands": [
-          { "command": "moveTo", "point": { "x": "50000", "y": "0" } },
-          { "command": "lineTo", "point": { "x": "100000", "y": "100000" } },
-          { "command": "lineTo", "point": { "x": "0", "y": "100000" } },
-          { "command": "close" }
-        ]
-      }
-    ]
-  },
-  "fill": "4472C4",
-  "outline": { "color": { "value": "C00000" }, "type": "solidFill", "width": 12700 },
-  "transformation": { "height": 150, "width": 200 },
-  "type": "wps"
+  "wpsShape": {
+    "children": [{ "alignment": "center", "children": [{ "text": "Shape text" }] }],
+    "customGeometry": {
+      "pathList": [
+        {
+          "w": 100000,
+          "h": 100000,
+          "commands": [
+            { "command": "moveTo", "point": { "x": "50000", "y": "0" } },
+            { "command": "lineTo", "point": { "x": "100000", "y": "100000" } },
+            { "command": "lineTo", "point": { "x": "0", "y": "100000" } },
+            { "command": "close" }
+          ]
+        }
+      ]
+    },
+    "fill": "4472C4",
+    "outline": { "color": { "value": "C00000" }, "type": "solidFill", "width": 12700 },
+    "transformation": { "height": 150, "width": 200 }
+  }
 }
 ```
 
-**Note**: `type: "wps"` is required. `children` contains paragraph options. Command types: `"moveTo"`, `"lineTo"`, `"arcTo"` (with `heightRadius`, `widthRadius`, `startAngle`, `sweepAngle`), `"close"`.
+**Note**: `wpsShape` wraps a `ShapeOptions` (use `wpgGroup` for a group). `children` contains paragraph options. Command types: `"moveTo"`, `"lineTo"`, `"arcTo"` (with `heightRadius`, `widthRadius`, `startAngle`, `sweepAngle`), `"close"`.
 
 ## Comments & Revisions
 

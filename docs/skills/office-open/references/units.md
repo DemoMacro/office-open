@@ -60,6 +60,10 @@ Available from `@office-open/core`:
 
 ```ts
 import {
+  convertToEmu,
+  convertToTwip,
+  convertToPt,
+  convertToInch,
   convertMillimetersToTwip,
   convertInchesToTwip,
   convertPixelsToEmu,
@@ -70,17 +74,26 @@ import {
   convertEmuToPoints,
 } from "@office-open/core";
 
-// mm → twips
-const margin = convertMillimetersToTwip(25.4); // 1440
+// Polymorphic converters accept `number | UniversalMeasure`:
+// a `number` is assumed to already be in the target unit (passes through),
+// a string is parsed ("5cm", "2in", "12pt", "100px" at 96 DPI on DrawingML).
 
-// inches → twips
-const indent = convertInchesToTwip(1); // 1440
+// any unit → EMU (DrawingML geometry: shapes, images, charts)
+const shapeEmu = convertToEmu("5cm"); // 1800000
 
-// pixels → EMU
-const emu = convertPixelsToEmu(200); // Used for shape/image dimensions
+// any unit → twips (Word spacing/indent)
+const margin = convertToTwip("1in"); // 1440
 
-// points → EMU
-const ptEmu = convertPointsToEmu(12); // Font size to EMU
+// any unit → points (font size, row height)
+const fontSize = convertToPt(12); // 12 (number passes through)
+
+// any unit → inches (xlsx page margins)
+const pageMargin = convertToInch("2.5cm"); // ~0.984
+
+// Legacy fixed-unit converters (still available):
+const marginTwip = convertMillimetersToTwip(25.4); // 1440
+const emu = convertPixelsToEmu(200); // shape/image dimensions
+const ptEmu = convertPointsToEmu(12); // font size to EMU
 ```
 
 ## Pixel to EMU Conversion

@@ -220,12 +220,12 @@ Set directly as a string cell range on worksheet options.
 { "data": "<Uint8Array>", "type": "png", "col": 3, "row": 1 }
 ```
 
-| Property | Type                       | Description             |
-| -------- | -------------------------- | ----------------------- |
-| `data`   | `Uint8Array`               | Image binary data       |
-| `type`   | `"png" \| "jpeg" \| "jpg"` | Image format            |
-| `col`    | `number`                   | 1-based column position |
-| `row`    | `number`                   | 1-based row position    |
+| Property | Type             | Description             |
+| -------- | ---------------- | ----------------------- |
+| `data`   | `Uint8Array`     | Image binary data       |
+| `type`   | `"png" \| "jpg"` | Image format            |
+| `col`    | `number`         | 1-based column position |
+| `row`    | `number`         | 1-based row position    |
 
 ## Charts
 
