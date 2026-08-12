@@ -715,15 +715,16 @@ describe("tableDesc round-trip", () => {
     expect(result.float!.overlap).toBe("never");
   });
 
-  it("round-trips table-level tableLook (CT_TblLook)", () => {
+  it("round-trips the 6 special-row flags via w:tblLook (CT_TblLook)", () => {
     const result = roundTrip({
-      tableLook: { firstRow: true, lastColumn: true, noHBand: false },
+      firstRow: true,
+      lastCol: true,
+      bandRow: true,
       rows: [{ cells: [{ children: [] }] }],
     });
-    expect(result.tableLook).toBeDefined();
-    expect(result.tableLook!.firstRow).toBe(true);
-    expect(result.tableLook!.lastColumn).toBe(true);
-    expect(result.tableLook!.noHBand).toBe(false);
+    expect(result.firstRow).toBe(true);
+    expect(result.lastCol).toBe(true);
+    expect(result.bandRow).toBe(true);
   });
 
   it("round-trips columnWidthsRevision (w:tblGridChange)", () => {

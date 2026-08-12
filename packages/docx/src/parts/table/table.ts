@@ -6,7 +6,7 @@
  * @module
  */
 
-import type { PositiveUniversalMeasure } from "@office-open/core";
+import type { BaseTableOptions } from "@office-open/core";
 import type { CustomXmlRowOptions } from "@parts/custom-xml";
 import type { ShadingProperties } from "@shared/shading";
 
@@ -20,7 +20,6 @@ import type {
 } from "./table-properties";
 import type { TableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
-import type { TableLookOptions } from "./table-properties/table-look";
 import type { SdtRowOptions, TableRowOptions } from "./table-row";
 import type { TableWidthProperties } from "./table-width";
 
@@ -38,10 +37,10 @@ import type { TableWidthProperties } from "./table-width";
  *
  * @see {@link Table}
  */
-export interface TableOptions {
-  rows: (TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions })[];
+export interface TableOptions extends BaseTableOptions<
+  TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions }
+> {
   width?: TableWidthProperties;
-  columnWidths?: number[] | PositiveUniversalMeasure[];
   columnWidthsRevision?: TableGridChangeOptions;
   margins?: TableCellMarginOptions;
   indent?: TableWidthProperties;
@@ -51,7 +50,6 @@ export interface TableOptions {
   borders?: TableBordersOptions;
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   visuallyRightToLeft?: boolean;
-  tableLook?: TableLookOptions;
   cellSpacing?: TableCellSpacingProperties;
   styleRowBandSize?: number;
   styleColBandSize?: number;

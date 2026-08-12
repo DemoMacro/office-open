@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
-// Example of using tableLook to control conditional table formatting
+// Example of using the special-row flags to control conditional table formatting
 import { generateDocument, WidthType } from "@office-open/docx";
 
 const styles = readFileSync("./demo/assets/custom-styles.xml", "utf8");
@@ -101,14 +101,12 @@ const buffer = await generateDocument({
               },
             ],
             style: "MyCustomTableStyle",
-            tableLook: {
-              firstColumn: true,
-              firstRow: true,
-              lastColumn: true,
-              lastRow: true,
-              noHBand: false,
-              noVBand: false,
-            },
+            firstRow: true,
+            lastRow: true,
+            firstCol: true,
+            lastCol: true,
+            bandRow: true,
+            bandCol: true,
             width: {
               size: 100,
               type: WidthType.PERCENTAGE,

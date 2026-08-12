@@ -6,6 +6,7 @@
  * @module
  */
 
+import type { BaseTableRowOptions } from "@office-open/core";
 import type { CustomXmlCellOptions } from "@parts/custom-xml";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
@@ -28,9 +29,12 @@ export interface SdtRowOptions {
   endProperties?: RunPropertiesOptions;
 }
 
-export type TableRowOptions = {
-  /** Array of TableCell options (or cell-level SDTs) that make up the row */
-  cells: (TableCellOptions | { sdt: SdtCellOptions } | { customXml: CustomXmlCellOptions })[];
+export interface TableRowOptions
+  extends
+    BaseTableRowOptions<
+      TableCellOptions | { sdt: SdtCellOptions } | { customXml: CustomXmlCellOptions }
+    >,
+    TableRowPropertiesOptions {
   /** Table property exceptions for this row (override table-level properties) */
   propertyExceptions?: TablePropertyExOptions;
   /** Revision save ID for row properties (w:rsidRPr, hex string). */
@@ -41,4 +45,4 @@ export type TableRowOptions = {
   deletionRsid?: string;
   /** Revision save ID for table row (w:rsidTr, hex string). */
   tableRowRsid?: string;
-} & TableRowPropertiesOptions;
+}

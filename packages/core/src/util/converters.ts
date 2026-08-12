@@ -61,6 +61,23 @@ export const convertPointsToEmu = (points: number): number => Math.round(points 
 export const convertEmuToPoints = (emus: number): number => emus / 12700;
 
 // ---------------------------------------------------------------------------
+// Cross-unit conversions (EMU ↔ TWIP ↔ points)
+// 1 TWIP = 1/20 point = 635 EMU
+// ---------------------------------------------------------------------------
+
+/** Converts EMU to TWIP (1 TWIP = 635 EMU). */
+export const convertEmuToTwip = (emus: number): number => Math.round(emus / 635);
+
+/** Converts TWIP to EMU (1 TWIP = 635 EMU). */
+export const convertTwipToEmu = (twips: number): number => twips * 635;
+
+/** Converts points to TWIP (1 point = 20 TWIP). */
+export const convertPointsToTwip = (points: number): number => Math.round(points * 20);
+
+/** Converts TWIP to points (1 point = 20 TWIP). */
+export const convertTwipToPoints = (twips: number): number => twips / 20;
+
+// ---------------------------------------------------------------------------
 // UniversalMeasure → Twips conversion
 // Used when numeric computation is needed (e.g., landscape width/height swap)
 // ---------------------------------------------------------------------------

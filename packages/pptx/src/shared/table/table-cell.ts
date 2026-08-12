@@ -1,4 +1,4 @@
-import type { UniversalMeasure } from "@office-open/core";
+import type { BaseTableCellOptions, UniversalMeasure } from "@office-open/core";
 import type { ParagraphDescriptorOptions } from "@office-open/core/drawingml";
 
 import type { FillOptions } from "../drawingml/fill";
@@ -6,7 +6,11 @@ import type { CellBorderOptions } from "./table-cell-properties";
 
 export type VerticalAlignment = "top" | "center" | "bottom" | "justify" | "distribute";
 
-export interface TableCellOptions {
+/** pptx cell extends the base cell contract (span from base); verticalAlign
+ *  widens to the DrawingML anchor set (justify/distribute) and fill/borders/
+ *  margins/content are a:-domain types. */
+export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAlign"> {
+  verticalAlign?: VerticalAlignment;
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];
   fill?: FillOptions;
@@ -18,11 +22,8 @@ export interface TableCellOptions {
     diagonalTopLeftToBottomRight?: CellBorderOptions;
     diagonalBottomLeftToTopRight?: CellBorderOptions;
   };
-  columnSpan?: number;
-  rowSpan?: number;
   horizontalMerge?: "continue" | "restart";
   verticalMerge?: "continue" | "restart";
-  verticalAlign?: VerticalAlignment;
   margins?: {
     top?: number | UniversalMeasure;
     bottom?: number | UniversalMeasure;

@@ -6,13 +6,13 @@ You are a senior TypeScript developer.
 
 ## Architecture
 
-- **Packages**: `core/` (shared OOXML domains — descriptor runtime, `drawingml/`, `chart/`, smartart, OPC), `xml/`, `docx/`, `pptx/`, `xlsx/`. The three format packages are peers: same `src/` layout (`parts/`, `shared/`, `compiler.ts`, `context.ts`, `generate.ts`, `parse.ts`, `patch.ts`, `index.ts`) and one `*Options` name per shared concept.
+- **Packages**: `core/` (shared OOXML domains — descriptor runtime, `drawingml/`, `chart/`, `table/`, smartart, OPC), `xml/`, `docx/`, `pptx/`, `xlsx/`. The three format packages are peers: same `src/` layout (`parts/`, `shared/`, `compiler.ts`, `context.ts`, `generate.ts`, `parse.ts`, `patch.ts`, `index.ts`) and one `**Options` name per shared concept.
 - **Parts**: one module per OOXML XML part. docx/xlsx co-locate types and the `<part>Desc` descriptor; pptx keeps descriptors in `parts/descriptors/` with public types in `shared/<domain>/`. Cross-part shared types live in `shared/`.
 - **Descriptor pattern**: every part is a `CustomDescriptor<T>` with hand-written `stringify(opts, ctx)` + `parse(el, ctx)` (bidirectional). Runtime at `packages/core/src/descriptor/`.
 - **Cross-format copy** reuses `core`'s shared domains + package-to-package conversion in `packages/office-open/src/convert/` — **no unified document-model layer**. The conversion mode follows how the concept's XML maps across packages:
   - _Identical XML_ (`chart`: one `c:chartSpace` part) → shared core model, no conversion.
   - _Same element, different anchoring_ (`picture` `pic:pic`/`p:pic`/`xdr:pic`; shapes; text) → each package owns an `*Options` reflecting its anchor model (docx `wp:inline`/`wp:anchor`, pptx spTree, xlsx cell anchor) + pairwise `convert/*` functions; N is small, so pairwise beats a hub-spoke intermediate.
-  - _Structurally different XML_ (`table`: `w:tbl` flow / `a:tbl` graphic / `sml` cell-range) → target state is a prefix-free core intermediate (`core/table/` `TableGrid`) + per-package `from<Pkg>`/`to<Pkg>` adapters, mirroring `core/chart/`; **not yet implemented**.
+  - _Structurally different XML_ (`table`: `w:tbl` flow / `a:tbl` graphic / `sml` cell-range) → `core/table/` defines the shared structural base (`BaseTableOptions`/`BaseTableRowOptions`/`BaseTableCellOptions`: rows/cells/span/6-flags/columnWidths/vertical-align); docx/pptx `TableOptions extends Base*` add domain-specific style/position, xlsx is independent (its sml Table is a data range, restored visually via `convert/table.ts`). `convert/table.ts` passes the structural base through directly and translates only cell content (w:p↔a:p via `convert/text`), units (twip↔EMU via `core/util/converters`), and pptx fill/scheme-color → docx shading/themeColor.
 - **OOXML XSD** (`ooxml-schemas/transitional/`) is the golden source of truth — `wml.xsd` (DOCX), `pml.xsd` (PPTX), `sml.xsd` (XLSX), `dml-main.xsd` (DrawingML). Validate XML output against it.
 
 Full layout and conventions in [CONTRIBUTING.md](./CONTRIBUTING.md).

@@ -393,6 +393,28 @@ function parseTablePropertyExChange(el: Element): TablePropertyExChangeOptions |
   return change as TablePropertyExChangeOptions;
 }
 
+/** Map base 6-flags to docx TableLookOptions for w:tblLook emit.
+ *  firstRow/lastRow pass through; firstCol→firstColumn, lastCol→lastColumn;
+ *  bandRow→!noHBand, bandCol→!noVBand (banding is inverted in w:tblLook). */
+function tableLookFromFlags(opts: TableOptions): TableLookOptions | undefined {
+  const has =
+    opts.firstRow !== undefined ||
+    opts.lastRow !== undefined ||
+    opts.firstCol !== undefined ||
+    opts.lastCol !== undefined ||
+    opts.bandRow !== undefined ||
+    opts.bandCol !== undefined;
+  if (!has) return undefined;
+  const look: TableLookOptions = {};
+  if (opts.firstRow !== undefined) look.firstRow = opts.firstRow;
+  if (opts.lastRow !== undefined) look.lastRow = opts.lastRow;
+  if (opts.firstCol !== undefined) look.firstColumn = opts.firstCol;
+  if (opts.lastCol !== undefined) look.lastColumn = opts.lastCol;
+  if (opts.bandRow !== undefined) look.noHBand = !opts.bandRow;
+  if (opts.bandCol !== undefined) look.noVBand = !opts.bandCol;
+  return look;
+}
+
 // ── Descriptor ──
 
 export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
@@ -419,7 +441,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
       style: opts.style,
       styleColBandSize: opts.styleColBandSize,
       styleRowBandSize: opts.styleRowBandSize,
-      tableLook: opts.tableLook,
+      tableLook: tableLookFromFlags(opts),
       visuallyRightToLeft: opts.visuallyRightToLeft,
       width: opts.width,
       includeIfEmpty: true,
@@ -1109,10 +1131,20 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
   const tblPr = findChild(el, "w:tblPr");
   if (tblPr) {
     const tblPrParsed = parseTablePropertiesEl(tblPr);
-    Object.assign(opts, tblPrParsed);
+    // tableLook maps to base 6-flags; pull it aside and assign the rest.
+    const { tableLook, ...rest } = tblPrParsed;
+    Object.assign(opts, rest);
     // TableOptions exposes w:tblCellMar as `margins`; TablePropertiesOptions
     // uses `cellMargin`. Map back so round-trip keeps the public field name.
     if (tblPrParsed.cellMargin !== undefined) opts.margins = tblPrParsed.cellMargin;
+    if (tableLook) {
+      if (tableLook.firstRow !== undefined) opts.firstRow = tableLook.firstRow;
+      if (tableLook.lastRow !== undefined) opts.lastRow = tableLook.lastRow;
+      if (tableLook.firstColumn !== undefined) opts.firstCol = tableLook.firstColumn;
+      if (tableLook.lastColumn !== undefined) opts.lastCol = tableLook.lastColumn;
+      if (tableLook.noHBand !== undefined) opts.bandRow = !tableLook.noHBand;
+      if (tableLook.noVBand !== undefined) opts.bandCol = !tableLook.noVBand;
+    }
   }
 
   const grid = parseColumnWidthsEl(el);

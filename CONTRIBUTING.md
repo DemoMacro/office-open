@@ -149,7 +149,7 @@ effectReference → a:effectRef  fontReference    → a:fontRef
 The same concept uses the **same name in every package** — picture/shape/connector/group share one `*Options` name across docx/pptx/xlsx (`PictureOptions` everywhere, not per-package `DrawingDescriptorOptions`/`PictureDescriptorOptions`/`DrawingImageOptions`).
 
 - **No grouping prefixes** (`Model`/`Content`/`Element`/`Universal`). `UniversalMeasure` is the XSD `ST_UniversalMeasure` type, kept as-is — not a precedent.
-- **Tables are the exception**: each package's `TableOptions` models a genuinely different thing (`w:tbl` flow / `a:tbl` graphic / xlsx cell-range), so the name stays but each carries a JSDoc boundary note; cross-format goes through `core/table/` `TableGrid` ([Cross-Format Conversion](#cross-format-conversion)).
+- **Tables are the exception**: each package's `TableOptions` models a genuinely different thing (`w:tbl` flow / `a:tbl` graphic / xlsx cell-range), so the name stays but each carries a JSDoc boundary note; docx/pptx `extends` the shared `core/table/` `BaseTableOptions` (rows/cells/span/6-flags/columnWidths/vertical-align) and add domain-specific style/position, xlsx is independent ([Cross-Format Conversion](#cross-format-conversion)).
 - **Renames are non-breaking**: keep the old name as a `@deprecated` alias until the next major release.
 
 ## Options Interface Design
@@ -206,7 +206,7 @@ Each descriptor is **bidirectional**: has both `stringify()` and `parse()`.
 Cross-format copy works at the `Options` layer — **no unified document model**.
 
 - **Similar structures** (picture/shape/connector/group): package-to-package functions translate one package's `Options` to another, reusing `core/drawingml/` for shared parts (spPr/fill/outline/effects) and mapping only container/positioning (`wps:`/`a:sp`/`xdr:sp`; inline vs x/y vs cell anchor).
-- **Tables**: three packages model tables fundamentally differently, so the concept owns a prefix-free intermediate in its own core domain (`core/table/` `TableGrid`/`TableRow`/`TableCell`); each package provides `from<Pkg>Table`/`to<Pkg>Table` adapters, reducing N² pairwise to N. Mirrors `core/chart/`.
+- **Tables**: three packages model tables fundamentally differently, but they share a structural core (rows/cells/span/6-flags/columnWidths/vertical-align) in `core/table/` (`BaseTableOptions`/`BaseTableRowOptions`/`BaseTableCellOptions`). docx/pptx `TableOptions extends Base*` and add domain-specific style/position; xlsx is independent (sml Table is a data range). `convert/table.ts` passes the base through directly and translates only cell content (w:p↔a:p via `convert/text`), units (twip↔EMU via `core/util/converters`), and pptx fill/scheme-color → docx shading/themeColor.
 - **Text**: `a:p` is shared in `core/drawingml/text/`; docx bridges `a:p ↔ w:p` (font ×100↔×2 half-points, `srgbClr`↔`w:color`, typeface↔`rFonts`, hyperlinks).
 - **Charts**: unified via `core/chart/`; cross-format is only packaging.
 
