@@ -7,6 +7,7 @@ import type {
   EffectListOptions,
   Scene3DOptions,
   Shape3DOptions,
+  FillOptions,
 } from "@office-open/core/drawingml";
 /**
  * Shape options type for PPTX.
@@ -14,7 +15,6 @@ import type {
  * @module
  */
 import type { AnimationOptions } from "@shared/animation/types";
-import type { ShapePropertiesOptions } from "@shared/drawingml/shape-properties";
 
 export interface ShapeStyleOptions {
   lineReference?: { index: number; color?: string };
@@ -32,7 +32,7 @@ export interface ShapeOptions {
   height?: number | UniversalMeasure;
   geometry?: string | PresetGeometryOptions;
   customGeometry?: CustomGeometryOptions;
-  fill?: ShapePropertiesOptions["fill"];
+  fill?: FillOptions;
   outline?: OutlineOptions;
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;

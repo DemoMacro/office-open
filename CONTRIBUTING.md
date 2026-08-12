@@ -210,7 +210,7 @@ Cross-format copy works at the `Options` layer — **no unified document model**
 - **Text**: `a:p` is shared in `core/drawingml/text/`; docx bridges `a:p ↔ w:p` (font ×100↔×2 half-points, `srgbClr`↔`w:color`, typeface↔`rFonts`, hyperlinks).
 - **Charts**: unified via `core/chart/`; cross-format is only packaging.
 
-Conversion functions are per-package pure functions (`to*`/`convert*`/`from*`), exported from `@office-open/<pkg>` — never core, to keep `format → core` one-directional. **Fidelity** matches MS Office paste: table structure/merge/border/font/alignment high-fidelity; multi-paragraph text ↔ single cell, and formulas/validation, lossy.
+Conversion functions are per-package pure functions (`to*`/`convert*`/`from*`), exported from `@office-open/<pkg>` — never core, to keep `format → core` one-directional. **Fidelity** matches MS Office paste: shapes (spPr/fill/outline/effects/textBody) translate near-losslessly across pptx/xlsx/docx; positioning is heuristic (xlsx cell-anchor ↔ absolute EMU), lossy on xlsx hops; connectors skip docx (no standalone connector element); table structure/merge/border/font/alignment high-fidelity; multi-paragraph text ↔ single cell, and formulas/validation, lossy.
 
 ## XML Generation
 

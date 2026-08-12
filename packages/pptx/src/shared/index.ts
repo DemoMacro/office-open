@@ -56,10 +56,10 @@ export {
   type GradientStopOptions,
 } from "./drawingml/fill";
 
-// DrawingML — local types
+// DrawingML — local aliases + core re-exports
 export type { Transform2DOptions } from "./drawingml/transform-2d";
 export { stringifyPresetGeometry } from "@office-open/core/drawingml";
-export type { ShapePropertiesOptions } from "./drawingml/shape-properties";
+export type { ShapePropertiesOptions } from "@office-open/core/drawingml";
 
 // Shape types — text/run types re-exported from core DrawingML
 export type { ShapeOptions } from "./shape/shape";
