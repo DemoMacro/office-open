@@ -838,6 +838,34 @@ export function parseParagraphProperties(
     if (val !== undefined) opts.outlineLevel = val;
   }
 
+  // Text direction (w:textDirection — ST_TextDirection).
+  const textDirection = findChild(el, "w:textDirection");
+  if (textDirection) {
+    const val = attr(textDirection, "w:val");
+    if (val) opts.textDirection = val as ParagraphPropertiesOptions["textDirection"];
+  }
+
+  // Textbox tight wrap (w:textboxTightWrap).
+  const textboxTightWrap = findChild(el, "w:textboxTightWrap");
+  if (textboxTightWrap) {
+    const val = attr(textboxTightWrap, "w:val");
+    if (val) opts.textboxTightWrap = val as ParagraphPropertiesOptions["textboxTightWrap"];
+  }
+
+  // HTML div id (w:divId).
+  const divIdEl = findChild(el, "w:divId");
+  if (divIdEl) {
+    const val = attrNum(divIdEl, "w:val");
+    if (val !== undefined) opts.divId = val;
+  }
+
+  // Conditional formatting style (w:cnfStyle — CT_Cnf w:val or 12 attrs).
+  const cnfStyle = findChild(el, "w:cnfStyle");
+  if (cnfStyle) {
+    const cnf = parseCnfStyle(cnfStyle);
+    if (cnf) opts.cnfStyle = cnf;
+  }
+
   // Run properties (paragraph-level defaults)
   const rPr = findChild(el, "w:rPr");
   if (rPr) {
@@ -907,6 +935,44 @@ export function parseParagraphProperties(
   }
 
   return opts;
+}
+
+// CT_Cnf attribute order — shared by parseCnfStyle (w:val digits + w: attrs).
+const CNF_KEYS = [
+  "firstRow",
+  "lastRow",
+  "firstColumn",
+  "lastColumn",
+  "oddVBand",
+  "evenVBand",
+  "oddHBand",
+  "evenHBand",
+  "firstRowFirstColumn",
+  "firstRowLastColumn",
+  "lastRowFirstColumn",
+  "lastRowLastColumn",
+] as const;
+
+/** Read w:cnfStyle (CT_Cnf). Office's canonical w:val is a 12-char [01]*
+ *  string (ST_Cnf), one digit per flag in CNF_KEYS order; the XSD also
+ *  permits 12 individual w: attributes, parsed as a fallback. */
+function parseCnfStyle(
+  el: Element,
+): NonNullable<ParagraphPropertiesOptions["cnfStyle"]> | undefined {
+  const val = attr(el, "w:val");
+  const result: Record<string, boolean> = {};
+  if (val && val.length === 12) {
+    for (let i = 0; i < 12; i++) {
+      if (val[i] === "1") result[CNF_KEYS[i]!] = true;
+    }
+  } else {
+    for (const key of CNF_KEYS) {
+      if (attrBool(el, `w:${key}`)) result[key] = true;
+    }
+  }
+  return Object.keys(result).length
+    ? (result as NonNullable<ParagraphPropertiesOptions["cnfStyle"]>)
+    : undefined;
 }
 
 /**

@@ -187,8 +187,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "cnfStyle",
       "revision",
     ],
-    // parse omits textDirection, textboxTightWrap, divId, cnfStyle
-    // (no findChild for these in parseParagraphProperties).
+    // parse covers every write field (round-trip complete).
     parseFields: [
       "heading",
       "style",
@@ -221,7 +220,11 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "topLinePunct",
       "autoSpaceDE",
       "textAlignment",
+      "textboxTightWrap",
+      "textDirection",
       "outlineLevel",
+      "divId",
+      "cnfStyle",
       "revision",
     ],
     order: [
@@ -279,7 +282,6 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
     },
     excludeFields: ["thematicBreak", "rightTabStop", "leftTabStop", "includeIfEmpty"],
     notes:
-      "F3 parse-loss: textDirection, textboxTightWrap, divId, cnfStyle written but never parsed. " +
       "Input-side sugar excluded from the field sets: thematicBreak (→pBdr/border), " +
       "rightTabStop/leftTabStop (→tabs/tabStops), includeIfEmpty (control flag) — these map field→XML but XML→a different field, breaking the 1:1 round-trip assumption.",
   },

@@ -9,10 +9,13 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
-import { xsdBlendMode, xsdRectAlignment } from "../../util/mappings";
-import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
+import { parse } from "../../descriptor";
+import { xsdBlendMode, xsdPresetShadow, xsdRectAlignment } from "../../util/mappings";
+import { parseColorChoice, solidFillDesc, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
+import { gradientFillDesc, patternFillDesc } from "../fill/fill-descriptors";
 import type { BlurEffectOptions, EffectListOptions } from "./effect-list";
+import { createFillOverlayEffect } from "./fill-overlay";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
 import type { GlowEffectOptions } from "./glow";
 import type { InnerShadowEffectOptions } from "./inner-shadow";
@@ -74,9 +77,9 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       parts.push(`<a:blur${attrStr}/>`);
     }
 
-    // Fill overlay
+    // Fill overlay — CT_FillOverlayEffect requires an EG_FillProperties child.
     if (opts.fillOverlay) {
-      parts.push(`<a:fillOverlay blend="${escapeXml(xsdBlendMode.to(opts.fillOverlay.blend))}"/>`);
+      parts.push(createFillOverlayEffect(opts.fillOverlay));
     }
 
     // Glow
@@ -133,7 +136,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
         stringifyColorEffect(
           "a:prstShdw",
           {
-            prst: opts.presetShadow.preset,
+            prst: xsdPresetShadow.to(opts.presetShadow.preset),
             dist: opts.presetShadow.distance,
             dir: opts.presetShadow.direction,
           },
@@ -251,6 +254,14 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
         overlayOpts.blend = xsdBlendMode.from(
           String(fillOverlay.attributes["blend"]),
         ) as FillOverlayEffectOptions["blend"];
+      const foSolid = findChild(fillOverlay, "a:solidFill");
+      if (foSolid) overlayOpts.solidFill = parse(solidFillDesc, foSolid, ctx) as SolidFillOptions;
+      const foGrad = findChild(fillOverlay, "a:gradFill");
+      if (foGrad) overlayOpts.gradientFill = parse(gradientFillDesc, foGrad, ctx);
+      const foPatt = findChild(fillOverlay, "a:pattFill");
+      if (foPatt) overlayOpts.patternFill = parse(patternFillDesc, foPatt, ctx);
+      if (findChild(fillOverlay, "a:noFill")) overlayOpts.noFill = true;
+      if (findChild(fillOverlay, "a:grpFill")) overlayOpts.groupFill = true;
       result.fillOverlay = overlayOpts as FillOverlayEffectOptions;
     }
 
@@ -259,8 +270,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
     if (prstShdw) {
       const prstOpts: Partial<PresetShadowEffectOptions> = {};
       if (prstShdw.attributes?.["prst"] !== undefined)
-        prstOpts.preset = String(
-          prstShdw.attributes["prst"],
+        prstOpts.preset = xsdPresetShadow.from(
+          String(prstShdw.attributes["prst"]),
         ) as PresetShadowEffectOptions["preset"];
       if (prstShdw.attributes?.["dist"] !== undefined)
         prstOpts.distance = Number(prstShdw.attributes["dist"]);

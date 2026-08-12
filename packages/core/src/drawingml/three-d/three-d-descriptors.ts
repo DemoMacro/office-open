@@ -11,7 +11,7 @@ import { findChild } from "@office-open/xml";
 import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { xsdMaterialType } from "../../util/mappings";
-import { solidFillDesc } from "../color/color-descriptors";
+import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { BevelOptions } from "./bevel";
 import type {
   Scene3DOptions,
@@ -77,11 +77,11 @@ export const shape3DDesc: CustomDescriptor<Shape3DOptions> = {
       if (bevelXml) parts.push(bevelXml.replace("<a:bevel", "<a:bevelB"));
     }
     if (opts.extrusionColor) {
-      const colorXml = stringify(solidFillDesc, opts.extrusionColor, ctx);
+      const colorXml = stringifyColorChoice(opts.extrusionColor, ctx);
       if (colorXml) parts.push(`<a:extrusionClr>${colorXml}</a:extrusionClr>`);
     }
     if (opts.contourColor) {
-      const colorXml = stringify(solidFillDesc, opts.contourColor, ctx);
+      const colorXml = stringifyColorChoice(opts.contourColor, ctx);
       if (colorXml) parts.push(`<a:contourClr>${colorXml}</a:contourClr>`);
     }
 
@@ -124,14 +124,14 @@ export const shape3DDesc: CustomDescriptor<Shape3DOptions> = {
 
     const extrusionClr = findChild(el, "a:extrusionClr");
     if (extrusionClr) {
-      const solidFill = findChild(extrusionClr, "a:solidFill");
-      if (solidFill) result.extrusionColor = parse(solidFillDesc, solidFill, ctx);
+      const color = parseColorChoice(extrusionClr, ctx);
+      if (color && Object.keys(color).length) result.extrusionColor = color;
     }
 
     const contourClr = findChild(el, "a:contourClr");
     if (contourClr) {
-      const solidFill = findChild(contourClr, "a:solidFill");
-      if (solidFill) result.contourColor = parse(solidFillDesc, solidFill, ctx);
+      const color = parseColorChoice(contourClr, ctx);
+      if (color && Object.keys(color).length) result.contourColor = color;
     }
 
     return result;

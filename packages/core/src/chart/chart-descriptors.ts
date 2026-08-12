@@ -625,8 +625,8 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
       if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
       break;
     case "pie":
-      // CT_PieChart: firstSliceAng (no holeSize)
-      if (opts.firstSliceAngle !== undefined)
+      // CT_PieChart: firstSliceAng (absent on CT_Pie3DChart).
+      if (!opts.threeD && opts.firstSliceAngle !== undefined)
         parts.push(valEl("c:firstSliceAng", opts.firstSliceAngle));
       break;
     case "doughnut":

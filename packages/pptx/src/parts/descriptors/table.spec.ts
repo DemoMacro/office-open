@@ -111,6 +111,20 @@ describe("tableDesc round-trip", () => {
     expect(fill.color.value).toBe("4472C4");
   });
 
+  it("round-trips cell with vert (text direction)", () => {
+    const opts: TableDescriptorOptions = {
+      rows: [
+        {
+          cells: [{ text: "Rotated", vert: "vert270" }],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const cell = result.rows![0]?.cells?.[0];
+
+    expect(cell?.vert).toBe("vert270");
+  });
+
   it("round-trips cell with borders", () => {
     const opts: TableDescriptorOptions = {
       rows: [

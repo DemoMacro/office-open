@@ -25,20 +25,18 @@ function parsePPr(inner: string): Record<string, unknown> {
 }
 
 describe("paragraph-properties field consistency", () => {
-  it("F3 — parse drops textDirection, textboxTightWrap, divId, cnfStyle", () => {
-    // All four elements are valid pPr children that stringify emits, yet
-    // parseParagraphProperties has no findChild for them — they vanish on
-    // round-trip. Verified at the code level, not just the declared field set.
+  it("round-trips textDirection, textboxTightWrap, divId, cnfStyle", () => {
     const opts = parsePPr(
       `<w:textDirection w:val="lr"/>` +
         `<w:textboxTightWrap w:val="none"/>` +
         `<w:divId w:val="1"/>` +
         `<w:cnfStyle w:val="000000010000"/>`,
     );
-    expect(opts.textDirection).toBeUndefined();
-    expect(opts.textboxTightWrap).toBeUndefined();
-    expect(opts.divId).toBeUndefined();
-    expect(opts.cnfStyle).toBeUndefined();
+    expect(opts.textDirection).toBe("lr");
+    expect(opts.textboxTightWrap).toBe("none");
+    expect(opts.divId).toBe(1);
+    // w:val="000000010000" — 12-char ST_Cnf, digit index 7 set → evenHBand.
+    expect(opts.cnfStyle).toEqual({ evenHBand: true });
   });
 
   it("round-trips revision (w:pPrChange)", () => {
@@ -59,8 +57,7 @@ describe("paragraph-properties field consistency", () => {
     // If parseParagraphProperties gains a findChild for any of these, the
     // field set above must be updated too — this keeps FIELD_SPECS honest.
     const report = diffTagSets(spec);
-    // Order follows writeFields (textboxTightWrap precedes textDirection there).
-    expect(report.f3ParseLoss).toEqual(["textboxTightWrap", "textDirection", "divId", "cnfStyle"]);
+    expect(report.f3ParseLoss).toEqual([]);
     expect(report.f1WriteLoss).toEqual([]);
     expect(report.f2WriteOnly).toEqual([]);
     expect(report.f5ParseOnly).toEqual([]);

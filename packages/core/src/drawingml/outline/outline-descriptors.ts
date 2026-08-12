@@ -13,7 +13,7 @@ import { stringify, parse } from "../../descriptor";
 import { convertToEmu } from "../../util/converters";
 import { xsdCompoundLine, xsdLineCap, xsdLineEndSize, xsdPenAlignment } from "../../util/mappings";
 import { solidFillDesc } from "../color/color-descriptors";
-import { gradientFillDesc } from "../fill/fill-descriptors";
+import { gradientFillDesc, patternFillDesc } from "../fill/fill-descriptors";
 import type { DashStop } from "./custom-dash";
 import type { LineEndOptions } from "./line-end";
 import type { OutlineOptions } from "./outline";
@@ -81,6 +81,9 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     } else if (fillType === "gradFill" && opts.gradientFill) {
       const gradXml = stringify(gradientFillDesc, opts.gradientFill, ctx);
       if (gradXml) parts.push(gradXml);
+    } else if (fillType === "pattFill" && opts.patternFill) {
+      const pattXml = stringify(patternFillDesc, opts.patternFill, ctx);
+      if (pattXml) parts.push(pattXml);
     }
 
     // Dash
@@ -140,6 +143,11 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
       result.type = "gradFill";
       const gradFill = findChild(el, "a:gradFill")!;
       result.gradientFill = parse(gradientFillDesc, gradFill, _ctx);
+    }
+    if (findChild(el, "a:pattFill")) {
+      result.type = "pattFill";
+      const pattFill = findChild(el, "a:pattFill")!;
+      result.patternFill = parse(patternFillDesc, pattFill, _ctx);
     }
 
     // Dash

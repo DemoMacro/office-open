@@ -61,6 +61,9 @@ export interface CellMarginsDescriptorOptions {
 
 export type CellVerticalAlign = "top" | "center" | "bottom" | "justify" | "distribute";
 
+/** ST_TextVerticalType — text direction within a cell (a:tcPr @vert). */
+export type TextVerticalType = "horz" | "vert" | "vert270" | "wordArt" | "wordArtV";
+
 export interface TableCellDescriptorOptions {
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];
@@ -71,6 +74,8 @@ export interface TableCellDescriptorOptions {
   horizontalMerge?: "continue" | "restart";
   verticalMerge?: "continue" | "restart";
   verticalAlign?: CellVerticalAlign;
+  /** @vert — text direction (ST_TextVerticalType). */
+  vert?: TextVerticalType;
   margins?: CellMarginsDescriptorOptions;
 }
 
@@ -341,6 +346,9 @@ function stringifyTcPr(cell: TableCellDescriptorOptions, ctx: PptxWriteContext):
   if (cell.verticalAlign) {
     parts.push(`anchor="${xsdTextAnchor.to(cell.verticalAlign)}"`);
   }
+  if (cell.vert) {
+    parts.push(`vert="${cell.vert}"`);
+  }
 
   if (cell.borders) {
     if (cell.borders.left) parts.push(buildBorderLine("a:lnL", cell.borders.left));
@@ -476,6 +484,8 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
   if (tcPr) {
     const anchor = attr(tcPr, "anchor");
     if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as CellVerticalAlign;
+    const vert = attr(tcPr, "vert");
+    if (vert) result.vert = vert as TextVerticalType;
 
     // Margins from tcPr attributes
     const margins: CellMarginsDescriptorOptions = {};
