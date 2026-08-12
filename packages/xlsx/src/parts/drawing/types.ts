@@ -7,7 +7,7 @@
  * @module
  */
 
-import type { BaseConnectorOptions, UniversalMeasure } from "@office-open/core";
+import type { BaseConnectorOptions, BaseGroupOptions, UniversalMeasure } from "@office-open/core";
 import type {
   GroupTransform2DOptions,
   NonVisualDrawingPropertiesOptions,
@@ -163,7 +163,7 @@ export interface GroupConnectorChildOptions extends BaseConnectorOptions {
 }
 
 /** Anchored group (xdr:grpSp): group transform + nested shapes/connectors. */
-export interface GroupOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+export interface GroupOptions extends DrawingAnchorOptions, BaseGroupOptions {
   /** Group shape properties (a:CT_GroupShapeProperties: group xfrm + fill/ln). */
   grpSpPr: GroupTransform2DOptions;
   /** Nested shapes. */

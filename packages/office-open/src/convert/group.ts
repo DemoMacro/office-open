@@ -6,6 +6,11 @@
  * via the absolute-box model (./position); only the xlsx leg loses precise
  * positioning (heuristic cell anchors).
  *
+ * The container cNvPr (name/description/title/hidden) passes straight through on
+ * every leg — pptx/xlsx via pickGroupBase, docx via its altText bridge — so alt
+ * text survives a cross-format copy. Child shapes/connectors carry their own
+ * cNvPr through pickNonVisualDrawingProperties (all four fields, not just name).
+ *
  * Children recurse through their own converters — shapes via ./shape,
  * connectors via ./connector. docx has no standalone connector and xlsx groups
  * hold only shapes/connectors, so picture/table/chart/... children are dropped
@@ -14,19 +19,21 @@
  * @module
  */
 
+import { pickGroupBase, pickNonVisualDrawingProperties } from "@office-open/core";
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
 import type { ShapePropertiesOptions, GroupTransform2DOptions } from "@office-open/core/drawingml";
 import type {
-  WpgGroupRunOptions as DocxGroupOptions,
+  GroupOptions as DocxGroupOptions,
   GroupChildMediaData,
   MediaDataTransformation,
   WpsShapeCoreOptions,
 } from "@office-open/docx";
 import { createTransformation } from "@office-open/docx";
 import type {
-  GroupShapeOptions as PptxGroupOptions,
+  GroupOptions as PptxGroupOptions,
   SlideChild,
   ShapeOptions as PptxShapeOptions,
-  ConnectorShapeOptions as PptxConnectorOptions,
+  ConnectorOptions as PptxConnectorOptions,
 } from "@office-open/pptx";
 import type {
   GroupOptions as XlsxGroupOptions,
@@ -55,6 +62,47 @@ import {
 
 const EMU_PER_PIXEL = 9525;
 const ANGLE_UNITS_PER_DEGREE = 60_000;
+
+// ── container cNvPr bridge ──
+
+/**
+ * Build the docx altText (wp:docPr) from the container cNvPr. Only emitted when
+ * at least one cNvPr field is authored; name defaults to "Group" since docx
+ * requires it. Structurally compatible with docx's DocPropertiesOptions without
+ * importing that internal type.
+ */
+const altTextFromCnvPr = (
+  picked: Partial<NonVisualDrawingPropertiesOptions>,
+): { altText?: NonVisualDrawingPropertiesOptions & { name: string } } => {
+  if (
+    picked.name === undefined &&
+    picked.description === undefined &&
+    picked.title === undefined &&
+    picked.hidden === undefined
+  ) {
+    return {};
+  }
+  return { altText: { name: picked.name ?? "Group", ...picked } };
+};
+
+/**
+ * Build a docx child nonVisualProperties object from a picked cNvPr. Only
+ * emitted when at least one field is authored; name defaults to `fallbackName`.
+ */
+const docxNonVisualFromCnvPr = (
+  picked: Partial<NonVisualDrawingPropertiesOptions>,
+  fallbackName: string,
+): { nonVisualProperties: NonVisualDrawingPropertiesOptions } => {
+  const name = picked.name ?? fallbackName;
+  return { nonVisualProperties: { name, ...picked } };
+};
+
+/** True when a picked cNvPr carries at least one authored field. */
+const hasCnvPr = (picked: Partial<NonVisualDrawingPropertiesOptions>): boolean =>
+  picked.name !== undefined ||
+  picked.description !== undefined ||
+  picked.title !== undefined ||
+  picked.hidden !== undefined;
 
 // ── container helpers ──
 
@@ -109,12 +157,13 @@ function spPrToPptxShape(spPr: ShapePropertiesOptions): PptxShapeOptions {
 /** xlsx group child shape → docx wps core (position lives on the wpg child wrapper). */
 function xlsxShapeChildToDocxData(s: GroupShapeChildOptions): WpsShapeCoreOptions {
   const preset = toPresetGeometry(s.spPr.geometry);
+  const cnvPr = pickNonVisualDrawingProperties(s);
   return {
     children: s.textBody ? textBodyToDocxChildren(s.textBody) : [],
     ...pickContent(s.spPr),
     ...(s.spPr.customGeometry !== undefined ? { customGeometry: s.spPr.customGeometry } : {}),
     ...(preset !== undefined ? { presetGeometry: preset } : {}),
-    ...(s.name ? { nonVisualProperties: { name: s.name } } : {}),
+    ...(hasCnvPr(cnvPr) ? docxNonVisualFromCnvPr(cnvPr, "Shape") : {}),
   };
 }
 
@@ -148,7 +197,7 @@ function xlsxConnectorChildToPptx(c: GroupConnectorChildOptions): PptxConnectorO
     ...(c.locking ? { locking: c.locking } : {}),
     ...(c.startConnection ? { startConnection: c.startConnection } : {}),
     ...(c.endConnection ? { endConnection: c.endConnection } : {}),
-    ...(c.name ? { name: c.name } : {}),
+    ...pickNonVisualDrawingProperties(c),
   };
 }
 
@@ -183,7 +232,8 @@ export function toDocxGroup(source: PptxGroupOptions | XlsxGroupOptions): DocxGr
     );
     children = pptxGroupChildrenToDocx(source.children);
   }
-  return { children, transformation: boxToDocx(box) };
+  // Container cNvPr → docx altText (wp:docPr).
+  return { children, transformation: boxToDocx(box), ...altTextFromCnvPr(pickGroupBase(source)) };
 }
 
 function pptxGroupChildrenToDocx(children: SlideChild[] | undefined): GroupChildMediaData[] {
@@ -232,6 +282,11 @@ export function toPptxGroup(source: XlsxGroupOptions): PptxGroupOptions;
 export function toPptxGroup(source: DocxGroupOptions | XlsxGroupOptions): PptxGroupOptions {
   let box: AbsoluteBox;
   let children: SlideChild[];
+  // Container cNvPr: docx bridges through altText; xlsx extends BaseGroupOptions.
+  const cnvPr =
+    "transformation" in source
+      ? pickNonVisualDrawingProperties(source.altText)
+      : pickGroupBase(source);
   if ("grpSpPr" in source) {
     const g = source.grpSpPr;
     box = boxFromXlsxAnchor(
@@ -247,7 +302,7 @@ export function toPptxGroup(source: DocxGroupOptions | XlsxGroupOptions): PptxGr
     box = boxFromDocx(source.transformation);
     children = docxGroupChildrenToPptx(source.children);
   }
-  return { ...boxToPptx(box), children };
+  return { ...boxToPptx(box), children, ...cnvPr };
 }
 
 function xlsxGroupChildrenToPptx(
@@ -258,7 +313,7 @@ function xlsxGroupChildrenToPptx(
   for (const s of shapes ?? []) {
     const shape = spPrToPptxShape(s.spPr);
     if (s.textBody) shape.textBody = s.textBody;
-    if (s.name) shape.name = s.name;
+    Object.assign(shape, pickNonVisualDrawingProperties(s));
     out.push({ shape });
   }
   for (const c of connectors ?? []) {
@@ -275,7 +330,7 @@ function docxGroupChildrenToPptx(children: GroupChildMediaData[] | undefined): S
       const shape = spPrToPptxShape(docxChildToSpPr(child.data, box));
       const textBody = docxToTextBody(child.data.children, child.data.bodyProperties);
       if (textBody) shape.textBody = textBody;
-      if (child.data.nonVisualProperties?.name) shape.name = child.data.nonVisualProperties.name;
+      Object.assign(shape, pickNonVisualDrawingProperties(child.data.nonVisualProperties));
       out.push({ shape });
     } else {
       console.warn(`Unsupported docx group child → pptx (${child.type}); skipped.`);
@@ -294,6 +349,11 @@ export function toXlsxGroup(source: DocxGroupOptions | PptxGroupOptions): XlsxGr
   let box: AbsoluteBox;
   let shapes: GroupShapeChildOptions[];
   let connectors: GroupConnectorChildOptions[];
+  // Container cNvPr: docx bridges through altText; pptx extends BaseGroupOptions.
+  const cnvPr =
+    "transformation" in source
+      ? pickNonVisualDrawingProperties(source.altText)
+      : pickGroupBase(source);
   if ("transformation" in source) {
     box = boxFromDocx(source.transformation);
     const r = docxGroupChildrenToXlsx(source.children);
@@ -327,6 +387,7 @@ export function toXlsxGroup(source: DocxGroupOptions | PptxGroupOptions): XlsxGr
     grpSpPr,
     ...(shapes.length ? { shapes } : {}),
     ...(connectors.length ? { connectors } : {}),
+    ...cnvPr,
   };
 }
 
@@ -341,7 +402,7 @@ function pptxGroupChildrenToXlsx(children: SlideChild[] | undefined): {
       const s: GroupShapeChildOptions = {
         spPr: pptxShapeToSpPr(child.shape),
         ...(child.shape.textBody ? { textBody: child.shape.textBody } : {}),
-        ...(child.shape.name ? { name: child.shape.name } : {}),
+        ...pickNonVisualDrawingProperties(child.shape),
       };
       shapes.push(s);
     } else if ("connector" in child) {
@@ -373,7 +434,7 @@ function pptxConnectorToXlsxChild(c: PptxConnectorOptions): GroupConnectorChildO
     ...(c.locking ? { locking: c.locking } : {}),
     ...(c.startConnection ? { startConnection: c.startConnection } : {}),
     ...(c.endConnection ? { endConnection: c.endConnection } : {}),
-    ...(c.name ? { name: c.name } : {}),
+    ...pickNonVisualDrawingProperties(c),
   };
 }
 
@@ -391,9 +452,7 @@ function docxGroupChildrenToXlsx(children: GroupChildMediaData[] | undefined): {
       shapes.push({
         spPr,
         ...(textBody ? { textBody } : {}),
-        ...(child.data.nonVisualProperties?.name
-          ? { name: child.data.nonVisualProperties.name }
-          : {}),
+        ...pickNonVisualDrawingProperties(child.data.nonVisualProperties),
       });
     } else {
       console.warn(`Unsupported docx group child → xlsx (${child.type}); skipped.`);

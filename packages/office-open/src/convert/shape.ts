@@ -15,6 +15,8 @@
  * @module
  */
 
+import { pickNonVisualDrawingProperties } from "@office-open/core";
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
 import type {
   FillOptions,
   OutlineOptions,
@@ -118,6 +120,28 @@ export interface DocxShapeParts {
 }
 
 /**
+ * Build docx nonVisualProperties from a source's cNvPr — all authored fields,
+ * not just name. name defaults to "Shape" (docx requires it).
+ */
+const docxNonVisual = (
+  source: NonVisualDrawingPropertiesOptions,
+): { nonVisualProperties: NonVisualDrawingPropertiesOptions } => {
+  const picked = pickNonVisualDrawingProperties(source);
+  return { nonVisualProperties: { name: picked.name ?? "Shape", ...picked } };
+};
+
+/** True when a source carries at least one authored cNvPr field. */
+const hasCnvPr = (source: NonVisualDrawingPropertiesOptions): boolean => {
+  const picked = pickNonVisualDrawingProperties(source);
+  return (
+    picked.name !== undefined ||
+    picked.description !== undefined ||
+    picked.title !== undefined ||
+    picked.hidden !== undefined
+  );
+};
+
+/**
  * Build the docx wps core + position from a pptx or xlsx shape. Group
  * conversion reuses this to embed shapes as wpg children (the child carries a
  * full MediaDataTransformation; the caller runs it through createTransformation).
@@ -141,7 +165,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
         ...pickContent(spPr),
         ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
         ...(preset !== undefined ? { presetGeometry: preset } : {}),
-        ...(source.name ? { nonVisualProperties: { name: source.name } } : {}),
+        ...(hasCnvPr(source) ? docxNonVisual(source) : {}),
       },
       transformation: boxToDocx(box),
     };
@@ -162,7 +186,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
       ...pickContent(source),
       ...(source.customGeometry !== undefined ? { customGeometry: source.customGeometry } : {}),
       ...(preset !== undefined ? { presetGeometry: preset } : {}),
-      ...(source.name ? { nonVisualProperties: { name: source.name } } : {}),
+      ...(hasCnvPr(source) ? docxNonVisual(source) : {}),
     },
     transformation: boxToDocx(box),
   };
@@ -201,7 +225,7 @@ export function toPptxShape(source: DocxShapeOptions | XlsxShapeOptions): PptxSh
       ...(spPr.geometry !== undefined ? { geometry: spPr.geometry } : {}),
       ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
       ...(source.textBody ? { textBody: source.textBody } : {}),
-      ...(source.name ? { name: source.name } : {}),
+      ...pickNonVisualDrawingProperties(source),
     };
     return result;
   }
@@ -217,7 +241,7 @@ export function toPptxShape(source: DocxShapeOptions | XlsxShapeOptions): PptxSh
         ? { customGeometry: source.customGeometry }
         : {}),
     ...(textBody ? { textBody } : {}),
-    ...(source.nonVisualProperties?.name ? { name: source.nonVisualProperties.name } : {}),
+    ...pickNonVisualDrawingProperties(source.nonVisualProperties),
   };
   return result;
 }
@@ -253,7 +277,7 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
       ...pos.anchor,
       spPr,
       ...(textBody ? { textBody } : {}),
-      ...(source.nonVisualProperties?.name ? { name: source.nonVisualProperties.name } : {}),
+      ...pickNonVisualDrawingProperties(source.nonVisualProperties),
     };
   }
   // pptx → xlsx
@@ -281,6 +305,6 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
     ...pos.anchor,
     spPr,
     ...(source.textBody ? { textBody: source.textBody } : {}),
-    ...(source.name ? { name: source.name } : {}),
+    ...pickNonVisualDrawingProperties(source),
   };
 }

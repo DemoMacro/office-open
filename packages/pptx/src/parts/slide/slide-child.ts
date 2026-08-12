@@ -5,8 +5,8 @@ import type { SmartArtOptions } from "@parts/smartart";
 import type { AudioFrameOptions } from "@shared/media/audio-frame";
 import type { VideoFrameOptions } from "@shared/media/video-frame";
 import type { PictureOptions } from "@shared/picture";
-import type { GroupShapeOptions } from "@shared/shape/group-shape";
-import type { ConnectorShapeOptions, LineShapeOptions } from "@shared/shape/line-shape";
+import type { GroupOptions } from "@shared/shape/group-shape";
+import type { ConnectorOptions, LineShapeOptions } from "@shared/shape/line-shape";
 import type { ShapeOptions } from "@shared/shape/shape";
 import type { TableOptions } from "@shared/table/table-frame";
 
@@ -20,10 +20,10 @@ export type SlideChild =
   | { table: TableOptions }
   | { chart: ChartOptions }
   | { line: LineShapeOptions }
-  | { connector: ConnectorShapeOptions }
+  | { connector: ConnectorOptions }
   | { video: VideoFrameOptions }
   | { audio: AudioFrameOptions }
-  | { group: GroupShapeOptions }
+  | { group: GroupOptions }
   | { smartart: SmartArtOptions }
   | { lockedCanvas: LockedCanvasFrameOptions }
   | { ole: OleOptions }

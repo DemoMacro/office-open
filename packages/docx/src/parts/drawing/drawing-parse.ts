@@ -23,7 +23,7 @@ import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 import type { PictureOptions } from "@parts/paragraph/run/picture-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
-import type { WpgGroupRunOptions } from "@parts/paragraph/run/wpg-group-run";
+import type { GroupOptions } from "@parts/paragraph/run/wpg-group-run";
 import type { WpsShapeRunOptions } from "@parts/paragraph/run/wps-shape-run";
 import type {
   GroupChildMediaData,
@@ -62,7 +62,7 @@ export type DrawingChild =
   | { chart: ChartOptions }
   | { smartArt: SmartArtOptions }
   | { wpsShape: WpsShapeRunOptions }
-  | { wpgGroup: WpgGroupRunOptions };
+  | { wpgGroup: GroupOptions };
 
 /**
  * Parse a w:drawing element and dispatch to the correct parser
@@ -744,7 +744,7 @@ function parseWpsShapeDrawing(
 function parseWpgGroupDrawing(
   el: Element,
   ctx: DocxReadContext,
-): { wpgGroup: WpgGroupRunOptions } | undefined {
+): { wpgGroup: GroupOptions } | undefined {
   const wgp = findFirst(el, "wpg:wgp");
   if (!wgp) return undefined;
 
@@ -752,7 +752,7 @@ function parseWpgGroupDrawing(
   const grpSpPr = findChild(wgp, "wpg:grpSpPr");
   const { childOffset, childExtent } = readGroupCoords(grpSpPr);
 
-  const group: WpgGroupRunOptions = {
+  const group: GroupOptions = {
     children: parseGroupChildren(wgp, ctx),
     transformation: {
       width: info.width ?? 0,
@@ -775,7 +775,7 @@ function parseWpgGroupDrawing(
     if (effectLst) group.effects = effectListDesc.parse(effectLst, ctx);
   }
 
-  return { wpgGroup: group as WpgGroupRunOptions };
+  return { wpgGroup: group as GroupOptions };
 }
 
 /**

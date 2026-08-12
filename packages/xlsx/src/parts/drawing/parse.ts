@@ -9,6 +9,7 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import {
   connectorLockingDesc,
   parseEndpointConnection,
+  groupShapePropertiesDesc,
   parseNonVisualDrawingProperties,
   shapePropertiesDesc,
   textBodyDesc,
@@ -16,7 +17,6 @@ import {
 import type {
   ConnectorLockingOptions,
   EndpointConnectionOptions,
-  GroupTransform2DOptions,
   NonVisualDrawingPropertiesOptions,
 } from "@office-open/core/drawingml";
 import { findChild } from "@office-open/xml";
@@ -296,7 +296,7 @@ export function parseGroupAnchor(
 
   const grpSpPrEl = findChild(grpSp, "grpSpPr");
   if (grpSpPrEl) {
-    result.grpSpPr = shapePropertiesDesc.parse(grpSpPrEl, ctx) as GroupTransform2DOptions;
+    result.grpSpPr = groupShapePropertiesDesc.parse(grpSpPrEl, ctx);
   }
 
   const shapes: GroupShapeChildOptions[] = [];

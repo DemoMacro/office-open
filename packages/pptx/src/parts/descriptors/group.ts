@@ -7,19 +7,18 @@
 import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { parse, stringify } from "@office-open/core/descriptor";
 import {
-  effectListDesc,
-  fillDesc,
-  stringifyNonVisualDrawingProperties,
+  groupShapePropertiesDesc,
   parseNonVisualDrawingProperties,
+  stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
 import type {
-  FillOptions as CoreFillOptions,
+  BlackWhiteMode,
   EffectListOptions,
+  FillOptions as CoreFillOptions,
   NonVisualDrawingPropertiesOptions,
 } from "@office-open/core/drawingml";
-import { attrBool, attrNum, findChild } from "@office-open/xml";
+import { attrNum, findChild } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 
 import type { PptxWriteContext } from "../../context";
@@ -43,6 +42,8 @@ export interface GroupShapeDescriptorOptions extends NonVisualDrawingPropertiesO
   fill?: CoreFillOptions;
   /** Group-level effects (EG_EffectProperties on grpSpPr). */
   effects?: EffectListOptions;
+  /** @bwMode container attribute (ST_BlackWhiteMode) on p:grpSpPr. */
+  bwMode?: BlackWhiteMode;
   children?: LegacySlideChild[];
 }
 
@@ -65,30 +66,27 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     const w = convertToEmu(opts.width ?? "100px");
     const h = convertToEmu(opts.height ?? "100px");
 
-    // chOff/chExt default to off/ext when the child coordinate system is unchanged.
-    const chOffX = opts.childOffset ? convertToEmu(opts.childOffset.x) : x;
-    const chOffY = opts.childOffset ? convertToEmu(opts.childOffset.y) : y;
-    const chExtCx = opts.childExtent ? convertToEmu(opts.childExtent.cx) : w;
-    const chExtCy = opts.childExtent ? convertToEmu(opts.childExtent.cy) : h;
+    const grpSpPrContent =
+      groupShapePropertiesDesc.stringify(
+        {
+          x,
+          y,
+          width: w,
+          height: h,
+          ...(opts.flipHorizontal !== undefined ? { flipHorizontal: opts.flipHorizontal } : {}),
+          ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
+          // chOff/chExt default to off/ext when the child coordinate system is unchanged.
+          childOffsetX: opts.childOffset ? convertToEmu(opts.childOffset.x) : x,
+          childOffsetY: opts.childOffset ? convertToEmu(opts.childOffset.y) : y,
+          childExtentWidth: opts.childExtent ? convertToEmu(opts.childExtent.cx) : w,
+          childExtentHeight: opts.childExtent ? convertToEmu(opts.childExtent.cy) : h,
+          ...(opts.fill !== undefined ? { fill: opts.fill } : {}),
+          ...(opts.effects !== undefined ? { effects: opts.effects } : {}),
+        },
+        descCtx,
+      ) ?? "";
 
-    const xfrmAttrs: string[] = [];
-    if (opts.flipHorizontal) xfrmAttrs.push(' flipH="1"');
-    if (opts.rotation !== undefined) xfrmAttrs.push(` rot="${opts.rotation}"`);
-
-    const grpSpPrParts: string[] = [
-      `<a:xfrm${xfrmAttrs.join("")}>` +
-        `<a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/>` +
-        `<a:chOff x="${chOffX}" y="${chOffY}"/><a:chExt cx="${chExtCx}" cy="${chExtCy}"/>` +
-        `</a:xfrm>`,
-    ];
-    if (opts.fill) {
-      const fillXml = stringify(fillDesc, opts.fill, descCtx);
-      if (fillXml) grpSpPrParts.push(fillXml);
-    }
-    if (opts.effects) {
-      const fxXml = stringify(effectListDesc, opts.effects, descCtx);
-      if (fxXml) grpSpPrParts.push(fxXml);
-    }
+    const grpSpPrAttrs = opts.bwMode ? ` bwMode="${opts.bwMode}"` : "";
 
     const parts: string[] = [];
 
@@ -98,7 +96,7 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     );
 
     // p:grpSpPr
-    parts.push(`<p:grpSpPr>${grpSpPrParts.join("")}</p:grpSpPr>`);
+    parts.push(`<p:grpSpPr${grpSpPrAttrs}>${grpSpPrContent}</p:grpSpPr>`);
 
     // Children
     if (opts.children) {
@@ -127,61 +125,23 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
 
     const grpSpPr = findChild(el, "p:grpSpPr");
     if (grpSpPr) {
-      const xfrm = findChild(grpSpPr, "a:xfrm");
-      if (xfrm) {
-        const off = findChild(xfrm, "a:off");
-        if (off) {
-          const x = attrNum(off, "x");
-          if (x !== undefined) result.x = x;
-          const y = attrNum(off, "y");
-          if (y !== undefined) result.y = y;
-        }
-        const ext = findChild(xfrm, "a:ext");
-        if (ext) {
-          const cx = attrNum(ext, "cx");
-          if (cx !== undefined) result.width = cx;
-          const cy = attrNum(ext, "cy");
-          if (cy !== undefined) result.height = cy;
-        }
-        const chOff = findChild(xfrm, "a:chOff");
-        if (chOff) {
-          const cox = attrNum(chOff, "x");
-          const coy = attrNum(chOff, "y");
-          if (cox !== undefined && coy !== undefined) {
-            result.childOffset = { x: cox, y: coy };
-          }
-        }
-        const chExt = findChild(xfrm, "a:chExt");
-        if (chExt) {
-          const ccx = attrNum(chExt, "cx");
-          const ccy = attrNum(chExt, "cy");
-          if (ccx !== undefined && ccy !== undefined) {
-            result.childExtent = { cx: ccx, cy: ccy };
-          }
-        }
-        const rot = attrNum(xfrm, "rot");
-        if (rot !== undefined) result.rotation = rot;
-        if (attrBool(xfrm, "flipH")) result.flipHorizontal = true;
+      const props = groupShapePropertiesDesc.parse(grpSpPr, ctx);
+      if (props.x !== undefined) result.x = props.x;
+      if (props.y !== undefined) result.y = props.y;
+      if (props.width !== undefined) result.width = props.width;
+      if (props.height !== undefined) result.height = props.height;
+      if (props.rotation !== undefined) result.rotation = props.rotation;
+      if (props.flipHorizontal) result.flipHorizontal = true;
+      if (props.childOffsetX !== undefined && props.childOffsetY !== undefined) {
+        result.childOffset = { x: props.childOffsetX, y: props.childOffsetY };
       }
-      // Guard: fillDesc returns { type: "none" } for a grpSpPr with no fill child,
-      // which would spuriously emit <a:noFill/> on re-stringify.
-      const fillChild =
-        findChild(grpSpPr, "a:solidFill") ||
-        findChild(grpSpPr, "a:noFill") ||
-        findChild(grpSpPr, "a:gradFill") ||
-        findChild(grpSpPr, "a:pattFill") ||
-        findChild(grpSpPr, "a:blipFill");
-      if (fillChild) {
-        result.fill = parse(fillDesc, grpSpPr, ctx) as GroupShapeDescriptorOptions["fill"];
+      if (props.childExtentWidth !== undefined && props.childExtentHeight !== undefined) {
+        result.childExtent = { cx: props.childExtentWidth, cy: props.childExtentHeight };
       }
-      const effectLst = findChild(grpSpPr, "a:effectLst");
-      if (effectLst) {
-        result.effects = parse(
-          effectListDesc,
-          effectLst,
-          ctx,
-        ) as GroupShapeDescriptorOptions["effects"];
-      }
+      if (props.fill !== undefined) result.fill = props.fill;
+      if (props.effects !== undefined) result.effects = props.effects;
+      const bwMode = grpSpPr.attributes?.["bwMode"];
+      if (bwMode !== undefined) result.bwMode = bwMode as BlackWhiteMode;
     }
 
     // Children — recursive parse

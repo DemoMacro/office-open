@@ -9,6 +9,7 @@ import type { UniversalMeasure } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
 import {
   connectorLockingDesc,
+  groupShapePropertiesDesc,
   shapePropertiesDesc,
   stringifyEndpointConnection,
   stringifyNonVisualDrawingProperties,
@@ -217,7 +218,7 @@ export function buildGroup(
   id: number,
   ctx: WriteContext,
 ): { xml: string; nextId: number } {
-  const grpSpPrXml = shapePropertiesDesc.stringify(grp.grpSpPr, ctx) ?? "";
+  const grpSpPrXml = groupShapePropertiesDesc.stringify(grp.grpSpPr, ctx) ?? "";
   let childId = id + 1;
   const children: string[] = [];
   for (const childShape of grp.shapes ?? []) {

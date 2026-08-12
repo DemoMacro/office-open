@@ -123,6 +123,9 @@ export type { TileAlignment } from "./blip/tile";
 export { createTransform2D, createGroupTransform2D } from "./transform";
 export type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
 
+// Black/white mode (ST_BlackWhiteMode — @bwMode on spPr/grpSpPr)
+export type { BlackWhiteMode } from "./black-white-mode";
+
 // Table Style
 export {
   createTableStyle,
@@ -247,6 +250,7 @@ export * from "./locking/locking-descriptors";
 export * from "./geometry/geometry-descriptors";
 export * from "./transform-descriptors";
 export * from "./shape-properties-desc";
+export * from "./group-shape-properties-desc";
 export * from "./text";
 export * from "./three-d/three-d-descriptors";
 export * from "./blip/blip-descriptors";

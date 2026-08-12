@@ -31,6 +31,7 @@ import type {
 import {
   calculateEffectExtent,
   createColorElement,
+  groupShapePropertiesDesc,
   shapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
@@ -486,7 +487,7 @@ function stringifyWpgGroup(
 ): string {
   const transform = opts.transformation;
   const grpSpPrContent =
-    shapePropertiesDesc.stringify(
+    groupShapePropertiesDesc.stringify(
       {
         x: transform.offset?.emus?.x ?? 0,
         y: transform.offset?.emus?.y ?? 0,
@@ -577,7 +578,7 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
  */
 function stringifyNestedGroup(grp: GroupMediaData, ctx: BodyContext): string {
   const grpSpPrContent =
-    shapePropertiesDesc.stringify(
+    groupShapePropertiesDesc.stringify(
       {
         x: grp.transformation.offset?.emus?.x ?? 0,
         y: grp.transformation.offset?.emus?.y ?? 0,

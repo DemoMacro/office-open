@@ -18,7 +18,13 @@ import type {
 
 export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
 
-interface CoreGroupOptions {
+/**
+ * Group options for docx (wpg:wgp). The cNvPr fields bridge through altText
+ * (DocPropertiesOptions); the rest is the docx run-level group model.
+ *
+ * @publicApi
+ */
+export interface GroupOptions {
   children: GroupChildMediaData[];
   transformation: MediaTransformation;
   /** Child coordinate offset (chOff) */
@@ -46,6 +52,7 @@ interface CoreGroupOptions {
 }
 
 /**
- * @publicApi
+ * @deprecated Use {@link GroupOptions}. Kept as an alias for backward
+ * compatibility; aligns the group Options name across packages.
  */
-export type WpgGroupRunOptions = CoreGroupOptions;
+export type WpgGroupRunOptions = GroupOptions;

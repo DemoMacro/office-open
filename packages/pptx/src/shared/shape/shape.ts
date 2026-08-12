@@ -1,4 +1,8 @@
-import type { ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
+import type {
+  NonVisualDrawingPropertiesOptions,
+  ShapeLockingOptions,
+  UniversalMeasure,
+} from "@office-open/core";
 import type {
   PresetGeometryOptions,
   CustomGeometryOptions,
@@ -23,9 +27,8 @@ export interface ShapeStyleOptions {
   fontReference?: { index: number; color?: string };
 }
 
-export interface ShapeOptions {
+export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;

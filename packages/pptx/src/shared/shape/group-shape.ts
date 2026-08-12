@@ -1,7 +1,12 @@
-import type { UniversalMeasure } from "@office-open/core";
+import type { BaseGroupOptions, UniversalMeasure } from "@office-open/core";
 import type { SlideChild } from "@parts/slide/slide-child";
 
-export interface GroupShapeOptions {
+/**
+ * Group shape options for pptx slides (p:grpSp). The cNvPr fields
+ * (name/description/title/hidden) come from {@link BaseGroupOptions}; the rest
+ * is the pptx flat positioning model plus the group's children.
+ */
+export interface GroupOptions extends BaseGroupOptions {
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -10,3 +15,9 @@ export interface GroupShapeOptions {
   flipHorizontal?: boolean;
   children: SlideChild[];
 }
+
+/**
+ * @deprecated Use {@link GroupOptions}. Kept as an alias for backward
+ * compatibility; matches the OOXML element name (p:grpSp → Group) across packages.
+ */
+export type GroupShapeOptions = GroupOptions;
