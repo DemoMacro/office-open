@@ -34,7 +34,7 @@ export type PartPresence =
   | { readonly kind: "conditional"; readonly flag: string }
   | { readonly kind: "repeated"; readonly countFrom: string };
 
-export interface PartDef {
+export interface PartDefinition {
   /**
    * ZIP path template. `${i}` expands per repeated index (1-based); a template
    * without the placeholder denotes a singleton part.
@@ -51,7 +51,7 @@ export interface PartDef {
 
 export interface PackagePartRegistry {
   format: "docx" | "pptx" | "xlsx";
-  parts: readonly PartDef[];
+  parts: readonly PartDefinition[];
   /**
    * Path prefixes that are always legitimate even when undeclared — media,
    * fonts, embeddings, altChunks, custom XML, and `.rels` parts. Used to

@@ -61,7 +61,7 @@ export {
   PPTX_PARTS,
   XLSX_PARTS,
   PART_REGISTRIES,
-  type PartDef,
+  type PartDefinition,
   type PartPresence,
   type PackagePartRegistry,
 } from "./part-registry";
