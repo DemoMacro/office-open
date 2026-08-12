@@ -31,6 +31,17 @@ interface CoreShapeOptions {
 }
 
 /**
+ * Shape options for docx (wps:wsp). The shape body comes from
+ * {@link WpsShapeCoreOptions}; the rest is the docx run-level shape model
+ * (transformation, floating, altText, run wrapping).
+ *
  * @publicApi
  */
-export type WpsShapeRunOptions = WpsShapeCoreOptions & CoreShapeOptions;
+export type ShapeOptions = WpsShapeCoreOptions & CoreShapeOptions;
+
+/**
+ * @deprecated Use {@link ShapeOptions}. Kept as an alias for backward
+ * compatibility; drops the OOXML namespace prefix and Run suffix to align
+ * the shape Options name across packages.
+ */
+export type WpsShapeRunOptions = ShapeOptions;

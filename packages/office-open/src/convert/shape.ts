@@ -30,7 +30,7 @@ import type {
   ShapePropertiesOptions,
 } from "@office-open/core/drawingml";
 import type {
-  WpsShapeRunOptions,
+  ShapeOptions as DocxShapeRunOptions,
   WpsShapeCoreOptions,
   MediaTransformation,
   ParagraphOptions as DocxParagraph,
@@ -48,8 +48,8 @@ import {
 } from "./position";
 import { fromDrawingParagraph, toDrawingParagraph } from "./text";
 
-/** docx shape input = WpsShapeRunOptions (core fields + transformation). */
-export type DocxShapeOptions = WpsShapeRunOptions;
+/** docx shape input = ShapeOptions (core fields + transformation). */
+export type DocxShapeOptions = DocxShapeRunOptions;
 
 /** The five-plus shape-content fields shared verbatim across all three packages. */
 export interface ShapeContent {

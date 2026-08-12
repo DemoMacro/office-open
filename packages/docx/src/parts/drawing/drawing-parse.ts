@@ -24,7 +24,7 @@ import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 import type { PictureOptions } from "@parts/paragraph/run/picture-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type { GroupOptions } from "@parts/paragraph/run/wpg-group-run";
-import type { WpsShapeRunOptions } from "@parts/paragraph/run/wps-shape-run";
+import type { ShapeOptions } from "@parts/paragraph/run/wps-shape-run";
 import type {
   GroupChildMediaData,
   MediaData,
@@ -61,7 +61,7 @@ export type DrawingChild =
   | { picture: PictureOptions }
   | { chart: ChartOptions }
   | { smartArt: SmartArtOptions }
-  | { wpsShape: WpsShapeRunOptions }
+  | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions };
 
 /**
@@ -716,14 +716,14 @@ function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData
 function parseWpsShapeDrawing(
   el: Element,
   ctx: DocxReadContext,
-): { wpsShape: WpsShapeRunOptions } | undefined {
+): { wpsShape: ShapeOptions } | undefined {
   const wsp = findFirst(el, "wps:wsp");
   if (!wsp) return undefined;
 
   const info = parseAnchorOrInline(el) ?? {};
   const data = parseWpsShapeCore(wsp, ctx);
 
-  const shape: WpsShapeRunOptions = {
+  const shape: ShapeOptions = {
     ...data,
     transformation: {
       width: info.width ?? 0,
@@ -735,7 +735,7 @@ function parseWpsShapeDrawing(
   if (info.altText) shape.altText = info.altText;
   if (info.graphicFrameLocks !== undefined) shape.graphicFrameLocks = info.graphicFrameLocks;
 
-  return { wpsShape: shape as WpsShapeRunOptions };
+  return { wpsShape: shape as ShapeOptions };
 }
 
 /**

@@ -29,7 +29,7 @@ import type { SimpleFieldOptions } from "./run/simple-field";
 import type { SmartArtOptions } from "./run/smartart-run";
 import type { SymbolRunOptions } from "./run/symbol-run";
 import type { GroupOptions } from "./run/wpg-group-run";
-import type { WpsShapeRunOptions } from "./run/wps-shape-run";
+import type { ShapeOptions } from "./run/wps-shape-run";
 
 /** Options for an inline (run-level) structured document tag (CT_SdtRun). */
 export interface SdtRunOptions {
@@ -87,7 +87,7 @@ export type ParagraphChild =
   | { bookmarkStart: BookmarkStartOptions }
   | { bookmarkEnd: MarkupRangeOptions }
   | { bookmark: BookmarkOptions }
-  | { wpsShape: WpsShapeRunOptions }
+  | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions }
   // Proof error markers
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
