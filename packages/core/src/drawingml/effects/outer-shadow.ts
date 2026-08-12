@@ -14,17 +14,16 @@ import type { SolidFillOptions } from "../color/solid-fill";
 /**
  * Rectangle alignment for shadow positioning.
  */
-export const RectAlignment = {
-  TOP_LEFT: "topLeft",
-  TOP: "top",
-  TOP_RIGHT: "topRight",
-  LEFT: "left",
-  CENTER: "center",
-  RIGHT: "right",
-  BOTTOM_LEFT: "bottomLeft",
-  BOTTOM: "bottom",
-  BOTTOM_RIGHT: "bottomRight",
-} as const;
+export type RectAlignment =
+  | "topLeft"
+  | "top"
+  | "topRight"
+  | "left"
+  | "center"
+  | "right"
+  | "bottomLeft"
+  | "bottom"
+  | "bottomRight";
 
 /**
  * Options for outer shadow effect.
@@ -45,7 +44,7 @@ export interface OuterShadowEffectOptions {
   /** Vertical skew angle */
   skewY?: number;
   /** Shadow alignment */
-  alignment?: (typeof RectAlignment)[keyof typeof RectAlignment];
+  alignment?: RectAlignment;
   /** Whether shadow rotates with shape */
   rotWithShape?: boolean;
   /** Shadow color */

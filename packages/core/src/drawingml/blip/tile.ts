@@ -17,42 +17,23 @@ import { xsdRectAlignment } from "../../util/mappings";
  * Specifies whether the image is flipped along the x-axis, y-axis,
  * both axes, or not at all when tiling.
  */
-export const TileFlipMode = {
-  /** No flipping */
-  NONE: "none",
-  /** Flip along x-axis */
-  X: "x",
-  /** Flip along y-axis */
-  Y: "y",
-  /** Flip along both axes */
-  XY: "xy",
-} as const;
+export type TileFlipMode = "none" | "x" | "y" | "xy";
 
 /**
  * Tile alignment within the shape.
  *
  * Specifies the anchor position of the first tile relative to the shape.
  */
-export const TileAlignment = {
-  /** Top-left corner */
-  TOP_LEFT: "topLeft",
-  /** Top center */
-  TOP: "top",
-  /** Top-right corner */
-  TOP_RIGHT: "topRight",
-  /** Middle-left */
-  LEFT: "left",
-  /** Center */
-  CENTER: "center",
-  /** Middle-right */
-  RIGHT: "right",
-  /** Bottom-left corner */
-  BOTTOM_LEFT: "bottomLeft",
-  /** Bottom center */
-  BOTTOM: "bottom",
-  /** Bottom-right corner */
-  BOTTOM_RIGHT: "bottomRight",
-} as const;
+export type TileAlignment =
+  | "topLeft"
+  | "top"
+  | "topRight"
+  | "left"
+  | "center"
+  | "right"
+  | "bottomLeft"
+  | "bottom"
+  | "bottomRight";
 
 /**
  * Options for tile fill mode.
@@ -69,9 +50,9 @@ export interface TileOptions {
   /** Vertical scale factor as percentage (e.g., 50 = 50%) */
   sy?: number;
   /** Flip mode for alternating tiles */
-  flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
+  flip?: TileFlipMode;
   /** Alignment of the first tile within the shape */
-  align?: (typeof TileAlignment)[keyof typeof TileAlignment];
+  align?: TileAlignment;
 }
 
 /**

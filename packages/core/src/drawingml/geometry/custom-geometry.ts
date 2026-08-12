@@ -29,6 +29,8 @@ const createGuideList = (name: string, guides: readonly GeometryGuide[]): string
 /**
  * Path fill mode (ST_PathFillMode).
  *
+ * Note: the `"normal"` value here maps to the XSD `norm` token.
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:simpleType name="ST_PathFillMode">
@@ -43,14 +45,7 @@ const createGuideList = (name: string, guides: readonly GeometryGuide[]): string
  * </xsd:simpleType>
  * ```
  */
-export const PathFillMode = {
-  NONE: "none",
-  NORM: "normal",
-  LIGHTEN: "lighten",
-  LIGHTEN_LESS: "lightenLess",
-  DARKEN: "darken",
-  DARKEN_LESS: "darkenLess",
-} as const;
+export type PathFillMode = "none" | "normal" | "lighten" | "lightenLess" | "darken" | "darkenLess";
 
 // ─── Point ──────────────────────────────────────────────────────────────────
 
@@ -173,7 +168,7 @@ export interface PathOptions {
   /** Path height (coordinate value, default 0 = use shape height) */
   h?: number;
   /** Fill mode for this path */
-  fill?: (typeof PathFillMode)[keyof typeof PathFillMode];
+  fill?: PathFillMode;
   /** Whether to stroke the path */
   stroke?: boolean;
   /** Whether extrusion is allowed */

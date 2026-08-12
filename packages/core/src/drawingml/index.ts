@@ -34,8 +34,9 @@ export type {
   PathShadeOptions,
   GradientStop,
   RelativeRect,
+  PathShade,
+  TileFlipMode,
 } from "./fill/gradient-fill";
-export { PathShadeType, TileFlipMode } from "./fill/gradient-fill";
 export { createPatternFill, PresetPattern } from "./fill/pattern-fill";
 export type { PatternFillOptions } from "./fill/pattern-fill";
 export { createGroupFill } from "./fill/group-fill";
@@ -43,7 +44,7 @@ export { createGroupFill } from "./fill/group-fill";
 // Outline
 export { createOutline } from "./outline/outline";
 export type { OutlineOptions, OutlineFillProperties } from "./outline/outline";
-export { LineCap, CompoundLine, PenAlignment, PresetDash, LineJoin } from "./outline/outline";
+export type { LineCap, CompoundLine, PenAlignment, PresetDash, LineJoin } from "./outline/outline";
 export { createCustomDash } from "./outline/custom-dash";
 export type { DashStop } from "./outline/custom-dash";
 export { createLineEnd } from "./outline/line-end";
@@ -54,21 +55,21 @@ export type { LineEndType, LineEndWidth, LineEndLength } from "./outline/line-en
 export { createEffectList, calculateEffectExtent } from "./effects/effect-list";
 export type { EffectListOptions, BlurEffectOptions, EffectExtent } from "./effects/effect-list";
 export { createEffectDag } from "./effects/effect-dag";
-export type { EffectDagOptions, EffectContainerType } from "./effects/effect-dag";
+export type { EffectDagOptions, EffectContainer } from "./effects/effect-dag";
 export { createGlowEffect } from "./effects/glow";
 export type { GlowEffectOptions } from "./effects/glow";
 export { createOuterShadowEffect } from "./effects/outer-shadow";
 export type { OuterShadowEffectOptions } from "./effects/outer-shadow";
 export { createInnerShadowEffect } from "./effects/inner-shadow";
 export type { InnerShadowEffectOptions } from "./effects/inner-shadow";
-export { createPresetShadowEffect, PresetShadowVal } from "./effects/preset-shadow";
-export type { PresetShadowEffectOptions } from "./effects/preset-shadow";
+export { createPresetShadowEffect } from "./effects/preset-shadow";
+export type { PresetShadowEffectOptions, PresetShadow } from "./effects/preset-shadow";
 export { createReflectionEffect } from "./effects/reflection";
 export type { ReflectionEffectOptions } from "./effects/reflection";
 export { createSoftEdgeEffect } from "./effects/soft-edge";
 export { createFillOverlayEffect, BlendMode } from "./effects/fill-overlay";
 export type { FillOverlayEffectOptions } from "./effects/fill-overlay";
-export { RectAlignment } from "./effects/outer-shadow";
+export type { RectAlignment } from "./effects/outer-shadow";
 
 // 3D
 export { createScene3D } from "./three-d/scene-3d";
@@ -83,10 +84,10 @@ export type {
 } from "./three-d/scene-3d";
 export { createShape3D } from "./three-d/shape-3d";
 export type { Shape3DOptions } from "./three-d/shape-3d";
-export { PresetMaterialType } from "./three-d/shape-3d";
+export type { PresetMaterial } from "./three-d/shape-3d";
 export { createBevel, createBottomBevel } from "./three-d/bevel";
 export type { BevelOptions } from "./three-d/bevel";
-export { BevelPresetType } from "./three-d/bevel";
+export type { BevelPreset } from "./three-d/bevel";
 
 // Geometry
 export { stringifyPresetGeometry } from "./geometry/preset-geometry";
@@ -116,7 +117,7 @@ export type { SourceRectangleOptions } from "./blip/source-rectangle";
 export { stringifyStretch } from "./blip/stretch";
 export { createTileInfo } from "./blip/tile";
 export type { TileOptions } from "./blip/tile";
-export { TileAlignment } from "./blip/tile";
+export type { TileAlignment } from "./blip/tile";
 
 // Transform
 export { createTransform2D, createGroupTransform2D } from "./transform";
@@ -169,9 +170,6 @@ export {
   createOrgChart,
   createHierBranch,
   createPresentationLayoutVariables,
-  AnimationLevelValue,
-  AnimateOneByOneValue,
-  HierBranchStyle,
   // Definition headers
   createColorsDefinitionHeader,
   createColorsDefinitionHeaderList,
@@ -188,9 +186,6 @@ export {
   createTextLineColorList,
   createTextEffectColorList,
   createStyleLabel,
-  ColorMethod,
-  HueDirection,
-  StyleMatrixIndex,
   FontCollectionIndex,
   // Relationship IDs
   createDiagramRelationshipIds,
@@ -201,6 +196,12 @@ export {
 } from "./diagram";
 
 export type {
+  AnimationLevel,
+  AnimateOneByOne,
+  HierBranch,
+  ColorMethod,
+  HueDirection,
+  StyleMatrixIndex,
   AdjustOptions,
   AdjustListOptions,
   AnimationLevelOptions,

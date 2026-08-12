@@ -12,20 +12,19 @@ import { element } from "@office-open/xml";
  *
  * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_BevelPresetType
  */
-export const BevelPresetType = {
-  RELAXED_INSET: "relaxedInset",
-  CIRCLE: "circle",
-  SLOPE: "slope",
-  CROSS: "cross",
-  ANGLE: "angle",
-  SOFT_ROUND: "softRound",
-  CONVEX: "convex",
-  COOL_SLANT: "coolSlant",
-  DIVOT: "divot",
-  RIBLET: "riblet",
-  HARD_EDGE: "hardEdge",
-  ART_DECO: "artDeco",
-} as const;
+export type BevelPreset =
+  | "relaxedInset"
+  | "circle"
+  | "slope"
+  | "cross"
+  | "angle"
+  | "softRound"
+  | "convex"
+  | "coolSlant"
+  | "divot"
+  | "riblet"
+  | "hardEdge"
+  | "artDeco";
 
 /**
  * Options for a bevel element.
@@ -36,7 +35,7 @@ export interface BevelOptions {
   /** Bevel height in EMUs (default 76200) */
   h?: number;
   /** Bevel preset type */
-  prst?: (typeof BevelPresetType)[keyof typeof BevelPresetType];
+  prst?: BevelPreset;
 }
 
 /**

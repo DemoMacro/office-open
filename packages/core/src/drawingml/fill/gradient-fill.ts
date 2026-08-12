@@ -25,14 +25,7 @@ export interface GradientStop {
 /**
  * Path shade type for radial gradients.
  */
-export const PathShadeType = {
-  /** Follow shape path */
-  SHAPE: "shape",
-  /** Circular gradient */
-  CIRCLE: "circle",
-  /** Rectangular gradient */
-  RECT: "rect",
-} as const;
+export type PathShade = "shape" | "circle" | "rect";
 
 /**
  * Tile flip mode for gradient fill.
@@ -49,16 +42,7 @@ export const PathShadeType = {
  * </xsd:simpleType>
  * ```
  */
-export const TileFlipMode = {
-  /** No flip */
-  NONE: "none",
-  /** Flip horizontally */
-  X: "x",
-  /** Flip vertically */
-  Y: "y",
-  /** Flip both horizontally and vertically */
-  XY: "xy",
-} as const;
+export type TileFlipMode = "none" | "x" | "y" | "xy";
 
 /**
  * Options for linear gradient shading.
@@ -99,7 +83,7 @@ export interface RelativeRect {
  */
 export interface PathShadeOptions {
   /** Path type */
-  path?: (typeof PathShadeType)[keyof typeof PathShadeType];
+  path?: PathShade;
   /**
    * Fill-to rectangle for path gradient.
    *
@@ -139,7 +123,7 @@ export interface GradientFillOptions {
    *
    * Controls how the gradient is flipped when tiled.
    */
-  flip?: (typeof TileFlipMode)[keyof typeof TileFlipMode];
+  flip?: TileFlipMode;
   /**
    * Tile rectangle for gradient tiling.
    *

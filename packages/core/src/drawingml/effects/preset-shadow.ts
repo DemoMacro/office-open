@@ -16,35 +16,34 @@ import type { SolidFillOptions } from "../color/solid-fill";
  *
  * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_PresetShadowVal
  */
-export const PresetShadowVal = {
-  SHDW1: "shadow1",
-  SHDW2: "shadow2",
-  SHDW3: "shadow3",
-  SHDW4: "shadow4",
-  SHDW5: "shadow5",
-  SHDW6: "shadow6",
-  SHDW7: "shadow7",
-  SHDW8: "shadow8",
-  SHDW9: "shadow9",
-  SHDW10: "shadow10",
-  SHDW11: "shadow11",
-  SHDW12: "shadow12",
-  SHDW13: "shadow13",
-  SHDW14: "shadow14",
-  SHDW15: "shadow15",
-  SHDW16: "shadow16",
-  SHDW17: "shadow17",
-  SHDW18: "shadow18",
-  SHDW19: "shadow19",
-  SHDW20: "shadow20",
-} as const;
+export type PresetShadow =
+  | "shadow1"
+  | "shadow2"
+  | "shadow3"
+  | "shadow4"
+  | "shadow5"
+  | "shadow6"
+  | "shadow7"
+  | "shadow8"
+  | "shadow9"
+  | "shadow10"
+  | "shadow11"
+  | "shadow12"
+  | "shadow13"
+  | "shadow14"
+  | "shadow15"
+  | "shadow16"
+  | "shadow17"
+  | "shadow18"
+  | "shadow19"
+  | "shadow20";
 
 /**
  * Options for preset shadow effect.
  */
 export interface PresetShadowEffectOptions {
   /** Preset shadow type (required) */
-  preset: (typeof PresetShadowVal)[keyof typeof PresetShadowVal];
+  preset: PresetShadow;
   /** Distance from shape in EMUs */
   distance?: number;
   /** Direction angle in 60,000ths of a degree */

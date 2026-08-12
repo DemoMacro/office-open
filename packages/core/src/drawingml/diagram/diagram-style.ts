@@ -16,11 +16,7 @@ import { createColorElement } from "../color/solid-fill";
 // dgm:style — diagram style (CT_ShapeStyle from dml-main.xsd)
 // ---------------------------------------------------------------------------
 
-export const StyleMatrixIndex = {
-  SUBTLE: "subtle",
-  MODERATE: "moderate",
-  INTENSE: "intense",
-} as const;
+export type StyleMatrixIndex = "subtle" | "moderate" | "intense";
 
 export const FontCollectionIndex = {
   MAJOR: "major",
@@ -97,22 +93,15 @@ export const createDiagramStyle = (options?: DiagramStyleOptions): string => {
 // Color list elements (CT_Colors) — used for fillClrLst, linClrLst, etc.
 // ---------------------------------------------------------------------------
 
-export const ColorMethod = {
-  SPAN: "span",
-  CYCLE: "cycle",
-  REPEAT: "repeat",
-} as const;
+export type ColorMethod = "span" | "cycle" | "repeat";
 
-export const HueDirection = {
-  CLOCKWISE: "cw",
-  COUNTER_CLOCKWISE: "ccw",
-} as const;
+export type HueDirection = "cw" | "ccw";
 
 export interface ColorListOptions {
   /** Color method (default: span) */
-  meth?: (typeof ColorMethod)[keyof typeof ColorMethod];
+  meth?: ColorMethod;
   /** Hue direction (default: cw) */
-  hueDir?: (typeof HueDirection)[keyof typeof HueDirection];
+  hueDir?: HueDirection;
   /** Colors (EG_ColorChoice items) */
   colors?: readonly SolidFillOptions[];
 }

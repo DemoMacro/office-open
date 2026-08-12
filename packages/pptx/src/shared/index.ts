@@ -20,27 +20,27 @@ export {
   createGradientStop,
   type GradientFillOptions as CoreGradientFillOptions,
   type GradientStop,
-  PathShadeType,
-  TileFlipMode,
+  type PathShade,
+  type TileFlipMode,
 } from "@office-open/core/drawingml";
 export {
-  LineCap,
-  CompoundLine,
-  PenAlignment,
-  PresetDash,
-  LineJoin,
+  type LineCap,
+  type CompoundLine,
+  type PenAlignment,
+  type PresetDash,
+  type LineJoin,
 } from "@office-open/core/drawingml";
 export { createScene3D, type Scene3DOptions } from "@office-open/core/drawingml";
 export {
   createShape3D,
   type Shape3DOptions,
-  PresetMaterialType,
+  type PresetMaterial,
 } from "@office-open/core/drawingml";
 export {
   createBevel,
   createBottomBevel,
   type BevelOptions,
-  BevelPresetType,
+  type BevelPreset,
 } from "@office-open/core/drawingml";
 export { createEffectList, type EffectListOptions } from "@office-open/core/drawingml";
 export { createColorElement } from "@office-open/core/drawingml";
@@ -69,9 +69,9 @@ export type {
   RunOptions,
 } from "@office-open/core/drawingml";
 export {
-  UnderlineStyle,
-  StrikeStyle,
-  TextCapitalization,
+  type UnderlineStyle,
+  type StrikeStyle,
+  type TextCapitalization,
   type RunPropertiesOptions,
   type HyperlinkOptions,
 } from "@office-open/core/drawingml";

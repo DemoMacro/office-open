@@ -17,9 +17,6 @@ export {
   createOrgChart,
   createHierBranch,
   createPresentationLayoutVariables,
-  AnimationLevelValue,
-  AnimateOneByOneValue,
-  HierBranchStyle,
 } from "./layout-vars";
 export type {
   AdjustOptions,
@@ -31,6 +28,9 @@ export type {
   OrgChartOptions,
   HierBranchOptions,
   PresentationLayoutVariablesOptions,
+  AnimationLevel,
+  AnimateOneByOne,
+  HierBranch,
 } from "./layout-vars";
 
 // Definition headers and lists
@@ -64,15 +64,15 @@ export {
   createTextLineColorList,
   createTextEffectColorList,
   createStyleLabel,
-  ColorMethod,
-  HueDirection,
-  StyleMatrixIndex,
   FontCollectionIndex,
 } from "./diagram-style";
 export type {
   DiagramStyleOptions,
   ColorListOptions,
   DiagramStyleLabelOptions,
+  StyleMatrixIndex,
+  ColorMethod,
+  HueDirection,
 } from "./diagram-style";
 
 // Relationship IDs

@@ -18,23 +18,22 @@ import type { BevelOptions } from "./bevel";
  *
  * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_PresetMaterialType
  */
-export const PresetMaterialType = {
-  LEGACY_MATTE: "legacyMatte",
-  LEGACY_PLASTIC: "legacyPlastic",
-  LEGACY_METAL: "legacyMetal",
-  LEGACY_WIREFRAME: "legacyWireframe",
-  MATTE: "matte",
-  PLASTIC: "plastic",
-  METAL: "metal",
-  WARM_MATTE: "warmMatte",
-  TRANSLUCENT_POWDER: "translucentPowder",
-  POWDER: "powder",
-  DK_EDGE: "darkEdge",
-  SOFT_EDGE: "softEdge",
-  CLEAR: "clear",
-  FLAT: "flat",
-  SOFT_METAL: "softMetal",
-} as const;
+export type PresetMaterial =
+  | "legacyMatte"
+  | "legacyPlastic"
+  | "legacyMetal"
+  | "legacyWireframe"
+  | "matte"
+  | "plastic"
+  | "metal"
+  | "warmMatte"
+  | "translucentPowder"
+  | "powder"
+  | "darkEdge"
+  | "softEdge"
+  | "clear"
+  | "flat"
+  | "softMetal";
 
 /**
  * Options for 3D shape properties.
@@ -55,7 +54,7 @@ export interface Shape3DOptions {
   /** Contour width in EMUs (default 0) */
   contourW?: number;
   /** Material preset type */
-  prstMaterial?: (typeof PresetMaterialType)[keyof typeof PresetMaterialType];
+  prstMaterial?: PresetMaterial;
 }
 
 /**

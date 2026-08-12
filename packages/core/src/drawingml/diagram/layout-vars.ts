@@ -27,14 +27,10 @@ export const createAdjust = (options: AdjustOptions): string =>
 // dgm:animLvl — animation level (CT_AnimLvl)
 // ---------------------------------------------------------------------------
 
-export const AnimationLevelValue = {
-  NONE: "none",
-  LEVEL: "lvl",
-  CENTER: "ctr",
-} as const;
+export type AnimationLevel = "none" | "lvl" | "ctr";
 
 export interface AnimationLevelOptions {
-  val?: (typeof AnimationLevelValue)[keyof typeof AnimationLevelValue];
+  val?: AnimationLevel;
 }
 
 /** Creates a dgm:animLvl element. */
@@ -45,14 +41,10 @@ export const createAnimationLevel = (options?: AnimationLevelOptions): string =>
 // dgm:animOne — animation one-by-one (CT_AnimOne)
 // ---------------------------------------------------------------------------
 
-export const AnimateOneByOneValue = {
-  NONE: "none",
-  ONE: "one",
-  BRANCH: "branch",
-} as const;
+export type AnimateOneByOne = "none" | "one" | "branch";
 
 export interface AnimateOneByOneOptions {
-  val?: (typeof AnimateOneByOneValue)[keyof typeof AnimateOneByOneValue];
+  val?: AnimateOneByOne;
 }
 
 /** Creates a dgm:animOne element. */
@@ -99,16 +91,10 @@ export const createOrgChart = (options?: OrgChartOptions): string =>
 // dgm:hierBranch — hierarchy branch style (CT_HierBranchStyle)
 // ---------------------------------------------------------------------------
 
-export const HierBranchStyle = {
-  LEFT: "l",
-  RIGHT: "r",
-  HANGING: "hang",
-  STANDARD: "std",
-  INITIAL: "init",
-} as const;
+export type HierBranch = "l" | "r" | "hang" | "std" | "init";
 
 export interface HierBranchOptions {
-  val?: (typeof HierBranchStyle)[keyof typeof HierBranchStyle];
+  val?: HierBranch;
 }
 
 /** Creates a dgm:hierBranch element. */

@@ -50,14 +50,7 @@ import type { LineEndOptions } from "./line-end";
  *
  * Defines how the ends of a line are rendered.
  */
-export const LineCap = {
-  /** Round cap style */
-  ROUND: "round",
-  /** Square cap style */
-  SQUARE: "square",
-  /** Flat cap style */
-  FLAT: "flat",
-} as const;
+export type LineCap = "round" | "square" | "flat";
 
 // <xsd:simpleType name="ST_CompoundLine">
 //     <xsd:restriction base="xsd:string">
@@ -74,18 +67,7 @@ export const LineCap = {
  *
  * Defines the structure of compound lines (single, double, etc.).
  */
-export const CompoundLine = {
-  /** Single line */
-  SINGLE: "single",
-  /** Double line */
-  DOUBLE: "double",
-  /** Thick-thin double line */
-  THICK_THIN: "thickThin",
-  /** Thin-thick double line */
-  THIN_THICK: "thinThick",
-  /** Triple line */
-  TRI: "triple",
-} as const;
+export type CompoundLine = "single" | "double" | "thickThin" | "thinThick" | "triple";
 
 // <xsd:simpleType name="ST_PenAlignment">
 //     <xsd:restriction base="xsd:string">
@@ -99,12 +81,7 @@ export const CompoundLine = {
  *
  * Defines how the outline is aligned relative to the shape edge.
  */
-export const PenAlignment = {
-  /** Center alignment */
-  CENTER: "center",
-  /** Inset alignment */
-  INSET: "inside",
-} as const;
+export type PenAlignment = "center" | "inside";
 
 /**
  * Preset dash styles for outlines.
@@ -128,28 +105,23 @@ export const PenAlignment = {
  * </xsd:simpleType>
  * ```
  */
-export const PresetDash = {
-  SOLID: "solid",
-  DOT: "dot",
-  DASH: "dash",
-  LG_DASH: "lgDash",
-  DASH_DOT: "dashDot",
-  LG_DASH_DOT: "lgDashDot",
-  LG_DASH_DOT_DOT: "lgDashDotDot",
-  SYS_DASH: "sysDash",
-  SYS_DOT: "sysDot",
-  SYS_DASH_DOT: "sysDashDot",
-  SYS_DASH_DOT_DOT: "sysDashDotDot",
-} as const;
+export type PresetDash =
+  | "solid"
+  | "dot"
+  | "dash"
+  | "lgDash"
+  | "dashDot"
+  | "lgDashDot"
+  | "lgDashDotDot"
+  | "sysDash"
+  | "sysDot"
+  | "sysDashDot"
+  | "sysDashDotDot";
 
 /**
  * Line join styles.
  */
-export const LineJoin = {
-  ROUND: "round",
-  BEVEL: "bevel",
-  MITER: "miter",
-} as const;
+export type LineJoin = "round" | "bevel" | "miter";
 
 /**
  * Attributes for configuring outline properties.
@@ -158,17 +130,17 @@ export interface OutlineProperties {
   /** Line width in EMUs (English Metric Units) or universal measure (e.g., "1pt", "2mm") */
   width?: number | UniversalMeasure;
   /** Line cap style */
-  cap?: (typeof LineCap)[keyof typeof LineCap];
+  cap?: LineCap;
   /** Compound line type */
-  compoundLine?: (typeof CompoundLine)[keyof typeof CompoundLine];
+  compoundLine?: CompoundLine;
   /** Pen alignment */
-  align?: (typeof PenAlignment)[keyof typeof PenAlignment];
+  align?: PenAlignment;
   /**
    * Preset dash style.
    *
    * Mutually exclusive with `customDash` — only one can be specified.
    */
-  dash?: (typeof PresetDash)[keyof typeof PresetDash];
+  dash?: PresetDash;
   /**
    * Custom dash pattern (list of dash/space stops).
    *
@@ -176,7 +148,7 @@ export interface OutlineProperties {
    */
   customDash?: readonly DashStop[];
   /** Line join style */
-  join?: (typeof LineJoin)[keyof typeof LineJoin];
+  join?: LineJoin;
   /** Miter limit (only when join is MITER) */
   miterLimit?: number;
   /** Line start arrow/head */
@@ -267,7 +239,7 @@ const createOutlineFill = (options: OutlineOptions): string | null => {
  *   width: 9525,
  *   type: "solidFill",
  *   color: { value: "FF0000" },
- *   dash: "DASH",
+ *   dash: "dash",
  * });
  * ```
  */

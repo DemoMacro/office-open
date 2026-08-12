@@ -13,23 +13,11 @@ import type { FillOptions } from "../fill/fill-options";
 
 // ── Run style enums ──
 
-export const UnderlineStyle = {
-  SINGLE: "single",
-  DOUBLE: "double",
-  NONE: "none",
-} as const;
+export type UnderlineStyle = "single" | "double" | "none";
 
-export const StrikeStyle = {
-  SINGLE: "sngStrike",
-  DOUBLE: "dblStrike",
-  NONE: "noStrike",
-} as const;
+export type StrikeStyle = "sngStrike" | "dblStrike" | "noStrike";
 
-export const TextCapitalization = {
-  NONE: "none",
-  ALL: "all",
-  SMALL: "small",
-} as const;
+export type TextCapitalization = "none" | "all" | "small";
 
 // ── Paragraph alignment ──
 
@@ -55,17 +43,17 @@ export interface RunPropertiesOptions {
   size?: number;
   bold?: boolean;
   italic?: boolean;
-  underline?: (typeof UnderlineStyle)[keyof typeof UnderlineStyle];
+  underline?: UnderlineStyle;
   font?: string;
   lang?: string;
   fill?: FillOptions;
   hyperlink?: HyperlinkOptions;
   /** a:hlinkMouseOver — hover hyperlink (CT_Hyperlink). */
   mouseoverHyperlink?: HyperlinkOptions;
-  strike?: (typeof StrikeStyle)[keyof typeof StrikeStyle];
+  strike?: StrikeStyle;
   baseline?: number;
   spacing?: number;
-  capitalization?: (typeof TextCapitalization)[keyof typeof TextCapitalization];
+  capitalization?: TextCapitalization;
   shadow?: boolean;
   outline?: boolean;
   rightToLeft?: boolean;

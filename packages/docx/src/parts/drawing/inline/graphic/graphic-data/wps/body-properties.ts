@@ -11,10 +11,10 @@
  */
 
 export {
-  TextVertOverflowType,
-  TextHorzOverflowType,
-  TextVerticalType,
-  TextBodyWrappingType,
+  type TextVertOverflow,
+  type TextHorzOverflow,
+  type TextVertical,
+  type TextBodyWrapping,
   parseBodyProperties,
   bodyPropertiesDesc,
 } from "@office-open/core/drawingml";

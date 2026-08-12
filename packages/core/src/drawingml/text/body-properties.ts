@@ -33,34 +33,23 @@ import { scene3DDesc, shape3DDesc } from "../three-d/three-d-descriptors";
 export type VerticalAnchor = "t" | "ctr" | "b" | "just" | "dist";
 
 /** Text vertical overflow type (ST_TextVertOverflowType). */
-export const TextVertOverflowType = {
-  OVERFLOW: "overflow",
-  ELLIPSIS: "ellipsis",
-  CLIP: "clip",
-} as const;
+export type TextVertOverflow = "overflow" | "ellipsis" | "clip";
 
 /** Text horizontal overflow type (ST_TextHorzOverflowType). */
-export const TextHorzOverflowType = {
-  OVERFLOW: "overflow",
-  CLIP: "clip",
-} as const;
+export type TextHorzOverflow = "overflow" | "clip";
 
 /** Text vertical type (ST_TextVerticalType). */
-export const TextVerticalType = {
-  HORIZONTAL: "horz",
-  VERTICAL: "vert",
-  VERTICAL_270: "vert270",
-  WORD_ART_VERTICAL: "wordArtVert",
-  EAST_ASIAN_VERTICAL: "eaVert",
-  MONGOLIAN_VERTICAL: "mongolianVert",
-  WORD_ART_VERTICAL_RTL: "wordArtVertRtl",
-} as const;
+export type TextVertical =
+  | "horz"
+  | "vert"
+  | "vert270"
+  | "wordArtVert"
+  | "eaVert"
+  | "mongolianVert"
+  | "wordArtVertRtl";
 
 /** Text body wrapping type (ST_TextWrappingType). */
-export const TextBodyWrappingType = {
-  NONE: "none",
-  SQUARE: "square",
-} as const;
+export type TextBodyWrapping = "none" | "square";
 
 // ── Sub-element Options ──
 
@@ -98,10 +87,10 @@ export interface FlatTextOptions {
 export interface BodyPropertiesOptions {
   rotation?: number;
   spcFirstLastPara?: boolean;
-  vertOverflow?: (typeof TextVertOverflowType)[keyof typeof TextVertOverflowType];
-  horzOverflow?: (typeof TextHorzOverflowType)[keyof typeof TextHorzOverflowType];
-  vert?: (typeof TextVerticalType)[keyof typeof TextVerticalType];
-  wrap?: (typeof TextBodyWrappingType)[keyof typeof TextBodyWrappingType];
+  vertOverflow?: TextVertOverflow;
+  horzOverflow?: TextHorzOverflow;
+  vert?: TextVertical;
+  wrap?: TextBodyWrapping;
   lIns?: number | UniversalMeasure;
   tIns?: number | UniversalMeasure;
   rIns?: number | UniversalMeasure;

@@ -46,6 +46,8 @@ import { createSoftEdgeEffect } from "./soft-edge";
  * - `sib`: sibling effects are applied in parallel
  * - `tree`: effects are applied sequentially in tree order
  *
+ * Note: the `sib` token maps to the `"sibling"` value accepted here.
+ *
  * ## XSD Schema
  * ```xml
  * <xsd:simpleType name="ST_EffectContainerType">
@@ -56,10 +58,7 @@ import { createSoftEdgeEffect } from "./soft-edge";
  * </xsd:simpleType>
  * ```
  */
-export const EffectContainerType = {
-  SIB: "sibling",
-  TREE: "tree",
-} as const;
+export type EffectContainer = "sibling" | "tree";
 
 // ─── New Effect Options ─────────────────────────────────────────────────────
 
@@ -207,7 +206,7 @@ export interface EffectReferenceOptions {
  */
 export interface EffectDagOptions {
   /** Container type: "sib" (parallel) or "tree" (sequential) */
-  type?: (typeof EffectContainerType)[keyof typeof EffectContainerType];
+  type?: EffectContainer;
   /** Container name */
   name?: string;
 
