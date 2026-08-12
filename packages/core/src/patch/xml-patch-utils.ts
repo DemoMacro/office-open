@@ -1,11 +1,11 @@
 /**
  * XML utility functions for patch operations.
  */
-import { xml2js } from "@office-open/xml";
+import { parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 export const toJson = (xmlData: string): Element => {
-  const xmlObj = xml2js(xmlData, {
+  const xmlObj = parse(xmlData, {
     captureSpacesBetweenElements: true,
     compact: false,
   }) as Element;

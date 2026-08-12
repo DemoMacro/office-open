@@ -23,7 +23,7 @@ import type {
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import type { RunOptions } from "@office-open/core/drawingml";
-import { findChild, js2xml, xml2js } from "@office-open/xml";
+import { findChild, stringify, parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import { commentAuthorsDesc, slideCommentsDesc } from "@parts/descriptors/comments";
@@ -107,7 +107,7 @@ const pptxReplacer = createReplacer({
   formatChild: (child: unknown): Element[] => {
     const runOpts = (typeof child === "string" ? { text: child } : child) as RunOptions;
     const xmlStr = textRunDesc.stringify(runOpts, currentPatchCtx) ?? "<a:r/>";
-    const root = xml2js(xmlStr, { captureSpacesBetweenElements: true }).elements?.[0];
+    const root = parse(xmlStr, { captureSpacesBetweenElements: true }).elements?.[0];
     return root ? [root] : [];
   },
   preserveSpace: false,
@@ -450,7 +450,7 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
     const targetEl = xmlMap.get(targetPath);
     if (!targetEl) continue;
 
-    const targetXml = js2xml(targetEl);
+    const targetXml = stringify(targetEl);
     const hlinkKeys = collectPlaceholderKeys(targetXml, "hlink:");
     if (hlinkKeys.length === 0) continue;
 
@@ -503,7 +503,7 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
     files[key] =
       key === "docProps/core.xml" && coreProperties
         ? encoder.encode(XML_DECL + applyCorePropertiesOverride(value, coreProperties))
-        : encoder.encode(js2xml(value));
+        : encoder.encode(stringify(value));
   }
 
   for (const [key, value] of binaryMap) {

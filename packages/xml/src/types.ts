@@ -1,4 +1,4 @@
-// ── xml-js compatible types ──
+// ── Element types ──
 
 export interface Attributes {
   [key: string]: string | number | undefined;
@@ -53,9 +53,9 @@ export interface IgnoreOptions {
   ignoreText?: boolean;
 }
 
-// ── Options: xml2js ──
+// ── Options: parse ──
 
-export interface Xml2JsOptions extends IgnoreOptions {
+export interface ParseOptions extends IgnoreOptions {
   compact?: boolean;
   trim?: boolean;
   sanitize?: boolean;
@@ -90,9 +90,9 @@ export interface Xml2JsOptions extends IgnoreOptions {
   attributesFn?: (value: Attributes, parentElement: string) => Attributes;
 }
 
-// ── Options: js2xml ──
+// ── Options: stringify ──
 
-export interface Js2XmlOptions extends IgnoreOptions {
+export interface StringifyOptions extends IgnoreOptions {
   spaces?: number | string;
   compact?: boolean;
   indentText?: boolean;
@@ -137,41 +137,3 @@ export interface Js2XmlOptions extends IgnoreOptions {
   ) => Attributes;
   fullTagEmptyElementFn?: (currentElementName: string, currentElementObj: object) => boolean;
 }
-
-// ── xml (node-xml) compatible types ──
-
-export interface XmlOption {
-  indent?: string;
-  stream?: boolean;
-  declaration?:
-    | boolean
-    | {
-        encoding?: string;
-        standalone?: string;
-      };
-}
-
-export interface XmlAttrs {
-  [attr: string]: XmlAtom;
-}
-
-export type XmlAtom = string | number | boolean | null;
-
-export interface ElementObject {
-  push(xmlObject: XmlObject): void;
-  close(xmlObject?: XmlObject): void;
-}
-
-export type XmlDesc =
-  | { _attr: XmlAttrs }
-  | { _cdata: string }
-  | { _attr: XmlAttrs; _cdata: string }
-  | XmlAtom
-  | XmlAtom[]
-  | XmlDescArray;
-
-export interface XmlDescArray {
-  [index: number]: { _attr: XmlAttrs } | XmlObject;
-}
-
-export type XmlObject = { [tag: string]: ElementObject | XmlDesc } | XmlDesc;

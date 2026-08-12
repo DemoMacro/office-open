@@ -1,4 +1,4 @@
-import type { Element, Xml2JsOptions } from "./types";
+import type { Element, ParseOptions } from "./types";
 
 const ENTITY_MAP: Record<string, string> = {
   "&amp;": "&",
@@ -35,7 +35,7 @@ export function nativeTypeValue(value: string): string | number | boolean {
   return value;
 }
 
-export function parse(xmlString: string, options?: Xml2JsOptions): Element {
+export function parse(xmlString: string, options?: ParseOptions): Element {
   const captureSpaces = options?.captureSpacesBetweenElements ?? false;
   const trim = options?.trim ?? false;
   const ignoreDeclaration = options?.ignoreDeclaration ?? false;
@@ -242,9 +242,6 @@ function parseAttributesFromXml(
 
   return { attrs, pos: i };
 }
-
-/** @deprecated Use `parse` instead. xml-js compatible alias. */
-export { parse as xml2js };
 
 export function parseAttributes(str: string): Record<string, string> {
   const result: Record<string, string> = {};

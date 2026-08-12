@@ -3,7 +3,7 @@ import { writeFileSync } from "node:fs";
 import { parseArchive } from "@office-open/core";
 import { generateWorkbook, parseWorkbook, parseXlsx } from "@office-open/xlsx";
 import type { WorksheetOptions } from "@office-open/xlsx";
-import { xml2js, js2xml } from "@office-open/xml";
+import { parse, stringify } from "@office-open/xml";
 import { strFromU8 } from "fflate";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -21,11 +21,11 @@ const assert = (label: string, condition: boolean) => {
 };
 
 function normalizeXml(raw: Uint8Array): string {
-  const parsed = xml2js(strFromU8(raw), {
+  const parsed = parse(strFromU8(raw), {
     nativeTypeAttributes: true,
     captureSpacesBetweenElements: true,
   });
-  return js2xml(parsed);
+  return stringify(parsed);
 }
 
 function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {

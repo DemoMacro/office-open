@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { js2xml, xml2js } from "@office-open/xml";
+import { stringify, parse } from "@office-open/xml";
 import type { Element as XMLElement } from "@office-open/xml";
 
 import type { StylesOptions } from "./styles";
@@ -26,7 +26,7 @@ export class ExternalStylesFactory {
    * Parses the styles XML and converts each child to a raw XML string.
    */
   public newInstance(xmlData: string): StylesOptions {
-    const xmlObj = xml2js(xmlData, { compact: false }) as XMLElement;
+    const xmlObj = parse(xmlData, { compact: false }) as XMLElement;
 
     let stylesXmlElement: XMLElement | undefined;
     for (const xmlElm of xmlObj.elements || []) {
@@ -43,7 +43,7 @@ export class ExternalStylesFactory {
 
     return {
       importedStyles: stylesElements.map((childElm) => ({
-        _raw: js2xml({ elements: [childElm] }),
+        _raw: stringify({ elements: [childElm] }),
       })),
       initialAttributes: (stylesXmlElement.attributes as Record<string, string>) ?? {},
     };

@@ -1,4 +1,4 @@
-import { xml2js, js2xml } from "@office-open/xml";
+import { parse, stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { unzipSync, zipSync, strFromU8, strToU8, type Zippable } from "fflate";
 
@@ -37,7 +37,7 @@ export class ParsedArchive {
     // Check modified first
     const modData = this.modified.get(path);
     if (modData) {
-      const wrapper = xml2js(strFromU8(modData), XML_PARSE_OPTIONS) as Element;
+      const wrapper = parse(strFromU8(modData), XML_PARSE_OPTIONS) as Element;
       this.wrapperCache.set(path, wrapper);
       return wrapper.elements?.find((e) => e.type === "element");
     }
@@ -50,7 +50,7 @@ export class ParsedArchive {
     if (cached) return cached.elements?.find((e) => e.type === "element");
 
     // Parse and cache
-    const wrapper = xml2js(strFromU8(data), XML_PARSE_OPTIONS) as Element;
+    const wrapper = parse(strFromU8(data), XML_PARSE_OPTIONS) as Element;
     this.wrapperCache.set(path, wrapper);
     return wrapper.elements?.find((e) => e.type === "element");
   }
@@ -61,7 +61,7 @@ export class ParsedArchive {
     const doc: Element = wrapper
       ? { ...wrapper, elements: [{ ...element, type: "element" as const }] }
       : { elements: [{ ...element, type: "element" as const }] };
-    const xml = js2xml(doc);
+    const xml = stringify(doc);
     this.modified.set(path, strToU8(xml));
   }
 

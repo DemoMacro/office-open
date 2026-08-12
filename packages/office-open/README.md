@@ -91,7 +91,7 @@ import { generateDocument, parseDocument, patchDocument } from "office-open/docx
 import { generatePresentation, parsePresentation, patchPresentation } from "office-open/pptx";
 import { generateWorkbook, parseWorkbook, patchWorkbook } from "office-open/xlsx";
 import { convertInchesToTwip } from "office-open/core";
-import { xml2js, js2xml } from "office-open/xml";
+import { parse, stringify } from "office-open/xml";
 ```
 
 ## Sub-Exports

@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 import { generateDocument, parseDocument, parseArchive } from "@office-open/docx";
 import type { SectionOptions } from "@office-open/docx";
-import { xml2js, js2xml } from "@office-open/xml";
+import { parse, stringify } from "@office-open/xml";
 import { strFromU8 } from "fflate";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -23,11 +23,11 @@ function assert(label: string, condition: boolean) {
 }
 
 function normalizeXml(raw: Uint8Array): string {
-  const parsed = xml2js(strFromU8(raw), {
+  const parsed = parse(strFromU8(raw), {
     nativeTypeAttributes: true,
     captureSpacesBetweenElements: true,
   });
-  let xml = js2xml(parsed);
+  let xml = stringify(parsed);
   // Normalize non-deterministic values
   xml = xml.replace(/\{[0-9A-F-]{36}\}/g, "{UUID}");
   xml = xml.replace(/afchunk[a-z0-9_-]+/g, "afchunk_NORM");

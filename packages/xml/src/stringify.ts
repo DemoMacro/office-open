@@ -1,7 +1,7 @@
 import { escapeXml } from "./escape";
-import type { Element, Js2XmlOptions } from "./types";
+import type { Element, StringifyOptions } from "./types";
 
-export function stringify(js: Element, options?: Js2XmlOptions): string {
+export function stringify(js: Element, options?: StringifyOptions): string {
   const opts = normalizeOptions(options);
   const parts: string[] = [];
 
@@ -16,15 +16,7 @@ export function stringify(js: Element, options?: Js2XmlOptions): string {
   return parts.join("");
 }
 
-/** @deprecated Use `stringify` instead. xml-js compatible alias. */
-export { stringify as js2xml };
-
-/** @deprecated Use `stringify` instead. xml-js compatible alias. */
-export function json2xml(json: Element, options?: Js2XmlOptions): string {
-  return stringify(json, options);
-}
-
-function normalizeOptions(options?: Js2XmlOptions): {
+function normalizeOptions(options?: StringifyOptions): {
   spaces: string;
   ignoreDeclaration: boolean;
   ignoreText: boolean;
@@ -34,7 +26,7 @@ function normalizeOptions(options?: Js2XmlOptions): {
   fullTagEmptyElement: boolean;
   indentText: boolean;
   indentCdata: boolean;
-  attributeValueFn?: Js2XmlOptions["attributeValueFn"];
+  attributeValueFn?: StringifyOptions["attributeValueFn"];
 } {
   if (!options) {
     return {
@@ -85,7 +77,7 @@ function writeAttributes(
   attributes: Record<string, string | number | undefined>,
   elementName: string,
   element: Element,
-  attributeValueFn?: Js2XmlOptions["attributeValueFn"],
+  attributeValueFn?: StringifyOptions["attributeValueFn"],
 ): string {
   const parts: string[] = [];
   for (const key of Object.keys(attributes)) {

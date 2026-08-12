@@ -8,7 +8,7 @@ import {
 } from "@office-open/pptx";
 import type { SlideOptions } from "@office-open/pptx";
 import type { PresentationOptions } from "@office-open/pptx";
-import { findChild, attrNum, xml2js, js2xml } from "@office-open/xml";
+import { findChild, attrNum, parse, stringify } from "@office-open/xml";
 import { strFromU8 } from "fflate";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -26,11 +26,11 @@ const assert = (label: string, condition: boolean) => {
 };
 
 function normalizeXml(raw: Uint8Array): string {
-  const parsed = xml2js(strFromU8(raw), {
+  const parsed = parse(strFromU8(raw), {
     nativeTypeAttributes: true,
     captureSpacesBetweenElements: true,
   });
-  let xml = js2xml(parsed);
+  let xml = stringify(parsed);
   // Normalize non-deterministic values: cNvPr id, GraphicFrame name/id, diagram UUIDs
   xml = xml.replace(/ id="\d+"/g, ' id="N"');
   xml = xml.replace(/ name="(Table|Chart|Diagram|Group) \d+"/g, ' name="$1 N"');

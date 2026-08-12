@@ -32,7 +32,7 @@ import type {
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
-import { js2xml } from "@office-open/xml";
+import { stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { SharedStrings, sharedStringsDesc } from "@parts/shared-strings";
@@ -219,7 +219,7 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
     files[key] =
       key === "docProps/core.xml" && coreProperties
         ? encoder.encode(XML_DECL + applyCorePropertiesOverride(value, coreProperties))
-        : encoder.encode(js2xml(value));
+        : encoder.encode(stringify(value));
   }
   for (const [key, value] of binaryMap) {
     files[key] = value;
@@ -448,7 +448,7 @@ function makeElement(name: string, attributes: Record<string, string> = {}): Ele
   return { type: "element", name, attributes, elements: [] };
 }
 
-/** Empty `<Relationships>` part (wrapped for js2xml serialization). */
+/** Empty `<Relationships>` part (wrapped for stringify serialization). */
 function createRelationshipFile(): Element {
   return {
     declaration: { attributes: { encoding: "UTF-8", standalone: "yes", version: "1.0" } },

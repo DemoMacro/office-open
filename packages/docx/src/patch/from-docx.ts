@@ -23,7 +23,7 @@ import type {
   OutputType,
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
-import { escapeXml, js2xml, xml2js } from "@office-open/xml";
+import { escapeXml, stringify, parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { commentsDesc } from "@parts/comments";
 import { DocumentAttributeNamespaces } from "@parts/document";
@@ -135,9 +135,9 @@ const formatChildElement = (child: unknown): Element[] => {
     xmlStr = "<w:r/>";
   }
 
-  const jsonObj = xml2js(xmlStr, { captureSpacesBetweenElements: true });
+  const jsonObj = parse(xmlStr, { captureSpacesBetweenElements: true });
   const rootEl = jsonObj.elements?.[0];
-  // xml2js yields a single root element for a well-formed fragment
+  // parse yields a single root element for a well-formed fragment
   return rootEl ? [rootEl] : [];
 };
 
@@ -476,7 +476,7 @@ export const patchDocument = async <T extends OutputType = OutputType>({
     files[key] =
       key === "docProps/core.xml" && coreProperties
         ? encoder.encode(XML_DECL + applyCorePropertiesOverride(value, coreProperties))
-        : encoder.encode(js2xml(value));
+        : encoder.encode(stringify(value));
   }
 
   for (const [key, value] of binaryContentMap) {
@@ -518,8 +518,8 @@ function makeElement(name: string, attributes: Record<string, string> = {}): Ele
 
 /** A `<w:r>` carrying a `<w:commentReference>` (CommentReference run style). */
 function commentReferenceRun(id: number): Element {
-  // xml2js yields a single root <w:r> for this well-formed fragment
-  return xml2js(
+  // parse yields a single root <w:r> for this well-formed fragment
+  return parse(
     `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${id}"/></w:r>`,
   ).elements![0]!;
 }
@@ -623,7 +623,7 @@ function mergeCommentsPart(
   if (existingEl) {
     // Append new <w:comment> elements to the existing <w:comments> root.
     const existingRoot = existingEl.elements?.find((e) => e.name === "w:comments");
-    const newRoot = xml2js(newXml).elements?.find((e) => e.name === "w:comments");
+    const newRoot = parse(newXml).elements?.find((e) => e.name === "w:comments");
     existingRoot?.elements?.push(...(newRoot?.elements ?? []));
   } else {
     map.set(

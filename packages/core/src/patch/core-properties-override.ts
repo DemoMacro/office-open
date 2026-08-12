@@ -1,7 +1,7 @@
 /**
  * Merge core-properties overrides onto an existing docProps/core.xml document.
  *
- * The patch layer unzips docProps/core.xml into an xml2js document structure
+ * The patch layer unzips docProps/core.xml into an parse document structure
  * (its `.elements` holds the `cp:coreProperties` root). This helper parses the
  * existing values, layers `overrides` on top (override wins), and returns the
  * re-serialized XML — without the XML declaration, which the caller prepends.

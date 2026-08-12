@@ -1,6 +1,6 @@
 import { DOCX_NS, createReplacer, createTraverser } from "@office-open/core";
 import type { Element } from "@office-open/xml";
-import { escapeXml, xml2js } from "@office-open/xml";
+import { escapeXml, parse } from "@office-open/xml";
 import { stringifyRunInline } from "@parts/inline";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { describe, expect, it, vi } from "vite-plus/test";
@@ -29,7 +29,7 @@ const replacer = createReplacer({
     } else {
       xmlStr = "<w:r/>";
     }
-    const jsonObj = xml2js(xmlStr, { captureSpacesBetweenElements: true });
+    const jsonObj = parse(xmlStr, { captureSpacesBetweenElements: true });
     const rootEl = jsonObj.elements?.[0];
     if (!rootEl) throw new Error("parsed xml has no root element");
     return [rootEl];

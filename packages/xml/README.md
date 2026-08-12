@@ -5,17 +5,15 @@
 ![npm license](https://img.shields.io/npm/l/@office-open/xml)
 ![zero dependencies](https://img.shields.io/badge/dependencies-0-green)
 
-> XML parsing and serialization for Office Open XML. Zero dependencies, drop-in replacement for xml + xml-js.
+> XML parsing and serialization for Office Open XML. Zero dependencies, pure TypeScript.
 
 ## Features
 
 - **Zero Dependencies** - No external runtime dependencies, pure TypeScript implementation
-- **xml() Serialization** - Drop-in replacement for the `xml` package
-- **xml2js() Parsing** - Drop-in replacement for `xml-js` XML parsing
-- **js2xml() Stringifying** - Drop-in replacement for `xml-js` JS-to-XML conversion
-- **toElement() Direct Convert** - Direct conversion from xml object format to xml-js Element, 10-19x faster than the xml→xml2js bridge
-- **Complete Type Definitions** - Full type compatibility with `xml` and `xml-js`, import without changes
-- **OOXML Optimized** - Implements all options needed for Office Open XML document generation
+- **parse() / stringify()** - XML string ↔ Element tree, OOXML-optimized
+- **Element Type** - Tolerant element model for round-tripping Office Open XML parts
+- **escapeXml() / unescapeXml()** - Low-level XML entity escaping
+- **OOXML Optimized** - Implements the options needed for Office Open XML document generation and parsing
 
 ## Installation
 
@@ -33,113 +31,54 @@ yarn add @office-open/xml
 bun add @office-open/xml
 ```
 
-## Migration from xml + xml-js
-
-Replace your existing imports:
-
-```typescript
-// Before
-import xml from "xml";
-import { xml2js, js2xml } from "xml-js";
-import type { Element } from "xml-js";
-
-// After
-import { xml, xml2js, js2xml } from "@office-open/xml";
-import type { Element } from "@office-open/xml";
-```
-
-No other code changes needed. All options and output formats are compatible.
-
 ## Quick Start
 
 ```typescript
-import { xml, xml2js, js2xml, toElement } from "@office-open/xml";
+import { parse, stringify } from "@office-open/xml";
 
-// Serialize JS objects to XML
-const xmlStr = xml({ "w:p": [{ _attr: { "w:val": "1" } }, { "w:r": [{ "w:t": "Hello" }] }] });
-// <w:p w:val="1"><w:r><w:t>Hello</w:t></w:r></w:p>
+// Parse XML to an Element tree
+const doc = parse("<w:t>Hello</w:t>");
 
-// Parse XML to JS objects
-const parsed = xml2js("<w:t>Hello</w:t>", { compact: false });
-
-// Convert JS objects back to XML
-const output = js2xml(parsed);
-
-// Direct conversion (faster than xml → xml2js bridge)
-const element = toElement({
-  "w:p": [{ _attr: { "w:val": "1" } }, { "w:r": [{ "w:t": "Hello" }] }],
-});
+// Serialize an Element tree back to XML
+const xml = stringify(doc);
 ```
 
 ## API
 
-### xml(input, options?)
+### parse(xmlString, options?)
 
-Serialize JavaScript objects to XML string. Compatible with the `xml` package.
+Parse an XML string into an `Element` tree. Options include `compact`, `trim`, `nativeType`, `captureSpacesBetweenElements`, the `ignore*` flags, and the `*Fn` transformation hooks.
 
-### xml2js(xmlString, options?)
+### stringify(element, options?)
 
-Parse XML string to JavaScript object. Compatible with `xml-js`.
+Serialize an `Element` tree to an XML string. Options include `spaces` (indentation), the `ignore*` flags, and the `*Fn` hooks.
 
-### js2xml(jsObject, options?)
+### escapeXml(str) / unescapeXml(str)
 
-Convert JavaScript object (xml-js Element format) to XML string. Compatible with `xml-js`.
+Low-level XML entity escaping and unescaping.
 
-### json2xml(jsObject, options?)
+### Element
 
-Alias for `js2xml`.
+The tolerant element type used across all office-open packages:
 
-### xml2json(xmlString, options?)
-
-Convenience function that returns `JSON.stringify(xml2js(xmlString, options))`.
-
-### toElement(input)
-
-Direct conversion from xml object format to xml-js Element format. Much faster than the `xml() → xml2js()` bridge path.
-
-### escapeXml(str) / escapeAttributeValue(str)
-
-Low-level XML entity escaping functions.
-
-## Benchmark
-
-Performance comparison against original `xml` (1.0.1) and `xml-js` (1.6.11) packages:
-
-### Serialization (xml)
-
-| Scenario                | @office-open/xml |        xml |   Speedup |
-| ----------------------- | ---------------: | ---------: | --------: |
-| Simple element          |     5,440,771 hz | 805,545 hz | **6.75x** |
-| Nested element          |     1,050,272 hz | 315,184 hz | **3.33x** |
-| Nested with declaration |       967,945 hz | 275,684 hz | **3.51x** |
-
-### Parsing (xml2js)
-
-| Scenario           | @office-open/xml |     xml-js |   Speedup |
-| ------------------ | ---------------: | ---------: | --------: |
-| Simple XML         |       869,965 hz | 100,507 hz | **8.66x** |
-| Complex OOXML      |       346,440 hz |  53,621 hz | **6.46x** |
-| With captureSpaces |       344,586 hz |  52,414 hz | **6.57x** |
-
-### Stringifying (js2xml)
-
-| Scenario       | @office-open/xml |     xml-js |   Speedup |
-| -------------- | ---------------: | ---------: | --------: |
-| Simple element |       793,710 hz | 207,730 hz | **3.82x** |
-| Complex OOXML  |       366,515 hz | 135,815 hz | **2.70x** |
-
-### Direct Conversion (toElement vs bridge)
-
-| Scenario |   toElement() | xml() + xml2js() bridge |    Speedup |
-| -------- | ------------: | ----------------------: | ---------: |
-| Simple   | 15,471,913 hz |            1,073,016 hz | **14.42x** |
-| Nested   |  4,278,499 hz |              441,468 hz |  **9.69x** |
+```typescript
+interface Element {
+  declaration?: { attributes?: DeclarationAttributes };
+  attributes?: Attributes;
+  type?: string;
+  name?: string;
+  text?: string | number | boolean;
+  cdata?: string;
+  comment?: string;
+  elements?: Element[];
+}
+```
 
 ## Bundle Size
 
-|      | @office-open/xml | xml + xml-js |
-| ---- | ---------------: | -----------: |
-| gzip |      **4.22 kB** |       ~15 kB |
+|      | @office-open/xml |
+| ---- | ---------------: |
+| gzip |      **4.22 kB** |
 
 ## License
 
