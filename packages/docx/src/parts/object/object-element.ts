@@ -19,7 +19,7 @@ import type { EmbeddingData } from "@shared/embeddings/embeddings";
 import type { MediaData } from "@shared/media/data";
 
 import type { BodyContext } from "../../context";
-import { createImageData } from "../paragraph/run/image-run";
+import { createPictureData } from "../paragraph/run/picture-run";
 
 // ── Options ──
 
@@ -111,7 +111,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
         (fileName) =>
           ({
             type: iconType,
-            ...createImageData(rawData, { width: widthVal, height: heightVal }, fileName),
+            ...createPictureData(rawData, { width: widthVal, height: heightVal }, fileName),
           }) as MediaData,
       );
       const titleAttr = opts.iconImage.title ? ` o:title="${opts.iconImage.title}"` : "";

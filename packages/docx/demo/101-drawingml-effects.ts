@@ -42,7 +42,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   transformation: {
                     height: "4.0cm",
@@ -64,7 +64,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   sourceRectangle: { left: 25000, right: 25000 },
                   transformation: {

@@ -25,7 +25,7 @@ const buffer = await generateDocument({
                         paragraph: {
                           children: [
                             {
-                              image: {
+                              picture: {
                                 data: imageData,
                                 transformation: { height: "2.6cm", width: "2.6cm" },
                                 type: "jpg",
@@ -65,7 +65,7 @@ const buffer = await generateDocument({
                           paragraph: {
                             children: [
                               {
-                                image: {
+                                picture: {
                                   data: imageData,
                                   transformation: { height: "2.6cm", width: "2.6cm" },
                                   type: "jpg",

@@ -18,7 +18,7 @@ Workbook
 │   ├── mergeCells: MergeCellOptions[]
 │   ├── freezePanes: FreezePaneOptions
 │   ├── autoFilter: string
-│   ├── images: WorksheetImageOptions[]
+│   ├── images: PictureOptions[]
 │   ├── charts: WorksheetChartOptions[]
 │   ├── dataValidations: DataValidationOptions[]
 │   └── conditionalFormats: ConditionalFormatOptions[]

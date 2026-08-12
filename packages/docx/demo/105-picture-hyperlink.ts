@@ -42,7 +42,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   altText: {
                     description: "Click me!",
                     hyperlink: { click: "https://example.com" },
@@ -85,7 +85,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   altText: {
                     description: "Click or hover me!",
                     hyperlink: {

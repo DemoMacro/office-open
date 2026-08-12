@@ -8,7 +8,7 @@
  * Position mapping is heuristic where the target has no matching coordinate
  * model:
  * - pptx/docx use absolute EMU coordinates; xlsx uses 1-based cell anchors with
- *   no size on the public input (`WorksheetImageOptions` carries only `col/row`).
+ *   no size on the public input (`XlsxPictureOptions` carries only `col/row`).
  * - EMU→cell divides by a default cell size (8.43-char column × 15pt row);
  *   cell→EMU multiplies back. Size is lost on the xlsx leg.
  *
@@ -16,22 +16,22 @@
  *
  * @module
  */
-import type { ImageOptions } from "@office-open/docx";
-import type { PictureOptions } from "@office-open/pptx";
-import type { WorksheetImageOptions } from "@office-open/xlsx";
+import type { PictureOptions as DocxPictureOptions } from "@office-open/docx";
+import type { PictureOptions as PptxPictureOptions } from "@office-open/pptx";
+import type { PictureOptions as XlsxPictureOptions } from "@office-open/xlsx";
 
 import { DEFAULT_COL_EMU, DEFAULT_ROW_EMU, emuToCell, toEmu } from "./position";
 
 // ── → docx ──
 
 /** Convert a pptx picture to a docx inline image. */
-export function toDocxPicture(source: PictureOptions): ImageOptions;
+export function toDocxPicture(source: PptxPictureOptions): DocxPictureOptions;
 /** Convert an xlsx image to a docx inline image (size defaults to 0; xlsx carries no size). */
-export function toDocxPicture(source: WorksheetImageOptions): ImageOptions;
-export function toDocxPicture(source: PictureOptions | WorksheetImageOptions): ImageOptions {
+export function toDocxPicture(source: XlsxPictureOptions): DocxPictureOptions;
+export function toDocxPicture(source: PptxPictureOptions | XlsxPictureOptions): DocxPictureOptions {
   // pptx → docx: absolute x/y → offset, width/height → transformation.
   if ("width" in source || "height" in source) {
-    const p = source as PictureOptions;
+    const p = source as PptxPictureOptions;
     return {
       type: p.type,
       data: p.data,
@@ -45,7 +45,7 @@ export function toDocxPicture(source: PictureOptions | WorksheetImageOptions): I
     };
   }
   // xlsx → docx: cell anchor → offset EMU; size unknown.
-  const x = source as WorksheetImageOptions;
+  const x = source as XlsxPictureOptions;
   return {
     type: x.type,
     data: x.data,
@@ -60,16 +60,16 @@ export function toDocxPicture(source: PictureOptions | WorksheetImageOptions): I
 // ── → pptx ──
 
 /** Convert a docx image to a pptx picture. */
-export function toPptxPicture(source: ImageOptions): PictureOptions;
+export function toPptxPicture(source: DocxPictureOptions): PptxPictureOptions;
 /** Convert an xlsx image to a pptx picture (size defaults to 0; xlsx carries no size). */
-export function toPptxPicture(source: WorksheetImageOptions): PictureOptions;
-export function toPptxPicture(source: ImageOptions | WorksheetImageOptions): PictureOptions {
+export function toPptxPicture(source: XlsxPictureOptions): PptxPictureOptions;
+export function toPptxPicture(source: DocxPictureOptions | XlsxPictureOptions): PptxPictureOptions {
   // docx → pptx: transformation → absolute x/y + width/height.
   if ("transformation" in source) {
-    const d = source as ImageOptions;
+    const d = source as DocxPictureOptions;
     const t = d.transformation;
     return {
-      type: d.type as PictureOptions["type"],
+      type: d.type as PptxPictureOptions["type"],
       data: d.data,
       width: t.width,
       height: t.height,
@@ -77,9 +77,9 @@ export function toPptxPicture(source: ImageOptions | WorksheetImageOptions): Pic
     };
   }
   // xlsx → pptx: cell anchor → absolute EMU; size unknown.
-  const x = source as WorksheetImageOptions;
+  const x = source as XlsxPictureOptions;
   return {
-    type: x.type as PictureOptions["type"],
+    type: x.type as PptxPictureOptions["type"],
     data: x.data,
     x: (x.col - 1) * DEFAULT_COL_EMU,
     y: (x.row - 1) * DEFAULT_ROW_EMU,
@@ -90,14 +90,14 @@ export function toPptxPicture(source: ImageOptions | WorksheetImageOptions): Pic
 
 // ── → xlsx ──
 
-/** Convert a docx image to an xlsx image (position mapped to cell anchor; size lost). */
-export function toXlsxImage(source: ImageOptions): WorksheetImageOptions;
-/** Convert a pptx picture to an xlsx image (position mapped to cell anchor; size lost). */
-export function toXlsxImage(source: PictureOptions): WorksheetImageOptions;
-export function toXlsxImage(source: ImageOptions | PictureOptions): WorksheetImageOptions {
+/** Convert a docx image to an xlsx picture (position mapped to cell anchor; size lost). */
+export function toXlsxPicture(source: DocxPictureOptions): XlsxPictureOptions;
+/** Convert a pptx picture to an xlsx picture (position mapped to cell anchor; size lost). */
+export function toXlsxPicture(source: PptxPictureOptions): XlsxPictureOptions;
+export function toXlsxPicture(source: DocxPictureOptions | PptxPictureOptions): XlsxPictureOptions {
   // docx → xlsx: offset EMU → cell anchor.
   if ("transformation" in source) {
-    const d = source as ImageOptions;
+    const d = source as DocxPictureOptions;
     const left = toEmu(d.transformation.offset?.left);
     const top = toEmu(d.transformation.offset?.top);
     return {
@@ -108,7 +108,7 @@ export function toXlsxImage(source: ImageOptions | PictureOptions): WorksheetIma
     };
   }
   // pptx → xlsx: absolute EMU → cell anchor.
-  const p = source as PictureOptions;
+  const p = source as PptxPictureOptions;
   return {
     data: p.data,
     type: xlsxType(p.type),

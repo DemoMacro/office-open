@@ -106,7 +106,7 @@ export interface DrawingAnchorOptions {
   printsWithSheet?: boolean;
 }
 
-export interface PictureOptions extends DrawingAnchorOptions {
+export interface DrawingPictureOptions extends DrawingAnchorOptions {
   /** Relationship ID for the image */
   rId: string;
 }
@@ -199,7 +199,7 @@ export interface DrawingContentPartOptions extends DrawingAnchorOptions {
 }
 
 export interface DrawingOptions {
-  images?: PictureOptions[];
+  images?: DrawingPictureOptions[];
   charts?: DrawingChartOptions[];
   shapes?: ShapeOptions[];
   connectors?: ConnectorOptions[];

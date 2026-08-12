@@ -1,7 +1,7 @@
 import type { PictureOptions } from "@office-open/pptx";
 import { describe, expect, it } from "vitest";
 
-import { toDocxPicture, toPptxPicture, toXlsxImage } from "./picture";
+import { toDocxPicture, toPptxPicture, toXlsxPicture } from "./picture";
 
 describe("toDocxPicture (pptx → docx)", () => {
   it("maps absolute position to offset and passes data through", () => {
@@ -33,11 +33,11 @@ describe("toDocxPicture (pptx → docx)", () => {
   });
 });
 
-describe("toXlsxImage (pptx → xlsx)", () => {
+describe("toXlsxPicture (pptx → xlsx)", () => {
   it("maps absolute EMU origin to cell (1,1) and keeps data", () => {
     const data = new Uint8Array([9, 8, 7]);
     const pptx: PictureOptions = { type: "jpg", data, x: 0, y: 0, width: 1, height: 1 };
-    const xlsx = toXlsxImage(pptx);
+    const xlsx = toXlsxPicture(pptx);
     expect(xlsx.type).toBe("jpg");
     expect(xlsx.data).toBe(data);
     expect(xlsx.col).toBe(1);
@@ -45,7 +45,7 @@ describe("toXlsxImage (pptx → xlsx)", () => {
   });
 
   it("drops size (xlsx public input carries none)", () => {
-    const xlsx = toXlsxImage({
+    const xlsx = toXlsxPicture({
       type: "png",
       data: new Uint8Array(),
       x: 0,

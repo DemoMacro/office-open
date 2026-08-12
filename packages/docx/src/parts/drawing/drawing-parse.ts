@@ -20,7 +20,7 @@ import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
-import type { ImageOptions } from "@parts/paragraph/run/image-run";
+import type { PictureOptions } from "@parts/paragraph/run/picture-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type { WpgGroupRunOptions } from "@parts/paragraph/run/wpg-group-run";
 import type { WpsShapeRunOptions } from "@parts/paragraph/run/wps-shape-run";
@@ -57,7 +57,7 @@ import type { TextWrapping, WrapPolygon } from "./text-wrap";
 
 /** Union type for parsed drawing child wrappers. */
 export type DrawingChild =
-  | { image: ImageOptions }
+  | { picture: PictureOptions }
   | { chart: ChartOptions }
   | { smartArt: SmartArtOptions }
   | { wpsShape: WpsShapeRunOptions }
@@ -85,7 +85,7 @@ export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild
   if (uri.includes("wordprocessingShape")) {
     return parseWpsShapeDrawing(el, ctx);
   }
-  return parseImageRun(el, ctx);
+  return parsePictureRun(el, ctx);
 }
 
 /**
@@ -274,12 +274,12 @@ function parseAnchorOrInline(el: Element): AnchorInfo | null {
 }
 
 /**
- * Parse a w:drawing element and return image data wrapped in { image: ... }.
+ * Parse a w:drawing element and return picture data wrapped in { picture: ... }.
  */
-export function parseImageRun(
+export function parsePictureRun(
   el: Element,
   ctx: DocxReadContext,
-): { image: ImageOptions } | undefined {
+): { picture: PictureOptions } | undefined {
   const info = parseAnchorOrInline(el);
   if (!info) return undefined;
 
@@ -377,7 +377,7 @@ export function parseImageRun(
     imageOpts.data = svg.data;
   }
 
-  return { image: imageOpts as unknown as ImageOptions };
+  return { picture: imageOpts as unknown as PictureOptions };
 }
 
 /**

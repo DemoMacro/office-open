@@ -249,7 +249,7 @@ describe("from-docx", () => {
             image_test: {
               children: [
                 {
-                  image: {
+                  picture: {
                     data: Buffer.from(""),
                     transformation: { height: 100, width: 100 },
                     type: "png",
@@ -287,7 +287,7 @@ describe("from-docx", () => {
                         },
                       },
                       {
-                        image: {
+                        picture: {
                           data: Buffer.from(""),
                           transformation: { height: 100, width: 100 },
                           type: "png",
@@ -336,7 +336,7 @@ describe("from-docx", () => {
             image_test: {
               children: [
                 {
-                  image: {
+                  picture: {
                     data: Buffer.from(""),
                     transformation: { height: 100, width: 100 },
                     type: "png",
@@ -374,7 +374,7 @@ describe("from-docx", () => {
                         },
                       },
                       {
-                        image: {
+                        picture: {
                           data: Buffer.from(""),
                           transformation: { height: 100, width: 100 },
                           type: "png",
@@ -450,7 +450,7 @@ describe("from-docx", () => {
             image_test: {
               children: [
                 {
-                  image: {
+                  picture: {
                     data: Buffer.from(""),
                     transformation: { height: 100, width: 100 },
                     type: "png",
@@ -567,7 +567,7 @@ describe("from-docx", () => {
               image_test: {
                 children: [
                   {
-                    image: {
+                    picture: {
                       data: Buffer.from(""),
                       transformation: { height: 100, width: 100 },
                       type: "png",
@@ -604,7 +604,7 @@ describe("from-docx", () => {
               image_test: {
                 children: [
                   {
-                    image: {
+                    picture: {
                       data: Buffer.from(""),
                       transformation: { height: 100, width: 100 },
                       type: "png",

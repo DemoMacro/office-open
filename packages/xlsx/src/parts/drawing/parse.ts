@@ -26,7 +26,7 @@ import type {
   DrawingContentPartOptions,
   ConnectorOptions,
   GroupOptions,
-  PictureOptions,
+  DrawingPictureOptions,
   ShapeOptions,
   GroupConnectorChildOptions,
   GroupShapeChildOptions,
@@ -135,8 +135,8 @@ export function parseImageAnchor(
   anchor: XmlElement,
   pic: XmlElement,
   name: string,
-): PictureOptions {
-  const result: PictureOptions = {
+): DrawingPictureOptions {
+  const result: DrawingPictureOptions = {
     col: 1,
     row: 1,
     rId: readPicRId(pic) ?? "",

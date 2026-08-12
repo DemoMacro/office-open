@@ -8,29 +8,13 @@ const buffer = await generateDocument({
   sections: [
     {
       children: [{ paragraph: "Hello World" }],
-      headers: {
+      footers: {
         default: [
           {
             paragraph: {
               children: [
                 {
-                  image: {
-                    data: readFileSync("./demo/images/image1.jpeg"),
-                    transformation: {
-                      height: "2.6cm",
-                      width: "2.6cm",
-                    },
-                    type: "jpg",
-                  },
-                },
-              ],
-            },
-          },
-          {
-            paragraph: {
-              children: [
-                {
-                  image: {
+                  picture: {
                     data: readFileSync("./demo/images/pizza.gif"),
                     transformation: {
                       height: "2.6cm",
@@ -42,17 +26,21 @@ const buffer = await generateDocument({
               ],
             },
           },
+        ],
+      },
+      headers: {
+        default: [
           {
             paragraph: {
               children: [
                 {
-                  image: {
-                    data: readFileSync("./demo/images/image1.jpeg"),
+                  picture: {
+                    data: readFileSync("./demo/images/pizza.gif"),
                     transformation: {
                       height: "2.6cm",
                       width: "2.6cm",
                     },
-                    type: "jpg",
+                    type: "gif",
                   },
                 },
               ],

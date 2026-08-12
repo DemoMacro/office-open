@@ -36,7 +36,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   blipEffects: { grayscale: true },
                   transformation: {
@@ -68,7 +68,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   blipEffects: {
                     luminance: { bright: 30, contrast: -20 },
@@ -102,7 +102,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   blipEffects: {
                     duotone: {
@@ -139,7 +139,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   blipEffects: {
                     tint: { hue: 6000000, amount: 40 },
@@ -173,7 +173,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   blipEffects: {
                     biLevel: { threshold: 50 },

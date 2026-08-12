@@ -1,6 +1,6 @@
-// This demo adds an image to the Media cache, and then insert to the document afterwards
+// Insert image from a buffer
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -13,89 +13,8 @@ const buffer = await generateDocument({
         {
           paragraph: {
             children: [
-              "Hello World",
               {
-                image: {
-                  data: readFileSync("./demo/images/parrots.bmp"),
-                  transformation: {
-                    height: "2.6cm",
-                    width: "2.6cm",
-                  },
-                  type: "bmp",
-                },
-              },
-            ],
-          },
-        },
-        {
-          paragraph: {
-            children: [
-              {
-                image: {
-                  data: readFileSync("./demo/images/image1.jpeg"),
-                  transformation: {
-                    height: "2.6cm",
-                    width: "2.6cm",
-                  },
-                  type: "jpg",
-                },
-              },
-            ],
-          },
-        },
-        {
-          paragraph: {
-            children: [
-              {
-                image: {
-                  data: readFileSync("./demo/images/dog.png"),
-                  transformation: {
-                    height: "2.6cm",
-                    width: "2.6cm",
-                  },
-                  type: "png",
-                },
-              },
-            ],
-          },
-        },
-        {
-          paragraph: {
-            children: [
-              {
-                image: {
-                  data: readFileSync("./demo/images/cat.jpg"),
-                  transformation: {
-                    height: "2.6cm",
-                    width: "2.6cm",
-                  },
-                  type: "jpg",
-                },
-              },
-            ],
-          },
-        },
-        {
-          paragraph: {
-            children: [
-              {
-                image: {
-                  data: readFileSync("./demo/images/parrots.bmp"),
-                  transformation: {
-                    height: "2.6cm",
-                    width: "2.6cm",
-                  },
-                  type: "bmp",
-                },
-              },
-            ],
-          },
-        },
-        {
-          paragraph: {
-            children: [
-              {
-                image: {
+                picture: {
                   data: Buffer.from(imageBase64Data, "base64"),
                   transformation: {
                     height: "2.6cm",

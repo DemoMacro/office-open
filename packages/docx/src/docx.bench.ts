@@ -76,7 +76,7 @@ const buildSimpleDoc = (): DocumentOptions => ({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: SMALL_IMAGES[0]!,
                   transformation: { width: 400, height: 300 },
                   type: "jpg",
@@ -101,7 +101,7 @@ const buildStyledDoc = (): DocumentOptions => ({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: SMALL_IMAGES[1]!,
                   transformation: { width: 400, height: 300 },
                   type: "jpg",
@@ -157,7 +157,7 @@ const buildFullFeaturedDoc = (): DocumentOptions => ({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: SMALL_IMAGES[0]!,
                   transformation: { width: 400, height: 300 },
                   type: "jpg",
@@ -173,7 +173,7 @@ const buildFullFeaturedDoc = (): DocumentOptions => ({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: SMALL_IMAGES[2]!,
                   transformation: { width: 400, height: 300 },
                   type: "jpg",
@@ -579,7 +579,7 @@ const buildLargeParagraphsDoc = (): DocumentOptions => ({
                 paragraph: {
                   children: [
                     {
-                      image: {
+                      picture: {
                         data: LARGE_IMAGES[(pi / 100 - 1) % LARGE_IMAGES.length]!,
                         transformation: { width: 400, height: 300 },
                         type: "jpg",
@@ -719,7 +719,7 @@ const buildLargeSectionsDoc = (): DocumentOptions => ({
         paragraph: {
           children: [
             {
-              image: {
+              picture: {
                 data: LARGE_IMAGES[(si * 2) % LARGE_IMAGES.length]!,
                 transformation: { width: 400, height: 300 },
                 type: "jpg",
@@ -732,7 +732,7 @@ const buildLargeSectionsDoc = (): DocumentOptions => ({
         paragraph: {
           children: [
             {
-              image: {
+              picture: {
                 data: LARGE_IMAGES[(si * 2 + 1) % LARGE_IMAGES.length]!,
                 transformation: { width: 400, height: 300 },
                 type: "jpg",
@@ -970,7 +970,7 @@ const buildMixed100MbDoc = (): DocumentOptions => ({
         ...(MIXED_IMAGES.map((img) => ({
           paragraph: {
             children: [
-              { image: { data: img, transformation: { width: 400, height: 300 }, type: "jpg" } },
+              { picture: { data: img, transformation: { width: 400, height: 300 }, type: "jpg" } },
             ],
           },
         })) as SectionChild[]),

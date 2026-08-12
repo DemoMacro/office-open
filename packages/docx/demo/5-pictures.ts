@@ -18,7 +18,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   altText: {
                     description: "This is an ultimate image",
                     name: "My Ultimate Image",
@@ -39,7 +39,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/dog.png").toString("base64"),
                   outline: {
                     color: { value: "FF0000" },
@@ -59,7 +59,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   outline: {
                     color: { value: "0000FF" },
@@ -83,7 +83,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/parrots.bmp"),
                   transformation: {
                     flip: {
@@ -103,7 +103,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
                     flip: {
@@ -123,7 +123,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   floating: {
                     horizontalPosition: {
@@ -149,7 +149,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   floating: {
                     horizontalPosition: {
@@ -176,7 +176,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/linux-svg.svg"),
                   fallback: {
                     data: readFileSync("./demo/images/linux-png.png"),

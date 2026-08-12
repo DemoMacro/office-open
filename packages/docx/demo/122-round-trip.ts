@@ -374,7 +374,7 @@ async function main() {
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   type: "png",
                   data: imageData,
                   transformation: { width: "4.0cm", height: "4.0cm" },
@@ -389,7 +389,7 @@ async function main() {
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   type: "png",
                   data: imageData,
                   transformation: { width: "2.6cm", height: "2.6cm" },

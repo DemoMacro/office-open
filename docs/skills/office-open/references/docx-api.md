@@ -12,7 +12,7 @@ DocumentOptions
 │   │   └── type: "nextPage" | "continuous" | "evenPage" | "oddPage"
 │   ├── headers: { default, first, even, odd }
 │   ├── footers: { default, first, even, odd }
-│   └── children: (ParagraphOptions | TableOptions | ImageOptions | ...)[]
+│   └── children: (ParagraphOptions | TableOptions | PictureOptions | ...)[]
 ```
 
 ## Text Formatting
@@ -102,55 +102,61 @@ DocumentOptions
 | `spacing`   | `{ before?, after?, line?, lineRule? }`   | Spacing in twips. `lineRule`: `"auto"` \| `"exact"` \| `"atLeast"` |
 | `indent`    | `{ left?, right?, firstLine?, hanging? }` | Indentation in twips                                               |
 | `numbering` | `{ reference, level }`                    | List reference and level                                           |
-| `children`  | `array`                                   | TextRun, ImageRun, Math, Bookmark, etc.                            |
+| `children`  | `array`                                   | TextRun, picture, Math, Bookmark, etc.                             |
 
-## Images
+## Pictures
 
-### Basic Image
-
-```json
-{
-  "type": "png",
-  "data": "<Uint8Array>",
-  "transformation": { "width": 200, "height": 150 }
-}
-```
-
-### Image with Effects
+### Basic Picture
 
 ```json
 {
-  "type": "jpg",
-  "data": "<Uint8Array>",
-  "transformation": {
-    "width": 200,
-    "height": 150,
-    "rotation": 45,
-    "flip": { "horizontal": true }
-  },
-  "srcRect": { "left": 1000, "top": 1000, "right": 1000, "bottom": 1000 },
-  "blipEffects": {
-    "grayscale": true,
-    "luminance": { "bright": 30, "contrast": -20 },
-    "hsl": { "hue": 0, "saturation": 50, "luminance": 0 },
-    "tint": { "hue": 6000000, "amount": 40 },
-    "duotone": { "color1": { "value": "002060" }, "color2": { "value": "D0CECE" } },
-    "biLevel": { "threshold": 50 }
+  "picture": {
+    "type": "png",
+    "data": "<Uint8Array>",
+    "transformation": { "width": 200, "height": 150 }
   }
 }
 ```
 
-### Floating Image
+### Picture with Effects
 
 ```json
 {
-  "type": "png",
-  "data": "<Uint8Array>",
-  "transformation": { "width": 150, "height": 150 },
-  "floating": {
-    "horizontalPosition": { "offset": 720000 },
-    "verticalPosition": { "offset": 720000 },
-    "wrap": { "type": "square" }
+  "picture": {
+    "type": "jpg",
+    "data": "<Uint8Array>",
+    "transformation": {
+      "width": 200,
+      "height": 150,
+      "rotation": 45,
+      "flip": { "horizontal": true }
+    },
+    "srcRect": { "left": 1000, "top": 1000, "right": 1000, "bottom": 1000 },
+    "blipEffects": {
+      "grayscale": true,
+      "luminance": { "bright": 30, "contrast": -20 },
+      "hsl": { "hue": 0, "saturation": 50, "luminance": 0 },
+      "tint": { "hue": 6000000, "amount": 40 },
+      "duotone": { "color1": { "value": "002060" }, "color2": { "value": "D0CECE" } },
+      "biLevel": { "threshold": 50 }
+    }
+  }
+}
+```
+
+### Floating Picture
+
+```json
+{
+  "picture": {
+    "type": "png",
+    "data": "<Uint8Array>",
+    "transformation": { "width": 150, "height": 150 },
+    "floating": {
+      "horizontalPosition": { "offset": 720000 },
+      "verticalPosition": { "offset": 720000 },
+      "wrap": { "type": "square" }
+    }
   }
 }
 ```
@@ -159,10 +165,12 @@ DocumentOptions
 
 ```json
 {
-  "type": "svg",
-  "data": "<Uint8Array>",
-  "transformation": { "width": 200, "height": 200 },
-  "fallback": { "type": "png", "data": "<Uint8Array>" }
+  "picture": {
+    "type": "svg",
+    "data": "<Uint8Array>",
+    "transformation": { "width": 200, "height": 200 },
+    "fallback": { "type": "png", "data": "<Uint8Array>" }
+  }
 }
 ```
 

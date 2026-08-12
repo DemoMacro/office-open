@@ -37,7 +37,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: imageData,
                   floating: {
                     horizontalPosition: {
@@ -78,7 +78,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: imageData,
                   floating: {
                     horizontalPosition: {
@@ -119,7 +119,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: imageData,
                   floating: {
                     horizontalPosition: {
@@ -160,7 +160,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: imageData,
                   floating: {
                     horizontalPosition: {
@@ -200,7 +200,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: imageData,
                   floating: {
                     horizontalPosition: {
@@ -236,7 +236,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: imageData,
                   floating: {
                     behindDocument: true,

@@ -37,7 +37,7 @@ import type {
   DrawingContentPartOptions,
   ConnectorOptions,
   GroupOptions,
-  PictureOptions,
+  DrawingPictureOptions,
   DrawingOptions,
   ShapeOptions,
 } from "./types";
@@ -98,7 +98,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
 
   parse(el, ctx) {
     const result: Partial<DrawingOptions> = {};
-    const images: PictureOptions[] = [];
+    const images: DrawingPictureOptions[] = [];
     const charts: DrawingChartOptions[] = [];
     const shapes: ShapeOptions[] = [];
     const connectors: ConnectorOptions[] = [];

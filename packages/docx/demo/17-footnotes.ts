@@ -37,7 +37,7 @@ const buffer = await generateDocument({
         {
           children: [
             {
-              image: {
+              picture: {
                 data: readFileSync("./demo/images/cat.jpg"),
                 transformation: {
                   height: "2.6cm",

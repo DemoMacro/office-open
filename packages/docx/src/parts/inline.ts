@@ -14,7 +14,6 @@ import { toUint8Array } from "@office-open/core";
 import { TargetModeType } from "@office-open/core";
 import { uniqueId } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
-import type { SourceRectangleOptions } from "@office-open/core/drawingml";
 import { createDataModel } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
@@ -27,7 +26,7 @@ import type {
 } from "@parts/paragraph/links/bookmark";
 import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { CommentChildOptions } from "@parts/paragraph/run/comment-run";
-import type { ImageOptions } from "@parts/paragraph/run/image-run";
+import { createPictureData } from "@parts/paragraph/run/picture-run";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import {
@@ -46,7 +45,6 @@ import type {
   ShapeMediaData,
 } from "@shared/media";
 import { createTransformation } from "@shared/media";
-import type { NonVisualPropertiesOptions } from "@shared/media/data";
 
 import type { BodyContext } from "../context";
 import { checkboxSymbolRunInner, stringifyCustomXmlShell, stringifySdtShell } from "./bodychildren";
@@ -155,27 +153,6 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
 
   const body = parts.join("");
   return body.length === 0 ? (attr ? `<w:r${attr}/>` : "<w:r/>") : `<w:r${attr}>${body}</w:r>`;
-}
-
-// ── Image helpers ──
-
-function createImageData(
-  data: Uint8Array,
-  transformation: ImageOptions["transformation"],
-  key: string,
-  sourceRectangle?: SourceRectangleOptions,
-  nonVisualProperties?: NonVisualPropertiesOptions,
-): Pick<
-  MediaData,
-  "data" | "fileName" | "transformation" | "sourceRectangle" | "nonVisualProperties"
-> {
-  return {
-    data,
-    fileName: key,
-    sourceRectangle,
-    nonVisualProperties,
-    transformation: createTransformation(transformation),
-  };
 }
 
 let nextChartId = 1;
@@ -471,9 +448,9 @@ export function stringifyChildDispatch(
     );
   }
 
-  // Image — side effect: media registration (content-deduplicated via core Media)
-  if ("image" in child) {
-    const opts = child.image;
+  // Picture — side effect: media registration (content-deduplicated via core Media)
+  if ("picture" in child) {
+    const opts = child.picture;
     const rawData = toUint8Array(opts.data, { encoding: "base64" }) as Uint8Array;
 
     let mediaData: MediaData;
@@ -488,7 +465,7 @@ export function stringifyChildDispatch(
         (fileName) =>
           ({
             type: fallbackType,
-            ...createImageData(fallbackData, opts.transformation, fileName),
+            ...createPictureData(fallbackData, opts.transformation, fileName),
           }) as MediaData,
       );
       mediaData = ctx.file.media.addMedia(
@@ -497,7 +474,7 @@ export function stringifyChildDispatch(
         (fileName) =>
           ({
             type: "svg" as const,
-            ...createImageData(
+            ...createPictureData(
               rawData,
               opts.transformation,
               fileName,
@@ -516,7 +493,7 @@ export function stringifyChildDispatch(
         (fileName) =>
           ({
             type,
-            ...createImageData(
+            ...createPictureData(
               rawData,
               opts.transformation,
               fileName,

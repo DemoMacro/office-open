@@ -8,9 +8,9 @@ import type {
   TileOptions,
 } from "@office-open/core/drawingml";
 /**
- * ImageRun types for WordprocessingML documents.
+ * Picture (pic:pic) run types for WordprocessingML documents.
  *
- * This module provides support for inserting images into documents.
+ * This module provides support for inserting pictures into documents.
  *
  * Reference: http://officeopenxml.com/drwPicInline.php
  *
@@ -26,9 +26,9 @@ import type { Floating } from "../../drawing";
 import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
 
 /**
- * Core options for image configuration.
+ * Core options for picture configuration.
  */
-interface CoreImageOptions {
+interface CorePictureOptions {
   transformation: MediaTransformation;
   floating?: Floating;
   altText?: DocPropertiesOptions;
@@ -48,7 +48,7 @@ interface CoreImageOptions {
   useLocalDpi?: boolean;
 }
 
-interface RegularImageOptions {
+interface RegularPictureOptions {
   type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   data: DataType;
 }
@@ -59,17 +59,15 @@ interface SvgMediaOptions {
   /**
    * Required in case the Word processor does not support SVG.
    */
-  fallback: RegularImageOptions;
+  fallback: RegularPictureOptions;
 }
 
 /**
- * Options for creating an ImageRun.
- *
- * @see {@link ImageRun}
+ * Options for an inline/anchored picture (pic:pic).
  */
-export type ImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
+export type PictureOptions = (RegularPictureOptions | SvgMediaOptions) & CorePictureOptions;
 
-export const createImageData = (
+export const createPictureData = (
   data: Uint8Array,
   transformation: MediaTransformation,
   key: string,

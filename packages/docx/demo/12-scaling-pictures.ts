@@ -13,7 +13,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
                     height: "1.3cm",
@@ -29,7 +29,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
                     height: "2.6cm",
@@ -45,7 +45,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
                     height: "6.6cm",
@@ -61,7 +61,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
                     height: "10.6cm",

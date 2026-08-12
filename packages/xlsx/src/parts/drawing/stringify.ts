@@ -26,7 +26,7 @@ import type {
   DrawingContentPartOptions,
   ConnectorOptions,
   GroupOptions,
-  PictureOptions,
+  DrawingPictureOptions,
   DrawingChartOptions,
   ShapeOptions,
 } from "./types";
@@ -103,7 +103,7 @@ function picXml(rId: string, id: number, cx: number, cy: number, ctx: WriteConte
   );
 }
 
-export function stringifyImage(img: PictureOptions, id: number, ctx: WriteContext): string {
+export function stringifyImage(img: DrawingPictureOptions, id: number, ctx: WriteContext): string {
   const cx = convertToEmu(img.extentCx ?? DEFAULT_EXTENT_CX);
   const cy = convertToEmu(img.extentCy ?? DEFAULT_EXTENT_CY);
   const pic = picXml(img.rId, id, cx, cy, ctx);

@@ -263,7 +263,7 @@ export interface FreezePaneOptions {
   col?: number;
 }
 
-export interface WorksheetImageOptions {
+export interface PictureOptions {
   data: DataType;
   type: "png" | "jpg";
   col: number;
@@ -1054,7 +1054,7 @@ export interface WorksheetOptions {
   scenarios?: ScenarioOptions;
   /** Auto-filter configuration */
   autoFilter?: string | AutoFilterOptions;
-  images?: WorksheetImageOptions[];
+  images?: PictureOptions[];
   charts?: WorksheetChartOptions[];
   /** Anchored shapes (xdr:sp): geometry + optional text body. */
   shapes?: ShapeOptions[];

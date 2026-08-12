@@ -41,11 +41,7 @@ import { tableDesc } from "@parts/table";
 import type { TableOptions } from "@parts/table";
 import { workbookDesc } from "@parts/workbook";
 import { worksheetDesc } from "@parts/worksheet";
-import type {
-  WorksheetChartOptions,
-  WorksheetImageOptions,
-  WorksheetOptions,
-} from "@parts/worksheet";
+import type { WorksheetChartOptions, PictureOptions, WorksheetOptions } from "@parts/worksheet";
 
 import { XlsxReadContext } from "./context";
 
@@ -310,8 +306,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       // shapes (data bytes / ChartSpace content). The shapes are not
       // interchangeable — round-trip drawings are lossy — these casts mark the
       // known impedance, same as wsOpts.pivotTables above.
-      if (drawingData.images)
-        wsOpts.images = drawingData.images as unknown as WorksheetImageOptions[];
+      if (drawingData.images) wsOpts.images = drawingData.images as unknown as PictureOptions[];
       if (drawingData.charts)
         wsOpts.charts = drawingData.charts as unknown as WorksheetChartOptions[];
       // Shapes/connectors/groups pass through unchanged (no media bridge).

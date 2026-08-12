@@ -23,7 +23,7 @@ const doc = await patchDocument({
     image_test: {
       children: [
         {
-          image: {
+          picture: {
             data: readFileSync("./demo/images/image1.jpeg"),
             transformation: { height: "2.6cm", width: "2.6cm" },
             type: "jpg",
@@ -53,7 +53,7 @@ const doc = await patchDocument({
               "This is a ",
               { hyperlink: { link: "https://www.google.co.uk", children: ["Google Link"] } },
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/dog.png"),
                   transformation: { height: "2.6cm", width: "2.6cm" },
                   type: "png",

@@ -54,11 +54,11 @@ function makeImageMediaData() {
   };
 }
 
-// readCtx with media wired so parseImageRun can resolve the blip embed
+// readCtx with media wired so parsePictureRun can resolve the blip embed
 // ({fileName} placeholder) and read image bytes.
 const mediaMap = new Map([["{image1.png}", "word/media/image1.png"]]);
 const mediaReadCtx = {
-  // parseImageRun resolves the blip embed via resolveRelationship (per-part
+  // parsePictureRun resolves the blip embed via resolveRelationship (per-part
   // rels, falling back to partRefs.media) — mirror that here.
   resolveRelationship: (rId: string) => mediaMap.get(rId),
   getPart: () => undefined,
@@ -231,7 +231,7 @@ describe("drawingDesc round-trip", () => {
   });
 
   it("round-trips floating image margins/flags/relativeFrom/wrap", () => {
-    // parseImageRun must read all Floating fields the anchor stringify writes:
+    // parsePictureRun must read all Floating fields the anchor stringify writes:
     // margins (distT-D), relativeFrom, allowOverlap/behindDoc/locked/
     // layoutInCell/relativeHeight, and wrap (type number + side).
     const xml = stringify({
@@ -251,8 +251,8 @@ describe("drawingDesc round-trip", () => {
     const doc = parseXml(xml);
     const el = doc.elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
-    const result = drawingDesc.parse(el, mediaReadCtx) as { image?: { floating?: Floating } };
-    const floating = result.image?.floating;
+    const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
+    const floating = result.picture?.floating;
     expect(floating).toBeDefined();
     expect(floating!.margins).toEqual({ top: 50000, bottom: 60000, left: 70000, right: 80000 });
     expect(floating!.horizontalPosition.relative).toBe("column");
@@ -269,7 +269,7 @@ describe("drawingDesc round-trip", () => {
   });
 
   it("round-trips image rotation via pic:spPr/a:xfrm/@rot", () => {
-    // parseImageRun must read pic:spPr/a:xfrm/@rot (ST_Angle, 1/60000 deg) and
+    // parsePictureRun must read pic:spPr/a:xfrm/@rot (ST_Angle, 1/60000 deg) and
     // convert to degrees — otherwise rotated images lose orientation on round-trip.
     const base = makeImageMediaData();
     const xml = stringify({
@@ -279,9 +279,9 @@ describe("drawingDesc round-trip", () => {
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = drawingDesc.parse(el, mediaReadCtx) as {
-      image?: { transformation?: { rotation?: number } };
+      picture?: { transformation?: { rotation?: number } };
     };
     // 16200000 / 60000 = 270 degrees
-    expect(result.image?.transformation?.rotation).toBe(270);
+    expect(result.picture?.transformation?.rotation).toBe(270);
   });
 });

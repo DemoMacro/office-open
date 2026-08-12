@@ -1,4 +1,4 @@
-// Image effects (shadow, glow, reflection, fillOverlay) applied via ImageRun
+// Image effects (shadow, glow, reflection, fillOverlay) applied via the picture child
 import { readFileSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
@@ -13,7 +13,7 @@ const buffer = await generateDocument({
               {
                 bold: true,
                 size: 16,
-                text: "Image Effects (via ImageRun)",
+                text: "Picture Effects (via the picture child)",
               },
             ],
             spacing: { after: 400 },
@@ -36,7 +36,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   effects: {
                     outerShadow: {
@@ -75,7 +75,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   effects: {
                     glow: {
@@ -112,7 +112,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   effects: {
                     reflection: {
@@ -149,7 +149,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   effects: {
                     softEdge: 50800,
@@ -183,7 +183,7 @@ const buffer = await generateDocument({
           paragraph: {
             children: [
               {
-                image: {
+                picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   effects: {
                     glow: {

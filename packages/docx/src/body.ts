@@ -1233,8 +1233,8 @@ function parseRunLevelChildren(
               }
             }
             if (runProperties) {
-              if ("image" in drawingChild) {
-                drawingChild.image.runProperties = runProperties;
+              if ("picture" in drawingChild) {
+                drawingChild.picture.runProperties = runProperties;
               } else if ("wpsShape" in drawingChild) {
                 drawingChild.wpsShape.runProperties = runProperties;
               } else if ("wpgGroup" in drawingChild) {

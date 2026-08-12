@@ -23,7 +23,7 @@ import type { RunOptions, RunPropertiesOptions } from "./run";
 import type { ChartOptions } from "./run/chart-run";
 import type { CommentChildOptions } from "./run/comment-run";
 import type { FormFieldOptions } from "./run/form-field";
-import type { ImageOptions } from "./run/image-run";
+import type { PictureOptions } from "./run/picture-run";
 import type { RubyOptions } from "./run/ruby";
 import type { SimpleFieldOptions } from "./run/simple-field";
 import type { SmartArtOptions } from "./run/smartart-run";
@@ -51,7 +51,7 @@ export interface FootnoteEndnoteReferenceOptions {
 export type ParagraphChild =
   | { chart: ChartOptions }
   | { smartArt: SmartArtOptions }
-  | { image: ImageOptions }
+  | { picture: PictureOptions }
   | { math: { children?: MathInput[] } }
   | { symbolRun: SymbolRunOptions }
   | { footnoteReference: number | FootnoteEndnoteReferenceOptions }

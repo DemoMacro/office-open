@@ -21,7 +21,7 @@ export type {
 export { worksheetDesc, stringifyWorksheet, buildWorksheetXml } from "./worksheet";
 export type {
   WorksheetOptions,
-  WorksheetImageOptions,
+  PictureOptions,
   WorksheetContext,
   RowOptions,
   CellOptions,
@@ -54,7 +54,7 @@ export { commentsDesc, vmlNotesDesc, type CommentsDocOptions } from "./comments"
 export {
   drawingDesc,
   type DrawingOptions,
-  type PictureOptions,
+  type DrawingPictureOptions,
   type DrawingChartOptions,
   type ShapeOptions,
   type ConnectorOptions,
