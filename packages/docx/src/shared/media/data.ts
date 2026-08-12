@@ -1,6 +1,7 @@
 import type {
   EffectListOptions,
   FillOptions,
+  NonVisualDrawingPropertiesOptions,
   OutlineOptions,
   SourceRectangleOptions,
 } from "@office-open/core/drawingml";
@@ -57,10 +58,8 @@ export interface MediaDataTransformation {
  * All fields optional to mirror the source element: `description` is omitted when
  * absent rather than emitted as an empty attribute (Word never writes it empty).
  */
-export interface NonVisualPropertiesOptions {
+export interface NonVisualPropertiesOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
-  description?: string;
   /**
    * From the sibling pic:cNvPicPr. Omitted = Word's default (true); only
    * `false` is emitted as preferRelativeResize="0" because Word never writes

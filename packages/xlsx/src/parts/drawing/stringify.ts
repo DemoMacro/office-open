@@ -11,11 +11,13 @@ import {
   connectorLockingDesc,
   shapePropertiesDesc,
   stringifyEndpointConnection,
+  stringifyNonVisualDrawingProperties,
   textBodyDesc,
 } from "@office-open/core/drawingml";
 import type {
   ConnectorLockingOptions,
   EndpointConnectionOptions,
+  NonVisualDrawingPropertiesOptions,
   ShapePropertiesOptions,
   TextBodyOptions,
 } from "@office-open/core/drawingml";
@@ -92,13 +94,19 @@ export function wrapAnchor(opts: DrawingAnchorOptions, inner: string): string {
   return `<twoCellAnchor editAs="${editAs}"><from>${from}</from><to>${to}</to>${inner}</twoCellAnchor>`;
 }
 
-function picXml(rId: string, id: number, cx: number, cy: number, ctx: WriteContext): string {
+function picXml(
+  img: DrawingPictureOptions,
+  id: number,
+  cx: number,
+  cy: number,
+  ctx: WriteContext,
+): string {
   const spPr =
     shapePropertiesDesc.stringify({ x: 0, y: 0, width: cx, height: cy, geometry: "rect" }, ctx) ??
     "";
   return (
-    `<pic><nvPicPr><cNvPr id="${id}" name="Picture ${id}"/><cNvPicPr preferRelativeResize="1"/></nvPicPr>` +
-    `<blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></blipFill>` +
+    `<pic><nvPicPr>${stringifyNonVisualDrawingProperties("cNvPr", id, img, `Picture ${id}`)}<cNvPicPr preferRelativeResize="1"/></nvPicPr>` +
+    `<blipFill><a:blip r:embed="${img.rId}"/><a:stretch><a:fillRect/></a:stretch></blipFill>` +
     `<spPr>${spPr}</spPr></pic>`
   );
 }
@@ -106,7 +114,7 @@ function picXml(rId: string, id: number, cx: number, cy: number, ctx: WriteConte
 export function stringifyImage(img: DrawingPictureOptions, id: number, ctx: WriteContext): string {
   const cx = convertToEmu(img.extentCx ?? DEFAULT_EXTENT_CX);
   const cy = convertToEmu(img.extentCy ?? DEFAULT_EXTENT_CY);
-  const pic = picXml(img.rId, id, cx, cy, ctx);
+  const pic = picXml(img, id, cx, cy, ctx);
   return wrapAnchor(img, `${pic}${clientDataXml(img)}`);
 }
 
@@ -117,7 +125,7 @@ export function stringifyChart(chart: DrawingChartOptions, id: number): string {
   const clientData = clientDataXml(chart);
   return (
     `<twoCellAnchor editAs="oneCell"><from>${from}</from><to>${to}</to>` +
-    `<graphicFrame><nvGraphicFramePr><cNvPr id="${id}" name="Chart ${id}"/>` +
+    `<graphicFrame><nvGraphicFramePr>${stringifyNonVisualDrawingProperties("cNvPr", id, chart, `Chart ${id}`)}` +
     `<cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></cNvGraphicFramePr></nvGraphicFramePr>` +
     `<xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xfrm>` +
     `<a:graphic><a:graphicData uri="${C_URI}">` +
@@ -128,8 +136,9 @@ export function stringifyChart(chart: DrawingChartOptions, id: number): string {
 
 /** Build the inner xdr:sp content (nvSpPr + spPr + optional txBody). */
 function buildShapeContent(
-  name: string,
+  cNvPr: NonVisualDrawingPropertiesOptions | undefined,
   id: number,
+  fallbackName: string,
   spPr: ShapePropertiesOptions,
   textBody: TextBodyOptions | undefined,
   ctx: WriteContext,
@@ -137,13 +146,14 @@ function buildShapeContent(
 ): string {
   const spPrXml = shapePropertiesDesc.stringify(spPr, ctx) ?? "";
   const txBodyXml = textBody ? `<txBody>${textBodyDesc.stringify(textBody, ctx)}</txBody>` : "";
-  return `<sp${attrs}><nvSpPr><cNvPr id="${id}" name="${escapeXml(name)}"/><cNvSpPr/></nvSpPr><spPr>${spPrXml}</spPr>${txBodyXml}</sp>`;
+  return `<sp${attrs}><nvSpPr>${stringifyNonVisualDrawingProperties("cNvPr", id, cNvPr, fallbackName)}<cNvSpPr/></nvSpPr><spPr>${spPrXml}</spPr>${txBodyXml}</sp>`;
 }
 
 /** Build the inner xdr:cxnSp content (nvCxnSpPr + spPr). */
 function buildConnectorContent(
-  name: string,
+  cNvPr: NonVisualDrawingPropertiesOptions | undefined,
   id: number,
+  fallbackName: string,
   spPr: ShapePropertiesOptions,
   ctx: WriteContext,
   attrs = "",
@@ -168,13 +178,14 @@ function buildConnectorContent(
   const cNvCxnSpPr = cNvCxnSpPrInner.length
     ? `<cNvCxnSpPr>${cNvCxnSpPrInner.join("")}</cNvCxnSpPr>`
     : "<cNvCxnSpPr/>";
-  return `<cxnSp${attrs}><nvCxnSpPr><cNvPr id="${id}" name="${escapeXml(name)}"/>${cNvCxnSpPr}</nvCxnSpPr><spPr>${spPrXml}</spPr></cxnSp>`;
+  return `<cxnSp${attrs}><nvCxnSpPr>${stringifyNonVisualDrawingProperties("cNvPr", id, cNvPr, fallbackName)}${cNvCxnSpPr}</nvCxnSpPr><spPr>${spPrXml}</spPr></cxnSp>`;
 }
 
 export function stringifyShape(shape: ShapeOptions, id: number, ctx: WriteContext): string {
   const xml = buildShapeContent(
-    shape.name ?? `Shape ${id}`,
+    shape,
     id,
+    `Shape ${id}`,
     shape.spPr,
     shape.textBody,
     ctx,
@@ -185,8 +196,9 @@ export function stringifyShape(shape: ShapeOptions, id: number, ctx: WriteContex
 
 export function stringifyConnector(conn: ConnectorOptions, id: number, ctx: WriteContext): string {
   const xml = buildConnectorContent(
-    conn.name ?? `Connector ${id}`,
+    conn,
     id,
+    `Connector ${id}`,
     conn.spPr,
     ctx,
     macroTextlinkAttrs(conn),
@@ -211,8 +223,9 @@ export function buildGroup(
   for (const childShape of grp.shapes ?? []) {
     children.push(
       buildShapeContent(
-        childShape.name ?? `Shape ${childId}`,
+        childShape,
         childId,
+        `Shape ${childId}`,
         childShape.spPr,
         childShape.textBody,
         ctx,
@@ -224,8 +237,9 @@ export function buildGroup(
   for (const childConn of grp.connectors ?? []) {
     children.push(
       buildConnectorContent(
-        childConn.name ?? `Connector ${childId}`,
+        childConn,
         childId,
+        `Connector ${childId}`,
         childConn.spPr,
         ctx,
         macroTextlinkAttrs(childConn),
@@ -235,7 +249,7 @@ export function buildGroup(
     childId++;
   }
   const xml =
-    `<grpSp><nvGrpSpPr><cNvPr id="${id}" name="${escapeXml(grp.name ?? `Group ${id}`)}"/><cNvGrpSpPr/></nvGrpSpPr>` +
+    `<grpSp><nvGrpSpPr>${stringifyNonVisualDrawingProperties("cNvPr", id, grp, `Group ${id}`)}<cNvGrpSpPr/></nvGrpSpPr>` +
     `<grpSpPr>${grpSpPrXml}</grpSpPr>${children.join("")}</grpSp>`;
   return { xml, nextId: childId };
 }

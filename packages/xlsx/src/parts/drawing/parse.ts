@@ -9,6 +9,7 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import {
   connectorLockingDesc,
   parseEndpointConnection,
+  parseNonVisualDrawingProperties,
   shapePropertiesDesc,
   textBodyDesc,
 } from "@office-open/core/drawingml";
@@ -16,6 +17,7 @@ import type {
   ConnectorLockingOptions,
   EndpointConnectionOptions,
   GroupTransform2DOptions,
+  NonVisualDrawingPropertiesOptions,
 } from "@office-open/core/drawingml";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -124,11 +126,14 @@ function readAnchorFields(anchor: XmlElement, name: string, result: DrawingAncho
   if (editAs) result.editAs = editAs;
 }
 
-/** Read cNvPr name from a non-visual properties child (nvSpPr/nvCxnSpPr/nvGrpSpPr). */
-function readCNvName(parent: XmlElement, nonVisualTag: string): string | undefined {
+/** Read cNvPr (a:CT_NonVisualDrawingProps) from a non-visual properties child. */
+function readCNvPr(
+  parent: XmlElement,
+  nonVisualTag: string,
+): Partial<NonVisualDrawingPropertiesOptions> {
   const nonVisual = findChild(parent, nonVisualTag);
   const cNvPr = nonVisual ? findChild(nonVisual, "cNvPr") : undefined;
-  return cNvPr?.attributes?.["name"] !== undefined ? String(cNvPr.attributes["name"]) : undefined;
+  return parseNonVisualDrawingProperties(cNvPr);
 }
 
 export function parseImageAnchor(
@@ -213,8 +218,7 @@ export function parseShapeAnchor(
   const result = { col: 1, row: 1, spPr: {} } as ShapeOptions;
   readAnchorFields(anchor, name, result);
 
-  const cNvName = readCNvName(sp, "nvSpPr");
-  if (cNvName !== undefined) result.name = cNvName;
+  Object.assign(result, readCNvPr(sp, "nvSpPr"));
 
   const spPr = findChild(sp, "spPr");
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
@@ -268,8 +272,7 @@ export function parseConnectorAnchor(
   const result = { col: 1, row: 1, spPr: {} } as ConnectorOptions;
   readAnchorFields(anchor, name, result);
 
-  const cNvName = readCNvName(cxnSp, "nvCxnSpPr");
-  if (cNvName !== undefined) result.name = cNvName;
+  Object.assign(result, readCNvPr(cxnSp, "nvCxnSpPr"));
 
   const spPr = findChild(cxnSp, "spPr");
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
@@ -289,8 +292,7 @@ export function parseGroupAnchor(
   const result = { col: 1, row: 1, grpSpPr: {} } as GroupOptions;
   readAnchorFields(anchor, name, result);
 
-  const cNvName = readCNvName(grpSp, "nvGrpSpPr");
-  if (cNvName !== undefined) result.name = cNvName;
+  Object.assign(result, readCNvPr(grpSp, "nvGrpSpPr"));
 
   const grpSpPrEl = findChild(grpSp, "grpSpPr");
   if (grpSpPrEl) {
@@ -305,8 +307,7 @@ export function parseGroupAnchor(
       const childShape = {
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupShapeChildOptions;
-      const childName = readCNvName(child, "nvSpPr");
-      if (childName !== undefined) childShape.name = childName;
+      Object.assign(childShape, readCNvPr(child, "nvSpPr"));
       const txBody = findChild(child, "txBody");
       if (txBody) childShape.textBody = textBodyDesc.parse(txBody, ctx);
       if (child.attributes?.["macro"] !== undefined)
@@ -319,8 +320,7 @@ export function parseGroupAnchor(
       const childConn = {
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupConnectorChildOptions;
-      const childName = readCNvName(child, "nvCxnSpPr");
-      if (childName !== undefined) childConn.name = childName;
+      Object.assign(childConn, readCNvPr(child, "nvCxnSpPr"));
       if (child.attributes?.["macro"] !== undefined)
         childConn.macro = String(child.attributes["macro"]);
       readConnectorNonVisual(childConn, child, ctx);

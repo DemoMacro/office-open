@@ -11,19 +11,22 @@
 import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import {
+  stringifyNonVisualDrawingProperties,
+  parseNonVisualDrawingProperties,
+} from "@office-open/core/drawingml";
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import { createDataModel, type TreeNode } from "@office-open/core/smartart";
 import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { escapeXml } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import { readPositionFromXfrm } from "./shape";
 
 // ── Types ──
 
-export interface SmartArtDescriptorOptions {
+export interface SmartArtDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -83,7 +86,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
 
     // p:nvGraphicFramePr
     parts.push(
-      `<p:nvGraphicFramePr><p:cNvPr id="${id}" name="${escapeXml(name)}"/>` +
+      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
         `<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>` +
         `<p:nvPr/></p:nvGraphicFramePr>`,
     );
@@ -113,10 +116,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
     const nvGfxFramePr = findChild(el, "p:nvGraphicFramePr");
     if (nvGfxFramePr) {
       const cNvPr = findChild(nvGfxFramePr, "p:cNvPr");
-      if (cNvPr) {
-        const name = attr(cNvPr, "name");
-        if (name) result.name = name;
-      }
+      Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
     }
 
     // SmartArt data via dgm:relIds → r:dm

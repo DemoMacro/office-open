@@ -354,3 +354,38 @@ describe("drawing shape hyperlink — compiler resolution", () => {
     expect(drawingRels).toContain("https://example.com");
   });
 });
+
+describe("drawing picture cNvPr — compiler passthrough", () => {
+  it("threads worksheet picture name/description/title/hidden through to the drawing cNvPr", async () => {
+    const buffer = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet1",
+            images: [
+              {
+                type: "png",
+                data: "AAAA",
+                col: 1,
+                row: 1,
+                name: "Logo",
+                description: "Company logo",
+                title: "Logo title",
+                hidden: true,
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    const unzipped = unzipSync(buffer);
+    const drawingXml = new TextDecoder().decode(unzipped["xl/drawings/drawing1.xml"]);
+
+    expect(drawingXml).toContain('name="Logo"');
+    expect(drawingXml).toContain('descr="Company logo"');
+    expect(drawingXml).toContain('title="Logo title"');
+    expect(drawingXml).toContain('hidden="1"');
+  });
+});

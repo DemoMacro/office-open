@@ -23,6 +23,8 @@ import {
   shape3DDesc,
   shapePropertiesDesc,
   textBodyDesc,
+  stringifyNonVisualDrawingProperties,
+  parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
 import type {
   FillOptions as CoreFillOptions,
@@ -33,6 +35,7 @@ import type {
   EffectListOptions,
   Scene3DOptions,
   Shape3DOptions,
+  NonVisualDrawingPropertiesOptions,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
@@ -48,9 +51,8 @@ export interface ShapeStyleDescriptorOptions {
   fontReference?: { index: number; color?: string };
 }
 
-export interface ShapeDescriptorOptions {
+export interface ShapeDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -91,9 +93,8 @@ export interface ShapeDescriptorOptions {
     | "hidden";
 }
 
-export interface PictureDescriptorOptions {
+export interface PictureDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -238,7 +239,7 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
     const parts: string[] = [];
 
     // ── p:nvPicPr ──
-    parts.push(stringifyNvPicPr(id, name));
+    parts.push(stringifyNvPicPr(id, name, opts));
 
     // ── p:blipFill ──
     parts.push(stringifyPptxBlipFill(mediaEntry.fileName));
@@ -257,9 +258,9 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
     const nvPicPr = findChild(el, "p:nvPicPr");
     if (nvPicPr) {
       const cNvPr = findChild(nvPicPr, "p:cNvPr");
-      if (cNvPr?.attributes) {
-        if (cNvPr.attributes["id"] !== undefined) result.id = Number(cNvPr.attributes["id"]);
-        if (cNvPr.attributes["name"] !== undefined) result.name = String(cNvPr.attributes["name"]);
+      Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
+      if (cNvPr?.attributes && cNvPr.attributes["id"] !== undefined) {
+        result.id = Number(cNvPr.attributes["id"]);
       }
     }
 
@@ -341,7 +342,8 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeDescriptorOptions)
     }
   }
 
-  return `<p:nvSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/>${cNvSpPrContent}${nvPrContent}</p:nvSpPr>`;
+  const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name);
+  return `<p:nvSpPr>${cNvPrXml}${cNvSpPrContent}${nvPrContent}</p:nvSpPr>`;
 }
 
 function buildLockAttrs(opts: ShapeLockingOptions): string[] {
@@ -457,8 +459,9 @@ function stringifyStyle(style: ShapeStyleDescriptorOptions): string | undefined 
 
 // ── Picture helpers ──
 
-function stringifyNvPicPr(id: number, name: string): string {
-  return `<p:nvPicPr><p:cNvPr id="${id}" name="${escapeXml(name)}" descr=""/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>`;
+function stringifyNvPicPr(id: number, name: string, opts?: PictureDescriptorOptions): string {
+  const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name);
+  return `<p:nvPicPr>${cNvPrXml}<p:cNvPicPr/><p:nvPr/></p:nvPicPr>`;
 }
 
 /** PPTX uses p:blipFill (not pic:blipFill). */
@@ -489,9 +492,9 @@ export function readNvSpPr(nvSpPr: XmlElement): ShapeDescriptorOptions {
   const result: ShapeDescriptorOptions = {};
 
   const cNvPr = findChild(nvSpPr, "p:cNvPr");
-  if (cNvPr?.attributes) {
-    if (cNvPr.attributes["id"] !== undefined) result.id = Number(cNvPr.attributes["id"]);
-    if (cNvPr.attributes["name"] !== undefined) result.name = String(cNvPr.attributes["name"]);
+  Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
+  if (cNvPr?.attributes && cNvPr.attributes["id"] !== undefined) {
+    result.id = Number(cNvPr.attributes["id"]);
   }
 
   const nvPr = findChild(nvSpPr, "p:nvPr");

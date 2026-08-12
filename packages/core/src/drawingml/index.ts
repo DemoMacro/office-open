@@ -158,6 +158,14 @@ export {
   type EndpointConnectionOptions,
 } from "./connection";
 
+// Non-visual drawing properties (cNvPr/docPr — a:CT_NonVisualDrawingProps)
+export {
+  stringifyNonVisualDrawingProperties,
+  parseNonVisualDrawingProperties,
+  pickNonVisualDrawingProperties,
+  type NonVisualDrawingPropertiesOptions,
+} from "./non-visual";
+
 // Diagram (SmartArt dgm: elements)
 export {
   // Layout variable property set

@@ -14,21 +14,22 @@ import {
   outlineDesc,
   parseEndpointConnection,
   stringifyEndpointConnection,
+  stringifyNonVisualDrawingProperties,
+  parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
 import type {
   EndpointConnectionOptions,
   ConnectorLockingOptions,
+  NonVisualDrawingPropertiesOptions,
   OutlineOptions,
 } from "@office-open/core/drawingml";
-import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
-import { escapeXml } from "@office-open/xml";
+import { attrBool, attrNum, findChild } from "@office-open/xml";
 import type { FillOptions } from "@shared/drawingml/fill";
 
 // ── Types ──
 
-export interface LineShapeDescriptorOptions {
+export interface LineShapeDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x1?: number | UniversalMeasure;
   y1?: number | UniversalMeasure;
   x2?: number | UniversalMeasure;
@@ -37,9 +38,8 @@ export interface LineShapeDescriptorOptions {
   outline?: OutlineOptions;
 }
 
-export interface ConnectorShapeDescriptorOptions {
+export interface ConnectorShapeDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x1?: number | UniversalMeasure;
   y1?: number | UniversalMeasure;
   x2?: number | UniversalMeasure;
@@ -80,7 +80,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
 
     // p:nvSpPr
     parts.push(
-      `<p:nvSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>`,
+      `<p:nvSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`,
     );
 
     // p:spPr
@@ -126,10 +126,9 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
     if (nvSpPr) {
       const cNvPr = findChild(nvSpPr, "p:cNvPr");
       if (cNvPr) {
+        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
         const id = attrNum(cNvPr, "id");
         if (id !== undefined) result.id = id;
-        const name = attr(cNvPr, "name");
-        if (name) result.name = name;
       }
     }
 
@@ -213,7 +212,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
       ? `<p:cNvCxnSpPr>${cNvCxnSpPrInner.join("")}</p:cNvCxnSpPr>`
       : "<p:cNvCxnSpPr/>";
     parts.push(
-      `<p:nvCxnSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/>${cNvCxnSpPr}<p:nvPr/></p:nvCxnSpPr>`,
+      `<p:nvCxnSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvCxnSpPr}<p:nvPr/></p:nvCxnSpPr>`,
     );
 
     // p:spPr
@@ -255,10 +254,9 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
     if (nvCxnSpPr) {
       const cNvPr = findChild(nvCxnSpPr, "p:cNvPr");
       if (cNvPr) {
+        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
         const id = attrNum(cNvPr, "id");
         if (id !== undefined) result.id = id;
-        const name = attr(cNvPr, "name");
-        if (name) result.name = name;
       }
       const cNvCxnSpPr = findChild(nvCxnSpPr, "p:cNvCxnSpPr");
       if (cNvCxnSpPr) {

@@ -11,8 +11,12 @@ import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import {
+  stringifyNonVisualDrawingProperties,
+  parseNonVisualDrawingProperties,
+} from "@office-open/core/drawingml";
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
-import { escapeXml } from "@office-open/xml";
 
 import { readPositionFromXfrm } from "./shape";
 
@@ -22,9 +26,8 @@ export type VideoType = "mp4" | "mov" | "wmv" | "avi";
 export type AudioType = "mp3" | "wav" | "wma" | "aac";
 export type PosterType = "png" | "jpg";
 
-export interface VideoDescriptorOptions {
+export interface VideoDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -35,9 +38,8 @@ export interface VideoDescriptorOptions {
   posterType?: PosterType;
 }
 
-export interface AudioDescriptorOptions {
+export interface AudioDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -76,7 +78,7 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
 
     // p:nvPicPr
     parts.push(
-      `<p:nvPicPr><p:cNvPr id="${id}" name="${escapeXml(name)}" descr=""/>` +
+      `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
         `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
         `<p:nvPr><a:videoFile r:link="{video:${mediaFileName}}"/>` +
         `<p:extLst><p:ext uri="${VIDEO_EXT_URI}">` +
@@ -113,10 +115,9 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
     if (nvPicPr) {
       const cNvPr = findChild(nvPicPr, "a:cNvPr") ?? findChild(nvPicPr, "p:cNvPr");
       if (cNvPr) {
+        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
         const id = attrNum(cNvPr, "id");
         if (id !== undefined) result.id = id;
-        const name = attr(cNvPr, "name");
-        if (name) result.name = name;
       }
     }
 
@@ -177,7 +178,7 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
 
     // p:nvPicPr
     parts.push(
-      `<p:nvPicPr><p:cNvPr id="${id}" name="${escapeXml(name)}" descr=""/>` +
+      `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
         `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
         `<p:nvPr><p:extLst><p:ext uri="${AUDIO_EXT_URI}">` +
         `<p14:media r:embed="{media:${mediaFileName}}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"/>` +
@@ -211,10 +212,9 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
     if (nvPicPr) {
       const cNvPr = findChild(nvPicPr, "a:cNvPr") ?? findChild(nvPicPr, "p:cNvPr");
       if (cNvPr) {
+        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
         const id = attrNum(cNvPr, "id");
         if (id !== undefined) result.id = id;
-        const name = attr(cNvPr, "name");
-        if (name) result.name = name;
       }
     }
 

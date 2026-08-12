@@ -7,6 +7,7 @@ export * from "./opc";
 export * from "./smartart";
 export * from "./chart";
 export * from "./table";
+export * from "./picture";
 export * from "./drawingml";
 export * from "./patch";
 export * from "./theme";

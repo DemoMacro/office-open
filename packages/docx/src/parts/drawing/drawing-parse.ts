@@ -13,6 +13,7 @@ import {
   fillDesc,
   outlineDesc,
   parseColorChoice,
+  parseNonVisualDrawingProperties,
   presetGeometryDesc,
 } from "@office-open/core";
 import { scene3DDesc, shape3DDesc } from "@office-open/core/drawingml";
@@ -205,16 +206,11 @@ function parseAnchorOrInline(el: Element): AnchorInfo | null {
   // Alt text (wp:docPr) — keep the id too so it round-trips verbatim
   const docPr = findChild(parent, "wp:docPr");
   if (docPr) {
+    const cNvPrOpts = parseNonVisualDrawingProperties(docPr);
     const id = attr(docPr, "id");
-    const name = attr(docPr, "name");
-    const descr = attr(docPr, "descr");
-    const title = attr(docPr, "title");
-    if (id !== undefined || name || descr || title) {
-      const alt: Partial<DocPropertiesOptions> = {};
+    if (id !== undefined || Object.keys(cNvPrOpts).length > 0) {
+      const alt: Partial<DocPropertiesOptions> = { ...cNvPrOpts };
       if (id !== undefined) alt.id = id;
-      if (name) alt.name = name;
-      if (descr) alt.description = descr;
-      if (title) alt.title = title;
       info.altText = alt as DocPropertiesOptions;
     }
   }
@@ -457,15 +453,11 @@ function readSourceRectangle(parent: Element): SourceRectangleOptions | undefine
 function readPicCnvPr(el: Element): NonVisualPropertiesOptions | undefined {
   const nvPicPr = findFirst(el, "pic:nvPicPr");
   if (!nvPicPr) return undefined;
-  const result: NonVisualPropertiesOptions = {};
   const cNvPr = findChild(nvPicPr, "pic:cNvPr");
+  const result: NonVisualPropertiesOptions = { ...parseNonVisualDrawingProperties(cNvPr) };
   if (cNvPr) {
     const id = attrNum(cNvPr, "id");
-    const name = attr(cNvPr, "name");
-    const descr = attr(cNvPr, "descr");
     if (id !== undefined) result.id = id;
-    if (name) result.name = name;
-    if (descr) result.description = descr;
   }
   // pic:cNvPicPr sibling — only preferRelativeResize is tracked (Word omits
   // the default true; an explicit false round-trips as "0").

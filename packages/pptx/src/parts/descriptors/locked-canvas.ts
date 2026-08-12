@@ -9,6 +9,11 @@
 import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import {
+  stringifyNonVisualDrawingProperties,
+  parseNonVisualDrawingProperties,
+} from "@office-open/core/drawingml";
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 
 // ── Types ──
@@ -23,9 +28,8 @@ export interface LockedCanvasShapeDescriptorOptions {
   textBody?: string;
 }
 
-export interface LockedCanvasDescriptorOptions {
+export interface LockedCanvasDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -56,7 +60,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
 
     // p:nvGraphicFramePr
     parts.push(
-      `<p:nvGraphicFramePr><p:cNvPr id="${id}" name="${escapeXml(name)}"/>` +
+      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
         `<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>` +
         `<p:nvPr/></p:nvGraphicFramePr>`,
     );
@@ -89,10 +93,9 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
     if (nvGrFrm) {
       const cnvPr = findChild(nvGrFrm, "p:cNvPr");
       if (cnvPr) {
+        Object.assign(result, parseNonVisualDrawingProperties(cnvPr));
         const id = attrNum(cnvPr, "id");
         if (id !== undefined) result.id = id;
-        const name = attr(cnvPr, "name");
-        if (name !== undefined) result.name = name;
       }
     }
 

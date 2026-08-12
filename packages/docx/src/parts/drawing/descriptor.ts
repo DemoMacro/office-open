@@ -32,6 +32,7 @@ import {
   calculateEffectExtent,
   createColorElement,
   shapePropertiesDesc,
+  stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
 import { escapeXml } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
@@ -214,19 +215,13 @@ function buildHyperlinkChildren(ids: HyperlinkIds): string {
 
 function stringifyDocPr(opts: DocPropertiesOptions | undefined, hlIds: HyperlinkIds): string {
   const id = opts?.id ?? _docPropsIdGen();
-  const name = opts?.name ?? "";
-  const attrs: string[] = [`id="${id}"`, `name="${escapeXml(name)}"`];
-  if (opts?.description != null && opts.description !== undefined) {
-    attrs.push(`descr="${escapeXml(opts.description)}"`);
-  }
-  if (opts?.title != null && opts.title !== undefined) {
-    attrs.push(`title="${escapeXml(opts.title)}"`);
-  }
-  const hlXml = buildHyperlinkChildren(hlIds);
-  if (hlXml) {
-    return `<wp:docPr ${attrs.join(" ")}>${hlXml}</wp:docPr>`;
-  }
-  return `<wp:docPr ${attrs.join(" ")}/>`;
+  return stringifyNonVisualDrawingProperties(
+    "wp:docPr",
+    id,
+    opts,
+    "",
+    buildHyperlinkChildren(hlIds),
+  );
 }
 
 // ── BlipFill (image data reference) ──
@@ -353,18 +348,17 @@ function stringifyShapeProps(
 // ── Non-visual picture properties (pic:nvPicPr) ──
 
 function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: NonVisualPropertiesOptions): string {
-  const hlXml = buildHyperlinkChildren(hlIds);
   const id = cNvPr?.id ?? 0;
-  const name = escapeXml(cNvPr?.name ?? "");
-  // descr omitted when absent — Word never writes an empty descr attribute.
-  const descrAttr = cNvPr?.description ? ` descr="${escapeXml(cNvPr.description)}"` : "";
+  const cNvPrXml = stringifyNonVisualDrawingProperties(
+    "pic:cNvPr",
+    id,
+    cNvPr,
+    "",
+    buildHyperlinkChildren(hlIds),
+  );
   // preferRelativeResize defaults to true; only an explicit false is written.
   const cNvPicPrAttr = cNvPr?.preferRelativeResize === false ? ' preferRelativeResize="0"' : "";
-  const cNvPrClose = hlXml ? `>${hlXml}</pic:cNvPr>` : "/>";
-  return (
-    `<pic:nvPicPr><pic:cNvPr id="${id}" name="${name}"${descrAttr}${cNvPrClose}` +
-    `<pic:cNvPicPr${cNvPicPrAttr}><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr>`
-  );
+  return `<pic:nvPicPr>${cNvPrXml}<pic:cNvPicPr${cNvPicPrAttr}><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr>`;
 }
 
 // ── WPS shape (pure string, no class instances) ──

@@ -8,13 +8,18 @@ import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
-import { effectListDesc, fillDesc } from "@office-open/core/drawingml";
+import {
+  effectListDesc,
+  fillDesc,
+  stringifyNonVisualDrawingProperties,
+  parseNonVisualDrawingProperties,
+} from "@office-open/core/drawingml";
 import type {
   FillOptions as CoreFillOptions,
   EffectListOptions,
+  NonVisualDrawingPropertiesOptions,
 } from "@office-open/core/drawingml";
-import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
-import { escapeXml } from "@office-open/xml";
+import { attrBool, attrNum, findChild } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 
 import type { PptxWriteContext } from "../../context";
@@ -22,9 +27,8 @@ import { parseChild, stringifyChild } from "./bridge";
 
 // ── Types ──
 
-export interface GroupShapeDescriptorOptions {
+export interface GroupShapeDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -90,7 +94,7 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
 
     // p:nvGrpSpPr
     parts.push(
-      `<p:nvGrpSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>`,
+      `<p:nvGrpSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}<p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>`,
     );
 
     // p:grpSpPr
@@ -115,10 +119,9 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     if (nvGrpSpPr) {
       const cNvPr = findChild(nvGrpSpPr, "p:cNvPr");
       if (cNvPr) {
+        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
         const id = attrNum(cNvPr, "id");
         if (id !== undefined) result.id = id;
-        const name = attr(cNvPr, "name");
-        if (name) result.name = name;
       }
     }
 

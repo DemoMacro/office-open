@@ -9,6 +9,8 @@
  * @module
  */
 
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
+
 /**
  * Options for hyperlinks on a drawing element.
  */
@@ -24,13 +26,12 @@ export interface HyperlinkOptions {
  *
  * @see {@link DocProperties}
  */
-export interface DocPropertiesOptions {
-  /** Name of the drawing element (used for identification) */
+export interface DocPropertiesOptions extends NonVisualDrawingPropertiesOptions {
+  /**
+   * Name of the drawing element (wp:docPr @name is XSD-required). Re-declared
+   * required to keep the docx API strict, overriding the base optional.
+   */
   name: string;
-  /** Description/alt text for accessibility */
-  description?: string;
-  /** Title of the drawing element */
-  title?: string;
   id?: string;
   /** Hyperlink options for click and hover actions */
   hyperlink?: HyperlinkOptions;

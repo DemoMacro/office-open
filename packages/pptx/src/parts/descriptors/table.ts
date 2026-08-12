@@ -9,19 +9,23 @@ import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
-import { fillDesc } from "@office-open/core/drawingml";
-import type { FillOptions } from "@office-open/core/drawingml";
+import {
+  fillDesc,
+  stringifyNonVisualDrawingProperties,
+  parseNonVisualDrawingProperties,
+} from "@office-open/core/drawingml";
+import type { FillOptions, NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import {
   attr,
   attrBool,
   attrMeasure,
   attrNum,
   children,
+  escapeXml,
   findChild,
   textOf,
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { escapeXml } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import { readPositionFromXfrm } from "./shape";
@@ -75,9 +79,8 @@ export interface TableRowDescriptorOptions {
   cells: TableCellDescriptorOptions[];
 }
 
-export interface TableDescriptorOptions {
+export interface TableDescriptorOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
-  name?: string;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
@@ -118,7 +121,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
 
     // p:nvGraphicFramePr
     parts.push(
-      `<p:nvGraphicFramePr><p:cNvPr id="${id}" name="${escapeXml(name)}"/>` +
+      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
         `<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>` +
         `<p:nvPr/></p:nvGraphicFramePr>`,
     );
@@ -167,10 +170,9 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     if (nvGfxFramePr) {
       const cNvPr = findChild(nvGfxFramePr, "p:cNvPr");
       if (cNvPr) {
+        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
         const id = attrNum(cNvPr, "id");
         if (id !== undefined) result.id = id;
-        const name = attr(cNvPr, "name");
-        if (name) result.name = name;
       }
     }
 

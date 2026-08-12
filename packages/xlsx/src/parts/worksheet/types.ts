@@ -4,6 +4,7 @@
  * @module
  */
 import type {
+  BasePictureOptions,
   ChartSpaceOptions,
   DataType,
   PositiveUniversalMeasure,
@@ -263,8 +264,14 @@ export interface FreezePaneOptions {
   col?: number;
 }
 
-export interface PictureOptions {
-  data: DataType;
+/**
+ * Picture anchored to a worksheet cell.
+ *
+ * Extends the cross-format {@link BasePictureOptions} (binary data + non-visual
+ * drawing properties) with a 1-based cell anchor. The base cNvPr fields
+ * (name/description/title/hidden) flow through to the drawing's cNvPr.
+ */
+export interface PictureOptions extends Omit<BasePictureOptions, "type"> {
   type: "png" | "jpg";
   col: number;
   row: number;

@@ -15,6 +15,7 @@ import {
   compileMapping,
   contentTypesDesc,
   deriveContentTypes,
+  pickNonVisualDrawingProperties,
   resolverFromRegistry,
   XLSX_PARTS,
   customPropertiesDesc,
@@ -27,7 +28,7 @@ import type { CalcCell } from "@parts/calc-chain";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
-import type { ImageOptions, ChartAnchorOptions } from "@parts/drawing";
+import type { DrawingPictureOptions, ChartAnchorOptions } from "@parts/drawing";
 import { drawingDesc } from "@parts/drawing";
 import { externalLinkDesc } from "@parts/external-link";
 import type { WorkbookOptions } from "@parts/file";
@@ -233,7 +234,7 @@ export function compileWorkbook(
     }
 
     if (hasMedia) {
-      const drawingImages: ImageOptions[] = [];
+      const drawingImages: DrawingPictureOptions[] = [];
       const drawingCharts: ChartAnchorOptions[] = [];
       const drawingRels = new Relationships();
       let rid = 1;
@@ -260,6 +261,7 @@ export function compileWorkbook(
           col: img.col,
           row: img.row,
           rId: `rId${rid}`,
+          ...pickNonVisualDrawingProperties(img),
         });
         rid++;
         globalMediaIdx++;

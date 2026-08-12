@@ -12,6 +12,7 @@ import type {
   ConnectorLockingOptions,
   EndpointConnectionOptions,
   GroupTransform2DOptions,
+  NonVisualDrawingPropertiesOptions,
   ShapePropertiesOptions,
   TextBodyOptions,
 } from "@office-open/core/drawingml";
@@ -106,12 +107,13 @@ export interface DrawingAnchorOptions {
   printsWithSheet?: boolean;
 }
 
-export interface DrawingPictureOptions extends DrawingAnchorOptions {
+export interface DrawingPictureOptions
+  extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the image */
   rId: string;
 }
 
-export interface DrawingChartOptions {
+export interface DrawingChartOptions extends NonVisualDrawingPropertiesOptions {
   /** 1-based column */
   col: number;
   /** Column offset in EMU (default 0) */
@@ -129,9 +131,7 @@ export interface DrawingChartOptions {
 }
 
 /** Anchored shape (xdr:sp): geometry + optional text body. */
-export interface ShapeOptions extends DrawingAnchorOptions {
-  /** Shape name (cNvPr name). Defaults to "Shape <id>". */
-  name?: string;
+export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Shape properties (a:CT_ShapeProperties). */
   spPr: ShapePropertiesOptions;
   /** Text body (a:CT_TextBody). */
@@ -143,9 +143,7 @@ export interface ShapeOptions extends DrawingAnchorOptions {
 }
 
 /** Anchored connector (xdr:cxnSp): line/arrow geometry via spPr. */
-export interface ConnectorOptions extends DrawingAnchorOptions {
-  /** Connector name. Defaults to "Connector <id>". */
-  name?: string;
+export interface ConnectorOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Shape properties (a:CT_ShapeProperties, typically prstGeom="line"). */
   spPr: ShapePropertiesOptions;
   /** macro attribute (CT_Connector). */
@@ -159,8 +157,7 @@ export interface ConnectorOptions extends DrawingAnchorOptions {
 }
 
 /** Shape nested inside a group (no anchor — positioned via spPr.xfrm). */
-export interface GroupShapeChildOptions {
-  name?: string;
+export interface GroupShapeChildOptions extends NonVisualDrawingPropertiesOptions {
   spPr: ShapePropertiesOptions;
   textBody?: TextBodyOptions;
   macro?: string;
@@ -168,8 +165,7 @@ export interface GroupShapeChildOptions {
 }
 
 /** Connector nested inside a group (no anchor). */
-export interface GroupConnectorChildOptions {
-  name?: string;
+export interface GroupConnectorChildOptions extends NonVisualDrawingPropertiesOptions {
   spPr: ShapePropertiesOptions;
   macro?: string;
   /** a:cxnSpLocks — connector locking (inside cNvCxnSpPr). */
@@ -181,9 +177,7 @@ export interface GroupConnectorChildOptions {
 }
 
 /** Anchored group (xdr:grpSp): group transform + nested shapes/connectors. */
-export interface GroupOptions extends DrawingAnchorOptions {
-  /** Group name. Defaults to "Group <id>". */
-  name?: string;
+export interface GroupOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Group shape properties (a:CT_GroupShapeProperties: group xfrm + fill/ln). */
   grpSpPr: GroupTransform2DOptions;
   /** Nested shapes. */
