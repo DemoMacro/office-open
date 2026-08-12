@@ -10,15 +10,14 @@ import type {
   SolidFillOptions,
 } from "@office-open/core/drawingml";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+
 /**
- * WPS shape types for WordprocessingML documents.
+ * Shape types for WordprocessingML drawings.
  *
- * Provides type definitions for WPS shape elements in drawingML.
+ * Provides type definitions for shape elements in DrawingML.
  *
  * @module
  */
-import type { MediaDataTransformation } from "@shared/media";
-
 import type { BodyPropertiesOptions } from "./body-properties";
 import type { NonVisualShapePropertiesOptions } from "./non-visual-shape-properties";
 
@@ -44,7 +43,7 @@ export interface ShapeStyleOptions {
   fontReference?: StyleMatrixReferenceOptions;
 }
 
-export interface WpsShapeCoreOptions {
+export interface ShapeCoreOptions {
   children: (ParagraphOptions | string)[];
   nonVisualProperties?: NonVisualShapePropertiesOptions;
   bodyProperties?: BodyPropertiesOptions;
@@ -59,7 +58,3 @@ export interface WpsShapeCoreOptions {
   /** Theme style references (wps:style → lnRef/fillRef/effectRef/fontRef). */
   style?: ShapeStyleOptions;
 }
-
-export type WpsShapeOptions = WpsShapeCoreOptions & {
-  transformation: MediaDataTransformation;
-};

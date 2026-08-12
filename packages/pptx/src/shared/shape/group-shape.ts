@@ -15,9 +15,3 @@ export interface GroupOptions extends BaseGroupOptions {
   flipHorizontal?: boolean;
   children: SlideChild[];
 }
-
-/**
- * @deprecated Use {@link GroupOptions}. Kept as an alias for backward
- * compatibility; matches the OOXML element name (p:grpSp → Group) across packages.
- */
-export type GroupShapeOptions = GroupOptions;

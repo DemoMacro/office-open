@@ -31,7 +31,7 @@ import type {
 } from "@office-open/core/drawingml";
 import type {
   ShapeOptions as DocxShapeRunOptions,
-  WpsShapeCoreOptions,
+  ShapeCoreOptions,
   MediaTransformation,
   ParagraphOptions as DocxParagraph,
 } from "@office-open/docx";
@@ -115,7 +115,7 @@ export function docxToTextBody(
 
 /** docx shape split: the wps core (data) + position (transformation). */
 export interface DocxShapeParts {
-  data: WpsShapeCoreOptions;
+  data: ShapeCoreOptions;
   transformation: MediaTransformation;
 }
 

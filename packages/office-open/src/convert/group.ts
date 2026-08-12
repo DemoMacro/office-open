@@ -26,7 +26,7 @@ import type {
   GroupOptions as DocxGroupOptions,
   GroupChildMediaData,
   MediaDataTransformation,
-  WpsShapeCoreOptions,
+  ShapeCoreOptions,
 } from "@office-open/docx";
 import { createTransformation } from "@office-open/docx";
 import type {
@@ -155,7 +155,7 @@ function spPrToPptxShape(spPr: ShapePropertiesOptions): PptxShapeOptions {
 }
 
 /** xlsx group child shape → docx wps core (position lives on the wpg child wrapper). */
-function xlsxShapeChildToDocxData(s: GroupShapeChildOptions): WpsShapeCoreOptions {
+function xlsxShapeChildToDocxData(s: GroupShapeChildOptions): ShapeCoreOptions {
   const preset = toPresetGeometry(s.spPr.geometry);
   const cnvPr = pickNonVisualDrawingProperties(s);
   return {
@@ -168,7 +168,7 @@ function xlsxShapeChildToDocxData(s: GroupShapeChildOptions): WpsShapeCoreOption
 }
 
 /** docx wps child → core spPr (absolute position from the child transformation). */
-function docxChildToSpPr(data: WpsShapeCoreOptions, box: AbsoluteBox): ShapePropertiesOptions {
+function docxChildToSpPr(data: ShapeCoreOptions, box: AbsoluteBox): ShapePropertiesOptions {
   const out: ShapePropertiesOptions = {
     x: box.x,
     y: box.y,

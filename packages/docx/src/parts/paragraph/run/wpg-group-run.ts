@@ -50,9 +50,3 @@ export interface GroupOptions {
   /** Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip. */
   groupShapeLocks?: GroupShapeLocksOptions;
 }
-
-/**
- * @deprecated Use {@link GroupOptions}. Kept as an alias for backward
- * compatibility; aligns the group Options name across packages.
- */
-export type WpgGroupRunOptions = GroupOptions;

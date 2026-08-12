@@ -32,8 +32,6 @@ export interface SettingsOptions {
    * omits, so rawXml child elements using those prefixes stay well-formed.
    */
   rootAttributes?: Record<string, string>;
-  /** @deprecated Use compatibility.version instead */
-  compatibilityModeVersion?: number;
   /** Enable different headers/footers for even and odd pages */
   evenAndOddHeaders?: boolean;
   /** Enable track changes (revision marking) */

@@ -1,4 +1,4 @@
-import type { ConnectorShapeOptions as PptxConnectorOptions } from "@office-open/pptx";
+import type { ConnectorOptions as PptxConnectorOptions } from "@office-open/pptx";
 import type { ConnectorOptions as XlsxConnectorOptions } from "@office-open/xlsx";
 import { describe, expect, it, vi } from "vitest";
 

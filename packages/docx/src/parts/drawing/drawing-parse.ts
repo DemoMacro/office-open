@@ -51,7 +51,7 @@ import type { NonVisualShapePropertiesOptions } from "./inline/graphic/graphic-d
 import type {
   ShapeStyleOptions,
   StyleMatrixReferenceOptions,
-  WpsShapeCoreOptions,
+  ShapeCoreOptions,
 } from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingType } from "./text-wrap";
 import type { TextWrapping, WrapPolygon } from "./text-wrap";
@@ -522,13 +522,13 @@ function parseShapeStyle(styleEl: Element, ctx: DocxReadContext): ShapeStyleOpti
  * the txBox non-visual flag. Used both for standalone wps shapes and for wps
  * children nested inside a wpg group.
  */
-function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): WpsShapeCoreOptions {
-  const result: Partial<WpsShapeCoreOptions> = {};
+function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptions {
+  const result: Partial<ShapeCoreOptions> = {};
 
   // Text content — w:txbxContent (w namespace, per CT_TxbxContent → w:EG_BlockLevelElts)
   // holds the shape's paragraphs, even when wrapped in wps:txbx.
   const txbxContent = findFirst(wspEl, "w:txbxContent");
-  const children: WpsShapeCoreOptions["children"] = [];
+  const children: ShapeCoreOptions["children"] = [];
   if (txbxContent) {
     for (const child of txbxContent.elements ?? []) {
       if (child.name === "w:p") children.push(parseParagraph(child, ctx));
@@ -587,7 +587,7 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): WpsShapeCoreOp
   const styleEl = findChild(wspEl, "wps:style");
   if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
 
-  return result as WpsShapeCoreOptions;
+  return result as ShapeCoreOptions;
 }
 
 /**

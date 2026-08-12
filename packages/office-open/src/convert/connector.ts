@@ -19,7 +19,7 @@
 
 import { pickConnectorBase, type UniversalMeasure } from "@office-open/core";
 import type { ShapePropertiesOptions } from "@office-open/core/drawingml";
-import type { ConnectorShapeOptions as PptxConnectorOptions } from "@office-open/pptx";
+import type { ConnectorOptions as PptxConnectorOptions } from "@office-open/pptx";
 import type { ConnectorOptions as XlsxConnectorOptions } from "@office-open/xlsx";
 
 import { boxFromXlsxAnchor, boxToXlsx, toEmu } from "./position";

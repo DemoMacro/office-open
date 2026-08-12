@@ -65,7 +65,6 @@ export interface FeaturesOptions {
  * @property footnotes - Document footnotes
  * @property background - Document background settings
  * @property features - Document features like track changes
- * @property compatabilityModeVersion - Compatibility mode version
  * @property compatibility - Compatibility settings
  * @property customProperties - Custom document properties
  * @property evenAndOddHeaderAndFooters - Enable different headers/footers for even/odd pages
@@ -98,7 +97,6 @@ export interface DocumentOptions extends CorePropertiesOptions {
   };
   background?: DocumentBackgroundOptions;
   features?: FeaturesOptions;
-  compatabilityModeVersion?: number;
   compatibility?: CompatibilityOptions;
   customProperties?: CustomPropertyOptions[];
   evenAndOddHeaderAndFooters?: boolean;

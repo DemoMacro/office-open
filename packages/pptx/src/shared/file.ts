@@ -79,7 +79,7 @@ export interface LayoutDefinition {
   timing?: TimingDescriptorOptions;
   // Fresh API (placeholder-template generation)
   placeholders?: LayoutPlaceholderOptions;
-  /** @deprecated Verbatim layout XML — no longer consumed by stringify. Kept for backward compat. */
+  /** Verbatim layout XML; when set, the compiler parses this instead of synthesizing layout XML from the structured fields. */
   layout?: string;
 }
 

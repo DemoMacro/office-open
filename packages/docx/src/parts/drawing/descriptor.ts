@@ -67,7 +67,7 @@ import type { NonVisualShapePropertiesOptions } from "./inline/graphic/graphic-d
 import type {
   ShapeStyleOptions,
   StyleMatrixReferenceOptions,
-  WpsShapeCoreOptions,
+  ShapeCoreOptions,
 } from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingSide, TextWrappingType } from "./text-wrap";
 import type { TextWrapping, WrapPolygon } from "./text-wrap";
@@ -364,8 +364,8 @@ function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: NonVisualPropertiesOption
 
 // ── WPS shape (pure string, no class instances) ──
 
-/** WpsShape options for stringification (extends WpsShapeCoreOptions with transformation). */
-interface WpsStringifyOptions extends WpsShapeCoreOptions {
+/** WpsShape options for stringification (extends ShapeCoreOptions with transformation). */
+interface WpsStringifyOptions extends ShapeCoreOptions {
   transformation: MediaDataTransformation;
 }
 

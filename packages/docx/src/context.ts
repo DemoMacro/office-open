@@ -275,7 +275,6 @@ export class DocxWriteContext implements WriteContext {
     this.document = { relationships: new Relationships() };
     this._settingsOptions = {
       compatibility: options.compatibility,
-      compatibilityModeVersion: options.compatabilityModeVersion,
       defaultTabStop: options.defaultTabStop,
       evenAndOddHeaders: options.evenAndOddHeaderAndFooters || undefined,
       characterSpacingControl: options.characterSpacingControl,

@@ -76,8 +76,8 @@ export {
   type HyperlinkOptions,
 } from "@office-open/core/drawingml";
 export type { TextAlignment, ParagraphPropertiesOptions } from "@office-open/core/drawingml";
-export type { GroupOptions, GroupShapeOptions } from "./shape/group-shape";
-export type { LineShapeOptions, ConnectorOptions, ConnectorShapeOptions } from "./shape/line-shape";
+export type { GroupOptions } from "./shape/group-shape";
+export type { LineShapeOptions, ConnectorOptions } from "./shape/line-shape";
 
 // Media
 export { Media } from "@office-open/core";

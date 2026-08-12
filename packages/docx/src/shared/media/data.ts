@@ -10,7 +10,7 @@ import type {
   ChildExtent,
   ChildOffset,
 } from "@parts/drawing/inline/graphic/graphic-data/wpg/wpg-group";
-import type { WpsShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
+import type { ShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
 
 export interface MediaDataTransformation {
   offset?: {
@@ -114,7 +114,7 @@ export interface SvgMediaData {
 export interface ShapeMediaData {
   type: "wps";
   transformation: MediaDataTransformation;
-  data: WpsShapeCoreOptions;
+  data: ShapeCoreOptions;
 }
 
 export interface GroupCommonMediaData {

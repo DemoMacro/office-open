@@ -30,9 +30,3 @@ export interface ConnectorOptions extends BaseConnectorOptions {
   fill?: FillOptions;
   outline?: OutlineOptions;
 }
-
-/**
- * @deprecated Use {@link ConnectorOptions}. Kept as an alias for backward
- * compatibility; matches the OOXML element name (p:cxnSp → Connector) across packages.
- */
-export type ConnectorShapeOptions = ConnectorOptions;

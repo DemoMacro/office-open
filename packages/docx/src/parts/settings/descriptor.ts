@@ -1070,7 +1070,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
           ? FRESH_COMPATIBILITY
           : {
               ...opts.compatibility,
-              version: opts.compatibility.version ?? opts.compatibilityModeVersion ?? 15,
+              version: opts.compatibility.version ?? 15,
             };
       const compatXml = stringifyCompatibility(compatOpts);
       if (compatXml) p.push(compatXml);

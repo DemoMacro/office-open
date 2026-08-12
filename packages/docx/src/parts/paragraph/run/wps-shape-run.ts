@@ -1,11 +1,11 @@
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 /**
- * WPS shape run types for WordprocessingML documents.
+ * Shape run types for WordprocessingML documents.
  *
  * @module
  */
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
-import type { WpsShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
+import type { ShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { MediaTransformation } from "@shared/media";
 
@@ -14,7 +14,7 @@ import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
 
 export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
 
-interface CoreShapeOptions {
+interface ShapeRunOptions {
   transformation: MediaTransformation;
   floating?: Floating;
   altText?: DocPropertiesOptions;
@@ -32,16 +32,9 @@ interface CoreShapeOptions {
 
 /**
  * Shape options for docx (wps:wsp). The shape body comes from
- * {@link WpsShapeCoreOptions}; the rest is the docx run-level shape model
+ * {@link ShapeCoreOptions}; the rest is the docx run-level shape model
  * (transformation, floating, altText, run wrapping).
  *
  * @publicApi
  */
-export type ShapeOptions = WpsShapeCoreOptions & CoreShapeOptions;
-
-/**
- * @deprecated Use {@link ShapeOptions}. Kept as an alias for backward
- * compatibility; drops the OOXML namespace prefix and Run suffix to align
- * the shape Options name across packages.
- */
-export type WpsShapeRunOptions = ShapeOptions;
+export type ShapeOptions = ShapeCoreOptions & ShapeRunOptions;

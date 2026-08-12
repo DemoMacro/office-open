@@ -631,9 +631,10 @@ function buildCustomXmlPropertiesXml(pr: CustomXmlPropertiesOptions): string {
  * Serialize the common customXml shell (element/uri/customXmlPr) wrapping
  * arbitrary content. Shared by all four customXml levels (block/run/row/cell).
  *
- * @deprecated Microsoft Word removed support for `w:customXml` inline markup on
- * 2010-01-10 (i4i Inc. v. Microsoft ruling); Word deletes these elements on
- * open. Prefer content controls (`w:sdt`) or a `customXml` part.
+ * Microsoft Word removed support for `w:customXml` inline markup on 2010-01-10
+ * (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this
+ * serializer exists for round-tripping documents that still carry them.
+ * Prefer content controls (`w:sdt`) or a `customXml` part for new content.
  */
 export function stringifyCustomXmlShell(
   opts: { element: string; uri?: string; customXmlPr?: CustomXmlPropertiesOptions },
