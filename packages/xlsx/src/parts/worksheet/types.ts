@@ -831,7 +831,7 @@ export interface SortStateOptions {
   /** Case sensitive sorting (CT_SortState @caseSensitive) */
   caseSensitive?: boolean;
   /** Sort method (CT_SortState @sortMethod) */
-  sortMethod?: "pinYin" | "stroke";
+  sortMethod?: "pinYin" | "stroke" | "none";
 }
 
 /** Print options (CT_PrintOptions) */

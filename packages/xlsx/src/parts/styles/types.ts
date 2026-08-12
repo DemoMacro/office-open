@@ -68,7 +68,21 @@ export interface FillOptions {
 }
 
 export interface BorderOptions {
-  style?: "thin" | "medium" | "thick" | "dotted" | "dashed" | "hair" | "none";
+  style?:
+    | "none"
+    | "thin"
+    | "medium"
+    | "dashed"
+    | "dotted"
+    | "thick"
+    | "double"
+    | "hair"
+    | "mediumDashed"
+    | "dashDot"
+    | "mediumDashDot"
+    | "dashDotDot"
+    | "mediumDashDotDot"
+    | "slantDashDot";
   color?: string;
 }
 
@@ -93,8 +107,16 @@ export interface BorderSideOptions {
 }
 
 export interface AlignmentOptions {
-  horizontal?: "left" | "center" | "right" | "fill" | "justify";
-  vertical?: "top" | "center" | "bottom";
+  horizontal?:
+    | "general"
+    | "left"
+    | "center"
+    | "right"
+    | "fill"
+    | "justify"
+    | "centerContinuous"
+    | "distributed";
+  vertical?: "top" | "center" | "bottom" | "justify" | "distributed";
   wrapText?: boolean;
   textRotation?: number;
   indent?: number;
