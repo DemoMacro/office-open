@@ -150,7 +150,7 @@ The same concept uses the **same name in every package** — picture/shape/conne
 
 - **No grouping prefixes** (`Model`/`Content`/`Element`/`Universal`). `UniversalMeasure` is the XSD `ST_UniversalMeasure` type, kept as-is — not a precedent.
 - **Tables are the exception**: each package's `TableOptions` models a genuinely different thing (`w:tbl` flow / `a:tbl` graphic / xlsx cell-range), so the name stays but each carries a JSDoc boundary note; docx/pptx `extends` the shared `core/table/` `BaseTableOptions` (rows/cells/span/6-flags/columnWidths/vertical-align) and add domain-specific style/position, xlsx is independent ([Cross-Format Conversion](#cross-format-conversion)).
-- **Renames are non-breaking**: keep the old name as a `@deprecated` alias until the next major release.
+- **Renames**: pre-1.0, rename in place (no `@deprecated` aliases — `GroupOptions`/`ConnectorOptions`/`ShapeOptions` replaced `WpgGroupRunOptions`/`ConnectorShapeOptions`/`WpsShapeRunOptions` directly); post-1.0, keep the old name as a `@deprecated` alias until the next major release.
 
 ## Options Interface Design
 
@@ -205,7 +205,7 @@ Each descriptor is **bidirectional**: has both `stringify()` and `parse()`.
 
 Cross-format copy works at the `Options` layer — **no unified document model**.
 
-- **Similar structures** (picture/shape/connector/group): package-to-package functions translate one package's `Options` to another, reusing `core/drawingml/` for shared parts (spPr/fill/outline/effects) and mapping only container/positioning (`wps:`/`a:sp`/`xdr:sp`; inline vs x/y vs cell anchor).
+- **Similar structures** (picture/connector/group): each concept has a core base the format `Options` extend — `core/picture/` `BasePictureOptions`, `core/connector/` `BaseConnectorOptions`, `core/group/` `BaseGroupOptions` (all `extends NonVisualDrawingPropertiesOptions`, the shared `a:CT_NonVisualDrawingProps` cNvPr/docPr type from `core/drawingml/non-visual/`); docx picture/group stay a discriminated union bridged through `altText`. `convert/*.ts` passes the base through directly (cNvPr name/description/title/hidden threads every leg) and maps only container/positioning (`wps:`/`a:sp`/`xdr:sp`; inline vs x/y vs cell anchor) plus format-specific spPr convenience. Shape has no base (YAGNI — cNvPr already unified, spPr/textBody already in core, no shape-specific field worth lifting).
 - **Tables**: three packages model tables fundamentally differently, but they share a structural core (rows/cells/span/6-flags/columnWidths/vertical-align) in `core/table/` (`BaseTableOptions`/`BaseTableRowOptions`/`BaseTableCellOptions`). docx/pptx `TableOptions extends Base*` and add domain-specific style/position; xlsx is independent (sml Table is a data range). `convert/table.ts` passes the base through directly and translates only cell content (w:p↔a:p via `convert/text`), units (twip↔EMU via `core/util/converters`), and pptx fill/scheme-color → docx shading/themeColor.
 - **Text**: `a:p` is shared in `core/drawingml/text/`; docx bridges `a:p ↔ w:p` (font ×100↔×2 half-points, `srgbClr`↔`w:color`, typeface↔`rFonts`, hyperlinks).
 - **Charts**: unified via `core/chart/`; cross-format is only packaging.
