@@ -2,7 +2,7 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ReadContext, WriteContext } from "../../descriptor";
-import { bodyPropertiesDesc, createBodyProperties, VerticalAnchor } from "./body-properties";
+import { bodyPropertiesDesc, createBodyProperties } from "./body-properties";
 import { textListStyleDesc, DEFAULT_TEXT_LIST_STYLE } from "./list-style";
 import { paragraphDesc } from "./paragraph";
 import type { ParagraphDescriptorOptions } from "./paragraph";
@@ -264,8 +264,8 @@ describe("bodyPropertiesDesc round-trip", () => {
   });
 
   it("round-trips anchor/wrap/numCol", () => {
-    const r = roundTrip({ anchor: VerticalAnchor.CENTER, wrap: "square", numCol: 2 });
-    expect(r.anchor).toBe(VerticalAnchor.CENTER);
+    const r = roundTrip({ anchor: "ctr", wrap: "square", numCol: 2 });
+    expect(r.anchor).toBe("ctr");
     expect(r.wrap).toBe("square");
     expect(r.numCol).toBe(2);
   });
@@ -334,5 +334,45 @@ describe("textListStyleDesc round-trip", () => {
     expect(r.title?.levels?.[0]?.defaultRun?.size).toBe(4400);
     expect(r.body?.levels?.[1]?.defaultRun?.size).toBe(2400);
     expect(r.other?.emptyDefaultParagraph).toBe(true);
+  });
+});
+
+// ── textBodyDesc top-level sugar ──
+
+describe("textBodyDesc top-level sugar", () => {
+  it("merges anchor/autoFit/columns sugar into bodyProperties on stringify", () => {
+    const xml = textBodyDesc.stringify(
+      { text: "Hi", anchor: "t", autoFit: "normal", columns: 2 },
+      writeCtx,
+    )!;
+    expect(xml).toContain('anchor="t"');
+    expect(xml).toContain("normAutofit");
+    expect(xml).toContain('numCol="2"');
+  });
+
+  it("maps autoFit shape to spAutoFit", () => {
+    const xml = textBodyDesc.stringify({ text: "Hi", autoFit: "shape" }, writeCtx)!;
+    expect(xml).toContain("spAutoFit");
+  });
+
+  it("emits normalized bodyProperties on round-trip (sugar is input-only)", () => {
+    const xml = textBodyDesc.stringify(
+      { text: "Hi", anchor: "t", autoFit: "normal", columns: 2 },
+      writeCtx,
+    )!;
+    const el = parseXml(`<root>${xml}</root>`).elements?.[0];
+    if (!el) throw new Error("no root");
+    const r = textBodyDesc.parse(el, readCtx);
+    expect(r.bodyProperties?.anchor).toBe("t");
+    expect(r.bodyProperties?.normAutofit).toEqual({});
+    expect(r.bodyProperties?.numCol).toBe(2);
+    expect(r.anchor).toBeUndefined();
+    expect(r.autoFit).toBeUndefined();
+  });
+
+  it("explicit bodyProperties wins over sugar", () => {
+    const xml = textBodyDesc.stringify({ anchor: "t", bodyProperties: { anchor: "b" } }, writeCtx)!;
+    expect(xml).toContain('anchor="b"');
+    expect(xml).not.toContain('anchor="t"');
   });
 });

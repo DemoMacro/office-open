@@ -30,13 +30,7 @@ import { scene3DDesc, shape3DDesc } from "../three-d/three-d-descriptors";
 // ── Enumerations ──
 
 /** Text anchoring type (ST_TextAnchoringType). */
-export enum VerticalAnchor {
-  TOP = "t",
-  CENTER = "ctr",
-  BOTTOM = "b",
-  JUSTIFY = "just",
-  DISTRIBUTED = "dist",
-}
+export type VerticalAnchor = "t" | "ctr" | "b" | "just" | "dist";
 
 /** Text vertical overflow type (ST_TextVertOverflowType). */
 export const TextVertOverflowType = {
@@ -116,7 +110,7 @@ export interface BodyPropertiesOptions {
   spcCol?: number | UniversalMeasure;
   rtlCol?: boolean;
   fromWordArt?: boolean;
-  anchor?: `${VerticalAnchor}`;
+  anchor?: VerticalAnchor;
   anchorCtr?: boolean;
   forceAA?: boolean;
   upright?: boolean;

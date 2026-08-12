@@ -48,7 +48,7 @@ export { createCustomDash } from "./outline/custom-dash";
 export type { DashStop } from "./outline/custom-dash";
 export { createLineEnd } from "./outline/line-end";
 export type { LineEndOptions } from "./outline/line-end";
-export { LineEndType, LineEndWidth, LineEndLength } from "./outline/line-end";
+export type { LineEndType, LineEndWidth, LineEndLength } from "./outline/line-end";
 
 // Effects
 export { createEffectList, calculateEffectExtent } from "./effects/effect-list";

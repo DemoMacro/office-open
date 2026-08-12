@@ -128,4 +128,18 @@ describe("outlineDesc", () => {
     expect(result.tailEnd).toBeDefined();
     expect(result.tailEnd!.type).toBe("arrow");
   });
+
+  it("treats a bare-string color as sRGB hex sugar with implicit solidFill", () => {
+    const xml = stringify(outlineDesc, { color: "2E74B5", width: 12700 }, {} as WriteContext)!;
+    expect(xml).toContain("<a:solidFill>");
+    expect(xml).toContain("2E74B5");
+    expect(xml).toContain('w="12700"');
+  });
+
+  it("coerces color string sugar to normalized { value } on round-trip", () => {
+    const result = roundTrip({ color: "#2E74B5", width: 12700 });
+    expect(result.type).toBe("solidFill");
+    expect(result.color).toEqual({ value: "2E74B5" });
+    expect(result.width).toBe(12700);
+  });
 });

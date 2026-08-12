@@ -194,8 +194,13 @@ export interface OutlineProperties {
 export interface OutlineFillProperties {
   /** Fill type */
   type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
-  /** Color definition (required when type is "solidFill") */
-  color?: SolidFillOptions;
+  /**
+   * Color definition (required when type is "solidFill"). A bare string is an
+   * sRGB hex convenience sugar (e.g. `"FF0000"`); stringify coerces it to
+   * `{ value }` and infers `type: "solidFill"` when `type` is omitted. Parse
+   * always emits the normalized `{ value }` form.
+   */
+  color?: SolidFillOptions | string;
   /** Gradient fill options (required when type is "gradFill") */
   gradientFill?: GradientFillOptions;
   /** Pattern fill options (required when type is "pattFill") */
@@ -218,13 +223,17 @@ const createOutlineFill = (options: OutlineOptions): string | null => {
   if (options.type === "noFill") {
     return createNoFill();
   }
-  if (options.type === "solidFill" && options.color) {
-    return createSolidFill(options.color);
+  // Bare-string color is an sRGB hex sugar; coerce and infer solidFill.
+  const resolvedColor =
+    typeof options.color === "string" ? { value: options.color.replace("#", "") } : options.color;
+  const fillType = options.type ?? (resolvedColor ? "solidFill" : undefined);
+  if (fillType === "solidFill" && resolvedColor) {
+    return createSolidFill(resolvedColor);
   }
-  if (options.type === "gradFill" && options.gradientFill) {
+  if (fillType === "gradFill" && options.gradientFill) {
     return createGradientFill(options.gradientFill);
   }
-  if (options.type === "pattFill" && options.patternFill) {
+  if (fillType === "pattFill" && options.patternFill) {
     return createPatternFill(options.patternFill);
   }
   return null;

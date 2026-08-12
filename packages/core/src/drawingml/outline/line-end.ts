@@ -30,20 +30,7 @@ import { xsdLineEndSize } from "../../util/mappings";
  *
  * @publicApi
  */
-export const LineEndType = {
-  /** No line end */
-  NONE: "none",
-  /** Triangle arrow */
-  TRIANGLE: "triangle",
-  /** Stealth arrow (filled triangle) */
-  STEALTH: "stealth",
-  /** Diamond shape */
-  DIAMOND: "diamond",
-  /** Oval shape */
-  OVAL: "oval",
-  /** Simple arrow */
-  ARROW: "arrow",
-} as const;
+export type LineEndType = "none" | "triangle" | "stealth" | "diamond" | "oval" | "arrow";
 
 /**
  * Line end width options.
@@ -61,14 +48,7 @@ export const LineEndType = {
  *
  * @publicApi
  */
-export const LineEndWidth = {
-  /** Small width */
-  SMALL: "small",
-  /** Medium width */
-  MEDIUM: "medium",
-  /** Large width */
-  LARGE: "large",
-} as const;
+export type LineEndWidth = "small" | "medium" | "large";
 
 /**
  * Line end length options.
@@ -86,14 +66,7 @@ export const LineEndWidth = {
  *
  * @publicApi
  */
-export const LineEndLength = {
-  /** Small length */
-  SMALL: "small",
-  /** MEDIUM length */
-  MEDIUM: "medium",
-  /** Large length */
-  LARGE: "large",
-} as const;
+export type LineEndLength = "small" | "medium" | "large";
 
 /**
  * Options for line end (arrow) properties.
@@ -109,11 +82,11 @@ export const LineEndLength = {
  */
 export interface LineEndOptions {
   /** Arrow/head type */
-  type: (typeof LineEndType)[keyof typeof LineEndType];
+  type: LineEndType;
   /** Arrow width */
-  width?: (typeof LineEndWidth)[keyof typeof LineEndWidth];
+  width?: LineEndWidth;
   /** Arrow length */
-  length?: (typeof LineEndLength)[keyof typeof LineEndLength];
+  length?: LineEndLength;
 }
 
 /**
@@ -122,9 +95,9 @@ export interface LineEndOptions {
  * @example
  * ```typescript
  * // Stealth arrow at start, medium size
- * createLineEnd("a:headEnd", { type: "STEALTH", width: "MEDIUM", length: "MEDIUM" });
+ * createLineEnd("a:headEnd", { type: "stealth", width: "medium", length: "medium" });
  * // Triangle arrow at end
- * createLineEnd("a:tailEnd", { type: "TRIANGLE" });
+ * createLineEnd("a:tailEnd", { type: "triangle" });
  * ```
  */
 export const createLineEnd = (name: string, options: LineEndOptions): string =>

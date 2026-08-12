@@ -25,6 +25,40 @@ export interface TextBodyOptions {
   text?: string;
   /** Paragraph list; string entries expand to a one-run paragraph. */
   paragraphs?: (ParagraphDescriptorOptions | string)[];
+
+  /**
+   * Convenience sugar — merged into {@link bodyProperties} on stringify (explicit
+   * `bodyProperties` fields take precedence). Input-only: parse always emits
+   * the normalized `bodyProperties` form. Mirrors the `fill` descriptor's
+   * string-sugar convention.
+   */
+  anchor?: BodyPropertiesOptions["anchor"];
+  /** Sugar → `bodyProperties.normAutofit` (`"normal"`) / `spAutoFit` (`"shape"`). */
+  autoFit?: "normal" | "shape";
+  /** Sugar → `bodyProperties.numCol`. */
+  columns?: BodyPropertiesOptions["numCol"];
+  /** Sugar → `bodyProperties.spcCol`. */
+  columnSpacing?: BodyPropertiesOptions["spcCol"];
+  /** Sugar → `bodyProperties.margins`. */
+  margins?: BodyPropertiesOptions["margins"];
+  /** Sugar → `bodyProperties.wrap`. */
+  wrap?: BodyPropertiesOptions["wrap"];
+  /** Sugar → `bodyProperties.vert`. */
+  vertical?: BodyPropertiesOptions["vert"];
+}
+
+/** Collect top-level TextBodyOptions sugar into a partial BodyPropertiesOptions. */
+function bodyPropertiesSugar(opts: TextBodyOptions): Partial<BodyPropertiesOptions> {
+  const sugar: Partial<BodyPropertiesOptions> = {};
+  if (opts.anchor !== undefined) sugar.anchor = opts.anchor;
+  if (opts.autoFit === "normal") sugar.normAutofit = {};
+  else if (opts.autoFit === "shape") sugar.spAutoFit = true;
+  if (opts.columns !== undefined) sugar.numCol = opts.columns;
+  if (opts.columnSpacing !== undefined) sugar.spcCol = opts.columnSpacing;
+  if (opts.margins !== undefined) sugar.margins = opts.margins;
+  if (opts.wrap !== undefined) sugar.wrap = opts.wrap;
+  if (opts.vertical !== undefined) sugar.vert = opts.vertical;
+  return sugar;
 }
 
 export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
@@ -33,8 +67,15 @@ export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
   stringify(opts, ctx) {
     const parts: string[] = [];
 
-    // a:bodyPr — always present in CT_TextBody.
-    parts.push(opts.bodyProperties ? createBodyProperties(opts.bodyProperties) : "<a:bodyPr/>");
+    // a:bodyPr — always present in CT_TextBody. Top-level sugar (anchor/
+    // autoFit/columns/...) merges into bodyProperties; explicit bodyProperties
+    // fields win.
+    const sugar = bodyPropertiesSugar(opts);
+    if (opts.bodyProperties || Object.keys(sugar).length > 0) {
+      parts.push(createBodyProperties({ ...sugar, ...opts.bodyProperties }));
+    } else {
+      parts.push("<a:bodyPr/>");
+    }
 
     // a:lstStyle — always emit (matches MS Office byte layout).
     parts.push(

@@ -11,7 +11,6 @@
  */
 
 export {
-  VerticalAnchor,
   TextVertOverflowType,
   TextHorzOverflowType,
   TextVerticalType,
@@ -20,6 +19,7 @@ export {
   bodyPropertiesDesc,
 } from "@office-open/core/drawingml";
 export type {
+  VerticalAnchor,
   NormalAutofitOptions,
   PresetTextShapeOptions,
   FlatTextOptions,

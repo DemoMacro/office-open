@@ -5,7 +5,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import {
   generateDocument,
   HorizontalPositionRelativeFrom,
-  VerticalAnchor,
   VerticalPositionRelativeFrom,
 } from "@office-open/docx";
 
@@ -142,7 +141,7 @@ const buffer = await generateDocument({
                       right: "0.4cm",
                       top: "0.2cm",
                     },
-                    verticalAnchor: VerticalAnchor.CENTER,
+                    verticalAnchor: "ctr",
                   },
                   children: ["Vertically centered text with custom margins."],
                   outline: {

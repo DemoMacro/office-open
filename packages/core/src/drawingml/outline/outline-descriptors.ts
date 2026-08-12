@@ -67,13 +67,18 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
       attrParts.push(`algn="${escapeXml(xsdPenAlignment.to(opts.align))}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
 
-    // Fill
-    if (opts.type === "noFill") {
+    // Fill. A bare-string color is an sRGB hex sugar; coerce to { value } and
+    // infer "solidFill" when type is omitted (mirrors the fill descriptor's
+    // own string-sugar handling).
+    const resolvedColor =
+      typeof opts.color === "string" ? { value: opts.color.replace("#", "") } : opts.color;
+    const fillType = opts.type ?? (resolvedColor ? "solidFill" : undefined);
+    if (fillType === "noFill") {
       parts.push("<a:noFill/>");
-    } else if (opts.type === "solidFill" && opts.color) {
-      const fillXml = stringify(solidFillDesc, opts.color, ctx);
+    } else if (fillType === "solidFill" && resolvedColor) {
+      const fillXml = stringify(solidFillDesc, resolvedColor, ctx);
       if (fillXml) parts.push(fillXml);
-    } else if (opts.type === "gradFill" && opts.gradientFill) {
+    } else if (fillType === "gradFill" && opts.gradientFill) {
       const gradXml = stringify(gradientFillDesc, opts.gradientFill, ctx);
       if (gradXml) parts.push(gradXml);
     }
