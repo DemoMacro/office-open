@@ -7,10 +7,8 @@
  * @module
  */
 
-import type { UniversalMeasure } from "@office-open/core";
+import type { BaseConnectorOptions, UniversalMeasure } from "@office-open/core";
 import type {
-  ConnectorLockingOptions,
-  EndpointConnectionOptions,
   GroupTransform2DOptions,
   NonVisualDrawingPropertiesOptions,
   ShapePropertiesOptions,
@@ -143,17 +141,11 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
 }
 
 /** Anchored connector (xdr:cxnSp): line/arrow geometry via spPr. */
-export interface ConnectorOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+export interface ConnectorOptions extends DrawingAnchorOptions, BaseConnectorOptions {
   /** Shape properties (a:CT_ShapeProperties, typically prstGeom="line"). */
   spPr: ShapePropertiesOptions;
   /** macro attribute (CT_Connector). */
   macro?: string;
-  /** a:cxnSpLocks — connector locking (inside cNvCxnSpPr). */
-  locking?: ConnectorLockingOptions;
-  /** a:stCxn — start endpoint glued to a shape connection site. */
-  startConnection?: EndpointConnectionOptions;
-  /** a:endCxn — end endpoint glued to a shape connection site. */
-  endConnection?: EndpointConnectionOptions;
 }
 
 /** Shape nested inside a group (no anchor — positioned via spPr.xfrm). */
@@ -165,15 +157,9 @@ export interface GroupShapeChildOptions extends NonVisualDrawingPropertiesOption
 }
 
 /** Connector nested inside a group (no anchor). */
-export interface GroupConnectorChildOptions extends NonVisualDrawingPropertiesOptions {
+export interface GroupConnectorChildOptions extends BaseConnectorOptions {
   spPr: ShapePropertiesOptions;
   macro?: string;
-  /** a:cxnSpLocks — connector locking (inside cNvCxnSpPr). */
-  locking?: ConnectorLockingOptions;
-  /** a:stCxn — start endpoint glued to a shape connection site. */
-  startConnection?: EndpointConnectionOptions;
-  /** a:endCxn — end endpoint glued to a shape connection site. */
-  endConnection?: EndpointConnectionOptions;
 }
 
 /** Anchored group (xdr:grpSp): group transform + nested shapes/connectors. */

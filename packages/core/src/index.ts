@@ -8,6 +8,7 @@ export * from "./smartart";
 export * from "./chart";
 export * from "./table";
 export * from "./picture";
+export * from "./connector";
 export * from "./drawingml";
 export * from "./patch";
 export * from "./theme";

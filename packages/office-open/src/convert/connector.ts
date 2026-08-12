@@ -3,9 +3,12 @@
  *
  * Connectors convert between pptx (p:cxnSp) and xlsx (xdr:cxnSp), which both
  * model a connector as a line geometry (spPr) plus optional endpoint glue
- * (startConnection/endConnection) and locks. The two endpoints (x1/y1/x2/y2 on
- * pptx) map to an xlsx bounding box (spPr.xfrm) with flip flags encoding the
- * direction the line was drawn — see ./position.
+ * (startConnection/endConnection), locks, and the shared cNvPr. The base
+ * fields (cNvPr name/description/title/hidden + locking + endpoint connections)
+ * pass straight through via pickConnectorBase; only positioning (pptx two
+ * endpoints ↔ xlsx cell-anchor bounding box, with flip flags encoding draw
+ * direction) and the line fill/outline (pptx top-level convenience ↔ xlsx
+ * nested in spPr) are adapted per leg.
  *
  * docx has no standalone connector element (Word embeds connectors as wps
  * shapes flagged with a connector marker), so converting a connector to docx
@@ -14,7 +17,7 @@
  * @module
  */
 
-import type { UniversalMeasure } from "@office-open/core";
+import { pickConnectorBase, type UniversalMeasure } from "@office-open/core";
 import type { ShapePropertiesOptions } from "@office-open/core/drawingml";
 import type { ConnectorShapeOptions as PptxConnectorOptions } from "@office-open/pptx";
 import type { ConnectorOptions as XlsxConnectorOptions } from "@office-open/xlsx";
@@ -91,10 +94,8 @@ export function toPptxConnector(source: XlsxConnectorOptions): PptxConnectorOpti
     y2,
     ...(spPr.outline !== undefined ? { outline: spPr.outline } : {}),
     ...(spPr.fill !== undefined ? { fill: spPr.fill } : {}),
-    ...(source.locking ? { locking: source.locking } : {}),
-    ...(source.startConnection ? { startConnection: source.startConnection } : {}),
-    ...(source.endConnection ? { endConnection: source.endConnection } : {}),
-    ...(source.name ? { name: source.name } : {}),
+    // cNvPr + locking + endpoint connections pass straight through.
+    ...pickConnectorBase(source),
   };
 }
 
@@ -119,9 +120,7 @@ export function toXlsxConnector(source: PptxConnectorOptions): XlsxConnectorOpti
   return {
     ...pos.anchor,
     spPr,
-    ...(source.locking ? { locking: source.locking } : {}),
-    ...(source.startConnection ? { startConnection: source.startConnection } : {}),
-    ...(source.endConnection ? { endConnection: source.endConnection } : {}),
-    ...(source.name ? { name: source.name } : {}),
+    // cNvPr + locking + endpoint connections pass straight through.
+    ...pickConnectorBase(source),
   };
 }
