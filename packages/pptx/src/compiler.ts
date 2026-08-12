@@ -62,7 +62,7 @@ import { handoutMasterDesc } from "./parts/descriptors/handout-master";
 import { notesMasterDesc } from "./parts/descriptors/notes-master";
 import { notesSlideDesc, type NotesSlideDescriptorOptions } from "./parts/descriptors/notes-slide";
 import { presentationDesc } from "./parts/descriptors/presentation";
-import { presPropsDesc } from "./parts/descriptors/presentation-properties";
+import { presentationPropertiesDesc } from "./parts/descriptors/presentation-properties";
 import { parseLayoutDef, slideLayoutDesc } from "./parts/descriptors/slide-layout";
 import { slideMasterDesc } from "./parts/descriptors/slide-master";
 import { slideSyncDesc } from "./parts/descriptors/slide-sync";
@@ -789,7 +789,7 @@ export function compilePresentation(
   };
 
   mapping["PresProps"] = {
-    data: XML_DECL + (presPropsDesc.stringify(presPropsFullOpts ?? {}, descCtx) ?? ""),
+    data: XML_DECL + (presentationPropertiesDesc.stringify(presPropsFullOpts ?? {}, descCtx) ?? ""),
     path: "ppt/presProps.xml",
   };
 

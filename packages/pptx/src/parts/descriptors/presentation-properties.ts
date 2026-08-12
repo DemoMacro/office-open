@@ -8,33 +8,29 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import {
-  buildPresPropsXml,
-  type PresentationPropertiesFullOptions,
+  buildPresentationPropertiesXml,
+  type PresentationPropertiesOptions,
 } from "@parts/presentation-properties";
 import type { ShowOptions } from "@shared/file";
 
-// ── Types ──
-
-export type PresPropsDescriptorOptions = PresentationPropertiesFullOptions;
-
 // ── Descriptor ──
 
-export const presPropsDesc: CustomDescriptor<PresPropsDescriptorOptions> = {
+export const presentationPropertiesDesc: CustomDescriptor<PresentationPropertiesOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    return buildPresPropsXml(opts);
+    return buildPresentationPropertiesXml(opts);
   },
 
   parse(el, _ctx) {
-    return parsePresProps(el);
+    return parsePresentationProperties(el);
   },
 };
 
 // ── Parse ──
 
-function parsePresProps(el: XmlElement): PresPropsDescriptorOptions {
-  const result: Partial<PresPropsDescriptorOptions> = {};
+function parsePresentationProperties(el: XmlElement): PresentationPropertiesOptions {
+  const result: Partial<PresentationPropertiesOptions> = {};
 
   // show (p:showPr in real PPTX files, or p:show for round-trip compat)
   const showPr = findChild(el, "p:showPr") ?? findChild(el, "p:show");
@@ -57,5 +53,5 @@ function parsePresProps(el: XmlElement): PresPropsDescriptorOptions {
     if (Object.keys(showOpts).length > 0) result.show = showOpts as ShowOptions;
   }
 
-  return result as PresPropsDescriptorOptions;
+  return result as PresentationPropertiesOptions;
 }

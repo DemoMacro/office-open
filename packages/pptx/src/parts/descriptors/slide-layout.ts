@@ -25,11 +25,6 @@ import { colorMapOverrideDesc } from "./color-map-override";
 import { readTransition, stringifyTransition } from "./slide";
 import type { ControlDescriptorOptions, HeaderFooterDescriptorOptions } from "./slide";
 
-// ── Types ──
-
-/** Slide layout options — structured form, shared with the public LayoutDefinition. */
-export type SlideLayoutDescriptorOptions = LayoutDefinition;
-
 // ── Display name → SlideLayoutType mapping (fallback when @type absent) ──
 
 const NAME_TO_TYPE: Record<string, string> = {

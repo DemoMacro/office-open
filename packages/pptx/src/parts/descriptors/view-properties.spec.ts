@@ -1,9 +1,9 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
+import type { ViewPropertiesOptions } from "@parts/view-properties";
 import { describe, expect, it } from "vite-plus/test";
 
 import { viewPropsDesc } from "./view-properties";
-import type { ViewPropertiesDescriptorOptions } from "./view-properties";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -16,7 +16,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: ViewPropertiesDescriptorOptions) {
+function roundTrip(opts: ViewPropertiesOptions) {
   const xml = viewPropsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
@@ -26,7 +26,7 @@ function roundTrip(opts: ViewPropertiesDescriptorOptions) {
 
 describe("viewPropsDesc round-trip", () => {
   it("round-trips lastView", () => {
-    const opts: ViewPropertiesDescriptorOptions = {
+    const opts: ViewPropertiesOptions = {
       lastView: "slideView",
     };
     const result = roundTrip(opts);
@@ -34,7 +34,7 @@ describe("viewPropsDesc round-trip", () => {
   });
 
   it("round-trips showComments false", () => {
-    const opts: ViewPropertiesDescriptorOptions = {
+    const opts: ViewPropertiesOptions = {
       showComments: false,
     };
     const result = roundTrip(opts);
@@ -42,7 +42,7 @@ describe("viewPropsDesc round-trip", () => {
   });
 
   it("round-trips gridSpacing", () => {
-    const opts: ViewPropertiesDescriptorOptions = {
+    const opts: ViewPropertiesOptions = {
       gridSpacing: { cx: 100000, cy: 100000 },
     };
     const result = roundTrip(opts);
@@ -51,7 +51,7 @@ describe("viewPropsDesc round-trip", () => {
   });
 
   it("round-trips lastView slideMasterView", () => {
-    const opts: ViewPropertiesDescriptorOptions = {
+    const opts: ViewPropertiesOptions = {
       lastView: "slideMasterView",
     };
     const result = roundTrip(opts);
@@ -59,7 +59,7 @@ describe("viewPropsDesc round-trip", () => {
   });
 
   it("round-trips lastView notesView", () => {
-    const opts: ViewPropertiesDescriptorOptions = {
+    const opts: ViewPropertiesOptions = {
       lastView: "notesView",
     };
     const result = roundTrip(opts);

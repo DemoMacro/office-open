@@ -41,6 +41,6 @@ export { slideLayoutDesc } from "./descriptors/slide-layout";
 export { timingDesc } from "./descriptors/animation";
 export { commentAuthorsDesc, slideCommentsDesc } from "./descriptors/comments";
 export { backgroundDesc } from "./descriptors/background";
-export { presPropsDesc } from "./descriptors/presentation-properties";
+export { presentationPropertiesDesc } from "./descriptors/presentation-properties";
 export { slideDesc } from "./descriptors/slide";
 export { slideMasterDesc } from "./descriptors/slide-master";

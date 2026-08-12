@@ -16,7 +16,7 @@ import { PptxReadContext, ParseContext } from "./context";
 import { commentAuthorsDesc, slideCommentsDesc } from "./parts/descriptors/comments";
 import { notesMasterDesc } from "./parts/descriptors/notes-master";
 import { notesSlideDesc } from "./parts/descriptors/notes-slide";
-import { presPropsDesc } from "./parts/descriptors/presentation-properties";
+import { presentationPropertiesDesc } from "./parts/descriptors/presentation-properties";
 import { slideDesc } from "./parts/descriptors/slide";
 import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
 import { slideMasterDesc } from "./parts/descriptors/slide-master";
@@ -448,7 +448,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   if (pptx.presProps) {
     const presPropsEl = pptx.doc.get(pptx.presProps);
     if (presPropsEl) {
-      const presPropsOpts = presPropsDesc.parse(presPropsEl, {} as ReadContext);
+      const presPropsOpts = presentationPropertiesDesc.parse(presPropsEl, {} as ReadContext);
       if (presPropsOpts.show) opts.show = presPropsOpts.show;
     }
   }

@@ -9,13 +9,9 @@ import { findChild, attrNum } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { buildViewPropsXml, type ViewPropertiesOptions } from "@parts/view-properties";
 
-// ── Types ──
-
-export type ViewPropertiesDescriptorOptions = ViewPropertiesOptions;
-
 // ── Descriptor ──
 
-export const viewPropsDesc: CustomDescriptor<ViewPropertiesDescriptorOptions> = {
+export const viewPropsDesc: CustomDescriptor<ViewPropertiesOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -29,8 +25,8 @@ export const viewPropsDesc: CustomDescriptor<ViewPropertiesDescriptorOptions> = 
 
 // ── Parse ──
 
-function parseViewProperties(el: XmlElement): ViewPropertiesDescriptorOptions {
-  const result: Partial<ViewPropertiesDescriptorOptions> = {};
+function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
+  const result: Partial<ViewPropertiesOptions> = {};
 
   if (el.attributes) {
     const a = el.attributes;
@@ -44,7 +40,7 @@ function parseViewProperties(el: XmlElement): ViewPropertiesDescriptorOptions {
         sldSorterView: "slideSorterView",
       };
       const mapped = reverseMap[a["lastView"]];
-      if (mapped) result.lastView = mapped as ViewPropertiesDescriptorOptions["lastView"];
+      if (mapped) result.lastView = mapped as ViewPropertiesOptions["lastView"];
     }
     if (a["showComments"] !== undefined) result.showComments = a["showComments"] !== "0";
   }
@@ -58,5 +54,5 @@ function parseViewProperties(el: XmlElement): ViewPropertiesDescriptorOptions {
     }
   }
 
-  return result as ViewPropertiesDescriptorOptions;
+  return result as ViewPropertiesOptions;
 }

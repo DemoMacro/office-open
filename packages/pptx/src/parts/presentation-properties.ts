@@ -36,7 +36,7 @@ export interface HtmlPublishPropertiesOptions {
   rId?: string;
 }
 
-export interface PresentationPropertiesFullOptions {
+export interface PresentationPropertiesOptions {
   show?: ShowOptions;
   web?: WebPropertiesOptions;
   print?: PrintPropertiesOptions;
@@ -116,7 +116,7 @@ function buildShowPrXml(showOptions: ShowOptions): string {
   return `<p:showPr${showPrAttrs.join("")}>${showTypeXml}${slideListXml}${penClrXml}</p:showPr>`;
 }
 
-export function buildPresPropsXml(opts?: PresentationPropertiesFullOptions): string {
+export function buildPresentationPropertiesXml(opts?: PresentationPropertiesOptions): string {
   const ns =
     'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +

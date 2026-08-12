@@ -1,10 +1,10 @@
 import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
+import type { LayoutDefinition } from "@shared/file";
 import { describe, expect, it } from "vite-plus/test";
 
 import { PptxWriteContext } from "../../context";
 import { slideLayoutDesc } from "./slide-layout";
-import type { SlideLayoutDescriptorOptions } from "./slide-layout";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -17,7 +17,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: SlideLayoutDescriptorOptions): SlideLayoutDescriptorOptions {
+function roundTrip(opts: LayoutDefinition): LayoutDefinition {
   const xml = slideLayoutDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
@@ -25,7 +25,7 @@ function roundTrip(opts: SlideLayoutDescriptorOptions): SlideLayoutDescriptorOpt
   return slideLayoutDesc.parse(el, readCtx);
 }
 
-function parseXmlDef(xml: string): SlideLayoutDescriptorOptions {
+function parseXmlDef(xml: string): LayoutDefinition {
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
@@ -108,7 +108,7 @@ describe("slideLayoutDesc stringify/parse", () => {
     const parsed = parseXmlDef(LAYOUT_WITH_PLACEHOLDERS);
     expect(parsed.children).toHaveLength(2);
     // Drop the first child (title) — simulating an editor deletion.
-    const edited: SlideLayoutDescriptorOptions = { ...parsed, children: parsed.children!.slice(1) };
+    const edited: LayoutDefinition = { ...parsed, children: parsed.children!.slice(1) };
     const xml = slideLayoutDesc.stringify(edited, writeCtx)!;
     expect(xml).not.toContain('name="Title 1"');
     // Re-parse confirms only one shape remains.
