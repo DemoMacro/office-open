@@ -1,8 +1,16 @@
+import { unzipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatePresentation } from "./generate";
 import { parsePresentation } from "./parse";
 import type { MasterDefinition, PresentationOptions, SlideOptions } from "./shared/file";
+
+const decodeEntry = (buffer: Uint8Array, path: string): string => {
+  const unzipped = unzipSync(buffer);
+  const entry = unzipped[path];
+  if (!entry) throw new Error(`missing zip entry: ${path}`);
+  return new TextDecoder().decode(entry);
+};
 
 describe("parsePresentation", () => {
   it("returns PresentationOptions with slides", async () => {
@@ -228,5 +236,46 @@ describe("parsePresentation", () => {
       "Content",
       undefined,
     ]);
+  });
+
+  it("registers internal slide-jump hyperlinks as slide relationships", async () => {
+    const options: PresentationOptions = {
+      slides: [
+        {
+          children: [
+            {
+              shape: {
+                x: 100,
+                y: 100,
+                width: 600,
+                height: 400,
+                textBody: {
+                  paragraphs: [
+                    { children: [{ text: "Go", hyperlink: { slide: 3, tooltip: "Jump" } }] },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        {
+          children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "T2" } } }],
+        },
+        {
+          children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "T3" } } }],
+        },
+      ],
+    };
+    const buffer = await generatePresentation(options);
+
+    // Internal slide jump: a:hlinkClick carries the ppaction token, and the
+    // slide rels register an internal .../relationships/slide (no TargetMode).
+    const slide1Rels = decodeEntry(buffer, "ppt/slides/_rels/slide1.xml.rels");
+    expect(slide1Rels).toContain("/relationships/slide");
+    expect(slide1Rels).toContain('Target="slide3.xml"');
+    expect(slide1Rels).not.toContain("TargetMode");
+    const slide1Xml = decodeEntry(buffer, "ppt/slides/slide1.xml");
+    expect(slide1Xml).toContain('action="ppaction://hlinksldjump"');
+    expect(slide1Xml).toContain('tooltip="Jump"');
   });
 });

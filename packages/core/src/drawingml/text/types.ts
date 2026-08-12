@@ -9,7 +9,10 @@
  * @module
  */
 
+import type { SolidFillOptions } from "../color/solid-fill";
+import type { EffectListOptions } from "../effects/effect-list";
 import type { FillOptions } from "../fill/fill-options";
+import type { OutlineOptions } from "../outline/outline";
 
 // ── Run style enums ──
 
@@ -26,7 +29,13 @@ export type TextAlignment = "left" | "center" | "right" | "justify";
 // ── Hyperlink (a:hlinkClick) ──
 
 export interface HyperlinkOptions {
-  url: string;
+  /** External URL target (mutually exclusive with slide). */
+  url?: string;
+  /**
+   * Internal slide target, 1-based slide number (mutually exclusive with url).
+   * Emitted as r:id → slideN.xml + action="ppaction://hlinksldjump".
+   */
+  slide?: number;
   /** Internal placeholder key ("{hlink:N}" → "N"); preserved across parse → stringify. */
   referenceId?: string;
   tooltip?: string;
@@ -36,6 +45,35 @@ export interface HyperlinkOptions {
   invalidUrl?: boolean;
 }
 
+// ── Text fonts (CT_TextFont: a:latin / a:ea / a:cs / a:sym) ──
+
+/**
+ * A script typeface (CT_TextFont). A bare string is the typeface only; the
+ * full object carries panose/pitchFamily/charset for embedded font metrics.
+ */
+export type TextFont =
+  | string
+  | {
+      typeface: string;
+      /** ST_Panose — 10-byte hex panose classification. */
+      panose?: string;
+      pitchFamily?: number;
+      charset?: number;
+    };
+
+/**
+ * Run font scripts. A bare string sets latin + ea to the same typeface (the
+ * common case); the object form sets each script independently.
+ */
+export type RunFont =
+  | string
+  | {
+      latin?: TextFont;
+      ea?: TextFont;
+      cs?: TextFont;
+      sym?: TextFont;
+    };
+
 // ── Run properties (CT_TextCharacterProperties) ──
 
 export interface RunPropertiesOptions {
@@ -44,7 +82,7 @@ export interface RunPropertiesOptions {
   bold?: boolean;
   italic?: boolean;
   underline?: UnderlineStyle;
-  font?: string;
+  font?: RunFont;
   lang?: string;
   fill?: FillOptions;
   hyperlink?: HyperlinkOptions;
@@ -54,8 +92,14 @@ export interface RunPropertiesOptions {
   baseline?: number;
   spacing?: number;
   capitalization?: TextCapitalization;
-  shadow?: boolean;
-  outline?: boolean;
+  /** a:highlight (CT_Color) — text highlight color. */
+  highlight?: SolidFillOptions;
+  /** @kern — kerning threshold in points (ST_TextNonNegativePoint). */
+  kern?: number;
+  /** a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips. */
+  outline?: true | OutlineOptions;
+  /** a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips. */
+  shadow?: true | EffectListOptions;
   rightToLeft?: boolean;
   noProof?: boolean;
   dirty?: boolean;
@@ -64,6 +108,10 @@ export interface RunPropertiesOptions {
   normalizeHeight?: boolean;
   bookmarkMark?: string;
   smartTagId?: string;
+  /** @err — spelling error flag. */
+  err?: boolean;
+  /** @smtClean — smart tag clean flag (XSD default true). */
+  smtClean?: boolean;
 }
 
 // ── Run (a:r) ──
@@ -142,9 +190,19 @@ export interface ParagraphPropertiesOptions {
   marginIndent?: number;
   marginRight?: number;
   defTabSize?: number;
+  /** @indent — first-line indent (ST_TextIndent, EMU). */
+  indent?: number;
   /** a:tabLst — explicit tab stops (emitted after bullets, before defRPr). */
   tabStops?: TabStopOptions[];
+  /** a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties). */
+  defaultRunProperties?: RunPropertiesOptions;
   fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
+  /** @rtl — paragraph right-to-left. */
+  rightToLeft?: boolean;
+  /** @eaLnBrk — East Asian line break. */
+  eastAsianLineBreak?: boolean;
+  /** @latinLnBrk — Latin line break. */
+  latinLineBreak?: boolean;
 }
 
 // ── Text field (a:fld) ──

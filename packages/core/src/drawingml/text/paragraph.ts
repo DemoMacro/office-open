@@ -47,7 +47,10 @@ export interface ParagraphDescriptorOptions {
 
 // ── Paragraph properties helper (a:pPr) ──
 
-function stringifyParagraphProperties(options: ParagraphPropertiesOptions): string {
+function stringifyParagraphProperties(
+  options: ParagraphPropertiesOptions,
+  ctx: WriteContext,
+): string {
   const children: string[] = [];
 
   const attrs: string[] = [];
@@ -55,12 +58,18 @@ function stringifyParagraphProperties(options: ParagraphPropertiesOptions): stri
   if (options.indentLevel !== undefined) attrs.push(`lvl="${options.indentLevel}"`);
   if (options.marginIndent !== undefined) attrs.push(`marL="${options.marginIndent}"`);
   if (options.marginRight !== undefined) attrs.push(`marR="${options.marginRight}"`);
+  if (options.indent !== undefined) attrs.push(`indent="${options.indent}"`);
   if (options.defTabSize !== undefined) attrs.push(`defTabSz="${options.defTabSize}"`);
   if (options.fontAlignment) attrs.push(`fontAlgn="${options.fontAlignment}"`);
+  if (options.rightToLeft !== undefined) attrs.push(`rtl="${options.rightToLeft ? 1 : 0}"`);
+  if (options.eastAsianLineBreak !== undefined)
+    attrs.push(`eaLnBrk="${options.eastAsianLineBreak ? 1 : 0}"`);
+  if (options.latinLineBreak !== undefined)
+    attrs.push(`latinLnBrk="${options.latinLineBreak ? 1 : 0}"`);
 
   // Line spacing
   if (options.lineSpacing !== undefined) {
-    children.push(`<a:lnSpc><a:spcPct val="${options.lineSpacing * 1000}"/></a:lnSpc>`);
+    children.push(`<a:lnSpc><a:spcPct val="${options.lineSpacing * 100000}"/></a:lnSpc>`);
   }
   if (options.lineSpacingPoints !== undefined) {
     children.push(`<a:lnSpc><a:spcPts val="${options.lineSpacingPoints * 100}"/></a:lnSpc>`);
@@ -70,8 +79,8 @@ function stringifyParagraphProperties(options: ParagraphPropertiesOptions): stri
   if (options.marginTop !== undefined) {
     children.push(`<a:spcBef><a:spcPts val="${options.marginTop}"/></a:spcBef>`);
   }
-  if (options.marginBottom !== undefined || options.marginTop !== undefined) {
-    children.push(`<a:spcAft><a:spcPts val="${options.marginBottom ?? 0}"/></a:spcAft>`);
+  if (options.marginBottom !== undefined) {
+    children.push(`<a:spcAft><a:spcPts val="${options.marginBottom}"/></a:spcAft>`);
   }
 
   // Bullets
@@ -82,6 +91,12 @@ function stringifyParagraphProperties(options: ParagraphPropertiesOptions): stri
   // Tab stops (after bullets, before defRPr)
   if (options.tabStops && options.tabStops.length > 0) {
     children.push(stringifyTabStops(options.tabStops));
+  }
+
+  // Default run properties — last child of a:pPr (CT_TextParagraphProperties).
+  if (options.defaultRunProperties) {
+    const rPr = runPropertiesDesc.stringify(options.defaultRunProperties, ctx) ?? "";
+    children.push(rPr.replaceAll("<a:rPr", "<a:defRPr").replaceAll("</a:rPr>", "</a:defRPr>"));
   }
 
   if (attrs.length === 0 && children.length === 0) return "";
@@ -136,7 +151,7 @@ function stringifyBullet(options: BulletOptions): string[] {
     if (options.startAt !== undefined) buAttrs.push(`startAt="${options.startAt}"`);
     parts.push(`<a:buAutoNum ${buAttrs.join(" ")}/>`);
   } else if (options.type === "picture") {
-    parts.push(`<a:buBlip r:embed="${options.embed}"/>`);
+    parts.push(`<a:buBlip><a:blip r:embed="${options.embed}"/></a:buBlip>`);
   }
 
   return parts;
@@ -152,7 +167,10 @@ function stringifyTabStops(stops: TabStopOptions[]): string {
   return `<a:tabLst>${tabs.join("")}</a:tabLst>`;
 }
 
-function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOptions> {
+function readParagraphProperties(
+  el: XmlElement,
+  ctx: ReadContext,
+): Mutable<ParagraphPropertiesOptions> {
   const result: Mutable<ParagraphPropertiesOptions> = {};
 
   if (el.attributes) {
@@ -161,12 +179,19 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
     if (el.attributes["lvl"] !== undefined) result.indentLevel = Number(el.attributes["lvl"]);
     if (el.attributes["marL"] !== undefined) result.marginIndent = Number(el.attributes["marL"]);
     if (el.attributes["marR"] !== undefined) result.marginRight = Number(el.attributes["marR"]);
+    if (el.attributes["indent"] !== undefined) result.indent = Number(el.attributes["indent"]);
     if (el.attributes["defTabSz"] !== undefined)
       result.defTabSize = Number(el.attributes["defTabSz"]);
     if (el.attributes["fontAlgn"] !== undefined)
       result.fontAlignment = String(
         el.attributes["fontAlgn"],
       ) as ParagraphPropertiesOptions["fontAlignment"];
+    if (el.attributes["rtl"] !== undefined)
+      result.rightToLeft = String(el.attributes["rtl"]) === "1";
+    if (el.attributes["eaLnBrk"] !== undefined)
+      result.eastAsianLineBreak = String(el.attributes["eaLnBrk"]) === "1";
+    if (el.attributes["latinLnBrk"] !== undefined)
+      result.latinLineBreak = String(el.attributes["latinLnBrk"]) === "1";
   }
 
   // Line spacing
@@ -174,7 +199,7 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
   if (lnSpc) {
     const spcPct = findChild(lnSpc, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined) {
-      result.lineSpacing = Number(spcPct.attributes["val"]) / 1000;
+      result.lineSpacing = Number(spcPct.attributes["val"]) / 100000;
     }
     const spcPts = findChild(lnSpc, "a:spcPts");
     if (spcPts?.attributes?.["val"] !== undefined) {
@@ -234,9 +259,10 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
       }
 
       if (buBlip) {
+        const blip = findChild(buBlip, "a:blip");
         result.bullet = {
           type: "picture",
-          embed: String(buBlip.attributes?.["r:embed"] ?? ""),
+          embed: String(blip?.attributes?.["r:embed"] ?? ""),
           ...style,
         } as BulletPictureOptions;
       } else if (buChar) {
@@ -269,6 +295,12 @@ function readParagraphProperties(el: XmlElement): Mutable<ParagraphPropertiesOpt
     if (tabs.length > 0) result.tabStops = tabs;
   }
 
+  // Default run properties — last child of a:pPr (CT_TextParagraphProperties).
+  const defRPr = findChild(el, "a:defRPr");
+  if (defRPr) {
+    result.defaultRunProperties = runPropertiesDesc.parse(defRPr, ctx) as RunPropertiesOptions;
+  }
+
   return result as ParagraphPropertiesOptions;
 }
 
@@ -282,7 +314,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
 
     // Paragraph properties
     if (opts.properties) {
-      const pPrXml = stringifyParagraphProperties(opts.properties);
+      const pPrXml = stringifyParagraphProperties(opts.properties, ctx);
       if (pPrXml) parts.push(pPrXml);
     }
 
@@ -326,7 +358,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
     // Paragraph properties
     const pPr = findChild(el, "a:pPr");
     if (pPr) {
-      result.properties = readParagraphProperties(pPr) as ParagraphPropertiesOptions;
+      result.properties = readParagraphProperties(pPr, ctx) as ParagraphPropertiesOptions;
     }
 
     // Collect runs, fields, and breaks in document order.

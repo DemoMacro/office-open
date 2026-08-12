@@ -5,7 +5,7 @@
  */
 
 import { Media } from "@office-open/core";
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 
 import type { PptxDocument } from "./parse";
 
@@ -50,7 +50,8 @@ export interface SmartArtEntry {
 
 export interface HyperlinkEntry {
   key: string;
-  url: string;
+  url?: string;
+  slide?: number;
   tooltip?: string;
 }
 
@@ -117,8 +118,13 @@ export class PptxWriteContext implements WriteContext {
     this._smartArts.set(key, entry);
   }
 
-  public addHyperlink(key: string, url: string, tooltip?: string): void {
-    this._hyperlinks.set(key, { key, url, tooltip });
+  public addHyperlink(key: string, target: HyperlinkTarget): void {
+    this._hyperlinks.set(key, {
+      key,
+      url: target.url,
+      slide: target.slide,
+      tooltip: target.tooltip,
+    });
   }
 
   public nextChartKey(): string {

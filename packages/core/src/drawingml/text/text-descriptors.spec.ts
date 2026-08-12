@@ -62,11 +62,67 @@ describe("runPropertiesDesc round-trip", () => {
     expect(r.capitalization).toBe("all");
   });
 
-  it("round-trips shadow/outline/rightToLeft", () => {
+  it("emits default shadow/outline from boolean sugar, parses back as full objects", () => {
     const r = roundTrip({ shadow: true, outline: true, rightToLeft: true });
-    expect(r.shadow).toBe(true);
-    expect(r.outline).toBe(true);
+    // shadow: true → default outer shadow; parsed back as EffectListOptions.
+    expect((r.shadow as { outerShadow?: unknown }).outerShadow).toBeDefined();
+    // outline: true → default solid outline; parsed back as OutlineOptions.
+    expect((r.outline as { type?: string }).type).toBe("solidFill");
     expect(r.rightToLeft).toBe(true);
+  });
+
+  it("round-trips full OutlineOptions (a:ln)", () => {
+    const r = roundTrip({
+      outline: { width: 9525, type: "solidFill", color: { value: "FF0000" } },
+    });
+    const o = r.outline as { width?: number; type?: string; color?: { value: string } };
+    expect(o.width).toBe(9525);
+    expect(o.type).toBe("solidFill");
+    expect(o.color?.value).toBe("FF0000");
+  });
+
+  it("round-trips full EffectListOptions (a:effectLst)", () => {
+    const r = roundTrip({
+      shadow: { outerShadow: { blurRadius: 50000, color: { value: "FF0000" } } },
+    });
+    const s = r.shadow as { outerShadow?: { blurRadius?: number; color?: { value: string } } };
+    expect(s.outerShadow?.blurRadius).toBe(50000);
+    expect(s.outerShadow?.color?.value).toBe("FF0000");
+  });
+
+  it("round-trips RunFont object (latin/ea/cs distinct)", () => {
+    const r = roundTrip({ font: { latin: "Arial", ea: "宋体", cs: "Times New Roman" } });
+    const f = r.font as { latin?: string; ea?: string; cs?: string };
+    expect(f.latin).toBe("Arial");
+    expect(f.ea).toBe("宋体");
+    expect(f.cs).toBe("Times New Roman");
+  });
+
+  it("round-trips TextFont with panose/pitchFamily/charset", () => {
+    const r = roundTrip({
+      font: {
+        latin: { typeface: "Arial", panose: "020B0604020202020204", pitchFamily: 34, charset: 0 },
+      },
+    });
+    const f = r.font as {
+      latin?: { typeface: string; panose?: string; pitchFamily?: number; charset?: number };
+    };
+    expect(f.latin?.typeface).toBe("Arial");
+    expect(f.latin?.panose).toBe("020B0604020202020204");
+    expect(f.latin?.pitchFamily).toBe(34);
+    expect(f.latin?.charset).toBe(0);
+  });
+
+  it("round-trips highlight (CT_Color)", () => {
+    const r = roundTrip({ highlight: { value: "FFFF00" } });
+    expect((r.highlight as { value?: string }).value).toBe("FFFF00");
+  });
+
+  it("round-trips kern/err/smtClean attributes", () => {
+    const r = roundTrip({ kern: 12, err: true, smtClean: false });
+    expect(r.kern).toBe(12);
+    expect(r.err).toBe(true);
+    expect(r.smtClean).toBe(false);
   });
 
   it("round-trips solid fill", () => {
@@ -82,6 +138,59 @@ describe("runPropertiesDesc round-trip", () => {
     });
     expect(r.mouseoverHyperlink).toBeDefined();
     expect(r.mouseoverHyperlink?.tooltip).toBe("Hover tip");
+  });
+
+  it("emits internal slide jump with ppaction token", () => {
+    const xml = runPropertiesDesc.stringify({ hyperlink: { slide: 3, tooltip: "Go" } }, writeCtx)!;
+    expect(xml).toContain('action="ppaction://hlinksldjump"');
+    expect(xml).toContain('tooltip="Go"');
+    expect(xml).toContain('r:id="{hlink:');
+  });
+
+  it("parses internal slide jump from r:id → slideN.xml + ppaction token", () => {
+    const xml = `<a:rPr><a:hlinkClick r:id="rId7" action="ppaction://hlinksldjump"/></a:rPr>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const slideReadCtx = {
+      resolveRelationship: (rId: string) => (rId === "rId7" ? "../slides/slide3.xml" : undefined),
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+    const r = runPropertiesDesc.parse(el, slideReadCtx);
+    expect(r.hyperlink?.slide).toBe(3);
+    expect(r.hyperlink?.action).toBeUndefined();
+    expect(r.hyperlink?.url).toBeUndefined();
+  });
+
+  it("parses external url hyperlink without slide mis-detection", () => {
+    const xml = `<a:rPr><a:hlinkClick r:id="rId2"/></a:rPr>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const urlReadCtx = {
+      resolveRelationship: (rId: string) => (rId === "rId2" ? "https://example.com" : undefined),
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+    const r = runPropertiesDesc.parse(el, urlReadCtx);
+    expect(r.hyperlink?.url).toBe("https://example.com");
+    expect(r.hyperlink?.slide).toBeUndefined();
+  });
+
+  it("round-trips action-only hyperlink token without r:id (CT_Hyperlink r:id optional)", () => {
+    const xml = runPropertiesDesc.stringify(
+      { hyperlink: { action: "ppaction://hlinkshowjump?jump=nextslide" } },
+      writeCtx,
+    )!;
+    // CT_Hyperlink r:id is optional — action-only tokens carry no r:id.
+    expect(xml).not.toContain("r:id");
+    expect(xml).toContain('action="ppaction://hlinkshowjump?jump=nextslide"');
+    // Round-trip: action read back verbatim; no url/slide synthesized.
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const r = runPropertiesDesc.parse(el, readCtx);
+    expect(r.hyperlink?.action).toBe("ppaction://hlinkshowjump?jump=nextslide");
+    expect(r.hyperlink?.url).toBeUndefined();
+    expect(r.hyperlink?.slide).toBeUndefined();
   });
 });
 
@@ -237,6 +346,19 @@ describe("paragraphDesc round-trip", () => {
       { position: 914400, alignment: "l" },
       { position: 4572000, alignment: "dec" },
     ]);
+  });
+
+  it("round-trips defRPr (default run properties)", () => {
+    const r = roundTrip({
+      text: "x",
+      properties: {
+        alignment: "center",
+        defaultRunProperties: { size: 24, bold: true, font: "Arial" },
+      },
+    });
+    expect(r.properties?.defaultRunProperties?.size).toBe(24);
+    expect(r.properties?.defaultRunProperties?.bold).toBe(true);
+    expect(r.properties?.defaultRunProperties?.font).toBe("Arial");
   });
 
   it("preserves single-run formatting (no text-shorthand collapse)", () => {

@@ -48,7 +48,6 @@ import {
   type SlideOptions,
   type SlideSize,
 } from "@shared/file";
-import { HyperlinkCollection } from "@shared/hyperlink-collection";
 import type { MediaData } from "@shared/media/data";
 import { createThemeXml } from "@shared/theme";
 import { buildTransition } from "@shared/transition";
@@ -728,7 +727,6 @@ export function compilePresentation(
   const media = descCtx.mediaCollection;
   const charts = new ChartCollection();
   const smartArts = new SmartArtCollection();
-  const hyperlinks = new HyperlinkCollection();
 
   const presPropsFullOpts =
     options.web || options.print || options.htmlPublish || options.colorMru
@@ -999,16 +997,25 @@ export function compilePresentation(
       const slideHlinkKeys = collectPlaceholderKeys(replacedSlideXml, "hlink:");
       if (slideHlinkKeys.length > 0) {
         const slideHlinkKeySet = new Set(slideHlinkKeys);
-        const slideHlinks = hyperlinks.array.filter((h) => slideHlinkKeySet.has(h.key));
+        const slideHlinks = descCtx.hyperlinks.filter((h) => slideHlinkKeySet.has(h.key));
         const hlinkOffset = currentSlideRels.relationshipCount + 1;
         replacedSlideXml = replaceHyperlinkPlaceholders(replacedSlideXml, slideHlinks, hlinkOffset);
         for (const [hi, hlink] of slideHlinks.entries()) {
-          currentSlideRels.addRelationship(
-            hlinkOffset + hi,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-            hlink.url,
-            "External",
-          );
+          if (hlink.slide !== undefined) {
+            // Internal slide jump: r:id → slideN.xml, no TargetMode (internal).
+            currentSlideRels.addRelationship(
+              hlinkOffset + hi,
+              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+              `slide${hlink.slide}.xml`,
+            );
+          } else {
+            currentSlideRels.addRelationship(
+              hlinkOffset + hi,
+              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+              hlink.url ?? "",
+              "External",
+            );
+          }
         }
       }
 

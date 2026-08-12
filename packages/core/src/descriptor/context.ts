@@ -6,6 +6,16 @@
 
 import type { Element as XmlElement } from "@office-open/xml";
 
+/** Target for a DrawingML text hyperlink (external URL or internal slide jump). */
+export interface HyperlinkTarget {
+  /** External URL (mutually exclusive with slide). */
+  url?: string;
+  /** Internal slide number, 1-based (mutually exclusive with url). */
+  slide?: number;
+  /** Optional tooltip. */
+  tooltip?: string;
+}
+
 /** Context passed during stringify (write path). */
 export interface WriteContext {
   /** Register a relationship and return its rId. */
@@ -17,7 +27,7 @@ export interface WriteContext {
    * don't emit DrawingML text hyperlinks (DOCX uses w:hyperlink) implement
    * this as a no-op.
    */
-  addHyperlink(key: string, url: string, tooltip?: string): void;
+  addHyperlink(key: string, target: HyperlinkTarget): void;
 }
 
 /** Context passed during parse (parse path). */

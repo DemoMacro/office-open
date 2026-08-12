@@ -9,7 +9,7 @@
 
 import { Relationships } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type { Element } from "@office-open/xml";
 import { AltChunkCollection } from "@parts/alt-chunk/alt-chunk-collection";
@@ -242,7 +242,7 @@ export class DocxWriteContext implements WriteContext {
     return `{${entry.fileName}}`;
   }
 
-  public addHyperlink(_key: string, _url: string, _tooltip?: string): void {
+  public addHyperlink(_key: string, _target: HyperlinkTarget): void {
     // DrawingML text hyperlinks are not emitted by DOCX; text boxes use w:hyperlink.
   }
 

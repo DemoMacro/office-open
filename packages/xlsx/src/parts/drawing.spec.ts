@@ -1,5 +1,5 @@
 import { unzipSync } from "@office-open/core";
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -149,8 +149,8 @@ describe("drawingDesc — anchored shapes", () => {
     const ctx = {
       addRelationship: () => "rId1",
       addMedia: () => "",
-      addHyperlink: (key: string, url: string, tooltip?: string) => {
-        registered.push({ key, url, tooltip });
+      addHyperlink: (key: string, target: HyperlinkTarget) => {
+        registered.push({ key, url: target.url ?? "", tooltip: target.tooltip });
       },
     } as unknown as WriteContext;
 

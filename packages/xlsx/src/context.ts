@@ -5,7 +5,7 @@
  */
 
 import { ChartCollection, Relationships, type RelationshipType } from "@office-open/core";
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
 import { SharedStrings } from "@parts/shared-strings";
 import { Styles } from "@parts/styles";
@@ -58,8 +58,9 @@ export class XlsxWriteContext implements WriteContext {
     return `{${entry.fileName}}`;
   }
 
-  public addHyperlink(key: string, url: string, tooltip?: string): void {
-    this._hyperlinks.set(key, { key, url, tooltip });
+  public addHyperlink(key: string, target: HyperlinkTarget): void {
+    // XLSX has no slide concept — only the external URL leg is reachable.
+    this._hyperlinks.set(key, { key, url: target.url ?? "", tooltip: target.tooltip });
   }
 
   /**

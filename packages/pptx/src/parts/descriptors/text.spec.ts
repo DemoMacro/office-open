@@ -88,14 +88,14 @@ describe("runPropertiesDesc round-trip", () => {
     expect(result.capitalization).toBe("all");
   });
 
-  it("round-trips shadow", () => {
+  it("round-trips shadow (boolean sugar → EffectListOptions)", () => {
     const result = roundTrip({ shadow: true });
-    expect(result.shadow).toBe(true);
+    expect((result.shadow as { outerShadow?: unknown }).outerShadow).toBeDefined();
   });
 
-  it("round-trips outline", () => {
+  it("round-trips outline (boolean sugar → OutlineOptions)", () => {
     const result = roundTrip({ outline: true });
-    expect(result.outline).toBe(true);
+    expect((result.outline as { type?: string }).type).toBe("solidFill");
   });
 
   it("round-trips rightToLeft", () => {
