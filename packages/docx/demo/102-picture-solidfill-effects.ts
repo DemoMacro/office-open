@@ -117,7 +117,7 @@ const buffer = await generateDocument({
                   effects: {
                     reflection: {
                       blurRadius: 6350,
-                      startAlpha: 40000,
+                      startAlpha: 40,
                     },
                   },
                   transformation: {
@@ -198,7 +198,7 @@ const buffer = await generateDocument({
                     },
                     reflection: {
                       blurRadius: 4000,
-                      startAlpha: 30000,
+                      startAlpha: 30,
                     },
                   },
                   transformation: {

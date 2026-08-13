@@ -82,8 +82,8 @@ const buffer = await generateDocument({
                     },
                   ],
                   effectDag: {
-                    luminance: { bright: 20000, contrast: -10000 },
-                    tint: { hue: 2700000, amount: 30000 },
+                    luminance: { bright: 20, contrast: -10 },
+                    tint: { hue: 2700000, amount: 30 },
                   },
                   fill: "4472C4",
                   transformation: { height: "2.1cm", width: "7.9cm" },
@@ -142,7 +142,7 @@ const buffer = await generateDocument({
                       shade: { angle: 5400000 },
                       stops: [
                         { color: { value: "1F4E79" }, position: 0 },
-                        { color: { value: "2E75B6" }, position: 100000 },
+                        { color: { value: "2E75B6" }, position: 100 },
                       ],
                     },
                   },

@@ -41,7 +41,7 @@ export interface RgbColorOptions {
  * ```typescript
  * const redColor = createRgbColor({ value: "FF0000" });
  * // With alpha transform
- * const semiRed = createRgbColor({ value: "FF0000", transforms: { alpha: 50000 } });
+ * const semiRed = createRgbColor({ value: "FF0000", transforms: { alpha: 50 } });
  * ```
  */
 export const createRgbColor = (options: RgbColorOptions): string => {

@@ -92,8 +92,8 @@ describe("effectListDesc", () => {
         blurRadius: 76200,
         distance: 40000,
         direction: 5400000,
-        scaleX: 100000,
-        scaleY: 100000,
+        scaleX: 100,
+        scaleY: 100,
         skewX: 0,
         skewY: 0,
         alignment: "bottom",
@@ -106,8 +106,8 @@ describe("effectListDesc", () => {
     expect(result.outerShadow!.blurRadius).toBe(76200);
     expect(result.outerShadow!.distance).toBe(40000);
     expect(result.outerShadow!.direction).toBe(5400000);
-    expect(result.outerShadow!.scaleX).toBe(100000);
-    expect(result.outerShadow!.scaleY).toBe(100000);
+    expect(result.outerShadow!.scaleX).toBe(100);
+    expect(result.outerShadow!.scaleY).toBe(100);
     expect(result.outerShadow!.skewX).toBe(0);
     expect(result.outerShadow!.skewY).toBe(0);
     expect(result.outerShadow!.alignment).toBe("bottom");
@@ -136,15 +136,15 @@ describe("effectListDesc", () => {
     const opts: EffectListOptions = {
       reflection: {
         blurRadius: 6350,
-        startAlpha: 50000,
+        startAlpha: 50,
         startPosition: 0,
         endAlpha: 0,
-        endPosition: 50000,
+        endPosition: 50,
         distance: 25400,
         direction: 5400000,
         fadeDirection: 5400000,
-        scaleX: 100000,
-        scaleY: 100000,
+        scaleX: 100,
+        scaleY: 100,
         skewX: 0,
         skewY: 0,
         alignment: "bottom",
@@ -155,15 +155,15 @@ describe("effectListDesc", () => {
     expect(result.reflection).toBeDefined();
     const ref = result.reflection as Record<string, unknown>;
     expect(ref.blurRadius).toBe(6350);
-    expect(ref.startAlpha).toBe(50000);
+    expect(ref.startAlpha).toBe(50);
     expect(ref.startPosition).toBe(0);
     expect(ref.endAlpha).toBe(0);
-    expect(ref.endPosition).toBe(50000);
+    expect(ref.endPosition).toBe(50);
     expect(ref.distance).toBe(25400);
     expect(ref.direction).toBe(5400000);
     expect(ref.fadeDirection).toBe(5400000);
-    expect(ref.scaleX).toBe(100000);
-    expect(ref.scaleY).toBe(100000);
+    expect(ref.scaleX).toBe(100);
+    expect(ref.scaleY).toBe(100);
     expect(ref.skewX).toBe(0);
     expect(ref.skewY).toBe(0);
     expect(ref.alignment).toBe("bottom");

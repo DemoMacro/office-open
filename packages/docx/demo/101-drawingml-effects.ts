@@ -207,7 +207,7 @@ const buffer = await generateDocument({
                       blurRadius: 6350,
                       distance: 38100,
                       fadeDirection: 5400000,
-                      startAlpha: 40000,
+                      startAlpha: 40,
                     },
                   },
                   outline: {
@@ -263,8 +263,8 @@ const buffer = await generateDocument({
                       shade: { angle: 5400000 },
                       stops: [
                         { color: { value: "002060" }, position: 0 },
-                        { color: { value: "0070C0" }, position: 50000 },
-                        { color: { value: "00B0F0" }, position: 100000 },
+                        { color: { value: "0070C0" }, position: 50 },
+                        { color: { value: "00B0F0" }, position: 100 },
                       ],
                     },
                   },
@@ -319,7 +319,7 @@ const buffer = await generateDocument({
                       shade: { path: "circle" },
                       stops: [
                         { color: { value: "FFFFFF" }, position: 0 },
-                        { color: { value: "4472C4" }, position: 100000 },
+                        { color: { value: "4472C4" }, position: 100 },
                       ],
                     },
                   },
@@ -461,7 +461,7 @@ const buffer = await generateDocument({
                       blurRadius: 4000,
                       distance: 20000,
                       fadeDirection: 5400000,
-                      startAlpha: 30000,
+                      startAlpha: 30,
                     },
                   },
                   fill: {
@@ -470,8 +470,8 @@ const buffer = await generateDocument({
                       shade: { angle: 2700000 },
                       stops: [
                         { color: { value: "1F4E79" }, position: 0 },
-                        { color: { value: "2E75B6" }, position: 50000 },
-                        { color: { value: "9DC3E6" }, position: 100000 },
+                        { color: { value: "2E75B6" }, position: 50 },
+                        { color: { value: "9DC3E6" }, position: 100 },
                       ],
                     },
                   },

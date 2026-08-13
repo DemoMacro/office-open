@@ -149,7 +149,7 @@ export const buildFill = (options: FillOptions, embedPlaceholder?: string): stri
       }
       return createGradientFill({
         stops: options.stops.map((stop) => ({
-          position: stop.position * 1000,
+          position: stop.position,
           color: normalizeColor(stop.color),
         })),
         ...(!options.path &&

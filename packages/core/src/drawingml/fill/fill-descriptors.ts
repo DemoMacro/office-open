@@ -75,8 +75,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     const stopsXml = opts.stops
       .map((stop) => {
         const colorXml = stringifyColorChoice(stop.color, ctx);
-        if (!colorXml) return `<a:gs pos="${stop.position}"/>`;
-        return `<a:gs pos="${stop.position}">${colorXml}</a:gs>`;
+        if (!colorXml) return `<a:gs pos="${stop.position * 1000}"/>`;
+        return `<a:gs pos="${stop.position * 1000}">${colorXml}</a:gs>`;
       })
       .join("");
     parts.push(`<a:gsLst>${stopsXml}</a:gsLst>`);
@@ -107,7 +107,7 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
         .map((gs) => {
           const pos = Number(gs.attributes?.["pos"] ?? 0);
           const color = readDirectColor(gs, ctx);
-          return { position: pos, color };
+          return { position: pos / 1000, color };
         });
     }
 
@@ -247,7 +247,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
         // Simplified API variant
         const gradOpts: GradientFillOptions = {
           stops: opts.stops.map((stop) => ({
-            position: stop.position * 1000,
+            position: stop.position,
             color:
               typeof stop.color === "string"
                 ? ({ value: stop.color.replace("#", "") } as SolidFillOptions)

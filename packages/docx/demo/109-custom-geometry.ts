@@ -157,7 +157,7 @@ const buffer = await generateDocument({
                       shade: { angle: 5400000 },
                       stops: [
                         { color: { value: "002060" }, position: 0 },
-                        { color: { value: "00B0F0" }, position: 100000 },
+                        { color: { value: "00B0F0" }, position: 100 },
                       ],
                     },
                   },

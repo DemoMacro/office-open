@@ -72,7 +72,7 @@ describe("backgroundDesc round-trip", () => {
         type: "gradient",
         stops: [
           { position: 0, color: "FFFFFF" },
-          { position: 100000, color: "4472C4" },
+          { position: 100, color: "4472C4" },
         ],
       },
     };

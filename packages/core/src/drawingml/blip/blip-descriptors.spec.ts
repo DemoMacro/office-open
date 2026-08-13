@@ -34,16 +34,16 @@ describe("tileDesc", () => {
     const opts: TileOptions = {
       tx: 100,
       ty: 200,
-      sx: 50000,
-      sy: 50000,
+      sx: 50,
+      sy: 50,
       flip: "x",
       align: "center",
     };
     const result = roundTrip(tileDesc, opts);
     expect(result.tx).toBe(100);
     expect(result.ty).toBe(200);
-    expect(result.sx).toBe(50000);
-    expect(result.sy).toBe(50000);
+    expect(result.sx).toBe(50);
+    expect(result.sy).toBe(50);
     expect(result.flip).toBe("x");
     expect(result.align).toBe("center");
   });
@@ -160,7 +160,7 @@ describe("blipFillDesc", () => {
     };
     const opts: BlipFillFull = {
       referenceId: "img.png",
-      tile: { tx: 100, ty: 200, sx: 50000, sy: 50000 },
+      tile: { tx: 100, ty: 200, sx: 50, sy: 50 },
     };
     const result = roundTrip(blipFillDesc, opts);
     expect(result.tile).toBeDefined();

@@ -45,9 +45,9 @@ export interface TileOptions {
   tx?: number;
   /** Vertical offset for the tile origin (in EMUs) */
   ty?: number;
-  /** Horizontal scale factor (ST_Percentage: 100000 = 100%, range unlimited) */
+  /** Horizontal scale as integer percent (100 = 100%) */
   sx?: number;
-  /** Vertical scale factor (ST_Percentage: 100000 = 100%, range unlimited) */
+  /** Vertical scale as integer percent (100 = 100%) */
   sy?: number;
   /** Flip mode for alternating tiles */
   flip?: TileFlipMode;
@@ -78,8 +78,8 @@ export interface TileOptions {
  *
  * @example
  * ```typescript
- * // Tile with 50% scale (50000 = 50%)
- * createTileInfo({ sx: 50000, sy: 50000 });
+ * // Tile with 50% scale
+ * createTileInfo({ sx: 50, sy: 50 });
  * // Tile with flip and alignment
  * createTileInfo({ flip: "xy", align: "center" });
  * ```
@@ -92,8 +92,8 @@ export const createTileInfo = (options?: TileOptions): string => {
   const attrs: Record<string, string | number | undefined> = {};
   if (options.tx !== undefined) attrs.tx = options.tx;
   if (options.ty !== undefined) attrs.ty = options.ty;
-  if (options.sx !== undefined) attrs.sx = options.sx;
-  if (options.sy !== undefined) attrs.sy = options.sy;
+  if (options.sx !== undefined) attrs.sx = options.sx * 1000;
+  if (options.sy !== undefined) attrs.sy = options.sy * 1000;
   if (options.flip !== undefined) attrs.flip = options.flip;
   if (options.align !== undefined) attrs.algn = xsdRectAlignment.to(options.align);
 

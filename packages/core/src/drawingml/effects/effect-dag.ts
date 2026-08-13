@@ -284,15 +284,17 @@ const createAlphaInverseEffect = (options?: AlphaInverseEffectOptions): string =
   );
 
 const createAlphaModulateFixedEffect = (options?: AlphaModulateFixedEffectOptions): string =>
-  options?.amount === undefined ? "<a:alphaModFix/>" : `<a:alphaModFix amt="${options.amount}"/>`;
+  options?.amount === undefined
+    ? "<a:alphaModFix/>"
+    : `<a:alphaModFix amt="${options.amount * 1000}"/>`;
 
 const createAlphaOutsetEffect = (options?: AlphaOutsetEffectOptions): string =>
   options?.radius === undefined ? "<a:alphaOutset/>" : `<a:alphaOutset rad="${options.radius}"/>`;
 
 const createAlphaReplaceEffect = (options: AlphaReplaceEffectOptions): string =>
-  `<a:alphaRepl a="${options.alpha}"/>`;
+  `<a:alphaRepl a="${options.alpha * 1000}"/>`;
 
-const createBiLevelEffect = (thresh: number): string => `<a:biLevel thresh="${thresh}"/>`;
+const createBiLevelEffect = (thresh: number): string => `<a:biLevel thresh="${thresh * 1000}"/>`;
 
 const createBlendEffect = (options: BlendEffectOptions): string =>
   element("a:blend", { blend: xsdBlendMode.to(options.blend) }, [
@@ -353,29 +355,29 @@ const createHSLEffect = (options?: HSLEffectOptions): string => {
 
 const createLuminanceEffect = (options?: LuminanceEffectOptions): string => {
   const attrs: Record<string, number> = {};
-  if (options?.bright !== undefined) attrs.bright = options.bright;
-  if (options?.contrast !== undefined) attrs.contrast = options.contrast;
+  if (options?.bright !== undefined) attrs.bright = options.bright * 1000;
+  if (options?.contrast !== undefined) attrs.contrast = options.contrast * 1000;
   return element("a:lum", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
 const createTintEffect = (options?: TintEffectOptions): string => {
   const attrs: Record<string, number> = {};
   if (options?.hue !== undefined) attrs.hue = options.hue;
-  if (options?.amount !== undefined) attrs.amt = options.amount;
+  if (options?.amount !== undefined) attrs.amt = options.amount * 1000;
   return element("a:tint", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
 const createRelativeOffsetEffect = (options?: RelativeOffsetEffectOptions): string => {
   const attrs: Record<string, number> = {};
-  if (options?.translateX !== undefined) attrs.tx = options.translateX;
-  if (options?.translateY !== undefined) attrs.ty = options.translateY;
+  if (options?.translateX !== undefined) attrs.tx = options.translateX * 1000;
+  if (options?.translateY !== undefined) attrs.ty = options.translateY * 1000;
   return element("a:relOff", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
 const createTransformEffect = (options?: TransformEffectOptions): string => {
   const attrs: Record<string, number> = {};
-  if (options?.scaleX !== undefined) attrs.sx = options.scaleX;
-  if (options?.scaleY !== undefined) attrs.sy = options.scaleY;
+  if (options?.scaleX !== undefined) attrs.sx = options.scaleX * 1000;
+  if (options?.scaleY !== undefined) attrs.sy = options.scaleY * 1000;
   if (options?.skewX !== undefined) attrs.kx = options.skewX;
   if (options?.skewY !== undefined) attrs.ky = options.skewY;
   if (options?.translateX !== undefined) attrs.tx = options.translateX;
@@ -546,7 +548,7 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
  * // DAG with alpha effects and nested container
  * createEffectDag({
  *   type: "tree",
- *   alphaBiLevel: { threshold: 50000 },
+ *   alphaBiLevel: { threshold: 50 },
  *   containers: [{
  *     glow: { color: { value: "FF0000" } },
  *   }],

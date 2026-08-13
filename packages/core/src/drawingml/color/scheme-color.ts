@@ -110,7 +110,7 @@ export const SchemeColor = {
  * // With tint transform
  * const lightAccent = createSchemeColor({
  *   value: SchemeColor.ACCENT1,
- *   transforms: { tint: 40000 },
+ *   transforms: { tint: 40 },
  * });
  * ```
  */

@@ -13,10 +13,10 @@ import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
 
 /**
- * Gradient stop position (0-100000, representing 0%-100%).
+ * Gradient stop position as integer percent (0-100).
  */
 export interface GradientStop {
-  /** Position of the color stop (0-100000) */
+  /** Position of the color stop as integer percent (0-100). */
   position: number;
   /** Color at this stop */
   color: SolidFillOptions;
@@ -140,11 +140,11 @@ export interface GradientFillOptions {
  * @example
  * ```typescript
  * createGradientStop({ position: 0, color: { value: "FF0000" } });
- * createGradientStop({ position: 100000, color: { value: "0000FF" } });
+ * createGradientStop({ position: 100, color: { value: "0000FF" } });
  * ```
  */
 export const createGradientStop = (stop: GradientStop): string =>
-  element("a:gs", { pos: stop.position }, [createColorElement(stop.color)]);
+  element("a:gs", { pos: stop.position * 1000 }, [createColorElement(stop.color)]);
 
 /**
  * Creates a relative rect element.
@@ -197,7 +197,7 @@ const createShadeElement = (shade: GradientShadeOptions): string => {
  * createGradientFill({
  *   stops: [
  *     { position: 0, color: { value: "FF0000" } },
- *     { position: 100000, color: { value: "0000FF" } },
+ *     { position: 100, color: { value: "0000FF" } },
  *   ],
  *   shade: { angle: 5400000 },
  * });

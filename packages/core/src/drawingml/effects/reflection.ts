@@ -17,25 +17,25 @@ import { xsdRectAlignment } from "../../util/mappings";
 export interface ReflectionEffectOptions {
   /** Blur radius in EMUs */
   blurRadius?: number;
-  /** Start opacity (fixed percentage, e.g., 100000 = 100%) */
+  /** Start opacity as integer percent (100 = fully opaque) */
   startAlpha?: number;
-  /** Start position (fixed percentage) */
+  /** Start position as integer percent (0-100) */
   startPosition?: number;
-  /** End opacity (fixed percentage) */
+  /** End opacity as integer percent */
   endAlpha?: number;
-  /** End position (fixed percentage) */
+  /** End position as integer percent (0-100) */
   endPosition?: number;
   /** Distance from shape in EMUs */
   distance?: number;
-  /** Direction angle in 60,000ths of a degree */
+  /** Direction angle in 60,000ths of a degree (will take degrees in the angle batch) */
   direction?: number;
-  /** Fade direction angle in 60,000ths of a degree */
+  /** Fade direction angle in 60,000ths of a degree (will take degrees in the angle batch) */
   fadeDirection?: number;
-  /** Horizontal scale percentage */
+  /** Horizontal scale as integer percent (100 = 100%) */
   scaleX?: number;
-  /** Vertical scale percentage */
+  /** Vertical scale as integer percent */
   scaleY?: number;
-  /** Horizontal skew angle */
+  /** Horizontal skew angle in 60,000ths of a degree (will take degrees in the angle batch) */
   skewX?: number;
   /** Vertical skew angle */
   skewY?: number;
@@ -76,15 +76,15 @@ export const createReflectionEffect = (options?: ReflectionEffectOptions): strin
   const attrs: Record<string, string | number> = {};
 
   if (options.blurRadius !== undefined) attrs.blurRad = options.blurRadius;
-  if (options.startAlpha !== undefined) attrs.stA = options.startAlpha;
-  if (options.startPosition !== undefined) attrs.stPos = options.startPosition;
-  if (options.endAlpha !== undefined) attrs.endA = options.endAlpha;
-  if (options.endPosition !== undefined) attrs.endPos = options.endPosition;
+  if (options.startAlpha !== undefined) attrs.stA = options.startAlpha * 1000;
+  if (options.startPosition !== undefined) attrs.stPos = options.startPosition * 1000;
+  if (options.endAlpha !== undefined) attrs.endA = options.endAlpha * 1000;
+  if (options.endPosition !== undefined) attrs.endPos = options.endPosition * 1000;
   if (options.distance !== undefined) attrs.dist = options.distance;
   if (options.direction !== undefined) attrs.dir = options.direction;
   if (options.fadeDirection !== undefined) attrs.fadeDir = options.fadeDirection;
-  if (options.scaleX !== undefined) attrs.sx = options.scaleX;
-  if (options.scaleY !== undefined) attrs.sy = options.scaleY;
+  if (options.scaleX !== undefined) attrs.sx = options.scaleX * 1000;
+  if (options.scaleY !== undefined) attrs.sy = options.scaleY * 1000;
   if (options.skewX !== undefined) attrs.kx = options.skewX;
   if (options.skewY !== undefined) attrs.ky = options.skewY;
   if (options.alignment !== undefined) attrs.algn = xsdRectAlignment.to(options.alignment);

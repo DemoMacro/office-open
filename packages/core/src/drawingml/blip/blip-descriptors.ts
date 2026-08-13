@@ -35,8 +35,8 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
     const attrParts: string[] = [];
     if (opts.tx !== undefined) attrParts.push(`tx="${opts.tx}"`);
     if (opts.ty !== undefined) attrParts.push(`ty="${opts.ty}"`);
-    if (opts.sx !== undefined) attrParts.push(`sx="${opts.sx}"`);
-    if (opts.sy !== undefined) attrParts.push(`sy="${opts.sy}"`);
+    if (opts.sx !== undefined) attrParts.push(`sx="${opts.sx * 1000}"`);
+    if (opts.sy !== undefined) attrParts.push(`sy="${opts.sy * 1000}"`);
     if (opts.flip !== undefined) attrParts.push(`flip="${escapeXml(opts.flip)}"`);
     if (opts.align !== undefined)
       attrParts.push(`algn="${escapeXml(xsdRectAlignment.to(opts.align))}"`);
@@ -47,8 +47,8 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
     const result: TileOptions = {};
     if (el.attributes?.["tx"] !== undefined) result.tx = Number(el.attributes["tx"]);
     if (el.attributes?.["ty"] !== undefined) result.ty = Number(el.attributes["ty"]);
-    if (el.attributes?.["sx"] !== undefined) result.sx = Number(el.attributes["sx"]);
-    if (el.attributes?.["sy"] !== undefined) result.sy = Number(el.attributes["sy"]);
+    if (el.attributes?.["sx"] !== undefined) result.sx = parsePercent(el.attributes["sx"])!;
+    if (el.attributes?.["sy"] !== undefined) result.sy = parsePercent(el.attributes["sy"])!;
     if (el.attributes?.["flip"] !== undefined)
       result.flip = String(el.attributes["flip"]) as TileOptions["flip"];
     if (el.attributes?.["algn"] !== undefined)
@@ -63,19 +63,19 @@ export const sourceRectangleDesc: CustomDescriptor<SourceRectangleOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const attrParts: string[] = [];
-    if (opts.left !== undefined) attrParts.push(`l="${opts.left}"`);
-    if (opts.top !== undefined) attrParts.push(`t="${opts.top}"`);
-    if (opts.right !== undefined) attrParts.push(`r="${opts.right}"`);
-    if (opts.bottom !== undefined) attrParts.push(`b="${opts.bottom}"`);
+    if (opts.left !== undefined) attrParts.push(`l="${opts.left * 1000}"`);
+    if (opts.top !== undefined) attrParts.push(`t="${opts.top * 1000}"`);
+    if (opts.right !== undefined) attrParts.push(`r="${opts.right * 1000}"`);
+    if (opts.bottom !== undefined) attrParts.push(`b="${opts.bottom * 1000}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     return `<a:srcRect${attrStr}/>`;
   },
   parse(el, _ctx) {
     const result: SourceRectangleOptions = {};
-    if (el.attributes?.["l"] !== undefined) result.left = Number(el.attributes["l"]);
-    if (el.attributes?.["t"] !== undefined) result.top = Number(el.attributes["t"]);
-    if (el.attributes?.["r"] !== undefined) result.right = Number(el.attributes["r"]);
-    if (el.attributes?.["b"] !== undefined) result.bottom = Number(el.attributes["b"]);
+    if (el.attributes?.["l"] !== undefined) result.left = parsePercent(el.attributes["l"])!;
+    if (el.attributes?.["t"] !== undefined) result.top = parsePercent(el.attributes["t"])!;
+    if (el.attributes?.["r"] !== undefined) result.right = parsePercent(el.attributes["r"])!;
+    if (el.attributes?.["b"] !== undefined) result.bottom = parsePercent(el.attributes["b"])!;
     return result;
   },
 };
@@ -116,9 +116,10 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
 
   if (opts.luminance) {
     const attrParts: string[] = [];
-    if (opts.luminance.bright !== undefined) attrParts.push(`bright="${opts.luminance.bright}"`);
+    if (opts.luminance.bright !== undefined)
+      attrParts.push(`bright="${opts.luminance.bright * 1000}"`);
     if (opts.luminance.contrast !== undefined)
-      attrParts.push(`contrast="${opts.luminance.contrast}"`);
+      attrParts.push(`contrast="${opts.luminance.contrast * 1000}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:lum${attrStr}/>`);
   }
@@ -126,8 +127,8 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   if (opts.hsl) {
     const attrParts: string[] = [];
     if (opts.hsl.hue !== undefined) attrParts.push(`hue="${opts.hsl.hue}"`);
-    if (opts.hsl.saturation !== undefined) attrParts.push(`sat="${opts.hsl.saturation}"`);
-    if (opts.hsl.luminance !== undefined) attrParts.push(`lum="${opts.hsl.luminance}"`);
+    if (opts.hsl.saturation !== undefined) attrParts.push(`sat="${opts.hsl.saturation * 1000}"`);
+    if (opts.hsl.luminance !== undefined) attrParts.push(`lum="${opts.hsl.luminance * 1000}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:hsl${attrStr}/>`);
   }
@@ -135,7 +136,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   if (opts.tint) {
     const attrParts: string[] = [];
     if (opts.tint.hue !== undefined) attrParts.push(`hue="${opts.tint.hue}"`);
-    if (opts.tint.amount !== undefined) attrParts.push(`amt="${opts.tint.amount}"`);
+    if (opts.tint.amount !== undefined) attrParts.push(`amt="${opts.tint.amount * 1000}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:tint${attrStr}/>`);
   }
@@ -147,7 +148,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.biLevel) {
-    parts.push(`<a:biLevel thresh="${opts.biLevel.threshold}"/>`);
+    parts.push(`<a:biLevel thresh="${opts.biLevel.threshold * 1000}"/>`);
   }
 
   if (opts.alphaCeiling) {
@@ -168,16 +169,16 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.alphaModFix) {
-    const amt = opts.alphaModFix.amount ?? 100;
+    const amt = (opts.alphaModFix.amount ?? 100) * 1000;
     parts.push(`<a:alphaModFix amt="${amt}"/>`);
   }
 
   if (opts.alphaRepl) {
-    parts.push(`<a:alphaRepl a="${opts.alphaRepl.amount}"/>`);
+    parts.push(`<a:alphaRepl a="${opts.alphaRepl.amount * 1000}"/>`);
   }
 
   if (opts.alphaBiLevel) {
-    parts.push(`<a:alphaBiLevel thresh="${opts.alphaBiLevel.threshold}"/>`);
+    parts.push(`<a:alphaBiLevel thresh="${opts.alphaBiLevel.threshold * 1000}"/>`);
   }
 
   if (opts.colorChange) {
@@ -207,6 +208,15 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   return parts.join("");
 }
 
+// Parse an ST_Percentage attribute that may be a 1/1000th integer ("50000")
+// or a percent literal ("50%"); both are XSD-valid. Returns integer percent.
+function parsePercent(raw: string | number | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  const s = typeof raw === "number" ? String(raw) : raw;
+  if (s.endsWith("%")) return Number(s.slice(0, -1));
+  return Number(s) / 1000;
+}
+
 function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions | undefined {
   const result: BlipEffectsOptions = {};
 
@@ -215,10 +225,10 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   const lum = findChild(el, "a:lum");
   if (lum) {
     const opts: LuminanceEffectOptions = {};
-    if (lum.attributes?.["bright"] !== undefined)
-      opts.bright = Number(String(lum.attributes["bright"]).replace("%", ""));
-    if (lum.attributes?.["contrast"] !== undefined)
-      opts.contrast = Number(String(lum.attributes["contrast"]).replace("%", ""));
+    const bright = parsePercent(lum.attributes?.["bright"]);
+    if (bright !== undefined) opts.bright = bright;
+    const contrast = parsePercent(lum.attributes?.["contrast"]);
+    if (contrast !== undefined) opts.contrast = contrast;
     result.luminance = opts;
   }
 
@@ -226,10 +236,10 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   if (hsl) {
     const opts: HSLEffectOptions = {};
     if (hsl.attributes?.["hue"] !== undefined) opts.hue = Number(hsl.attributes["hue"]);
-    if (hsl.attributes?.["sat"] !== undefined)
-      opts.saturation = Number(String(hsl.attributes["sat"]).replace("%", ""));
-    if (hsl.attributes?.["lum"] !== undefined)
-      opts.luminance = Number(String(hsl.attributes["lum"]).replace("%", ""));
+    const sat = parsePercent(hsl.attributes?.["sat"]);
+    if (sat !== undefined) opts.saturation = sat;
+    const l = parsePercent(hsl.attributes?.["lum"]);
+    if (l !== undefined) opts.luminance = l;
     result.hsl = opts;
   }
 
@@ -237,16 +247,14 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   if (tint) {
     const opts: TintEffectOptions = {};
     if (tint.attributes?.["hue"] !== undefined) opts.hue = Number(tint.attributes["hue"]);
-    if (tint.attributes?.["amt"] !== undefined)
-      opts.amount = Number(String(tint.attributes["amt"]).replace("%", ""));
+    const amt = parsePercent(tint.attributes?.["amt"]);
+    if (amt !== undefined) opts.amount = amt;
     result.tint = opts;
   }
 
   const biLevel = findChild(el, "a:biLevel");
   if (biLevel?.attributes?.["thresh"] !== undefined) {
-    result.biLevel = {
-      threshold: Number(String(biLevel.attributes["thresh"]).replace("%", "")),
-    };
+    result.biLevel = { threshold: parsePercent(biLevel.attributes["thresh"])! };
   }
 
   if (findChild(el, "a:alphaCeiling")) result.alphaCeiling = true;
@@ -265,23 +273,19 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   const alphaModFix = findChild(el, "a:alphaModFix");
   if (alphaModFix) {
     const opts: AlphaModulateFixedEffectOptions = {};
-    if (alphaModFix.attributes?.["amt"] !== undefined)
-      opts.amount = Number(String(alphaModFix.attributes["amt"]).replace("%", ""));
+    const amt = parsePercent(alphaModFix.attributes?.["amt"]);
+    if (amt !== undefined) opts.amount = amt;
     result.alphaModFix = opts;
   }
 
   const alphaRepl = findChild(el, "a:alphaRepl");
   if (alphaRepl?.attributes?.["a"] !== undefined) {
-    result.alphaRepl = {
-      amount: Number(String(alphaRepl.attributes["a"]).replace("%", "")),
-    };
+    result.alphaRepl = { amount: parsePercent(alphaRepl.attributes["a"])! };
   }
 
   const alphaBiLevel = findChild(el, "a:alphaBiLevel");
   if (alphaBiLevel?.attributes?.["thresh"] !== undefined) {
-    result.alphaBiLevel = {
-      threshold: Number(String(alphaBiLevel.attributes["thresh"]).replace("%", "")),
-    };
+    result.alphaBiLevel = { threshold: parsePercent(alphaBiLevel.attributes["thresh"])! };
   }
 
   const clrChange = findChild(el, "a:clrChange");

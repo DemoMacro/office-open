@@ -98,6 +98,7 @@ export interface AnimationOptions {
   emphasisType?: EmphasisType;
   pathType?: PathAnimationType;
   path?: string;
+  /** Animation speed as integer percent (100 = normal speed). */
   speed?: number;
   repeatCount?: number;
   autoReverse?: boolean;
@@ -107,6 +108,7 @@ export interface AnimationOptions {
   mediaType?: MediaAnimationType;
   isNarration?: boolean;
   fullScreen?: boolean;
+  /** Media volume as integer percent (0-100). */
   volume?: number;
   mute?: boolean;
 
@@ -138,15 +140,16 @@ export interface AnimationOptions {
     type?: "el" | "wd" | "lt";
     interval?: number;
     backwards?: boolean;
+    /** Iterate step as integer percent (0–100). */
     iteratePercentage?: number;
   };
 
   // cTn advanced time node attributes
   /** Repeat duration ("indefinite" or milliseconds). */
   repeatDuration?: string;
-  /** Acceleration percentage (0–100000, default 0). */
+  /** Acceleration as integer percent (default 0). */
   acceleration?: number;
-  /** Deceleration percentage (0–100000, default 0). */
+  /** Deceleration as integer percent (default 0). */
   deceleration?: number;
   /** Restart behavior: "always", "whenNotActive", "never". */
   restart?: "always" | "whenNotActive" | "never";

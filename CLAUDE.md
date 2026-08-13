@@ -29,7 +29,7 @@ Full layout and conventions in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Measurement Units
 
-Geometry/sizing fields take **`number`** (native unit — EMU for DrawingML, twip for Word) or a **`UniversalMeasure` string** (mm/cm/in/pt/pc/pi, plus px at 96 DPI on DrawingML). Convert with `convertToEmu` / `convertToTwip` / `convertToPt` / `convertToInch` — polymorphic, `number` passes through, round-trip lossless. `UniversalMeasure` is input-only: stringify emits the integer/unit the XSD requires, so a field stays plain `number` when it isn't a geometric length or its XSD type is integer-only (bevel, 3D, rotation). See [CONTRIBUTING.md](./CONTRIBUTING.md#measurement-units).
+**Every numeric field uses the unit a human would say out loud; the library owns the OOXML scale factors.** Percent = integer percent (`50` = 50%, ×1000), angle = degrees (`45` = 45°, ×60000), font size/spacing = points (`12` = 12 pt, ×100 or ×2 half-points), duration = milliseconds. No field exposes the raw `ST_Percentage`/`ST_Angle` integer to the caller. Geometry/sizing fields take **`number`** (native unit — EMU for DrawingML, twip for Word) or a **`UniversalMeasure` string** (mm/cm/in/pt/pc/pi, plus px at 96 DPI on DrawingML). Convert with `convertToEmu` / `convertToTwip` / `convertToPt` / `convertToInch` — polymorphic, `number` passes through, round-trip lossless. `UniversalMeasure` is input-only: stringify emits the integer/unit the XSD requires, so a geometric-length field stays plain `number` only when its XSD type is integer-only (bevel, 3D extrusion depth). **Stringify and parse change together** so every scale cancels out. See [CONTRIBUTING.md](./CONTRIBUTING.md#measurement-units).
 
 ## Code Conventions
 

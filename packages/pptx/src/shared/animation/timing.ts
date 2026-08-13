@@ -543,7 +543,7 @@ function buildIterate(iterate: NonNullable<AnimationOptions["iterate"]>): string
 
   const iterChildren: string[] = [];
   if (iterate.iteratePercentage !== undefined) {
-    iterChildren.push(`<p:tmPct val="${iterate.iteratePercentage}"/>`);
+    iterChildren.push(`<p:tmPct val="${iterate.iteratePercentage * 1000}"/>`);
   } else if (iterate.interval !== undefined) {
     iterChildren.push(`<p:tmAbs val="${iterate.interval}"/>`);
   }
@@ -922,12 +922,12 @@ export class SlideTiming {
         cTnAttrs.presetClass = presetClass;
         cTnAttrs.presetSubtype = presetSubtype;
       }
-      if (options.speed !== undefined) cTnAttrs.spd = String(options.speed);
+      if (options.speed !== undefined) cTnAttrs.spd = String(options.speed * 1000);
       if (options.repeatCount !== undefined) cTnAttrs.repeatCount = String(options.repeatCount);
       if (options.autoReverse) cTnAttrs.autoRev = 1;
       if (options.repeatDuration !== undefined) cTnAttrs.repeatDur = options.repeatDuration;
-      if (options.acceleration !== undefined) cTnAttrs.accel = options.acceleration;
-      if (options.deceleration !== undefined) cTnAttrs.decel = options.deceleration;
+      if (options.acceleration !== undefined) cTnAttrs.accel = options.acceleration * 1000;
+      if (options.deceleration !== undefined) cTnAttrs.decel = options.deceleration * 1000;
       if (options.restart !== undefined) cTnAttrs.restart = options.restart;
       if (options.syncBehavior !== undefined) cTnAttrs.syncBehavior = options.syncBehavior;
       if (options.timeFilter !== undefined) cTnAttrs.tmFilter = options.timeFilter;

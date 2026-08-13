@@ -16,12 +16,12 @@ import { createColorTransforms } from "./color-transform";
  * Options for scRGB color.
  */
 export interface ScRgbColorOptions {
-  /** Red percentage (e.g., "50%" or "100%") */
-  r: string;
-  /** Green percentage (e.g., "50%" or "100%") */
-  g: string;
-  /** Blue percentage (e.g., "50%" or "100%") */
-  b: string;
+  /** Red as integer percent (0-100) */
+  r: number;
+  /** Green as integer percent (0-100) */
+  g: number;
+  /** Blue as integer percent (0-100) */
+  b: number;
   /** Optional color transforms */
   transforms?: ColorTransformOptions;
 }
@@ -45,12 +45,16 @@ export interface ScRgbColorOptions {
  *
  * @example
  * ```typescript
- * const redColor = createScRgbColor({ r: "100%", g: "0%", b: "0%" });
+ * const redColor = createScRgbColor({ r: 100, g: 0, b: 0 });
  * // With alpha transform
- * const semiRed = createScRgbColor({ r: "100%", g: "0%", b: "0%", transforms: { alpha: 50000 } });
+ * const semiRed = createScRgbColor({ r: 100, g: 0, b: 0, transforms: { alpha: 50 } });
  * ```
  */
 export const createScRgbColor = (options: ScRgbColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
-  return element("a:scrgbClr", { r: options.r, g: options.g, b: options.b }, transforms);
+  return element(
+    "a:scrgbClr",
+    { r: options.r * 1000, g: options.g * 1000, b: options.b * 1000 },
+    transforms,
+  );
 };

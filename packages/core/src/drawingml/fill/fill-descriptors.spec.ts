@@ -68,7 +68,7 @@ describe("fillDesc", () => {
       options: {
         stops: [
           { position: 0, color: { value: "FF0000" } },
-          { position: 100000, color: { value: "0000FF" } },
+          { position: 100, color: { value: "0000FF" } },
         ],
         shade: { angle: 5400000, scaled: true },
       },
@@ -80,7 +80,7 @@ describe("fillDesc", () => {
       const stops = options.stops as Record<string, unknown>[];
       expect(stops).toHaveLength(2);
       expect(stops[0]?.position).toBe(0);
-      expect(stops[1]?.position).toBe(100000);
+      expect(stops[1]?.position).toBe(100);
     } else {
       expect.fail("expected options in gradient fill result");
     }
@@ -107,8 +107,8 @@ describe("gradientFillDesc", () => {
     const opts: GradientFillOptions = {
       stops: [
         { position: 0, color: { value: "4472C4" } },
-        { position: 50000, color: { value: "ED7D31" } },
-        { position: 100000, color: { value: "A5A5A5" } },
+        { position: 50, color: { value: "ED7D31" } },
+        { position: 100, color: { value: "A5A5A5" } },
       ],
       shade: { angle: 5400000, scaled: false },
       flip: "x",
@@ -117,8 +117,8 @@ describe("gradientFillDesc", () => {
     const result = roundTripGradient(opts);
     expect(result.stops).toHaveLength(3);
     expect(result.stops[0]?.position).toBe(0);
-    expect(result.stops[1]?.position).toBe(50000);
-    expect(result.stops[2]?.position).toBe(100000);
+    expect(result.stops[1]?.position).toBe(50);
+    expect(result.stops[2]?.position).toBe(100);
     expect(result.shade).toBeDefined();
     if (result.shade && "angle" in result.shade) {
       expect(result.shade.angle).toBe(5400000);
@@ -132,7 +132,7 @@ describe("gradientFillDesc", () => {
     const opts: GradientFillOptions = {
       stops: [
         { position: 0, color: { value: "FFFFFF" } },
-        { position: 100000, color: { value: "4472C4" } },
+        { position: 100, color: { value: "4472C4" } },
       ],
       shade: { path: "circle", fillToRectangle: { left: "50000", top: "50000" } },
     };
@@ -149,16 +149,16 @@ describe("gradientFillDesc", () => {
     // color kinds, not just srgbClr/schemeClr (otherwise HSL/sys/prst/scRgb drop).
     const opts: GradientFillOptions = {
       stops: [
-        { position: 0, color: { hue: 120000, saturation: 100000, luminance: 50000 } },
-        { position: 100000, color: { value: "4472C4" } },
+        { position: 0, color: { hue: 120000, saturation: 100, luminance: 50 } },
+        { position: 100, color: { value: "4472C4" } },
       ],
     };
     const result = roundTripGradient(opts);
     expect(result.stops).toHaveLength(2);
     expect(result.stops[0]?.color).toEqual({
       hue: 120000,
-      saturation: 100000,
-      luminance: 50000,
+      saturation: 100,
+      luminance: 50,
     });
   });
 });
@@ -178,10 +178,10 @@ describe("patternFillDesc", () => {
   it("round-trips pattern with non-rgb foreground color (HSL)", () => {
     const opts: PatternFillOptions = {
       pattern: "cross",
-      foregroundColor: { hue: 0, saturation: 100000, luminance: 50000 },
+      foregroundColor: { hue: 0, saturation: 100, luminance: 50 },
     };
     const result = roundTripPattern(opts);
-    expect(result.foregroundColor).toEqual({ hue: 0, saturation: 100000, luminance: 50000 });
+    expect(result.foregroundColor).toEqual({ hue: 0, saturation: 100, luminance: 50 });
   });
 });
 

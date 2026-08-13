@@ -37,7 +37,7 @@ describe("outlineDesc", () => {
       gradientFill: {
         stops: [
           { position: 0, color: { value: "FF0000" } },
-          { position: 100000, color: { value: "0000FF" } },
+          { position: 100, color: { value: "0000FF" } },
         ],
         shade: { angle: 5400000, scaled: true },
       },
@@ -47,7 +47,7 @@ describe("outlineDesc", () => {
     expect(result.gradientFill).toBeDefined();
     expect(result.gradientFill!.stops).toHaveLength(2);
     expect(result.gradientFill?.stops?.[0]?.position).toBe(0);
-    expect(result.gradientFill?.stops?.[1]?.position).toBe(100000);
+    expect(result.gradientFill?.stops?.[1]?.position).toBe(100);
   });
 
   it("round-trips width, cap, compoundLine, align", () => {

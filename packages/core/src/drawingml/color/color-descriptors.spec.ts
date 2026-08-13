@@ -45,13 +45,13 @@ describe("rgbColorDesc", () => {
   it("round-trips RGB color with transforms", () => {
     const opts: RgbColorOptions = {
       value: "4472C4",
-      transforms: { tint: 50000, alpha: 80000 },
+      transforms: { tint: 50, alpha: 80 },
     };
     const result = roundTrip(rgbColorDesc, opts);
     expect(result.value).toBe("4472C4");
     expect(result.transforms).toBeDefined();
-    expect(result.transforms!.tint).toBe(50000);
-    expect(result.transforms!.alpha).toBe(80000);
+    expect(result.transforms!.tint).toBe(50);
+    expect(result.transforms!.alpha).toBe(80);
   });
 });
 
@@ -65,21 +65,21 @@ describe("schemeColorDesc", () => {
   it("round-trips scheme color with transforms", () => {
     const opts: SchemeColorOptions = {
       value: "accent2",
-      transforms: { shade: 25000 },
+      transforms: { shade: 25 },
     };
     const result = roundTrip(schemeColorDesc, opts);
     expect(result.value).toBe("accent2");
-    expect(result.transforms!.shade).toBe(25000);
+    expect(result.transforms!.shade).toBe(25);
   });
 });
 
 describe("hslColorDesc", () => {
   it("round-trips HSL color", () => {
-    const opts: HslColorOptions = { hue: 120000, saturation: 100000, luminance: 50000 };
+    const opts: HslColorOptions = { hue: 120000, saturation: 100, luminance: 50 };
     const result = roundTrip(hslColorDesc, opts);
     expect(result.hue).toBe(120000);
-    expect(result.saturation).toBe(100000);
-    expect(result.luminance).toBe(50000);
+    expect(result.saturation).toBe(100);
+    expect(result.luminance).toBe(50);
   });
 });
 
@@ -102,11 +102,11 @@ describe("presetColorDesc", () => {
 
 describe("scRgbColorDesc", () => {
   it("round-trips scRGB color", () => {
-    const opts: ScRgbColorOptions = { r: "0.5", g: "0.3", b: "0.8" };
+    const opts: ScRgbColorOptions = { r: 50, g: 30, b: 80 };
     const result = roundTrip(scRgbColorDesc, opts);
-    expect(result.r).toBe("0.5");
-    expect(result.g).toBe("0.3");
-    expect(result.b).toBe("0.8");
+    expect(result.r).toBe(50);
+    expect(result.g).toBe(30);
+    expect(result.b).toBe(80);
   });
 });
 
@@ -118,18 +118,18 @@ describe("solidFillDesc", () => {
   });
 
   it("round-trips solidFill with scheme color", () => {
-    const opts: SolidFillOptions = { value: "accent1", transforms: { tint: 50000 } };
+    const opts: SolidFillOptions = { value: "accent1", transforms: { tint: 50 } };
     const result = roundTrip(solidFillDesc, opts) as SchemeColorOptions;
     expect(result.value).toBe("accent1");
-    expect(result.transforms!.tint).toBe(50000);
+    expect(result.transforms!.tint).toBe(50);
   });
 
   it("round-trips solidFill with HSL color", () => {
-    const opts: SolidFillOptions = { hue: 240000, saturation: 80000, luminance: 60000 };
+    const opts: SolidFillOptions = { hue: 240000, saturation: 80, luminance: 60 };
     const result = roundTrip(solidFillDesc, opts) as HslColorOptions;
     expect(result.hue).toBe(240000);
-    expect(result.saturation).toBe(80000);
-    expect(result.luminance).toBe(60000);
+    expect(result.saturation).toBe(80);
+    expect(result.luminance).toBe(60);
   });
 
   it("round-trips solidFill with system color", () => {

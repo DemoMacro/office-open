@@ -174,6 +174,20 @@ Domain names follow the XSD element: `rows` for `w:tr`/`x:row`, `cells` for `w:t
 
 ## Measurement Units
 
+**Every numeric field uses the unit a human would say out loud.** The library owns the OOXML encoding (the 1/1000th, 1/60000th, half-point scale factors) — the caller never does. This single rule governs all field types below.
+
+| Quantity                         | Caller writes                                           | Library converts (stringify / parse)              | XSD type                           |
+| -------------------------------- | ------------------------------------------------------- | ------------------------------------------------- | ---------------------------------- |
+| Percent                          | integer percent (`50` = 50%, `150` = 150%)              | × 1000 / ÷ 1000                                   | `ST_Percentage` family             |
+| Angle                            | degrees (`45` = 45°)                                    | × 60000 / ÷ 60000                                 | `ST_Angle` family                  |
+| Font size / text spacing         | points (`12` = 12 pt)                                   | × 100 / ÷ 100 (DrawingML), × 2 (Word half-points) | `ST_TextFontSize` / `ST_TextPoint` |
+| Duration (animation, transition) | milliseconds (`2000` = 2 s)                             | passed through                                    | `ST_TLTime`                        |
+| Geometric length                 | `number` (native unit) **or** `UniversalMeasure` string | via the converter below                           | `ST_Coordinate` family             |
+
+**No field exposes the raw OOXML scale to the caller.** A color tint is `tint: 40` (40%), not `40000`. A shape rotation is `rotation: 45` (45°), not `2700000`. The XSD integer lives only inside the emitted XML. **Stringify and parse are always changed together** so the scale factor cancels out — round-trip stays lossless.
+
+### Geometric lengths: `number` (native unit) or `UniversalMeasure`
+
 Geometry and sizing fields accept **`number`** (the format's native unit) or a **`UniversalMeasure` string** (mm/cm/in/pt/pc/pi; px at 96 DPI on DrawingML fields). The native unit follows the domain:
 
 | Domain                                              | `number` means    | Convert with    |
@@ -191,7 +205,7 @@ The converters are **polymorphic** — a `number` passes through unchanged, a st
 
 `UniversalMeasure` exists for input ergonomics only — the XML we emit must still satisfy its XSD type, so stringify always converts to the integer/unit the schema requires, never writing a raw UM string where a number is mandated.
 
-A field stays plain `number` when its value isn't a geometric length or its XSD type is integer-only — bevel size, 3D angles, rotation, xlsx column width (character units). Don't add `UniversalMeasure` to such fields.
+A geometric-length field stays plain `number` (no `UniversalMeasure`) only when its XSD type is integer-only and the field is not a real-world length — bevel size, 3D extrusion depth, xlsx column width (character units). Angles, percents, and durations are **never** given `UniversalMeasure`; they use the ×1000 / ×60000 / pass-through rules above.
 
 ## Descriptor Pattern
 

@@ -26,9 +26,9 @@ import type { SolidFillOptions } from "../color/solid-fill";
  * ```
  */
 export interface LuminanceEffectOptions {
-  /** Brightness adjustment (ST_FixedPercentage: -100000 to 100000, 100000 = 100%). Default 0. */
+  /** Brightness adjustment in percentage points (-100 to 100). Default 0. */
   bright?: number;
-  /** Contrast adjustment (ST_FixedPercentage: -100000 to 100000, 100000 = 100%). Default 0. */
+  /** Contrast adjustment in percentage points (-100 to 100). Default 0. */
   contrast?: number;
 }
 

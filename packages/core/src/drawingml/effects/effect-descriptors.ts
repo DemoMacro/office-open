@@ -23,6 +23,20 @@ import type { OuterShadowEffectOptions } from "./outer-shadow";
 import type { PresetShadowEffectOptions } from "./preset-shadow";
 import type { ReflectionEffectOptions } from "./reflection";
 
+// Scale a caller percent (100 = 100%) to the XSD 1/1000th-of-a-percent attr.
+function scaleToAttr(value: number | undefined): number | undefined {
+  return value === undefined ? undefined : value * 1000;
+}
+
+// Parse an ST_Percentage attr that may be a 1/1000th integer or "50%" literal
+// back to caller integer percent.
+function parsePercentAttr(raw: string | number | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  const s = typeof raw === "number" ? String(raw) : raw;
+  if (s.endsWith("%")) return Number(s.slice(0, -1));
+  return Number(s) / 1000;
+}
+
 // ── Helper: stringify a color into an effect element ──
 
 function stringifyEffectColor(
@@ -114,8 +128,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
             blurRad: opts.outerShadow.blurRadius,
             dist: opts.outerShadow.distance,
             dir: opts.outerShadow.direction,
-            sx: opts.outerShadow.scaleX,
-            sy: opts.outerShadow.scaleY,
+            sx: scaleToAttr(opts.outerShadow.scaleX),
+            sy: scaleToAttr(opts.outerShadow.scaleY),
             kx: opts.outerShadow.skewX,
             ky: opts.outerShadow.skewY,
             algn:
@@ -151,15 +165,18 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       const refOpts = opts.reflection === true ? ({} as ReflectionEffectOptions) : opts.reflection;
       const attrParts: string[] = [];
       if (refOpts.blurRadius !== undefined) attrParts.push(`blurRad="${refOpts.blurRadius}"`);
-      if (refOpts.startAlpha !== undefined) attrParts.push(`stA="${refOpts.startAlpha}"`);
-      if (refOpts.startPosition !== undefined) attrParts.push(`stPos="${refOpts.startPosition}"`);
-      if (refOpts.endAlpha !== undefined) attrParts.push(`endA="${refOpts.endAlpha}"`);
-      if (refOpts.endPosition !== undefined) attrParts.push(`endPos="${refOpts.endPosition}"`);
+      if (refOpts.startAlpha !== undefined)
+        attrParts.push(`stA="${scaleToAttr(refOpts.startAlpha)}"`);
+      if (refOpts.startPosition !== undefined)
+        attrParts.push(`stPos="${scaleToAttr(refOpts.startPosition)}"`);
+      if (refOpts.endAlpha !== undefined) attrParts.push(`endA="${scaleToAttr(refOpts.endAlpha)}"`);
+      if (refOpts.endPosition !== undefined)
+        attrParts.push(`endPos="${scaleToAttr(refOpts.endPosition)}"`);
       if (refOpts.distance !== undefined) attrParts.push(`dist="${refOpts.distance}"`);
       if (refOpts.direction !== undefined) attrParts.push(`dir="${refOpts.direction}"`);
       if (refOpts.fadeDirection !== undefined) attrParts.push(`fadeDir="${refOpts.fadeDirection}"`);
-      if (refOpts.scaleX !== undefined) attrParts.push(`sx="${refOpts.scaleX}"`);
-      if (refOpts.scaleY !== undefined) attrParts.push(`sy="${refOpts.scaleY}"`);
+      if (refOpts.scaleX !== undefined) attrParts.push(`sx="${scaleToAttr(refOpts.scaleX)}"`);
+      if (refOpts.scaleY !== undefined) attrParts.push(`sy="${scaleToAttr(refOpts.scaleY)}"`);
       if (refOpts.skewX !== undefined) attrParts.push(`kx="${refOpts.skewX}"`);
       if (refOpts.skewY !== undefined) attrParts.push(`ky="${refOpts.skewY}"`);
       if (refOpts.alignment !== undefined)
@@ -228,9 +245,9 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (outerShdw.attributes?.["dir"] !== undefined)
         outerOpts.direction = Number(outerShdw.attributes["dir"]);
       if (outerShdw.attributes?.["sx"] !== undefined)
-        outerOpts.scaleX = Number(outerShdw.attributes["sx"]);
+        outerOpts.scaleX = parsePercentAttr(outerShdw.attributes["sx"]);
       if (outerShdw.attributes?.["sy"] !== undefined)
-        outerOpts.scaleY = Number(outerShdw.attributes["sy"]);
+        outerOpts.scaleY = parsePercentAttr(outerShdw.attributes["sy"]);
       if (outerShdw.attributes?.["kx"] !== undefined)
         outerOpts.skewX = Number(outerShdw.attributes["kx"]);
       if (outerShdw.attributes?.["ky"] !== undefined)
@@ -289,13 +306,13 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (reflection.attributes?.["blurRad"] !== undefined)
         refOpts.blurRadius = Number(reflection.attributes["blurRad"]);
       if (reflection.attributes?.["stA"] !== undefined)
-        refOpts.startAlpha = Number(reflection.attributes["stA"]);
+        refOpts.startAlpha = parsePercentAttr(reflection.attributes["stA"]);
       if (reflection.attributes?.["stPos"] !== undefined)
-        refOpts.startPosition = Number(reflection.attributes["stPos"]);
+        refOpts.startPosition = parsePercentAttr(reflection.attributes["stPos"]);
       if (reflection.attributes?.["endA"] !== undefined)
-        refOpts.endAlpha = Number(reflection.attributes["endA"]);
+        refOpts.endAlpha = parsePercentAttr(reflection.attributes["endA"]);
       if (reflection.attributes?.["endPos"] !== undefined)
-        refOpts.endPosition = Number(reflection.attributes["endPos"]);
+        refOpts.endPosition = parsePercentAttr(reflection.attributes["endPos"]);
       if (reflection.attributes?.["dist"] !== undefined)
         refOpts.distance = Number(reflection.attributes["dist"]);
       if (reflection.attributes?.["dir"] !== undefined)
@@ -303,9 +320,9 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (reflection.attributes?.["fadeDir"] !== undefined)
         refOpts.fadeDirection = Number(reflection.attributes["fadeDir"]);
       if (reflection.attributes?.["sx"] !== undefined)
-        refOpts.scaleX = Number(reflection.attributes["sx"]);
+        refOpts.scaleX = parsePercentAttr(reflection.attributes["sx"]);
       if (reflection.attributes?.["sy"] !== undefined)
-        refOpts.scaleY = Number(reflection.attributes["sy"]);
+        refOpts.scaleY = parsePercentAttr(reflection.attributes["sy"]);
       if (reflection.attributes?.["kx"] !== undefined)
         refOpts.skewX = Number(reflection.attributes["kx"]);
       if (reflection.attributes?.["ky"] !== undefined)

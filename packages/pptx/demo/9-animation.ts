@@ -588,7 +588,7 @@ const options: PresentationOptions = {
             type: "fade",
             duration: 500,
             exclusiveMode: true,
-            iterate: { type: "el", iteratePercentage: 50000 },
+            iterate: { type: "el", iteratePercentage: 50 },
           },
         },
       ],

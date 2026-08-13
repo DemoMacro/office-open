@@ -89,6 +89,7 @@ export interface RunPropertiesOptions {
   /** a:hlinkMouseOver — hover hyperlink (CT_Hyperlink). */
   mouseoverHyperlink?: HyperlinkOptions;
   strike?: StrikeStyle;
+  /** Baseline offset as integer percent (positive = superscript, negative = subscript). */
   baseline?: number;
   spacing?: number;
   capitalization?: TextCapitalization;
@@ -236,5 +237,5 @@ export const DEFAULT_SHADOW_BLUR_RADIUS = 50800;
 export const DEFAULT_SHADOW_DISTANCE = 38100;
 /** Default shadow direction: 270° = 2700000 (60,000ths of a degree). */
 export const DEFAULT_SHADOW_DIRECTION = 2700000;
-/** Default shadow alpha: 40% = 40000 (100,000ths of a percent). */
-export const DEFAULT_SHADOW_ALPHA = 40000;
+/** Default shadow alpha: 40% (integer percent). */
+export const DEFAULT_SHADOW_ALPHA = 40;

@@ -12,17 +12,16 @@ import { element } from "@office-open/xml";
 /**
  * Options for source rectangle cropping.
  *
- * Each value is ST_Percentage (1000th of percent: 10000 = 10%, 100000 = 100%).
- * The values represent the inset from each edge of the image.
+ * Each value is integer percent (10 = 10% crop from that edge of the image).
  */
 export interface SourceRectangleOptions {
-  /** Left inset (ST_Percentage: 10000 = 10% crop from left) */
+  /** Left inset as integer percent (10 = 10% crop from left) */
   left?: number;
-  /** Top inset (ST_Percentage: 10000 = 10% crop from top) */
+  /** Top inset as integer percent (10 = 10% crop from top) */
   top?: number;
-  /** Right inset (ST_Percentage: 10000 = 10% crop from right) */
+  /** Right inset as integer percent (10 = 10% crop from right) */
   right?: number;
-  /** Bottom inset (ST_Percentage: 10000 = 10% crop from bottom) */
+  /** Bottom inset as integer percent (10 = 10% crop from bottom) */
   bottom?: number;
 }
 
@@ -47,7 +46,7 @@ export interface SourceRectangleOptions {
  * @example
  * ```typescript
  * // Crop 10% from left and right
- * createSourceRectangle({ left: 10000, right: 10000 });
+ * createSourceRectangle({ left: 10, right: 10 });
  * ```
  */
 export const createSourceRectangle = (options?: SourceRectangleOptions): string => {
@@ -56,10 +55,10 @@ export const createSourceRectangle = (options?: SourceRectangleOptions): string 
   }
 
   const attrs: Record<string, string | number | undefined> = {};
-  if (options.left !== undefined) attrs.l = options.left;
-  if (options.top !== undefined) attrs.t = options.top;
-  if (options.right !== undefined) attrs.r = options.right;
-  if (options.bottom !== undefined) attrs.b = options.bottom;
+  if (options.left !== undefined) attrs.l = options.left * 1000;
+  if (options.top !== undefined) attrs.t = options.top * 1000;
+  if (options.right !== undefined) attrs.r = options.right * 1000;
+  if (options.bottom !== undefined) attrs.b = options.bottom * 1000;
 
   return element("a:srcRect", attrs);
 };

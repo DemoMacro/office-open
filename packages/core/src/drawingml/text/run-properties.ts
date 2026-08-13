@@ -150,7 +150,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     if (opts.underline) attrParts.push(`u="${xsdUnderlineStyle.to(opts.underline)}"`);
     if (opts.lang) attrParts.push(`lang="${opts.lang}"`);
     if (opts.strike) attrParts.push(`strike="${xsdStrikeStyle.to(opts.strike)}"`);
-    if (opts.baseline !== undefined) attrParts.push(`baseline="${opts.baseline}"`);
+    if (opts.baseline !== undefined) attrParts.push(`baseline="${opts.baseline * 1000}"`);
     if (opts.capitalization) attrParts.push(`cap="${xsdTextCaps.to(opts.capitalization)}"`);
     if (opts.spacing !== undefined) attrParts.push(`spc="${opts.spacing}"`);
     if (opts.kern !== undefined) attrParts.push(`kern="${opts.kern}"`);
@@ -252,8 +252,11 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
         result.strike = xsdStrikeStyle.from(
           String(el.attributes["strike"]),
         ) as RunPropertiesOptions["strike"];
-      if (el.attributes["baseline"] !== undefined)
-        result.baseline = Number(el.attributes["baseline"]);
+      if (el.attributes["baseline"] !== undefined) {
+        const raw = el.attributes["baseline"];
+        const s = typeof raw === "number" ? String(raw) : raw;
+        result.baseline = s.endsWith("%") ? Number(s.slice(0, -1)) : Number(s) / 1000;
+      }
       if (el.attributes["cap"] !== undefined)
         result.capitalization = xsdTextCaps.from(
           String(el.attributes["cap"]),

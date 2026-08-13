@@ -16,11 +16,11 @@ import { createColorTransforms } from "./color-transform";
  * Options for HSL color.
  */
 export interface HslColorOptions {
-  /** Hue angle in 60,000ths of a degree (0-21600000) */
+  /** Hue angle in 60,000ths of a degree (0-21600000; will take degrees in the angle batch) */
   hue: number;
-  /** Saturation in 1/1000th of a percent (0-100000) */
+  /** Saturation as integer percent (0-100) */
   saturation: number;
-  /** Luminance in 1/1000th of a percent (0-100000) */
+  /** Luminance as integer percent (0-100) */
   luminance: number;
   /** Optional color transforms */
   transforms?: ColorTransformOptions;
@@ -47,7 +47,7 @@ export const createHslColor = (options: HslColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
   return element(
     "a:hslClr",
-    { hue: options.hue, sat: options.saturation, lum: options.luminance },
+    { hue: options.hue, sat: options.saturation * 1000, lum: options.luminance * 1000 },
     transforms,
   );
 };
