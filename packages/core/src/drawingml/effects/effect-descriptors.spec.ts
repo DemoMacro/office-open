@@ -74,7 +74,7 @@ describe("effectListDesc", () => {
       innerShadow: {
         blurRadius: 50000,
         distance: 25000,
-        direction: 2700000,
+        direction: 45,
         color: { value: "000000" },
       },
     };
@@ -82,7 +82,7 @@ describe("effectListDesc", () => {
     expect(result.innerShadow).toBeDefined();
     expect(result.innerShadow!.blurRadius).toBe(50000);
     expect(result.innerShadow!.distance).toBe(25000);
-    expect(result.innerShadow!.direction).toBe(2700000);
+    expect(result.innerShadow!.direction).toBe(45);
     expect(result.innerShadow!.color).toEqual({ value: "000000" });
   });
 
@@ -91,7 +91,7 @@ describe("effectListDesc", () => {
       outerShadow: {
         blurRadius: 76200,
         distance: 40000,
-        direction: 5400000,
+        direction: 90,
         scaleX: 100,
         scaleY: 100,
         skewX: 0,
@@ -105,7 +105,7 @@ describe("effectListDesc", () => {
     expect(result.outerShadow).toBeDefined();
     expect(result.outerShadow!.blurRadius).toBe(76200);
     expect(result.outerShadow!.distance).toBe(40000);
-    expect(result.outerShadow!.direction).toBe(5400000);
+    expect(result.outerShadow!.direction).toBe(90);
     expect(result.outerShadow!.scaleX).toBe(100);
     expect(result.outerShadow!.scaleY).toBe(100);
     expect(result.outerShadow!.skewX).toBe(0);
@@ -120,7 +120,7 @@ describe("effectListDesc", () => {
       presetShadow: {
         preset: "shadow2",
         distance: 30000,
-        direction: 2700000,
+        direction: 45,
         color: { value: "666666" },
       },
     };
@@ -128,7 +128,7 @@ describe("effectListDesc", () => {
     expect(result.presetShadow).toBeDefined();
     expect(result.presetShadow!.preset).toBe("shadow2");
     expect(result.presetShadow!.distance).toBe(30000);
-    expect(result.presetShadow!.direction).toBe(2700000);
+    expect(result.presetShadow!.direction).toBe(45);
     expect(result.presetShadow!.color).toEqual({ value: "666666" });
   });
 
@@ -141,8 +141,8 @@ describe("effectListDesc", () => {
         endAlpha: 0,
         endPosition: 50,
         distance: 25400,
-        direction: 5400000,
-        fadeDirection: 5400000,
+        direction: 90,
+        fadeDirection: 90,
         scaleX: 100,
         scaleY: 100,
         skewX: 0,
@@ -160,8 +160,8 @@ describe("effectListDesc", () => {
     expect(ref.endAlpha).toBe(0);
     expect(ref.endPosition).toBe(50);
     expect(ref.distance).toBe(25400);
-    expect(ref.direction).toBe(5400000);
-    expect(ref.fadeDirection).toBe(5400000);
+    expect(ref.direction).toBe(90);
+    expect(ref.fadeDirection).toBe(90);
     expect(ref.scaleX).toBe(100);
     expect(ref.scaleY).toBe(100);
     expect(ref.skewX).toBe(0);

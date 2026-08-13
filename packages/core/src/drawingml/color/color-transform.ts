@@ -13,8 +13,8 @@
  * Options for color transforms.
  *
  * Percent fields take integer percent (e.g., `40` = 40%); the library scales
- * to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) still
- * take the raw 1/60000th value and are unified in the angle batch.
+ * to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) take
+ * degrees; the library scales to the XSD 1/60000th-of-a-degree unit.
  *
  * Reference: ISO/IEC 29500-4, dml-main.xsd, EG_ColorTransform
  */
@@ -35,9 +35,9 @@ export interface ColorTransformOptions {
   alphaOff?: number;
   /** Alpha modulation: scales alpha by percent (0-100) */
   alphaMod?: number;
-  /** Hue: sets hue angle (0-21600000 in 1/60000ths of a degree; will take degrees in the angle batch) */
+  /** Hue: sets hue angle in degrees (0-360). */
   hue?: number;
-  /** Hue offset: adjusts hue angle (-5400000 to 5400000 in 1/60000ths of a degree; will take degrees in the angle batch) */
+  /** Hue offset: adjusts hue angle in degrees (-90 to 90). */
   hueOff?: number;
   /** Hue modulation: scales hue by percent (0-100) */
   hueMod?: number;
@@ -102,8 +102,9 @@ export const createColorTransforms = (options: ColorTransformOptions): readonly 
   if (options.alpha !== undefined) t.push(`<a:alpha val="${options.alpha * 1000}"/>`);
   if (options.alphaOff !== undefined) t.push(`<a:alphaOff val="${options.alphaOff * 1000}"/>`);
   if (options.alphaMod !== undefined) t.push(`<a:alphaMod val="${options.alphaMod * 1000}"/>`);
-  if (options.hue !== undefined) t.push(`<a:hue val="${options.hue}"/>`);
-  if (options.hueOff !== undefined) t.push(`<a:hueOff val="${options.hueOff}"/>`);
+  if (options.hue !== undefined) t.push(`<a:hue val="${Math.round(options.hue * 60000)}"/>`);
+  if (options.hueOff !== undefined)
+    t.push(`<a:hueOff val="${Math.round(options.hueOff * 60000)}"/>`);
   if (options.hueMod !== undefined) t.push(`<a:hueMod val="${options.hueMod * 1000}"/>`);
   if (options.sat !== undefined) t.push(`<a:sat val="${options.sat * 1000}"/>`);
   if (options.satOff !== undefined) t.push(`<a:satOff val="${options.satOff * 1000}"/>`);

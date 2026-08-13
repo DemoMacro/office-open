@@ -180,7 +180,7 @@ const slides: SlideOptions[] = [
             outerShadow: {
               blurRadius: 50800,
               distance: 38100,
-              direction: 2700000,
+              direction: 45,
               color: { value: "000000", transforms: { alpha: 40 } },
             },
             glow: { radius: 76200, color: { value: "4472C4", transforms: { alpha: 50 } } },
@@ -777,7 +777,7 @@ const slides: SlideOptions[] = [
             innerShadow: {
               blurRadius: 40000,
               distance: 30000,
-              direction: 5400000,
+              direction: 90,
               color: { value: "000000", transforms: { alpha: 40 } },
             },
           },
@@ -796,7 +796,7 @@ const slides: SlideOptions[] = [
             reflection: {
               blurRadius: 6350,
               distance: 38100,
-              direction: 5400000,
+              direction: 90,
               startAlpha: 90,
               endAlpha: 0,
             },
@@ -829,7 +829,7 @@ const slides: SlideOptions[] = [
             outerShadow: {
               blurRadius: 38100,
               distance: 25400,
-              direction: 5400000,
+              direction: 90,
               color: { value: "000000", transforms: { alpha: 50 } },
             },
             reflection: { startAlpha: 80, endAlpha: 0 },

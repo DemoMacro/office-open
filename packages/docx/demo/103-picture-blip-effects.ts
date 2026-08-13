@@ -142,7 +142,7 @@ const buffer = await generateDocument({
                 picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
                   blipEffects: {
-                    tint: { hue: 6000000, amount: 40 },
+                    tint: { hue: 100, amount: 40 },
                   },
                   transformation: {
                     height: "4.0cm",

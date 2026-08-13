@@ -126,7 +126,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
 
   if (opts.hsl) {
     const attrParts: string[] = [];
-    if (opts.hsl.hue !== undefined) attrParts.push(`hue="${opts.hsl.hue}"`);
+    if (opts.hsl.hue !== undefined) attrParts.push(`hue="${Math.round(opts.hsl.hue * 60000)}"`);
     if (opts.hsl.saturation !== undefined) attrParts.push(`sat="${opts.hsl.saturation * 1000}"`);
     if (opts.hsl.luminance !== undefined) attrParts.push(`lum="${opts.hsl.luminance * 1000}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
@@ -135,7 +135,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
 
   if (opts.tint) {
     const attrParts: string[] = [];
-    if (opts.tint.hue !== undefined) attrParts.push(`hue="${opts.tint.hue}"`);
+    if (opts.tint.hue !== undefined) attrParts.push(`hue="${Math.round(opts.tint.hue * 60000)}"`);
     if (opts.tint.amount !== undefined) attrParts.push(`amt="${opts.tint.amount * 1000}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:tint${attrStr}/>`);
@@ -235,7 +235,7 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   const hsl = findChild(el, "a:hsl");
   if (hsl) {
     const opts: HSLEffectOptions = {};
-    if (hsl.attributes?.["hue"] !== undefined) opts.hue = Number(hsl.attributes["hue"]);
+    if (hsl.attributes?.["hue"] !== undefined) opts.hue = Number(hsl.attributes["hue"]) / 60000;
     const sat = parsePercent(hsl.attributes?.["sat"]);
     if (sat !== undefined) opts.saturation = sat;
     const l = parsePercent(hsl.attributes?.["lum"]);
@@ -246,7 +246,7 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   const tint = findChild(el, "a:tint");
   if (tint) {
     const opts: TintEffectOptions = {};
-    if (tint.attributes?.["hue"] !== undefined) opts.hue = Number(tint.attributes["hue"]);
+    if (tint.attributes?.["hue"] !== undefined) opts.hue = Number(tint.attributes["hue"]) / 60000;
     const amt = parsePercent(tint.attributes?.["amt"]);
     if (amt !== undefined) opts.amount = amt;
     result.tint = opts;

@@ -55,8 +55,7 @@ const TRANSFORM_KEYS: readonly (keyof ColorTransformOptions & string)[] = [
 ];
 
 // Percent transforms: caller writes integer percent (50 = 50%), emitted as
-// XSD 1/1000th-of-a-percent. Angle transforms (hue/hueOff) keep the raw
-// 1/60000th value until the angle batch.
+// XSD 1/1000th-of-a-percent.
 const PERCENT_KEYS: ReadonlySet<string> = new Set([
   "tint",
   "shade",
@@ -81,6 +80,9 @@ const PERCENT_KEYS: ReadonlySet<string> = new Set([
   "blueMod",
 ]);
 
+// Angle transforms: caller writes degrees, emitted as XSD 1/60000th-of-a-degree.
+const ANGLE_KEYS: ReadonlySet<string> = new Set(["hue", "hueOff"]);
+
 // Parse an ST_Percentage channel that may arrive as either a 1/1000th integer
 // ("50000" = 50%) or a percent literal ("50%"); both are XSD-valid. Returns
 // the caller-facing integer percent.
@@ -99,7 +101,11 @@ function stringifyTransforms(opts: ColorTransformOptions): string {
     if (v === true) {
       parts.push(`<a:${key}/>`);
     } else {
-      const scaled = PERCENT_KEYS.has(key) ? (v as number) * 1000 : (v as number);
+      const scaled = PERCENT_KEYS.has(key)
+        ? (v as number) * 1000
+        : ANGLE_KEYS.has(key)
+          ? Math.round((v as number) * 60000)
+          : (v as number);
       parts.push(`<a:${key} val="${escapeXml(String(scaled))}"/>`);
     }
   }
@@ -116,8 +122,12 @@ function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
     const val = child.attributes?.["val"];
     if (val !== undefined) {
       const raw = Number(val);
-      // Percent transforms: XSD 1/1000th-of-a-percent → caller integer percent.
-      (result as Record<string, unknown>)[key] = PERCENT_KEYS.has(key) ? raw / 1000 : raw;
+      // Percent → integer percent (÷1000); angle → degrees (÷60000); else raw.
+      (result as Record<string, unknown>)[key] = PERCENT_KEYS.has(key)
+        ? raw / 1000
+        : ANGLE_KEYS.has(key)
+          ? raw / 60000
+          : raw;
     } else {
       (result as Record<string, unknown>)[key] = true;
     }
@@ -173,14 +183,15 @@ export const hslColorDesc: CustomDescriptor<HslColorOptions> = {
     const transforms = opts.transforms ? stringifyTransforms(opts.transforms) : "";
     const sat = opts.saturation * 1000;
     const lum = opts.luminance * 1000;
+    const hue = Math.round(opts.hue * 60000);
     if (transforms) {
-      return `<a:hslClr hue="${opts.hue}" sat="${sat}" lum="${lum}">${transforms}</a:hslClr>`;
+      return `<a:hslClr hue="${hue}" sat="${sat}" lum="${lum}">${transforms}</a:hslClr>`;
     }
-    return `<a:hslClr hue="${opts.hue}" sat="${sat}" lum="${lum}"/>`;
+    return `<a:hslClr hue="${hue}" sat="${sat}" lum="${lum}"/>`;
   },
   parse(el, _ctx) {
     const result: HslColorOptions = {
-      hue: Number(el.attributes?.["hue"] ?? 0),
+      hue: Number(el.attributes?.["hue"] ?? 0) / 60000,
       saturation: Number(el.attributes?.["sat"] ?? 0) / 1000,
       luminance: Number(el.attributes?.["lum"] ?? 0) / 1000,
     };

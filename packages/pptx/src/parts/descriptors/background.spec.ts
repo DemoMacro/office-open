@@ -105,7 +105,7 @@ describe("backgroundDesc round-trip", () => {
           color: { value: "000000" },
           blurRadius: 50000,
           distance: 30000,
-          direction: 2700000,
+          direction: 45,
         },
       },
     };
@@ -116,6 +116,6 @@ describe("backgroundDesc round-trip", () => {
     expect((shadow.color as { value: string }).value).toBe("000000");
     expect(shadow.blurRadius).toBe(50000);
     expect(shadow.distance).toBe(30000);
-    expect(shadow.direction).toBe(2700000);
+    expect(shadow.direction).toBe(45);
   });
 });

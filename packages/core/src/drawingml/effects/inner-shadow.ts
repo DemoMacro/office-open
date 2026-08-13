@@ -18,7 +18,7 @@ export interface InnerShadowEffectOptions {
   blurRadius?: number;
   /** Distance from shape edge in EMUs */
   distance?: number;
-  /** Direction angle in 60,000ths of a degree */
+  /** Direction angle in degrees (0–360). */
   direction?: number;
   /** Shadow color */
   color: SolidFillOptions;
@@ -45,7 +45,7 @@ export const createInnerShadowEffect = (options: InnerShadowEffectOptions): stri
   const attrs: Record<string, number> = {};
   if (options.blurRadius !== undefined) attrs.blurRad = options.blurRadius;
   if (options.distance !== undefined) attrs.dist = options.distance;
-  if (options.direction !== undefined) attrs.dir = options.direction;
+  if (options.direction !== undefined) attrs.dir = Math.round(options.direction * 60000);
 
   const hasAttributes = Object.keys(attrs).length > 0;
 

@@ -39,7 +39,7 @@ describe("outlineDesc", () => {
           { position: 0, color: { value: "FF0000" } },
           { position: 100, color: { value: "0000FF" } },
         ],
-        shade: { angle: 5400000, scaled: true },
+        shade: { angle: 90, scaled: true },
       },
     };
     const result = roundTrip(opts);

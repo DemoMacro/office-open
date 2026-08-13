@@ -134,7 +134,7 @@ export interface FillEffectOptions {
 
 /** HSL effect — adjusts hue, saturation, luminance (CT_HSLEffect). */
 export interface HSLEffectOptions {
-  /** Hue angle in 60,000ths of a degree (default 0) */
+  /** Hue angle in degrees (default 0). */
   hue?: number;
   /** Saturation percentage (default 0%) */
   saturation?: number;
@@ -152,7 +152,7 @@ export interface LuminanceEffectOptions {
 
 /** Tint effect — applies tint with hue and amount (CT_TintEffect). */
 export interface TintEffectOptions {
-  /** Hue angle in 60,000ths of a degree (default 0) */
+  /** Hue angle in degrees (default 0). */
   hue?: number;
   /** Tint amount percentage (default 0%) */
   amount?: number;
@@ -172,9 +172,9 @@ export interface TransformEffectOptions {
   scaleX?: number;
   /** Vertical scale percentage (default 100%) */
   scaleY?: number;
-  /** Horizontal skew angle (default 0) */
+  /** Horizontal skew angle in degrees (default 0). */
   skewX?: number;
-  /** Vertical skew angle (default 0) */
+  /** Vertical skew angle in degrees (default 0). */
   skewY?: number;
   /** Horizontal translation */
   translateX?: number;
@@ -347,7 +347,7 @@ const createGrayscaleEffect = (): string => "<a:grayscl/>";
 
 const createHSLEffect = (options?: HSLEffectOptions): string => {
   const attrs: Record<string, number> = {};
-  if (options?.hue !== undefined) attrs.hue = options.hue;
+  if (options?.hue !== undefined) attrs.hue = Math.round(options.hue * 60000);
   if (options?.saturation !== undefined) attrs.sat = options.saturation;
   if (options?.luminance !== undefined) attrs.lum = options.luminance;
   return element("a:hsl", Object.keys(attrs).length > 0 ? attrs : undefined);
@@ -362,7 +362,7 @@ const createLuminanceEffect = (options?: LuminanceEffectOptions): string => {
 
 const createTintEffect = (options?: TintEffectOptions): string => {
   const attrs: Record<string, number> = {};
-  if (options?.hue !== undefined) attrs.hue = options.hue;
+  if (options?.hue !== undefined) attrs.hue = Math.round(options.hue * 60000);
   if (options?.amount !== undefined) attrs.amt = options.amount * 1000;
   return element("a:tint", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
@@ -378,8 +378,8 @@ const createTransformEffect = (options?: TransformEffectOptions): string => {
   const attrs: Record<string, number> = {};
   if (options?.scaleX !== undefined) attrs.sx = options.scaleX * 1000;
   if (options?.scaleY !== undefined) attrs.sy = options.scaleY * 1000;
-  if (options?.skewX !== undefined) attrs.kx = options.skewX;
-  if (options?.skewY !== undefined) attrs.ky = options.skewY;
+  if (options?.skewX !== undefined) attrs.kx = Math.round(options.skewX * 60000);
+  if (options?.skewY !== undefined) attrs.ky = Math.round(options.skewY * 60000);
   if (options?.translateX !== undefined) attrs.tx = options.translateX;
   if (options?.translateY !== undefined) attrs.ty = options.translateY;
   return element("a:xfrm", Object.keys(attrs).length > 0 ? attrs : undefined);

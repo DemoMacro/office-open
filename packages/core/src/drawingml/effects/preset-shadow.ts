@@ -46,7 +46,7 @@ export interface PresetShadowEffectOptions {
   preset: PresetShadow;
   /** Distance from shape in EMUs */
   distance?: number;
-  /** Direction angle in 60,000ths of a degree */
+  /** Direction angle in degrees (0–360). */
   direction?: number;
   /** Shadow color */
   color: SolidFillOptions;
@@ -73,7 +73,7 @@ export const createPresetShadowEffect = (options: PresetShadowEffectOptions): st
   };
 
   if (options.distance !== undefined) attrs.dist = options.distance;
-  if (options.direction !== undefined) attrs.dir = options.direction;
+  if (options.direction !== undefined) attrs.dir = Math.round(options.direction * 60000);
 
   return element("a:prstShdw", attrs, [createColorElement(options.color)]);
 };

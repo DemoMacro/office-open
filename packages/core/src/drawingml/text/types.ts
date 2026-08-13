@@ -235,7 +235,7 @@ export const DEFAULT_OUTLINE_WIDTH = 12700;
 export const DEFAULT_SHADOW_BLUR_RADIUS = 50800;
 /** Default shadow distance: ~3pt = 38100 EMU. */
 export const DEFAULT_SHADOW_DISTANCE = 38100;
-/** Default shadow direction: 270° = 2700000 (60,000ths of a degree). */
-export const DEFAULT_SHADOW_DIRECTION = 2700000;
+/** Default shadow direction: 270° (degrees). */
+export const DEFAULT_SHADOW_DIRECTION = 270;
 /** Default shadow alpha: 40% (integer percent). */
 export const DEFAULT_SHADOW_ALPHA = 40;

@@ -75,9 +75,9 @@ describe("schemeColorDesc", () => {
 
 describe("hslColorDesc", () => {
   it("round-trips HSL color", () => {
-    const opts: HslColorOptions = { hue: 120000, saturation: 100, luminance: 50 };
+    const opts: HslColorOptions = { hue: 120, saturation: 100, luminance: 50 };
     const result = roundTrip(hslColorDesc, opts);
-    expect(result.hue).toBe(120000);
+    expect(result.hue).toBe(120);
     expect(result.saturation).toBe(100);
     expect(result.luminance).toBe(50);
   });
@@ -125,9 +125,9 @@ describe("solidFillDesc", () => {
   });
 
   it("round-trips solidFill with HSL color", () => {
-    const opts: SolidFillOptions = { hue: 240000, saturation: 80, luminance: 60 };
+    const opts: SolidFillOptions = { hue: 240, saturation: 80, luminance: 60 };
     const result = roundTrip(solidFillDesc, opts) as HslColorOptions;
-    expect(result.hue).toBe(240000);
+    expect(result.hue).toBe(240);
     expect(result.saturation).toBe(80);
     expect(result.luminance).toBe(60);
   });

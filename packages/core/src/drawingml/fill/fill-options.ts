@@ -73,7 +73,7 @@ export interface BlipFillMediaData {
  * // Gradient fill — path (radial)
  * fill: { type: "gradient", path: "circle", stops: [{ position: 0, color: "FFFFFF" }, { position: 100, color: "4472C4" }] }
  * // Gradient fill (core API for advanced options)
- * fill: { type: "gradient", options: { stops: [...], shade: { angle: 5400000 } } }
+ * fill: { type: "gradient", options: { stops: [...], shade: { angle: 90 } } }
  * // Blip fill (image)
  * fill: { type: "blip", data: imageBuffer, imageType: "png" }
  * // Pattern fill
@@ -154,7 +154,7 @@ export const buildFill = (options: FillOptions, embedPlaceholder?: string): stri
         })),
         ...(!options.path &&
           options.angle !== undefined && {
-            shade: { angle: options.angle * 60000, scaled: options.scaled ?? true },
+            shade: { angle: options.angle, scaled: options.scaled ?? true },
           }),
         ...(options.path && {
           shade: { path: options.path as "shape" | "circle" | "rect" },

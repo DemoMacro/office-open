@@ -89,7 +89,7 @@ export const createColorElement = (color: SolidFillOptions): string => {
  *   value: SchemeColor.ACCENT1, transforms: { tint: 40 },
  * });
  * // HSL solid fill
- * const hslFill = createSolidFill({ hue: 120000, saturation: 100, luminance: 50 });
+ * const hslFill = createSolidFill({ hue: 120, saturation: 100, luminance: 50 });
  * ```
  */
 export const createSolidFill = (options: SolidFillOptions): string =>

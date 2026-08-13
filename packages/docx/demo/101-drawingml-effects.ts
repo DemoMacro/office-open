@@ -108,7 +108,7 @@ const buffer = await generateDocument({
                       blurRadius: 50800,
                       color: { value: "000000" },
                       distance: 38100,
-                      direction: 5400000,
+                      direction: 90,
                     },
                   },
                   outline: {
@@ -206,7 +206,7 @@ const buffer = await generateDocument({
                     reflection: {
                       blurRadius: 6350,
                       distance: 38100,
-                      fadeDirection: 5400000,
+                      fadeDirection: 90,
                       startAlpha: 40,
                     },
                   },
@@ -260,7 +260,7 @@ const buffer = await generateDocument({
                   fill: {
                     type: "gradient",
                     options: {
-                      shade: { angle: 5400000 },
+                      shade: { angle: 90 },
                       stops: [
                         { color: { value: "002060" }, position: 0 },
                         { color: { value: "0070C0" }, position: 50 },
@@ -455,19 +455,19 @@ const buffer = await generateDocument({
                       blurRadius: 40000,
                       color: { value: "000000" },
                       distance: 30000,
-                      direction: 5400000,
+                      direction: 90,
                     },
                     reflection: {
                       blurRadius: 4000,
                       distance: 20000,
-                      fadeDirection: 5400000,
+                      fadeDirection: 90,
                       startAlpha: 30,
                     },
                   },
                   fill: {
                     type: "gradient",
                     options: {
-                      shade: { angle: 2700000 },
+                      shade: { angle: 45 },
                       stops: [
                         { color: { value: "1F4E79" }, position: 0 },
                         { color: { value: "2E75B6" }, position: 50 },

@@ -64,8 +64,8 @@ export const calculateEffectExtent = (options?: EffectListOptions): EffectExtent
     const blur = options.outerShadow.blurRadius ?? 0;
     const dir = options.outerShadow.direction ?? 0;
 
-    // Direction is in 60,000ths of a degree, convert to radians
-    const radians = (dir / 60000) * (Math.PI / 180);
+    // Direction is in degrees, convert to radians
+    const radians = dir * (Math.PI / 180);
     const dx = Math.cos(radians) * dist;
     const dy = Math.sin(radians) * dist;
 

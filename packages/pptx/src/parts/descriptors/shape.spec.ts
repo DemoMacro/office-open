@@ -345,16 +345,16 @@ describe("shapeDesc round-trip", () => {
         reflection: {
           blurRadius: 12700,
           distance: 50000,
-          direction: 5400000,
+          direction: 90,
           startAlpha: 60,
           startPosition: 10,
           endAlpha: 0,
           endPosition: 90,
-          fadeDirection: 5400000,
+          fadeDirection: 90,
           scaleX: 50,
           scaleY: 75,
-          skewX: 2700000,
-          skewY: 1800000,
+          skewX: 45,
+          skewY: 30,
           alignment: "bottomLeft",
           rotWithShape: false,
         },
@@ -363,16 +363,16 @@ describe("shapeDesc round-trip", () => {
     const reflection = result.effects!.reflection as ReflectionEffectOptions;
     expect(reflection.blurRadius).toBe(12700);
     expect(reflection.distance).toBe(50000);
-    expect(reflection.direction).toBe(5400000);
+    expect(reflection.direction).toBe(90);
     expect(reflection.startAlpha).toBe(60);
     expect(reflection.startPosition).toBe(10);
     expect(reflection.endAlpha).toBe(0);
     expect(reflection.endPosition).toBe(90);
-    expect(reflection.fadeDirection).toBe(5400000);
+    expect(reflection.fadeDirection).toBe(90);
     expect(reflection.scaleX).toBe(50);
     expect(reflection.scaleY).toBe(75);
-    expect(reflection.skewX).toBe(2700000);
-    expect(reflection.skewY).toBe(1800000);
+    expect(reflection.skewX).toBe(45);
+    expect(reflection.skewY).toBe(30);
     expect(reflection.alignment).toBe("bottomLeft");
     expect(reflection.rotWithShape).toBe(false);
   });

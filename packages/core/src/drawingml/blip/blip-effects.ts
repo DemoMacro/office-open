@@ -43,7 +43,7 @@ export interface LuminanceEffectOptions {
  * ```
  */
 export interface HSLEffectOptions {
-  /** Hue rotation in 60000ths of a degree. Default 0. */
+  /** Hue rotation in degrees. Default 0. */
   hue?: number;
   /** Saturation adjustment in percentage points (-100 to 100). Default 0. */
   saturation?: number;
@@ -61,7 +61,7 @@ export interface HSLEffectOptions {
  * ```
  */
 export interface TintEffectOptions {
-  /** Hue in 60000ths of a degree. Default 0. */
+  /** Hue in degrees. Default 0. */
   hue?: number;
   /** Amount in percentage points (0 to 100). Default 0. */
   amount?: number;

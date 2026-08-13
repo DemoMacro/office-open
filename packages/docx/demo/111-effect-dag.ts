@@ -49,7 +49,7 @@ const buffer = await generateDocument({
                     outerShadow: {
                       blurRadius: 76200,
                       color: { value: "000000" },
-                      direction: 5400000,
+                      direction: 90,
                       distance: 38100,
                     },
                   },
@@ -83,7 +83,7 @@ const buffer = await generateDocument({
                   ],
                   effectDag: {
                     luminance: { bright: 20, contrast: -10 },
-                    tint: { hue: 2700000, amount: 30 },
+                    tint: { hue: 45, amount: 30 },
                   },
                   fill: "4472C4",
                   transformation: { height: "2.1cm", width: "7.9cm" },
@@ -132,14 +132,14 @@ const buffer = await generateDocument({
                     outerShadow: {
                       color: { value: "000000" },
                       blurRadius: 50800,
-                      direction: 2700000,
+                      direction: 45,
                       distance: 25400,
                     },
                   },
                   fill: {
                     type: "gradient",
                     options: {
-                      shade: { angle: 5400000 },
+                      shade: { angle: 90 },
                       stops: [
                         { color: { value: "1F4E79" }, position: 0 },
                         { color: { value: "2E75B6" }, position: 100 },

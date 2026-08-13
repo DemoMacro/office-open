@@ -31,7 +31,7 @@ const options: PresentationOptions = {
               outerShadow: {
                 blurRadius: 50800,
                 distance: 38100,
-                direction: 5400000,
+                direction: 90,
                 color: { value: "000000", transforms: { alpha: 50 } },
               },
             },
@@ -62,7 +62,7 @@ const options: PresentationOptions = {
               reflection: {
                 blurRadius: 6350,
                 distance: 38100,
-                direction: 5400000,
+                direction: 90,
                 startAlpha: 90,
                 endAlpha: 0,
               },
@@ -81,7 +81,7 @@ const options: PresentationOptions = {
               innerShadow: {
                 blurRadius: 40000,
                 distance: 30000,
-                direction: 5400000,
+                direction: 90,
                 color: { value: "000000", transforms: { alpha: 40 } },
               },
             },
@@ -112,7 +112,7 @@ const options: PresentationOptions = {
               outerShadow: {
                 blurRadius: 40000,
                 distance: 30000,
-                direction: 2700000,
+                direction: 45,
                 color: { value: "000000", transforms: { alpha: 40 } },
               },
               glow: { radius: 101600, color: { value: "B381E7", transforms: { alpha: 35 } } },

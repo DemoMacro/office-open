@@ -70,7 +70,7 @@ describe("fillDesc", () => {
           { position: 0, color: { value: "FF0000" } },
           { position: 100, color: { value: "0000FF" } },
         ],
-        shade: { angle: 5400000, scaled: true },
+        shade: { angle: 90, scaled: true },
       },
     };
     const result = roundTripFillAsRecord(opts);
@@ -110,7 +110,7 @@ describe("gradientFillDesc", () => {
         { position: 50, color: { value: "ED7D31" } },
         { position: 100, color: { value: "A5A5A5" } },
       ],
-      shade: { angle: 5400000, scaled: false },
+      shade: { angle: 90, scaled: false },
       flip: "x",
       rotateWithShape: true,
     };
@@ -121,7 +121,7 @@ describe("gradientFillDesc", () => {
     expect(result.stops[2]?.position).toBe(100);
     expect(result.shade).toBeDefined();
     if (result.shade && "angle" in result.shade) {
-      expect(result.shade.angle).toBe(5400000);
+      expect(result.shade.angle).toBe(90);
       expect(result.shade.scaled).toBe(false);
     }
     expect(result.flip).toBe("x");
@@ -149,14 +149,14 @@ describe("gradientFillDesc", () => {
     // color kinds, not just srgbClr/schemeClr (otherwise HSL/sys/prst/scRgb drop).
     const opts: GradientFillOptions = {
       stops: [
-        { position: 0, color: { hue: 120000, saturation: 100, luminance: 50 } },
+        { position: 0, color: { hue: 120, saturation: 100, luminance: 50 } },
         { position: 100, color: { value: "4472C4" } },
       ],
     };
     const result = roundTripGradient(opts);
     expect(result.stops).toHaveLength(2);
     expect(result.stops[0]?.color).toEqual({
-      hue: 120000,
+      hue: 120,
       saturation: 100,
       luminance: 50,
     });

@@ -42,7 +42,7 @@ const buffer = await generateDocument({
                     outerShadow: {
                       blurRadius: 50800,
                       color: { value: "000000" },
-                      direction: 5400000,
+                      direction: 90,
                       distance: 38100,
                     },
                   },
@@ -193,7 +193,7 @@ const buffer = await generateDocument({
                     outerShadow: {
                       blurRadius: 40000,
                       color: { value: "000000" },
-                      direction: 5400000,
+                      direction: 90,
                       distance: 30000,
                     },
                     reflection: {

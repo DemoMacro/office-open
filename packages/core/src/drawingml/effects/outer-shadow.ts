@@ -33,15 +33,15 @@ export interface OuterShadowEffectOptions {
   blurRadius?: number;
   /** Distance from shape in EMUs */
   distance?: number;
-  /** Direction angle in 60,000ths of a degree (will take degrees in the angle batch) */
+  /** Direction angle in degrees (0–360). */
   direction?: number;
   /** Horizontal scale as integer percent (100 = 100%) */
   scaleX?: number;
   /** Vertical scale as integer percent */
   scaleY?: number;
-  /** Horizontal skew angle in 60,000ths of a degree (will take degrees in the angle batch) */
+  /** Horizontal skew angle in degrees. */
   skewX?: number;
-  /** Vertical skew angle */
+  /** Vertical skew angle in degrees. */
   skewY?: number;
   /** Shadow alignment */
   alignment?: RectAlignment;
@@ -77,11 +77,11 @@ export const createOuterShadowEffect = (options: OuterShadowEffectOptions): stri
 
   if (options.blurRadius !== undefined) attrs.blurRad = options.blurRadius;
   if (options.distance !== undefined) attrs.dist = options.distance;
-  if (options.direction !== undefined) attrs.dir = options.direction;
+  if (options.direction !== undefined) attrs.dir = Math.round(options.direction * 60000);
   if (options.scaleX !== undefined) attrs.sx = options.scaleX * 1000;
   if (options.scaleY !== undefined) attrs.sy = options.scaleY * 1000;
-  if (options.skewX !== undefined) attrs.kx = options.skewX;
-  if (options.skewY !== undefined) attrs.ky = options.skewY;
+  if (options.skewX !== undefined) attrs.kx = Math.round(options.skewX * 60000);
+  if (options.skewY !== undefined) attrs.ky = Math.round(options.skewY * 60000);
   if (options.alignment !== undefined) attrs.algn = xsdRectAlignment.to(options.alignment);
   if (options.rotWithShape === false) attrs.rotWithShape = 0;
 

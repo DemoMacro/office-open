@@ -16,7 +16,7 @@ import { createColorTransforms } from "./color-transform";
  * Options for HSL color.
  */
 export interface HslColorOptions {
-  /** Hue angle in 60,000ths of a degree (0-21600000; will take degrees in the angle batch) */
+  /** Hue angle in degrees (0-360). */
   hue: number;
   /** Saturation as integer percent (0-100) */
   saturation: number;
@@ -47,7 +47,11 @@ export const createHslColor = (options: HslColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
   return element(
     "a:hslClr",
-    { hue: options.hue, sat: options.saturation * 1000, lum: options.luminance * 1000 },
+    {
+      hue: Math.round(options.hue * 60000),
+      sat: options.saturation * 1000,
+      lum: options.luminance * 1000,
+    },
     transforms,
   );
 };

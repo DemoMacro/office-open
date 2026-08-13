@@ -28,6 +28,11 @@ function scaleToAttr(value: number | undefined): number | undefined {
   return value === undefined ? undefined : value * 1000;
 }
 
+// Scale a caller angle in degrees to the XSD 1/60000th-of-a-degree attr.
+function scaleAngleToAttr(value: number | undefined): number | undefined {
+  return value === undefined ? undefined : Math.round(value * 60000);
+}
+
 // Parse an ST_Percentage attr that may be a 1/1000th integer or "50%" literal
 // back to caller integer percent.
 function parsePercentAttr(raw: string | number | undefined): number | undefined {
@@ -35,6 +40,12 @@ function parsePercentAttr(raw: string | number | undefined): number | undefined 
   const s = typeof raw === "number" ? String(raw) : raw;
   if (s.endsWith("%")) return Number(s.slice(0, -1));
   return Number(s) / 1000;
+}
+
+// Parse an ST_Angle / ST_FixedAngle 1/60000th attr back to caller degrees.
+function parseAngleAttr(raw: string | number | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  return Number(raw) / 60000;
 }
 
 // ── Helper: stringify a color into an effect element ──
@@ -111,7 +122,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
           {
             blurRad: opts.innerShadow.blurRadius,
             dist: opts.innerShadow.distance,
-            dir: opts.innerShadow.direction,
+            dir: scaleAngleToAttr(opts.innerShadow.direction),
           },
           opts.innerShadow.color,
           ctx,
@@ -127,11 +138,11 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
           {
             blurRad: opts.outerShadow.blurRadius,
             dist: opts.outerShadow.distance,
-            dir: opts.outerShadow.direction,
+            dir: scaleAngleToAttr(opts.outerShadow.direction),
             sx: scaleToAttr(opts.outerShadow.scaleX),
             sy: scaleToAttr(opts.outerShadow.scaleY),
-            kx: opts.outerShadow.skewX,
-            ky: opts.outerShadow.skewY,
+            kx: scaleAngleToAttr(opts.outerShadow.skewX),
+            ky: scaleAngleToAttr(opts.outerShadow.skewY),
             algn:
               opts.outerShadow.alignment !== undefined
                 ? xsdRectAlignment.to(opts.outerShadow.alignment)
@@ -152,7 +163,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
           {
             prst: xsdPresetShadow.to(opts.presetShadow.preset),
             dist: opts.presetShadow.distance,
-            dir: opts.presetShadow.direction,
+            dir: scaleAngleToAttr(opts.presetShadow.direction),
           },
           opts.presetShadow.color,
           ctx,
@@ -173,12 +184,14 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (refOpts.endPosition !== undefined)
         attrParts.push(`endPos="${scaleToAttr(refOpts.endPosition)}"`);
       if (refOpts.distance !== undefined) attrParts.push(`dist="${refOpts.distance}"`);
-      if (refOpts.direction !== undefined) attrParts.push(`dir="${refOpts.direction}"`);
-      if (refOpts.fadeDirection !== undefined) attrParts.push(`fadeDir="${refOpts.fadeDirection}"`);
+      if (refOpts.direction !== undefined)
+        attrParts.push(`dir="${scaleAngleToAttr(refOpts.direction)}"`);
+      if (refOpts.fadeDirection !== undefined)
+        attrParts.push(`fadeDir="${scaleAngleToAttr(refOpts.fadeDirection)}"`);
       if (refOpts.scaleX !== undefined) attrParts.push(`sx="${scaleToAttr(refOpts.scaleX)}"`);
       if (refOpts.scaleY !== undefined) attrParts.push(`sy="${scaleToAttr(refOpts.scaleY)}"`);
-      if (refOpts.skewX !== undefined) attrParts.push(`kx="${refOpts.skewX}"`);
-      if (refOpts.skewY !== undefined) attrParts.push(`ky="${refOpts.skewY}"`);
+      if (refOpts.skewX !== undefined) attrParts.push(`kx="${scaleAngleToAttr(refOpts.skewX)}"`);
+      if (refOpts.skewY !== undefined) attrParts.push(`ky="${scaleAngleToAttr(refOpts.skewY)}"`);
       if (refOpts.alignment !== undefined)
         attrParts.push(`algn="${escapeXml(xsdRectAlignment.to(refOpts.alignment))}"`);
       if (refOpts.rotWithShape !== undefined)
@@ -228,7 +241,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (innerShdw.attributes?.["dist"] !== undefined)
         innerOpts.distance = Number(innerShdw.attributes["dist"]);
       if (innerShdw.attributes?.["dir"] !== undefined)
-        innerOpts.direction = Number(innerShdw.attributes["dir"]);
+        innerOpts.direction = parseAngleAttr(innerShdw.attributes["dir"]);
       const color = readColorFromElement(innerShdw, ctx);
       if (color) innerOpts.color = color;
       result.innerShadow = innerOpts as InnerShadowEffectOptions;
@@ -243,15 +256,15 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (outerShdw.attributes?.["dist"] !== undefined)
         outerOpts.distance = Number(outerShdw.attributes["dist"]);
       if (outerShdw.attributes?.["dir"] !== undefined)
-        outerOpts.direction = Number(outerShdw.attributes["dir"]);
+        outerOpts.direction = parseAngleAttr(outerShdw.attributes["dir"]);
       if (outerShdw.attributes?.["sx"] !== undefined)
         outerOpts.scaleX = parsePercentAttr(outerShdw.attributes["sx"]);
       if (outerShdw.attributes?.["sy"] !== undefined)
         outerOpts.scaleY = parsePercentAttr(outerShdw.attributes["sy"]);
       if (outerShdw.attributes?.["kx"] !== undefined)
-        outerOpts.skewX = Number(outerShdw.attributes["kx"]);
+        outerOpts.skewX = parseAngleAttr(outerShdw.attributes["kx"]);
       if (outerShdw.attributes?.["ky"] !== undefined)
-        outerOpts.skewY = Number(outerShdw.attributes["ky"]);
+        outerOpts.skewY = parseAngleAttr(outerShdw.attributes["ky"]);
       if (outerShdw.attributes?.["algn"] !== undefined)
         outerOpts.alignment = xsdRectAlignment.from(
           String(outerShdw.attributes["algn"]),
@@ -293,7 +306,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (prstShdw.attributes?.["dist"] !== undefined)
         prstOpts.distance = Number(prstShdw.attributes["dist"]);
       if (prstShdw.attributes?.["dir"] !== undefined)
-        prstOpts.direction = Number(prstShdw.attributes["dir"]);
+        prstOpts.direction = parseAngleAttr(prstShdw.attributes["dir"]);
       const color = readColorFromElement(prstShdw, ctx);
       if (color) prstOpts.color = color;
       result.presetShadow = prstOpts as PresetShadowEffectOptions;
@@ -316,17 +329,17 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (reflection.attributes?.["dist"] !== undefined)
         refOpts.distance = Number(reflection.attributes["dist"]);
       if (reflection.attributes?.["dir"] !== undefined)
-        refOpts.direction = Number(reflection.attributes["dir"]);
+        refOpts.direction = parseAngleAttr(reflection.attributes["dir"]);
       if (reflection.attributes?.["fadeDir"] !== undefined)
-        refOpts.fadeDirection = Number(reflection.attributes["fadeDir"]);
+        refOpts.fadeDirection = parseAngleAttr(reflection.attributes["fadeDir"]);
       if (reflection.attributes?.["sx"] !== undefined)
         refOpts.scaleX = parsePercentAttr(reflection.attributes["sx"]);
       if (reflection.attributes?.["sy"] !== undefined)
         refOpts.scaleY = parsePercentAttr(reflection.attributes["sy"]);
       if (reflection.attributes?.["kx"] !== undefined)
-        refOpts.skewX = Number(reflection.attributes["kx"]);
+        refOpts.skewX = parseAngleAttr(reflection.attributes["kx"]);
       if (reflection.attributes?.["ky"] !== undefined)
-        refOpts.skewY = Number(reflection.attributes["ky"]);
+        refOpts.skewY = parseAngleAttr(reflection.attributes["ky"]);
       if (reflection.attributes?.["algn"] !== undefined)
         refOpts.alignment = xsdRectAlignment.from(String(reflection.attributes["algn"]));
       if (reflection.attributes?.["rotWithShape"] !== undefined)

@@ -49,7 +49,7 @@ function readRelativeRect(el: XmlElement): RelativeRect {
 function stringifyShade(shade: GradientShadeOptions): string {
   if ("angle" in shade) {
     const parts: string[] = [];
-    if (shade.angle !== undefined) parts.push(`ang="${shade.angle}"`);
+    if (shade.angle !== undefined) parts.push(`ang="${Math.round(shade.angle * 60000)}"`);
     if (shade.scaled !== undefined) parts.push(`scaled="${shade.scaled ? 1 : 0}"`);
     const attrStr = parts.length ? " " + parts.join(" ") : "";
     return `<a:lin${attrStr}/>`;
@@ -115,7 +115,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     const lin = findChild(el, "a:lin");
     if (lin) {
       const shade: LinearShadeOptions = {};
-      if (lin.attributes?.["ang"] !== undefined) shade.angle = Number(lin.attributes["ang"]);
+      if (lin.attributes?.["ang"] !== undefined)
+        shade.angle = Number(lin.attributes["ang"]) / 60000;
       if (lin.attributes?.["scaled"] !== undefined) shade.scaled = lin.attributes["scaled"] !== "0";
       result.shade = shade;
     } else {
@@ -255,7 +256,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           })),
         };
         if (!opts.path && opts.angle !== undefined) {
-          gradOpts.shade = { angle: opts.angle * 60000, scaled: opts.scaled ?? true };
+          gradOpts.shade = { angle: opts.angle, scaled: opts.scaled ?? true };
         }
         if (opts.path) {
           gradOpts.shade = { path: opts.path };

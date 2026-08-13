@@ -73,7 +73,7 @@ const options: PresentationOptions = {
           outerShadow: {
             blurRadius: 50800,
             distance: 38100,
-            direction: 2700000,
+            direction: 45,
             color: { value: "000000", transforms: { alpha: 50 } },
           },
         },

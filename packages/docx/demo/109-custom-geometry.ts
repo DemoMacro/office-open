@@ -154,7 +154,7 @@ const buffer = await generateDocument({
                   fill: {
                     type: "gradient",
                     options: {
-                      shade: { angle: 5400000 },
+                      shade: { angle: 90 },
                       stops: [
                         { color: { value: "002060" }, position: 0 },
                         { color: { value: "00B0F0" }, position: 100 },

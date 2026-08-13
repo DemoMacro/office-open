@@ -48,7 +48,7 @@ export type TileFlipMode = "none" | "x" | "y" | "xy";
  * Options for linear gradient shading.
  */
 export interface LinearShadeOptions {
-  /** Angle in 60,000ths of a degree (e.g., 5400000 = 90°) */
+  /** Angle in degrees (e.g., 90 = 90°). */
   angle?: number;
   /** Whether the angle scales with the shape */
   scaled?: boolean;
@@ -163,7 +163,7 @@ const createRelativeRect = (name: string, rect?: RelativeRect): string =>
 const createShadeElement = (shade: GradientShadeOptions): string => {
   if ("angle" in shade) {
     return element("a:lin", {
-      ang: shade.angle,
+      ang: shade.angle !== undefined ? Math.round(shade.angle * 60000) : undefined,
       scaled: shade.scaled,
     });
   }
@@ -199,7 +199,7 @@ const createShadeElement = (shade: GradientShadeOptions): string => {
  *     { position: 0, color: { value: "FF0000" } },
  *     { position: 100, color: { value: "0000FF" } },
  *   ],
- *   shade: { angle: 5400000 },
+ *   shade: { angle: 90 },
  * });
  * ```
  */
