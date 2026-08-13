@@ -9,7 +9,9 @@
  */
 import { element } from "@office-open/xml";
 
+import { convertToEmu } from "../../util/converters";
 import { xsdRectAlignment } from "../../util/mappings";
+import type { UniversalMeasure } from "../../util/values";
 
 /**
  * Tile flip mode for tiling images.
@@ -41,10 +43,10 @@ export type TileAlignment =
  * Configures how an image is tiled (repeated) to fill a shape.
  */
 export interface TileOptions {
-  /** Horizontal offset for the tile origin (in EMUs) */
-  tx?: number;
-  /** Vertical offset for the tile origin (in EMUs) */
-  ty?: number;
+  /** Horizontal offset for the tile origin in EMUs (number) or UniversalMeasure. */
+  tx?: number | UniversalMeasure;
+  /** Vertical offset for the tile origin in EMUs (number) or UniversalMeasure. */
+  ty?: number | UniversalMeasure;
   /** Horizontal scale as integer percent (100 = 100%) */
   sx?: number;
   /** Vertical scale as integer percent (100 = 100%) */
@@ -90,8 +92,8 @@ export const createTileInfo = (options?: TileOptions): string => {
   }
 
   const attrs: Record<string, string | number | undefined> = {};
-  if (options.tx !== undefined) attrs.tx = options.tx;
-  if (options.ty !== undefined) attrs.ty = options.ty;
+  if (options.tx !== undefined) attrs.tx = convertToEmu(options.tx);
+  if (options.ty !== undefined) attrs.ty = convertToEmu(options.ty);
   if (options.sx !== undefined) attrs.sx = Math.round(options.sx * 1000);
   if (options.sy !== undefined) attrs.sy = Math.round(options.sy * 1000);
   if (options.flip !== undefined) attrs.flip = options.flip;

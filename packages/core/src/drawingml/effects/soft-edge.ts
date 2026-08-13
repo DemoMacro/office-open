@@ -5,6 +5,8 @@
  *
  * @module
  */
+import { convertToEmu } from "../../util/converters";
+import type { UniversalMeasure } from "../../util/values";
 
 /**
  * Creates a soft edge effect element.
@@ -16,6 +18,7 @@
  * </xsd:complexType>
  * ```
  *
- * @param rad - Soft edge radius in EMUs (required)
+ * @param rad - Soft edge radius in EMUs (number) or UniversalMeasure (required)
  */
-export const createSoftEdgeEffect = (rad: number): string => `<a:softEdge rad="${rad}"/>`;
+export const createSoftEdgeEffect = (rad: number | UniversalMeasure): string =>
+  `<a:softEdge rad="${convertToEmu(rad)}"/>`;

@@ -3,6 +3,16 @@
  *
  * @module
  */
+import type { UniversalMeasure } from "./values";
+
+/**
+ * Apply `fn` to `value` unless it is `undefined`; `undefined` passes through.
+ *
+ * Lets an optional field (e.g. `radius?: number | UniversalMeasure`) be threaded
+ * through a conversion without a per-call ternary.
+ */
+export const mapOptional = <T, R>(value: T | undefined, fn: (value: T) => R): R | undefined =>
+  value === undefined ? undefined : fn(value);
 
 // ---------------------------------------------------------------------------
 // TWIP conversions (1 TWIP = 1/20 point, used in WordprocessingML)
@@ -166,7 +176,7 @@ export const convertUniversalMeasureToTwip = (measure: string): number => {
  * convertToTwip("2.54cm"); // ~1440
  * ```
  */
-export const convertToTwip = (val: number | string): number =>
+export const convertToTwip = (val: number | UniversalMeasure): number =>
   typeof val === "string" ? convertUniversalMeasureToTwip(val) : val;
 
 // ---------------------------------------------------------------------------
@@ -229,7 +239,7 @@ export const convertUniversalMeasureToEmu = (measure: string): number => {
  * convertToEmu("200px");   // 1905000 (200 * 9525)
  * ```
  */
-export const convertToEmu = (val: number | string): number =>
+export const convertToEmu = (val: number | UniversalMeasure): number =>
   typeof val === "string" ? convertUniversalMeasureToEmu(val) : val;
 
 // ---------------------------------------------------------------------------
@@ -268,7 +278,7 @@ export const convertUniversalMeasureToPt = (measure: string): number => {
  * Numbers are returned as-is (assumed to be in points). Strings are parsed as
  * UniversalMeasure. Useful for SpreadsheetML fields where a number is points.
  */
-export const convertToPt = (val: number | string): number =>
+export const convertToPt = (val: number | UniversalMeasure): number =>
   typeof val === "string" ? convertUniversalMeasureToPt(val) : val;
 
 /**
@@ -301,5 +311,5 @@ export const convertUniversalMeasureToInch = (measure: string): number => {
  * Numbers are returned as-is (assumed to be in inches). Useful for SpreadsheetML
  * page-margin fields where a number is inches.
  */
-export const convertToInch = (val: number | string): number =>
+export const convertToInch = (val: number | UniversalMeasure): number =>
   typeof val === "string" ? convertUniversalMeasureToInch(val) : val;

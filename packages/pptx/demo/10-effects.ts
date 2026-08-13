@@ -29,8 +29,8 @@ const options: PresentationOptions = {
             fill: "ED7D31",
             effects: {
               outerShadow: {
-                blurRadius: 50800,
-                distance: 38100,
+                blurRadius: "4pt",
+                distance: "3pt",
                 direction: 90,
                 color: { value: "000000", transforms: { alpha: 50 } },
               },

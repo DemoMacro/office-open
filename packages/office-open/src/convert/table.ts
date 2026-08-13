@@ -36,6 +36,7 @@ import {
   convertTwipToEmu,
   ThemeColor,
 } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { ParagraphDescriptorOptions } from "@office-open/core/drawingml";
 import type {
   ParagraphOptions,
@@ -77,10 +78,10 @@ const emuToCharWidth = (emu: number): number => emu / EMU_PER_CHAR;
 const charWidthToEmu = (chars: number): number => chars * EMU_PER_CHAR;
 
 /** docx height value (twip number or UM) → EMU. */
-const docxHeightToEmu = (v: number | string): number =>
+const docxHeightToEmu = (v: number | UniversalMeasure): number =>
   typeof v === "number" ? convertTwipToEmu(v) : convertToEmu(v);
 /** pptx height value (EMU number or UM) → twip. */
-const pptxHeightToTwip = (v: number | string): number =>
+const pptxHeightToTwip = (v: number | UniversalMeasure): number =>
   typeof v === "number" ? convertEmuToTwip(v) : convertToTwip(v);
 
 /** Convert numeric column widths via `convert`; UM strings pass through. */

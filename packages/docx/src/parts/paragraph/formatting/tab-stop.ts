@@ -7,6 +7,7 @@
  *
  * @module
  */
+import type { UniversalMeasure } from "@office-open/core";
 
 /**
  * Definition for a single tab stop.
@@ -16,8 +17,8 @@
 export interface TabStopDefinition {
   /** The type of tab stop alignment */
   type: (typeof TabStopType)[keyof typeof TabStopType];
-  /** The position of the tab stop in twips */
-  position: number | (typeof TabStopPosition)[keyof typeof TabStopPosition];
+  /** The position of the tab stop in twips (number) or UniversalMeasure (mm/cm/in/pt/pc/pi). */
+  position: number | UniversalMeasure;
   /** Optional leader character to fill space before the tab */
   leader?: (typeof LeaderType)[keyof typeof LeaderType];
 }

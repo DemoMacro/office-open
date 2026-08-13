@@ -7,7 +7,9 @@
  */
 import { element } from "@office-open/xml";
 
+import { convertToEmu } from "../../util/converters";
 import { xsdRectAlignment } from "../../util/mappings";
+import type { UniversalMeasure } from "../../util/values";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -29,10 +31,10 @@ export type RectAlignment =
  * Options for outer shadow effect.
  */
 export interface OuterShadowEffectOptions {
-  /** Blur radius in EMUs */
-  blurRadius?: number;
-  /** Distance from shape in EMUs */
-  distance?: number;
+  /** Blur radius in EMUs (number) or UniversalMeasure (mm/cm/in/pt/pc/pi/px). */
+  blurRadius?: number | UniversalMeasure;
+  /** Distance from shape in EMUs (number) or UniversalMeasure. */
+  distance?: number | UniversalMeasure;
   /** Direction angle in degrees (0–360). */
   direction?: number;
   /** Horizontal scale as integer percent (100 = 100%) */
@@ -75,8 +77,8 @@ export interface OuterShadowEffectOptions {
 export const createOuterShadowEffect = (options: OuterShadowEffectOptions): string => {
   const attrs: Record<string, string | number> = {};
 
-  if (options.blurRadius !== undefined) attrs.blurRad = options.blurRadius;
-  if (options.distance !== undefined) attrs.dist = options.distance;
+  if (options.blurRadius !== undefined) attrs.blurRad = convertToEmu(options.blurRadius);
+  if (options.distance !== undefined) attrs.dist = convertToEmu(options.distance);
   if (options.direction !== undefined) attrs.dir = Math.round(options.direction * 60000);
   if (options.scaleX !== undefined) attrs.sx = Math.round(options.scaleX * 1000);
   if (options.scaleY !== undefined) attrs.sy = Math.round(options.scaleY * 1000);

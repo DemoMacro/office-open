@@ -7,6 +7,8 @@
  */
 import { element } from "@office-open/xml";
 
+import { convertToEmu } from "../../util/converters";
+import type { UniversalMeasure } from "../../util/values";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
 import { createFillOverlayEffect } from "./fill-overlay";
 import type { GlowEffectOptions } from "./glow";
@@ -60,8 +62,8 @@ export const calculateEffectExtent = (options?: EffectListOptions): EffectExtent
 
   // Outer shadow: distance + blurRadius extends in the shadow direction
   if (options.outerShadow) {
-    const dist = options.outerShadow.distance ?? 0;
-    const blur = options.outerShadow.blurRadius ?? 0;
+    const dist = convertToEmu(options.outerShadow.distance ?? 0);
+    const blur = convertToEmu(options.outerShadow.blurRadius ?? 0);
     const dir = options.outerShadow.direction ?? 0;
 
     // Direction is in degrees, convert to radians
@@ -82,7 +84,7 @@ export const calculateEffectExtent = (options?: EffectListOptions): EffectExtent
 
   // Glow: radius extends equally in all directions
   if (options.glow) {
-    const radius = options.glow.radius ?? 0;
+    const radius = convertToEmu(options.glow.radius ?? 0);
     l = Math.max(l, radius);
     t = Math.max(t, radius);
     r = Math.max(r, radius);
@@ -91,18 +93,19 @@ export const calculateEffectExtent = (options?: EffectListOptions): EffectExtent
 
   // Reflection: typically extends downward
   if (options.reflection && options.reflection !== true) {
-    const dist = options.reflection.distance ?? 0;
-    const blur = options.reflection.blurRadius ?? 0;
+    const dist = convertToEmu(options.reflection.distance ?? 0);
+    const blur = convertToEmu(options.reflection.blurRadius ?? 0);
     // Reflection typically extends downward
     b = Math.max(b, dist + blur);
   }
 
   // Soft edge: radius extends equally in all directions
   if (options.softEdge !== undefined) {
-    l = Math.max(l, options.softEdge);
-    t = Math.max(t, options.softEdge);
-    r = Math.max(r, options.softEdge);
-    b = Math.max(b, options.softEdge);
+    const softRad = convertToEmu(options.softEdge);
+    l = Math.max(l, softRad);
+    t = Math.max(t, softRad);
+    r = Math.max(r, softRad);
+    b = Math.max(b, softRad);
   }
 
   // EMU coordinates must be integers (ST_Coordinate); the cos/sin projections
@@ -142,7 +145,7 @@ export interface EffectListOptions {
   /** Reflection effect (pass object for attributes, or true for defaults) */
   reflection?: ReflectionEffectOptions | true;
   /** Soft edge radius in EMUs */
-  softEdge?: number;
+  softEdge?: number | UniversalMeasure;
 }
 
 /**

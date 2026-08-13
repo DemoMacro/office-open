@@ -10,6 +10,7 @@ import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { parse } from "../../descriptor";
+import { convertToEmu, mapOptional } from "../../util/converters";
 import { xsdBlendMode, xsdPresetShadow, xsdRectAlignment } from "../../util/mappings";
 import { parseColorChoice, solidFillDesc, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
@@ -110,7 +111,12 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
     // Glow
     if (opts.glow) {
       parts.push(
-        stringifyColorEffect("a:glow", { rad: opts.glow.radius }, opts.glow.color, ctx) ?? "",
+        stringifyColorEffect(
+          "a:glow",
+          { rad: mapOptional(opts.glow.radius, convertToEmu) },
+          opts.glow.color,
+          ctx,
+        ) ?? "",
       );
     }
 
@@ -120,8 +126,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
         stringifyColorEffect(
           "a:innerShdw",
           {
-            blurRad: opts.innerShadow.blurRadius,
-            dist: opts.innerShadow.distance,
+            blurRad: mapOptional(opts.innerShadow.blurRadius, convertToEmu),
+            dist: mapOptional(opts.innerShadow.distance, convertToEmu),
             dir: scaleAngleToAttr(opts.innerShadow.direction),
           },
           opts.innerShadow.color,
@@ -136,8 +142,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
         stringifyColorEffect(
           "a:outerShdw",
           {
-            blurRad: opts.outerShadow.blurRadius,
-            dist: opts.outerShadow.distance,
+            blurRad: mapOptional(opts.outerShadow.blurRadius, convertToEmu),
+            dist: mapOptional(opts.outerShadow.distance, convertToEmu),
             dir: scaleAngleToAttr(opts.outerShadow.direction),
             sx: scaleToAttr(opts.outerShadow.scaleX),
             sy: scaleToAttr(opts.outerShadow.scaleY),
@@ -162,7 +168,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
           "a:prstShdw",
           {
             prst: xsdPresetShadow.to(opts.presetShadow.preset),
-            dist: opts.presetShadow.distance,
+            dist: mapOptional(opts.presetShadow.distance, convertToEmu),
             dir: scaleAngleToAttr(opts.presetShadow.direction),
           },
           opts.presetShadow.color,
@@ -175,7 +181,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
     if (opts.reflection) {
       const refOpts = opts.reflection === true ? ({} as ReflectionEffectOptions) : opts.reflection;
       const attrParts: string[] = [];
-      if (refOpts.blurRadius !== undefined) attrParts.push(`blurRad="${refOpts.blurRadius}"`);
+      if (refOpts.blurRadius !== undefined)
+        attrParts.push(`blurRad="${convertToEmu(refOpts.blurRadius)}"`);
       if (refOpts.startAlpha !== undefined)
         attrParts.push(`stA="${scaleToAttr(refOpts.startAlpha)}"`);
       if (refOpts.startPosition !== undefined)
@@ -183,7 +190,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (refOpts.endAlpha !== undefined) attrParts.push(`endA="${scaleToAttr(refOpts.endAlpha)}"`);
       if (refOpts.endPosition !== undefined)
         attrParts.push(`endPos="${scaleToAttr(refOpts.endPosition)}"`);
-      if (refOpts.distance !== undefined) attrParts.push(`dist="${refOpts.distance}"`);
+      if (refOpts.distance !== undefined)
+        attrParts.push(`dist="${convertToEmu(refOpts.distance)}"`);
       if (refOpts.direction !== undefined)
         attrParts.push(`dir="${scaleAngleToAttr(refOpts.direction)}"`);
       if (refOpts.fadeDirection !== undefined)
@@ -202,7 +210,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
 
     // Soft edge
     if (opts.softEdge !== undefined) {
-      parts.push(`<a:softEdge rad="${opts.softEdge}"/>`);
+      parts.push(`<a:softEdge rad="${convertToEmu(opts.softEdge)}"/>`);
     }
 
     // Filter empty strings

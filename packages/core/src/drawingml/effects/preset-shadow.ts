@@ -7,7 +7,9 @@
  */
 import { element } from "@office-open/xml";
 
+import { convertToEmu } from "../../util/converters";
 import { xsdPresetShadow } from "../../util/mappings";
+import type { UniversalMeasure } from "../../util/values";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -44,8 +46,8 @@ export type PresetShadow =
 export interface PresetShadowEffectOptions {
   /** Preset shadow type (required) */
   preset: PresetShadow;
-  /** Distance from shape in EMUs */
-  distance?: number;
+  /** Distance from shape in EMUs (number) or UniversalMeasure. */
+  distance?: number | UniversalMeasure;
   /** Direction angle in degrees (0–360). */
   direction?: number;
   /** Shadow color */
@@ -72,7 +74,7 @@ export const createPresetShadowEffect = (options: PresetShadowEffectOptions): st
     prst: xsdPresetShadow.to(options.preset),
   };
 
-  if (options.distance !== undefined) attrs.dist = options.distance;
+  if (options.distance !== undefined) attrs.dist = convertToEmu(options.distance);
   if (options.direction !== undefined) attrs.dir = Math.round(options.direction * 60000);
 
   return element("a:prstShdw", attrs, [createColorElement(options.color)]);

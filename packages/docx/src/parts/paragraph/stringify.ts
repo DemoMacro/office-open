@@ -134,7 +134,11 @@ function indentStr(opts: IndentProperties): string {
 
 function tabStopsStr(defs: TabStopDefinition[]): string {
   const items = defs.map(({ type, position, leader }) => {
-    const a = attrParts({ "w:val": type, "w:pos": position, "w:leader": leader });
+    const a = attrParts({
+      "w:val": type,
+      "w:pos": signedTwipsMeasureValue(position),
+      "w:leader": leader,
+    });
     return `<w:tab ${a}/>`;
   });
   return `<w:tabs>${items.join("")}</w:tabs>`;
