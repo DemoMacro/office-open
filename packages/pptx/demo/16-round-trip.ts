@@ -287,7 +287,7 @@ const slides: SlideOptions[] = [
           textBody: {
             paragraphs: [
               {
-                properties: { alignment: "center", bullet: { type: "none" }, lineSpacing: 1.5 },
+                properties: { alignment: "center", bullet: { type: "none" }, lineSpacing: 150 },
                 children: [
                   { text: "H", size: 20 },
                   { text: "2", size: 12, baseline: -25000 },

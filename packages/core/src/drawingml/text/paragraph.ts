@@ -69,7 +69,8 @@ function stringifyParagraphProperties(
 
   // Line spacing
   if (options.lineSpacing !== undefined) {
-    children.push(`<a:lnSpc><a:spcPct val="${options.lineSpacing * 100000}"/></a:lnSpc>`);
+    // spcPct unit is 1/1000 percent; lineSpacing is percent (100 = single) → ×1000.
+    children.push(`<a:lnSpc><a:spcPct val="${options.lineSpacing * 1000}"/></a:lnSpc>`);
   }
   if (options.lineSpacingPoints !== undefined) {
     children.push(`<a:lnSpc><a:spcPts val="${options.lineSpacingPoints * 100}"/></a:lnSpc>`);
@@ -199,7 +200,7 @@ function readParagraphProperties(
   if (lnSpc) {
     const spcPct = findChild(lnSpc, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined) {
-      result.lineSpacing = Number(spcPct.attributes["val"]) / 100000;
+      result.lineSpacing = Number(spcPct.attributes["val"]) / 1000;
     }
     const spcPts = findChild(lnSpc, "a:spcPts");
     if (spcPts?.attributes?.["val"] !== undefined) {
