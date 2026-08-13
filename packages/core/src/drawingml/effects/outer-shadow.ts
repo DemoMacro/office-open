@@ -78,8 +78,8 @@ export const createOuterShadowEffect = (options: OuterShadowEffectOptions): stri
   if (options.blurRadius !== undefined) attrs.blurRad = options.blurRadius;
   if (options.distance !== undefined) attrs.dist = options.distance;
   if (options.direction !== undefined) attrs.dir = Math.round(options.direction * 60000);
-  if (options.scaleX !== undefined) attrs.sx = options.scaleX * 1000;
-  if (options.scaleY !== undefined) attrs.sy = options.scaleY * 1000;
+  if (options.scaleX !== undefined) attrs.sx = Math.round(options.scaleX * 1000);
+  if (options.scaleY !== undefined) attrs.sy = Math.round(options.scaleY * 1000);
   if (options.skewX !== undefined) attrs.kx = Math.round(options.skewX * 60000);
   if (options.skewY !== undefined) attrs.ky = Math.round(options.skewY * 60000);
   if (options.alignment !== undefined) attrs.algn = xsdRectAlignment.to(options.alignment);

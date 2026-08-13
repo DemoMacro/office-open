@@ -75,8 +75,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     const stopsXml = opts.stops
       .map((stop) => {
         const colorXml = stringifyColorChoice(stop.color, ctx);
-        if (!colorXml) return `<a:gs pos="${stop.position * 1000}"/>`;
-        return `<a:gs pos="${stop.position * 1000}">${colorXml}</a:gs>`;
+        if (!colorXml) return `<a:gs pos="${Math.round(stop.position * 1000)}"/>`;
+        return `<a:gs pos="${Math.round(stop.position * 1000)}">${colorXml}</a:gs>`;
       })
       .join("");
     parts.push(`<a:gsLst>${stopsXml}</a:gsLst>`);

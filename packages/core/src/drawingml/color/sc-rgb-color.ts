@@ -54,7 +54,11 @@ export const createScRgbColor = (options: ScRgbColorOptions): string => {
   const transforms = options.transforms ? createColorTransforms(options.transforms) : [];
   return element(
     "a:scrgbClr",
-    { r: options.r * 1000, g: options.g * 1000, b: options.b * 1000 },
+    {
+      r: Math.round(options.r * 1000),
+      g: Math.round(options.g * 1000),
+      b: Math.round(options.b * 1000),
+    },
     transforms,
   );
 };

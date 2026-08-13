@@ -92,8 +92,8 @@ export const createTileInfo = (options?: TileOptions): string => {
   const attrs: Record<string, string | number | undefined> = {};
   if (options.tx !== undefined) attrs.tx = options.tx;
   if (options.ty !== undefined) attrs.ty = options.ty;
-  if (options.sx !== undefined) attrs.sx = options.sx * 1000;
-  if (options.sy !== undefined) attrs.sy = options.sy * 1000;
+  if (options.sx !== undefined) attrs.sx = Math.round(options.sx * 1000);
+  if (options.sy !== undefined) attrs.sy = Math.round(options.sy * 1000);
   if (options.flip !== undefined) attrs.flip = options.flip;
   if (options.align !== undefined) attrs.algn = xsdRectAlignment.to(options.align);
 

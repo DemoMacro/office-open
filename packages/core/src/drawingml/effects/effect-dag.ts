@@ -286,15 +286,16 @@ const createAlphaInverseEffect = (options?: AlphaInverseEffectOptions): string =
 const createAlphaModulateFixedEffect = (options?: AlphaModulateFixedEffectOptions): string =>
   options?.amount === undefined
     ? "<a:alphaModFix/>"
-    : `<a:alphaModFix amt="${options.amount * 1000}"/>`;
+    : `<a:alphaModFix amt="${Math.round(options.amount * 1000)}"/>`;
 
 const createAlphaOutsetEffect = (options?: AlphaOutsetEffectOptions): string =>
   options?.radius === undefined ? "<a:alphaOutset/>" : `<a:alphaOutset rad="${options.radius}"/>`;
 
 const createAlphaReplaceEffect = (options: AlphaReplaceEffectOptions): string =>
-  `<a:alphaRepl a="${options.alpha * 1000}"/>`;
+  `<a:alphaRepl a="${Math.round(options.alpha * 1000)}"/>`;
 
-const createBiLevelEffect = (thresh: number): string => `<a:biLevel thresh="${thresh * 1000}"/>`;
+const createBiLevelEffect = (thresh: number): string =>
+  `<a:biLevel thresh="${Math.round(thresh * 1000)}"/>`;
 
 const createBlendEffect = (options: BlendEffectOptions): string =>
   element("a:blend", { blend: xsdBlendMode.to(options.blend) }, [
@@ -355,29 +356,29 @@ const createHSLEffect = (options?: HSLEffectOptions): string => {
 
 const createLuminanceEffect = (options?: LuminanceEffectOptions): string => {
   const attrs: Record<string, number> = {};
-  if (options?.bright !== undefined) attrs.bright = options.bright * 1000;
-  if (options?.contrast !== undefined) attrs.contrast = options.contrast * 1000;
+  if (options?.bright !== undefined) attrs.bright = Math.round(options.bright * 1000);
+  if (options?.contrast !== undefined) attrs.contrast = Math.round(options.contrast * 1000);
   return element("a:lum", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
 const createTintEffect = (options?: TintEffectOptions): string => {
   const attrs: Record<string, number> = {};
   if (options?.hue !== undefined) attrs.hue = Math.round(options.hue * 60000);
-  if (options?.amount !== undefined) attrs.amt = options.amount * 1000;
+  if (options?.amount !== undefined) attrs.amt = Math.round(options.amount * 1000);
   return element("a:tint", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
 const createRelativeOffsetEffect = (options?: RelativeOffsetEffectOptions): string => {
   const attrs: Record<string, number> = {};
-  if (options?.translateX !== undefined) attrs.tx = options.translateX * 1000;
-  if (options?.translateY !== undefined) attrs.ty = options.translateY * 1000;
+  if (options?.translateX !== undefined) attrs.tx = Math.round(options.translateX * 1000);
+  if (options?.translateY !== undefined) attrs.ty = Math.round(options.translateY * 1000);
   return element("a:relOff", Object.keys(attrs).length > 0 ? attrs : undefined);
 };
 
 const createTransformEffect = (options?: TransformEffectOptions): string => {
   const attrs: Record<string, number> = {};
-  if (options?.scaleX !== undefined) attrs.sx = options.scaleX * 1000;
-  if (options?.scaleY !== undefined) attrs.sy = options.scaleY * 1000;
+  if (options?.scaleX !== undefined) attrs.sx = Math.round(options.scaleX * 1000);
+  if (options?.scaleY !== undefined) attrs.sy = Math.round(options.scaleY * 1000);
   if (options?.skewX !== undefined) attrs.kx = Math.round(options.skewX * 60000);
   if (options?.skewY !== undefined) attrs.ky = Math.round(options.skewY * 60000);
   if (options?.translateX !== undefined) attrs.tx = options.translateX;

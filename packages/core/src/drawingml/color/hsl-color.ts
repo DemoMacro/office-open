@@ -49,8 +49,8 @@ export const createHslColor = (options: HslColorOptions): string => {
     "a:hslClr",
     {
       hue: Math.round(options.hue * 60000),
-      sat: options.saturation * 1000,
-      lum: options.luminance * 1000,
+      sat: Math.round(options.saturation * 1000),
+      lum: Math.round(options.luminance * 1000),
     },
     transforms,
   );

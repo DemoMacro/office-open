@@ -35,8 +35,8 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
     const attrParts: string[] = [];
     if (opts.tx !== undefined) attrParts.push(`tx="${opts.tx}"`);
     if (opts.ty !== undefined) attrParts.push(`ty="${opts.ty}"`);
-    if (opts.sx !== undefined) attrParts.push(`sx="${opts.sx * 1000}"`);
-    if (opts.sy !== undefined) attrParts.push(`sy="${opts.sy * 1000}"`);
+    if (opts.sx !== undefined) attrParts.push(`sx="${Math.round(opts.sx * 1000)}"`);
+    if (opts.sy !== undefined) attrParts.push(`sy="${Math.round(opts.sy * 1000)}"`);
     if (opts.flip !== undefined) attrParts.push(`flip="${escapeXml(opts.flip)}"`);
     if (opts.align !== undefined)
       attrParts.push(`algn="${escapeXml(xsdRectAlignment.to(opts.align))}"`);
@@ -63,10 +63,10 @@ export const sourceRectangleDesc: CustomDescriptor<SourceRectangleOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const attrParts: string[] = [];
-    if (opts.left !== undefined) attrParts.push(`l="${opts.left * 1000}"`);
-    if (opts.top !== undefined) attrParts.push(`t="${opts.top * 1000}"`);
-    if (opts.right !== undefined) attrParts.push(`r="${opts.right * 1000}"`);
-    if (opts.bottom !== undefined) attrParts.push(`b="${opts.bottom * 1000}"`);
+    if (opts.left !== undefined) attrParts.push(`l="${Math.round(opts.left * 1000)}"`);
+    if (opts.top !== undefined) attrParts.push(`t="${Math.round(opts.top * 1000)}"`);
+    if (opts.right !== undefined) attrParts.push(`r="${Math.round(opts.right * 1000)}"`);
+    if (opts.bottom !== undefined) attrParts.push(`b="${Math.round(opts.bottom * 1000)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     return `<a:srcRect${attrStr}/>`;
   },
@@ -117,9 +117,9 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   if (opts.luminance) {
     const attrParts: string[] = [];
     if (opts.luminance.bright !== undefined)
-      attrParts.push(`bright="${opts.luminance.bright * 1000}"`);
+      attrParts.push(`bright="${Math.round(opts.luminance.bright * 1000)}"`);
     if (opts.luminance.contrast !== undefined)
-      attrParts.push(`contrast="${opts.luminance.contrast * 1000}"`);
+      attrParts.push(`contrast="${Math.round(opts.luminance.contrast * 1000)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:lum${attrStr}/>`);
   }
@@ -127,8 +127,10 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   if (opts.hsl) {
     const attrParts: string[] = [];
     if (opts.hsl.hue !== undefined) attrParts.push(`hue="${Math.round(opts.hsl.hue * 60000)}"`);
-    if (opts.hsl.saturation !== undefined) attrParts.push(`sat="${opts.hsl.saturation * 1000}"`);
-    if (opts.hsl.luminance !== undefined) attrParts.push(`lum="${opts.hsl.luminance * 1000}"`);
+    if (opts.hsl.saturation !== undefined)
+      attrParts.push(`sat="${Math.round(opts.hsl.saturation * 1000)}"`);
+    if (opts.hsl.luminance !== undefined)
+      attrParts.push(`lum="${Math.round(opts.hsl.luminance * 1000)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:hsl${attrStr}/>`);
   }
@@ -136,7 +138,8 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   if (opts.tint) {
     const attrParts: string[] = [];
     if (opts.tint.hue !== undefined) attrParts.push(`hue="${Math.round(opts.tint.hue * 60000)}"`);
-    if (opts.tint.amount !== undefined) attrParts.push(`amt="${opts.tint.amount * 1000}"`);
+    if (opts.tint.amount !== undefined)
+      attrParts.push(`amt="${Math.round(opts.tint.amount * 1000)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:tint${attrStr}/>`);
   }
@@ -148,7 +151,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.biLevel) {
-    parts.push(`<a:biLevel thresh="${opts.biLevel.threshold * 1000}"/>`);
+    parts.push(`<a:biLevel thresh="${Math.round(opts.biLevel.threshold * 1000)}"/>`);
   }
 
   if (opts.alphaCeiling) {
@@ -169,16 +172,16 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.alphaModFix) {
-    const amt = (opts.alphaModFix.amount ?? 100) * 1000;
+    const amt = Math.round((opts.alphaModFix.amount ?? 100) * 1000);
     parts.push(`<a:alphaModFix amt="${amt}"/>`);
   }
 
   if (opts.alphaRepl) {
-    parts.push(`<a:alphaRepl a="${opts.alphaRepl.amount * 1000}"/>`);
+    parts.push(`<a:alphaRepl a="${Math.round(opts.alphaRepl.amount * 1000)}"/>`);
   }
 
   if (opts.alphaBiLevel) {
-    parts.push(`<a:alphaBiLevel thresh="${opts.alphaBiLevel.threshold * 1000}"/>`);
+    parts.push(`<a:alphaBiLevel thresh="${Math.round(opts.alphaBiLevel.threshold * 1000)}"/>`);
   }
 
   if (opts.colorChange) {

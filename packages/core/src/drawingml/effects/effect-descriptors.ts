@@ -25,7 +25,7 @@ import type { ReflectionEffectOptions } from "./reflection";
 
 // Scale a caller percent (100 = 100%) to the XSD 1/1000th-of-a-percent attr.
 function scaleToAttr(value: number | undefined): number | undefined {
-  return value === undefined ? undefined : value * 1000;
+  return value === undefined ? undefined : Math.round(value * 1000);
 }
 
 // Scale a caller angle in degrees to the XSD 1/60000th-of-a-degree attr.

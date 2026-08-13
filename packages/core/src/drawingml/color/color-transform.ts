@@ -94,33 +94,46 @@ export interface ColorTransformOptions {
 export const createColorTransforms = (options: ColorTransformOptions): readonly string[] => {
   const t: string[] = [];
 
-  if (options.tint !== undefined) t.push(`<a:tint val="${options.tint * 1000}"/>`);
-  if (options.shade !== undefined) t.push(`<a:shade val="${options.shade * 1000}"/>`);
+  if (options.tint !== undefined) t.push(`<a:tint val="${Math.round(options.tint * 1000)}"/>`);
+  if (options.shade !== undefined) t.push(`<a:shade val="${Math.round(options.shade * 1000)}"/>`);
   if (options.comp) t.push(`<a:comp/>`);
   if (options.inv) t.push(`<a:inv/>`);
   if (options.gray) t.push(`<a:gray/>`);
-  if (options.alpha !== undefined) t.push(`<a:alpha val="${options.alpha * 1000}"/>`);
-  if (options.alphaOff !== undefined) t.push(`<a:alphaOff val="${options.alphaOff * 1000}"/>`);
-  if (options.alphaMod !== undefined) t.push(`<a:alphaMod val="${options.alphaMod * 1000}"/>`);
+  if (options.alpha !== undefined) t.push(`<a:alpha val="${Math.round(options.alpha * 1000)}"/>`);
+  if (options.alphaOff !== undefined)
+    t.push(`<a:alphaOff val="${Math.round(options.alphaOff * 1000)}"/>`);
+  if (options.alphaMod !== undefined)
+    t.push(`<a:alphaMod val="${Math.round(options.alphaMod * 1000)}"/>`);
   if (options.hue !== undefined) t.push(`<a:hue val="${Math.round(options.hue * 60000)}"/>`);
   if (options.hueOff !== undefined)
     t.push(`<a:hueOff val="${Math.round(options.hueOff * 60000)}"/>`);
-  if (options.hueMod !== undefined) t.push(`<a:hueMod val="${options.hueMod * 1000}"/>`);
-  if (options.sat !== undefined) t.push(`<a:sat val="${options.sat * 1000}"/>`);
-  if (options.satOff !== undefined) t.push(`<a:satOff val="${options.satOff * 1000}"/>`);
-  if (options.satMod !== undefined) t.push(`<a:satMod val="${options.satMod * 1000}"/>`);
-  if (options.lum !== undefined) t.push(`<a:lum val="${options.lum * 1000}"/>`);
-  if (options.lumOff !== undefined) t.push(`<a:lumOff val="${options.lumOff * 1000}"/>`);
-  if (options.lumMod !== undefined) t.push(`<a:lumMod val="${options.lumMod * 1000}"/>`);
-  if (options.red !== undefined) t.push(`<a:red val="${options.red * 1000}"/>`);
-  if (options.redOff !== undefined) t.push(`<a:redOff val="${options.redOff * 1000}"/>`);
-  if (options.redMod !== undefined) t.push(`<a:redMod val="${options.redMod * 1000}"/>`);
-  if (options.green !== undefined) t.push(`<a:green val="${options.green * 1000}"/>`);
-  if (options.greenOff !== undefined) t.push(`<a:greenOff val="${options.greenOff * 1000}"/>`);
-  if (options.greenMod !== undefined) t.push(`<a:greenMod val="${options.greenMod * 1000}"/>`);
-  if (options.blue !== undefined) t.push(`<a:blue val="${options.blue * 1000}"/>`);
-  if (options.blueOff !== undefined) t.push(`<a:blueOff val="${options.blueOff * 1000}"/>`);
-  if (options.blueMod !== undefined) t.push(`<a:blueMod val="${options.blueMod * 1000}"/>`);
+  if (options.hueMod !== undefined)
+    t.push(`<a:hueMod val="${Math.round(options.hueMod * 1000)}"/>`);
+  if (options.sat !== undefined) t.push(`<a:sat val="${Math.round(options.sat * 1000)}"/>`);
+  if (options.satOff !== undefined)
+    t.push(`<a:satOff val="${Math.round(options.satOff * 1000)}"/>`);
+  if (options.satMod !== undefined)
+    t.push(`<a:satMod val="${Math.round(options.satMod * 1000)}"/>`);
+  if (options.lum !== undefined) t.push(`<a:lum val="${Math.round(options.lum * 1000)}"/>`);
+  if (options.lumOff !== undefined)
+    t.push(`<a:lumOff val="${Math.round(options.lumOff * 1000)}"/>`);
+  if (options.lumMod !== undefined)
+    t.push(`<a:lumMod val="${Math.round(options.lumMod * 1000)}"/>`);
+  if (options.red !== undefined) t.push(`<a:red val="${Math.round(options.red * 1000)}"/>`);
+  if (options.redOff !== undefined)
+    t.push(`<a:redOff val="${Math.round(options.redOff * 1000)}"/>`);
+  if (options.redMod !== undefined)
+    t.push(`<a:redMod val="${Math.round(options.redMod * 1000)}"/>`);
+  if (options.green !== undefined) t.push(`<a:green val="${Math.round(options.green * 1000)}"/>`);
+  if (options.greenOff !== undefined)
+    t.push(`<a:greenOff val="${Math.round(options.greenOff * 1000)}"/>`);
+  if (options.greenMod !== undefined)
+    t.push(`<a:greenMod val="${Math.round(options.greenMod * 1000)}"/>`);
+  if (options.blue !== undefined) t.push(`<a:blue val="${Math.round(options.blue * 1000)}"/>`);
+  if (options.blueOff !== undefined)
+    t.push(`<a:blueOff val="${Math.round(options.blueOff * 1000)}"/>`);
+  if (options.blueMod !== undefined)
+    t.push(`<a:blueMod val="${Math.round(options.blueMod * 1000)}"/>`);
   if (options.gamma) t.push(`<a:gamma/>`);
   if (options.invGamma) t.push(`<a:invGamma/>`);
 

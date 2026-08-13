@@ -76,16 +76,16 @@ export const createReflectionEffect = (options?: ReflectionEffectOptions): strin
   const attrs: Record<string, string | number> = {};
 
   if (options.blurRadius !== undefined) attrs.blurRad = options.blurRadius;
-  if (options.startAlpha !== undefined) attrs.stA = options.startAlpha * 1000;
-  if (options.startPosition !== undefined) attrs.stPos = options.startPosition * 1000;
-  if (options.endAlpha !== undefined) attrs.endA = options.endAlpha * 1000;
-  if (options.endPosition !== undefined) attrs.endPos = options.endPosition * 1000;
+  if (options.startAlpha !== undefined) attrs.stA = Math.round(options.startAlpha * 1000);
+  if (options.startPosition !== undefined) attrs.stPos = Math.round(options.startPosition * 1000);
+  if (options.endAlpha !== undefined) attrs.endA = Math.round(options.endAlpha * 1000);
+  if (options.endPosition !== undefined) attrs.endPos = Math.round(options.endPosition * 1000);
   if (options.distance !== undefined) attrs.dist = options.distance;
   if (options.direction !== undefined) attrs.dir = Math.round(options.direction * 60000);
   if (options.fadeDirection !== undefined)
     attrs.fadeDir = Math.round(options.fadeDirection * 60000);
-  if (options.scaleX !== undefined) attrs.sx = options.scaleX * 1000;
-  if (options.scaleY !== undefined) attrs.sy = options.scaleY * 1000;
+  if (options.scaleX !== undefined) attrs.sx = Math.round(options.scaleX * 1000);
+  if (options.scaleY !== undefined) attrs.sy = Math.round(options.scaleY * 1000);
   if (options.skewX !== undefined) attrs.kx = Math.round(options.skewX * 60000);
   if (options.skewY !== undefined) attrs.ky = Math.round(options.skewY * 60000);
   if (options.alignment !== undefined) attrs.algn = xsdRectAlignment.to(options.alignment);

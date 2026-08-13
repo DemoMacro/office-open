@@ -55,10 +55,10 @@ export const createSourceRectangle = (options?: SourceRectangleOptions): string 
   }
 
   const attrs: Record<string, string | number | undefined> = {};
-  if (options.left !== undefined) attrs.l = options.left * 1000;
-  if (options.top !== undefined) attrs.t = options.top * 1000;
-  if (options.right !== undefined) attrs.r = options.right * 1000;
-  if (options.bottom !== undefined) attrs.b = options.bottom * 1000;
+  if (options.left !== undefined) attrs.l = Math.round(options.left * 1000);
+  if (options.top !== undefined) attrs.t = Math.round(options.top * 1000);
+  if (options.right !== undefined) attrs.r = Math.round(options.right * 1000);
+  if (options.bottom !== undefined) attrs.b = Math.round(options.bottom * 1000);
 
   return element("a:srcRect", attrs);
 };

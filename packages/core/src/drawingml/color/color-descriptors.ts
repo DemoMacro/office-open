@@ -102,7 +102,7 @@ function stringifyTransforms(opts: ColorTransformOptions): string {
       parts.push(`<a:${key}/>`);
     } else {
       const scaled = PERCENT_KEYS.has(key)
-        ? (v as number) * 1000
+        ? Math.round((v as number) * 1000)
         : ANGLE_KEYS.has(key)
           ? Math.round((v as number) * 60000)
           : (v as number);
@@ -181,8 +181,8 @@ export const hslColorDesc: CustomDescriptor<HslColorOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const transforms = opts.transforms ? stringifyTransforms(opts.transforms) : "";
-    const sat = opts.saturation * 1000;
-    const lum = opts.luminance * 1000;
+    const sat = Math.round(opts.saturation * 1000);
+    const lum = Math.round(opts.luminance * 1000);
     const hue = Math.round(opts.hue * 60000);
     if (transforms) {
       return `<a:hslClr hue="${hue}" sat="${sat}" lum="${lum}">${transforms}</a:hslClr>`;
@@ -254,9 +254,9 @@ export const scRgbColorDesc: CustomDescriptor<ScRgbColorOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const transforms = opts.transforms ? stringifyTransforms(opts.transforms) : "";
-    const r = opts.r * 1000;
-    const g = opts.g * 1000;
-    const b = opts.b * 1000;
+    const r = Math.round(opts.r * 1000);
+    const g = Math.round(opts.g * 1000);
+    const b = Math.round(opts.b * 1000);
     if (transforms) {
       return `<a:scrgbClr r="${r}" g="${g}" b="${b}">${transforms}</a:scrgbClr>`;
     }
