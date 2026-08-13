@@ -143,7 +143,7 @@ const options: PresentationOptions = {
             textBody: { text: "X=30 Y=0" },
             fill: "4472C4",
             scene3d: {
-              camera: { preset: "orthographicFront", rotation: { lat: 1800000, lon: 0, rev: 0 } },
+              camera: { preset: "orthographicFront", rotation: { lat: 30, lon: 0, rev: 0 } },
               lightRig: { rig: "threePt", direction: "t" },
             },
           },
@@ -157,7 +157,7 @@ const options: PresentationOptions = {
             textBody: { text: "X=0 Y=45" },
             fill: "ED7D31",
             scene3d: {
-              camera: { preset: "orthographicFront", rotation: { lat: 0, lon: 2700000, rev: 0 } },
+              camera: { preset: "orthographicFront", rotation: { lat: 0, lon: 45, rev: 0 } },
               lightRig: { rig: "threePt", direction: "t" },
             },
           },
@@ -173,8 +173,8 @@ const options: PresentationOptions = {
             scene3d: {
               camera: {
                 preset: "legacyPerspectiveFront",
-                rotation: { lat: 1200000, lon: 1800000, rev: 600000 },
-                fov: 500,
+                rotation: { lat: 20, lon: 30, rev: 10 },
+                fov: 10,
               },
               lightRig: { rig: "threePt", direction: "t" },
             },
@@ -191,7 +191,7 @@ const options: PresentationOptions = {
             scene3d: {
               camera: {
                 preset: "orthographicFront",
-                rotation: { lat: 1500000, lon: 900000, rev: 0 },
+                rotation: { lat: 25, lon: 15, rev: 0 },
               },
               lightRig: { rig: "threePt", direction: "t" },
             },
@@ -207,7 +207,7 @@ const options: PresentationOptions = {
             textBody: { text: "Bevel Top" },
             fill: "7030A0",
             scene3d: {
-              camera: { preset: "orthographicFront", rotation: { lat: 1200000, lon: 0, rev: 0 } },
+              camera: { preset: "orthographicFront", rotation: { lat: 20, lon: 0, rev: 0 } },
               lightRig: { rig: "threePt", direction: "t" },
             },
             shape3d: { bevelT: { w: 8, h: 8 }, extrusionH: 25000, prstMaterial: "metal" },

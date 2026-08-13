@@ -30,6 +30,7 @@ export interface Transform2DOptions {
   height?: number | UniversalMeasure;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
+  /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
 }
 
@@ -57,7 +58,7 @@ function buildXfrmAttrs(
   const attrs: Record<string, string | number | boolean> = {};
   if (options.flipHorizontal !== undefined) attrs.flipH = options.flipHorizontal;
   if (options.flipVertical !== undefined) attrs.flipV = options.flipVertical;
-  if (options.rotation !== undefined) attrs.rot = options.rotation;
+  if (options.rotation !== undefined) attrs.rot = Math.round(options.rotation * 60000);
   return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
 

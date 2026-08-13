@@ -32,6 +32,7 @@ export interface GroupShapeDescriptorOptions extends NonVisualDrawingPropertiesO
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
+  /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
   flipHorizontal?: boolean;
   /** Child coordinate system offset (a:chOff). Defaults to {x,y} when omitted. */

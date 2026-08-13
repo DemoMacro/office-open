@@ -273,7 +273,7 @@ describe("drawingDesc round-trip", () => {
     // convert to degrees — otherwise rotated images lose orientation on round-trip.
     const base = makeImageMediaData();
     const xml = stringify({
-      mediaData: { ...base, transformation: { ...base.transformation, rotation: 16200000 } },
+      mediaData: { ...base, transformation: { ...base.transformation, rotation: 270 } },
     });
     expect(xml).toContain('rot="16200000"');
     const el = parseXml(xml).elements?.[0];

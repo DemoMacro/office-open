@@ -27,7 +27,10 @@ import type { Shape3DOptions } from "./shape-3d";
 // ── SphereCoords helper ──
 
 function stringifySphereCoords(coords: SphereCoords): string {
-  return `<a:rot lat="${coords.lat}" lon="${coords.lon}" rev="${coords.rev}"/>`;
+  const lat = Math.round(coords.lat * 60000);
+  const lon = Math.round(coords.lon * 60000);
+  const rev = Math.round(coords.rev * 60000);
+  return `<a:rot lat="${lat}" lon="${lon}" rev="${rev}"/>`;
 }
 
 function readSphereCoords(el: XmlElement): SphereCoords | undefined {
@@ -35,7 +38,7 @@ function readSphereCoords(el: XmlElement): SphereCoords | undefined {
   const lon = el.attributes?.["lon"];
   const rev = el.attributes?.["rev"];
   if (lat === undefined || lon === undefined || rev === undefined) return undefined;
-  return { lat: Number(lat), lon: Number(lon), rev: Number(rev) };
+  return { lat: Number(lat) / 60000, lon: Number(lon) / 60000, rev: Number(rev) / 60000 };
 }
 
 // ── Bevel descriptor (a:bevelT / a:bevelB) ──
@@ -145,7 +148,7 @@ const cameraDesc: CustomDescriptor<CameraOptions> = {
   stringify(opts, _ctx) {
     const attrParts: string[] = [];
     attrParts.push(`prst="${escapeXml(opts.preset)}"`);
-    if (opts.fov !== undefined) attrParts.push(`fov="${opts.fov}"`);
+    if (opts.fov !== undefined) attrParts.push(`fov="${Math.round(opts.fov * 60000)}"`);
     if (opts.zoom !== undefined) attrParts.push(`zoom="${escapeXml(opts.zoom)}"`);
     const attrStr = " " + attrParts.join(" ");
 
@@ -159,7 +162,7 @@ const cameraDesc: CustomDescriptor<CameraOptions> = {
   parse(el, _ctx) {
     const result: Partial<CameraOptions> = {};
     if (el.attributes?.["prst"] !== undefined) result.preset = String(el.attributes["prst"]);
-    if (el.attributes?.["fov"] !== undefined) result.fov = Number(el.attributes["fov"]);
+    if (el.attributes?.["fov"] !== undefined) result.fov = Number(el.attributes["fov"]) / 60000;
     if (el.attributes?.["zoom"] !== undefined) result.zoom = String(el.attributes["zoom"]);
     const rot = findChild(el, "a:rot");
     if (rot) result.rotation = readSphereCoords(rot);

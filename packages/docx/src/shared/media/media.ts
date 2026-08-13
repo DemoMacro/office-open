@@ -67,7 +67,7 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
       x: Math.round(convertEmuToPixels(widthEmu)),
       y: Math.round(convertEmuToPixels(heightEmu)),
     },
-    rotation: options.rotation ? options.rotation * 60_000 : undefined,
+    rotation: options.rotation,
     ...(options.effectExtent ? { effectExtent: options.effectExtent } : {}),
   };
 };

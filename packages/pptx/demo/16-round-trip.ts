@@ -270,7 +270,7 @@ const slides: SlideOptions[] = [
           scene3d: {
             camera: {
               preset: "orthographicFront",
-              rotation: { lat: 1200000, lon: 600000, rev: 300000 },
+              rotation: { lat: 20, lon: 10, rev: 5 },
             },
             lightRig: { rig: "threePt", direction: "t" },
           },
@@ -483,7 +483,7 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "16.4cm",
           height: "5.3cm",
-          rotation: 5000,
+          rotation: 5,
           children: [
             {
               shape: {

@@ -49,6 +49,7 @@ export interface ShapePropertiesOptions {
   height?: number | UniversalMeasure;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
+  /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
   // CT_GroupTransform2D extras (a:chOff / a:chExt). When any is set, the
   // descriptor emits a group transform (groupTransform2DDesc) instead of a

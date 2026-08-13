@@ -11,6 +11,7 @@ export interface GroupOptions extends BaseGroupOptions {
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
+  /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
   flipHorizontal?: boolean;
   children: SlideChild[];

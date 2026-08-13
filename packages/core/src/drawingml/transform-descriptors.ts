@@ -22,7 +22,7 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
     const attrParts: string[] = [];
     if (opts.flipHorizontal !== undefined) attrParts.push(`flipH="${opts.flipHorizontal ? 1 : 0}"`);
     if (opts.flipVertical !== undefined) attrParts.push(`flipV="${opts.flipVertical ? 1 : 0}"`);
-    if (opts.rotation !== undefined) attrParts.push(`rot="${opts.rotation}"`);
+    if (opts.rotation !== undefined) attrParts.push(`rot="${Math.round(opts.rotation * 60000)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
 
     // Child elements: off, ext
@@ -50,7 +50,8 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
         result.flipHorizontal = el.attributes["flipH"] === 1 || el.attributes["flipH"] === "1";
       if (el.attributes["flipV"] !== undefined)
         result.flipVertical = el.attributes["flipV"] === 1 || el.attributes["flipV"] === "1";
-      if (el.attributes["rot"] !== undefined) result.rotation = Number(el.attributes["rot"]);
+      if (el.attributes["rot"] !== undefined)
+        result.rotation = Number(el.attributes["rot"]) / 60000;
     }
 
     // Child: off — a:off x/y are ST_Coordinate (number EMU | UniversalMeasure)

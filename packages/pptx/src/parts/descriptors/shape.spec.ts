@@ -136,9 +136,9 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      rotation: 45000,
+      rotation: 45,
     });
-    expect(result.rotation).toBe(45000);
+    expect(result.rotation).toBe(45);
   });
 
   it("round-trips shape with flipHorizontal", () => {

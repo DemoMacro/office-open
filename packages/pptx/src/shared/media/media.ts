@@ -33,6 +33,6 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
     emus: { x: cx, y: cy },
     pixels: { x: Math.round(convertEmuToPixels(cx)), y: Math.round(convertEmuToPixels(cy)) },
     flip: options.flip,
-    rotation: options.rotation ? options.rotation * 60_000 : undefined,
+    rotation: options.rotation,
   };
 };

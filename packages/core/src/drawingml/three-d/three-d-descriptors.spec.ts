@@ -95,17 +95,17 @@ describe("scene3DDesc", () => {
     const opts: Scene3DOptions = {
       camera: {
         preset: "isometricTopUp",
-        fov: 3600000,
+        fov: 60,
         zoom: "100%",
-        rotation: { lat: 0, lon: 0, rev: 5400000 },
+        rotation: { lat: 0, lon: 0, rev: 90 },
       },
       lightRig: { rig: "balanced", direction: "tl" },
     };
     const result = roundTrip(scene3DDesc, opts);
     expect(result.camera.preset).toBe("isometricTopUp");
-    expect(result.camera.fov).toBe(3600000);
+    expect(result.camera.fov).toBe(60);
     expect(result.camera.zoom).toBe("100%");
-    expect(result.camera.rotation).toEqual({ lat: 0, lon: 0, rev: 5400000 });
+    expect(result.camera.rotation).toEqual({ lat: 0, lon: 0, rev: 90 });
   });
 
   it("round-trips lightRig with rotation", () => {
@@ -114,13 +114,13 @@ describe("scene3DDesc", () => {
       lightRig: {
         rig: "soft",
         direction: "b",
-        rotation: { lat: 5400000, lon: 0, rev: 0 },
+        rotation: { lat: 90, lon: 0, rev: 0 },
       },
     };
     const result = roundTrip(scene3DDesc, opts);
     expect(result.lightRig.rig).toBe("soft");
     expect(result.lightRig.direction).toBe("b");
-    expect(result.lightRig.rotation).toEqual({ lat: 5400000, lon: 0, rev: 0 });
+    expect(result.lightRig.rotation).toEqual({ lat: 90, lon: 0, rev: 0 });
   });
 
   it("round-trips scene with backdrop", () => {

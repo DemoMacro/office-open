@@ -51,14 +51,14 @@ describe("createTransformation", () => {
     });
   });
 
-  it("should convert rotation from degrees to 60000ths", () => {
+  it("should pass rotation through in degrees", () => {
     const result = createTransformation({
       height: 100,
       rotation: 90,
       width: 100,
     });
 
-    expect(result.rotation).to.equal(5400000);
+    expect(result.rotation).to.equal(90);
   });
 
   it("should pass flip through unchanged", () => {

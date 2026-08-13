@@ -90,7 +90,7 @@ const buffer = await generateDocument({
                   ],
                   scene3d: {
                     camera: {
-                      fov: 600000,
+                      fov: 10,
                       preset: "perspectiveFront",
                       zoom: "120000",
                     },
@@ -142,8 +142,8 @@ const buffer = await generateDocument({
                       preset: "orthographicFront",
                       rotation: {
                         lat: 0,
-                        lon: 2700000,
-                        rev: 450000,
+                        lon: 45,
+                        rev: 7.5,
                       },
                     },
                     lightRig: { direction: "t", rig: "balanced" },

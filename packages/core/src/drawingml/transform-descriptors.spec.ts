@@ -41,24 +41,24 @@ describe("transform2DDesc", () => {
       y: 0,
       width: 100000,
       height: 100000,
-      rotation: 5400000,
+      rotation: 90,
       flipHorizontal: true,
       flipVertical: false,
     };
     const result = roundTrip(transform2DDesc, opts);
-    expect(result.rotation).toBe(5400000);
+    expect(result.rotation).toBe(90);
     expect(result.flipHorizontal).toBe(true);
     expect(result.flipVertical).toBe(false);
   });
 
   it("round-trips attributes only (no children)", () => {
     const opts: Transform2DOptions = {
-      rotation: 2700000,
+      rotation: 45,
       flipHorizontal: true,
       flipVertical: true,
     };
     const result = roundTrip(transform2DDesc, opts);
-    expect(result.rotation).toBe(2700000);
+    expect(result.rotation).toBe(45);
     expect(result.flipHorizontal).toBe(true);
     expect(result.flipVertical).toBe(true);
   });

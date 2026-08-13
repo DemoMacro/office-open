@@ -41,6 +41,7 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   scene3d?: Scene3DOptions;
   shape3d?: Shape3DOptions;
   flipHorizontal?: boolean;
+  /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
   textBody?: TextBodyOptions;
   animation?: AnimationOptions;

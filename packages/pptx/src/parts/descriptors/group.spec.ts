@@ -68,11 +68,11 @@ describe("groupShapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      rotation: 5400000,
+      rotation: 90,
     };
     const result = roundTrip(opts);
 
-    expect(result.rotation).toBe(5400000);
+    expect(result.rotation).toBe(90);
   });
 
   it("round-trips group with nested shape child", () => {

@@ -15,7 +15,7 @@ import { element } from "@office-open/xml";
 /**
  * Sphere coordinates (CT_SphereCoords).
  *
- * Used for camera and light rig rotation. All angles are in 1/60000 of a degree.
+ * Used for camera and light rig rotation. All angles are in degrees.
  *
  * ## XSD Schema
  * ```xml
@@ -27,16 +27,20 @@ import { element } from "@office-open/xml";
  * ```
  */
 export interface SphereCoords {
-  /** Latitude angle (0 to 21600000, in 1/60000 degree units) */
+  /** Latitude angle in degrees (0–360). */
   lat: number;
-  /** Longitude angle (0 to 21600000) */
+  /** Longitude angle in degrees (0–360). */
   lon: number;
-  /** Revolution angle (0 to 21600000) */
+  /** Revolution angle in degrees (0–360). */
   rev: number;
 }
 
-const createSphereCoords = (coords: SphereCoords): string =>
-  `<a:rot lat="${coords.lat}" lon="${coords.lon}" rev="${coords.rev}"/>`;
+const createSphereCoords = (coords: SphereCoords): string => {
+  const lat = Math.round(coords.lat * 60000);
+  const lon = Math.round(coords.lon * 60000);
+  const rev = Math.round(coords.rev * 60000);
+  return `<a:rot lat="${lat}" lon="${lon}" rev="${rev}"/>`;
+};
 
 // ─── Camera ─────────────────────────────────────────────────────────────────
 
@@ -60,7 +64,7 @@ const createSphereCoords = (coords: SphereCoords): string =>
 export interface CameraOptions {
   /** Preset camera type (e.g., "perspectiveFront", "isometricTopUp") */
   preset: string;
-  /** Field of view angle (0 to 10800000, in 1/60000 degree units, max 180°) */
+  /** Field of view angle in degrees (0–180). */
   fov?: number;
   /** Zoom percentage (e.g., "100%") */
   zoom?: string;
@@ -76,7 +80,11 @@ const createCamera = (options: CameraOptions): string => {
 
   return element(
     "a:camera",
-    { prst: options.preset, fov: options.fov, zoom: options.zoom },
+    {
+      prst: options.preset,
+      fov: options.fov !== undefined ? Math.round(options.fov * 60000) : undefined,
+      zoom: options.zoom,
+    },
     children,
   );
 };
@@ -225,7 +233,7 @@ export interface Scene3DOptions {
  * createScene3D({
  *   camera: {
  *     preset: "isometricTopUp",
- *     rotation: { lat: 0, lon: 0, rev: 5400000 },
+ *     rotation: { lat: 0, lon: 0, rev: 90 },
  *   },
  *   lightRig: { rig: "balanced", direction: "tl" },
  *   backdrop: {
