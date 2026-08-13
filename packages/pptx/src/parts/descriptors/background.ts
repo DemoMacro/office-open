@@ -6,38 +6,16 @@
 
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { parse as coreParse } from "@office-open/core/descriptor";
-import {
-  createEffectList,
-  effectListDesc,
-  fillDesc,
-  type EffectListOptions,
-} from "@office-open/core/drawingml";
+import { createEffectList, effectListDesc, fillDesc } from "@office-open/core/drawingml";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { buildFill } from "@shared/drawingml/fill";
-import type { FillOptions } from "@shared/drawingml/fill";
 
-// ── Types ──
-
-export interface BackgroundDescriptorOptions {
-  fill?: FillOptions;
-  effects?: EffectListOptions;
-  shadeToTitle?: boolean;
-  blackWhiteMode?:
-    | "clr"
-    | "gray"
-    | "ltGray"
-    | "invGray"
-    | "gmGray"
-    | "bw"
-    | "auto"
-    | "black"
-    | "white";
-}
+import type { BackgroundOptions } from "../background";
 
 // ── Descriptor ──
 
-export const backgroundDesc: CustomDescriptor<BackgroundDescriptorOptions> = {
+export const backgroundDesc: CustomDescriptor<BackgroundOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -51,7 +29,7 @@ export const backgroundDesc: CustomDescriptor<BackgroundDescriptorOptions> = {
 
 // ── Stringify ──
 
-function stringifyBackgroundInner(opts: BackgroundDescriptorOptions): string {
+function stringifyBackgroundInner(opts: BackgroundOptions): string {
   const bgAttrs: string[] = [];
   if (opts.blackWhiteMode) bgAttrs.push(` p:bwMode="${opts.blackWhiteMode}"`);
 
@@ -70,13 +48,13 @@ function stringifyBackgroundInner(opts: BackgroundDescriptorOptions): string {
 
 // ── Parse ──
 
-function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundDescriptorOptions {
-  const result: Partial<BackgroundDescriptorOptions> = {};
+function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundOptions {
+  const result: Partial<BackgroundOptions> = {};
 
   if (el.attributes?.["p:bwMode"]) {
     result.blackWhiteMode = String(
       el.attributes["p:bwMode"],
-    ) as BackgroundDescriptorOptions["blackWhiteMode"];
+    ) as BackgroundOptions["blackWhiteMode"];
   }
 
   const bgPr = findChild(el, "p:bgPr");
@@ -99,5 +77,5 @@ function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundDescriptor
     }
   }
 
-  return result as BackgroundDescriptorOptions;
+  return result as BackgroundOptions;
 }

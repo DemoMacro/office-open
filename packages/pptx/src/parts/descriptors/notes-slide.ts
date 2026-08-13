@@ -19,28 +19,29 @@ import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 
 import type { PptxWriteContext } from "../../context";
-import { backgroundDesc, type BackgroundDescriptorOptions } from "./background";
+import type { BackgroundOptions } from "../background";
+import { backgroundDesc } from "./background";
 import { stringifyChild, parseChild } from "./bridge";
 import { colorMapOverrideDesc, type ColorMapOverrideOptions } from "./color-map-override";
 
 // ── Types ──
 
-export interface NotesSlideDescriptorOptions {
+export interface NotesSlideOptions {
   /** Notes text — shorthand that builds a fresh sldImg + body placeholder slide. */
   text?: string;
   /** Shape-tree children (structured). When set, the structured path is used. */
   children?: SlideChild[];
-  background?: BackgroundDescriptorOptions;
+  background?: BackgroundOptions;
   colorMapOverride?: ColorMapOverrideOptions;
-  showMasterSp?: boolean;
-  showMasterPhAnim?: boolean;
+  showMasterShapes?: boolean;
+  showMasterPlaceholderAnimations?: boolean;
   /** Hidden notes slide (p:notes/@show="0"). */
   show?: boolean;
 }
 
 // ── Descriptor ──
 
-export const notesSlideDesc: CustomDescriptor<NotesSlideDescriptorOptions, PptxWriteContext> = {
+export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -54,8 +55,8 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideDescriptorOptions, PptxW
     // Structured path — mirror slideDesc (p:notes has no transition/timing).
     const parts: string[] = [];
     const attrs: string[] = [];
-    if (opts.showMasterSp === false) attrs.push(' showMasterSp="0"');
-    if (opts.showMasterPhAnim === false) attrs.push(' showMasterPhAnim="0"');
+    if (opts.showMasterShapes === false) attrs.push(' showMasterSp="0"');
+    if (opts.showMasterPlaceholderAnimations === false) attrs.push(' showMasterPhAnim="0"');
     if (opts.show === false) attrs.push(' show="0"');
     parts.push(
       '<p:notes xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"' +
@@ -86,13 +87,13 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideDescriptorOptions, PptxW
   },
 
   parse(el, ctx) {
-    const result: Partial<NotesSlideDescriptorOptions> = {};
+    const result: Partial<NotesSlideOptions> = {};
 
     if (el.attributes) {
       if (el.attributes["showMasterSp"] !== undefined)
-        result.showMasterSp = String(el.attributes["showMasterSp"]) !== "0";
+        result.showMasterShapes = String(el.attributes["showMasterSp"]) !== "0";
       if (el.attributes["showMasterPhAnim"] !== undefined)
-        result.showMasterPhAnim = String(el.attributes["showMasterPhAnim"]) !== "0";
+        result.showMasterPlaceholderAnimations = String(el.attributes["showMasterPhAnim"]) !== "0";
       if (el.attributes["show"] !== undefined) result.show = String(el.attributes["show"]) !== "0";
     }
 
@@ -117,6 +118,6 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideDescriptorOptions, PptxW
     const clrMapOvr = findChild(el, "p:clrMapOvr");
     if (clrMapOvr) result.colorMapOverride = colorMapOverrideDesc.parse(clrMapOvr, ctx);
 
-    return result as NotesSlideDescriptorOptions;
+    return result as NotesSlideOptions;
   },
 };

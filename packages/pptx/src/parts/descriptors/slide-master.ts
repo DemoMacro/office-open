@@ -21,6 +21,7 @@ import {
   type MasterPlaceholderOptions,
   type SlideMasterOptions,
 } from "@parts/slide-master";
+import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 import type { MasterChild } from "@shared/file";
@@ -37,7 +38,6 @@ import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild, stringifyChild } from "./bridge";
 import { readTransition, stringifyTransition } from "./slide";
-import type { ControlDescriptorOptions } from "./slide";
 import {
   DEFAULT_TEXT_LIST_STYLE,
   parseTextListStyle,
@@ -217,10 +217,10 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
       // controls (inside cSld).
       const controls = findChild(cSld, "p:controls");
       if (controls) {
-        const items: ControlDescriptorOptions[] = [];
+        const items: ControlOptions[] = [];
         for (const ctrl of controls.elements ?? []) {
           if (ctrl.name !== "p:control") continue;
-          const item: ControlDescriptorOptions = {};
+          const item: ControlOptions = {};
           const spid = attrNum(ctrl, "spid");
           if (spid !== undefined) item.shapeId = spid;
           const ctrlName = attr(ctrl, "name");

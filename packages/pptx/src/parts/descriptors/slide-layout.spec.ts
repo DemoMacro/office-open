@@ -45,14 +45,14 @@ describe("slideLayoutDesc stringify/parse", () => {
       matchingName: "Title Slide",
       preserve: true,
       userDrawn: true,
-      showMasterSp: false,
+      showMasterShapes: false,
     });
     expect(result.type).toBe("title");
     expect(result.name).toBe("Title Slide");
     expect(result.matchingName).toBe("Title Slide");
     expect(result.preserve).toBe(true);
     expect(result.userDrawn).toBe(true);
-    expect(result.showMasterSp).toBe(false);
+    expect(result.showMasterShapes).toBe(false);
   });
 
   it("defaults colorMapOverride to masterClrMapping and round-trips it", () => {

@@ -7,9 +7,7 @@
  */
 import { escapeXml } from "@office-open/xml";
 
-export interface NotesSlideOptions {
-  text?: string;
-}
+import type { NotesSlideOptions } from "./descriptors/notes-slide";
 
 /**
  * Build a complete p:notes XML string.

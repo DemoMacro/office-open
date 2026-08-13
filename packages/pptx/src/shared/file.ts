@@ -7,14 +7,8 @@ import type {
 } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
 import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
-import type { BackgroundDescriptorOptions } from "@parts/descriptors/background";
 import type { ColorMapOverrideOptions } from "@parts/descriptors/color-map-override";
-import type { NotesSlideDescriptorOptions } from "@parts/descriptors/notes-slide";
-import type {
-  ControlDescriptorOptions,
-  HeaderFooterDescriptorOptions,
-  TransitionDescriptorOptions,
-} from "@parts/descriptors/slide";
+import type { NotesSlideOptions } from "@parts/descriptors/notes-slide";
 import type { HandoutMasterOptions } from "@parts/handout-master";
 import type { NotesMasterOptions } from "@parts/notes-master";
 import type {
@@ -65,17 +59,17 @@ export interface LayoutDefinition {
   matchingName?: string;
   preserve?: boolean;
   userDrawn?: boolean;
-  showMasterSp?: boolean;
-  showMasterPhAnim?: boolean;
+  showMasterShapes?: boolean;
+  showMasterPlaceholderAnimations?: boolean;
   // Structured cSld content (round-trip, mirrors SlideDescriptorOptions)
   children?: SlideChild[];
-  background?: BackgroundDescriptorOptions;
-  headerFooter?: HeaderFooterDescriptorOptions;
-  controls?: ControlDescriptorOptions[];
+  background?: BackgroundOptions;
+  headerFooter?: SlideHeaderFooterOptions;
+  controls?: ControlOptions[];
   customerData?: { rId: string }[];
   // Child slide elements
   colorMapOverride?: ColorMapOverrideOptions;
-  transition?: TransitionDescriptorOptions;
+  transition?: TransitionOptions;
   timing?: TimingDescriptorOptions;
   // Fresh API (placeholder-template generation)
   placeholders?: LayoutPlaceholderOptions;
@@ -110,7 +104,7 @@ export interface SlideOptions {
   children?: SlideChild[];
   background?: BackgroundOptions;
   /** Speaker notes — plain text shorthand, or a structured notes-slide object. */
-  notes?: string | NotesSlideDescriptorOptions;
+  notes?: string | NotesSlideOptions;
   transition?: TransitionOptions;
   headerFooter?: SlideHeaderFooterOptions;
   comments?: SlideCommentOptions[];

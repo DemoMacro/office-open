@@ -8,42 +8,34 @@ import type { CustomDescriptor, WriteContext } from "@office-open/core/descripto
 import type { TextBodyOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
+import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
+import type { SlideAnimation } from "@shared/file";
+import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 import type { PictureOptions } from "@shared/picture";
 import type { ShapeOptions } from "@shared/shape/shape";
-import type { TransitionDirection, TransitionType } from "@shared/transition";
+import type { TransitionDirection, TransitionOptions } from "@shared/transition";
 import { buildTransition } from "@shared/transition";
 
+import type { BackgroundOptions } from "../background";
 import { timingDesc } from "./animation";
-import { backgroundDesc, type BackgroundDescriptorOptions } from "./background";
+import { backgroundDesc } from "./background";
 import { parseChild } from "./bridge";
 import { shapeDesc, pictureDesc } from "./shape";
 
 // ── Types ──
 
-export interface HeaderFooterDescriptorOptions {
-  slideNumber?: boolean;
-  dateTime?: boolean;
-  footer?: boolean;
-  header?: boolean;
-}
-
-export interface AnimationDescriptorOptions {
-  shapeId: number;
-  options: unknown;
-}
-
 export interface SlideDescriptorOptions {
   children?: SlideChild[];
-  background?: BackgroundDescriptorOptions;
-  transition?: TransitionDescriptorOptions;
-  showMasterSp?: boolean;
-  showMasterPhAnim?: boolean;
-  controls?: ControlDescriptorOptions[];
+  background?: BackgroundOptions;
+  transition?: TransitionOptions;
+  showMasterShapes?: boolean;
+  showMasterPlaceholderAnimations?: boolean;
+  controls?: ControlOptions[];
   customerData?: { rId: string }[];
-  headerFooter?: HeaderFooterDescriptorOptions;
-  animations?: AnimationDescriptorOptions[];
+  headerFooter?: SlideHeaderFooterOptions;
+  animations?: SlideAnimation[];
   /** Hidden slide — excluded from slideshow (emits p:sld/@show="0"). */
   hidden?: boolean;
 }
@@ -55,26 +47,6 @@ export type SlideChild =
   | { text: TextBodyOptions }
   | { contentPart: { rId: string } };
 
-export interface TransitionDescriptorOptions {
-  type?: TransitionType | "none";
-  direction?: TransitionDirection;
-  orient?: "horz" | "vert";
-  spokes?: number;
-  speed?: "slow" | "medium" | "fast";
-  thruBlk?: boolean;
-  advanceOnClick?: boolean;
-  advanceAfterMs?: number;
-}
-
-export interface ControlDescriptorOptions {
-  shapeId?: number;
-  name?: string;
-  showAsIcon?: boolean;
-  rId?: string;
-  imageWidth?: number;
-  imageHeight?: number;
-}
-
 // ── Slide (p:sld) descriptor ──
 
 export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
@@ -85,8 +57,8 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
 
     // Opening tag with namespace declarations
     const sldAttrs: string[] = [];
-    if (opts.showMasterSp === false) sldAttrs.push(' showMasterSp="0"');
-    if (opts.showMasterPhAnim === false) sldAttrs.push(' showMasterPhAnim="0"');
+    if (opts.showMasterShapes === false) sldAttrs.push(' showMasterSp="0"');
+    if (opts.showMasterPlaceholderAnimations === false) sldAttrs.push(' showMasterPhAnim="0"');
     if (opts.hidden) sldAttrs.push(' show="0"');
     parts.push(
       `<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${sldAttrs.join("")}>`,
@@ -166,9 +138,9 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     // Root attributes
     if (el.attributes) {
       if (el.attributes["showMasterSp"] !== undefined)
-        result.showMasterSp = el.attributes["showMasterSp"] !== "0";
+        result.showMasterShapes = el.attributes["showMasterSp"] !== "0";
       if (el.attributes["showMasterPhAnim"] !== undefined)
-        result.showMasterPhAnim = el.attributes["showMasterPhAnim"] !== "0";
+        result.showMasterPlaceholderAnimations = el.attributes["showMasterPhAnim"] !== "0";
       if (el.attributes["show"] === "0") result.hidden = true;
     }
 
@@ -197,7 +169,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
       // Header/Footer (p:hf)
       const hf = findChild(cSld, "p:hf");
       if (hf) {
-        const hfOpts: HeaderFooterDescriptorOptions = {};
+        const hfOpts: SlideHeaderFooterOptions = {};
         if (findChild(hf, "p:sldNum")) hfOpts.slideNumber = true;
         if (findChild(hf, "p:dt")) hfOpts.dateTime = true;
         if (findChild(hf, "p:ftr")) hfOpts.footer = true;
@@ -216,7 +188,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     if (timing) {
       const timingOpts = timingDesc.parse(timing, _ctx);
       if (timingOpts.entries && timingOpts.entries.length > 0) {
-        const animations: AnimationDescriptorOptions[] = [];
+        const animations: SlideAnimation[] = [];
         for (const entry of timingOpts.entries) {
           animations.push({ shapeId: entry.spid, options: entry.options });
         }
@@ -240,10 +212,10 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     // controls
     const controls = findChild(el, "p:controls");
     if (controls) {
-      const items: ControlDescriptorOptions[] = [];
+      const items: ControlOptions[] = [];
       for (const ctrl of controls.elements ?? []) {
         if (ctrl.name !== "p:control") continue;
-        const item: ControlDescriptorOptions = {};
+        const item: ControlOptions = {};
         const spid = attrNum(ctrl, "spid");
         if (spid !== undefined) item.shapeId = spid;
         const name = attr(ctrl, "name");
@@ -275,18 +247,9 @@ function stringifySlideChild(child: SlideChild, ctx: WriteContext): string | und
 
 // ── Transition helpers ──
 
-export function stringifyTransition(opts: TransitionDescriptorOptions): string {
-  if (opts.type === "none" || opts.type === undefined) return "";
-  return buildTransition({
-    type: opts.type,
-    direction: opts.direction,
-    orient: opts.orient,
-    spokes: opts.spokes,
-    thruBlk: opts.thruBlk,
-    speed: opts.speed,
-    advanceOnClick: opts.advanceOnClick,
-    advanceAfterTime: opts.advanceAfterMs,
-  });
+export function stringifyTransition(opts: TransitionOptions): string {
+  if (!opts.type) return "";
+  return buildTransition(opts);
 }
 
 // Reverse of DIRECTION_MAP in @shared/transition (dir attribute → semantic direction).
@@ -330,8 +293,8 @@ const TRANSITION_ELEMENT_TYPES = [
   "cut",
 ] as const;
 
-export function readTransition(el: XmlElement): TransitionDescriptorOptions {
-  const result: TransitionDescriptorOptions = {};
+export function readTransition(el: XmlElement): TransitionOptions {
+  const result: TransitionOptions = {};
 
   if (el.attributes) {
     if (el.attributes["spd"] !== undefined)
@@ -340,7 +303,7 @@ export function readTransition(el: XmlElement): TransitionDescriptorOptions {
     if (el.attributes["advClick"] !== undefined)
       result.advanceOnClick = el.attributes["advClick"] === "1";
     if (el.attributes["advTm"] !== undefined)
-      result.advanceAfterMs = Number(el.attributes["advTm"]);
+      result.advanceAfterTime = Number(el.attributes["advTm"]);
   }
 
   // Detect transition type from the first matching child, then read its
@@ -359,6 +322,25 @@ export function readTransition(el: XmlElement): TransitionDescriptorOptions {
     if (attrs["spokes"] !== undefined) result.spokes = Number(attrs["spokes"]);
     if (attrs["thruBlk"] !== undefined) result.thruBlk = attrs["thruBlk"] === "1";
     break;
+  }
+
+  // Sound action (p:sndAc: stSnd with embedded sound, or endSnd to stop previous).
+  const sndAc = findChild(el, "p:sndAc");
+  if (sndAc) {
+    const stSnd = findChild(sndAc, "p:stSnd");
+    if (stSnd) {
+      const snd = findChild(stSnd, "p:snd");
+      const rId = snd ? attr(snd, "r:embed") : undefined;
+      if (rId) {
+        const startSound: NonNullable<TransitionOptions["startSound"]> = { rId };
+        const name = snd ? attr(snd, "name") : undefined;
+        if (name) startSound.name = name;
+        if (attr(stSnd, "loop") === "1") startSound.loop = true;
+        result.startSound = startSound;
+      }
+    } else if (findChild(sndAc, "p:endSnd")) {
+      result.stopPreviousSound = true;
+    }
   }
 
   return result;

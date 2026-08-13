@@ -2,8 +2,8 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { BackgroundOptions } from "../background";
 import { backgroundDesc } from "./background";
-import type { BackgroundDescriptorOptions } from "./background";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -16,7 +16,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: BackgroundDescriptorOptions) {
+function roundTrip(opts: BackgroundOptions) {
   const xml = backgroundDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
@@ -26,7 +26,7 @@ function roundTrip(opts: BackgroundDescriptorOptions) {
 
 describe("backgroundDesc round-trip", () => {
   it("round-trips solidFill color", () => {
-    const opts: BackgroundDescriptorOptions = {
+    const opts: BackgroundOptions = {
       fill: { type: "solid", color: "FF0000" },
     };
     const result = roundTrip(opts);
@@ -37,7 +37,7 @@ describe("backgroundDesc round-trip", () => {
   });
 
   it("round-trips noFill", () => {
-    const opts: BackgroundDescriptorOptions = {
+    const opts: BackgroundOptions = {
       fill: { type: "none" },
     };
     const result = roundTrip(opts);
@@ -47,7 +47,7 @@ describe("backgroundDesc round-trip", () => {
   });
 
   it("round-trips shadeToTitle", () => {
-    const opts: BackgroundDescriptorOptions = {
+    const opts: BackgroundOptions = {
       fill: { type: "solid", color: "4472C4" },
       shadeToTitle: true,
     };
@@ -57,7 +57,7 @@ describe("backgroundDesc round-trip", () => {
   });
 
   it("round-trips blackWhiteMode", () => {
-    const opts: BackgroundDescriptorOptions = {
+    const opts: BackgroundOptions = {
       fill: { type: "solid", color: "000000" },
       blackWhiteMode: "gray",
     };
@@ -67,7 +67,7 @@ describe("backgroundDesc round-trip", () => {
   });
 
   it("round-trips gradientFill", () => {
-    const opts: BackgroundDescriptorOptions = {
+    const opts: BackgroundOptions = {
       fill: {
         type: "gradient",
         stops: [
@@ -83,7 +83,7 @@ describe("backgroundDesc round-trip", () => {
   });
 
   it("round-trips patternFill", () => {
-    const opts: BackgroundDescriptorOptions = {
+    const opts: BackgroundOptions = {
       fill: {
         type: "pattern",
         pattern: "diagCross",
@@ -98,7 +98,7 @@ describe("backgroundDesc round-trip", () => {
   });
 
   it("round-trips effects (a:effectLst outerShadow)", () => {
-    const opts: BackgroundDescriptorOptions = {
+    const opts: BackgroundOptions = {
       fill: { type: "solid", color: "FF0000" },
       effects: {
         outerShadow: {

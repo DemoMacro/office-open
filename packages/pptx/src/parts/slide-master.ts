@@ -6,15 +6,13 @@ import type { ShapePropertiesOptions } from "@office-open/core/drawingml";
 import { createEffectList } from "@office-open/core/drawingml";
 import type { BackgroundOptions } from "@parts/background";
 import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
-import type {
-  ControlDescriptorOptions,
-  TransitionDescriptorOptions,
-} from "@parts/descriptors/slide";
 import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
+import type { ControlOptions } from "@parts/slide/slide";
 import { buildFill } from "@shared/drawingml/fill";
 import type { MasterChild } from "@shared/file";
 import type { PlaceholderDefinition } from "@shared/placeholder";
 import type { ShapeStyleOptions } from "@shared/shape/shape";
+import type { TransitionOptions } from "@shared/transition";
 
 import type { PptxWriteContext } from "../context";
 import type { ColorMapOptions, HeaderFooterOptions } from "./handout-master";
@@ -51,13 +49,13 @@ export interface SlideMasterOptions {
   /** @preserve — keep this master even when no slide references it. */
   preserve?: boolean;
   /** p:transition — slide-transition defaults inherited by slides. */
-  transition?: TransitionDescriptorOptions;
+  transition?: TransitionOptions;
   /** p:timing — animation timeline. */
   timing?: TimingDescriptorOptions;
   /** cSld/custDataLst — relationship references to customer data parts. */
   customerData?: { rId: string }[];
   /** cSld/controls — embedded controls (ActiveX/legacy). */
-  controls?: ControlDescriptorOptions[];
+  controls?: ControlOptions[];
 }
 
 // ── Placeholder emit helpers (fresh-generate + round-trip path) ──

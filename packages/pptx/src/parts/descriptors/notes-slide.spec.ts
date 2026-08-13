@@ -4,7 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { PptxWriteContext } from "../../context";
 import { notesSlideDesc } from "./notes-slide";
-import type { NotesSlideDescriptorOptions } from "./notes-slide";
+import type { NotesSlideOptions } from "./notes-slide";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -18,7 +18,7 @@ const readCtx = {
 } as unknown as ReadContext;
 
 /** stringify → parse → stringify must be byte-stable (round-trip fidelity). */
-function restringify(opts: NotesSlideDescriptorOptions): string {
+function restringify(opts: NotesSlideOptions): string {
   const original = notesSlideDesc.stringify(opts, writeCtx)!;
   const el = parseXml(original).elements?.[0];
   if (!el) throw new Error("parsed document has no root element");

@@ -33,22 +33,22 @@ describe("slideDesc round-trip", () => {
     expect(result).toBeDefined();
   });
 
-  it("round-trips showMasterSp=false", () => {
+  it("round-trips showMasterShapes=false", () => {
     const opts: SlideDescriptorOptions = {
-      showMasterSp: false,
+      showMasterShapes: false,
     };
     const result = roundTrip(opts);
 
-    expect(result.showMasterSp).toBe(false);
+    expect(result.showMasterShapes).toBe(false);
   });
 
-  it("round-trips showMasterPhAnim=false", () => {
+  it("round-trips showMasterPlaceholderAnimations=false", () => {
     const opts: SlideDescriptorOptions = {
-      showMasterPhAnim: false,
+      showMasterPlaceholderAnimations: false,
     };
     const result = roundTrip(opts);
 
-    expect(result.showMasterPhAnim).toBe(false);
+    expect(result.showMasterPlaceholderAnimations).toBe(false);
   });
 
   it("round-trips background with solid fill", () => {
@@ -80,7 +80,7 @@ describe("slideDesc round-trip", () => {
         type: "wipe",
         speed: "fast",
         advanceOnClick: false,
-        advanceAfterMs: 5000,
+        advanceAfterTime: 5000,
       },
     };
     const result = roundTrip(opts);
@@ -89,7 +89,7 @@ describe("slideDesc round-trip", () => {
     expect(result.transition!.type).toBe("wipe");
     expect(result.transition!.speed).toBe("fast");
     expect(result.transition!.advanceOnClick).toBe(false);
-    expect(result.transition!.advanceAfterMs).toBe(5000);
+    expect(result.transition!.advanceAfterTime).toBe(5000);
   });
 
   it("round-trips transition dissolve", () => {

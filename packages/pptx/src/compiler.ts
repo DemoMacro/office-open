@@ -59,7 +59,7 @@ import { stringifyChild } from "./parts/descriptors/bridge";
 import { commentAuthorsDesc, slideCommentsDesc } from "./parts/descriptors/comments";
 import { handoutMasterDesc } from "./parts/descriptors/handout-master";
 import { notesMasterDesc } from "./parts/descriptors/notes-master";
-import { notesSlideDesc, type NotesSlideDescriptorOptions } from "./parts/descriptors/notes-slide";
+import { notesSlideDesc, type NotesSlideOptions } from "./parts/descriptors/notes-slide";
 import { presentationDesc } from "./parts/descriptors/presentation";
 import { presentationPropertiesDesc } from "./parts/descriptors/presentation-properties";
 import { parseLayoutDef, slideLayoutDesc } from "./parts/descriptors/slide-layout";
@@ -671,7 +671,7 @@ export function compilePresentation(
   const slideRels = buildSlideRels(masters, slides);
   const { authors: commentAuthorEntries, perSlide: slideCommentEntries } = buildCommentData(slides);
 
-  const notesOptions: NotesSlideDescriptorOptions[] = [];
+  const notesOptions: NotesSlideOptions[] = [];
   const notesSlideIndexMap = new Map<number, number>();
   let notesIdx = 0;
   for (const [i, slide] of slides.entries()) {

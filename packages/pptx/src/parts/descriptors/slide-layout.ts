@@ -12,9 +12,11 @@
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, parse as parseXml } from "@office-open/xml";
 import { NS } from "@parts/slide-layout";
+import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 import type { LayoutDefinition, LayoutPlaceholderOptions } from "@shared/file";
+import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 import { extractPlaceholderDefinition } from "@shared/placeholder";
 
 import type { PptxWriteContext } from "../../context";
@@ -23,7 +25,6 @@ import { backgroundDesc } from "./background";
 import { parseChild, stringifyChild } from "./bridge";
 import { colorMapOverrideDesc } from "./color-map-override";
 import { readTransition, stringifyTransition } from "./slide";
-import type { ControlDescriptorOptions, HeaderFooterDescriptorOptions } from "./slide";
 
 // ── Display name → SlideLayoutType mapping (fallback when @type absent) ──
 
@@ -66,8 +67,8 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     if (opts.matchingName !== undefined) attrs.push(`matchingName="${opts.matchingName}"`);
     attrs.push(`preserve="${opts.preserve ? 1 : 0}"`);
     if (opts.userDrawn) attrs.push('userDrawn="1"');
-    if (opts.showMasterSp === false) attrs.push('showMasterSp="0"');
-    if (opts.showMasterPhAnim === false) attrs.push('showMasterPhAnim="0"');
+    if (opts.showMasterShapes === false) attrs.push('showMasterSp="0"');
+    if (opts.showMasterPlaceholderAnimations === false) attrs.push('showMasterPhAnim="0"');
     parts.push(`<p:sldLayout ${NS} ${attrs.join(" ")}>`);
 
     // p:cSld (CT_CommonSlideData) — optional name attribute.
@@ -156,10 +157,11 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     const preserveAttr = attr(el, "preserve");
     if (preserveAttr !== undefined) result.preserve = preserveAttr === "1";
     if (attr(el, "userDrawn") === "1") result.userDrawn = true;
-    const showMasterSp = attr(el, "showMasterSp");
-    if (showMasterSp !== undefined) result.showMasterSp = showMasterSp !== "0";
-    const showMasterPhAnim = attr(el, "showMasterPhAnim");
-    if (showMasterPhAnim !== undefined) result.showMasterPhAnim = showMasterPhAnim !== "0";
+    const showMasterShapes = attr(el, "showMasterSp");
+    if (showMasterShapes !== undefined) result.showMasterShapes = showMasterShapes !== "0";
+    const showMasterPlaceholderAnimations = attr(el, "showMasterPhAnim");
+    if (showMasterPlaceholderAnimations !== undefined)
+      result.showMasterPlaceholderAnimations = showMasterPlaceholderAnimations !== "0";
 
     // p:cSld (CT_CommonSlideData).
     const cSld = findChild(el, "p:cSld");
@@ -207,10 +209,10 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       // controls (inside cSld).
       const controls = findChild(cSld, "p:controls");
       if (controls) {
-        const items: ControlDescriptorOptions[] = [];
+        const items: ControlOptions[] = [];
         for (const ctrl of controls.elements ?? []) {
           if (ctrl.name !== "p:control") continue;
-          const item: ControlDescriptorOptions = {};
+          const item: ControlOptions = {};
           const spid = attrNum(ctrl, "spid");
           if (spid !== undefined) item.shapeId = spid;
           const ctrlName = attr(ctrl, "name");
@@ -243,7 +245,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     // p:hf (sibling of cSld).
     const hf = findChild(el, "p:hf");
     if (hf) {
-      const hfOpts: HeaderFooterDescriptorOptions = {};
+      const hfOpts: SlideHeaderFooterOptions = {};
       if (findChild(hf, "p:sldNum")) hfOpts.slideNumber = true;
       if (findChild(hf, "p:dt")) hfOpts.dateTime = true;
       if (findChild(hf, "p:ftr")) hfOpts.footer = true;
