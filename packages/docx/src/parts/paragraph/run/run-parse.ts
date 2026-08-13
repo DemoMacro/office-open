@@ -197,10 +197,9 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
 
   const kern = findChild(el, "w:kern");
   if (kern) {
-    // w:kern is ST_HpsMeasure (half-points | UniversalMeasure); use attrMeasure
-    // to round-trip UniversalMeasure tokens symmetrically with hpsMeasureValue.
-    const val = attrMeasure(kern, "w:val");
-    if (val !== undefined) opts.kern = val;
+    // w:kern is ST_HpsMeasure in half-points; convert to points (÷2).
+    const kernHalfPts = attrNum(kern, "w:val");
+    if (kernHalfPts !== undefined) opts.kern = kernHalfPts / 2;
   }
 
   const position = findChild(el, "w:position");

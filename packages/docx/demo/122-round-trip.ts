@@ -565,7 +565,7 @@ async function main() {
             children: [
               { text: "Spaced Out", characterSpacing: 200 },
               " | ",
-              { text: "Kerned", kern: 20 },
+              { text: "Kerned", kern: 10 },
               " | ",
               { text: "Raised", position: "6pt" },
               " | ",

@@ -144,16 +144,17 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     }
 
     const attrParts: string[] = [];
-    if (opts.size) attrParts.push(`sz="${opts.size * 100}"`);
+    if (opts.size) attrParts.push(`sz="${Math.round(opts.size * 100)}"`);
     if (opts.bold !== undefined) attrParts.push(`b="${opts.bold ? 1 : 0}"`);
     if (opts.italic !== undefined) attrParts.push(`i="${opts.italic ? 1 : 0}"`);
     if (opts.underline) attrParts.push(`u="${xsdUnderlineStyle.to(opts.underline)}"`);
     if (opts.lang) attrParts.push(`lang="${opts.lang}"`);
     if (opts.strike) attrParts.push(`strike="${xsdStrikeStyle.to(opts.strike)}"`);
-    if (opts.baseline !== undefined) attrParts.push(`baseline="${opts.baseline * 1000}"`);
+    if (opts.baseline !== undefined)
+      attrParts.push(`baseline="${Math.round(opts.baseline * 1000)}"`);
     if (opts.capitalization) attrParts.push(`cap="${xsdTextCaps.to(opts.capitalization)}"`);
-    if (opts.spacing !== undefined) attrParts.push(`spc="${opts.spacing}"`);
-    if (opts.kern !== undefined) attrParts.push(`kern="${opts.kern}"`);
+    if (opts.spacing !== undefined) attrParts.push(`spc="${Math.round(opts.spacing * 100)}"`);
+    if (opts.kern !== undefined) attrParts.push(`kern="${Math.round(opts.kern * 100)}"`);
     if (opts.noProof !== undefined) attrParts.push(`noProof="${opts.noProof ? 1 : 0}"`);
     if (opts.dirty !== undefined) attrParts.push(`dirty="${opts.dirty ? 1 : 0}"`);
     if (opts.kumimoji !== undefined) attrParts.push(`kumimoji="${opts.kumimoji ? 1 : 0}"`);
@@ -261,7 +262,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
         result.capitalization = xsdTextCaps.from(
           String(el.attributes["cap"]),
         ) as RunPropertiesOptions["capitalization"];
-      if (el.attributes["spc"] !== undefined) result.spacing = Number(el.attributes["spc"]);
+      if (el.attributes["spc"] !== undefined) result.spacing = Number(el.attributes["spc"]) / 100;
       if (el.attributes["noProof"] !== undefined) result.noProof = isOn(el.attributes["noProof"]);
       if (el.attributes["dirty"] !== undefined) result.dirty = isOn(el.attributes["dirty"]);
       if (el.attributes["kumimoji"] !== undefined)
@@ -272,7 +273,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
         result.normalizeHeight = isOn(el.attributes["normalizeH"]);
       if (el.attributes["bmk"] !== undefined) result.bookmarkMark = String(el.attributes["bmk"]);
       if (el.attributes["smtId"] !== undefined) result.smartTagId = String(el.attributes["smtId"]);
-      if (el.attributes["kern"] !== undefined) result.kern = Number(el.attributes["kern"]);
+      if (el.attributes["kern"] !== undefined) result.kern = Number(el.attributes["kern"]) / 100;
       if (el.attributes["err"] !== undefined) result.err = isOn(el.attributes["err"]);
       if (el.attributes["smtClean"] !== undefined)
         result.smtClean = isOn(el.attributes["smtClean"]);

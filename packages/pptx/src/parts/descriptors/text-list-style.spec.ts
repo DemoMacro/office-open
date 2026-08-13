@@ -50,11 +50,11 @@ describe("text-list-style round-trip", () => {
     const xml = `<p:txStyles>${stringifyTextListStyle(DEFAULT_TEXT_LIST_STYLE)}</p:txStyles>`;
     const parsed = parseTextListStyle(parseCoerced(xml));
 
-    expect(parsed.title?.levels?.[0]?.defaultRun?.size).toBe(4400);
+    expect(parsed.title?.levels?.[0]?.defaultRun?.size).toBe(44);
     expect(parsed.title?.levels?.[0]?.bullet?.type).toBe("none");
-    expect(parsed.body?.levels?.[1]?.defaultRun?.size).toBe(2400);
+    expect(parsed.body?.levels?.[1]?.defaultRun?.size).toBe(24);
     expect(parsed.body?.levels?.[1]?.bullet?.type).toBe("char");
-    expect(parsed.body?.levels?.[1]?.spaceBeforePoints).toBe(500);
+    expect(parsed.body?.levels?.[1]?.spaceBeforePoints).toBe(5);
     expect(parsed.other?.emptyDefaultParagraph).toBe(true);
     expect(parsed.other?.levels?.[8]?.indent).toBe(-228600);
     expect(parsed.other?.levels?.[0]?.defaultRun?.latin).toBe("+mn-lt");

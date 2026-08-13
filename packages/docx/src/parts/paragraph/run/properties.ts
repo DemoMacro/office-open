@@ -115,6 +115,7 @@ export interface RunStylePropertiesOptions {
     type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
   };
   color?: string | ColorOptions;
+  /** Kerning threshold in points. */
   kern?: number;
   position?: string;
   /** Font size in points. Internally stored as half-points in XML (×2). */

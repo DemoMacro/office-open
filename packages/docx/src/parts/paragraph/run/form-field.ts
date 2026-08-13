@@ -57,7 +57,7 @@ export const FormFieldTextType = {
  */
 export interface CheckBoxOptions {
   /**
-   * Checkbox size in half-points.
+   * Checkbox size in points.
    *
    * Mutually exclusive with `sizeAuto`.
    */
@@ -176,7 +176,7 @@ const createCheckBox = (options: CheckBoxOptions): string => {
   const children: string[] = [];
 
   if (options.size !== undefined) {
-    children.push(valElement("w:size", options.size));
+    children.push(valElement("w:size", options.size * 2));
   } else if (options.sizeAuto !== undefined) {
     children.push(`<w:sizeAuto/>`);
   }
@@ -362,7 +362,7 @@ export function parseFormFieldData(el: Element): FormFieldOptions {
     const size = findChild(checkBox, "w:size");
     if (size) {
       const v = attrNum(size, "w:val");
-      if (v !== undefined) cb.size = v;
+      if (v !== undefined) cb.size = v / 2;
     }
     const def = findChild(checkBox, "w:default");
     if (def) cb.default = attrBool(def, "w:val") ?? true;

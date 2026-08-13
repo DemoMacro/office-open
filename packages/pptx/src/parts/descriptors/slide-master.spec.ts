@@ -201,7 +201,7 @@ describe("slide-master textStyles round-trip", () => {
 
   it("structured custom textStyles is emitted, replacing the default", () => {
     const custom: TextListStyleOptions = {
-      title: { levels: [{ defaultRun: { size: 9000 } }] },
+      title: { levels: [{ defaultRun: { size: 90 } }] },
       body: { levels: [{}] },
       other: { levels: [{}] },
     };
@@ -211,8 +211,11 @@ describe("slide-master textStyles round-trip", () => {
   });
 
   it("round-trips a parsed master's txStyles structured", () => {
+    // 11.1pt is a non-integer-hundredth size (11.1 * 100 drifts to
+    // 1110.0000000000002 in float); verifies Math.round keeps the round-trip
+    // byte-equal instead of emitting an XSD-invalid fractional sz.
     const source: TextListStyleOptions = {
-      title: { levels: [{ defaultRun: { size: 9999 } }] },
+      title: { levels: [{ defaultRun: { size: 11.1 } }] },
       body: { levels: [{}] },
       other: { levels: [{}] },
     };
@@ -221,7 +224,7 @@ describe("slide-master textStyles round-trip", () => {
     const extracted = parseTextListStyle(findChild(el, "p:txStyles")!);
 
     const reEmitted = freshXml({ textStyles: extracted });
-    expect(reEmitted).toContain('sz="9999"');
+    expect(reEmitted).toContain('sz="1110"');
     expect(reEmitted).not.toContain('sz="4400"');
   });
 });

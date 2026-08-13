@@ -91,6 +91,7 @@ export interface RunPropertiesOptions {
   strike?: StrikeStyle;
   /** Baseline offset as integer percent (positive = superscript, negative = subscript). */
   baseline?: number;
+  /** Character spacing in points (a:spc). */
   spacing?: number;
   capitalization?: TextCapitalization;
   /** a:highlight (CT_Color) — text highlight color. */
@@ -134,7 +135,7 @@ export type BulletStyleOptions = {
   size?: number;
   /** a:buSzTx — bullet size follows the text run size. */
   sizeFollowsText?: boolean;
-  /** a:buSzPts @val — bullet size in hundredths of a point. */
+  /** a:buSzPts @val — bullet size in points. */
   sizePoints?: number;
   /** a:buFont @typeface — bullet font (defaults to Arial on fresh char/autoNum). */
   font?: string;
@@ -183,10 +184,14 @@ export interface TabStopOptions {
 export interface ParagraphPropertiesOptions {
   alignment?: TextAlignment;
   indentLevel?: number;
+  /** Space after a paragraph in points (a:spcAft/a:spcPts). */
   marginBottom?: number;
+  /** Space before a paragraph in points (a:spcBef/a:spcPts). */
   marginTop?: number;
   bullet?: BulletOptions;
+  /** Line spacing as a percentage (100 = single). */
   lineSpacing?: number;
+  /** Line spacing in exact points (a:lnSpc/a:spcPts). */
   lineSpacingPoints?: number;
   marginIndent?: number;
   marginRight?: number;

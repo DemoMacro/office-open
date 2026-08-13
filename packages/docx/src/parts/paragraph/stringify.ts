@@ -541,7 +541,7 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
 
   // Kern — w:val="0" is meaningful (explicitly disables kerning), so emit
   // whenever the field is set rather than truthy-checking it.
-  if (opts.kern !== undefined) parts.push(`<w:kern w:val="${hpsMeasureValue(opts.kern)}"/>`);
+  if (opts.kern !== undefined) parts.push(`<w:kern w:val="${hpsMeasureValue(opts.kern * 2)}"/>`);
 
   // Position
   if (opts.position) parts.push(`<w:position w:val="${opts.position}"/>`);

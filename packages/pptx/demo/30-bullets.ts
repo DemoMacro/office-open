@@ -43,7 +43,7 @@ const options: PresentationOptions = {
                 },
                 {
                   properties: {
-                    bullet: { type: "char", char: "◆", sizePoints: 2400 },
+                    bullet: { type: "char", char: "◆", sizePoints: 24 },
                   },
                   children: [{ text: "Fixed 24pt bullet size", size: 18 }],
                 },

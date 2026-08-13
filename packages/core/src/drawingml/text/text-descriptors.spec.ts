@@ -305,7 +305,7 @@ describe("paragraphDesc round-trip", () => {
           type: "char",
           char: "•",
           colorFollowsText: true,
-          sizePoints: 1200,
+          sizePoints: 12,
           fontFollowsText: true,
         },
       },
@@ -318,7 +318,7 @@ describe("paragraphDesc round-trip", () => {
     };
     expect(b.type).toBe("char");
     expect(b.colorFollowsText).toBe(true);
-    expect(b.sizePoints).toBe(1200);
+    expect(b.sizePoints).toBe(12);
     expect(b.fontFollowsText).toBe(true);
   });
 
@@ -453,8 +453,8 @@ describe("textListStyleDesc round-trip", () => {
     const el = parseXml(`<root>${xml}</root>`).elements?.[0];
     if (!el) throw new Error("no root");
     const r = textListStyleDesc.parse(el, readCtx);
-    expect(r.title?.levels?.[0]?.defaultRun?.size).toBe(4400);
-    expect(r.body?.levels?.[1]?.defaultRun?.size).toBe(2400);
+    expect(r.title?.levels?.[0]?.defaultRun?.size).toBe(44);
+    expect(r.body?.levels?.[1]?.defaultRun?.size).toBe(24);
     expect(r.other?.emptyDefaultParagraph).toBe(true);
   });
 });

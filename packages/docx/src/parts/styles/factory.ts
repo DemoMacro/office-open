@@ -699,7 +699,7 @@ export class DefaultStylesFactory {
           cstheme: "majorBidi",
         },
         characterSpacing: -10,
-        kern: 28,
+        kern: 14,
         size: 28,
         sizeComplexScript: 28,
       };

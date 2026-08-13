@@ -20,9 +20,9 @@ import type { CustomDescriptor } from "../../descriptor";
 // ── Types ──
 
 export interface TextListStyleRunOptions {
-  /** Font size in hundredths of a point (OOXML sz, e.g. 4400 = 44pt). */
+  /** Font size in points (e.g., 44 = 44pt). */
   size?: number;
-  /** Character kerning in hundredths of a point (OOXML kern, e.g. 1200). */
+  /** Character kerning in points (e.g., 12 = 12pt). */
   kern?: number;
   /** Solid fill as a theme color token (e.g. "tx1"). */
   schemeColor?: string;
@@ -53,11 +53,11 @@ export interface TextListStyleLevelOptions {
   /** Latin line breaking (default false). */
   latinLineBreak?: boolean;
   hangingPunctuation?: boolean;
-  /** Line spacing as a percentage (OOXML spcPct val, e.g. 90000 = 90%). */
+  /** Line spacing as a percentage (e.g., 90 = 90%). */
   lineSpacingPercent?: number;
-  /** Space before as a percentage (OOXML spcBef/a:spcPct val, e.g. 0). */
+  /** Space before as a percentage (e.g., 0 = 0%). */
   spaceBeforePercent?: number;
-  /** Space before in hundredths of a point (OOXML spcBef/a:spcPts val, e.g. 500). */
+  /** Space before in points (e.g., 5 = 5pt). */
   spaceBeforePoints?: number;
   bullet?: TextListStyleBulletOptions;
   defaultRun?: TextListStyleRunOptions;
@@ -82,8 +82,8 @@ export interface TextListStyleOptions {
 function stringifyRun(run: TextListStyleRunOptions | undefined): string {
   if (!run) return "";
   const attrs: string[] = [];
-  if (run.size !== undefined) attrs.push(`sz="${run.size}"`);
-  if (run.kern !== undefined) attrs.push(`kern="${run.kern}"`);
+  if (run.size !== undefined) attrs.push(`sz="${Math.round(run.size * 100)}"`);
+  if (run.kern !== undefined) attrs.push(`kern="${Math.round(run.kern * 100)}"`);
   const fillXml = run.schemeColor
     ? `<a:solidFill><a:schemeClr val="${run.schemeColor}"/></a:solidFill>`
     : "";
@@ -120,11 +120,17 @@ function stringifyLevel(level: number, opts: TextListStyleLevelOptions): string 
   const children: string[] = [];
   // Child order: lnSpc, spcBef, bullet, defRPr
   if (opts.lineSpacingPercent !== undefined)
-    children.push(`<a:lnSpc><a:spcPct val="${opts.lineSpacingPercent}"/></a:lnSpc>`);
+    children.push(
+      `<a:lnSpc><a:spcPct val="${Math.round(opts.lineSpacingPercent * 1000)}"/></a:lnSpc>`,
+    );
   if (opts.spaceBeforePercent !== undefined)
-    children.push(`<a:spcBef><a:spcPct val="${opts.spaceBeforePercent}"/></a:spcBef>`);
+    children.push(
+      `<a:spcBef><a:spcPct val="${Math.round(opts.spaceBeforePercent * 1000)}"/></a:spcBef>`,
+    );
   else if (opts.spaceBeforePoints !== undefined)
-    children.push(`<a:spcBef><a:spcPts val="${opts.spaceBeforePoints}"/></a:spcBef>`);
+    children.push(
+      `<a:spcBef><a:spcPts val="${Math.round(opts.spaceBeforePoints * 100)}"/></a:spcBef>`,
+    );
   if (opts.bullet) children.push(stringifyBullet(opts.bullet));
   const runXml = stringifyRun(opts.defaultRun);
   if (runXml) children.push(runXml);
@@ -161,8 +167,8 @@ function parseRun(el: Element | undefined): TextListStyleRunOptions | undefined 
   if (!el) return undefined;
   const run: TextListStyleRunOptions = {};
   if (el.attributes) {
-    if (el.attributes["sz"] !== undefined) run.size = Number(el.attributes["sz"]);
-    if (el.attributes["kern"] !== undefined) run.kern = Number(el.attributes["kern"]);
+    if (el.attributes["sz"] !== undefined) run.size = Number(el.attributes["sz"]) / 100;
+    if (el.attributes["kern"] !== undefined) run.kern = Number(el.attributes["kern"]) / 100;
   }
   const solidFill = findChild(el, "a:solidFill");
   if (solidFill) {
@@ -198,16 +204,16 @@ function parseLevel(el: Element): TextListStyleLevelOptions {
   if (lnSpc) {
     const spcPct = findChild(lnSpc, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined)
-      lvl.lineSpacingPercent = Number(spcPct.attributes["val"]);
+      lvl.lineSpacingPercent = Number(spcPct.attributes["val"]) / 1000;
   }
   const spcBef = findChild(el, "a:spcBef");
   if (spcBef) {
     const spcPct = findChild(spcBef, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined)
-      lvl.spaceBeforePercent = Number(spcPct.attributes["val"]);
+      lvl.spaceBeforePercent = Number(spcPct.attributes["val"]) / 1000;
     const spcPts = findChild(spcBef, "a:spcPts");
     if (spcPts?.attributes?.["val"] !== undefined)
-      lvl.spaceBeforePoints = Number(spcPts.attributes["val"]);
+      lvl.spaceBeforePoints = Number(spcPts.attributes["val"]) / 100;
   }
   if (findChild(el, "a:buNone")) {
     lvl.bullet = { type: "none" };
@@ -276,7 +282,7 @@ const BASE_ATTRS = {
 } as const;
 
 const BODY_MARL = [228600, 685800, 1143000, 1600200, 2057400, 2514600, 2971800, 3429000, 3886200];
-const BODY_SZ = [2800, 2400, 2000, 1800, 1800, 1800, 1800, 1800, 1800];
+const BODY_SZ = [28, 24, 20, 18, 18, 18, 18, 18, 18];
 const OTHER_MARL = [0, 457200, 914400, 1371600, 1828800, 2286000, 2743200, 3200400, 3657600];
 
 /** MS Office's default p:txStyles — title/body/other, 9 outline levels. */
@@ -285,10 +291,10 @@ export const DEFAULT_TEXT_LIST_STYLE: TextListStyleOptions = {
     levels: [
       {
         ...BASE_ATTRS,
-        lineSpacingPercent: 90000,
+        lineSpacingPercent: 90,
         spaceBeforePercent: 0,
         bullet: { type: "none" },
-        defaultRun: { size: 4400, kern: 1200, ...MJ_RUN },
+        defaultRun: { size: 44, kern: 12, ...MJ_RUN },
       },
     ],
   },
@@ -297,11 +303,11 @@ export const DEFAULT_TEXT_LIST_STYLE: TextListStyleOptions = {
       ...BASE_ATTRS,
       marginIndent: marL,
       indent: -228600,
-      lineSpacingPercent: 90000,
-      spaceBeforePoints: i === 0 ? undefined : 500,
+      lineSpacingPercent: 90,
+      spaceBeforePoints: i === 0 ? undefined : 5,
       spaceBeforePercent: i === 0 ? 0 : undefined,
       bullet: { type: "char", char: "•", font: "Arial" },
-      defaultRun: { size: BODY_SZ[i]!, kern: 1200, ...MN_RUN },
+      defaultRun: { size: BODY_SZ[i]!, kern: 12, ...MN_RUN },
     })),
   },
   other: {
@@ -310,7 +316,7 @@ export const DEFAULT_TEXT_LIST_STYLE: TextListStyleOptions = {
       ...BASE_ATTRS,
       marginIndent: marL,
       indent: i === 8 ? -228600 : undefined,
-      defaultRun: { size: 1800, kern: 1200, ...MN_RUN },
+      defaultRun: { size: 18, kern: 12, ...MN_RUN },
     })),
   },
 };

@@ -70,18 +70,22 @@ function stringifyParagraphProperties(
   // Line spacing
   if (options.lineSpacing !== undefined) {
     // spcPct unit is 1/1000 percent; lineSpacing is percent (100 = single) → ×1000.
-    children.push(`<a:lnSpc><a:spcPct val="${options.lineSpacing * 1000}"/></a:lnSpc>`);
+    children.push(`<a:lnSpc><a:spcPct val="${Math.round(options.lineSpacing * 1000)}"/></a:lnSpc>`);
   }
   if (options.lineSpacingPoints !== undefined) {
-    children.push(`<a:lnSpc><a:spcPts val="${options.lineSpacingPoints * 100}"/></a:lnSpc>`);
+    children.push(
+      `<a:lnSpc><a:spcPts val="${Math.round(options.lineSpacingPoints * 100)}"/></a:lnSpc>`,
+    );
   }
 
   // Spacing before/after (XSD CT_TextParagraphProperties order: spcBef, spcAft)
   if (options.marginTop !== undefined) {
-    children.push(`<a:spcBef><a:spcPts val="${options.marginTop}"/></a:spcBef>`);
+    children.push(`<a:spcBef><a:spcPts val="${Math.round(options.marginTop * 100)}"/></a:spcBef>`);
   }
   if (options.marginBottom !== undefined) {
-    children.push(`<a:spcAft><a:spcPts val="${options.marginBottom}"/></a:spcAft>`);
+    children.push(
+      `<a:spcAft><a:spcPts val="${Math.round(options.marginBottom * 100)}"/></a:spcAft>`,
+    );
   }
 
   // Bullets
@@ -126,7 +130,7 @@ function stringifyBullet(options: BulletOptions): string[] {
   if (options.sizeFollowsText) {
     parts.push("<a:buSzTx/>");
   } else if (options.sizePoints !== undefined) {
-    parts.push(`<a:buSzPts val="${options.sizePoints}"/>`);
+    parts.push(`<a:buSzPts val="${Math.round(options.sizePoints * 100)}"/>`);
   } else if (options.size !== undefined) {
     parts.push(`<a:buSzPct val="${options.size}%"/>`);
   }
@@ -212,13 +216,15 @@ function readParagraphProperties(
   const spcAft = findChild(el, "a:spcAft");
   if (spcAft) {
     const pts = findChild(spcAft, "a:spcPts");
-    if (pts?.attributes?.["val"] !== undefined) result.marginBottom = Number(pts.attributes["val"]);
+    if (pts?.attributes?.["val"] !== undefined)
+      result.marginBottom = Number(pts.attributes["val"]) / 100;
   }
 
   const spcBef = findChild(el, "a:spcBef");
   if (spcBef) {
     const pts = findChild(spcBef, "a:spcPts");
-    if (pts?.attributes?.["val"] !== undefined) result.marginTop = Number(pts.attributes["val"]);
+    if (pts?.attributes?.["val"] !== undefined)
+      result.marginTop = Number(pts.attributes["val"]) / 100;
   }
 
   // Bullets
@@ -245,7 +251,7 @@ function readParagraphProperties(
       } else {
         const buSzPts = findChild(el, "a:buSzPts");
         if (buSzPts?.attributes?.["val"]) {
-          style.sizePoints = Number(buSzPts.attributes["val"]);
+          style.sizePoints = Number(buSzPts.attributes["val"]) / 100;
         } else {
           const buSzPct = findChild(el, "a:buSzPct");
           if (buSzPct?.attributes?.["val"])

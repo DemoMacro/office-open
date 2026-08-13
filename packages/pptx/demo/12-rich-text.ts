@@ -137,12 +137,12 @@ const options: PresentationOptions = {
                     {
                       text: "    Wide spacing",
                       size: 18,
-                      spacing: 400,
+                      spacing: 4,
                     },
                     {
                       text: "    Tight spacing",
                       size: 18,
-                      spacing: -100,
+                      spacing: -1,
                     },
                   ],
                 },
