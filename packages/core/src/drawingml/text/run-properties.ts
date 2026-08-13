@@ -208,12 +208,16 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     }
 
     if (opts.font !== undefined) {
-      const scripts: { latin?: TextFont; ea?: TextFont; cs?: TextFont; sym?: TextFont } =
-        typeof opts.font === "string" ? { latin: opts.font, ea: opts.font } : opts.font;
+      const scripts: {
+        latin?: TextFont;
+        eastAsia?: TextFont;
+        complexScript?: TextFont;
+        symbol?: TextFont;
+      } = typeof opts.font === "string" ? { latin: opts.font, eastAsia: opts.font } : opts.font;
       if (scripts.latin) parts.push(stringifyFontElement("a:latin", scripts.latin));
-      if (scripts.ea) parts.push(stringifyFontElement("a:ea", scripts.ea));
-      if (scripts.cs) parts.push(stringifyFontElement("a:cs", scripts.cs));
-      if (scripts.sym) parts.push(stringifyFontElement("a:sym", scripts.sym));
+      if (scripts.eastAsia) parts.push(stringifyFontElement("a:ea", scripts.eastAsia));
+      if (scripts.complexScript) parts.push(stringifyFontElement("a:cs", scripts.complexScript));
+      if (scripts.symbol) parts.push(stringifyFontElement("a:sym", scripts.symbol));
     }
 
     if (opts.hyperlink) {
@@ -319,11 +323,16 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     ) {
       result.font = latinFont;
     } else if (latinFont || eaFont || csFont || symFont) {
-      const font: { latin?: TextFont; ea?: TextFont; cs?: TextFont; sym?: TextFont } = {};
+      const font: {
+        latin?: TextFont;
+        eastAsia?: TextFont;
+        complexScript?: TextFont;
+        symbol?: TextFont;
+      } = {};
       if (latinFont) font.latin = latinFont;
-      if (eaFont) font.ea = eaFont;
-      if (csFont) font.cs = csFont;
-      if (symFont) font.sym = symFont;
+      if (eaFont) font.eastAsia = eaFont;
+      if (csFont) font.complexScript = csFont;
+      if (symFont) font.symbol = symFont;
       result.font = font;
     }
 

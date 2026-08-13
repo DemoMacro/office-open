@@ -67,7 +67,7 @@ const buffer = await generateDocument({
         run: {
           font: {
             ascii: "minorHAnsi",
-            cs: "minorBidi",
+            complexScript: "minorBidi",
             eastAsia: "minorEastAsia",
             hAnsi: "minorHAnsi",
           },
@@ -85,7 +85,7 @@ const buffer = await generateDocument({
           font: {
             ascii: "minorHAnsi", // Can also use minorHAnsi
             eastAsia: "minorEastAsia", // Can also use minorEastAsia
-            cs: "minorBidi",
+            complexScript: "minorBidi",
             hAnsi: "minorHAnsi",
           },
         },

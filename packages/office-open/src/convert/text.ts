@@ -45,8 +45,10 @@ import type {
   FillOptions,
   ParagraphDescriptorOptions,
   ParagraphPropertiesOptions as DrawingParagraphProperties,
+  RunFont,
   RunOptions as DrawingRunOptions,
   RunPropertiesOptions as DrawingRunProperties,
+  TextFont,
 } from "@office-open/core";
 import type { ParagraphOptions, RunOptions } from "@office-open/docx";
 
@@ -211,10 +213,10 @@ function drawingRunPropertiesToDocx(run: DrawingRunProperties): Partial<RunOptio
   if (run.spacing !== undefined) out.characterSpacing = round(run.spacing * TWIPS_PER_HUNDREDTH);
   if (run.capitalization === "all") out.allCaps = true;
   else if (run.capitalization === "small") out.smallCaps = true;
-  if (run.shadow !== undefined) out.shadow = run.shadow;
-  if (run.outline !== undefined) out.outline = run.outline;
+  if (run.shadow) out.shadow = true;
+  if (run.outline) out.outline = true;
   if (run.rightToLeft !== undefined) out.rightToLeft = run.rightToLeft;
-  if (run.font !== undefined) out.font = run.font;
+  if (run.font !== undefined) out.font = drawingFontToDocx(run.font);
   if (run.fill !== undefined) {
     const hex = solidFillToHex(run.fill);
     if (hex) out.color = hex;
@@ -312,8 +314,8 @@ function docxRunPropertiesToDrawing(run: RunOptions): DrawingRunProperties {
   }
   if (run.allCaps) out.capitalization = "all";
   else if (run.smallCaps) out.capitalization = "small";
-  if (run.shadow !== undefined) out.shadow = run.shadow;
-  if (run.outline !== undefined) out.outline = run.outline;
+  if (run.shadow) out.shadow = true;
+  if (run.outline) out.outline = true;
   if (run.rightToLeft !== undefined) out.rightToLeft = run.rightToLeft;
   if (run.font !== undefined) {
     const typeface = fontToString(run.font);
@@ -547,7 +549,22 @@ function colorToHex(color: NonNullable<RunOptions["color"]>): string | undefined
 function fontToString(font: NonNullable<RunOptions["font"]>): string | undefined {
   if (typeof font === "string") return font;
   if ("name" in font) return font.name; // RunFontReference
-  return font.ascii ?? font.hAnsi ?? font.eastAsia ?? font.cs; // FontProperties
+  return font.ascii ?? font.hAnsi ?? font.eastAsia ?? font.complexScript; // FontProperties
+}
+
+/** Map a DrawingML RunFont to a docx run font: latin→ascii+hAnsi, eastAsia→eastAsia, complexScript→complexScript. symbol has no docx equivalent and is dropped. */
+function drawingFontToDocx(font: RunFont): NonNullable<RunOptions["font"]> {
+  if (typeof font === "string") return font;
+  const typeface = (tf: TextFont | undefined): string | undefined =>
+    tf === undefined ? undefined : typeof tf === "string" ? tf : tf.typeface;
+  const latin = typeface(font.latin);
+  const ea = typeface(font.eastAsia);
+  const cs = typeface(font.complexScript);
+  return {
+    ...(latin ? { ascii: latin, hAnsi: latin } : {}),
+    ...(ea ? { eastAsia: ea } : {}),
+    ...(cs ? { complexScript: cs } : {}),
+  };
 }
 
 function isRunChild(child: unknown): child is RunOptions {

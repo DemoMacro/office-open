@@ -29,9 +29,9 @@ export interface TextListStyleRunOptions {
   /** Latin script typeface (e.g. "+mj-lt"). */
   latin?: string;
   /** East-Asian script typeface (e.g. "+mj-ea"). */
-  ea?: string;
+  eastAsia?: string;
   /** Complex-script typeface (e.g. "+mj-cs"). */
-  cs?: string;
+  complexScript?: string;
 }
 
 export interface TextListStyleBulletOptions {
@@ -88,8 +88,8 @@ function stringifyRun(run: TextListStyleRunOptions | undefined): string {
     ? `<a:solidFill><a:schemeClr val="${run.schemeColor}"/></a:solidFill>`
     : "";
   const latinXml = run.latin ? `<a:latin typeface="${run.latin}"/>` : "";
-  const eaXml = run.ea ? `<a:ea typeface="${run.ea}"/>` : "";
-  const csXml = run.cs ? `<a:cs typeface="${run.cs}"/>` : "";
+  const eaXml = run.eastAsia ? `<a:ea typeface="${run.eastAsia}"/>` : "";
+  const csXml = run.complexScript ? `<a:cs typeface="${run.complexScript}"/>` : "";
   const inner = `${fillXml}${latinXml}${eaXml}${csXml}`;
   const attrStr = attrs.length ? " " + attrs.join(" ") : "";
   return `<a:defRPr${attrStr}>${inner}</a:defRPr>`;
@@ -178,9 +178,9 @@ function parseRun(el: Element | undefined): TextListStyleRunOptions | undefined 
   const latin = findChild(el, "a:latin");
   if (latin?.attributes?.["typeface"]) run.latin = String(latin.attributes["typeface"]);
   const ea = findChild(el, "a:ea");
-  if (ea?.attributes?.["typeface"]) run.ea = String(ea.attributes["typeface"]);
+  if (ea?.attributes?.["typeface"]) run.eastAsia = String(ea.attributes["typeface"]);
   const cs = findChild(el, "a:cs");
-  if (cs?.attributes?.["typeface"]) run.cs = String(cs.attributes["typeface"]);
+  if (cs?.attributes?.["typeface"]) run.complexScript = String(cs.attributes["typeface"]);
   return Object.keys(run).length > 0 ? run : undefined;
 }
 
@@ -270,8 +270,18 @@ export const textListStyleDesc: CustomDescriptor<TextListStyleOptions> = {
 
 // ── MS Office standard master text styles (structured form) ──
 
-const MJ_RUN = { schemeColor: "tx1", latin: "+mj-lt", ea: "+mj-ea", cs: "+mj-cs" } as const;
-const MN_RUN = { schemeColor: "tx1", latin: "+mn-lt", ea: "+mn-ea", cs: "+mn-cs" } as const;
+const MJ_RUN = {
+  schemeColor: "tx1",
+  latin: "+mj-lt",
+  eastAsia: "+mj-ea",
+  complexScript: "+mj-cs",
+} as const;
+const MN_RUN = {
+  schemeColor: "tx1",
+  latin: "+mn-lt",
+  eastAsia: "+mn-ea",
+  complexScript: "+mn-cs",
+} as const;
 const BASE_ATTRS = {
   alignment: "l",
   defaultTabSize: 914400,

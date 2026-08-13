@@ -69,9 +69,9 @@ export type RunFont =
   | string
   | {
       latin?: TextFont;
-      ea?: TextFont;
-      cs?: TextFont;
-      sym?: TextFont;
+      eastAsia?: TextFont;
+      complexScript?: TextFont;
+      symbol?: TextFont;
     };
 
 // ── Run properties (CT_TextCharacterProperties) ──

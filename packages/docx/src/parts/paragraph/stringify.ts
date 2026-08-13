@@ -237,7 +237,7 @@ function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): strin
   const a = attrParts({
     "w:ascii": attrs.ascii,
     "w:asciiTheme": attrs.asciiTheme,
-    "w:cs": attrs.cs,
+    "w:cs": attrs.complexScript,
     "w:cstheme": attrs.cstheme,
     "w:eastAsia": attrs.eastAsia,
     "w:eastAsiaTheme": attrs.eastAsiaTheme,

@@ -28,7 +28,7 @@ export interface FontProperties {
   /** Font for ASCII characters (0x00-0x7F) */
   ascii?: string;
   /** Font for complex script characters */
-  cs?: string;
+  complexScript?: string;
   /** Font for East Asian characters */
   eastAsia?: string;
   /** Font for high ANSI characters (0x80-0xFF) */

@@ -470,7 +470,11 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
     xmlMap.set(targetPath, toJson(resolved));
 
     for (const [i, hlink] of targetHlinks.entries()) {
-      appendRelationship(relsJson, offset + i, HYPERLINK_REL_TYPE, hlink.url, "External");
+      // External URL hyperlinks only; internal slide jumps carry no url and are
+      // tokenized by the stringifier rather than registered as External rels.
+      if (hlink.url !== undefined) {
+        appendRelationship(relsJson, offset + i, HYPERLINK_REL_TYPE, hlink.url, "External");
+      }
     }
   }
 

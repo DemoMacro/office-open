@@ -44,7 +44,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
     const ascii = attr(font, "w:ascii");
     const eastAsia = attr(font, "w:eastAsia");
     const hAnsi = attr(font, "w:hAnsi");
-    const cs = attr(font, "w:cs");
+    const complexScript = attr(font, "w:cs");
     const asciiTheme = attr(font, "w:asciiTheme");
     const eastAsiaTheme = attr(font, "w:eastAsiaTheme");
     const hAnsiTheme = attr(font, "w:hAnsiTheme");
@@ -55,7 +55,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
       ascii &&
       !eastAsia &&
       !hAnsi &&
-      !cs &&
+      !complexScript &&
       !asciiTheme &&
       !eastAsiaTheme &&
       !hAnsiTheme &&
@@ -67,7 +67,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
       if (ascii) fontObj.ascii = ascii;
       if (eastAsia) fontObj.eastAsia = eastAsia;
       if (hAnsi) fontObj.hAnsi = hAnsi;
-      if (cs) fontObj.cs = cs;
+      if (complexScript) fontObj.complexScript = complexScript;
       if (asciiTheme) fontObj.asciiTheme = asciiTheme;
       if (eastAsiaTheme) fontObj.eastAsiaTheme = eastAsiaTheme;
       if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme;

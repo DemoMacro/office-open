@@ -90,12 +90,14 @@ describe("runPropertiesDesc round-trip", () => {
     expect(s.outerShadow?.color?.value).toBe("FF0000");
   });
 
-  it("round-trips RunFont object (latin/ea/cs distinct)", () => {
-    const r = roundTrip({ font: { latin: "Arial", ea: "宋体", cs: "Times New Roman" } });
-    const f = r.font as { latin?: string; ea?: string; cs?: string };
+  it("round-trips RunFont object (latin/eastAsia/complexScript distinct)", () => {
+    const r = roundTrip({
+      font: { latin: "Arial", eastAsia: "宋体", complexScript: "Times New Roman" },
+    });
+    const f = r.font as { latin?: string; eastAsia?: string; complexScript?: string };
     expect(f.latin).toBe("Arial");
-    expect(f.ea).toBe("宋体");
-    expect(f.cs).toBe("Times New Roman");
+    expect(f.eastAsia).toBe("宋体");
+    expect(f.complexScript).toBe("Times New Roman");
   });
 
   it("round-trips TextFont with panose/pitchFamily/charset", () => {
