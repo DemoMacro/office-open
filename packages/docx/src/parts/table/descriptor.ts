@@ -7,9 +7,9 @@
  * @module
  */
 
-import { ThemeColor } from "@office-open/core";
+import { convertToTwip, ThemeColor } from "@office-open/core";
 import { xsdVerticalMergeRev } from "@office-open/core";
-import type { PositiveUniversalMeasure } from "@office-open/core";
+import type { PositiveUniversalMeasure, UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrMeasure, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -83,10 +83,14 @@ function buildTableGridXml(
   widths: Array<number | string>,
   revision?: TableGridChangeOptions,
 ): string {
-  const cols = widths.map((w) => `<w:gridCol w:w="${w}"/>`).join("");
+  // w:gridCol @w is s:ST_TwipsMeasure — normalize UniversalMeasure to twip integers
+  // so the emitted @w is always a bare integer (never "25mm").
+  const gridCol = (w: number | string): string =>
+    `<w:gridCol w:w="${convertToTwip(w as number | UniversalMeasure)}"/>`;
+  const cols = widths.map(gridCol).join("");
 
   if (revision) {
-    const revCols = revision.columnWidths.map((w) => `<w:gridCol w:w="${w}"/>`).join("");
+    const revCols = revision.columnWidths.map(gridCol).join("");
     return `<w:tblGrid>${cols}<w:tblGridChange w:id="${revision.id}"><w:tblGrid>${revCols}</w:tblGrid></w:tblGridChange></w:tblGrid>`;
   }
 

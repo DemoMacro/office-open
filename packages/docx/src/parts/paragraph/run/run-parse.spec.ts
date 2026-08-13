@@ -73,9 +73,9 @@ describe("parseRunProperties round-trip", () => {
     expect(rev.italic).toBe(true);
   });
 
-  it("round-trips characterSpacing with UniversalMeasure (mm)", () => {
+  it("normalizes characterSpacing UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({ characterSpacing: "0.5mm" });
-    expect(result.characterSpacing).toBe("0.5mm");
+    expect(result.characterSpacing).toBe(28);
   });
 
   // b/bCs, i/iCs, sz/szCs are independent toggle/measure properties (Latin vs

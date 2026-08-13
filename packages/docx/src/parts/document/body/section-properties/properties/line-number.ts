@@ -1,4 +1,4 @@
-import { decimalNumber, twipsMeasureValue } from "@office-open/core";
+import { convertToTwip, decimalNumber } from "@office-open/core";
 import type { PositiveUniversalMeasure } from "@office-open/core";
 import { element } from "@office-open/xml";
 
@@ -134,7 +134,7 @@ export const createLineNumberType = ({
 }: LineNumberProperties): string =>
   element("w:lnNumType", {
     "w:countBy": countBy === undefined ? undefined : decimalNumber(countBy),
-    "w:distance": distance === undefined ? undefined : twipsMeasureValue(distance),
+    "w:distance": distance === undefined ? undefined : convertToTwip(distance),
     "w:restart": restart,
     "w:start": start === undefined ? undefined : decimalNumber(start),
   });

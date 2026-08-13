@@ -8,12 +8,8 @@
  * @module
  */
 
-import { xsdVerticalMergeRev } from "@office-open/core";
-import {
-  measurementOrPercentValue,
-  signedTwipsMeasureValue,
-  twipsMeasureValue,
-} from "@office-open/core";
+import { convertToTwip, xsdVerticalMergeRev } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { AlignmentType } from "@parts/paragraph";
 import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
 import type {
@@ -42,14 +38,25 @@ import { attrParts, borderStr, onOff, shadingStr } from "../paragraph/stringify"
 
 // ── Table width string ──
 
+// Normalize a CT_TblWidth @w value to a bare integer: pct percentage (50 / "50%") →
+// fiftieths, dxa length (twip number | UniversalMeasure) → twips. The emitted @w is
+// always an integer — never "N%" or a measure string, which are different XSD branches
+// (ST_Percentage / ST_UniversalMeasure) that Word treats as auto on tblW. A stray "%"
+// under dxa is a meaningless cross-branch value, passed through verbatim for parity.
+function tableWidthValue(
+  size: TableWidthProperties["size"],
+  type: string | undefined,
+): number | string {
+  if (type === WidthType.PERCENTAGE) return widthPctToFiftieths(size);
+  if (typeof size === "number") return size;
+  if (size.endsWith("%")) return size;
+  return convertToTwip(size as UniversalMeasure);
+}
+
 function tableWidthStr(name: string, opts: TableWidthProperties): string {
   const type = opts.type ?? WidthType.AUTO;
-  // pct: user-facing percentage (100 = 100%) → OOXML fiftieths (5000 = 100%); the
-  // emitted @w is always a bare integer, never "N%" (a different XSD branch that
-  // Word treats as auto on tblW).
-  const w = type === WidthType.PERCENTAGE ? widthPctToFiftieths(opts.size) : opts.size;
   const a = attrParts({
-    "w:w": w !== undefined ? measurementOrPercentValue(w) : undefined,
+    "w:w": tableWidthValue(opts.size, type),
     "w:type": type,
   });
   return `<${name} ${a}/>`;
@@ -119,22 +126,21 @@ function floatPropertiesStr(opts: TableFloatOptions): string {
     "w:vertAnchor": opts.verticalAnchor,
     "w:tblpX":
       opts.absoluteHorizontalPosition !== undefined
-        ? signedTwipsMeasureValue(opts.absoluteHorizontalPosition)
+        ? convertToTwip(opts.absoluteHorizontalPosition)
         : undefined,
     "w:tblpXSpec": opts.relativeHorizontalPosition,
     "w:tblpY":
       opts.absoluteVerticalPosition !== undefined
-        ? signedTwipsMeasureValue(opts.absoluteVerticalPosition)
+        ? convertToTwip(opts.absoluteVerticalPosition)
         : undefined,
     "w:tblpYSpec": opts.relativeVerticalPosition,
     "w:bottomFromText":
-      opts.bottomFromText !== undefined ? twipsMeasureValue(opts.bottomFromText) : undefined,
-    "w:topFromText":
-      opts.topFromText !== undefined ? twipsMeasureValue(opts.topFromText) : undefined,
+      opts.bottomFromText !== undefined ? convertToTwip(opts.bottomFromText) : undefined,
+    "w:topFromText": opts.topFromText !== undefined ? convertToTwip(opts.topFromText) : undefined,
     "w:leftFromText":
-      opts.leftFromText !== undefined ? twipsMeasureValue(opts.leftFromText) : undefined,
+      opts.leftFromText !== undefined ? convertToTwip(opts.leftFromText) : undefined,
     "w:rightFromText":
-      opts.rightFromText !== undefined ? twipsMeasureValue(opts.rightFromText) : undefined,
+      opts.rightFromText !== undefined ? convertToTwip(opts.rightFromText) : undefined,
   });
   return `<w:tblpPr ${a}/>`;
 }
@@ -202,11 +208,8 @@ function cellMergeStr(opts: CellMergeAttributes): string {
 // ── Cell spacing string ──
 
 function cellSpacingStr(opts: TableCellSpacingProperties): string {
-  // CT_TblWidth: pct size is a user-facing percentage (100 = 100%); convert to
-  // fiftieths, matching tableWidthStr. type stays optional (no AUTO default).
-  const w = opts.type === WidthType.PERCENTAGE ? widthPctToFiftieths(opts.size) : opts.size;
   const a = attrParts({
-    "w:w": w !== undefined ? measurementOrPercentValue(w) : undefined,
+    "w:w": tableWidthValue(opts.size, opts.type),
     "w:type": opts.type,
   });
   return `<w:tblCellSpacing ${a}/>`;
@@ -395,7 +398,7 @@ function stringifyTableRowPropertiesInner(options: TableRowPropertiesOptions): s
 
   if (options.height) {
     const a = attrParts({
-      "w:val": twipsMeasureValue(options.height.value),
+      "w:val": convertToTwip(options.height.value),
       "w:hRule": options.height.rule,
     });
     parts.push(`<w:trHeight ${a}/>`);

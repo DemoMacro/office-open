@@ -9,13 +9,12 @@
  */
 
 import {
+  convertToTwip,
   decimalNumber,
   eighthPointMeasureValue,
   hexColorValue,
   hpsMeasureValue,
   pointMeasureValue,
-  signedTwipsMeasureValue,
-  twipsMeasureValue,
   uCharHexNumber,
 } from "@office-open/core";
 import { escapeXml } from "@office-open/xml";
@@ -94,15 +93,15 @@ export function shadingStr(opts: ShadingProperties): string {
 
 function spacingStr(opts: SpacingProperties): string {
   const a = attrParts({
-    "w:after": opts.after !== undefined ? twipsMeasureValue(opts.after) : undefined,
+    "w:after": opts.after !== undefined ? convertToTwip(opts.after) : undefined,
     "w:afterAutospacing":
       opts.afterAutoSpacing !== undefined ? (opts.afterAutoSpacing ? 1 : 0) : undefined,
     "w:afterLines": opts.afterLines !== undefined ? decimalNumber(opts.afterLines) : undefined,
-    "w:before": opts.before !== undefined ? twipsMeasureValue(opts.before) : undefined,
+    "w:before": opts.before !== undefined ? convertToTwip(opts.before) : undefined,
     "w:beforeAutospacing":
       opts.beforeAutoSpacing !== undefined ? (opts.beforeAutoSpacing ? 1 : 0) : undefined,
     "w:beforeLines": opts.beforeLines !== undefined ? decimalNumber(opts.beforeLines) : undefined,
-    "w:line": opts.line !== undefined ? twipsMeasureValue(opts.line) : undefined,
+    "w:line": opts.line !== undefined ? convertToTwip(opts.line) : undefined,
     "w:lineRule": opts.lineRule,
   });
   return `<w:spacing ${a}/>`;
@@ -112,18 +111,18 @@ function spacingStr(opts: SpacingProperties): string {
 
 function indentStr(opts: IndentProperties): string {
   const a = attrParts({
-    "w:start": opts.start !== undefined ? signedTwipsMeasureValue(opts.start) : undefined,
+    "w:start": opts.start !== undefined ? convertToTwip(opts.start) : undefined,
     "w:startChars": opts.startChars !== undefined ? decimalNumber(opts.startChars) : undefined,
-    "w:end": opts.end !== undefined ? signedTwipsMeasureValue(opts.end) : undefined,
+    "w:end": opts.end !== undefined ? convertToTwip(opts.end) : undefined,
     "w:endChars": opts.endChars !== undefined ? decimalNumber(opts.endChars) : undefined,
-    "w:left": opts.left !== undefined ? signedTwipsMeasureValue(opts.left) : undefined,
+    "w:left": opts.left !== undefined ? convertToTwip(opts.left) : undefined,
     "w:leftChars": opts.leftChars !== undefined ? decimalNumber(opts.leftChars) : undefined,
-    "w:right": opts.right !== undefined ? signedTwipsMeasureValue(opts.right) : undefined,
+    "w:right": opts.right !== undefined ? convertToTwip(opts.right) : undefined,
     "w:rightChars": opts.rightChars !== undefined ? decimalNumber(opts.rightChars) : undefined,
-    "w:hanging": opts.hanging !== undefined ? twipsMeasureValue(opts.hanging) : undefined,
+    "w:hanging": opts.hanging !== undefined ? convertToTwip(opts.hanging) : undefined,
     "w:hangingChars":
       opts.hangingChars !== undefined ? decimalNumber(opts.hangingChars) : undefined,
-    "w:firstLine": opts.firstLine !== undefined ? twipsMeasureValue(opts.firstLine) : undefined,
+    "w:firstLine": opts.firstLine !== undefined ? convertToTwip(opts.firstLine) : undefined,
     "w:firstLineChars":
       opts.firstLineChars !== undefined ? decimalNumber(opts.firstLineChars) : undefined,
   });
@@ -136,7 +135,7 @@ function tabStopsStr(defs: TabStopDefinition[]): string {
   const items = defs.map(({ type, position, leader }) => {
     const a = attrParts({
       "w:val": type,
-      "w:pos": signedTwipsMeasureValue(position),
+      "w:pos": convertToTwip(position),
       "w:leader": leader,
     });
     return `<w:tab ${a}/>`;
@@ -537,7 +536,7 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
 
   // Character spacing
   if (opts.characterSpacing) {
-    parts.push(`<w:spacing w:val="${signedTwipsMeasureValue(opts.characterSpacing)}"/>`);
+    parts.push(`<w:spacing w:val="${convertToTwip(opts.characterSpacing)}"/>`);
   }
 
   // Scale

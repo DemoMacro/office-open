@@ -140,29 +140,29 @@ describe("tableDesc round-trip", () => {
     expect(result.columnWidths).toEqual([3000, 3000]);
   });
 
-  it("round-trips table width with UniversalMeasure (mm)", () => {
+  it("normalizes table width UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({
       width: { size: "50mm", type: "dxa" },
       rows: [{ cells: [{ children: [] }] }],
     });
-    expect(result.width?.size).toBe("50mm");
+    expect(result.width?.size).toBe(2834);
     expect(result.width?.type).toBe("dxa");
   });
 
-  it("round-trips row height with UniversalMeasure (cm)", () => {
+  it("normalizes row height UniversalMeasure (cm) to twips", () => {
     const result = roundTrip({
       rows: [{ height: { value: "1cm" }, cells: [{ children: [] }] }],
     });
     const row = result.rows[0] as TableRowOptions;
-    expect(row.height?.value).toBe("1cm");
+    expect(row.height?.value).toBe(566);
   });
 
-  it("round-trips column widths with UniversalMeasure", () => {
+  it("normalizes column widths UniversalMeasure to twips", () => {
     const result = roundTrip({
       columnWidths: ["25mm", "25mm"],
       rows: [{ cells: [{ children: [] }, { children: [] }] }],
     });
-    expect(result.columnWidths).toEqual(["25mm", "25mm"]);
+    expect(result.columnWidths).toEqual([1417, 1417]);
   });
 
   it('parses pct fiftieths as percentage (w:w="5000" w:type="pct" → 100)', () => {

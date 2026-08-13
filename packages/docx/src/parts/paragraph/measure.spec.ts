@@ -18,30 +18,32 @@ function roundTrip(props: Record<string, unknown>): Record<string, unknown> {
 }
 
 describe("paragraph properties measure round-trip", () => {
-  it("round-trips spacing before/after with UniversalMeasure (mm)", () => {
+  // UniversalMeasure is input-only: stringify normalizes it to twip integers (matching
+  // MS Office's integer-only output), so a UM value round-trips as its twip equivalent.
+  it("normalizes spacing before/after UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({ spacing: { before: "1.5mm", after: "2mm" } });
     const spacing = result.spacing as Record<string, unknown>;
-    expect(spacing.before).toBe("1.5mm");
-    expect(spacing.after).toBe("2mm");
+    expect(spacing.before).toBe(85);
+    expect(spacing.after).toBe(113);
   });
 
-  it("round-trips spacing.line with UniversalMeasure (mm)", () => {
+  it("normalizes spacing.line UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({ spacing: { line: "3mm", lineRule: "exact" } });
     const spacing = result.spacing as Record<string, unknown>;
-    expect(spacing.line).toBe("3mm");
+    expect(spacing.line).toBe(170);
   });
 
-  it("round-trips indent left/firstLine with UniversalMeasure (mm)", () => {
+  it("normalizes indent left/firstLine UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({ indent: { left: "5mm", firstLine: "2.5mm" } });
     const indent = result.indent as Record<string, unknown>;
-    expect(indent.left).toBe("5mm");
-    expect(indent.firstLine).toBe("2.5mm");
+    expect(indent.left).toBe(283);
+    expect(indent.firstLine).toBe(141);
   });
 
-  it("round-trips indent right/hanging with UniversalMeasure (mm)", () => {
+  it("normalizes indent right/hanging UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({ indent: { right: "4mm", hanging: "1mm" } });
     const indent = result.indent as Record<string, unknown>;
-    expect(indent.right).toBe("4mm");
-    expect(indent.hanging).toBe("1mm");
+    expect(indent.right).toBe(226);
+    expect(indent.hanging).toBe(56);
   });
 });

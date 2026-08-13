@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { signedTwipsMeasureValue, twipsMeasureValue } from "@office-open/core";
+import { convertToTwip } from "@office-open/core";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@office-open/core";
 
 /**
@@ -76,4 +76,4 @@ export const createPageMargin = (
   footer: number | PositiveUniversalMeasure,
   gutter: number | PositiveUniversalMeasure,
 ): string =>
-  `<w:pgMar w:bottom="${signedTwipsMeasureValue(bottom)}" w:footer="${twipsMeasureValue(footer)}" w:gutter="${twipsMeasureValue(gutter)}" w:header="${twipsMeasureValue(header)}" w:left="${twipsMeasureValue(left)}" w:right="${twipsMeasureValue(right)}" w:top="${signedTwipsMeasureValue(top)}"/>`;
+  `<w:pgMar w:bottom="${convertToTwip(bottom)}" w:footer="${convertToTwip(footer)}" w:gutter="${convertToTwip(gutter)}" w:header="${convertToTwip(header)}" w:left="${convertToTwip(left)}" w:right="${convertToTwip(right)}" w:top="${convertToTwip(top)}"/>`;
