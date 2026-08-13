@@ -2,8 +2,8 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { SmartArtOptions } from "../smartart";
 import { smartArtDesc } from "./smartart";
-import type { SmartArtDescriptorOptions } from "./smartart";
 
 // ── Mock contexts ──
 
@@ -22,7 +22,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: SmartArtDescriptorOptions) {
+function roundTrip(opts: SmartArtOptions) {
   const xml = smartArtDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
@@ -32,8 +32,9 @@ function roundTrip(opts: SmartArtDescriptorOptions) {
 
 describe("smartArtDesc round-trip", () => {
   it("round-trips basic position and name", () => {
-    const opts: SmartArtDescriptorOptions = {
+    const opts: SmartArtOptions = {
       id: 100,
+      nodes: [],
       name: "Test Diagram",
       x: 50,
       y: 60,
@@ -50,8 +51,9 @@ describe("smartArtDesc round-trip", () => {
   });
 
   it("round-trips position with defaults", () => {
-    const opts: SmartArtDescriptorOptions = {
+    const opts: SmartArtOptions = {
       id: 200,
+      nodes: [],
     };
     const result = roundTrip(opts);
 
@@ -65,7 +67,7 @@ describe("smartArtDesc round-trip", () => {
 
   it("registers SmartArt data in context when nodes provided", () => {
     smartArtRegistry.clear();
-    const opts: SmartArtDescriptorOptions = {
+    const opts: SmartArtOptions = {
       id: 300,
       smartArtKey: "smartart_test",
       nodes: [{ text: "Root", children: [{ text: "Child" }] }],
@@ -78,9 +80,10 @@ describe("smartArtDesc round-trip", () => {
     expect(smartArtRegistry.has("smartart_test")).toBe(true);
   });
 
-  it("round-trips without nodes", () => {
-    const opts: SmartArtDescriptorOptions = {
+  it("round-trips with empty nodes", () => {
+    const opts: SmartArtOptions = {
       id: 400,
+      nodes: [],
       name: "Empty Diagram",
       x: 10,
       y: 20,
@@ -97,8 +100,9 @@ describe("smartArtDesc round-trip", () => {
   });
 
   it("round-trips large EMU values correctly", () => {
-    const opts: SmartArtDescriptorOptions = {
+    const opts: SmartArtOptions = {
       id: 500,
+      nodes: [],
       x: 1024,
       y: 768,
       width: 1920,

@@ -7,33 +7,14 @@
  */
 
 import { convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, escapeXml, findChild } from "@office-open/xml";
 
-// ── Types ──
-
-export interface OleDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  progId?: string;
-  spid?: string;
-  showAsIcon?: boolean;
-  imgW?: number;
-  imgH?: number;
-  embed?: { rId: string; lastEdited?: string };
-  link?: { rId: string; updateLastEdited?: string; autoUpdate?: boolean };
-  imgRId?: string;
-  followColorScheme?: "none" | "full" | "textAndBackground";
-}
+import type { OleOptions } from "../ole-frame";
 
 // ── ID counter ──
 
@@ -41,7 +22,7 @@ let _nextOleId = 2048;
 
 // ── OLE descriptor ──
 
-export const oleDesc: CustomDescriptor<OleDescriptorOptions> = {
+export const oleDesc: CustomDescriptor<OleOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -101,7 +82,7 @@ export const oleDesc: CustomDescriptor<OleDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Partial<OleDescriptorOptions> = {};
+    const result: Partial<OleOptions> = {};
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
     const nvGrFrm = findChild(el, "p:nvGraphicFramePr");
@@ -173,7 +154,7 @@ export const oleDesc: CustomDescriptor<OleDescriptorOptions> = {
       }
     }
 
-    return result as OleDescriptorOptions;
+    return result as OleOptions;
   },
 };
 

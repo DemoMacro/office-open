@@ -9,39 +9,20 @@
  */
 
 import { convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import { createDataModel, type TreeNode } from "@office-open/core/smartart";
 import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
+import type { SmartArtOptions } from "../smartart";
 import { readPositionFromXfrm } from "./shape";
 
 // ── Types ──
-
-export interface SmartArtDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  /** Pre-generated SmartArt key (e.g. "smartart_1024"). If omitted, auto-generated. */
-  smartArtKey?: string;
-  /** Tree nodes for the diagram content. */
-  nodes?: TreeNode[];
-  /** Layout ID (e.g. "default", "process1", "hierarchy1"). */
-  layout?: string;
-  /** Quick style ID (e.g. "simple1", "moderate1"). */
-  style?: string;
-  /** Color transform ID (e.g. "accent1_2", "colorful1"). */
-  color?: string;
-}
 
 // ── ID counter ──
 
@@ -49,7 +30,7 @@ let _nextSmartArtId = 1024;
 
 // ── SmartArt descriptor ──
 
-export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
+export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -106,7 +87,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Partial<SmartArtDescriptorOptions> = {};
+    const result: Partial<SmartArtOptions> = {};
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");
@@ -134,12 +115,12 @@ export const smartArtDesc: CustomDescriptor<SmartArtDescriptorOptions> = {
       }
     }
 
-    return result as SmartArtDescriptorOptions;
+    return result as SmartArtOptions;
   },
 };
 
 /** Parse SmartArt data XML into options. */
-function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtDescriptorOptions>): void {
+function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtOptions>): void {
   const model = findChild(dataEl, "dgm:dataModel");
   if (!model) return;
 

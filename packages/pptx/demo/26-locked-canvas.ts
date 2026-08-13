@@ -38,21 +38,7 @@ const options: PresentationOptions = {
                 width: "6.6cm",
                 height: "2.6cm",
                 fill: "4472C4",
-                textBody: {
-                  paragraphs: [
-                    {
-                      properties: { alignment: "center", bullet: { type: "none" } },
-                      children: [
-                        {
-                          text: "Locked Shape 1",
-                          size: 18,
-                          bold: true,
-                          fill: "FFFFFF",
-                        },
-                      ],
-                    },
-                  ],
-                },
+                textBody: "Locked Shape 1",
               },
               {
                 x: "7.9cm",
@@ -60,21 +46,7 @@ const options: PresentationOptions = {
                 width: "6.6cm",
                 height: "2.6cm",
                 fill: "ED7D31",
-                textBody: {
-                  paragraphs: [
-                    {
-                      properties: { alignment: "center", bullet: { type: "none" } },
-                      children: [
-                        {
-                          text: "Locked Shape 2",
-                          size: 18,
-                          bold: true,
-                          fill: "FFFFFF",
-                        },
-                      ],
-                    },
-                  ],
-                },
+                textBody: "Locked Shape 2",
               },
             ],
           },

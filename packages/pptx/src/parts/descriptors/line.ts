@@ -5,7 +5,6 @@
  */
 
 import { convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import {
@@ -17,42 +16,8 @@ import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type {
-  EndpointConnectionOptions,
-  ConnectorLockingOptions,
-  NonVisualDrawingPropertiesOptions,
-  OutlineOptions,
-} from "@office-open/core/drawingml";
 import { attrBool, attrNum, findChild } from "@office-open/xml";
-import type { FillOptions } from "@shared/drawingml/fill";
-
-// ── Types ──
-
-export interface LineShapeDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x1?: number | UniversalMeasure;
-  y1?: number | UniversalMeasure;
-  x2?: number | UniversalMeasure;
-  y2?: number | UniversalMeasure;
-  fill?: FillOptions;
-  outline?: OutlineOptions;
-}
-
-export interface ConnectorShapeDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x1?: number | UniversalMeasure;
-  y1?: number | UniversalMeasure;
-  x2?: number | UniversalMeasure;
-  y2?: number | UniversalMeasure;
-  fill?: FillOptions;
-  outline?: OutlineOptions;
-  /** a:cxnSpLocks — connector locking (inside p:cNvCxnSpPr). */
-  locking?: ConnectorLockingOptions;
-  /** a:stCxn — start endpoint glued to a shape connection site. */
-  startConnection?: EndpointConnectionOptions;
-  /** a:endCxn — end endpoint glued to a shape connection site. */
-  endConnection?: EndpointConnectionOptions;
-}
+import type { ConnectorOptions, LineShapeOptions } from "@shared/shape/line-shape";
 
 // ── ID counters ──
 
@@ -61,7 +26,7 @@ let _nextConnectorId = 2;
 
 // ── LineShape (p:sp) descriptor ──
 
-export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
+export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -119,7 +84,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Partial<LineShapeDescriptorOptions> = {};
+    const result: Partial<LineShapeOptions> = {};
 
     // p:nvSpPr → id, name
     const nvSpPr = findChild(el, "p:nvSpPr");
@@ -173,13 +138,13 @@ export const lineShapeDesc: CustomDescriptor<LineShapeDescriptorOptions> = {
       if (ln) result.outline = parse(outlineDesc, ln, _ctx);
     }
 
-    return result as LineShapeDescriptorOptions;
+    return result as LineShapeOptions;
   },
 };
 
 // ── ConnectorShape (p:cxnSp) descriptor ──
 
-export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOptions> = {
+export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -247,7 +212,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
   },
 
   parse(el, _ctx) {
-    const result: Partial<ConnectorShapeDescriptorOptions> = {};
+    const result: Partial<ConnectorOptions> = {};
 
     // p:nvCxnSpPr → id, name, and optional cNvCxnSpPr (locks + connections)
     const nvCxnSpPr = findChild(el, "p:nvCxnSpPr");
@@ -319,6 +284,6 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorShapeDescriptorOption
       if (ln) result.outline = parse(outlineDesc, ln, _ctx);
     }
 
-    return result as ConnectorShapeDescriptorOptions;
+    return result as ConnectorOptions;
   },
 };

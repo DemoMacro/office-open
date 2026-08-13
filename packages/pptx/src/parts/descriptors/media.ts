@@ -8,45 +8,16 @@
  */
 
 import { convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
-import type { DataType } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
+import type { AudioFrameOptions, AudioType } from "@shared/media/audio-frame";
+import type { PosterType, VideoFrameOptions, VideoType } from "@shared/media/video-frame";
 
 import { readPositionFromXfrm } from "./shape";
-
-// ── Types ──
-
-export type VideoType = "mp4" | "mov" | "wmv" | "avi";
-export type AudioType = "mp3" | "wav" | "wma" | "aac";
-export type PosterType = "png" | "jpg";
-
-export interface VideoDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  data?: DataType;
-  type?: VideoType;
-  poster?: DataType;
-  posterType?: PosterType;
-}
-
-export interface AudioDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  data?: DataType;
-  type?: AudioType;
-}
 
 // ── ID counters ──
 
@@ -60,7 +31,7 @@ const AUDIO_EXT_URI = "{CF1602FD-DB20-4165-A070-5F299619DA56}";
 
 // ── Video descriptor ──
 
-export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
+export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -101,7 +72,7 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Partial<VideoDescriptorOptions> = {};
+    const result: Partial<VideoFrameOptions> = {};
 
     // Position from p:spPr
     const spPr = findChild(el, "p:spPr");
@@ -155,13 +126,13 @@ export const videoDesc: CustomDescriptor<VideoDescriptorOptions> = {
       }
     }
 
-    return result as VideoDescriptorOptions;
+    return result as VideoFrameOptions;
   },
 };
 
 // ── Audio descriptor ──
 
-export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
+export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -198,7 +169,7 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Partial<AudioDescriptorOptions> = {};
+    const result: Partial<AudioFrameOptions> = {};
 
     // Position from p:spPr
     const spPr = findChild(el, "p:spPr");
@@ -235,7 +206,7 @@ export const audioDesc: CustomDescriptor<AudioDescriptorOptions> = {
       result.type = mediaTypeFromPath(mediaPath ?? mediaRef, "audio");
     }
 
-    return result as AudioDescriptorOptions;
+    return result as AudioFrameOptions;
   },
 };
 

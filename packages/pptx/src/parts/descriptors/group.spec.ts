@@ -1,9 +1,9 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
+import type { GroupOptions } from "@shared/shape/group-shape";
 import { describe, expect, it } from "vite-plus/test";
 
 import { groupShapeDesc } from "./group";
-import type { GroupShapeDescriptorOptions } from "./group";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -16,7 +16,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: GroupShapeDescriptorOptions) {
+function roundTrip(opts: GroupOptions) {
   const xml = groupShapeDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
@@ -27,7 +27,7 @@ function roundTrip(opts: GroupShapeDescriptorOptions) {
 
 describe("groupShapeDesc round-trip", () => {
   it("round-trips an empty group", () => {
-    const opts: GroupShapeDescriptorOptions = {};
+    const opts: GroupOptions = { children: [] };
     const result = roundTrip(opts);
 
     // Group always has defaults for position/size
@@ -35,7 +35,8 @@ describe("groupShapeDesc round-trip", () => {
   });
 
   it("round-trips group position and size", () => {
-    const opts: GroupShapeDescriptorOptions = {
+    const opts: GroupOptions = {
+      children: [],
       x: 100,
       y: 200,
       width: 400,
@@ -50,7 +51,8 @@ describe("groupShapeDesc round-trip", () => {
   });
 
   it("round-trips group with flipHorizontal", () => {
-    const opts: GroupShapeDescriptorOptions = {
+    const opts: GroupOptions = {
+      children: [],
       x: 50,
       y: 50,
       width: 200,
@@ -63,7 +65,8 @@ describe("groupShapeDesc round-trip", () => {
   });
 
   it("round-trips group with rotation", () => {
-    const opts: GroupShapeDescriptorOptions = {
+    const opts: GroupOptions = {
+      children: [],
       x: 0,
       y: 0,
       width: 100,
@@ -76,7 +79,7 @@ describe("groupShapeDesc round-trip", () => {
   });
 
   it("round-trips group with nested shape child", () => {
-    const opts: GroupShapeDescriptorOptions = {
+    const opts: GroupOptions = {
       x: 10,
       y: 20,
       width: 500,

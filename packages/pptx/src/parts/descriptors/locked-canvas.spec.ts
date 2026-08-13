@@ -2,8 +2,8 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { LockedCanvasFrameOptions } from "../locked-canvas-frame";
 import { lockedCanvasDesc } from "./locked-canvas";
-import type { LockedCanvasDescriptorOptions } from "./locked-canvas";
 
 // ── Mock contexts ──
 
@@ -18,7 +18,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: LockedCanvasDescriptorOptions) {
+function roundTrip(opts: LockedCanvasFrameOptions) {
   const xml = lockedCanvasDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
@@ -28,7 +28,7 @@ function roundTrip(opts: LockedCanvasDescriptorOptions) {
 
 describe("lockedCanvasDesc round-trip", () => {
   it("round-trips basic position and name", () => {
-    const opts: LockedCanvasDescriptorOptions = {
+    const opts: LockedCanvasFrameOptions = {
       id: 100,
       name: "Test Canvas",
       x: 50,
@@ -47,7 +47,7 @@ describe("lockedCanvasDesc round-trip", () => {
   });
 
   it("round-trips with children shapes (excluding textBody)", () => {
-    const opts: LockedCanvasDescriptorOptions = {
+    const opts: LockedCanvasFrameOptions = {
       id: 200,
       name: "Canvas with Children",
       x: 10,
@@ -102,7 +102,7 @@ describe("lockedCanvasDesc round-trip", () => {
   });
 
   it("round-trips without children", () => {
-    const opts: LockedCanvasDescriptorOptions = {
+    const opts: LockedCanvasFrameOptions = {
       id: 300,
       name: "Empty Canvas",
       x: 0,
@@ -122,7 +122,7 @@ describe("lockedCanvasDesc round-trip", () => {
   });
 
   it("round-trips default geometry for child shape", () => {
-    const opts: LockedCanvasDescriptorOptions = {
+    const opts: LockedCanvasFrameOptions = {
       id: 400,
       children: [
         {
@@ -141,7 +141,7 @@ describe("lockedCanvasDesc round-trip", () => {
   });
 
   it("round-trips EMU conversion correctly", () => {
-    const opts: LockedCanvasDescriptorOptions = {
+    const opts: LockedCanvasFrameOptions = {
       id: 500,
       x: 1024,
       y: 768,

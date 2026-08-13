@@ -5,48 +5,19 @@
  */
 
 import { convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   groupShapePropertiesDesc,
   parseNonVisualDrawingProperties,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type {
-  BlackWhiteMode,
-  EffectListOptions,
-  FillOptions as CoreFillOptions,
-  NonVisualDrawingPropertiesOptions,
-} from "@office-open/core/drawingml";
+import type { BlackWhiteMode } from "@office-open/core/drawingml";
 import { attrNum, findChild } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
+import type { GroupOptions } from "@shared/shape/group-shape";
 
 import type { PptxWriteContext } from "../../context";
 import { parseChild, stringifyChild } from "./bridge";
-
-// ── Types ──
-
-export interface GroupShapeDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  /** Rotation angle in degrees (e.g., 45 = 45°). */
-  rotation?: number;
-  flipHorizontal?: boolean;
-  /** Child coordinate system offset (a:chOff). Defaults to {x,y} when omitted. */
-  childOffset?: { x: number | UniversalMeasure; y: number | UniversalMeasure };
-  /** Child coordinate system extent (a:chExt). Defaults to {width,height} when omitted. */
-  childExtent?: { cx: number | UniversalMeasure; cy: number | UniversalMeasure };
-  /** Group-level fill (EG_FillProperties on grpSpPr). */
-  fill?: CoreFillOptions;
-  /** Group-level effects (EG_EffectProperties on grpSpPr). */
-  effects?: EffectListOptions;
-  /** @bwMode container attribute (ST_BlackWhiteMode) on p:grpSpPr. */
-  bwMode?: BlackWhiteMode;
-  children?: LegacySlideChild[];
-}
 
 // ── ID counter ──
 
@@ -54,7 +25,7 @@ let _nextGroupId = 200;
 
 // ── GroupShape (p:grpSp) descriptor ──
 
-export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
+export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -111,7 +82,7 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
   },
 
   parse(el, ctx) {
-    const result: Partial<GroupShapeDescriptorOptions> = {};
+    const result: Partial<GroupOptions> = {};
 
     // id + name from p:nvGrpSpPr/p:cNvPr
     const nvGrpSpPr = findChild(el, "p:nvGrpSpPr");
@@ -154,6 +125,6 @@ export const groupShapeDesc: CustomDescriptor<GroupShapeDescriptorOptions> = {
     }
     if (groupChildren.length > 0) result.children = groupChildren;
 
-    return result as GroupShapeDescriptorOptions;
+    return result as GroupOptions;
   },
 };

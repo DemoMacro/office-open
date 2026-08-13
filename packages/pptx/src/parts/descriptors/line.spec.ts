@@ -1,9 +1,9 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
+import type { ConnectorOptions, LineShapeOptions } from "@shared/shape/line-shape";
 import { describe, expect, it } from "vite-plus/test";
 
 import { lineShapeDesc, connectorShapeDesc } from "./line";
-import type { LineShapeDescriptorOptions, ConnectorShapeDescriptorOptions } from "./line";
 
 const writeCtx = {} as unknown as WriteContext;
 const readCtx = {
@@ -12,7 +12,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTripLine(opts: LineShapeDescriptorOptions) {
+function roundTripLine(opts: LineShapeOptions) {
   const xml = lineShapeDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
@@ -21,7 +21,7 @@ function roundTripLine(opts: LineShapeDescriptorOptions) {
   return lineShapeDesc.parse(el, readCtx);
 }
 
-function roundTripConnector(opts: ConnectorShapeDescriptorOptions) {
+function roundTripConnector(opts: ConnectorOptions) {
   const xml = connectorShapeDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
@@ -32,7 +32,7 @@ function roundTripConnector(opts: ConnectorShapeDescriptorOptions) {
 
 describe("lineShapeDesc round-trip", () => {
   it("round-trips basic line coordinates", () => {
-    const opts: LineShapeDescriptorOptions = {
+    const opts: LineShapeOptions = {
       id: 10,
       name: "Test Line",
       x1: 0,
@@ -52,7 +52,7 @@ describe("lineShapeDesc round-trip", () => {
   });
 
   it("round-trips line with default endpoints", () => {
-    const opts: LineShapeDescriptorOptions = {
+    const opts: LineShapeOptions = {
       id: 5,
     };
     const result = roundTripLine(opts);
@@ -62,7 +62,7 @@ describe("lineShapeDesc round-trip", () => {
   });
 
   it("round-trips line with reversed coordinates (flip)", () => {
-    const opts: LineShapeDescriptorOptions = {
+    const opts: LineShapeOptions = {
       id: 3,
       x1: 200,
       y1: 150,
@@ -78,7 +78,7 @@ describe("lineShapeDesc round-trip", () => {
   });
 
   it("round-trips line with outline", () => {
-    const opts: LineShapeDescriptorOptions = {
+    const opts: LineShapeOptions = {
       id: 4,
       outline: { type: "solidFill", color: { value: "FF0000" }, width: 2 },
     };
@@ -92,7 +92,7 @@ describe("lineShapeDesc round-trip", () => {
 
 describe("connectorShapeDesc round-trip", () => {
   it("round-trips basic connector", () => {
-    const opts: ConnectorShapeDescriptorOptions = {
+    const opts: ConnectorOptions = {
       id: 20,
       name: "Test Connector",
       x1: 10,
@@ -111,7 +111,7 @@ describe("connectorShapeDesc round-trip", () => {
   });
 
   it("round-trips connector with arrowheads", () => {
-    const opts: ConnectorShapeDescriptorOptions = {
+    const opts: ConnectorOptions = {
       id: 21,
       x1: 0,
       y1: 0,
@@ -129,7 +129,7 @@ describe("connectorShapeDesc round-trip", () => {
   });
 
   it("round-trips connector with outline", () => {
-    const opts: ConnectorShapeDescriptorOptions = {
+    const opts: ConnectorOptions = {
       id: 22,
       outline: { type: "solidFill", color: { value: "00FF00" }, width: 3 },
     };

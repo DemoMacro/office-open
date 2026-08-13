@@ -13,13 +13,17 @@ import type {
   Shape3DOptions,
   FillOptions,
 } from "@office-open/core/drawingml";
+
 /**
  * Shape options type for PPTX.
  *
+ * The single source of truth for both the public slide-child entry and the
+ * descriptor. Shape-level animation is intentionally absent — CT_Shape has no
+ * timing child in the XSD; animation lives at the slide level
+ * (slide.animations / timing).
+ *
  * @module
  */
-import type { AnimationOptions } from "@shared/animation/types";
-
 export interface ShapeStyleOptions {
   lineReference?: { index: number; color?: string };
   fillReference?: { index: number; color?: string };
@@ -44,10 +48,13 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
   textBody?: TextBodyOptions;
-  animation?: AnimationOptions;
   locking?: ShapeLockingOptions;
   placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
   placeholderIndex?: number;
+  /** CT_Placeholder @sz — sizing hint (default "full"). */
+  placeholderSize?: "full" | "half" | "quarter";
+  /** CT_Placeholder @orient — orientation hint (default "horz"). */
+  placeholderOrientation?: "horz" | "vert";
   useBackgroundFill?: boolean;
   isPhoto?: boolean;
   userDrawn?: boolean;

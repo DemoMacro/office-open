@@ -10,6 +10,8 @@ import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
+import type { PictureOptions } from "@shared/picture";
+import type { ShapeOptions } from "@shared/shape/shape";
 import type { TransitionDirection, TransitionType } from "@shared/transition";
 import { buildTransition } from "@shared/transition";
 
@@ -17,7 +19,6 @@ import { timingDesc } from "./animation";
 import { backgroundDesc, type BackgroundDescriptorOptions } from "./background";
 import { parseChild } from "./bridge";
 import { shapeDesc, pictureDesc } from "./shape";
-import type { ShapeDescriptorOptions, PictureDescriptorOptions } from "./shape";
 
 // ── Types ──
 
@@ -49,8 +50,8 @@ export interface SlideDescriptorOptions {
 
 /** Discriminated union for slide children (JSON-friendly). */
 export type SlideChild =
-  | { shape: ShapeDescriptorOptions }
-  | { picture: PictureDescriptorOptions }
+  | { shape: ShapeOptions }
+  | { picture: PictureOptions }
   | { text: TextBodyOptions }
   | { contentPart: { rId: string } };
 

@@ -4,7 +4,7 @@
  * @module
  */
 
-import type { UniversalMeasure } from "@office-open/core";
+import type { NonVisualDrawingPropertiesOptions, UniversalMeasure } from "@office-open/core";
 
 // ── Options ──
 
@@ -24,7 +24,15 @@ export interface OleLinkOptions {
   autoUpdate?: boolean;
 }
 
-export interface OleOptions {
+/**
+ * OLE Object frame options for pptx slides (p:graphicFrame with p:oleObj). The
+ * cNvPr fields (name/description/title/hidden) come from
+ * {@link NonVisualDrawingPropertiesOptions}. The single source of truth for
+ * both the public slide-child entry and the descriptor.
+ */
+export interface OleOptions extends NonVisualDrawingPropertiesOptions {
+  /** OLE frame id (p:cNvPr @id). Auto-generated if omitted. */
+  id?: number;
   /** Position and size */
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
@@ -34,8 +42,6 @@ export interface OleOptions {
   progId?: string;
   /** Shape ID */
   spid?: string;
-  /** Object name */
-  name?: string;
   /** Show as icon */
   showAsIcon?: boolean;
   /** Image width (EMU) for icon/preview */

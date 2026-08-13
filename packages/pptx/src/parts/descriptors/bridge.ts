@@ -14,25 +14,14 @@ import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 
 import type { PptxWriteContext } from "../../context";
 import { chartDesc } from "./chart";
-import type { ChartDescriptorOptions } from "./chart";
 import { groupShapeDesc } from "./group";
-import type { GroupShapeDescriptorOptions } from "./group";
-import { connectorShapeDesc } from "./line";
-import type { ConnectorShapeDescriptorOptions } from "./line";
-import { lineShapeDesc } from "./line";
-import type { LineShapeDescriptorOptions } from "./line";
+import { connectorShapeDesc, lineShapeDesc } from "./line";
 import { lockedCanvasDesc } from "./locked-canvas";
-import type { LockedCanvasDescriptorOptions } from "./locked-canvas";
 import { audioDesc, videoDesc } from "./media";
-import type { AudioDescriptorOptions, VideoDescriptorOptions } from "./media";
 import { oleDesc } from "./ole";
-import type { OleDescriptorOptions } from "./ole";
 import { shapeDesc, pictureDesc } from "./shape";
-import type { ShapeDescriptorOptions, PictureDescriptorOptions } from "./shape";
 import { smartArtDesc } from "./smartart";
-import type { SmartArtDescriptorOptions } from "./smartart";
 import { tableDesc } from "./table";
-import type { TableDescriptorOptions } from "./table";
 
 // ── Helpers ──
 
@@ -46,40 +35,40 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
 export function stringifyChild(child: LegacySlideChild, ctx: PptxWriteContext): string | undefined {
   // JSON object — descriptor dispatch
   if ("shape" in child && child.shape) {
-    return shapeDesc.stringify(child.shape as ShapeDescriptorOptions, ctx);
+    return shapeDesc.stringify(child.shape, ctx);
   }
   if ("picture" in child && child.picture) {
-    return pictureDesc.stringify(child.picture as PictureDescriptorOptions, ctx);
+    return pictureDesc.stringify(child.picture, ctx);
   }
   if ("table" in child && child.table) {
-    return tableDesc.stringify(child.table as TableDescriptorOptions, ctx);
+    return tableDesc.stringify(child.table, ctx);
   }
   if ("line" in child && child.line) {
-    return lineShapeDesc.stringify(child.line as LineShapeDescriptorOptions, ctx);
+    return lineShapeDesc.stringify(child.line, ctx);
   }
   if ("connector" in child && child.connector) {
-    return connectorShapeDesc.stringify(child.connector as ConnectorShapeDescriptorOptions, ctx);
+    return connectorShapeDesc.stringify(child.connector, ctx);
   }
   if ("group" in child && child.group) {
-    return groupShapeDesc.stringify(child.group as GroupShapeDescriptorOptions, ctx);
+    return groupShapeDesc.stringify(child.group, ctx);
   }
   if ("chart" in child && child.chart) {
-    return chartDesc.stringify(child.chart as ChartDescriptorOptions, ctx);
+    return chartDesc.stringify(child.chart, ctx);
   }
   if ("smartart" in child && child.smartart) {
-    return smartArtDesc.stringify(child.smartart as SmartArtDescriptorOptions, ctx);
+    return smartArtDesc.stringify(child.smartart, ctx);
   }
   if ("video" in child && child.video) {
-    return videoDesc.stringify(child.video as VideoDescriptorOptions, ctx);
+    return videoDesc.stringify(child.video, ctx);
   }
   if ("audio" in child && child.audio) {
-    return audioDesc.stringify(child.audio as AudioDescriptorOptions, ctx);
+    return audioDesc.stringify(child.audio, ctx);
   }
   if ("ole" in child && child.ole) {
-    return oleDesc.stringify(child.ole as OleDescriptorOptions, ctx);
+    return oleDesc.stringify(child.ole, ctx);
   }
   if ("lockedCanvas" in child && child.lockedCanvas) {
-    return lockedCanvasDesc.stringify(child.lockedCanvas as LockedCanvasDescriptorOptions, ctx);
+    return lockedCanvasDesc.stringify(child.lockedCanvas, ctx);
   }
 
   return undefined;

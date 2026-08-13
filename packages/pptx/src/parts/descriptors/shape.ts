@@ -8,7 +8,7 @@
  */
 
 import { convertEmuToPixels, convertToEmu, toUint8Array } from "@office-open/core";
-import type { ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
+import type { ShapeLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { parse } from "@office-open/core/descriptor";
 import {
@@ -26,85 +26,12 @@ import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type {
-  FillOptions as CoreFillOptions,
-  PresetGeometryOptions,
-  CustomGeometryOptions,
-  TextBodyOptions,
-  OutlineOptions,
-  EffectListOptions,
-  Scene3DOptions,
-  Shape3DOptions,
-  NonVisualDrawingPropertiesOptions,
-} from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
+import type { PictureOptions } from "@shared/picture";
+import type { ShapeOptions, ShapeStyleOptions } from "@shared/shape/shape";
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
-
-// ── Types ──
-
-export interface ShapeStyleDescriptorOptions {
-  lineReference?: { index: number; color?: string };
-  fillReference?: { index: number; color?: string };
-  effectReference?: { index: number; color?: string };
-  fontReference?: { index: number; color?: string };
-}
-
-export interface ShapeDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  geometry?: string | PresetGeometryOptions;
-  customGeometry?: CustomGeometryOptions;
-  fill?: CoreFillOptions;
-  outline?: OutlineOptions;
-  effects?: EffectListOptions;
-  scene3d?: Scene3DOptions;
-  shape3d?: Shape3DOptions;
-  flipHorizontal?: boolean;
-  /** Rotation angle in degrees (e.g., 45 = 45°). */
-  rotation?: number;
-  textBody?: TextBodyOptions;
-  locking?: ShapeLockingOptions;
-  placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
-  placeholderIndex?: number;
-  /** CT_Placeholder @sz — sizing hint (default "full"). */
-  placeholderSize?: "full" | "half" | "quarter";
-  /** CT_Placeholder @orient — orientation hint (default "horz"). */
-  placeholderOrientation?: "horz" | "vert";
-  useBackgroundFill?: boolean;
-  isPhoto?: boolean;
-  userDrawn?: boolean;
-  hasCustomPrompt?: boolean;
-  style?: ShapeStyleDescriptorOptions;
-  blackWhiteMode?:
-    | "clr"
-    | "auto"
-    | "gray"
-    | "ltGray"
-    | "invGray"
-    | "grayWhite"
-    | "blackGray"
-    | "blackWhite"
-    | "black"
-    | "white"
-    | "hidden";
-}
-
-export interface PictureDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
-  effects?: EffectListOptions;
-  data: Uint8Array;
-  type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
-}
 
 // ── Auto-incrementing IDs ──
 
@@ -123,7 +50,7 @@ export function resetPictureIdCounter(value = 100): void {
 
 // ── Shape (p:sp) descriptor ──
 
-export const shapeDesc: CustomDescriptor<ShapeDescriptorOptions> = {
+export const shapeDesc: CustomDescriptor<ShapeOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -160,16 +87,14 @@ export const shapeDesc: CustomDescriptor<ShapeDescriptorOptions> = {
   },
 
   parse(el, ctx) {
-    const result: ShapeDescriptorOptions = {};
+    const result: ShapeOptions = {};
 
     // Root attributes
     if (el.attributes) {
       if (el.attributes["useBgFill"] !== undefined)
         result.useBackgroundFill = el.attributes["useBgFill"] === "1";
       if (el.attributes["bwMode"] !== undefined)
-        result.blackWhiteMode = String(
-          el.attributes["bwMode"],
-        ) as ShapeDescriptorOptions["blackWhiteMode"];
+        result.blackWhiteMode = String(el.attributes["bwMode"]) as ShapeOptions["blackWhiteMode"];
     }
 
     // p:nvSpPr
@@ -209,7 +134,7 @@ export const shapeDesc: CustomDescriptor<ShapeDescriptorOptions> = {
 
 // ── Picture (p:pic) descriptor ──
 
-export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
+export const pictureDesc: CustomDescriptor<PictureOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -253,7 +178,7 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
   },
 
   parse(el, ctx) {
-    const result: Partial<PictureDescriptorOptions> = {};
+    const result: Partial<PictureOptions> = {};
 
     // p:nvPicPr
     const nvPicPr = findChild(el, "p:nvPicPr");
@@ -310,13 +235,13 @@ export const pictureDesc: CustomDescriptor<PictureDescriptorOptions> = {
     if (!result.data) result.data = new Uint8Array(0);
     if (!result.type) result.type = "png";
 
-    return result as PictureDescriptorOptions;
+    return result as PictureOptions;
   },
 };
 
 // ── Shape helper: p:nvSpPr ──
 
-function stringifyNvSpPr(id: number, name: string, opts: ShapeDescriptorOptions): string {
+function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions): string {
   // nvPr
   let nvPrContent = "<p:nvPr/>";
   if (opts.placeholder) {
@@ -371,7 +296,7 @@ function buildLockAttrs(opts: ShapeLockingOptions): string[] {
 
 // ── Shape helper: p:spPr ──
 
-function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string {
+function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
   const pptx = ctx as PptxWriteContext;
 
   // Blip fill: pre-register via addImage so the deduped canonical keeps the
@@ -426,7 +351,7 @@ function stringifySpPr(opts: ShapeDescriptorOptions, ctx: WriteContext): string 
 
 // ── Shape helper: p:style ──
 
-function stringifyStyle(style: ShapeStyleDescriptorOptions): string | undefined {
+function stringifyStyle(style: ShapeStyleOptions): string | undefined {
   const parts: string[] = [];
 
   if (style.lineReference) {
@@ -460,7 +385,7 @@ function stringifyStyle(style: ShapeStyleDescriptorOptions): string | undefined 
 
 // ── Picture helpers ──
 
-function stringifyNvPicPr(id: number, name: string, opts?: PictureDescriptorOptions): string {
+function stringifyNvPicPr(id: number, name: string, opts?: PictureOptions): string {
   const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name);
   return `<p:nvPicPr>${cNvPrXml}<p:cNvPicPr/><p:nvPr/></p:nvPicPr>`;
 }
@@ -470,7 +395,7 @@ function stringifyPptxBlipFill(fileName: string): string {
   return `<p:blipFill><a:blip r:embed="{${escapeXml(fileName)}}" cstate="none"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
 }
 
-function stringifyPicSpPr(opts: PictureDescriptorOptions, ctx: WriteContext): string {
+function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
   const spPrContent = shapePropertiesDesc.stringify(
     {
       x: opts.x,
@@ -489,8 +414,8 @@ function stringifyPicSpPr(opts: PictureDescriptorOptions, ctx: WriteContext): st
 
 // ── Read helpers ──
 
-export function readNvSpPr(nvSpPr: XmlElement): ShapeDescriptorOptions {
-  const result: ShapeDescriptorOptions = {};
+export function readNvSpPr(nvSpPr: XmlElement): ShapeOptions {
+  const result: ShapeOptions = {};
 
   const cNvPr = findChild(nvSpPr, "p:cNvPr");
   Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
@@ -509,15 +434,15 @@ export function readNvSpPr(nvSpPr: XmlElement): ShapeDescriptorOptions {
     const ph = findChild(nvPr, "p:ph");
     if (ph?.attributes) {
       if (ph.attributes["type"] !== undefined)
-        result.placeholder = String(ph.attributes["type"]) as ShapeDescriptorOptions["placeholder"];
+        result.placeholder = String(ph.attributes["type"]) as ShapeOptions["placeholder"];
       if (ph.attributes["idx"] !== undefined)
         result.placeholderIndex = Number(ph.attributes["idx"]);
       if (ph.attributes["sz"] !== undefined)
-        result.placeholderSize = ph.attributes["sz"] as ShapeDescriptorOptions["placeholderSize"];
+        result.placeholderSize = ph.attributes["sz"] as ShapeOptions["placeholderSize"];
       if (ph.attributes["orient"] !== undefined)
         result.placeholderOrientation = ph.attributes[
           "orient"
-        ] as ShapeDescriptorOptions["placeholderOrientation"];
+        ] as ShapeOptions["placeholderOrientation"];
       if (ph.attributes["hasCustomPrompt"] !== undefined)
         result.hasCustomPrompt = ph.attributes["hasCustomPrompt"] === "1";
     }
@@ -534,8 +459,8 @@ export function readNvSpPr(nvSpPr: XmlElement): ShapeDescriptorOptions {
   return result;
 }
 
-export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOptions {
-  const result: ShapeDescriptorOptions = {};
+export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeOptions {
+  const result: ShapeOptions = {};
 
   // Transform
   const xfrm = findChild(spPr, "a:xfrm");
@@ -576,7 +501,7 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeDescriptorOpt
     findChild(spPr, "a:pattFill") ||
     findChild(spPr, "a:blipFill");
   if (fillChild) {
-    result.fill = parse(fillDesc, spPr, ctx) as ShapeDescriptorOptions["fill"];
+    result.fill = parse(fillDesc, spPr, ctx) as ShapeOptions["fill"];
   }
 
   // Outline
@@ -625,8 +550,8 @@ export function readPositionFromXfrm(xfrm: XmlElement): Record<string, number> {
   return result;
 }
 
-function readStyle(styleEl: XmlElement): ShapeStyleDescriptorOptions {
-  const result: ShapeStyleDescriptorOptions = {};
+function readStyle(styleEl: XmlElement): ShapeStyleOptions {
+  const result: ShapeStyleOptions = {};
 
   const lnRef = findChild(styleEl, "a:lnRef");
   if (lnRef?.attributes) {

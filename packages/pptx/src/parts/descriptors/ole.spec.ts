@@ -2,8 +2,8 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { OleOptions } from "../ole-frame";
 import { oleDesc } from "./ole";
-import type { OleDescriptorOptions } from "./ole";
 
 // ── Mock contexts ──
 
@@ -18,7 +18,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: OleDescriptorOptions) {
+function roundTrip(opts: OleOptions) {
   const xml = oleDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
@@ -28,7 +28,7 @@ function roundTrip(opts: OleDescriptorOptions) {
 
 describe("oleDesc round-trip", () => {
   it("round-trips basic embedded OLE object", () => {
-    const opts: OleDescriptorOptions = {
+    const opts: OleOptions = {
       id: 100,
       name: "Test OLE",
       x: 50,
@@ -52,7 +52,7 @@ describe("oleDesc round-trip", () => {
   });
 
   it("round-trips linked OLE object", () => {
-    const opts: OleDescriptorOptions = {
+    const opts: OleOptions = {
       id: 200,
       name: "Linked OLE",
       x: 10,
@@ -73,7 +73,7 @@ describe("oleDesc round-trip", () => {
   });
 
   it("round-trips linked OLE without autoUpdate", () => {
-    const opts: OleDescriptorOptions = {
+    const opts: OleOptions = {
       id: 250,
       link: { rId: "rId4" },
     };
@@ -85,7 +85,7 @@ describe("oleDesc round-trip", () => {
   });
 
   it("round-trips OLE with showAsIcon", () => {
-    const opts: OleDescriptorOptions = {
+    const opts: OleOptions = {
       id: 300,
       name: "Icon OLE",
       showAsIcon: true,
@@ -102,7 +102,7 @@ describe("oleDesc round-trip", () => {
   });
 
   it("round-trips OLE with spid", () => {
-    const opts: OleDescriptorOptions = {
+    const opts: OleOptions = {
       id: 400,
       spid: "_x0000_s1025",
       embed: { rId: "rId6" },
@@ -113,7 +113,7 @@ describe("oleDesc round-trip", () => {
   });
 
   it("round-trips OLE with followColorScheme", () => {
-    const opts: OleDescriptorOptions = {
+    const opts: OleOptions = {
       id: 500,
       followColorScheme: "full",
       embed: { rId: "rId7" },
@@ -124,7 +124,7 @@ describe("oleDesc round-trip", () => {
   });
 
   it("round-trips position with defaults", () => {
-    const opts: OleDescriptorOptions = {
+    const opts: OleOptions = {
       id: 700,
       embed: { rId: "rId10" },
     };
@@ -140,7 +140,7 @@ describe("oleDesc round-trip", () => {
   });
 
   it("round-trips EMU conversion correctly", () => {
-    const opts: OleDescriptorOptions = {
+    const opts: OleOptions = {
       id: 800,
       x: 1024,
       y: 768,

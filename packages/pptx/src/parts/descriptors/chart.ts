@@ -9,7 +9,6 @@
  */
 
 import { convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
 import type { ChartSpaceOptions, ChartType } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
@@ -18,25 +17,12 @@ import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
+import type { ChartOptions } from "../chart-frame";
 import { readPositionFromXfrm } from "./shape";
-
-// ── Types ──
-
-export interface ChartDescriptorOptions
-  extends ChartSpaceOptions, NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  /** Pre-generated chart key (e.g. "chart_2048"). If omitted, auto-generated. */
-  chartKey?: string;
-}
 
 // ── ID counter ──
 
@@ -44,7 +30,7 @@ let _nextChartId = 2048;
 
 // ── Chart descriptor ──
 
-export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
+export const chartDesc: CustomDescriptor<ChartOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -87,7 +73,7 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Partial<ChartDescriptorOptions> = {};
+    const result: Partial<ChartOptions> = {};
 
     // id + name from p:nvGraphicFramePr/p:cNvPr
     const nvGfxFramePr = findChild(el, "p:nvGraphicFramePr");
@@ -120,7 +106,7 @@ export const chartDesc: CustomDescriptor<ChartDescriptorOptions> = {
       }
     }
 
-    return result as ChartDescriptorOptions;
+    return result as ChartOptions;
   },
 };
 

@@ -7,35 +7,14 @@
  */
 
 import { convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 
-// ── Types ──
-
-export interface LockedCanvasShapeDescriptorOptions {
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  geometry?: string;
-  fill?: string;
-  textBody?: string;
-}
-
-export interface LockedCanvasDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  children?: LockedCanvasShapeDescriptorOptions[];
-}
+import type { LockedCanvasFrameOptions, LockedCanvasShapeOptions } from "../locked-canvas-frame";
 
 // ── ID counters ──
 
@@ -44,7 +23,7 @@ let _nextCanvasShapeId = 2;
 
 // ── Locked Canvas descriptor ──
 
-export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> = {
+export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -86,7 +65,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
   },
 
   parse(el, _ctx) {
-    const result: Partial<LockedCanvasDescriptorOptions> = {};
+    const result: Partial<LockedCanvasFrameOptions> = {};
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
     const nvGrFrm = findChild(el, "p:nvGraphicFramePr");
@@ -124,10 +103,10 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
     const lockedCanvas = graphicData ? findChild(graphicData, "lc:lockedCanvas") : undefined;
 
     if (lockedCanvas) {
-      const children: LockedCanvasShapeDescriptorOptions[] = [];
+      const children: LockedCanvasShapeOptions[] = [];
       for (const child of lockedCanvas.elements ?? []) {
         if (child.name !== "a:sp") continue;
-        const shape: Partial<LockedCanvasShapeDescriptorOptions> = {};
+        const shape: Partial<LockedCanvasShapeOptions> = {};
 
         const spPr = findChild(child, "a:spPr");
         if (spPr) {
@@ -177,16 +156,16 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasDescriptorOptions> =
           }
         }
 
-        children.push(shape as LockedCanvasShapeDescriptorOptions);
+        children.push(shape as LockedCanvasShapeOptions);
       }
       if (children.length > 0) result.children = children;
     }
 
-    return result as LockedCanvasDescriptorOptions;
+    return result as LockedCanvasFrameOptions;
   },
 };
 
-function buildCanvasChildren(children: LockedCanvasShapeDescriptorOptions[] | undefined): string {
+function buildCanvasChildren(children: LockedCanvasShapeOptions[] | undefined): string {
   if (!children || children.length === 0) return "";
 
   const parts: string[] = [];

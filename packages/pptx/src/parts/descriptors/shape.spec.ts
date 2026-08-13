@@ -1,10 +1,10 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { ReflectionEffectOptions } from "@office-open/core/drawingml";
 import { parse as parseXml } from "@office-open/xml";
+import type { ShapeOptions } from "@shared/shape/shape";
 import { describe, expect, it, beforeEach } from "vite-plus/test";
 
 import { shapeDesc, resetShapeIdCounter } from "./shape";
-import type { ShapeDescriptorOptions } from "./shape";
 
 // ── Mock PPTX write context ──
 
@@ -26,7 +26,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: ShapeDescriptorOptions) {
+function roundTrip(opts: ShapeOptions) {
   const writeCtx = new MockWriteContext() as unknown as WriteContext;
   const xml = shapeDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);

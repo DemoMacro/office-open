@@ -1,12 +1,18 @@
-import type { DataType, UniversalMeasure } from "@office-open/core";
+import type {
+  DataType,
+  NonVisualDrawingPropertiesOptions,
+  UniversalMeasure,
+} from "@office-open/core";
 import type { AnimationOptions } from "@shared/animation/types";
 import type { MediaData } from "@shared/media/data";
 
 /**
- * Common options for all media frames.
+ * Common options for all media frames. The cNvPr fields
+ * (name/description/title/hidden) come from
+ * {@link NonVisualDrawingPropertiesOptions}.
  * @internal
  */
-export interface MediaFrameBaseOptions {
+export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
@@ -14,6 +20,5 @@ export interface MediaFrameBaseOptions {
   height?: number | UniversalMeasure;
   data: DataType;
   type: MediaData["type"];
-  name?: string;
   animation?: AnimationOptions;
 }

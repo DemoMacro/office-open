@@ -1,9 +1,9 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
+import type { TableOptions } from "@shared/table/table-frame";
 import { describe, expect, it } from "vite-plus/test";
 
 import { tableDesc } from "./table";
-import type { TableDescriptorOptions } from "./table";
 
 // ── Mock PPTX write context ──
 
@@ -25,7 +25,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: TableDescriptorOptions) {
+function roundTrip(opts: TableOptions) {
   const writeCtx = new MockWriteContext() as unknown as WriteContext;
   const xml = tableDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
@@ -36,7 +36,7 @@ function roundTrip(opts: TableDescriptorOptions) {
 
 describe("tableDesc round-trip", () => {
   it("round-trips basic 2x2 table", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [
         { cells: [{ text: "A1" }, { text: "B1" }] },
         { cells: [{ text: "A2" }, { text: "B2" }] },
@@ -54,7 +54,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips table with position", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       x: 100,
       y: 200,
       width: 400,
@@ -70,7 +70,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips table with columnWidths", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       columnWidths: [5000, 7000],
       rows: [{ cells: [{ text: "A" }, { text: "B" }] }],
     };
@@ -83,7 +83,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips table with row height", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [{ height: 500, cells: [{ text: "Tall" }] }],
     };
     const result = roundTrip(opts);
@@ -94,7 +94,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips cell with fill", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [
         {
           cells: [{ text: "Filled", fill: { type: "solid", color: "4472C4" } }],
@@ -112,7 +112,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips cell with vert (text direction)", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [
         {
           cells: [{ text: "Rotated", vert: "vert270" }],
@@ -126,7 +126,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips cell with borders", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [
         {
           cells: [
@@ -153,7 +153,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips cell with diagonal borders", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [
         {
           cells: [
@@ -182,7 +182,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips cell with verticalAlign", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [{ cells: [{ text: "Center", verticalAlign: "center" }] }],
     };
     const result = roundTrip(opts);
@@ -194,7 +194,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips table properties (bandRow, firstRow, etc.)", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       bandRow: true,
       firstRow: true,
       lastCol: true,
@@ -208,7 +208,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips table with tableStyleId", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       tableStyleId: "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}",
       rows: [{ cells: [{ text: "X" }] }],
     };
@@ -222,7 +222,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips table with table-level borders", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       borders: {
         top: { width: 25400, color: "000000" },
         bottom: { width: 25400, color: "000000" },
@@ -248,7 +248,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips cell with margins", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [
         {
           cells: [
@@ -273,7 +273,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips cell margins with UniversalMeasure (mm)", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [
         {
           cells: [
@@ -294,7 +294,7 @@ describe("tableDesc round-trip", () => {
   });
 
   it("round-trips tableStyleId (a:tableStyleId)", () => {
-    const opts: TableDescriptorOptions = {
+    const opts: TableOptions = {
       rows: [{ cells: [{ text: "A1" }] }],
       tableStyleId: "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}",
     };

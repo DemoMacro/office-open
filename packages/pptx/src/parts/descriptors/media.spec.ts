@@ -1,9 +1,10 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
+import type { AudioFrameOptions } from "@shared/media/audio-frame";
+import type { VideoFrameOptions } from "@shared/media/video-frame";
 import { describe, expect, it } from "vite-plus/test";
 
 import { videoDesc, audioDesc } from "./media";
-import type { VideoDescriptorOptions, AudioDescriptorOptions } from "./media";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -16,7 +17,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTripVideo(opts: VideoDescriptorOptions) {
+function roundTripVideo(opts: VideoFrameOptions) {
   const xml = videoDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
@@ -25,7 +26,7 @@ function roundTripVideo(opts: VideoDescriptorOptions) {
   return videoDesc.parse(el, readCtx);
 }
 
-function roundTripAudio(opts: AudioDescriptorOptions) {
+function roundTripAudio(opts: AudioFrameOptions) {
   const xml = audioDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
@@ -36,8 +37,10 @@ function roundTripAudio(opts: AudioDescriptorOptions) {
 
 describe("videoDesc round-trip", () => {
   it("round-trips basic video position and name", () => {
-    const opts: VideoDescriptorOptions = {
+    const opts: VideoFrameOptions = {
       id: 101,
+      data: "dummy",
+      type: "mp4",
       name: "My Video",
       x: 50,
       y: 100,
@@ -54,8 +57,10 @@ describe("videoDesc round-trip", () => {
   });
 
   it("round-trips video with default name", () => {
-    const opts: VideoDescriptorOptions = {
+    const opts: VideoFrameOptions = {
       id: 102,
+      data: "dummy",
+      type: "mp4",
     };
     const result = roundTripVideo(opts);
 
@@ -64,8 +69,10 @@ describe("videoDesc round-trip", () => {
   });
 
   it("round-trips video with zero dimensions", () => {
-    const opts: VideoDescriptorOptions = {
+    const opts: VideoFrameOptions = {
       id: 103,
+      data: "dummy",
+      type: "mp4",
       name: "Placeholder",
       x: 0,
       y: 0,
@@ -85,8 +92,10 @@ describe("videoDesc round-trip", () => {
 
 describe("audioDesc round-trip", () => {
   it("round-trips basic audio position and name", () => {
-    const opts: AudioDescriptorOptions = {
+    const opts: AudioFrameOptions = {
       id: 201,
+      data: "dummy",
+      type: "mp3",
       name: "My Audio",
       x: 30,
       y: 40,
@@ -103,8 +112,10 @@ describe("audioDesc round-trip", () => {
   });
 
   it("round-trips audio with default name", () => {
-    const opts: AudioDescriptorOptions = {
+    const opts: AudioFrameOptions = {
       id: 202,
+      data: "dummy",
+      type: "mp3",
     };
     const result = roundTripAudio(opts);
 

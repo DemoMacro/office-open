@@ -14,7 +14,6 @@ import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import type { FillOptions, NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
 import {
   attr,
   attrBool,
@@ -26,81 +25,26 @@ import {
   textOf,
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import type {
+  TableCellOptions,
+  VerticalAlignment,
+  TextVerticalType,
+} from "@shared/table/table-cell";
+import type { CellBorderOptions } from "@shared/table/table-cell-properties";
+import type { TableOptions } from "@shared/table/table-frame";
+import type { TableRowOptions } from "@shared/table/table-row";
 
 import type { PptxWriteContext } from "../../context";
 import { readPositionFromXfrm } from "./shape";
 import { paragraphDesc, type ParagraphDescriptorOptions } from "./text";
 
-// ── Types ──
+// ── Internal aliases ──
 
-export type CellDashStyle = "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
-
-export interface CellBorderDescriptorOptions {
-  width?: number | UniversalMeasure;
-  color?: string;
-  dashStyle?: CellDashStyle;
-}
-
-export interface TableBordersDescriptorOptions {
-  top?: CellBorderDescriptorOptions;
-  bottom?: CellBorderDescriptorOptions;
-  left?: CellBorderDescriptorOptions;
-  right?: CellBorderDescriptorOptions;
-  /** a:lnTlToBr — top-left to bottom-right diagonal (cell tcPr only). */
-  diagonalTopLeftToBottomRight?: CellBorderDescriptorOptions;
-  /** a:lnBlToTr — bottom-left to top-right diagonal (cell tcPr only). */
-  diagonalBottomLeftToTopRight?: CellBorderDescriptorOptions;
-}
-
-export interface CellMarginsDescriptorOptions {
-  top?: number | UniversalMeasure;
-  bottom?: number | UniversalMeasure;
-  left?: number | UniversalMeasure;
-  right?: number | UniversalMeasure;
-}
-
-export type CellVerticalAlign = "top" | "center" | "bottom" | "justify" | "distribute";
-
-/** ST_TextVerticalType — text direction within a cell (a:tcPr @vert). */
-export type TextVerticalType = "horz" | "vert" | "vert270" | "wordArt" | "wordArtV";
-
-export interface TableCellDescriptorOptions {
-  text?: string;
-  children?: (ParagraphDescriptorOptions | string)[];
-  fill?: FillOptions;
-  borders?: TableBordersDescriptorOptions;
-  columnSpan?: number;
-  rowSpan?: number;
-  horizontalMerge?: "continue" | "restart";
-  verticalMerge?: "continue" | "restart";
-  verticalAlign?: CellVerticalAlign;
-  /** @vert — text direction (ST_TextVerticalType). */
-  vert?: TextVerticalType;
-  margins?: CellMarginsDescriptorOptions;
-}
-
-export interface TableRowDescriptorOptions {
-  height?: number | UniversalMeasure;
-  cells: TableCellDescriptorOptions[];
-}
-
-export interface TableDescriptorOptions extends NonVisualDrawingPropertiesOptions {
-  id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  rows: TableRowDescriptorOptions[];
-  columnWidths?: (number | UniversalMeasure)[];
-  firstRow?: boolean;
-  lastRow?: boolean;
-  bandRow?: boolean;
-  firstCol?: boolean;
-  lastCol?: boolean;
-  bandCol?: boolean;
-  tableStyleId?: string;
-  borders?: TableBordersDescriptorOptions;
-}
+// The public types carry the canonical shapes; these name the inline
+// border/margin maps the descriptor reads and writes cell-by-cell.
+type CellBorders = NonNullable<TableCellOptions["borders"]>;
+type CellMargins = NonNullable<TableCellOptions["margins"]>;
+type TableLevelBorders = NonNullable<TableOptions["borders"]>;
 
 // ── ID counter ──
 
@@ -108,7 +52,7 @@ let _nextTableId = 1024;
 
 // ── Table (p:graphicFrame) descriptor ──
 
-export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
+export const tableDesc: CustomDescriptor<TableOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -164,7 +108,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Partial<TableDescriptorOptions> = {};
+    const result: Partial<TableOptions> = {};
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");
@@ -185,7 +129,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     const graphicData = findChild(el, "a:graphic") ? findChild(el, "a:graphic") : undefined;
     const gd = graphicData ? findChild(graphicData, "a:graphicData") : undefined;
     const tbl = gd ? findChild(gd, "a:tbl") : undefined;
-    if (!tbl) return result as TableDescriptorOptions;
+    if (!tbl) return result as TableOptions;
 
     // a:tblPr
     const tblPr = findChild(tbl, "a:tblPr");
@@ -204,7 +148,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
       }
 
       // Table-level borders
-      const borders: TableBordersDescriptorOptions = {};
+      const borders: TableLevelBorders = {};
       for (const [elName, key] of [
         ["a:lnL", "left"],
         ["a:lnR", "right"],
@@ -213,7 +157,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
       ] as const) {
         const borderEl = findChild(tblPr, elName);
         if (borderEl) {
-          const borderOpts: Partial<CellBorderDescriptorOptions> = {};
+          const borderOpts: Partial<CellBorderOptions> = {};
           const w = attrNum(borderEl, "w");
           if (w !== undefined) borderOpts.width = w;
           const fillResult = parseTableCellFill(borderEl);
@@ -221,7 +165,7 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
           const prstDash = findChild(borderEl, "a:prstDash");
           if (prstDash) {
             const val = attr(prstDash, "val");
-            if (val) borderOpts.dashStyle = val as CellDashStyle;
+            if (val) borderOpts.dashStyle = val as CellBorderOptions["dashStyle"];
           }
           if (Object.keys(borderOpts).length > 0) borders[key] = borderOpts;
         }
@@ -241,26 +185,26 @@ export const tableDesc: CustomDescriptor<TableDescriptorOptions> = {
     }
 
     // a:tr → rows
-    const rows: TableRowDescriptorOptions[] = [];
+    const rows: TableRowOptions[] = [];
     for (const tr of children(tbl, "a:tr")) {
       const h = attrNum(tr, "h");
-      const cells: TableCellDescriptorOptions[] = [];
+      const cells: TableCellOptions[] = [];
       for (const tc of children(tr, "a:tc")) {
         cells.push(parseTableCell(tc, _ctx));
       }
-      const row: TableRowDescriptorOptions = { cells };
+      const row: TableRowOptions = { cells };
       if (h !== undefined) row.height = h;
       rows.push(row);
     }
     result.rows = rows;
 
-    return result as TableDescriptorOptions;
+    return result as TableOptions;
   },
 };
 
 // ── Helpers ──
 
-function stringifyTblPr(opts: TableDescriptorOptions): string {
+function stringifyTblPr(opts: TableOptions): string {
   const attrs: string[] = [];
   if (opts.firstRow !== undefined) attrs.push(`firstRow="${opts.firstRow ? 1 : 0}"`);
   if (opts.lastRow !== undefined) attrs.push(`lastRow="${opts.lastRow ? 1 : 0}"`);
@@ -275,7 +219,7 @@ function stringifyTblPr(opts: TableDescriptorOptions): string {
   return `<a:tblPr ${attrs.join(" ")}>${styleId}</a:tblPr>`;
 }
 
-function stringifyRow(row: TableRowDescriptorOptions, ctx: PptxWriteContext): string {
+function stringifyRow(row: TableRowOptions, ctx: PptxWriteContext): string {
   const h = convertToEmu(row.height ?? 0);
   const cellParts: string[] = [];
   for (const cell of row.cells) {
@@ -284,7 +228,7 @@ function stringifyRow(row: TableRowDescriptorOptions, ctx: PptxWriteContext): st
   return `<a:tr h="${h}">${cellParts.join("")}</a:tr>`;
 }
 
-function stringifyCell(cell: TableCellDescriptorOptions, ctx: PptxWriteContext): string {
+function stringifyCell(cell: TableCellOptions, ctx: PptxWriteContext): string {
   const parts: string[] = [];
 
   // Attributes
@@ -305,7 +249,7 @@ function stringifyCell(cell: TableCellDescriptorOptions, ctx: PptxWriteContext):
   return `<a:tc${tcAttrStr}>${parts.join("")}</a:tc>`;
 }
 
-function stringifyTxBody(cell: TableCellDescriptorOptions, ctx: PptxWriteContext): string {
+function stringifyTxBody(cell: TableCellOptions, ctx: PptxWriteContext): string {
   const txParts: string[] = [];
 
   // a:bodyPr
@@ -340,7 +284,7 @@ function stringifyTxBody(cell: TableCellDescriptorOptions, ctx: PptxWriteContext
   return `<a:txBody>${txParts.join("")}</a:txBody>`;
 }
 
-function stringifyTcPr(cell: TableCellDescriptorOptions, ctx: PptxWriteContext): string {
+function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
   const parts: string[] = [];
 
   if (cell.verticalAlign) {
@@ -379,7 +323,7 @@ function stringifyTcPr(cell: TableCellDescriptorOptions, ctx: PptxWriteContext):
   return `<a:tcPr>${parts.join("")}</a:tcPr>`;
 }
 
-function buildBorderLine(name: string, options: CellBorderDescriptorOptions): string {
+function buildBorderLine(name: string, options: CellBorderOptions): string {
   const attrs: string[] = [];
   if (options.width !== undefined) attrs.push(`w="${convertToEmu(options.width)}"`);
 
@@ -400,11 +344,11 @@ function buildBorderLine(name: string, options: CellBorderDescriptorOptions): st
 
 /** Distribute table-level borders to edge cells. */
 function distributeBorders(
-  row: TableRowDescriptorOptions,
+  row: TableRowOptions,
   ri: number,
   rowCount: number,
-  tb: TableDescriptorOptions["borders"],
-): TableCellDescriptorOptions[] {
+  tb: TableOptions["borders"],
+): TableCellOptions[] {
   if (!tb) return row.cells;
   const colCount = row.cells.length;
   return row.cells.map((cell, ci) => {
@@ -425,8 +369,8 @@ function distributeBorders(
 }
 
 /** Parse a table cell (a:tc) into options. */
-function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptorOptions {
-  const result: TableCellDescriptorOptions = {};
+function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
+  const result: TableCellOptions = {};
   const ctx = readCtx ?? ({} as ReadContext);
 
   const gridSpan = attrNum(tc, "gridSpan");
@@ -466,7 +410,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
     // Extract margins from a:bodyPr
     const bodyPr = findChild(txBody, "a:bodyPr");
     if (bodyPr) {
-      const margins: CellMarginsDescriptorOptions = {};
+      const margins: CellMargins = {};
       const tIns = attrMeasure(bodyPr, "tIns");
       if (tIns !== undefined) margins.top = tIns as number | UniversalMeasure;
       const bIns = attrMeasure(bodyPr, "bIns");
@@ -483,12 +427,12 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
   const tcPr = findChild(tc, "a:tcPr");
   if (tcPr) {
     const anchor = attr(tcPr, "anchor");
-    if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as CellVerticalAlign;
+    if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as VerticalAlignment;
     const vert = attr(tcPr, "vert");
     if (vert) result.vert = vert as TextVerticalType;
 
     // Margins from tcPr attributes
-    const margins: CellMarginsDescriptorOptions = {};
+    const margins: CellMargins = {};
     const marL = attrMeasure(tcPr, "marL");
     if (marL !== undefined) margins.left = marL as number | UniversalMeasure;
     const marR = attrMeasure(tcPr, "marR");
@@ -510,7 +454,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
     if (fillChild) result.fill = parse(fillDesc, tcPr, ctx);
 
     // Cell borders
-    const borders: TableBordersDescriptorOptions = {};
+    const borders: CellBorders = {};
     for (const [elName, key] of [
       ["a:lnL", "left"],
       ["a:lnR", "right"],
@@ -521,7 +465,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
     ] as const) {
       const borderEl = findChild(tcPr, elName);
       if (borderEl) {
-        const borderOpts: Partial<CellBorderDescriptorOptions> = {};
+        const borderOpts: Partial<CellBorderOptions> = {};
         const w = attrNum(borderEl, "w");
         if (w !== undefined) borderOpts.width = w;
         const fillResult = parseTableCellFill(borderEl);
@@ -530,7 +474,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellDescriptor
         const prstDash = findChild(borderEl, "a:prstDash");
         if (prstDash) {
           const val = attr(prstDash, "val");
-          if (val) borderOpts.dashStyle = val as CellDashStyle;
+          if (val) borderOpts.dashStyle = val as CellBorderOptions["dashStyle"];
         }
         if (Object.keys(borderOpts).length > 0) borders[key] = borderOpts;
       }
