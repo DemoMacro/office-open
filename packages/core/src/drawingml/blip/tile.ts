@@ -45,9 +45,9 @@ export interface TileOptions {
   tx?: number;
   /** Vertical offset for the tile origin (in EMUs) */
   ty?: number;
-  /** Horizontal scale factor as percentage (e.g., 50 = 50%) */
+  /** Horizontal scale factor (ST_Percentage: 100000 = 100%, range unlimited) */
   sx?: number;
-  /** Vertical scale factor as percentage (e.g., 50 = 50%) */
+  /** Vertical scale factor (ST_Percentage: 100000 = 100%, range unlimited) */
   sy?: number;
   /** Flip mode for alternating tiles */
   flip?: TileFlipMode;
@@ -78,10 +78,10 @@ export interface TileOptions {
  *
  * @example
  * ```typescript
- * // Tile with 50% scale
- * createTileInfo({ sx: 50, sy: 50 });
+ * // Tile with 50% scale (50000 = 50%)
+ * createTileInfo({ sx: 50000, sy: 50000 });
  * // Tile with flip and alignment
- * createTileInfo({ flip: "XY", align: "CENTER" });
+ * createTileInfo({ flip: "xy", align: "center" });
  * ```
  */
 export const createTileInfo = (options?: TileOptions): string => {

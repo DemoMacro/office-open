@@ -12,17 +12,17 @@ import { element } from "@office-open/xml";
 /**
  * Options for source rectangle cropping.
  *
- * Each value is a percentage (0-100000) of the image dimension to crop.
- * The values represent the inset from each edge.
+ * Each value is ST_Percentage (1000th of percent: 10000 = 10%, 100000 = 100%).
+ * The values represent the inset from each edge of the image.
  */
 export interface SourceRectangleOptions {
-  /** Left inset percentage (0-100000) */
+  /** Left inset (ST_Percentage: 10000 = 10% crop from left) */
   left?: number;
-  /** Top inset percentage (0-100000) */
+  /** Top inset (ST_Percentage: 10000 = 10% crop from top) */
   top?: number;
-  /** Right inset percentage (0-100000) */
+  /** Right inset (ST_Percentage: 10000 = 10% crop from right) */
   right?: number;
-  /** Bottom inset percentage (0-100000) */
+  /** Bottom inset (ST_Percentage: 10000 = 10% crop from bottom) */
   bottom?: number;
 }
 
