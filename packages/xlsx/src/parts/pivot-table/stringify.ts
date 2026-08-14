@@ -5,6 +5,7 @@
  */
 
 import { attrs, escapeXml } from "@office-open/xml";
+import { columnToLetter, letterToColumn } from "@util/index";
 
 import { collectUniqueValues } from "../pivot/pivot-utils";
 import type {
@@ -466,7 +467,7 @@ function computeLocationRef(
   }
   colCount += 1;
 
-  const endCol = colIndexToLetter(letterToColIndex(startCol) + colCount - 1);
+  const endCol = columnToLetter(letterToColumn(startCol) + colCount - 1);
   const endRow = startRow + rowCount - 1;
   return `${startCol}${startRow}:${endCol}${endRow}`;
 }
@@ -550,23 +551,6 @@ function buildPivotAreaReferences(refs: PivotAreaReferenceOptions[]): string {
   }
   parts.push("</references>");
   return parts.join("");
-}
-
-function letterToColIndex(letters: string): number {
-  let col = 0;
-  for (let i = 0; i < letters.length; i++) col = col * 26 + (letters.charCodeAt(i) - 64);
-  return col;
-}
-
-function colIndexToLetter(col: number): string {
-  let result = "";
-  let n = col;
-  while (n > 0) {
-    n--;
-    result = String.fromCharCode(65 + (n % 26)) + result;
-    n = Math.floor(n / 26);
-  }
-  return result;
 }
 
 function cartesianOfCounts(counts: number[]): number[][] {

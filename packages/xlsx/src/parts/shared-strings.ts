@@ -11,6 +11,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml, findChild, attr, attrNum, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
+import { parseColorHex } from "./styles/parse";
 import type {
   RichTextOptions,
   RichTextRunOptions,
@@ -275,9 +276,9 @@ function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         result.extend = true;
         break;
       case "color": {
-        const rgb = attr(child, "rgb");
+        const rgb = parseColorHex(child);
         if (rgb) {
-          result.color = rgb.length === 8 ? rgb.slice(2) : rgb;
+          result.color = rgb;
         } else {
           const indexed = attrNum(child, "indexed");
           if (indexed !== undefined) result.color = String(indexed);

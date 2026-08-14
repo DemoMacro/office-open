@@ -14,6 +14,7 @@ import { attr, attrMeasure, attrNum, findChild, stringify, textOf } from "@offic
 
 import type { XlsxReadContext } from "../../context";
 import { parseAutoFilter } from "../auto-filter";
+import { parseColorHex } from "../styles/parse";
 import { parseCellRef, parseCfvo, parsePageBreaks } from "./parse";
 import type {
   CellOptions,
@@ -375,8 +376,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
             for (const child of csEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
               if (child.name === "color") {
-                const rgb = attr(child, "rgb");
-                if (rgb) colors.push(rgb.length === 8 ? rgb.slice(2) : rgb);
+                const hex = parseColorHex(child);
+                if (hex) colors.push(hex);
               }
             }
             rule.colorScale = { cfvo, colors };
@@ -390,8 +391,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
             for (const child of dbEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
               if (child.name === "color") {
-                const rgb = attr(child, "rgb");
-                if (rgb) color = rgb.length === 8 ? rgb.slice(2) : rgb;
+                const hex = parseColorHex(child);
+                if (hex) color = hex;
               }
             }
             rule.dataBar = { cfvo: cfvo as [CfvoOptions, CfvoOptions], color };

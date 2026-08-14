@@ -33,6 +33,7 @@ import { chartsheetDesc } from "@parts/chartsheet";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import type { DrawingPictureOptions, ChartAnchorOptions } from "@parts/drawing";
 import { drawingDesc } from "@parts/drawing";
+import { A_NS, R_NS, XDR_NS, graphicFrameXml, wrapAnchor } from "@parts/drawing/stringify";
 import { externalLinkDesc } from "@parts/external-link";
 import type { WorkbookOptions } from "@parts/file";
 import { aggregate, collectUniqueValues } from "@parts/pivot";
@@ -623,20 +624,23 @@ export function compileWorkbook(
       `../charts/chart${csChartGlobalIdx + 1}.xml`,
     );
 
-    // Minimal drawing XML with chart anchor
-    const csDrawingXml =
-      `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
-      `<xdr:absoluteAnchor>` +
-      `<xdr:pos x="0" y="0"/>` +
-      `<xdr:ext cx="9308969" cy="6096000"/>` +
-      `<xdr:graphicFrame>` +
-      `<xdr:nvGraphicFramePr><xdr:cNvPr id="1" name="Chart ${i + 1}"/><xdr:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></xdr:cNvGraphicFramePr></xdr:nvGraphicFramePr>` +
-      `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="9308969" cy="6096000"/></xdr:xfrm>` +
-      `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId1"/></a:graphicData></a:graphic>` +
-      `</xdr:graphicFrame>` +
-      `<xdr:clientData/>` +
-      `</xdr:absoluteAnchor>` +
-      `</xdr:wsDr>`;
+    // Minimal drawing XML with chart anchor — reuses the parts/drawing anchor
+    // and graphicFrame builders (no hand-rolled xdr emitter). A chartsheet
+    // chart fills the sheet: absolute anchor at origin with the full-page frame.
+    const frame = graphicFrameXml(1, undefined, `Chart ${i + 1}`, "rId1", 9308969, 6096000);
+    const anchor = wrapAnchor(
+      {
+        anchorType: "absolute",
+        col: 1,
+        row: 1,
+        absoluteX: 0,
+        absoluteY: 0,
+        extentCx: 9308969,
+        extentCy: 6096000,
+      },
+      `${frame}<clientData/>`,
+    );
+    const csDrawingXml = `<wsDr xmlns="${XDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">${anchor}</wsDr>`;
 
     mapping[`ChartsheetDrawing${i}`] = {
       data: csDrawingXml,
@@ -1242,13 +1246,7 @@ function renderPivotSheetData(
   return { sheetData: parts.join(""), dimensionRef };
 }
 
+/** 0-based column index → Excel letter(s); delegates to the 1-based util helper. */
 function colIndexToLetter(col: number): string {
-  let result = "";
-  let n = col + 1;
-  while (n > 0) {
-    n--;
-    result = String.fromCharCode(65 + (n % 26)) + result;
-    n = Math.floor(n / 26);
-  }
-  return result;
+  return columnToLetter(col + 1);
 }

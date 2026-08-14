@@ -8,7 +8,14 @@ import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, stringify } from "@office-open/xml";
 
-import { parseAlignment, parseBorder, parseFill, parseFont, parseProtection } from "./parse";
+import {
+  parseAlignment,
+  parseBorder,
+  parseColorHex,
+  parseFill,
+  parseFont,
+  parseProtection,
+} from "./parse";
 import type {
   CellStyleXfOptions,
   ColorsOptions,
@@ -252,8 +259,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         const mru: string[] = [];
         for (const c of mruEl.elements ?? []) {
           if (c.name === "color") {
-            const rgb = attr(c, "rgb");
-            if (rgb) mru.push(rgb.length === 8 ? rgb.slice(2) : rgb);
+            const hex = parseColorHex(c);
+            if (hex) mru.push(hex);
           }
         }
         colors.mruColors = mru;

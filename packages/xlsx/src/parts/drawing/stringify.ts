@@ -119,20 +119,36 @@ export function stringifyImage(img: DrawingPictureOptions, id: number, ctx: Writ
   return wrapAnchor(img, `${pic}${clientDataXml(img)}`);
 }
 
+/**
+ * Build an xdr:graphicFrame hosting a chart reference. The xfrm extent is the
+ * caller's choice: twoCell anchors carry 0×0 (position comes from the cell
+ * markers), absolute anchors carry the real frame size.
+ */
+export function graphicFrameXml(
+  id: number,
+  cNvPr: NonVisualDrawingPropertiesOptions | undefined,
+  name: string,
+  rId: string,
+  cx: number,
+  cy: number,
+): string {
+  return (
+    `<graphicFrame><nvGraphicFramePr>${stringifyNonVisualDrawingProperties("cNvPr", id, cNvPr, name)}` +
+    `<cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></cNvGraphicFramePr></nvGraphicFramePr>` +
+    `<xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></xfrm>` +
+    `<a:graphic><a:graphicData uri="${C_URI}">` +
+    `<c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="${R_NS}" r:id="${rId}"/>` +
+    `</a:graphicData></a:graphic></graphicFrame>`
+  );
+}
+
 export function stringifyChart(chart: DrawingChartOptions, id: number): string {
   // Charts default to twoCellAnchor (existing behavior).
   const from = markerXml(chart.col, chart.colOffset ?? 0, chart.row, chart.rowOffset ?? 0);
   const to = markerXml(chart.col + 9, 0, chart.row + 16, 0);
   const clientData = clientDataXml(chart);
-  return (
-    `<twoCellAnchor editAs="oneCell"><from>${from}</from><to>${to}</to>` +
-    `<graphicFrame><nvGraphicFramePr>${stringifyNonVisualDrawingProperties("cNvPr", id, chart, `Chart ${id}`)}` +
-    `<cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></cNvGraphicFramePr></nvGraphicFramePr>` +
-    `<xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xfrm>` +
-    `<a:graphic><a:graphicData uri="${C_URI}">` +
-    `<c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="${R_NS}" r:id="${chart.rId}"/>` +
-    `</a:graphicData></a:graphic></graphicFrame>${clientData}</twoCellAnchor>`
-  );
+  const frame = graphicFrameXml(id, chart, `Chart ${id}`, chart.rId, 0, 0);
+  return `<twoCellAnchor editAs="oneCell"><from>${from}</from><to>${to}</to>${frame}${clientData}</twoCellAnchor>`;
 }
 
 /** Build the inner xdr:sp content (nvSpPr + spPr + optional txBody). */

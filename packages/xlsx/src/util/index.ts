@@ -14,6 +14,16 @@ export function columnToLetter(col: number): string {
 }
 
 /**
+ * Convert Excel column letter(s) to a 1-based column number.
+ * "A" → 1, "Z" → 26, "AA" → 27
+ */
+export function letterToColumn(letters: string): number {
+  let col = 0;
+  for (let i = 0; i < letters.length; i++) col = col * 26 + (letters.charCodeAt(i) - 64);
+  return col;
+}
+
+/**
  * Convert a JavaScript Date to an Excel serial number.
  * Excel epoch: January 1, 1900 = 1 (with the 1900 leap year bug).
  */

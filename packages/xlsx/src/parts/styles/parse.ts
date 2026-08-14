@@ -176,7 +176,11 @@ export function parseProtection(el: XmlElement): CellProtectionOptions {
   return result as CellProtectionOptions;
 }
 
-function parseColorHex(el: XmlElement): string | undefined {
+/**
+ * Read an sml color element's @rgb, stripping the alpha prefix when present
+ * (FF000000 → 000000). Shared by all xlsx color-attr parse sites.
+ */
+export function parseColorHex(el: XmlElement): string | undefined {
   const rgb = attr(el, "rgb");
   if (rgb) {
     // Strip alpha prefix if present (FF000000 → 000000)
