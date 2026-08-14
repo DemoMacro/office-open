@@ -7,7 +7,7 @@
  * @module
  */
 import { convertToInch, convertToPt, derivePasswordHash } from "@office-open/core";
-import { attrs, attrsRaw, escapeXml, selfCloseElement } from "@office-open/xml";
+import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
 import { stringifyAutoFilter } from "../auto-filter";
@@ -218,26 +218,24 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push("</cols>");
   }
 
-  // Sheet data (rows + cells) — the hot path
+  // Sheet data (rows + cells) — the hot path. Flat attribute assembly (no
+  // per-row Record + for-in) keeps young-gen pressure near zero at 100k+ rows.
   p.push("<sheetData>");
   for (const [i, rowOpts] of rows.entries()) {
     const rowNumber = rowOpts.rowNumber ?? i + 1;
-    const rowAttrs: Record<string, string | number | boolean | undefined> = { r: rowNumber };
+    let rowAttr = ` r="${rowNumber}"`;
     if (rowOpts.height !== undefined) {
-      rowAttrs.ht = convertToPt(rowOpts.height);
-      rowAttrs.customHeight = 1;
+      rowAttr += ` ht="${convertToPt(rowOpts.height)}" customHeight="1"`;
     }
-    if (rowOpts.hidden) {
-      rowAttrs.hidden = 1;
-    }
-    if (rowOpts.spans) rowAttrs.spans = rowOpts.spans;
-    if (rowOpts.customFormat) rowAttrs.customFormat = 1;
-    if (rowOpts.thickTop) rowAttrs.thickTop = 1;
-    if (rowOpts.thickBot) rowAttrs.thickBot = 1;
-    if (rowOpts.ph) rowAttrs.ph = 1;
+    if (rowOpts.hidden) rowAttr += ' hidden="1"';
+    if (rowOpts.spans) rowAttr += ` spans="${rowOpts.spans}"`;
+    if (rowOpts.customFormat) rowAttr += ' customFormat="1"';
+    if (rowOpts.thickTop) rowAttr += ' thickTop="1"';
+    if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
+    if (rowOpts.ph) rowAttr += ' ph="1"';
 
     if (rowOpts.cells) {
-      p.push(`<row${attrsRaw(rowAttrs)}>`);
+      p.push(`<row${rowAttr}>`);
       for (const [j, cell] of rowOpts.cells.entries()) {
         const ref = cell.reference ?? defaultCellRef(rowNumber, j + 1);
         const cellStr = buildCellString(ref, cell, sharedStrings, styles);
@@ -245,7 +243,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       }
       p.push("</row>");
     } else {
-      p.push(`<row${attrsRaw(rowAttrs)}/>`);
+      p.push(`<row${rowAttr}/>`);
     }
   }
   p.push("</sheetData>");
@@ -926,13 +924,15 @@ function buildCellString(
   sharedStrings?: SharedStrings,
   styles?: Styles,
 ): string {
-  const cellAttrs: Record<string, string | number | boolean | undefined> = { r: ref };
-
-  // Resolve style
+  // Flat attribute assembly (r → s → t, matching the former Record insertion
+  // order byte-for-byte). No per-cell Record + for-in enumeration — at 2M cells
+  // the dynamic-shape objects were a dominant Scavenge source.
+  const rAttr = ` r="${ref}"`;
+  let sAttr = "";
   if (cell.style !== undefined && styles) {
-    cellAttrs.s = styles.register(cell.style);
+    sAttr = ` s="${styles.register(cell.style)}"`;
   } else if (cell.styleIndex !== undefined) {
-    cellAttrs.s = cell.styleIndex;
+    sAttr = ` s="${cell.styleIndex}"`;
   }
 
   const value = cell.value;
@@ -940,30 +940,31 @@ function buildCellString(
   // Formula path — formula takes precedence; value is the cached result.
   if (cell.formula) {
     const fStr = buildFormulaString(cell.formula);
-    let vStr = "";
     if (value === null || value === undefined) {
-      return `<c${attrsRaw(cellAttrs)}>${fStr}</c>`;
+      return `<c${rAttr}${sAttr}>${fStr}</c>`;
     }
+    let vStr = "";
+    let tAttr = "";
     if (typeof value === "number") {
       vStr = `<v>${value}</v>`;
     } else if (typeof value === "boolean") {
-      cellAttrs.t = "b";
+      tAttr = ' t="b"';
       vStr = `<v>${value ? 1 : 0}</v>`;
     } else if (typeof value === "string") {
-      cellAttrs.t = "str";
+      tAttr = ' t="str"';
       vStr = `<v>${escapeXml(value)}</v>`;
     } else if (value instanceof Date) {
       vStr = `<v>${dateToSerialNumber(value)}</v>`;
     }
     if (vStr) {
-      return `<c${attrsRaw(cellAttrs)}>${fStr}${vStr}</c>`;
+      return `<c${rAttr}${sAttr}${tAttr}>${fStr}${vStr}</c>`;
     }
-    return `<c${attrsRaw(cellAttrs)}>${fStr}</c>`;
+    return `<c${rAttr}${sAttr}>${fStr}</c>`;
   }
 
   if (value === null || value === undefined) {
     if (cell.styleIndex !== undefined) {
-      return selfCloseElement("c", attrsRaw(cellAttrs));
+      return `<c${rAttr}${sAttr}/>`;
     }
     return "";
   }
@@ -971,36 +972,31 @@ function buildCellString(
   // Rich text value (RichTextOptions)
   if (typeof value === "object" && !(value instanceof Date)) {
     if (sharedStrings) {
-      cellAttrs.t = "s";
       const idx = sharedStrings.registerRich(value);
-      return `<c${attrsRaw(cellAttrs)}><v>${idx}</v></c>`;
+      return `<c${rAttr}${sAttr} t="s"><v>${idx}</v></c>`;
     }
-    cellAttrs.t = "inlineStr";
-    return `<c${attrsRaw(cellAttrs)}><is>${buildRstXml(value)}</is></c>`;
+    return `<c${rAttr}${sAttr} t="inlineStr"><is>${buildRstXml(value)}</is></c>`;
   }
 
   if (typeof value === "string") {
     if (sharedStrings) {
-      cellAttrs.t = "s";
       const idx = sharedStrings.register(value);
-      return `<c${attrsRaw(cellAttrs)}><v>${idx}</v></c>`;
+      return `<c${rAttr}${sAttr} t="s"><v>${idx}</v></c>`;
     }
-    cellAttrs.t = "inlineStr";
-    return `<c${attrsRaw(cellAttrs)}><is><t>${escapeXml(value)}</t></is></c>`;
+    return `<c${rAttr}${sAttr} t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`;
   }
 
   if (typeof value === "number") {
-    return `<c${attrsRaw(cellAttrs)}><v>${value}</v></c>`;
+    return `<c${rAttr}${sAttr}><v>${value}</v></c>`;
   }
 
   if (typeof value === "boolean") {
-    cellAttrs.t = "b";
-    return `<c${attrsRaw(cellAttrs)}><v>${value ? 1 : 0}</v></c>`;
+    return `<c${rAttr}${sAttr} t="b"><v>${value ? 1 : 0}</v></c>`;
   }
 
   if (value instanceof Date) {
     const serial = dateToSerialNumber(value);
-    return `<c${attrsRaw(cellAttrs)}><v>${serial}</v></c>`;
+    return `<c${rAttr}${sAttr}><v>${serial}</v></c>`;
   }
 
   return "";
