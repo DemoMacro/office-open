@@ -1,5 +1,5 @@
 import { convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
+import type { ColorMappingOptions, UniversalMeasure } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawingml";
 import type { ShapePropertiesOptions } from "@office-open/core/drawingml";
@@ -15,7 +15,7 @@ import type { ShapeStyleOptions } from "@shared/shape/shape";
 import type { TransitionOptions } from "@shared/transition";
 
 import type { PptxWriteContext } from "../context";
-import type { ColorMapOptions, HeaderFooterOptions } from "./handout-master";
+import type { HeaderFooterOptions } from "./handout-master";
 
 export interface MasterPlaceholderPosition {
   x: number | UniversalMeasure;
@@ -36,8 +36,8 @@ export interface SlideMasterOptions {
   background?: BackgroundOptions;
   children?: MasterChild[];
   placeholders?: MasterPlaceholderOptions;
-  /** Color map overrides (p:clrMap); defaults to the standard mapping. */
-  colorMap?: ColorMapOptions;
+  /** Color mapping overrides (p:clrMap); defaults to the standard mapping. */
+  colorMapping?: Partial<ColorMappingOptions>;
   /** Header/footer visibility on the master (p:hf). */
   headerFooter?: HeaderFooterOptions;
   /**

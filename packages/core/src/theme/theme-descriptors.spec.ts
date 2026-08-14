@@ -44,6 +44,36 @@ describe("themeDesc", () => {
     expect(result.colorScheme?.hyperlink).toBe("2563EB");
   });
 
+  it("round-trips extra color-scheme mappings with full-word API values", () => {
+    const opts: ThemeOptions = {
+      extraColorSchemes: [
+        {
+          colorScheme: { accent1: "112233" },
+          colorMapping: { background1: "dark1", followedHyperlink: "hyperlink" },
+        },
+      ],
+    };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('<a:clrMap bg1="dk1"');
+    expect(xml).toContain('folHlink="hlink"');
+
+    const result = roundTrip(opts);
+    expect(result.extraColorSchemes?.[0]?.colorMapping).toEqual({
+      background1: "dark1",
+      text1: "dark1",
+      background2: "light2",
+      text2: "dark2",
+      accent1: "accent1",
+      accent2: "accent2",
+      accent3: "accent3",
+      accent4: "accent4",
+      accent5: "accent5",
+      accent6: "accent6",
+      hyperlink: "hyperlink",
+      followedHyperlink: "hyperlink",
+    });
+  });
+
   it("round-trips font scheme with font collections", () => {
     const opts: ThemeOptions = {
       fontScheme: {

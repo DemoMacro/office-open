@@ -132,26 +132,41 @@ export interface ObjectDefaultsOptions {
   textDefault?: DefaultShapeDefinitionOptions;
 }
 
+/** Theme color slot referenced by CT_ColorMapping. */
+export type ColorSchemeIndex =
+  | "dark1"
+  | "light1"
+  | "dark2"
+  | "light2"
+  | "accent1"
+  | "accent2"
+  | "accent3"
+  | "accent4"
+  | "accent5"
+  | "accent6"
+  | "hyperlink"
+  | "followedHyperlink";
+
 /** Color mapping — 12 scheme-slot remappings (CT_ColorMapping: clrMap). */
 export interface ColorMappingOptions {
-  background1: string;
-  text1: string;
-  background2: string;
-  text2: string;
-  accent1: string;
-  accent2: string;
-  accent3: string;
-  accent4: string;
-  accent5: string;
-  accent6: string;
-  hyperlink: string;
-  followedHyperlink: string;
+  background1: ColorSchemeIndex;
+  text1: ColorSchemeIndex;
+  background2: ColorSchemeIndex;
+  text2: ColorSchemeIndex;
+  accent1: ColorSchemeIndex;
+  accent2: ColorSchemeIndex;
+  accent3: ColorSchemeIndex;
+  accent4: ColorSchemeIndex;
+  accent5: ColorSchemeIndex;
+  accent6: ColorSchemeIndex;
+  hyperlink: ColorSchemeIndex;
+  followedHyperlink: ColorSchemeIndex;
 }
 
 /** Extra color scheme (CT_ExtraColorScheme). */
 export interface ExtraColorSchemeOptions {
   colorScheme: ColorSchemeOptions;
-  colorMap?: ColorMappingOptions;
+  colorMapping?: Partial<ColorMappingOptions>;
 }
 
 /** Theme customization options (a:theme). */

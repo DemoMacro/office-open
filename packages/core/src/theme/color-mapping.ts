@@ -1,16 +1,16 @@
 /**
  * Color mapping (a:clrMap / CT_ColorMapping) stringify + parse.
  *
- * Remaps the 12 scheme slots (bg1/tx1/bg2/tx2/accent1-6/hlink/folHlink) to
- * ST_ColorSchemeIndex tokens (dk1/lt1/dk2/lt2/accent1-6/hlink/folHlink).
+ * Remaps the 12 semantic color slots to theme color slots. Public options use
+ * full words; this module owns the abbreviated OOXML tokens.
  *
  * @module
  */
+import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import type { ColorMappingOptions } from "./theme-options";
+import type { ColorMappingOptions, ColorSchemeIndex } from "./theme-options";
 
-/** clrMap attribute token → ColorMappingOptions key. */
 const MAPPING_ATTRS: ReadonlyArray<{ attr: string; key: keyof ColorMappingOptions }> = [
   { attr: "bg1", key: "background1" },
   { attr: "tx1", key: "text1" },
@@ -26,23 +26,65 @@ const MAPPING_ATTRS: ReadonlyArray<{ attr: string; key: keyof ColorMappingOption
   { attr: "folHlink", key: "followedHyperlink" },
 ];
 
-/** Serialize a:clrMap. */
-export function stringifyColorMapping(opts: ColorMappingOptions): string {
-  const attrs = MAPPING_ATTRS.map(({ attr, key }) => `${attr}="${opts[key]}"`).join(" ");
-  return `<a:clrMap ${attrs}/>`;
+const COLOR_SCHEME_INDEX_TO_XML: Record<ColorSchemeIndex, string> = {
+  dark1: "dk1",
+  light1: "lt1",
+  dark2: "dk2",
+  light2: "lt2",
+  accent1: "accent1",
+  accent2: "accent2",
+  accent3: "accent3",
+  accent4: "accent4",
+  accent5: "accent5",
+  accent6: "accent6",
+  hyperlink: "hlink",
+  followedHyperlink: "folHlink",
+};
+
+const XML_TO_COLOR_SCHEME_INDEX = Object.fromEntries(
+  Object.entries(COLOR_SCHEME_INDEX_TO_XML).map(([key, value]) => [value, key]),
+) as Record<string, ColorSchemeIndex>;
+
+/** Standard Office mapping from semantic slots to theme color slots. */
+export const DEFAULT_COLOR_MAPPING: ColorMappingOptions = {
+  background1: "light1",
+  text1: "dark1",
+  background2: "light2",
+  text2: "dark2",
+  accent1: "accent1",
+  accent2: "accent2",
+  accent3: "accent3",
+  accent4: "accent4",
+  accent5: "accent5",
+  accent6: "accent6",
+  hyperlink: "hyperlink",
+  followedHyperlink: "followedHyperlink",
+};
+
+/** Serialize a complete, XSD-valid CT_ColorMapping element. */
+export function stringifyColorMapping(
+  opts: Partial<ColorMappingOptions> | undefined,
+  elementName = "a:clrMap",
+): string {
+  const merged = { ...DEFAULT_COLOR_MAPPING, ...opts };
+  const attrs = MAPPING_ATTRS.map(({ attr, key }) => {
+    const value = COLOR_SCHEME_INDEX_TO_XML[merged[key]];
+    return `${attr}="${escapeXml(value)}"`;
+  }).join(" ");
+  return `<${elementName} ${attrs}/>`;
 }
 
-/** Parse a:clrMap. */
-export function parseColorMapping(el: XmlElement | undefined): ColorMappingOptions | undefined {
+/** Parse CT_ColorMapping attributes into full-word public keys and values. */
+export function parseColorMapping(
+  el: XmlElement | undefined,
+): Partial<ColorMappingOptions> | undefined {
   if (!el?.attributes) return undefined;
-  const result = {} as ColorMappingOptions;
-  let hasAny = false;
+  const result: Partial<ColorMappingOptions> = {};
   for (const { attr, key } of MAPPING_ATTRS) {
     const value = el.attributes[attr];
-    if (value !== undefined) {
-      result[key] = String(value);
-      hasAny = true;
-    }
+    if (value === undefined) continue;
+    const parsed = XML_TO_COLOR_SCHEME_INDEX[String(value)];
+    if (parsed !== undefined) result[key] = parsed;
   }
-  return hasAny ? result : undefined;
+  return Object.keys(result).length > 0 ? result : undefined;
 }

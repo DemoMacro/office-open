@@ -442,9 +442,9 @@ const options: PresentationOptions = {
             plotVisOnly: false,
             displayBlanksAs: "span",
             showDataLabelsOverMax: true,
-            colorMapOverride: {
-              bg1: "dk1",
-              tx1: "lt1",
+            colorMappingOverride: {
+              background1: "dark1",
+              text1: "light1",
             },
             protection: {
               chartObject: true,

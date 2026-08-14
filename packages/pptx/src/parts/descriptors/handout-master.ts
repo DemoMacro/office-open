@@ -4,9 +4,10 @@
  * @module
  */
 
+import { parseColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild } from "@office-open/xml";
-import { buildHandoutMasterXml, parseColorMap, parseHeaderFooter } from "@parts/handout-master";
+import { buildHandoutMasterXml, parseHeaderFooter } from "@parts/handout-master";
 import type { HandoutMasterOptions } from "@parts/handout-master";
 
 // ── Types ──
@@ -27,8 +28,8 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions>
   parse(el, _ctx) {
     const options: HandoutMasterOptions = {};
 
-    const colorMap = parseColorMap(findChild(el, "p:clrMap"));
-    if (colorMap) options.colorMap = colorMap;
+    const colorMapping = parseColorMapping(findChild(el, "p:clrMap"));
+    if (colorMapping) options.colorMapping = colorMapping;
 
     const headerFooter = parseHeaderFooter(findChild(el, "p:hf"));
     if (headerFooter) options.headerFooter = headerFooter;

@@ -33,19 +33,19 @@ describe("handoutMasterDesc round-trip", () => {
 
     // Default color map values
     expect(result.options).toBeDefined();
-    expect(result.options!.colorMap).toBeDefined();
-    expect(result.options!.colorMap!.bg1).toBe("lt1");
-    expect(result.options!.colorMap!.tx1).toBe("dk1");
-    expect(result.options!.colorMap!.bg2).toBe("lt2");
-    expect(result.options!.colorMap!.tx2).toBe("dk2");
-    expect(result.options!.colorMap!.accent1).toBe("accent1");
-    expect(result.options!.colorMap!.accent2).toBe("accent2");
-    expect(result.options!.colorMap!.accent3).toBe("accent3");
-    expect(result.options!.colorMap!.accent4).toBe("accent4");
-    expect(result.options!.colorMap!.accent5).toBe("accent5");
-    expect(result.options!.colorMap!.accent6).toBe("accent6");
-    expect(result.options!.colorMap!.hlink).toBe("hlink");
-    expect(result.options!.colorMap!.folHlink).toBe("folHlink");
+    expect(result.options!.colorMapping).toBeDefined();
+    expect(result.options!.colorMapping!.background1).toBe("light1");
+    expect(result.options!.colorMapping!.text1).toBe("dark1");
+    expect(result.options!.colorMapping!.background2).toBe("light2");
+    expect(result.options!.colorMapping!.text2).toBe("dark2");
+    expect(result.options!.colorMapping!.accent1).toBe("accent1");
+    expect(result.options!.colorMapping!.accent2).toBe("accent2");
+    expect(result.options!.colorMapping!.accent3).toBe("accent3");
+    expect(result.options!.colorMapping!.accent4).toBe("accent4");
+    expect(result.options!.colorMapping!.accent5).toBe("accent5");
+    expect(result.options!.colorMapping!.accent6).toBe("accent6");
+    expect(result.options!.colorMapping!.hyperlink).toBe("hyperlink");
+    expect(result.options!.colorMapping!.followedHyperlink).toBe("followedHyperlink");
 
     // Default header/footer values
     expect(result.options!.headerFooter).toBeDefined();
@@ -58,21 +58,21 @@ describe("handoutMasterDesc round-trip", () => {
   it("round-trips custom color map", () => {
     const opts: HandoutMasterDescriptorOptions = {
       options: {
-        colorMap: {
-          bg1: "customBg1",
-          tx1: "customTx1",
-          accent1: "customAccent1",
+        colorMapping: {
+          background1: "dark1",
+          text1: "light1",
+          accent1: "accent2",
         },
       },
     };
     const result = roundTrip(opts);
 
-    expect(result.options!.colorMap!.bg1).toBe("customBg1");
-    expect(result.options!.colorMap!.tx1).toBe("customTx1");
-    expect(result.options!.colorMap!.accent1).toBe("customAccent1");
+    expect(result.options!.colorMapping!.background1).toBe("dark1");
+    expect(result.options!.colorMapping!.text1).toBe("light1");
+    expect(result.options!.colorMapping!.accent1).toBe("accent2");
     // Other values should remain default
-    expect(result.options!.colorMap!.bg2).toBe("lt2");
-    expect(result.options!.colorMap!.tx2).toBe("dk2");
+    expect(result.options!.colorMapping!.background2).toBe("light2");
+    expect(result.options!.colorMapping!.text2).toBe("dark2");
   });
 
   it("round-trips header footer settings", () => {
@@ -97,11 +97,11 @@ describe("handoutMasterDesc round-trip", () => {
   it("round-trips all options together", () => {
     const opts: HandoutMasterDescriptorOptions = {
       options: {
-        colorMap: {
-          bg1: "white",
-          tx1: "black",
-          accent1: "blue",
-          hlink: "purple",
+        colorMapping: {
+          background1: "light2",
+          text1: "dark2",
+          accent1: "accent3",
+          hyperlink: "followedHyperlink",
         },
         headerFooter: {
           date: true,
@@ -113,10 +113,10 @@ describe("handoutMasterDesc round-trip", () => {
     };
     const result = roundTrip(opts);
 
-    expect(result.options!.colorMap!.bg1).toBe("white");
-    expect(result.options!.colorMap!.tx1).toBe("black");
-    expect(result.options!.colorMap!.accent1).toBe("blue");
-    expect(result.options!.colorMap!.hlink).toBe("purple");
+    expect(result.options!.colorMapping!.background1).toBe("light2");
+    expect(result.options!.colorMapping!.text1).toBe("dark2");
+    expect(result.options!.colorMapping!.accent1).toBe("accent3");
+    expect(result.options!.colorMapping!.hyperlink).toBe("followedHyperlink");
 
     expect(result.options!.headerFooter!.date).toBe(true);
     expect(result.options!.headerFooter!.header).toBe(false);

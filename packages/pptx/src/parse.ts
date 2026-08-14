@@ -514,7 +514,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
       // unifying them, so the cast stays local to this known impedance.
       children: masterOpts.children,
       placeholders: masterOpts.placeholders,
-      colorMap: masterOpts.colorMap,
+      colorMapping: masterOpts.colorMapping,
       headerFooter: masterOpts.headerFooter,
       textStyles: masterOpts.textStyles,
       preserve: masterOpts.preserve,
@@ -630,7 +630,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
         notesData.children ||
         notesData.text ||
         notesData.background ||
-        notesData.colorMapOverride
+        notesData.colorMappingOverride
       ) {
         slideOpts.notes = notesData;
       }

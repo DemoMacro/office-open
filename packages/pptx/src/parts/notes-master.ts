@@ -1,14 +1,10 @@
-import type { UniversalMeasure } from "@office-open/core";
+import { stringifyColorMapping } from "@office-open/core";
+import type { ColorMappingOptions, UniversalMeasure } from "@office-open/core";
 import { SP_TREE_HEADER } from "@shared/constants";
 
-import {
-  buildColorMapAttrs,
-  buildHfAttrs,
-  type ColorMapOptions,
-  type HeaderFooterOptions,
-} from "./handout-master";
+import { buildHfAttrs, type HeaderFooterOptions } from "./handout-master";
 
-export type { ColorMapOptions, HeaderFooterOptions };
+export type { HeaderFooterOptions };
 
 /** Notes style level override */
 export interface NotesLevelProperties {
@@ -22,8 +18,8 @@ export interface NotesLevelProperties {
 
 /** Options for notes master parameterization */
 export interface NotesMasterOptions {
-  /** Color map overrides */
-  colorMap?: ColorMapOptions;
+  /** Color mapping overrides */
+  colorMapping?: Partial<ColorMappingOptions>;
   /** Header/footer settings */
   headerFooter?: HeaderFooterOptions;
   /** Notes style overrides (levels 1-9) */
@@ -52,7 +48,7 @@ function buildNotesStyleXml(levels?: NotesLevelProperties[]): string {
 }
 
 export function buildNotesMasterXml(options?: NotesMasterOptions): string {
-  const colorMap = buildColorMapAttrs(options?.colorMap);
+  const colorMapping = stringifyColorMapping(options?.colorMapping, "p:clrMap");
   const hf = buildHfAttrs(options?.headerFooter);
   const notesStyle = buildNotesStyleXml(options?.notesStyle);
   return (
@@ -61,7 +57,7 @@ export function buildNotesMasterXml(options?: NotesMasterOptions): string {
     'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
     '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
     `<p:spTree>${SP_TREE_HEADER}</p:spTree></p:cSld>` +
-    `<p:clrMap ${colorMap}/>` +
+    colorMapping +
     `<p:hf ${hf}/>` +
     notesStyle +
     "</p:notesMaster>"

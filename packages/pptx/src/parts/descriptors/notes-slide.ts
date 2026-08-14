@@ -23,7 +23,7 @@ import type { PptxWriteContext } from "../../context";
 import type { BackgroundOptions } from "../background";
 import { backgroundDesc } from "./background";
 import { stringifyChild, parseChild } from "./bridge";
-import { colorMapOverrideDesc, type ColorMapOverrideOptions } from "./color-map-override";
+import { colorMappingOverrideDesc, type ColorMappingOverrideOptions } from "./color-map-override";
 
 // ── Types ──
 
@@ -33,7 +33,7 @@ export interface NotesSlideOptions {
   /** Shape-tree children (structured). When set, the structured path is used. */
   children?: SlideChild[];
   background?: BackgroundOptions;
-  colorMapOverride?: ColorMapOverrideOptions;
+  colorMappingOverride?: ColorMappingOverrideOptions;
   showMasterShapes?: boolean;
   showMasterPlaceholderAnimations?: boolean;
   /** Hidden notes slide (p:notes/@show="0"). */
@@ -50,7 +50,7 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
     const structured =
       opts.children !== undefined ||
       opts.background !== undefined ||
-      opts.colorMapOverride !== undefined;
+      opts.colorMappingOverride !== undefined;
     if (!structured) return buildNotesSlideXml({ text: opts.text });
 
     // Structured path — mirror slideDesc (p:notes has no transition/timing).
@@ -79,7 +79,7 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
     parts.push("</p:cSld>");
 
     parts.push(
-      colorMapOverrideDesc.stringify(opts.colorMapOverride, ctx) ??
+      colorMappingOverrideDesc.stringify(opts.colorMappingOverride, ctx) ??
         "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>",
     );
 
@@ -119,7 +119,7 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
     }
 
     const clrMapOvr = findChild(el, "p:clrMapOvr");
-    if (clrMapOvr) result.colorMapOverride = colorMapOverrideDesc.parse(clrMapOvr, ctx);
+    if (clrMapOvr) result.colorMappingOverride = colorMappingOverrideDesc.parse(clrMapOvr, ctx);
 
     return result as NotesSlideOptions;
   },

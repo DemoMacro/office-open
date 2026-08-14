@@ -7,7 +7,7 @@ import type {
 } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
 import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
-import type { ColorMapOverrideOptions } from "@parts/descriptors/color-map-override";
+import type { ColorMappingOverrideOptions } from "@parts/descriptors/color-map-override";
 import type { NotesSlideOptions } from "@parts/descriptors/notes-slide";
 import type { HandoutMasterOptions } from "@parts/handout-master";
 import type { NotesMasterOptions } from "@parts/notes-master";
@@ -68,7 +68,7 @@ export interface LayoutDefinition {
   controls?: ControlOptions[];
   customerData?: { rId: string }[];
   // Child slide elements
-  colorMapOverride?: ColorMapOverrideOptions;
+  colorMappingOverride?: ColorMappingOverrideOptions;
   transition?: TransitionOptions;
   timing?: TimingDescriptorOptions;
   // Fresh API (placeholder-template generation)

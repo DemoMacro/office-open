@@ -4,10 +4,11 @@
  * @module
  */
 
+import { parseColorMapping } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrMeasure, findChild } from "@office-open/xml";
-import { parseColorMap, parseHeaderFooter } from "@parts/handout-master";
+import { parseHeaderFooter } from "@parts/handout-master";
 import { buildNotesMasterXml } from "@parts/notes-master";
 import type { NotesMasterOptions, NotesLevelProperties } from "@parts/notes-master";
 
@@ -42,8 +43,8 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
     const result: Partial<NotesMasterDescriptorOptions> = {};
     const options: Partial<NotesMasterOptions> = {};
 
-    const colorMap = parseColorMap(findChild(el, "p:clrMap"));
-    if (colorMap) options.colorMap = colorMap;
+    const colorMapping = parseColorMapping(findChild(el, "p:clrMap"));
+    if (colorMapping) options.colorMapping = colorMapping;
 
     const headerFooter = parseHeaderFooter(findChild(el, "p:hf"));
     if (headerFooter) options.headerFooter = headerFooter;

@@ -129,7 +129,7 @@ function hasStructuredLayoutContent(def: LayoutDefinition): boolean {
     def.transition !== undefined ||
     def.timing !== undefined ||
     def.headerFooter !== undefined ||
-    def.colorMapOverride !== undefined ||
+    def.colorMappingOverride !== undefined ||
     (def.controls !== undefined && def.controls.length > 0) ||
     (def.customerData !== undefined && def.customerData.length > 0)
   );
@@ -225,7 +225,7 @@ function buildMasterMap(
           background: def.background,
           children: def.children,
           placeholders: def.placeholders,
-          colorMap: def.colorMap,
+          colorMapping: def.colorMapping,
           headerFooter: def.headerFooter,
           textStyles: def.textStyles,
           preserve: def.preserve,

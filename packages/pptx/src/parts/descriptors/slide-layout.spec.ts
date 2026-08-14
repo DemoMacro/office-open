@@ -55,19 +55,35 @@ describe("slideLayoutDesc stringify/parse", () => {
     expect(result.showMasterShapes).toBe(false);
   });
 
-  it("defaults colorMapOverride to masterClrMapping and round-trips it", () => {
+  it("defaults colorMappingOverride to masterClrMapping and round-trips it", () => {
     const result = roundTrip({ type: "blank" });
-    expect(result.colorMapOverride).toEqual({ kind: "master" });
+    expect(result.colorMappingOverride).toEqual({ kind: "master" });
   });
 
   it("round-trips an explicit color-mapping override", () => {
     const result = roundTrip({
       type: "blank",
-      colorMapOverride: { kind: "override", mapping: { bg1: "dk1", tx1: "lt1" } },
+      colorMappingOverride: {
+        kind: "override",
+        colorMapping: { background1: "dark1", text1: "light1" },
+      },
     });
-    expect(result.colorMapOverride).toEqual({
+    expect(result.colorMappingOverride).toEqual({
       kind: "override",
-      mapping: { bg1: "dk1", tx1: "lt1" },
+      colorMapping: {
+        background1: "dark1",
+        text1: "light1",
+        background2: "light2",
+        text2: "dark2",
+        accent1: "accent1",
+        accent2: "accent2",
+        accent3: "accent3",
+        accent4: "accent4",
+        accent5: "accent5",
+        accent6: "accent6",
+        hyperlink: "hyperlink",
+        followedHyperlink: "followedHyperlink",
+      },
     });
   });
 

@@ -967,13 +967,13 @@ describe("chartSpaceDesc", () => {
       type: "column",
       categories: ["A", "B"],
       series: [{ name: "S", values: [1, 2] }],
-      colorMapOverride: { bg1: "dk1", tx1: "lt1" },
+      colorMappingOverride: { background1: "dark1", text1: "light1" },
       protection: { chartObject: true, selection: false },
       externalData: { relationshipId: "rId1", autoUpdate: true },
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
     // CT_ColorMapping carries 12 ST_ColorSchemeIndex attributes (all required);
-    // keys the caller omits fall back to the identity mapping.
+    // keys the caller omits fall back to the standard mapping.
     expect(xml).toContain("<c:clrMapOvr ");
     expect(xml).toContain('bg1="dk1"');
     expect(xml).toContain('tx1="lt1"');
@@ -986,19 +986,19 @@ describe("chartSpaceDesc", () => {
     expect(xml).toContain('<c:autoUpdate val="1"/>');
 
     const result = roundTrip(opts);
-    expect(result.colorMapOverride).toEqual({
-      bg1: "dk1",
-      tx1: "lt1",
-      bg2: "lt2",
-      tx2: "dk2",
+    expect(result.colorMappingOverride).toEqual({
+      background1: "dark1",
+      text1: "light1",
+      background2: "light2",
+      text2: "dark2",
       accent1: "accent1",
       accent2: "accent2",
       accent3: "accent3",
       accent4: "accent4",
       accent5: "accent5",
       accent6: "accent6",
-      hlink: "hlink",
-      folHlink: "folHlink",
+      hyperlink: "hyperlink",
+      followedHyperlink: "followedHyperlink",
     });
     expect(result.protection).toEqual({ chartObject: true, selection: false });
     expect(result.externalData).toEqual({ relationshipId: "rId1", autoUpdate: true });

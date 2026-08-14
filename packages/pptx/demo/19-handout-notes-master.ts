@@ -10,9 +10,9 @@ const options: PresentationOptions = {
   includeHandoutMaster: true,
   includeNotesMaster: true,
   handoutMasterOptions: {
-    colorMap: {
-      bg1: "lt1",
-      tx1: "dk1",
+    colorMapping: {
+      background1: "light1",
+      text1: "dark1",
       accent1: "accent1",
     },
     headerFooter: {
@@ -23,9 +23,9 @@ const options: PresentationOptions = {
     },
   },
   notesMasterOptions: {
-    colorMap: {
-      bg1: "lt1",
-      tx1: "dk1",
+    colorMapping: {
+      background1: "light1",
+      text1: "dark1",
     },
     headerFooter: {
       date: true,

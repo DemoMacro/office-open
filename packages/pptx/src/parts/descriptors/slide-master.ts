@@ -13,7 +13,7 @@
  * @module
  */
 
-import { parseOnOff } from "@office-open/core";
+import { parseColorMapping, parseOnOff, stringifyColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import {
@@ -29,12 +29,7 @@ import type { MasterChild } from "@shared/file";
 import { extractPlaceholderDefinition } from "@shared/placeholder";
 
 import type { PptxWriteContext } from "../../context";
-import {
-  buildColorMapAttrs,
-  buildHfAttrs,
-  parseColorMap,
-  parseHeaderFooter,
-} from "../handout-master";
+import { buildHfAttrs, parseHeaderFooter } from "../handout-master";
 import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild, stringifyChild } from "./bridge";
@@ -129,7 +124,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     parts.push("</p:cSld>");
 
     // EG_TopLevelSlide — p:clrMap (required; defaults to the standard mapping).
-    parts.push(`<p:clrMap ${buildColorMapAttrs(opts.colorMap)}/>`);
+    parts.push(stringifyColorMapping(opts.colorMapping, "p:clrMap"));
 
     // p:sldLayoutIdLst (always emitted; empty when the master owns no layouts).
     const layoutIds = (opts.slideLayoutIds ?? []).map(
@@ -240,8 +235,8 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     }
 
     // EG_TopLevelSlide — p:clrMap (required).
-    const colorMap = parseColorMap(findChild(el, "p:clrMap"));
-    if (colorMap) result.colorMap = colorMap;
+    const colorMapping = parseColorMapping(findChild(el, "p:clrMap"));
+    if (colorMapping) result.colorMapping = colorMapping;
 
     // p:sldLayoutIdLst.
     const sldLayoutIdLst = findChild(el, "p:sldLayoutIdLst");

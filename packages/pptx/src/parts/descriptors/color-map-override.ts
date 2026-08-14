@@ -1,43 +1,33 @@
 /**
  * Color mapping override (p:clrMapOvr) descriptor for PPTX.
  *
- * CT_ColorMappingOverride — appears on slides, layouts, and masters. Two
- * forms: inherit the master mapping (a:masterClrMapping) or override the
- * 12 theme-color slots explicitly (a:overrideClrMapping bg1="dk1" ...).
+ * CT_ColorMappingOverride appears on child slides. It either inherits the
+ * master mapping or contains a complete a:overrideClrMapping.
  *
  * @module
  */
+import { parseColorMapping, stringifyColorMapping } from "@office-open/core";
+import type { ColorMappingOptions } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild } from "@office-open/xml";
 
-export type ColorMapOverrideOptions =
+export type ColorMappingOverrideOptions =
   | { kind: "master" }
-  | { kind: "override"; mapping: Record<string, string> };
+  | { kind: "override"; colorMapping: Partial<ColorMappingOptions> };
 
-export const colorMapOverrideDesc: CustomDescriptor<ColorMapOverrideOptions | undefined> = {
+export const colorMappingOverrideDesc: CustomDescriptor<ColorMappingOverrideOptions | undefined> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
     if (opts?.kind === "override") {
-      const attrs = Object.entries(opts.mapping)
-        .map(([k, v]) => `${k}="${v}"`)
-        .join(" ");
-      return `<p:clrMapOvr><a:overrideClrMapping${attrs ? " " + attrs : ""}/></p:clrMapOvr>`;
+      return `<p:clrMapOvr>${stringifyColorMapping(opts.colorMapping, "a:overrideClrMapping")}</p:clrMapOvr>`;
     }
-    // Explicit master or undefined default — both emit masterClrMapping.
     return "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>";
   },
 
   parse(el, _ctx) {
     if (findChild(el, "a:masterClrMapping")) return { kind: "master" };
-    const override = findChild(el, "a:overrideClrMapping");
-    if (override?.attributes) {
-      const mapping: Record<string, string> = {};
-      for (const [k, v] of Object.entries(override.attributes)) {
-        if (typeof v === "string") mapping[k] = v;
-      }
-      if (Object.keys(mapping).length > 0) return { kind: "override", mapping };
-    }
-    return undefined;
+    const colorMapping = parseColorMapping(findChild(el, "a:overrideClrMapping"));
+    return colorMapping ? { kind: "override", colorMapping } : undefined;
   },
 };

@@ -24,7 +24,7 @@ import type { PptxWriteContext } from "../../context";
 import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild, stringifyChild } from "./bridge";
-import { colorMapOverrideDesc } from "./color-map-override";
+import { colorMappingOverrideDesc } from "./color-map-override";
 import { readTransition, stringifyTransition } from "./slide";
 
 // ── Display name → SlideLayoutType mapping (fallback when @type absent) ──
@@ -117,7 +117,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // EG_ChildSlide — p:clrMapOvr (always present; defaults to masterClrMapping).
     parts.push(
-      colorMapOverrideDesc.stringify(opts.colorMapOverride, ctx) ??
+      colorMappingOverrideDesc.stringify(opts.colorMappingOverride, ctx) ??
         "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>",
     );
 
@@ -234,7 +234,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // EG_ChildSlide — p:clrMapOvr.
     const clrMapOvr = findChild(el, "p:clrMapOvr");
-    if (clrMapOvr) result.colorMapOverride = colorMapOverrideDesc.parse(clrMapOvr, ctx);
+    if (clrMapOvr) result.colorMappingOverride = colorMappingOverrideDesc.parse(clrMapOvr, ctx);
 
     // p:transition.
     const transition = findChild(el, "p:transition");

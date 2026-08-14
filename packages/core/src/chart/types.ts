@@ -7,6 +7,8 @@
  * @module
  */
 
+import type { ColorMappingOptions } from "../theme/theme-options";
+
 // ── Series common (CT_Ser shared children) ──
 
 /** Fields shared by every chart series type (name + optional decorations). */
@@ -225,7 +227,7 @@ export interface ChartSpaceOptions {
   /** ofPie second-pie size — number (5–200) or percent string (c:secondPieSize). */
   secondPieSize?: number | string;
   /** Theme color mapping override (c:clrMapOvr, before c:chart). */
-  colorMapOverride?: ColorMapOverrideOptions;
+  colorMappingOverride?: Partial<ColorMappingOptions>;
   /** Chart protection (c:protection, before c:chart). */
   protection?: ProtectionOptions;
   /** External linked workbook (c:externalData, after c:txPr). */
@@ -444,40 +446,6 @@ export interface DataTableOptions {
 }
 
 // ── ChartSpace-level containers (CT_ChartSpace) ──
-
-export type ColorSchemeIndex =
-  | "dk1"
-  | "lt1"
-  | "dk2"
-  | "lt2"
-  | "accent1"
-  | "accent2"
-  | "accent3"
-  | "accent4"
-  | "accent5"
-  | "accent6"
-  | "hlink"
-  | "folHlink";
-
-/**
- * Theme color mapping override (a:CT_ColorMapping — 12 ST_ColorSchemeIndex
- * attributes, all XSD-required). Omitted keys fall back to the identity
- * mapping on serialization so emission is always schema-valid.
- */
-export interface ColorMapOverrideOptions {
-  bg1?: ColorSchemeIndex;
-  tx1?: ColorSchemeIndex;
-  bg2?: ColorSchemeIndex;
-  tx2?: ColorSchemeIndex;
-  accent1?: ColorSchemeIndex;
-  accent2?: ColorSchemeIndex;
-  accent3?: ColorSchemeIndex;
-  accent4?: ColorSchemeIndex;
-  accent5?: ColorSchemeIndex;
-  accent6?: ColorSchemeIndex;
-  hlink?: ColorSchemeIndex;
-  folHlink?: ColorSchemeIndex;
-}
 
 /** Chart protection flags (CT_Protection). */
 export interface ProtectionOptions {

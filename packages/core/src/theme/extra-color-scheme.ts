@@ -25,7 +25,7 @@ export function stringifyExtraColorSchemes(
         scheme.colorScheme,
         scheme.colorScheme.name ?? fallbackName,
       );
-      const clrMap = scheme.colorMap ? stringifyColorMapping(scheme.colorMap) : "";
+      const clrMap = scheme.colorMapping ? stringifyColorMapping(scheme.colorMapping) : "";
       return `<a:extraClrScheme>${clrScheme}${clrMap}</a:extraClrScheme>`;
     })
     .join("");
@@ -42,8 +42,8 @@ export function parseExtraColorSchemes(
     if (child.name !== "a:extraClrScheme") continue;
     const colorScheme = parseColorScheme(findChild(child, "a:clrScheme"));
     if (!colorScheme) continue;
-    const colorMap = parseColorMapping(findChild(child, "a:clrMap"));
-    result.push(colorMap ? { colorScheme, colorMap } : { colorScheme });
+    const colorMapping = parseColorMapping(findChild(child, "a:clrMap"));
+    result.push(colorMapping ? { colorScheme, colorMapping } : { colorScheme });
   }
   return result.length > 0 ? result : undefined;
 }

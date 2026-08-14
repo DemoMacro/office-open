@@ -1,8 +1,9 @@
+import { parseColorMapping } from "@office-open/core";
 import { findChild, parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import { PptxWriteContext } from "../../context";
-import { parseColorMap, parseHeaderFooter } from "../handout-master";
+import { parseHeaderFooter } from "../handout-master";
 import type { SlideMasterDescriptorOptions } from "./slide-master";
 import { slideMasterDesc } from "./slide-master";
 import type { TextListStyleOptions } from "./text-list-style";
@@ -153,20 +154,20 @@ describe("slide-master placeholder facets round-trip", () => {
   });
 });
 
-describe("slide-master colorMap/headerFooter round-trip", () => {
-  it("emits custom colorMap and headerFooter, parseable back", () => {
+describe("slide-master colorMapping/headerFooter round-trip", () => {
+  it("emits custom colorMapping and headerFooter, parseable back", () => {
     const el = parseXml(
       freshXml({
-        colorMap: { bg1: "dk1", tx1: "lt1" },
+        colorMapping: { background1: "dark1", text1: "light1" },
         headerFooter: { date: true, footer: true },
       }),
     ).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
 
-    const clrMap = parseColorMap(findChild(el, "p:clrMap"));
-    expect(clrMap?.bg1).toBe("dk1");
-    expect(clrMap?.tx1).toBe("lt1");
-    expect(clrMap?.bg2).toBe("lt2"); // untouched keys keep standard defaults
+    const clrMap = parseColorMapping(findChild(el, "p:clrMap"));
+    expect(clrMap?.background1).toBe("dark1");
+    expect(clrMap?.text1).toBe("light1");
+    expect(clrMap?.background2).toBe("light2"); // untouched keys keep standard defaults
 
     const hf = parseHeaderFooter(findChild(el, "p:hf"));
     expect(hf?.date).toBe(true);
@@ -175,13 +176,13 @@ describe("slide-master colorMap/headerFooter round-trip", () => {
     expect(hf?.slideNumber).toBe(false);
   });
 
-  it("emits standard defaults when colorMap/headerFooter are undefined", () => {
+  it("emits standard defaults when colorMapping/headerFooter are undefined", () => {
     const el = parseXml(freshXml()).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
 
-    const clrMap = parseColorMap(findChild(el, "p:clrMap"));
-    expect(clrMap?.bg1).toBe("lt1");
-    expect(clrMap?.tx1).toBe("dk1");
+    const clrMap = parseColorMapping(findChild(el, "p:clrMap"));
+    expect(clrMap?.background1).toBe("light1");
+    expect(clrMap?.text1).toBe("dark1");
 
     const hf = parseHeaderFooter(findChild(el, "p:hf"));
     expect(hf?.date).toBe(false);

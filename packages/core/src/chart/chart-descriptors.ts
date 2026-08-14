@@ -9,6 +9,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { attr, findChild, children, textOf } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
+import { parseColorMapping, stringifyColorMapping } from "../theme/color-mapping";
 import { parseOnOff } from "../util/values";
 import type {
   ChartSpaceOptions,
@@ -50,8 +51,6 @@ import type {
   DataTableOptions,
   OfPieType,
   SplitType,
-  ColorMapOverrideOptions,
-  ColorSchemeIndex,
   ProtectionOptions,
   ExternalDataOptions,
   HeaderFooterOptions,
@@ -418,44 +417,6 @@ function stringifyDataTable(opts: DataTableOptions): string {
   if (opts.showOutline !== undefined) parts.push(`<c:showOutline${boolVal(opts.showOutline)}/>`);
   if (opts.showLegendKeys !== undefined) parts.push(`<c:showKeys${boolVal(opts.showLegendKeys)}/>`);
   return `<c:dTable>${parts.join("")}</c:dTable>`;
-}
-
-const COLOR_MAP_KEYS = [
-  "bg1",
-  "tx1",
-  "bg2",
-  "tx2",
-  "accent1",
-  "accent2",
-  "accent3",
-  "accent4",
-  "accent5",
-  "accent6",
-  "hlink",
-  "folHlink",
-] as const;
-
-const COLOR_MAP_IDENTITY: Required<ColorMapOverrideOptions> = {
-  bg1: "lt1",
-  tx1: "dk1",
-  bg2: "lt2",
-  tx2: "dk2",
-  accent1: "accent1",
-  accent2: "accent2",
-  accent3: "accent3",
-  accent4: "accent4",
-  accent5: "accent5",
-  accent6: "accent6",
-  hlink: "hlink",
-  folHlink: "folHlink",
-};
-
-function stringifyColorMapOverride(opts: ColorMapOverrideOptions): string {
-  // CT_ColorMapping: 12 ST_ColorSchemeIndex attributes, all XSD use="required".
-  // Merge caller overrides onto the identity mapping so emission is always complete.
-  const merged = { ...COLOR_MAP_IDENTITY, ...opts };
-  const attrs = COLOR_MAP_KEYS.map((k) => `${k}="${escapeXml(merged[k])}"`).join(" ");
-  return `<c:clrMapOvr ${attrs}/>`;
 }
 
 function stringifyProtection(opts: ProtectionOptions): string {
@@ -1386,17 +1347,6 @@ function readDataTable(plotArea: XmlElement | undefined): DataTableOptions | und
 
 // ── ChartSpace-level read (CT_ChartSpace children) ──
 
-function readColorMapOverride(el: XmlElement): ColorMapOverrideOptions | undefined {
-  const clrMapOvr = findChild(el, "c:clrMapOvr");
-  if (!clrMapOvr?.attributes) return undefined;
-  const opts: ColorMapOverrideOptions = {};
-  for (const k of COLOR_MAP_KEYS) {
-    const v = clrMapOvr.attributes[k];
-    if (v !== undefined) opts[k] = v as ColorSchemeIndex;
-  }
-  return Object.keys(opts).length ? opts : undefined;
-}
-
 function readProtection(el: XmlElement): ProtectionOptions | undefined {
   const protection = findChild(el, "c:protection");
   if (!protection) return undefined;
@@ -1772,7 +1722,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     }
 
     // CT_ChartSpace: style → clrMapOvr → pivotSource → protection → chart
-    if (opts.colorMapOverride) parts.push(stringifyColorMapOverride(opts.colorMapOverride));
+    if (opts.colorMappingOverride) {
+      parts.push(stringifyColorMapping(opts.colorMappingOverride, "c:clrMapOvr"));
+    }
     if (opts.pivotSource) parts.push(stringifyPivotSource(opts.pivotSource));
     if (opts.protection) parts.push(stringifyProtection(opts.protection));
 
@@ -1858,8 +1810,8 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     }
 
     // CT_ChartSpace: clrMapOvr + protection (before c:chart)
-    const colorMapOverride = readColorMapOverride(el);
-    if (colorMapOverride) result.colorMapOverride = colorMapOverride;
+    const colorMappingOverride = parseColorMapping(findChild(el, "c:clrMapOvr"));
+    if (colorMappingOverride) result.colorMappingOverride = colorMappingOverride;
     const protection = readProtection(el);
     if (protection) result.protection = protection;
     const pivotSource = readPivotSource(el);
