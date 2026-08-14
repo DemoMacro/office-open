@@ -11,20 +11,47 @@ export type IdFormat = "rId" | "plain";
 export const formatId = (offset: number, index: number, style: IdFormat): string =>
   style === "rId" ? `rId${offset + index}` : `${offset + index}`;
 
-/** Single-pass regex replacement for `{key}` placeholders using a Map lookup. */
-const PLACEHOLDER_RE = /\{([^{}]+)\}/g;
+/**
+ * Find the next `{key}` placeholder at/after `from`. Returns `[open, close]`
+ * brace indices, or undefined when none remain. Mirrors the semantics of
+ * `/\{([^{}]+)\}/g`: empty keys and keys containing `{` are skipped (the scan
+ * restarts after the nested brace), matching what the regex would accept.
+ */
+function nextPlaceholder(xml: string, from: number): [number, number] | undefined {
+  let pos = from;
+  for (;;) {
+    const open = xml.indexOf("{", pos);
+    if (open === -1) return undefined;
+    const close = xml.indexOf("}", open + 1);
+    if (close === -1) return undefined;
+    const keyLen = close - open - 1;
+    if (keyLen === 0) {
+      pos = open + 1;
+      continue;
+    }
+    if (xml.indexOf("{", open + 1) < close) {
+      // Nested "{" inside the candidate key — the regex would restart there.
+      pos = open + 1;
+      continue;
+    }
+    return [open, close];
+  }
+}
 
 function replacePlaceholders(xml: string, map: Map<string, string>): string {
   const parts: string[] = [];
   let last = 0;
-  for (const m of xml.matchAll(PLACEHOLDER_RE)) {
-    const key = m[1];
-    if (key === undefined) continue;
-    const replacement = map.get(key);
+  let pos = 0;
+  for (;;) {
+    const found = nextPlaceholder(xml, pos);
+    if (found === undefined) break;
+    const [open, close] = found;
+    const replacement = map.get(xml.substring(open + 1, close));
     if (replacement !== undefined) {
-      parts.push(xml.substring(last, m.index!), replacement);
-      last = m.index! + m[0].length;
+      parts.push(xml.substring(last, open), replacement);
+      last = close + 1;
     }
+    pos = close + 1;
   }
   if (last === 0) return xml;
   parts.push(xml.substring(last));
@@ -100,24 +127,30 @@ export function findAndReplaceImagePlaceholders(
   const replaceMap = new Map<string, string>();
   const parts: string[] = [];
   let last = 0;
+  let pos = 0;
 
-  for (const m of xml.matchAll(PLACEHOLDER_RE)) {
-    const key = m[1];
-    if (key === undefined) continue;
+  for (;;) {
+    const found = nextPlaceholder(xml, pos);
+    if (found === undefined) break;
+    const [open, close] = found;
+    const key = xml.substring(open + 1, close);
     const item = itemMap.get(key);
     if (item !== undefined) {
-      if (!replaceMap.has(key)) {
+      let id = replaceMap.get(key);
+      if (id === undefined) {
         // Use the referenced-local position (not the global media index) so the
         // generated IDs align with the caller's per-part addRelationship(offset+i)
         // loop. Using the global index desyncs the body's r:embed from the part's
         // .rels when a part references only a subset of the global media array
         // (e.g. headers/footers, whose images sit at high global indices).
-        replaceMap.set(key, formatId(offset, referenced.length, idFormat));
+        id = formatId(offset, referenced.length, idFormat);
+        replaceMap.set(key, id);
         referenced.push(item);
       }
-      parts.push(xml.substring(last, m.index!), replaceMap.get(key)!);
-      last = m.index! + m[0].length;
+      parts.push(xml.substring(last, open), id);
+      last = close + 1;
     }
+    pos = close + 1;
   }
 
   if (last === 0) return { xml, referenced: [] };
