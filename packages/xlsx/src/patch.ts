@@ -38,6 +38,7 @@ import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { SharedStrings, sharedStringsDesc } from "@parts/shared-strings";
 import { buildWorksheetXml } from "@parts/worksheet";
 import type { CommentOptions, WorksheetOptions } from "@parts/worksheet";
+import { dateToSerialNumber } from "@util/index";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
@@ -77,10 +78,6 @@ export interface PatchWorkbookOptions<
   comments?: Readonly<Record<string, CommentOptions[]>>;
 }
 
-// Excel serial-date epoch: 1899-12-30 accounts for the spurious 1900 leap year.
-const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30);
-const MS_PER_DAY = 86_400_000;
-
 const WORKSHEET_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml";
 const WORKSHEET_REL_TYPE =
@@ -103,8 +100,6 @@ const STUB_READ_CTX: ReadContext = {
   getPart: () => undefined,
   getRaw: () => undefined,
 };
-
-const toExcelSerial = (date: Date): number => (date.getTime() - EXCEL_EPOCH_MS) / MS_PER_DAY;
 
 /** Human-readable form for string-substitution (mixed-text) fallback. */
 const toDisplayString = (value: Exclude<ScalarValue, string>): string => {
@@ -304,7 +299,7 @@ function rewriteCellToValue(cell: Element, value: Exclude<ScalarValue, string>):
     vText = value ? "1" : "0";
   } else if (value instanceof Date) {
     delete attrs["t"]; // serial date is numeric
-    vText = String(toExcelSerial(value));
+    vText = String(dateToSerialNumber(value));
   } else {
     delete attrs["t"]; // plain numeric
     vText = String(value);

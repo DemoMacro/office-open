@@ -19,11 +19,10 @@ export function columnToLetter(col: number): string {
  */
 export function dateToSerialNumber(date: Date): number {
   // Excel treats 1900 as a leap year (bug inherited from Lotus 1-2-3).
-  // The epoch is effectively December 30, 1899 = 0.
-  const epoch = new Date(1899, 11, 30);
-  const msPerDay = 86400000;
-  const diff = date.getTime() - epoch.getTime();
-  return diff / msPerDay;
+  // The epoch is effectively December 30, 1899 = 0, fixed in UTC so the
+  // serial does not shift with the host timezone.
+  const epochMs = Date.UTC(1899, 11, 30);
+  return (date.getTime() - epochMs) / 86400000;
 }
 
 /**
