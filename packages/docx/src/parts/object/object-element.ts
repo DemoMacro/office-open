@@ -15,6 +15,7 @@ import { toUint8Array, parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, type Element } from "@office-open/xml";
+import { parseVmlStyle } from "@parts/textbox/shape/shape";
 import type { EmbeddingData } from "@shared/embeddings/embeddings";
 import type { MediaData } from "@shared/media/data";
 
@@ -164,10 +165,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       if (id) result.shapeId = id;
       const style = attr(shape, "style");
       if (style) {
-        const w = style.match(/width:([^;]+)/);
-        const h = style.match(/height:([^;]+)/);
-        if (w) result.width = (w[1] ?? "").trim() as UniversalMeasure;
-        if (h) result.height = (h[1] ?? "").trim() as UniversalMeasure;
+        const parsed = parseVmlStyle(style);
+        if (parsed["width"]) result.width = parsed["width"] as UniversalMeasure;
+        if (parsed["height"]) result.height = parsed["height"] as UniversalMeasure;
       }
     }
 

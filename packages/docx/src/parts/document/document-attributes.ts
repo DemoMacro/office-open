@@ -61,3 +61,21 @@ export const DocumentAttributeNamespaces = {
  * Type representing valid namespace keys.
  */
 export type DocumentAttributeNamespace = keyof typeof DocumentAttributeNamespaces;
+
+/**
+ * Namespace-declaration attribute string for a WordprocessingML root element,
+ * derived from the canonical {@link DocumentAttributeNamespaces} table. Key
+ * order is preserved per call site so each part keeps its established byte
+ * layout; the single table kills hand-copied URI drift between parts.
+ */
+export const documentNamespaceAttributes = (keys: readonly DocumentAttributeNamespace[]): string =>
+  keys.map((key) => `xmlns:${key}="${DocumentAttributeNamespaces[key]}"`).join(" ");
+
+/**
+ * Object form of {@link documentNamespaceAttributes} for element-builder
+ * APIs that take an attributes record.
+ */
+export const documentNamespaceRecord = (
+  keys: readonly DocumentAttributeNamespace[],
+): Record<string, string> =>
+  Object.fromEntries(keys.map((key) => [`xmlns:${key}`, DocumentAttributeNamespaces[key]]));

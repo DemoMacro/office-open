@@ -1,4 +1,5 @@
 import { escapeXml } from "@office-open/xml";
+import { documentNamespaceRecord } from "@parts/document/document-attributes";
 import { AlignmentType } from "@parts/paragraph";
 /**
  * Factory module for creating default document styles.
@@ -411,11 +412,7 @@ export class DefaultStylesFactory {
 
     // XML namespace attributes for styles root element (matching Word exactly)
     const initialAttributes: Record<string, string> = {
-      "xmlns:mc": "http://schemas.openxmlformats.org/markup-compatibility/2006",
-      "xmlns:r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
-      "xmlns:w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
-      "xmlns:w14": "http://schemas.microsoft.com/office/word/2010/wordml",
-      "xmlns:w15": "http://schemas.microsoft.com/office/word/2012/wordml",
+      ...documentNamespaceRecord(["mc", "r", "w", "w14", "w15"]),
       "mc:Ignorable": "w14 w15",
     };
 

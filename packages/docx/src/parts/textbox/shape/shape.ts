@@ -44,6 +44,31 @@ export const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
 };
 
 /**
+ * Serialize a VmlShapeStyle object to the VML style attribute value
+ * (`"width:100pt;height:50pt"`), translating property names via
+ * {@link styleToKeyMap}.
+ */
+export function stringifyVmlStyle(style: VmlShapeStyle): string {
+  return Object.entries(style)
+    .map(([key, value]) => `${styleToKeyMap[key as keyof VmlShapeStyle]}:${value}`)
+    .join(";");
+}
+
+/**
+ * Parse a VML style attribute value into a CSS-name-keyed record
+ * (`{ "mso-position-horizontal": "absolute", … }`). Keys stay in VML/CSS form;
+ * callers read the entries they understand (width/height, wrap distances, …).
+ */
+export function parseVmlStyle(styleStr: string): Record<string, string> {
+  const style: Record<string, string> = {};
+  for (const part of styleStr.split(";")) {
+    const [key, val] = part.split(":").map((s) => s.trim());
+    if (key && val) style[key] = val;
+  }
+  return style;
+}
+
+/**
  * VML shape styling properties for WordprocessingML documents.
  *
  * These properties map to CSS-style attributes on VML shape elements and control

@@ -9,18 +9,7 @@ import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { DocxReadContext } from "../../context";
-
-/**
- * Parse VML shape style string into VmlShapeStyle-like object.
- */
-function parseVmlStyle(styleStr: string): Record<string, string> {
-  const style: Record<string, string> = {};
-  for (const part of styleStr.split(";")) {
-    const [key, val] = part.split(":").map((s) => s.trim());
-    if (key && val) style[key] = val;
-  }
-  return style;
-}
+import { parseVmlStyle } from "./shape/shape";
 
 /**
  * Parse a w:pict element that contains a textbox.

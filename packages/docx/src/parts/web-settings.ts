@@ -108,6 +108,8 @@ import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@off
 import type { Element } from "@office-open/xml";
 import type { FrameOptions, FramesetSplitbarOptions } from "@parts/frameset";
 
+import { documentNamespaceAttributes } from "./document/document-attributes";
+
 /** Subset of WebSettingsOptions for descriptor stringify. */
 export interface WebSettingsInput {
   frameset?: FramesetOptions;
@@ -125,11 +127,7 @@ export interface WebSettingsInput {
   saveSmartTagsAsXml?: boolean;
 }
 
-const WS_NS =
-  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
-  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
-  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
-  'xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"';
+const WS_NS = documentNamespaceAttributes(["mc", "r", "w", "w15"]);
 
 function wsOnOff(tag: string, val: boolean): string {
   return `<${tag} w:val="${val ? "true" : "false"}"/>`;
