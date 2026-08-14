@@ -1,9 +1,11 @@
 /**
- * VML shape module for WordprocessingML documents.
+ * VML style mini-language for WordprocessingML documents.
  *
- * Provides the VmlShapeStyle type and style-to-key mapping used by compile/
- * and parse paths. Runtime shape construction has been migrated to the
- * descriptor pipeline.
+ * VML elements (v:shape, v:rect, …) carry layout in a CSS-like `style`
+ * attribute (`"position:absolute;width:100pt;height:50pt"`). This module owns
+ * the shared vocabulary: the VmlShapeStyle type, the property-name mapping,
+ * and the stringify/parse pair used by the textbox, object, and section
+ * paths. VML is a docx-only namespace, so this stays in the docx package.
  *
  * References:
  * - https://c-rex.net/samples/ooxml/e1/Part3/OOXML_P3_Primer_OfficeArt_topic_ID0ELU5O.html
@@ -11,7 +13,19 @@
  *
  * @module
  */
-import type { LengthUnit } from "../types";
+import type { Percentage, RelativeMeasure, UniversalMeasure } from "@office-open/core";
+
+/**
+ * Represents a length unit value for VML shape styling.
+ *
+ * Length units can be specified in multiple formats:
+ * - "auto" - Automatically calculated by the application
+ * - number - Numeric value (typically in points)
+ * - Percentage - Percentage-based measurement
+ * - UniversalMeasure - Measurement with explicit units (pt, cm, in, etc.)
+ * - RelativeMeasure - Relative measurement units
+ */
+export type LengthUnit = "auto" | number | Percentage | UniversalMeasure | RelativeMeasure;
 
 /**
  * Maps VmlShapeStyle property names to their corresponding CSS-style property names.
@@ -117,7 +131,7 @@ export interface VmlShapeStyle {
   top?: LengthUnit;
   /** Specifies whether a shape is displayed. Default is inherit. */
   visibility?: "hidden" | "inherit";
-  /** Specifies the width of the containing block of the shape. Default is 0. */
+  /** Specifies the width of the containing block. Default is 0. */
   width: LengthUnit;
   /** Specifies the display order of overlapping shapes. Default is 0. */
   zIndex?: "auto" | number;

@@ -15,7 +15,8 @@ import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 import type { TableOptions } from "@parts/table/table";
-import type { VmlShapeStyle } from "@parts/textbox/shape/shape";
+
+import type { VmlShapeStyle } from "./vml/vml-style";
 
 /**
  * Discriminated union for section body, header, and footer children.

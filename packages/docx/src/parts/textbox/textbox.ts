@@ -10,8 +10,7 @@
  */
 import type { ParagraphOptions } from "@parts/paragraph";
 import type { SectionChild } from "@shared/section";
-
-import type { VmlShapeStyle } from "./shape/shape";
+import type { VmlShapeStyle } from "@shared/vml/vml-style";
 
 /**
  * Options for creating a Textbox.

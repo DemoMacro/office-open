@@ -15,9 +15,9 @@ import { toUint8Array, parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, type Element } from "@office-open/xml";
-import { parseVmlStyle } from "@parts/textbox/shape/shape";
 import type { EmbeddingData } from "@shared/embeddings/embeddings";
 import type { MediaData } from "@shared/media/data";
+import { parseVmlStyle } from "@shared/vml/vml-style";
 
 import type { BodyContext } from "../../context";
 import { createPictureData } from "../paragraph/run/picture-run";

@@ -59,13 +59,13 @@ import {
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
-import type { VmlShapeStyle } from "@parts/textbox/shape/shape";
-import { stringifyVmlStyle } from "@parts/textbox/shape/shape";
 import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
 import type { MediaData } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
 import { parseShading } from "@shared/shading";
+import type { VmlShapeStyle } from "@shared/vml/vml-style";
+import { stringifyVmlStyle } from "@shared/vml/vml-style";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
