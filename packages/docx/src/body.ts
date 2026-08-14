@@ -73,7 +73,11 @@ import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
 import type { ParagraphChild, SdtRunOptions } from "./parts/paragraph/paragraph";
-import { stringifyParagraphProperties, stringifyRunProperties } from "./parts/paragraph/stringify";
+import {
+  EMPTY_PPR_RESULT,
+  stringifyParagraphProperties,
+  stringifyRunProperties,
+} from "./parts/paragraph/stringify";
 import { replaceRelsWithPlaceholders } from "./util/replace-media-placeholders";
 import { stringifyElement } from "./util/stringify-element";
 
@@ -87,7 +91,7 @@ export type { BodyContext } from "./context";
  * Handles text, children, breaks, and run properties.
  */
 export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
-  const parts: string[] = [];
+  let body = "";
 
   // Pre-scan children for commentReference — needs CommentReference style in rPr
   let commentRefStyle = false;
@@ -103,11 +107,11 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
   // Run properties — inject CommentReference style if needed
   const runOpts = commentRefStyle ? { ...opts, style: "CommentReference" as const } : opts;
   const rPr = stringifyRunProperties(runOpts);
-  if (rPr) parts.push(rPr);
+  if (rPr) body += rPr;
 
   // Breaks (w:br) — count shorthand or structured with clear (CT_Br)
   if (opts.break) {
-    parts.push(breakXml(opts.break));
+    body += breakXml(opts.break);
   }
 
   // Children or text
@@ -115,27 +119,27 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
     for (const child of opts.children) {
       if (typeof child === "string") {
         // Simple text string — direct output
-        parts.push(`<w:t xml:space="preserve">${escapeXml(child)}</w:t>`);
+        body += `<w:t xml:space="preserve">${escapeXml(child)}</w:t>`;
       } else if (typeof child === "object" && child !== null) {
         // Simple run-level elements — bare content, no <w:r> wrapper
         if ("tab" in child) {
-          parts.push("<w:tab/>");
+          body += "<w:tab/>";
           continue;
         }
         if ("pageBreak" in child) {
-          parts.push('<w:br w:type="page"/>');
+          body += '<w:br w:type="page"/>';
           continue;
         }
         if ("columnBreak" in child) {
-          parts.push('<w:br w:type="column"/>');
+          body += '<w:br w:type="column"/>';
           continue;
         }
         if ("break" in child) {
-          parts.push(breakXml((child as { break: number | BreakOptions }).break));
+          body += breakXml((child as { break: number | BreakOptions }).break);
           continue;
         }
         if ("commentReference" in child) {
-          parts.push(`<w:commentReference w:id="${Number(child.commentReference)}"/>`);
+          body += `<w:commentReference w:id="${Number(child.commentReference)}"/>`;
           continue;
         }
 
@@ -143,26 +147,21 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
         // { noBreakHyphen: true } → <w:noBreakHyphen/>, etc.
         const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0] ?? ""];
         if (emptyXml) {
-          parts.push(emptyXml);
+          body += emptyXml;
           continue;
         }
 
         // OLE object — w:object (VML shape + objectEmbed/link/control/movie)
         if ("object" in child) {
-          parts.push(
-            objectDesc.stringify((child as { object: ObjectElementOptions }).object, ctx) ?? "",
-          );
+          body +=
+            objectDesc.stringify((child as { object: ObjectElementOptions }).object, ctx) ?? "";
           continue;
         }
 
         // JSON child dispatch (images, charts, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
-          if (Array.isArray(jsonResult)) {
-            parts.push(...jsonResult);
-          } else {
-            parts.push(jsonResult);
-          }
+          body += Array.isArray(jsonResult) ? jsonResult.join("") : jsonResult;
         } else {
           // Fallback: treat as an object-tree-like value — should not happen in JSON path
           throw new Error(`Unsupported run child type: ${Object.keys(child).join(", ")}`);
@@ -170,17 +169,15 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
       }
     }
   } else if (opts.text !== undefined) {
-    parts.push(`<w:t xml:space="preserve">${escapeXml(String(opts.text))}</w:t>`);
+    body += `<w:t xml:space="preserve">${escapeXml(String(opts.text))}</w:t>`;
   }
 
   // rsid attributes on <w:r>
-  const rsidAttrs: string[] = [];
-  if (opts.rsid) rsidAttrs.push(` w:rsidR="${opts.rsid}"`);
-  if (opts.runPropertiesRsid) rsidAttrs.push(` w:rsidRPr="${opts.runPropertiesRsid}"`);
-  if (opts.deletionRsid) rsidAttrs.push(` w:rsidDel="${opts.deletionRsid}"`);
-  const attr = rsidAttrs.join("");
+  let attr = "";
+  if (opts.rsid) attr += ` w:rsidR="${opts.rsid}"`;
+  if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
+  if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
 
-  const body = parts.join("");
   return body.length === 0 ? (attr ? `<w:r${attr}/>` : "<w:r/>") : `<w:r${attr}>${body}</w:r>`;
 }
 
@@ -196,15 +193,19 @@ export function stringifyParagraph(
   ctx: BodyContext,
   sectionPropertiesXml?: string,
 ): string {
-  const resolved: ParagraphOptions = typeof opts === "string" ? { text: opts } : opts;
-  const parts: string[] = [];
+  const isPlainText = typeof opts === "string";
+  const resolved: ParagraphOptions = isPlainText ? { text: opts } : opts;
+  let body = "";
 
-  // Build paragraph properties — direct string output, no intermediate object tree
-  const props = stringifyParagraphProperties(resolved);
+  // Build paragraph properties — direct string output, no intermediate object tree.
+  // A string paragraph is `{ text }` by construction: no pPr fields, no numbering.
+  const props = isPlainText ? EMPTY_PPR_RESULT : stringifyParagraphProperties(resolved);
 
-  // Register numbering references
-  if (!(ctx.viewWrapper instanceof FontWrapper)) {
-    for (const ref of props.numberingReferences) {
+  // Register numbering references (length check skips the iterator allocation
+  // on the common no-numbering path)
+  const numberingRefs = props.numberingReferences;
+  if (numberingRefs.length > 0 && !(ctx.viewWrapper instanceof FontWrapper)) {
+    for (const ref of numberingRefs) {
       ctx.file.numbering.createConcreteNumberingInstance(ref.reference, ref.instance);
     }
   }
@@ -213,53 +214,48 @@ export function stringifyParagraph(
   if (props.xml) {
     if (sectionPropertiesXml) {
       // Insert sectPr before closing </w:pPr>
-      parts.push(props.xml.replace("</w:pPr>", sectionPropertiesXml + "</w:pPr>"));
+      body += props.xml.replace("</w:pPr>", sectionPropertiesXml + "</w:pPr>");
     } else {
-      parts.push(props.xml);
+      body += props.xml;
     }
   } else if (sectionPropertiesXml) {
     // No pPr but we need sectPr — wrap in pPr
-    parts.push(`<w:pPr>${sectionPropertiesXml}</w:pPr>`);
+    body += `<w:pPr>${sectionPropertiesXml}</w:pPr>`;
   }
 
-  // Text shorthand
+  // Text shorthand — the run is `{ text }` by construction (no rPr/break/children/rsid),
+  // so build the bare <w:r> directly instead of walking stringifyRun's full dispatch.
   if (resolved.text !== undefined) {
-    parts.push(stringifyRun({ text: resolved.text }, ctx));
+    body += `<w:r><w:t xml:space="preserve">${escapeXml(String(resolved.text))}</w:t></w:r>`;
   }
 
   // Children
   if (resolved.children) {
     for (const child of resolved.children) {
       if (typeof child === "string") {
-        parts.push(stringifyRun({ text: child }, ctx));
+        body += `<w:r><w:t xml:space="preserve">${escapeXml(child)}</w:t></w:r>`;
       } else if (typeof child === "object" && child !== null) {
         // Try JSON child dispatch first (image, chart, pageBreak, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
-          if (Array.isArray(jsonResult)) {
-            parts.push(...jsonResult);
-          } else {
-            parts.push(jsonResult);
-          }
+          body += Array.isArray(jsonResult) ? jsonResult.join("") : jsonResult;
         } else {
           // RunOptions-like plain object — may be an empty run carrying only
           // run properties (round-tripped from <w:r><w:rPr>…</w:rPr></w:r>).
-          parts.push(stringifyRun(child as RunOptions, ctx));
+          body += stringifyRun(child as RunOptions, ctx);
         }
       }
     }
   }
 
-  const body = parts.join("");
-  const paraAttrs: string[] = [];
-  if (resolved.paraId) paraAttrs.push(` w14:paraId="${resolved.paraId}"`);
-  if (resolved.textId) paraAttrs.push(` w14:textId="${resolved.textId}"`);
-  if (resolved.rsid) paraAttrs.push(` w:rsidR="${resolved.rsid}"`);
-  if (resolved.defaultRunRsid) paraAttrs.push(` w:rsidRDefault="${resolved.defaultRunRsid}"`);
-  if (resolved.propertiesRsid) paraAttrs.push(` w:rsidP="${resolved.propertiesRsid}"`);
-  if (resolved.runPropertiesRsid) paraAttrs.push(` w:rsidRPr="${resolved.runPropertiesRsid}"`);
-  if (resolved.deletionRsid) paraAttrs.push(` w:rsidDel="${resolved.deletionRsid}"`);
-  const attr = paraAttrs.join("");
+  let attr = "";
+  if (resolved.paraId) attr += ` w14:paraId="${resolved.paraId}"`;
+  if (resolved.textId) attr += ` w14:textId="${resolved.textId}"`;
+  if (resolved.rsid) attr += ` w:rsidR="${resolved.rsid}"`;
+  if (resolved.defaultRunRsid) attr += ` w:rsidRDefault="${resolved.defaultRunRsid}"`;
+  if (resolved.propertiesRsid) attr += ` w:rsidP="${resolved.propertiesRsid}"`;
+  if (resolved.runPropertiesRsid) attr += ` w:rsidRPr="${resolved.runPropertiesRsid}"`;
+  if (resolved.deletionRsid) attr += ` w:rsidDel="${resolved.deletionRsid}"`;
   return body ? `<w:p${attr}>${body}</w:p>` : `<w:p${attr}/>`;
 }
 
@@ -489,8 +485,8 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     parts.push(stringifyDocumentBackground(ctx._options.background, docCtx));
   }
 
-  // <w:body>
-  const bodyParts: string[] = [];
+  // <w:body> — children go straight into `parts` (single join, no intermediate)
+  parts.push("<w:body>");
 
   for (const [si, section] of sections.entries()) {
     const children = section.children ?? [];
@@ -507,18 +503,17 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     for (const [ci, child] of children.entries()) {
       const inject = !isLast && sectPrXml && ci === children.length - 1 && "paragraph" in child;
       if (inject) sectPrHosted = true;
-      bodyParts.push(stringifyBodyChild(child, docCtx, inject ? sectPrXml : undefined));
+      parts.push(stringifyBodyChild(child, docCtx, inject ? sectPrXml : undefined));
     }
     if (!isLast && sectPrXml && !sectPrHosted) {
-      bodyParts.push(`<w:p><w:pPr>${sectPrXml}</w:pPr></w:p>`);
+      parts.push(`<w:p><w:pPr>${sectPrXml}</w:pPr></w:p>`);
     }
     if (isLast && sectPrXml) {
-      bodyParts.push(sectPrXml);
+      parts.push(sectPrXml);
     }
   }
 
-  parts.push(`<w:body>${bodyParts.join("")}</w:body>`);
-  parts.push("</w:document>");
+  parts.push("</w:body></w:document>");
 
   return parts.join("");
 }

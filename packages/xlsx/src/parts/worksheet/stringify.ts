@@ -909,7 +909,10 @@ export function appendSheetDataRows(
   styles: Styles | undefined,
   startRowNumber = 1,
 ): void {
-  for (const [i, rowOpts] of rows.entries()) {
+  // Indexed loops (not `entries()` destructuring) — at 100k rows × 20 cells the
+  // per-iteration [index, value] entry arrays were a dominant Scavenge source.
+  for (let i = 0; i < rows.length; i++) {
+    const rowOpts = rows[i]!;
     const rowNumber = rowOpts.rowNumber ?? startRowNumber + i;
     // Flat attribute assembly (no per-row Record + for-in) keeps young-gen
     // pressure near zero at 100k+ rows.
@@ -924,9 +927,11 @@ export function appendSheetDataRows(
     if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
     if (rowOpts.ph) rowAttr += ' ph="1"';
 
-    if (rowOpts.cells) {
+    const cells = rowOpts.cells;
+    if (cells) {
       out.push(`<row${rowAttr}>`);
-      for (const [j, cell] of rowOpts.cells.entries()) {
+      for (let j = 0; j < cells.length; j++) {
+        const cell = cells[j]!;
         const ref = cell.reference ?? defaultCellRef(rowNumber, j + 1);
         const cellStr = buildCellString(ref, cell, sharedStrings, styles);
         if (cellStr) out.push(cellStr);

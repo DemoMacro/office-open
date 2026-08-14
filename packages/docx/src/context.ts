@@ -101,7 +101,9 @@ function scanDocumentTree(value: unknown, acc: DocumentTreeScan): void {
   const moveRun = obj.movedFrom ?? obj.movedTo;
   if (isNumericIdMarker(moveRun) && moveRun.id > acc.maxMoveRunId) acc.maxMoveRunId = moveRun.id;
   if (typeof obj.comment === "object" && obj.comment !== null) acc.hasCommentSugar = true;
-  for (const key of Object.keys(obj)) scanDocumentTree(obj[key], acc);
+  // for...in walks own enumerable keys without allocating a keys array (options
+  // trees are JSON literals / class instances whose methods are non-enumerable).
+  for (const key in obj) scanDocumentTree(obj[key], acc);
 }
 
 /** Interface for document view wrappers — provides relationships access. */

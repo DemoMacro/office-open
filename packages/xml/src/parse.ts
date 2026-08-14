@@ -206,12 +206,43 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     const tagName = xmlString.slice(i, tagNameEnd);
     let pos = tagNameEnd;
 
-    const attributes = parseAttributesFromXml(xmlString, pos);
-    pos = attributes.pos;
+    // Attribute scan, inlined from parseAttributesFromXml: called once per
+    // opening tag, the `{ attrs, pos }` wrapper was one allocation per element.
+    // `attrs` is allocated lazily on the first attribute — tags without
+    // attributes (the majority in data-heavy parts) must not pay a record
+    // allocation.
+    let attrs: Record<string, string> | undefined;
+    while (pos < len) {
+      while (pos < len && isWhitespace(xmlString.charCodeAt(pos))) pos++;
+      if (pos >= len || xmlString.charCodeAt(pos) === 0x3e || xmlString.charCodeAt(pos) === 0x2f) {
+        break;
+      }
 
-    if (attributes.attrs && nativeTypeAttributes) {
-      for (const key in attributes.attrs) {
-        attributes.attrs[key] = nativeTypeValue(attributes.attrs[key] as string) as string;
+      const nameStart = pos;
+      while (pos < len && xmlString.charCodeAt(pos) !== 0x3d) {
+        if (xmlString.charCodeAt(pos) === 0x3e || xmlString.charCodeAt(pos) === 0x2f) break;
+        pos++;
+      }
+      const name = xmlString.slice(nameStart, pos);
+
+      if (xmlString.charCodeAt(pos) !== 0x3d) break;
+      pos++;
+
+      while (pos < len && isWhitespace(xmlString.charCodeAt(pos))) pos++;
+
+      const quote = xmlString.charCodeAt(pos);
+      if (quote !== 0x22 && quote !== 0x27) break;
+      pos++;
+      const valueStart = pos;
+      while (pos < len && xmlString.charCodeAt(pos) !== quote) pos++;
+      if (attrs === undefined) attrs = {};
+      attrs[name] = unescapeXml(xmlString.slice(valueStart, pos));
+      pos++;
+    }
+
+    if (attrs && nativeTypeAttributes) {
+      for (const key in attrs) {
+        attrs[key] = nativeTypeValue(attrs[key] as string) as string;
       }
     }
 
@@ -223,8 +254,8 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       type: "element",
       name: tagName,
     };
-    if (attributes.attrs) {
-      element.attributes = attributes.attrs;
+    if (attrs) {
+      element.attributes = attrs;
     }
 
     const parent = peek(stack);
@@ -303,49 +334,6 @@ function findTagNameEnd(str: string, start: number): number {
     i++;
   }
   return i;
-}
-
-function parseAttributesFromXml(
-  str: string,
-  start: number,
-): { attrs: Record<string, string> | undefined; pos: number } {
-  // `attrs` is allocated lazily on the first attribute — tags without
-  // attributes (the majority in data-heavy parts) must not pay a record
-  // allocation, and the caller checks `attrs !== undefined` instead of
-  // Object.keys() (which allocated a throwaway key array per tag).
-  let attrs: Record<string, string> | undefined;
-  let i = start;
-  const len = str.length;
-
-  while (i < len) {
-    while (i < len && isWhitespace(str.charCodeAt(i))) i++;
-    if (i >= len || str.charCodeAt(i) === 0x3e || str.charCodeAt(i) === 0x2f) {
-      break;
-    }
-
-    const nameStart = i;
-    while (i < len && str.charCodeAt(i) !== 0x3d) {
-      if (str.charCodeAt(i) === 0x3e || str.charCodeAt(i) === 0x2f) break;
-      i++;
-    }
-    const name = str.slice(nameStart, i);
-
-    if (str.charCodeAt(i) !== 0x3d) break;
-    i++;
-
-    while (i < len && isWhitespace(str.charCodeAt(i))) i++;
-
-    const quote = str.charCodeAt(i);
-    if (quote !== 0x22 && quote !== 0x27) break;
-    i++;
-    const valueStart = i;
-    while (i < len && str.charCodeAt(i) !== quote) i++;
-    if (attrs === undefined) attrs = {};
-    attrs[name] = unescapeXml(str.slice(valueStart, i));
-    i++;
-  }
-
-  return { attrs, pos: i };
 }
 
 export function parseAttributes(str: string): Record<string, string> {

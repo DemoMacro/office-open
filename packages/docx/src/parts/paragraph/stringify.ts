@@ -279,6 +279,9 @@ export interface StringifyPPrResult {
   numberingReferences: { reference: string; instance: number }[];
 }
 
+/** Shared empty result — plain-text paragraphs produce no pPr and no numbering. */
+export const EMPTY_PPR_RESULT: StringifyPPrResult = { xml: undefined, numberingReferences: [] };
+
 /**
  * Build `<w:pPr>` XML string directly from options — no intermediate object tree.
  *
@@ -287,68 +290,66 @@ export interface StringifyPPrResult {
 export function stringifyParagraphProperties(
   options?: ParagraphPropertiesOptions,
 ): StringifyPPrResult {
-  const numberingReferences: { reference: string; instance: number }[] = [];
+  if (!options) return EMPTY_PPR_RESULT;
 
-  if (!options) return { xml: undefined, numberingReferences };
+  let numberingReferences: { reference: string; instance: number }[] | undefined;
 
-  const parts: string[] = [];
+  let s = "";
 
   // Style / heading / bullet / numbering style references
   if (options.heading) {
-    parts.push(`<w:pStyle w:val="${escapeXml(options.heading)}"/>`);
+    s += `<w:pStyle w:val="${escapeXml(options.heading)}"/>`;
   }
 
   if (options.bullet) {
-    parts.push('<w:pStyle w:val="ListParagraph"/>');
+    s += '<w:pStyle w:val="ListParagraph"/>';
   }
 
   if (options.numbering) {
     if (!options.style && !options.heading) {
       if (!options.numbering.custom) {
-        parts.push('<w:pStyle w:val="ListParagraph"/>');
+        s += '<w:pStyle w:val="ListParagraph"/>';
       }
     }
   }
 
   if (options.style) {
-    parts.push(`<w:pStyle w:val="${escapeXml(options.style)}"/>`);
+    s += `<w:pStyle w:val="${escapeXml(options.style)}"/>`;
   }
 
   // CT_PPrBase element order per XSD (wml.xsd) — strictly ordered sequence.
   // 1-4: keepNext, keepLines, pageBreakBefore
-  if (options.keepNext !== undefined) parts.push(onOff("w:keepNext", options.keepNext));
-  if (options.keepLines !== undefined) parts.push(onOff("w:keepLines", options.keepLines));
+  if (options.keepNext !== undefined) s += onOff("w:keepNext", options.keepNext);
+  if (options.keepLines !== undefined) s += onOff("w:keepLines", options.keepLines);
   if (options.pageBreakBefore !== undefined)
-    parts.push(onOff("w:pageBreakBefore", options.pageBreakBefore));
+    s += onOff("w:pageBreakBefore", options.pageBreakBefore);
 
   // 5: framePr
-  if (options.frame) parts.push(framePrStr(options.frame));
+  if (options.frame) s += framePrStr(options.frame);
 
   // 6: widowControl
-  if (options.widowControl !== undefined) parts.push(onOff("w:widowControl", options.widowControl));
+  if (options.widowControl !== undefined) s += onOff("w:widowControl", options.widowControl);
 
   // 7: numPr
   if (options.bullet) {
-    parts.push(
-      `<w:numPr><w:ilvl w:val="${Math.min(options.bullet.level, 9)}"/><w:numId w:val="1"/></w:numPr>`,
-    );
+    s += `<w:numPr><w:ilvl w:val="${Math.min(options.bullet.level, 9)}"/><w:numId w:val="1"/></w:numPr>`;
   }
 
   if (options.numbering) {
-    numberingReferences.push({
+    (numberingReferences ??= []).push({
       instance: options.numbering.instance ?? 0,
       reference: options.numbering.reference,
     });
 
     const numId = `${options.numbering.reference}-${options.numbering.instance ?? 0}`;
-    parts.push(numPrStr(numId, options.numbering.level, options.numbering.numberingChange));
+    s += numPrStr(numId, options.numbering.level, options.numbering.numberingChange);
   } else if (options.numbering === false) {
-    parts.push(numPrStr(0, 0));
+    s += numPrStr(0, 0);
   }
 
   // 8: suppressLineNumbers
   if (options.suppressLineNumbers !== undefined)
-    parts.push(onOff("w:suppressLineNumbers", options.suppressLineNumbers));
+    s += onOff("w:suppressLineNumbers", options.suppressLineNumbers);
 
   // 9: pBdr
   if (options.border) {
@@ -359,17 +360,15 @@ export function stringifyParagraphProperties(
     if (options.border.right) bParts.push(borderStr("w:right", options.border.right));
     if (options.border.between) bParts.push(borderStr("w:between", options.border.between));
     if (options.border.bar) bParts.push(borderStr("w:bar", options.border.bar));
-    if (bParts.length) parts.push(`<w:pBdr>${bParts.join("")}</w:pBdr>`);
+    if (bParts.length) s += `<w:pBdr>${bParts.join("")}</w:pBdr>`;
   }
 
   if (options.thematicBreak) {
-    parts.push(
-      `<w:pBdr>${borderStr("w:bottom", { color: "auto", size: 6, space: 1, style: BorderStyle.SINGLE })}</w:pBdr>`,
-    );
+    s += `<w:pBdr>${borderStr("w:bottom", { color: "auto", size: 6, space: 1, style: BorderStyle.SINGLE })}</w:pBdr>`;
   }
 
   // 10: shd
-  if (options.shading) parts.push(shadingStr(options.shading));
+  if (options.shading) s += shadingStr(options.shading);
 
   // 11: tabs
   const tabDefs: TabStopDefinition[] = [
@@ -381,56 +380,53 @@ export function stringifyParagraphProperties(
       ? [{ position: options.leftTabStop, type: "left" as const }]
       : []),
   ];
-  if (tabDefs.length > 0) parts.push(tabStopsStr(tabDefs));
+  if (tabDefs.length > 0) s += tabStopsStr(tabDefs);
 
   // 12-18: suppressAutoHyphens, kinsoku, wordWrap, overflowPunct, topLinePunct, autoSpaceDE, autoSpaceDN
   if (options.suppressAutoHyphens !== undefined)
-    parts.push(onOff("w:suppressAutoHyphens", options.suppressAutoHyphens));
-  if (options.kinsoku !== undefined) parts.push(onOff("w:kinsoku", options.kinsoku));
-  if (options.wordWrap !== undefined) parts.push(onOff("w:wordWrap", options.wordWrap));
+    s += onOff("w:suppressAutoHyphens", options.suppressAutoHyphens);
+  if (options.kinsoku !== undefined) s += onOff("w:kinsoku", options.kinsoku);
+  if (options.wordWrap !== undefined) s += onOff("w:wordWrap", options.wordWrap);
   if (options.overflowPunctuation !== undefined)
-    parts.push(onOff("w:overflowPunct", options.overflowPunctuation));
-  if (options.topLinePunct !== undefined) parts.push(onOff("w:topLinePunct", options.topLinePunct));
-  if (options.autoSpaceDE !== undefined) parts.push(onOff("w:autoSpaceDE", options.autoSpaceDE));
+    s += onOff("w:overflowPunct", options.overflowPunctuation);
+  if (options.topLinePunct !== undefined) s += onOff("w:topLinePunct", options.topLinePunct);
+  if (options.autoSpaceDE !== undefined) s += onOff("w:autoSpaceDE", options.autoSpaceDE);
   if (options.autoSpaceEastAsianText !== undefined)
-    parts.push(onOff("w:autoSpaceDN", options.autoSpaceEastAsianText));
+    s += onOff("w:autoSpaceDN", options.autoSpaceEastAsianText);
 
   // 19: bidi
-  if (options.bidirectional !== undefined) parts.push(onOff("w:bidi", options.bidirectional));
+  if (options.bidirectional !== undefined) s += onOff("w:bidi", options.bidirectional);
 
   // 20-21: adjustRightInd, snapToGrid
-  if (options.adjustRightInd !== undefined)
-    parts.push(onOff("w:adjustRightInd", options.adjustRightInd));
-  if (options.snapToGrid !== undefined) parts.push(onOff("w:snapToGrid", options.snapToGrid));
+  if (options.adjustRightInd !== undefined) s += onOff("w:adjustRightInd", options.adjustRightInd);
+  if (options.snapToGrid !== undefined) s += onOff("w:snapToGrid", options.snapToGrid);
 
   // 22-24: spacing, ind, contextualSpacing
-  if (options.spacing) parts.push(spacingStr(options.spacing));
-  if (options.indent) parts.push(indentStr(options.indent));
+  if (options.spacing) s += spacingStr(options.spacing);
+  if (options.indent) s += indentStr(options.indent);
   if (options.contextualSpacing !== undefined)
-    parts.push(onOff("w:contextualSpacing", options.contextualSpacing));
+    s += onOff("w:contextualSpacing", options.contextualSpacing);
 
   // 25-26: mirrorIndents, suppressOverlap
-  if (options.mirrorIndents !== undefined)
-    parts.push(onOff("w:mirrorIndents", options.mirrorIndents));
+  if (options.mirrorIndents !== undefined) s += onOff("w:mirrorIndents", options.mirrorIndents);
   if (options.suppressOverlap !== undefined)
-    parts.push(onOff("w:suppressOverlap", options.suppressOverlap));
+    s += onOff("w:suppressOverlap", options.suppressOverlap);
 
   // 27: jc
-  if (options.alignment) parts.push(`<w:jc w:val="${options.alignment}"/>`);
+  if (options.alignment) s += `<w:jc w:val="${options.alignment}"/>`;
 
   // 28-30: textDirection, textAlignment, textboxTightWrap
   if (options.textDirection !== undefined)
-    parts.push(`<w:textDirection w:val="${options.textDirection}"/>`);
+    s += `<w:textDirection w:val="${options.textDirection}"/>`;
   if (options.textAlignment !== undefined)
-    parts.push(`<w:textAlignment w:val="${options.textAlignment}"/>`);
+    s += `<w:textAlignment w:val="${options.textAlignment}"/>`;
   if (options.textboxTightWrap !== undefined)
-    parts.push(`<w:textboxTightWrap w:val="${options.textboxTightWrap}"/>`);
+    s += `<w:textboxTightWrap w:val="${options.textboxTightWrap}"/>`;
 
   // 31-33: outlineLvl, divId, cnfStyle
-  if (options.outlineLevel !== undefined)
-    parts.push(`<w:outlineLvl w:val="${options.outlineLevel}"/>`);
-  if (options.divId !== undefined) parts.push(`<w:divId w:val="${options.divId}"/>`);
-  if (options.cnfStyle) parts.push(cnfStyleStr(options.cnfStyle));
+  if (options.outlineLevel !== undefined) s += `<w:outlineLvl w:val="${options.outlineLevel}"/>`;
+  if (options.divId !== undefined) s += `<w:divId w:val="${options.divId}"/>`;
+  if (options.cnfStyle) s += cnfStyleStr(options.cnfStyle);
 
   // Embedded run properties (w:rPr inside w:pPr)
   if (options.run) {
@@ -447,7 +443,7 @@ export function stringifyParagraphProperties(
         extra.push(`<w:del w:id="${id}" w:author="${escapeXml(author)}" w:date="${date}"/>`);
       }
       const body = inner + extra.join("");
-      parts.push(`<w:rPr>${body}</w:rPr>`);
+      s += `<w:rPr>${body}</w:rPr>`;
     }
   }
 
@@ -456,13 +452,16 @@ export function stringifyParagraphProperties(
     const rev = options.revision;
     const { author: _a, date: _d, id: _i, ...originalProps } = rev;
     const inner = stringifyParagraphProperties({ ...originalProps, includeIfEmpty: true });
-    parts.push(
-      `<w:pPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`,
-    );
+    s += `<w:pPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
   }
 
-  const body = parts.join("");
+  const body = s;
   const xml = options.includeIfEmpty || body.length > 0 ? `<w:pPr>${body}</w:pPr>` : undefined;
+  if (numberingReferences === undefined) {
+    return xml === undefined
+      ? EMPTY_PPR_RESULT
+      : { xml, numberingReferences: EMPTY_PPR_RESULT.numberingReferences };
+  }
   return { xml, numberingReferences };
 }
 
@@ -477,139 +476,137 @@ export function stringifyParagraphProperties(
 export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string | undefined {
   if (!opts) return undefined;
 
-  const parts: string[] = [];
+  let s = "";
 
   // Style
-  if (opts.style) parts.push(`<w:rStyle w:val="${escapeXml(opts.style)}"/>`);
+  if (opts.style) s += `<w:rStyle w:val="${escapeXml(opts.style)}"/>`;
 
   // Font
   if (opts.font) {
     if (typeof opts.font === "string") {
-      parts.push(runFontsStr(opts.font));
+      s += runFontsStr(opts.font);
     } else if ("name" in opts.font) {
-      parts.push(runFontsStr(opts.font.name, opts.font.hint));
+      s += runFontsStr(opts.font.name, opts.font.hint);
     } else {
-      parts.push(runFontsStr(opts.font));
+      s += runFontsStr(opts.font);
     }
   }
 
   // Bold — w:b and w:bCs are independent toggle properties (Latin vs complex
   // script, per ISO/IEC 29500). Emit each only when explicitly set so round-trip
   // is field-faithful (source <w:b/> stays <w:b/>, not inflated to <w:b/><w:bCs/>).
-  if (opts.bold !== undefined) parts.push(onOff("w:b", opts.bold));
-  if (opts.boldComplexScript !== undefined) parts.push(onOff("w:bCs", opts.boldComplexScript));
+  if (opts.bold !== undefined) s += onOff("w:b", opts.bold);
+  if (opts.boldComplexScript !== undefined) s += onOff("w:bCs", opts.boldComplexScript);
 
   // Italic — w:i and w:iCs are independent (same rationale as bold).
-  if (opts.italic !== undefined) parts.push(onOff("w:i", opts.italic));
-  if (opts.italicComplexScript !== undefined) parts.push(onOff("w:iCs", opts.italicComplexScript));
+  if (opts.italic !== undefined) s += onOff("w:i", opts.italic);
+  if (opts.italicComplexScript !== undefined) s += onOff("w:iCs", opts.italicComplexScript);
 
   // Caps
   if (opts.smallCaps !== undefined) {
-    parts.push(onOff("w:smallCaps", opts.smallCaps));
+    s += onOff("w:smallCaps", opts.smallCaps);
   } else if (opts.allCaps !== undefined) {
-    parts.push(onOff("w:caps", opts.allCaps));
+    s += onOff("w:caps", opts.allCaps);
   }
 
   // Strike
-  if (opts.strike !== undefined) parts.push(onOff("w:strike", opts.strike));
-  if (opts.doubleStrike !== undefined) parts.push(onOff("w:dstrike", opts.doubleStrike));
-  if (opts.emboss !== undefined) parts.push(onOff("w:emboss", opts.emboss));
-  if (opts.imprint !== undefined) parts.push(onOff("w:imprint", opts.imprint));
-  if (opts.outline !== undefined) parts.push(onOff("w:outline", opts.outline));
-  if (opts.shadow !== undefined) parts.push(onOff("w:shadow", opts.shadow));
-  if (opts.webHidden !== undefined) parts.push(onOff("w:webHidden", opts.webHidden));
-  if (opts.noProof !== undefined) parts.push(onOff("w:noProof", opts.noProof));
-  if (opts.snapToGrid !== undefined) parts.push(onOff("w:snapToGrid", opts.snapToGrid));
-  if (opts.vanish) parts.push(onOff("w:vanish", opts.vanish));
+  if (opts.strike !== undefined) s += onOff("w:strike", opts.strike);
+  if (opts.doubleStrike !== undefined) s += onOff("w:dstrike", opts.doubleStrike);
+  if (opts.emboss !== undefined) s += onOff("w:emboss", opts.emboss);
+  if (opts.imprint !== undefined) s += onOff("w:imprint", opts.imprint);
+  if (opts.outline !== undefined) s += onOff("w:outline", opts.outline);
+  if (opts.shadow !== undefined) s += onOff("w:shadow", opts.shadow);
+  if (opts.webHidden !== undefined) s += onOff("w:webHidden", opts.webHidden);
+  if (opts.noProof !== undefined) s += onOff("w:noProof", opts.noProof);
+  if (opts.snapToGrid !== undefined) s += onOff("w:snapToGrid", opts.snapToGrid);
+  if (opts.vanish) s += onOff("w:vanish", opts.vanish);
 
   // Color
-  if (opts.color) parts.push(colorStr(opts.color));
+  if (opts.color) s += colorStr(opts.color);
 
   // Character spacing
   if (opts.characterSpacing) {
-    parts.push(`<w:spacing w:val="${convertToTwip(opts.characterSpacing)}"/>`);
+    s += `<w:spacing w:val="${convertToTwip(opts.characterSpacing)}"/>`;
   }
 
   // Scale
-  if (opts.scale !== undefined) parts.push(`<w:w w:val="${opts.scale}"/>`);
+  if (opts.scale !== undefined) s += `<w:w w:val="${opts.scale}"/>`;
 
   // Kern — w:val="0" is meaningful (explicitly disables kerning), so emit
   // whenever the field is set rather than truthy-checking it.
-  if (opts.kern !== undefined) parts.push(`<w:kern w:val="${hpsMeasureValue(opts.kern * 2)}"/>`);
+  if (opts.kern !== undefined) s += `<w:kern w:val="${hpsMeasureValue(opts.kern * 2)}"/>`;
 
   // Position
-  if (opts.position) parts.push(`<w:position w:val="${opts.position}"/>`);
+  if (opts.position) s += `<w:position w:val="${opts.position}"/>`;
 
   // Size (points → half-points). sz and szCs are independent (Latin vs complex
   // script); emit each only when set so round-trip is field-faithful.
-  if (opts.size !== undefined) parts.push(`<w:sz w:val="${hpsMeasureValue(opts.size * 2)}"/>`);
+  if (opts.size !== undefined) s += `<w:sz w:val="${hpsMeasureValue(opts.size * 2)}"/>`;
   if (opts.sizeComplexScript !== undefined) {
-    parts.push(`<w:szCs w:val="${hpsMeasureValue(opts.sizeComplexScript * 2)}"/>`);
+    s += `<w:szCs w:val="${hpsMeasureValue(opts.sizeComplexScript * 2)}"/>`;
   }
 
   // Highlight — independent Latin vs complex-script values.
-  if (opts.highlight) parts.push(`<w:highlight w:val="${opts.highlight}"/>`);
+  if (opts.highlight) s += `<w:highlight w:val="${opts.highlight}"/>`;
   if (opts.highlightComplexScript !== undefined) {
-    parts.push(`<w:highlightCs w:val="${opts.highlightComplexScript}"/>`);
+    s += `<w:highlightCs w:val="${opts.highlightComplexScript}"/>`;
   }
 
   // Underline
-  if (opts.underline) parts.push(underlineStr(opts.underline.type, opts.underline.color));
+  if (opts.underline) s += underlineStr(opts.underline.type, opts.underline.color);
 
   // Effect
-  if (opts.effect) parts.push(`<w:effect w:val="${opts.effect}"/>`);
+  if (opts.effect) s += `<w:effect w:val="${opts.effect}"/>`;
 
   // Border
-  if (opts.border) parts.push(borderStr("w:bdr", opts.border));
+  if (opts.border) s += borderStr("w:bdr", opts.border);
 
   // Shading
-  if (opts.shading) parts.push(shadingStr(opts.shading));
+  if (opts.shading) s += shadingStr(opts.shading);
 
   // Vertical alignment
-  if (opts.subScript) parts.push('<w:vertAlign w:val="subscript"/>');
-  if (opts.superScript) parts.push('<w:vertAlign w:val="superscript"/>');
+  if (opts.subScript) s += '<w:vertAlign w:val="subscript"/>';
+  if (opts.superScript) s += '<w:vertAlign w:val="superscript"/>';
 
   // RTL
-  if (opts.rightToLeft !== undefined) parts.push(onOff("w:rtl", opts.rightToLeft));
+  if (opts.rightToLeft !== undefined) s += onOff("w:rtl", opts.rightToLeft);
 
   // Emphasis mark
-  if (opts.emphasisMark) parts.push(`<w:em w:val="${opts.emphasisMark.type ?? "dot"}"/>`);
+  if (opts.emphasisMark) s += `<w:em w:val="${opts.emphasisMark.type ?? "dot"}"/>`;
 
   // Language
-  if (opts.language) parts.push(languageStr(opts.language));
+  if (opts.language) s += languageStr(opts.language);
 
   // Spec vanish
-  if (opts.specVanish) parts.push("<w:specVanish/>");
+  if (opts.specVanish) s += "<w:specVanish/>";
 
   // Math
-  if (opts.math) parts.push(onOff("w:oMath", opts.math));
+  if (opts.math) s += onOff("w:oMath", opts.math);
 
   // Fit text
-  if (opts.fitText !== undefined) parts.push(`<w:fitText w:val="${opts.fitText}"/>`);
+  if (opts.fitText !== undefined) s += `<w:fitText w:val="${opts.fitText}"/>`;
 
   // Complex script
-  if (opts.complexScript !== undefined) parts.push(onOff("w:cs", opts.complexScript));
+  if (opts.complexScript !== undefined) s += onOff("w:cs", opts.complexScript);
 
   // East Asian layout
-  if (opts.eastAsianLayout) parts.push(eastAsianLayoutStr(opts.eastAsianLayout));
+  if (opts.eastAsianLayout) s += eastAsianLayoutStr(opts.eastAsianLayout);
 
   // Content part
-  if (opts.contentPartRId) parts.push(`<w:contentPart r:id="${opts.contentPartRId}"/>`);
+  if (opts.contentPartRId) s += `<w:contentPart r:id="${opts.contentPartRId}"/>`;
 
   // Revision (rPrChange)
   if (opts.revision) {
     const rev = opts.revision as RunPropertiesChangeOptions;
     const { author: _a, date: _d, id: _i, ...originalProps } = rev;
     const inner = stringifyRunPropertiesInner(originalProps as RunPropertiesOptions);
-    parts.push(
-      `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`,
-    );
+    s += `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
   }
 
   // w14:* text effects — raw passthrough, emitted last (EG_RPrBase extension slot)
-  if (opts.w14RawXml) parts.push(opts.w14RawXml);
+  if (opts.w14RawXml) s += opts.w14RawXml;
 
-  return parts.length > 0 ? parts.join("") : undefined;
+  return s.length > 0 ? s : undefined;
 }
 
 /**

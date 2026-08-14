@@ -103,19 +103,19 @@ generatePresentationStream(options);
 
 | Scenario           | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
 | ------------------ | -----------: | ------------: | -------------: | --------------: | -------------: | ----------------: | --------------: |
-| Simple (2 shapes)  |    824 ops/s |     555 ops/s |    2,718 ops/s |     2,425 ops/s |     12.7 ops/s |         172 ops/s |       173 ops/s |
-| Styled shapes (20) |    884 ops/s |     542 ops/s |    2,514 ops/s |     2,505 ops/s |     12.7 ops/s |         174 ops/s |       176 ops/s |
-| Table (10x5)       |  1,032 ops/s |     619 ops/s |    2,822 ops/s |     2,995 ops/s |     12.8 ops/s |         919 ops/s |       940 ops/s |
-| Full featured      |    824 ops/s |     490 ops/s |    1,648 ops/s |     1,508 ops/s |     12.7 ops/s |        93.3 ops/s |      92.1 ops/s |
+| Simple (2 shapes)  |    919 ops/s |     549 ops/s |    2,731 ops/s |     2,767 ops/s |     12.8 ops/s |         172 ops/s |       173 ops/s |
+| Styled shapes (20) |    935 ops/s |     558 ops/s |    2,567 ops/s |     2,345 ops/s |     12.6 ops/s |         174 ops/s |       176 ops/s |
+| Table (10x5)       |  1,093 ops/s |     602 ops/s |    2,882 ops/s |     2,976 ops/s |     12.8 ops/s |         919 ops/s |       940 ops/s |
+| Full featured      |    727 ops/s |     533 ops/s |    1,703 ops/s |     1,682 ops/s |     12.5 ops/s |        93.3 ops/s |      92.1 ops/s |
 
 **Large Files — Create + toBuffer / toStream**
 
 | Scenario              | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
 | --------------------- | -----------: | ------------: | -------------: | --------------: | -------------: | ----------------: | --------------: |
-| 30 slides x 20 shapes |    167 ops/s |     108 ops/s |      246 ops/s |       239 ops/s |     2.78 ops/s |         121 ops/s |       121 ops/s |
-| 30 slides x 10 images |    106 ops/s |    70.4 ops/s |      139 ops/s |       137 ops/s |     2.74 ops/s |        0.30 ops/s |      0.30 ops/s |
-| 100x10 table          |    245 ops/s |     217 ops/s |      306 ops/s |       318 ops/s |     11.1 ops/s |         123 ops/s |       134 ops/s |
-| 50 slides full        |   66.6 ops/s |    47.2 ops/s |     92.4 ops/s |      90.3 ops/s |     1.82 ops/s |        0.92 ops/s |      0.91 ops/s |
+| 30 slides x 20 shapes |    160 ops/s |     109 ops/s |      267 ops/s |       259 ops/s |     2.81 ops/s |         121 ops/s |       121 ops/s |
+| 30 slides x 10 images |    105 ops/s |    78.9 ops/s |      135 ops/s |       138 ops/s |     2.75 ops/s |        0.30 ops/s |      0.30 ops/s |
+| 100x10 table          |    259 ops/s |     213 ops/s |      273 ops/s |       292 ops/s |     10.7 ops/s |         123 ops/s |       134 ops/s |
+| 50 slides full        |   67.7 ops/s |    49.7 ops/s |     89.8 ops/s |      86.8 ops/s |     1.78 ops/s |        0.92 ops/s |      0.91 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -123,7 +123,7 @@ generatePresentationStream(options);
 
 | Scenario        | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
 | --------------- | -----------: | ------------: | -------------: | --------------: | -------------: | ----------------: | --------------: |
-| 40 slides mixed |   22.7 ops/s |    20.6 ops/s |     23.9 ops/s |      24.4 ops/s |     1.64 ops/s |        0.22 ops/s |      0.21 ops/s |
+| 40 slides mixed |   21.7 ops/s |    20.2 ops/s |     23.2 ops/s |      23.9 ops/s |     1.67 ops/s |        0.22 ops/s |      0.21 ops/s |
 
 **Stream column** = `generatePresentationStream` (default compression, fully drained). Streaming trades throughput for pipeability: each part is compressed in a Web Worker as it is produced, so a fixed per-part worker handoff dominates small decks — streaming targets memory footprint and piping (file / HTTP response), not peak ops/s.
 

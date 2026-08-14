@@ -1,8 +1,15 @@
 /**
  * Convert a 1-based column number to Excel column letter(s).
  * 1 → "A", 26 → "Z", 27 → "AA", 28 → "AB"
+ *
+ * Memoized: sheet building calls this per cell (millions of times over a few
+ * dozen distinct columns) — the cache turns each hit into an array read.
  */
+const COLUMN_LETTERS: string[] = [];
+
 export function columnToLetter(col: number): string {
+  const cached = COLUMN_LETTERS[col];
+  if (cached !== undefined) return cached;
   let result = "";
   let n = col;
   while (n > 0) {
@@ -10,6 +17,7 @@ export function columnToLetter(col: number): string {
     result = String.fromCharCode(65 + remainder) + result;
     n = Math.floor((n - 1) / 26);
   }
+  COLUMN_LETTERS[col] = result;
   return result;
 }
 
