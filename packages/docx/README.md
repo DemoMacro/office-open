@@ -94,18 +94,18 @@ generateDocumentStream(options);
 
 | Scenario                       | Default sync | Default async | All STORE sync | All STORE async | Default stream |       docx |
 | ------------------------------ | -----------: | ------------: | -------------: | --------------: | -------------: | ---------: |
-| Simple (2p + 1 img)            |    881 ops/s |     600 ops/s |    2,377 ops/s |     2,289 ops/s |     14.6 ops/s | 89.2 ops/s |
-| Styled paragraphs (20) + 1 img |  1,002 ops/s |     604 ops/s |    2,635 ops/s |     2,472 ops/s |     14.6 ops/s |  101 ops/s |
-| Table (10x5)                   |  1,195 ops/s |     671 ops/s |    2,803 ops/s |     2,826 ops/s |     14.7 ops/s |  211 ops/s |
-| Full featured + 2 imgs         |    815 ops/s |     481 ops/s |    1,579 ops/s |     1,531 ops/s |     13.1 ops/s | 56.7 ops/s |
+| Simple (2p + 1 img)            |    906 ops/s |     588 ops/s |    1,999 ops/s |     2,276 ops/s |     14.1 ops/s | 82.1 ops/s |
+| Styled paragraphs (20) + 1 img |    987 ops/s |     651 ops/s |    2,571 ops/s |     2,502 ops/s |     14.4 ops/s | 94.8 ops/s |
+| Table (10x5)                   |  1,193 ops/s |     675 ops/s |    2,704 ops/s |     2,627 ops/s |     14.2 ops/s |  188 ops/s |
+| Full featured + 2 imgs         |    765 ops/s |     523 ops/s |    1,513 ops/s |     1,534 ops/s |     12.4 ops/s | 54.3 ops/s |
 
 **Large Files — Create + toBuffer / toStream**
 
 | Scenario                       | Default sync | Default async | All STORE sync | All STORE async | Default stream |       docx |
 | ------------------------------ | -----------: | ------------: | -------------: | --------------: | -------------: | ---------: |
-| 2000 paragraphs + 20 images    |   84.8 ops/s |    80.6 ops/s |     88.8 ops/s |      88.8 ops/s |     11.1 ops/s | 2.97 ops/s |
-| 200x10 table                   |    189 ops/s |     159 ops/s |      217 ops/s |       212 ops/s |     14.0 ops/s | 33.9 ops/s |
-| 20 sections x 100p + 40 images |   78.3 ops/s |    62.1 ops/s |     85.7 ops/s |      89.8 ops/s |     3.91 ops/s | 1.79 ops/s |
+| 2000 paragraphs + 20 images    |   84.8 ops/s |    81.2 ops/s |     92.5 ops/s |      92.5 ops/s |     11.2 ops/s | 2.81 ops/s |
+| 200x10 table                   |    191 ops/s |     173 ops/s |      207 ops/s |       230 ops/s |     13.8 ops/s | 34.9 ops/s |
+| 20 sections x 100p + 40 images |   77.1 ops/s |    65.5 ops/s |     90.9 ops/s |      83.5 ops/s |     3.72 ops/s | 1.72 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -113,7 +113,7 @@ generateDocumentStream(options);
 
 | Scenario                 | Default sync | Default async | All STORE sync | All STORE async | Default stream |       docx |
 | ------------------------ | -----------: | ------------: | -------------: | --------------: | -------------: | ---------: |
-| Mixed (500p+38img+50x10) |   23.6 ops/s |    22.4 ops/s |     24.7 ops/s |      24.1 ops/s |     3.72 ops/s | 0.30 ops/s |
+| Mixed (500p+38img+50x10) |   23.5 ops/s |    22.0 ops/s |     23.7 ops/s |      23.1 ops/s |     3.60 ops/s | 0.29 ops/s |
 
 **Stream column** = `generateDocumentStream` (default compression, fully drained). Streaming trades throughput for pipeability: each part is compressed in a Web Worker as it is produced, so a fixed per-part worker handoff dominates small documents — streaming targets memory footprint and piping (file / HTTP response), not peak ops/s.
 

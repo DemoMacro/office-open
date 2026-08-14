@@ -86,23 +86,23 @@ generateWorkbookStream(options);
 
 | Scenario         | Default sync | Default async | All STORE sync | All STORE async | Default stream |     hucre |
 | ---------------- | -----------: | ------------: | -------------: | --------------: | -------------: | --------: |
-| Simple (3 rows)  |  1,901 ops/s |     925 ops/s |   16,585 ops/s |    18,225 ops/s |     23.2 ops/s | 536 ops/s |
-| Styled rows (20) |  1,946 ops/s |     988 ops/s |   16,638 ops/s |    16,709 ops/s |     22.6 ops/s | 819 ops/s |
-| Table (10x5)     |  1,847 ops/s |   1,060 ops/s |   16,964 ops/s |    17,922 ops/s |     23.1 ops/s | 837 ops/s |
+| Simple (3 rows)  |  2,020 ops/s |     981 ops/s |   17,743 ops/s |    17,499 ops/s |     19.4 ops/s | 829 ops/s |
+| Styled rows (20) |  1,935 ops/s |   1,097 ops/s |   16,393 ops/s |    15,990 ops/s |     21.5 ops/s | 810 ops/s |
+| Table (10x5)     |  1,815 ops/s |   1,120 ops/s |   16,632 ops/s |    16,575 ops/s |     21.6 ops/s | 827 ops/s |
 
 **Large Files — Create + toBuffer / toStream**
 
 | Scenario                      | Default sync | Default async | All STORE sync | All STORE async | Default stream |      hucre |
 | ----------------------------- | -----------: | ------------: | -------------: | --------------: | -------------: | ---------: |
-| 2000 rows + 10 images         |    141 ops/s |     127 ops/s |      114 ops/s |       134 ops/s |     12.5 ops/s | 43.3 ops/s |
-| 200x10 table                  |    831 ops/s |     579 ops/s |    1,427 ops/s |     1,285 ops/s |     22.1 ops/s |  242 ops/s |
-| 20 sheets × 100 rows + 20 img |   67.1 ops/s |    55.5 ops/s |     97.3 ops/s |      91.6 ops/s |     2.44 ops/s | 19.9 ops/s |
+| 2000 rows + 10 images         |    141 ops/s |     139 ops/s |      147 ops/s |       148 ops/s |     12.2 ops/s | 42.0 ops/s |
+| 200x10 table                  |    856 ops/s |     596 ops/s |    1,303 ops/s |     1,281 ops/s |     21.4 ops/s |  231 ops/s |
+| 20 sheets × 100 rows + 20 img |   61.3 ops/s |    54.0 ops/s |     85.8 ops/s |      93.7 ops/s |     2.36 ops/s | 22.1 ops/s |
 
 **Large Data — 100,000 rows × 20 columns (2M cells)**
 
 | Scenario  | Default sync | Default async | All STORE sync | All STORE async | Default stream |      hucre |
 | --------- | -----------: | ------------: | -------------: | --------------: | -------------: | ---------: |
-| 100k × 20 |   0.84 ops/s |    0.91 ops/s |     1.08 ops/s |      1.08 ops/s |     1.01 ops/s | 0.37 ops/s |
+| 100k × 20 |   0.90 ops/s |    0.89 ops/s |     1.12 ops/s |      1.06 ops/s |     0.97 ops/s | 0.37 ops/s |
 
 **Stream column** = `generateWorkbookStream` (default compression, fully drained). Streaming trades throughput for pipeability: each part is compressed in a Web Worker as it is produced, so a fixed per-part worker handoff dominates small workbooks. Plain-data workbooks stream through a constant-memory path — worksheet rows serialize chunk-wise with inline strings, so the full worksheet XML and the archive never coexist (at 1M rows × 3 cols: peak RSS +177 MB streamed vs +810 MB buffered, and ~17% faster; at 100k × 20 it is also the fastest mode). Scenarios with images fall back to the full-memory stream.
 
