@@ -815,7 +815,7 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
 // --- Main class ---
 
 export interface AnimationEntry {
-  spid: number;
+  shapeId: number;
   options: AnimationOptions;
 }
 
@@ -844,7 +844,7 @@ export class SlideTiming {
     let clickGroupDelay = 0;
 
     for (const [i, entry] of entries.entries()) {
-      const { spid, options } = entry;
+      const { shapeId: spid, options } = entry;
 
       const nodeType =
         options.trigger === "withPrevious"

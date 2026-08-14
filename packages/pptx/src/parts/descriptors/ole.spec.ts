@@ -101,15 +101,15 @@ describe("oleDesc round-trip", () => {
     expect(result.imgH).toBe(64);
   });
 
-  it("round-trips OLE with spid", () => {
+  it("round-trips OLE with shapeId", () => {
     const opts: OleOptions = {
       id: 400,
-      spid: "_x0000_s1025",
+      shapeId: "_x0000_s1025",
       embed: { rId: "rId6" },
     };
     const result = roundTrip(opts);
 
-    expect(result.spid).toBe("_x0000_s1025");
+    expect(result.shapeId).toBe("_x0000_s1025");
   });
 
   it("round-trips OLE with followColorScheme", () => {

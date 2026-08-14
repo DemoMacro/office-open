@@ -36,7 +36,7 @@ describe("timingDesc round-trip", () => {
     const opts: TimingDescriptorOptions = {
       entries: [
         {
-          spid: 2,
+          shapeId: 2,
           options: { type: "fade", trigger: "onClick", duration: 500 },
         },
       ],
@@ -44,7 +44,7 @@ describe("timingDesc round-trip", () => {
     const result = roundTrip(opts);
     expect(result.entries).toHaveLength(1);
     const [entry] = result.entries;
-    expect(entry?.spid).toBe(2);
+    expect(entry?.shapeId).toBe(2);
     expect(entry?.options.type).toBe("fade");
     expect(entry?.options.trigger).toBe("onClick");
     expect(entry?.options.duration).toBe(500);
@@ -54,7 +54,7 @@ describe("timingDesc round-trip", () => {
     const opts: TimingDescriptorOptions = {
       entries: [
         {
-          spid: 3,
+          shapeId: 3,
           options: { type: "appear", trigger: "withPrevious" },
         },
       ],
@@ -70,7 +70,7 @@ describe("timingDesc round-trip", () => {
     const opts: TimingDescriptorOptions = {
       entries: [
         {
-          spid: 4,
+          shapeId: 4,
           options: { type: "wipe", direction: "left", trigger: "afterPrevious", duration: 700 },
         },
       ],

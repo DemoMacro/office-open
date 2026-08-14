@@ -349,8 +349,8 @@ export const timingDesc: CustomDescriptor<TimingDescriptorOptions> = {
   parse(el, _ctx) {
     const animMap = parseTiming(el);
     const entries: AnimationEntry[] = [];
-    for (const [spid, options] of animMap) {
-      entries.push({ spid, options });
+    for (const [shapeId, options] of animMap) {
+      entries.push({ shapeId, options });
     }
     return { entries } as TimingDescriptorOptions;
   },

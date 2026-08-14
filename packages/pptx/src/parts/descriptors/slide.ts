@@ -192,7 +192,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
       if (timingOpts.entries && timingOpts.entries.length > 0) {
         const animations: SlideAnimation[] = [];
         for (const entry of timingOpts.entries) {
-          animations.push({ shapeId: entry.spid, options: entry.options });
+          animations.push({ shapeId: entry.shapeId, options: entry.options });
         }
         result.animations = animations;
       }

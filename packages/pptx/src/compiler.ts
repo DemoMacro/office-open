@@ -630,7 +630,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   }
 
   if (slideOpts.animations && slideOpts.animations.length > 0) {
-    const entries = slideOpts.animations.map((a) => ({ spid: a.shapeId, options: a.options }));
+    const entries = slideOpts.animations.map((a) => ({ shapeId: a.shapeId, options: a.options }));
     parts.push(timingDesc.stringify({ entries }, ctx) ?? "");
   }
 

@@ -29,7 +29,7 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "7.9cm",
             progId: "Excel.Sheet.12",
-            spid: "sp1025",
+            shapeId: "sp1025",
             name: "Embedded Worksheet",
             showAsIcon: false,
             embed: {

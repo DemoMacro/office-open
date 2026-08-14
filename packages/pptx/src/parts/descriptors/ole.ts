@@ -49,7 +49,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     // a:graphic > a:graphicData > p:oleObj
     const oleAttrs: string[] = [];
     oleAttrs.push(`name="${escapeXml(opts.name ?? "OLE Object")}"`);
-    if (opts.spid) oleAttrs.push(`spid="${opts.spid}"`);
+    if (opts.shapeId) oleAttrs.push(`spid="${opts.shapeId}"`);
     if (opts.showAsIcon) oleAttrs.push(`showAsIcon="1"`);
     if (opts.imgW !== undefined) oleAttrs.push(`imgW="${opts.imgW}"`);
     if (opts.imgH !== undefined) oleAttrs.push(`imgH="${opts.imgH}"`);
@@ -121,8 +121,8 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     if (oleObj) {
       const progId = attr(oleObj, "progId");
       if (progId !== undefined) result.progId = progId;
-      const spid = attr(oleObj, "spid");
-      if (spid !== undefined) result.spid = spid;
+      const shapeId = attr(oleObj, "spid");
+      if (shapeId !== undefined) result.shapeId = shapeId;
       if (attrBool(oleObj, "showAsIcon")) result.showAsIcon = true;
       const imgW = attrNum(oleObj, "imgW");
       if (imgW !== undefined) result.imgW = imgW;
