@@ -191,6 +191,70 @@ export const createZipStream = (
   });
 };
 
+// ── Streaming ZIP writer ──
+
+/**
+ * Incremental sink for one ZIP part. Feed chunks as they are produced; the
+ * entry's local header is emitted on {@link ZipStreamWriter.addPart} and the
+ * trailing CRC/sizes on {@link end} — the part's full content never has to
+ * exist in memory at once.
+ */
+export interface ZipPartSink {
+  /** Append a chunk to the part. */
+  push(chunk: Uint8Array): void;
+  /** Finalize the part. Must be called before adding the next one. */
+  end(): void;
+}
+
+/**
+ * Incremental ZIP archive writer over fflate's streaming `Zip` — parts are
+ * added and completed one at a time; compressed output flows to `ondata` as
+ * it is produced. This is the constant-memory counterpart to
+ * {@link createZipStream} (which requires the complete `Zippable` up front):
+ * serialize each part chunk-wise into the returned sink instead of building
+ * the full part string.
+ *
+ * Parts must be added in order — `[Content_Types].xml` first per OPC. The
+ * whole archive finishes when {@link ZipStreamWriter.end} is called.
+ */
+export class ZipStreamWriter {
+  private readonly zip: Zip;
+  private current: AsyncZipDeflate | ZipPassThrough | undefined;
+
+  constructor(
+    ondata: (err: Error | null, chunk: Uint8Array, final: boolean) => void,
+    private readonly defaultLevel: number = ZIP_DEFLATE_LEVEL,
+  ) {
+    this.zip = new Zip(ondata);
+  }
+
+  /** Add a part and return its incremental sink. `end()` the previous first. */
+  addPart(name: string, level: number = this.defaultLevel): ZipPartSink {
+    if (this.current) throw new Error(`ZipStreamWriter: previous part not finalized`);
+    const entry =
+      level === ZIP_STORED_LEVEL
+        ? new ZipPassThrough(name)
+        : new AsyncZipDeflate(name, { level: level as ZipOptions["level"] });
+    // AsyncZipDeflate hands chunks to a worker; ondata delivery is asynchronous,
+    // so ordering between parts is preserved by fflate's internal queue.
+    this.zip.add(entry);
+    this.current = entry;
+    return {
+      push: (chunk) => entry.push(chunk, false),
+      end: (lastChunk?: Uint8Array) => {
+        entry.push(lastChunk ?? new Uint8Array(0), true);
+        this.current = undefined;
+      },
+    };
+  }
+
+  /** Finish the archive (central directory + EOCD). */
+  end(): void {
+    if (this.current) throw new Error(`ZipStreamWriter: unclosed part at end()`);
+    this.zip.end();
+  }
+}
+
 // ── Factory function ──
 
 /**

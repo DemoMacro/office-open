@@ -45,6 +45,7 @@ export { convertOutput, OoxmlMimeType, type OutputByType, type OutputType } from
 export {
   createPacker,
   createZipStream,
+  ZipStreamWriter,
   zipAndConvert,
   zipSyncAndConvert,
   ZIP_DEFLATE_LEVEL,
@@ -55,6 +56,7 @@ export {
   type Packer,
   type PackerOptions,
   type XmlifyedFile,
+  type ZipPartSink,
 } from "./packer";
 export type { Zippable, ZipOptions } from "./packer";
 export { strFromU8, unzipSync } from "./packer";

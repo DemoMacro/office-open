@@ -9,6 +9,7 @@ import type { OutputByType, OutputType, PackerOptions } from "@office-open/core"
 import type { WorkbookOptions } from "@parts/file";
 
 import { compileWorkbook } from "./compiler";
+import { canStreamWorkbook, streamWorkbook } from "./stream";
 
 /** @internal Packer instance for XLSX generation. */
 const Packer = createPacker<WorkbookOptions>({
@@ -53,10 +54,38 @@ export function generateWorkbookSync<T extends OutputType = "nodebuffer">(
 
 /**
  * Generate an XLSX file as a `ReadableStream<Uint8Array>`.
+ *
+ * Plain-data workbooks (worksheets with rows/cells, metadata) stream through
+ * a constant-memory path: worksheet XML is written row-chunk-wise with inline
+ * strings, so the full part and the archive never coexist in memory.
+ * Workbooks using richer features (images, charts, tables, …) fall back to
+ * the full-memory stream — same output contract, linear memory.
  */
 export function generateWorkbookStream(
   options: WorkbookOptions,
   packerOptions?: PackerOptions,
 ): ReadableStream<Uint8Array> {
-  return Packer.toStream(options, packerOptions);
+  if (!canStreamWorkbook(options)) {
+    return Packer.toStream(options, packerOptions);
+  }
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      try {
+        streamWorkbook(
+          options,
+          (err, chunk, final) => {
+            if (err) {
+              controller.error(err);
+              return;
+            }
+            controller.enqueue(chunk);
+            if (final) controller.close();
+          },
+          packerOptions?.compression,
+        );
+      } catch (err) {
+        controller.error(err instanceof Error ? err : new Error(String(err)));
+      }
+    },
+  });
 }

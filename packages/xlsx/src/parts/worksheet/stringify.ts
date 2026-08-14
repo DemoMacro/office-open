@@ -20,6 +20,7 @@ import type {
   CfvoOptions,
   FormulaOptions,
   PivotSelectionOptions,
+  RowOptions,
   SelectionOptions,
   SheetViewOptions,
   WorksheetContext,
@@ -218,34 +219,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push("</cols>");
   }
 
-  // Sheet data (rows + cells) — the hot path. Flat attribute assembly (no
-  // per-row Record + for-in) keeps young-gen pressure near zero at 100k+ rows.
+  // Sheet data (rows + cells) — the hot path, shared with the streaming writer.
   p.push("<sheetData>");
-  for (const [i, rowOpts] of rows.entries()) {
-    const rowNumber = rowOpts.rowNumber ?? i + 1;
-    let rowAttr = ` r="${rowNumber}"`;
-    if (rowOpts.height !== undefined) {
-      rowAttr += ` ht="${convertToPt(rowOpts.height)}" customHeight="1"`;
-    }
-    if (rowOpts.hidden) rowAttr += ' hidden="1"';
-    if (rowOpts.spans) rowAttr += ` spans="${rowOpts.spans}"`;
-    if (rowOpts.customFormat) rowAttr += ' customFormat="1"';
-    if (rowOpts.thickTop) rowAttr += ' thickTop="1"';
-    if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
-    if (rowOpts.ph) rowAttr += ' ph="1"';
-
-    if (rowOpts.cells) {
-      p.push(`<row${rowAttr}>`);
-      for (const [j, cell] of rowOpts.cells.entries()) {
-        const ref = cell.reference ?? defaultCellRef(rowNumber, j + 1);
-        const cellStr = buildCellString(ref, cell, sharedStrings, styles);
-        if (cellStr) p.push(cellStr);
-      }
-      p.push("</row>");
-    } else {
-      p.push(`<row${rowAttr}/>`);
-    }
-  }
+  appendSheetDataRows(rows, p, sharedStrings, styles);
   p.push("</sheetData>");
 
   // Sheet calc properties (after sheetData per XSD sequence)
@@ -916,6 +892,50 @@ function buildFormulaString(fOpts: FormulaOptions): string {
     return selfCloseElement("f", attrs(fAttrs));
   }
   return "";
+}
+
+/**
+ * Serialize the sheetData rows into `out` (strings appended in order, caller
+ * wraps with `<sheetData>`/`</sheetData>`). Shared by the full stringify and
+ * the streaming writer so the row/cell serialization cannot drift — passing
+ * `sharedStrings: undefined` switches string cells to `t="inlineStr"`, the
+ * constant-memory mode used when streaming. `startRowNumber` seeds the
+ * implicit row numbering for callers streaming a slice of the full row list.
+ */
+export function appendSheetDataRows(
+  rows: RowOptions[],
+  out: string[],
+  sharedStrings: SharedStrings | undefined,
+  styles: Styles | undefined,
+  startRowNumber = 1,
+): void {
+  for (const [i, rowOpts] of rows.entries()) {
+    const rowNumber = rowOpts.rowNumber ?? startRowNumber + i;
+    // Flat attribute assembly (no per-row Record + for-in) keeps young-gen
+    // pressure near zero at 100k+ rows.
+    let rowAttr = ` r="${rowNumber}"`;
+    if (rowOpts.height !== undefined) {
+      rowAttr += ` ht="${convertToPt(rowOpts.height)}" customHeight="1"`;
+    }
+    if (rowOpts.hidden) rowAttr += ' hidden="1"';
+    if (rowOpts.spans) rowAttr += ` spans="${rowOpts.spans}"`;
+    if (rowOpts.customFormat) rowAttr += ' customFormat="1"';
+    if (rowOpts.thickTop) rowAttr += ' thickTop="1"';
+    if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
+    if (rowOpts.ph) rowAttr += ' ph="1"';
+
+    if (rowOpts.cells) {
+      out.push(`<row${rowAttr}>`);
+      for (const [j, cell] of rowOpts.cells.entries()) {
+        const ref = cell.reference ?? defaultCellRef(rowNumber, j + 1);
+        const cellStr = buildCellString(ref, cell, sharedStrings, styles);
+        if (cellStr) out.push(cellStr);
+      }
+      out.push("</row>");
+    } else {
+      out.push(`<row${rowAttr}/>`);
+    }
+  }
 }
 
 function buildCellString(
