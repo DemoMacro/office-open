@@ -40,11 +40,27 @@ export const ZIP_STORED_LEVEL = 0;
 
 /**
  * Media formats already compressed internally (DEFLATE for PNG, DCT for JPEG,
- * LZW for GIF). Re-compressing via zip DEFLATE wastes CPU and often inflates
- * the data, so MS Office STORE-s these (CompressionOption.NotCompressed → zip
- * method 0). Everything else (EMF/WMF/BMP/TIFF/SVG/…) is compressible → DEFLATE.
+ * LZW for GIF; video/audio containers carry their own codec streams).
+ * Re-compressing via zip DEFLATE wastes CPU and often inflates the data, so
+ * MS Office STORE-s these (CompressionOption.NotCompressed → zip method 0).
+ * Everything else (EMF/WMF/BMP/TIFF/SVG/WAV…) is compressible → DEFLATE —
+ * measured on a real Office package, EMF at zlib level 6 matches Office
+ * output where SuperFast inflates ~15%.
  */
-const PRECOMPRESSED_MEDIA_EXT = new Set(["jpg", "jpeg", "png", "gif"]);
+const PRECOMPRESSED_MEDIA_EXT = new Set([
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "mp4",
+  "mov",
+  "wmv",
+  "mpg",
+  "mpeg",
+  "mp3",
+  "wma",
+  "aac",
+]);
 
 /**
  * Resolve the ZIP level for a media entry by file-name extension, matching MS

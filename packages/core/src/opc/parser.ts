@@ -1,7 +1,8 @@
 import { parse, stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { unzipSync, zipSync, strFromU8, strToU8, type Zippable } from "fflate";
+import { unzipSync, zipSync, strFromU8, strToU8, type ZipOptions, type Zippable } from "fflate";
 
+import { levelForMediaName, ZIP_MEDIA_LEVEL } from "./packer";
 import { hasNativeInflate, nativeUnzip } from "./zip-native";
 
 const XML_PARSE_OPTIONS = {
@@ -104,41 +105,21 @@ export class ParsedArchive {
     const files: Zippable = {};
     for (const [path, data] of this.zip) {
       if (!this.modified.has(path)) {
-        files[path] = isMediaPath(path) ? [data, { level: MEDIA_STORED_LEVEL }] : data;
+        files[path] = [
+          data,
+          { level: levelForMediaName(path, ZIP_MEDIA_LEVEL) as ZipOptions["level"] },
+        ];
       }
     }
     for (const [path, data] of this.modified) {
-      files[path] = isMediaPath(path) ? [data, { level: MEDIA_STORED_LEVEL }] : data;
+      files[path] = [
+        data,
+        { level: levelForMediaName(path, ZIP_MEDIA_LEVEL) as ZipOptions["level"] },
+      ];
     }
     return zipSync(files);
   }
 }
-
-/** Media file extensions that should use STORE (no compression). */
-const MEDIA_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".wmf",
-  ".emf",
-  ".tif",
-  ".tiff",
-  ".avi",
-  ".mp4",
-  ".mp3",
-  ".wav",
-]);
-
-/** Check if a file path has a media extension that should use STORE (no compression). */
-function isMediaPath(path: string): boolean {
-  const dot = path.lastIndexOf(".");
-  if (dot === -1) return false;
-  return MEDIA_EXTENSIONS.has(path.slice(dot).toLowerCase());
-}
-
-/** STORE level for already-compressed media formats. */
-const MEDIA_STORED_LEVEL = 0;
 
 /** Parse an OOXML archive (.docx, .pptx, .xlsx) into a ParsedArchive. */
 export function parseArchive(data: Uint8Array): ParsedArchive {
