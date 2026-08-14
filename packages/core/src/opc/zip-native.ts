@@ -81,6 +81,16 @@ export const hasNativeDeflate = (): boolean => _nativeDeflate !== undefined;
 
 export const hasNativeInflate = (): boolean => _nativeInflate !== undefined;
 
+/**
+ * Synchronous native CRC-32 (`zlib.crc32`, Node/Bun only) — undefined where no
+ * native zlib resolved (browsers/Deno). Used by media dedup as a fast content
+ * key; callers keep their own JS fallback. ~59× faster than a JS hash on
+ * 100 MB inputs.
+ */
+export function nativeCrc32(data: Uint8Array): number | undefined {
+  return _nativeCrc32?.(data);
+}
+
 // ── LE write helpers ──
 
 function wU16(b: Uint8Array, o: number, v: number): void {
