@@ -16,8 +16,8 @@ import type { XlsxReadContext } from "../../context";
 import { parseAutoFilter } from "../auto-filter";
 import { parseColorHex } from "../styles/parse";
 import { parseCellRef, parseCfvo, parsePageBreaks } from "./parse";
+import { parseSheetDataRows } from "./sheet-data";
 import type {
-  CellOptions,
   CellWatchOptions,
   CfvoOptions,
   ColumnOptions,
@@ -33,8 +33,6 @@ import type {
   DataValidationOptions,
   DataValidationType,
   DrawingHfOptions,
-  FormulaOptions,
-  FormulaType,
   FreezePaneOptions,
   HeaderFooterOptions,
   HyperlinkOptions,
@@ -51,7 +49,6 @@ import type {
   PhoneticPropertiesOptions,
   PrintOptions,
   ProtectedRangeOptions,
-  RowOptions,
   ScenarioCellOptions,
   ScenarioDefinition,
   ScenarioOptions,
@@ -585,88 +582,17 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       result.sheetCalcPr = sc;
     }
 
-    // Sheet data (rows and cells)
+    // Sheet data (rows and cells) — parsed by the dedicated sheetData scanner.
+    // The archive read path defers sheetData (Element.raw, children never
+    // materialized); a hand-built or non-deferred tree normalizes through
+    // stringify first, so there is exactly one row parsing implementation.
     const sheetDataEl = findChild(el, "sheetData");
     if (sheetDataEl) {
-      const rows: RowOptions[] = [];
-      for (const rowEl of sheetDataEl.elements ?? []) {
-        if (rowEl.name !== "row") continue;
-        const row: RowOptions = {};
-        const rowNumber = attrNum(rowEl, "r");
-        if (rowNumber !== undefined) row.rowNumber = rowNumber;
-        const ht = attrNum(rowEl, "ht");
-        if (ht !== undefined) row.height = ht;
-        if (parseOnOff(attr(rowEl, "hidden"))) row.hidden = true;
-        if (attr(rowEl, "spans")) row.spans = attr(rowEl, "spans");
-        if (parseOnOff(attr(rowEl, "customFormat"))) row.customFormat = true;
-        if (parseOnOff(attr(rowEl, "thickTop"))) row.thickTop = true;
-        if (parseOnOff(attr(rowEl, "thickBot"))) row.thickBot = true;
-        if (parseOnOff(attr(rowEl, "ph"))) row.ph = true;
-
-        const cells: CellOptions[] = [];
-        for (const cellEl of rowEl.elements ?? []) {
-          if (cellEl.name !== "c") continue;
-          const cell: CellOptions = {};
-          const ref = attr(cellEl, "r");
-          if (ref) cell.reference = ref;
-          const type = attr(cellEl, "t");
-          const styleIdx = attrNum(cellEl, "s");
-          if (styleIdx !== undefined) {
-            // Resolve to a concrete StyleOptions so re-stringify registers it in
-            // the fresh Styles table (whose indices may differ). Keep styleIndex
-            // as a fallback when the styles table cannot be resolved.
-            const resolved =
-              ctx && "resolveStyle" in ctx
-                ? (ctx as XlsxReadContext).resolveStyle(styleIdx)
-                : undefined;
-            if (resolved) {
-              cell.style = resolved;
-            } else {
-              cell.styleIndex = styleIdx;
-            }
-          }
-
-          // Cell value
-          const vEl = findChild(cellEl, "v");
-          const isEl = findChild(cellEl, "is");
-
-          if (type === "s" && vEl) {
-            // Shared string
-            const idx = parseInt(textOf(vEl) ?? "", 10);
-            cell.value = strings[idx] ?? "";
-          } else if (type === "b" && vEl) {
-            cell.value = textOf(vEl) === "1";
-          } else if (type === "inlineStr" && isEl) {
-            const t = findChild(isEl, "t");
-            cell.value = textOf(t) ?? "";
-          } else if (vEl) {
-            const raw = textOf(vEl) ?? "";
-            const num = Number(raw);
-            cell.value = isNaN(num) ? raw : num;
-          }
-
-          // Formula
-          const fEl = findChild(cellEl, "f");
-          if (fEl) {
-            const formula: FormulaOptions = { formula: textOf(fEl) ?? "" };
-            const ft = attr(fEl, "t");
-            if (ft && ft !== "normal") formula.type = ft as FormulaType;
-            const fRef = attr(fEl, "ref");
-            if (fRef) formula.reference = fRef;
-            const fSi = attrNum(fEl, "si");
-            if (fSi !== undefined) formula.sharedIndex = fSi;
-            if (parseOnOff(attr(fEl, "aca"))) formula.aca = true;
-            if (parseOnOff(attr(fEl, "ca"))) formula.ca = true;
-            if (parseOnOff(attr(fEl, "bx"))) formula.bx = true;
-            cell.formula = formula;
-          }
-
-          cells.push(cell);
-        }
-
-        row.cells = cells;
-        rows.push(row);
-      }
+      const rows = parseSheetDataRows(
+        sheetDataEl.raw ?? stringify(sheetDataEl),
+        strings,
+        ctx && "resolveStyle" in ctx ? (ctx as XlsxReadContext) : undefined,
+      );
       if (rows.length > 0) result.rows = rows;
     }
 

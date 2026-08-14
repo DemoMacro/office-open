@@ -10,6 +10,7 @@
 
 import { convertToTwip, xsdVerticalMergeRev } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
+import { attrsRaw } from "@office-open/xml";
 import type { AlignmentType } from "@parts/paragraph";
 import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
 import type {
@@ -34,7 +35,7 @@ import type { CellMergeAttributes } from "@shared/track-revision";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 import type { TableVerticalAlign } from "@shared/vertical-align";
 
-import { attrParts, borderStr, onOff, shadingStr } from "../paragraph/stringify";
+import { borderStr, onOff, shadingStr } from "../paragraph/stringify";
 
 // ── Table width string ──
 
@@ -55,11 +56,11 @@ function tableWidthValue(
 
 function tableWidthStr(name: string, opts: TableWidthProperties): string {
   const type = opts.type ?? WidthType.AUTO;
-  const a = attrParts({
+  const a = attrsRaw({
     "w:w": tableWidthValue(opts.size, type),
     "w:type": type,
   });
-  return `<${name} ${a}/>`;
+  return `<${name}${a}/>`;
 }
 
 // ── Cell margin string ──
@@ -121,7 +122,7 @@ function cellBordersStr(opts: TableCellBordersOptions): string | undefined {
 // ── Float properties string ──
 
 function floatPropertiesStr(opts: TableFloatOptions): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:horzAnchor": opts.horizontalAnchor,
     "w:vertAnchor": opts.verticalAnchor,
     "w:tblpX":
@@ -142,13 +143,13 @@ function floatPropertiesStr(opts: TableFloatOptions): string {
     "w:rightFromText":
       opts.rightFromText !== undefined ? convertToTwip(opts.rightFromText) : undefined,
   });
-  return `<w:tblpPr ${a}/>`;
+  return `<w:tblpPr${a}/>`;
 }
 
 // ── Table look string ──
 
 function tableLookStr(opts: TableLookOptions): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:firstRow": opts.firstRow,
     "w:lastRow": opts.lastRow,
     "w:firstColumn": opts.firstColumn,
@@ -156,13 +157,13 @@ function tableLookStr(opts: TableLookOptions): string {
     "w:noHBand": opts.noHBand,
     "w:noVBand": opts.noVBand,
   });
-  return `<w:tblLook ${a}/>`;
+  return `<w:tblLook${a}/>`;
 }
 
 // ── Conditional format style string (CT_Cnf) ──
 
 function cnfStyleStr(opts: CnfStyleOptions): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:val": opts.val,
     "w:firstRow": opts.firstRow,
     "w:lastRow": opts.lastRow,
@@ -177,14 +178,14 @@ function cnfStyleStr(opts: CnfStyleOptions): string {
     "w:lastRowFirstColumn": opts.lastRowFirstColumn,
     "w:lastRowLastColumn": opts.lastRowLastColumn,
   });
-  return `<w:cnfStyle ${a}/>`;
+  return `<w:cnfStyle${a}/>`;
 }
 
 // ── Change/revision attribute string ──
 
 function changeAttrStr(tag: string, opts: ChangedProperties): string {
-  const a = attrParts({ "w:author": opts.author, "w:date": opts.date, "w:id": opts.id });
-  return `<${tag} ${a}/>`;
+  const a = attrsRaw({ "w:author": opts.author, "w:date": opts.date, "w:id": opts.id });
+  return `<${tag}${a}/>`;
 }
 
 // ── Cell merge revision string ──
@@ -201,18 +202,18 @@ function cellMergeStr(opts: CellMergeAttributes): string {
   if (opts.verticalMergeOriginal !== undefined) {
     attrs["w:vMergeOrig"] = xsdVerticalMergeRev.to(opts.verticalMergeOriginal);
   }
-  const a = attrParts(attrs);
-  return `<w:cellMerge ${a}/>`;
+  const a = attrsRaw(attrs);
+  return `<w:cellMerge${a}/>`;
 }
 
 // ── Cell spacing string ──
 
 function cellSpacingStr(opts: TableCellSpacingProperties): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:w": tableWidthValue(opts.size, opts.type),
     "w:type": opts.type,
   });
-  return `<w:tblCellSpacing ${a}/>`;
+  return `<w:tblCellSpacing${a}/>`;
 }
 
 // ── Table properties types ──
@@ -247,7 +248,7 @@ export type TablePropertiesOptions = {
 
 function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptions): string {
   const inner = stringifyTablePropertiesInner({ ...options, includeIfEmpty: true });
-  const a = attrParts({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
+  const a = attrsRaw({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
   return `<w:tblPrChange ${a}><w:tblPr>${inner}</w:tblPr></w:tblPrChange>`;
 }
 
@@ -355,7 +356,7 @@ export type TableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
 
 function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChangeOptions): string {
   const inner = stringifyTableRowPropertiesInner({ ...options, includeIfEmpty: true });
-  const a = attrParts({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
+  const a = attrsRaw({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
   return `<w:trPrChange ${a}><w:trPr>${inner}</w:trPr></w:trPrChange>`;
 }
 
@@ -397,11 +398,11 @@ function stringifyTableRowPropertiesInner(options: TableRowPropertiesOptions): s
   }
 
   if (options.height) {
-    const a = attrParts({
+    const a = attrsRaw({
       "w:val": convertToTwip(options.height.value),
       "w:hRule": options.height.rule,
     });
-    parts.push(`<w:trHeight ${a}/>`);
+    parts.push(`<w:trHeight${a}/>`);
   }
 
   if (options.cellSpacing) {
@@ -477,7 +478,7 @@ function stringifyTableCellPropertiesChangeInner(
   options: TableCellPropertiesChangeOptions,
 ): string {
   const inner = stringifyTableCellPropertiesInner({ ...options, includeIfEmpty: true });
-  const a = attrParts({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
+  const a = attrsRaw({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
   return `<w:tcPrChange ${a}><w:tcPr>${inner}</w:tcPr></w:tcPrChange>`;
 }
 
@@ -628,7 +629,7 @@ function stringifyTablePropertyExceptionsInner(options: TablePropertyExOptions):
 
   if (options.tblPrExChange) {
     const change = options.tblPrExChange;
-    const a = attrParts({ "w:author": change.author, "w:date": change.date, "w:id": change.id });
+    const a = attrsRaw({ "w:author": change.author, "w:date": change.date, "w:id": change.id });
     // CT_TblPrExChange requires a tblPrEx child holding the previous (pre-change) values.
     const revInner = stringifyTablePropertyExceptionsInner(change);
     parts.push(`<w:tblPrExChange ${a}><w:tblPrEx>${revInner}</w:tblPrEx></w:tblPrExChange>`);

@@ -105,6 +105,11 @@ function writeElement(
   const attrStr = element.attributes
     ? writeAttributes(element.attributes, name, element, opts.attributeValueFn)
     : "";
+  // Deferred content: re-emit the captured inner XML verbatim — children were
+  // never parsed, and the bytes must survive a set/save round-trip.
+  if (element.raw !== undefined) {
+    return `<${name}${attrStr}>${element.raw}</${name}>`;
+  }
   const withClosingTag =
     (element.elements?.length ?? 0) > 0 ||
     element.attributes?.["xml:space"] === "preserve" ||

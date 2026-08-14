@@ -23,6 +23,13 @@ export interface Element {
   type?: string;
   name?: string;
   elements?: Element[];
+  /**
+   * Deferred content: the element's inner XML captured verbatim, children
+   * not parsed (see `ParseOptions.deferElements`). Consumers that understand
+   * the element scan `raw` themselves; `stringify` re-emits it verbatim, so
+   * set/save round-trips keep the bytes.
+   */
+  raw?: string;
   parent?: Element;
 }
 
@@ -66,6 +73,14 @@ export interface ParseOptions extends IgnoreOptions {
   alwaysChildren?: boolean;
   instructionHasAttributes?: boolean;
   captureSpacesBetweenElements?: boolean;
+  /**
+   * Element names whose inner XML is captured verbatim into {@link Element.raw}
+   * instead of being parsed into child elements. Lets a consumer with a
+   * dedicated scanner for a hot container (e.g. xlsx `sheetData`) skip
+   * materializing millions of child nodes. Same-name nesting is tracked, so
+   * the capture always ends at the truly matching close tag.
+   */
+  deferElements?: string[];
   doctypeFn?: (value: string, parentElement: object) => string;
   instructionFn?: (value: string, instructionName: string, parentElement: string) => string;
   cdataFn?: (value: string, parentElement: object) => string;

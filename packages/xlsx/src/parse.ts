@@ -14,6 +14,7 @@ import { partPathToRelsPath, toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
+import type { ParseOptions } from "@office-open/xml";
 import { attr } from "@office-open/xml";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
@@ -82,6 +83,12 @@ function sortByNumber(paths: string[]): string[] {
     return numA - numB;
   });
 }
+
+/**
+ * Worksheet parts read with sheetData deferred — the XML parser captures the
+ * container's inner XML verbatim and `parseSheetDataRows` walks it directly.
+ */
+const WORKSHEET_PARSE_OPTIONS: ParseOptions = { deferElements: ["sheetData"] };
 
 /**
  * Parse raw .xlsx data into a low-level XlsxDocument.
@@ -262,10 +269,12 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (wbData.definedNames) opts.definedNames = wbData.definedNames;
   }
 
-  // Parse worksheets using descriptor pipeline
+  // Parse worksheets using descriptor pipeline. Worksheet parts defer
+  // sheetData — the row scanner walks the captured inner XML, skipping the
+  // per-cell Element tree (the dominant allocation cost on large sheets).
   const worksheets: WorksheetOptions[] = [];
   for (const [i, wsPath] of xlsx.worksheets.entries()) {
-    const wsEl = xlsx.doc.get(wsPath);
+    const wsEl = xlsx.doc.get(wsPath, WORKSHEET_PARSE_OPTIONS);
     if (!wsEl) continue;
 
     const wsOpts = worksheetDesc.parse(wsEl, readContext);

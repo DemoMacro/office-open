@@ -3,36 +3,36 @@ export function escapeXml(str: string): string {
   // Fast path: most text content doesn't contain XML-special characters.
   // Manual scan avoids regex overhead; returning the original string reference
   // means zero allocation for the common case.
+  let firstSpecial = -1;
   for (let i = 0; i < str.length; i++) {
     const c = str.charCodeAt(i);
     if (c === 38 || c === 34 || c === 39 || c === 60 || c === 62) {
       // & " ' < >
-      // Slow path: slice-and-append avoids regex + temporary match objects.
-      let s = "";
-      let last = 0;
-      for (let j = i; j < str.length; j++) {
-        const cj = str.charCodeAt(j);
-        if (cj === 38) {
-          s += str.slice(last, j) + "&amp;";
-          last = j + 1;
-        } else if (cj === 34) {
-          s += str.slice(last, j) + "&quot;";
-          last = j + 1;
-        } else if (cj === 39) {
-          s += str.slice(last, j) + "&apos;";
-          last = j + 1;
-        } else if (cj === 60) {
-          s += str.slice(last, j) + "&lt;";
-          last = j + 1;
-        } else if (cj === 62) {
-          s += str.slice(last, j) + "&gt;";
-          last = j + 1;
-        }
-      }
-      return s + str.slice(last);
+      firstSpecial = i;
+      break;
     }
   }
-  return str;
+  if (firstSpecial === -1) return str;
+
+  // Slow path: collect all replacement positions, then batch slice
+  const parts: string[] = [str.slice(0, firstSpecial)];
+  for (let i = firstSpecial; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c === 38) {
+      parts.push("&amp;");
+    } else if (c === 34) {
+      parts.push("&quot;");
+    } else if (c === 39) {
+      parts.push("&apos;");
+    } else if (c === 60) {
+      parts.push("&lt;");
+    } else if (c === 62) {
+      parts.push("&gt;");
+    } else {
+      parts.push(str.charAt(i));
+    }
+  }
+  return parts.join("");
 }
 
 /**

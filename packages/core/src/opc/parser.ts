@@ -1,5 +1,5 @@
 import { parse, stringify } from "@office-open/xml";
-import type { Element } from "@office-open/xml";
+import type { Element, ParseOptions } from "@office-open/xml";
 import { unzipSync, zipSync, strFromU8, strToU8, type ZipOptions, type Zippable } from "fflate";
 
 import { levelForMediaName, ZIP_MEDIA_LEVEL } from "./packer";
@@ -33,12 +33,18 @@ export class ParsedArchive {
     this.zip = new Map(Object.entries(unzipped));
   }
 
-  /** Read an XML part as an Element tree. */
-  public get(path: string): Element | undefined {
+  /**
+   * Read an XML part as an Element tree. `parseOptions` extends the default
+   * XML parse options for this part (e.g. `deferElements` to capture a hot
+   * container's inner XML verbatim). Callers must use consistent options per
+   * path — the wrapper cache is keyed by path only.
+   */
+  public get(path: string, parseOptions?: ParseOptions): Element | undefined {
+    const opts = parseOptions ? { ...XML_PARSE_OPTIONS, ...parseOptions } : XML_PARSE_OPTIONS;
     // Check modified first
     const modData = this.modified.get(path);
     if (modData) {
-      const wrapper = parse(strFromU8(modData), XML_PARSE_OPTIONS) as Element;
+      const wrapper = parse(strFromU8(modData), opts) as Element;
       this.wrapperCache.set(path, wrapper);
       return wrapper.elements?.find((e) => e.type === "element");
     }
@@ -51,7 +57,7 @@ export class ParsedArchive {
     if (cached) return cached.elements?.find((e) => e.type === "element");
 
     // Parse and cache
-    const wrapper = parse(strFromU8(data), XML_PARSE_OPTIONS) as Element;
+    const wrapper = parse(strFromU8(data), opts) as Element;
     this.wrapperCache.set(path, wrapper);
     return wrapper.elements?.find((e) => e.type === "element");
   }

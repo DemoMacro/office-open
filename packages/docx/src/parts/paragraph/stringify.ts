@@ -17,7 +17,7 @@ import {
   pointMeasureValue,
   uCharHexNumber,
 } from "@office-open/core";
-import { escapeXml } from "@office-open/xml";
+import { attrsRaw, escapeXml } from "@office-open/xml";
 import type { CnfConditionalOptions } from "@parts/paragraph/formatting/cnf-style";
 import type { IndentProperties } from "@parts/paragraph/formatting/indent";
 import type { SpacingProperties } from "@parts/paragraph/formatting/spacing";
@@ -44,19 +44,10 @@ export function onOff(name: string, val: boolean): string {
   return val ? `<${name}/>` : `<${name} w:val="0"/>`;
 }
 
-/** Build attrs string from key-value pairs, skipping undefined */
-export function attrParts(attrs: Record<string, string | number | boolean | undefined>): string {
-  const parts: string[] = [];
-  for (const [key, val] of Object.entries(attrs)) {
-    if (val !== undefined) parts.push(`${key}="${val}"`);
-  }
-  return parts.join(" ");
-}
-
 // ── Border ──
 
 export function borderStr(name: string, opts: BorderOptions): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:val": opts.style,
     "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
     "w:sz": opts.size !== undefined ? eighthPointMeasureValue(opts.size) : undefined,
@@ -67,13 +58,13 @@ export function borderStr(name: string, opts: BorderOptions): string {
     "w:shadow": opts.shadow !== undefined ? (opts.shadow ? 1 : 0) : undefined,
     "w:frame": opts.frame !== undefined ? (opts.frame ? 1 : 0) : undefined,
   });
-  return `<${name} ${a}/>`;
+  return `<${name}${a}/>`;
 }
 
 // ── Shading ──
 
 export function shadingStr(opts: ShadingProperties): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:val": opts.type ?? "clear",
     "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
     "w:fill": opts.fill !== undefined ? hexColorValue(opts.fill) : undefined,
@@ -86,13 +77,13 @@ export function shadingStr(opts: ShadingProperties): string {
     "w:themeFillShade":
       opts.themeFillShade !== undefined ? uCharHexNumber(opts.themeFillShade) : undefined,
   });
-  return `<w:shd ${a}/>`;
+  return `<w:shd${a}/>`;
 }
 
 // ── Spacing ──
 
 function spacingStr(opts: SpacingProperties): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:after": opts.after !== undefined ? convertToTwip(opts.after) : undefined,
     "w:afterAutospacing":
       opts.afterAutoSpacing !== undefined ? (opts.afterAutoSpacing ? 1 : 0) : undefined,
@@ -104,13 +95,13 @@ function spacingStr(opts: SpacingProperties): string {
     "w:line": opts.line !== undefined ? convertToTwip(opts.line) : undefined,
     "w:lineRule": opts.lineRule,
   });
-  return `<w:spacing ${a}/>`;
+  return `<w:spacing${a}/>`;
 }
 
 // ── Indent ──
 
 function indentStr(opts: IndentProperties): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:start": opts.start !== undefined ? convertToTwip(opts.start) : undefined,
     "w:startChars": opts.startChars !== undefined ? decimalNumber(opts.startChars) : undefined,
     "w:end": opts.end !== undefined ? convertToTwip(opts.end) : undefined,
@@ -126,19 +117,19 @@ function indentStr(opts: IndentProperties): string {
     "w:firstLineChars":
       opts.firstLineChars !== undefined ? decimalNumber(opts.firstLineChars) : undefined,
   });
-  return `<w:ind ${a}/>`;
+  return `<w:ind${a}/>`;
 }
 
 // ── Tab stops ──
 
 function tabStopsStr(defs: TabStopDefinition[]): string {
   const items = defs.map(({ type, position, leader }) => {
-    const a = attrParts({
+    const a = attrsRaw({
       "w:val": type,
       "w:pos": convertToTwip(position),
       "w:leader": leader,
     });
-    return `<w:tab ${a}/>`;
+    return `<w:tab${a}/>`;
   });
   return `<w:tabs>${items.join("")}</w:tabs>`;
 }
@@ -146,7 +137,7 @@ function tabStopsStr(defs: TabStopDefinition[]): string {
 // ── CNF style ──
 
 function cnfStyleStr(opts: CnfConditionalOptions): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:firstRow": opts.firstRow ? "1" : "0",
     "w:lastRow": opts.lastRow ? "1" : "0",
     "w:firstColumn": opts.firstColumn ? "1" : "0",
@@ -160,7 +151,7 @@ function cnfStyleStr(opts: CnfConditionalOptions): string {
     "w:lastRowFirstColumn": opts.lastRowFirstColumn ? "1" : "0",
     "w:lastRowLastColumn": opts.lastRowLastColumn ? "1" : "0",
   });
-  return `<w:cnfStyle ${a}/>`;
+  return `<w:cnfStyle${a}/>`;
 }
 
 // ── Frame properties ──
@@ -168,7 +159,7 @@ function cnfStyleStr(opts: CnfConditionalOptions): string {
 function framePrStr(opts: FrameOptions): string {
   const alignment = (opts as { alignment?: { x?: string; y?: string } }).alignment;
   const position = (opts as { position?: { x?: number; y?: number } }).position;
-  const a = attrParts({
+  const a = attrsRaw({
     "w:xAlign": alignment?.x,
     "w:yAlign": alignment?.y,
     "w:hAnchor": opts.anchor?.horizontal,
@@ -185,7 +176,7 @@ function framePrStr(opts: FrameOptions): string {
     "w:x": position?.x,
     "w:y": position?.y,
   });
-  return `<w:framePr ${a}/>`;
+  return `<w:framePr${a}/>`;
 }
 
 // ── Number properties ──
@@ -198,13 +189,13 @@ function numPrStr(
   const idVal = typeof numberId === "string" ? `{${numberId}}` : numberId;
   const parts = [`<w:ilvl w:val="${Math.min(indentLevel, 9)}"/>`, `<w:numId w:val="${idVal}"/>`];
   if (numberingChange) {
-    const a = attrParts({
+    const a = attrsRaw({
       "w:original": numberingChange.original,
       "w:id": numberingChange.id,
       "w:author": numberingChange.author,
       "w:date": numberingChange.date,
     });
-    parts.push(`<w:numberingChange ${a}/>`);
+    parts.push(`<w:numberingChange${a}/>`);
   }
   return `<w:numPr>${parts.join("")}</w:numPr>`;
 }
@@ -216,28 +207,28 @@ function colorStr(colorOrOptions: string | ColorOptions): string {
     return `<w:color w:val="${hexColorValue(colorOrOptions)}"/>`;
   }
   const opts = colorOrOptions;
-  const a = attrParts({
+  const a = attrsRaw({
     "w:val": opts.val !== undefined ? hexColorValue(opts.val) : undefined,
     "w:themeColor": opts.themeColor,
     "w:themeTint": opts.themeTint !== undefined ? uCharHexNumber(opts.themeTint) : undefined,
     "w:themeShade": opts.themeShade !== undefined ? uCharHexNumber(opts.themeShade) : undefined,
   });
-  return `<w:color ${a}/>`;
+  return `<w:color${a}/>`;
 }
 
 function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): string {
   if (typeof nameOrAttrs === "string") {
-    const a = attrParts({
+    const a = attrsRaw({
       "w:ascii": nameOrAttrs,
       "w:cs": nameOrAttrs,
       "w:eastAsia": nameOrAttrs,
       "w:hAnsi": nameOrAttrs,
       "w:hint": hint,
     });
-    return `<w:rFonts ${a}/>`;
+    return `<w:rFonts${a}/>`;
   }
   const attrs = nameOrAttrs;
-  const a = attrParts({
+  const a = attrsRaw({
     "w:ascii": attrs.ascii,
     "w:asciiTheme": attrs.asciiTheme,
     "w:cs": attrs.complexScript,
@@ -248,7 +239,7 @@ function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): strin
     "w:hAnsiTheme": attrs.hAnsiTheme,
     "w:hint": attrs.hint,
   });
-  return `<w:rFonts ${a}/>`;
+  return `<w:rFonts${a}/>`;
 }
 
 function underlineStr(type: string | undefined, color?: string): string {
@@ -259,7 +250,7 @@ function underlineStr(type: string | undefined, color?: string): string {
 }
 
 function eastAsianLayoutStr(opts: EastAsianLayoutOptions): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:id": opts.id !== undefined ? decimalNumber(opts.id) : undefined,
     "w:combine": opts.combine !== undefined ? (opts.combine ? 1 : 0) : undefined,
     "w:combineBrackets": opts.combineBrackets,
@@ -267,16 +258,16 @@ function eastAsianLayoutStr(opts: EastAsianLayoutOptions): string {
     "w:vertCompress":
       opts.verticalCompress !== undefined ? (opts.verticalCompress ? 1 : 0) : undefined,
   });
-  return `<w:eastAsianLayout ${a}/>`;
+  return `<w:eastAsianLayout${a}/>`;
 }
 
 function languageStr(opts: LanguageOptions): string {
-  const a = attrParts({
+  const a = attrsRaw({
     "w:val": opts.value,
     "w:eastAsia": opts.eastAsia,
     "w:bidi": opts.bidirectional,
   });
-  return `<w:lang ${a}/>`;
+  return `<w:lang${a}/>`;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
