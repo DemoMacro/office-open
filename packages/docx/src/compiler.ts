@@ -22,6 +22,7 @@ import {
   optionalRelsPart,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
+  IMAGE_MEDIA_CONTENT_TYPES,
   resolverFromRegistry,
 } from "@office-open/core";
 import type { XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
@@ -64,17 +65,7 @@ const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
 /** Extension → MIME for media/font/embedding Default entries. Declared only
  * for extensions actually present in the package. */
 const DOCX_MEDIA_CONTENT_TYPES: Record<string, string> = {
-  png: "image/png",
-  jpeg: "image/jpeg",
-  jpg: "image/jpeg",
-  bmp: "image/bmp",
-  gif: "image/gif",
-  tif: "image/tiff",
-  tiff: "image/tiff",
-  emf: "image/x-emf",
-  wmf: "image/x-wmf",
-  ico: "image/x-icon",
-  svg: "image/svg+xml",
+  ...IMAGE_MEDIA_CONTENT_TYPES,
   odttf: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
   bin: "application/vnd.openxmlformats-officedocument.oleObject",
 };

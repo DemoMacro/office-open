@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Relationships, convertToEmu } from "@office-open/core";
+import { IMAGE_MEDIA_CONTENT_TYPES, Relationships, convertToEmu } from "@office-open/core";
 import type { RelationshipType } from "@office-open/core";
 import {
   appPropertiesDesc,
@@ -413,17 +413,7 @@ const PPTX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(PPTX_PARTS);
 /** Extension → MIME for media Default entries (image/video/audio). Declared
  * only for extensions actually present in the package. */
 const PPTX_MEDIA_CONTENT_TYPES: Record<string, string> = {
-  png: "image/png",
-  jpeg: "image/jpeg",
-  jpg: "image/jpeg",
-  gif: "image/gif",
-  bmp: "image/bmp",
-  tif: "image/tiff",
-  tiff: "image/tiff",
-  ico: "image/x-icon",
-  emf: "image/x-emf",
-  wmf: "image/x-wmf",
-  svg: "image/svg+xml",
+  ...IMAGE_MEDIA_CONTENT_TYPES,
   mp4: "video/mp4",
   mov: "video/quicktime",
   wmv: "video/x-ms-wmv",

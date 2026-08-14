@@ -184,3 +184,25 @@ export function deriveContentTypes(
   }
   return { defaults, overrides: [...overrideMap.values()] };
 }
+
+/**
+ * Extension → MIME for image media, shared by every format package.
+ *
+ * The three format compilers each declare a package-scoped media table made
+ * of this image block plus format-specific extras (docx: odttf/bin fonts and
+ * OLE; pptx: video/audio; xlsx: vml). Keeping the image half in one place
+ * means a new image format lands everywhere at once.
+ */
+export const IMAGE_MEDIA_CONTENT_TYPES: Record<string, string> = {
+  png: "image/png",
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  bmp: "image/bmp",
+  gif: "image/gif",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  emf: "image/x-emf",
+  wmf: "image/x-wmf",
+  ico: "image/x-icon",
+  svg: "image/svg+xml",
+};

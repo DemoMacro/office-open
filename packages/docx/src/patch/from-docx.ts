@@ -1,4 +1,4 @@
-import { TargetModeType } from "@office-open/core";
+import { IMAGE_MEDIA_CONTENT_TYPES, TargetModeType } from "@office-open/core";
 import {
   DOCX_NS,
   OoxmlMimeType,
@@ -461,12 +461,12 @@ export const patchDocument = async <T extends OutputType = OutputType>({
       throw new Error("Could not find content types file");
     }
 
-    appendContentType(contentTypesJson, "image/png", "png");
-    appendContentType(contentTypesJson, "image/jpeg", "jpeg");
-    appendContentType(contentTypesJson, "image/jpeg", "jpg");
-    appendContentType(contentTypesJson, "image/bmp", "bmp");
-    appendContentType(contentTypesJson, "image/gif", "gif");
-    appendContentType(contentTypesJson, "image/svg+xml", "svg");
+    // Cover every media extension the patch path can register (RegularMediaData
+    // includes emf/wmf/tif/ico), not just a hand-picked subset — a patched-in
+    // image needs its <Default> even when the source package lacks one.
+    for (const [ext, mime] of Object.entries(IMAGE_MEDIA_CONTENT_TYPES)) {
+      appendContentType(contentTypesJson, mime, ext);
+    }
   }
 
   const files: Record<string, Uint8Array> = {};

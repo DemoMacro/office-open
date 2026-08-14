@@ -20,6 +20,7 @@ import {
   XLSX_PARTS,
   customPropertiesDesc,
   toUint8Array,
+  IMAGE_MEDIA_CONTENT_TYPES,
   type XmlifyedFile,
   type Zippable,
 } from "@office-open/core";
@@ -60,17 +61,7 @@ const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
  * extensions actually present in the package. VML backs legacy comment
  * anchors (xl/drawings/vmlDrawing${i}.vml). */
 const XLSX_MEDIA_CONTENT_TYPES: Record<string, string> = {
-  png: "image/png",
-  jpeg: "image/jpeg",
-  jpg: "image/jpeg",
-  gif: "image/gif",
-  bmp: "image/bmp",
-  tif: "image/tiff",
-  tiff: "image/tiff",
-  ico: "image/x-icon",
-  emf: "image/x-emf",
-  wmf: "image/x-wmf",
-  svg: "image/svg+xml",
+  ...IMAGE_MEDIA_CONTENT_TYPES,
   vml: "application/vnd.openxmlformats-officedocument.vmlDrawing",
 };
 

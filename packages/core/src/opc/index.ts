@@ -75,4 +75,5 @@ export {
   type ContentTypesInput,
   type PartContentTypeResolver,
   type DeriveContentTypesOptions,
+  IMAGE_MEDIA_CONTENT_TYPES,
 } from "./content-types-input";
