@@ -10,6 +10,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
 import {
+  createBodyProperties,
   fillDesc,
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
@@ -107,7 +108,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     return `<p:graphicFrame>${parts.join("")}</p:graphicFrame>`;
   },
 
-  parse(el, _ctx) {
+  parse(el, ctx) {
     const result: Partial<TableOptions> = {};
 
     // Position from p:xfrm
@@ -160,8 +161,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
           const borderOpts: Partial<CellBorderOptions> = {};
           const w = attrNum(borderEl, "w");
           if (w !== undefined) borderOpts.width = w;
-          const fillResult = parseTableCellFill(borderEl);
-          if (fillResult) borderOpts.color = fillResult;
+          const fillResult = parseBorderColor(borderEl, ctx);
+          if (fillResult !== undefined) borderOpts.color = fillResult;
           const prstDash = findChild(borderEl, "a:prstDash");
           if (prstDash) {
             const val = attr(prstDash, "val");
@@ -190,7 +191,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       const h = attrNum(tr, "h");
       const cells: TableCellOptions[] = [];
       for (const tc of children(tr, "a:tc")) {
-        cells.push(parseTableCell(tc, _ctx));
+        cells.push(parseTableCell(tc, ctx));
       }
       const row: TableRowOptions = { cells };
       if (h !== undefined) row.height = h;
@@ -252,15 +253,8 @@ function stringifyCell(cell: TableCellOptions, ctx: PptxWriteContext): string {
 function stringifyTxBody(cell: TableCellOptions, ctx: PptxWriteContext): string {
   const txParts: string[] = [];
 
-  // a:bodyPr
-  const bodyPrAttrs: string[] = [];
-  const margins = cell.margins;
-  if (margins?.top !== undefined) bodyPrAttrs.push(`tIns="${margins.top}"`);
-  if (margins?.bottom !== undefined) bodyPrAttrs.push(`bIns="${margins.bottom}"`);
-  if (margins?.left !== undefined) bodyPrAttrs.push(`lIns="${margins.left}"`);
-  if (margins?.right !== undefined) bodyPrAttrs.push(`rIns="${margins.right}"`);
-  const bodyPrStr = bodyPrAttrs.length > 0 ? ` ${bodyPrAttrs.join(" ")}` : "";
-  txParts.push(`<a:bodyPr${bodyPrStr}/>`);
+  // a:bodyPr — core owns the inset conversion (UniversalMeasure → EMU)
+  txParts.push(createBodyProperties({ margins: cell.margins }));
   txParts.push("<a:lstStyle/>");
 
   // Paragraphs
@@ -295,14 +289,14 @@ function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
   }
 
   if (cell.borders) {
-    if (cell.borders.left) parts.push(buildBorderLine("a:lnL", cell.borders.left));
-    if (cell.borders.right) parts.push(buildBorderLine("a:lnR", cell.borders.right));
-    if (cell.borders.top) parts.push(buildBorderLine("a:lnT", cell.borders.top));
-    if (cell.borders.bottom) parts.push(buildBorderLine("a:lnB", cell.borders.bottom));
+    if (cell.borders.left) parts.push(buildBorderLine("a:lnL", cell.borders.left, ctx));
+    if (cell.borders.right) parts.push(buildBorderLine("a:lnR", cell.borders.right, ctx));
+    if (cell.borders.top) parts.push(buildBorderLine("a:lnT", cell.borders.top, ctx));
+    if (cell.borders.bottom) parts.push(buildBorderLine("a:lnB", cell.borders.bottom, ctx));
     if (cell.borders.diagonalTopLeftToBottomRight)
-      parts.push(buildBorderLine("a:lnTlToBr", cell.borders.diagonalTopLeftToBottomRight));
+      parts.push(buildBorderLine("a:lnTlToBr", cell.borders.diagonalTopLeftToBottomRight, ctx));
     if (cell.borders.diagonalBottomLeftToTopRight)
-      parts.push(buildBorderLine("a:lnBlToTr", cell.borders.diagonalBottomLeftToTopRight));
+      parts.push(buildBorderLine("a:lnBlToTr", cell.borders.diagonalBottomLeftToTopRight, ctx));
   }
 
   if (cell.fill !== undefined) {
@@ -323,15 +317,17 @@ function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
   return `<a:tcPr>${parts.join("")}</a:tcPr>`;
 }
 
-function buildBorderLine(name: string, options: CellBorderOptions): string {
+function buildBorderLine(name: string, options: CellBorderOptions, ctx: PptxWriteContext): string {
   const attrs: string[] = [];
   if (options.width !== undefined) attrs.push(`w="${convertToEmu(options.width)}"`);
 
   const children: string[] = [];
-  if (options.color) {
-    children.push(
-      `<a:solidFill><a:srgbClr val="${options.color.replace("#", "")}"/></a:solidFill>`,
-    );
+  if (options.color !== undefined) {
+    const fillXml =
+      typeof options.color === "string"
+        ? `<a:solidFill><a:srgbClr val="${options.color.replace("#", "")}"/></a:solidFill>`
+        : stringify(fillDesc, options.color, ctx);
+    if (fillXml) children.push(fillXml);
   }
   if (options.dashStyle) {
     children.push(`<a:prstDash val="${options.dashStyle}"/>`);
@@ -468,8 +464,8 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
         const borderOpts: Partial<CellBorderOptions> = {};
         const w = attrNum(borderEl, "w");
         if (w !== undefined) borderOpts.width = w;
-        const fillResult = parseTableCellFill(borderEl);
-        if (fillResult) borderOpts.color = fillResult;
+        const fillResult = parseBorderColor(borderEl, ctx);
+        if (fillResult !== undefined) borderOpts.color = fillResult;
         // Dash style
         const prstDash = findChild(borderEl, "a:prstDash");
         if (prstDash) {
@@ -485,10 +481,16 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
   return result;
 }
 
-/** Extract a solid fill color string from an element (e.g. a:lnL, a:tcPr). */
-function parseTableCellFill(el: Element): string | undefined {
+/**
+ * Read a border line color from its a:lnL/a:lnR/… element. An srgb solid fill
+ * stays the hex-string sugar; any other fill (scheme color, gradient) comes
+ * back as the structured FillOptions so it round-trips.
+ */
+function parseBorderColor(el: Element, ctx: ReadContext): CellBorderOptions["color"] {
   const solidFill = findChild(el, "a:solidFill");
   if (!solidFill) return undefined;
   const srgbClr = findChild(solidFill, "a:srgbClr");
-  return srgbClr?.attributes?.["val"] ? String(srgbClr.attributes["val"]) : undefined;
+  if (srgbClr?.attributes?.["val"] !== undefined) return String(srgbClr.attributes["val"]);
+  const fill = parse(fillDesc, el, ctx);
+  return fill ?? undefined;
 }

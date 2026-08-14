@@ -152,6 +152,27 @@ describe("tableDesc round-trip", () => {
     expect(top.color).toBe("000000");
   });
 
+  it("round-trips a scheme-color border as structured fill", () => {
+    const opts: TableOptions = {
+      rows: [
+        {
+          cells: [
+            {
+              text: "Scheme",
+              borders: {
+                top: { width: 12700, color: { type: "solid", color: { value: "accent1" } } },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const cell = result.rows![0]?.cells?.[0];
+    if (!cell) throw new Error("missing cell");
+    expect(cell.borders?.top?.color).toEqual({ type: "solid", color: { value: "accent1" } });
+  });
+
   it("round-trips cell with diagonal borders", () => {
     const opts: TableOptions = {
       rows: [
@@ -289,8 +310,10 @@ describe("tableDesc round-trip", () => {
     const cell = result.rows![0]?.cells?.[0];
     if (!cell) throw new Error("missing cell");
     const margins = cell.margins!;
-    expect(margins.top).toBe("1mm");
-    expect(margins.left).toBe("2.5mm");
+    // UniversalMeasure input is normalized to EMU on stringify (ST_TextMargin
+    // is an integer type), so it comes back as the plain EMU number.
+    expect(margins.top).toBe(36000);
+    expect(margins.left).toBe(90000);
   });
 
   it("round-trips tableStyleId (a:tableStyleId)", () => {
