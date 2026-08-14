@@ -7,6 +7,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, textOf } from "@office-open/xml";
 
@@ -46,51 +47,51 @@ export const pivotTableDesc: CustomDescriptor<
     // Root element attributes
     if (attr(el, "name")) result.name = attr(el, "name");
     if (attr(el, "cacheId") !== undefined) result.cacheId = attrNum(el, "cacheId") ?? 0;
-    if (String(attr(el, "dataOnRows")) === "1") result.dataOnRows = true;
+    if (parseOnOff(attr(el, "dataOnRows"))) result.dataOnRows = true;
     if (String(attr(el, "showHeaders")) === "0") result.showHeaders = false;
-    if (String(attr(el, "showEmptyRow")) === "1") result.showEmptyRow = true;
-    if (String(attr(el, "showEmptyCol")) === "1") result.showEmptyCol = true;
+    if (parseOnOff(attr(el, "showEmptyRow"))) result.showEmptyRow = true;
+    if (parseOnOff(attr(el, "showEmptyCol"))) result.showEmptyCol = true;
     if (attr(el, "grandTotalCaption")) result.grandTotalCaption = attr(el, "grandTotalCaption");
     if (attr(el, "errorCaption")) result.errorCaption = attr(el, "errorCaption");
-    if (String(attr(el, "showError")) === "1") result.showError = true;
+    if (parseOnOff(attr(el, "showError"))) result.showError = true;
     if (attr(el, "missingCaption")) result.missingCaption = attr(el, "missingCaption");
     if (String(attr(el, "showMissing")) === "0") result.showMissing = false;
     if (attr(el, "pageStyle")) result.pageStyle = attr(el, "pageStyle");
     if (attr(el, "pivotTableStyle")) result.pivotTableStyle = attr(el, "pivotTableStyle");
     if (attr(el, "tag")) result.tag = attr(el, "tag");
     if (String(attr(el, "showItems")) === "0") result.showItems = false;
-    if (String(attr(el, "editData")) === "1") result.editData = true;
-    if (String(attr(el, "disableFieldList")) === "1") result.disableFieldList = true;
+    if (parseOnOff(attr(el, "editData"))) result.editData = true;
+    if (parseOnOff(attr(el, "disableFieldList"))) result.disableFieldList = true;
     if (String(attr(el, "showCalcMbrs")) === "0") result.showCalcMbrs = false;
-    if (String(attr(el, "visualTotals")) === "1") result.visualTotals = true;
+    if (parseOnOff(attr(el, "visualTotals"))) result.visualTotals = true;
     if (String(attr(el, "showMultipleLabel")) === "0") result.showMultipleLabel = false;
     if (String(attr(el, "showDataDropDown")) === "0") result.showDataDropDown = false;
     if (String(attr(el, "showDrill")) === "0") result.showDrill = false;
-    if (String(attr(el, "printDrill")) === "1") result.printDrill = true;
-    if (String(attr(el, "showMemberPropertyTips")) === "1") result.showMemberPropertyTips = true;
+    if (parseOnOff(attr(el, "printDrill"))) result.printDrill = true;
+    if (parseOnOff(attr(el, "showMemberPropertyTips"))) result.showMemberPropertyTips = true;
     if (String(attr(el, "showDataTips")) === "0") result.showDataTips = false;
     if (String(attr(el, "enableWizard")) === "0") result.enableWizard = false;
     if (String(attr(el, "enableDrill")) === "0") result.enableDrill = false;
     if (String(attr(el, "enableFieldProperties")) === "0") result.enableFieldProperties = false;
     const pageWrap = attrNum(el, "pageWrap");
     if (pageWrap !== undefined) result.pageWrap = pageWrap;
-    if (String(attr(el, "pageOverThenDown")) === "1") result.pageOverThenDown = true;
-    if (String(attr(el, "subtotalHiddenItems")) === "1") result.subtotalHiddenItems = true;
-    if (String(attr(el, "fieldPrintTitles")) === "1") result.fieldPrintTitles = true;
-    if (String(attr(el, "mergeItem")) === "1") result.mergeItem = true;
+    if (parseOnOff(attr(el, "pageOverThenDown"))) result.pageOverThenDown = true;
+    if (parseOnOff(attr(el, "subtotalHiddenItems"))) result.subtotalHiddenItems = true;
+    if (parseOnOff(attr(el, "fieldPrintTitles"))) result.fieldPrintTitles = true;
+    if (parseOnOff(attr(el, "mergeItem"))) result.mergeItem = true;
     if (String(attr(el, "showDropZones")) === "0") result.showDropZones = false;
-    if (String(attr(el, "published")) === "1") result.published = true;
+    if (parseOnOff(attr(el, "published"))) result.published = true;
     if (String(attr(el, "gridDropZones")) === "0") result.gridDropZones = false;
     if (String(attr(el, "multipleFieldFilters")) === "0") result.multipleFieldFilters = false;
     if (attr(el, "rowHeaderCaption")) result.rowHeaderCaption = attr(el, "rowHeaderCaption");
     if (attr(el, "colHeaderCaption")) result.colHeaderCaption = attr(el, "colHeaderCaption");
-    if (String(attr(el, "fieldListSortAscending")) === "1") result.fieldListSortAscending = true;
-    if (String(attr(el, "mdxSubqueries")) === "1") result.mdxSubqueries = true;
+    if (parseOnOff(attr(el, "fieldListSortAscending"))) result.fieldListSortAscending = true;
+    if (parseOnOff(attr(el, "mdxSubqueries"))) result.mdxSubqueries = true;
     if (String(attr(el, "customListSort")) === "0") result.customListSort = false;
-    if (String(attr(el, "asteriskTotals")) === "1") result.asteriskTotals = true;
+    if (parseOnOff(attr(el, "asteriskTotals"))) result.asteriskTotals = true;
     const dataPosition = attrNum(el, "dataPosition");
     if (dataPosition !== undefined) result.dataPosition = dataPosition;
-    if (String(attr(el, "immersive")) === "1") result.immersive = true;
+    if (parseOnOff(attr(el, "immersive"))) result.immersive = true;
     if (attr(el, "vacatedStyle")) result.vacatedStyle = attr(el, "vacatedStyle");
     if (attr(el, "dataCaption")) result.dataCaption = attr(el, "dataCaption");
 
@@ -114,24 +115,23 @@ export const pivotTableDesc: CustomDescriptor<
         const axis = attr(fEl, "axis");
         if (axis) field.axis = axis;
         if (String(attr(fEl, "showAll")) === "0") field.showAll = false;
-        else if (String(attr(fEl, "showAll")) === "1") field.showAll = true;
-        if (String(attr(fEl, "dataField")) === "1") field.dataField = true;
+        else if (parseOnOff(attr(fEl, "showAll"))) field.showAll = true;
+        if (parseOnOff(attr(fEl, "dataField"))) field.dataField = true;
         if (attr(fEl, "hierarchy")) field.hierarchy = attr(fEl, "hierarchy");
         if (String(attr(fEl, "dragToRow")) === "0") field.dragToRow = false;
         if (String(attr(fEl, "dragToCol")) === "0") field.dragToCol = false;
         if (String(attr(fEl, "dragToPage")) === "0") field.dragToPage = false;
-        if (String(attr(fEl, "dragToData")) === "1") field.dragToData = true;
+        if (parseOnOff(attr(fEl, "dragToData"))) field.dragToData = true;
         if (String(attr(fEl, "dragOff")) === "0") field.dragOff = false;
         if (String(attr(fEl, "showDropDowns")) === "0") field.showDropDowns = false;
-        if (String(attr(fEl, "insertBlankRow")) === "1") field.insertBlankRow = true;
-        if (String(attr(fEl, "showPropCell")) === "1") field.showPropCell = true;
-        if (String(attr(fEl, "showPropTip")) === "1") field.showPropTip = true;
-        if (String(attr(fEl, "showPropAsCaption")) === "1") field.showPropAsCaption = true;
+        if (parseOnOff(attr(fEl, "insertBlankRow"))) field.insertBlankRow = true;
+        if (parseOnOff(attr(fEl, "showPropCell"))) field.showPropCell = true;
+        if (parseOnOff(attr(fEl, "showPropTip"))) field.showPropTip = true;
+        if (parseOnOff(attr(fEl, "showPropAsCaption"))) field.showPropAsCaption = true;
         if (String(attr(fEl, "compact")) === "0") field.compact = false;
-        if (String(attr(fEl, "outline")) === "1") field.outline = true;
+        if (parseOnOff(attr(fEl, "outline"))) field.outline = true;
         if (String(attr(fEl, "subtotalTop")) === "0") field.subtotalTop = false;
-        if (String(attr(fEl, "includeNewItemsInFilter")) === "1")
-          field.includeNewItemsInFilter = true;
+        if (parseOnOff(attr(fEl, "includeNewItemsInFilter"))) field.includeNewItemsInFilter = true;
         fields.push(field);
       }
       result.pivotFields = fields;
@@ -230,7 +230,7 @@ export const pivotTableDesc: CustomDescriptor<
         if (chart !== undefined) cf.chart = chart;
         const format = attrNum(cfEl, "format");
         if (format !== undefined) cf.format = format;
-        if (String(attr(cfEl, "series")) === "1") cf.series = true;
+        if (parseOnOff(attr(cfEl, "series"))) cf.series = true;
         const paEl = findChild(cfEl, "pivotArea");
         if (paEl) cf.pivotArea = parsePivotArea(paEl);
         chartFormats.push(cf);
@@ -245,17 +245,17 @@ export const pivotTableDesc: CustomDescriptor<
       for (const hEl of hierarchiesEl.elements ?? []) {
         if (hEl.name !== "pivotHierarchy") continue;
         const h: PivotHierarchyParseResult = {};
-        if (String(attr(hEl, "outline")) === "1") h.outline = true;
-        if (String(attr(hEl, "multipleItemSelectionAllowed")) === "1")
+        if (parseOnOff(attr(hEl, "outline"))) h.outline = true;
+        if (parseOnOff(attr(hEl, "multipleItemSelectionAllowed")))
           h.multipleItemSelectionAllowed = true;
-        if (String(attr(hEl, "subtotalTop")) === "1") h.subtotalTop = true;
+        if (parseOnOff(attr(hEl, "subtotalTop"))) h.subtotalTop = true;
         if (String(attr(hEl, "showInFieldList")) === "0") h.showInFieldList = false;
         if (String(attr(hEl, "dragToRow")) === "0") h.dragToRow = false;
         if (String(attr(hEl, "dragToCol")) === "0") h.dragToCol = false;
         if (String(attr(hEl, "dragToPage")) === "0") h.dragToPage = false;
-        if (String(attr(hEl, "dragToData")) === "1") h.dragToData = true;
+        if (parseOnOff(attr(hEl, "dragToData"))) h.dragToData = true;
         if (String(attr(hEl, "dragOff")) === "0") h.dragOff = false;
-        if (String(attr(hEl, "includeNewItemsInFilter")) === "1") h.includeNewItemsInFilter = true;
+        if (parseOnOff(attr(hEl, "includeNewItemsInFilter"))) h.includeNewItemsInFilter = true;
         if (attr(hEl, "caption")) h.caption = attr(hEl, "caption");
         hierarchies.push(h);
       }
@@ -340,7 +340,7 @@ export const pivotTableDesc: CustomDescriptor<
         if (attr(mEl, "parent")) m.parent = attr(mEl, "parent");
         const solveOrder = attrNum(mEl, "solveOrder");
         if (solveOrder !== undefined) m.solveOrder = solveOrder;
-        if (String(attr(mEl, "set")) === "1") m.set = true;
+        if (parseOnOff(attr(mEl, "set"))) m.set = true;
         members.push(m);
       }
       result.calculatedMembers = members;

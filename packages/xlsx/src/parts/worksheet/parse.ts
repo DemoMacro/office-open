@@ -3,6 +3,7 @@
  *
  * @module
  */
+import { parseOnOff } from "@office-open/core";
 import { attr, attrNum } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
@@ -20,8 +21,8 @@ export function parsePageBreaks(el: XmlElement): PageBreakOptions[] {
     if (min !== undefined) b.min = min;
     const max = attrNum(brkEl, "max");
     if (max !== undefined) b.max = max;
-    if (String(attr(brkEl, "man")) === "1") b.manual = true;
-    if (String(attr(brkEl, "pt")) === "1") b.pivot = true;
+    if (parseOnOff(attr(brkEl, "man"))) b.manual = true;
+    if (parseOnOff(attr(brkEl, "pt"))) b.pivot = true;
     breaks.push(b);
   }
   return breaks;

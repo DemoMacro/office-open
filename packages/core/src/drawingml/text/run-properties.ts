@@ -14,6 +14,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { parse, stringify } from "../../descriptor";
 import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "../../util/mappings";
+import { parseOnOff } from "../../util/values";
 import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { effectListDesc } from "../effects/effect-descriptors";
@@ -240,9 +241,9 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
   parse(el, _ctx) {
     const result: Mutable<RunPropertiesOptions> = {};
 
-    // nativeTypeAttributes (opc parser) coerces "1"/"0" to numbers, so a strict
-    // `=== "1"` check silently fails; normalize via String() before comparing.
-    const isOn = (raw: unknown): boolean => String(raw) === "1";
+    // nativeTypeAttributes (opc parser) coerces boolean attribute values between
+    // string/number/boolean forms; parseOnOff accepts all of them.
+    const isOn = (raw: string | number | boolean | undefined): boolean => parseOnOff(raw) ?? false;
 
     if (el.attributes) {
       if (el.attributes["sz"] !== undefined) result.size = Number(el.attributes["sz"]) / 100;

@@ -9,6 +9,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, parse as parseXml } from "@office-open/xml";
 import { NS } from "@parts/slide-layout";
@@ -155,13 +156,14 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     const matchingName = attr(el, "matchingName");
     if (matchingName !== undefined) result.matchingName = matchingName;
     const preserveAttr = attr(el, "preserve");
-    if (preserveAttr !== undefined) result.preserve = preserveAttr === "1";
-    if (attr(el, "userDrawn") === "1") result.userDrawn = true;
+    if (preserveAttr !== undefined) result.preserve = parseOnOff(preserveAttr) ?? false;
+    if (parseOnOff(attr(el, "userDrawn"))) result.userDrawn = true;
     const showMasterShapes = attr(el, "showMasterSp");
-    if (showMasterShapes !== undefined) result.showMasterShapes = showMasterShapes !== "0";
+    if (showMasterShapes !== undefined)
+      result.showMasterShapes = parseOnOff(showMasterShapes) ?? true;
     const showMasterPlaceholderAnimations = attr(el, "showMasterPhAnim");
     if (showMasterPlaceholderAnimations !== undefined)
-      result.showMasterPlaceholderAnimations = showMasterPlaceholderAnimations !== "0";
+      result.showMasterPlaceholderAnimations = parseOnOff(showMasterPlaceholderAnimations) ?? true;
 
     // p:cSld (CT_CommonSlideData).
     const cSld = findChild(el, "p:cSld");
@@ -217,7 +219,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
           if (spid !== undefined) item.shapeId = spid;
           const ctrlName = attr(ctrl, "name");
           if (ctrlName) item.name = ctrlName;
-          if (attr(ctrl, "showAsIcon") === "1") item.showAsIcon = true;
+          if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;
           const rId = attr(ctrl, "r:id");
           if (rId) item.rId = rId;
           const imgW = attrNum(ctrl, "imgW");

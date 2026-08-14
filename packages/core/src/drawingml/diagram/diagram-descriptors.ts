@@ -7,6 +7,7 @@
 import { escapeXml, findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
+import { parseOnOff } from "../../util/values";
 import type { DiagramExtensionListOptions } from "./diagram-props";
 import type { DiagramRelationshipIdsOptions } from "./diagram-rel";
 import type { DiagramStyleOptions } from "./diagram-style";
@@ -108,7 +109,7 @@ export const presentationLayoutVariablesDesc: CustomDescriptor<PresentationLayou
       const orgChart = findChild(el, "dgm:orgChart");
       if (orgChart?.attributes?.["val"] !== undefined)
         result.orgChart = {
-          val: orgChart.attributes["val"] === 1 || orgChart.attributes["val"] === "1",
+          val: parseOnOff(orgChart.attributes["val"]) ?? false,
         };
 
       const chMax = findChild(el, "dgm:chMax");

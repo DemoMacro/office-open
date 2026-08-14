@@ -7,6 +7,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { escapeXml, findChild, attr, attrNum } from "@office-open/xml";
 
@@ -98,20 +99,20 @@ export const pivotCacheDefDesc: CustomDescriptor<
     const result: Partial<PivotCacheDefParseResult> = {};
 
     // Root element attributes
-    if (String(attr(el, "invalid")) === "1") result.invalid = true;
+    if (parseOnOff(attr(el, "invalid"))) result.invalid = true;
     if (String(attr(el, "saveData")) === "0") result.saveData = false;
-    if (String(attr(el, "optimizeMemory")) === "1") result.optimizeMemory = true;
+    if (parseOnOff(attr(el, "optimizeMemory"))) result.optimizeMemory = true;
     if (String(attr(el, "enableRefresh")) === "0") result.enableRefresh = false;
     if (attr(el, "refreshedBy")) result.refreshedBy = attr(el, "refreshedBy");
     const rd = attrNum(el, "refreshedDate");
     if (rd !== undefined) result.refreshedDate = rd;
     if (attr(el, "refreshedDateIso")) result.refreshedDateIso = attr(el, "refreshedDateIso");
-    if (String(attr(el, "backgroundQuery")) === "1") result.backgroundQuery = true;
+    if (parseOnOff(attr(el, "backgroundQuery"))) result.backgroundQuery = true;
     const mil = attrNum(el, "missingItemsLimit");
     if (mil !== undefined) result.missingItemsLimit = mil;
-    if (String(attr(el, "upgradeOnRefresh")) === "1") result.upgradeOnRefresh = true;
-    if (String(attr(el, "supportSubquery")) === "1") result.supportSubquery = true;
-    if (String(attr(el, "supportAdvancedDrill")) === "1") result.supportAdvancedDrill = true;
+    if (parseOnOff(attr(el, "upgradeOnRefresh"))) result.upgradeOnRefresh = true;
+    if (parseOnOff(attr(el, "supportSubquery"))) result.supportSubquery = true;
+    if (parseOnOff(attr(el, "supportAdvancedDrill"))) result.supportAdvancedDrill = true;
     const recordCount = attrNum(el, "recordCount");
     if (recordCount !== undefined) result.recordCount = recordCount;
 

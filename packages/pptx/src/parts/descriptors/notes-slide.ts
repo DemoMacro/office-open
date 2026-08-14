@@ -11,6 +11,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -91,10 +92,12 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
 
     if (el.attributes) {
       if (el.attributes["showMasterSp"] !== undefined)
-        result.showMasterShapes = String(el.attributes["showMasterSp"]) !== "0";
+        result.showMasterShapes = parseOnOff(String(el.attributes["showMasterSp"])) ?? true;
       if (el.attributes["showMasterPhAnim"] !== undefined)
-        result.showMasterPlaceholderAnimations = String(el.attributes["showMasterPhAnim"]) !== "0";
-      if (el.attributes["show"] !== undefined) result.show = String(el.attributes["show"]) !== "0";
+        result.showMasterPlaceholderAnimations =
+          parseOnOff(String(el.attributes["showMasterPhAnim"])) ?? true;
+      if (el.attributes["show"] !== undefined)
+        result.show = parseOnOff(String(el.attributes["show"])) ?? true;
     }
 
     const cSld = findChild(el, "p:cSld");

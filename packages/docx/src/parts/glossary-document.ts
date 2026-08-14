@@ -7,6 +7,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { SectionChild } from "@shared/section";
 
 /** Gallery type for building blocks (ST_DocPartGallery) */
@@ -195,7 +196,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
         if (name) {
           part.name = attr(name, "w:val") ?? "";
           const decorated = attr(name, "w:decorated");
-          if (decorated === "1") part.decorated = true;
+          if (parseOnOff(decorated)) part.decorated = true;
         }
 
         // category
@@ -219,7 +220,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
           }
           if (typeList.length > 0) part.types = typeList as DocPartOptions["types"];
           const allAttr = attr(types, "w:all");
-          if (allAttr === "1") part.allTypes = true;
+          if (parseOnOff(allAttr)) part.allTypes = true;
         }
 
         // behaviors

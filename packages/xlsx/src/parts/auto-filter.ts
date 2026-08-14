@@ -11,6 +11,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import { attrs, attr, attrNum, escapeXml, findChild, selfCloseElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
@@ -160,14 +161,14 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
   for (const child of afEl.elements ?? []) {
     if (child.name === "filterColumn") {
       const colId = attrNum(child, "colId") ?? 0;
-      const hiddenButton = String(attr(child, "hiddenButton")) === "1";
+      const hiddenButton = parseOnOff(attr(child, "hiddenButton"));
       const showButtonOff = String(attr(child, "showButton")) === "0";
       for (const fc of child.elements ?? []) {
         if (fc.name === "top10") {
           af.top10 ??= [];
           const t: Top10FilterOptions = { colId, val: attrNum(fc, "val") ?? 0 };
           if (String(attr(fc, "top")) === "0") t.top = false;
-          if (String(attr(fc, "percent")) === "1") t.percent = true;
+          if (parseOnOff(attr(fc, "percent"))) t.percent = true;
           const fv = attrNum(fc, "filterVal");
           if (fv !== undefined) t.filterVal = fv;
           if (hiddenButton) t.hiddenButton = true;
@@ -176,7 +177,7 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
         } else if (fc.name === "customFilters") {
           af.customFilters ??= [];
           const cf: CustomFilterOptions = { colId };
-          if (String(attr(fc, "and")) === "1") cf.and = true;
+          if (parseOnOff(attr(fc, "and"))) cf.and = true;
           const cfs = (fc.elements ?? []).filter((e) => e.name === "customFilter");
           const first = cfs[0];
           if (first) {
@@ -196,7 +197,7 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
         } else if (fc.name === "filters") {
           // CT_Filters holds filter[] + dateGroupItem[]
           const fi: FilterItemsOptions = { colId };
-          if (String(attr(fc, "blank")) === "1") fi.blank = true;
+          if (parseOnOff(attr(fc, "blank"))) fi.blank = true;
           const cal = attr(fc, "calendarType");
           if (cal) fi.calendarType = cal;
           const values: string[] = [];
@@ -263,8 +264,8 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
       }
     } else if (child.name === "sortState") {
       const ss: SortStateOptions = {};
-      if (String(attr(child, "columnSort")) === "1") ss.columnSort = true;
-      if (String(attr(child, "caseSensitive")) === "1") ss.caseSensitive = true;
+      if (parseOnOff(attr(child, "columnSort"))) ss.columnSort = true;
+      if (parseOnOff(attr(child, "caseSensitive"))) ss.caseSensitive = true;
       const sm = attr(child, "sortMethod");
       if (sm) ss.sortMethod = sm as SortStateOptions["sortMethod"];
       af.sortState = ss;
@@ -272,7 +273,7 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
         if (sc.name !== "sortCondition") continue;
         af.sort ??= [];
         const cond: SortCondition = { ref: attr(sc, "ref") ?? "" };
-        if (String(attr(sc, "descending")) === "1") cond.descending = true;
+        if (parseOnOff(attr(sc, "descending"))) cond.descending = true;
         const sb = attr(sc, "sortBy");
         if (sb) cond.sortBy = sb as SortCondition["sortBy"];
         const cl = attr(sc, "customList");

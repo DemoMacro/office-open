@@ -13,6 +13,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import {
@@ -163,7 +164,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     const result: Partial<SlideMasterDescriptorOptions> = {};
 
     // @preserve
-    if (attr(el, "preserve") === "1") result.preserve = true;
+    if (parseOnOff(attr(el, "preserve"))) result.preserve = true;
 
     // p:cSld (CT_CommonSlideData).
     const cSld = findChild(el, "p:cSld");
@@ -225,7 +226,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
           if (spid !== undefined) item.shapeId = spid;
           const ctrlName = attr(ctrl, "name");
           if (ctrlName) item.name = ctrlName;
-          if (attr(ctrl, "showAsIcon") === "1") item.showAsIcon = true;
+          if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;
           const rId = attr(ctrl, "r:id");
           if (rId) item.rId = rId;
           const imgW = attrNum(ctrl, "imgW");

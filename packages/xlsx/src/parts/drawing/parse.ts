@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import {
@@ -69,10 +70,10 @@ function readAnchorFields(anchor: XmlElement, name: string, result: DrawingAncho
   const clientData = findChild(anchor, "clientData");
   if (clientData?.attributes) {
     if (clientData.attributes["fLocksWithSheet"] !== undefined) {
-      result.locksWithSheet = clientData.attributes["fLocksWithSheet"] !== "0";
+      result.locksWithSheet = parseOnOff(clientData.attributes["fLocksWithSheet"]) ?? true;
     }
     if (clientData.attributes["fPrintsWithSheet"] !== undefined) {
-      result.printsWithSheet = clientData.attributes["fPrintsWithSheet"] !== "0";
+      result.printsWithSheet = parseOnOff(clientData.attributes["fPrintsWithSheet"]) ?? true;
     }
   }
 
@@ -200,10 +201,10 @@ export function parseChartAnchor(
   const clientData = findChild(anchor, "clientData");
   if (clientData?.attributes) {
     if (clientData.attributes["fLocksWithSheet"] !== undefined) {
-      result.locksWithSheet = clientData.attributes["fLocksWithSheet"] !== "0";
+      result.locksWithSheet = parseOnOff(clientData.attributes["fLocksWithSheet"]) ?? true;
     }
     if (clientData.attributes["fPrintsWithSheet"] !== undefined) {
-      result.printsWithSheet = clientData.attributes["fPrintsWithSheet"] !== "0";
+      result.printsWithSheet = parseOnOff(clientData.attributes["fPrintsWithSheet"]) ?? true;
     }
   }
   return result;

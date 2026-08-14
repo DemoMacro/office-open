@@ -6,6 +6,7 @@
  *
  * @module
  */
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml, findChild, attr, attrNum, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -253,10 +254,10 @@ function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         result.family = attrNum(child, "val");
         break;
       case "b":
-        result.bold = attr(child, "val") !== "0";
+        result.bold = parseOnOff(attr(child, "val")) ?? true;
         break;
       case "i":
-        result.italic = attr(child, "val") !== "0";
+        result.italic = parseOnOff(attr(child, "val")) ?? true;
         break;
       case "strike":
         result.strike = true;

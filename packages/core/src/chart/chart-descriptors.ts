@@ -9,6 +9,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { attr, findChild, children, textOf } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
+import { parseOnOff } from "../util/values";
 import type {
   ChartSpaceOptions,
   BubbleSeriesData,
@@ -1010,7 +1011,7 @@ function readBoolAttr(el: XmlElement, childName: string): boolean | undefined {
   const v = attr(child, "val");
   // CT_OnOff: absent val or val="1"/"true" → true; val="0"/"false" → false
   if (v === undefined) return true;
-  return v !== "0" && v !== "false";
+  return parseOnOff(v) ?? true;
 }
 
 function readValNum(el: XmlElement, childName: string): number | undefined {
@@ -1404,7 +1405,7 @@ function readProtection(el: XmlElement): ProtectionOptions | undefined {
     const child = findChild(protection, tag);
     if (!child) return undefined;
     const v = attr(child, "val");
-    return v === undefined ? undefined : v !== "0" && v !== "false";
+    return v === undefined ? undefined : (parseOnOff(v) ?? true);
   };
   const chartObject = readFlag("c:chartObject");
   if (chartObject !== undefined) opts.chartObject = chartObject;
@@ -1428,7 +1429,7 @@ function readExternalData(el: XmlElement): ExternalDataOptions | undefined {
   const autoUpdateEl = findChild(externalData, "c:autoUpdate");
   if (autoUpdateEl) {
     const v = attr(autoUpdateEl, "val");
-    if (v !== undefined) opts.autoUpdate = v !== "0" && v !== "false";
+    if (v !== undefined) opts.autoUpdate = parseOnOff(v) ?? true;
   }
   return opts;
 }
@@ -1480,7 +1481,7 @@ function readLegendEntries(legend: XmlElement): LegendEntryOptions[] | undefined
     const v = attr(deleteEl, "val");
     result.push({
       index: Number(attr(idxEl, "val")),
-      delete: v === undefined ? true : v !== "0",
+      delete: parseOnOff(v) ?? true,
     });
   }
   return result.length ? result : undefined;
@@ -1526,7 +1527,7 @@ function readHeaderFooter(ps: XmlElement): HeaderFooterOptions | undefined {
   if (ff !== undefined) opts.firstFooter = ff;
   const readFlag = (name: string): boolean | undefined => {
     const v = attr(hf, name);
-    return v === undefined ? undefined : v !== "0" && v !== "false";
+    return v === undefined ? undefined : (parseOnOff(v) ?? true);
   };
   const alignWithMargins = readFlag("alignWithMargins");
   if (alignWithMargins !== undefined) opts.alignWithMargins = alignWithMargins;
@@ -1570,7 +1571,7 @@ function readPageSetup(ps: XmlElement): PageSetupOptions | undefined {
   };
   const readFlag = (name: string): boolean | undefined => {
     const v = attr(pg, name);
-    return v === undefined ? undefined : v !== "0" && v !== "false";
+    return v === undefined ? undefined : (parseOnOff(v) ?? true);
   };
   const paperSize = readNum("paperSize");
   if (paperSize !== undefined) opts.paperSize = paperSize;

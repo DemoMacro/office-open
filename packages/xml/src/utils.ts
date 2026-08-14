@@ -132,8 +132,8 @@ export function attrBool(element: Element | undefined, name: string): boolean | 
   if (v === undefined) return undefined;
   if (typeof v === "boolean") return v;
   const lower = String(v).toLowerCase();
-  if (lower === "true" || lower === "1") return true;
-  if (lower === "false" || lower === "0") return false;
+  if (lower === "true" || lower === "1" || lower === "on") return true;
+  if (lower === "false" || lower === "0" || lower === "off") return false;
   return undefined;
 }
 

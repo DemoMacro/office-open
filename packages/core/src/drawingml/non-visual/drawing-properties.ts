@@ -14,6 +14,8 @@
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
+import { parseOnOff } from "../../util/values";
+
 /** Mirrors a:CT_NonVisualDrawingProps — name/descr/title/hidden. id is runtime; hyperlinks stay package-side. */
 export interface NonVisualDrawingPropertiesOptions {
   /** XSD @name (required in XML); API-optional, the descriptor synthesizes a fallback. */
@@ -64,7 +66,7 @@ export function parseNonVisualDrawingProperties(
   const title = a["title"];
   if (title !== undefined && title !== "") result.title = String(title);
   const hidden = a["hidden"];
-  if (hidden !== undefined) result.hidden = hidden === "1" || hidden === "true";
+  if (hidden !== undefined) result.hidden = parseOnOff(hidden) ?? false;
   return result;
 }
 

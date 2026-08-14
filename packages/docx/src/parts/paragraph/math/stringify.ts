@@ -9,6 +9,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import { attr, children, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type {
@@ -435,7 +436,7 @@ function parseMathRun(el: Element): MathInput {
 function readOnOff(el: Element | undefined): boolean | undefined {
   if (!el) return undefined;
   const v = attr(el, "m:val");
-  return v === undefined ? true : v === "1" || v === "true" || v === "on";
+  return parseOnOff(v) ?? true;
 }
 
 /** Read an m:val numeric attribute. */

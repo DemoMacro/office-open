@@ -8,6 +8,7 @@ import {
   hpsMeasureValue,
   longHexNumber,
   measurementOrPercentValue,
+  parseOnOff,
   percentageValue,
   pointMeasureValue,
   positiveUniversalMeasureValue,
@@ -450,6 +451,27 @@ describe("values — additional input cases", () => {
     });
     it("should throw on invalid values", () => {
       expect(() => measurementOrPercentValue(NaN)).toThrow();
+    });
+  });
+
+  describe("parseOnOff", () => {
+    it("parses the ST_OnOff union lexical space", () => {
+      expect(parseOnOff("1")).toBe(true);
+      expect(parseOnOff("true")).toBe(true);
+      expect(parseOnOff("on")).toBe(true);
+      expect(parseOnOff(1)).toBe(true);
+      expect(parseOnOff(true)).toBe(true);
+      expect(parseOnOff("0")).toBe(false);
+      expect(parseOnOff("false")).toBe(false);
+      expect(parseOnOff("off")).toBe(false);
+      expect(parseOnOff(0)).toBe(false);
+      expect(parseOnOff(false)).toBe(false);
+    });
+    it("is case-insensitive and returns undefined for unrecognized values", () => {
+      expect(parseOnOff("ON")).toBe(true);
+      expect(parseOnOff("False")).toBe(false);
+      expect(parseOnOff("garbage")).toBeUndefined();
+      expect(parseOnOff(undefined)).toBeUndefined();
     });
   });
 

@@ -9,6 +9,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
+import { parseOnOff } from "../../util/values";
 import type { GeometryGuide } from "./adjustment-values";
 import type {
   CustomGeometryOptions,
@@ -192,10 +193,9 @@ function readPath(el: XmlElement): Partial<PathOptions> {
     if (el.attributes["fill"] !== undefined)
       result.fill = String(el.attributes["fill"]) as PathOptions["fill"];
     if (el.attributes["stroke"] !== undefined)
-      result.stroke = el.attributes["stroke"] !== "0" && el.attributes["stroke"] !== "false";
+      result.stroke = parseOnOff(el.attributes["stroke"]) ?? true;
     if (el.attributes["extrusionOk"] !== undefined)
-      result.extrusionOk =
-        el.attributes["extrusionOk"] !== "0" && el.attributes["extrusionOk"] !== "false";
+      result.extrusionOk = parseOnOff(el.attributes["extrusionOk"]) ?? true;
   }
   const commands: PathCommand[] = [];
   if (el.elements) {

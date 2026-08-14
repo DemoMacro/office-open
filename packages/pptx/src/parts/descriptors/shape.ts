@@ -7,7 +7,7 @@
  * @module
  */
 
-import { convertEmuToPixels, convertToEmu, toUint8Array } from "@office-open/core";
+import { convertEmuToPixels, convertToEmu, parseOnOff, toUint8Array } from "@office-open/core";
 import type { ShapeLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { parse } from "@office-open/core/descriptor";
@@ -92,7 +92,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
     // Root attributes
     if (el.attributes) {
       if (el.attributes["useBgFill"] !== undefined)
-        result.useBackgroundFill = el.attributes["useBgFill"] === "1";
+        result.useBackgroundFill = parseOnOff(el.attributes["useBgFill"]) ?? false;
       if (el.attributes["bwMode"] !== undefined)
         result.blackWhiteMode = String(el.attributes["bwMode"]) as ShapeOptions["blackWhiteMode"];
     }
@@ -427,9 +427,9 @@ export function readNvSpPr(nvSpPr: XmlElement): ShapeOptions {
   if (nvPr) {
     if (nvPr.attributes) {
       if (nvPr.attributes["isPhoto"] !== undefined)
-        result.isPhoto = nvPr.attributes["isPhoto"] === "1";
+        result.isPhoto = parseOnOff(nvPr.attributes["isPhoto"]) ?? false;
       if (nvPr.attributes["userDrawn"] !== undefined)
-        result.userDrawn = nvPr.attributes["userDrawn"] === "1";
+        result.userDrawn = parseOnOff(nvPr.attributes["userDrawn"]) ?? false;
     }
     const ph = findChild(nvPr, "p:ph");
     if (ph?.attributes) {
@@ -444,7 +444,7 @@ export function readNvSpPr(nvSpPr: XmlElement): ShapeOptions {
           "orient"
         ] as ShapeOptions["placeholderOrientation"];
       if (ph.attributes["hasCustomPrompt"] !== undefined)
-        result.hasCustomPrompt = ph.attributes["hasCustomPrompt"] === "1";
+        result.hasCustomPrompt = parseOnOff(ph.attributes["hasCustomPrompt"]) ?? false;
     }
   }
 

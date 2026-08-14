@@ -285,6 +285,35 @@ export const hexColorValue = (val: string): string => {
 };
 
 /**
+ * Parses an ST_OnOff / xsd:boolean attribute value.
+ *
+ * Accepts the full union lexical space leniently on read: true/false, 1/0
+ * (number or string — nativeTypeAttributes coerces 1/0 to numbers), and
+ * on/off (legal only in wml's ST_OnOff union, not in xsd:boolean). Emission
+ * stays per-schema canonical ("1"/"0").
+ *
+ * Reference: ST_OnOff in shared-commonSimpleTypes.xsd
+ *
+ * @param raw - The raw attribute value (string, number, or boolean)
+ * @returns The parsed boolean, or undefined when unrecognized
+ *
+ * @example
+ * ```typescript
+ * parseOnOff("1"); // true
+ * parseOnOff("off"); // false
+ * parseOnOff(1); // true (nativeTypeAttributes number coercion)
+ * ```
+ */
+export const parseOnOff = (raw: string | number | boolean | undefined): boolean | undefined => {
+  if (raw === undefined) return undefined;
+  if (typeof raw === "boolean") return raw;
+  const s = String(raw).toLowerCase();
+  if (s === "1" || s === "true" || s === "on") return true;
+  if (s === "0" || s === "false" || s === "off") return false;
+  return undefined;
+};
+
+/**
  * Validates a signed TWIP measurement value.
  *
  * Accepts either a universal measure string or a numeric TWIP value.

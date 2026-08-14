@@ -6,6 +6,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild, attr, attrNum, textOf, escapeXml } from "@office-open/xml";
 
@@ -282,13 +283,13 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     if (attr(el, "ref")) result.ref = attr(el, "ref");
     const headerRowCount = attrNum(el, "headerRowCount");
     if (headerRowCount !== undefined) result.headerRowCount = headerRowCount;
-    if (String(attr(el, "insertRow")) === "1") result.insertRow = true;
+    if (parseOnOff(attr(el, "insertRow"))) result.insertRow = true;
     const totalsRowCount = attrNum(el, "totalsRowCount");
     if (totalsRowCount !== undefined) result.totalsRowCount = totalsRowCount;
     if (String(attr(el, "totalsRowShown")) === "0") result.totalsRowShown = false;
     if (attr(el, "tableType")) result.tableType = attr(el, "tableType") as TableType;
-    if (String(attr(el, "insertRowShift")) === "1") result.insertRowShift = true;
-    if (String(attr(el, "published")) === "1") result.published = true;
+    if (parseOnOff(attr(el, "insertRowShift"))) result.insertRowShift = true;
+    if (parseOnOff(attr(el, "published"))) result.published = true;
     const connectionId = attrNum(el, "connectionId");
     if (connectionId !== undefined) result.connectionId = connectionId;
 
@@ -311,12 +312,12 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         const ccfEl = findChild(colEl, "calculatedColumnFormula");
         if (ccfEl) {
           col.calculatedColumnFormula = textOf(ccfEl);
-          if (String(attr(ccfEl, "array")) === "1") col.calculatedColumnFormulaArray = true;
+          if (parseOnOff(attr(ccfEl, "array"))) col.calculatedColumnFormulaArray = true;
         }
         const trfEl = findChild(colEl, "totalsRowFormula");
         if (trfEl) {
           col.totalsRowFormula = textOf(trfEl);
-          if (String(attr(trfEl, "array")) === "1") col.totalsRowFormulaArray = true;
+          if (parseOnOff(attr(trfEl, "array"))) col.totalsRowFormulaArray = true;
         }
         if (attr(colEl, "uniqueName")) col.uniqueName = attr(colEl, "uniqueName");
         const qtfId = attrNum(colEl, "queryTableFieldId");
@@ -342,10 +343,10 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     if (siEl) {
       const style: Partial<TableStyleInfoOptions> = {};
       if (attr(siEl, "name")) style.name = attr(siEl, "name");
-      if (String(attr(siEl, "showFirstColumn")) === "1") style.showFirstColumn = true;
-      if (String(attr(siEl, "showLastColumn")) === "1") style.showLastColumn = true;
-      if (String(attr(siEl, "showRowStripes")) === "1") style.showRowStripes = true;
-      if (String(attr(siEl, "showColumnStripes")) === "1") style.showColumnStripes = true;
+      if (parseOnOff(attr(siEl, "showFirstColumn"))) style.showFirstColumn = true;
+      if (parseOnOff(attr(siEl, "showLastColumn"))) style.showLastColumn = true;
+      if (parseOnOff(attr(siEl, "showRowStripes"))) style.showRowStripes = true;
+      if (parseOnOff(attr(siEl, "showColumnStripes"))) style.showColumnStripes = true;
       result.style = style;
     }
 

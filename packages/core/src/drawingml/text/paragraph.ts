@@ -14,6 +14,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { xsdTextAlign } from "../../util/mappings";
+import { parseOnOff } from "../../util/values";
 import { textRunDesc } from "./run";
 import { runPropertiesDesc } from "./run-properties";
 import type { Mutable } from "./run-properties";
@@ -192,11 +193,11 @@ function readParagraphProperties(
         el.attributes["fontAlgn"],
       ) as ParagraphPropertiesOptions["fontAlignment"];
     if (el.attributes["rtl"] !== undefined)
-      result.rightToLeft = String(el.attributes["rtl"]) === "1";
+      result.rightToLeft = parseOnOff(el.attributes["rtl"]) ?? false;
     if (el.attributes["eaLnBrk"] !== undefined)
-      result.eastAsianLineBreak = String(el.attributes["eaLnBrk"]) === "1";
+      result.eastAsianLineBreak = parseOnOff(el.attributes["eaLnBrk"]) ?? false;
     if (el.attributes["latinLnBrk"] !== undefined)
-      result.latinLineBreak = String(el.attributes["latinLnBrk"]) === "1";
+      result.latinLineBreak = parseOnOff(el.attributes["latinLnBrk"]) ?? false;
   }
 
   // Line spacing

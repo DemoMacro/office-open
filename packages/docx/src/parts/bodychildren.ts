@@ -23,7 +23,7 @@ import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
 import type { CustomXmlPropertiesOptions } from "@parts/custom-xml/custom-xml";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
-import { stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
+import { onOff, stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type {
   SdtCheckboxOptions,
@@ -239,10 +239,6 @@ function sdtDocPartXml(
   return parts.length ? `<${name}>${parts.join("")}</${name}>` : `<${name}/>`;
 }
 
-function onOffAttr(name: string, val: boolean): string {
-  return val ? `<${name}/>` : `<${name} w:val="0"/>`;
-}
-
 const W14_NS = 'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"';
 
 /** Default symbol font for checkbox content controls (CT_SdtCheckboxSymbol). */
@@ -290,10 +286,10 @@ export function stringifySdtPr(opts: SdtPropertiesOptions): string {
 
   // placeholder not supported in pure JSON path — skip
 
-  if (opts.temporary !== undefined) parts.push(onOffAttr("w:temporary", opts.temporary));
+  if (opts.temporary !== undefined) parts.push(onOff("w:temporary", opts.temporary));
   const effectiveShowingPlcHdr = opts.showingPlaceholder ?? false;
   if (opts.showingPlaceholder !== undefined || effectiveShowingPlcHdr) {
-    parts.push(onOffAttr("w:showingPlcHdr", effectiveShowingPlcHdr));
+    parts.push(onOff("w:showingPlcHdr", effectiveShowingPlcHdr));
   }
   if (opts.dataBinding) parts.push(sdtDataBindingXml(opts.dataBinding));
   if (opts.label !== undefined) parts.push(`<w:label w:val="${opts.label}"/>`);

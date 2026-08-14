@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, stringify } from "@office-open/xml";
 
@@ -112,14 +113,14 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (alignmentEl) entry.alignment = parseAlignment(alignmentEl);
         const protectionEl = findChild(xf, "protection");
         if (protectionEl) entry.protection = parseProtection(protectionEl);
-        if (String(attr(xf, "applyNumberFormat")) === "1") entry.applyNumberFormat = true;
-        if (String(attr(xf, "applyFont")) === "1") entry.applyFont = true;
-        if (String(attr(xf, "applyFill")) === "1") entry.applyFill = true;
-        if (String(attr(xf, "applyBorder")) === "1") entry.applyBorder = true;
-        if (String(attr(xf, "applyAlignment")) === "1") entry.applyAlignment = true;
-        if (String(attr(xf, "applyProtection")) === "1") entry.applyProtection = true;
-        if (String(attr(xf, "quotePrefix")) === "1") entry.quotePrefix = true;
-        if (String(attr(xf, "pivotButton")) === "1") entry.pivotButton = true;
+        if (parseOnOff(attr(xf, "applyNumberFormat"))) entry.applyNumberFormat = true;
+        if (parseOnOff(attr(xf, "applyFont"))) entry.applyFont = true;
+        if (parseOnOff(attr(xf, "applyFill"))) entry.applyFill = true;
+        if (parseOnOff(attr(xf, "applyBorder"))) entry.applyBorder = true;
+        if (parseOnOff(attr(xf, "applyAlignment"))) entry.applyAlignment = true;
+        if (parseOnOff(attr(xf, "applyProtection"))) entry.applyProtection = true;
+        if (parseOnOff(attr(xf, "quotePrefix"))) entry.quotePrefix = true;
+        if (parseOnOff(attr(xf, "pivotButton"))) entry.pivotButton = true;
         xfs.push(entry);
       }
       result.cellStyleXfs = xfs;
@@ -150,8 +151,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (alignment) style.alignment = alignment;
         if (protection) style.protection = protection;
         // nativeTypeAttributes (xlsx parse path) coerces "1"/"0" to numbers
-        if (String(attr(xf, "quotePrefix")) === "1") style.quotePrefix = true;
-        if (String(attr(xf, "pivotButton")) === "1") style.pivotButton = true;
+        if (parseOnOff(attr(xf, "quotePrefix"))) style.quotePrefix = true;
+        if (parseOnOff(attr(xf, "pivotButton"))) style.pivotButton = true;
 
         xfs.push(style);
       }
@@ -170,8 +171,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (xfId !== undefined) style.xfId = xfId;
         const builtinId = attrNum(cs, "builtinId");
         if (builtinId !== undefined) style.builtinId = builtinId;
-        if (String(attr(cs, "customBuiltin")) === "1") style.customBuiltin = true;
-        if (String(attr(cs, "hidden")) === "1") style.hidden = true;
+        if (parseOnOff(attr(cs, "customBuiltin"))) style.customBuiltin = true;
+        if (parseOnOff(attr(cs, "hidden"))) style.hidden = true;
         const iLevel = attrNum(cs, "iLevel");
         if (iLevel !== undefined) style.iLevel = iLevel;
         styles.push(style as CustomCellStyleOptions);
@@ -214,7 +215,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (tse.name !== "tableStyle") continue;
         const style: Partial<CustomTableStyleOptions> = {};
         if (attr(tse, "name")) style.name = attr(tse, "name");
-        if (String(attr(tse, "pivot")) === "1") style.pivot = true;
+        if (parseOnOff(attr(tse, "pivot"))) style.pivot = true;
         const elements: TableStyleElementOptions[] = [];
         for (const tsee of tse.elements ?? []) {
           if (tsee.name !== "tableStyleElement") continue;
@@ -222,7 +223,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
           if (attr(tsee, "type")) elOpts.type = attr(tsee, "type") as TableStyleElementType;
           const dxfId = attrNum(tsee, "dxfId");
           if (dxfId !== undefined) elOpts.dxfId = dxfId;
-          if (String(attr(tsee, "button")) === "1") elOpts.button = true;
+          if (parseOnOff(attr(tsee, "button"))) elOpts.button = true;
           elements.push(elOpts as TableStyleElementOptions);
         }
         if (elements.length > 0) style.elements = elements;

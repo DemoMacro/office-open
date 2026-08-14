@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
@@ -16,13 +17,13 @@ export function parsePivotArea(el: XmlElement): Partial<PivotAreaOptions> {
   const typeVal = attr(el, "type");
   if (typeVal) result.type = typeVal as PivotAreaOptions["type"];
   if (String(attr(el, "dataOnly")) === "0") result.dataOnly = false;
-  if (String(attr(el, "labelOnly")) === "1") result.labelOnly = true;
-  if (String(attr(el, "grandRow")) === "1") result.grandRow = true;
-  if (String(attr(el, "grandCol")) === "1") result.grandCol = true;
-  if (String(attr(el, "cacheIndex")) === "1") result.cacheIndex = true;
+  if (parseOnOff(attr(el, "labelOnly"))) result.labelOnly = true;
+  if (parseOnOff(attr(el, "grandRow"))) result.grandRow = true;
+  if (parseOnOff(attr(el, "grandCol"))) result.grandCol = true;
+  if (parseOnOff(attr(el, "cacheIndex"))) result.cacheIndex = true;
   if (String(attr(el, "outline")) === "0") result.outline = false;
   if (attr(el, "offset")) result.offset = attr(el, "offset");
-  if (String(attr(el, "collapsedLevelsAreSubtotals")) === "1")
+  if (parseOnOff(attr(el, "collapsedLevelsAreSubtotals")))
     result.collapsedLevelsAreSubtotals = true;
   const axisVal = attr(el, "axis");
   if (axisVal) result.axis = axisVal as PivotAreaOptions["axis"];
@@ -39,9 +40,9 @@ export function parsePivotArea(el: XmlElement): Partial<PivotAreaOptions> {
       const rCount = attrNum(rEl, "count");
       if (rCount !== undefined) ref.count = rCount;
       if (String(attr(rEl, "selected")) === "0") ref.selected = false;
-      if (String(attr(rEl, "byPosition")) === "1") ref.byPosition = true;
-      if (String(attr(rEl, "relative")) === "1") ref.relative = true;
-      if (String(attr(rEl, "defaultSubtotal")) === "1") ref.defaultSubtotal = true;
+      if (parseOnOff(attr(rEl, "byPosition"))) ref.byPosition = true;
+      if (parseOnOff(attr(rEl, "relative"))) ref.relative = true;
+      if (parseOnOff(attr(rEl, "defaultSubtotal"))) ref.defaultSubtotal = true;
       const xArr: number[] = [];
       for (const xEl of rEl.elements ?? []) {
         if (xEl.name === "x") {

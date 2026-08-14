@@ -1,3 +1,4 @@
+import { parseOnOff } from "@office-open/core";
 import { attr, type Element } from "@office-open/xml";
 import { DEFAULT_COLOR_MAP, SP_TREE_HEADER } from "@shared/constants";
 
@@ -122,13 +123,13 @@ export function parseHeaderFooter(el: Element | undefined): HeaderFooterOptions 
   if (!el) return undefined;
   const headerFooter: HeaderFooterOptions = {};
   const dt = attr(el, "dt");
-  if (dt !== undefined) headerFooter.date = dt === "1";
+  if (dt !== undefined) headerFooter.date = parseOnOff(dt) ?? false;
   const hdr = attr(el, "hdr");
-  if (hdr !== undefined) headerFooter.header = hdr === "1";
+  if (hdr !== undefined) headerFooter.header = parseOnOff(hdr) ?? false;
   const ftr = attr(el, "ftr");
-  if (ftr !== undefined) headerFooter.footer = ftr === "1";
+  if (ftr !== undefined) headerFooter.footer = parseOnOff(ftr) ?? false;
   const sldNum = attr(el, "sldNum");
-  if (sldNum !== undefined) headerFooter.slideNumber = sldNum === "1";
+  if (sldNum !== undefined) headerFooter.slideNumber = parseOnOff(sldNum) ?? false;
   return Object.keys(headerFooter).length > 0 ? headerFooter : undefined;
 }
 

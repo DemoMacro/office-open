@@ -7,6 +7,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild, attr, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -187,17 +188,17 @@ function buildAnchorXml(anchor: ObjectAnchorOptions | undefined): string {
 function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
   const pr: CommentPropertiesOptions = {};
   const locked = attr(el, "locked");
-  if (locked !== undefined) pr.locked = locked === "1";
+  if (locked !== undefined) pr.locked = parseOnOff(locked) ?? false;
   const defaultSize = attr(el, "defaultSize");
-  if (defaultSize !== undefined) pr.defaultSize = defaultSize === "1";
+  if (defaultSize !== undefined) pr.defaultSize = parseOnOff(defaultSize) ?? false;
   const print = attr(el, "print");
-  if (print !== undefined) pr.print = print === "1";
+  if (print !== undefined) pr.print = parseOnOff(print) ?? false;
   const disabled = attr(el, "disabled");
-  if (disabled !== undefined) pr.disabled = disabled === "1";
+  if (disabled !== undefined) pr.disabled = parseOnOff(disabled) ?? false;
   const autoFill = attr(el, "autoFill");
-  if (autoFill !== undefined) pr.autoFill = autoFill === "1";
+  if (autoFill !== undefined) pr.autoFill = parseOnOff(autoFill) ?? false;
   const autoLine = attr(el, "autoLine");
-  if (autoLine !== undefined) pr.autoLine = autoLine === "1";
+  if (autoLine !== undefined) pr.autoLine = parseOnOff(autoLine) ?? false;
   const altText = attr(el, "altText");
   if (altText !== undefined) pr.altText = altText;
   const textHAlign = attr(el, "textHAlign");
@@ -207,11 +208,11 @@ function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
   if (textVAlign !== undefined)
     pr.textVAlign = textVAlign as CommentPropertiesOptions["textVAlign"];
   const lockText = attr(el, "lockText");
-  if (lockText !== undefined) pr.lockText = lockText === "1";
+  if (lockText !== undefined) pr.lockText = parseOnOff(lockText) ?? false;
   const justLastX = attr(el, "justLastX");
-  if (justLastX !== undefined) pr.justLastX = justLastX === "1";
+  if (justLastX !== undefined) pr.justLastX = parseOnOff(justLastX) ?? false;
   const autoScale = attr(el, "autoScale");
-  if (autoScale !== undefined) pr.autoScale = autoScale === "1";
+  if (autoScale !== undefined) pr.autoScale = parseOnOff(autoScale) ?? false;
   const anchorEl = findChild(el, "xdr:anchor");
   if (anchorEl) pr.anchor = parseAnchor(anchorEl);
   return pr;
@@ -219,8 +220,8 @@ function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
 
 function parseAnchor(el: XmlElement): ObjectAnchorOptions {
   return {
-    moveWithCells: String(attr(el, "moveWithCells")) === "1",
-    sizeWithCells: String(attr(el, "sizeWithCells")) === "1",
+    moveWithCells: parseOnOff(attr(el, "moveWithCells")),
+    sizeWithCells: parseOnOff(attr(el, "sizeWithCells")),
   };
 }
 

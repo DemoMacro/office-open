@@ -101,11 +101,6 @@ export interface TableStyleListOptions {
 
 // ── Helpers ──
 
-function onOffAttr(val: OnOffStyleType | undefined): string {
-  if (val === undefined) return "";
-  return val;
-}
-
 /** Pass through a string value (all color/fill factories now return string). */
 function toStr(el: string): string {
   return el;
@@ -167,8 +162,8 @@ function buildTextStyle(opts: TableTextStyleOptions): string {
   if (opts.fontReference) children.push(createStyleMatrixRef("fontRef", opts.fontReference));
   if (opts.color) children.push(toStr(opts.color));
   const attrs: Record<string, string> = {};
-  if (opts.bold && opts.bold !== "def") attrs.b = onOffAttr(opts.bold);
-  if (opts.italic && opts.italic !== "def") attrs.i = onOffAttr(opts.italic);
+  if (opts.bold && opts.bold !== "def") attrs.b = opts.bold;
+  if (opts.italic && opts.italic !== "def") attrs.i = opts.italic;
   return element("a:tcTxStyle", attrs, children.length > 0 ? children : undefined);
 }
 

@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import type { TextBodyOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, findChild } from "@office-open/xml";
@@ -138,9 +139,10 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     // Root attributes
     if (el.attributes) {
       if (el.attributes["showMasterSp"] !== undefined)
-        result.showMasterShapes = el.attributes["showMasterSp"] !== "0";
+        result.showMasterShapes = parseOnOff(el.attributes["showMasterSp"]) ?? true;
       if (el.attributes["showMasterPhAnim"] !== undefined)
-        result.showMasterPlaceholderAnimations = el.attributes["showMasterPhAnim"] !== "0";
+        result.showMasterPlaceholderAnimations =
+          parseOnOff(el.attributes["showMasterPhAnim"]) ?? true;
       if (el.attributes["show"] === "0") result.hidden = true;
     }
 
@@ -220,7 +222,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
         if (spid !== undefined) item.shapeId = spid;
         const name = attr(ctrl, "name");
         if (name) item.name = name;
-        if (attr(ctrl, "showAsIcon") === "1") item.showAsIcon = true;
+        if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;
         const rId = attr(ctrl, "r:id");
         if (rId) item.rId = rId;
         const imgW = attrNum(ctrl, "imgW");
@@ -301,7 +303,7 @@ export function readTransition(el: XmlElement): TransitionOptions {
       result.speed =
         el.attributes["spd"] === "med" ? "medium" : (el.attributes["spd"] as "slow" | "fast");
     if (el.attributes["advClick"] !== undefined)
-      result.advanceOnClick = el.attributes["advClick"] === "1";
+      result.advanceOnClick = parseOnOff(el.attributes["advClick"]) ?? false;
     if (el.attributes["advTm"] !== undefined)
       result.advanceAfterTime = Number(el.attributes["advTm"]);
   }
@@ -320,7 +322,7 @@ export function readTransition(el: XmlElement): TransitionOptions {
     }
     if (attrs["orient"] !== undefined) result.orient = attrs["orient"] as "horz" | "vert";
     if (attrs["spokes"] !== undefined) result.spokes = Number(attrs["spokes"]);
-    if (attrs["thruBlk"] !== undefined) result.thruBlk = attrs["thruBlk"] === "1";
+    if (attrs["thruBlk"] !== undefined) result.thruBlk = parseOnOff(attrs["thruBlk"]) ?? false;
     break;
   }
 
@@ -335,7 +337,7 @@ export function readTransition(el: XmlElement): TransitionOptions {
         const startSound: NonNullable<TransitionOptions["startSound"]> = { rId };
         const name = snd ? attr(snd, "name") : undefined;
         if (name) startSound.name = name;
-        if (attr(stSnd, "loop") === "1") startSound.loop = true;
+        if (parseOnOff(attr(stSnd, "loop"))) startSound.loop = true;
         result.startSound = startSound;
       }
     } else if (findChild(sndAc, "p:endSnd")) {

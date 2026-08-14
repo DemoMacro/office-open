@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { parse as coreParse } from "@office-open/core/descriptor";
 import { createEffectList, effectListDesc, fillDesc } from "@office-open/core/drawingml";
@@ -59,7 +60,7 @@ function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundOptions {
 
   const bgPr = findChild(el, "p:bgPr");
   if (bgPr) {
-    if (bgPr.attributes?.["shadeToTitle"] === "1") {
+    if (parseOnOff(bgPr.attributes?.["shadeToTitle"])) {
       result.shadeToTitle = true;
     }
 

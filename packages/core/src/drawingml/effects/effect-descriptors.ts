@@ -12,6 +12,7 @@ import type { CustomDescriptor, ReadContext, WriteContext } from "../../descript
 import { parse } from "../../descriptor";
 import { convertToEmu, mapOptional } from "../../util/converters";
 import { xsdBlendMode, xsdPresetShadow, xsdRectAlignment } from "../../util/mappings";
+import { parseOnOff } from "../../util/values";
 import { parseColorChoice, solidFillDesc, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { gradientFillDesc, patternFillDesc } from "../fill/fill-descriptors";
@@ -226,7 +227,8 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
     if (blur) {
       const blurOpts: BlurEffectOptions = {};
       if (blur.attributes?.["rad"] !== undefined) blurOpts.radius = Number(blur.attributes["rad"]);
-      if (blur.attributes?.["grow"] !== undefined) blurOpts.grow = blur.attributes["grow"] !== "0";
+      if (blur.attributes?.["grow"] !== undefined)
+        blurOpts.grow = parseOnOff(blur.attributes["grow"]) ?? true;
       result.blur = blurOpts;
     }
 
@@ -278,7 +280,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
           String(outerShdw.attributes["algn"]),
         ) as OuterShadowEffectOptions["alignment"];
       if (outerShdw.attributes?.["rotWithShape"] !== undefined)
-        outerOpts.rotWithShape = outerShdw.attributes["rotWithShape"] !== "0";
+        outerOpts.rotWithShape = parseOnOff(outerShdw.attributes["rotWithShape"]) ?? true;
       const color = readColorFromElement(outerShdw, ctx);
       if (color) outerOpts.color = color;
       result.outerShadow = outerOpts as OuterShadowEffectOptions;
@@ -351,7 +353,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (reflection.attributes?.["algn"] !== undefined)
         refOpts.alignment = xsdRectAlignment.from(String(reflection.attributes["algn"]));
       if (reflection.attributes?.["rotWithShape"] !== undefined)
-        refOpts.rotWithShape = reflection.attributes["rotWithShape"] !== "0";
+        refOpts.rotWithShape = parseOnOff(reflection.attributes["rotWithShape"]) ?? true;
       result.reflection = refOpts;
     }
 

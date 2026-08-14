@@ -11,7 +11,7 @@
  *
  * @module
  */
-import { toUint8Array } from "@office-open/core";
+import { toUint8Array, parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, type Element } from "@office-open/xml";
@@ -183,9 +183,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       result.link = {
         ...base,
         ...(updateMode ? { updateMode: updateMode as "always" | "onCall" } : {}),
-        ...(lockedField !== undefined
-          ? { lockedField: lockedField === "true" || lockedField === "1" }
-          : {}),
+        ...(lockedField !== undefined ? { lockedField: parseOnOff(lockedField) ?? false } : {}),
       } as ObjectLinkOptions;
     }
 

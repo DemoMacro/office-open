@@ -12,6 +12,7 @@ import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { toUint8Array } from "../../util/data-type";
 import { xsdPattern } from "../../util/mappings";
+import { parseOnOff } from "../../util/values";
 import { blipFillDesc } from "../blip/blip-descriptors";
 import { solidFillDesc, parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
@@ -117,7 +118,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
       const shade: LinearShadeOptions = {};
       if (lin.attributes?.["ang"] !== undefined)
         shade.angle = Number(lin.attributes["ang"]) / 60000;
-      if (lin.attributes?.["scaled"] !== undefined) shade.scaled = lin.attributes["scaled"] !== "0";
+      if (lin.attributes?.["scaled"] !== undefined)
+        shade.scaled = parseOnOff(lin.attributes["scaled"]) ?? true;
       result.shade = shade;
     } else {
       const path = findChild(el, "a:path");
@@ -137,7 +139,7 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
 
     // Rotate with shape
     if (el.attributes?.["rotWithShape"] !== undefined)
-      result.rotateWithShape = el.attributes["rotWithShape"] !== "0";
+      result.rotateWithShape = parseOnOff(el.attributes["rotWithShape"]) ?? true;
 
     // Tile rect
     const tileRectangle = findChild(el, "a:tileRect");

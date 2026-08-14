@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild, attrNum } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -42,7 +43,8 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
       const mapped = reverseMap[a["lastView"]];
       if (mapped) result.lastView = mapped as ViewPropertiesOptions["lastView"];
     }
-    if (a["showComments"] !== undefined) result.showComments = a["showComments"] !== "0";
+    if (a["showComments"] !== undefined)
+      result.showComments = parseOnOff(a["showComments"]) ?? true;
   }
 
   const gridSpacing = findChild(el, "p:gridSpacing");

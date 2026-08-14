@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -37,11 +38,11 @@ function parsePresentationProperties(el: XmlElement): PresentationPropertiesOpti
   if (showPr) {
     const showOpts: Partial<ShowOptions> = {};
     if (showPr.attributes?.["loop"] !== undefined)
-      showOpts.loop = showPr.attributes["loop"] === "1";
+      showOpts.loop = parseOnOff(showPr.attributes["loop"]) ?? false;
     if (showPr.attributes?.["showNarration"] !== undefined)
-      showOpts.showNarration = showPr.attributes["showNarration"] === "1";
+      showOpts.showNarration = parseOnOff(showPr.attributes["showNarration"]) ?? false;
     if (showPr.attributes?.["useTimings"] !== undefined)
-      showOpts.useTimings = showPr.attributes["useTimings"] === "1";
+      showOpts.useTimings = parseOnOff(showPr.attributes["useTimings"]) ?? false;
     // Show type from child elements (kiosk/browse/present)
     if (findChild(showPr, "p:kiosk")) {
       showOpts.type = "kiosk";

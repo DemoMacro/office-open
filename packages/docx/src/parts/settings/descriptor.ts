@@ -8,7 +8,7 @@
  * @module
  */
 
-import { derivePasswordHash } from "@office-open/core";
+import { derivePasswordHash, parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml, findChild, stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -77,7 +77,7 @@ function compatSetting(name: string, val: string | number, uri?: string): string
 function readOnOff(el: Element | undefined): boolean | undefined {
   if (!el || !el.name) return undefined;
   const v = attr(el, valAttr(el.name));
-  return v !== "false" && v !== "0" && v !== "off";
+  return parseOnOff(v) ?? true;
 }
 
 /** Read an attribute as a number, or undefined if absent/unparseable. */
@@ -266,7 +266,7 @@ function parseCompatibility(el: Element): CompatibilityOptions | undefined {
         const n = parseInt(val, 10);
         if (!Number.isNaN(n)) o.version = n;
       } else if (sugar !== undefined) {
-        o[sugar] = val !== "0" && val !== "false";
+        o[sugar] = parseOnOff(val) ?? true;
       } else {
         extras.push({ name, val, uri: attr(child, "w:uri") });
       }
@@ -345,11 +345,11 @@ function parseCaptions(el: Element): CaptionsOptions | undefined {
       const pos = attr(child, "w:pos");
       if (pos) c.pos = pos as CaptionOptions["pos"];
       const chapNum = attr(child, "w:chapNum");
-      if (chapNum !== undefined) c.chapNum = chapNum === "1";
+      if (chapNum !== undefined) c.chapNum = parseOnOff(chapNum) ?? false;
       const heading = attr(child, "w:heading");
       if (heading !== undefined) c.heading = parseInt(heading, 10);
       const noLabel = attr(child, "w:noLabel");
-      if (noLabel !== undefined) c.noLabel = noLabel === "1";
+      if (noLabel !== undefined) c.noLabel = parseOnOff(noLabel) ?? false;
       const numFmt = attr(child, "w:numFmt");
       if (numFmt) c.numFmt = numFmt;
       const sep = attr(child, "w:sep");
@@ -1145,7 +1145,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     if (wpEl) {
       const wp = readPasswordAttrs(wpEl) as WriteProtectionOptions;
       const recommended = attr(wpEl, "w:recommended");
-      if (recommended !== undefined) wp.recommended = recommended === "1" || recommended === "true";
+      if (recommended !== undefined) wp.recommended = parseOnOff(recommended) ?? false;
       if (Object.keys(wp).length > 0) opts.writeProtection = wp;
     }
 
@@ -1233,9 +1233,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const dllVersion = attr(child, "w:dllVersion");
       if (dllVersion) entry.dllVersion = dllVersion;
       const nlCheck = attr(child, "w:nlCheck");
-      if (nlCheck !== undefined) entry.nlCheck = nlCheck !== "0" && nlCheck !== "false";
+      if (nlCheck !== undefined) entry.nlCheck = parseOnOff(nlCheck) ?? true;
       const checkStyle = attr(child, "w:checkStyle");
-      if (checkStyle !== undefined) entry.checkStyle = checkStyle !== "0" && checkStyle !== "false";
+      if (checkStyle !== undefined) entry.checkStyle = parseOnOff(checkStyle) ?? true;
       const appCheck = attr(child, "w:appCheck");
       if (appCheck) entry.appCheck = appCheck;
       const appName = attr(child, "w:appName");
@@ -1285,7 +1285,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       ];
       for (const [prop, xmlKey] of spffFlags) {
         const v = attr(spffEl, xmlKey);
-        if (v !== undefined) filter[prop] = v !== "0" && v !== "false" && v !== "off";
+        if (v !== undefined) filter[prop] = parseOnOff(v) ?? true;
       }
       if (Object.keys(filter).length > 0) opts.stylePaneFormatFilter = filter;
     }
@@ -1321,7 +1321,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       ];
       for (const [k, a] of rvFlags) {
         const v = attr(revViewEl, a);
-        if (v !== undefined) rv[k] = v !== "false" && v !== "0";
+        if (v !== undefined) rv[k] = parseOnOff(v) ?? true;
       }
       if (Object.keys(rv).length > 0) opts.revisionView = rv as RevisionViewOptions;
     }
@@ -1338,7 +1338,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (enforcement !== undefined) {
         Object.assign(prot, readPasswordAttrs(docProtEl));
         const formatting = attr(docProtEl, "w:formatting");
-        if (formatting !== undefined) prot.formatting = formatting === "1" || formatting === "true";
+        if (formatting !== undefined) prot.formatting = parseOnOff(formatting) ?? false;
       }
       if (Object.keys(prot).length > 0) opts.documentProtection = prot;
     }
@@ -1545,7 +1545,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     const rmilEl = findChild(el, "w:readModeInkLockDown");
     if (rmilEl) {
       opts.readModeInkLockDown = {
-        actualPg: attr(rmilEl, "w:actualPg") !== "0",
+        actualPg: parseOnOff(attr(rmilEl, "w:actualPg")) ?? true,
         w: parseInt(attr(rmilEl, "w:w") ?? "0", 10),
         h: parseInt(attr(rmilEl, "w:h") ?? "0", 10),
         fontSz: parseInt(attr(rmilEl, "w:fontSz") ?? "0", 10),

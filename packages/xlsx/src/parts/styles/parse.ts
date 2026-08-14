@@ -3,6 +3,7 @@
  *
  * @module
  */
+import { parseOnOff } from "@office-open/core";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
@@ -118,8 +119,8 @@ export function parseFill(el: XmlElement): FillOptions {
 
 export function parseBorder(el: XmlElement): BorderSideOptions {
   const result: BorderSideOptions = {};
-  if (String(attr(el, "diagonalUp")) === "1") result.diagonalUp = true;
-  if (String(attr(el, "diagonalDown")) === "1") result.diagonalDown = true;
+  if (parseOnOff(attr(el, "diagonalUp"))) result.diagonalUp = true;
+  if (parseOnOff(attr(el, "diagonalDown"))) result.diagonalDown = true;
 
   for (const side of [
     "left",
@@ -152,15 +153,15 @@ export function parseAlignment(el: XmlElement): AlignmentOptions {
   if (h) result.horizontal = h as AlignmentOptions["horizontal"];
   const v = attr(el, "vertical");
   if (v) result.vertical = v as AlignmentOptions["vertical"];
-  if (String(attr(el, "wrapText")) === "1") result.wrapText = true;
+  if (parseOnOff(attr(el, "wrapText"))) result.wrapText = true;
   const rotation = attrNum(el, "textRotation");
   if (rotation !== undefined) result.textRotation = rotation;
   const indent = attrNum(el, "indent");
   if (indent !== undefined) result.indent = indent;
   const relativeIndent = attrNum(el, "relativeIndent");
   if (relativeIndent !== undefined) result.relativeIndent = relativeIndent;
-  if (String(attr(el, "justifyLastLine")) === "1") result.justifyLastLine = true;
-  if (String(attr(el, "shrinkToFit")) === "1") result.shrinkToFit = true;
+  if (parseOnOff(attr(el, "justifyLastLine"))) result.justifyLastLine = true;
+  if (parseOnOff(attr(el, "shrinkToFit"))) result.shrinkToFit = true;
   const readingOrder = attrNum(el, "readingOrder");
   if (readingOrder !== undefined) result.readingOrder = readingOrder;
   return result;
@@ -169,9 +170,9 @@ export function parseAlignment(el: XmlElement): AlignmentOptions {
 export function parseProtection(el: XmlElement): CellProtectionOptions {
   const result: Partial<CellProtectionOptions> = {};
   const locked = attr(el, "locked");
-  if (locked !== undefined) result.locked = locked !== "0";
+  if (locked !== undefined) result.locked = parseOnOff(locked) ?? true;
   const hidden = attr(el, "hidden");
-  if (hidden !== undefined) result.hidden = hidden !== "0";
+  if (hidden !== undefined) result.hidden = parseOnOff(hidden) ?? true;
   return result as CellProtectionOptions;
 }
 

@@ -8,6 +8,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
@@ -186,7 +187,7 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     // sheetPr
     const sheetPr = findChild(el, "sheetPr");
     if (sheetPr) {
-      if (String(attr(sheetPr, "published")) === "1") result.published = true;
+      if (parseOnOff(attr(sheetPr, "published"))) result.published = true;
       if (attr(sheetPr, "codeName")) result.codeName = attr(sheetPr, "codeName");
       const tabColor = findChild(sheetPr, "tabColor");
       if (tabColor) {
@@ -199,15 +200,15 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     const sheetViews = findChild(el, "sheetViews");
     if (sheetViews) {
       const sv = findChild(sheetViews, "sheetView");
-      if (sv && String(attr(sv, "zoomToFit")) === "1") result.zoomToFit = true;
+      if (sv && parseOnOff(attr(sv, "zoomToFit"))) result.zoomToFit = true;
     }
 
     // sheetProtection
     const sheetProtectionEl = findChild(el, "sheetProtection");
     if (sheetProtectionEl) {
       const sp: Partial<ChartsheetProtectionOptions> = {};
-      if (String(attr(sheetProtectionEl, "content")) === "1") sp.content = true;
-      if (String(attr(sheetProtectionEl, "objects")) === "1") sp.objects = true;
+      if (parseOnOff(attr(sheetProtectionEl, "content"))) sp.content = true;
+      if (parseOnOff(attr(sheetProtectionEl, "objects"))) sp.objects = true;
       result.sheetProtection = sp;
     }
 
@@ -251,8 +252,8 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     const headerFooterEl = findChild(el, "headerFooter");
     if (headerFooterEl) {
       const hf: Partial<ChartsheetHeaderFooterOptions> = {};
-      if (String(attr(headerFooterEl, "differentFirst")) === "1") hf.differentFirst = true;
-      if (String(attr(headerFooterEl, "differentOddEven")) === "1") hf.differentOddEven = true;
+      if (parseOnOff(attr(headerFooterEl, "differentFirst"))) hf.differentFirst = true;
+      if (parseOnOff(attr(headerFooterEl, "differentOddEven"))) hf.differentOddEven = true;
       const oh = findChild(headerFooterEl, "oddHeader");
       if (oh) hf.oddHeader = textOf(oh);
       const of2 = findChild(headerFooterEl, "oddFooter");

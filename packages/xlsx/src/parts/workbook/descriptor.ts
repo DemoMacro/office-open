@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild } from "@office-open/xml";
 
@@ -93,9 +94,9 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     const protEl = findChild(el, "workbookProtection");
     if (protEl?.attributes) {
       const prot: WorkbookProtectionOptions = {};
-      if (String(attr(protEl, "lockStructure")) === "1") prot.lockStructure = true;
-      if (String(attr(protEl, "lockWindows")) === "1") prot.lockWindows = true;
-      if (String(attr(protEl, "lockRevision")) === "1") prot.lockRevision = true;
+      if (parseOnOff(attr(protEl, "lockStructure"))) prot.lockStructure = true;
+      if (parseOnOff(attr(protEl, "lockWindows"))) prot.lockWindows = true;
+      if (parseOnOff(attr(protEl, "lockRevision"))) prot.lockRevision = true;
       if (attr(protEl, "workbookPassword"))
         prot.workbookPassword = attr(protEl, "workbookPassword");
       if (attr(protEl, "workbookAlgorithmName"))
@@ -144,20 +145,20 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const calcId = attrNum(calcPrEl, "calcId");
       if (calcId !== undefined) calc.calcId = calcId;
       if (attr(calcPrEl, "calcMode")) calc.calcMode = attr(calcPrEl, "calcMode");
-      if (String(attr(calcPrEl, "fullCalcOnLoad")) === "1") calc.fullCalcOnLoad = true;
+      if (parseOnOff(attr(calcPrEl, "fullCalcOnLoad"))) calc.fullCalcOnLoad = true;
       if (String(attr(calcPrEl, "concurrentCalc")) === "0") calc.concurrentCalc = false;
       if (attr(calcPrEl, "refMode")) calc.refMode = attr(calcPrEl, "refMode");
       if (String(attr(calcPrEl, "calcOnSave")) === "0") calc.calcOnSave = false;
-      if (String(attr(calcPrEl, "forceFullCalc")) === "1") calc.forceFullCalc = true;
+      if (parseOnOff(attr(calcPrEl, "forceFullCalc"))) calc.forceFullCalc = true;
       const cmc = attrNum(calcPrEl, "concurrentManualCount");
       if (cmc !== undefined) calc.concurrentManualCount = cmc;
-      if (String(attr(calcPrEl, "iterate")) === "1") calc.iterate = true;
+      if (parseOnOff(attr(calcPrEl, "iterate"))) calc.iterate = true;
       const ic = attrNum(calcPrEl, "iterateCount");
       if (ic !== undefined) calc.iterateCount = ic;
       const id = attrNum(calcPrEl, "iterateDelta");
       if (id !== undefined) calc.iterateDelta = id;
       if (String(attr(calcPrEl, "fullPrecision")) === "0") calc.fullPrecision = false;
-      if (String(attr(calcPrEl, "calcCompleted")) === "1") calc.calcCompleted = true;
+      if (parseOnOff(attr(calcPrEl, "calcCompleted"))) calc.calcCompleted = true;
       result.calcPr = calc;
     }
 
@@ -187,14 +188,14 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (tabRatio !== undefined) view.tabRatio = tabRatio;
         if (String(attr(v, "includeHiddenRowCol")) === "0") view.includeHiddenRowCol = false;
         if (String(attr(v, "includePrintSettings")) === "0") view.includePrintSettings = false;
-        if (String(attr(v, "personalView")) === "1") view.personalView = true;
-        if (String(attr(v, "maximized")) === "1") view.maximized = true;
-        if (String(attr(v, "minimized")) === "1") view.minimized = true;
-        if (String(attr(v, "autoUpdate")) === "1") view.autoUpdate = true;
+        if (parseOnOff(attr(v, "personalView"))) view.personalView = true;
+        if (parseOnOff(attr(v, "maximized"))) view.maximized = true;
+        if (parseOnOff(attr(v, "minimized"))) view.minimized = true;
+        if (parseOnOff(attr(v, "autoUpdate"))) view.autoUpdate = true;
         const mi = attrNum(v, "mergeInterval");
         if (mi !== undefined) view.mergeInterval = mi;
-        if (String(attr(v, "changesSavedWin")) === "1") view.changesSavedWin = true;
-        if (String(attr(v, "onlySync")) === "1") view.onlySync = true;
+        if (parseOnOff(attr(v, "changesSavedWin"))) view.changesSavedWin = true;
+        if (parseOnOff(attr(v, "onlySync"))) view.onlySync = true;
         if (attr(v, "showComments")) view.showComments = attr(v, "showComments");
         views.push(view);
       }
@@ -205,7 +206,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     const fileSharingEl = findChild(el, "fileSharing");
     if (fileSharingEl?.attributes) {
       const fs: FileSharingOptions = {};
-      if (String(attr(fileSharingEl, "readOnlyRecommended")) === "1") fs.readOnlyRecommended = true;
+      if (parseOnOff(attr(fileSharingEl, "readOnlyRecommended"))) fs.readOnlyRecommended = true;
       if (attr(fileSharingEl, "userName")) fs.userName = attr(fileSharingEl, "userName");
       if (attr(fileSharingEl, "reservationPassword"))
         fs.reservationPassword = attr(fileSharingEl, "reservationPassword");
@@ -225,8 +226,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (String(attr(webPublishingEl, "css")) === "0") wp.css = false;
       if (String(attr(webPublishingEl, "thicket")) === "0") wp.thicket = false;
       if (String(attr(webPublishingEl, "longFileNames")) === "0") wp.longFileNames = false;
-      if (String(attr(webPublishingEl, "vml")) === "1") wp.vml = true;
-      if (String(attr(webPublishingEl, "allowPng")) === "1") wp.allowPng = true;
+      if (parseOnOff(attr(webPublishingEl, "vml"))) wp.vml = true;
+      if (parseOnOff(attr(webPublishingEl, "allowPng"))) wp.allowPng = true;
       if (attr(webPublishingEl, "targetScreenSize"))
         wp.targetScreenSize = attr(webPublishingEl, "targetScreenSize");
       const dpi = attrNum(webPublishingEl, "dpi");
@@ -243,9 +244,9 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     if (fileRecoveryEl?.attributes) {
       const frp: FileRecoveryPropertiesOptions = {};
       if (String(attr(fileRecoveryEl, "autoRecover")) === "0") frp.autoRecover = false;
-      if (String(attr(fileRecoveryEl, "crashSave")) === "1") frp.crashSave = true;
-      if (String(attr(fileRecoveryEl, "dataExtractLoad")) === "1") frp.dataExtractLoad = true;
-      if (String(attr(fileRecoveryEl, "repairLoad")) === "1") frp.repairLoad = true;
+      if (parseOnOff(attr(fileRecoveryEl, "crashSave"))) frp.crashSave = true;
+      if (parseOnOff(attr(fileRecoveryEl, "dataExtractLoad"))) frp.dataExtractLoad = true;
+      if (parseOnOff(attr(fileRecoveryEl, "repairLoad"))) frp.repairLoad = true;
       result.fileRecoveryPr = frp;
     }
 
@@ -253,27 +254,27 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     const wbPrEl = findChild(el, "workbookPr");
     if (wbPrEl?.attributes) {
       const wbPr: WorkbookPropertiesOptions = {};
-      if (String(attr(wbPrEl, "date1904")) === "1") wbPr.date1904 = true;
+      if (parseOnOff(attr(wbPrEl, "date1904"))) wbPr.date1904 = true;
       const dtv = attrNum(wbPrEl, "defaultThemeVersion");
       if (dtv !== undefined) wbPr.defaultThemeVersion = dtv;
       if (attr(wbPrEl, "showObjects")) wbPr.showObjects = attr(wbPrEl, "showObjects");
-      if (String(attr(wbPrEl, "hidePivotFieldList")) === "1") wbPr.hidePivotFieldList = true;
-      if (String(attr(wbPrEl, "allowRefreshQuery")) === "1") wbPr.allowRefreshQuery = true;
-      if (String(attr(wbPrEl, "filterPrivacy")) === "1") wbPr.filterPrivacy = true;
-      if (String(attr(wbPrEl, "backupFile")) === "1") wbPr.backupFile = true;
+      if (parseOnOff(attr(wbPrEl, "hidePivotFieldList"))) wbPr.hidePivotFieldList = true;
+      if (parseOnOff(attr(wbPrEl, "allowRefreshQuery"))) wbPr.allowRefreshQuery = true;
+      if (parseOnOff(attr(wbPrEl, "filterPrivacy"))) wbPr.filterPrivacy = true;
+      if (parseOnOff(attr(wbPrEl, "backupFile"))) wbPr.backupFile = true;
       if (attr(wbPrEl, "codeName")) wbPr.codeName = attr(wbPrEl, "codeName");
-      if (String(attr(wbPrEl, "showBorderUnselectedTables")) === "1")
+      if (parseOnOff(attr(wbPrEl, "showBorderUnselectedTables")))
         wbPr.showBorderUnselectedTables = true;
-      if (String(attr(wbPrEl, "promptedSolutions")) === "1") wbPr.promptedSolutions = true;
+      if (parseOnOff(attr(wbPrEl, "promptedSolutions"))) wbPr.promptedSolutions = true;
       if (String(attr(wbPrEl, "showInkAnnotation")) === "0") wbPr.showInkAnnotation = false;
       if (String(attr(wbPrEl, "saveExternalLinkValues")) === "0")
         wbPr.saveExternalLinkValues = false;
       if (attr(wbPrEl, "updateLinks")) wbPr.updateLinks = attr(wbPrEl, "updateLinks");
-      if (String(attr(wbPrEl, "showPivotChartFilter")) === "1") wbPr.showPivotChartFilter = true;
-      if (String(attr(wbPrEl, "publishItems")) === "1") wbPr.publishItems = true;
-      if (String(attr(wbPrEl, "checkCompatibility")) === "1") wbPr.checkCompatibility = true;
+      if (parseOnOff(attr(wbPrEl, "showPivotChartFilter"))) wbPr.showPivotChartFilter = true;
+      if (parseOnOff(attr(wbPrEl, "publishItems"))) wbPr.publishItems = true;
+      if (parseOnOff(attr(wbPrEl, "checkCompatibility"))) wbPr.checkCompatibility = true;
       if (String(attr(wbPrEl, "autoCompressPictures")) === "0") wbPr.autoCompressPictures = false;
-      if (String(attr(wbPrEl, "refreshAllConnections")) === "1") wbPr.refreshAllConnections = true;
+      if (parseOnOff(attr(wbPrEl, "refreshAllConnections"))) wbPr.refreshAllConnections = true;
       result.workbookPr = wbPr;
     }
 
@@ -299,7 +300,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
           rId: (wo.attributes?.["r:id"] as string) ?? "",
         };
         if (attr(wo, "destinationFile")) obj.destinationFile = attr(wo, "destinationFile");
-        if (String(attr(wo, "autoRepublish")) === "1") obj.autoRepublish = true;
+        if (parseOnOff(attr(wo, "autoRepublish"))) obj.autoRepublish = true;
         if (attr(wo, "title")) obj.title = attr(wo, "title");
         if (attr(wo, "sourceObject")) obj.sourceObject = attr(wo, "sourceObject");
         if (attr(wo, "appName")) obj.appName = attr(wo, "appName");
@@ -368,15 +369,15 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (attr(d, "statusBar") !== undefined) dn.statusBar = attr(d, "statusBar");
         const localSheetId = attrNum(d, "localSheetId");
         if (localSheetId !== undefined) dn.localSheetId = localSheetId;
-        if (String(attr(d, "hidden")) === "1") dn.hidden = true;
-        if (String(attr(d, "function")) === "1") dn.function = true;
-        if (String(attr(d, "vbProcedure")) === "1") dn.vbProcedure = true;
-        if (String(attr(d, "xlm")) === "1") dn.xlm = true;
+        if (parseOnOff(attr(d, "hidden"))) dn.hidden = true;
+        if (parseOnOff(attr(d, "function"))) dn.function = true;
+        if (parseOnOff(attr(d, "vbProcedure"))) dn.vbProcedure = true;
+        if (parseOnOff(attr(d, "xlm"))) dn.xlm = true;
         const functionGroupId = attrNum(d, "functionGroupId");
         if (functionGroupId !== undefined) dn.functionGroupId = functionGroupId;
         if (attr(d, "shortcutKey") !== undefined) dn.shortcutKey = attr(d, "shortcutKey");
-        if (String(attr(d, "publishToServer")) === "1") dn.publishToServer = true;
-        if (String(attr(d, "workbookParameter")) === "1") dn.workbookParameter = true;
+        if (parseOnOff(attr(d, "publishToServer"))) dn.publishToServer = true;
+        if (parseOnOff(attr(d, "workbookParameter"))) dn.workbookParameter = true;
         names.push(dn);
       }
       if (names.length > 0) result.definedNames = names;
@@ -386,7 +387,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     const smartTagPrEl = findChild(el, "smartTagPr");
     if (smartTagPrEl?.attributes) {
       const stp: SmartTagPropertiesOptions = {};
-      if (String(attr(smartTagPrEl, "embed")) === "1") stp.embed = true;
+      if (parseOnOff(attr(smartTagPrEl, "embed"))) stp.embed = true;
       const show = attr(smartTagPrEl, "show");
       if (show && show !== "all") stp.show = show as SmartTagShow;
       result.smartTagPr = stp;

@@ -7,6 +7,7 @@
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
+import { parseOnOff } from "../../util/values";
 import type {
   BaseLockingOptions,
   ConnectorLockingOptions,
@@ -56,7 +57,7 @@ function readLockingAttrs(el: XmlElement, keys: readonly string[]): Record<strin
   if (!el.attributes) return result;
   for (const key of keys) {
     const val = el.attributes[key];
-    if (val !== undefined) result[key] = val === "1" || val === 1 || val === "true";
+    if (val !== undefined) result[key] = parseOnOff(val) ?? false;
   }
   return result;
 }

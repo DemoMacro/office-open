@@ -16,6 +16,7 @@ import type { Element } from "@office-open/xml";
 import { escapeXml, findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
+import { parseOnOff } from "../../util/values";
 
 // ── Types ──
 
@@ -186,9 +187,9 @@ function parseRun(el: Element | undefined): TextListStyleRunOptions | undefined 
 
 function parseLevel(el: Element): TextListStyleLevelOptions {
   const lvl: TextListStyleLevelOptions = {};
-  // nativeTypeAttributes (opc parser) coerces "1"/"0" to numbers, so a strict
-  // `=== "1"` check silently fails; normalize via String() before comparing.
-  const isOn = (raw: unknown): boolean => String(raw) === "1";
+  // nativeTypeAttributes (opc parser) coerces boolean attribute values between
+  // string/number/boolean forms; parseOnOff accepts all of them.
+  const isOn = (raw: string | number | boolean | undefined): boolean => parseOnOff(raw) ?? false;
   if (el.attributes) {
     const a = el.attributes;
     if (a["algn"] !== undefined) lvl.alignment = String(a["algn"]);

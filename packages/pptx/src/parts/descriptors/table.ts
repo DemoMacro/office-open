@@ -4,7 +4,7 @@
  * @module
  */
 
-import { convertToEmu, xsdTextAnchor } from "@office-open/core";
+import { convertToEmu, parseOnOff, xsdTextAnchor } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
@@ -377,12 +377,12 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
   if (gridSpan !== undefined && gridSpan > 1) result.columnSpan = gridSpan;
   const rowSpan = attrNum(tc, "rowSpan");
   if (rowSpan !== undefined && rowSpan > 1) result.rowSpan = rowSpan;
-  const hMerge = attr(tc, "hMerge");
-  if (hMerge === "1") result.horizontalMerge = "restart";
-  else if (hMerge === "0") result.horizontalMerge = "continue";
-  const vMerge = attr(tc, "vMerge");
-  if (vMerge === "1") result.verticalMerge = "restart";
-  else if (vMerge === "0") result.verticalMerge = "continue";
+  const hMerge = parseOnOff(attr(tc, "hMerge"));
+  if (hMerge === true) result.horizontalMerge = "restart";
+  else if (hMerge === false) result.horizontalMerge = "continue";
+  const vMerge = parseOnOff(attr(tc, "vMerge"));
+  if (vMerge === true) result.verticalMerge = "restart";
+  else if (vMerge === false) result.verticalMerge = "continue";
 
   // a:txBody → paragraph children
   const txBody = findChild(tc, "a:txBody");

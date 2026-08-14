@@ -7,7 +7,7 @@
  * @module
  */
 
-import { convertToEmu } from "@office-open/core";
+import { convertToEmu, parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml } from "@office-open/xml";
 import { attr, attrNum, findChild, textOf } from "@office-open/xml";
@@ -91,7 +91,7 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
       const extLst = findChild(cm, "p:extLst");
       if (extLst) {
         const mod = attr(extLst, "mod");
-        if (mod !== undefined) entry.modified = mod === "1";
+        if (mod !== undefined) entry.modified = parseOnOff(mod) ?? false;
       }
       comments.push(entry);
     }

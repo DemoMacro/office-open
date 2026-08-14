@@ -13,6 +13,7 @@
 import { escapeXml } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
+import { parseOnOff } from "../util/values";
 
 /** xsd:boolean lexical form — spec canonical form is "true"/"false" (Word's convention). */
 const xsdBoolean = (value: boolean): string => (value ? "true" : "false");
@@ -174,22 +175,22 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
           if (typeof text === "string") result.mmClips = Number(text);
           break;
         case "ScaleCrop":
-          if (typeof text === "string") result.scaleCrop = text === "1" || text === "true";
+          if (typeof text === "string") result.scaleCrop = parseOnOff(text) ?? false;
           break;
         case "LinksUpToDate":
-          if (typeof text === "string") result.linksUpToDate = text === "1" || text === "true";
+          if (typeof text === "string") result.linksUpToDate = parseOnOff(text) ?? false;
           break;
         case "CharactersWithSpaces":
           if (typeof text === "string") result.charactersWithSpaces = Number(text);
           break;
         case "SharedDoc":
-          if (typeof text === "string") result.sharedDoc = text === "1" || text === "true";
+          if (typeof text === "string") result.sharedDoc = parseOnOff(text) ?? false;
           break;
         case "HyperlinkBase":
           if (typeof text === "string") result.hyperlinkBase = text;
           break;
         case "HyperlinksChanged":
-          if (typeof text === "string") result.hyperlinksChanged = text === "1" || text === "true";
+          if (typeof text === "string") result.hyperlinksChanged = parseOnOff(text) ?? false;
           break;
         case "Application":
           if (typeof text === "string") result.application = text;

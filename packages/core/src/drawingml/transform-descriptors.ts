@@ -8,6 +8,7 @@ import { attrMeasure, findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import { convertToEmu } from "../util/converters";
+import { parseOnOff } from "../util/values";
 import type { GroupTransform2DOptions, Transform2DOptions } from "./transform";
 
 // ── Transform2D descriptor ──
@@ -47,9 +48,9 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
     // Attributes
     if (el.attributes) {
       if (el.attributes["flipH"] !== undefined)
-        result.flipHorizontal = el.attributes["flipH"] === 1 || el.attributes["flipH"] === "1";
+        result.flipHorizontal = parseOnOff(el.attributes["flipH"]) ?? false;
       if (el.attributes["flipV"] !== undefined)
-        result.flipVertical = el.attributes["flipV"] === 1 || el.attributes["flipV"] === "1";
+        result.flipVertical = parseOnOff(el.attributes["flipV"]) ?? false;
       if (el.attributes["rot"] !== undefined)
         result.rotation = Number(el.attributes["rot"]) / 60000;
     }

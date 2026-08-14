@@ -4,7 +4,7 @@
  * @module
  */
 
-import { derivePasswordHash, uniqueUuid } from "@office-open/core";
+import { derivePasswordHash, parseOnOff, uniqueUuid } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -283,18 +283,19 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
     if (a["serverZoom"]) result.serverZoom = String(a["serverZoom"]);
     if (a["firstSlideNum"] !== undefined) result.firstSlideNum = Number(a["firstSlideNum"]);
     if (a["showSpecialPlsOnTitleSld"] !== undefined)
-      result.showSpecialPlsOnTitleSld = a["showSpecialPlsOnTitleSld"] !== "0";
-    if (a["rtl"] !== undefined) result.rtl = a["rtl"] === "1";
+      result.showSpecialPlsOnTitleSld = parseOnOff(a["showSpecialPlsOnTitleSld"]) ?? true;
+    if (a["rtl"] !== undefined) result.rtl = parseOnOff(a["rtl"]) ?? false;
     if (a["removePersonalInfoOnSave"] !== undefined)
-      result.removePersonalInfoOnSave = a["removePersonalInfoOnSave"] === "1";
-    if (a["compatMode"] !== undefined) result.compatMode = a["compatMode"] === "1";
+      result.removePersonalInfoOnSave = parseOnOff(a["removePersonalInfoOnSave"]) ?? false;
+    if (a["compatMode"] !== undefined) result.compatMode = parseOnOff(a["compatMode"]) ?? false;
     if (a["strictFirstAndLastChars"] !== undefined)
-      result.strictFirstAndLastChars = a["strictFirstAndLastChars"] !== "0";
+      result.strictFirstAndLastChars = parseOnOff(a["strictFirstAndLastChars"]) ?? true;
     if (a["embedTrueTypeFonts"] !== undefined)
-      result.embedTrueTypeFonts = a["embedTrueTypeFonts"] === "1";
-    if (a["saveSubsetFonts"] !== undefined) result.saveSubsetFonts = a["saveSubsetFonts"] === "1";
+      result.embedTrueTypeFonts = parseOnOff(a["embedTrueTypeFonts"]) ?? false;
+    if (a["saveSubsetFonts"] !== undefined)
+      result.saveSubsetFonts = parseOnOff(a["saveSubsetFonts"]) ?? false;
     if (a["autoCompressPictures"] !== undefined)
-      result.autoCompressPictures = a["autoCompressPictures"] !== "0";
+      result.autoCompressPictures = parseOnOff(a["autoCompressPictures"]) ?? true;
     if (a["bookmarkIdSeed"] !== undefined) result.bookmarkIdSeed = Number(a["bookmarkIdSeed"]);
     if (a["conformance"])
       result.conformance = a["conformance"] as PresentationPartOptions["conformance"];
@@ -354,8 +355,8 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
   const photoAlbum = findChild(el, "p:photoAlbum");
   if (photoAlbum?.attributes) {
     const pa: PhotoAlbumOptions = {};
-    if (photoAlbum.attributes["bw"] === "1") pa.blackWhite = true;
-    if (photoAlbum.attributes["showCaptions"] === "1") pa.showCaptions = true;
+    if (parseOnOff(photoAlbum.attributes["bw"])) pa.blackWhite = true;
+    if (parseOnOff(photoAlbum.attributes["showCaptions"])) pa.showCaptions = true;
     if (photoAlbum.attributes["layout"])
       pa.layout = photoAlbum.attributes["layout"] as PhotoAlbumOptions["layout"];
     if (photoAlbum.attributes["frame"])

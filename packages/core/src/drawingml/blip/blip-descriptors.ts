@@ -11,6 +11,7 @@ import { findChild } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { xsdRectAlignment } from "../../util/mappings";
+import { parseOnOff } from "../../util/values";
 import { solidFillDesc } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlipOptions } from "./blip";
@@ -297,7 +298,7 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   if (clrChange) {
     const opts: Partial<ColorChangeEffectOptions> = {};
     if (clrChange.attributes?.["useA"] !== undefined)
-      opts.useAlpha = clrChange.attributes["useA"] !== "0";
+      opts.useAlpha = parseOnOff(clrChange.attributes["useA"]) ?? true;
     const clrFrom = findChild(clrChange, "a:clrFrom");
     if (clrFrom) {
       const fromFill = findChild(clrFrom, "a:solidFill");
@@ -322,7 +323,8 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   if (blur) {
     const opts: BlipBlurEffectOptions = {};
     if (blur.attributes?.["rad"] !== undefined) opts.radius = Number(blur.attributes["rad"]);
-    if (blur.attributes?.["grow"] !== undefined) opts.grow = blur.attributes["grow"] !== "0";
+    if (blur.attributes?.["grow"] !== undefined)
+      opts.grow = parseOnOff(blur.attributes["grow"]) ?? true;
     result.blur = opts;
   }
 
@@ -429,7 +431,7 @@ export const blipFillDesc: CustomDescriptor<
     // Attributes
     if (el.attributes?.["dpi"] !== undefined) result.dpi = Number(el.attributes["dpi"]);
     if (el.attributes?.["rotWithShape"] !== undefined)
-      result.rotWithShape = el.attributes["rotWithShape"] !== "0";
+      result.rotWithShape = parseOnOff(el.attributes["rotWithShape"]) ?? true;
 
     // Blip child
     const blip = findChild(el, "a:blip");

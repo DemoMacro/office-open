@@ -5,6 +5,7 @@
  *
  * @module
  */
+import { parseOnOff } from "@office-open/core";
 import {
   blipDesc,
   convertEmuToPixels,
@@ -142,12 +143,13 @@ function readGraphicFrameLocks(el: Element): GraphicFrameLocksOptions {
   const result: GraphicFrameLocksOptions = {};
   if (!locks) return result;
   const a = locks.attributes ?? {};
-  if (a["noGrp"] !== undefined) result.noGrp = a["noGrp"] !== "0";
-  if (a["noDrilldown"] !== undefined) result.noDrilldown = a["noDrilldown"] !== "0";
-  if (a["noSelect"] !== undefined) result.noSelect = a["noSelect"] !== "0";
-  if (a["noChangeAspect"] !== undefined) result.noChangeAspect = a["noChangeAspect"] !== "0";
-  if (a["noMove"] !== undefined) result.noMove = a["noMove"] !== "0";
-  if (a["noResize"] !== undefined) result.noResize = a["noResize"] !== "0";
+  if (a["noGrp"] !== undefined) result.noGrp = parseOnOff(a["noGrp"]) ?? true;
+  if (a["noDrilldown"] !== undefined) result.noDrilldown = parseOnOff(a["noDrilldown"]) ?? true;
+  if (a["noSelect"] !== undefined) result.noSelect = parseOnOff(a["noSelect"]) ?? true;
+  if (a["noChangeAspect"] !== undefined)
+    result.noChangeAspect = parseOnOff(a["noChangeAspect"]) ?? true;
+  if (a["noMove"] !== undefined) result.noMove = parseOnOff(a["noMove"]) ?? true;
+  if (a["noResize"] !== undefined) result.noResize = parseOnOff(a["noResize"]) ?? true;
   return result as GraphicFrameLocksOptions;
 }
 
@@ -161,13 +163,14 @@ function readGrpSpLocks(cNvGrpSpPr: Element | undefined): GroupShapeLocksOptions
   if (!locks) return undefined;
   const result: GroupShapeLocksOptions = {};
   const a = locks.attributes ?? {};
-  if (a["noGrp"] !== undefined) result.noGrp = a["noGrp"] !== "0";
-  if (a["noUngrp"] !== undefined) result.noUngrp = a["noUngrp"] !== "0";
-  if (a["noSelect"] !== undefined) result.noSelect = a["noSelect"] !== "0";
-  if (a["noRot"] !== undefined) result.noRot = a["noRot"] !== "0";
-  if (a["noChangeAspect"] !== undefined) result.noChangeAspect = a["noChangeAspect"] !== "0";
-  if (a["noMove"] !== undefined) result.noMove = a["noMove"] !== "0";
-  if (a["noResize"] !== undefined) result.noResize = a["noResize"] !== "0";
+  if (a["noGrp"] !== undefined) result.noGrp = parseOnOff(a["noGrp"]) ?? true;
+  if (a["noUngrp"] !== undefined) result.noUngrp = parseOnOff(a["noUngrp"]) ?? true;
+  if (a["noSelect"] !== undefined) result.noSelect = parseOnOff(a["noSelect"]) ?? true;
+  if (a["noRot"] !== undefined) result.noRot = parseOnOff(a["noRot"]) ?? true;
+  if (a["noChangeAspect"] !== undefined)
+    result.noChangeAspect = parseOnOff(a["noChangeAspect"]) ?? true;
+  if (a["noMove"] !== undefined) result.noMove = parseOnOff(a["noMove"]) ?? true;
+  if (a["noResize"] !== undefined) result.noResize = parseOnOff(a["noResize"]) ?? true;
   return Object.keys(result).length === 0 ? undefined : (result as GroupShapeLocksOptions);
 }
 
@@ -388,7 +391,7 @@ function readBlipUseLocalDpi(blip: Element): boolean | undefined {
     const useLocalDpiEl = findChild(ext, "a14:useLocalDpi");
     if (useLocalDpiEl) {
       const val = useLocalDpiEl.attributes?.["val"];
-      return val !== "0";
+      return parseOnOff(val) ?? true;
     }
   }
   return undefined;

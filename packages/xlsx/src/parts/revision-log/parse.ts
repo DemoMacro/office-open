@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import { attr, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
@@ -61,7 +62,7 @@ function parseBool(el: XmlElement, name: string): boolean | undefined {
   const v = attr(el, name);
   if (v === undefined) return undefined;
   // nativeTypeAttributes (xlsx parse path) coerces "1" to number 1.
-  return String(v) === "1" || v === "true";
+  return parseOnOff(v) ?? false;
 }
 
 export function parseEntry(el: XmlElement): RevisionEntry | undefined {
@@ -286,7 +287,7 @@ export function parseEntry(el: XmlElement): RevisionEntry | undefined {
 export function readBool(el: XmlElement, name: string, set: (v: boolean) => void): void {
   const raw = attr(el, name);
   // nativeTypeAttributes (xlsx parse path) coerces "1" to number 1.
-  if (String(raw) === "1" || raw === "true") set(true);
+  if (parseOnOff(raw)) set(true);
 }
 
 export function readNum(el: XmlElement, name: string, set: (v: number) => void): void {
