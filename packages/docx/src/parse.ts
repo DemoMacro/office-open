@@ -1,7 +1,7 @@
 import type { ParsedArchive } from "@office-open/core";
 import { parseArchive } from "@office-open/core";
 import type { DataType } from "@office-open/core";
-import { toUint8Array } from "@office-open/core";
+import { resolveRelationshipTarget, toUint8Array } from "@office-open/core";
 import { contentTypesDesc } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -100,12 +100,6 @@ export interface DocxDocument {
   contentTypes?: Element;
 }
 
-function resolveRelsPath(target: string): string {
-  if (target.startsWith("/")) return target.slice(1);
-  if (target.startsWith("../")) return target.replace("../", "");
-  return `word/${target}`;
-}
-
 /**
  * Resolve each embedded font's .odttf bytes through fontTable.xml.rels.
  * Reads the binary verbatim and flags it raw so the compiler copies it as-is
@@ -121,7 +115,7 @@ function resolveEmbeddedFontData(fonts: EmbeddedFontOptionsWithKey[], doc: Parse
     if (!type.includes("/font")) continue;
     const id = attr(child, "Id") ?? "";
     const target = attr(child, "Target") ?? "";
-    if (id && target) ridToPath.set(id, resolveRelsPath(target));
+    if (id && target) ridToPath.set(id, resolveRelationshipTarget("word/fontTable.xml", target));
   }
   for (const font of fonts) {
     if (!font.embedRid) continue;
@@ -159,7 +153,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     const id = attr(child, "Id") ?? "";
     if (!target) continue;
 
-    const path = resolveRelsPath(target);
+    const path = resolveRelationshipTarget("word/document.xml", target);
 
     if (type.includes("/header")) {
       refs.headers.set(id, path);
@@ -211,7 +205,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
         partMap = new Map();
         refs.partMedia.set(partPath, partMap);
       }
-      partMap.set(id, resolveRelsPath(target));
+      partMap.set(id, resolveRelationshipTarget(partPath, target));
     }
   }
 

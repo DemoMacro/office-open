@@ -152,3 +152,34 @@ export function optionalRelsPart(
 ): XmlifyedFile | undefined {
   return rel.relationshipCount > 0 ? { data: xmlDeclaration + rel.serialize(), path } : undefined;
 }
+
+/**
+ * Derive the .rels part path for a package part:
+ * "ppt/slides/slide1.xml" → "ppt/slides/_rels/slide1.xml.rels".
+ */
+export function partPathToRelsPath(partPath: string): string {
+  const idx = partPath.lastIndexOf("/");
+  const dir = partPath.substring(0, idx);
+  const file = partPath.substring(idx + 1);
+  return `${dir}/_rels/${file}.rels`;
+}
+
+/**
+ * Resolve a relationship target against the referencing part's directory,
+ * segment by segment: each ".." pops one directory level. A single
+ * String.replace("../", …) only strips the first occurrence and mis-resolves
+ * deeper targets like "../../media/image.png".
+ */
+export function resolveRelationshipTarget(partPath: string, target: string): string {
+  if (target.startsWith("/")) return target.slice(1);
+  const dir = partPath.substring(0, partPath.lastIndexOf("/"));
+  const dirParts = dir ? dir.split("/") : [];
+  for (const part of target.split("/")) {
+    if (part === "..") {
+      dirParts.pop();
+    } else if (part !== "." && part !== "") {
+      dirParts.push(part);
+    }
+  }
+  return dirParts.join("/");
+}

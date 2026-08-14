@@ -10,7 +10,7 @@ import {
   parseCorePropsElement,
 } from "@office-open/core";
 import type { ParsedArchive } from "@office-open/core";
-import { toUint8Array } from "@office-open/core";
+import { partPathToRelsPath, toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
@@ -81,16 +81,6 @@ function sortByNumber(paths: string[]): string[] {
     const numB = parseInt(b.match(/(\d+)/)?.[1] ?? "0", 10);
     return numA - numB;
   });
-}
-
-/** Derive the sibling rels path for an external link part.
- * "xl/externalLinks/externalLink1.xml" → "xl/externalLinks/_rels/externalLink1.xml.rels"
- */
-function externalLinkRelsPath(elPath: string): string {
-  const idx = elPath.lastIndexOf("/");
-  const dir = elPath.substring(0, idx);
-  const file = elPath.substring(idx + 1);
-  return `${dir}/_rels/${file}.rels`;
 }
 
 /**
@@ -425,7 +415,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       // Resolve the external book target from the sibling rels file
       // (xl/externalLinks/_rels/externalLinkN.xml.rels), which compiler.ts writes.
       if (elData.externalBook) {
-        const relsPath = externalLinkRelsPath(elPath);
+        const relsPath = partPathToRelsPath(elPath);
         const relsEl = xlsx.doc.get(relsPath);
         if (relsEl) {
           for (const child of relsEl.elements ?? []) {
@@ -468,10 +458,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (headersEl) {
       const headers = revisionHeadersDesc.parse(headersEl, readContext);
       const logs: RevisionLogOptions[] = [];
-      const slash = headersPath.lastIndexOf("/");
-      const revHeadersRelsEl = xlsx.doc.get(
-        `${headersPath.slice(0, slash)}/_rels/${headersPath.slice(slash + 1)}.rels`,
-      );
+      const revHeadersRelsEl = xlsx.doc.get(partPathToRelsPath(headersPath));
       if (revHeadersRelsEl) {
         for (const child of revHeadersRelsEl.elements ?? []) {
           if (child.name !== "Relationship") continue;

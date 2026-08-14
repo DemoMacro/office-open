@@ -4,6 +4,8 @@ import {
   customPropertiesDesc,
   parseArchive,
   parseCorePropsElement,
+  partPathToRelsPath,
+  resolveRelationshipTarget,
 } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
@@ -82,12 +84,6 @@ export interface PptxDocument {
   customProps?: string;
 }
 
-function resolveRelsPath(target: string): string {
-  if (target.startsWith("/")) return target.slice(1);
-  if (target.startsWith("../")) return target.replace("../", "ppt/");
-  return `ppt/${target}`;
-}
-
 function sortByNumber(paths: string[]): string[] {
   return paths.sort((a, b) => {
     const numA = parseInt(a.match(/(\d+)/)?.[1] ?? "0", 10);
@@ -139,9 +135,7 @@ function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPart
   const mediaSet = new Set(refs.media);
 
   for (const slidePath of slidePaths) {
-    const parts = slidePath.split("/");
-    const fileName = parts.pop()!;
-    const relsPath = `${parts.join("/")}/_rels/${fileName}.rels`;
+    const relsPath = partPathToRelsPath(slidePath);
 
     const relsEl = doc.get(relsPath);
     if (!relsEl) continue;
@@ -152,7 +146,7 @@ function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPart
       const target = attr(child, "Target") ?? "";
       if (!target) continue;
 
-      const path = resolveRelsPath(target);
+      const path = resolveRelationshipTarget(slidePath, target);
 
       if (type.includes("/comments") && !type.includes("commentAuthors")) {
         commentsSet.add(path);
@@ -195,7 +189,7 @@ export function parsePptx(data: DataType): PptxDocument {
       const target = attr(child, "Target") ?? "";
       if (!target) continue;
 
-      const path = resolveRelsPath(target);
+      const path = resolveRelationshipTarget("ppt/presentation.xml", target);
 
       if (type.includes("/slideMaster")) {
         slideMasters.push(path);
@@ -268,9 +262,7 @@ export function parsePptx(data: DataType): PptxDocument {
  */
 function parseSlideRelMap(doc: ParsedArchive, slidePath: string): Map<string, string> {
   const rels = new Map<string, string>();
-  const parts = slidePath.split("/");
-  const fileName = parts.pop()!;
-  const relsPath = `${parts.join("/")}/_rels/${fileName}.rels`;
+  const relsPath = partPathToRelsPath(slidePath);
 
   const relsEl = doc.get(relsPath);
   if (!relsEl) return rels;
@@ -284,7 +276,7 @@ function parseSlideRelMap(doc: ParsedArchive, slidePath: string): Map<string, st
     if (attr(child, "TargetMode") === "External") {
       rels.set(id, target);
     } else {
-      rels.set(id, resolveRelsPath(target));
+      rels.set(id, resolveRelationshipTarget(slidePath, target));
     }
   }
 
@@ -364,7 +356,7 @@ function parseSlideSections(
     if (child.name !== "Relationship") continue;
     const id = attr(child, "Id");
     const target = attr(child, "Target");
-    if (id && target) pathByRId.set(id, resolveRelsPath(target));
+    if (id && target) pathByRId.set(id, resolveRelationshipTarget("ppt/presentation.xml", target));
   }
 
   for (const [slideId, name] of sectionBySlideId) {

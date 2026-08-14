@@ -1,4 +1,10 @@
-export { Relationships, TargetModeType, optionalRelsPart } from "./relationships";
+export {
+  Relationships,
+  TargetModeType,
+  optionalRelsPart,
+  partPathToRelsPath,
+  resolveRelationshipTarget,
+} from "./relationships";
 export type { RelationshipType } from "./relationships";
 export { Media, type BaseMediaEntry } from "./media";
 export { createDefault, createOverride } from "./content-types";

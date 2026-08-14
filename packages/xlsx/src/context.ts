@@ -4,7 +4,13 @@
  * @module
  */
 
-import { ChartCollection, Relationships, type RelationshipType } from "@office-open/core";
+import {
+  ChartCollection,
+  partPathToRelsPath,
+  Relationships,
+  resolveRelationshipTarget,
+  type RelationshipType,
+} from "@office-open/core";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
 import { SharedStrings } from "@parts/shared-strings";
@@ -116,7 +122,7 @@ export class XlsxReadContext implements ReadContext {
    * Worksheet rels paths: `xl/worksheets/sheet1.xml` → `xl/worksheets/_rels/sheet1.xml.rels`
    */
   public resolveWorksheetRel(wsPath: string, rId: string): string | undefined {
-    const relsPath = wsPathToRelsPath(wsPath);
+    const relsPath = partPathToRelsPath(wsPath);
     const rels = this.xlsx.doc.get(relsPath);
     if (!rels?.elements) return undefined;
     for (const child of rels.elements) {
@@ -124,7 +130,7 @@ export class XlsxReadContext implements ReadContext {
       if (child.attributes?.["Id"] === rId) {
         const target = child.attributes["Target"] as string | undefined;
         if (!target) return undefined;
-        return resolveWsTarget(wsPath, target);
+        return resolveRelationshipTarget(wsPath, target);
       }
     }
     return undefined;
@@ -138,7 +144,7 @@ export class XlsxReadContext implements ReadContext {
     wsPath: string,
     typeFragment: string,
   ): Array<{ rId: string; target: string }> {
-    const relsPath = wsPathToRelsPath(wsPath);
+    const relsPath = partPathToRelsPath(wsPath);
     const rels = this.xlsx.doc.get(relsPath);
     if (!rels?.elements) return [];
     const result: Array<{ rId: string; target: string }> = [];
@@ -149,7 +155,7 @@ export class XlsxReadContext implements ReadContext {
       const rId = child.attributes?.["Id"] as string | undefined;
       const target = child.attributes?.["Target"] as string | undefined;
       if (rId && target) {
-        result.push({ rId, target: resolveWsTarget(wsPath, target) });
+        result.push({ rId, target: resolveRelationshipTarget(wsPath, target) });
       }
     }
     return result;
@@ -196,32 +202,4 @@ export class XlsxReadContext implements ReadContext {
 
     return result as StyleOptions;
   }
-}
-
-// ── Worksheet rels helpers ──
-
-/** Derive rels path from worksheet path. */
-function wsPathToRelsPath(wsPath: string): string {
-  // "xl/worksheets/sheet1.xml" → "xl/worksheets/_rels/sheet1.xml.rels"
-  const idx = wsPath.lastIndexOf("/");
-  const dir = wsPath.substring(0, idx);
-  const file = wsPath.substring(idx + 1);
-  return `${dir}/_rels/${file}.rels`;
-}
-
-/** Resolve a relative target from a worksheet rels file to an absolute archive path. */
-function resolveWsTarget(wsPath: string, target: string): string {
-  if (target.startsWith("/")) return target.slice(1);
-  // Target is relative to the worksheet's directory, e.g. "../comments1.xml" from "xl/worksheets/"
-  const wsDir = wsPath.substring(0, wsPath.lastIndexOf("/"));
-  const parts = target.split("/");
-  const dirParts = wsDir.split("/");
-  for (const part of parts) {
-    if (part === "..") {
-      dirParts.pop();
-    } else {
-      dirParts.push(part);
-    }
-  }
-  return dirParts.join("/");
 }
