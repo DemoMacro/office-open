@@ -252,11 +252,10 @@ function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): strin
 }
 
 function underlineStr(type: string | undefined, color?: string): string {
-  const a = attrParts({
-    "w:val": type ?? "single",
-    "w:color": color !== undefined ? hexColorValue(color) : undefined,
-  });
-  return `<w:u ${a}/>`;
+  // Scalar build — this runs for every underlined run, and the Record +
+  // Object.entries round-trip of attrParts showed up in compile profiles.
+  if (color === undefined) return `<w:u w:val="${type ?? "single"}"/>`;
+  return `<w:u w:val="${type ?? "single"}" w:color="${hexColorValue(color)}"/>`;
 }
 
 function eastAsianLayoutStr(opts: EastAsianLayoutOptions): string {
