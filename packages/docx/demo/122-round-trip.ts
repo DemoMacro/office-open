@@ -167,7 +167,7 @@ async function main() {
               "Visit ",
               {
                 text: "our website",
-                hyperlink: { link: "https://example.com", tooltip: "Example" },
+                hyperlink: { url: "https://example.com", tooltip: "Example" },
               },
               " for more.",
             ],

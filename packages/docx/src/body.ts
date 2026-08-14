@@ -1321,7 +1321,7 @@ function parseRunLevelChildren(
         const rId = attr(child, "r:id");
         if (rId) {
           const target = ctx.docx.partRefs.hyperlinks.get(rId);
-          if (target) hl.link = target;
+          if (target) hl.url = target;
         }
         const anchor = attr(child, "w:anchor");
         if (anchor) hl.anchor = anchor;

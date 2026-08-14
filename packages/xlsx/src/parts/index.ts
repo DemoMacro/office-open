@@ -9,7 +9,7 @@ export { Styles, stylesDesc, type StylesDocOptions } from "./styles";
 export type {
   StyleOptions,
   FontOptions,
-  FillOptions,
+  CellFillOptions,
   BorderSideOptions,
   BorderOptions,
   AlignmentOptions,

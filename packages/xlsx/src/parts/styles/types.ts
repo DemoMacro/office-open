@@ -36,14 +36,14 @@ export interface FontOptions {
 }
 
 /** Gradient stop (CT_GradientStop) */
-export interface GradientStopOptions {
+export interface CellGradientStopOptions {
   /** Position (0.0–1.0) */
   position: number;
   /** RGB color hex without alpha, e.g. "FF0000" */
   color: string;
 }
 
-export interface FillOptions {
+export interface CellFillOptions {
   type?: "solid" | "pattern" | "gradient";
   color?: string;
   patternType?: string;
@@ -52,7 +52,7 @@ export interface FillOptions {
   /** Background color indexed (CT_Color @indexed) */
   colorIndexed?: number;
   /** Gradient stops (CT_GradientFill/stop) */
-  stops?: GradientStopOptions[];
+  stops?: CellGradientStopOptions[];
   /** Gradient type (CT_GradientFill @type) */
   gradientType?: "linear" | "path";
   /** Gradient degree for linear (CT_GradientFill @degree) */
@@ -132,7 +132,7 @@ export interface AlignmentOptions {
 
 export interface StyleOptions {
   font?: FontOptions;
-  fill?: FillOptions;
+  fill?: CellFillOptions;
   border?: BorderSideOptions;
   numFmt?: string;
   alignment?: AlignmentOptions;
@@ -171,7 +171,7 @@ export interface ColorsOptions {
 /** Differential format — used by conditional formatting to specify what changes. */
 export interface DxfOptions {
   font?: FontOptions;
-  fill?: FillOptions;
+  fill?: CellFillOptions;
   border?: BorderSideOptions;
   numFmt?: string;
 }
@@ -276,7 +276,7 @@ export interface CellXfEntry {
  */
 export interface CellStyleXfOptions {
   font?: FontOptions;
-  fill?: FillOptions;
+  fill?: CellFillOptions;
   border?: BorderSideOptions;
   numFmt?: string;
   alignment?: AlignmentOptions;
@@ -295,7 +295,7 @@ export interface CellStyleXfOptions {
 export interface StylesState {
   customNumFmts: ReadonlyMap<string, number>;
   fonts: FontOptions[];
-  fills: FillOptions[];
+  fills: CellFillOptions[];
   borders: BorderSideOptions[];
   cellXfs: CellXfEntry[];
   dxfs: DxfOptions[];
@@ -334,7 +334,7 @@ export interface StylesParseResult {
   /** Reverse map numFmtId → formatCode, for O(1) lookup in resolveStyle. */
   customNumFmtById?: Map<number, string>;
   fonts?: FontOptions[];
-  fills?: FillOptions[];
+  fills?: CellFillOptions[];
   borders?: BorderSideOptions[];
   cellStyleXfs?: CellStyleXfOptions[];
   cellXfs?: IndexedXfEntry[];

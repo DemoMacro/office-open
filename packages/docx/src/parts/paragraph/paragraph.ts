@@ -66,7 +66,7 @@ export type ParagraphChild =
   | { deletion: ChangedProperties & { children: (RunOptions | string)[] } }
   | {
       hyperlink: {
-        link?: string;
+        url?: string;
         anchor?: string;
         tooltip?: string;
         /** Target frame for the hyperlink (CT_Hyperlink @tgtFrame) */

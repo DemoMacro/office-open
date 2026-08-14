@@ -15,7 +15,7 @@ import type {
   CustomCellStyleOptions,
   CustomTableStyleOptions,
   DxfOptions,
-  FillOptions,
+  CellFillOptions,
   FontOptions,
   IndexedColorOptions,
   IndexedXfEntry,
@@ -44,7 +44,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     // section can resolve index references into font/fill/border/numFmt defs.
     const numFmtById = new Map<number, string>();
     const fonts: FontOptions[] = [];
-    const fills: FillOptions[] = [];
+    const fills: CellFillOptions[] = [];
     const borders: BorderSideOptions[] = [];
 
     // numFmts

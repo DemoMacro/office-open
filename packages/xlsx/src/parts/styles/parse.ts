@@ -12,9 +12,9 @@ import type {
   BorderOptions,
   BorderSideOptions,
   CellProtectionOptions,
-  FillOptions,
+  CellFillOptions,
   FontOptions,
-  GradientStopOptions,
+  CellGradientStopOptions,
 } from "./types";
 
 export function parseFont(el: XmlElement): FontOptions {
@@ -71,10 +71,10 @@ export function parseFont(el: XmlElement): FontOptions {
   return result as FontOptions;
 }
 
-export function parseFill(el: XmlElement): FillOptions {
+export function parseFill(el: XmlElement): CellFillOptions {
   const patternFill = findChild(el, "patternFill");
   if (patternFill) {
-    const result: FillOptions = {};
+    const result: CellFillOptions = {};
     const patternType = attr(patternFill, "patternType");
     if (patternType) result.patternType = patternType;
     const fg = findChild(patternFill, "fgColor");
@@ -88,9 +88,9 @@ export function parseFill(el: XmlElement): FillOptions {
 
   const gradientFill = findChild(el, "gradientFill");
   if (gradientFill) {
-    const result: FillOptions = { type: "gradient" };
+    const result: CellFillOptions = { type: "gradient" };
     const gType = attr(gradientFill, "type");
-    if (gType) result.gradientType = gType as FillOptions["gradientType"];
+    if (gType) result.gradientType = gType as CellFillOptions["gradientType"];
     const degree = attrNum(gradientFill, "degree");
     if (degree !== undefined) result.gradientDegree = degree;
     const left = attrNum(gradientFill, "left");
@@ -101,7 +101,7 @@ export function parseFill(el: XmlElement): FillOptions {
     if (top !== undefined) result.gradientTop = top;
     const bottom = attrNum(gradientFill, "bottom");
     if (bottom !== undefined) result.gradientBottom = bottom;
-    const stops: GradientStopOptions[] = [];
+    const stops: CellGradientStopOptions[] = [];
     for (const s of gradientFill.elements ?? []) {
       if (s.name !== "stop") continue;
       const pos = attrNum(s, "position");

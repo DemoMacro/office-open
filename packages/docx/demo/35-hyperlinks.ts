@@ -13,7 +13,7 @@ const buffer = await generateDocument({
             "Click here for the ",
             {
               hyperlink: {
-                link: "http://www.example.com",
+                url: "http://www.example.com",
                 children: ["Footnotes external hyperlink"],
               },
             },
@@ -28,7 +28,7 @@ const buffer = await generateDocument({
         {
           paragraph: {
             children: [
-              { hyperlink: { link: "http://www.example.com", children: ["Anchor Text"] } },
+              { hyperlink: { url: "http://www.example.com", children: ["Anchor Text"] } },
               { footnoteReference: 1 },
             ],
           },
@@ -38,11 +38,11 @@ const buffer = await generateDocument({
             children: [
               {
                 hyperlink: {
-                  link: "http://www.google.com",
+                  url: "http://www.google.com",
                   children: ["Google Image Link"],
                 },
               },
-              { hyperlink: { link: "https://www.bbc.co.uk/news", children: ["BBC News Link"] } },
+              { hyperlink: { url: "https://www.bbc.co.uk/news", children: ["BBC News Link"] } },
             ],
           },
         },
@@ -54,7 +54,7 @@ const buffer = await generateDocument({
               },
               {
                 hyperlink: {
-                  link: "http://www.example.com",
+                  url: "http://www.example.com",
                   children: [
                     { text: "A ", style: "Hyperlink" },
                     { text: "single ", bold: true, style: "Hyperlink" },
@@ -73,7 +73,7 @@ const buffer = await generateDocument({
               "Tooltip example: ",
               {
                 hyperlink: {
-                  link: "http://www.example.com",
+                  url: "http://www.example.com",
                   children: ["Hover for tooltip"],
                   tooltip: "This is a tooltip shown on hover",
                 },
@@ -87,7 +87,7 @@ const buffer = await generateDocument({
               "Target frame example: ",
               {
                 hyperlink: {
-                  link: "http://www.example.com",
+                  url: "http://www.example.com",
                   children: ["Open in new window"],
                 },
               },
@@ -103,7 +103,7 @@ const buffer = await generateDocument({
                 "Click here for the ",
                 {
                   hyperlink: {
-                    link: "http://www.example.com",
+                    url: "http://www.example.com",
                     children: ["Footer external hyperlink"],
                   },
                 },
@@ -120,7 +120,7 @@ const buffer = await generateDocument({
                 "Click here for the ",
                 {
                   hyperlink: {
-                    link: "http://www.google.com",
+                    url: "http://www.google.com",
                     children: ["Header external hyperlink"],
                   },
                 },

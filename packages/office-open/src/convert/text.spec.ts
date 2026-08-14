@@ -139,12 +139,12 @@ describe("fromDrawingParagraph (a:p → w:p)", () => {
     };
     const child = fromDrawingParagraph(drawing).children![0] as {
       hyperlink?: {
-        link?: string;
+        url?: string;
         tooltip?: string;
         children?: { text?: string; bold?: boolean }[];
       };
     };
-    expect(child.hyperlink?.link).toBe("https://example.com");
+    expect(child.hyperlink?.url).toBe("https://example.com");
     expect(child.hyperlink?.tooltip).toBe("go");
     const inner = child.hyperlink?.children?.[0];
     expect(inner?.text).toBe("link");
@@ -214,7 +214,7 @@ describe("toDrawingParagraph (w:p → a:p)", () => {
     const drawing = toDrawingParagraph({
       children: [
         {
-          hyperlink: { link: "https://example.com", tooltip: "go", children: [{ text: "link" }] },
+          hyperlink: { url: "https://example.com", tooltip: "go", children: [{ text: "link" }] },
         },
       ],
     });

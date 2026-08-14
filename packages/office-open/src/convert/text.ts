@@ -179,7 +179,7 @@ function drawingToDocxChildren(
       const { hyperlink, ...rest } = run;
       out.push({
         hyperlink: {
-          link: hyperlink.url,
+          url: hyperlink.url,
           ...(hyperlink.tooltip ? { tooltip: hyperlink.tooltip } : {}),
           children: [drawingRunToDocx(rest)],
         },
@@ -264,7 +264,7 @@ function docxToDrawingChildren(
     // External hyperlink child → flatten: each inner run inherits the link.
     if ("hyperlink" in child) {
       const hl = child.hyperlink;
-      const url = hl.link;
+      const url = hl.url;
       if (url === undefined) continue; // anchor-only/internal link — no a:p equivalent
       const link = { url, ...(hl.tooltip ? { tooltip: hl.tooltip } : {}) };
       const subs =

@@ -30,7 +30,7 @@ export interface InternalHyperlinkOptions {
  */
 export interface ExternalHyperlinkOptions {
   /** URL to link to outside the document */
-  link: string;
+  url: string;
   /** Screen tip text shown when hovering over the hyperlink */
   tooltip?: string;
   /** Target frame for the hyperlink (e.g., "_blank", "_self") */

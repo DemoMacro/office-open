@@ -263,7 +263,7 @@ describe("from-docx", () => {
                 "#657",
                 {
                   hyperlink: {
-                    link: "https://www.bbc.co.uk/news",
+                    url: "https://www.bbc.co.uk/news",
                     children: ["BBC News Link"],
                   },
                 },
@@ -282,7 +282,7 @@ describe("from-docx", () => {
                       "This is a ",
                       {
                         hyperlink: {
-                          link: "https://www.google.co.uk",
+                          url: "https://www.google.co.uk",
                           children: ["Google Link"],
                         },
                       },
@@ -350,7 +350,7 @@ describe("from-docx", () => {
                 "#657",
                 {
                   hyperlink: {
-                    link: "https://www.bbc.co.uk/news",
+                    url: "https://www.bbc.co.uk/news",
                     children: ["BBC News Link"],
                   },
                 },
@@ -369,7 +369,7 @@ describe("from-docx", () => {
                       "This is a ",
                       {
                         hyperlink: {
-                          link: "https://www.google.co.uk",
+                          url: "https://www.google.co.uk",
                           children: ["Google Link"],
                         },
                       },
@@ -458,7 +458,7 @@ describe("from-docx", () => {
                 },
                 {
                   hyperlink: {
-                    link: "https://www.google.co.uk",
+                    url: "https://www.google.co.uk",
                     children: ["Google Link"],
                   },
                 },
@@ -494,7 +494,7 @@ describe("from-docx", () => {
               children: [
                 {
                   hyperlink: {
-                    link: "https://www.google.co.uk",
+                    url: "https://www.google.co.uk",
                     children: ["Google Link"],
                   },
                 },

@@ -20,7 +20,7 @@ import type {
   CustomCellStyleOptions,
   CustomTableStyleOptions,
   DxfOptions,
-  FillOptions,
+  CellFillOptions,
   FontOptions,
   StyleExtensionOptions,
   StyleOptions,
@@ -33,7 +33,7 @@ function fontKey(f: FontOptions): string {
   return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}n${f.font ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
 }
 
-function fillKey(f: FillOptions): string {
+function fillKey(f: CellFillOptions): string {
   return `t${f.type ?? ""}c${f.color ?? ""}p${f.patternType ?? ""}bg${f.bgColor ?? ""}g${f.stops?.map((s) => `${s.position}_${s.color}`).join("|") ?? ""}`;
 }
 
@@ -100,7 +100,7 @@ export class Styles {
   ];
   private fontKeys = new Map<string, number>();
 
-  private fills: FillOptions[] = [
+  private fills: CellFillOptions[] = [
     { patternType: "none" }, // default fill (index 0)
     { patternType: "gray125" }, // required fill (index 1)
   ];
@@ -271,7 +271,7 @@ export class Styles {
     return idx;
   }
 
-  private registerFill(opts?: FillOptions): number {
+  private registerFill(opts?: CellFillOptions): number {
     if (!opts) return 0;
     const key = fillKey(opts);
     const existing = this.fillKeys.get(key);

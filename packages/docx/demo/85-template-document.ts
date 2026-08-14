@@ -12,7 +12,7 @@ const doc = await patchDocument({
       children: [
         "replaced just as",
         " well",
-        { hyperlink: { link: "https://www.bbc.co.uk/news", children: ["BBC News Link"] } },
+        { hyperlink: { url: "https://www.bbc.co.uk/news", children: ["BBC News Link"] } },
       ],
       type: "paragraph",
     },
@@ -35,7 +35,7 @@ const doc = await patchDocument({
     item_1: {
       children: [
         "#657",
-        { hyperlink: { link: "https://www.bbc.co.uk/news", children: ["BBC News Link"] } },
+        { hyperlink: { url: "https://www.bbc.co.uk/news", children: ["BBC News Link"] } },
       ],
       type: "paragraph",
     },
@@ -51,7 +51,7 @@ const doc = await patchDocument({
           paragraph: {
             children: [
               "This is a ",
-              { hyperlink: { link: "https://www.google.co.uk", children: ["Google Link"] } },
+              { hyperlink: { url: "https://www.google.co.uk", children: ["Google Link"] } },
               {
                 picture: {
                   data: readFileSync("./demo/images/dog.png"),

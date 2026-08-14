@@ -759,12 +759,12 @@ export function stringifyChildDispatch(
       if (hl.targetFrame) attrs.push(`w:tgtFrame="${escapeXml(hl.targetFrame)}"`);
       if (hl.docLocation) attrs.push(`w:docLocation="${escapeXml(hl.docLocation)}"`);
     };
-    if (hl.link) {
+    if (hl.url) {
       const linkId = uniqueId();
       ctx.viewWrapper.relationships.addRelationship(
         linkId,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-        hl.link,
+        hl.url,
         TargetModeType.EXTERNAL,
       );
       const attrs = [`r:id="rId${linkId}"`];
