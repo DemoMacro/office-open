@@ -69,9 +69,11 @@ function stringifyParagraphProperties(
     attrs.push(`latinLnBrk="${options.latinLineBreak ? 1 : 0}"`);
 
   // Line spacing
-  if (options.lineSpacing !== undefined) {
-    // spcPct unit is 1/1000 percent; lineSpacing is percent (100 = single) → ×1000.
-    children.push(`<a:lnSpc><a:spcPct val="${Math.round(options.lineSpacing * 1000)}"/></a:lnSpc>`);
+  if (options.lineSpacingPercent !== undefined) {
+    // spcPct unit is 1/1000 percent; lineSpacingPercent is percent (100 = single) → ×1000.
+    children.push(
+      `<a:lnSpc><a:spcPct val="${Math.round(options.lineSpacingPercent * 1000)}"/></a:lnSpc>`,
+    );
   }
   if (options.lineSpacingPoints !== undefined) {
     children.push(
@@ -80,13 +82,13 @@ function stringifyParagraphProperties(
   }
 
   // Spacing before/after (XSD CT_TextParagraphProperties order: spcBef, spcAft)
-  if (options.marginTop !== undefined) {
-    children.push(`<a:spcBef><a:spcPts val="${Math.round(options.marginTop * 100)}"/></a:spcBef>`);
-  }
-  if (options.marginBottom !== undefined) {
+  if (options.spaceBefore !== undefined) {
     children.push(
-      `<a:spcAft><a:spcPts val="${Math.round(options.marginBottom * 100)}"/></a:spcAft>`,
+      `<a:spcBef><a:spcPts val="${Math.round(options.spaceBefore * 100)}"/></a:spcBef>`,
     );
+  }
+  if (options.spaceAfter !== undefined) {
+    children.push(`<a:spcAft><a:spcPts val="${Math.round(options.spaceAfter * 100)}"/></a:spcAft>`);
   }
 
   // Bullets
@@ -205,7 +207,7 @@ function readParagraphProperties(
   if (lnSpc) {
     const spcPct = findChild(lnSpc, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined) {
-      result.lineSpacing = Number(spcPct.attributes["val"]) / 1000;
+      result.lineSpacingPercent = Number(spcPct.attributes["val"]) / 1000;
     }
     const spcPts = findChild(lnSpc, "a:spcPts");
     if (spcPts?.attributes?.["val"] !== undefined) {
@@ -218,14 +220,14 @@ function readParagraphProperties(
   if (spcAft) {
     const pts = findChild(spcAft, "a:spcPts");
     if (pts?.attributes?.["val"] !== undefined)
-      result.marginBottom = Number(pts.attributes["val"]) / 100;
+      result.spaceAfter = Number(pts.attributes["val"]) / 100;
   }
 
   const spcBef = findChild(el, "a:spcBef");
   if (spcBef) {
     const pts = findChild(spcBef, "a:spcPts");
     if (pts?.attributes?.["val"] !== undefined)
-      result.marginTop = Number(pts.attributes["val"]) / 100;
+      result.spaceBefore = Number(pts.attributes["val"]) / 100;
   }
 
   // Bullets

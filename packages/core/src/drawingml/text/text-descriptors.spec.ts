@@ -264,14 +264,14 @@ describe("paragraphDesc round-trip", () => {
     expect(children[1]?.bold).toBe(true);
   });
 
-  it("round-trips alignment/indentLevel/lineSpacing", () => {
+  it("round-trips alignment/indentLevel/lineSpacingPercent", () => {
     const r = roundTrip({
       text: "x",
-      properties: { alignment: "center", indentLevel: 2, lineSpacing: 150 },
+      properties: { alignment: "center", indentLevel: 2, lineSpacingPercent: 150 },
     });
     expect(r.properties?.alignment).toBe("center");
     expect(r.properties?.indentLevel).toBe(2);
-    expect(r.properties?.lineSpacing).toBe(150);
+    expect(r.properties?.lineSpacingPercent).toBe(150);
   });
 
   it("round-trips bullet none/char/autoNum", () => {

@@ -234,13 +234,13 @@ describe("paragraphDesc round-trip", () => {
     expect(props.indentLevel).toBe(2);
   });
 
-  it("round-trips lineSpacing", () => {
+  it("round-trips lineSpacingPercent", () => {
     const result = roundTrip({
       text: "Spaced",
-      properties: { lineSpacing: 150 },
+      properties: { lineSpacingPercent: 150 },
     });
     const props = result.properties!;
-    expect(props.lineSpacing).toBe(150);
+    expect(props.lineSpacingPercent).toBe(150);
   });
 
   it("round-trips marginIndent", () => {
@@ -286,14 +286,14 @@ describe("paragraphDesc round-trip", () => {
     expect(bullet.startAt).toBe(1);
   });
 
-  it("round-trips marginBottom and marginTop", () => {
+  it("round-trips spaceAfter and spaceBefore", () => {
     const result = roundTrip({
       text: "With margins",
-      properties: { marginTop: 400, marginBottom: 200 },
+      properties: { spaceBefore: 400, spaceAfter: 200 },
     });
     const props = result.properties!;
-    expect(props.marginTop).toBe(400);
-    expect(props.marginBottom).toBe(200);
+    expect(props.spaceBefore).toBe(400);
+    expect(props.spaceAfter).toBe(200);
   });
 
   it("round-trips properties with children", () => {

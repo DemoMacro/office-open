@@ -95,7 +95,7 @@ describe("fromDrawingParagraph (a:p → w:p)", () => {
 
   it("converts paragraph before/after (1/100 pt → twips)", () => {
     const drawing: ParagraphDescriptorOptions = {
-      properties: { marginTop: 500, marginBottom: 250 },
+      properties: { spaceBefore: 500, spaceAfter: 250 },
     };
     const spacing = fromDrawingParagraph(drawing).spacing!;
     expect(spacing.before).toBe(100); // 5 pt
@@ -103,7 +103,7 @@ describe("fromDrawingParagraph (a:p → w:p)", () => {
   });
 
   it("converts percent line spacing to auto, points line spacing to exact", () => {
-    const pct = fromDrawingParagraph({ properties: { lineSpacing: 150 } }).spacing!;
+    const pct = fromDrawingParagraph({ properties: { lineSpacingPercent: 150 } }).spacing!;
     expect(pct.line).toBe(360); // 1.5 × 240
     expect(pct.lineRule).toBe("auto");
 
@@ -205,7 +205,7 @@ describe("toDrawingParagraph (w:p → a:p)", () => {
 
   it("converts auto/exact line spacing back to percent/points", () => {
     const auto = toDrawingParagraph({ spacing: { line: 360, lineRule: "auto" } });
-    expect(auto.properties?.lineSpacing).toBe(150);
+    expect(auto.properties?.lineSpacingPercent).toBe(150);
     const exact = toDrawingParagraph({ spacing: { line: 480, lineRule: "exactly" } });
     expect(exact.properties?.lineSpacingPoints).toBe(24);
   });
@@ -248,7 +248,7 @@ describe("round-trip a:p → w:p → a:p", () => {
       children: [
         { text: "x", bold: true, size: 18, underline: "single", fill: "ABCDEF", lang: "en-US" },
       ],
-      properties: { alignment: "right", marginTop: 200 },
+      properties: { alignment: "right", spaceBefore: 200 },
     };
     const back = toDrawingParagraph(fromDrawingParagraph(original));
     const run = back.children![0] as {
@@ -268,6 +268,6 @@ describe("round-trip a:p → w:p → a:p", () => {
       lang: "en-US",
     });
     expect(back.properties?.alignment).toBe("right");
-    expect(back.properties?.marginTop).toBe(200); // 200 hundredths → 40 twips → 200 hundredths
+    expect(back.properties?.spaceBefore).toBe(200); // 200 hundredths → 40 twips → 200 hundredths
   });
 });

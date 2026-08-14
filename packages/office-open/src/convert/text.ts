@@ -32,7 +32,7 @@
  *   font size      points on both APIs (direct).
  *   char spacing   a:p spc (1/100 pt) ↔ w:p spacing (twips), ÷5 / ×5.
  *   before/after   a:p spcPts (1/100 pt) ↔ w:p spacing (twips), ÷5 / ×5.
- *   line spacing   a:p lineSpacing (percent, 100 = single) ↔ w:p line +
+ *   line spacing   a:p lineSpacingPercent (percent, 100 = single) ↔ w:p line +
  *                  lineRule "auto" (240 = single); a:p lineSpacingPoints (pt)
  *                  ↔ line + lineRule "exactly" (×20).
  *   indents/tabs   a:p marL/marR/pos (EMU) ↔ w:p (twips), ÷635 / ×635.
@@ -342,12 +342,12 @@ function paragraphPropertiesToDrawing(
   if (docx.spacing) {
     const sp = docx.spacing;
     if (sp.before !== undefined)
-      out.marginTop = round(convertToTwip(sp.before) * HUNDREDTHS_PER_TWIP);
+      out.spaceBefore = round(convertToTwip(sp.before) * HUNDREDTHS_PER_TWIP);
     if (sp.after !== undefined)
-      out.marginBottom = round(convertToTwip(sp.after) * HUNDREDTHS_PER_TWIP);
+      out.spaceAfter = round(convertToTwip(sp.after) * HUNDREDTHS_PER_TWIP);
     if (sp.line !== undefined) {
       const twips = convertToTwip(sp.line);
-      if (sp.lineRule === "auto") out.lineSpacing = round((twips / AUTO_LINE_SINGLE) * 100);
+      if (sp.lineRule === "auto") out.lineSpacingPercent = round((twips / AUTO_LINE_SINGLE) * 100);
       else out.lineSpacingPoints = round(twips * POINTS_PER_TWIP);
     }
   }
@@ -378,11 +378,11 @@ function spacingToDocx(
   props: DrawingParagraphProperties,
 ): NonNullable<ParagraphOptions["spacing"]> | undefined {
   const sp: NonNullable<ParagraphOptions["spacing"]> = {};
-  if (props.marginTop !== undefined) sp.before = round(props.marginTop * TWIPS_PER_HUNDREDTH);
-  if (props.marginBottom !== undefined) sp.after = round(props.marginBottom * TWIPS_PER_HUNDREDTH);
+  if (props.spaceBefore !== undefined) sp.before = round(props.spaceBefore * TWIPS_PER_HUNDREDTH);
+  if (props.spaceAfter !== undefined) sp.after = round(props.spaceAfter * TWIPS_PER_HUNDREDTH);
   // Percent line spacing (100 = single) takes precedence over the points form.
-  if (props.lineSpacing !== undefined) {
-    sp.line = round((props.lineSpacing / 100) * AUTO_LINE_SINGLE);
+  if (props.lineSpacingPercent !== undefined) {
+    sp.line = round((props.lineSpacingPercent / 100) * AUTO_LINE_SINGLE);
     sp.lineRule = "auto";
   } else if (props.lineSpacingPoints !== undefined) {
     sp.line = round(props.lineSpacingPoints / POINTS_PER_TWIP);

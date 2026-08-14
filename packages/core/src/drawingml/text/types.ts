@@ -185,12 +185,12 @@ export interface ParagraphPropertiesOptions {
   alignment?: TextAlignment;
   indentLevel?: number;
   /** Space after a paragraph in points (a:spcAft/a:spcPts). */
-  marginBottom?: number;
+  spaceAfter?: number;
   /** Space before a paragraph in points (a:spcBef/a:spcPts). */
-  marginTop?: number;
+  spaceBefore?: number;
   bullet?: BulletOptions;
   /** Line spacing as a percentage (100 = single). */
-  lineSpacing?: number;
+  lineSpacingPercent?: number;
   /** Line spacing in exact points (a:lnSpc/a:spcPts). */
   lineSpacingPoints?: number;
   marginIndent?: number;

@@ -365,15 +365,15 @@ const options: PresentationOptions = {
             textBody: {
               paragraphs: [
                 {
-                  properties: { lineSpacing: 100, bullet: { type: "none" } },
+                  properties: { lineSpacingPercent: 100, bullet: { type: "none" } },
                   children: [{ text: "Single spacing (1.0)", size: 14 }],
                 },
                 {
-                  properties: { lineSpacing: 150, bullet: { type: "none" } },
+                  properties: { lineSpacingPercent: 150, bullet: { type: "none" } },
                   children: [{ text: "1.5x spacing", size: 14 }],
                 },
                 {
-                  properties: { lineSpacing: 200, bullet: { type: "none" } },
+                  properties: { lineSpacingPercent: 200, bullet: { type: "none" } },
                   children: [{ text: "Double spacing (2.0)", size: 14 }],
                 },
               ],
