@@ -5,6 +5,7 @@
  */
 
 import { Media } from "@office-open/core";
+import type { BaseMediaEntry } from "@office-open/core";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 
 import type { PptxDocument } from "./parse";
@@ -24,11 +25,8 @@ export class ParseContext {
 
 // ── Resource entries ──
 
-export interface MediaEntry {
+export interface MediaEntry extends BaseMediaEntry {
   key: string;
-  fileName: string;
-  data: Uint8Array;
-  type: string;
   transformation: {
     pixels: { x: number; y: number };
     emus: { x: number; y: number };

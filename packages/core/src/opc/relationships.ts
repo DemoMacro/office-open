@@ -153,6 +153,37 @@ export function optionalRelsPart(
   return rel.relationshipCount > 0 ? { data: xmlDeclaration + rel.serialize(), path } : undefined;
 }
 
+/** Build the package root relationships shared by docx, pptx, and xlsx. */
+export function buildRootRelationships(
+  mainPartTarget: string,
+  includeCustomProperties: boolean,
+): Relationships {
+  const rels = new Relationships();
+  rels.addRelationship(
+    1,
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+    mainPartTarget,
+  );
+  rels.addRelationship(
+    2,
+    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+    "docProps/core.xml",
+  );
+  rels.addRelationship(
+    3,
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+    "docProps/app.xml",
+  );
+  if (includeCustomProperties) {
+    rels.addRelationship(
+      4,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
+      "docProps/custom.xml",
+    );
+  }
+  return rels;
+}
+
 /**
  * Derive the .rels part path for a package part:
  * "ppt/slides/slide1.xml" → "ppt/slides/_rels/slide1.xml.rels".

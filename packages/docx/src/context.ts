@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Relationships } from "@office-open/core";
+import { Relationships, buildRootRelationships } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { SmartArtCollection } from "@office-open/core/smartart";
@@ -269,7 +269,7 @@ export class DocxWriteContext implements WriteContext {
       rangeNext: markupSeed.range + 1,
       moveRunNext: markupSeed.moveRun + 1,
     };
-    this.fileRelationships = new Relationships();
+    this.fileRelationships = buildRootRelationships("word/document.xml", true);
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };
     this.document = { relationships: new Relationships() };
@@ -516,27 +516,6 @@ export class DocxWriteContext implements WriteContext {
   }
 
   private addDefaultRelationships(): void {
-    this.fileRelationships.addRelationship(
-      1,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
-      "word/document.xml",
-    );
-    this.fileRelationships.addRelationship(
-      2,
-      "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
-      "docProps/core.xml",
-    );
-    this.fileRelationships.addRelationship(
-      3,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
-      "docProps/app.xml",
-    );
-    this.fileRelationships.addRelationship(
-      4,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
-      "docProps/custom.xml",
-    );
-
     this.document.relationships.addRelationship(
       this._currentRelationshipId++,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",

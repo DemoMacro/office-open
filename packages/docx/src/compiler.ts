@@ -10,7 +10,9 @@
  */
 
 import {
+  addBinaryFile,
   addSmartArtRelationships,
+  compileMapping,
   contentTypesDesc,
   createThemeXml,
   deriveContentTypes,
@@ -18,14 +20,13 @@ import {
   findAndReplaceImagePlaceholders,
   formatId,
   hasPlaceholders,
-  levelForMediaName,
   optionalRelsPart,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
   IMAGE_MEDIA_CONTENT_TYPES,
   resolverFromRegistry,
 } from "@office-open/core";
-import type { XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
+import type { XmlifyedFile, Zippable } from "@office-open/core";
 import {
   DEFAULT_DRAWING_XML,
   getColorXml,
@@ -90,54 +91,29 @@ export function compileDocument(
   mediaLevel: number = 0,
 ): Zippable {
   const ctx = new DocxWriteContext(options);
-  const files: Zippable = {};
-
   const headerFormattedViews = new Map<number, string>();
   const footerFormattedViews = new Map<number, string>();
 
   const xmlifiedFileMapping = xmlifyContext(ctx, headerFormattedViews, footerFormattedViews);
-  const map = new Map<string, XmlifyedFile | XmlifyedFile[]>(Object.entries(xmlifiedFileMapping));
-
-  for (const [, obj] of map) {
-    if (obj === undefined) continue;
-    if (Array.isArray(obj)) {
-      for (const subFile of obj) {
-        files[subFile.path] =
-          typeof subFile.data === "string" ? encoder.encode(subFile.data) : subFile.data;
-      }
-    } else {
-      files[obj.path] = typeof obj.data === "string" ? encoder.encode(obj.data) : obj.data;
-    }
-  }
-
-  for (const subFile of overrides) {
-    files[subFile.path] =
-      typeof subFile.data === "string" ? encoder.encode(subFile.data) : subFile.data;
-  }
+  const files = compileMapping(xmlifiedFileMapping, overrides);
 
   // Media files
   const mediaArray = ctx.media.array;
   for (const mediaData of mediaArray) {
-    files[`word/media/${mediaData.fileName}`] = [
-      mediaData.data as Uint8Array,
-      { level: levelForMediaName(mediaData.fileName, mediaLevel) as ZipOptions["level"] },
-    ];
+    addBinaryFile(files, `word/media/${mediaData.fileName}`, mediaData.data, mediaLevel);
     if (mediaData.type === "svg") {
-      files[`word/media/${mediaData.fallback.fileName}`] = [
-        mediaData.fallback.data as Uint8Array,
-        {
-          level: levelForMediaName(mediaData.fallback.fileName, mediaLevel) as ZipOptions["level"],
-        },
-      ];
+      addBinaryFile(
+        files,
+        `word/media/${mediaData.fallback.fileName}`,
+        mediaData.fallback.data,
+        mediaLevel,
+      );
     }
   }
 
   // OLE embedding binaries (word/embeddings/oleObjectN.bin)
   for (const embedding of ctx.embeddings.array) {
-    files[`word/embeddings/${embedding.fileName}`] = [
-      embedding.data as Uint8Array,
-      { level: levelForMediaName(embedding.fileName, mediaLevel) as ZipOptions["level"] },
-    ];
+    addBinaryFile(files, `word/embeddings/${embedding.fileName}`, embedding.data, mediaLevel);
   }
 
   // Font files — only fonts carrying binary data produce a .odttf part.

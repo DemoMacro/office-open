@@ -1,3 +1,4 @@
+import type { BaseMediaEntry } from "@office-open/core";
 import type {
   EffectListOptions,
   FillOptions,
@@ -71,13 +72,9 @@ export interface NonVisualPropertiesOptions extends NonVisualDrawingPropertiesOp
 /**
  * Core properties shared by all media data types.
  */
-interface CoreMediaData {
-  /** File name for the media in the package */
-  fileName: string;
+interface CoreMediaData extends BaseMediaEntry {
   /** Transformation settings for display */
   transformation: MediaDataTransformation;
-  /** Raw image data */
-  data: Uint8Array;
   /** Source rectangle for image cropping */
   sourceRectangle?: SourceRectangleOptions;
   /** Picture non-visual properties (pic:cNvPr) for round-trip fidelity */

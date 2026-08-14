@@ -7,7 +7,13 @@
  * @module
  */
 
-import { IMAGE_MEDIA_CONTENT_TYPES, Relationships, convertToEmu } from "@office-open/core";
+import {
+  IMAGE_MEDIA_CONTENT_TYPES,
+  Relationships,
+  addBinaryFile,
+  buildRootRelationships,
+  convertToEmu,
+} from "@office-open/core";
 import type { RelationshipType } from "@office-open/core";
 import {
   appPropertiesDesc,
@@ -19,7 +25,6 @@ import {
   getMediaRefs,
   getVideoRefs,
   hasPlaceholders,
-  levelForMediaName,
   replaceChartPlaceholders,
   replaceHyperlinkPlaceholders,
   replaceImagePlaceholders,
@@ -32,7 +37,7 @@ import {
   resolverFromRegistry,
   PPTX_PARTS,
 } from "@office-open/core";
-import type { XmlifyedFile, ZipOptions, Zippable } from "@office-open/core";
+import type { XmlifyedFile, Zippable } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
@@ -426,34 +431,6 @@ const PPTX_MEDIA_CONTENT_TYPES: Record<string, string> = {
   aac: "audio/aac",
 };
 
-function buildFileRels(hasCustomProperties: boolean): Relationships {
-  const entries: RelEntry[] = [
-    {
-      id: 1,
-      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
-      target: "ppt/presentation.xml",
-    },
-    {
-      id: 2,
-      type: "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
-      target: "docProps/core.xml",
-    },
-    {
-      id: 3,
-      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
-      target: "docProps/app.xml",
-    },
-  ];
-  if (hasCustomProperties) {
-    entries.push({
-      id: 4,
-      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
-      target: "docProps/custom.xml",
-    });
-  }
-  return buildRels(entries);
-}
-
 function initPresRels(masters: MasterInfo[], slideCount: number): Relationships {
   const rels = new Relationships();
   let rid = 1;
@@ -713,7 +690,7 @@ export function compilePresentation(
     sections,
     ...buildPresAttrOpts(options),
   };
-  const fileRels = buildFileRels(hasCustomProperties);
+  const fileRels = buildRootRelationships("ppt/presentation.xml", hasCustomProperties);
   const media = descCtx.mediaCollection;
   const charts = new ChartCollection();
   const smartArts = new SmartArtCollection();
@@ -1184,20 +1161,14 @@ export function compilePresentation(
 
   // Media files
   for (const image of media.array) {
-    files[`ppt/media/${image.fileName}`] = [
-      image.data,
-      { level: levelForMediaName(image.fileName, mediaLevel) as ZipOptions["level"] },
-    ];
+    addBinaryFile(files, `ppt/media/${image.fileName}`, image.data, mediaLevel);
     if (image.type === "svg" && "fallback" in image) {
       const fallback = (
         image as MediaData & {
           fallback: { fileName: string; data: Uint8Array };
         }
       ).fallback;
-      files[`ppt/media/${fallback.fileName}`] = [
-        fallback.data,
-        { level: levelForMediaName(fallback.fileName, mediaLevel) as ZipOptions["level"] },
-      ];
+      addBinaryFile(files, `ppt/media/${fallback.fileName}`, fallback.data, mediaLevel);
     }
   }
 

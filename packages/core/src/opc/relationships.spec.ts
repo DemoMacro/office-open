@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { Relationships, TargetModeType } from "./relationships";
+import { buildRootRelationships, Relationships, TargetModeType } from "./relationships";
 
 describe("Relationships", () => {
   it("add() allocates sequential ids and returns the numeric id", () => {
@@ -38,6 +38,19 @@ describe("Relationships", () => {
       "theme/theme1.xml",
     );
     expect(rels.serialize()).toContain('Id="rId1"');
+  });
+
+  it("buildRootRelationships creates fixed package relationships with optional custom props", () => {
+    const withoutCustom = buildRootRelationships("ppt/presentation.xml", false).serialize();
+    expect(withoutCustom).toContain('Id="rId1"');
+    expect(withoutCustom).toContain('Target="ppt/presentation.xml"');
+    expect(withoutCustom).toContain('Target="docProps/core.xml"');
+    expect(withoutCustom).toContain('Target="docProps/app.xml"');
+    expect(withoutCustom).not.toContain("custom-properties");
+
+    const withCustom = buildRootRelationships("word/document.xml", true).serialize();
+    expect(withCustom).toContain('Id="rId4"');
+    expect(withCustom).toContain('Target="docProps/custom.xml"');
   });
 
   it("serialize() escapes special characters in target and id", () => {

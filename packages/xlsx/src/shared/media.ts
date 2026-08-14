@@ -8,10 +8,9 @@
  * @module
  */
 
-export interface MediaData {
-  fileName: string;
-  type: string;
-  data: Uint8Array;
+import type { BaseMediaEntry } from "@office-open/core";
+
+export interface MediaData extends BaseMediaEntry {
   width: number;
   height: number;
 }

@@ -12,6 +12,7 @@ import {
   TargetModeType,
   appPropertiesDesc,
   buildCorePropertiesXmlString,
+  buildRootRelationships,
   compileMapping,
   contentTypesDesc,
   deriveContentTypes,
@@ -106,7 +107,7 @@ export function compileWorkbook(
   }
 
   // File-level relationships (_rels/.rels)
-  const fileRels = buildFileRelationships(hasCustomProperties);
+  const fileRels = buildRootRelationships("xl/workbook.xml", hasCustomProperties);
   mapping["FileRelationships"] = {
     data: XML_DECL + fileRels.serialize(),
     path: "_rels/.rels",
@@ -848,33 +849,6 @@ export function compileWorkbook(
 }
 
 // ── Pure helper functions ──
-
-function buildFileRelationships(hasCustomProperties: boolean): Relationships {
-  const rels = new Relationships();
-  rels.addRelationship(
-    1,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
-    "xl/workbook.xml",
-  );
-  rels.addRelationship(
-    2,
-    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
-    "docProps/core.xml",
-  );
-  rels.addRelationship(
-    3,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
-    "docProps/app.xml",
-  );
-  if (hasCustomProperties) {
-    rels.addRelationship(
-      4,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
-      "docProps/custom.xml",
-    );
-  }
-  return rels;
-}
 
 function buildWorkbookRelationships(rels: Relationships, wsCount: number, csCount: number): void {
   let rid = 1;

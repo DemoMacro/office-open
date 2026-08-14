@@ -1,14 +1,13 @@
 export {
   Relationships,
   TargetModeType,
+  buildRootRelationships,
   optionalRelsPart,
   partPathToRelsPath,
   resolveRelationshipTarget,
 } from "./relationships";
 export type { RelationshipType } from "./relationships";
 export { Media, type BaseMediaEntry } from "./media";
-export { createDefault, createOverride } from "./content-types";
-export type { DefaultProperties, OverrideProperties } from "./content-types";
 
 // Core properties (OPC metadata)
 export {
