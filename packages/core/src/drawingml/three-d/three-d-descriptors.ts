@@ -10,6 +10,7 @@ import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
+import { emitAngle, parseAngle } from "../../util/converters";
 import { xsdMaterialType } from "../../util/mappings";
 import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { BevelOptions } from "./bevel";
@@ -27,9 +28,9 @@ import type { Shape3DOptions } from "./shape-3d";
 // ── SphereCoords helper ──
 
 function stringifySphereCoords(coords: SphereCoords): string {
-  const lat = Math.round(coords.lat * 60000);
-  const lon = Math.round(coords.lon * 60000);
-  const rev = Math.round(coords.rev * 60000);
+  const lat = emitAngle(coords.lat);
+  const lon = emitAngle(coords.lon);
+  const rev = emitAngle(coords.rev);
   return `<a:rot lat="${lat}" lon="${lon}" rev="${rev}"/>`;
 }
 
@@ -38,7 +39,11 @@ function readSphereCoords(el: XmlElement): SphereCoords | undefined {
   const lon = el.attributes?.["lon"];
   const rev = el.attributes?.["rev"];
   if (lat === undefined || lon === undefined || rev === undefined) return undefined;
-  return { lat: Number(lat) / 60000, lon: Number(lon) / 60000, rev: Number(rev) / 60000 };
+  return {
+    lat: parseAngle(Number(lat)),
+    lon: parseAngle(Number(lon)),
+    rev: parseAngle(Number(rev)),
+  };
 }
 
 // ── Bevel descriptor (a:bevelT / a:bevelB) ──
@@ -148,7 +153,7 @@ const cameraDesc: CustomDescriptor<CameraOptions> = {
   stringify(opts, _ctx) {
     const attrParts: string[] = [];
     attrParts.push(`prst="${escapeXml(opts.preset)}"`);
-    if (opts.fov !== undefined) attrParts.push(`fov="${Math.round(opts.fov * 60000)}"`);
+    if (opts.fov !== undefined) attrParts.push(`fov="${emitAngle(opts.fov)}"`);
     if (opts.zoom !== undefined) attrParts.push(`zoom="${escapeXml(opts.zoom)}"`);
     const attrStr = " " + attrParts.join(" ");
 
@@ -162,7 +167,7 @@ const cameraDesc: CustomDescriptor<CameraOptions> = {
   parse(el, _ctx) {
     const result: Partial<CameraOptions> = {};
     if (el.attributes?.["prst"] !== undefined) result.preset = String(el.attributes["prst"]);
-    if (el.attributes?.["fov"] !== undefined) result.fov = Number(el.attributes["fov"]) / 60000;
+    if (el.attributes?.["fov"] !== undefined) result.fov = parseAngle(Number(el.attributes["fov"]));
     if (el.attributes?.["zoom"] !== undefined) result.zoom = String(el.attributes["zoom"]);
     const rot = findChild(el, "a:rot");
     if (rot) result.rotation = readSphereCoords(rot);

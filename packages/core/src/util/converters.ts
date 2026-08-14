@@ -15,6 +15,32 @@ export const mapOptional = <T, R>(value: T | undefined, fn: (value: T) => R): R 
   value === undefined ? undefined : fn(value);
 
 // ---------------------------------------------------------------------------
+// Percent and angle conversions (public API ↔ OOXML scalars)
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert public percent (100 = 100%) to OOXML ST_Percentage scalar (1/1000).
+ * Math.round ensures JSON-first float input produces exact integer output.
+ */
+export const emitPercent = (percent: number): number => Math.round(percent * 1000);
+
+/**
+ * Convert OOXML ST_Percentage scalar (1/1000) to public percent.
+ */
+export const parsePercent = (value: number): number => value / 1000;
+
+/**
+ * Convert public degrees to OOXML ST_Angle / ST_FixedAngle scalar (1/60000).
+ * Math.round ensures JSON-first float input produces exact integer output.
+ */
+export const emitAngle = (degrees: number): number => Math.round(degrees * 60000);
+
+/**
+ * Convert OOXML ST_Angle / ST_FixedAngle scalar (1/60000) to public degrees.
+ */
+export const parseAngle = (value: number): number => value / 60000;
+
+// ---------------------------------------------------------------------------
 // TWIP conversions (1 TWIP = 1/20 point, used in WordprocessingML)
 // ---------------------------------------------------------------------------
 

@@ -40,7 +40,7 @@
  * @module
  */
 
-import { convertToTwip } from "@office-open/core";
+import { convertToTwip, stripColorHashPrefix } from "@office-open/core";
 import type {
   FillOptions,
   ParagraphDescriptorOptions,
@@ -533,17 +533,17 @@ const SRGB_HEX = /^[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/;
  * w:p color equivalent.
  */
 function solidFillToHex(fill: FillOptions): string | undefined {
-  if (typeof fill === "string") return fill.replace("#", "");
+  if (typeof fill === "string") return stripColorHashPrefix(fill);
   if (fill.type === "solid") {
     const c = fill.color;
-    if (typeof c === "string") return c.replace("#", "");
+    if (typeof c === "string") return stripColorHashPrefix(c);
     if ("value" in c && typeof c.value === "string" && SRGB_HEX.test(c.value)) return c.value;
   }
   return undefined;
 }
 
 function colorToHex(color: NonNullable<RunOptions["color"]>): string | undefined {
-  return typeof color === "string" ? color.replace("#", "") : color.val;
+  return typeof color === "string" ? stripColorHashPrefix(color) : color.val;
 }
 
 function fontToString(font: NonNullable<RunOptions["font"]>): string | undefined {

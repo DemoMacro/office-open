@@ -1,6 +1,15 @@
 import type { Element } from "./types";
 
 /**
+ * Standard OOXML XML declaration used in all Office Open XML documents.
+ *
+ * The declaration specifies UTF-8 encoding and standalone="yes" as required
+ * by the OOXML specification. All XML parts in .docx, .pptx, and .xlsx files
+ * use this declaration.
+ */
+export const OOXML_XML_DECLARATION = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+
+/**
  * A readonly array guaranteed to have at least one element. Use with
  * {@link isNonEmpty} to narrow `T[]` so indexed access (e.g. `arr[0]`)
  * returns `T` instead of `T | undefined` under `noUncheckedIndexedAccess`.

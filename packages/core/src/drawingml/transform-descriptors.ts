@@ -7,7 +7,7 @@
 import { attrMeasure, findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
-import { convertToEmu } from "../util/converters";
+import { convertToEmu, emitAngle, parseAngle } from "../util/converters";
 import { parseOnOff } from "../util/values";
 import type { GroupTransform2DOptions, Transform2DOptions } from "./transform";
 
@@ -23,7 +23,7 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
     const attrParts: string[] = [];
     if (opts.flipHorizontal !== undefined) attrParts.push(`flipH="${opts.flipHorizontal ? 1 : 0}"`);
     if (opts.flipVertical !== undefined) attrParts.push(`flipV="${opts.flipVertical ? 1 : 0}"`);
-    if (opts.rotation !== undefined) attrParts.push(`rot="${Math.round(opts.rotation * 60000)}"`);
+    if (opts.rotation !== undefined) attrParts.push(`rot="${emitAngle(opts.rotation)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
 
     // Child elements: off, ext
@@ -52,7 +52,7 @@ export const transform2DDesc: CustomDescriptor<Transform2DOptions> = {
       if (el.attributes["flipV"] !== undefined)
         result.flipVertical = parseOnOff(el.attributes["flipV"]) ?? false;
       if (el.attributes["rot"] !== undefined)
-        result.rotation = Number(el.attributes["rot"]) / 60000;
+        result.rotation = parseAngle(Number(el.attributes["rot"]));
     }
 
     // Child: off — a:off x/y are ST_Coordinate (number EMU | UniversalMeasure)

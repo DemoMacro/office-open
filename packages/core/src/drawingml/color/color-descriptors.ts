@@ -9,6 +9,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify } from "../../descriptor";
+import { emitAngle, emitPercent, parseAngle, parsePercent } from "../../util/converters";
 import type { ColorTransformOptions } from "./color-transform";
 import type { HslColorOptions } from "./hsl-color";
 import type { PresetColorOptions } from "./preset-color";
@@ -102,9 +103,9 @@ function stringifyTransforms(opts: ColorTransformOptions): string {
       parts.push(`<a:${key}/>`);
     } else {
       const scaled = PERCENT_KEYS.has(key)
-        ? Math.round((v as number) * 1000)
+        ? emitPercent(v as number)
         : ANGLE_KEYS.has(key)
-          ? Math.round((v as number) * 60000)
+          ? emitAngle(v as number)
           : (v as number);
       parts.push(`<a:${key} val="${escapeXml(String(scaled))}"/>`);
     }
@@ -124,9 +125,9 @@ function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
       const raw = Number(val);
       // Percent → integer percent (÷1000); angle → degrees (÷60000); else raw.
       (result as Record<string, unknown>)[key] = PERCENT_KEYS.has(key)
-        ? raw / 1000
+        ? parsePercent(raw)
         : ANGLE_KEYS.has(key)
-          ? raw / 60000
+          ? parseAngle(raw)
           : raw;
     } else {
       (result as Record<string, unknown>)[key] = true;
@@ -181,9 +182,9 @@ export const hslColorDesc: CustomDescriptor<HslColorOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const transforms = opts.transforms ? stringifyTransforms(opts.transforms) : "";
-    const sat = Math.round(opts.saturation * 1000);
-    const lum = Math.round(opts.luminance * 1000);
-    const hue = Math.round(opts.hue * 60000);
+    const sat = emitPercent(opts.saturation);
+    const lum = emitPercent(opts.luminance);
+    const hue = emitAngle(opts.hue);
     if (transforms) {
       return `<a:hslClr hue="${hue}" sat="${sat}" lum="${lum}">${transforms}</a:hslClr>`;
     }
@@ -191,9 +192,9 @@ export const hslColorDesc: CustomDescriptor<HslColorOptions> = {
   },
   parse(el, _ctx) {
     const result: HslColorOptions = {
-      hue: Number(el.attributes?.["hue"] ?? 0) / 60000,
-      saturation: Number(el.attributes?.["sat"] ?? 0) / 1000,
-      luminance: Number(el.attributes?.["lum"] ?? 0) / 1000,
+      hue: parseAngle(Number(el.attributes?.["hue"] ?? 0)),
+      saturation: parsePercent(Number(el.attributes?.["sat"] ?? 0)),
+      luminance: parsePercent(Number(el.attributes?.["lum"] ?? 0)),
     };
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
@@ -254,9 +255,9 @@ export const scRgbColorDesc: CustomDescriptor<ScRgbColorOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const transforms = opts.transforms ? stringifyTransforms(opts.transforms) : "";
-    const r = Math.round(opts.r * 1000);
-    const g = Math.round(opts.g * 1000);
-    const b = Math.round(opts.b * 1000);
+    const r = emitPercent(opts.r);
+    const g = emitPercent(opts.g);
+    const b = emitPercent(opts.b);
     if (transforms) {
       return `<a:scrgbClr r="${r}" g="${g}" b="${b}">${transforms}</a:scrgbClr>`;
     }

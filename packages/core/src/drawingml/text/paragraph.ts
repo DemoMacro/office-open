@@ -13,8 +13,9 @@ import { findChild, escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
+import { emitPercent, parsePercent } from "../../util/converters";
 import { xsdTextAlign } from "../../util/mappings";
-import { parseOnOff } from "../../util/values";
+import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { textRunDesc } from "./run";
 import { runPropertiesDesc } from "./run-properties";
 import type { Mutable } from "./run-properties";
@@ -70,9 +71,8 @@ function stringifyParagraphProperties(
 
   // Line spacing
   if (options.lineSpacingPercent !== undefined) {
-    // spcPct unit is 1/1000 percent; lineSpacingPercent is percent (100 = single) → ×1000.
     children.push(
-      `<a:lnSpc><a:spcPct val="${Math.round(options.lineSpacingPercent * 1000)}"/></a:lnSpc>`,
+      `<a:lnSpc><a:spcPct val="${emitPercent(options.lineSpacingPercent)}"/></a:lnSpc>`,
     );
   }
   if (options.lineSpacingPoints !== undefined) {
@@ -126,7 +126,7 @@ function stringifyBullet(options: BulletOptions): string[] {
   if (options.colorFollowsText) {
     parts.push("<a:buClrTx/>");
   } else if (options.color) {
-    parts.push(`<a:buClr><a:srgbClr val="${options.color.replace("#", "")}"/></a:buClr>`);
+    parts.push(`<a:buClr><a:srgbClr val="${stripColorHashPrefix(options.color)}"/></a:buClr>`);
   }
 
   // Size: buSzTx | buSzPts | buSzPct
@@ -207,7 +207,7 @@ function readParagraphProperties(
   if (lnSpc) {
     const spcPct = findChild(lnSpc, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined) {
-      result.lineSpacingPercent = Number(spcPct.attributes["val"]) / 1000;
+      result.lineSpacingPercent = parsePercent(Number(spcPct.attributes["val"]));
     }
     const spcPts = findChild(lnSpc, "a:spcPts");
     if (spcPts?.attributes?.["val"] !== undefined) {

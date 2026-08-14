@@ -3,6 +3,7 @@ import { element } from "@office-open/xml";
 import { toUint8Array } from "../../util/data-type";
 import type { DataType } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
+import { stripColorHashPrefix } from "../../util/values";
 import { createBlipEffects } from "../blip/blip-effects";
 import type { BlipEffectsOptions } from "../blip/blip-effects";
 import { createSourceRectangle } from "../blip/source-rectangle";
@@ -103,7 +104,7 @@ export type FillOptions =
   | { type: "group" };
 
 function normalizeColor(color: string | SolidFillOptions): SolidFillOptions {
-  return typeof color === "string" ? { value: color.replace("#", "") } : color;
+  return typeof color === "string" ? { value: stripColorHashPrefix(color) } : color;
 }
 
 /**
@@ -135,7 +136,7 @@ export const extractBlipFillMedia = (
  */
 export const buildFill = (options: FillOptions, embedPlaceholder?: string): string => {
   if (typeof options === "string") {
-    return createSolidFill({ value: options.replace("#", "") });
+    return createSolidFill({ value: stripColorHashPrefix(options) });
   }
 
   switch (options.type) {

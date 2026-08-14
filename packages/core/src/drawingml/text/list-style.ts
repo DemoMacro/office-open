@@ -16,6 +16,7 @@ import type { Element } from "@office-open/xml";
 import { escapeXml, findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
+import { emitPercent, parsePercent } from "../../util/converters";
 import { parseOnOff } from "../../util/values";
 
 // ── Types ──
@@ -121,13 +122,9 @@ function stringifyLevel(level: number, opts: TextListStyleLevelOptions): string 
   const children: string[] = [];
   // Child order: lnSpc, spcBef, bullet, defRPr
   if (opts.lineSpacingPercent !== undefined)
-    children.push(
-      `<a:lnSpc><a:spcPct val="${Math.round(opts.lineSpacingPercent * 1000)}"/></a:lnSpc>`,
-    );
+    children.push(`<a:lnSpc><a:spcPct val="${emitPercent(opts.lineSpacingPercent)}"/></a:lnSpc>`);
   if (opts.spaceBeforePercent !== undefined)
-    children.push(
-      `<a:spcBef><a:spcPct val="${Math.round(opts.spaceBeforePercent * 1000)}"/></a:spcBef>`,
-    );
+    children.push(`<a:spcBef><a:spcPct val="${emitPercent(opts.spaceBeforePercent)}"/></a:spcBef>`);
   else if (opts.spaceBeforePoints !== undefined)
     children.push(
       `<a:spcBef><a:spcPts val="${Math.round(opts.spaceBeforePoints * 100)}"/></a:spcBef>`,
@@ -205,13 +202,13 @@ function parseLevel(el: Element): TextListStyleLevelOptions {
   if (lnSpc) {
     const spcPct = findChild(lnSpc, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined)
-      lvl.lineSpacingPercent = Number(spcPct.attributes["val"]) / 1000;
+      lvl.lineSpacingPercent = parsePercent(Number(spcPct.attributes["val"]));
   }
   const spcBef = findChild(el, "a:spcBef");
   if (spcBef) {
     const spcPct = findChild(spcBef, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined)
-      lvl.spaceBeforePercent = Number(spcPct.attributes["val"]) / 1000;
+      lvl.spaceBeforePercent = parsePercent(Number(spcPct.attributes["val"]));
     const spcPts = findChild(spcBef, "a:spcPts");
     if (spcPts?.attributes?.["val"] !== undefined)
       lvl.spaceBeforePoints = Number(spcPts.attributes["val"]) / 100;

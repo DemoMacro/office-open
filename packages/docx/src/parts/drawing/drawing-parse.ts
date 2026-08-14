@@ -13,6 +13,7 @@ import {
   effectListDesc,
   fillDesc,
   outlineDesc,
+  parseAngle,
   parseColorChoice,
   parseNonVisualDrawingProperties,
   presetGeometryDesc,
@@ -344,7 +345,7 @@ export function parsePictureRun(
         flip?: { horizontal?: boolean; vertical?: boolean };
       };
       const rot = attrNum(xfrm, "rot");
-      if (rot !== undefined) transform.rotation = rot / 60_000;
+      if (rot !== undefined) transform.rotation = parseAngle(rot);
       const flipH = attrBool(xfrm, "flipH");
       const flipV = attrBool(xfrm, "flipV");
       if (flipH !== undefined || flipV !== undefined) {

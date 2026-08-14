@@ -13,6 +13,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { parse, stringify } from "../../descriptor";
+import { emitPercent } from "../../util/converters";
 import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
 import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
@@ -151,8 +152,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     if (opts.underline) attrParts.push(`u="${xsdUnderlineStyle.to(opts.underline)}"`);
     if (opts.lang) attrParts.push(`lang="${opts.lang}"`);
     if (opts.strike) attrParts.push(`strike="${xsdStrikeStyle.to(opts.strike)}"`);
-    if (opts.baseline !== undefined)
-      attrParts.push(`baseline="${Math.round(opts.baseline * 1000)}"`);
+    if (opts.baseline !== undefined) attrParts.push(`baseline="${emitPercent(opts.baseline)}"`);
     if (opts.capitalization) attrParts.push(`cap="${xsdTextCaps.to(opts.capitalization)}"`);
     if (opts.spacing !== undefined) attrParts.push(`spc="${Math.round(opts.spacing * 100)}"`);
     if (opts.kern !== undefined) attrParts.push(`kern="${Math.round(opts.kern * 100)}"`);

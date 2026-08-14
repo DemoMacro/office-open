@@ -23,6 +23,7 @@ import type {
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import type { RunOptions } from "@office-open/core/drawingml";
+import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import { findChild, stringify, parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
@@ -501,12 +502,11 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
 
   // Rebuild ZIP
   const files: Record<string, Uint8Array> = {};
-  const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 
   for (const [key, value] of xmlMap) {
     files[key] =
       key === "docProps/core.xml" && coreProperties
-        ? encoder.encode(XML_DECL + applyCorePropertiesOverride(value, coreProperties))
+        ? encoder.encode(OOXML_XML_DECLARATION + applyCorePropertiesOverride(value, coreProperties))
         : encoder.encode(stringify(value));
   }
 

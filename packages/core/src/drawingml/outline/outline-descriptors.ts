@@ -12,6 +12,7 @@ import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { convertToEmu } from "../../util/converters";
 import { xsdCompoundLine, xsdLineCap, xsdLineEndSize, xsdPenAlignment } from "../../util/mappings";
+import { stripColorHashPrefix } from "../../util/values";
 import { solidFillDesc } from "../color/color-descriptors";
 import { gradientFillDesc, patternFillDesc } from "../fill/fill-descriptors";
 import type { DashStop } from "./custom-dash";
@@ -71,7 +72,7 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     // infer "solidFill" when type is omitted (mirrors the fill descriptor's
     // own string-sugar handling).
     const resolvedColor =
-      typeof opts.color === "string" ? { value: opts.color.replace("#", "") } : opts.color;
+      typeof opts.color === "string" ? { value: stripColorHashPrefix(opts.color) } : opts.color;
     const fillType = opts.type ?? (resolvedColor ? "solidFill" : undefined);
     if (fillType === "noFill") {
       parts.push("<a:noFill/>");

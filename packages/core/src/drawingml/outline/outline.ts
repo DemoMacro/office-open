@@ -2,6 +2,7 @@ import { element } from "@office-open/xml";
 
 import { convertToEmu } from "../../util/converters";
 import { xsdCompoundLine, xsdLineCap, xsdPenAlignment } from "../../util/mappings";
+import { stripColorHashPrefix } from "../../util/values";
 /**
  * Outline (line) properties for DrawingML shapes.
  *
@@ -197,7 +198,9 @@ const createOutlineFill = (options: OutlineOptions): string | null => {
   }
   // Bare-string color is an sRGB hex sugar; coerce and infer solidFill.
   const resolvedColor =
-    typeof options.color === "string" ? { value: options.color.replace("#", "") } : options.color;
+    typeof options.color === "string"
+      ? { value: stripColorHashPrefix(options.color) }
+      : options.color;
   const fillType = options.type ?? (resolvedColor ? "solidFill" : undefined);
   if (fillType === "solidFill" && resolvedColor) {
     return createSolidFill(resolvedColor);

@@ -4,7 +4,7 @@
  * @module
  */
 
-import { convertToEmu, parseOnOff, xsdTextAnchor } from "@office-open/core";
+import { convertToEmu, parseOnOff, xsdTextAnchor, stripColorHashPrefix } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
@@ -325,7 +325,7 @@ function buildBorderLine(name: string, options: CellBorderOptions, ctx: PptxWrit
   if (options.color !== undefined) {
     const fillXml =
       typeof options.color === "string"
-        ? `<a:solidFill><a:srgbClr val="${options.color.replace("#", "")}"/></a:solidFill>`
+        ? `<a:solidFill><a:srgbClr val="${stripColorHashPrefix(options.color)}"/></a:solidFill>`
         : stringify(fillDesc, options.color, ctx);
     if (fillXml) children.push(fillXml);
   }

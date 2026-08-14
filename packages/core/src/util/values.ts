@@ -280,9 +280,27 @@ export const hexColorValue = (val: string): string => {
   }
   // It's super common to see colors prefixed with a pound, but technically invalid here.
   // Most clients work with it, but strip it off anyway for strict compliance.
-  const color = val.charAt(0) === "#" ? val.substring(1) : val;
+  const color = stripColorHashPrefix(val);
   return hexBinary(color, 3);
 };
+
+/**
+ * Strips the leading "#" prefix from a color string if present.
+ *
+ * Hex color values in OOXML do not include the "#" prefix, but user input
+ * commonly includes it. This helper normalizes color strings for OOXML output.
+ *
+ * @param color - The color string (with or without "#" prefix)
+ * @returns The color string without the "#" prefix
+ *
+ * @example
+ * ```typescript
+ * stripColorHashPrefix("#FF0000"); // Returns "FF0000"
+ * stripColorHashPrefix("00FF00"); // Returns "00FF00"
+ * ```
+ */
+export const stripColorHashPrefix = (color: string): string =>
+  color.charAt(0) === "#" ? color.substring(1) : color;
 
 /**
  * Parses an ST_OnOff / xsd:boolean attribute value.

@@ -33,6 +33,7 @@ import {
   getLayoutXml,
   getStyleXml,
 } from "@office-open/core/smartart";
+import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 import { HEADER_NAMESPACES, FOOTER_NAMESPACES, stringifyHeaderFooter } from "@parts/header-footer";
@@ -58,7 +59,7 @@ import {
 const encoder = new TextEncoder();
 
 /** XML declaration prepended to every OOXML part. */
-const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+const XML_DECL = OOXML_XML_DECLARATION;
 
 /** DOCX part path → content type, derived from the part registry. */
 const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);

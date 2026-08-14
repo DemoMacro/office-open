@@ -10,6 +10,7 @@ import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
+import { emitAngle, emitPercent, parseAngle } from "../../util/converters";
 import { xsdRectAlignment } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
 import { solidFillDesc } from "../color/color-descriptors";
@@ -36,8 +37,8 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
     const attrParts: string[] = [];
     if (opts.tx !== undefined) attrParts.push(`tx="${opts.tx}"`);
     if (opts.ty !== undefined) attrParts.push(`ty="${opts.ty}"`);
-    if (opts.sx !== undefined) attrParts.push(`sx="${Math.round(opts.sx * 1000)}"`);
-    if (opts.sy !== undefined) attrParts.push(`sy="${Math.round(opts.sy * 1000)}"`);
+    if (opts.sx !== undefined) attrParts.push(`sx="${emitPercent(opts.sx)}"`);
+    if (opts.sy !== undefined) attrParts.push(`sy="${emitPercent(opts.sy)}"`);
     if (opts.flip !== undefined) attrParts.push(`flip="${escapeXml(opts.flip)}"`);
     if (opts.alignment !== undefined)
       attrParts.push(`algn="${escapeXml(xsdRectAlignment.to(opts.alignment))}"`);
@@ -66,10 +67,10 @@ export const sourceRectangleDesc: CustomDescriptor<SourceRectangleOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const attrParts: string[] = [];
-    if (opts.left !== undefined) attrParts.push(`l="${Math.round(opts.left * 1000)}"`);
-    if (opts.top !== undefined) attrParts.push(`t="${Math.round(opts.top * 1000)}"`);
-    if (opts.right !== undefined) attrParts.push(`r="${Math.round(opts.right * 1000)}"`);
-    if (opts.bottom !== undefined) attrParts.push(`b="${Math.round(opts.bottom * 1000)}"`);
+    if (opts.left !== undefined) attrParts.push(`l="${emitPercent(opts.left)}"`);
+    if (opts.top !== undefined) attrParts.push(`t="${emitPercent(opts.top)}"`);
+    if (opts.right !== undefined) attrParts.push(`r="${emitPercent(opts.right)}"`);
+    if (opts.bottom !== undefined) attrParts.push(`b="${emitPercent(opts.bottom)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     return `<a:srcRect${attrStr}/>`;
   },
@@ -120,29 +121,28 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   if (opts.luminance) {
     const attrParts: string[] = [];
     if (opts.luminance.bright !== undefined)
-      attrParts.push(`bright="${Math.round(opts.luminance.bright * 1000)}"`);
+      attrParts.push(`bright="${emitPercent(opts.luminance.bright)}"`);
     if (opts.luminance.contrast !== undefined)
-      attrParts.push(`contrast="${Math.round(opts.luminance.contrast * 1000)}"`);
+      attrParts.push(`contrast="${emitPercent(opts.luminance.contrast)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:lum${attrStr}/>`);
   }
 
   if (opts.hsl) {
     const attrParts: string[] = [];
-    if (opts.hsl.hue !== undefined) attrParts.push(`hue="${Math.round(opts.hsl.hue * 60000)}"`);
+    if (opts.hsl.hue !== undefined) attrParts.push(`hue="${emitAngle(opts.hsl.hue)}"`);
     if (opts.hsl.saturation !== undefined)
-      attrParts.push(`sat="${Math.round(opts.hsl.saturation * 1000)}"`);
+      attrParts.push(`sat="${emitPercent(opts.hsl.saturation)}"`);
     if (opts.hsl.luminance !== undefined)
-      attrParts.push(`lum="${Math.round(opts.hsl.luminance * 1000)}"`);
+      attrParts.push(`lum="${emitPercent(opts.hsl.luminance)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:hsl${attrStr}/>`);
   }
 
   if (opts.tint) {
     const attrParts: string[] = [];
-    if (opts.tint.hue !== undefined) attrParts.push(`hue="${Math.round(opts.tint.hue * 60000)}"`);
-    if (opts.tint.amount !== undefined)
-      attrParts.push(`amt="${Math.round(opts.tint.amount * 1000)}"`);
+    if (opts.tint.hue !== undefined) attrParts.push(`hue="${emitAngle(opts.tint.hue)}"`);
+    if (opts.tint.amount !== undefined) attrParts.push(`amt="${emitPercent(opts.tint.amount)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     parts.push(`<a:tint${attrStr}/>`);
   }
@@ -154,7 +154,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.biLevel) {
-    parts.push(`<a:biLevel thresh="${Math.round(opts.biLevel.threshold * 1000)}"/>`);
+    parts.push(`<a:biLevel thresh="${emitPercent(opts.biLevel.threshold)}"/>`);
   }
 
   if (opts.alphaCeiling) {
@@ -175,16 +175,16 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.alphaModulateFixed) {
-    const amt = Math.round((opts.alphaModulateFixed.amount ?? 100) * 1000);
+    const amt = emitPercent(opts.alphaModulateFixed.amount ?? 100);
     parts.push(`<a:alphaModFix amt="${amt}"/>`);
   }
 
   if (opts.alphaReplace) {
-    parts.push(`<a:alphaRepl a="${Math.round(opts.alphaReplace.amount * 1000)}"/>`);
+    parts.push(`<a:alphaRepl a="${emitPercent(opts.alphaReplace.amount)}"/>`);
   }
 
   if (opts.alphaBiLevel) {
-    parts.push(`<a:alphaBiLevel thresh="${Math.round(opts.alphaBiLevel.threshold * 1000)}"/>`);
+    parts.push(`<a:alphaBiLevel thresh="${emitPercent(opts.alphaBiLevel.threshold)}"/>`);
   }
 
   if (opts.colorChange) {
@@ -241,7 +241,7 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   const hsl = findChild(el, "a:hsl");
   if (hsl) {
     const opts: HSLEffectOptions = {};
-    if (hsl.attributes?.["hue"] !== undefined) opts.hue = Number(hsl.attributes["hue"]) / 60000;
+    if (hsl.attributes?.["hue"] !== undefined) opts.hue = parseAngle(Number(hsl.attributes["hue"]));
     const sat = parsePercent(hsl.attributes?.["sat"]);
     if (sat !== undefined) opts.saturation = sat;
     const l = parsePercent(hsl.attributes?.["lum"]);
@@ -252,7 +252,8 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   const tint = findChild(el, "a:tint");
   if (tint) {
     const opts: TintEffectOptions = {};
-    if (tint.attributes?.["hue"] !== undefined) opts.hue = Number(tint.attributes["hue"]) / 60000;
+    if (tint.attributes?.["hue"] !== undefined)
+      opts.hue = parseAngle(Number(tint.attributes["hue"]));
     const amt = parsePercent(tint.attributes?.["amt"]);
     if (amt !== undefined) opts.amount = amt;
     result.tint = opts;

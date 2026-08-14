@@ -40,6 +40,7 @@ import {
 import type { XmlifyedFile, Zippable } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
 import { SmartArtCollection } from "@office-open/core/smartart";
+import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import type { PresentationPartOptions, PresentationSectionGroup } from "@parts/presentation";
 import { buildCustomLayoutXml, buildLayoutXml, type SlideLayoutType } from "@parts/slide-layout";
@@ -76,7 +77,7 @@ import { viewPropsDesc } from "./parts/descriptors/view-properties";
 // ── Constants ──
 
 const encoder = new TextEncoder();
-const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+const XML_DECL = OOXML_XML_DECLARATION + "\n";
 
 // ── Helper types ──
 

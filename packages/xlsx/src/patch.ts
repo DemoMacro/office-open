@@ -32,6 +32,7 @@ import type {
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import { stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
@@ -209,11 +210,10 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
 
   // Rebuild ZIP
   const files: Record<string, Uint8Array> = {};
-  const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
   for (const [key, value] of xmlMap) {
     files[key] =
       key === "docProps/core.xml" && coreProperties
-        ? encoder.encode(XML_DECL + applyCorePropertiesOverride(value, coreProperties))
+        ? encoder.encode(OOXML_XML_DECLARATION + applyCorePropertiesOverride(value, coreProperties))
         : encoder.encode(stringify(value));
   }
   for (const [key, value] of binaryMap) {

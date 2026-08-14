@@ -10,6 +10,8 @@
 
 export { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 
+import { OOXML_XML_DECLARATION } from "@office-open/xml";
+
 import { LAYOUT_CATEGORIES, STYLE_CATEGORIES, COLOR_CATEGORIES } from "./categories";
 
 // ---------------------------------------------------------------------------
@@ -18,7 +20,6 @@ import { LAYOUT_CATEGORIES, STYLE_CATEGORIES, COLOR_CATEGORIES } from "./categor
 
 const DGM_NS = "http://schemas.openxmlformats.org/drawingml/2006/diagram";
 const A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
-const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 
 /** Full default list layout (urn:microsoft.com/office/officeart/2005/8/layout/default) */
 const FULL_DEFAULT_LAYOUT_XML =
@@ -58,11 +59,11 @@ const FULL_DEFAULT_LAYOUT_XML =
  */
 export function getLayoutXml(layoutId: string): string {
   if (layoutId === "default") {
-    return XML_DECL + FULL_DEFAULT_LAYOUT_XML;
+    return OOXML_XML_DECLARATION + FULL_DEFAULT_LAYOUT_XML;
   }
   const cat = LAYOUT_CATEGORIES[layoutId] ?? "list";
   return (
-    XML_DECL +
+    OOXML_XML_DECLARATION +
     '<dgm:layoutDef xmlns:dgm="' +
     DGM_NS +
     '" xmlns:a="' +
@@ -105,7 +106,7 @@ export function getStyleXml(styleId: string): string {
     "</dgm:fontClrLst>";
 
   return (
-    XML_DECL +
+    OOXML_XML_DECLARATION +
     '<dgm:styleDef xmlns:dgm="' +
     DGM_NS +
     '" xmlns:a="' +
@@ -186,7 +187,7 @@ export function getColorXml(colorId: string): string {
   }
 
   return (
-    XML_DECL +
+    OOXML_XML_DECLARATION +
     '<dgm:colorsDef xmlns:dgm="' +
     DGM_NS +
     '" xmlns:a="' +

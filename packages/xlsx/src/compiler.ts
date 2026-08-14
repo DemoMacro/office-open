@@ -26,6 +26,7 @@ import {
   type Zippable,
 } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
+import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { CalcCell } from "@parts/calc-chain";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
@@ -52,7 +53,7 @@ import { columnToLetter } from "@util/index";
 
 import { XlsxWriteContext } from "./context";
 
-const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+const XML_DECL = OOXML_XML_DECLARATION;
 
 /** XLSX part path → content type, derived from the part registry. Matches
  * actual file paths, so the dense/sequential xlsx part naming is handled. */

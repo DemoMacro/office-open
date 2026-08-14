@@ -10,9 +10,10 @@ import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
+import { emitAngle, emitPercent, parseAngle, parsePercent } from "../../util/converters";
 import { toUint8Array } from "../../util/data-type";
 import { xsdPattern } from "../../util/mappings";
-import { parseOnOff } from "../../util/values";
+import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { blipFillDesc } from "../blip/blip-descriptors";
 import { solidFillDesc, parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
@@ -50,7 +51,7 @@ function readRelativeRect(el: XmlElement): RelativeRect {
 function stringifyShade(shade: GradientShadeOptions): string {
   if ("angle" in shade) {
     const parts: string[] = [];
-    if (shade.angle !== undefined) parts.push(`ang="${Math.round(shade.angle * 60000)}"`);
+    if (shade.angle !== undefined) parts.push(`ang="${emitAngle(shade.angle)}"`);
     if (shade.scaled !== undefined) parts.push(`scaled="${shade.scaled ? 1 : 0}"`);
     const attrStr = parts.length ? " " + parts.join(" ") : "";
     return `<a:lin${attrStr}/>`;
@@ -76,8 +77,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     const stopsXml = opts.stops
       .map((stop) => {
         const colorXml = stringifyColorChoice(stop.color, ctx);
-        if (!colorXml) return `<a:gs pos="${Math.round(stop.position * 1000)}"/>`;
-        return `<a:gs pos="${Math.round(stop.position * 1000)}">${colorXml}</a:gs>`;
+        if (!colorXml) return `<a:gs pos="${emitPercent(stop.position)}"/>`;
+        return `<a:gs pos="${emitPercent(stop.position)}">${colorXml}</a:gs>`;
       })
       .join("");
     parts.push(`<a:gsLst>${stopsXml}</a:gsLst>`);
@@ -108,7 +109,7 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
         .map((gs) => {
           const pos = Number(gs.attributes?.["pos"] ?? 0);
           const color = readDirectColor(gs, ctx);
-          return { position: pos / 1000, color };
+          return { position: parsePercent(pos), color };
         });
     }
 
@@ -117,7 +118,7 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
     if (lin) {
       const shade: LinearShadeOptions = {};
       if (lin.attributes?.["ang"] !== undefined)
-        shade.angle = Number(lin.attributes["ang"]) / 60000;
+        shade.angle = parseAngle(Number(lin.attributes["ang"]));
       if (lin.attributes?.["scaled"] !== undefined)
         shade.scaled = parseOnOff(lin.attributes["scaled"]) ?? true;
       result.shade = shade;
@@ -227,7 +228,11 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
   stringify(opts, ctx) {
     // String shorthand → solid fill
     if (typeof opts === "string") {
-      return stringify(solidFillDesc, { value: opts.replace("#", "") } as SolidFillOptions, ctx);
+      return stringify(
+        solidFillDesc,
+        { value: stripColorHashPrefix(opts) } as SolidFillOptions,
+        ctx,
+      );
     }
 
     switch (opts.type) {
@@ -237,7 +242,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
       case "solid": {
         const color =
           typeof opts.color === "string"
-            ? ({ value: opts.color.replace("#", "") } as SolidFillOptions)
+            ? ({ value: stripColorHashPrefix(opts.color) } as SolidFillOptions)
             : opts.color;
         return stringify(solidFillDesc, color, ctx);
       }
@@ -253,7 +258,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
             position: stop.position,
             color:
               typeof stop.color === "string"
-                ? ({ value: stop.color.replace("#", "") } as SolidFillOptions)
+                ? ({ value: stripColorHashPrefix(stop.color) } as SolidFillOptions)
                 : stop.color,
           })),
         };
@@ -283,13 +288,13 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           ...(opts.foregroundColor && {
             foregroundColor:
               typeof opts.foregroundColor === "string"
-                ? ({ value: opts.foregroundColor.replace("#", "") } as SolidFillOptions)
+                ? ({ value: stripColorHashPrefix(opts.foregroundColor) } as SolidFillOptions)
                 : opts.foregroundColor,
           }),
           ...(opts.backgroundColor && {
             backgroundColor:
               typeof opts.backgroundColor === "string"
-                ? ({ value: opts.backgroundColor.replace("#", "") } as SolidFillOptions)
+                ? ({ value: stripColorHashPrefix(opts.backgroundColor) } as SolidFillOptions)
                 : opts.backgroundColor,
           }),
         };
