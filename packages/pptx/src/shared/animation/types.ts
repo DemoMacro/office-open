@@ -63,22 +63,22 @@ export interface EndConditionOptions {
 
 export interface AnimationBuildOptions {
   type: "paragraph" | "diagram" | "oleChart" | "graphic";
-  spid: number;
-  grpId: number;
+  shapeId: number;
+  groupId: number;
   uiExpand?: boolean;
   // paragraph-specific
   build?: "allAtOnce" | "p" | "cust" | "whole";
-  bldLvl?: number;
-  animBg?: boolean;
-  autoUpdateAnimBg?: boolean;
+  buildLevel?: number;
+  animateBackground?: boolean;
+  autoUpdateAnimateBackground?: boolean;
   rev?: boolean;
-  advAuto?: number;
+  advanceAuto?: number;
   templates?: AnimationTemplateOptions[];
   // diagram-specific
   diagramBuild?: string;
   // oleChart-specific
   oleChartBuild?: string;
-  oleChartAnimBg?: boolean;
+  oleChartAnimateBackground?: boolean;
   // graphic-specific
   graphicBuildAsOne?: boolean;
 }

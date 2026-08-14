@@ -22,7 +22,7 @@ import type { ThemeFont } from "@office-open/core";
  * @property asciiTheme - Theme font for ASCII characters
  * @property hAnsiTheme - Theme font for high ANSI characters
  * @property eastAsiaTheme - Theme font for East Asian characters
- * @property cstheme - Theme font for complex script characters
+ * @property complexScriptTheme - Theme font for complex script characters
  */
 export interface FontProperties {
   /** Font for ASCII characters (0x00-0x7F) */
@@ -42,5 +42,5 @@ export interface FontProperties {
   /** Theme font for East Asian characters */
   eastAsiaTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
   /** Theme font for complex script characters */
-  cstheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  complexScriptTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
 }

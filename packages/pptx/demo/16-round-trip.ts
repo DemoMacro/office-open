@@ -1270,7 +1270,7 @@ const slides: SlideOptions[] = [
           width: "2.6cm",
           height: "7.9cm",
           fill: "4472C4",
-          textBody: { bodyProperties: { vert: "vert" }, text: "Vertical" },
+          textBody: { bodyProperties: { vertical: "vert" }, text: "Vertical" },
         },
       },
       // Anchor bottom

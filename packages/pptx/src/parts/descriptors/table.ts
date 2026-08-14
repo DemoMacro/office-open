@@ -290,8 +290,8 @@ function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
   if (cell.verticalAlign) {
     parts.push(`anchor="${xsdTextAnchor.to(cell.verticalAlign)}"`);
   }
-  if (cell.vert) {
-    parts.push(`vert="${cell.vert}"`);
+  if (cell.vertical) {
+    parts.push(`vert="${cell.vertical}"`);
   }
 
   if (cell.borders) {
@@ -429,7 +429,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
     const anchor = attr(tcPr, "anchor");
     if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as VerticalAlignment;
     const vert = attr(tcPr, "vert");
-    if (vert) result.vert = vert as TextVerticalType;
+    if (vert) result.vertical = vert as TextVerticalType;
 
     // Margins from tcPr attributes
     const margins: CellMargins = {};

@@ -6,7 +6,7 @@ import type { PresentationOptions, SlideChild } from "./shared";
 
 // Bench modes:
 //   "ours default"  = XML DEFLATE level 1 (SuperFast); media split by type
-//     (PNG/JPEG/GIF → STORE, EMF/WMF/BMP/TIFF/… → DEFLATE 1), matching MS Office.
+//     (PNG/JPEG/GIF → STORE, EMF/WMF/BMP/TIFF/… → DEFLATE 6), matching MS Office.
 //   "ours all-store" = all entries STORE (no compression) — { compression: { xml: 0, media: 0 } }.
 //
 // PptxGenJS (JSZip): async only. Default STORE; DEFLATE via compression: true.

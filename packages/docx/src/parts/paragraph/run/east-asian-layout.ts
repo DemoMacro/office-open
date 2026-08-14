@@ -51,7 +51,7 @@ export interface EastAsianLayoutOptions {
   /** Bracket type for combined characters */
   combineBrackets?: (typeof CombineBracketsType)[keyof typeof CombineBracketsType];
   /** Whether to render text vertically */
-  vert?: boolean;
+  vertical?: boolean;
   /** Whether to compress characters in vertical text */
-  vertCompress?: boolean;
+  verticalCompress?: boolean;
 }

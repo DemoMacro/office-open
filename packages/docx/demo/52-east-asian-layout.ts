@@ -57,7 +57,7 @@ const buffer = await generateDocument({
               "Vertical text: ",
               {
                 eastAsianLayout: {
-                  vert: true,
+                  vertical: true,
                 },
                 text: "縦書き",
               },

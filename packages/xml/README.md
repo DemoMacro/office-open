@@ -74,11 +74,23 @@ interface Element {
 }
 ```
 
-## Bundle Size
+## Benchmark
 
-|      | @office-open/xml |
-| ---- | ---------------: |
-| gzip |      **4.22 kB** |
+Performance vs [xml-js](https://github.com/nashwaan/xml-js) and [xml](https://github.com/dylang/node-xml) (higher ops/s is better, Windows 11 / Node 24). `@office-open/xml` is a drop-in replacement for both. The `xml` (npm) package is generation-only (no parser), so it only appears under stringify.
+
+**parse() — XML string → Element tree**
+
+| Scenario      | @office-open/xml |        xml-js |
+| ------------- | ---------------: | ------------: |
+| simple XML    |    837,902 ops/s | 100,244 ops/s |
+| complex OOXML |    354,836 ops/s |  54,457 ops/s |
+
+**stringify() — Element tree → XML string**
+
+| Scenario       | @office-open/xml |        xml-js |     xml (npm) |
+| -------------- | ---------------: | ------------: | ------------: |
+| simple element |    827,864 ops/s | 208,934 ops/s | 379,424 ops/s |
+| complex OOXML  |    374,933 ops/s | 135,967 ops/s | 203,205 ops/s |
 
 ## License
 

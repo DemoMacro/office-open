@@ -15,7 +15,7 @@ export type TextVerticalType = "horz" | "vert" | "vert270" | "wordArt" | "wordAr
 export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAlign"> {
   verticalAlign?: VerticalAlignment;
   /** @vert — text direction (ST_TextVerticalType). */
-  vert?: TextVerticalType;
+  vertical?: TextVerticalType;
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];
   fill?: FillOptions;

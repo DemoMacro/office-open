@@ -115,14 +115,14 @@ describe("tableDesc round-trip", () => {
     const opts: TableOptions = {
       rows: [
         {
-          cells: [{ text: "Rotated", vert: "vert270" }],
+          cells: [{ text: "Rotated", vertical: "vert270" }],
         },
       ],
     };
     const result = roundTrip(opts);
     const cell = result.rows![0]?.cells?.[0];
 
-    expect(cell?.vert).toBe("vert270");
+    expect(cell?.vertical).toBe("vert270");
   });
 
   it("round-trips cell with borders", () => {

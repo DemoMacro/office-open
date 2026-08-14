@@ -89,7 +89,7 @@ export interface BodyPropertiesOptions {
   spcFirstLastPara?: boolean;
   vertOverflow?: TextVertOverflow;
   horzOverflow?: TextHorzOverflow;
-  vert?: TextVertical;
+  vertical?: TextVertical;
   wrap?: TextBodyWrapping;
   lIns?: number | UniversalMeasure;
   tIns?: number | UniversalMeasure;
@@ -176,7 +176,7 @@ export const createBodyProperties = (
     spcFirstLastPara: options.spcFirstLastPara,
     vertOverflow: options.vertOverflow,
     horzOverflow: options.horzOverflow,
-    vert: options.vert,
+    vert: options.vertical,
     wrap: options.wrap,
     lIns: lIns !== undefined ? convertToEmu(lIns) : undefined,
     tIns: tIns !== undefined ? convertToEmu(tIns) : undefined,
@@ -239,7 +239,7 @@ export const parseBodyProperties = (el: Element, ctx: ReadContext): BodyProperti
   if (horzOverflow !== undefined)
     result.horzOverflow = horzOverflow as BodyPropertiesOptions["horzOverflow"];
   const vert = attr(el, "vert");
-  if (vert !== undefined) result.vert = vert as BodyPropertiesOptions["vert"];
+  if (vert !== undefined) result.vertical = vert as BodyPropertiesOptions["vertical"];
   const wrap = attr(el, "wrap");
   if (wrap !== undefined) result.wrap = wrap as BodyPropertiesOptions["wrap"];
   const lIns = attrMeasure(el, "lIns");

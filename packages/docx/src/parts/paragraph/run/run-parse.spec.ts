@@ -42,16 +42,16 @@ describe("parseRunProperties round-trip", () => {
         id: 1,
         combine: true,
         combineBrackets: "round",
-        vert: true,
-        vertCompress: false,
+        vertical: true,
+        verticalCompress: false,
       },
     });
     expect(result.eastAsianLayout).toEqual({
       id: 1,
       combine: true,
       combineBrackets: "round",
-      vert: true,
-      vertCompress: false,
+      vertical: true,
+      verticalCompress: false,
     });
   });
 

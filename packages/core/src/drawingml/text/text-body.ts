@@ -43,8 +43,8 @@ export interface TextBodyOptions {
   margins?: BodyPropertiesOptions["margins"];
   /** Sugar → `bodyProperties.wrap`. */
   wrap?: BodyPropertiesOptions["wrap"];
-  /** Sugar → `bodyProperties.vert`. */
-  vertical?: BodyPropertiesOptions["vert"];
+  /** Sugar → `bodyProperties.vertical`. */
+  vertical?: BodyPropertiesOptions["vertical"];
 }
 
 /** Collect top-level TextBodyOptions sugar into a partial BodyPropertiesOptions. */
@@ -57,7 +57,7 @@ function bodyPropertiesSugar(opts: TextBodyOptions): Partial<BodyPropertiesOptio
   if (opts.columnSpacing !== undefined) sugar.spcCol = opts.columnSpacing;
   if (opts.margins !== undefined) sugar.margins = opts.margins;
   if (opts.wrap !== undefined) sugar.wrap = opts.wrap;
-  if (opts.vertical !== undefined) sugar.vert = opts.vertical;
+  if (opts.vertical !== undefined) sugar.vertical = opts.vertical;
   return sugar;
 }
 

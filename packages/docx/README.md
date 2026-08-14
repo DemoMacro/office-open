@@ -92,18 +92,18 @@ await generateDocument(options, { compression: { xml: 0, media: 0 } });
 
 | Scenario                       | Default sync | Default async | All STORE sync | All STORE async |       docx |
 | ------------------------------ | -----------: | ------------: | -------------: | --------------: | ---------: |
-| Simple (2p + 1 img)            |    915 ops/s |     584 ops/s |    2,454 ops/s |     2,545 ops/s | 86.3 ops/s |
-| Styled paragraphs (20) + 1 img |    935 ops/s |     626 ops/s |    2,721 ops/s |     2,522 ops/s | 90.1 ops/s |
-| Table (10x5)                   |  1,164 ops/s |     659 ops/s |    2,743 ops/s |     2,821 ops/s |  227 ops/s |
-| Full featured + 2 imgs         |    753 ops/s |     527 ops/s |    1,601 ops/s |     1,615 ops/s | 56.6 ops/s |
+| Simple (2p + 1 img)            |    938 ops/s |     599 ops/s |    2,279 ops/s |     2,299 ops/s | 89.1 ops/s |
+| Styled paragraphs (20) + 1 img |    932 ops/s |     614 ops/s |    2,741 ops/s |     2,712 ops/s |  101 ops/s |
+| Table (10x5)                   |  1,245 ops/s |     664 ops/s |    2,700 ops/s |     2,680 ops/s |  216 ops/s |
+| Full featured + 2 imgs         |    794 ops/s |     508 ops/s |    1,579 ops/s |     1,627 ops/s | 57.6 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario                       | Default sync | Default async | All STORE sync | All STORE async |       docx |
 | ------------------------------ | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 2000 paragraphs + 20 images    |   85.4 ops/s |    77.1 ops/s |     90.5 ops/s |      86.4 ops/s | 2.95 ops/s |
-| 200x10 table                   |    194 ops/s |     175 ops/s |      220 ops/s |       222 ops/s | 33.9 ops/s |
-| 20 sections x 100p + 40 images |   80.5 ops/s |    66.2 ops/s |     89.7 ops/s |      91.7 ops/s | 1.80 ops/s |
+| 2000 paragraphs + 20 images    |   85.2 ops/s |    75.4 ops/s |     90.2 ops/s |      86.7 ops/s | 2.98 ops/s |
+| 200x10 table                   |    204 ops/s |     181 ops/s |      220 ops/s |       225 ops/s | 37.8 ops/s |
+| 20 sections x 100p + 40 images |   81.2 ops/s |    68.7 ops/s |     89.9 ops/s |      89.7 ops/s | 1.81 ops/s |
 
 **Large File (~100MB) — Mixed Content**
 
@@ -111,7 +111,7 @@ await generateDocument(options, { compression: { xml: 0, media: 0 } });
 
 | Scenario                 | Default sync | Default async | All STORE sync | All STORE async |       docx |
 | ------------------------ | -----------: | ------------: | -------------: | --------------: | ---------: |
-| Mixed (500p+38img+50x10) |   23.7 ops/s |    21.8 ops/s |     23.4 ops/s |      24.5 ops/s | 0.30 ops/s |
+| Mixed (500p+38img+50x10) |   23.9 ops/s |    22.2 ops/s |     24.9 ops/s |      24.6 ops/s | 0.30 ops/s |
 
 ## License
 

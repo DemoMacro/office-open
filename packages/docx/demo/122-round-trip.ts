@@ -417,7 +417,7 @@ async function main() {
               "The formula E=mc",
               { math: { children: [{ text: "2" }] } },
               " uses a ",
-              { symbolRun: { char: "F021", symbolfont: "Wingdings" } },
+              { symbolRun: { char: "F021", symbolFont: "Wingdings" } },
               " symbol.",
             ],
           },

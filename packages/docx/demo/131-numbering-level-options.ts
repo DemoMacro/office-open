@@ -17,7 +17,7 @@ const buffer = await generateDocument({
             alignment: AlignmentType.LEFT,
             start: 1,
             // Restart numbering at level 1
-            lvlRestart: 0,
+            levelRestart: 0,
             // Legacy compatibility spacing and indent
             legacy: { space: 720, indent: 360 },
             style: {
@@ -32,7 +32,7 @@ const buffer = await generateDocument({
             text: "%2)",
             alignment: AlignmentType.LEFT,
             start: 1,
-            lvlRestart: 0,
+            levelRestart: 0,
             legacy: { space: 360, indent: 180 },
             style: {
               paragraph: {

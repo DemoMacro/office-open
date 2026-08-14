@@ -63,8 +63,8 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     if (opts.cap !== undefined) attrParts.push(`cap="${escapeXml(xsdLineCap.to(opts.cap))}"`);
     if (opts.compoundLine !== undefined)
       attrParts.push(`cmpd="${escapeXml(xsdCompoundLine.to(opts.compoundLine))}"`);
-    if (opts.align !== undefined)
-      attrParts.push(`algn="${escapeXml(xsdPenAlignment.to(opts.align))}"`);
+    if (opts.alignment !== undefined)
+      attrParts.push(`algn="${escapeXml(xsdPenAlignment.to(opts.alignment))}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
 
     // Fill. A bare-string color is an sRGB hex sugar; coerce to { value } and
@@ -125,9 +125,9 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
           String(el.attributes["cmpd"]),
         ) as OutlineOptions["compoundLine"];
       if (el.attributes["algn"] !== undefined)
-        result.align = xsdPenAlignment.from(
+        result.alignment = xsdPenAlignment.from(
           String(el.attributes["algn"]),
-        ) as OutlineOptions["align"];
+        ) as OutlineOptions["alignment"];
     }
 
     // Fill

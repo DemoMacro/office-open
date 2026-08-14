@@ -16,5 +16,5 @@ export type SymbolRunOptions = {
   /** The Unicode character code for the symbol */
   char: string;
   /** The font to use for the symbol (e.g., "Wingdings", "Symbol") */
-  symbolfont?: string;
+  symbolFont?: string;
 } & RunOptions;

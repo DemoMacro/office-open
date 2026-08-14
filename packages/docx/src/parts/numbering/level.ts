@@ -197,11 +197,11 @@ export interface LevelsOptions {
   /** Use legal numbering style (e.g., 1.1.1). */
   isLegalNumberingStyle?: boolean;
   /** Restart numbering after this level (0-based level index). */
-  lvlRestart?: number;
+  levelRestart?: number;
   /** Paragraph style ID this level is linked to (CT_Lvl pStyle). */
   paragraphStyle?: string;
   /** Picture bullet ID reference. */
-  lvlPicBulletId?: number;
+  levelPictureBulletId?: number;
   /** Template code for the level. */
   templateCode?: string;
   /** Whether this level is tentative (w:tentative attribute). */

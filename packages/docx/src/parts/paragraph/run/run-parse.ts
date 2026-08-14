@@ -71,7 +71,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
       if (asciiTheme) fontObj.asciiTheme = asciiTheme;
       if (eastAsiaTheme) fontObj.eastAsiaTheme = eastAsiaTheme;
       if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme;
-      if (cstheme) fontObj.cstheme = cstheme;
+      if (cstheme) fontObj.complexScriptTheme = cstheme;
       if (hint) fontObj.hint = hint;
       opts.font = fontObj;
     }
@@ -312,9 +312,9 @@ export function parseEastAsianLayout(el: Element): Record<string, unknown> {
   const combineBrackets = attr(el, "w:combineBrackets");
   if (combineBrackets) opts.combineBrackets = combineBrackets;
   const vert = attrBool(el, "w:vert");
-  if (vert !== undefined) opts.vert = vert;
+  if (vert !== undefined) opts.vertical = vert;
   const vertCompress = attrBool(el, "w:vertCompress");
-  if (vertCompress !== undefined) opts.vertCompress = vertCompress;
+  if (vertCompress !== undefined) opts.verticalCompress = vertCompress;
   return opts;
 }
 
@@ -477,7 +477,7 @@ export function parseRun(
         const fontVal = attr(child, "w:font");
         if (charVal) {
           children.push({
-            symbolRun: { char: charVal, symbolfont: fontVal ?? "Wingdings" },
+            symbolRun: { char: charVal, symbolFont: fontVal ?? "Wingdings" },
           } as unknown as ParsedRunChild);
         }
         break;

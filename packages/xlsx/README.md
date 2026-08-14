@@ -84,23 +84,23 @@ await generateWorkbook(options, { compression: { xml: 0, media: 0 } });
 
 | Scenario         | Default sync | Default async | All STORE sync | All STORE async |     hucre |
 | ---------------- | -----------: | ------------: | -------------: | --------------: | --------: |
-| Simple (3 rows)  |  2,040 ops/s |   1,096 ops/s |   21,165 ops/s |    21,851 ops/s | 854 ops/s |
-| Styled rows (20) |  1,894 ops/s |   1,107 ops/s |   18,327 ops/s |    18,581 ops/s | 815 ops/s |
-| Table (10x5)     |  2,017 ops/s |   1,148 ops/s |   17,836 ops/s |    16,761 ops/s | 865 ops/s |
+| Simple (3 rows)  |  2,061 ops/s |   1,137 ops/s |   20,250 ops/s |    19,561 ops/s | 904 ops/s |
+| Styled rows (20) |  1,924 ops/s |   1,149 ops/s |   15,573 ops/s |    16,227 ops/s | 863 ops/s |
+| Table (10x5)     |  2,197 ops/s |   1,381 ops/s |   16,808 ops/s |    15,852 ops/s | 968 ops/s |
 
 **Large Files — Create + toBuffer**
 
 | Scenario                      | Default sync | Default async | All STORE sync | All STORE async |      hucre |
 | ----------------------------- | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 2000 rows + 10 images         |    110 ops/s |     127 ops/s |      127 ops/s |       134 ops/s | 43.7 ops/s |
-| 200x10 table                  |    821 ops/s |     610 ops/s |    1,253 ops/s |     1,172 ops/s |  251 ops/s |
-| 20 sheets × 100 rows + 20 img |   73.8 ops/s |    56.9 ops/s |       96 ops/s |        99 ops/s | 22.8 ops/s |
+| 2000 rows + 10 images         |    123 ops/s |     134 ops/s |      181 ops/s |       180 ops/s | 41.4 ops/s |
+| 200x10 table                  |    793 ops/s |     583 ops/s |    1,143 ops/s |     1,141 ops/s |  243 ops/s |
+| 20 sheets × 100 rows + 20 img |   67.8 ops/s |    54.8 ops/s |     94.9 ops/s |      97.1 ops/s | 17.0 ops/s |
 
 **Large Data — 100,000 rows × 20 columns (2M cells)**
 
 | Scenario  | Default sync | Default async | All STORE sync | All STORE async |      hucre |
 | --------- | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 100k × 20 |   0.86 ops/s |    0.84 ops/s |     1.01 ops/s |      0.92 ops/s | 0.40 ops/s |
+| 100k × 20 |   0.84 ops/s |    0.77 ops/s |     0.96 ops/s |      0.95 ops/s | 0.38 ops/s |
 
 ## License
 

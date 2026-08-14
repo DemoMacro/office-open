@@ -126,10 +126,22 @@ Do **not** use TypeScript `enum`. Historical `as const` enumerated option types 
 
 ### Property Naming
 
-Interface properties use **full English words** (camelCase), even when XML uses abbreviations. Do **not** abbreviate by deleting letters within a word — write `index`, not `idx` (aligns with the Google TypeScript Style Guide). Reference elements map to `*Reference`, matching the Open XML SDK (`LineReference`, `FillReference`, …).
+Whether a property is spelled out or abbreviated is decided by **domain precedent**, not by length. Three rules, in priority order:
+
+1. **Established short forms stay short.** If a term is the standard notation in its domain and its meaning is unambiguous to a web search, keep it — even though it is technically an abbreviation. CSS keeps `align`/`color`/`font`, HTML keeps `id`/`src`/`href`/`alt`, color channels keep `r`/`g`/`b`/`h`/`s`/`l`, math keeps `sin`. OOXML standard attribute tokens fall here — `id`, `idx`, `numFmt`, `numId`, `fontId`, `fillId`, `borderId`, `clrIdx`, `lastIdx` map 1:1 to the XSD attribute name, and `num` (number) and `toc` (the Word `TOC` field) likewise stay.
+
+2. **Invented abbreviations spell out.** If the short form is an ad-hoc truncation with no domain precedent and a web search cannot pin it down, use the full word: `level` not `lvl`, `field` not `fld`, `vertical` not `vert`, `target` not `tgt`, `position` not `pos`, `background` not `bg`, `complement` not `comp`, `inverse` not `inv`. When in doubt, write the full word — brevity is a side-effect of precedent, never a goal in itself.
+
+3. **Compound abbreviations always spell out.** Two words each truncated and concatenated cannot be searched and are never a domain standard: `lineReferenceIndex` never `lnIdx`, `buildLevel` never `bldLvl`, `animateBackground` never `animBg`, `followedHyperlink` never `folHlink`.
+
+**Meta-rule — consistency overrides everything.** The same concept uses the same name everywhere: across the write `Options` and the parse output (`fontId` on both `CellXfEntry` and `IndexedXfEntry`, never `fontId` on one and `fontIdx` on the other), across packages (see Cross-Package Naming), and within one type — a concept already spelled out in its sibling field is spelled out too (`complexScript` full-word means `cstheme` becomes `complexScriptTheme`, not a lone abbreviation).
+
+**Root vs derived noun.** Some concepts have both a verb root and a derived noun, each with strong precedent — `align` (CSS `text-align`/`align-items`) vs `alignment` (Open XML SDK/exceljs/openpyxl), `rotate` (CSS/SVG) vs `rotation` (OOXML SDK), `indent` vs `indentation`. Rule 1 does not decide these because both forms are established; the meta-rule does: use the form already taken by the concept's **type name** and sibling fields, and by the package mainstream. As an object-model library this codebase trends to the noun (`alignment`, `rotation`, `orientation`); the verb root survives only where OOXML keeps the literal short attribute (`@orient`, `@rot`, `@scale`) or a type/field pair is already self-consistent on the root (`wp:positionH/@align` → `HorizontalPositionAlign` + `align`). A field that contradicts its own type name (`PenAlignment` + `align`) is the inconsistency to fix.
+
+Reference elements map to `*Reference`, matching the Open XML SDK (`LineReference`, `FillReference`, …):
 
 ```typescript
-// Element names → semantic full words
+// Element names → semantic full words (rule 2)
 outline         → a:ln         gradientFill  → a:gradFill
 outerShadow     → a:outerShdw  solidFill     → a:solidFill
 
@@ -138,11 +150,7 @@ lineReference   → a:lnRef      fillReference    → a:fillRef
 effectReference → a:effectRef  fontReference    → a:fontRef
 ```
 
-**OOXML standard attribute tokens are preserved verbatim** — a 1:1 mapping with the XSD attribute name, exactly like `@id` → `id`. Keep these as-is: `id`, `idx`, `numFmt`, `numId`, `fontId`, `fillId`, `borderId`, `clrIdx`, `lastIdx`.
-
-**Never invent compound abbreviations** by concatenating an element abbreviation with an attribute. The `@idx` of `a:lnRef` is `lineReferenceIndex`, never `lnIdx` (`ln` + `idx`).
-
-**Read/write symmetry:** the same OOXML concept uses the same property name on both the write `Options` and the parse output — `fontId` on both `CellXfEntry` and `IndexedXfEntry`, never `fontId` on one and `fontIdx` on the other.
+**How to decide:** take the candidate name and search the web. If a developer lands on its meaning instantly and it is the field's standard notation, keep it (rule 1). If they hesitate or find nothing, spell it out (rule 2). If it concatenates two truncations, spell it out (rule 3).
 
 ### Cross-Package Naming
 

@@ -10,7 +10,7 @@ export interface SimpleFieldOptions {
   /** Optional cached field value */
   cachedValue?: string;
   /** Lock the field to prevent updates (CT_SimpleField @fldLock) */
-  fldLock?: boolean;
+  fieldLock?: boolean;
   /** Field result is out of date (CT_SimpleField @dirty) */
   dirty?: boolean;
 }

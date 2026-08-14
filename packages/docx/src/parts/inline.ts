@@ -410,7 +410,7 @@ export function stringifyChildDispatch(
   if ("symbolRun" in child) {
     const opts = child.symbolRun;
     const rPr = stringifyRunProperties(opts) ?? "";
-    return `<w:r>${rPr}<w:sym w:char="${opts.char}" w:font="${opts.symbolfont ?? "Wingdings"}"/></w:r>`;
+    return `<w:r>${rPr}<w:sym w:char="${opts.char}" w:font="${opts.symbolFont ?? "Wingdings"}"/></w:r>`;
   }
 
   // Form field (checkbox / dropdown list / text input) — fldChar sequence.
@@ -756,7 +756,7 @@ export function stringifyChildDispatch(
     const pushHlAttrs = (attrs: string[]): void => {
       if (hl.history !== false) attrs.push('w:history="1"');
       if (hl.tooltip) attrs.push(`w:tooltip="${escapeXml(hl.tooltip)}"`);
-      if (hl.tgtFrame) attrs.push(`w:tgtFrame="${escapeXml(hl.tgtFrame)}"`);
+      if (hl.targetFrame) attrs.push(`w:tgtFrame="${escapeXml(hl.targetFrame)}"`);
       if (hl.docLocation) attrs.push(`w:docLocation="${escapeXml(hl.docLocation)}"`);
     };
     if (hl.link) {
@@ -861,7 +861,7 @@ export function stringifyChildDispatch(
   if ("simpleField" in child) {
     const sf = child.simpleField;
     const sfAttrs = [`w:instr="${escapeXml(sf.instruction)}"`];
-    if (sf.fldLock !== undefined) sfAttrs.push(`w:fldLock="${sf.fldLock ? 1 : 0}"`);
+    if (sf.fieldLock !== undefined) sfAttrs.push(`w:fldLock="${sf.fieldLock ? 1 : 0}"`);
     if (sf.dirty !== undefined) sfAttrs.push(`w:dirty="${sf.dirty ? 1 : 0}"`);
     if (sf.cachedValue !== undefined) {
       return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:t>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;

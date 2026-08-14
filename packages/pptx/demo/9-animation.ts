@@ -536,8 +536,8 @@ const options: PresentationOptions = {
             duration: 500,
             // Build list: paragraph build for shape 2
             builds: [
-              { type: "paragraph", spid: 3, grpId: 1, build: "p" },
-              { type: "diagram", spid: 4, grpId: 2, diagramBuild: "depthByNode" },
+              { type: "paragraph", shapeId: 3, groupId: 1, build: "p" },
+              { type: "diagram", shapeId: 4, groupId: 2, diagramBuild: "depthByNode" },
             ],
           },
         },

@@ -29,7 +29,7 @@ import type { DocumentOptions, SectionChild } from "./index";
 
 // Bench modes:
 //   "ours default"  = XML DEFLATE level 1 (SuperFast); media split by type
-//     (PNG/JPEG/GIF → STORE, EMF/WMF/BMP/TIFF/… → DEFLATE 1), matching MS Office Word.
+//     (PNG/JPEG/GIF → STORE, EMF/WMF/BMP/TIFF/… → DEFLATE 6), matching MS Office Word.
 //   "ours all-store" = all entries STORE (no compression) — { compression: { xml: 0, media: 0 } }.
 //
 // docx (JSZip): async (Packer.toBuffer). Hardcoded global DEFLATE for ALL entries,

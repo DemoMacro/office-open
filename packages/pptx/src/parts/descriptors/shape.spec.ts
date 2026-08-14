@@ -284,10 +284,10 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      textBody: { text: "Vertical", bodyProperties: { vert: "vert" } },
+      textBody: { text: "Vertical", bodyProperties: { vertical: "vert" } },
     });
     const textBody = result.textBody!;
-    expect(textBody.bodyProperties?.vert).toBe("vert");
+    expect(textBody.bodyProperties?.vertical).toBe("vert");
   });
 
   it("round-trips shape with textBody anchor", () => {

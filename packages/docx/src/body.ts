@@ -1328,7 +1328,7 @@ function parseRunLevelChildren(
         const tooltip = attr(child, "w:tooltip");
         if (tooltip) hl.tooltip = tooltip;
         const tgtFrame = attr(child, "w:tgtFrame");
-        if (tgtFrame) hl.tgtFrame = tgtFrame;
+        if (tgtFrame) hl.targetFrame = tgtFrame;
         const docLocation = attr(child, "w:docLocation");
         if (docLocation) hl.docLocation = docLocation;
         const history = attrBool(child, "w:history");
@@ -1479,7 +1479,7 @@ function parseRunLevelChildren(
           const sf: {
             instruction: string;
             cachedValue?: string;
-            fldLock?: boolean;
+            fieldLock?: boolean;
             dirty?: boolean;
           } = { instruction };
           // cachedValue: concatenate the result-run <w:t> text (one or more
@@ -1490,7 +1490,7 @@ function parseRunLevelChildren(
           }
           if (cachedValue) sf.cachedValue = cachedValue;
           const sfLock = attrBool(child, "w:fldLock");
-          if (sfLock !== undefined) sf.fldLock = sfLock;
+          if (sfLock !== undefined) sf.fieldLock = sfLock;
           const sfDirty = attrBool(child, "w:dirty");
           if (sfDirty !== undefined) sf.dirty = sfDirty;
           childList.push({ simpleField: sf });

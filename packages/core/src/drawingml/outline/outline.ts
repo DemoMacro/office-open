@@ -134,7 +134,7 @@ export interface OutlineProperties {
   /** Compound line type */
   compoundLine?: CompoundLine;
   /** Pen alignment */
-  align?: PenAlignment;
+  alignment?: PenAlignment;
   /**
    * Preset dash style.
    *
@@ -279,7 +279,7 @@ export const createOutline = (options: OutlineOptions): string => {
   return element(
     "a:ln",
     {
-      algn: options.align ? xsdPenAlignment.to(options.align) : undefined,
+      algn: options.alignment ? xsdPenAlignment.to(options.alignment) : undefined,
       cap: options.cap ? xsdLineCap.to(options.cap) : undefined,
       cmpd: options.compoundLine ? xsdCompoundLine.to(options.compoundLine) : undefined,
       w: options.width !== undefined ? convertToEmu(options.width) : undefined,

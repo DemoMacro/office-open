@@ -205,15 +205,15 @@ export interface BlipEffectsOptions {
   /** Alpha inverse effect (with optional color). */
   alphaInverse?: SolidFillOptions;
   /** Alpha modulate fixed effect. */
-  alphaModFix?: AlphaModulateFixedEffectOptions;
+  alphaModulateFixed?: AlphaModulateFixedEffectOptions;
   /** Alpha replace effect. */
-  alphaRepl?: AlphaReplaceEffectOptions;
+  alphaReplace?: AlphaReplaceEffectOptions;
   /** Alpha bi-level effect. */
   alphaBiLevel?: AlphaBiLevelEffectOptions;
   /** Color change effect. */
   colorChange?: ColorChangeEffectOptions;
   /** Color replace effect. */
-  colorRepl?: ColorReplaceEffectOptions;
+  colorReplace?: ColorReplaceEffectOptions;
   /** Blur effect on blip. */
   blur?: BlipBlurEffectOptions;
 }
@@ -297,13 +297,13 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
     }
   }
 
-  if (options.alphaModFix) {
-    const amt = options.alphaModFix.amount ?? 100;
+  if (options.alphaModulateFixed) {
+    const amt = options.alphaModulateFixed.amount ?? 100;
     children.push(`<a:alphaModFix amt="${amt}"/>`);
   }
 
-  if (options.alphaRepl) {
-    children.push(`<a:alphaRepl a="${options.alphaRepl.amount}"/>`);
+  if (options.alphaReplace) {
+    children.push(`<a:alphaRepl a="${options.alphaReplace.amount}"/>`);
   }
 
   if (options.alphaBiLevel) {
@@ -323,8 +323,10 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
     );
   }
 
-  if (options.colorRepl) {
-    children.push(element("a:clrRepl", undefined, [createColorElement(options.colorRepl.color)]));
+  if (options.colorReplace) {
+    children.push(
+      element("a:clrRepl", undefined, [createColorElement(options.colorReplace.color)]),
+    );
   }
 
   if (options.blur) {

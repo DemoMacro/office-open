@@ -133,7 +133,7 @@ const buffer = await generateDocument({
               {
                 picture: {
                   data: readFileSync("./demo/images/cat.jpg"),
-                  tile: { align: "center", sx: 50, sy: 50 },
+                  tile: { alignment: "center", sx: 50, sy: 50 },
                   transformation: {
                     height: "2.6cm",
                     width: "7.9cm",

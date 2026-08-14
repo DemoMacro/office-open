@@ -80,7 +80,7 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              bodyProperties: { vert: "vert" },
+              bodyProperties: { vertical: "vert" },
               paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
@@ -103,7 +103,7 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              bodyProperties: { vert: "vert270" },
+              bodyProperties: { vertical: "vert270" },
               paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
@@ -121,7 +121,7 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              bodyProperties: { vert: "horz" },
+              bodyProperties: { vertical: "horz" },
               paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },

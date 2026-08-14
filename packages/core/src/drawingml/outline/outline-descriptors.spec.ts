@@ -50,25 +50,25 @@ describe("outlineDesc", () => {
     expect(result.gradientFill?.stops?.[1]?.position).toBe(100);
   });
 
-  it("round-trips width, cap, compoundLine, align", () => {
+  it("round-trips width, cap, compoundLine, alignment", () => {
     const opts: OutlineOptions = {
       type: "noFill",
       width: 9525,
       cap: "round",
       compoundLine: "double",
-      align: "center",
+      alignment: "center",
     };
     const result = roundTrip(opts);
     expect(result.width).toBe(9525);
     expect(result.cap).toBe("round");
     expect(result.compoundLine).toBe("double");
-    expect(result.align).toBe("center");
+    expect(result.alignment).toBe("center");
   });
 
-  it("emits XSD tokens (rnd/sng/ctr), not full words, for cap/compoundLine/align", () => {
+  it("emits XSD tokens (rnd/sng/ctr), not full words, for cap/compoundLine/alignment", () => {
     const xml = stringify(
       outlineDesc,
-      { type: "noFill", cap: "round", compoundLine: "double", align: "center" },
+      { type: "noFill", cap: "round", compoundLine: "double", alignment: "center" },
       {} as WriteContext,
     )!;
     expect(xml).toContain('cap="rnd"');

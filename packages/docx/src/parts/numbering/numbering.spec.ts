@@ -131,7 +131,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
               text: "%1.",
               alignment: AlignmentType.LEFT,
               suffix: LevelSuffix.TAB,
-              lvlRestart: 0,
+              levelRestart: 0,
               templateCode: "0409000F",
               isLegalNumberingStyle: true,
               legacy: { space: 0, indent: 0 },
@@ -167,7 +167,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect(lvl.text).toBe("%1.");
     expect(lvl.alignment).toBe(AlignmentType.LEFT);
     expect(lvl.suffix).toBe(LevelSuffix.TAB);
-    expect(lvl.lvlRestart).toBe(0);
+    expect(lvl.levelRestart).toBe(0);
     expect(lvl.templateCode).toBe("0409000F");
     expect(lvl.isLegalNumberingStyle).toBe(true);
     expect(lvl.legacy).toEqual({ enabled: true, space: 0, indent: 0 });

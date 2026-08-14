@@ -748,8 +748,8 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
 
   for (const bld of builds) {
     const bldAttrs: Record<string, string | number | undefined> = {
-      spid: bld.spid,
-      grpId: bld.grpId,
+      spid: bld.shapeId,
+      grpId: bld.groupId,
     };
     if (bld.uiExpand) bldAttrs.uiExpand = 1;
 
@@ -760,12 +760,12 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
       case "paragraph": {
         elementName = "p:bldP";
         if (bld.build) bldAttrs.build = bld.build;
-        if (bld.bldLvl !== undefined) bldAttrs.bldLvl = bld.bldLvl;
-        if (bld.animBg !== undefined) bldAttrs.animBg = bld.animBg ? 1 : 0;
-        if (bld.autoUpdateAnimBg !== undefined)
-          bldAttrs.autoUpdateAnimBg = bld.autoUpdateAnimBg ? 1 : 0;
+        if (bld.buildLevel !== undefined) bldAttrs.bldLvl = bld.buildLevel;
+        if (bld.animateBackground !== undefined) bldAttrs.animBg = bld.animateBackground ? 1 : 0;
+        if (bld.autoUpdateAnimateBackground !== undefined)
+          bldAttrs.autoUpdateAnimBg = bld.autoUpdateAnimateBackground ? 1 : 0;
         if (bld.rev) bldAttrs.rev = 1;
-        if (bld.advAuto !== undefined) bldAttrs.advAuto = bld.advAuto;
+        if (bld.advanceAuto !== undefined) bldAttrs.advAuto = bld.advanceAuto;
         // Templates (tmplLst)
         if (bld.templates && bld.templates.length > 0) {
           const tmplChildren = bld.templates.map((tmpl) => {
@@ -789,7 +789,8 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
       case "oleChart": {
         elementName = "p:bldOleChart";
         if (bld.oleChartBuild) bldAttrs.bld = bld.oleChartBuild;
-        if (bld.oleChartAnimBg !== undefined) bldAttrs.animBg = bld.oleChartAnimBg ? 1 : 0;
+        if (bld.oleChartAnimateBackground !== undefined)
+          bldAttrs.animBg = bld.oleChartAnimateBackground ? 1 : 0;
         break;
       }
       case "graphic": {

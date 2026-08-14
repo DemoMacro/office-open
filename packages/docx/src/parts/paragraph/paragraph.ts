@@ -70,7 +70,7 @@ export type ParagraphChild =
         anchor?: string;
         tooltip?: string;
         /** Target frame for the hyperlink (CT_Hyperlink @tgtFrame) */
-        tgtFrame?: string;
+        targetFrame?: string;
         /** Location within the target document (CT_Hyperlink @docLocation) */
         docLocation?: string;
         /** Add the target to the navigation history (CT_Hyperlink @history) */

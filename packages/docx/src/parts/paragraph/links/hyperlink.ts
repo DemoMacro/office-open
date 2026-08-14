@@ -34,5 +34,5 @@ export interface ExternalHyperlinkOptions {
   /** Screen tip text shown when hovering over the hyperlink */
   tooltip?: string;
   /** Target frame for the hyperlink (e.g., "_blank", "_self") */
-  tgtFrame?: string;
+  targetFrame?: string;
 }

@@ -37,7 +37,7 @@ describe("tileDesc", () => {
       sx: 50,
       sy: 50,
       flip: "x",
-      align: "center",
+      alignment: "center",
     };
     const result = roundTrip(tileDesc, opts);
     expect(result.tx).toBe(100);
@@ -45,7 +45,7 @@ describe("tileDesc", () => {
     expect(result.sx).toBe(50);
     expect(result.sy).toBe(50);
     expect(result.flip).toBe("x");
-    expect(result.align).toBe("center");
+    expect(result.alignment).toBe("center");
   });
 });
 

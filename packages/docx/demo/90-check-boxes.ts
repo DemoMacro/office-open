@@ -25,9 +25,9 @@ const buffer = await generateDocument({
         {
           paragraph: {
             children: [
-              { symbolRun: { char: "2610", symbolfont: "MS Gothic" } }, // ☐ unchecked
+              { symbolRun: { char: "2610", symbolFont: "MS Gothic" } }, // ☐ unchecked
               "   ",
-              { symbolRun: { char: "2612", symbolfont: "MS Gothic" } }, // ☒ checked
+              { symbolRun: { char: "2612", symbolFont: "MS Gothic" } }, // ☒ checked
               { text: "   (not interactive)", italic: true },
             ],
           },

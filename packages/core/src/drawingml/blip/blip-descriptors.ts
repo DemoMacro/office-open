@@ -38,8 +38,8 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
     if (opts.sx !== undefined) attrParts.push(`sx="${Math.round(opts.sx * 1000)}"`);
     if (opts.sy !== undefined) attrParts.push(`sy="${Math.round(opts.sy * 1000)}"`);
     if (opts.flip !== undefined) attrParts.push(`flip="${escapeXml(opts.flip)}"`);
-    if (opts.align !== undefined)
-      attrParts.push(`algn="${escapeXml(xsdRectAlignment.to(opts.align))}"`);
+    if (opts.alignment !== undefined)
+      attrParts.push(`algn="${escapeXml(xsdRectAlignment.to(opts.alignment))}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     return `<a:tile${attrStr}/>`;
   },
@@ -52,7 +52,9 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
     if (el.attributes?.["flip"] !== undefined)
       result.flip = String(el.attributes["flip"]) as TileOptions["flip"];
     if (el.attributes?.["algn"] !== undefined)
-      result.align = xsdRectAlignment.from(String(el.attributes["algn"])) as TileOptions["align"];
+      result.alignment = xsdRectAlignment.from(
+        String(el.attributes["algn"]),
+      ) as TileOptions["alignment"];
     return result;
   },
 };
@@ -171,13 +173,13 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
     }
   }
 
-  if (opts.alphaModFix) {
-    const amt = Math.round((opts.alphaModFix.amount ?? 100) * 1000);
+  if (opts.alphaModulateFixed) {
+    const amt = Math.round((opts.alphaModulateFixed.amount ?? 100) * 1000);
     parts.push(`<a:alphaModFix amt="${amt}"/>`);
   }
 
-  if (opts.alphaRepl) {
-    parts.push(`<a:alphaRepl a="${Math.round(opts.alphaRepl.amount * 1000)}"/>`);
+  if (opts.alphaReplace) {
+    parts.push(`<a:alphaRepl a="${Math.round(opts.alphaReplace.amount * 1000)}"/>`);
   }
 
   if (opts.alphaBiLevel) {
@@ -195,8 +197,8 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
     );
   }
 
-  if (opts.colorRepl) {
-    const colorXml = stringify(solidFillDesc, opts.colorRepl.color, ctx);
+  if (opts.colorReplace) {
+    const colorXml = stringify(solidFillDesc, opts.colorReplace.color, ctx);
     parts.push(`<a:clrRepl>${colorXml ?? ""}</a:clrRepl>`);
   }
 
@@ -278,12 +280,12 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
     const opts: AlphaModulateFixedEffectOptions = {};
     const amt = parsePercent(alphaModFix.attributes?.["amt"]);
     if (amt !== undefined) opts.amount = amt;
-    result.alphaModFix = opts;
+    result.alphaModulateFixed = opts;
   }
 
   const alphaRepl = findChild(el, "a:alphaRepl");
   if (alphaRepl?.attributes?.["a"] !== undefined) {
-    result.alphaRepl = { amount: parsePercent(alphaRepl.attributes["a"])! };
+    result.alphaReplace = { amount: parsePercent(alphaRepl.attributes["a"])! };
   }
 
   const alphaBiLevel = findChild(el, "a:alphaBiLevel");
@@ -313,7 +315,7 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   if (clrRepl) {
     const solidFill = findChild(clrRepl, "a:solidFill");
     if (solidFill)
-      result.colorRepl = { color: parse(solidFillDesc, solidFill, ctx) as SolidFillOptions };
+      result.colorReplace = { color: parse(solidFillDesc, solidFill, ctx) as SolidFillOptions };
   }
 
   const blur = findChild(el, "a:blur");

@@ -355,8 +355,8 @@ function stringifyLevel(opts: LevelsOptions): string {
 
   children.push(`<w:start w:val="${decimalNumber(opts.start ?? 1)}"/>`);
   if (opts.format) children.push(`<w:numFmt w:val="${opts.format}"/>`);
-  if (opts.lvlRestart !== undefined)
-    children.push(`<w:lvlRestart w:val="${decimalNumber(opts.lvlRestart)}"/>`);
+  if (opts.levelRestart !== undefined)
+    children.push(`<w:lvlRestart w:val="${decimalNumber(opts.levelRestart)}"/>`);
   if (opts.paragraphStyle !== undefined)
     children.push(`<w:pStyle w:val="${opts.paragraphStyle}"/>`);
   // CT_Lvl sequence: pStyle → isLgl → suff (XSD). isLgl must precede suff.
@@ -368,8 +368,8 @@ function stringifyLevel(opts: LevelsOptions): string {
     if (opts.textNull) lvlTextAttrs.push('w:null="1"');
     children.push(`<w:lvlText ${lvlTextAttrs.join(" ")}/>`);
   }
-  if (opts.lvlPicBulletId !== undefined)
-    children.push(`<w:lvlPicBulletId w:val="${decimalNumber(opts.lvlPicBulletId)}"/>`);
+  if (opts.levelPictureBulletId !== undefined)
+    children.push(`<w:lvlPicBulletId w:val="${decimalNumber(opts.levelPictureBulletId)}"/>`);
   if (opts.legacy !== undefined) {
     const legacyAttrs: string[] = [`w:legacy="${(opts.legacy.enabled ?? true) ? 1 : 0}"`];
     if (opts.legacy.space !== undefined) legacyAttrs.push(`w:legacySpace="${opts.legacy.space}"`);
@@ -545,7 +545,7 @@ function parseLevelEl(
   const lvlRestart = findChild(el, "w:lvlRestart");
   if (lvlRestart) {
     const val = attrNum(lvlRestart, "w:val");
-    if (val !== undefined) opts.lvlRestart = val;
+    if (val !== undefined) opts.levelRestart = val;
   }
 
   const numFmt = findChild(el, "w:numFmt");
@@ -579,7 +579,7 @@ function parseLevelEl(
   const lvlPicBulletId = findChild(el, "w:lvlPicBulletId");
   if (lvlPicBulletId) {
     const val = attrNum(lvlPicBulletId, "w:val");
-    if (val !== undefined) opts.lvlPicBulletId = val;
+    if (val !== undefined) opts.levelPictureBulletId = val;
   }
 
   // Legacy spacing (w:legacy/@w:legacy [required], @w:legacySpace, @w:legacyIndent)

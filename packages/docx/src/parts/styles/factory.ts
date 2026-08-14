@@ -579,9 +579,9 @@ export class DefaultStylesFactory {
               asciiTheme: "majorHAnsi",
               eastAsiaTheme: "majorEastAsia",
               hAnsiTheme: "majorHAnsi",
-              cstheme: "majorBidi",
+              complexScriptTheme: "majorBidi",
             }
-          : { cstheme: "majorBidi" },
+          : { complexScriptTheme: "majorBidi" },
         color: accentRange
           ? { val: "0F4761", themeColor: "accent1", themeShade: "BF" }
           : { val: "595959", themeColor: "text1", themeTint: "A6" },
@@ -696,7 +696,7 @@ export class DefaultStylesFactory {
           asciiTheme: "majorHAnsi",
           eastAsiaTheme: "majorEastAsia",
           hAnsiTheme: "majorHAnsi",
-          cstheme: "majorBidi",
+          complexScriptTheme: "majorBidi",
         },
         characterSpacing: -10,
         kern: 14,
@@ -754,7 +754,7 @@ export class DefaultStylesFactory {
           asciiTheme: "majorHAnsi",
           eastAsiaTheme: "majorEastAsia",
           hAnsiTheme: "majorHAnsi",
-          cstheme: "majorBidi",
+          complexScriptTheme: "majorBidi",
         },
         color: { val: "595959", themeColor: "text1", themeTint: "A6" },
         characterSpacing: 15,

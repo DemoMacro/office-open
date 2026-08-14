@@ -54,7 +54,7 @@ export interface TileOptions {
   /** Flip mode for alternating tiles */
   flip?: TileFlipMode;
   /** Alignment of the first tile within the shape */
-  align?: TileAlignment;
+  alignment?: TileAlignment;
 }
 
 /**
@@ -83,7 +83,7 @@ export interface TileOptions {
  * // Tile with 50% scale
  * createTileInfo({ sx: 50, sy: 50 });
  * // Tile with flip and alignment
- * createTileInfo({ flip: "xy", align: "center" });
+ * createTileInfo({ flip: "xy", alignment: "center" });
  * ```
  */
 export const createTileInfo = (options?: TileOptions): string => {
@@ -97,7 +97,7 @@ export const createTileInfo = (options?: TileOptions): string => {
   if (options.sx !== undefined) attrs.sx = Math.round(options.sx * 1000);
   if (options.sy !== undefined) attrs.sy = Math.round(options.sy * 1000);
   if (options.flip !== undefined) attrs.flip = options.flip;
-  if (options.align !== undefined) attrs.algn = xsdRectAlignment.to(options.align);
+  if (options.alignment !== undefined) attrs.algn = xsdRectAlignment.to(options.alignment);
 
   return element("a:tile", attrs);
 };

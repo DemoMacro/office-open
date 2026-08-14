@@ -241,7 +241,7 @@ function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): strin
     "w:ascii": attrs.ascii,
     "w:asciiTheme": attrs.asciiTheme,
     "w:cs": attrs.complexScript,
-    "w:cstheme": attrs.cstheme,
+    "w:cstheme": attrs.complexScriptTheme,
     "w:eastAsia": attrs.eastAsia,
     "w:eastAsiaTheme": attrs.eastAsiaTheme,
     "w:hAnsi": attrs.hAnsi,
@@ -264,8 +264,9 @@ function eastAsianLayoutStr(opts: EastAsianLayoutOptions): string {
     "w:id": opts.id !== undefined ? decimalNumber(opts.id) : undefined,
     "w:combine": opts.combine !== undefined ? (opts.combine ? 1 : 0) : undefined,
     "w:combineBrackets": opts.combineBrackets,
-    "w:vert": opts.vert !== undefined ? (opts.vert ? 1 : 0) : undefined,
-    "w:vertCompress": opts.vertCompress !== undefined ? (opts.vertCompress ? 1 : 0) : undefined,
+    "w:vert": opts.vertical !== undefined ? (opts.vertical ? 1 : 0) : undefined,
+    "w:vertCompress":
+      opts.verticalCompress !== undefined ? (opts.verticalCompress ? 1 : 0) : undefined,
   });
   return `<w:eastAsianLayout ${a}/>`;
 }
