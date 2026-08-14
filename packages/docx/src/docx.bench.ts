@@ -21,6 +21,7 @@ import {
   HeadingLevel,
   PageNumber,
   generateDocument,
+  generateDocumentStream,
   generateDocumentSync,
   UnderlineType,
   WidthType,
@@ -898,7 +899,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours default sync — 20 sec × 100p + 40 img + toBufferSync",
+    "ours default sync — 20 sec x 100p + 40 img + toBufferSync",
     () => {
       generateDocumentSync(buildLargeSectionsDoc());
     },
@@ -906,7 +907,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours all-store sync — 20 sec × 100p + 40 img + toBufferStore",
+    "ours all-store sync — 20 sec x 100p + 40 img + toBufferStore",
     () => {
       generateDocumentSync(buildLargeSectionsDoc(), { compression: { xml: 0, media: 0 } });
     },
@@ -914,7 +915,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours default async — 20 sec × 100p + 40 img + toBuffer",
+    "ours default async — 20 sec x 100p + 40 img + toBuffer",
     async () => {
       await generateDocument(buildLargeSectionsDoc());
     },
@@ -922,7 +923,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "ours all-store async — 20 sec × 100p + 40 img + toBufferStoreAsync",
+    "ours all-store async — 20 sec x 100p + 40 img + toBufferStoreAsync",
     async () => {
       await generateDocument(buildLargeSectionsDoc(), { compression: { xml: 0, media: 0 } });
     },
@@ -930,7 +931,7 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
   );
 
   bench(
-    "docx — 20 sec × 100p + 40 img + toBuffer",
+    "docx — 20 sec x 100p + 40 img + toBuffer",
     async () => {
       await PackerOrig.toBuffer(buildLargeSectionsDocCompetitor());
     },
@@ -940,12 +941,12 @@ describe("DOCX: Large Files — Create + toBuffer", () => {
 
 // ── Large file ~100MB mixed benchmarks ──
 
-// Mixed-size image pool: 1MB×10 + 2MB×10 + 3MB×10 + 5MB×8 = 100MB, 38 unique images
+// Mixed-size image pool: 1MBx10 + 2MBx10 + 3MBx10 + 5MBx8 = 100MB, 38 unique images
 const MIXED_IMAGE_SIZES = [
-  ...Array(10).fill(1024), // 1MB × 10
-  ...Array(10).fill(2048), // 2MB × 10
-  ...Array(10).fill(3072), // 3MB × 10
-  ...Array(8).fill(5120), // 5MB × 8
+  ...Array(10).fill(1024), // 1MB x 10
+  ...Array(10).fill(2048), // 2MB x 10
+  ...Array(10).fill(3072), // 3MB x 10
+  ...Array(8).fill(5120), // 5MB x 8
 ];
 const MIXED_IMAGES = MIXED_IMAGE_SIZES.map((sizeKB, i) => makeImage(i, sizeKB));
 
@@ -974,7 +975,7 @@ const buildMixed100MbDoc = (): DocumentOptions => ({
             ],
           },
         })) as SectionChild[]),
-        // 50×10 table
+        // 50x10 table
         {
           table: {
             rows: Array.from({ length: 50 }, (_, rowIdx) => ({
@@ -1057,7 +1058,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
                     ],
                   }),
               ),
-              // 50×10 table
+              // 50x10 table
               new TableOrig({
                 rows: Array.from(
                   { length: 50 },
@@ -1085,6 +1086,82 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
         ],
       });
       await PackerOrig.toBuffer(doc);
+    },
+    { iterations: 3 },
+  );
+});
+
+// ── Streaming benchmarks (default compression, fully drained) ──
+
+const drainStream = async (stream: ReadableStream<Uint8Array>): Promise<void> => {
+  const reader = stream.getReader();
+  for (;;) {
+    const { done } = await reader.read();
+    if (done) return;
+  }
+};
+
+describe("DOCX: Create + toStream", () => {
+  bench(
+    "ours default stream — simple (2p + 1 img) + toStream",
+    async () => {
+      await drainStream(generateDocumentStream(buildSimpleDoc()));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — styled paragraphs (20) + 1 img + toStream",
+    async () => {
+      await drainStream(generateDocumentStream(buildStyledDoc()));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — table (10x5) + toStream",
+    async () => {
+      await drainStream(generateDocumentStream(buildTableDoc()));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — full featured + 2 imgs + toStream",
+    async () => {
+      await drainStream(generateDocumentStream(buildFullFeaturedDoc()));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — 2000p + 20 img + toStream",
+    async () => {
+      await drainStream(generateDocumentStream(buildLargeParagraphsDoc()));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — 200x10 table + toStream",
+    async () => {
+      await drainStream(generateDocumentStream(buildLargeTableDoc()));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — 20 sec x 100p + 40 img + toStream",
+    async () => {
+      await drainStream(generateDocumentStream(buildLargeSectionsDoc()));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — mixed (500p, 38img, 50x10) + toStream",
+    async () => {
+      await drainStream(generateDocumentStream(buildMixed100MbDoc()));
     },
     { iterations: 3 },
   );

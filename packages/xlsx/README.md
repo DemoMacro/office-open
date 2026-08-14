@@ -78,29 +78,33 @@ Performance comparison against [hucre](https://github.com/nicolo-ribaudo/hucre) 
 await generateWorkbook(options);
 // All STORE (no compression)
 await generateWorkbook(options, { compression: { xml: 0, media: 0 } });
+// Stream as ReadableStream<Uint8Array> (pipe to a file / HTTP response)
+generateWorkbookStream(options);
 ```
 
-**Create + toBuffer (end-to-end)**
+**Create + toBuffer / toStream (end-to-end)**
 
-| Scenario         | Default sync | Default async | All STORE sync | All STORE async |     hucre |
-| ---------------- | -----------: | ------------: | -------------: | --------------: | --------: |
-| Simple (3 rows)  |  2,061 ops/s |   1,137 ops/s |   20,250 ops/s |    19,561 ops/s | 904 ops/s |
-| Styled rows (20) |  1,924 ops/s |   1,149 ops/s |   15,573 ops/s |    16,227 ops/s | 863 ops/s |
-| Table (10x5)     |  2,197 ops/s |   1,381 ops/s |   16,808 ops/s |    15,852 ops/s | 968 ops/s |
+| Scenario         | Default sync | Default async | All STORE sync | All STORE async | Default stream |     hucre |
+| ---------------- | -----------: | ------------: | -------------: | --------------: | -------------: | --------: |
+| Simple (3 rows)  |  1,901 ops/s |     925 ops/s |   16,585 ops/s |    18,225 ops/s |     23.2 ops/s | 536 ops/s |
+| Styled rows (20) |  1,946 ops/s |     988 ops/s |   16,638 ops/s |    16,709 ops/s |     22.6 ops/s | 819 ops/s |
+| Table (10x5)     |  1,847 ops/s |   1,060 ops/s |   16,964 ops/s |    17,922 ops/s |     23.1 ops/s | 837 ops/s |
 
-**Large Files — Create + toBuffer**
+**Large Files — Create + toBuffer / toStream**
 
-| Scenario                      | Default sync | Default async | All STORE sync | All STORE async |      hucre |
-| ----------------------------- | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 2000 rows + 10 images         |    123 ops/s |     134 ops/s |      181 ops/s |       180 ops/s | 41.4 ops/s |
-| 200x10 table                  |    793 ops/s |     583 ops/s |    1,143 ops/s |     1,141 ops/s |  243 ops/s |
-| 20 sheets × 100 rows + 20 img |   67.8 ops/s |    54.8 ops/s |     94.9 ops/s |      97.1 ops/s | 17.0 ops/s |
+| Scenario                      | Default sync | Default async | All STORE sync | All STORE async | Default stream |      hucre |
+| ----------------------------- | -----------: | ------------: | -------------: | --------------: | -------------: | ---------: |
+| 2000 rows + 10 images         |    141 ops/s |     127 ops/s |      114 ops/s |       134 ops/s |     12.5 ops/s | 43.3 ops/s |
+| 200x10 table                  |    831 ops/s |     579 ops/s |    1,427 ops/s |     1,285 ops/s |     22.1 ops/s |  242 ops/s |
+| 20 sheets × 100 rows + 20 img |   67.1 ops/s |    55.5 ops/s |     97.3 ops/s |      91.6 ops/s |     2.44 ops/s | 19.9 ops/s |
 
 **Large Data — 100,000 rows × 20 columns (2M cells)**
 
-| Scenario  | Default sync | Default async | All STORE sync | All STORE async |      hucre |
-| --------- | -----------: | ------------: | -------------: | --------------: | ---------: |
-| 100k × 20 |   0.84 ops/s |    0.77 ops/s |     0.96 ops/s |      0.95 ops/s | 0.38 ops/s |
+| Scenario  | Default sync | Default async | All STORE sync | All STORE async | Default stream |      hucre |
+| --------- | -----------: | ------------: | -------------: | --------------: | -------------: | ---------: |
+| 100k × 20 |   0.84 ops/s |    0.91 ops/s |     1.08 ops/s |      1.08 ops/s |     1.01 ops/s | 0.37 ops/s |
+
+**Stream column** = `generateWorkbookStream` (default compression, fully drained). Streaming trades throughput for pipeability: each part is compressed in a Web Worker as it is produced, so a fixed per-part worker handoff dominates small workbooks. Plain-data workbooks stream through a constant-memory path — worksheet rows serialize chunk-wise with inline strings, so the full worksheet XML and the archive never coexist (at 1M rows × 3 cols: peak RSS +177 MB streamed vs +810 MB buffered, and ~17% faster; at 100k × 20 it is also the fastest mode). Scenarios with images fall back to the full-memory stream.
 
 ## License
 

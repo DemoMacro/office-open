@@ -1,7 +1,11 @@
 import PptxGenJS from "pptxgenjs";
 import { bench, describe } from "vite-plus/test";
 
-import { generatePresentation, generatePresentationSync } from "./generate";
+import {
+  generatePresentation,
+  generatePresentationStream,
+  generatePresentationSync,
+} from "./generate";
 import type { PresentationOptions, SlideChild } from "./shared";
 
 // Bench modes:
@@ -1382,6 +1386,90 @@ describe("PPTX: Large File (~100MB) — Mixed + async vs sync", () => {
         );
       }
       await pptx.write({ outputType: "nodebuffer" });
+    },
+    { iterations: 3 },
+  );
+});
+
+// ── Streaming benchmarks (default compression, fully drained) ──
+
+const drainStream = async (stream: ReadableStream<Uint8Array>): Promise<void> => {
+  const reader = stream.getReader();
+  for (;;) {
+    const { done } = await reader.read();
+    if (done) return;
+  }
+};
+
+describe("PPTX: Create + toStream", () => {
+  bench(
+    "ours default stream — simple (2 shapes + 1 img) + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(buildSimplePres()));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — styled shapes (20) + 1 img + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(buildStyledPres()));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — table (10x5) + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(buildTablePres()));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — full featured + 2 imgs + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(buildFullFeaturedPres()));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — 30 slides × 20 shapes + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(build30Slides20Shapes()));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — 30 slides × 10 images + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(build30Slides10Images()));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — 100x10 table + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(build100x10Table()));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — 50 slides full + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(build50SlidesFull()));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — mixed (40sl, 38img) + toStream",
+    async () => {
+      await drainStream(generatePresentationStream(buildMixed100MbPres()));
     },
     { iterations: 3 },
   );

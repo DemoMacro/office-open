@@ -2,7 +2,7 @@ import { writeXlsx as hucreWriteXlsx } from "hucre";
 import type { WriteSheet as HucreWriteSheet } from "hucre";
 import { bench, describe } from "vite-plus/test";
 
-import { generateWorkbook, generateWorkbookSync } from "./index";
+import { generateWorkbook, generateWorkbookStream, generateWorkbookSync } from "./index";
 
 // Bench modes:
 //   "ours default"  = XML DEFLATE level 1 (SuperFast); media split by type
@@ -499,6 +499,78 @@ describe("XLSX: Large Data — 100,000 rows × 20 columns", () => {
       await hucreWriteXlsx({
         sheets: [{ name: "Sheet1", rows: DATA_100K_ROWS }],
       });
+    },
+    { iterations: 3 },
+  );
+});
+
+// ── Streaming benchmarks (default compression, fully drained) ──
+//
+// Plain-data scenarios take the constant-memory path (row-chunked worksheet
+// XML + inline strings); scenarios with images fall back to the full-memory
+// stream via the canStreamWorkbook gate.
+
+const drainStream = async (stream: ReadableStream<Uint8Array>): Promise<void> => {
+  const reader = stream.getReader();
+  for (;;) {
+    const { done } = await reader.read();
+    if (done) return;
+  }
+};
+
+describe("XLSX: Create + toStream", () => {
+  bench(
+    "ours default stream — simple + toStream",
+    async () => {
+      await drainStream(generateWorkbookStream(SIMPLE_OPTS));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — styled rows (20) + toStream",
+    async () => {
+      await drainStream(generateWorkbookStream(STYLED_OPTS));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — table (10x5) + toStream",
+    async () => {
+      await drainStream(generateWorkbookStream(TABLE_OPTS));
+    },
+    { iterations: 50 },
+  );
+
+  bench(
+    "ours default stream — 2000 rows + 10 img + toStream",
+    async () => {
+      await drainStream(generateWorkbookStream(LARGE_ROWS_OPTS));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — 200x10 table + toStream",
+    async () => {
+      await drainStream(generateWorkbookStream(LARGE_TABLE_OPTS));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — 20 sheets × 100 rows + 20 img + toStream",
+    async () => {
+      await drainStream(generateWorkbookStream(LARGE_SHEETS_OPTS));
+    },
+    { iterations: 10 },
+  );
+
+  bench(
+    "ours default stream — 100k×20 data + toStream",
+    async () => {
+      await drainStream(generateWorkbookStream(DATA_100K_OPTS));
     },
     { iterations: 3 },
   );
