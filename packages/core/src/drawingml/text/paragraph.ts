@@ -16,7 +16,7 @@ import type { CustomDescriptor, ReadContext, WriteContext } from "../../descript
 import { emitPercent, parsePercent } from "../../util/converters";
 import { xsdTextAlign } from "../../util/mappings";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
-import { textRunDesc } from "./run";
+import { stringifyTextRun, textRunDesc } from "./run";
 import { runPropertiesDesc } from "./run-properties";
 import type { Mutable } from "./run-properties";
 import type {
@@ -330,7 +330,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
 
     // Simple text shorthand
     if (opts.text) {
-      parts.push(textRunDesc.stringify({ text: opts.text }, ctx) ?? "");
+      parts.push(stringifyTextRun(opts.text));
     }
 
     // Children (text runs + fields + line breaks; a bare string is shorthand
@@ -338,7 +338,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
     if (opts.children) {
       for (const child of opts.children) {
         if (typeof child === "string") {
-          parts.push(textRunDesc.stringify({ text: child }, ctx) ?? "");
+          parts.push(stringifyTextRun(child));
         } else if (isTextField(child)) {
           parts.push(stringifyTextField(child, ctx));
         } else if (isBreak(child)) {

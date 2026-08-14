@@ -47,8 +47,24 @@ export interface TextBodyOptions {
   vertical?: BodyPropertiesOptions["vertical"];
 }
 
-/** Collect top-level TextBodyOptions sugar into a partial BodyPropertiesOptions. */
-function bodyPropertiesSugar(opts: TextBodyOptions): Partial<BodyPropertiesOptions> {
+/**
+ * Collect top-level TextBodyOptions sugar into a partial BodyPropertiesOptions.
+ * Returns undefined when no sugar field is set — textBodyDesc runs once per
+ * shape and the common case has no sugar, so the guard avoids allocating the
+ * collector object (and the caller's emptiness check) on that path.
+ */
+function bodyPropertiesSugar(opts: TextBodyOptions): Partial<BodyPropertiesOptions> | undefined {
+  if (
+    opts.anchor === undefined &&
+    opts.autoFit === undefined &&
+    opts.columns === undefined &&
+    opts.columnSpacing === undefined &&
+    opts.margins === undefined &&
+    opts.wrap === undefined &&
+    opts.vertical === undefined
+  ) {
+    return undefined;
+  }
   const sugar: Partial<BodyPropertiesOptions> = {};
   if (opts.anchor !== undefined) sugar.anchor = opts.anchor;
   if (opts.autoFit === "normal") sugar.normAutofit = {};
@@ -71,7 +87,7 @@ export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
     // autoFit/columns/...) merges into bodyProperties; explicit bodyProperties
     // fields win.
     const sugar = bodyPropertiesSugar(opts);
-    if (opts.bodyProperties || Object.keys(sugar).length > 0) {
+    if (opts.bodyProperties || sugar !== undefined) {
       parts.push(createBodyProperties({ ...sugar, ...opts.bodyProperties }));
     } else {
       parts.push("<a:bodyPr/>");
