@@ -71,53 +71,37 @@ function isNumericIdMarker(value: unknown): value is { id: number } {
 }
 
 /**
- * Highest w:id among explicit bookmark + move-range start markers (`range`) and
- * explicit movedFrom/movedTo runs (`moveRun`) anywhere in the body tree
- * (paragraphs, tables, textboxes, SDTs, headers/footers nested in sections).
- * Seeds the markup id allocators so `{ bookmark }` / `{ moveFrom }` / `{ moveTo }`
- * sugars never collide with ids the caller already assigned. Comment ids live in
- * their own namespace (comments.nextId) and are intentionally excluded.
+ * Single preflight scan of the full Options tree. Collects everything that
+ * must be known before stringify starts: the max explicit markup ids (seeding
+ * the `{ bookmark }` / `{ moveFrom }` / `{ moveTo }` sugar allocators so they
+ * never collide with caller-assigned ids) and whether any `{ comment }` sugar
+ * appears — the document→comments relationship must exist whenever
+ * comments.xml will be generated, and sugar entries are only registered
+ * during stringify, after the constructor wires relationships. Every
+ * `{ comment }` always stringifies, so the prediction matches the entries
+ * actually registered.
  */
-function collectMaxMarkupIds(value: unknown, acc: { range: number; moveRun: number }): void {
+interface DocumentTreeScan {
+  maxRangeId: number;
+  maxMoveRunId: number;
+  hasCommentSugar: boolean;
+}
+
+function scanDocumentTree(value: unknown, acc: DocumentTreeScan): void {
   if (value === null || value === undefined || typeof value !== "object") return;
   if (value instanceof Uint8Array || value instanceof Date) return;
   if (Array.isArray(value)) {
-    for (const item of value) collectMaxMarkupIds(item, acc);
+    for (const item of value) scanDocumentTree(item, acc);
     return;
   }
   const obj = value as Record<string, unknown>;
   const rangeMarker = obj.bookmarkStart ?? obj.moveFromRangeStart ?? obj.moveToRangeStart;
-  if (isNumericIdMarker(rangeMarker) && rangeMarker.id > acc.range) acc.range = rangeMarker.id;
+  if (isNumericIdMarker(rangeMarker) && rangeMarker.id > acc.maxRangeId)
+    acc.maxRangeId = rangeMarker.id;
   const moveRun = obj.movedFrom ?? obj.movedTo;
-  if (isNumericIdMarker(moveRun) && moveRun.id > acc.moveRun) acc.moveRun = moveRun.id;
-  for (const key of Object.keys(obj)) collectMaxMarkupIds(obj[key], acc);
-}
-
-/**
- * Whether any `{ comment }` sugar child appears anywhere in the body tree
- * (paragraphs, tables, textboxes, SDTs, headers/footers nested in sections).
- * The document→comments relationship must exist whenever comments.xml will be
- * generated; since sugar entries are registered during stringify — after the
- * constructor wires relationships — this pre-scan predicts them so the part and
- * its relationship stay in sync (OPC consistency). Every `{ comment }` always
- * stringifies, so the prediction matches the entries actually registered.
- */
-function bodyContainsCommentSugar(value: unknown): boolean {
-  if (value === null || value === undefined) return false;
-  if (typeof value !== "object") return false;
-  if (value instanceof Uint8Array || value instanceof Date) return false;
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      if (bodyContainsCommentSugar(item)) return true;
-    }
-    return false;
-  }
-  const obj = value as Record<string, unknown>;
-  if (typeof obj.comment === "object" && obj.comment !== null) return true;
-  for (const key of Object.keys(obj)) {
-    if (bodyContainsCommentSugar(obj[key])) return true;
-  }
-  return false;
+  if (isNumericIdMarker(moveRun) && moveRun.id > acc.maxMoveRunId) acc.maxMoveRunId = moveRun.id;
+  if (typeof obj.comment === "object" && obj.comment !== null) acc.hasCommentSugar = true;
+  for (const key of Object.keys(obj)) scanDocumentTree(obj[key], acc);
 }
 
 /** Interface for document view wrappers — provides relationships access. */
@@ -253,6 +237,9 @@ export class DocxWriteContext implements WriteContext {
   // --- Original input preserved for descriptor usage ---
   declare public _options: DocumentOptions;
 
+  /** Preflight result: does the body tree carry any `{ comment }` sugar? */
+  declare private _hasCommentSugar: boolean;
+
   constructor(options: DocumentOptions) {
     this._options = options;
 
@@ -263,11 +250,12 @@ export class DocxWriteContext implements WriteContext {
       entries: [],
       nextId: maxCommentId(options.comments?.children) + 1,
     };
-    const markupSeed = { range: -1, moveRun: -1 };
-    collectMaxMarkupIds(options.sections, markupSeed);
+    const scan: DocumentTreeScan = { maxRangeId: -1, maxMoveRunId: -1, hasCommentSugar: false };
+    scanDocumentTree(options.sections, scan);
+    this._hasCommentSugar = scan.hasCommentSugar;
     this.markupIds = {
-      rangeNext: markupSeed.range + 1,
-      moveRunNext: markupSeed.moveRun + 1,
+      rangeNext: scan.maxRangeId + 1,
+      moveRunNext: scan.maxMoveRunId + 1,
     };
     this.fileRelationships = buildRootRelationships("word/document.xml", true);
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
@@ -552,10 +540,7 @@ export class DocxWriteContext implements WriteContext {
     // produces an orphan comments.xml that Word rejects as an OPC violation
     // (empty part with no [Content_Types] Override when content types are
     // passed through from the source on round-trip).
-    if (
-      this._options.comments?.children?.length ||
-      bodyContainsCommentSugar(this._options.sections)
-    ) {
+    if (this._options.comments?.children?.length || this._hasCommentSugar) {
       this.document.relationships.addRelationship(
         this._currentRelationshipId++,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
