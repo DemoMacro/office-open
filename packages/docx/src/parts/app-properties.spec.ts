@@ -124,3 +124,20 @@ describe("appPropertiesDesc round-trip", () => {
     expect(result.company).toBe('A <B> & "C"');
   });
 });
+
+describe("appPropertiesDesc vector round-trip", () => {
+  it("round-trips HeadingPairs and TitlesOfParts", () => {
+    const result = roundTrip({
+      headingPairs: [
+        { name: "Theme", count: 1 },
+        { name: "Slide Titles", count: 2 },
+      ],
+      titlesOfParts: ["Office Theme", "Title Slide", "Content Slide"],
+    });
+    expect(result.headingPairs).toEqual([
+      { name: "Theme", count: 1 },
+      { name: "Slide Titles", count: 2 },
+    ]);
+    expect(result.titlesOfParts).toEqual(["Office Theme", "Title Slide", "Content Slide"]);
+  });
+});

@@ -16,12 +16,22 @@ export {
   appPropertiesDesc,
   type AppPropertiesOptions,
   type AppPropertiesInput,
+  type HeadingPairOptions,
 } from "./app-properties";
 export {
   customPropertiesDesc,
   type CustomPropertyOptions,
   type CustomPropertiesInput,
 } from "./custom-properties";
+
+// Variant value types (vt:*) shared by the docProps parts
+export {
+  parseVariantValue,
+  stringifyVariantValue,
+  stringifyStringVector,
+  parseVector,
+  type VariantValue,
+} from "./variant-types";
 
 // Output types
 export { convertOutput, OoxmlMimeType, type OutputByType, type OutputType } from "./output";

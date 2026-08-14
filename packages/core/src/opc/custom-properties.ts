@@ -7,21 +7,23 @@
  * @module
  */
 
-import { attr, escapeXml, textOf } from "@office-open/xml";
+import { attr, escapeXml } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
+import { parseVariantValue, stringifyVariantValue, type VariantValue } from "./variant-types";
 
 /**
  * Options for a single custom property.
  *
  * @property name - The property name
- * @property value - The property value (as string)
+ * @property value - The property value; the JS type picks the vt:* element
+ * (string → lpwstr, number → i4/r8, boolean → bool, Date → filetime)
  */
 export interface CustomPropertyOptions {
   /** The property name */
   name: string;
   /** The property value (as string) */
-  value: string;
+  value: VariantValue;
 }
 
 /** Input shape for the custom-properties descriptor. */
@@ -41,7 +43,7 @@ export const customPropertiesDesc: CustomDescriptor<CustomPropertiesInput> = {
     for (const prop of opts.properties) {
       p.push(
         `<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${pid}" name="${escapeXml(prop.name)}">` +
-          `<vt:lpwstr>${escapeXml(prop.value)}</vt:lpwstr>` +
+          stringifyVariantValue(prop.value) +
           `</property>`,
       );
       pid++;
@@ -57,10 +59,12 @@ export const customPropertiesDesc: CustomDescriptor<CustomPropertiesInput> = {
       const name = attr(child, "name");
       if (!name) continue;
 
-      // Find the value element (vt:lpwstr, vt:lpstr, vt:i4, etc.)
+      // The value element is a single vt:* scalar (lpwstr, i4, bool, …)
       const valueEl = child.elements?.find((e) => e.name?.startsWith("vt:"));
-      const value = valueEl ? (textOf(valueEl) ?? "") : "";
-      properties.push({ name, value });
+      if (valueEl) {
+        const value = parseVariantValue(valueEl);
+        if (value !== undefined) properties.push({ name, value });
+      }
     }
     return { properties };
   },

@@ -14,16 +14,13 @@ import { escapeXml } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import { parseOnOff } from "../util/values";
+import { parseVector, stringifyStringVector } from "./variant-types";
 
 /** xsd:boolean lexical form — spec canonical form is "true"/"false" (Word's convention). */
 const xsdBoolean = (value: boolean): string => (value ? "true" : "false");
 
 /**
  * Options for docProps/app.xml extended properties (CT_Properties).
- *
- * Only the scalar (string/number/boolean) child elements are modelled.
- * Structured vector/blob elements (HeadingPairs, TitlesOfParts, HLinks,
- * DigSig, PresentationFormat) are intentionally omitted.
  *
  * Property order follows the CT_Properties xsd:all sequence so the
  * emitted XML matches the reference schema ordering.
@@ -73,6 +70,18 @@ export interface AppPropertiesOptions {
   sharedDoc?: boolean;
   /** Whether hyperlinks changed */
   hyperlinksChanged?: boolean;
+  /** Named part-group counters (Office always writes these) */
+  headingPairs?: HeadingPairOptions[];
+  /** Part titles (slide titles, sheet names, heading ranges) */
+  titlesOfParts?: string[];
+}
+
+/** One HeadingPairs entry: a group name plus the number of parts it covers. */
+export interface HeadingPairOptions {
+  /** Group name (e.g. "Fonts Used", "Theme", "Slide Titles") */
+  name: string;
+  /** Number of parts in the group */
+  count: number;
 }
 
 /** Subset of AppPropertiesOptions accepted by stringify. */
@@ -109,6 +118,22 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
     if (opts.mmClips !== undefined) p.push(`<MMClips>${opts.mmClips}</MMClips>`);
     if (opts.scaleCrop !== undefined)
       p.push(`<ScaleCrop>${xsdBoolean(opts.scaleCrop)}</ScaleCrop>`);
+    if (opts.headingPairs !== undefined && opts.headingPairs.length > 0) {
+      const items = opts.headingPairs
+        .map(
+          (pair) =>
+            `<vt:variant><vt:lpwstr>${escapeXml(pair.name)}</vt:lpwstr></vt:variant>` +
+            `<vt:variant><vt:i4>${pair.count}</vt:i4></vt:variant>`,
+        )
+        .join("");
+      p.push(
+        `<HeadingPairs><vt:vector size="${opts.headingPairs.length * 2}" baseType="variant">` +
+          `${items}</vt:vector></HeadingPairs>`,
+      );
+    }
+    if (opts.titlesOfParts !== undefined && opts.titlesOfParts.length > 0) {
+      p.push(`<TitlesOfParts>${stringifyStringVector(opts.titlesOfParts)}</TitlesOfParts>`);
+    }
     if (opts.linksUpToDate !== undefined)
       p.push(`<LinksUpToDate>${xsdBoolean(opts.linksUpToDate)}</LinksUpToDate>`);
     if (opts.charactersWithSpaces !== undefined)
@@ -174,6 +199,26 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
         case "MMClips":
           if (typeof text === "string") result.mmClips = Number(text);
           break;
+        case "HeadingPairs": {
+          const vector = child.elements?.find((e) => e.name === "vt:vector");
+          const flat = parseVector(vector);
+          const pairs: HeadingPairOptions[] = [];
+          for (let i = 0; i + 1 < flat.length; i += 2) {
+            const name = flat[i];
+            const count = flat[i + 1];
+            if (typeof name === "string" && typeof count === "number") {
+              pairs.push({ name, count });
+            }
+          }
+          if (pairs.length > 0) result.headingPairs = pairs;
+          break;
+        }
+        case "TitlesOfParts": {
+          const vector = child.elements?.find((e) => e.name === "vt:vector");
+          const titles = parseVector(vector).filter((v): v is string => typeof v === "string");
+          if (titles.length > 0) result.titlesOfParts = titles;
+          break;
+        }
         case "ScaleCrop":
           if (typeof text === "string") result.scaleCrop = parseOnOff(text) ?? false;
           break;
