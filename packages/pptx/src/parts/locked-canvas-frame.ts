@@ -1,13 +1,16 @@
-import type { NonVisualDrawingPropertiesOptions, UniversalMeasure } from "@office-open/core";
+import type {
+  NonVisualDrawingPropertiesOptions,
+  ShapePropertiesOptions,
+  UniversalMeasure,
+} from "@office-open/core";
 
-export interface LockedCanvasShapeOptions {
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  geometry?: string;
-  fill?: string;
-  /** Simple text content (a:r/a:t); locked-canvas shapes carry plain text only. */
+/**
+ * Locked-canvas child shape (a:sp). Shape properties (position/geometry/fill/
+ * outline/effects) come from the core CT_ShapeProperties model; text is plain
+ * string only — locked-canvas shapes carry no rich text.
+ */
+export interface LockedCanvasShapeOptions extends ShapePropertiesOptions {
+  /** Simple text content (a:r/a:t). */
   textBody?: string;
 }
 

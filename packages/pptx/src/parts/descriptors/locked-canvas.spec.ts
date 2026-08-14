@@ -90,15 +90,15 @@ describe("lockedCanvasDesc round-trip", () => {
     expect(child1.y).toBe(10);
     expect(child1.width).toBe(100);
     expect(child1.height).toBe(50);
-    expect(child1.geometry).toBe("ellipse");
-    expect(child1.fill).toBe("FF0000");
+    expect(child1.geometry).toEqual({ preset: "ellipse" });
+    expect(child1.fill).toEqual({ type: "solid", color: { value: "FF0000" } });
 
     expect(child2.x).toBe(120);
     expect(child2.y).toBe(10);
     expect(child2.width).toBe(80);
     expect(child2.height).toBe(40);
-    expect(child2.geometry).toBe("roundRect");
-    expect(child2.fill).toBe("00FF00");
+    expect(child2.geometry).toEqual({ preset: "roundRect" });
+    expect(child2.fill).toEqual({ type: "solid", color: { value: "00FF00" } });
   });
 
   it("round-trips without children", () => {
@@ -137,7 +137,7 @@ describe("lockedCanvasDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.children).toHaveLength(1);
-    expect(result.children?.[0]?.geometry).toBe("rect");
+    expect(result.children?.[0]?.geometry).toEqual({ preset: "rect" });
   });
 
   it("round-trips EMU conversion correctly", () => {

@@ -7,6 +7,7 @@
 import { convertToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
+import type { ReadContext } from "@office-open/core/descriptor";
 import {
   connectorLockingDesc,
   fillDesc,
@@ -17,12 +18,69 @@ import {
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
 import { attrBool, attrNum, findChild } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 import type { ConnectorOptions, LineShapeOptions } from "@shared/shape/line-shape";
 
 // ── ID counters ──
 
 let _nextLineId = 2;
 let _nextConnectorId = 2;
+
+// ── Shared endpoint-model spPr helpers (line + connector) ──
+
+/** a:xfrm + a:prstGeom for an endpoint-model line (flip encodes direction). */
+function stringifyLineXfrmGeometry(x1: number, y1: number, x2: number, y2: number): string {
+  const attrs = [x1 > x2 ? ' flipH="1"' : "", y1 > y2 ? ' flipV="1"' : ""].join("");
+  const offX = Math.min(x1, x2);
+  const offY = Math.min(y1, y2);
+  return (
+    `<a:xfrm${attrs}><a:off x="${offX}" y="${offY}"/>` +
+    `<a:ext cx="${Math.abs(x2 - x1)}" cy="${Math.abs(y2 - y1)}"/></a:xfrm>` +
+    `<a:prstGeom prst="line"><a:avLst/></a:prstGeom>`
+  );
+}
+
+/** Parse endpoints + fill/outline from p:spPr of a line/connector. */
+function parseLineSpPr(
+  spPr: Element,
+  ctx: ReadContext,
+): Pick<LineShapeOptions, "x1" | "y1" | "x2" | "y2" | "fill" | "outline"> {
+  const result: ReturnType<typeof parseLineSpPr> = {};
+
+  const xfrm = findChild(spPr, "a:xfrm");
+  if (xfrm) {
+    const off = findChild(xfrm, "a:off");
+    const ext = findChild(xfrm, "a:ext");
+    const flipH = attrBool(xfrm, "flipH");
+    const flipV = attrBool(xfrm, "flipV");
+
+    if (off && ext) {
+      const offX = attrNum(off, "x") ?? 0;
+      const offY = attrNum(off, "y") ?? 0;
+      const cx = attrNum(ext, "cx") ?? 0;
+      const cy = attrNum(ext, "cy") ?? 0;
+
+      result.x1 = flipH ? offX + cx : offX;
+      result.y1 = flipV ? offY + cy : offY;
+      result.x2 = flipH ? offX : offX + cx;
+      result.y2 = flipV ? offY : offY + cy;
+    }
+  }
+
+  // Only parse fill when a fill child exists — fillDesc returns
+  // { type: "none" } for an empty spPr, which would spuriously emit <a:noFill/>.
+  const fillChild =
+    findChild(spPr, "a:solidFill") ||
+    findChild(spPr, "a:noFill") ||
+    findChild(spPr, "a:gradFill") ||
+    findChild(spPr, "a:pattFill") ||
+    findChild(spPr, "a:blipFill");
+  if (fillChild) result.fill = parse(fillDesc, spPr, ctx);
+  const ln = findChild(spPr, "a:ln");
+  if (ln) result.outline = parse(outlineDesc, ln, ctx);
+
+  return result;
+}
 
 // ── LineShape (p:sp) descriptor ──
 
@@ -38,9 +96,6 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     const x2 = convertToEmu(opts.x2 ?? "100px");
     const y2 = convertToEmu(opts.y2 ?? "100px");
 
-    const offX = Math.min(x1, x2);
-    const offY = Math.min(y1, y2);
-
     const parts: string[] = [];
 
     // p:nvSpPr
@@ -50,18 +105,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
 
     // p:spPr
     const spPrParts: string[] = [];
-
-    // a:xfrm (with optional flip)
-    const xfrmAttrs: string[] = [];
-    if (x1 > x2) xfrmAttrs.push(' flipH="1"');
-    if (y1 > y2) xfrmAttrs.push(' flipV="1"');
-
-    spPrParts.push(
-      `<a:xfrm${xfrmAttrs.join("")}><a:off x="${offX}" y="${offY}"/><a:ext cx="${Math.abs(x2 - x1)}" cy="${Math.abs(y2 - y1)}"/></a:xfrm>`,
-    );
-
-    // PresetGeometry
-    spPrParts.push('<a:prstGeom prst="line"><a:avLst/></a:prstGeom>');
+    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2));
 
     // Fill
     if (opts.fill !== undefined) {
@@ -97,46 +141,9 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
       }
     }
 
-    // p:spPr → endpoints (off/ext + flip)
+    // p:spPr → endpoints (off/ext + flip) + fill/outline
     const spPr = findChild(el, "p:spPr");
-    if (spPr) {
-      const xfrm = findChild(spPr, "a:xfrm");
-      if (xfrm) {
-        const off = findChild(xfrm, "a:off");
-        const ext = findChild(xfrm, "a:ext");
-        const flipH = attrBool(xfrm, "flipH");
-        const flipV = attrBool(xfrm, "flipV");
-
-        if (off && ext) {
-          const offX = attrNum(off, "x") ?? 0;
-          const offY = attrNum(off, "y") ?? 0;
-          const cx = attrNum(ext, "cx") ?? 0;
-          const cy = attrNum(ext, "cy") ?? 0;
-
-          const x1 = flipH ? offX + cx : offX;
-          const y1 = flipV ? offY + cy : offY;
-          const x2 = flipH ? offX : offX + cx;
-          const y2 = flipV ? offY : offY + cy;
-
-          result.x1 = x1;
-          result.y1 = y1;
-          result.x2 = x2;
-          result.y2 = y2;
-        }
-      }
-
-      // Only parse fill when a fill child exists — fillDesc returns
-      // { type: "none" } for an empty spPr, which would spuriously emit <a:noFill/>.
-      const fillChild =
-        findChild(spPr, "a:solidFill") ||
-        findChild(spPr, "a:noFill") ||
-        findChild(spPr, "a:gradFill") ||
-        findChild(spPr, "a:pattFill") ||
-        findChild(spPr, "a:blipFill");
-      if (fillChild) result.fill = parse(fillDesc, spPr, _ctx);
-      const ln = findChild(spPr, "a:ln");
-      if (ln) result.outline = parse(outlineDesc, ln, _ctx);
-    }
+    if (spPr) Object.assign(result, parseLineSpPr(spPr, _ctx));
 
     return result as LineShapeOptions;
   },
@@ -155,9 +162,6 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     const y1 = convertToEmu(opts.y1 ?? 0);
     const x2 = convertToEmu(opts.x2 ?? "100px");
     const y2 = convertToEmu(opts.y2 ?? "100px");
-
-    const offX = Math.min(x1, x2);
-    const offY = Math.min(y1, y2);
 
     const parts: string[] = [];
 
@@ -182,17 +186,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
 
     // p:spPr
     const spPrParts: string[] = [];
-
-    // a:xfrm
-    const xfrmAttrs: string[] = [];
-    if (x1 > x2) xfrmAttrs.push(' flipH="1"');
-    if (y1 > y2) xfrmAttrs.push(' flipV="1"');
-
-    spPrParts.push(
-      `<a:xfrm${xfrmAttrs.join("")}><a:off x="${offX}" y="${offY}"/><a:ext cx="${Math.abs(x2 - x1)}" cy="${Math.abs(y2 - y1)}"/></a:xfrm>`,
-    );
-
-    spPrParts.push('<a:prstGeom prst="line"><a:avLst/></a:prstGeom>');
+    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2));
 
     // Fill
     if (opts.fill !== undefined) {
@@ -243,46 +237,9 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
       }
     }
 
-    // p:spPr → endpoints (off/ext + flip)
+    // p:spPr → endpoints (off/ext + flip) + fill/outline
     const spPr = findChild(el, "p:spPr");
-    if (spPr) {
-      const xfrm = findChild(spPr, "a:xfrm");
-      if (xfrm) {
-        const off = findChild(xfrm, "a:off");
-        const ext = findChild(xfrm, "a:ext");
-        const flipH = attrBool(xfrm, "flipH");
-        const flipV = attrBool(xfrm, "flipV");
-
-        if (off && ext) {
-          const offX = attrNum(off, "x") ?? 0;
-          const offY = attrNum(off, "y") ?? 0;
-          const cx = attrNum(ext, "cx") ?? 0;
-          const cy = attrNum(ext, "cy") ?? 0;
-
-          const x1 = flipH ? offX + cx : offX;
-          const y1 = flipV ? offY + cy : offY;
-          const x2 = flipH ? offX : offX + cx;
-          const y2 = flipV ? offY : offY + cy;
-
-          result.x1 = x1;
-          result.y1 = y1;
-          result.x2 = x2;
-          result.y2 = y2;
-        }
-      }
-
-      // Only parse fill when a fill child exists — fillDesc returns
-      // { type: "none" } for an empty spPr, which would spuriously emit <a:noFill/>.
-      const fillChild =
-        findChild(spPr, "a:solidFill") ||
-        findChild(spPr, "a:noFill") ||
-        findChild(spPr, "a:gradFill") ||
-        findChild(spPr, "a:pattFill") ||
-        findChild(spPr, "a:blipFill");
-      if (fillChild) result.fill = parse(fillDesc, spPr, _ctx);
-      const ln = findChild(spPr, "a:ln");
-      if (ln) result.outline = parse(outlineDesc, ln, _ctx);
-    }
+    if (spPr) Object.assign(result, parseLineSpPr(spPr, _ctx));
 
     return result as ConnectorOptions;
   },

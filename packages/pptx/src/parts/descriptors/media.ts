@@ -7,14 +7,15 @@
  * @module
  */
 
-import { convertToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
+  shapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
 import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
 import type { AudioFrameOptions, AudioType } from "@shared/media/audio-frame";
+import type { MediaFrameBaseOptions } from "@shared/media/media-frame-base";
 import type { PosterType, VideoFrameOptions, VideoType } from "@shared/media/video-frame";
 
 import { readPositionFromXfrm } from "./shape";
@@ -34,16 +35,11 @@ const AUDIO_EXT_URI = "{CF1602FD-DB20-4165-A070-5F299619DA56}";
 export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
+  stringify(opts, ctx) {
     const id = opts.id ?? _nextVideoId++;
     const name = opts.name ?? `Video ${id}`;
     const mediaFileName = `${name.replace(/\s+/g, "_")}.${opts.type ?? "mp4"}`;
     const posterFileName = `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`;
-
-    const x = convertToEmu(opts.x ?? 0);
-    const y = convertToEmu(opts.y ?? 0);
-    const w = convertToEmu(opts.width ?? 0);
-    const h = convertToEmu(opts.height ?? 0);
 
     const parts: string[] = [];
 
@@ -63,10 +59,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     );
 
     // p:spPr
-    parts.push(
-      `<p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
-        `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>`,
-    );
+    parts.push(stringifyMediaSpPr(opts, ctx));
 
     return `<p:pic>${parts.join("")}</p:pic>`;
   },
@@ -135,15 +128,10 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
 export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
+  stringify(opts, ctx) {
     const id = opts.id ?? _nextAudioId++;
     const name = opts.name ?? `Audio ${id}`;
     const mediaFileName = `${name.replace(/\s+/g, "_")}.${opts.type ?? "mp3"}`;
-
-    const x = convertToEmu(opts.x ?? 0);
-    const y = convertToEmu(opts.y ?? 0);
-    const w = convertToEmu(opts.width ?? 0);
-    const h = convertToEmu(opts.height ?? 0);
 
     const parts: string[] = [];
 
@@ -160,10 +148,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     parts.push(`<p:blipFill><a:stretch><a:fillRect/></a:stretch></p:blipFill>`);
 
     // p:spPr
-    parts.push(
-      `<p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
-        `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>`,
-    );
+    parts.push(stringifyMediaSpPr(opts, ctx));
 
     return `<p:pic>${parts.join("")}</p:pic>`;
   },
@@ -211,6 +196,24 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
 };
 
 // ── Helpers ──
+
+/** p:spPr for a media frame: position/size + rect geometry (picture precedent). */
+function stringifyMediaSpPr(
+  opts: Pick<MediaFrameBaseOptions, "x" | "y" | "width" | "height">,
+  ctx: Parameters<typeof shapePropertiesDesc.stringify>[1],
+): string {
+  const content = shapePropertiesDesc.stringify(
+    {
+      x: opts.x ?? 0,
+      y: opts.y ?? 0,
+      width: opts.width ?? 0,
+      height: opts.height ?? 0,
+      geometry: "rect",
+    },
+    ctx,
+  );
+  return `<p:spPr>${content ?? ""}</p:spPr>`;
+}
 
 function mediaTypeFromPath(path: string, kind: "video"): VideoType;
 function mediaTypeFromPath(path: string, kind: "audio"): AudioType;

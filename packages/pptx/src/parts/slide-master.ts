@@ -6,12 +6,12 @@ import type { ShapePropertiesOptions } from "@office-open/core/drawingml";
 import { createEffectList } from "@office-open/core/drawingml";
 import type { BackgroundOptions } from "@parts/background";
 import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
+import { stringifyShapeStyle } from "@parts/descriptors/shape";
 import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
 import type { ControlOptions } from "@parts/slide/slide";
 import { buildFill } from "@shared/drawingml/fill";
 import type { MasterChild } from "@shared/file";
 import type { PlaceholderDefinition } from "@shared/placeholder";
-import type { ShapeStyleOptions } from "@shared/shape/shape";
 import type { TransitionOptions } from "@shared/transition";
 
 import type { PptxWriteContext } from "../context";
@@ -166,35 +166,10 @@ function phSp(
   );
   const spPr = spPrContent ? `<p:spPr>${spPrContent}</p:spPr>` : "<p:spPr/>";
 
-  const styleXml = def.style ? stringifyPlaceholderStyle(def.style) : "";
+  const styleXml = def.style ? stringifyShapeStyle(def.style, ctx) : "";
   const bodyContent = def.textBody ? textBodyDesc.stringify(def.textBody, ctx) : defaultBody;
 
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr>${spPr}${styleXml}<p:txBody>${bodyContent}</p:txBody></p:sp>`;
-}
-
-function stringifyPlaceholderStyle(style: ShapeStyleOptions): string {
-  const parts: string[] = [];
-  if (style.lineReference) {
-    const c = style.lineReference.color ? `<a:srgbClr val="${style.lineReference.color}"/>` : "";
-    parts.push(`<a:lnRef idx="${style.lineReference.index}">${c}</a:lnRef>`);
-  }
-  if (style.fillReference) {
-    const c = style.fillReference.color ? `<a:srgbClr val="${style.fillReference.color}"/>` : "";
-    parts.push(`<a:fillRef idx="${style.fillReference.index}">${c}</a:fillRef>`);
-  }
-  if (style.effectReference) {
-    const c = style.effectReference.color
-      ? `<a:srgbClr val="${style.effectReference.color}"/>`
-      : "";
-    parts.push(`<a:effectRef idx="${style.effectReference.index}">${c}</a:effectRef>`);
-  }
-  if (style.fontReference) {
-    const c = style.fontReference.color
-      ? `<a:solidFill><a:srgbClr val="${style.fontReference.color}"/></a:solidFill>`
-      : "";
-    parts.push(`<a:fontRef idx="${style.fontReference.index}">${c}</a:fontRef>`);
-  }
-  return parts.length > 0 ? `<p:style>${parts.join("")}</p:style>` : "";
 }
 
 export const BODY_DEFAULT = `<a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p>`;

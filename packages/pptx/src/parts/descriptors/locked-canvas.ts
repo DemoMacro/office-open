@@ -11,8 +11,10 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
+  shapePropertiesDesc,
+  textBodyDesc,
 } from "@office-open/core/drawingml";
-import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
+import { attrNum, findChild } from "@office-open/xml";
 
 import type { LockedCanvasFrameOptions, LockedCanvasShapeOptions } from "../locked-canvas-frame";
 
@@ -26,7 +28,7 @@ let _nextCanvasShapeId = 2;
 export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
+  stringify(opts, ctx) {
     const id = opts.id ?? _nextLockedCanvasId++;
     const name = opts.name ?? `Locked Canvas ${id}`;
 
@@ -51,7 +53,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
     const grpSpPr =
       `<a:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/>` +
       `<a:chOff x="0" y="0"/><a:chExt cx="${cx}" cy="${cy}"/></a:xfrm></a:grpSpPr>`;
-    const canvasChildren = buildCanvasChildren(opts.children);
+    const canvasChildren = buildCanvasChildren(opts.children, ctx);
 
     parts.push(
       `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/lockedCanvas">` +
@@ -108,42 +110,10 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
         if (child.name !== "a:sp") continue;
         const shape: Partial<LockedCanvasShapeOptions> = {};
 
+        // Full CT_ShapeProperties round-trip (geometry/fill/outline/effects/…)
         const spPr = findChild(child, "a:spPr");
         if (spPr) {
-          const spXfrm = findChild(spPr, "a:xfrm");
-          if (spXfrm) {
-            const off = findChild(spXfrm, "a:off");
-            if (off) {
-              const x = attrNum(off, "x");
-              if (x !== undefined) shape.x = x;
-              const y = attrNum(off, "y");
-              if (y !== undefined) shape.y = y;
-            }
-            const ext = findChild(spXfrm, "a:ext");
-            if (ext) {
-              const cx = attrNum(ext, "cx");
-              if (cx !== undefined) shape.width = cx;
-              const cy = attrNum(ext, "cy");
-              if (cy !== undefined) shape.height = cy;
-            }
-          }
-
-          // geometry from a:prstGeom/@prst
-          const prstGeom = findChild(spPr, "a:prstGeom");
-          if (prstGeom) {
-            const prst = attr(prstGeom, "prst");
-            if (prst !== undefined) shape.geometry = prst;
-          }
-
-          // fill from a:solidFill/a:srgbClr/@val
-          const solidFill = findChild(spPr, "a:solidFill");
-          if (solidFill) {
-            const srgbClr = findChild(solidFill, "a:srgbClr");
-            if (srgbClr) {
-              const val = attr(srgbClr, "val");
-              if (val !== undefined) shape.fill = val;
-            }
-          }
+          Object.assign(shape, shapePropertiesDesc.parse(spPr, _ctx));
         }
 
         // textBody from a:txSp/a:txBody/a:p/a:r/a:t
@@ -165,38 +135,32 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
   },
 };
 
-function buildCanvasChildren(children: LockedCanvasShapeOptions[] | undefined): string {
+function buildCanvasChildren(
+  children: LockedCanvasShapeOptions[] | undefined,
+  ctx: Parameters<typeof shapePropertiesDesc.stringify>[1],
+): string {
   if (!children || children.length === 0) return "";
 
   const parts: string[] = [];
-  for (const opts of children) {
+  for (const { textBody, ...spPr } of children) {
     const id = _nextCanvasShapeId++;
-    const spParts: string[] = [];
-
-    // a:nvSpPr
-    spParts.push(`<a:nvSpPr><a:cNvPr id="${id}" name="Shape ${id}"/><a:cNvSpPr/></a:nvSpPr>`);
-
-    // a:spPr
-    const spPrParts: string[] = [];
-    const sx = convertToEmu(opts.x ?? 0);
-    const sy = convertToEmu(opts.y ?? 0);
-    const scx = convertToEmu(opts.width ?? 0);
-    const scy = convertToEmu(opts.height ?? 0);
-    spPrParts.push(`<a:xfrm><a:off x="${sx}" y="${sy}"/><a:ext cx="${scx}" cy="${scy}"/></a:xfrm>`);
-    spPrParts.push(`<a:prstGeom prst="${opts.geometry ?? "rect"}"><a:avLst/></a:prstGeom>`);
-    if (opts.fill) {
-      spPrParts.push(`<a:solidFill><a:srgbClr val="${opts.fill}"/></a:solidFill>`);
-    }
-    spParts.push(`<a:spPr>${spPrParts.join("")}</a:spPr>`);
-
-    // a:txSp > a:txBody > a:useSpRect
-    spParts.push(
-      `<a:txSp><a:txBody><a:bodyPr/><a:lstStyle/>` +
-        `<a:p>${opts.textBody ? `<a:r><a:t>${escapeXml(opts.textBody)}</a:t></a:r>` : ""}</a:p>` +
-        `</a:txBody><a:useSpRect/></a:txSp>`,
+    const spPrContent = shapePropertiesDesc.stringify(
+      { ...spPr, geometry: spPr.geometry ?? "rect" },
+      ctx,
     );
 
-    parts.push(`<a:sp>${spParts.join("")}</a:sp>`);
+    const txBodyContent = textBodyDesc.stringify(
+      textBody !== undefined ? { text: textBody } : {},
+      ctx,
+    );
+
+    parts.push(
+      `<a:sp>` +
+        `<a:nvSpPr><a:cNvPr id="${id}" name="Shape ${id}"/><a:cNvSpPr/></a:nvSpPr>` +
+        `<a:spPr>${spPrContent ?? ""}</a:spPr>` +
+        `<a:txSp><a:txBody>${txBodyContent ?? ""}</a:txBody><a:useSpRect/></a:txSp>` +
+        `</a:sp>`,
+    );
   }
 
   return parts.join("");

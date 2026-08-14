@@ -25,6 +25,8 @@ import {
   textBodyDesc,
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
+  createSolidFill,
+  stringifyColorChoice,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
@@ -67,7 +69,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
 
     // ── p:style ──
     if (opts.style) {
-      const styleXml = stringifyStyle(opts.style);
+      const styleXml = stringifyShapeStyle(opts.style, ctx);
       if (styleXml) parts.push(styleXml);
     }
 
@@ -351,36 +353,30 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
 
 // ── Shape helper: p:style ──
 
-function stringifyStyle(style: ShapeStyleOptions): string | undefined {
+/**
+ * Serialize p:style (CT_ShapeStyle). lnRef/fillRef/effectRef carry a bare
+ * EG_ColorChoice; fontRef wraps it in a:solidFill. Shared by the shape
+ * descriptor and the master placeholder emitter.
+ */
+export function stringifyShapeStyle(style: ShapeStyleOptions, ctx: WriteContext): string {
+  const ref = (
+    name: string,
+    { index, color }: { index: number; color?: string },
+    wrapSolidFill: boolean,
+  ): string => {
+    if (color === undefined) return `<${name} idx="${index}"/>`;
+    const colorChoice = wrapSolidFill
+      ? createSolidFill({ value: color })
+      : stringifyColorChoice({ value: color }, ctx);
+    return `<${name} idx="${index}">${colorChoice}</${name}>`;
+  };
+
   const parts: string[] = [];
-
-  if (style.lineReference) {
-    const colorChild = style.lineReference.color
-      ? `<a:srgbClr val="${style.lineReference.color}"/>`
-      : "";
-    parts.push(`<a:lnRef idx="${style.lineReference.index}">${colorChild}</a:lnRef>`);
-  }
-  if (style.fillReference) {
-    const colorChild = style.fillReference.color
-      ? `<a:srgbClr val="${style.fillReference.color}"/>`
-      : "";
-    parts.push(`<a:fillRef idx="${style.fillReference.index}">${colorChild}</a:fillRef>`);
-  }
-  if (style.effectReference) {
-    const colorChild = style.effectReference.color
-      ? `<a:srgbClr val="${style.effectReference.color}"/>`
-      : "";
-    parts.push(`<a:effectRef idx="${style.effectReference.index}">${colorChild}</a:effectRef>`);
-  }
-  if (style.fontReference) {
-    const colorChild = style.fontReference.color
-      ? `<a:solidFill><a:srgbClr val="${style.fontReference.color}"/></a:solidFill>`
-      : "";
-    parts.push(`<a:fontRef idx="${style.fontReference.index}">${colorChild}</a:fontRef>`);
-  }
-
-  if (parts.length === 0) return undefined;
-  return `<p:style>${parts.join("")}</p:style>`;
+  if (style.lineReference) parts.push(ref("a:lnRef", style.lineReference, false));
+  if (style.fillReference) parts.push(ref("a:fillRef", style.fillReference, false));
+  if (style.effectReference) parts.push(ref("a:effectRef", style.effectReference, false));
+  if (style.fontReference) parts.push(ref("a:fontRef", style.fontReference, true));
+  return parts.length > 0 ? `<p:style>${parts.join("")}</p:style>` : "";
 }
 
 // ── Picture helpers ──
