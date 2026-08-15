@@ -29,7 +29,8 @@ function nextPlaceholder(xml: string, from: number): [number, number] | undefine
       pos = open + 1;
       continue;
     }
-    if (xml.indexOf("{", open + 1) < close) {
+    const nextOpen = xml.indexOf("{", open + 1);
+    if (nextOpen !== -1 && nextOpen < close) {
       // Nested "{" inside the candidate key — the regex would restart there.
       pos = open + 1;
       continue;
@@ -283,12 +284,7 @@ export function replaceMediaPlaceholders(
   mediaData: { fileName: string }[],
   offset: number,
 ): string {
-  if (mediaData.length === 0) return xml;
-  const map = new Map<string, string>();
-  for (const [i, item] of mediaData.entries()) {
-    map.set(`media:${item.fileName}`, formatId(offset, i, "rId"));
-  }
-  return replacePlaceholders(xml, map);
+  return replacePrefixedPlaceholders(xml, mediaData, offset, "media:");
 }
 
 /** Replace `{video:fileName}` placeholders with relationship IDs. */
@@ -297,10 +293,28 @@ export function replaceVideoPlaceholders(
   mediaData: { fileName: string }[],
   offset: number,
 ): string {
+  return replacePrefixedPlaceholders(xml, mediaData, offset, "video:");
+}
+
+/** Replace `{audio:fileName}` placeholders with relationship IDs. */
+export function replaceAudioPlaceholders(
+  xml: string,
+  mediaData: { fileName: string }[],
+  offset: number,
+): string {
+  return replacePrefixedPlaceholders(xml, mediaData, offset, "audio:");
+}
+
+function replacePrefixedPlaceholders(
+  xml: string,
+  mediaData: { fileName: string }[],
+  offset: number,
+  prefix: string,
+): string {
   if (mediaData.length === 0) return xml;
   const map = new Map<string, string>();
   for (const [i, item] of mediaData.entries()) {
-    map.set(`video:${item.fileName}`, formatId(offset, i, "rId"));
+    map.set(`${prefix}${item.fileName}`, formatId(offset, i, "rId"));
   }
   return replacePlaceholders(xml, map);
 }
@@ -319,6 +333,14 @@ export function getVideoRefs(
   mediaArray: { fileName: string }[],
 ): { fileName: string }[] {
   return collectPrefixedRefs(xml, "video:", mediaArray);
+}
+
+/** Collect media items referenced by `{audio:...}` placeholders in XML. */
+export function getAudioRefs(
+  xml: string,
+  mediaArray: { fileName: string }[],
+): { fileName: string }[] {
+  return collectPrefixedRefs(xml, "audio:", mediaArray);
 }
 
 function collectPrefixedRefs(

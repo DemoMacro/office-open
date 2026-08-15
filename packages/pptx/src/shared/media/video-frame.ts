@@ -9,4 +9,6 @@ export interface VideoFrameOptions extends MediaFrameBaseOptions {
   type: VideoType;
   poster?: DataType;
   posterType?: PosterType;
+  /** MIME content type of the linked video (CT_VideoFile @contentType) */
+  contentType?: string;
 }

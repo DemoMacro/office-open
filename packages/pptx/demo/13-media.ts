@@ -76,6 +76,48 @@ const options: PresentationOptions = {
         },
       ],
     },
+    // Slide 2: audio variants — linked file with contentType, embedded WAV, CD track
+    {
+      children: [
+        {
+          audio: {
+            id: 200,
+            x: "1.3cm",
+            y: "2.6cm",
+            width: "2cm",
+            height: "2cm",
+            data: videoData,
+            type: "mp3",
+            name: "Narration",
+            contentType: "audio/mpeg",
+          },
+        },
+        {
+          audio: {
+            id: 201,
+            x: "4cm",
+            y: "2.6cm",
+            width: "2cm",
+            height: "2cm",
+            data: videoData,
+            type: "wav",
+            name: "Beep",
+            audioFileName: "beep.wav",
+          },
+        },
+        {
+          audio: {
+            id: 202,
+            x: "6.7cm",
+            y: "2.6cm",
+            width: "2cm",
+            height: "2cm",
+            name: "CD Clip",
+            cd: { start: { track: 1, time: 30 }, end: { track: 3, time: 245 } },
+          },
+        },
+      ],
+    },
   ],
 };
 

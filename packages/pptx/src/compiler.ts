@@ -22,9 +22,11 @@ import {
   compileMapping,
   customPropertiesDesc,
   getReferencedMedia,
+  getAudioRefs,
   getMediaRefs,
   getVideoRefs,
   hasPlaceholders,
+  replaceAudioPlaceholders,
   replaceChartPlaceholders,
   replaceHyperlinkPlaceholders,
   replaceImagePlaceholders,
@@ -999,17 +1001,27 @@ export function compilePresentation(
 
       // Media (video/audio)
       const slideMediaRefs = getMediaRefs(replacedSlideXml, media.array);
+      const slideAudioRefs = getAudioRefs(replacedSlideXml, media.array);
       const slideVideoRefs = getVideoRefs(replacedSlideXml, media.array);
-      if (slideMediaRefs.length > 0 || slideVideoRefs.length > 0) {
+      if (slideMediaRefs.length > 0 || slideAudioRefs.length > 0 || slideVideoRefs.length > 0) {
         const mediaOffset = currentSlideRels.relationshipCount + 1;
-        const videoOffset = mediaOffset + slideMediaRefs.length;
+        const audioOffset = mediaOffset + slideMediaRefs.length;
+        const videoOffset = audioOffset + slideAudioRefs.length;
         replacedSlideXml = replaceMediaPlaceholders(replacedSlideXml, slideMediaRefs, mediaOffset);
+        replacedSlideXml = replaceAudioPlaceholders(replacedSlideXml, slideAudioRefs, audioOffset);
         replacedSlideXml = replaceVideoPlaceholders(replacedSlideXml, slideVideoRefs, videoOffset);
         for (const [mi, mediaRef] of slideMediaRefs.entries()) {
           currentSlideRels.addRelationship(
             mediaOffset + mi,
             "http://schemas.microsoft.com/office/2007/relationships/media",
             `../media/${mediaRef.fileName}`,
+          );
+        }
+        for (const [ai, audioRef] of slideAudioRefs.entries()) {
+          currentSlideRels.addRelationship(
+            audioOffset + ai,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio",
+            `../media/${audioRef.fileName}`,
           );
         }
         for (const [vi, videoRef] of slideVideoRefs.entries()) {

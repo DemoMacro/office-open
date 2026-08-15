@@ -154,7 +154,12 @@ function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPart
         chartsSet.add(path);
       } else if (type.includes("/diagramData")) {
         diagramDataSet.add(path);
-      } else if (type.includes("/image") || type.includes("/video") || type.includes("/media")) {
+      } else if (
+        type.includes("/image") ||
+        type.includes("/video") ||
+        type.includes("/audio") ||
+        type.includes("/media")
+      ) {
         mediaSet.add(path);
       }
     }

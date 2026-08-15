@@ -83,7 +83,12 @@ export { Media } from "@office-open/core";
 export { createTransformation, type MediaTransformation } from "./media/media";
 export type { MediaData, MediaDataTransformation } from "./media/data";
 export type { VideoFrameOptions, VideoType, PosterType } from "./media/video-frame";
-export type { AudioFrameOptions, AudioType } from "./media/audio-frame";
+export type {
+  AudioFrameOptions,
+  AudioType,
+  AudioCdOptions,
+  AudioCdTimeOptions,
+} from "./media/audio-frame";
 
 // Table
 export type { TableOptions } from "./table/table-frame";

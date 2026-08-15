@@ -132,6 +132,15 @@ function detectMediaType(el: XmlElement): "video" | "audio" | undefined {
   const nvPr = findChild(nvPicPr, "p:nvPr");
   if (!nvPr) return undefined;
 
+  // EG_Media elements come first — plain a:videoFile/a:audioFile/etc. without
+  // the p14:media extension (pre-2010 files) still identify the frame kind.
+  for (const name of ["a:audioCd", "a:wavAudioFile", "a:audioFile"]) {
+    if (findChild(nvPr, name)) return "audio";
+  }
+  for (const name of ["a:videoFile", "a:quickTimeFile"]) {
+    if (findChild(nvPr, name)) return "video";
+  }
+
   const extLst = findChild(nvPr, "p:extLst");
   if (!extLst) return undefined;
 

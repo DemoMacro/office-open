@@ -50,6 +50,7 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideSyncProperties"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio"
   | "http://schemas.microsoft.com/office/2007/relationships/media"
   // SpreadsheetML specific
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
