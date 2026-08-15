@@ -91,6 +91,49 @@ describe("parseWorkbook round-trip", () => {
     // the externalLink XML body — this asserts the rels file is actually read.
     expect(parsed.externalLinks![0]?.externalBook?.target).toBe("external/source.xlsx");
   });
+
+  it("round-trips sheet-view selection, pivotSelection, and cell smart tags", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "S",
+          rows: [{ cells: [{ reference: "A1", value: 1 }] }],
+          selection: { activeCell: "B2", sqref: "B2" },
+          pivotSelection: {
+            axis: "axisRow",
+            activeRow: 1,
+            count: 1,
+            pivotArea: { type: "normal", outline: true },
+          },
+          smartTags: [
+            {
+              reference: "A1",
+              smartTags: [
+                {
+                  type: 0,
+                  xmlBased: true,
+                  properties: [{ key: "urn:schemas-company:stock", val: "FIN" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const parsed = await roundTrip(opts);
+    const sheet = parsed.worksheets![0]!;
+    expect(sheet.selection).toMatchObject({ activeCell: "B2", sqref: "B2" });
+    expect(sheet.pivotSelection).toMatchObject({ axis: "axisRow", activeRow: 1, count: 1 });
+    expect(sheet.pivotSelection!.pivotArea).toMatchObject({ type: "normal" });
+    expect(sheet.smartTags).toHaveLength(1);
+    expect(sheet.smartTags![0]).toMatchObject({ reference: "A1" });
+    expect(sheet.smartTags![0]!.smartTags[0]).toMatchObject({ type: 0, xmlBased: true });
+    expect(sheet.smartTags![0]!.smartTags[0]!.properties![0]).toEqual({
+      key: "urn:schemas-company:stock",
+      val: "FIN",
+    });
+  });
 });
 
 describe("theme round-trip", () => {

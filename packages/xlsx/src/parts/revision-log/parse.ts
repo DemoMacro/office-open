@@ -19,21 +19,44 @@ import type {
   RevisionFormattingOptions,
   RevisionInsertSheetOptions,
   RevisionMoveOptions,
+  RevisionNestedChild,
   RevisionRowColumnOptions,
   RevisionSheetRenameOptions,
+  RevisionUndoOptions,
   RowColumnAction,
 } from "./types";
 
 // ── Per-revision parse ──
 
-/** Serializes an element's children back to a raw XML string (for rawXml passthrough). */
-function childrenToXml(el: XmlElement | null): string {
-  if (!el || !el.elements) return "";
-  // Re-emit element children verbatim via their name + attributes + text + nested.
-  return el.elements
-    .filter((c) => c.type === "element")
-    .map((c) => elementToXml(c as XmlElement))
-    .join("");
+/** Parses the shared undo/rcc/rfmt nested choice group on rrc/rm. */
+function parseNestedChildren(el: XmlElement): RevisionNestedChild[] {
+  const children: RevisionNestedChild[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "undo") {
+      const undo: Partial<RevisionUndoOptions> = {
+        index: Number(attr(child, "index") ?? "0"),
+        expression: (attr(child, "exp") ?? "ref") as RevisionUndoOptions["expression"],
+        dr: attr(child, "dr") ?? "",
+      };
+      readBool(child, "ref3D", (v) => (undo.ref3D = v));
+      readBool(child, "array", (v) => (undo.array = v));
+      readBool(child, "v", (v) => (undo.v = v));
+      readBool(child, "nf", (v) => (undo.nf = v));
+      readBool(child, "cs", (v) => (undo.cs = v));
+      readStr(child, "dn", (v) => (undo.dn = v));
+      readStr(child, "r", (v) => (undo.r = v));
+      readNum(child, "sId", (v) => (undo.sId = v));
+      children.push({ kind: "undo", data: undo as RevisionUndoOptions });
+    } else if (child.name === "rcc") {
+      const nested = parseEntry(child);
+      if (nested?.type === "cellChange") children.push({ kind: "cellChange", data: nested.data });
+    } else if (child.name === "rfmt") {
+      const nested = parseEntry(child);
+      if (nested?.type === "formatting") children.push({ kind: "formatting", data: nested.data });
+    }
+  }
+  return children;
 }
 
 function elementToXml(el: XmlElement): string {
@@ -82,8 +105,8 @@ export function parseEntry(el: XmlElement): RevisionEntry | undefined {
       if (undo) d.undo = undo;
       const rejected = parseBool(el, "ra");
       if (rejected) d.rejected = rejected;
-      const childrenXml = childrenToXml(el);
-      if (childrenXml) d.childrenXml = childrenXml;
+      const children = parseNestedChildren(el);
+      if (children.length > 0) d.children = children;
       return { type: "rowColumn", data: d as RevisionRowColumnOptions };
     }
     case "rm": {
@@ -99,8 +122,8 @@ export function parseEntry(el: XmlElement): RevisionEntry | undefined {
       if (undo) d.undo = undo;
       const rejected = parseBool(el, "ra");
       if (rejected) d.rejected = rejected;
-      const childrenXml = childrenToXml(el);
-      if (childrenXml) d.childrenXml = childrenXml;
+      const children = parseNestedChildren(el);
+      if (children.length > 0) d.children = children;
       return { type: "move", data: d as RevisionMoveOptions };
     }
     case "rcv":

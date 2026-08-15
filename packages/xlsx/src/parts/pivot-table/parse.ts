@@ -43,6 +43,11 @@ export function parsePivotArea(el: XmlElement): Partial<PivotAreaOptions> {
       if (parseOnOff(attr(rEl, "byPosition"))) ref.byPosition = true;
       if (parseOnOff(attr(rEl, "relative"))) ref.relative = true;
       if (parseOnOff(attr(rEl, "defaultSubtotal"))) ref.defaultSubtotal = true;
+      if (parseOnOff(attr(rEl, "sumSubtotal"))) ref.sumSubtotal = true;
+      if (parseOnOff(attr(rEl, "avgSubtotal"))) ref.avgSubtotal = true;
+      if (parseOnOff(attr(rEl, "countASubtotal"))) ref.countASubtotal = true;
+      if (parseOnOff(attr(rEl, "maxSubtotal"))) ref.maxSubtotal = true;
+      if (parseOnOff(attr(rEl, "minSubtotal"))) ref.minSubtotal = true;
       const xArr: number[] = [];
       for (const xEl of rEl.elements ?? []) {
         if (xEl.name === "x") {

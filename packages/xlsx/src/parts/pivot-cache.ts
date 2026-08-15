@@ -12,7 +12,7 @@ import type { CustomDescriptor, WriteContext } from "@office-open/core/descripto
 import { escapeXml, findChild, attr, attrNum } from "@office-open/xml";
 
 import type { PivotCacheDefinitionOptions } from "./pivot/pivot-utils";
-import type { PivotSourceData } from "./pivot/pivot-utils";
+import type { PivotSourceData, TupleOptions } from "./pivot/pivot-utils";
 import { collectUniqueValues, isNumericField } from "./pivot/pivot-utils";
 
 // ── Types ──
@@ -22,6 +22,7 @@ export type PivotCacheRecordEntry =
   | { type: "string"; v: number } // <x v="idx"/> — shared-items index
   | { type: "number"; v: number } // <n v="num"/>
   | { type: "date"; v: string } // <d v="date"/>
+  | { type: "error"; v: string } // <e v="#DIV/0!"/> — cached error
   | { type: "missing" }; // <m/>
 
 export interface PivotCacheRecordsDescriptorOptions {
@@ -65,6 +66,8 @@ export interface PivotCacheDefParseResult {
   upgradeOnRefresh?: boolean;
   supportSubquery?: boolean;
   supportAdvancedDrill?: boolean;
+  refreshOnLoad?: boolean;
+  tupleCache?: boolean;
   recordCount?: number;
   sourceType?: string;
   worksheetSource?: PivotCacheDefWorksheetSource;
@@ -113,6 +116,8 @@ export const pivotCacheDefDesc: CustomDescriptor<
     if (parseOnOff(attr(el, "upgradeOnRefresh"))) result.upgradeOnRefresh = true;
     if (parseOnOff(attr(el, "supportSubquery"))) result.supportSubquery = true;
     if (parseOnOff(attr(el, "supportAdvancedDrill"))) result.supportAdvancedDrill = true;
+    if (parseOnOff(attr(el, "refreshOnLoad"))) result.refreshOnLoad = true;
+    if (parseOnOff(attr(el, "tupleCache"))) result.tupleCache = true;
     const recordCount = attrNum(el, "recordCount");
     if (recordCount !== undefined) result.recordCount = recordCount;
 
@@ -177,6 +182,8 @@ export const pivotCacheRecordsDesc: CustomDescriptor<
           entry = { type: "number", v: v !== undefined ? Number(v) : 0 };
         } else if (fEl.name === "d") {
           entry = { type: "date", v: attr(fEl, "v") ?? "" };
+        } else if (fEl.name === "e") {
+          entry = { type: "error", v: attr(fEl, "v") ?? "" };
         } else if (fEl.name === "m") {
           entry = { type: "missing" };
         } else {
@@ -225,6 +232,8 @@ function stringifyPivotCacheDef(
     if (cd.upgradeOnRefresh) rootAttrs.push('upgradeOnRefresh="1"');
     if (cd.supportSubquery) rootAttrs.push('supportSubquery="1"');
     if (cd.supportAdvancedDrill) rootAttrs.push('supportAdvancedDrill="1"');
+    if (cd.refreshOnLoad) rootAttrs.push('refreshOnLoad="1"');
+    if (cd.tupleCache) rootAttrs.push('tupleCache="1"');
   }
 
   p.push(`<pivotCacheDefinition ${rootAttrs.join(" ")}>`);
@@ -309,6 +318,7 @@ function stringifyPivotCacheDef(
           cfExtraAttrs.push(`propertyName="${escapeXml(cfOverride.propertyName)}"`);
         if (cfOverride.serverField) cfExtraAttrs.push('serverField="1"');
         if (cfOverride.uniqueList) cfExtraAttrs.push('uniqueList="1"');
+        if (cfOverride.sqlType !== undefined) cfExtraAttrs.push(`sqlType="${cfOverride.sqlType}"`);
         if (cfOverride.containsMixedTypes) siExtraAttrs.push('containsMixedTypes="1"');
         if (cfOverride.containsNonDate) siExtraAttrs.push('containsNonDate="1"');
         if (cfOverride.longText) siExtraAttrs.push('longText="1"');
@@ -334,7 +344,19 @@ function stringifyPivotCacheDef(
         if (v === null) hasMissing = true;
       }
       const siAttrs: string[] = [`count="${uniqueVals.length}"`];
-      if (hasDate) siAttrs.push('containsDate="1"');
+      if (hasDate) {
+        siAttrs.push('containsDate="1"');
+        let minD: Date | undefined;
+        let maxD: Date | undefined;
+        for (const v of uniqueVals) {
+          if (!(v instanceof Date)) continue;
+          if (!minD || v < minD) minD = v;
+          if (!maxD || v > maxD) maxD = v;
+        }
+        const iso = (d: Date) => d.toISOString().replace(/\.\d{3}Z$/, "Z");
+        if (minD) siAttrs.push(`minDate="${iso(minD)}"`);
+        if (maxD) siAttrs.push(`maxDate="${iso(maxD)}"`);
+      }
       if (hasMissing) siAttrs.push('containsBlank="1"');
 
       const cfOverride = cacheDefOpts?.cacheFieldOverrides?.get(i);
@@ -350,6 +372,7 @@ function stringifyPivotCacheDef(
           cfExtraAttrs.push(`propertyName="${escapeXml(cfOverride.propertyName)}"`);
         if (cfOverride.serverField) cfExtraAttrs.push('serverField="1"');
         if (cfOverride.uniqueList) cfExtraAttrs.push('uniqueList="1"');
+        if (cfOverride.sqlType !== undefined) cfExtraAttrs.push(`sqlType="${cfOverride.sqlType}"`);
         if (cfOverride.containsMixedTypes) siAttrs.push('containsMixedTypes="1"');
         if (cfOverride.containsNonDate) siAttrs.push('containsNonDate="1"');
         if (cfOverride.longText) siAttrs.push('longText="1"');
@@ -581,6 +604,7 @@ function stringifyPivotCacheDef(
       const entParts: string[] = [`<entries count="${cd!.entries!.length}">`];
       for (const ent of cd!.entries!) {
         if (ent.type === "m") entParts.push("<m/>");
+        else if (ent.type === "e") entParts.push(`<e v="${escapeXml(String(ent.value ?? ""))}"/>`);
         else if (ent.value !== undefined) entParts.push(`<${ent.type} v="${ent.value}"/>`);
       }
       entParts.push("</entries>");
@@ -596,7 +620,29 @@ function stringifyPivotCacheDef(
         if (s.count !== undefined) sAttrs.push(`count="${s.count}"`);
         if (s.sortType && s.sortType !== "none") sAttrs.push(`sortType="${s.sortType}"`);
         if (s.queryFailed) sAttrs.push('queryFailed="1"');
-        p.push(`<set ${sAttrs.join(" ")}/>`);
+        const tplsXml = (tpls: TupleOptions[] | undefined) =>
+          tpls && tpls.length > 0
+            ? `<tpls count="${tpls.length}">${tpls
+                .map((tpl) =>
+                  tpl.items && tpl.items.length > 0
+                    ? `<tpl>${tpl.items.map((x) => `<x v="${x}"/>`).join("")}</tpl>`
+                    : "<tpl/>",
+                )
+                .join("")}</tpls>`
+            : "";
+        const sortByXml =
+          s.sortByTuple && s.sortByTuple.length > 0
+            ? `<sortByTuple>${s.sortByTuple
+                .map((tpl) =>
+                  tpl.items && tpl.items.length > 0
+                    ? `<tpl>${tpl.items.map((x) => `<x v="${x}"/>`).join("")}</tpl>`
+                    : "<tpl/>",
+                )
+                .join("")}</sortByTuple>`
+            : "";
+        const inner = tplsXml(s.tpls) + sortByXml;
+        if (inner) p.push(`<set ${sAttrs.join(" ")}>${inner}</set>`);
+        else p.push(`<set ${sAttrs.join(" ")}/>`);
       }
       p.push("</sets>");
     }

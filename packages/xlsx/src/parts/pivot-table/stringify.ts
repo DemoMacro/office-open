@@ -131,6 +131,8 @@ export function stringifyPivotTable(
   if (o.dataPosition !== undefined) defAttrs.push(`dataPosition="${o.dataPosition}"`);
   if (o.immersive) defAttrs.push('immersive="1"');
   if (o.vacatedStyle) defAttrs.push(`vacatedStyle="${escapeXml(o.vacatedStyle)}"`);
+  if (o.chartFormat) defAttrs.push('chartFormat="1"');
+  if (o.preserveFormatting === false) defAttrs.push('preserveFormatting="0"');
 
   p.push(
     `<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ${defAttrs.join(" ")}>`,
@@ -172,6 +174,22 @@ export function stringifyPivotTable(
     p.push(fmtParts.join(""));
   }
 
+  // pivot conditionalFormats (CT_ConditionalFormats)
+  if (o.pivotConditionalFormats && o.pivotConditionalFormats.length > 0) {
+    const pcParts: string[] = [`<conditionalFormats count="${o.pivotConditionalFormats.length}">`];
+    for (const cf of o.pivotConditionalFormats) {
+      const cfAttrs: string[] = [`priority="${cf.priority}"`];
+      if (cf.scope && cf.scope !== "selection") cfAttrs.push(`scope="${cf.scope}"`);
+      if (cf.type && cf.type !== "none") cfAttrs.push(`type="${cf.type}"`);
+      const areasXml = cf.pivotAreas?.length
+        ? `<pivotAreas count="${cf.pivotAreas.length}">${cf.pivotAreas.map((a) => buildPivotAreaXml(a)).join("")}</pivotAreas>`
+        : '<pivotAreas count="0"/>';
+      pcParts.push(`<conditionalFormat ${cfAttrs.join(" ")}>${areasXml}</conditionalFormat>`);
+    }
+    pcParts.push("</conditionalFormats>");
+    p.push(pcParts.join(""));
+  }
+
   // chartFormats
   if (o.chartFormats && o.chartFormats.length > 0) {
     const cfParts: string[] = [`<chartFormats count="${o.chartFormats.length}">`];
@@ -206,6 +224,12 @@ export function stringifyPivotTable(
       };
       if (f.mpFld !== undefined) fAttrs.mpFld = f.mpFld;
       if (f.evalOrder !== undefined) fAttrs.evalOrder = f.evalOrder;
+      if (f.iMeasureHier !== undefined) fAttrs.iMeasureHier = f.iMeasureHier;
+      if (f.iMeasureFld !== undefined) fAttrs.iMeasureFld = f.iMeasureFld;
+      if (f.name) fAttrs.name = f.name;
+      if (f.description) fAttrs.description = f.description;
+      if (f.stringValue1) fAttrs.stringValue1 = f.stringValue1;
+      if (f.stringValue2) fAttrs.stringValue2 = f.stringValue2;
       fParts.push(`<filter${attrs(fAttrs)}><autoFilter></autoFilter></filter>`);
     }
     fParts.push("</filters>");
@@ -239,6 +263,11 @@ function buildFieldOverrideAttrs(fo: PivotFieldOverrideOptions): string {
   if (fo.allDrilled) a.push('allDrilled="1"');
   if (fo.autoShow) a.push('autoShow="1"');
   if (fo.countSubtotal) a.push('countSubtotal="1"');
+  if (fo.avgSubtotal) a.push('avgSubtotal="1"');
+  if (fo.countASubtotal) a.push('countASubtotal="1"');
+  if (fo.maxSubtotal) a.push('maxSubtotal="1"');
+  if (fo.minSubtotal) a.push('minSubtotal="1"');
+  if (fo.sumSubtotal) a.push('sumSubtotal="1"');
   if (fo.dataSourceSort) a.push('dataSourceSort="1"');
   if (fo.defaultAttributeDrillState) a.push('defaultAttributeDrillState="1"');
   if (fo.hiddenLevel) a.push('hiddenLevel="1"');
@@ -345,7 +374,9 @@ function buildPageFields(o: PivotTableOptions, pageIndices: number[]): string {
   for (let i = 0; i < pageIndices.length; i++) {
     const cap = o.pageCaptions?.[i];
     const capAttr = cap ? ` cap="${escapeXml(cap)}"` : "";
-    parts.push(`<pageField fld="${pageIndices[i]}" hier="${i}"${capAttr}/>`);
+    const item = o.pageFieldItems?.[i];
+    const itemAttr = item !== undefined ? ` item="${item}"` : "";
+    parts.push(`<pageField fld="${pageIndices[i]}" hier="${i}"${capAttr}${itemAttr}/>`);
   }
   parts.push("</pageFields>");
   return parts.join("");
@@ -513,7 +544,7 @@ function buildPivotHierarchies(hierarchies: PivotHierarchyOptions[]): string {
   return parts.join("");
 }
 
-function buildPivotAreaXml(area: PivotAreaOptions): string {
+export function buildPivotAreaXml(area: PivotAreaOptions): string {
   const aAttrs: string[] = [];
   if (area.field !== undefined) aAttrs.push(`field="${area.field}"`);
   if (area.type) aAttrs.push(`type="${area.type}"`);
@@ -542,6 +573,11 @@ function buildPivotAreaReferences(refs: PivotAreaReferenceOptions[]): string {
     if (ref.byPosition) rAttrs.push('byPosition="1"');
     if (ref.relative) rAttrs.push('relative="1"');
     if (ref.defaultSubtotal) rAttrs.push('defaultSubtotal="1"');
+    if (ref.sumSubtotal) rAttrs.push('sumSubtotal="1"');
+    if (ref.avgSubtotal) rAttrs.push('avgSubtotal="1"');
+    if (ref.countASubtotal) rAttrs.push('countASubtotal="1"');
+    if (ref.maxSubtotal) rAttrs.push('maxSubtotal="1"');
+    if (ref.minSubtotal) rAttrs.push('minSubtotal="1"');
     const xXml = ref.x ? ref.x.map((v) => `<x v="${v}"/>`).join("") : "";
     if (xXml) {
       parts.push(`<reference ${rAttrs.join(" ")}>${xXml}</reference>`);

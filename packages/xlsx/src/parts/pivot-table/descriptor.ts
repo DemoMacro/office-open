@@ -11,12 +11,14 @@ import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, textOf } from "@office-open/xml";
 
+import type { PivotAreaOptions } from "../pivot/pivot-utils";
 import { parsePivotArea } from "./parse";
 import { stringifyPivotTable } from "./stringify";
 import type {
   CalculatedItemParseResult,
   CalculatedMemberParseResult,
   ChartFormatParseResult,
+  ConditionalFormatParseResult,
   DataFieldParseResult,
   HierarchyUsageParseResult,
   PageFieldParseResult,
@@ -93,6 +95,9 @@ export const pivotTableDesc: CustomDescriptor<
     if (dataPosition !== undefined) result.dataPosition = dataPosition;
     if (parseOnOff(attr(el, "immersive"))) result.immersive = true;
     if (attr(el, "vacatedStyle")) result.vacatedStyle = attr(el, "vacatedStyle");
+    if (parseOnOff(attr(el, "chartFormat"))) result.chartFormat = true;
+    if (String(attr(el, "preserveFormatting")) === "0") result.preserveFormatting = false;
+    else if (parseOnOff(attr(el, "preserveFormatting"))) result.preserveFormatting = true;
     if (attr(el, "dataCaption")) result.dataCaption = attr(el, "dataCaption");
 
     // Location — store ref as string, plus extended counts
@@ -132,6 +137,11 @@ export const pivotTableDesc: CustomDescriptor<
         if (parseOnOff(attr(fEl, "outline"))) field.outline = true;
         if (String(attr(fEl, "subtotalTop")) === "0") field.subtotalTop = false;
         if (parseOnOff(attr(fEl, "includeNewItemsInFilter"))) field.includeNewItemsInFilter = true;
+        if (parseOnOff(attr(fEl, "avgSubtotal"))) field.avgSubtotal = true;
+        if (parseOnOff(attr(fEl, "countASubtotal"))) field.countASubtotal = true;
+        if (parseOnOff(attr(fEl, "maxSubtotal"))) field.maxSubtotal = true;
+        if (parseOnOff(attr(fEl, "minSubtotal"))) field.minSubtotal = true;
+        if (parseOnOff(attr(fEl, "sumSubtotal"))) field.sumSubtotal = true;
         fields.push(field);
       }
       result.pivotFields = fields;
@@ -197,6 +207,8 @@ export const pivotTableDesc: CustomDescriptor<
         const hier = attrNum(pf, "hier");
         if (hier !== undefined) pfResult.hier = hier;
         if (attr(pf, "cap")) pfResult.cap = attr(pf, "cap");
+        const item = attrNum(pf, "item");
+        if (item !== undefined) pfResult.item = item;
         pageFields.push(pfResult);
       }
       result.pageFields = pageFields;
@@ -217,6 +229,31 @@ export const pivotTableDesc: CustomDescriptor<
         formats.push(fmt);
       }
       result.formats = formats;
+    }
+
+    // ConditionalFormats (pivot-specific CT_ConditionalFormats)
+    const condFormatsEl = findChild(el, "conditionalFormats");
+    if (condFormatsEl) {
+      const condFormats: ConditionalFormatParseResult[] = [];
+      for (const cfEl of condFormatsEl.elements ?? []) {
+        if (cfEl.name !== "conditionalFormat") continue;
+        const cf: ConditionalFormatParseResult = {};
+        if (attr(cfEl, "scope")) cf.scope = attr(cfEl, "scope");
+        if (attr(cfEl, "type")) cf.type = attr(cfEl, "type");
+        const priority = attrNum(cfEl, "priority");
+        if (priority !== undefined) cf.priority = priority;
+        const areasEl = findChild(cfEl, "pivotAreas");
+        if (areasEl) {
+          const areas: Partial<PivotAreaOptions>[] = [];
+          for (const aEl of areasEl.elements ?? []) {
+            if (aEl.name !== "pivotArea") continue;
+            areas.push(parsePivotArea(aEl));
+          }
+          cf.pivotAreas = areas;
+        }
+        condFormats.push(cf);
+      }
+      result.conditionalFormats = condFormats;
     }
 
     // ChartFormats
@@ -278,6 +315,12 @@ export const pivotTableDesc: CustomDescriptor<
         if (mpFld !== undefined) f.mpFld = mpFld;
         const evalOrder = attrNum(fEl, "evalOrder");
         if (evalOrder !== undefined) f.evalOrder = evalOrder;
+        const imh = attrNum(fEl, "iMeasureHier");
+        if (imh !== undefined) f.iMeasureHier = imh;
+        const imf = attrNum(fEl, "iMeasureFld");
+        if (imf !== undefined) f.iMeasureFld = imf;
+        if (attr(fEl, "stringValue1")) f.stringValue1 = attr(fEl, "stringValue1");
+        if (attr(fEl, "stringValue2")) f.stringValue2 = attr(fEl, "stringValue2");
         filters.push(f);
       }
       result.filters = filters;

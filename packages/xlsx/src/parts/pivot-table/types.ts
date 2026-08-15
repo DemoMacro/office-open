@@ -34,6 +34,11 @@ export interface PivotFieldParseResult {
   outline?: boolean;
   subtotalTop?: boolean;
   includeNewItemsInFilter?: boolean;
+  avgSubtotal?: boolean;
+  countASubtotal?: boolean;
+  maxSubtotal?: boolean;
+  minSubtotal?: boolean;
+  sumSubtotal?: boolean;
 }
 
 /** Parsed dataField (CT_DataField). */
@@ -52,6 +57,7 @@ export interface PageFieldParseResult {
   fld?: number;
   hier?: number;
   cap?: string;
+  item?: number;
 }
 
 /** Parsed format entry (CT_Format). */
@@ -59,6 +65,14 @@ export interface PivotFormatParseResult {
   action?: string;
   dxfId?: number;
   pivotArea?: Partial<PivotAreaOptions>;
+}
+
+/** Parsed conditionalFormat (CT_ConditionalFormat) entry. */
+export interface ConditionalFormatParseResult {
+  scope?: string;
+  type?: string;
+  priority?: number;
+  pivotAreas?: Partial<PivotAreaOptions>[];
 }
 
 /** Parsed chartFormat (CT_ChartFormat). */
@@ -91,6 +105,10 @@ export interface PivotFilterParseResult {
   id?: number;
   mpFld?: number;
   evalOrder?: number;
+  iMeasureHier?: number;
+  iMeasureFld?: number;
+  stringValue1?: string;
+  stringValue2?: string;
 }
 
 /** Parsed row/col hierarchyUsage entry (CT_RowColHierarchyUsage). */
@@ -170,6 +188,8 @@ export interface PivotTableParseResult {
   dataPosition?: number;
   immersive?: boolean;
   vacatedStyle?: string;
+  chartFormat?: boolean;
+  preserveFormatting?: boolean;
   dataCaption?: string;
   location?: string;
   locationRowPageCount?: number;
@@ -180,6 +200,7 @@ export interface PivotTableParseResult {
   colFields?: number[];
   pageFields?: PageFieldParseResult[];
   formats?: PivotFormatParseResult[];
+  conditionalFormats?: ConditionalFormatParseResult[];
   chartFormats?: ChartFormatParseResult[];
   pivotHierarchies?: PivotHierarchyParseResult[];
   filters?: PivotFilterParseResult[];

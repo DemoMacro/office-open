@@ -13,6 +13,7 @@ import type {
 
 import type { ConnectorOptions, GroupOptions, ShapeOptions } from "../drawing";
 import type { PivotTableOptions } from "../pivot";
+import type { PivotAreaOptions } from "../pivot/pivot-utils";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles, StyleOptions } from "../styles";
 import type { TableOptions } from "../table";
@@ -913,6 +914,74 @@ export interface SelectionOptions {
   sqref?: string;
 }
 
+/** Pivot selection in sheet view (CT_PivotSelection) */
+export interface PivotSelectionOptions {
+  /** Pane (CT_PivotSelection @pane, default "topLeft") */
+  pane?: "bottomRight" | "topRight" | "bottomLeft" | "topLeft";
+  /** Show header (default false) */
+  showHeader?: boolean;
+  /** Label selection (default false) */
+  label?: boolean;
+  /** Data selection (default false) */
+  data?: boolean;
+  /** Extendable (default false) */
+  extendable?: boolean;
+  /** Selection count (default 0) */
+  count?: number;
+  /** Axis */
+  axis?: "axisRow" | "axisCol" | "axisPage" | "axisValues";
+  /** Dimension (default 0) */
+  dimension?: number;
+  /** Start (default 0) */
+  start?: number;
+  /** Min (default 0) */
+  min?: number;
+  /** Max (default 0) */
+  max?: number;
+  /** Active row (default 0) */
+  activeRow?: number;
+  /** Active column (default 0) */
+  activeCol?: number;
+  /** Previous row (default 0) */
+  previousRow?: number;
+  /** Previous column (default 0) */
+  previousCol?: number;
+  /** Click count (default 0) */
+  click?: number;
+  /** Relationship id (r:id, OLAP pivot selection part) */
+  rId?: string;
+  /** Pivot area (required child) */
+  pivotArea?: PivotAreaOptions;
+}
+
+/** Smart tag property (CT_CellSmartTagPr) */
+export interface CellSmartTagPropertyOptions {
+  /** Property key (required) */
+  key: string;
+  /** Property value (required) */
+  val: string;
+}
+
+/** Smart tag on a cell (CT_CellSmartTag) */
+export interface CellSmartTagOptions {
+  /** Smart tag type index (required) */
+  type: number;
+  /** Deleted (default false) */
+  deleted?: boolean;
+  /** XML-based (default false) */
+  xmlBased?: boolean;
+  /** Properties */
+  properties?: CellSmartTagPropertyOptions[];
+}
+
+/** Cell smart tags (CT_CellSmartTags) */
+export interface CellSmartTagsOptions {
+  /** Cell reference (required) */
+  reference: string;
+  /** Smart tags */
+  smartTags: CellSmartTagOptions[];
+}
+
 /** Custom sheet view (CT_CustomSheetView) */
 export interface CustomSheetViewOptions {
   /** GUID identifier (required, CT_CustomSheetView @guid) */
@@ -1072,6 +1141,10 @@ export interface WorksheetOptions {
   legacyDrawingHF?: string;
   /** Selection in sheet view (CT_Selection) */
   selection?: SelectionOptions;
+  /** Pivot selection in sheet view (CT_PivotSelection) */
+  pivotSelection?: PivotSelectionOptions;
+  /** Cell smart tags (CT_SmartTags) */
+  smartTags?: CellSmartTagsOptions[];
   /** Sheet calc properties (CT_SheetCalcPr) */
   sheetCalcPr?: SheetCalculationPropertiesOptions;
   /** Extension list (extLst) */

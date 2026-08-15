@@ -82,6 +82,20 @@ export interface TableColumnOptions {
   dataCellStyle?: string;
   /** Totals row cell style name */
   totalsRowCellStyle?: string;
+  /** XML mapping (CT_XmlColumnPr) — binds the column to an XML map */
+  xmlColumnPr?: XmlColumnPrOptions;
+}
+
+/** XML column properties (CT_XmlColumnPr — table column bound to an XML map). */
+export interface XmlColumnPrOptions {
+  /** XML map id (required, indexes xl/xmlMaps.xml Map entries) */
+  mapId: number;
+  /** XPath expression (required) */
+  xpath: string;
+  /** Denormalized (default false) */
+  denormalized?: boolean;
+  /** XML schema data type (required, ST_XmlDataType) */
+  xmlDataType: string;
 }
 
 export interface TableOptions {
@@ -246,6 +260,14 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       if (col.dataCellStyle) colAttrs.dataCellStyle = col.dataCellStyle;
       if (col.totalsRowCellStyle) colAttrs.totalsRowCellStyle = col.totalsRowCellStyle;
 
+      if (col.xmlColumnPr) {
+        const xp = col.xmlColumnPr;
+        const xpAttrs = [`mapId="${xp.mapId}"`, `xpath="${escapeXml(xp.xpath)}"`];
+        if (xp.denormalized) xpAttrs.push('denormalized="1"');
+        xpAttrs.push(`xmlDataType="${escapeXml(xp.xmlDataType)}"`);
+        inner.push(`<xmlColumnPr ${xpAttrs.join(" ")}/>`);
+      }
+
       if (inner.length > 0) {
         p.push(`<tableColumn${buildAttrs(colAttrs)}>${inner.join("")}</tableColumn>`);
       } else {
@@ -333,6 +355,15 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         if (attr(colEl, "dataCellStyle")) col.dataCellStyle = attr(colEl, "dataCellStyle");
         if (attr(colEl, "totalsRowCellStyle"))
           col.totalsRowCellStyle = attr(colEl, "totalsRowCellStyle");
+        const xcpEl = findChild(colEl, "xmlColumnPr");
+        if (xcpEl) {
+          col.xmlColumnPr = {
+            mapId: attrNum(xcpEl, "mapId") ?? 0,
+            xpath: attr(xcpEl, "xpath") ?? "",
+            xmlDataType: attr(xcpEl, "xmlDataType") ?? "",
+          };
+          if (parseOnOff(attr(xcpEl, "denormalized"))) col.xmlColumnPr.denormalized = true;
+        }
         columns.push(col as TableColumnOptions);
       }
       result.columns = columns;

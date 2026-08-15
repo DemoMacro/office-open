@@ -11,6 +11,7 @@ import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
 import { stringifyAutoFilter } from "../auto-filter";
+import { buildPivotAreaXml } from "../pivot-table/stringify";
 import { buildRstXml } from "../shared-strings";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles } from "../styles";
@@ -19,6 +20,7 @@ import type {
   CellOptions,
   CfvoOptions,
   FormulaOptions,
+  PivotSelectionOptions,
   RowOptions,
   SelectionOptions,
   SheetViewOptions,
@@ -153,11 +155,14 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       `<sheetViews><sheetView${svAttrs}>`,
       `<pane ySplit="${ySplit}" xSplit="${xSplit}" topLeftCell="${topLeftCell}" activePane="${activePane}" state="frozen"/>`,
       opts.selection ? buildSelectionXml(opts.selection) : "",
+      opts.pivotSelection ? buildPivotSelectionXml(opts.pivotSelection) : "",
       "</sheetView></sheetViews>",
     );
   } else {
     const svAttrs = buildSheetViewAttrs(opts.sheetView);
-    const innerXml = opts.selection ? buildSelectionXml(opts.selection) : "";
+    const innerXml =
+      (opts.selection ? buildSelectionXml(opts.selection) : "") +
+      (opts.pivotSelection ? buildPivotSelectionXml(opts.pivotSelection) : "");
     if (innerXml) {
       p.push(`<sheetViews><sheetView${svAttrs}>${innerXml}</sheetView></sheetViews>`);
     } else {
@@ -715,6 +720,34 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push(ieParts.join(""));
   }
 
+  // Cell smart tags (after ignoredErrors per XSD sequence)
+  if (opts.smartTags && opts.smartTags.length > 0) {
+    const stParts: string[] = ["<smartTags>"];
+    for (const cst of opts.smartTags) {
+      stParts.push(`<cellSmartTags r="${escapeXml(cst.reference)}">`);
+      for (const st of cst.smartTags) {
+        const stAttrs: string[] = [`type="${st.type}"`];
+        if (st.deleted) stAttrs.push('deleted="1"');
+        if (st.xmlBased) stAttrs.push('xmlBased="1"');
+        const prXml = st.properties
+          ? st.properties
+              .map(
+                (pr) => `<cellSmartTagPr key="${escapeXml(pr.key)}" val="${escapeXml(pr.val)}"/>`,
+              )
+              .join("")
+          : "";
+        stParts.push(
+          prXml
+            ? `<cellSmartTag ${stAttrs.join(" ")}>${prXml}</cellSmartTag>`
+            : `<cellSmartTag ${stAttrs.join(" ")}/>`,
+        );
+      }
+      stParts.push("</cellSmartTags>");
+    }
+    stParts.push("</smartTags>");
+    p.push(stParts.join(""));
+  }
+
   // Background picture placeholder — compiler replaces with <picture r:id="rIdN"/>
   if (opts.backgroundImage) {
     p.push("<!--BACKGROUND_PICTURE-->");
@@ -849,6 +882,32 @@ function buildSheetViewAttrs(sv?: SheetViewOptions): string {
   if (sv?.zoomScalePageLayoutView !== undefined)
     svMap.zoomScalePageLayoutView = sv.zoomScalePageLayoutView;
   return attrs(svMap);
+}
+
+function buildPivotSelectionXml(ps: PivotSelectionOptions): string {
+  const psAttrs: string[] = [];
+  if (ps.pane) psAttrs.push(`pane="${ps.pane}"`);
+  if (ps.showHeader) psAttrs.push('showHeader="1"');
+  if (ps.label) psAttrs.push('label="1"');
+  if (ps.data) psAttrs.push('data="1"');
+  if (ps.extendable) psAttrs.push('extendable="1"');
+  if (ps.count !== undefined) psAttrs.push(`count="${ps.count}"`);
+  if (ps.axis) psAttrs.push(`axis="${ps.axis}"`);
+  if (ps.dimension !== undefined) psAttrs.push(`dimension="${ps.dimension}"`);
+  if (ps.start !== undefined) psAttrs.push(`start="${ps.start}"`);
+  if (ps.min !== undefined) psAttrs.push(`min="${ps.min}"`);
+  if (ps.max !== undefined) psAttrs.push(`max="${ps.max}"`);
+  if (ps.activeRow !== undefined) psAttrs.push(`activeRow="${ps.activeRow}"`);
+  if (ps.activeCol !== undefined) psAttrs.push(`activeCol="${ps.activeCol}"`);
+  if (ps.previousRow !== undefined) psAttrs.push(`previousRow="${ps.previousRow}"`);
+  if (ps.previousCol !== undefined) psAttrs.push(`previousCol="${ps.previousCol}"`);
+  if (ps.click !== undefined) psAttrs.push(`click="${ps.click}"`);
+  if (ps.rId) psAttrs.push(`r:id="${escapeXml(ps.rId)}"`);
+  const areaXml = ps.pivotArea ? buildPivotAreaXml(ps.pivotArea) : "";
+  const attrStr = psAttrs.join(" ");
+  return areaXml
+    ? `<pivotSelection ${attrStr}>${areaXml}</pivotSelection>`
+    : `<pivotSelection ${attrStr}/>`;
 }
 
 function buildSelectionXml(sel: SelectionOptions): string {

@@ -90,6 +90,38 @@ export interface UsersOptions {
 // AG_RevData (sml.xsd:1893): rId required, ua (undo), ra (rejected).
 // Present on: rrc, rm, rsnm, ris, rcc, rdn, rcft. Absent on: rcv, rfmt, raf, rcmt, rqt.
 
+/** Undo tracking info (CT_UndoInfo, sml.xsd:1933). */
+export interface RevisionUndoOptions {
+  /** Undo index (required). */
+  index: number;
+  /** Expression kind (required, ST_FormulaExpression). */
+  expression: "ref" | "refError" | "area" | "areaError" | "computedArea";
+  /** Undo range (required, ST_RefA). */
+  dr: string;
+  /** 3D reference (default false). */
+  ref3D?: boolean;
+  /** Array formula (default false). */
+  array?: boolean;
+  /** Value (default false). */
+  v?: boolean;
+  /** Number format (default false). */
+  nf?: boolean;
+  /** Conditional style (default false). */
+  cs?: boolean;
+  /** Defined name (optional). */
+  dn?: string;
+  /** Cell reference (optional). */
+  r?: string;
+  /** Sheet ID (optional). */
+  sId?: number;
+}
+
+/** Nested rrc/rm child — undo tracking, cell change, or formatting (shared choice group). */
+export type RevisionNestedChild =
+  | { kind: "undo"; data: RevisionUndoOptions }
+  | { kind: "cellChange"; data: RevisionCellChangeOptions }
+  | { kind: "formatting"; data: RevisionFormattingOptions };
+
 /** Row/column insert/delete (CT_RevisionRowColumn, sml.xsd:1943). */
 export interface RevisionRowColumnOptions {
   /** Revision ID (AG_RevData rId, required). */
@@ -108,8 +140,8 @@ export interface RevisionRowColumnOptions {
   undo?: boolean;
   /** Revision was rejected (ra). */
   rejected?: boolean;
-  /** Nested undo/rcc/rfmt children verbatim (optional). */
-  childrenXml?: string;
+  /** Nested undo/rcc/rfmt children (optional). */
+  children?: RevisionNestedChild[];
 }
 
 /** Cell move (CT_RevisionMove, sml.xsd:1956). */
@@ -128,8 +160,8 @@ export interface RevisionMoveOptions {
   undo?: boolean;
   /** Revision was rejected (ra). */
   rejected?: boolean;
-  /** Nested undo/rcc/rfmt children verbatim (optional). */
-  childrenXml?: string;
+  /** Nested undo/rcc/rfmt children (optional). */
+  children?: RevisionNestedChild[];
 }
 
 /** Custom view add/delete (CT_RevisionCustomView, sml.xsd:1968 — no AG_RevData). */

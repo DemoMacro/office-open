@@ -5,7 +5,12 @@ import { describe, expect, it } from "vite-plus/test";
 import { generateWorkbook } from "../generate";
 import { parseWorkbook } from "../parse";
 import { revisionHeadersDesc, revisionLogDesc, usersDesc } from "./revision-log";
-import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
+import type {
+  RevisionHeadersOptions,
+  RevisionLogOptions,
+  RevisionNestedChild,
+  UsersOptions,
+} from "./revision-log";
 
 // revision descriptors ignore their context, so empty stubs suffice.
 const writeCtx = {} as unknown as WriteContext;
@@ -150,6 +155,45 @@ describe("revisionLogDesc round-trip", () => {
     expect(d.rId).toBe(1);
     expect(d.sheetId).toBe(1);
     expect(d.newCellXml).toContain("<t>foo</t>");
+  });
+
+  it("round-trips rowColumn with structured undo/rcc/rfmt children", () => {
+    const opts: RevisionLogOptions = {
+      revisions: [
+        {
+          type: "rowColumn",
+          data: {
+            rId: 3,
+            sheetId: 1,
+            ref: "2:2",
+            action: "insertRow",
+            children: [
+              {
+                kind: "undo",
+                data: { index: 1, expression: "ref", dr: "A2:B2", ref3D: true, nf: true },
+              },
+              {
+                kind: "cellChange",
+                data: { rId: 4, sheetId: 1, newCellXml: `<nc r="A2"><v>7</v></nc>` },
+              },
+              { kind: "formatting", data: { sheetId: 1, sqref: "A2" } },
+            ],
+          },
+        },
+      ],
+    };
+    const result = revisionLogDesc.parse(
+      parseRoot(revisionLogDesc.stringify(opts, writeCtx)!),
+      readCtx,
+    );
+    const d = result.revisions[0]?.data as { children?: RevisionNestedChild[] };
+    expect(d.children).toHaveLength(3);
+    expect(d.children![0]).toMatchObject({
+      kind: "undo",
+      data: { index: 1, expression: "ref", dr: "A2:B2", ref3D: true, nf: true },
+    });
+    expect(d.children![1]?.kind).toBe("cellChange");
+    expect(d.children![2]?.kind).toBe("formatting");
   });
 
   it("round-trips comment (no AG_RevData, no rId)", () => {

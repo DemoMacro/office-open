@@ -6,7 +6,7 @@
 
 import { escapeXml } from "@office-open/xml";
 
-import type { RevisionEntry } from "./types";
+import type { RevisionEntry, RevisionNestedChild, RevisionUndoOptions } from "./types";
 
 // Namespace constants shared across the headers/users/log descriptors.
 const S_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
@@ -21,6 +21,35 @@ function agRevData(data: { rId: number; undo?: boolean; rejected?: boolean }): s
   return s;
 }
 
+function stringifyUndo(d: RevisionUndoOptions): string {
+  let a = ` index="${d.index}" exp="${d.expression}" dr="${escapeXml(d.dr)}"`;
+  if (d.ref3D) a += ` ref3D="1"`;
+  if (d.array) a += ` array="1"`;
+  if (d.v) a += ` v="1"`;
+  if (d.nf) a += ` nf="1"`;
+  if (d.cs) a += ` cs="1"`;
+  if (d.dn !== undefined) a += ` dn="${escapeXml(d.dn)}"`;
+  if (d.r !== undefined) a += ` r="${escapeXml(d.r)}"`;
+  if (d.sId !== undefined) a += ` sId="${d.sId}"`;
+  return `<undo${a}/>`;
+}
+
+function stringifyNestedChildren(children: RevisionNestedChild[] | undefined): string {
+  if (!children) return "";
+  return children
+    .map((child) => {
+      switch (child.kind) {
+        case "undo":
+          return stringifyUndo(child.data);
+        case "cellChange":
+          return stringifyEntry({ type: "cellChange", data: child.data });
+        case "formatting":
+          return stringifyEntry({ type: "formatting", data: child.data });
+      }
+    })
+    .join("");
+}
+
 export function stringifyEntry(entry: RevisionEntry): string {
   switch (entry.type) {
     case "rowColumn": {
@@ -28,7 +57,7 @@ export function stringifyEntry(entry: RevisionEntry): string {
       let a = agRevData(d) + ` sId="${d.sheetId}" ref="${escapeXml(d.ref)}" action="${d.action}"`;
       if (d.endOfList) a += ` eol="1"`;
       if (d.edge) a += ` edge="1"`;
-      return `<rrc${a}>${d.childrenXml ?? ""}</rrc>`;
+      return `<rrc${a}>${stringifyNestedChildren(d.children)}</rrc>`;
     }
     case "move": {
       const d = entry.data;
@@ -36,7 +65,7 @@ export function stringifyEntry(entry: RevisionEntry): string {
         agRevData(d) +
         ` sheetId="${d.sheetId}" source="${escapeXml(d.source)}" destination="${escapeXml(d.destination)}"`;
       if (d.sourceSheetId !== undefined) a += ` sourceSheetId="${d.sourceSheetId}"`;
-      return `<rm${a}>${d.childrenXml ?? ""}</rm>`;
+      return `<rm${a}>${stringifyNestedChildren(d.children)}</rm>`;
     }
     case "customView": {
       const d = entry.data;

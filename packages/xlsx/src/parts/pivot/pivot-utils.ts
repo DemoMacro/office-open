@@ -49,6 +49,16 @@ export interface PivotFieldOverrideOptions {
   autoShow?: boolean;
   /** Count subtotal (CT_PivotField @countSubtotal) */
   countSubtotal?: boolean;
+  /** Average subtotal (CT_PivotField @avgSubtotal) */
+  avgSubtotal?: boolean;
+  /** CountA subtotal (CT_PivotField @countASubtotal) */
+  countASubtotal?: boolean;
+  /** Max subtotal (CT_PivotField @maxSubtotal) */
+  maxSubtotal?: boolean;
+  /** Min subtotal (CT_PivotField @minSubtotal) */
+  minSubtotal?: boolean;
+  /** Sum subtotal (CT_PivotField @sumSubtotal) */
+  sumSubtotal?: boolean;
   /** Data source sort (CT_PivotField @dataSourceSort) */
   dataSourceSort?: boolean;
   /** Default attribute drill state (CT_PivotField @defaultAttributeDrillState) */
@@ -319,6 +329,12 @@ export interface PivotTableOptions {
   pivotConditionalFormats?: PivotConditionalFormatOptions[];
   /** Chart formats (CT_ChartFormats) */
   chartFormats?: ChartFormatOptions[];
+  /** Chart format applied (CT_PivotTableDefinition @chartFormat) */
+  chartFormat?: boolean;
+  /** Preserve formatting on refresh (CT_PivotTableDefinition @preserveFormatting, default true) */
+  preserveFormatting?: boolean;
+  /** Selected item index per page field (CT_PageField @item, by position) */
+  pageFieldItems?: number[];
   /** Auto sort scope (CT_AutoSortScope) */
   autoSortScope?: PivotAreaOptions;
   /** Member properties per field (CT_MemberProperties → mps/mp) */
@@ -632,6 +648,10 @@ export interface SetOptions {
     | "descendingNatural";
   /** Query failed (default: false) */
   queryFailed?: boolean;
+  /** Sort/filter tuples (CT_Set @tpls → CT_Tuples) */
+  tpls?: TupleOptions[];
+  /** Sort-by tuples (CT_Set @sortByTuple → CT_Tuples) */
+  sortByTuple?: TupleOptions[];
 }
 
 /** Server format (CT_ServerFormat) */
@@ -949,6 +969,8 @@ export interface CacheFieldExtraAttrs {
   serverField?: boolean;
   /** Unique list (CT_CacheField @uniqueList) */
   uniqueList?: boolean;
+  /** SQL data type (CT_CacheField @sqlType) */
+  sqlType?: number;
   /** Shared items contains mixed types (CT_SharedItems @containsMixedTypes) */
   containsMixedTypes?: boolean;
   /** Shared items contains non-date (CT_SharedItems @containsNonDate) */
@@ -986,6 +1008,10 @@ export interface PivotCacheDefinitionOptions {
   supportSubquery?: boolean;
   /** Support advanced drill */
   supportAdvancedDrill?: boolean;
+  /** Refresh cache when the workbook opens (CT_PivotCacheDefinition @refreshOnLoad) */
+  refreshOnLoad?: boolean;
+  /** Tuple cache is stored (CT_PivotCacheDefinition @tupleCache) */
+  tupleCache?: boolean;
   /** Cache hierarchies (CT_CacheHierarchies) */
   cacheHierarchies?: CacheHierarchyOptions[];
   /** KPIs (CT_PCDKPIs) */

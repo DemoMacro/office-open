@@ -14,10 +14,12 @@ import { attr, attrMeasure, attrNum, findChild, stringify, textOf } from "@offic
 
 import type { XlsxReadContext } from "../../context";
 import { parseAutoFilter } from "../auto-filter";
+import { parsePivotArea } from "../pivot-table/parse";
 import { parseColorHex } from "../styles/parse";
 import { parseCellRef, parseCfvo, parsePageBreaks } from "./parse";
 import { parseSheetDataRows } from "./sheet-data";
 import type {
+  CellSmartTagsOptions,
   CellWatchOptions,
   CfvoOptions,
   ColumnOptions,
@@ -47,11 +49,13 @@ import type {
   PageOrientation,
   PageSetupOptions,
   PhoneticPropertiesOptions,
+  PivotSelectionOptions,
   PrintOptions,
   ProtectedRangeOptions,
   ScenarioCellOptions,
   ScenarioDefinition,
   ScenarioOptions,
+  SelectionOptions,
   SheetCalculationPropertiesOptions,
   SheetFormatPropertiesOptions,
   SheetPropertiesOptions,
@@ -193,6 +197,56 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const xs = attrNum(paneEl, "xSplit");
           if (xs && xs > 0) fp.col = xs;
           if (Object.keys(fp).length > 0) result.freezePanes = fp;
+        }
+
+        // Selection (CT_Selection)
+        const selEl = findChild(svEl, "selection");
+        if (selEl) {
+          const sel: SelectionOptions = {};
+          const pane = attr(selEl, "pane");
+          if (pane) sel.pane = pane as SelectionOptions["pane"];
+          const activeCell = attr(selEl, "activeCell");
+          if (activeCell) sel.activeCell = activeCell;
+          const acId = attrNum(selEl, "activeCellId");
+          if (acId !== undefined) sel.activeCellId = acId;
+          const sqref = attr(selEl, "sqref");
+          if (sqref) sel.sqref = sqref;
+          result.selection = sel;
+        }
+
+        // Pivot selection (CT_PivotSelection)
+        const psEl = findChild(svEl, "pivotSelection");
+        if (psEl) {
+          const ps: Partial<PivotSelectionOptions> = {};
+          const pane = attr(psEl, "pane");
+          if (pane) ps.pane = pane as PivotSelectionOptions["pane"];
+          if (parseOnOff(attr(psEl, "showHeader"))) ps.showHeader = true;
+          if (parseOnOff(attr(psEl, "label"))) ps.label = true;
+          if (parseOnOff(attr(psEl, "data"))) ps.data = true;
+          if (parseOnOff(attr(psEl, "extendable"))) ps.extendable = true;
+          const count = attrNum(psEl, "count");
+          if (count !== undefined) ps.count = count;
+          const axis = attr(psEl, "axis");
+          if (axis) ps.axis = axis as PivotSelectionOptions["axis"];
+          for (const key of [
+            "dimension",
+            "start",
+            "min",
+            "max",
+            "activeRow",
+            "activeCol",
+            "previousRow",
+            "previousCol",
+            "click",
+          ] as const) {
+            const v = attrNum(psEl, key);
+            if (v !== undefined) ps[key] = v;
+          }
+          const rId = attr(psEl, "r:id");
+          if (rId) ps.rId = rId;
+          const paEl = findChild(psEl, "pivotArea");
+          if (paEl) ps.pivotArea = parsePivotArea(paEl) as PivotSelectionOptions["pivotArea"];
+          result.pivotSelection = ps as PivotSelectionOptions;
         }
       }
     }
@@ -561,6 +615,42 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         errors.push(ie);
       }
       result.ignoredErrors = errors;
+    }
+
+    // Cell smart tags (CT_SmartTags)
+    const smartTagsEl = findChild(el, "smartTags");
+    if (smartTagsEl) {
+      const entries: CellSmartTagsOptions[] = [];
+      for (const cstEl of smartTagsEl.elements ?? []) {
+        if (cstEl.name !== "cellSmartTags") continue;
+        const cst: CellSmartTagsOptions = {
+          reference: attr(cstEl, "r") ?? "",
+          smartTags: [],
+        };
+        for (const stEl of cstEl.elements ?? []) {
+          if (stEl.name !== "cellSmartTag") continue;
+          const st: {
+            type: number;
+            deleted?: boolean;
+            xmlBased?: boolean;
+            properties?: { key: string; val: string }[];
+          } = {
+            type: attrNum(stEl, "type") ?? 0,
+          };
+          if (parseOnOff(attr(stEl, "deleted"))) st.deleted = true;
+          if (parseOnOff(attr(stEl, "xmlBased"))) st.xmlBased = true;
+          const prEls = stEl.elements?.filter((e) => e.name === "cellSmartTagPr") ?? [];
+          if (prEls.length > 0) {
+            st.properties = prEls.map((prEl) => ({
+              key: attr(prEl, "key") ?? "",
+              val: attr(prEl, "val") ?? "",
+            }));
+          }
+          cst.smartTags.push(st);
+        }
+        entries.push(cst);
+      }
+      if (entries.length > 0) result.smartTags = entries;
     }
 
     // Phonetic properties

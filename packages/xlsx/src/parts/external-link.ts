@@ -32,6 +32,8 @@ export interface ExternalCellOptions {
   type?: string;
   /** Cell value */
   value?: string;
+  /** Value metadata index (CT_ExternalCell @vm) */
+  vm?: number;
 }
 
 export interface ExternalBookOptions {
@@ -62,22 +64,69 @@ export interface ExternalLinkOptions {
   externalBook?: ExternalBookOptions;
   /** Relationship ID for the external book (set by compiler) */
   bookRId?: string;
+  /** DDE link configuration (CT_DdeLink) */
+  ddeLink?: DdeLinkOptions;
   /** OLE link configuration (CT_OleLink) */
   oleLink?: OleLinkOptions;
   /** Relationship ID for the OLE link (set by compiler) */
   oleRId?: string;
 }
 
+/** One cached DDE value (CT_DdeValue — val element + type attribute). */
+export interface DdeValueOptions {
+  /** Value type (ST_DdeValueType, default "n") */
+  type?: "nil" | "b" | "n" | "e" | "str";
+  /** Value text (the val element) */
+  value: string;
+}
+
+/** Cached DDE value grid (CT_DdeValues) */
+export interface DdeValuesOptions {
+  /** Row count of the cached grid (default 1) */
+  rows?: number;
+  /** Column count of the cached grid (default 1) */
+  cols?: number;
+  values: DdeValueOptions[];
+}
+
+/** One DDE item (CT_DdeItem) */
+export interface DdeItemOptions {
+  /** Item name (default "0") */
+  name?: string;
+  /** Item is an OLE link */
+  ole?: boolean;
+  /** Advise events on the item */
+  advise?: boolean;
+  /** Prefer picture representation */
+  preferPic?: boolean;
+  /** Cached values */
+  values?: DdeValuesOptions;
+}
+
+/** DDE link (CT_DdeLink — ddeService/ddeTopic + items) */
+export interface DdeLinkOptions {
+  /** DDE service name */
+  ddeService: string;
+  /** DDE topic */
+  ddeTopic: string;
+  /** DDE items */
+  ddeItems?: DdeItemOptions[];
+}
+
 export interface OleItemOptions {
   /** OLE item name (required) */
   name: string;
+  /** Show as icon */
+  icon?: boolean;
   /** Whether to advise events */
   advise?: boolean;
-  /** Whether preferred */
-  prefer?: boolean;
+  /** Prefer picture representation */
+  preferPic?: boolean;
 }
 
 export interface OleLinkOptions {
+  /** OLE program identifier (CT_OleLink @progId) */
+  progId?: string;
   /** OLE items */
   oleItems?: OleItemOptions[];
 }
@@ -138,6 +187,7 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
                     r: cell.reference,
                   };
                   if (cell.type !== undefined) cellAttrs.t = cell.type;
+                  if (cell.vm !== undefined) cellAttrs.vm = cell.vm;
                   if (cell.value !== undefined) {
                     bookParts.push(
                       `<cell${attrs(cellAttrs)}><v>${escapeXml(cell.value)}</v></cell>`,
@@ -161,25 +211,63 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
       );
     }
 
+    // ddeLink (CT_DdeLink — ddeService/ddeTopic + items with cached values)
+    if (opts.ddeLink) {
+      const dde = opts.ddeLink;
+      const ddeParts: string[] = [];
+      if (dde.ddeItems && dde.ddeItems.length > 0) {
+        ddeParts.push("<ddeItems>");
+        for (const item of dde.ddeItems) {
+          const itemAttrs: string[] = [];
+          if (item.name !== undefined) itemAttrs.push(`name="${escapeXml(item.name)}"`);
+          if (item.ole) itemAttrs.push('ole="1"');
+          if (item.advise) itemAttrs.push('advise="1"');
+          if (item.preferPic) itemAttrs.push('preferPic="1"');
+          if (item.values) {
+            const v = item.values;
+            const valuesAttrs: string[] = [];
+            if (v.rows !== undefined) valuesAttrs.push(`rows="${v.rows}"`);
+            if (v.cols !== undefined) valuesAttrs.push(`cols="${v.cols}"`);
+            const valueParts: string[] = [];
+            for (const dv of v.values) {
+              const valueAttrs = dv.type !== undefined ? ` t="${dv.type}"` : "";
+              valueParts.push(`<value${valueAttrs}><val>${escapeXml(dv.value)}</val></value>`);
+            }
+            ddeParts.push(
+              `<ddeItem${itemAttrs.length > 0 ? " " + itemAttrs.join(" ") : ""}><values${valuesAttrs.length > 0 ? " " + valuesAttrs.join(" ") : ""}>${valueParts.join("")}</values></ddeItem>`,
+            );
+          } else {
+            ddeParts.push(`<ddeItem${itemAttrs.length > 0 ? " " + itemAttrs.join(" ") : ""}/>`);
+          }
+        }
+        ddeParts.push("</ddeItems>");
+      }
+      p.push(
+        `<ddeLink ddeService="${escapeXml(dde.ddeService)}" ddeTopic="${escapeXml(dde.ddeTopic)}"${ddeParts.length > 0 ? `>${ddeParts.join("")}</ddeLink>` : "/>"}`,
+      );
+    }
+
     // oleLink (CT_OleLink)
     if (opts.oleLink) {
       const oleRId = opts.oleRId ? ` r:id="${escapeXml(opts.oleRId)}"` : "";
+      const progIdAttr = opts.oleLink.progId ? ` progId="${escapeXml(opts.oleLink.progId)}"` : "";
       const oleChildren: string[] = [];
       if (opts.oleLink.oleItems && opts.oleLink.oleItems.length > 0) {
         const itemParts: string[] = [`<oleItems>`];
         for (const item of opts.oleLink.oleItems) {
           const itemAttrs: string[] = [`name="${escapeXml(item.name)}"`];
+          if (item.icon) itemAttrs.push('icon="1"');
           if (item.advise) itemAttrs.push('advise="1"');
-          if (item.prefer) itemAttrs.push('prefer="1"');
+          if (item.preferPic) itemAttrs.push('preferPic="1"');
           itemParts.push(`<oleItem ${itemAttrs.join(" ")}/>`);
         }
         itemParts.push("</oleItems>");
         oleChildren.push(itemParts.join(""));
       }
       if (oleChildren.length > 0) {
-        p.push(`<oleLink${oleRId}>${oleChildren.join("")}</oleLink>`);
+        p.push(`<oleLink${oleRId}${progIdAttr}>${oleChildren.join("")}</oleLink>`);
       } else {
-        p.push(`<oleLink${oleRId}/>`);
+        p.push(`<oleLink${oleRId}${progIdAttr}/>`);
       }
     }
 
@@ -251,6 +339,8 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
                 reference: String(cellChild.attributes?.["r"] ?? ""),
               };
               if (cellChild.attributes?.["t"]) cell.type = String(cellChild.attributes["t"]);
+              if (cellChild.attributes?.["vm"] !== undefined)
+                cell.vm = Number(cellChild.attributes["vm"]);
               const vEl = findChild(cellChild, "v");
               if (vEl && vEl.elements?.[0]?.text !== undefined) {
                 cell.value = String(vEl.elements[0].text);
@@ -269,11 +359,59 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
       result.externalBook = book;
     }
 
+    // ddeLink
+    const ddeEl = findChild(el, "ddeLink");
+    if (ddeEl) {
+      const dde: DdeLinkOptions = {
+        ddeService: String(ddeEl.attributes?.["ddeService"] ?? ""),
+        ddeTopic: String(ddeEl.attributes?.["ddeTopic"] ?? ""),
+      };
+
+      const ddeItemsEl = findChild(ddeEl, "ddeItems");
+      if (ddeItemsEl) {
+        const items: DdeItemOptions[] = [];
+        for (const child of ddeItemsEl.elements ?? []) {
+          if (child.name !== "ddeItem") continue;
+          const item: DdeItemOptions = {};
+          if (child.attributes?.["name"] !== undefined)
+            item.name = String(child.attributes["name"]);
+          if (child.attributes?.["ole"]) item.ole = true;
+          if (child.attributes?.["advise"]) item.advise = true;
+          if (child.attributes?.["preferPic"]) item.preferPic = true;
+
+          const valuesEl = findChild(child, "values");
+          if (valuesEl) {
+            const values: DdeValuesOptions = { values: [] };
+            if (valuesEl.attributes?.["rows"] !== undefined)
+              values.rows = Number(valuesEl.attributes["rows"]);
+            if (valuesEl.attributes?.["cols"] !== undefined)
+              values.cols = Number(valuesEl.attributes["cols"]);
+            for (const valueChild of valuesEl.elements ?? []) {
+              if (valueChild.name !== "value") continue;
+              const valEl = findChild(valueChild, "val");
+              const dv: DdeValueOptions = {
+                value: valEl ? String(valEl.elements?.[0]?.text ?? "") : "",
+              };
+              if (valueChild.attributes?.["t"])
+                dv.type = valueChild.attributes["t"] as DdeValueOptions["type"];
+              values.values.push(dv);
+            }
+            item.values = values;
+          }
+          items.push(item);
+        }
+        if (items.length > 0) dde.ddeItems = items;
+      }
+
+      result.ddeLink = dde;
+    }
+
     // oleLink
     const oleEl = findChild(el, "oleLink");
     if (oleEl) {
       const ole: OleLinkOptions = {};
       if (oleEl.attributes?.["r:id"]) result.oleRId = String(oleEl.attributes["r:id"]);
+      if (oleEl.attributes?.["progId"]) ole.progId = String(oleEl.attributes["progId"]);
 
       const oleItemsEl = findChild(oleEl, "oleItems");
       if (oleItemsEl) {
@@ -281,8 +419,9 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
         for (const child of oleItemsEl.elements ?? []) {
           if (child.name !== "oleItem") continue;
           const item: OleItemOptions = { name: String(child.attributes?.["name"] ?? "") };
+          if (child.attributes?.["icon"]) item.icon = true;
           if (child.attributes?.["advise"]) item.advise = true;
-          if (child.attributes?.["prefer"]) item.prefer = true;
+          if (child.attributes?.["preferPic"]) item.preferPic = true;
           items.push(item);
         }
         if (items.length > 0) ole.oleItems = items;
