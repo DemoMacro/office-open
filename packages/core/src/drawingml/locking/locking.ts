@@ -75,6 +75,10 @@ export interface GraphicFrameLockingOptions {
 
 export type ConnectorLockingOptions = BaseLockingOptions;
 
+// ── Content part locking (CT_ContentPartLocking = AG_Locking, no extras) ──
+
+export type ContentPartLockingOptions = BaseLockingOptions;
+
 // ── Factory functions ──
 
 function toFlatAttrs(opts: Readonly<Record<string, boolean | undefined>>): Record<string, boolean> {
@@ -105,4 +109,8 @@ export function createGraphicFrameLocking(opts: GraphicFrameLockingOptions): str
 
 export function createConnectorLocking(opts: ConnectorLockingOptions): string {
   return element("a:cxnSpLocks", toFlatAttrs(opts as Record<string, boolean | undefined>));
+}
+
+export function createContentPartLocking(opts: ContentPartLockingOptions): string {
+  return element("a:cpLocks", toFlatAttrs(opts as Record<string, boolean | undefined>));
 }

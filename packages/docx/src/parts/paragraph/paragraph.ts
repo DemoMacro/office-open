@@ -8,6 +8,7 @@
 
 import type { CustomXmlRunOptions } from "@parts/custom-xml";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
+import type { ContentPartOptions } from "@shared/media/data";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type {
@@ -89,6 +90,7 @@ export type ParagraphChild =
   | { bookmark: BookmarkOptions }
   | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions }
+  | { contentPart: ContentPartOptions }
   // Proof error markers
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
   // Positional tab

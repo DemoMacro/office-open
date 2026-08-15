@@ -38,6 +38,7 @@ import {
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type {
   ChartMediaData,
+  ContentPartMediaData,
   GroupChildMediaData,
   MediaData,
   SmartArtMediaData,
@@ -623,6 +624,20 @@ export function stringifyChildDispatch(
     return wrapDrawingRun(drawingXml, opts);
   }
 
+  // Content part (wp:contentPart) — opaque part reference, r:id passthrough
+  if ("contentPart" in child) {
+    const opts = child.contentPart;
+    const mediaData: ContentPartMediaData = {
+      type: "contentPart",
+      referenceId: opts.referenceId,
+      transformation: opts.transformation ?? { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+      ...(opts.nonVisualProperties ? { nonVisualProperties: opts.nonVisualProperties } : {}),
+      ...(opts.blackWhiteMode ? { blackWhiteMode: opts.blackWhiteMode } : {}),
+    };
+    const drawingXml = drawingDesc.stringify({ mediaData }, ctx);
+    return `<w:r>${drawingXml}</w:r>`;
+  }
+
   // WPG Group (WordProcessing Group) — group of shapes/pictures
   if ("wpgGroup" in child) {
     const opts = child.wpgGroup;
@@ -646,6 +661,20 @@ export function stringifyChildDispatch(
           registerMedia(c.children);
           continue;
         }
+        if (c.type === "chart") {
+          // Group-nested charts register their chart part from the parsed or
+          // fresh chartOptions; the {chart:key} placeholder resolves in the
+          // compiler like a top-level chart run.
+          if (c.chartOptions && !c.chartKey) {
+            c.chartKey = `chart_${nextChartId++}`;
+            ctx.file.charts.addChart(c.chartKey, {
+              key: c.chartKey,
+              chartSpaceXml: chartSpaceDesc.stringify(c.chartOptions, ctx.file) ?? "",
+            });
+          }
+          continue;
+        }
+        if (c.type === "contentPart") continue;
         if (c.type === "svg") {
           // Register the raster fallback first so its file name is allocated,
           // then the SVG entry referencing it. Dedup applies to each independently.

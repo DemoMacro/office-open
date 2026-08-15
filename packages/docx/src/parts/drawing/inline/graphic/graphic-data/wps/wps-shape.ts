@@ -57,4 +57,17 @@ export interface ShapeCoreOptions {
   shape3d?: Shape3DOptions;
   /** Theme style references (wps:style → lnRef/fillRef/effectRef/fontRef). */
   style?: ShapeStyleOptions;
+  /**
+   * Linked text box chain (wps:linkedTxbx) — the shape's text lives in the
+   * linked part instead of inline w:txbxContent. XSD choice: exclusive with
+   * inline text content.
+   */
+  linkedTextBox?: {
+    /** Chain id shared by all boxes in the link (@id, required). */
+    id: number;
+    /** Position of this box in the chain (@seq, required). */
+    sequence: number;
+  };
+  /** East-Asian vertical text flow (wps:wsp @normalEastAsianFlow, default false). */
+  normalEastAsianFlow?: boolean;
 }

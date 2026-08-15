@@ -210,6 +210,91 @@ describe("drawingDesc round-trip", () => {
     expect(xml).not.toContain('prst="rect"');
   });
 
+  it("round-trips wps linked text box and normalEastAsianFlow", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: {
+          children: [],
+          linkedTextBox: { id: 7, sequence: 2 },
+          normalEastAsianFlow: true,
+        },
+      },
+    });
+    expect(xml).toContain('<wps:wsp normalEastAsianFlow="1">');
+    expect(xml).toContain('<wps:linkedTxbx id="7" seq="2"/>');
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: {
+        linkedTextBox?: { id: number; sequence: number };
+        normalEastAsianFlow?: boolean;
+      };
+    };
+    expect(result.wpsShape?.linkedTextBox).toEqual({ id: 7, sequence: 2 });
+    expect(result.wpsShape?.normalEastAsianFlow).toBe(true);
+  });
+
+  it("stringifies a chart group child as wpg:graphicFrame", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wpg" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 1828800, y: 914400 } },
+        children: [
+          {
+            type: "chart" as const,
+            chartKey: "chart_1",
+            transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+            nonVisualProperties: { id: 6, name: "Chart 6" },
+          },
+        ],
+      },
+    });
+    expect(xml).toContain("<wpg:graphicFrame>");
+    expect(xml).toContain('<wpg:cNvPr id="6" name="Chart 6"/>');
+    expect(xml).toContain("<wpg:cNvFrPr/>");
+    expect(xml).toContain('r:id="{chart:chart_1}"');
+  });
+
+  it("round-trips a content part (wp:contentPart) with cpLocks", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "contentPart" as const,
+        referenceId: "rId9",
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        nonVisualProperties: {
+          id: 3,
+          name: "Video",
+          contentPart: { isComment: false, locks: { noChangeAspect: true } },
+        },
+        blackWhiteMode: "auto" as const,
+      },
+    });
+    expect(xml).toContain('<wp:contentPart r:id="rId9" bwMode="auto">');
+    expect(xml).toContain('<wp:cNvContentPartPr isComment="0">');
+    expect(xml).toContain('<a:cpLocks noChangeAspect="true"/>');
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      contentPart?: {
+        referenceId?: string;
+        blackWhiteMode?: string;
+        nonVisualProperties?: {
+          contentPart?: { isComment?: boolean; locks?: Record<string, boolean> };
+        };
+      };
+    };
+    expect(result.contentPart?.referenceId).toBe("rId9");
+    expect(result.contentPart?.blackWhiteMode).toBe("auto");
+    expect(result.contentPart?.nonVisualProperties?.contentPart?.isComment).toBe(false);
+    expect(result.contentPart?.nonVisualProperties?.contentPart?.locks?.noChangeAspect).toBe(true);
+  });
+
   it("round-trips wps shape preset geometry", () => {
     const xml = stringify({
       mediaData: {

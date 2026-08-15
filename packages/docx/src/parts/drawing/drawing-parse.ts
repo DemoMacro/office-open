@@ -19,7 +19,12 @@ import {
   presetGeometryDesc,
 } from "@office-open/core";
 import { scene3DDesc, shape3DDesc } from "@office-open/core/drawingml";
-import type { SourceRectangleOptions } from "@office-open/core/drawingml";
+import type {
+  BlackWhiteMode,
+  NonVisualContentPartPropertiesOptions,
+  SourceRectangleOptions,
+} from "@office-open/core/drawingml";
+import { parseNonVisualContentPartProperties } from "@office-open/core/drawingml";
 import { attr, attrBool, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
@@ -28,6 +33,8 @@ import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type { GroupOptions } from "@parts/paragraph/run/wpg-group-run";
 import type { ShapeOptions } from "@parts/paragraph/run/wps-shape-run";
 import type {
+  ChartMediaData,
+  ContentPartMediaData,
   GroupChildMediaData,
   MediaData,
   MediaDataTransformation,
@@ -64,13 +71,19 @@ export type DrawingChild =
   | { chart: ChartOptions }
   | { smartArt: SmartArtOptions }
   | { wpsShape: ShapeOptions }
-  | { wpgGroup: GroupOptions };
+  | { wpgGroup: GroupOptions }
+  | { contentPart: ContentPartMediaData };
 
 /**
  * Parse a w:drawing element and dispatch to the correct parser
  * based on the graphicData URI.
  */
 export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild | undefined {
+  // A content part is a direct choice child of wp:inline/wp:anchor — no
+  // a:graphic wrapper, so it must be checked before the graphicData dispatch.
+  const contentPartEl = findFirst(el, "wp:contentPart") ?? findFirst(el, "wpg:contentPart");
+  if (contentPartEl) return { contentPart: parseContentPart(contentPartEl) };
+
   const graphicData = findFirst(el, "a:graphicData");
   if (!graphicData) return undefined;
 
@@ -540,6 +553,18 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   }
   result.children = children;
 
+  // Linked text box chain (wps:linkedTxbx) — XSD choice partner of txbx.
+  const linkedTxbx = findChild(wspEl, "wps:linkedTxbx");
+  if (linkedTxbx) {
+    result.linkedTextBox = {
+      id: attrNum(linkedTxbx, "id") ?? 0,
+      sequence: attrNum(linkedTxbx, "seq") ?? 1,
+    };
+  }
+  // East-Asian vertical flow (wps:wsp @normalEastAsianFlow)
+  const normalEastAsianFlow = attrBool(wspEl, "normalEastAsianFlow");
+  if (normalEastAsianFlow !== undefined) result.normalEastAsianFlow = normalEastAsianFlow;
+
   // Non-visual shape properties: wps:cNvPr (id/name/descr) + a choice of
   // wps:cNvSpPr (txBox marker) or wps:cNvCnPr (connector) — mutually exclusive.
   const cNvPr = findChild(wspEl, "wps:cNvPr");
@@ -636,6 +661,37 @@ function readChildTransformation(spPr: Element | undefined): MediaDataTransforma
   const rot = attrNum(xfrm, "rot");
   if (rot !== undefined) result.rotation = rot;
 
+  return result;
+}
+
+/**
+ * Build a MediaDataTransformation from a directly nested xfrm (graphicFrame /
+ * contentPart carry wp:/wpg:xfrm as a direct child instead of inside spPr).
+ */
+function readDirectXfrmTransformation(el: Element): MediaDataTransformation {
+  const xfrm = (el.elements ?? []).find(
+    (c) => c.type === "element" && /^(wp|wpg|a):xfrm$/.test(c.name ?? ""),
+  ) as Element | undefined;
+  if (!xfrm) return { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } };
+
+  const result: MediaDataTransformation = { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } };
+  const off = findChild(xfrm, "a:off");
+  if (off?.attributes) {
+    result.offset = {
+      emus: { x: Number(off.attributes["x"] ?? 0), y: Number(off.attributes["y"] ?? 0) },
+      pixels: {
+        x: convertEmuToPixels(Number(off.attributes["x"] ?? 0)),
+        y: convertEmuToPixels(Number(off.attributes["y"] ?? 0)),
+      },
+    };
+  }
+  const ext = findChild(xfrm, "a:ext");
+  if (ext?.attributes) {
+    const cx = Number(ext.attributes["cx"] ?? 0);
+    const cy = Number(ext.attributes["cy"] ?? 0);
+    result.emus = { x: cx, y: cy };
+    result.pixels = { x: convertEmuToPixels(cx), y: convertEmuToPixels(cy) };
+  }
   return result;
 }
 
@@ -826,7 +882,92 @@ function parseGroupChild(el: Element, ctx: DocxReadContext): GroupChildMediaData
     return parsePicChildMediaData(el, ctx) as GroupChildMediaData | undefined;
   }
   if (el.name === "wpg:grpSp") return parseNestedGroup(el, ctx);
+  if (el.name === "wpg:graphicFrame") return parseGroupGraphicFrame(el, ctx);
+  if (el.name === "wpg:contentPart" || el.name === "wp:contentPart") return parseContentPart(el);
   return undefined;
+}
+
+/**
+ * Parse a wpg:graphicFrame group child (CT_GraphicFrame). Charts are the
+ * payload Word produces in groups; the chart part is re-registered on
+ * generate from the parsed chartOptions.
+ */
+function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaData | undefined {
+  const chartRef = findFirst(el, "c:chart");
+  if (!chartRef) return undefined;
+  const rId = attr(chartRef, "r:id");
+  const chartPath = rId ? lookupRId(ctx.docx.partRefs.charts, rId) : undefined;
+  if (!chartPath) return undefined;
+
+  const chartXml = ctx.docx.doc.get(chartPath);
+  if (!chartXml) return undefined;
+  const chartOpts = parseChartXml(chartXml);
+  if (!chartOpts) return undefined;
+
+  const md: ChartMediaData = {
+    type: "chart",
+    transformation: readDirectXfrmTransformation(el),
+    chartOptions: chartOpts as unknown as ChartOptions,
+  };
+
+  const cNvPr = findChild(el, "wpg:cNvPr") ?? findChild(el, "wp:cNvPr");
+  if (cNvPr) {
+    const nvp: NonVisualPropertiesOptions = {};
+    const id = attrNum(cNvPr, "id");
+    const name = attr(cNvPr, "name");
+    const descr = attr(cNvPr, "descr");
+    const title = attr(cNvPr, "title");
+    if (id !== undefined) nvp.id = id;
+    if (name) nvp.name = name;
+    if (descr) nvp.description = descr;
+    if (title) nvp.title = title;
+    if (Object.keys(nvp).length > 0) md.nonVisualProperties = nvp;
+  }
+  const cNvFrPr = findChild(el, "wpg:cNvFrPr") ?? findChild(el, "wp:cNvFrPr");
+  if (cNvFrPr) md.graphicFrameLocks = readGraphicFrameLocks(cNvFrPr);
+
+  return md;
+}
+
+/**
+ * Parse a wp:/wpg:contentPart element (CT_WordprocessingContentPart). The
+ * r:id is captured verbatim — the relationship itself is not re-registered
+ * on generate.
+ */
+function parseContentPart(el: Element): ContentPartMediaData {
+  const md: ContentPartMediaData = {
+    type: "contentPart",
+    referenceId: attr(el, "r:id") ?? "",
+    transformation: readDirectXfrmTransformation(el),
+  };
+  const bwMode = attr(el, "bwMode");
+  if (bwMode) md.blackWhiteMode = bwMode as BlackWhiteMode;
+
+  const nv = findChild(el, "wp:nvContentPartPr") ?? findChild(el, "wpg:nvContentPartPr");
+  if (nv) {
+    const cNvPr = findChild(nv, "wp:cNvPr") ?? findChild(nv, "wpg:cNvPr");
+    const cpPr = findChild(nv, "wp:cNvContentPartPr") ?? findChild(nv, "wpg:cNvContentPartPr");
+    const nvp: NonVisualContentPartNv = {};
+    if (cNvPr) {
+      const id = attrNum(cNvPr, "id");
+      const name = attr(cNvPr, "name");
+      const descr = attr(cNvPr, "descr");
+      const title = attr(cNvPr, "title");
+      if (id !== undefined) nvp.id = id;
+      if (name) nvp.name = name;
+      if (descr) nvp.description = descr;
+      if (title) nvp.title = title;
+    }
+    const contentPart = parseNonVisualContentPartProperties(cpPr);
+    if (contentPart) nvp.contentPart = contentPart;
+    if (Object.keys(nvp).length > 0) md.nonVisualProperties = nvp;
+  }
+  return md;
+}
+
+/** Non-visual properties of a content part (cNvPr + cNvContentPartPr). */
+interface NonVisualContentPartNv extends NonVisualPropertiesOptions {
+  contentPart?: NonVisualContentPartPropertiesOptions;
 }
 
 /**

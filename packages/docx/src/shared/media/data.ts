@@ -1,17 +1,20 @@
 import type { BaseMediaEntry } from "@office-open/core";
 import type {
+  BlackWhiteMode,
   EffectListOptions,
   FillOptions,
+  NonVisualContentPartPropertiesOptions,
   NonVisualDrawingPropertiesOptions,
   OutlineOptions,
   SourceRectangleOptions,
 } from "@office-open/core/drawingml";
-import type { GroupShapeLocksOptions } from "@parts/drawing/descriptor";
+import type { GraphicFrameLocksOptions, GroupShapeLocksOptions } from "@parts/drawing/descriptor";
 import type {
   ChildExtent,
   ChildOffset,
 } from "@parts/drawing/inline/graphic/graphic-data/wpg/wpg-group";
 import type { ShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
+import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 
 export interface MediaDataTransformation {
   offset?: {
@@ -119,7 +122,13 @@ export interface GroupCommonMediaData {
   fill?: FillOptions;
 }
 
-export type GroupChildMediaData = (ShapeMediaData | MediaData | GroupMediaData) &
+export type GroupChildMediaData = (
+  | ShapeMediaData
+  | MediaData
+  | GroupMediaData
+  | ChartMediaData
+  | ContentPartMediaData
+) &
   GroupCommonMediaData;
 
 export interface GroupMediaData {
@@ -140,11 +149,48 @@ export interface GroupMediaData {
 
 /**
  * Chart media data — references a chart part via placeholder.
+ *
+ * Top-level drawings always carry a chartKey assigned at the `{ chart }` sugar
+ * dispatch; charts nested in a wpg group may instead carry `chartOptions`,
+ * in which case the group dispatch assigns the key and registers the part.
  */
 export interface ChartMediaData {
   type: "chart";
   transformation: MediaDataTransformation;
-  chartKey: string;
+  chartKey?: string;
+  /**
+   * Chart payload for a group-nested chart (wpg:graphicFrame). Present on the
+   * round-trip path and for fresh group children declared as options.
+   */
+  chartOptions?: ChartOptions;
+  /** Non-visual properties (wpg:cNvPr) for round-trip fidelity. */
+  nonVisualProperties?: NonVisualPropertiesOptions;
+  /** Graphic frame locks (wpg:cNvFrPr/a:graphicFrameLocks) for round-trip. */
+  graphicFrameLocks?: GraphicFrameLocksOptions | null;
+}
+
+/**
+ * Content part options (wp:contentPart / wpg:contentPart) — references an
+ * opaque part via r:id. The relationship is not re-registered on generate;
+ * the source r:id is passed through verbatim.
+ */
+export interface ContentPartOptions {
+  /** Relationship id from the source document (r:id, round-trip passthrough). */
+  referenceId: string;
+  /** Placement transform (xfrm) */
+  transformation?: MediaDataTransformation;
+  /** Non-visual content part properties (cNvPr + cNvContentPartPr). */
+  nonVisualProperties?: NonVisualPropertiesOptions & {
+    contentPart?: NonVisualContentPartPropertiesOptions;
+  };
+  /** Black-and-white mode (@bwMode). */
+  blackWhiteMode?: BlackWhiteMode;
+}
+
+/** Group-child / drawing-data form of {@link ContentPartOptions}. */
+export interface ContentPartMediaData extends ContentPartOptions {
+  type: "contentPart";
+  transformation: MediaDataTransformation;
 }
 
 /**
@@ -161,6 +207,7 @@ export type ExtendedMediaData =
   | ShapeMediaData
   | GroupMediaData
   | ChartMediaData
-  | SmartArtMediaData;
+  | SmartArtMediaData
+  | ContentPartMediaData;
 
 export type MediaData = (RegularMediaData | SvgMediaData) & CoreMediaData;

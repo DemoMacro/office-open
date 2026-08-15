@@ -150,11 +150,13 @@ export {
   createGroupLocking,
   createGraphicFrameLocking,
   createConnectorLocking,
+  createContentPartLocking,
   type ShapeLockingOptions,
   type PictureLockingOptions,
   type GroupLockingOptions,
   type GraphicFrameLockingOptions,
   type ConnectorLockingOptions,
+  type ContentPartLockingOptions,
 } from "./locking";
 export {
   stringifyEndpointConnection,
@@ -167,7 +169,10 @@ export {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
   pickNonVisualDrawingProperties,
+  stringifyNonVisualContentPartProperties,
+  parseNonVisualContentPartProperties,
   type NonVisualDrawingPropertiesOptions,
+  type NonVisualContentPartPropertiesOptions,
 } from "./non-visual";
 
 // Diagram (SmartArt dgm: elements)

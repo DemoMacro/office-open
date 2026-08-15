@@ -33,6 +33,7 @@ import {
   createColorElement,
   groupShapePropertiesDesc,
   shapePropertiesDesc,
+  stringifyNonVisualContentPartProperties,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
 import { escapeXml } from "@office-open/xml";
@@ -40,6 +41,7 @@ import { stringifyParagraphInline } from "@parts/inline";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type {
   ChartMediaData,
+  ContentPartMediaData,
   ExtendedMediaData,
   GroupChildMediaData,
   MediaData,
@@ -410,13 +412,22 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   // wps:txbx — only emit when the shape carries text (text boxes). Pure
   // geometry shapes (no paragraphs) omit txbx in the source.
   const txbxXml = childXml ? `<wps:txbx><w:txbxContent>${childXml}</w:txbxContent></wps:txbx>` : "";
+  // wps:linkedTxbx — XSD choice partner of txbx: the text lives in the linked
+  // part, so the shape carries the chain reference instead of inline content.
+  const linkedTxbxXml =
+    !childXml && opts.linkedTextBox
+      ? `<wps:linkedTxbx id="${opts.linkedTextBox.id}" seq="${opts.linkedTextBox.sequence}"/>`
+      : "";
+  // East-Asian vertical flow attribute (default false — emit only when set)
+  const neafAttr = opts.normalEastAsianFlow ? ' normalEastAsianFlow="1"' : "";
 
   return (
-    "<wps:wsp>" +
+    `<wps:wsp${neafAttr}>` +
     cNvSpPr +
     `<wps:spPr bwMode="auto">${spPrContent}</wps:spPr>` +
     styleXml +
     txbxXml +
+    linkedTxbxXml +
     stringifyBodyPr(opts.bodyProperties) +
     "</wps:wsp>"
   );
@@ -538,6 +549,12 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
   if (child.type === "wpg") {
     return stringifyNestedGroup(child as GroupMediaData, ctx);
   }
+  if (child.type === "chart") {
+    return stringifyGroupGraphicFrame(child as ChartMediaData);
+  }
+  if (child.type === "contentPart") {
+    return stringifyContentPart("wpg", child as ContentPartMediaData);
+  }
   // pic child (MediaData) — fill/outline ride on the group-child extension
   // (GroupCommonMediaData) so a grouped picture's spPr round-trips verbatim.
   const picData = child as MediaData & { outline?: OutlineOptions; fill?: FillOptions };
@@ -570,6 +587,80 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
   picParts.push(`<pic:blipFill>${groupBlipParts.join("")}</pic:blipFill>`);
   picParts.push(stringifyShapeProps(picData.transformation, picData.outline, picData.fill));
   return `<pic:pic xmlns:pic="${PIC_URI}">${picParts.join("")}</pic:pic>`;
+}
+
+/**
+ * Stringify a wpg:graphicFrame group child (CT_GraphicFrame): cNvPr +
+ * cNvFrPr + a:xfrm + a:graphic. Charts are the graphic payload Word produces
+ * inside groups; the chart part is registered by the group dispatch.
+ */
+function stringifyGroupGraphicFrame(md: ChartMediaData): string {
+  const nvp = md.nonVisualProperties;
+  const cNvPrXml = stringifyNonVisualDrawingProperties("wpg:cNvPr", nvp?.id ?? 0, nvp, "Chart");
+  const cNvFrPrXml = stringifyCnvFrPr(md.graphicFrameLocks);
+  const xfrmXml = stringifyChildXfrm("wpg", md.transformation);
+  return (
+    "<wpg:graphicFrame>" +
+    cNvPrXml +
+    cNvFrPrXml +
+    xfrmXml +
+    `<a:graphic ${GRAPHIC_NS}>` +
+    `<a:graphicData uri="${CHART_URI}">` +
+    `<c:chart xmlns:c="${CHART_URI}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="{chart:${md.chartKey}}"/>` +
+    `</a:graphicData>` +
+    `</a:graphic>` +
+    "</wpg:graphicFrame>"
+  );
+}
+
+/** Render wpg:cNvFrPr (CT_NonVisualGraphicFrameProperties — a:graphicFrameLocks). */
+function stringifyCnvFrPr(locks?: GraphicFrameLocksOptions | null): string {
+  if (!locks) return "<wpg:cNvFrPr/>";
+  const attrParts: string[] = [];
+  if (locks.noGrp) attrParts.push('noGrp="1"');
+  if (locks.noDrilldown) attrParts.push('noDrilldown="1"');
+  if (locks.noSelect) attrParts.push('noSelect="1"');
+  if (locks.noChangeAspect) attrParts.push('noChangeAspect="1"');
+  if (locks.noMove) attrParts.push('noMove="1"');
+  if (locks.noResize) attrParts.push('noResize="1"');
+  if (attrParts.length === 0) return "<wpg:cNvFrPr/>";
+  const attrStr = " " + attrParts.join(" ");
+  return `<wpg:cNvFrPr><a:graphicFrameLocks${attrStr} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wpg:cNvFrPr>`;
+}
+
+/**
+ * Build the xfrm (off/ext) of a nested drawing from its transformation. The
+ * root tag is host-namespaced (local element of CT_GraphicFrame /
+ * CT_WordprocessingContentPart); the off/ext children belong to a:.
+ */
+function stringifyChildXfrm(prefix: "wp" | "wpg", t: MediaDataTransformation): string {
+  const x = t.offset?.emus?.x ?? 0;
+  const y = t.offset?.emus?.y ?? 0;
+  const flipAttrs =
+    (t.flip?.horizontal ? ' flipH="1"' : "") + (t.flip?.vertical ? ' flipV="1"' : "");
+  const rotAttr = t.rotation !== undefined ? ` rot="${t.rotation}"` : "";
+  return `<${prefix}:xfrm${flipAttrs}${rotAttr}><a:off x="${x}" y="${y}"/><a:ext cx="${t.emus.x}" cy="${t.emus.y}"/></${prefix}:xfrm>`;
+}
+
+/**
+ * Stringify a contentPart child (CT_WordprocessingContentPart): nvContentPartPr
+ * (cNvPr + cNvContentPartPr) + a:xfrm + @bwMode/@r:id. `prefix` selects the
+ * host namespace (wp: at the drawing root, wpg: inside a group).
+ */
+function stringifyContentPart(prefix: "wp" | "wpg", md: ContentPartMediaData): string {
+  const nvp = md.nonVisualProperties;
+  const attrParts = [`r:id="${escapeXml(md.referenceId)}"`];
+  if (md.blackWhiteMode) attrParts.push(`bwMode="${escapeXml(md.blackWhiteMode)}"`);
+  const nvInner =
+    stringifyNonVisualDrawingProperties(`${prefix}:cNvPr`, nvp?.id ?? 0, nvp, "Content Part") +
+    stringifyNonVisualContentPartProperties(`${prefix}:cNvContentPartPr`, nvp?.contentPart);
+  const nvXml = nvInner ? `<${prefix}:nvContentPartPr>${nvInner}</${prefix}:nvContentPartPr>` : "";
+  return (
+    `<${prefix}:contentPart ${attrParts.join(" ")}>` +
+    nvXml +
+    stringifyChildXfrm(prefix, md.transformation) +
+    `</${prefix}:contentPart>`
+  );
 }
 
 /**
@@ -824,7 +915,11 @@ function stringifyInline(
   // Prefer the verbatim source effectExtent (round-trip); fall back to
   // computing it from the shape's effects on the generation path.
   const effectExtent = mediaData.transformation.effectExtent ?? calculateEffectExtent(effects);
-  const graphicDataXml = stringifyGraphicDataContent(mediaData, opts, hlIds, ctx);
+  // A content part is a direct choice child of wp:inline (no a:graphic wrapper).
+  const choiceXml =
+    mediaData.type === "contentPart"
+      ? stringifyContentPart("wp", mediaData as ContentPartMediaData)
+      : `<a:graphic ${GRAPHIC_NS}>${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
 
   return (
     `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">` +
@@ -832,7 +927,7 @@ function stringifyInline(
     `<wp:effectExtent l="${effectExtent.l}" t="${effectExtent.t}" r="${effectExtent.r}" b="${effectExtent.b}"/>` +
     stringifyDocPr(docProperties, hlIds) +
     stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
-    `<a:graphic ${GRAPHIC_NS}>${graphicDataXml}</a:graphic>` +
+    choiceXml +
     `</wp:inline></w:drawing>`
   );
 }
@@ -889,7 +984,11 @@ function stringifyAnchor(
     wrapXml = "<wp:wrapNone/>";
   }
 
-  const graphicDataXml = stringifyGraphicDataContent(mediaData, opts, hlIds, ctx);
+  // A content part is a direct choice child of wp:anchor (no a:graphic wrapper).
+  const choiceXml =
+    mediaData.type === "contentPart"
+      ? stringifyContentPart("wp", mediaData as ContentPartMediaData)
+      : `<a:graphic ${GRAPHIC_NS}>${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
 
   // Prefer the verbatim source effectExtent (round-trip); default to zero.
   const ee = mediaData.transformation.effectExtent;
@@ -907,7 +1006,7 @@ function stringifyAnchor(
     wrapXml +
     stringifyDocPr(docProperties, hlIds) +
     stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
-    `<a:graphic ${GRAPHIC_NS}>${graphicDataXml}</a:graphic>` +
+    choiceXml +
     `</wp:anchor></w:drawing>`
   );
 }
