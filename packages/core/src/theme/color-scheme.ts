@@ -42,6 +42,17 @@ function readColorValue(el: XmlElement | undefined): string | undefined {
   return undefined;
 }
 
+/**
+ * Whether the color element carries the conventional default sysClr form
+ * (dk1 = windowText, lt1 = window). These parse to "not explicitly set" so
+ * stringify re-emits the same sysClr spelling and Office-default themes
+ * round-trip byte-identically instead of degrading sysClr to srgbClr.
+ */
+function isDefaultSysClr(el: XmlElement | undefined, val: string): boolean {
+  const sysClr = findChild(el, "a:sysClr");
+  return sysClr !== undefined && String(sysClr.attributes?.["val"] ?? "") === val;
+}
+
 /** dk1/lt1 emit sysClr by default, srgbClr when explicitly supplied. */
 function stringifyColorTag(
   tag: string,
@@ -81,7 +92,16 @@ export function parseColorScheme(el: XmlElement | undefined): ColorSchemeOptions
   const name = el.attributes?.["name"];
   if (name) result.name = String(name);
   for (const { tag, key } of COLOR_TAGS) {
-    const value = readColorValue(findChild(el, tag));
+    const colorEl = findChild(el, tag);
+    // Conventional-default sysClr (windowText/window) parses to "unset" so
+    // stringify re-emits the sysClr form — see isDefaultSysClr.
+    if (
+      (key === "dark1" && isDefaultSysClr(colorEl, "windowText")) ||
+      (key === "light1" && isDefaultSysClr(colorEl, "window"))
+    ) {
+      continue;
+    }
+    const value = readColorValue(colorEl);
     if (value) result[key] = value;
   }
   return result;

@@ -12,11 +12,13 @@ import {
 import type { ParsedArchive } from "@office-open/core";
 import { partPathToRelsPath, toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
+import { chartSpaceDesc } from "@office-open/core/chart";
+import type { ChartSeriesData } from "@office-open/core/chart";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import type { ParseOptions } from "@office-open/xml";
-import { attr } from "@office-open/xml";
+import { attr, findChild } from "@office-open/xml";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
@@ -32,8 +34,7 @@ import { metadataDesc } from "@parts/metadata";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
-import type { PivotTableParseResult } from "@parts/pivot-table";
-import type { PivotTableOptions } from "@parts/pivot/pivot-utils";
+import type { ConsolidateFunction, PivotTableOptions } from "@parts/pivot/pivot-utils";
 import { queryTableDesc } from "@parts/query-table";
 import type { QueryTableOptions } from "@parts/query-table";
 import {
@@ -245,6 +246,29 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   // Create read context for descriptor pipeline
   const readContext = new XlsxReadContext(xlsx, strings);
 
+  // Pivot cache definitions, keyed by part path — worksheet parsing resolves
+  // each pivot table's cacheId against this map when rebuilding the
+  // user-layer PivotTableOptions (field indices → cache field names, data
+  // range → worksheetSource).
+  const pivotCacheByPath = new Map<string, PivotCacheDefParseResult>();
+  for (const key of xlsx.doc.keys("xl/pivotCache/")) {
+    if (!key.includes("pivotCacheDefinition")) continue;
+    const pcdEl = xlsx.doc.get(key);
+    if (!pcdEl) continue;
+    pivotCacheByPath.set(key, pivotCacheDefDesc.parse(pcdEl, readContext));
+  }
+  // workbook.xml pivotCaches: cacheId → definition part path.
+  const pivotCachePathById = new Map<number, string>();
+  const wbPivotCaches = xlsx.workbook ? findChild(xlsx.workbook, "pivotCaches") : undefined;
+  for (const pc of wbPivotCaches?.elements ?? []) {
+    if (pc.name !== "pivotCache") continue;
+    const cacheId = attr(pc, "cacheId");
+    const rId = attr(pc, "r:id");
+    if (cacheId === undefined || rId === undefined) continue;
+    const target = readContext.resolveRelationship(rId);
+    if (target) pivotCachePathById.set(Number(cacheId), target);
+  }
+
   // Parse styles (fonts, fills, borders, cellXfs)
   if (xlsx.styles) {
     const parsedStyles = stylesDesc.parse(xlsx.styles, readContext);
@@ -325,14 +349,41 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       const drawingEl = xlsx.doc.get(dr.target);
       if (!drawingEl) continue;
       const drawingData = drawingDesc.parse(drawingEl, readContext);
-      // drawingDesc.parse yields CT-layer shapes (rId-anchored DrawingImage/
-      // DrawingChart), while WorksheetOptions.images/charts are the user-layer
-      // shapes (data bytes / ChartSpace content). The shapes are not
-      // interchangeable — round-trip drawings are lossy — these casts mark the
-      // known impedance, same as wsOpts.pivotTables above.
-      if (drawingData.images) wsOpts.images = drawingData.images as unknown as PictureOptions[];
-      if (drawingData.charts)
-        wsOpts.charts = drawingData.charts as unknown as WorksheetChartOptions[];
+      // drawingDesc.parse yields CT-layer anchors (rId-anchored DrawingImage/
+      // DrawingChart); bridge them to the user-layer shapes the compiler
+      // consumes: image bytes are read back through the drawing's image
+      // relationships, chart parts through the core chartSpace descriptor.
+      if (drawingData.images) {
+        const images: PictureOptions[] = [];
+        for (const image of drawingData.images) {
+          const mediaPath = readContext.resolveWorksheetRel(dr.target, image.rId);
+          const raw = mediaPath ? xlsx.doc.getRaw(mediaPath) : undefined;
+          const ext = mediaPath?.split(".").pop();
+          if (!raw || (ext !== "png" && ext !== "jpeg" && ext !== "jpg")) continue;
+          images.push({
+            data: raw,
+            type: ext === "png" ? "png" : "jpg",
+            col: image.col,
+            row: image.row,
+            name: image.name,
+            description: image.description,
+            title: image.title,
+            hidden: image.hidden,
+          });
+        }
+        if (images.length > 0) wsOpts.images = images;
+      }
+      if (drawingData.charts) {
+        const charts: WorksheetChartOptions[] = [];
+        for (const anchor of drawingData.charts) {
+          const chartPath = readContext.resolveWorksheetRel(dr.target, anchor.rId);
+          const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
+          if (!chartEl) continue;
+          const chartSpace = chartSpaceDesc.parse(chartEl, readContext);
+          charts.push({ ...chartSpace, col: anchor.col, row: anchor.row });
+        }
+        if (charts.length > 0) wsOpts.charts = charts;
+      }
       // Shapes/connectors/groups pass through unchanged (no media bridge).
       if (drawingData.shapes) wsOpts.shapes = drawingData.shapes;
       if (drawingData.connectors) wsOpts.connectors = drawingData.connectors;
@@ -377,22 +428,53 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       if (singleXmlCells.length > 0) wsOpts.singleXmlCells = singleXmlCells;
     }
 
-    // Pivot tables
+    // Pivot tables — rebuild the user-layer shape from the CT-layer parse
+    // result: field indices resolve against the cache definition's field
+    // names, the data range against its worksheetSource.
     const pivotRels = readContext.getWorksheetRelsByType(wsPath, "/pivotTable");
     if (pivotRels.length > 0) {
-      const pivotTables: PivotTableParseResult[] = [];
+      const pivotTables: PivotTableOptions[] = [];
       for (const pr of pivotRels) {
         const pivotEl = xlsx.doc.get(pr.target);
         if (!pivotEl) continue;
         const pivotData = pivotTableDesc.parse(pivotEl, readContext);
-        pivotTables.push(pivotData);
+        const cache = pivotCacheByPath.get(pivotCachePathById.get(pivotData.cacheId ?? -1) ?? "");
+        const ref = cache?.worksheetSource?.ref;
+        if (!cache || !ref) continue;
+        const fieldNames = (cache.cacheFields ?? []).map((f) => f.name ?? "");
+        const rows = (pivotData.rowFields ?? [])
+          .map((i) => fieldNames[i])
+          .filter((name): name is string => name !== "");
+        const data = (pivotData.dataFields ?? [])
+          .filter((d) => d.fld !== undefined)
+          .map((d) => ({
+            field: fieldNames[d.fld!] ?? "",
+            ...(d.subtotal ? { summarize: d.subtotal as ConsolidateFunction } : {}),
+            ...(d.name ? { name: d.name } : {}),
+          }));
+        if (rows.length === 0 || data.length === 0) continue;
+        const pt: PivotTableOptions = { source: ref, rows, data };
+        if (pivotData.name) pt.name = pivotData.name;
+        if (cache.worksheetSource?.sheet) pt.sourceSheet = cache.worksheetSource.sheet;
+        if (pivotData.location) pt.location = pivotData.location;
+        const columns = (pivotData.colFields ?? [])
+          .map((i) => fieldNames[i])
+          .filter((name): name is string => name !== "");
+        if (columns.length > 0) pt.columns = columns;
+        if (pivotData.pivotTableStyle) pt.style = pivotData.pivotTableStyle;
+        if (pivotData.dataOnRows) pt.dataOnRows = true;
+        if (pivotData.grandTotalCaption) pt.grandTotalCaption = pivotData.grandTotalCaption;
+        if (pivotData.errorCaption) pt.errorCaption = pivotData.errorCaption;
+        if (pivotData.showError) pt.showError = true;
+        if (pivotData.missingCaption) pt.missingCaption = pivotData.missingCaption;
+        if (pivotData.showMissing === false) pt.showMissing = false;
+        if (pivotData.pageStyle) pt.pageStyle = pivotData.pageStyle;
+        if (pivotData.tag) pt.tag = pivotData.tag;
+        if (pivotData.showItems === false) pt.showItems = false;
+        if (pivotData.editData) pt.editData = true;
+        pivotTables.push(pt);
       }
-      // WorksheetOptions.pivotTables is PivotTableOptions[] (user-layer) for the
-      // compiler's stringify; parse yields the CT-layer PivotTableParseResult.
-      // The shapes are not interchangeable (index-based vs name-based), so
-      // round-trip pivot tables are lossy — this cast marks the known impedance.
-      if (pivotTables.length > 0)
-        wsOpts.pivotTables = pivotTables as unknown as PivotTableOptions[];
+      if (pivotTables.length > 0) wsOpts.pivotTables = pivotTables;
     }
 
     // Resolve external hyperlink URLs
@@ -420,6 +502,30 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       if (!csEl) continue;
       const csData = chartsheetDesc.parse(csEl, readContext);
       if (sheetNames[worksheets.length + i]) csData.name = sheetNames[worksheets.length + i];
+      // The chart itself lives in a drawing part — bridge it back through the
+      // core chartSpace descriptor into the simplified chartsheet chart shape.
+      const csDrawingRels = readContext.getWorksheetRelsByType(csPath, "/drawing");
+      outer: for (const dr of csDrawingRels) {
+        const drawingEl = xlsx.doc.get(dr.target);
+        if (!drawingEl) continue;
+        const drawingData = drawingDesc.parse(drawingEl, readContext);
+        for (const anchor of drawingData.charts ?? []) {
+          const chartPath = readContext.resolveWorksheetRel(dr.target, anchor.rId);
+          const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
+          if (!chartEl) continue;
+          const cs = chartSpaceDesc.parse(chartEl, readContext);
+          csData.chart = {
+            type: cs.type,
+            ...(cs.title !== undefined ? { title: cs.title } : {}),
+            ...(cs.categories ? { categories: [...cs.categories] } : {}),
+            series: (cs.series as ChartSeriesData[]).map((s) => ({
+              name: s.name,
+              values: [...s.values],
+            })),
+          };
+          break outer;
+        }
+      }
       chartsheets.push(csData);
     }
     if (chartsheets.length > 0) opts.chartsheets = chartsheets;
@@ -438,19 +544,9 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (dialogsheets.length > 0) opts.dialogsheets = dialogsheets;
   }
 
-  // Pivot cache definitions and records
-  const pivotCacheDefPaths = xlsx.doc
-    .keys("xl/pivotCache/")
-    .filter((k) => k.includes("pivotCacheDefinition"));
-  if (pivotCacheDefPaths.length > 0) {
-    const pivotCaches: PivotCacheDefParseResult[] = [];
-    for (const pcdPath of pivotCacheDefPaths) {
-      const pcdEl = xlsx.doc.get(pcdPath);
-      if (!pcdEl) continue;
-      const pcdData = pivotCacheDefDesc.parse(pcdEl, readContext);
-      pivotCaches.push(pcdData);
-    }
-    if (pivotCaches.length > 0) opts.pivotCaches = pivotCaches;
+  // Pivot cache definitions (parsed into pivotCacheByPath above) and records
+  if (pivotCacheByPath.size > 0) {
+    opts.pivotCaches = [...pivotCacheByPath.values()];
   }
 
   const pivotCacheRecPaths = xlsx.doc

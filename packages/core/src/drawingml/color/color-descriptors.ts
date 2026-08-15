@@ -10,6 +10,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify } from "../../descriptor";
 import { emitAngle, emitPercent, parseAngle, parsePercent } from "../../util/converters";
+import { ANGLE_TRANSFORMS, createColorTransforms, PERCENT_TRANSFORMS } from "./color-transform";
 import type { ColorTransformOptions } from "./color-transform";
 import type { HslColorOptions } from "./hsl-color";
 import type { PresetColorOptions } from "./preset-color";
@@ -55,34 +56,8 @@ const TRANSFORM_KEYS: readonly (keyof ColorTransformOptions & string)[] = [
   "invGamma",
 ];
 
-// Percent transforms: caller writes integer percent (50 = 50%), emitted as
-// XSD 1/1000th-of-a-percent.
-const PERCENT_KEYS: ReadonlySet<string> = new Set([
-  "tint",
-  "shade",
-  "alpha",
-  "alphaOff",
-  "alphaMod",
-  "hueMod",
-  "sat",
-  "satOff",
-  "satMod",
-  "lum",
-  "lumOff",
-  "lumMod",
-  "red",
-  "redOff",
-  "redMod",
-  "green",
-  "greenOff",
-  "greenMod",
-  "blue",
-  "blueOff",
-  "blueMod",
-]);
-
-// Angle transforms: caller writes degrees, emitted as XSD 1/60000th-of-a-degree.
-const ANGLE_KEYS: ReadonlySet<string> = new Set(["hue", "hueOff"]);
+// Transform key classification (percent vs angle) lives in color-transform.ts
+// so stringify and parse share one source of truth.
 
 // Parse an ST_Percentage channel that may arrive as either a 1/1000th integer
 // ("50000" = 50%) or a percent literal ("50%"); both are XSD-valid. Returns
@@ -95,22 +70,9 @@ function parsePercentChannel(raw: string | number | undefined): number {
 }
 
 function stringifyTransforms(opts: ColorTransformOptions): string {
-  const parts: string[] = [];
-  for (const key of TRANSFORM_KEYS) {
-    const v = (opts as Record<string, unknown>)[key];
-    if (v === undefined || v === false) continue;
-    if (v === true) {
-      parts.push(`<a:${key}/>`);
-    } else {
-      const scaled = PERCENT_KEYS.has(key)
-        ? emitPercent(v as number)
-        : ANGLE_KEYS.has(key)
-          ? emitAngle(v as number)
-          : (v as number);
-      parts.push(`<a:${key} val="${escapeXml(String(scaled))}"/>`);
-    }
-  }
-  return parts.join("");
+  // Delegates to createColorTransforms so both paths emit in the caller's key
+  // order (XSD transforms compose left to right — order is fidelity).
+  return createColorTransforms(opts).join("");
 }
 
 function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
@@ -124,9 +86,9 @@ function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
     if (val !== undefined) {
       const raw = Number(val);
       // Percent → integer percent (÷1000); angle → degrees (÷60000); else raw.
-      (result as Record<string, unknown>)[key] = PERCENT_KEYS.has(key)
+      (result as Record<string, unknown>)[key] = PERCENT_TRANSFORMS.has(key)
         ? parsePercent(raw)
-        : ANGLE_KEYS.has(key)
+        : ANGLE_TRANSFORMS.has(key)
           ? parseAngle(raw)
           : raw;
     } else {

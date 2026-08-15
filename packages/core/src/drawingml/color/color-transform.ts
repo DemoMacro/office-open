@@ -9,6 +9,47 @@
  * @module
  */
 
+import { emitAngle, emitPercent } from "../../util/converters";
+
+/**
+ * Transform keys classified by XSD unit — the single source of truth shared by
+ * stringify and parse. Percent keys take integer percent (e.g. `50` = 50%,
+ * scaled ×1000); angle keys take degrees (scaled ×60000); value-less boolean
+ * keys (comp/inv/gray/gamma/invGamma) belong to neither set.
+ */
+export const PERCENT_TRANSFORMS: ReadonlySet<string> = new Set([
+  "tint",
+  "shade",
+  "alpha",
+  "alphaOff",
+  "alphaMod",
+  "hueMod",
+  "sat",
+  "satOff",
+  "satMod",
+  "lum",
+  "lumOff",
+  "lumMod",
+  "red",
+  "redOff",
+  "redMod",
+  "green",
+  "greenOff",
+  "greenMod",
+  "blue",
+  "blueOff",
+  "blueMod",
+]);
+
+export const ANGLE_TRANSFORMS: ReadonlySet<string> = new Set(["hue", "hueOff"]);
+
+/** Scale a transform value to its XSD unit; non-percent/angle keys pass through. */
+export function emitTransformValue(key: string, value: number): number {
+  if (PERCENT_TRANSFORMS.has(key)) return emitPercent(value);
+  if (ANGLE_TRANSFORMS.has(key)) return emitAngle(value);
+  return value;
+}
+
 /**
  * Options for color transforms.
  *
@@ -78,10 +119,12 @@ export interface ColorTransformOptions {
 }
 
 /**
- * Creates color transform child elements as XML strings.
+ * Serialize color transforms, preserving the key order of the options object.
  *
- * These elements modify the parent color according to OOXML color transform rules.
- * Multiple transforms can be applied in sequence.
+ * EG_ColorTransform is an unordered XSD choice, but the sequence is
+ * semantically significant (transforms compose left to right), so the caller's
+ * key order is the emission order and round-trips come back in source order —
+ * plain JS objects preserve insertion order.
  *
  * @example
  * ```typescript
@@ -94,48 +137,14 @@ export interface ColorTransformOptions {
 export const createColorTransforms = (options: ColorTransformOptions): readonly string[] => {
   const t: string[] = [];
 
-  if (options.tint !== undefined) t.push(`<a:tint val="${Math.round(options.tint * 1000)}"/>`);
-  if (options.shade !== undefined) t.push(`<a:shade val="${Math.round(options.shade * 1000)}"/>`);
-  if (options.comp) t.push(`<a:comp/>`);
-  if (options.inv) t.push(`<a:inv/>`);
-  if (options.gray) t.push(`<a:gray/>`);
-  if (options.alpha !== undefined) t.push(`<a:alpha val="${Math.round(options.alpha * 1000)}"/>`);
-  if (options.alphaOff !== undefined)
-    t.push(`<a:alphaOff val="${Math.round(options.alphaOff * 1000)}"/>`);
-  if (options.alphaMod !== undefined)
-    t.push(`<a:alphaMod val="${Math.round(options.alphaMod * 1000)}"/>`);
-  if (options.hue !== undefined) t.push(`<a:hue val="${Math.round(options.hue * 60000)}"/>`);
-  if (options.hueOff !== undefined)
-    t.push(`<a:hueOff val="${Math.round(options.hueOff * 60000)}"/>`);
-  if (options.hueMod !== undefined)
-    t.push(`<a:hueMod val="${Math.round(options.hueMod * 1000)}"/>`);
-  if (options.sat !== undefined) t.push(`<a:sat val="${Math.round(options.sat * 1000)}"/>`);
-  if (options.satOff !== undefined)
-    t.push(`<a:satOff val="${Math.round(options.satOff * 1000)}"/>`);
-  if (options.satMod !== undefined)
-    t.push(`<a:satMod val="${Math.round(options.satMod * 1000)}"/>`);
-  if (options.lum !== undefined) t.push(`<a:lum val="${Math.round(options.lum * 1000)}"/>`);
-  if (options.lumOff !== undefined)
-    t.push(`<a:lumOff val="${Math.round(options.lumOff * 1000)}"/>`);
-  if (options.lumMod !== undefined)
-    t.push(`<a:lumMod val="${Math.round(options.lumMod * 1000)}"/>`);
-  if (options.red !== undefined) t.push(`<a:red val="${Math.round(options.red * 1000)}"/>`);
-  if (options.redOff !== undefined)
-    t.push(`<a:redOff val="${Math.round(options.redOff * 1000)}"/>`);
-  if (options.redMod !== undefined)
-    t.push(`<a:redMod val="${Math.round(options.redMod * 1000)}"/>`);
-  if (options.green !== undefined) t.push(`<a:green val="${Math.round(options.green * 1000)}"/>`);
-  if (options.greenOff !== undefined)
-    t.push(`<a:greenOff val="${Math.round(options.greenOff * 1000)}"/>`);
-  if (options.greenMod !== undefined)
-    t.push(`<a:greenMod val="${Math.round(options.greenMod * 1000)}"/>`);
-  if (options.blue !== undefined) t.push(`<a:blue val="${Math.round(options.blue * 1000)}"/>`);
-  if (options.blueOff !== undefined)
-    t.push(`<a:blueOff val="${Math.round(options.blueOff * 1000)}"/>`);
-  if (options.blueMod !== undefined)
-    t.push(`<a:blueMod val="${Math.round(options.blueMod * 1000)}"/>`);
-  if (options.gamma) t.push(`<a:gamma/>`);
-  if (options.invGamma) t.push(`<a:invGamma/>`);
+  for (const [key, value] of Object.entries(options)) {
+    if (value === undefined || value === false) continue;
+    if (value === true) {
+      t.push(`<a:${key}/>`);
+      continue;
+    }
+    t.push(`<a:${key} val="${emitTransformValue(key, value)}"/>`);
+  }
 
   return t;
 };
