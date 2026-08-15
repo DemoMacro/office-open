@@ -9,9 +9,11 @@
 ## Features
 
 - 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API, no Office dependency
-- 📐 **Spec-Compliant** — Output validates against OOXML Transitional XSD schemas (ISO/IEC 29500), compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace
+- 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500), compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace
+- 🧭 **Full Vocabulary Coverage** — Every element and attribute defined by WordprocessingML, PresentationML, SpreadsheetML, and DrawingML (including shared math) is implemented for both generation and parsing, tracked by automated XSD coverage tooling
 - 🔒 **Fully Typed** — Comprehensive TypeScript definitions for autocomplete and type safety across every API
 - 🎯 **Pure JSON API** — Define documents as plain JSON objects, zero class instantiation, designed for AI agents
+- 🤖 **AI-Native** — Draft-07 JSON Schemas frozen from the TypeScript API, on-demand schema slicing for LLM context budgets (CLI + SDK tool), Vercel AI SDK tool definitions, and an installable Agent Skill
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
 - 🔀 **Cross-Format Copy** — Convert pictures, shapes, tables, and text between .docx, .pptx, and .xlsx; each format keeps its native types, conversions reuse shared `core` domains
@@ -31,24 +33,26 @@
 
 ## Quick Start
 
-### DOCX Generation
-
 ```bash
 # pnpm
-pnpm add @office-open/docx
+pnpm add office-open
 
 # npm
-npm install @office-open/docx
+npm install office-open
 
 # yarn
-yarn add @office-open/docx
+yarn add office-open
 
 # bun
-bun add @office-open/docx
+bun add office-open
 ```
 
+The `office-open` package bundles all three format packages plus the CLI, JSON Schemas, and AI SDK tools. Prefer a smaller footprint? See [Packages](#packages) for the per-format `@office-open/*` packages.
+
+### DOCX Generation
+
 ```typescript
-import { generateDocumentSync } from "@office-open/docx";
+import { generateDocumentSync } from "office-open/docx";
 import { writeFileSync } from "node:fs";
 
 const buffer = generateDocumentSync({
@@ -63,22 +67,8 @@ writeFileSync("document.docx", buffer);
 
 ### PPTX Generation
 
-```bash
-# pnpm
-pnpm add @office-open/pptx
-
-# npm
-npm install @office-open/pptx
-
-# yarn
-yarn add @office-open/pptx
-
-# bun
-bun add @office-open/pptx
-```
-
 ```typescript
-import { generatePresentationSync } from "@office-open/pptx";
+import { generatePresentationSync } from "office-open/pptx";
 import { writeFileSync } from "node:fs";
 
 const buffer = generatePresentationSync({
@@ -104,22 +94,8 @@ writeFileSync("presentation.pptx", buffer);
 
 ### XLSX Generation
 
-```bash
-# pnpm
-pnpm add @office-open/xlsx
-
-# npm
-npm install @office-open/xlsx
-
-# yarn
-yarn add @office-open/xlsx
-
-# bun
-bun add @office-open/xlsx
-```
-
 ```typescript
-import { generateWorkbookSync } from "@office-open/xlsx";
+import { generateWorkbookSync } from "office-open/xlsx";
 import { writeFileSync } from "node:fs";
 
 const buffer = generateWorkbookSync({
@@ -137,23 +113,9 @@ const buffer = generateWorkbookSync({
 writeFileSync("workbook.xlsx", buffer);
 ```
 
-### Umbrella Package
+### Unified API & CLI
 
-Install all packages at once with CLI, AI SDK tools, and schemas:
-
-```bash
-# pnpm
-pnpm add office-open
-
-# npm
-npm install office-open
-
-# yarn
-yarn add office-open
-
-# bun
-bun add office-open
-```
+The same package also exposes a type-dispatched `generate` helper and a CLI:
 
 ```typescript
 import { generate } from "office-open/generate";
@@ -180,19 +142,19 @@ Read and inspect existing `.docx`, `.pptx`, and `.xlsx` files into structured ob
 
 ```typescript
 // DOCX
-import { parseDocument } from "@office-open/docx";
+import { parseDocument } from "office-open/docx";
 const opts = parseDocument(buffer);
 // opts.sections — document sections
 // opts.title, opts.creator — core properties
 
 // PPTX
-import { parsePresentation } from "@office-open/pptx";
+import { parsePresentation } from "office-open/pptx";
 const opts = parsePresentation(buffer);
 // opts.slides — slide array
 // opts.size, opts.title — presentation properties
 
 // XLSX
-import { parseWorkbook } from "@office-open/xlsx";
+import { parseWorkbook } from "office-open/xlsx";
 const opts = parseWorkbook(buffer);
 // opts.worksheets — worksheet array
 // opts.worksheets[0].rows — row/cell data
@@ -203,7 +165,7 @@ const opts = parseWorkbook(buffer);
 Define documents as plain JSON objects — zero class instantiation, pure data in and binary out:
 
 ```typescript
-import { generateDocumentSync } from "@office-open/docx";
+import { generateDocumentSync } from "office-open/docx";
 
 const buffer = generateDocumentSync({
   sections: [
@@ -233,6 +195,10 @@ const buffer = generateDocumentSync({
 4. **Performance First**: Pure string concatenation for XML generation, native zlib compression, no intermediate AST
 5. **Modular Design**: Shared `core` domains across DOCX, PPTX, XLSX; cross-format copy reuses them via per-package conversions — no unified model layer
 6. **Cross-Platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/). While the major version is `0` (pre-1.0), breaking API changes are released as **minor** version bumps (`0.x.0`) rather than patch releases — the public API is expected to keep evolving until the `1.0.0` stabilization release. Pin exact versions in downstream projects if you require stability between minor updates.
 
 ## Development
 
@@ -327,6 +293,7 @@ We welcome contributions! Here's how to get started:
 
 ## Support & Community
 
+- [Documentation](https://www.office-open.com) — guides, API reference, and AI integration docs
 - [Report Issues](https://github.com/DemoMacro/office-open/issues)
 - [DOCX Documentation](./packages/docx/README.md)
 - [PPTX Documentation](./packages/pptx/README.md)

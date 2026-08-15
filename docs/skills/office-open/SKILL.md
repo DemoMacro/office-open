@@ -29,7 +29,7 @@ pnpm add office-open          # Umbrella
 3. Build the options object (e.g. `DocumentOptions`, `PresentationOptions`, `WorkbookOptions`).
 4. Call the generate function with optional output type.
 
-For measurement conversions (twips, EMU, half-points), see `references/units.md`.
+For measurement conversions (twips, EMU, half-points), see `references/units.md`. For exact field names, enum values, or unit constraints of any options type, see [Precise Field Lookup](#precise-field-lookup) below.
 
 ## Generate
 
@@ -108,6 +108,18 @@ For detailed options, property tables, and complete examples, read the relevant 
 - **`references/pptx-api.md`** — slides, shapes, fills, outlines, effects (shadow/glow/reflection/3D), tables, images, charts, animations, transitions, groups, lines, connectors, patching
 - **`references/xlsx-api.md`** — worksheets, cells, styles (font/fill/border/alignment), number formats, merge cells, freeze panes, auto filter, images, charts, data validation, conditional formatting, patching
 - **`references/units.md`** — twips, EMU, half-points, 60000ths°, converter functions
+
+## Precise Field Lookup
+
+The references above are curated summaries. When you need the exact fields of any options type (enum values, unit constraints, optionality), query the package's JSON Schema instead of guessing:
+
+```bash
+npx office-open schema index docx                          # indexed lookup entries by domain
+npx office-open schema index docx --all                   # every definition name
+npx office-open schema slice docx ParagraphOptions RunOptions   # sub-schema for those types
+```
+
+A slice carries the full dependency closure of the requested types; other cataloged domains stay as expandable stubs. Generic definition names need shell quotes: `"HeaderFooterGroup<HeaderFooterReference>"`. TypeScript remains the source of truth at compile time — use the CLI to read, not to validate, your code.
 
 ## Quick Examples
 

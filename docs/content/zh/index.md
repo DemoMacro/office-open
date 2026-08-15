@@ -75,7 +75,7 @@ variant: outline
 features:
   - icon: i-lucide-braces
     title: JSON 与 TypeScript
-    description: 使用纯 JSON 对象或 TypeScript 函数式 API 创建文档。JSON 优先的设计天然适配 AI 代理、LLM 工作流和 Zod 驱动的 schema。
+    description: 使用纯 JSON 对象或 TypeScript 函数式 API 创建文档。JSON 优先的设计天然适配 AI 代理、LLM 工作流，以及由冻结 JSON Schema 支撑的工具调用。
   - icon: i-lucide-layers
     title: 丰富内容
     description: 段落、表格、图片、图表、SmartArt、数学公式、页眉、页脚等。
@@ -87,7 +87,7 @@ features:
     description: 支持 Node.js、浏览器、Deno 和 Bun。可导出为 Buffer、Blob、Base64、流或字符串。
   - icon: i-lucide-shield-check
     title: 符合 OOXML 规范
-    description: 输出通过 OOXML XSD 校验，可在 Microsoft Office、WPS Office、LibreOffice 和 Google Workspace 中打开。
+    description: 完整覆盖 OOXML Transitional 词汇表 — WordprocessingML、PresentationML、SpreadsheetML 与 DrawingML。输出通过 XSD 校验，可在 Microsoft Office、WPS Office、LibreOffice 和 Google Workspace 中打开。
   - icon: i-lucide-package
     title: 模块化包
     description: 按需安装 — docx、pptx、xlsx、xml 或 core。统一的 office-open 包还提供 CLI 和 AI SDK 工具。

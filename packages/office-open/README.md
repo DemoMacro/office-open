@@ -4,14 +4,14 @@
 ![npm downloads](https://img.shields.io/npm/dw/office-open)
 ![npm license](https://img.shields.io/npm/l/office-open)
 
-> Umbrella package for Office Open XML — all packages, CLI, AI SDK tools, and Zod schemas in one install.
+> Umbrella package for Office Open XML — all packages, CLI, AI SDK tools, and JSON schemas in one install.
 
 ## Features
 
 - **Unified Re-exports** — Import from `office-open/docx`, `office-open/pptx`, `office-open/xlsx`
 - **CLI** — Generate files from JSON via `npx office-open`
 - **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`
-- **Zod Schemas** — Input validation for all document types
+- **JSON Schemas** — Input validation for all document types, with on-demand schema slicing
 - **Generate Function** — Type-agnostic `generate()` for dynamic document creation
 
 ## Installation
@@ -57,6 +57,11 @@ const buffer = await generate({
 npx office-open docx document.json "output.docx"
 npx office-open pptx slides.json "output.pptx"
 npx office-open xlsx spreadsheet.json "output.xlsx"
+
+# Consult the JSON schemas (for AI agents and humans)
+npx office-open schema index docx                        # indexed lookup entries by domain
+npx office-open schema index docx --all                   # every definition name
+npx office-open schema slice docx ParagraphOptions RunOptions   # sub-schema for those types
 ```
 
 ### AI SDK Tools
@@ -72,16 +77,21 @@ const result = await generateText({
 });
 ```
 
-### Zod Schemas
+The generate tools carry skeleton input schemas (top-level shape + wrapper keys, ~5K tokens instead of the ~170K-token full schema); the `office-open-schema-lookup` tool fetches precise option schemas on demand.
+
+### JSON Schemas
 
 ```typescript
-import { validateDocumentInput } from "office-open/schemas";
+import { validateDocumentInput, sliceDocumentSchema } from "office-open/schemas";
 
 try {
   const validated = validateDocumentInput("docx", userInput);
 } catch (e) {
-  // Structured validation error with path and message
+  // Aggregated validation errors with instance paths and messages
 }
+
+// Extract the dependency closure of specific option types
+const slice = sliceDocumentSchema("docx", ["ParagraphOptions", "RunOptions"]);
 ```
 
 ### Import from Sub-Packages
@@ -106,7 +116,7 @@ import { parse, stringify } from "office-open/xml";
 | `office-open/xml`      | @office-open/xml                         |
 | `office-open/generate` | `generate()` function                    |
 | `office-open/ai`       | Vercel AI SDK tools                      |
-| `office-open/schemas`  | Zod validation schemas                   |
+| `office-open/schemas`  | JSON schemas, validation, and slicing    |
 
 ## JSON Document Structures
 

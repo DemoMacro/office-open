@@ -75,7 +75,7 @@ variant: outline
 features:
   - icon: i-lucide-braces
     title: JSON & TypeScript
-    description: Create documents with pure JSON objects or the TypeScript functional API. The JSON-first design pairs naturally with AI agents, LLM workflows, and Zod-powered schemas.
+    description: Create documents with pure JSON objects or the TypeScript functional API. The JSON-first design pairs naturally with AI agents, LLM workflows, and tool-calling backed by frozen JSON Schemas.
   - icon: i-lucide-layers
     title: Rich Content
     description: Paragraphs, tables, images, charts, SmartArt, math equations, headers, footers, and more.
@@ -87,7 +87,7 @@ features:
     description: Runs in Node.js, browsers, Deno, and Bun. Export to Buffer, Blob, Base64, stream, or string.
   - icon: i-lucide-shield-check
     title: OOXML Compliant
-    description: Output validates against the OOXML XSD and opens in Microsoft Office, WPS Office, LibreOffice, and Google Workspace.
+    description: Full coverage of the OOXML Transitional vocabulary — WordprocessingML, PresentationML, SpreadsheetML, and DrawingML. Output validates against the XSD and opens in Microsoft Office, WPS Office, LibreOffice, and Google Workspace.
   - icon: i-lucide-package
     title: Modular Packages
     description: Install only what you need — docx, pptx, xlsx, xml, or core. The unified office-open package adds a CLI and AI SDK tools.
