@@ -7,7 +7,7 @@
  */
 import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { parseVmlStyle } from "@shared/vml/vml-style";
+import { parseVmlShapeStyle, parseVmlStyle } from "@shared/vml/vml-style";
 
 import type { DocxReadContext } from "../../context";
 
@@ -31,7 +31,7 @@ export function parseTextbox(
   // Parse VML style
   const styleAttr = attr(shape, "style");
   if (styleAttr) {
-    opts.style = parseVmlStyle(styleAttr);
+    opts.style = parseVmlShapeStyle(parseVmlStyle(styleAttr));
   }
 
   // Parse textbox content

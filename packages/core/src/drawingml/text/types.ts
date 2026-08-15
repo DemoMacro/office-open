@@ -18,7 +18,8 @@ import type { OutlineOptions } from "../outline/outline";
 
 export type UnderlineStyle = "single" | "double" | "none";
 
-export type StrikeStyle = "sngStrike" | "dblStrike" | "noStrike";
+// Friendly spellings; xsdStrikeStyle maps them to ST_TextStrikeType tokens.
+export type StrikeStyle = "singleStrike" | "doubleStrike" | "noStrike";
 
 export type TextCapitalization = "none" | "all" | "small";
 

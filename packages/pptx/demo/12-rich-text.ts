@@ -102,13 +102,13 @@ const options: PresentationOptions = {
                   children: [
                     {
                       text: "Single Strike",
-                      strike: "sngStrike",
+                      strike: "singleStrike",
                       size: 18,
                     },
                     { text: " | " },
                     {
                       text: "Double Strike",
-                      strike: "dblStrike",
+                      strike: "doubleStrike",
                       size: 18,
                     },
                   ],

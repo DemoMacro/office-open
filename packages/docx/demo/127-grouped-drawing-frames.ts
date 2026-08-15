@@ -26,7 +26,6 @@ const buffer = await generateDocument({
                         categories: ["Q1", "Q2", "Q3", "Q4"],
                         series: [{ name: "2025", values: [140, 170, 210, 250] }],
                         title: "Quarterly Revenue",
-                        transformation: { height: "4.8cm", width: "6cm" },
                       },
                       transformation: {
                         pixels: { x: 0, y: 0 },

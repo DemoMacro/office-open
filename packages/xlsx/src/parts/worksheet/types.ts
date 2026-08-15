@@ -1173,7 +1173,7 @@ export interface WorksheetOptions {
   webPublishItems?: WebPublishItemOptions[];
   /** Page margins in inches (CT_PageMargins) */
   pageMargins?: PageMarginsOptions;
-  /** Cell range dimension (CT_Dimension @ref); auto-computed when omitted */
+  /** Cell range dimension (CT_Dimension ref); auto-computed when omitted */
   dimension?: string;
 }
 

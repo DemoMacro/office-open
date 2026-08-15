@@ -35,8 +35,8 @@ function makeOleStub(): Uint8Array {
   for (let i = 1; i < 109; i++) view.setUint32(76 + i * 4, FREESECT, true); // unused DIFAT slots
 
   // FAT sector (sector 0): FAT[0] marks itself, FAT[1] ends the directory chain
-  view.setUint32(SECTOR + 0 * 4, FATSECT, true);
-  view.setUint32(SECTOR + 1 * 4, ENDOFCHAIN, true);
+  view.setUint32(SECTOR, FATSECT, true);
+  view.setUint32(SECTOR + 4, ENDOFCHAIN, true);
   for (let i = 2; i < SECTOR / 4; i++) view.setUint32(SECTOR + i * 4, FREESECT, true);
 
   // Directory sector (sector 1): root entry only, no children, no mini stream

@@ -3612,105 +3612,19 @@
     "DataType": {
       "anyOf": [
         {
-          "additionalProperties": false,
-          "properties": {
-            "byteLength": {
-              "type": "number"
-            }
-          },
-          "required": ["byteLength"],
-          "title": "byteLength",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "size": {
-              "type": "number"
-            },
-            "type": {
-              "type": "string"
-            }
-          },
-          "required": ["size", "type"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "buffer": {
-              "additionalProperties": false,
-              "properties": {
-                "byteLength": {
-                  "type": "number"
-                }
-              },
-              "required": ["byteLength"],
-              "type": "object"
-            },
-            "byteLength": {
-              "type": "number"
-            },
-            "byteOffset": {
-              "type": "number"
-            }
-          },
-          "required": ["buffer", "byteLength", "byteOffset"],
-          "type": "object"
-        },
-        {
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "locked": {
-              "type": "boolean"
-            }
-          },
-          "required": ["locked"],
-          "title": "locked",
-          "type": "object"
-        },
-        {
+          "description": "Base64 string, data:[<mediatype>][;base64],<data> URL, or plain text.",
           "type": "string"
         },
         {
-          "additionalProperties": {
-            "type": "number"
+          "items": {
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
           },
-          "properties": {
-            "BYTES_PER_ELEMENT": {
-              "type": "number"
-            },
-            "buffer": {
-              "additionalProperties": false,
-              "properties": {
-                "byteLength": {
-                  "type": "number"
-                }
-              },
-              "required": ["byteLength"],
-              "type": "object"
-            },
-            "byteLength": {
-              "type": "number"
-            },
-            "byteOffset": {
-              "type": "number"
-            },
-            "length": {
-              "type": "number"
-            }
-          },
-          "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-          "type": "object"
+          "type": "array"
         }
       ],
-      "description": "Supported binary input shapes."
+      "description": "Binary content as a string or an array of byte values."
     },
     "DataValidationOperator": {
       "enum": [
@@ -12453,7 +12367,7 @@
       "type": "string"
     },
     "StrikeStyle": {
-      "enum": ["sngStrike", "dblStrike", "noStrike"],
+      "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
     "StyleExtensionOptions": {
@@ -13033,7 +12947,6 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "$id": "— GUID identifier.",
           "description": "a:fld",
           "type": "string"
         },
@@ -13168,14 +13081,14 @@
           "type": "boolean"
         },
         "levels": {
-          "description": "Levels 1-9; index 0 = lvl1pPr. `undefined` omits the level.",
+          "description": "Levels 1-9; index 0 = lvl1pPr. `null` omits the level (JSON form of an undefined array slot — the position still pins the level number).",
           "items": {
             "anyOf": [
               {
                 "$ref": "#/definitions/TextListStyleLevelOptions"
               },
               {
-                "not": {}
+                "type": "null"
               }
             ]
           },
@@ -14791,8 +14704,8 @@
           "type": "boolean"
         },
         "dimension": {
-          "$ref": "); auto-computed when omitted",
-          "description": "Cell range dimension (CT_Dimension"
+          "description": "Cell range dimension (CT_Dimension ref); auto-computed when omitted",
+          "type": "string"
         },
         "drawingHF": {
           "$ref": "#/definitions/DrawingHfOptions",

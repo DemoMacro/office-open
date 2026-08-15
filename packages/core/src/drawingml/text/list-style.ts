@@ -69,8 +69,9 @@ export interface TextListStyleLevelOptions {
 export interface TextListStyleGroupOptions {
   /** Emit an empty <a:defPPr><a:defRPr/></a:defPPr> (otherStyle carries one). */
   emptyDefaultParagraph?: boolean;
-  /** Levels 1-9; index 0 = lvl1pPr. `undefined` omits the level. */
-  levels?: (TextListStyleLevelOptions | undefined)[];
+  /** Levels 1-9; index 0 = lvl1pPr. `null` omits the level (JSON form of
+   *  an undefined array slot — the position still pins the level number). */
+  levels?: (TextListStyleLevelOptions | null)[];
 }
 
 export interface TextListStyleOptions {
@@ -239,9 +240,9 @@ function parseGroup(el: Element | undefined): TextListStyleGroupOptions | undefi
   if (defPPr) group.emptyDefaultParagraph = true;
   for (let i = 1; i <= 9; i++) {
     const lvlEl = findChild(el, `a:lvl${i}pPr`);
-    group.levels!.push(lvlEl ? parseLevel(lvlEl) : undefined);
+    group.levels!.push(lvlEl ? parseLevel(lvlEl) : null);
   }
-  const hasContent = group.emptyDefaultParagraph || group.levels!.some((l) => l !== undefined);
+  const hasContent = group.emptyDefaultParagraph || group.levels!.some((l) => l !== null);
   return hasContent ? group : undefined;
 }
 

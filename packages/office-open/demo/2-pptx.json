@@ -19,7 +19,7 @@
                   "children": [
                     {
                       "text": "JSON-Friendly API",
-                      "fontSize": 44,
+                      "size": 44,
                       "bold": true,
                       "fill": "FFFFFF",
                       "font": "Calibri"
@@ -43,7 +43,7 @@
                   "children": [
                     {
                       "text": "Generated from JSON via office-open",
-                      "fontSize": 18,
+                      "size": 18,
                       "fill": "B0C4DE"
                     }
                   ]
@@ -69,7 +69,7 @@
                   "children": [
                     {
                       "text": "Shapes with Fill and Effects",
-                      "fontSize": 32,
+                      "size": 32,
                       "bold": true,
                       "fill": "4472C4"
                     }
@@ -91,7 +91,7 @@
               "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
-                  "children": [{ "text": "Solid Fill", "fontSize": 20, "fill": "FFFFFF" }]
+                  "children": [{ "text": "Solid Fill", "size": 20, "fill": "FFFFFF" }]
                 }
               ]
             },
@@ -108,7 +108,7 @@
               "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
-                  "children": [{ "text": "Gradient Fill", "fontSize": 20, "fill": "FFFFFF" }]
+                  "children": [{ "text": "Gradient Fill", "size": 20, "fill": "FFFFFF" }]
                 }
               ]
             },
@@ -131,7 +131,7 @@
               "paragraphs": [
                 {
                   "properties": { "alignment": "center" },
-                  "children": [{ "text": "No Fill", "fontSize": 20, "fill": "4472C4" }]
+                  "children": [{ "text": "No Fill", "size": 20, "fill": "4472C4" }]
                 }
               ]
             },
@@ -164,7 +164,7 @@
                   "children": [
                     {
                       "text": "Tables and Connectors",
-                      "fontSize": 32,
+                      "size": 32,
                       "bold": true,
                       "fill": "4472C4"
                     }
@@ -251,7 +251,7 @@
                   "children": [
                     {
                       "text": "Group Shapes",
-                      "fontSize": 32,
+                      "size": 32,
                       "bold": true,
                       "fill": "4472C4"
                     }
@@ -280,9 +280,7 @@
                     "paragraphs": [
                       {
                         "properties": { "alignment": "center" },
-                        "children": [
-                          { "text": "A", "fontSize": 36, "bold": true, "fill": "FFFFFF" }
-                        ]
+                        "children": [{ "text": "A", "size": 36, "bold": true, "fill": "FFFFFF" }]
                       }
                     ]
                   },
@@ -299,9 +297,7 @@
                     "paragraphs": [
                       {
                         "properties": { "alignment": "center" },
-                        "children": [
-                          { "text": "B", "fontSize": 36, "bold": true, "fill": "FFFFFF" }
-                        ]
+                        "children": [{ "text": "B", "size": 36, "bold": true, "fill": "FFFFFF" }]
                       }
                     ]
                   },
@@ -318,9 +314,7 @@
                     "paragraphs": [
                       {
                         "properties": { "alignment": "center" },
-                        "children": [
-                          { "text": "Wide", "fontSize": 36, "bold": true, "fill": "FFFFFF" }
-                        ]
+                        "children": [{ "text": "Wide", "size": 36, "bold": true, "fill": "FFFFFF" }]
                       }
                     ]
                   },
@@ -331,7 +325,7 @@
           }
         }
       ],
-      "transition": { "type": "push", "speed": "med", "direction": "left" }
+      "transition": { "type": "push", "speed": "medium", "direction": "left" }
     },
     {
       "children": [
@@ -348,7 +342,7 @@
                   "children": [
                     {
                       "text": "Slide with Notes",
-                      "fontSize": 32,
+                      "size": 32,
                       "bold": true,
                       "fill": "4472C4"
                     }
@@ -374,7 +368,7 @@
                   "children": [
                     {
                       "text": "Thank you!",
-                      "fontSize": 44,
+                      "size": 44,
                       "bold": true,
                       "fill": "1F4E79"
                     }

@@ -7,6 +7,7 @@
  * @module
  */
 
+import type { UniversalMeasure } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { uniqueId } from "@office-open/core";
 import { hexColorValue, uCharHexNumber } from "@office-open/core";
@@ -153,6 +154,8 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
 
         // OLE object — w:object (VML shape + objectEmbed/link/control/movie)
         if ("object" in child) {
+          // RunOptions.children carries Record<string, unknown>, so `in`
+          // narrows to unknown — cast back to the object variant payload.
           body +=
             objectDesc.stringify((child as { object: ObjectElementOptions }).object, ctx) ?? "";
           continue;
@@ -550,30 +553,6 @@ const DELETED_PAGE_FIELD: Record<string, string> = {
   SECTIONPAGES: "TOTAL_PAGES_IN_SECTION",
 };
 
-/**
- * Parsed w:framePr attributes — flat capture of whatever attributes the source
- * carries. The public FrameOptions union (type/position/alignment + required
- * width/height/anchor) is rebuilt on the stringify side; parse preserves raw
- * attributes verbatim so round-trip keeps source fidelity.
- */
-interface ParsedFrameProperties {
-  dropCap?: string;
-  lines?: string;
-  wrap?: string;
-  vAnchor?: string;
-  hAnchor?: string;
-  x?: string;
-  y?: string;
-  hRule?: string;
-  hSpace?: string;
-  vSpace?: string;
-  alignment?: { x?: string; y?: string };
-  anchor?: { horizontal?: string; vertical?: string };
-  anchorLock?: boolean;
-  width?: number;
-  height?: number;
-}
-
 // Inline element payloads extracted from the ParagraphChild union — used by
 // parse to build typed objects instead of Record<string, unknown>.
 type SmartTagInlineOptions = Extract<ParagraphChild, { smartTag: unknown }>["smartTag"];
@@ -862,51 +841,75 @@ export function parseParagraphProperties(
     opts.run = parseRunProperties(rPr);
   }
 
-  // Frame properties
+  // Frame properties — rebuilt into the public FrameOptions union so parse
+  // output re-enters generate unchanged (CT_FramePr attributes are all
+  // optional, hence the optional base fields).
   const framePr = findChild(el, "w:framePr");
   if (framePr) {
-    const frame: ParsedFrameProperties = {};
+    // Mutable superset of the FrameOptions union members — cast once at the end.
+    const frame: {
+      type?: "absolute" | "alignment";
+      position?: { x?: number | UniversalMeasure; y?: number | UniversalMeasure };
+      alignment?: { x?: string; y?: string };
+      anchor?: { horizontal?: string; vertical?: string };
+      space?: { horizontal?: number | UniversalMeasure; vertical?: number | UniversalMeasure };
+      dropCap?: string;
+      lines?: string;
+      wrap?: string;
+      rule?: string;
+      anchorLock?: boolean;
+      width?: number | UniversalMeasure;
+      height?: number | UniversalMeasure;
+    } = {};
     for (const [attrName, optName] of [
       ["w:dropCap", "dropCap"],
       ["w:lines", "lines"],
       ["w:wrap", "wrap"],
-      ["w:vAnchor", "vAnchor"],
-      ["w:hAnchor", "hAnchor"],
-      ["w:x", "x"],
-      ["w:y", "y"],
-      ["w:hRule", "hRule"],
-      ["w:hSpace", "hSpace"],
-      ["w:vSpace", "vSpace"],
+      ["w:hRule", "rule"],
     ] as const) {
       const val = attr(framePr, attrName);
       if (val !== undefined) frame[optName] = val;
     }
-    // Alignment (xAlign/yAlign)
+    // Position: absolute coordinates (w:x/w:y) vs alignment (w:xAlign/w:yAlign)
+    const x = attrMeasure(framePr, "w:x") as number | UniversalMeasure;
+    const y = attrMeasure(framePr, "w:y") as number | UniversalMeasure;
     const xAlign = attr(framePr, "w:xAlign");
     const yAlign = attr(framePr, "w:yAlign");
-    if (xAlign || yAlign) {
-      const alignment: NonNullable<ParsedFrameProperties["alignment"]> = {};
-      if (xAlign) alignment.x = xAlign;
-      if (yAlign) alignment.y = yAlign;
-      frame.alignment = alignment;
+    if (x !== undefined || y !== undefined) {
+      frame.type = "absolute";
+      frame.position = { ...(x !== undefined ? { x } : {}), ...(y !== undefined ? { y } : {}) };
+    } else if (xAlign || yAlign) {
+      frame.type = "alignment";
+      frame.alignment = {
+        ...(xAlign ? { x: xAlign } : {}),
+        ...(yAlign ? { y: yAlign } : {}),
+      };
     }
     // Anchor (hAnchor/vAnchor)
     const hAnchor = attr(framePr, "w:hAnchor");
     const vAnchor = attr(framePr, "w:vAnchor");
     if (hAnchor || vAnchor) {
-      const anchor: NonNullable<ParsedFrameProperties["anchor"]> = {};
-      if (hAnchor) anchor.horizontal = hAnchor;
-      if (vAnchor) anchor.vertical = vAnchor;
-      frame.anchor = anchor;
+      frame.anchor = {
+        ...(hAnchor ? { horizontal: hAnchor } : {}),
+        ...(vAnchor ? { vertical: vAnchor } : {}),
+      };
     }
-    // Anchor lock
+    // Spacing (hSpace/vSpace)
+    const hSpace = attrMeasure(framePr, "w:hSpace") as number | UniversalMeasure;
+    const vSpace = attrMeasure(framePr, "w:vSpace") as number | UniversalMeasure;
+    if (hSpace !== undefined || vSpace !== undefined) {
+      frame.space = {
+        ...(hSpace !== undefined ? { horizontal: hSpace } : {}),
+        ...(vSpace !== undefined ? { vertical: vSpace } : {}),
+      };
+    }
     const anchorLock = attrBool(framePr, "w:anchorLock");
     if (anchorLock !== undefined) frame.anchorLock = anchorLock;
-    const w = attrNum(framePr, "w:w");
+    const w = attrMeasure(framePr, "w:w") as number | UniversalMeasure;
     if (w !== undefined) frame.width = w;
-    const h = attrNum(framePr, "w:h");
+    const h = attrMeasure(framePr, "w:h") as number | UniversalMeasure;
     if (h !== undefined) frame.height = h;
-    if (Object.keys(frame).length > 0) opts.frame = frame as unknown as FrameOptions;
+    if (Object.keys(frame).length > 0) opts.frame = frame as FrameOptions;
   }
 
   // Revision (w:pPrChange) — symmetric with stringifyParagraphProperties

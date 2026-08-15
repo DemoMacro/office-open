@@ -82,6 +82,34 @@ export function parseVmlStyle(styleStr: string): Record<string, string> {
   return style;
 }
 
+/** Reverse of {@link styleToKeyMap} — CSS-style property name → VmlShapeStyle field. */
+const keyToStyleMap = Object.fromEntries(
+  Object.entries(styleToKeyMap).map(([field, key]) => [key, field]),
+) as Record<string, keyof VmlShapeStyle>;
+
+const NUMERIC = /^-?\d+(\.\d+)?$/;
+
+/**
+ * Parse a CSS-name-keyed style record into a VmlShapeStyle object (camelCase
+ * fields, numeric and boolean literals coerced) — the inverse of
+ * {@link stringifyVmlStyle}. Keys outside the map are dropped.
+ */
+export function parseVmlShapeStyle(record: Record<string, string>): VmlShapeStyle {
+  const style: Partial<Record<keyof VmlShapeStyle, unknown>> = {};
+  for (const [key, value] of Object.entries(record)) {
+    const field = keyToStyleMap[key];
+    if (!field) continue;
+    if (field === "wrapEdited") {
+      style[field] = value === "true";
+    } else if (NUMERIC.test(value)) {
+      style[field] = Number(value);
+    } else {
+      style[field] = value;
+    }
+  }
+  return style as unknown as VmlShapeStyle;
+}
+
 /**
  * VML shape styling properties for WordprocessingML documents.
  *

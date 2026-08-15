@@ -165,7 +165,7 @@
           "type": "string"
         }
       },
-      "required": ["alignment", "anchor", "height", "type", "width"],
+      "required": ["alignment", "type"],
       "type": "object"
     },
     "AlphaBiLevelEffectOptions": {
@@ -2031,6 +2031,276 @@
       "required": ["name", "values"],
       "type": "object"
     },
+    "ChartSpaceOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "axes": {
+          "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
+          "items": {
+            "$ref": "#/definitions/AxisOptions"
+          },
+          "type": "array"
+        },
+        "backWall": {
+          "$ref": "#/definitions/SurfaceOptions",
+          "description": "3D back wall (c:backWall)."
+        },
+        "bandFormats": {
+          "description": "Surface chart color bands (c:bandFmts, after ser in surface charts).",
+          "items": {
+            "$ref": "#/definitions/BandFormatOptions"
+          },
+          "type": "array"
+        },
+        "bubbleScale": {
+          "description": "Bubble scale as percent of default size (c:bubbleScale).",
+          "type": "number"
+        },
+        "categories": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "categoryLabels": {
+          "description": "Literal category labels, emitted as c:strLit (c:cat > c:strLit).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "colorMappingOverride": {
+          "additionalProperties": false,
+          "description": "Theme color mapping override (c:clrMapOvr, before c:chart).",
+          "properties": {
+            "accent1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent3": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent4": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent5": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent6": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "followedHyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "hyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            }
+          },
+          "type": "object"
+        },
+        "customSplitPoints": {
+          "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "dataTable": {
+          "$ref": "#/definitions/DataTableOptions",
+          "description": "Plot-area data table (c:dTable)."
+        },
+        "displayBlanksAs": {
+          "$ref": "#/definitions/DisplayBlanksAs",
+          "description": "How blank cells are plotted (c:dispBlanksAs)."
+        },
+        "dropLines": {
+          "description": "Drop lines (c:dropLines, line/area/stock).",
+          "type": "boolean"
+        },
+        "externalData": {
+          "$ref": "#/definitions/ExternalDataOptions",
+          "description": "External linked workbook (c:externalData, after c:txPr)."
+        },
+        "firstSliceAngle": {
+          "description": "Pie/doughnut first slice angle in degrees (c:firstSliceAng).",
+          "type": "number"
+        },
+        "floor": {
+          "$ref": "#/definitions/SurfaceOptions",
+          "description": "3D floor (c:floor)."
+        },
+        "gapDepth": {
+          "description": "3D bar/column gap depth as percent (c:gapDepth).",
+          "type": "number"
+        },
+        "gapWidth": {
+          "description": "Bar/column gap width as percent of width (c:gapWidth).",
+          "type": "number"
+        },
+        "highLowLines": {
+          "description": "High-low lines (c:hiLowLines, line/stock 2D).",
+          "type": "boolean"
+        },
+        "holeSize": {
+          "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
+          "type": "number"
+        },
+        "legendEntries": {
+          "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
+          "items": {
+            "$ref": "#/definitions/LegendEntryOptions"
+          },
+          "type": "array"
+        },
+        "legendPosition": {
+          "$ref": "#/definitions/LegendPosition",
+          "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
+        },
+        "multiLevelCategories": {
+          "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
+          "items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "ofPieType": {
+          "$ref": "#/definitions/OfPieType",
+          "description": "ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default \"pie\")."
+        },
+        "overlap": {
+          "description": "Bar/column overlap as percent (c:overlap, 2D only).",
+          "type": "number"
+        },
+        "pivotFormats": {
+          "description": "Pivot chart per-series formats (c:pivotFmts, after autoTitleDeleted).",
+          "items": {
+            "$ref": "#/definitions/ChartPivotFormatOptions"
+          },
+          "type": "array"
+        },
+        "pivotSource": {
+          "$ref": "#/definitions/PivotSourceOptions",
+          "description": "Pivot chart source (c:pivotSource, after clrMapOvr, before protection)."
+        },
+        "plotAreaLayout": {
+          "$ref": "#/definitions/ManualLayoutOptions",
+          "description": "Manual plot-area layout (c:plotArea > c:layout > c:manualLayout)."
+        },
+        "plotVisOnly": {
+          "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
+          "type": "boolean"
+        },
+        "printSettings": {
+          "$ref": "#/definitions/PrintSettingsOptions",
+          "description": "Print settings (c:printSettings, after c:externalData)."
+        },
+        "protection": {
+          "$ref": "#/definitions/ProtectionOptions",
+          "description": "Chart protection (c:protection, before c:chart)."
+        },
+        "secondPieSize": {
+          "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
+          "type": ["number", "string"]
+        },
+        "series": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/ChartSeriesData"
+              },
+              "type": "array"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/BubbleSeriesData"
+              },
+              "type": "array"
+            }
+          ]
+        },
+        "seriesLines": {
+          "description": "Series lines (c:serLines, stock / 2D bar / 3D area).",
+          "type": "boolean"
+        },
+        "showDataLabelsOverMax": {
+          "description": "Show data labels over the chart maximum (c:showDLblsOverMax).",
+          "type": "boolean"
+        },
+        "showLegend": {
+          "type": "boolean"
+        },
+        "showNegativeBubbles": {
+          "description": "Show negative-value bubbles (c:showNegBubbles).",
+          "type": "boolean"
+        },
+        "sideWall": {
+          "$ref": "#/definitions/SurfaceOptions",
+          "description": "3D side wall (c:sideWall)."
+        },
+        "sizeRepresents": {
+          "$ref": "#/definitions/SizeRepresents",
+          "description": "What the bubble size represents (c:sizeRepresents)."
+        },
+        "splitPosition": {
+          "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
+          "type": "number"
+        },
+        "splitType": {
+          "$ref": "#/definitions/SplitType",
+          "description": "ofPie split behavior (c:splitType, default \"auto\")."
+        },
+        "style": {
+          "type": "number"
+        },
+        "threeD": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ChartType"
+        },
+        "upDownBars": {
+          "description": "Up/down bars container (c:upDownBars, line/stock 2D).",
+          "type": "boolean"
+        },
+        "upDownBarsGapWidth": {
+          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
+          "type": "number"
+        },
+        "userShapes": {
+          "description": "User-drawn shapes relationship id (c:userShapes r:id, after printSettings).",
+          "type": "string"
+        },
+        "view3D": {
+          "$ref": "#/definitions/View3DOptions"
+        },
+        "wireframe": {
+          "description": "Surface chart wireframe rendering (c:wireframe).",
+          "type": "boolean"
+        }
+      },
+      "required": ["type", "series"],
+      "type": "object"
+    },
     "ChartType": {
       "enum": [
         "column",
@@ -3377,105 +3647,19 @@
     "DataType": {
       "anyOf": [
         {
-          "additionalProperties": false,
-          "properties": {
-            "byteLength": {
-              "type": "number"
-            }
-          },
-          "required": ["byteLength"],
-          "title": "byteLength",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "size": {
-              "type": "number"
-            },
-            "type": {
-              "type": "string"
-            }
-          },
-          "required": ["size", "type"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "buffer": {
-              "additionalProperties": false,
-              "properties": {
-                "byteLength": {
-                  "type": "number"
-                }
-              },
-              "required": ["byteLength"],
-              "type": "object"
-            },
-            "byteLength": {
-              "type": "number"
-            },
-            "byteOffset": {
-              "type": "number"
-            }
-          },
-          "required": ["buffer", "byteLength", "byteOffset"],
-          "type": "object"
-        },
-        {
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "locked": {
-              "type": "boolean"
-            }
-          },
-          "required": ["locked"],
-          "title": "locked",
-          "type": "object"
-        },
-        {
+          "description": "Base64 string, data:[<mediatype>][;base64],<data> URL, or plain text.",
           "type": "string"
         },
         {
-          "additionalProperties": {
-            "type": "number"
+          "items": {
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
           },
-          "properties": {
-            "BYTES_PER_ELEMENT": {
-              "type": "number"
-            },
-            "buffer": {
-              "additionalProperties": false,
-              "properties": {
-                "byteLength": {
-                  "type": "number"
-                }
-              },
-              "required": ["byteLength"],
-              "type": "object"
-            },
-            "byteLength": {
-              "type": "number"
-            },
-            "byteOffset": {
-              "type": "number"
-            },
-            "length": {
-              "type": "number"
-            }
-          },
-          "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-          "type": "object"
+          "type": "array"
         }
       ],
-      "description": "Supported binary input shapes."
+      "description": "Binary content as a string or an array of byte values."
     },
     "DayLong": {
       "additionalProperties": false,
@@ -4249,35 +4433,7 @@
             "additionalProperties": false,
             "properties": {
               "data": {
-                "additionalProperties": {
-                  "type": "number"
-                },
-                "properties": {
-                  "BYTES_PER_ELEMENT": {
-                    "type": "number"
-                  },
-                  "buffer": {
-                    "additionalProperties": false,
-                    "properties": {
-                      "byteLength": {
-                        "type": "number"
-                      }
-                    },
-                    "required": ["byteLength"],
-                    "type": "object"
-                  },
-                  "byteLength": {
-                    "type": "number"
-                  },
-                  "byteOffset": {
-                    "type": "number"
-                  },
-                  "length": {
-                    "type": "number"
-                  }
-                },
-                "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-                "type": "object"
+                "$ref": "#/definitions/DataType"
               },
               "path": {
                 "type": "string"
@@ -6106,8 +6262,8 @@
               "type": "string"
             },
             "chartOptions": {
-              "$ref": "#/definitions/ChartOptions",
-              "description": "Chart payload for a group-nested chart (wpg:graphicFrame). Present on the round-trip path and for fresh group children declared as options."
+              "$ref": "#/definitions/ChartSpaceOptions",
+              "description": "Chart payload for a group-nested chart (wpg:graphicFrame). Present on the round-trip path and for fresh group children declared as options. ChartSpaceOptions, not the top-level ChartOptions — the group child carries the transformation."
             },
             "fill": {
               "$ref": "#/definitions/FillOptions"
@@ -8621,7 +8777,6 @@
           "type": "string"
         },
         "id": {
-          "$id": ").",
           "description": "Drawing id (wps:cNvPr",
           "type": "number"
         },
@@ -9936,6 +10091,17 @@
           },
           "required": ["wpgGroup"],
           "title": "wpgGroup",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "object": {
+              "$ref": "#/definitions/ObjectElementOptions"
+            }
+          },
+          "required": ["object"],
+          "title": "object",
           "type": "object"
         },
         {
@@ -11619,6 +11785,11 @@
           "$ref": "#/definitions/FrameOptions",
           "description": "Frame properties for positioning the paragraph"
         },
+        "heading": {
+          "description": "Heading shorthand for the referenced style (w:pStyle val=\"HeadingN\").",
+          "enum": ["Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Title"],
+          "type": "string"
+        },
         "indent": {
           "$ref": "#/definitions/IndentProperties",
           "description": "Indentation settings for the paragraph"
@@ -11726,6 +11897,10 @@
         "spacing": {
           "$ref": "#/definitions/SpacingProperties",
           "description": "Spacing before/after paragraph and between lines"
+        },
+        "style": {
+          "description": "Referenced style inside the style's own pPr (w:pStyle).",
+          "type": "string"
         },
         "suppressAutoHyphens": {
           "description": "Whether to disable automatic hyphenation for this paragraph",
@@ -14644,17 +14819,205 @@
                   "description": "Frame properties for positioning the paragraph"
                 },
                 "heading": {
-                  "description": "Heading level (Heading1, Heading2, etc.) - applies predefined heading style",
-                  "enum": [
-                    "Heading1",
-                    "Heading2",
-                    "Heading3",
-                    "Heading4",
-                    "Heading5",
-                    "Heading6",
-                    "Title"
+                  "anyOf": [
+                    {
+                      "const": "Heading1",
+                      "type": "string"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "const": "Heading2",
+                      "type": "string"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "const": "Heading3",
+                      "type": "string"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "const": "Heading4",
+                      "type": "string"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "const": "Heading5",
+                      "type": "string"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "const": "Heading6",
+                      "type": "string"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "properties": {},
+                      "type": "object"
+                    },
+                    {
+                      "const": "Title",
+                      "type": "string"
+                    }
                   ],
-                  "type": "string"
+                  "description": "Heading level (Heading1, Heading2, etc.) - applies predefined heading style"
                 },
                 "includeIfEmpty": {
                   "type": "boolean"
@@ -19528,7 +19891,7 @@
           "type": "string"
         }
       },
-      "required": ["anchor", "height", "position", "type", "width"],
+      "required": ["position", "type"],
       "type": "object"
     },
     "YearLong": {

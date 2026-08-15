@@ -144,6 +144,10 @@ export interface LevelParagraphStylePropertiesOptions {
  * border, shading, and numbering options in addition to level properties.
  */
 export type ParagraphStylePropertiesOptions = {
+  /** Referenced style inside the style's own pPr (w:pStyle). */
+  style?: string;
+  /** Heading shorthand for the referenced style (w:pStyle val="HeadingN"). */
+  heading?: (typeof HeadingLevel)[keyof typeof HeadingLevel];
   /** Border settings for the paragraph */
   border?: BordersOptions;
   /** Background shading/fill color for the paragraph */

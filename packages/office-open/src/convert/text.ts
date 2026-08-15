@@ -204,8 +204,8 @@ function drawingRunPropertiesToDocx(run: DrawingRunProperties): Partial<RunOptio
   if (run.bold !== undefined) out.bold = run.bold;
   if (run.italic !== undefined) out.italic = run.italic;
   if (run.underline && run.underline !== "none") out.underline = { type: run.underline };
-  if (run.strike === "sngStrike") out.strike = true;
-  else if (run.strike === "dblStrike") out.doubleStrike = true;
+  if (run.strike === "singleStrike") out.strike = true;
+  else if (run.strike === "doubleStrike") out.doubleStrike = true;
   if (run.baseline !== undefined && run.baseline !== 0) {
     if (run.baseline > 0) out.superScript = true;
     else out.subScript = true;
@@ -305,8 +305,8 @@ function docxRunPropertiesToDrawing(run: RunOptions): DrawingRunProperties {
     // a:p models only single/double; other Word underline styles collapse to single.
     out.underline = run.underline.type === "double" ? "double" : "single";
   }
-  if (run.doubleStrike) out.strike = "dblStrike";
-  else if (run.strike) out.strike = "sngStrike";
+  if (run.doubleStrike) out.strike = "doubleStrike";
+  else if (run.strike) out.strike = "singleStrike";
   if (run.superScript) out.baseline = 30000;
   else if (run.subScript) out.baseline = -25000;
   if (run.characterSpacing !== undefined) {

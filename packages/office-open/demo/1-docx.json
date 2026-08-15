@@ -124,7 +124,7 @@
               "Visit ",
               {
                 "hyperlink": {
-                  "link": "https://example.com",
+                  "url": "https://example.com",
                   "tooltip": "Example Website",
                   "children": [
                     { "text": "our website", "color": "0563C1", "underline": { "type": "single" } }

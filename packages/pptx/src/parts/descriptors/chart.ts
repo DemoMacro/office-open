@@ -10,15 +10,14 @@
 
 import { convertToEmu } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
-import type { ChartSpaceOptions, ChartType } from "@office-open/core/chart";
+import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringify } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import { attr, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
-import type { Element } from "@office-open/xml";
+import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { ChartOptions } from "../chart-frame";
@@ -90,7 +89,9 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     const xfrm = findChild(el, "p:xfrm");
     if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
 
-    // Chart data via c:chart → r:id → resolve relationship
+    // Chart data via c:chart → r:id → resolve relationship; the c:chartSpace
+    // payload itself is parsed by the core chart descriptor (full type/series
+    // coverage — the same descriptor that stringifies it).
     const chartRef = findFirst(el, "c:chart");
     if (chartRef) {
       const rId = attr(chartRef, "r:id");
@@ -99,8 +100,7 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
         if (chartPath) {
           const chartXml = _ctx.getPart(chartPath);
           if (chartXml) {
-            const chartOpts = parseChartXml(chartXml);
-            if (chartOpts) Object.assign(result, chartOpts);
+            Object.assign(result, chartSpaceDesc.parse(chartXml, _ctx));
           }
         }
       }
@@ -109,127 +109,3 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     return result as ChartOptions;
   },
 };
-
-/** Parse chart XML (c:chartSpace) into chart options. */
-function parseChartXml(el: Element): Partial<ChartSpaceOptions> | undefined {
-  const chart = findChild(el, "c:chart");
-  if (!chart) return undefined;
-
-  const opts: Partial<ChartSpaceOptions> = {};
-
-  // Title
-  const titleEl = findChild(chart, "c:title");
-  if (titleEl) {
-    const rich = findFirst(titleEl, "c:rich");
-    if (rich) {
-      const t = findFirst(rich, "a:t");
-      if (t) {
-        const title = textOf(t);
-        if (title) opts.title = title;
-      }
-    }
-  }
-
-  // Plot area → chart type
-  const plotArea = findChild(chart, "c:plotArea");
-  if (!plotArea) return undefined;
-
-  let chartType: string | undefined;
-  let typeElement: Element | undefined;
-
-  for (const child of plotArea.elements ?? []) {
-    switch (child.name) {
-      case "c:barChart": {
-        const barDir = findChild(child, "c:barDir");
-        chartType = barDir && attr(barDir, "val") === "bar" ? "bar" : "column";
-        typeElement = child;
-        break;
-      }
-      case "c:lineChart":
-        chartType = "line";
-        typeElement = child;
-        break;
-      case "c:pieChart":
-        chartType = "pie";
-        typeElement = child;
-        break;
-      case "c:areaChart":
-        chartType = "area";
-        typeElement = child;
-        break;
-      case "c:scatterChart":
-        chartType = "scatter";
-        typeElement = child;
-        break;
-    }
-    if (chartType) break;
-  }
-
-  if (!chartType || !typeElement) return undefined;
-  opts.type = chartType as ChartType;
-
-  // Series
-  const series: { name: string; values: number[] }[] = [];
-  let categories: string[] | undefined;
-
-  for (const serEl of typeElement.elements ?? []) {
-    if (serEl.name !== "c:ser") continue;
-    const nameParts = extractStrCache(serEl, "c:tx");
-    const cats = extractStrCache(serEl, "c:cat");
-    if (cats.length > 0 && !categories) categories = cats;
-    const vals = extractNumCache(serEl);
-    series.push({ name: nameParts[0] ?? "", values: vals });
-  }
-
-  opts.categories = categories ?? [];
-  opts.series = series;
-  opts.showLegend = findChild(chart, "c:legend") !== undefined;
-
-  const styleEl = findChild(el, "c:style");
-  if (styleEl) {
-    const val = attrNum(styleEl, "val");
-    if (val !== undefined) opts.style = val;
-  }
-
-  return opts;
-}
-
-function extractStrCache(serEl: Element, tag: string): string[] {
-  const txEl = findChild(serEl, tag);
-  if (!txEl) return [];
-  const strRef = findChild(txEl, "c:strRef");
-  if (!strRef) return [];
-  const strCache = findChild(strRef, "c:strCache");
-  if (!strCache) return [];
-
-  const parts: string[] = [];
-  for (const pt of strCache.elements ?? []) {
-    if (pt.name !== "c:pt") continue;
-    const v = findChild(pt, "c:v");
-    if (v) {
-      const text = textOf(v);
-      if (text) parts.push(text);
-    }
-  }
-  return parts;
-}
-
-function extractNumCache(serEl: Element): number[] {
-  const valEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
-  if (!valEl) return [];
-  const numRef = findChild(valEl, "c:numRef");
-  if (!numRef) return [];
-  const numCache = findChild(numRef, "c:numCache");
-  if (!numCache) return [];
-
-  const vals: number[] = [];
-  for (const pt of numCache.elements ?? []) {
-    if (pt.name !== "c:pt") continue;
-    const v = findChild(pt, "c:v");
-    if (v) {
-      const text = textOf(v);
-      if (text) vals.push(parseFloat(text));
-    }
-  }
-  return vals;
-}

@@ -224,7 +224,7 @@ const slides: SlideOptions[] = [
                   { text: "\n" },
                   { text: "Underline", underline: "single", size: 14 },
                   { text: " " },
-                  { text: "Strike", strike: "sngStrike", size: 14, fill: "FF0000" },
+                  { text: "Strike", strike: "singleStrike", size: 14, fill: "FF0000" },
                 ],
               },
             ],

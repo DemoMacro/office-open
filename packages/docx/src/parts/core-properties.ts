@@ -8,7 +8,7 @@
  *
  * @module
  */
-import type { ContentTypesInput } from "@office-open/core";
+import type { ContentTypesInput, DataType } from "@office-open/core";
 import type { BibliographyOptions } from "@parts/bibliography";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
@@ -144,7 +144,7 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * declarations stay valid and the package opens in Word. Media/fonts/headers
    * are rebuilt by the compiler and must NOT be listed here.
    */
-  rawParts?: { path: string; data: Uint8Array }[];
+  rawParts?: { path: string; data: DataType }[];
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
 }

@@ -436,7 +436,9 @@ export function parseDocument(data: DataType): DocumentOptions {
     const ftResult = fontTableDesc.parse(docx.fontTable, ctx);
     if (ftResult.fonts && ftResult.fonts.length > 0) {
       resolveEmbeddedFontData(ftResult.fonts, docx.doc);
-      opts.fonts = ftResult.fonts;
+      // embedRid is a resolve-time lookup key — the FontWrapper reassigns it
+      // on generate, so it must not leak into the public options JSON.
+      opts.fonts = ftResult.fonts.map(({ embedRid: _embedRid, ...font }) => font);
     }
   }
 

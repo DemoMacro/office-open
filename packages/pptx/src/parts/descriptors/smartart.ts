@@ -121,10 +121,11 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
 
 /** Parse SmartArt data XML into options. */
 function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtOptions>): void {
-  const model = findChild(dataEl, "dgm:dataModel");
+  // The data part's root element IS dgm:dataModel (CT_DataModel: ptLst + cxnLst).
+  const model = dataEl.name === "dgm:dataModel" ? dataEl : findChild(dataEl, "dgm:dataModel");
   if (!model) return;
 
-  const pts = findChild(model, "dgm:pts");
+  const pts = findChild(model, "dgm:ptLst");
   if (!pts) return;
 
   // Build node text map and extract layout/style/color from doc point

@@ -442,7 +442,6 @@
                   "type": "string"
                 },
                 "id": {
-                  "$id": ")",
                   "description": "Diagram node GUID (a:dgm",
                   "type": "string"
                 }
@@ -2093,7 +2092,6 @@
           "type": "number"
         },
         "id": {
-          "$id": "). Auto-generated if omitted.",
           "description": "Chart frame id (p:cNvPr",
           "type": "number"
         },
@@ -3127,105 +3125,19 @@
     "DataType": {
       "anyOf": [
         {
-          "additionalProperties": false,
-          "properties": {
-            "byteLength": {
-              "type": "number"
-            }
-          },
-          "required": ["byteLength"],
-          "title": "byteLength",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "size": {
-              "type": "number"
-            },
-            "type": {
-              "type": "string"
-            }
-          },
-          "required": ["size", "type"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "buffer": {
-              "additionalProperties": false,
-              "properties": {
-                "byteLength": {
-                  "type": "number"
-                }
-              },
-              "required": ["byteLength"],
-              "type": "object"
-            },
-            "byteLength": {
-              "type": "number"
-            },
-            "byteOffset": {
-              "type": "number"
-            }
-          },
-          "required": ["buffer", "byteLength", "byteOffset"],
-          "type": "object"
-        },
-        {
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "locked": {
-              "type": "boolean"
-            }
-          },
-          "required": ["locked"],
-          "title": "locked",
-          "type": "object"
-        },
-        {
+          "description": "Base64 string, data:[<mediatype>][;base64],<data> URL, or plain text.",
           "type": "string"
         },
         {
-          "additionalProperties": {
-            "type": "number"
+          "items": {
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
           },
-          "properties": {
-            "BYTES_PER_ELEMENT": {
-              "type": "number"
-            },
-            "buffer": {
-              "additionalProperties": false,
-              "properties": {
-                "byteLength": {
-                  "type": "number"
-                }
-              },
-              "required": ["byteLength"],
-              "type": "object"
-            },
-            "byteLength": {
-              "type": "number"
-            },
-            "byteOffset": {
-              "type": "number"
-            },
-            "length": {
-              "type": "number"
-            }
-          },
-          "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-          "type": "object"
+          "type": "array"
         }
       ],
-      "description": "Supported binary input shapes."
+      "description": "Binary content as a string or an array of byte values."
     },
     "DefaultShapeDefinitionOptions": {
       "additionalProperties": false,
@@ -4305,7 +4217,6 @@
           ]
         },
         "id": {
-          "$id": "). Auto-generated if omitted.",
           "description": "Group id (p:cNvPr",
           "type": "number"
         },
@@ -4925,7 +4836,6 @@
           ]
         },
         "id": {
-          "$id": "). Auto-generated if omitted.",
           "description": "Locked canvas frame id (p:cNvPr",
           "type": "number"
         },
@@ -5622,12 +5532,27 @@
     "OleEmbedOptions": {
       "additionalProperties": false,
       "properties": {
-        "rId": {
-          "description": "Relationship ID for the embedded OLE data",
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "OLE container binary — registered as ppt/embeddings/oleObjectN.bin."
+        }
+      },
+      "required": ["data"],
+      "type": "object"
+    },
+    "OleIconImageOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "Icon/preview image bytes (binary or base64 data URL)."
+        },
+        "type": {
+          "description": "Image type / extension (e.g. \"png\", \"emf\").",
           "type": "string"
         }
       },
-      "required": ["rId"],
+      "required": ["data", "type"],
       "type": "object"
     },
     "OleLinkOptions": {
@@ -5655,10 +5580,10 @@
         },
         "embed": {
           "$ref": "#/definitions/OleEmbedOptions",
-          "description": "Embed mode (provides rId for embedded OLE)"
+          "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin)."
         },
         "followColorScheme": {
-          "description": "Follow color scheme: \"none\", \"full\", or \"textAndBackground\"",
+          "description": "Follow color scheme (p:embed/@followColorScheme): \"none\", \"full\", or \"textAndBackground\"",
           "enum": ["none", "full", "textAndBackground"],
           "type": "string"
         },
@@ -5672,8 +5597,11 @@
             }
           ]
         },
+        "iconImage": {
+          "$ref": "#/definitions/OleIconImageOptions",
+          "description": "Icon/preview image (p:pic under p:oleObj). MS Office refuses to open a presentation whose oleObj has no picture, so this is effectively required for embedded objects."
+        },
         "id": {
-          "$id": "). Auto-generated if omitted.",
           "description": "OLE frame id (p:cNvPr",
           "type": "number"
         },
@@ -5681,17 +5609,13 @@
           "description": "Image height (EMU) for icon/preview",
           "type": "number"
         },
-        "imgRId": {
-          "description": "Relationship ID for the preview/icon image",
-          "type": "string"
-        },
         "imgW": {
           "description": "Image width (EMU) for icon/preview",
           "type": "number"
         },
         "link": {
           "$ref": "#/definitions/OleLinkOptions",
-          "description": "Link mode (provides rId for linked OLE)"
+          "description": "Link mode (provides rId for linked OLE data)"
         },
         "name": {
           "description": "XSD",
@@ -6345,7 +6269,6 @@
           ]
         },
         "id": {
-          "$id": "). Auto-generated if omitted.",
           "description": "Picture id (p:cNvPr",
           "type": "number"
         },
@@ -7819,7 +7742,25 @@
           "$ref": "#/definitions/OutlineOptions"
         },
         "placeholder": {
-          "enum": ["title", "body", "subTitle", "sldNum", "dt", "ftr", "hdr", "obj"],
+          "description": "CT_Placeholder",
+          "enum": [
+            "title",
+            "body",
+            "ctrTitle",
+            "subTitle",
+            "dt",
+            "sldNum",
+            "ftr",
+            "hdr",
+            "obj",
+            "chart",
+            "tbl",
+            "clipArt",
+            "dgm",
+            "media",
+            "sldImg",
+            "pic"
+          ],
           "type": "string"
         },
         "placeholderIndex": {
@@ -8566,7 +8507,6 @@
           ]
         },
         "id": {
-          "$id": "). Auto-generated if omitted.",
           "description": "Diagram id (p:cNvPr",
           "type": "number"
         },
@@ -8703,7 +8643,7 @@
       "type": "string"
     },
     "StrikeStyle": {
-      "enum": ["sngStrike", "dblStrike", "noStrike"],
+      "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
     "StringTagOptions": {
@@ -9059,7 +8999,6 @@
           ]
         },
         "id": {
-          "$id": "). Auto-generated if omitted.",
           "description": "Table id (p:cNvPr",
           "type": "number"
         },
@@ -9392,7 +9331,6 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "$id": "— GUID identifier.",
           "description": "a:fld",
           "type": "string"
         },
@@ -9527,14 +9465,14 @@
           "type": "boolean"
         },
         "levels": {
-          "description": "Levels 1-9; index 0 = lvl1pPr. `undefined` omits the level.",
+          "description": "Levels 1-9; index 0 = lvl1pPr. `null` omits the level (JSON form of an undefined array slot — the position still pins the level number).",
           "items": {
             "anyOf": [
               {
                 "$ref": "#/definitions/TextListStyleLevelOptions"
               },
               {
-                "not": {}
+                "type": "null"
               }
             ]
           },
@@ -9902,17 +9840,23 @@
         "startSound": {
           "additionalProperties": false,
           "properties": {
+            "data": {
+              "$ref": "#/definitions/DataType",
+              "description": "Audio content: base64 string, data URL, or raw bytes."
+            },
             "loop": {
               "type": "boolean"
             },
             "name": {
               "type": "string"
             },
-            "rId": {
+            "type": {
+              "description": "Audio container format — becomes the media part extension.",
+              "enum": ["mp3", "wav", "wma", "aac"],
               "type": "string"
             }
           },
-          "required": ["rId"],
+          "required": ["data", "type"],
           "type": "object"
         },
         "stopPreviousSound": {

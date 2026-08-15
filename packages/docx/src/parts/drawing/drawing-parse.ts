@@ -5,6 +5,7 @@
  *
  * @module
  */
+import type { ChartSpaceOptions } from "@office-open/core";
 import { parseOnOff } from "@office-open/core";
 import {
   blipDesc,
@@ -42,7 +43,7 @@ import type {
   GroupMediaData,
   ShapeMediaData,
 } from "@shared/media";
-import type { NonVisualPropertiesOptions } from "@shared/media/data";
+import type { ContentPartOptions, NonVisualPropertiesOptions } from "@shared/media/data";
 
 import { parseParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
@@ -72,7 +73,7 @@ export type DrawingChild =
   | { smartArt: SmartArtOptions }
   | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions }
-  | { contentPart: ContentPartMediaData };
+  | { contentPart: ContentPartOptions };
 
 /**
  * Parse a w:drawing element and dispatch to the correct parser
@@ -82,7 +83,12 @@ export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild
   // A content part is a direct choice child of wp:inline/wp:anchor — no
   // a:graphic wrapper, so it must be checked before the graphicData dispatch.
   const contentPartEl = findFirst(el, "wp:contentPart") ?? findFirst(el, "wpg:contentPart");
-  if (contentPartEl) return { contentPart: parseContentPart(contentPartEl) };
+  if (contentPartEl) {
+    // Group children keep the full ContentPartMediaData (type-discriminated);
+    // the paragraph-level payload is the public ContentPartOptions.
+    const { type: _type, ...contentPart } = parseContentPart(contentPartEl);
+    return { contentPart };
+  }
 
   const graphicData = findFirst(el, "a:graphicData");
   if (!graphicData) return undefined;
@@ -907,7 +913,7 @@ function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaDa
   const md: ChartMediaData = {
     type: "chart",
     transformation: readDirectXfrmTransformation(el),
-    chartOptions: chartOpts as unknown as ChartOptions,
+    chartOptions: chartOpts as ChartSpaceOptions,
   };
 
   const cNvPr = findChild(el, "wpg:cNvPr") ?? findChild(el, "wp:cNvPr");
@@ -1117,13 +1123,13 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
 }
 
 /**
- * Parse c:chartSpace element into ChartOptions.
+ * Parse c:chartSpace element into ChartSpaceOptions.
  */
-function parseChartXml(el: Element): Record<string, unknown> | undefined {
+function parseChartXml(el: Element): Partial<ChartSpaceOptions> | undefined {
   const chart = findChild(el, "c:chart");
   if (!chart) return undefined;
 
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<ChartSpaceOptions> = {};
 
   // Title: c:chart → c:title → c:tx → c:rich → a:p → a:r → a:t
   const titleEl = findChild(chart, "c:title");
@@ -1142,7 +1148,7 @@ function parseChartXml(el: Element): Record<string, unknown> | undefined {
   const plotArea = findChild(chart, "c:plotArea");
   if (!plotArea) return undefined;
 
-  let chartType: string | undefined;
+  let chartType: ChartSpaceOptions["type"] | undefined;
   let typeElement: Element | undefined;
 
   for (const child of plotArea.elements ?? []) {

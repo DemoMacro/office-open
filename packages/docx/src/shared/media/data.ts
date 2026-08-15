@@ -1,4 +1,5 @@
 import type { BaseMediaEntry } from "@office-open/core";
+import type { ChartSpaceOptions } from "@office-open/core";
 import type {
   BlackWhiteMode,
   EffectListOptions,
@@ -14,7 +15,6 @@ import type {
   ChildOffset,
 } from "@parts/drawing/inline/graphic/graphic-data/wpg/wpg-group";
 import type { ShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
-import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 
 export interface MediaDataTransformation {
   offset?: {
@@ -161,8 +161,10 @@ export interface ChartMediaData {
   /**
    * Chart payload for a group-nested chart (wpg:graphicFrame). Present on the
    * round-trip path and for fresh group children declared as options.
+   * ChartSpaceOptions, not the top-level ChartOptions — the group child
+   * carries the transformation.
    */
-  chartOptions?: ChartOptions;
+  chartOptions?: ChartSpaceOptions;
   /** Non-visual properties (wpg:cNvPr) for round-trip fidelity. */
   nonVisualProperties?: NonVisualPropertiesOptions;
   /** Graphic frame locks (wpg:cNvFrPr/a:graphicFrameLocks) for round-trip. */

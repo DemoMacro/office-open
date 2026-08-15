@@ -7,6 +7,7 @@
  */
 
 import type { CustomXmlRunOptions } from "@parts/custom-xml";
+import type { ObjectElementOptions } from "@parts/object";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ContentPartOptions } from "@shared/media/data";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
@@ -90,6 +91,8 @@ export type ParagraphChild =
   | { bookmark: BookmarkOptions }
   | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions }
+  // OLE object (w:object) — occupies its own paragraph-child slot
+  | { object: ObjectElementOptions }
   | { contentPart: ContentPartOptions }
   // Proof error markers
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }

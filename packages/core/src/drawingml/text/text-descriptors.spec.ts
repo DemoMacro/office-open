@@ -57,7 +57,7 @@ describe("runPropertiesDesc round-trip", () => {
   });
 
   it("round-trips strike/capitalization", () => {
-    const r = roundTrip({ strike: "sngStrike", capitalization: "all" });
+    const r = roundTrip({ strike: "singleStrike", capitalization: "all" });
     expect(r.strike).toBe("singleStrike");
     expect(r.capitalization).toBe("all");
   });

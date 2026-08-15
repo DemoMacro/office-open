@@ -98,6 +98,27 @@ const PATTERN_OVERRIDES: Record<string, { pattern: string; description: string }
   },
 };
 
+/**
+ * P4 definition overrides: TS types whose members are runtime objects with no
+ * JSON shape (typed arrays, blobs, streams). The JSON-representable inputs a
+ * caller can actually write are a string or a byte array, so replace the whole
+ * definition with those legs. contentEncoding:"base64" is deliberately not
+ * used — the string leg also admits data: URLs and plain UTF-8 text, so the
+ * encoding is stated in prose instead of a keyword that would be half-true.
+ */
+const DEFINITION_OVERRIDES: Record<string, Record<string, unknown>> = {
+  DataType: {
+    description: "Binary content as a string or an array of byte values.",
+    anyOf: [
+      {
+        type: "string",
+        description: "Base64 string, data:[<mediatype>][;base64],<data> URL, or plain text.",
+      },
+      { type: "array", items: { type: "integer", minimum: 0, maximum: 255 } },
+    ],
+  },
+};
+
 // ── Post-processing ──
 
 /** P0: every $ref in the schema must resolve to a definition. */
@@ -140,6 +161,11 @@ function postProcess(schema: Record<string, unknown>) {
     }
     if (!node || typeof node !== "object") return;
     const obj = node as Record<string, unknown>;
+
+    // P2a: tsj's extended JSDoc turns `(p:cNvPr @id)` in a description into a
+    // spurious nested "$id" ("…). Auto-generated …"), which ajv then tries to
+    // resolve as a reference host. Only the root envelope carries an $id.
+    delete obj.$id;
 
     // P2: anyOf whose branches each require exactly one property — the
     // tagged-union shape. Title each branch after its required tag.
@@ -200,6 +226,9 @@ function postProcess(schema: Record<string, unknown>) {
 
   // P1: pattern overrides (definition-level replacement)
   const definitions = (schema.definitions ?? {}) as Record<string, Record<string, unknown>>;
+  for (const [name, replacement] of Object.entries(DEFINITION_OVERRIDES)) {
+    if (definitions[name]) definitions[name] = replacement;
+  }
   for (const [name, override] of Object.entries(PATTERN_OVERRIDES)) {
     const def = definitions[name];
     if (!def) continue;

@@ -63,15 +63,15 @@ interface BaseFrameOptions {
   /** Drop cap effect type */
   dropCap?: (typeof DropCapType)[keyof typeof DropCapType];
   /** Frame width in twips or universal measure (e.g., "1cm", "0.5in") */
-  width: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
   /** Frame height in twips or universal measure (e.g., "1cm", "0.5in") */
-  height: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   /** Text wrapping behavior around the frame */
   wrap?: (typeof FrameWrap)[keyof typeof FrameWrap];
   /** Number of lines for drop cap effect */
   lines?: number;
   /** Anchor reference points for horizontal and vertical positioning */
-  anchor: {
+  anchor?: {
     /** Horizontal anchor reference point */
     horizontal: (typeof FrameAnchorType)[keyof typeof FrameAnchorType];
     /** Vertical anchor reference point */

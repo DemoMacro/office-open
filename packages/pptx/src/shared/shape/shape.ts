@@ -51,7 +51,24 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   rotation?: number;
   textBody?: TextBodyOptions;
   locking?: ShapeLockingOptions;
-  placeholder?: "title" | "body" | "subTitle" | "sldNum" | "dt" | "ftr" | "hdr" | "obj";
+  /** CT_Placeholder @type — ST_PlaceholderType. */
+  placeholder?:
+    | "title"
+    | "body"
+    | "ctrTitle"
+    | "subTitle"
+    | "dt"
+    | "sldNum"
+    | "ftr"
+    | "hdr"
+    | "obj"
+    | "chart"
+    | "tbl"
+    | "clipArt"
+    | "dgm"
+    | "media"
+    | "sldImg"
+    | "pic";
   placeholderIndex?: number;
   /** CT_Placeholder @sz — sizing hint (default "full"). */
   placeholderSize?: "full" | "half" | "quarter";

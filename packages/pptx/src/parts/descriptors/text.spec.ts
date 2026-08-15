@@ -69,7 +69,7 @@ describe("runPropertiesDesc round-trip", () => {
   });
 
   it("round-trips strike", () => {
-    const result = roundTrip({ strike: "sngStrike" });
+    const result = roundTrip({ strike: "singleStrike" });
     expect(result.strike).toBe("singleStrike");
   });
 

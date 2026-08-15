@@ -25,6 +25,7 @@ import {
   replaceNumberingPlaceholders,
   IMAGE_MEDIA_CONTENT_TYPES,
   resolverFromRegistry,
+  toUint8Array,
 } from "@office-open/core";
 import type { XmlifyedFile, Zippable } from "@office-open/core";
 import {
@@ -130,7 +131,7 @@ export function compileDocument(
   // rebuild these, so copy their original bytes verbatim to keep [Content_Types]
   // declarations valid and the package openable in Word.
   for (const part of ctx._options.rawParts ?? []) {
-    files[part.path] = part.data;
+    files[part.path] = toUint8Array(part.data);
   }
 
   // [Content_Types].xml is serialized last: parts register their media/fonts

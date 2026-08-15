@@ -52,8 +52,8 @@ describe("fromDrawingParagraph (a:p → w:p)", () => {
   it("converts underline and strike enums", () => {
     const drawing: ParagraphDescriptorOptions = {
       children: [
-        { text: "u", underline: "double", strike: "dblStrike" },
-        { text: "v", underline: "single", strike: "sngStrike" },
+        { text: "u", underline: "double", strike: "doubleStrike" },
+        { text: "v", underline: "single", strike: "singleStrike" },
       ],
     };
     const [a, b] = fromDrawingParagraph(drawing).children as [
@@ -182,9 +182,9 @@ describe("toDrawingParagraph (w:p → a:p)", () => {
       { underline?: string; strike?: string },
     ];
     expect(a.underline).toBe("single"); // dotted collapsed
-    expect(a.strike).toBe("dblStrike");
+    expect(a.strike).toBe("doubleStrike");
     expect(b.underline).toBe("double");
-    expect(b.strike).toBe("sngStrike");
+    expect(b.strike).toBe("singleStrike");
   });
 
   it("recovers run spacing (twips → 1/100 pt) and color", () => {
