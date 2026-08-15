@@ -60,7 +60,7 @@ export interface WebPropertiesOptions {
 }
 
 /** Text import field (CT_TextField). */
-export interface TextFieldOptions {
+export interface ConnectionTextFieldOptions {
   /** Field data type (ST_ExternalConnectionType, default "general") */
   type?: string;
   /** Field position (default 0) */
@@ -102,7 +102,7 @@ export interface TextPropertiesOptions {
   /** Text qualifier: "doubleQuote" | "singleQuote" | "none" */
   qualifier?: "doubleQuote" | "singleQuote" | "none";
   /** Field layout (CT_TextFields) */
-  textFields?: TextFieldOptions[];
+  textFields?: ConnectionTextFieldOptions[];
 }
 
 /** Query parameter (CT_Parameter). */
@@ -416,10 +416,10 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
         if (q !== undefined) t.qualifier = q as TextPropertiesOptions["qualifier"];
         const fieldsEl = findChild(textEl, "textFields");
         if (fieldsEl) {
-          const fields: TextFieldOptions[] = [];
+          const fields: ConnectionTextFieldOptions[] = [];
           for (const fEl of fieldsEl.elements ?? []) {
             if (fEl.name !== "textField") continue;
-            const f: TextFieldOptions = {};
+            const f: ConnectionTextFieldOptions = {};
             if (attr(fEl, "type") !== undefined) f.type = attr(fEl, "type");
             const pos = attrNum(fEl, "position");
             if (pos !== undefined) f.position = pos;

@@ -72,7 +72,7 @@ export {
   type StrikeStyle,
   type TextCapitalization,
   type RunPropertiesOptions,
-  type HyperlinkOptions,
+  type TextHyperlinkOptions,
 } from "@office-open/core/drawingml";
 export type { TextAlignment, ParagraphPropertiesOptions } from "@office-open/core/drawingml";
 export type { GroupOptions } from "./shape/group-shape";

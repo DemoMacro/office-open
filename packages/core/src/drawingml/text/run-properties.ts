@@ -31,7 +31,7 @@ import {
   DEFAULT_SHADOW_DIRECTION,
   DEFAULT_SHADOW_DISTANCE,
 } from "./types";
-import type { HyperlinkOptions, RunPropertiesOptions, TextFont } from "./types";
+import type { TextHyperlinkOptions, RunPropertiesOptions, TextFont } from "./types";
 
 /** Strip `readonly` from all properties. */
 export type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
@@ -40,7 +40,11 @@ export type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
 
 let nextHyperlinkId = 1;
 
-function buildHyperlinkElement(tag: string, hl: HyperlinkOptions, key: string | undefined): string {
+function buildHyperlinkElement(
+  tag: string,
+  hl: TextHyperlinkOptions,
+  key: string | undefined,
+): string {
   const attrs: string[] = [];
   // CT_Hyperlink r:id is optional — emit it only for relational targets
   // (external url or internal slide). Action-only tokens (nextslide/endshow/
@@ -61,8 +65,8 @@ function buildHyperlinkElement(tag: string, hl: HyperlinkOptions, key: string | 
   return attrs.length ? `<${tag} ${attrs.join(" ")}/>` : `<${tag}/>`;
 }
 
-function readHyperlink(el: XmlElement, ctx: ReadContext): HyperlinkOptions {
-  const hl: Mutable<HyperlinkOptions> = {};
+function readHyperlink(el: XmlElement, ctx: ReadContext): TextHyperlinkOptions {
+  const hl: Mutable<TextHyperlinkOptions> = {};
   const rId = el.attributes?.["r:id"];
   const action =
     el.attributes?.["action"] !== undefined ? String(el.attributes["action"]) : undefined;
@@ -88,7 +92,7 @@ function readHyperlink(el: XmlElement, ctx: ReadContext): HyperlinkOptions {
   if (el.attributes?.["highlightClick"]) hl.highlightClick = true;
   if (el.attributes?.["endSnd"]) hl.endSound = true;
   if (el.attributes?.["invalidUrl"]) hl.invalidUrl = true;
-  return hl as HyperlinkOptions;
+  return hl as TextHyperlinkOptions;
 }
 
 // ── CT_TextFont helpers (a:latin / a:ea / a:cs / a:sym) ──

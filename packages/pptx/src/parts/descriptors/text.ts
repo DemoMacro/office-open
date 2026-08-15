@@ -18,6 +18,6 @@ export type {
   BulletOptions,
   ParagraphPropertiesOptions,
   RunOptions,
-  HyperlinkOptions,
+  TextHyperlinkOptions,
   RunPropertiesOptions,
 } from "@office-open/core/drawingml";

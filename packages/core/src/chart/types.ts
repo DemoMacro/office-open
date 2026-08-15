@@ -235,7 +235,7 @@ export interface ChartSpaceOptions {
   /** Pivot chart source (c:pivotSource, after clrMapOvr, before protection). */
   pivotSource?: PivotSourceOptions;
   /** Pivot chart per-series formats (c:pivotFmts, after autoTitleDeleted). */
-  pivotFormats?: readonly PivotFormatOptions[];
+  pivotFormats?: readonly ChartPivotFormatOptions[];
   /** Surface chart color bands (c:bandFmts, after ser in surface charts). */
   bandFormats?: readonly BandFormatOptions[];
   /** Legend position (c:legendPos, defaults to "r" when legend is shown). */
@@ -463,7 +463,7 @@ export interface ExternalDataOptions {
 // ── Print settings (CT_PrintSettings) ──
 
 /** Print-time header/footer text (CT_HeaderFooter). */
-export interface HeaderFooterOptions {
+export interface ChartHeaderFooterOptions {
   oddHeader?: string;
   oddFooter?: string;
   evenHeader?: string;
@@ -476,7 +476,7 @@ export interface HeaderFooterOptions {
 }
 
 /** Print page margins in inches (CT_PageMargins, all XSD-required). */
-export interface PageMarginsOptions {
+export interface ChartPageMarginsOptions {
   left?: number;
   right?: number;
   top?: number;
@@ -488,7 +488,7 @@ export interface PageMarginsOptions {
 export type PageSetupOrientation = "default" | "portrait" | "landscape";
 
 /** Print page setup (CT_PageSetup). */
-export interface PageSetupOptions {
+export interface ChartPageSetupOptions {
   paperSize?: number;
   /** Paper height as a UniversalMeasure string (mm/cm/in/...). */
   paperHeight?: string;
@@ -506,9 +506,9 @@ export interface PageSetupOptions {
 
 /** Print settings (CT_PrintSettings). */
 export interface PrintSettingsOptions {
-  headerFooter?: HeaderFooterOptions;
-  pageMargins?: PageMarginsOptions;
-  pageSetup?: PageSetupOptions;
+  headerFooter?: ChartHeaderFooterOptions;
+  pageMargins?: ChartPageMarginsOptions;
+  pageSetup?: ChartPageSetupOptions;
   /** Legacy VML drawing relationship id (c:legacyDrawingHF r:id). */
   legacyDrawingId?: string;
 }
@@ -528,7 +528,7 @@ export interface PivotSourceOptions {
 }
 
 /** Per-series pivot format override (CT_PivotFmt). */
-export interface PivotFormatOptions {
+export interface ChartPivotFormatOptions {
   index: number;
   marker?: MarkerOptions;
 }

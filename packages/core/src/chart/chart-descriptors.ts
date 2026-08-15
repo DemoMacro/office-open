@@ -53,13 +53,13 @@ import type {
   SplitType,
   ProtectionOptions,
   ExternalDataOptions,
-  HeaderFooterOptions,
-  PageMarginsOptions,
-  PageSetupOptions,
+  ChartHeaderFooterOptions,
+  ChartPageMarginsOptions,
+  ChartPageSetupOptions,
   PrintSettingsOptions,
   PageSetupOrientation,
   PivotSourceOptions,
-  PivotFormatOptions,
+  ChartPivotFormatOptions,
   BandFormatOptions,
   LegendEntryOptions,
   LegendPosition,
@@ -437,7 +437,7 @@ function stringifyExternalData(opts: ExternalDataOptions): string {
   return `<c:externalData r:id="${escapeXml(opts.relationshipId)}">${auto}</c:externalData>`;
 }
 
-function stringifyHeaderFooter(opts: HeaderFooterOptions): string {
+function stringifyHeaderFooter(opts: ChartHeaderFooterOptions): string {
   const parts: string[] = [];
   if (opts.oddHeader !== undefined)
     parts.push(`<c:oddHeader>${escapeXml(opts.oddHeader)}</c:oddHeader>`);
@@ -462,7 +462,7 @@ function stringifyHeaderFooter(opts: HeaderFooterOptions): string {
   return `<c:headerFooter${attrStr}>${parts.join("")}</c:headerFooter>`;
 }
 
-function stringifyPageMargins(opts: PageMarginsOptions): string {
+function stringifyPageMargins(opts: ChartPageMarginsOptions): string {
   // CT_PageMargins attributes are all XSD use="required". Fill Office default
   // margins (inches) for any the caller omits so emission is always schema-valid.
   const l = opts.left ?? 0.7;
@@ -474,7 +474,7 @@ function stringifyPageMargins(opts: PageMarginsOptions): string {
   return `<c:pageMargins l="${l}" r="${r}" t="${t}" b="${b}" header="${header}" footer="${footer}"/>`;
 }
 
-function stringifyPageSetup(opts: PageSetupOptions): string {
+function stringifyPageSetup(opts: ChartPageSetupOptions): string {
   const attrs: string[] = [];
   if (opts.paperSize !== undefined) attrs.push(`paperSize="${opts.paperSize}"`);
   if (opts.paperHeight !== undefined) attrs.push(`paperHeight="${escapeXml(opts.paperHeight)}"`);
@@ -767,7 +767,7 @@ function stringifyPivotSource(opts: PivotSourceOptions): string {
   return `<c:pivotSource><c:name>${escapeXml(opts.name)}</c:name><c:fmtId val="${opts.formatId}"/></c:pivotSource>`;
 }
 
-function stringifyPivotFormats(formats: readonly PivotFormatOptions[]): string {
+function stringifyPivotFormats(formats: readonly ChartPivotFormatOptions[]): string {
   const inner = formats
     .map((f) => {
       let entry = `<c:idx val="${f.index}"/>`;
@@ -1393,14 +1393,14 @@ function readPivotSource(el: XmlElement): PivotSourceOptions | undefined {
   return { name: textOf(nameEl) ?? "", formatId: Number(attr(fmtIdEl, "val")) };
 }
 
-function readPivotFormats(chart: XmlElement): PivotFormatOptions[] | undefined {
+function readPivotFormats(chart: XmlElement): ChartPivotFormatOptions[] | undefined {
   const pf = findChild(chart, "c:pivotFmts");
   if (!pf) return undefined;
-  const result: PivotFormatOptions[] = [];
+  const result: ChartPivotFormatOptions[] = [];
   for (const fmt of children(pf, "c:pivotFmt")) {
     const idxEl = findChild(fmt, "c:idx");
     if (!idxEl) continue;
-    const opt: PivotFormatOptions = { index: Number(attr(idxEl, "val")) };
+    const opt: ChartPivotFormatOptions = { index: Number(attr(idxEl, "val")) };
     const marker = readMarker(fmt);
     if (marker) opt.marker = marker;
     result.push(opt);
@@ -1455,10 +1455,10 @@ function readLegend(
 
 // ── Print settings read (CT_PrintSettings) ──
 
-function readHeaderFooter(ps: XmlElement): HeaderFooterOptions | undefined {
+function readHeaderFooter(ps: XmlElement): ChartHeaderFooterOptions | undefined {
   const hf = findChild(ps, "c:headerFooter");
   if (!hf) return undefined;
-  const opts: HeaderFooterOptions = {};
+  const opts: ChartHeaderFooterOptions = {};
   const readStr = (tag: string): string | undefined => {
     const child = findChild(hf, tag);
     return child ? textOf(child) : undefined;
@@ -1488,10 +1488,10 @@ function readHeaderFooter(ps: XmlElement): HeaderFooterOptions | undefined {
   return Object.keys(opts).length ? opts : undefined;
 }
 
-function readPageMargins(ps: XmlElement): PageMarginsOptions | undefined {
+function readPageMargins(ps: XmlElement): ChartPageMarginsOptions | undefined {
   const pm = findChild(ps, "c:pageMargins");
   if (!pm) return undefined;
-  const opts: PageMarginsOptions = {};
+  const opts: ChartPageMarginsOptions = {};
   const readNum = (name: string): number | undefined => {
     const v = attr(pm, name);
     return v === undefined ? undefined : Number(v);
@@ -1511,10 +1511,10 @@ function readPageMargins(ps: XmlElement): PageMarginsOptions | undefined {
   return Object.keys(opts).length ? opts : undefined;
 }
 
-function readPageSetup(ps: XmlElement): PageSetupOptions | undefined {
+function readPageSetup(ps: XmlElement): ChartPageSetupOptions | undefined {
   const pg = findChild(ps, "c:pageSetup");
   if (!pg) return undefined;
-  const opts: PageSetupOptions = {};
+  const opts: ChartPageSetupOptions = {};
   const readNum = (name: string): number | undefined => {
     const v = attr(pg, name);
     return v === undefined ? undefined : Number(v);

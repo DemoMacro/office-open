@@ -28,7 +28,7 @@ import type {
   ConditionalFormatRule,
   ConditionalFormatType,
   ControlOptions,
-  CustomPropertyOptions,
+  CustomSheetPropertyOptions,
   CustomSheetViewOptions,
   DataConsolidateOptions,
   DataValidationOperator,
@@ -708,7 +708,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Custom properties (CT_CustomProperties — customPr name + r:id)
     const customPropsEl = findChild(el, "customProperties");
     if (customPropsEl) {
-      const props: CustomPropertyOptions[] = [];
+      const props: CustomSheetPropertyOptions[] = [];
       for (const cpEl of customPropsEl.elements ?? []) {
         if (cpEl.name !== "customPr") continue;
         const name = attr(cpEl, "name");

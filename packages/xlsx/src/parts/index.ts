@@ -74,7 +74,7 @@ export type {
   DatabasePropertiesOptions,
   WebPropertiesOptions,
   TextPropertiesOptions,
-  TextFieldOptions,
+  ConnectionTextFieldOptions,
   ParameterOptions,
   WebTableSelection,
 } from "./connection";

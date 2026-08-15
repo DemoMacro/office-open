@@ -28,7 +28,7 @@ export type TextAlignment = "left" | "center" | "right" | "justify";
 
 // ── Hyperlink (a:hlinkClick) ──
 
-export interface HyperlinkOptions {
+export interface TextHyperlinkOptions {
   /** External URL target (mutually exclusive with slide). */
   url?: string;
   /**
@@ -85,9 +85,9 @@ export interface RunPropertiesOptions {
   font?: RunFont;
   lang?: string;
   fill?: FillOptions;
-  hyperlink?: HyperlinkOptions;
+  hyperlink?: TextHyperlinkOptions;
   /** a:hlinkMouseOver — hover hyperlink (CT_Hyperlink). */
-  mouseoverHyperlink?: HyperlinkOptions;
+  mouseoverHyperlink?: TextHyperlinkOptions;
   strike?: StrikeStyle;
   /** Baseline offset as integer percent (positive = superscript, negative = subscript). */
   baseline?: number;

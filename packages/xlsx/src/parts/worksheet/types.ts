@@ -1166,7 +1166,7 @@ export interface WorksheetOptions {
   /** Control objects (CT_Controls) */
   controls?: ControlOptions[];
   /** Custom sheet properties (CT_CustomProperties) */
-  customProperties?: CustomPropertyOptions[];
+  customProperties?: CustomSheetPropertyOptions[];
   /** OLE objects (CT_OleObjects) */
   oleObjects?: OleObjectOptions[];
   /** Web publish items (CT_WebPublishItems) */
@@ -1216,7 +1216,7 @@ export interface ControlOptions {
 }
 
 /** Custom property (CT_CustomProperty) */
-export interface CustomPropertyOptions {
+export interface CustomSheetPropertyOptions {
   /** Property name */
   name: string;
   /** Relationship ID to binary data */
