@@ -264,7 +264,17 @@ function stringifySurface(
 ): string {
   if (!opts) return "";
   const parts: string[] = [];
-  if (opts.thickness !== undefined) parts.push(valEl("c:thickness", opts.thickness));
+  // ST_Thickness is a union of a percentage pattern and unsignedInt, but MS
+  // Office rejects the "N%" spelling on open — normalize to the bare number.
+  if (opts.thickness !== undefined)
+    parts.push(
+      valEl(
+        "c:thickness",
+        typeof opts.thickness === "string"
+          ? Number(opts.thickness.replace("%", ""))
+          : opts.thickness,
+      ),
+    );
   return parts.length ? `<${tag}>${parts.join("")}</${tag}>` : `<${tag}/>`;
 }
 
@@ -624,11 +634,11 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
       break;
   }
 
-  // Axes (pie/doughnut have none)
+  // Axes (pie/doughnut have none). The axId sequence must reference the axes
+  // actually emitted below — derive it from the effective axis list, never
+  // hardcode, or custom axis ids detach the chart group from its axes.
   if (!NO_AXES_TYPES.has(opts.type)) {
-    parts.push(valEl("c:axId", 10));
-    parts.push(valEl("c:axId", 20));
-    if (opts.threeD || opts.type === "surface") parts.push(valEl("c:axId", 30));
+    for (const axis of axesFor(opts)) parts.push(valEl("c:axId", axis.id));
   }
 
   return `${parts.join("")}</${tag}>`;
@@ -853,15 +863,20 @@ function defaultAxesFor(chartType: ChartType, threeD?: boolean): readonly AxisOp
     return [categoryAxis(10, 20), valueAxis(20, 10)];
   }
   if (threeD) {
-    return [categoryAxis(10, 20), valueAxis(20, 10), categoryAxis(30, 10)];
+    // 3D bar/line groups take cat + val + series axes (the third axis of a
+    // 3-axis group is c:serAx — emitting a second c:catAx breaks MS Office).
+    return [categoryAxis(10, 20), valueAxis(20, 10), seriesAxis(30, 10)];
   }
   return [categoryAxis(10, 20), valueAxis(20, 10)];
 }
 
 /** Provided axes override defaults; otherwise defaults are derived from chart type. */
+function axesFor(opts: ChartSpaceOptions): readonly AxisOptions[] {
+  return opts.axes ?? defaultAxesFor(opts.type, opts.threeD);
+}
+
 function stringifyAxes(opts: ChartSpaceOptions): string {
-  const axes = opts.axes ?? defaultAxesFor(opts.type, opts.threeD);
-  return axes.map(stringifyAxis).join("");
+  return axesFor(opts).map(stringifyAxis).join("");
 }
 
 // ── Read helpers ──

@@ -130,7 +130,7 @@ const options: PresentationOptions = {
             height: "6.6cm",
             rows: [
               {
-                height: "18520.8cm",
+                height: "3.3cm",
                 cells: [
                   {
                     text: "Top",
@@ -150,7 +150,7 @@ const options: PresentationOptions = {
                 ],
               },
               {
-                height: "13229.2cm",
+                height: "3.3cm",
                 cells: [
                   { text: "Default" },
                   { text: "Wide L/R", margins: { left: 300000, right: 300000 } },

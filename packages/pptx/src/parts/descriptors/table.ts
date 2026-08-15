@@ -89,10 +89,13 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     tblParts.push(stringifyTblPr(opts));
 
     // a:tblGrid — gridCol widths are EMU; numbers stay (already EMU), strings convert.
+    // Without explicit columnWidths the table fills its graphicFrame, so the
+    // frame width is split evenly (a 0-width gridCol collapses the column).
+    const colCount = opts.rows[0]?.cells.length ?? 1;
     const colWidths =
       opts.columnWidths && opts.columnWidths.length > 0
         ? opts.columnWidths.map(convertToEmu)
-        : Array.from({ length: opts.rows[0]?.cells.length ?? 1 }, () => 0);
+        : Array.from({ length: colCount }, () => Math.round(w / colCount));
     const gridCols = colWidths.map((cw) => `<a:gridCol w="${cw}"/>`).join("");
     tblParts.push(`<a:tblGrid>${gridCols}</a:tblGrid>`);
 
