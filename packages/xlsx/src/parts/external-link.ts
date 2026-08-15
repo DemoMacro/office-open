@@ -33,7 +33,7 @@ export interface ExternalCellOptions {
   /** Cell value */
   value?: string;
   /** Value metadata index (CT_ExternalCell @vm) */
-  vm?: number;
+  valueMetadataIndex?: number;
 }
 
 export interface ExternalBookOptions {
@@ -187,7 +187,7 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
                     r: cell.reference,
                   };
                   if (cell.type !== undefined) cellAttrs.t = cell.type;
-                  if (cell.vm !== undefined) cellAttrs.vm = cell.vm;
+                  if (cell.valueMetadataIndex !== undefined) cellAttrs.vm = cell.valueMetadataIndex;
                   if (cell.value !== undefined) {
                     bookParts.push(
                       `<cell${attrs(cellAttrs)}><v>${escapeXml(cell.value)}</v></cell>`,
@@ -340,7 +340,7 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
               };
               if (cellChild.attributes?.["t"]) cell.type = String(cellChild.attributes["t"]);
               if (cellChild.attributes?.["vm"] !== undefined)
-                cell.vm = Number(cellChild.attributes["vm"]);
+                cell.valueMetadataIndex = Number(cellChild.attributes["vm"]);
               const vEl = findChild(cellChild, "v");
               if (vEl && vEl.elements?.[0]?.text !== undefined) {
                 cell.value = String(vEl.elements[0].text);

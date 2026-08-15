@@ -317,7 +317,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   if (cellWatches.length > 0) {
     p.push("<cellWatches>");
     for (const cw of cellWatches) {
-      p.push(`<cellWatch r="${escapeXml(cw.r)}"/>`);
+      p.push(`<cellWatch r="${escapeXml(cw.reference)}"/>`);
     }
     p.push("</cellWatches>");
   }
@@ -808,7 +808,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (c.recalcAlways) prAttrs.push('recalcAlways="1"');
       if (c.linkedCell) prAttrs.push(`linkedCell="${escapeXml(c.linkedCell)}"`);
       if (c.listFillRange) prAttrs.push(`listFillRange="${escapeXml(c.listFillRange)}"`);
-      if (c.cf) prAttrs.push(`cf="${escapeXml(c.cf)}"`);
+      if (c.formula) prAttrs.push(`cf="${escapeXml(c.formula)}"`);
       if (prAttrs.length > 0) {
         ctrlParts.push(
           `<control ${cAttrs.join(" ")}><controlPr${prAttrs.length ? " " + prAttrs.join(" ") : ""}/></control>`,
@@ -935,7 +935,7 @@ function buildFormulaString(fOpts: FormulaOptions): string {
   if (fOpts.r1) fAttrs.r1 = fOpts.r1;
   if (fOpts.r2) fAttrs.r2 = fOpts.r2;
   if (fOpts.ca) fAttrs.ca = 1;
-  if (fOpts.bx) fAttrs.bx = 1;
+  if (fOpts.arrayContext) fAttrs.bx = 1;
 
   const hasContent = fOpts.formula !== undefined && fOpts.formula !== "";
 
@@ -979,7 +979,7 @@ export function appendSheetDataRows(
     if (rowOpts.customFormat) rowAttr += ' customFormat="1"';
     if (rowOpts.thickTop) rowAttr += ' thickTop="1"';
     if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
-    if (rowOpts.ph) rowAttr += ' ph="1"';
+    if (rowOpts.phonetic) rowAttr += ' ph="1"';
 
     const cells = rowOpts.cells;
     if (cells) {

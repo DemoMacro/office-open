@@ -120,19 +120,19 @@ describe("metadataDesc", () => {
       cellMetadata: [
         {
           records: [
-            { t: 0, v: 0 },
-            { t: 1, v: 2 },
+            { typeIndex: 0, valueIndex: 0 },
+            { typeIndex: 1, valueIndex: 2 },
           ],
         },
       ],
-      valueMetadata: [{ records: [{ t: 0, v: 1 }] }],
+      valueMetadata: [{ records: [{ typeIndex: 0, valueIndex: 1 }] }],
     });
     expect(parsed.futureMetadata![0]).toMatchObject({ name: "XLDAPROPERTY" });
     expect(parsed.futureMetadata![0]!.blocks).toHaveLength(2);
     expect(parsed.cellMetadata![0]!.records).toEqual([
-      { t: 0, v: 0 },
-      { t: 1, v: 2 },
+      { typeIndex: 0, valueIndex: 0 },
+      { typeIndex: 1, valueIndex: 2 },
     ]);
-    expect(parsed.valueMetadata![0]!.records).toEqual([{ t: 0, v: 1 }]);
+    expect(parsed.valueMetadata![0]!.records).toEqual([{ typeIndex: 0, valueIndex: 1 }]);
   });
 });

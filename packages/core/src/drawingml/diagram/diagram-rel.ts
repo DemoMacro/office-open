@@ -11,14 +11,14 @@
 // ---------------------------------------------------------------------------
 
 export interface DiagramRelationshipIdsOptions {
-  /** Relationship to data model part */
-  dm: string;
-  /** Relationship to layout definition part */
-  lo: string;
-  /** Relationship to quick style part */
-  qs: string;
-  /** Relationship to color transform part */
-  cs: string;
+  /** Relationship to data model part (@r:dm) */
+  dataModel: string;
+  /** Relationship to layout definition part (@r:lo) */
+  layout: string;
+  /** Relationship to quick style part (@r:qs) */
+  quickStyle: string;
+  /** Relationship to color transform part (@r:cs) */
+  colorStyle: string;
 }
 
 /**
@@ -35,4 +35,4 @@ export interface DiagramRelationshipIdsOptions {
  * ```
  */
 export const createDiagramRelationshipIds = (options: DiagramRelationshipIdsOptions): string =>
-  `<dgm:relIds r:dm="${options.dm}" r:lo="${options.lo}" r:qs="${options.qs}" r:cs="${options.cs}"/>`;
+  `<dgm:relIds r:dm="${options.dataModel}" r:lo="${options.layout}" r:qs="${options.quickStyle}" r:cs="${options.colorStyle}"/>`;

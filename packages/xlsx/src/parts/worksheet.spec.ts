@@ -669,7 +669,7 @@ describe("Worksheet", () => {
           { name: "MyProp", rId: "rId1" },
           { name: "Other", rId: "rId2" },
         ],
-        cellWatches: [{ r: "A1" }, { r: "B2" }],
+        cellWatches: [{ reference: "A1" }, { reference: "B2" }],
         legacyDrawingHF: "rId3",
       };
       const result = roundTrip(opts);
@@ -677,7 +677,7 @@ describe("Worksheet", () => {
         { name: "MyProp", rId: "rId1" },
         { name: "Other", rId: "rId2" },
       ]);
-      expect(result.cellWatches).toEqual([{ r: "A1" }, { r: "B2" }]);
+      expect(result.cellWatches).toEqual([{ reference: "A1" }, { reference: "B2" }]);
       expect(result.legacyDrawingHF).toBe("rId3");
     });
 

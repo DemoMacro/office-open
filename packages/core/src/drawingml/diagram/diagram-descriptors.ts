@@ -18,15 +18,15 @@ import type { PresentationLayoutVariablesOptions } from "./layout-vars";
 export const diagramRelationshipIdsDesc: CustomDescriptor<DiagramRelationshipIdsOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
-    return `<dgm:relIds r:dm="${escapeXml(opts.dm)}" r:lo="${escapeXml(opts.lo)}" r:qs="${escapeXml(opts.qs)}" r:cs="${escapeXml(opts.cs)}"/>`;
+    return `<dgm:relIds r:dm="${escapeXml(opts.dataModel)}" r:lo="${escapeXml(opts.layout)}" r:qs="${escapeXml(opts.quickStyle)}" r:cs="${escapeXml(opts.colorStyle)}"/>`;
   },
   parse(el, _ctx) {
     const result: Partial<DiagramRelationshipIdsOptions> = {};
     if (el.attributes) {
-      if (el.attributes["r:dm"] !== undefined) result.dm = String(el.attributes["r:dm"]);
-      if (el.attributes["r:lo"] !== undefined) result.lo = String(el.attributes["r:lo"]);
-      if (el.attributes["r:qs"] !== undefined) result.qs = String(el.attributes["r:qs"]);
-      if (el.attributes["r:cs"] !== undefined) result.cs = String(el.attributes["r:cs"]);
+      if (el.attributes["r:dm"] !== undefined) result.dataModel = String(el.attributes["r:dm"]);
+      if (el.attributes["r:lo"] !== undefined) result.layout = String(el.attributes["r:lo"]);
+      if (el.attributes["r:qs"] !== undefined) result.quickStyle = String(el.attributes["r:qs"]);
+      if (el.attributes["r:cs"] !== undefined) result.colorStyle = String(el.attributes["r:cs"]);
     }
     return result as DiagramRelationshipIdsOptions;
   },

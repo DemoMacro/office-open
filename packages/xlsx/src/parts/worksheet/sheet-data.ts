@@ -205,7 +205,7 @@ export function parseSheetDataRows(
           if (isOn(value)) row.thickBot = true;
           break;
         case "ph":
-          if (isOn(value)) row.ph = true;
+          if (isOn(value)) row.phonetic = true;
           break;
       }
     });
@@ -324,7 +324,7 @@ export function parseSheetDataRows(
                     if (isOn(v3)) f.ca = true;
                     break;
                   case "bx":
-                    if (isOn(v3)) f.bx = true;
+                    if (isOn(v3)) f.arrayContext = true;
                     break;
                 }
               });

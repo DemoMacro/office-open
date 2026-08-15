@@ -50,7 +50,7 @@ export interface RowOptions {
   /** Thick bottom border (CT_Row @thickBot) */
   thickBot?: boolean;
   /** Phonetic text (CT_Row @ph) */
-  ph?: boolean;
+  phonetic?: boolean;
 }
 
 /** Rich text run properties (CT_RPrElt). */
@@ -166,7 +166,7 @@ export interface FormulaOptions {
   /** Calculate cell (CT_CellFormula @ca) */
   ca?: boolean;
   /** Array formula context (CT_CellFormula @bx) */
-  bx?: boolean;
+  arrayContext?: boolean;
 }
 
 /** Input cell for a what-if scenario (maps to CT_InputCells). */
@@ -1032,8 +1032,8 @@ export interface CustomSheetViewOptions {
 
 /** Cell watch entry (CT_CellWatch) */
 export interface CellWatchOptions {
-  /** Cell reference, e.g. "A1" */
-  r: string;
+  /** Cell reference, e.g. "A1" (CT_CellWatch @r) */
+  reference: string;
 }
 
 /** Data consolidation (CT_DataConsolidate) */
@@ -1212,7 +1212,7 @@ export interface ControlOptions {
   /** List fill range (CT_ControlPr @listFillRange) */
   listFillRange?: string;
   /** Control formula (CT_ControlPr @cf) */
-  cf?: string;
+  formula?: string;
 }
 
 /** Custom property (CT_CustomProperty) */

@@ -31,8 +31,8 @@ const buffer = await generateWorkbook({
     ],
     strings: [{ value: "Product catalog" }],
     futureMetadata: [{ name: "XLDAPROPERTY", blocks: [{}] }],
-    cellMetadata: [{ records: [{ t: 0, v: 0 }] }],
-    valueMetadata: [{ records: [{ t: 0, v: 0 }] }],
+    cellMetadata: [{ records: [{ typeIndex: 0, valueIndex: 0 }] }],
+    valueMetadata: [{ records: [{ typeIndex: 0, valueIndex: 0 }] }],
   },
 });
 

@@ -153,8 +153,8 @@ describe("metadata round-trip", () => {
         types: [{ name: "XLDAPROPERTY", minSupportedVersion: 1 }],
         strings: [{ value: "s1" }],
         futureMetadata: [{ name: "XLDAPROPERTY", blocks: [{}] }],
-        cellMetadata: [{ records: [{ t: 0, v: 0 }] }],
-        valueMetadata: [{ records: [{ t: 0, v: 0 }] }],
+        cellMetadata: [{ records: [{ typeIndex: 0, valueIndex: 0 }] }],
+        valueMetadata: [{ records: [{ typeIndex: 0, valueIndex: 0 }] }],
       },
     };
 
@@ -164,7 +164,7 @@ describe("metadata round-trip", () => {
       minSupportedVersion: 1,
     });
     expect(parsed.metadata?.futureMetadata![0]).toMatchObject({ name: "XLDAPROPERTY" });
-    expect(parsed.metadata?.cellMetadata![0]!.records).toEqual([{ t: 0, v: 0 }]);
+    expect(parsed.metadata?.cellMetadata![0]!.records).toEqual([{ typeIndex: 0, valueIndex: 0 }]);
     const cell = parsed.worksheets![0]!.rows![0]!.cells![0]!;
     expect(cell.cellMetadataId).toBe(1);
     expect(cell.valueMetadataId).toBe(1);

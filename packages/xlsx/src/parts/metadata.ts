@@ -181,10 +181,10 @@ export interface FutureMetadataOptions {
 
 /** Metadata record (CT_MetadataRecord, the rc child of bk). */
 export interface MetadataRecordOptions {
-  /** Metadata type index (required) */
-  t: number;
-  /** Metadata value index (required) */
-  v: number;
+  /** Metadata type index (@t, required) */
+  typeIndex: number;
+  /** Metadata value index (@v, required) */
+  valueIndex: number;
 }
 
 /** Metadata block (CT_MetadataBlock). */
@@ -467,7 +467,7 @@ function parseStringIndexes(parent: Element): MetadataStringIndexOptions[] | und
 }
 
 function stringifyBlock(b: MetadataBlockOptions): string {
-  const rc = (b.records ?? []).map((r) => `<rc t="${r.t}" v="${r.v}"/>`).join("");
+  const rc = (b.records ?? []).map((r) => `<rc t="${r.typeIndex}" v="${r.valueIndex}"/>`).join("");
   return `<bk>${rc}</bk>`;
 }
 
@@ -478,7 +478,7 @@ function parseBlocks(el: Element): MetadataBlockOptions[] {
     const records: MetadataRecordOptions[] = [];
     for (const rcEl of bEl.elements ?? []) {
       if (rcEl.name !== "rc") continue;
-      records.push({ t: attrNum(rcEl, "t") ?? 0, v: attrNum(rcEl, "v") ?? 0 });
+      records.push({ typeIndex: attrNum(rcEl, "t") ?? 0, valueIndex: attrNum(rcEl, "v") ?? 0 });
     }
     blocks.push(records.length > 0 ? { records } : {});
   }

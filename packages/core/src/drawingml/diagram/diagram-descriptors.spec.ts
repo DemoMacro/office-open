@@ -31,16 +31,16 @@ function roundTrip<T>(desc: CustomDescriptor<T>, opts: T): T {
 describe("diagramRelationshipIdsDesc", () => {
   it("round-trips all relationship IDs", () => {
     const opts: DiagramRelationshipIdsOptions = {
-      dm: "rId1",
-      lo: "rId2",
-      qs: "rId3",
-      cs: "rId4",
+      dataModel: "rId1",
+      layout: "rId2",
+      quickStyle: "rId3",
+      colorStyle: "rId4",
     };
     const result = roundTrip(diagramRelationshipIdsDesc, opts);
-    expect(result.dm).toBe("rId1");
-    expect(result.lo).toBe("rId2");
-    expect(result.qs).toBe("rId3");
-    expect(result.cs).toBe("rId4");
+    expect(result.dataModel).toBe("rId1");
+    expect(result.layout).toBe("rId2");
+    expect(result.quickStyle).toBe("rId3");
+    expect(result.colorStyle).toBe("rId4");
   });
 });
 

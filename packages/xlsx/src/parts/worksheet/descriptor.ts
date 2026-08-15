@@ -725,7 +725,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       for (const cwEl of cellWatchesEl.elements ?? []) {
         if (cwEl.name !== "cellWatch") continue;
         const r = attr(cwEl, "r");
-        if (r) watches.push({ r });
+        if (r) watches.push({ reference: r });
       }
       if (watches.length > 0) result.cellWatches = watches;
     }
@@ -900,7 +900,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const listFillRange = attr(prEl, "listFillRange");
           if (listFillRange !== undefined) c.listFillRange = listFillRange;
           const cf = attr(prEl, "cf");
-          if (cf !== undefined) c.cf = cf;
+          if (cf !== undefined) c.formula = cf;
         }
         controls.push(c);
       }
