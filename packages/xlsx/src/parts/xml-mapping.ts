@@ -40,7 +40,7 @@ export interface DataBindingOptions {
   /** File binding name (CT_DataBinding @FileBindingName) */
   fileBindingName?: string;
   /** Load mode (CT_DataBinding@DataBindingLoadMode, required by XSD) */
-  dataBindingLoadMode?: number;
+  dataBindingLoadMode: number;
 }
 
 /** XML map (CT_Map). */
@@ -166,7 +166,7 @@ export const mapInfoDesc: CustomDescriptor<MapInfoOptions> = {
         if (d.connectionId !== undefined) dAttrs.push(`ConnectionID="${d.connectionId}"`);
         if (d.fileBindingName !== undefined)
           dAttrs.push(`FileBindingName="${escapeXml(d.fileBindingName)}"`);
-        dAttrs.push(`DataBindingLoadMode="${d.dataBindingLoadMode ?? 0}"`);
+        dAttrs.push(`DataBindingLoadMode="${d.dataBindingLoadMode}"`);
         p.push(`<Map ${attrs.join(" ")}><DataBinding ${dAttrs.join(" ")}/></Map>`);
       } else {
         p.push(`<Map ${attrs.join(" ")}/>`);
@@ -204,7 +204,7 @@ export const mapInfoDesc: CustomDescriptor<MapInfoOptions> = {
         if (parseOnOff(attr(child, "PreserveFormat"))) m.preserveFormat = true;
         const dEl = findChild(child, "DataBinding");
         if (dEl) {
-          const d: DataBindingOptions = {};
+          const d: DataBindingOptions = { dataBindingLoadMode: 0 };
           if (attr(dEl, "DataBindingName") !== undefined)
             d.dataBindingName = attr(dEl, "DataBindingName");
           if (parseOnOff(attr(dEl, "FileBinding"))) d.fileBinding = true;

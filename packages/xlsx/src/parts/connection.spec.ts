@@ -87,6 +87,7 @@ describe("connectionsDesc", () => {
           id: 2,
           name: "Web",
           type: 4,
+          refreshedVersion: 6,
           webPr: {
             url: "https://example.com/table",
             firstRow: true,
@@ -114,6 +115,7 @@ describe("connectionsDesc", () => {
           id: 3,
           name: "Text",
           type: 5,
+          refreshedVersion: 6,
           textPr: {
             fileType: "dos" as const,
             codePage: 65001,

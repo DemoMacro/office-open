@@ -17,8 +17,8 @@ import { attr, attrNum, escapeXml, findChild, stringifyElement } from "@office-o
 export interface MetadataTypeOptions {
   /** Type name (required) */
   name: string;
-  /** Minimum supported version (required by XSD, default 1 at stringify) */
-  minSupportedVersion?: number;
+  /** Minimum supported version (required by XSD) */
+  minSupportedVersion: number;
   /** Ghost row flag */
   ghostRow?: boolean;
   /** Ghost column flag */
@@ -247,7 +247,7 @@ export const metadataDesc: CustomDescriptor<MetadataOptions> = {
       for (const t of opts.types) {
         const attrs: string[] = [
           `name="${escapeXml(t.name)}"`,
-          `minSupportedVersion="${t.minSupportedVersion ?? 1}"`,
+          `minSupportedVersion="${t.minSupportedVersion}"`,
         ];
         for (const key of METADATA_TYPE_BOOL_ATTRS) {
           if (t[key]) attrs.push(`${key}="1"`);

@@ -135,8 +135,8 @@ export interface ConnectionOptions {
   name?: string;
   /** Connection type: 1=ODBC, 2=DAO, 3=OLE DB, 4=web, 5=text, 6=ADO, 7=DSP */
   type?: number;
-  /** Refreshed version (required by XSD, default 6 at stringify) */
-  refreshedVersion?: number;
+  /** Version of the application that last refreshed the connection (required by XSD) */
+  refreshedVersion: number;
   /** Minimum refreshable version (default 0) */
   minRefreshableVersion?: number;
   /** Refresh on load (default false) */
@@ -205,7 +205,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
       if (c.type !== undefined) cAttrs.push(`type="${c.type}"`);
       if (c.reconnectionMethod !== undefined)
         cAttrs.push(`reconnectionMethod="${c.reconnectionMethod}"`);
-      cAttrs.push(`refreshedVersion="${c.refreshedVersion ?? 6}"`);
+      cAttrs.push(`refreshedVersion="${c.refreshedVersion}"`);
       if (c.minRefreshableVersion !== undefined)
         cAttrs.push(`minRefreshableVersion="${c.minRefreshableVersion}"`);
       if (c.savePassword) cAttrs.push('savePassword="1"');
