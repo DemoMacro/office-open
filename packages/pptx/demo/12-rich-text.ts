@@ -54,6 +54,26 @@ const options: PresentationOptions = {
                       underline: "single",
                       size: 18,
                     },
+                    {
+                      text: " | ",
+                    },
+                    {
+                      text: "Styled Underline",
+                      underline: "single",
+                      size: 18,
+                      underlineLine: { width: 12700, color: "FF0000" },
+                      underlineFill: { type: "solid", color: "FF0000" },
+                    },
+                    {
+                      text: " | ",
+                    },
+                    {
+                      text: "Follow-Text Underline",
+                      underline: "single",
+                      size: 18,
+                      underlineLine: true,
+                      underlineFill: true,
+                    },
                     { text: " | " },
                     {
                       text: "Bold+Italic+Underline",

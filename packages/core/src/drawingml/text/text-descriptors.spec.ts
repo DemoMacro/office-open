@@ -120,6 +120,26 @@ describe("runPropertiesDesc round-trip", () => {
     expect((r.highlight as { value?: string }).value).toBe("FFFF00");
   });
 
+  it("round-trips underline line/fill follow-text markers", () => {
+    const r = roundTrip({ underline: "single", underlineLine: true, underlineFill: true });
+    expect(r.underlineLine).toBe(true);
+    expect(r.underlineFill).toBe(true);
+  });
+
+  it("round-trips explicit uLn/uFill", () => {
+    const r = roundTrip({
+      underline: "single",
+      underlineLine: { width: 12700, type: "solidFill", color: { value: "FF0000" } },
+      underlineFill: { type: "solid", color: "00FF00" },
+    });
+    const line = r.underlineLine as { width?: number; color?: { value?: string } };
+    expect(line.width).toBe(12700);
+    expect((line.color as { value?: string }).value).toBe("FF0000");
+    const fill = r.underlineFill as { type: string; color: { value: string } };
+    expect(fill.type).toBe("solid");
+    expect(fill.color.value).toBe("00FF00");
+  });
+
   it("round-trips kern/err/smtClean attributes", () => {
     const r = roundTrip({ kern: 12, err: true, smtClean: false });
     expect(r.kern).toBe(12);

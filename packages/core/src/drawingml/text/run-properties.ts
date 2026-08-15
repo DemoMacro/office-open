@@ -23,7 +23,7 @@ import type { EffectListOptions } from "../effects/effect-list";
 import { fillDesc } from "../fill/fill-descriptors";
 import type { FillOptions } from "../fill/fill-options";
 import type { OutlineOptions } from "../outline/outline";
-import { outlineDesc } from "../outline/outline-descriptors";
+import { outlineDesc, stringifyLineProperties } from "../outline/outline-descriptors";
 import {
   DEFAULT_OUTLINE_WIDTH,
   DEFAULT_SHADOW_ALPHA,
@@ -208,6 +208,25 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
       if (hlXml) parts.push(`<a:highlight>${hlXml}</a:highlight>`);
     }
 
+    // EG_TextUnderlineLine / EG_TextUnderlineFill — after highlight, before fonts.
+    if (opts.underlineLine !== undefined) {
+      if (opts.underlineLine === true) {
+        parts.push("<a:uLnTx/>");
+      } else {
+        // a:uLn is itself a CT_LineProperties — same content, different root tag.
+        const uLnXml = stringifyLineProperties("a:uLn", opts.underlineLine, ctx);
+        if (uLnXml) parts.push(uLnXml);
+      }
+    }
+    if (opts.underlineFill !== undefined) {
+      if (opts.underlineFill === true) {
+        parts.push("<a:uFillTx/>");
+      } else {
+        const uFillXml = stringify(fillDesc, opts.underlineFill, ctx);
+        if (uFillXml) parts.push(`<a:uFill>${uFillXml}</a:uFill>`);
+      }
+    }
+
     if (opts.font !== undefined) {
       const scripts: {
         latin?: TextFont;
@@ -306,6 +325,20 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     // Highlight (CT_Color)
     const highlight = findChild(el, "a:highlight");
     if (highlight) result.highlight = parseColorChoice(highlight, _ctx) as SolidFillOptions;
+
+    // Underline line/fill (EG_TextUnderlineLine / EG_TextUnderlineFill)
+    const uLnTx = findChild(el, "a:uLnTx");
+    if (uLnTx) result.underlineLine = true;
+    else {
+      const uLn = findChild(el, "a:uLn");
+      if (uLn) result.underlineLine = parse(outlineDesc, uLn, _ctx) as OutlineOptions;
+    }
+    const uFillTx = findChild(el, "a:uFillTx");
+    if (uFillTx) result.underlineFill = true;
+    else {
+      const uFill = findChild(el, "a:uFill");
+      if (uFill) result.underlineFill = parse(fillDesc, uFill, _ctx) as FillOptions;
+    }
 
     // Font — latin/ea/cs/sym (CT_TextFont). Collapse to a string when only latin
     // and ea share the same typeface (the common case); otherwise the full object.

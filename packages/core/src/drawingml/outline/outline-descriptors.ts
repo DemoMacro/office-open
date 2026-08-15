@@ -50,66 +50,78 @@ function stringifyCustomDash(stops: readonly DashStop[]): string {
 
 // ── Outline descriptor ──
 
+/**
+ * Serialize CT_LineProperties content under an arbitrary root tag. Shared by
+ * a:ln and the text-underline line element a:uLn (same complex type).
+ */
+export function stringifyLineProperties(
+  tag: string,
+  opts: OutlineOptions,
+  ctx: Parameters<CustomDescriptor<OutlineOptions>["stringify"]>[1],
+): string | undefined {
+  const parts: string[] = [];
+
+  // Attributes
+  const attrParts: string[] = [];
+  // ST_LineWidth is EMU (integer) or a universal measure; normalize so the
+  // descriptor path matches createOutline (outline.ts) and stays XSD-valid.
+  if (opts.width !== undefined) attrParts.push(`w="${convertToEmu(opts.width)}"`);
+  // Map full-word enums to XSD tokens (rnd/sng/ctr), matching createOutline.
+  if (opts.cap !== undefined) attrParts.push(`cap="${escapeXml(xsdLineCap.to(opts.cap))}"`);
+  if (opts.compoundLine !== undefined)
+    attrParts.push(`cmpd="${escapeXml(xsdCompoundLine.to(opts.compoundLine))}"`);
+  if (opts.alignment !== undefined)
+    attrParts.push(`algn="${escapeXml(xsdPenAlignment.to(opts.alignment))}"`);
+  const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
+
+  // Fill. A bare-string color is an sRGB hex sugar; coerce to { value } and
+  // infer "solidFill" when type is omitted (mirrors the fill descriptor's
+  // own string-sugar handling).
+  const resolvedColor =
+    typeof opts.color === "string" ? { value: stripColorHashPrefix(opts.color) } : opts.color;
+  const fillType = opts.type ?? (resolvedColor ? "solidFill" : undefined);
+  if (fillType === "noFill") {
+    parts.push("<a:noFill/>");
+  } else if (fillType === "solidFill" && resolvedColor) {
+    const fillXml = stringify(solidFillDesc, resolvedColor, ctx);
+    if (fillXml) parts.push(fillXml);
+  } else if (fillType === "gradFill" && opts.gradientFill) {
+    const gradXml = stringify(gradientFillDesc, opts.gradientFill, ctx);
+    if (gradXml) parts.push(gradXml);
+  } else if (fillType === "pattFill" && opts.patternFill) {
+    const pattXml = stringify(patternFillDesc, opts.patternFill, ctx);
+    if (pattXml) parts.push(pattXml);
+  }
+
+  // Dash
+  if (opts.customDash) {
+    parts.push(stringifyCustomDash(opts.customDash));
+  } else if (opts.dash) {
+    parts.push(`<a:prstDash val="${escapeXml(opts.dash)}"/>`);
+  }
+
+  // Join
+  if (opts.join) {
+    if (opts.join === "miter" && opts.miterLimit !== undefined) {
+      parts.push(`<a:miter lim="${opts.miterLimit}"/>`);
+    } else {
+      parts.push(`<a:${opts.join}/>`);
+    }
+  }
+
+  // Line ends
+  if (opts.headEnd) parts.push(stringifyLineEnd("a:headEnd", opts.headEnd));
+  if (opts.tailEnd) parts.push(stringifyLineEnd("a:tailEnd", opts.tailEnd));
+
+  if (parts.length === 0 && !attrStr) return undefined;
+  if (parts.length === 0) return `<${tag}${attrStr}/>`;
+  return `<${tag}${attrStr}>${parts.join("")}</${tag}>`;
+}
+
 export const outlineDesc: CustomDescriptor<OutlineOptions> = {
   kind: "custom",
   stringify(opts, ctx) {
-    const parts: string[] = [];
-
-    // Attributes
-    const attrParts: string[] = [];
-    // ST_LineWidth is EMU (integer) or a universal measure; normalize so the
-    // descriptor path matches createOutline (outline.ts) and stays XSD-valid.
-    if (opts.width !== undefined) attrParts.push(`w="${convertToEmu(opts.width)}"`);
-    // Map full-word enums to XSD tokens (rnd/sng/ctr), matching createOutline.
-    if (opts.cap !== undefined) attrParts.push(`cap="${escapeXml(xsdLineCap.to(opts.cap))}"`);
-    if (opts.compoundLine !== undefined)
-      attrParts.push(`cmpd="${escapeXml(xsdCompoundLine.to(opts.compoundLine))}"`);
-    if (opts.alignment !== undefined)
-      attrParts.push(`algn="${escapeXml(xsdPenAlignment.to(opts.alignment))}"`);
-    const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
-
-    // Fill. A bare-string color is an sRGB hex sugar; coerce to { value } and
-    // infer "solidFill" when type is omitted (mirrors the fill descriptor's
-    // own string-sugar handling).
-    const resolvedColor =
-      typeof opts.color === "string" ? { value: stripColorHashPrefix(opts.color) } : opts.color;
-    const fillType = opts.type ?? (resolvedColor ? "solidFill" : undefined);
-    if (fillType === "noFill") {
-      parts.push("<a:noFill/>");
-    } else if (fillType === "solidFill" && resolvedColor) {
-      const fillXml = stringify(solidFillDesc, resolvedColor, ctx);
-      if (fillXml) parts.push(fillXml);
-    } else if (fillType === "gradFill" && opts.gradientFill) {
-      const gradXml = stringify(gradientFillDesc, opts.gradientFill, ctx);
-      if (gradXml) parts.push(gradXml);
-    } else if (fillType === "pattFill" && opts.patternFill) {
-      const pattXml = stringify(patternFillDesc, opts.patternFill, ctx);
-      if (pattXml) parts.push(pattXml);
-    }
-
-    // Dash
-    if (opts.customDash) {
-      parts.push(stringifyCustomDash(opts.customDash));
-    } else if (opts.dash) {
-      parts.push(`<a:prstDash val="${escapeXml(opts.dash)}"/>`);
-    }
-
-    // Join
-    if (opts.join) {
-      if (opts.join === "miter" && opts.miterLimit !== undefined) {
-        parts.push(`<a:miter lim="${opts.miterLimit}"/>`);
-      } else {
-        parts.push(`<a:${opts.join}/>`);
-      }
-    }
-
-    // Line ends
-    if (opts.headEnd) parts.push(stringifyLineEnd("a:headEnd", opts.headEnd));
-    if (opts.tailEnd) parts.push(stringifyLineEnd("a:tailEnd", opts.tailEnd));
-
-    if (parts.length === 0 && !attrStr) return undefined;
-    if (parts.length === 0) return `<a:ln${attrStr}/>`;
-    return `<a:ln${attrStr}>${parts.join("")}</a:ln>`;
+    return stringifyLineProperties("a:ln", opts, ctx);
   },
   parse(el, _ctx) {
     const result: OutlineOptions = {};

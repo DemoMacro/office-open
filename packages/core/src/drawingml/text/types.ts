@@ -96,6 +96,10 @@ export interface RunPropertiesOptions {
   capitalization?: TextCapitalization;
   /** a:highlight (CT_Color) — text highlight color. */
   highlight?: SolidFillOptions;
+  /** EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn. */
+  underlineLine?: true | OutlineOptions;
+  /** EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill. */
+  underlineFill?: true | FillOptions;
   /** @kern — kerning threshold in points (ST_TextNonNegativePoint). */
   kern?: number;
   /** a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips. */
