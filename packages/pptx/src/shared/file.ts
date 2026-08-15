@@ -71,6 +71,8 @@ export interface LayoutDefinition {
   colorMappingOverride?: ColorMappingOverrideOptions;
   transition?: TransitionOptions;
   timing?: TimingDescriptorOptions;
+  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  ext?: string;
   // Fresh API (placeholder-template generation)
   placeholders?: LayoutPlaceholderOptions;
   /** Verbatim layout XML; when set, the compiler parses this instead of synthesizing layout XML from the structured fields. */
@@ -116,6 +118,8 @@ export interface SlideOptions {
   customerData?: { rId: string }[];
   slideSync?: SlideSyncOptions;
   animations?: SlideAnimation[];
+  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  ext?: string;
   /** Section name — slides sharing a name form one p14:section in presentation.xml. */
   section?: string;
 }

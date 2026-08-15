@@ -11,7 +11,13 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild, parse as parseXml } from "@office-open/xml";
+import {
+  attr,
+  attrNum,
+  findChild,
+  parse as parseXml,
+  stringify as stringifyXml,
+} from "@office-open/xml";
 import { NS } from "@parts/slide-layout";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
@@ -143,6 +149,9 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       if (hfChildren.length > 0) parts.push(`<p:hf>${hfChildren.join("")}</p:hf>`);
     }
 
+    // p:extLst — verbatim round-trip (last child per CT_SlideLayout sequence).
+    if (opts.ext) parts.push(`<p:extLst>${opts.ext}</p:extLst>`);
+
     parts.push("</p:sldLayout>");
     return parts.join("");
   },
@@ -255,6 +264,13 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       if (hfOpts.slideNumber || hfOpts.dateTime || hfOpts.footer || hfOpts.header) {
         result.headerFooter = hfOpts;
       }
+    }
+
+    // p:extLst — verbatim inner XML for unmodeled extensions.
+    const extLst = findChild(el, "p:extLst");
+    if (extLst) {
+      const inner = stringifyXml(extLst);
+      if (inner) result.ext = inner;
     }
 
     return result as LayoutDefinition;

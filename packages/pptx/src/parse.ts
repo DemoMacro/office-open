@@ -522,6 +522,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
       timing: masterOpts.timing,
       customerData: masterOpts.customerData,
       controls: masterOpts.controls,
+      ext: masterOpts.ext,
     };
     if (themeOptions) masterDef.theme = themeOptions;
     if (masterLayouts.length > 0) masterDef.layouts = masterLayouts;

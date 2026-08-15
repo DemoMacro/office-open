@@ -12,7 +12,7 @@
  * @module
  */
 
-import { findChild } from "@office-open/xml";
+import { findChild, stringify } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import { parse } from "../descriptor";
@@ -72,6 +72,8 @@ export interface ShapePropertiesOptions {
   // 3D
   scene3d?: Scene3DOptions;
   shape3d?: Shape3DOptions;
+  /** Raw a:extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  ext?: string;
 }
 
 // ── Descriptor ──
@@ -161,6 +163,9 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
       if (sp) parts.push(sp);
     }
 
+    // a:extLst — verbatim round-trip (last child per CT_ShapeProperties sequence).
+    if (opts.ext) parts.push(`<a:extLst>${opts.ext}</a:extLst>`);
+
     return parts.length > 0 ? parts.join("") : undefined;
   },
 
@@ -216,6 +221,13 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
     // a:sp3d
     const sp3d = findChild(el, "a:sp3d");
     if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
+
+    // a:extLst — verbatim inner XML for unmodeled extensions.
+    const extLst = findChild(el, "a:extLst");
+    if (extLst) {
+      const inner = stringify(extLst);
+      if (inner) result.ext = inner;
+    }
 
     return result as ShapePropertiesOptions;
   },

@@ -9,6 +9,7 @@ import type {
   CorePropertiesOptions,
   CustomPropertyOptions,
 } from "@office-open/core";
+import type { ThemeOptions } from "@office-open/core/theme";
 import type {
   CellStyleXfOptions,
   ColorsOptions,
@@ -48,6 +49,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   colors?: ColorsOptions;
   /** Custom table/pivot table styles (CT_TableStyles) */
   tableStyles?: CustomTableStyleOptions[];
+  /** Theme (xl/theme/theme1.xml) — structured round-trip; fresh default when omitted */
+  theme?: ThemeOptions;
   /** Custom named cell styles (CT_CellStyles) */
   cellStyles?: CustomCellStyleOptions[];
   /** Named cell-style templates (CT_CellStyleXfs) — definitions referenced by cellStyles */

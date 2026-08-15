@@ -134,6 +134,7 @@ function hasStructuredLayoutContent(def: LayoutDefinition): boolean {
     def.background !== undefined ||
     def.transition !== undefined ||
     def.timing !== undefined ||
+    def.ext !== undefined ||
     def.headerFooter !== undefined ||
     def.colorMappingOverride !== undefined ||
     (def.controls !== undefined && def.controls.length > 0) ||
@@ -239,6 +240,7 @@ function buildMasterMap(
           timing: def.timing,
           customerData: def.customerData,
           controls: def.controls,
+          ext: def.ext,
           slideLayoutIds,
         },
         ctx,
@@ -609,6 +611,11 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
 
   if (slideOpts.animations && slideOpts.animations.length > 0) {
     parts.push(timingDesc.stringify({ entries: slideOpts.animations }, ctx) ?? "");
+  }
+
+  // p:extLst — verbatim round-trip (last child per CT_Slide sequence)
+  if (slideOpts.ext) {
+    parts.push(`<p:extLst>${slideOpts.ext}</p:extLst>`);
   }
 
   parts.push("</p:sld>");

@@ -8,7 +8,7 @@
  */
 
 import type { ReadContext } from "@office-open/core/descriptor";
-import { attr, findChild, findFirst } from "@office-open/xml";
+import { attr, findChild, findFirst, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 
@@ -70,6 +70,9 @@ export function stringifyChild(child: LegacySlideChild, ctx: PptxWriteContext): 
   if ("lockedCanvas" in child && child.lockedCanvas) {
     return lockedCanvasDesc.stringify(child.lockedCanvas, ctx);
   }
+  if ("rawXml" in child && child.rawXml) {
+    return child.rawXml;
+  }
 
   return undefined;
 }
@@ -115,7 +118,9 @@ export function parseChild(el: XmlElement, ctx: ReadContext): LegacySlideChild |
     case "p:grpSp":
       return { group: groupShapeDesc.parse(el, ctx) } as LegacySlideChild;
     default:
-      return undefined;
+      // Unrecognized element — keep verbatim so round-trip never drops content
+      // (mc:AlternateContent, vendor extensions, future schema versions).
+      return { rawXml: stringifyElement(el) } as LegacySlideChild;
   }
 }
 
@@ -159,5 +164,6 @@ function parseGraphicFrameChild(el: XmlElement, ctx: ReadContext): LegacySlideCh
     return { table: tableDesc.parse(el, ctx) } as LegacySlideChild;
   }
 
-  return undefined;
+  // Unknown graphicData URI (OLE objects, ink, future content) — keep verbatim.
+  return { rawXml: stringifyElement(el) } as LegacySlideChild;
 }

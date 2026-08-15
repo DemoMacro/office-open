@@ -44,6 +44,8 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;
   shape3d?: Shape3DOptions;
+  /** Raw a:extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  ext?: string;
   flipHorizontal?: boolean;
   /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;

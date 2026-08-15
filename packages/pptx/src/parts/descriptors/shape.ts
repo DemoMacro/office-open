@@ -29,7 +29,7 @@ import {
   stringifyColorChoice,
 } from "@office-open/core/drawingml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
+import { findChild, findFirst, escapeXml, attrNum, attr, stringify } from "@office-open/xml";
 import type { PictureOptions } from "@shared/picture";
 import type { ShapeOptions, ShapeStyleOptions } from "@shared/shape/shape";
 
@@ -343,6 +343,7 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
       effects: opts.effects,
       scene3d: opts.scene3d,
       shape3d: opts.shape3d,
+      ext: opts.ext,
     },
     ctx,
   );
@@ -521,6 +522,13 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeOptions {
   if (sp3d) {
     const shape3d = parse(shape3DDesc, sp3d, ctx);
     if (shape3d) result.shape3d = shape3d;
+  }
+
+  // a:extLst — verbatim inner XML for unmodeled extensions.
+  const extLst = findChild(spPr, "a:extLst");
+  if (extLst) {
+    const inner = stringify(extLst);
+    if (inner) result.ext = inner;
   }
 
   return result;

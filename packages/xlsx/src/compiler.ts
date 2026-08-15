@@ -26,6 +26,7 @@ import {
   type Zippable,
 } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
+import { buildThemeXml } from "@office-open/core/theme";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { CalcCell } from "@parts/calc-chain";
 import { calcChainDesc } from "@parts/calc-chain";
@@ -749,9 +750,10 @@ export function compileWorkbook(
     path: "xl/styles.xml",
   };
 
-  // Theme
+  // Theme — a parsed source theme round-trips structurally; fresh output
+  // keeps the Office default.
   mapping["Theme"] = {
-    data: XML_DECL + createThemeXml(),
+    data: XML_DECL + (options.theme ? buildThemeXml(options.theme, ctx) : createThemeXml()),
     path: "xl/theme/theme1.xml",
   };
 

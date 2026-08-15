@@ -15,7 +15,7 @@
 
 import { parseColorMapping, parseOnOff, stringifyColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild, stringify as stringifyXml } from "@office-open/xml";
 import {
   buildBackgroundXml,
   buildPlaceholderShapes,
@@ -151,6 +151,9 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
       `<p:txStyles>${stringifyTextListStyle(opts.textStyles ?? DEFAULT_TEXT_LIST_STYLE)}</p:txStyles>`,
     );
 
+    // p:extLst — verbatim round-trip (last child per CT_SlideMaster sequence).
+    if (opts.ext) parts.push(`<p:extLst>${opts.ext}</p:extLst>`);
+
     parts.push("</p:sldMaster>");
     return parts.join("");
   },
@@ -265,6 +268,13 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     // p:txStyles (CT_SlideMasterTextStyles — title/body/other).
     const txStyles = findChild(el, "p:txStyles");
     if (txStyles) result.textStyles = parseTextListStyle(txStyles);
+
+    // p:extLst — verbatim inner XML for unmodeled extensions.
+    const extLst = findChild(el, "p:extLst");
+    if (extLst) {
+      const inner = stringifyXml(extLst);
+      if (inner) result.ext = inner;
+    }
 
     return result as SlideMasterDescriptorOptions;
   },

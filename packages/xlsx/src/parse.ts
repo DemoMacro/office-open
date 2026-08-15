@@ -13,6 +13,7 @@ import type { ParsedArchive } from "@office-open/core";
 import { partPathToRelsPath, toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
+import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import type { ParseOptions } from "@office-open/xml";
 import { attr } from "@office-open/xml";
@@ -67,6 +68,8 @@ export interface XlsxDocument {
   styles?: Element;
   /** xl/sharedStrings.xml root element */
   sharedStrings?: Element;
+  /** xl/theme/theme{n}.xml path (resolved from workbook rels) */
+  theme?: string;
   partRefs: XlsxPartRefs;
   /** docProps/core.xml path */
   coreProps?: string;
@@ -106,6 +109,7 @@ export function parseXlsx(data: DataType): XlsxDocument {
   const charts: string[] = [];
   const drawings: string[] = [];
   const media: string[] = [];
+  let theme: string | undefined;
 
   const wbRels = doc.get("xl/_rels/workbook.xml.rels");
   if (wbRels) {
@@ -117,6 +121,8 @@ export function parseXlsx(data: DataType): XlsxDocument {
 
       if (type.includes("/worksheet")) {
         worksheets.push(target.startsWith("/") ? target.slice(1) : `xl/${target}`);
+      } else if (type.includes("/theme")) {
+        theme = target.startsWith("/") ? target.slice(1) : `xl/${target}`;
       }
     }
   }
@@ -151,6 +157,7 @@ export function parseXlsx(data: DataType): XlsxDocument {
     worksheets,
     styles,
     sharedStrings,
+    theme,
     partRefs: { worksheets, charts, media, drawings },
     coreProps,
     appProps,
@@ -246,6 +253,16 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (parsedStyles.styleExtensions) opts.styleExtensions = parsedStyles.styleExtensions;
     if (parsedStyles.tableStylesInfo?.tableStyles)
       opts.tableStyles = parsedStyles.tableStylesInfo.tableStyles;
+  }
+
+  // Theme — structured round-trip so a custom source theme survives instead of
+  // being replaced by the compiler's fresh default.
+  if (xlsx.theme) {
+    const themeEl = xlsx.doc.get(xlsx.theme);
+    if (themeEl) {
+      const themeOptions = themeDesc.parse(themeEl, readContext);
+      if (themeOptions) opts.theme = themeOptions;
+    }
   }
 
   // Parse workbook via descriptor for richer data

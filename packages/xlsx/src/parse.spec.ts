@@ -1,3 +1,4 @@
+import { unzipSync, zipSync } from "@office-open/core";
 import type { WorkbookOptions } from "@parts/file";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -89,5 +90,31 @@ describe("parseWorkbook round-trip", () => {
     // The target lives in xl/externalLinks/_rels/externalLink1.xml.rels, not in
     // the externalLink XML body — this asserts the rels file is actually read.
     expect(parsed.externalLinks![0]?.externalBook?.target).toBe("external/source.xlsx");
+  });
+});
+
+describe("theme round-trip", () => {
+  it("preserves a custom source theme instead of replacing it with the default", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [{ name: "S", rows: [{ cells: [{ reference: "A1", value: 1 }] }] }],
+    };
+    const buffer = (await generateWorkbook(opts, { type: "uint8array" })) as Uint8Array;
+
+    // Inject a custom theme color (accent1 = FF00FF) into the generated package.
+    const unzipped = unzipSync(buffer);
+    const themeEntry = unzipped["xl/theme/theme1.xml"];
+    if (!themeEntry) throw new Error("missing xl/theme/theme1.xml");
+    const themeXml = new TextDecoder().decode(themeEntry);
+    const mutated = themeXml.replace(/(<a:accent1>\s*<a:srgbClr val=")[0-9A-Fa-f]{6}/, "$1FF00FF");
+    if (mutated === themeXml) throw new Error("accent1 srgbClr not found in theme");
+    unzipped["xl/theme/theme1.xml"] = new TextEncoder().encode(mutated);
+    const reborn = zipSync(unzipped);
+
+    const parsed = parseWorkbook(reborn);
+    expect(parsed.theme?.colorScheme?.accent1).to.exist;
+
+    const regenerated = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const regTheme = new TextDecoder().decode(unzipSync(regenerated)["xl/theme/theme1.xml"]!);
+    expect(regTheme.toLowerCase()).to.contain('val="ff00ff"');
   });
 });

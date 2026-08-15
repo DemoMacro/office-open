@@ -20,7 +20,7 @@ import type { OutputByType, OutputType } from "./output";
 import { hasNativeDeflate, nativeZip, nativeZipAsync } from "./zip-native";
 
 export type { Zippable, ZipOptions } from "fflate";
-export { strFromU8, unzipSync } from "fflate";
+export { strFromU8, unzipSync, zipSync } from "fflate";
 
 export interface XmlifyedFile {
   path: string;

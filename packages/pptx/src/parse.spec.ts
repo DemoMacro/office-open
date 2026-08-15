@@ -1,4 +1,4 @@
-import { unzipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatePresentation } from "./generate";
@@ -277,5 +277,75 @@ describe("parsePresentation", () => {
     const slide1Xml = decodeEntry(buffer, "ppt/slides/slide1.xml");
     expect(slide1Xml).toContain('action="ppaction://hlinksldjump"');
     expect(slide1Xml).toContain('tooltip="Jump"');
+  });
+});
+
+describe("raw fidelity fallbacks", () => {
+  const rezip = async (
+    buffer: Uint8Array,
+    path: string,
+    mutate: (xml: string) => string,
+  ): Promise<Uint8Array> => {
+    const unzipped = unzipSync(buffer);
+    const entry = unzipped[path];
+    if (!entry) throw new Error(`missing zip entry: ${path}`);
+    unzipped[path] = new TextEncoder().encode(mutate(new TextDecoder().decode(entry)));
+    return zipSync(unzipped);
+  };
+
+  const minimalOptions: PresentationOptions = {
+    slides: [
+      { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
+    ],
+  };
+
+  it("preserves unrecognized spTree children verbatim", async () => {
+    const buffer = await generatePresentation(minimalOptions);
+    const unknown =
+      '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"><mc:Fallback/></mc:AlternateContent>';
+    const mutated = await rezip(buffer, "ppt/slides/slide1.xml", (xml) =>
+      xml.replace("</p:spTree>", `${unknown}</p:spTree>`),
+    );
+    const parsed = parsePresentation(mutated);
+    const child = parsed.slides![0]?.children?.find((c) => "rawXml" in c);
+    expect(child).to.exist;
+    expect((child as { rawXml: string }).rawXml).toContain("mc:AlternateContent");
+
+    // Re-compilation emits the verbatim payload back into the slide.
+    const regenerated = await generatePresentation(parsed);
+    const slideXml = decodeEntry(regenerated, "ppt/slides/slide1.xml");
+    expect(slideXml).toContain("mc:AlternateContent");
+  });
+
+  it("preserves slide extLst verbatim", async () => {
+    const buffer = await generatePresentation(minimalOptions);
+    const ext =
+      '<p:extLst><p:ext uri="{TEST-URI}"><test:data xmlns:test="urn:test"/></p:ext></p:extLst>';
+    const mutated = await rezip(buffer, "ppt/slides/slide1.xml", (xml) =>
+      xml.replace("</p:sld>", `${ext}</p:sld>`),
+    );
+    const parsed = parsePresentation(mutated);
+    expect(parsed.slides![0]?.ext).to.contain("{TEST-URI}");
+
+    const regenerated = await generatePresentation(parsed);
+    const slideXml = decodeEntry(regenerated, "ppt/slides/slide1.xml");
+    expect(slideXml).toContain("{TEST-URI}");
+    expect(slideXml.indexOf("<p:extLst>")).toBeLessThan(slideXml.indexOf("</p:sld>"));
+  });
+
+  it("preserves spPr extLst verbatim", async () => {
+    const buffer = await generatePresentation(minimalOptions);
+    const ext =
+      '<a:extLst><a:ext uri="{SP-TEST}"><test:x xmlns:test="urn:test"/></a:ext></a:extLst>';
+    const mutated = await rezip(buffer, "ppt/slides/slide1.xml", (xml) =>
+      xml.replace(/<p:spPr>/, (m) => `${m}${ext}`),
+    );
+    const parsed = parsePresentation(mutated);
+    const shape = parsed.slides![0]?.children?.[0] as { shape?: { ext?: string } };
+    expect(shape.shape?.ext).to.contain("{SP-TEST}");
+
+    const regenerated = await generatePresentation(parsed);
+    const slideXml = decodeEntry(regenerated, "ppt/slides/slide1.xml");
+    expect(slideXml).toContain("{SP-TEST}");
   });
 });

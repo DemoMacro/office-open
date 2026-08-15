@@ -553,39 +553,41 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
       let m: RegExpExecArray | null;
 
       // Pattern 1: XML attribute in template — name=, name="${, name='
-      // e.g. w:val="${v}", sz="1200", xmlns:w="..."
-      const xmlAttrRe = /\b([a-zA-Z][a-zA-Z0-9]+)=["'`]/g;
+      // e.g. w:val="${v}", sz="1200", xmlns:w="...". Single-char names allowed
+      // (wp:effectExtent @l/@t/@r/@b) — generic ones are filtered by
+      // UNTRACKABLE_ATTRS before the XSD intersection.
+      const xmlAttrRe = /\b([a-zA-Z][a-zA-Z0-9]*)=["'`]/g;
       while ((m = xmlAttrRe.exec(src)) !== null) {
         found.add(m[1]);
       }
 
       // Pattern 2: el.attributes["name"] or el.attributes["prefix:name"] — parse path
-      const attrAccessRe = /\.attributes\[\s*["']([a-zA-Z][a-zA-Z0-9]+)["']\s*\]/g;
+      const attrAccessRe = /\.attributes\[\s*["']([a-zA-Z][a-zA-Z0-9]*)["']\s*\]/g;
       while ((m = attrAccessRe.exec(src)) !== null) {
         found.add(m[1]);
       }
 
       // Pattern 3: bracket access with prefix — attrs["w:val"], result["w:spacing"], etc.
       // This catches stringify (attrs["w:name"]) and parse (result["w:name"]) patterns
-      const bracketPrefixRe = /\[\s*["'][a-z]+:([a-zA-Z][a-zA-Z0-9]+)["']\s*\]/g;
+      const bracketPrefixRe = /\[\s*["'][a-z]+:([a-zA-Z][a-zA-Z0-9]*)["']\s*\]/g;
       while ((m = bracketPrefixRe.exec(src)) !== null) {
         found.add(m[1]);
       }
 
       // Pattern 3: .attr(key, "xmlName") — descriptor builder
-      const builderAttrRe = /\.attr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      const builderAttrRe = /\.attr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]*)["']/g;
       while ((m = builderAttrRe.exec(src)) !== null) {
         found.add(m[1]);
       }
 
       // Pattern 4: attr(el, "name") — parse helper from @office-open/xml
-      const attrHelperRe = /\battr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      const attrHelperRe = /\battr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]*)["']/g;
       while ((m = attrHelperRe.exec(src)) !== null) {
         found.add(m[1]);
       }
 
       // Pattern 5: attr(el, "prefix:name") — prefixed version
-      const prefixedHelperRe = /\battr\([^,]+,\s*["'][a-z]+:([a-zA-Z][a-zA-Z0-9]+)["']/g;
+      const prefixedHelperRe = /\battr\([^,]+,\s*["'][a-z]+:([a-zA-Z][a-zA-Z0-9]*)["']/g;
       while ((m = prefixedHelperRe.exec(src)) !== null) {
         found.add(m[1]);
       }
@@ -600,7 +602,7 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
       // attrMeasure(el,"name",...), colorAttr(el,"name"). Parse-side workhorses
       // (the plain `attr(` helper is covered by Pattern 4 above).
       const typedAttrRe =
-        /\b(?:attr[A-Z]\w*|colorAttr)\(\s*[^,)]+,\s*["']([a-z]+:)?([a-zA-Z]\w+)["']/g;
+        /\b(?:attr[A-Z]\w*|colorAttr)\(\s*[^,)]+,\s*["']([a-z]+:)?([a-zA-Z]\w*)["']/g;
       while ((m = typedAttrRe.exec(src)) !== null) {
         found.add(m[2]);
       }
@@ -615,9 +617,28 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
 
       // Pattern 9: attribute mapping pairs — `["w:name", "jsName"]`. docx parse
       // loops over [xmlName, optionName] pairs to read frame/section/run attrs.
-      const attrPairRe = /\[\s*["']([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)["']\s*,\s*["'][a-zA-Z]/g;
+      const attrPairRe = /\[\s*["']([a-z]+:)?([a-zA-Z][a-zA-Z0-9]*)["']\s*,\s*["'][a-zA-Z]/g;
       while ((m = attrPairRe.exec(src)) !== null) {
         found.add(m[2]);
+      }
+
+      // Pattern 10: pure string-array constants — key lists driving dynamic
+      // serialization (locking key arrays) and mapping tables. Over-extraction
+      // is harmless: found is intersected with the XSD attribute list.
+      const stringArrayRe = /=\s*\[((?:\s*"[^"]+"\s*,?)+)\s*\]/g;
+      while ((m = stringArrayRe.exec(src)) !== null) {
+        const strRe = /"([^"]+)"/g;
+        let s: RegExpExecArray | null;
+        while ((s = strRe.exec(m[1]!)) !== null) {
+          found.add(s[1]!);
+        }
+      }
+
+      // Pattern 11: object-literal mapping properties — { attr: "tx1", key: "text1" }.
+      const mappingPropRe =
+        /\b(?:attr|xml|xmlName|attribute|localName)\s*:\s*["']([a-zA-Z][a-zA-Z0-9]*)["']/g;
+      while ((m = mappingPropRe.exec(src)) !== null) {
+        found.add(m[1]);
       }
     }
   }

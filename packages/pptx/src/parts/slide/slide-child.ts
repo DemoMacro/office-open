@@ -27,4 +27,6 @@ export type SlideChild =
   | { smartart: SmartArtOptions }
   | { lockedCanvas: LockedCanvasFrameOptions }
   | { ole: OleOptions }
-  | { contentPart: { rId: string } };
+  | { contentPart: { rId: string } }
+  /** Unrecognized element — verbatim XML so round-trip never drops content. */
+  | { rawXml: string };

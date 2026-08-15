@@ -7,7 +7,7 @@
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import type { TextBodyOptions } from "@office-open/core/drawingml";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
@@ -39,6 +39,8 @@ export interface SlideDescriptorOptions {
   animations?: SlideAnimation[];
   /** Hidden slide — excluded from slideshow (emits p:sld/@show="0"). */
   hidden?: boolean;
+  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  ext?: string;
 }
 
 /** Discriminated union for slide children (JSON-friendly). */
@@ -128,6 +130,9 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     if (opts.transition) {
       parts.push(stringifyTransition(opts.transition));
     }
+
+    // p:extLst — verbatim round-trip
+    if (opts.ext) parts.push(`<p:extLst>${opts.ext}</p:extLst>`);
 
     parts.push("</p:sld>");
     return parts.join("");
@@ -228,6 +233,13 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
         items.push(item);
       }
       if (items.length > 0) result.controls = items;
+    }
+
+    // extLst — verbatim inner XML for unmodeled extensions
+    const extLst = findChild(el, "p:extLst");
+    if (extLst) {
+      const inner = stringify(extLst);
+      if (inner) result.ext = inner;
     }
 
     return result as unknown as SlideDescriptorOptions;
