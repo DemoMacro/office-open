@@ -11,29 +11,31 @@
 import { convertToTwip, xsdVerticalMergeRev } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import { attrsRaw } from "@office-open/xml";
-import type { AlignmentType } from "@parts/paragraph";
 import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
-import type {
-  TableCellBordersOptions,
-  TextDirection,
-} from "@parts/table/table-cell/table-cell-components";
+import type { TableCellBordersOptions } from "@parts/table/table-cell/table-cell-components";
 import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components";
+import type {
+  TableCellPropertiesChangeOptions,
+  TableCellPropertiesOptions,
+} from "@parts/table/table-cell/table-cell-properties";
 import type { TableBordersOptions } from "@parts/table/table-properties/table-borders";
 import type { TableCellMarginOptions } from "@parts/table/table-properties/table-cell-margin";
 import type { TableFloatOptions } from "@parts/table/table-properties/table-float-properties";
-import type { TableLayoutType } from "@parts/table/table-properties/table-layout";
 import type { TableLookOptions } from "@parts/table/table-properties/table-look";
+import type {
+  TablePropertiesChangeOptions,
+  TablePropertiesOptions,
+} from "@parts/table/table-properties/table-properties";
 import type { TablePropertyExOptions } from "@parts/table/table-properties/table-property-exceptions";
 import type {
   CnfStyleOptions,
-  TableRowPropertiesOptionsBase,
+  TableRowPropertiesChangeOptions,
+  TableRowPropertiesOptions,
 } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { WidthType, widthPctToFiftieths } from "@parts/table/table-width";
-import type { ShadingProperties } from "@shared/shading";
 import type { CellMergeAttributes } from "@shared/track-revision";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
-import type { TableVerticalAlign } from "@shared/vertical-align";
 
 import { borderStr, onOff, shadingStr } from "../paragraph/stringify";
 
@@ -216,34 +218,6 @@ function cellSpacingStr(opts: TableCellSpacingProperties): string {
   return `<w:tblCellSpacing${a}/>`;
 }
 
-// ── Table properties types ──
-
-export interface TablePropertiesOptionsBase {
-  width?: TableWidthProperties;
-  indent?: TableWidthProperties;
-  layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
-  borders?: TableBordersOptions;
-  float?: TableFloatOptions;
-  shading?: ShadingProperties;
-  style?: string;
-  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  cellMargin?: TableCellMarginOptions;
-  visuallyRightToLeft?: boolean;
-  tableLook?: TableLookOptions;
-  cellSpacing?: TableCellSpacingProperties;
-  styleRowBandSize?: number;
-  styleColBandSize?: number;
-  caption?: string;
-  description?: string;
-}
-
-export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedProperties;
-
-export type TablePropertiesOptions = {
-  revision?: TablePropertiesChangeOptions;
-  includeIfEmpty?: boolean;
-} & TablePropertiesOptionsBase;
-
 // ── Table properties change (w:tblPrChange) ──
 
 function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptions): string {
@@ -341,17 +315,6 @@ export function stringifyTableProperties(options: TablePropertiesOptions): strin
   return undefined;
 }
 
-// ── Row properties types ──
-
-export type TableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase & ChangedProperties;
-
-export type TableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
-  insertion?: ChangedProperties;
-  deletion?: ChangedProperties;
-  revision?: TableRowPropertiesChangeOptions;
-  includeIfEmpty?: boolean;
-};
-
 // ── Row properties change (w:trPrChange) ──
 
 function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChangeOptions): string {
@@ -441,36 +404,6 @@ export function stringifyTableRowProperties(
   }
   return undefined;
 }
-
-// ── Cell properties types ──
-
-export interface TableCellPropertiesOptionsBase {
-  cnfStyle?: CnfStyleOptions;
-  shading?: ShadingProperties;
-  margins?: TableCellMarginOptions;
-  verticalAlign?: TableVerticalAlign;
-  textDirection?: (typeof TextDirection)[keyof typeof TextDirection];
-  verticalMerge?: (typeof VerticalMergeType)[keyof typeof VerticalMergeType];
-  width?: TableWidthProperties;
-  columnSpan?: number;
-  rowSpan?: number;
-  borders?: TableCellBordersOptions;
-  horizontalMerge?: "continue" | "restart";
-  noWrap?: boolean;
-  fitText?: boolean;
-  hideMark?: boolean;
-  headers?: string[];
-  insertion?: ChangedProperties;
-  deletion?: ChangedProperties;
-  cellMerge?: CellMergeAttributes;
-}
-
-export type TableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase & ChangedProperties;
-
-export type TableCellPropertiesOptions = {
-  revision?: TableCellPropertiesChangeOptions;
-  includeIfEmpty?: boolean;
-} & TableCellPropertiesOptionsBase;
 
 // ── Cell properties change (w:tcPrChange) ──
 

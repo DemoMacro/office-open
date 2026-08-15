@@ -53,13 +53,19 @@ import {
   stringifyTableProperties,
   stringifyTablePropertyExceptions,
   stringifyTableRowProperties,
-  type TableCellPropertiesChangeOptions,
-  type TableCellPropertiesOptions,
-  type TablePropertiesChangeOptions,
-  type TablePropertiesOptions,
-  type TableRowPropertiesChangeOptions,
-  type TableRowPropertiesOptions,
 } from "./stringify";
+import type {
+  TableCellPropertiesChangeOptions,
+  TableCellPropertiesOptions,
+} from "./table-cell/table-cell-properties";
+import type {
+  TablePropertiesChangeOptions,
+  TablePropertiesOptions,
+} from "./table-properties/table-properties";
+import type {
+  TableRowPropertiesChangeOptions,
+  TableRowPropertiesOptions,
+} from "./table-row/table-row-properties";
 
 // Valid border @w:val (ST_Border / BorderStyle) and @w:themeColor (ST_ThemeColor) values.
 const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];

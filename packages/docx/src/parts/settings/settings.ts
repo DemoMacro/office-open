@@ -203,9 +203,9 @@ export interface SettingsOptions {
   /** Vertical origin for the drawing grid (twips) */
   drawingGridVerticalOrigin?: number;
   /** Document-level footnote properties (CT_FtnDocProps) */
-  footnotePr?: FootnotePropertiesOptions;
+  footnotePr?: DocumentFootnotePropertiesOptions;
   /** Document-level endnote properties (CT_EdnDocProps) */
-  endnotePr?: EndnotePropertiesOptions;
+  endnotePr?: DocumentEndnotePropertiesOptions;
   /** Document revision save IDs (CT_DocRsids) */
   rsids?: RsidsOptions;
   /** Reading mode ink lock-down settings */
@@ -516,7 +516,7 @@ export interface HyphenationOptions {
 /**
  * Footnote properties for document-level settings (CT_FtnDocProps).
  */
-export interface FootnotePropertiesOptions {
+export interface DocumentFootnotePropertiesOptions {
   /** Footnote placement */
   pos?: "pageBottom" | "beneathText" | "sectEnd" | "docEnd";
   /** Number format */
@@ -532,7 +532,7 @@ export interface FootnotePropertiesOptions {
 /**
  * Endnote properties for document-level settings (CT_EdnDocProps).
  */
-export interface EndnotePropertiesOptions {
+export interface DocumentEndnotePropertiesOptions {
   /** Endnote placement */
   pos?: "sectEnd" | "docEnd";
   /** Number format */

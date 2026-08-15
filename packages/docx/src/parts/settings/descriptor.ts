@@ -30,8 +30,8 @@ import type {
   RsidsOptions,
   ReadModeInkLockDownOptions,
   RevisionViewOptions,
-  FootnotePropertiesOptions,
-  EndnotePropertiesOptions,
+  DocumentFootnotePropertiesOptions,
+  DocumentEndnotePropertiesOptions,
 } from "./settings";
 
 /** Derive the namespace-prefixed val attribute from the element tag. */
@@ -627,7 +627,7 @@ function stringifyOdsoFieldMap(opts: OdsoFieldMapDataOptions): string {
   return `<w:fieldMapData>${p.join("")}</w:fieldMapData>`;
 }
 
-function stringifyFootnotePr(opts: FootnotePropertiesOptions): string {
+function stringifyFootnotePr(opts: DocumentFootnotePropertiesOptions): string {
   const p: string[] = [];
   if (opts.pos !== undefined) p.push(attrEl("w:pos", { "w:val": opts.pos }));
   if (opts.numFmt !== undefined || opts.format !== undefined) {
@@ -641,7 +641,7 @@ function stringifyFootnotePr(opts: FootnotePropertiesOptions): string {
   return `<w:footnotePr>${p.join("")}</w:footnotePr>`;
 }
 
-function stringifyEndnotePr(opts: EndnotePropertiesOptions): string {
+function stringifyEndnotePr(opts: DocumentEndnotePropertiesOptions): string {
   const p: string[] = [];
   if (opts.pos !== undefined) p.push(attrEl("w:pos", { "w:val": opts.pos }));
   if (opts.numFmt !== undefined || opts.format !== undefined) {

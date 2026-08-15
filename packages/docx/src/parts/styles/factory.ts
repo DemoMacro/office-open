@@ -13,16 +13,14 @@ import { AlignmentType } from "@parts/paragraph";
  */
 import type { ParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
 import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
-import type {
-  TableCellPropertiesOptions,
-  TablePropertiesOptions,
-  TableRowPropertiesOptions,
-} from "@parts/table/stringify";
 import {
   stringifyTableCellProperties,
   stringifyTableProperties,
   stringifyTableRowProperties,
 } from "@parts/table/stringify";
+import type { TableCellPropertiesOptions } from "@parts/table/table-cell/table-cell-properties";
+import type { TablePropertiesOptions } from "@parts/table/table-properties/table-properties";
+import type { TableRowPropertiesOptions } from "@parts/table/table-row/table-row-properties";
 import { WidthType } from "@parts/table/table-width";
 import { BorderStyle, type BorderOptions } from "@shared/border";
 

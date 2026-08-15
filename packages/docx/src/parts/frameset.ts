@@ -11,7 +11,7 @@
 
 // ── Options ──
 
-export interface FrameOptions {
+export interface WebFrameOptions {
   /** Frame size (e.g., "50%") */
   size?: string;
   /** Frame name */
@@ -55,5 +55,5 @@ export interface FramesetOptions {
   /** Frameset title */
   title?: string;
   /** Child framesets and frames (in order) */
-  children?: (FramesetOptions | FrameOptions)[];
+  children?: (FramesetOptions | WebFrameOptions)[];
 }

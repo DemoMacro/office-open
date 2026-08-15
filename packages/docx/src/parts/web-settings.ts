@@ -106,7 +106,7 @@ import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import type { FrameOptions, FramesetSplitbarOptions } from "@parts/frameset";
+import type { WebFrameOptions, FramesetSplitbarOptions } from "@parts/frameset";
 
 import { documentNamespaceAttributes } from "./document/document-attributes";
 
@@ -167,7 +167,7 @@ function parseFramesetEl(el: Element): FramesetOptions {
     if (val) opts.title = val;
   }
 
-  const children: (FramesetOptions | FrameOptions)[] = [];
+  const children: (FramesetOptions | WebFrameOptions)[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:frameset") {
       children.push(parseFramesetEl(child));
@@ -201,8 +201,8 @@ function parseSplitbarEl(el: Element): FramesetSplitbarOptions {
   return opts as FramesetSplitbarOptions;
 }
 
-function parseFrameEl(el: Element): FrameOptions {
-  const opts: Partial<FrameOptions> = {};
+function parseFrameEl(el: Element): WebFrameOptions {
+  const opts: Partial<WebFrameOptions> = {};
 
   const sz = findChild(el, "w:sz");
   if (sz) {
@@ -255,7 +255,7 @@ function parseFrameEl(el: Element): FrameOptions {
     if (val) opts.longDescRId = val;
   }
 
-  return opts as FrameOptions;
+  return opts as WebFrameOptions;
 }
 
 function parseDivsEl(el: Element): DivOptions[] {
@@ -399,7 +399,7 @@ export function framesetXml(fs: FramesetOptions): string {
       if ("children" in child || "layout" in child || "splitbar" in child) {
         parts.push(framesetXml(child as FramesetOptions));
       } else {
-        parts.push(frameXml(child as FrameOptions));
+        parts.push(frameXml(child as WebFrameOptions));
       }
     }
   }
@@ -407,7 +407,7 @@ export function framesetXml(fs: FramesetOptions): string {
   return parts.join("");
 }
 
-export function frameXml(f: FrameOptions): string {
+export function frameXml(f: WebFrameOptions): string {
   const parts: string[] = ["<w:frame>"];
   if (f.size !== undefined) parts.push(wsStringVal("w:sz", f.size));
   if (f.name !== undefined) parts.push(wsStringVal("w:name", f.name));

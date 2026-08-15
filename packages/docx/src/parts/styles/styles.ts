@@ -36,11 +36,9 @@ import {
   parseTablePropertiesEl,
   parseTableRowPropertiesEl,
 } from "@parts/table/descriptor";
-import type {
-  TableCellPropertiesOptions,
-  TablePropertiesOptions,
-  TableRowPropertiesOptions,
-} from "@parts/table/stringify";
+import type { TableCellPropertiesOptions } from "@parts/table/table-cell/table-cell-properties";
+import type { TablePropertiesOptions } from "@parts/table/table-properties/table-properties";
+import type { TableRowPropertiesOptions } from "@parts/table/table-row/table-row-properties";
 
 import type { DocxReadContext } from "../../context";
 import { stringifyElement } from "../../util/stringify-element";
