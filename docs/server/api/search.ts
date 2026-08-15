@@ -5,63 +5,19 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
-  tool,
 } from "ai";
 import type { UIMessageStreamWriter, ToolSet } from "ai";
 import type { H3Event } from "h3";
-import { formatToolError } from "office-open/ai";
-import { generate } from "office-open/generate";
-import type { GenerateType } from "office-open/generate";
-import { z } from "zod";
+import { officeOpenTools } from "office-open/ai";
 
-const MIME_TYPES = {
-  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+const GENERATE_TOOL_EXTENSIONS = {
+  "generate-docx": "docx",
+  "generate-pptx": "pptx",
+  "generate-xlsx": "xlsx",
 } as const;
 
-async function generateDocument(type: GenerateType, options: Record<string, unknown>) {
-  try {
-    const base64 = (await generate({ type, options, outputType: "base64" })) as string;
-    return {
-      filename: `${(options.title as string) || "generated"}.${type}`,
-      base64,
-      mimeType: MIME_TYPES[type],
-      size: Math.ceil((base64.length * 3) / 4),
-    };
-  } catch (error) {
-    throw new Error(formatToolError(type, error));
-  }
-}
-
-const generateDocumentTool = tool({
-  description:
-    "Generate a downloadable Office document (.docx, .pptx, or .xlsx). " +
-    "Pass type and options as separate parameters. " +
-    "options is a JSON object (NOT a string) containing the document structure directly. " +
-    "IMPORTANT: " +
-    "Section/slide children must use wrapper keys: { paragraph: {...} }, { table: {...} }, { shape: {...} }, etc. " +
-    "Text runs MUST have a 'text' key: { text: '...', bold?: true }. " +
-    "Colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
-    "For docx, options must include 'sections'. For pptx, options must include 'slides'. For xlsx, options must include 'worksheets'.",
-  inputSchema: z.object({
-    type: z.enum(["docx", "pptx", "xlsx"]).describe("Document type to generate"),
-    options: z
-      .object({})
-      .passthrough()
-      .describe(
-        "Document options object. " +
-          "docx: { sections: [{ children: [...] }] }, " +
-          "pptx: { title: '...', slides: [{ children: [...] }] }, " +
-          "xlsx: { worksheets: [{ rows: [{ cells: [...] }] }] }",
-      ),
-  }),
-  execute: async ({ type, options }: { type: GenerateType; options: Record<string, unknown> }) => {
-    return generateDocument(type, options);
-  },
-});
-
-const MAX_STEPS = 8;
+// Enough headroom for schema lookups plus a validation retry before the final answer.
+const MAX_STEPS = 20;
 
 function createLocalFetch(event: H3Event): typeof fetch {
   const origin = getRequestURL(event).origin;
@@ -104,7 +60,7 @@ function getSystemPrompt(siteName: string) {
 - Speak as a helpful guide, not as the documentation itself
 
 **Tool usage (CRITICAL):**
-- You have tools: list-pages (discover pages), get-page (read a page), and generate-document (create Office files)
+- You have tools: list-pages (discover pages), get-page (read a page), generate-docx / generate-pptx / generate-xlsx (create Office files), and office-open-schema-lookup (fetch option schemas on demand)
 - If a page title clearly matches the question, read it directly without listing first
 - ALWAYS respond with text after using tools - never end with just tool calls
 
@@ -133,18 +89,17 @@ function getSystemPrompt(siteName: string) {
 
 **Document Generation:**
 - When a user asks to create/generate/build an Office document, ALWAYS read the relevant documentation pages FIRST to understand the correct JSON structure
-- Use get-page to read the docx/pptx/xlsx documentation before calling generate-document
-- Call generate-document with two parameters: type ("docx"/"pptx"/"xlsx") and options (a JSON object, NOT a string)
-- The entire options object is the document definition — pass it directly as an object with proper nesting
+- Unsure about an option type's fields? Call office-open-schema-lookup with { type, definitions: [...] } (e.g. ["ParagraphOptions"]) — it returns the full schema slice; names come from the generate tool's skeleton stubs
+- The generate tools validate input with JSON Schema before generating; if validation reports errors, fix the reported instance paths and call the same tool again
 - CRITICAL STRUCTURE RULES:
   - Section/slide children MUST use wrapper keys: { paragraph: {...} }, { table: {...} }, NOT bare objects
   - Text runs MUST have a "text" key: { text: "Hello", bold?: true }, NOT { bold: true } alone
   - Colors are hex WITHOUT "#": "FF0000", not "#FF0000"
-- For docx: { type: "docx", options: { sections: [{ properties: {}, children: [{ paragraph: { children: [{ text: "..." }] } }] }] }] } }
-- For pptx: { type: "pptx", options: { title: "...", slides: [{ children: [{ shape: { x: 100, y: 100, width: 600, height: 60, textBody: { text: "..." } } }] }] } }
-- For xlsx: { type: "xlsx", options: { worksheets: [{ rows: [{ cells: [{ value: "Name" }] }] }] } }
+- For docx: options must include { sections: [{ children: [{ paragraph: { children: [{ text: "..." }] } }] }] }
+- For pptx: options must include { title: "...", slides: [{ children: [{ shape: { x: 100, y: 100, width: 600, height: 60, textBody: { text: "..." } } }] }] }
+- For xlsx: options must include { worksheets: [{ rows: [{ cells: [{ value: "Name" }] }] }] }
 - Set the "title" field in options to customize the download filename without extension (e.g. "My Report")
-- Call generate-document exactly ONCE — never retry or call it multiple times for the same request
+- Call the generate tool once per document — retry only to fix validation errors
 - ALWAYS describe what you generated after the tool completes
 - Keep generated documents focused and reasonable in size`;
 }
@@ -202,7 +157,7 @@ export default defineEventHandler(async (event) => {
         stopWhen: stopWhenResponseComplete,
         system: getSystemPrompt(siteName),
         messages: modelMessages,
-        tools: { ...mcpTools, "generate-document": generateDocumentTool } as ToolSet,
+        tools: { ...mcpTools, ...officeOpenTools } as ToolSet,
         onStepFinish: ({ toolCalls, toolResults }) => {
           if (toolCalls.length > 0) {
             writer.write({
@@ -221,13 +176,28 @@ export default defineEventHandler(async (event) => {
             });
           }
 
+          const argsByCallId = new Map(
+            toolCalls.map((tc) => {
+              const args = "args" in tc ? tc.args : "input" in tc ? tc.input : {};
+              return [tc.toolCallId, args] as const;
+            }),
+          );
+
           for (const tr of toolResults) {
-            if (tr.toolName === "generate-document" && tr.output?.base64) {
-              const { filename, base64, mimeType, size } = tr.output;
+            const extension =
+              GENERATE_TOOL_EXTENSIONS[tr.toolName as keyof typeof GENERATE_TOOL_EXTENSIONS];
+            if (extension && tr.output?.base64) {
+              const args = (argsByCallId.get(tr.toolCallId) ?? {}) as { title?: string };
+              const base64 = tr.output.base64 as string;
               writer.write({
                 id: tr.toolCallId,
                 type: "data-document",
-                data: { filename, base64, mimeType, size },
+                data: {
+                  filename: `${args.title || "generated"}.${extension}`,
+                  base64,
+                  mimeType: tr.output.mimeType,
+                  size: Math.ceil((base64.length * 3) / 4),
+                },
               });
             }
           }

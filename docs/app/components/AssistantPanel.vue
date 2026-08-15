@@ -82,11 +82,17 @@ function getToolMessage(
 ) {
   const searchVerb = state === "output-available" ? "Searched" : "Searching";
   const readVerb = state === "output-available" ? "Read" : "Reading";
+  const createVerb = state === "output-available" ? "Created" : "Creating";
+  const lookupVerb = state === "output-available" ? "Fetched" : "Fetching";
 
   return (
     {
       "list-pages": `${searchVerb} pages`,
       "get-page": `${readVerb} ${input.path || "..."}`,
+      "generate-docx": `${createVerb} Word document`,
+      "generate-pptx": `${createVerb} presentation`,
+      "generate-xlsx": `${createVerb} spreadsheet`,
+      "office-open-schema-lookup": `${lookupVerb} option schema`,
     }[toolName] || `${searchVerb} ${toolName}`
   );
 }
@@ -105,6 +111,10 @@ function getToolIcon(part: ToolPart): string {
   return (
     {
       "get-page": "i-lucide-file-text",
+      "generate-docx": "i-lucide-file-down",
+      "generate-pptx": "i-lucide-file-down",
+      "generate-xlsx": "i-lucide-file-down",
+      "office-open-schema-lookup": "i-lucide-braces",
     }[toolName] || "i-lucide-search"
   );
 }
@@ -148,7 +158,7 @@ interface DocumentPartData {
   size: number;
 }
 
-// data-document parts are emitted by the custom search API (office-open/generate),
+// data-document parts are emitted by the custom search API (office-open/ai tools),
 // not part of the AI SDK's typed UIMessage parts, so the payload is typed here.
 function getDocumentData(part: { type: string; data?: unknown }): DocumentPartData {
   return part.data as DocumentPartData;
