@@ -39,3 +39,7 @@ jobs:
         run: pnpm run build
       - name: Test
         run: pnpm run test
+      - name: Check Schema Drift
+        run: pnpm run schema:check
+      - name: Validate Schemas
+        run: pnpm run schema:validate

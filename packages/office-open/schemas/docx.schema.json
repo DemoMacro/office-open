@@ -1,5 +1,5 @@
 {
-  "$id": "https://unpkg.com/office-open/schemas/docx.schema.json",
+  "$id": "https://cdn.jsdelivr.net/npm/office-open/schemas/docx.schema.json",
   "$ref": "#/definitions/DocumentOptions",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {

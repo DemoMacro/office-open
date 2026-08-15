@@ -31,7 +31,8 @@
     "office-open": "dist/cli.mjs"
   },
   "files": [
-    "dist"
+    "dist",
+    "schemas"
   ],
   "type": "module",
   "sideEffects": false,

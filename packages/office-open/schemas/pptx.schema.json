@@ -1,5 +1,5 @@
 {
-  "$id": "https://unpkg.com/office-open/schemas/pptx.schema.json",
+  "$id": "https://cdn.jsdelivr.net/npm/office-open/schemas/pptx.schema.json",
   "$ref": "#/definitions/PresentationOptions",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {

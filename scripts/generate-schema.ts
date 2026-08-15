@@ -15,9 +15,9 @@
  *   P3  envelope: $schema/$id/title/description on the root
  *
  * Usage:
- *   pnpm tsx scripts/generate-schema.ts            # write schema files
- *   pnpm tsx scripts/generate-schema.ts --check    # diff against committed files
- *   pnpm tsx scripts/generate-schema.ts --json     # print metrics only
+ *   pnpm schema:generate    # write schema files, then vp fmt them (root script)
+ *   pnpm schema:check       # re-generate in memory and diff content, not bytes
+ *   --json                  # print metrics only
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -253,7 +253,9 @@ function postProcess(schema: Record<string, unknown>) {
   };
 }
 
-/** Deterministic serialization: recursively sort object keys. */
+/** Deterministic serialization: recursively sort object keys. Byte-stable, so
+ * the --check mode can diff this against the committed file re-serialized the
+ * same way — formatting differences never count as drift. */
 function canonicalJson(value: unknown): string {
   const sort = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(sort);
@@ -301,9 +303,9 @@ function generateFormat(config: FormatConfig): FormatResult {
 
   const metrics = postProcess(schema);
 
-  // P3: envelope
+  // P3: envelope — consumer-facing only; no repo-workflow wording here
   schema.$schema = "http://json-schema.org/draft-07/schema#";
-  schema.$id = `https://unpkg.com/office-open/schemas/${config.format}.schema.json`;
+  schema.$id = `https://cdn.jsdelivr.net/npm/office-open/schemas/${config.format}.schema.json`;
   schema.title = config.title;
   schema.description = config.description;
 
@@ -345,8 +347,11 @@ function main() {
   for (const result of results) {
     const outPath = path.join(OUT_DIR, `${result.format}.schema.json`);
     if (checkOnly) {
+      // Compare parsed content, not bytes: `vp fmt` may fold arrays differently
+      // than the raw generator output, and that must never read as drift.
       const committed = fs.existsSync(outPath) ? fs.readFileSync(outPath, "utf-8") : null;
-      if (committed !== result.output) {
+      const matches = committed !== null && canonicalJson(JSON.parse(committed)) === result.output;
+      if (!matches) {
         console.error(`DRIFT: ${path.relative(ROOT_DIR, outPath)} does not match generated output`);
         failed = true;
       }
