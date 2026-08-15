@@ -154,7 +154,7 @@ describe("parsePresentation", () => {
             styleId: defaultStyleId,
             styleName: "Custom Style",
             regions: {
-              wholeTbl: { cell: { fillReference: { idx: 1, color: '<a:srgbClr val="4472C4"/>' } } },
+              wholeTbl: { cell: { fillReference: { index: 1, color: { value: "4472C4" } } } },
             },
           },
         ],

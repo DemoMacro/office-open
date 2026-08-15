@@ -33,7 +33,7 @@ import { textBodyDesc } from "../../drawingml/text/text-body";
 import type { Transform2DOptions } from "../../drawingml/transform";
 import { transform2DDesc } from "../../drawingml/transform-descriptors";
 import { stringifyShapeStyle, parseShapeStyle } from "../../theme/style-matrix";
-import type { ShapeStyleOptions } from "../../theme/theme-options";
+import type { DefaultShapeStyleOptions } from "../../theme/theme-options";
 import { parseOnOff } from "../../util/values";
 
 const CDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/chartDrawing";
@@ -95,7 +95,7 @@ export interface UserShapeShapeOptions extends ObjectCommonAttributes {
   /** Text-box marker (cdr:cNvSpPr @txBox) */
   textBox?: boolean;
   shapeProperties: ShapePropertiesOptions;
-  style?: ShapeStyleOptions;
+  style?: DefaultShapeStyleOptions;
   textBody?: TextBodyOptions;
   /** Formula linking the text to a cell (@textlink) */
   textLink?: string;
@@ -107,7 +107,7 @@ export interface UserShapeConnectorOptions extends ObjectCommonAttributes {
   type: "connector";
   nonVisualProperties?: NonVisualDrawingPropertiesOptions;
   shapeProperties: ShapePropertiesOptions;
-  style?: ShapeStyleOptions;
+  style?: DefaultShapeStyleOptions;
 }
 
 export interface UserShapePictureOptions extends ObjectCommonAttributes {
@@ -117,7 +117,7 @@ export interface UserShapePictureOptions extends ObjectCommonAttributes {
   referenceId: string;
   blipFill?: BlipFillOptions;
   shapeProperties: ShapePropertiesOptions;
-  style?: ShapeStyleOptions;
+  style?: DefaultShapeStyleOptions;
 }
 
 export interface UserShapeGraphicFrameOptions extends ObjectCommonAttributes {

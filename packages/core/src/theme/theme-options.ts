@@ -17,8 +17,11 @@ import type {
   Shape3DOptions,
   ShapePropertiesOptions,
   SolidFillOptions,
+  StyleMatrixReferenceOptions,
   TextListStyleOptions,
 } from "../drawingml";
+
+export type { StyleMatrixReferenceOptions } from "../drawingml";
 
 /** Single font slot — a:latin / a:ea / a:cs / a:sym (CT_TextFont). */
 export interface TextFontOptions {
@@ -71,14 +74,6 @@ export interface ColorSchemeOptions {
   name?: string;
 }
 
-/** Reference into the theme style matrix — a:lnRef / a:fillRef / a:effectRef. */
-export interface StyleMatrixReferenceOptions {
-  /** Index into the style matrix list (idx attribute). */
-  index: number;
-  /** Color component (EG_ColorChoice). */
-  color?: SolidFillOptions;
-}
-
 /** Font reference — a:fontRef (CT_FontReference). */
 export interface FontReferenceOptions {
   /** Font collection (idx attribute: ST_FontCollectionIndex). */
@@ -87,7 +82,7 @@ export interface FontReferenceOptions {
 }
 
 /** Shape style — a:style (CT_ShapeStyle). */
-export interface ShapeStyleOptions {
+export interface DefaultShapeStyleOptions {
   lineReference: StyleMatrixReferenceOptions;
   fillReference: StyleMatrixReferenceOptions;
   effectReference: StyleMatrixReferenceOptions;
@@ -119,7 +114,7 @@ export interface DefaultShapeDefinitionOptions {
   shapeProperties?: ShapePropertiesOptions;
   bodyProperties?: BodyPropertiesOptions;
   listStyle?: TextListStyleOptions;
-  shapeStyle?: ShapeStyleOptions;
+  shapeStyle?: DefaultShapeStyleOptions;
 }
 
 /** Object defaults — a:objectDefaults (CT_ObjectStyleDefaults). */

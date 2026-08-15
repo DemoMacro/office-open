@@ -60,24 +60,36 @@ import { createSoftEdgeEffect } from "./soft-edge";
  */
 export type EffectContainer = "sibling" | "tree";
 
-// ─── New Effect Options ─────────────────────────────────────────────────────
+// ─── Effect Options ─────────────────────────────────────────────────────────
+// Shared CT_* effect option types live in blip-effects.ts (single home);
+// this module re-exports them for the effect-DAG path.
 
-/** Alpha bi-level effect — clips alpha to threshold (CT_AlphaBiLevelEffect). */
-export interface AlphaBiLevelEffectOptions {
-  /** Alpha threshold (fixed percentage, required) */
-  threshold: number;
-}
+import type {
+  AlphaBiLevelEffectOptions,
+  AlphaModulateFixedEffectOptions,
+  AlphaReplaceEffectOptions,
+  ColorChangeEffectOptions,
+  DuotoneEffectOptions,
+  HSLEffectOptions,
+  LuminanceEffectOptions,
+  TintEffectOptions,
+} from "../blip/blip-effects";
+
+export type {
+  AlphaBiLevelEffectOptions,
+  AlphaModulateFixedEffectOptions,
+  AlphaReplaceEffectOptions,
+  ColorChangeEffectOptions,
+  DuotoneEffectOptions,
+  HSLEffectOptions,
+  LuminanceEffectOptions,
+  TintEffectOptions,
+} from "../blip/blip-effects";
 
 /** Alpha inverse effect — inverts alpha, optionally with color (CT_AlphaInverseEffect). */
 export interface AlphaInverseEffectOptions {
   /** Optional color to apply inverse to */
   color?: SolidFillOptions;
-}
-
-/** Alpha modulate fixed effect (CT_AlphaModulateFixedEffect). */
-export interface AlphaModulateFixedEffectOptions {
-  /** Amount percentage (default 100%) */
-  amount?: number;
 }
 
 /** Alpha outset effect (CT_AlphaOutsetEffect). */
@@ -86,36 +98,12 @@ export interface AlphaOutsetEffectOptions {
   radius?: number;
 }
 
-/** Alpha replace effect — replaces alpha value (CT_AlphaReplaceEffect). */
-export interface AlphaReplaceEffectOptions {
-  /** New alpha value (fixed percentage, required) */
-  alpha: number;
-}
-
 /** Blend effect — blends with nested container (CT_BlendEffect). */
 export interface BlendEffectOptions {
   /** Blend mode (required) */
   blend: (typeof BlendMode)[keyof typeof BlendMode];
   /** Nested effect container */
   container: EffectDagOptions;
-}
-
-/** Color change effect — maps one color to another (CT_ColorChangeEffect). */
-export interface ColorChangeEffectOptions {
-  /** Source color to replace */
-  from: SolidFillOptions;
-  /** Target color */
-  to: SolidFillOptions;
-  /** Whether to use alpha channel (default true) */
-  useA?: boolean;
-}
-
-/** Duotone effect — two-color tone mapping (CT_DuotoneEffect). */
-export interface DuotoneEffectOptions {
-  /** First color */
-  color1: SolidFillOptions;
-  /** Second color */
-  color2: SolidFillOptions;
 }
 
 /** Fill effect — applies a fill as an effect (CT_FillEffect). */
@@ -130,32 +118,6 @@ export interface FillEffectOptions {
   groupFill?: boolean;
   /** No fill */
   noFill?: boolean;
-}
-
-/** HSL effect — adjusts hue, saturation, luminance (CT_HSLEffect). */
-export interface HSLEffectOptions {
-  /** Hue angle in degrees (default 0). */
-  hue?: number;
-  /** Saturation percentage (default 0%) */
-  saturation?: number;
-  /** Luminance percentage (default 0%) */
-  luminance?: number;
-}
-
-/** Luminance effect — adjusts brightness and contrast (CT_LuminanceEffect). */
-export interface LuminanceEffectOptions {
-  /** Brightness percentage (default 0%) */
-  bright?: number;
-  /** Contrast percentage (default 0%) */
-  contrast?: number;
-}
-
-/** Tint effect — applies tint with hue and amount (CT_TintEffect). */
-export interface TintEffectOptions {
-  /** Hue angle in degrees (default 0). */
-  hue?: number;
-  /** Tint amount percentage (default 0%) */
-  amount?: number;
 }
 
 /** Relative offset effect (CT_RelativeOffsetEffect). */
@@ -308,7 +270,7 @@ const createColorChangeEffect = (options: ColorChangeEffectOptions): string => {
     element("a:clrTo", undefined, [createColorElement(options.to)]),
   ];
 
-  if (options.useA === false) {
+  if (options.useAlpha === false) {
     return element("a:clrChange", { useA: 0 }, children);
   }
 

@@ -9,8 +9,13 @@
  */
 import { element } from "@office-open/xml";
 
+import type { TileFlipMode } from "../blip/tile";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
+
+// Single home for the shared ST_TileFlipMode token set is blip/tile.ts;
+// re-exported here for gradient-fill consumers.
+export type { TileFlipMode } from "../blip/tile";
 
 /**
  * Gradient stop position as integer percent (0-100).
@@ -26,23 +31,6 @@ export interface GradientStop {
  * Path shade type for radial gradients.
  */
 export type PathShade = "shape" | "circle" | "rect";
-
-/**
- * Tile flip mode for gradient fill.
- *
- * ## XSD Schema
- * ```xml
- * <xsd:simpleType name="ST_TileFlipMode">
- *   <xsd:restriction base="xsd:string">
- *     <xsd:enumeration value="none"/>
- *     <xsd:enumeration value="x"/>
- *     <xsd:enumeration value="y"/>
- *     <xsd:enumeration value="xy"/>
- *   </xsd:restriction>
- * </xsd:simpleType>
- * ```
- */
-export type TileFlipMode = "none" | "x" | "y" | "xy";
 
 /**
  * Options for linear gradient shading.

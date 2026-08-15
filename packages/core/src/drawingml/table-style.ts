@@ -13,8 +13,12 @@ import type { Element } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../descriptor";
 import { parse as parseDesc, stringify as stringifyDesc } from "../descriptor";
+import { parseColorChoice, stringifyColorChoice } from "./color/color-descriptors";
+import type { StyleMatrixReferenceOptions } from "./style-reference";
 import { cell3DDesc } from "./three-d/three-d-descriptors";
 import type { Cell3DOptions } from "./three-d/three-d-descriptors";
+
+export type { StyleMatrixReferenceOptions } from "./style-reference";
 
 // cell3DDesc's stringify/parse never touch the context (bevel/lightRig are
 // pure attribute emitters), so bare stubs satisfy the descriptor signature.
@@ -88,13 +92,6 @@ export interface ThemeableLineStyleOptions {
   lineReference?: StyleMatrixReferenceOptions;
 }
 
-export interface StyleMatrixReferenceOptions {
-  /** Index into the theme style matrix */
-  idx: number;
-  /** Color component */
-  color?: string;
-}
-
 export interface TableStyleOptions {
   /** Unique GUID for this style */
   styleId: string;
@@ -121,10 +118,10 @@ function toStr(el: string): string {
 /** Create a:styleMatrixReference (fillRef, lnRef, effectRef, fontRef) */
 function createStyleMatrixRef(elementName: string, opts: StyleMatrixReferenceOptions): string {
   const children: string[] = [];
-  if (opts.color) children.push(opts.color);
+  if (opts.color) children.push(stringifyColorChoice(opts.color, EMPTY_WRITE_CTX));
   return element(
     `a:${elementName}`,
-    { idx: String(opts.idx) },
+    { idx: String(opts.index) },
     children.length > 0 ? children : undefined,
   );
 }
@@ -136,7 +133,7 @@ function createThemeableLine(opts: ThemeableLineStyleOptions): string {
     if (opts.color) children.push(toStr(opts.color));
     return element(
       "a:lnRef",
-      { idx: String(opts.lineReference.idx) },
+      { idx: String(opts.lineReference.index) },
       children.length > 0 ? children : undefined,
     );
   }
@@ -386,7 +383,7 @@ function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined 
   const opts: ThemeableLineStyleOptions = {};
   if (el.name === "a:lnRef") {
     const idx = attrNum(el, "idx");
-    if (idx !== undefined) opts.lineReference = { idx };
+    if (idx !== undefined) opts.lineReference = { index: idx };
   } else {
     const w = attrNum(el, "w");
     if (w !== undefined) opts.width = w;
@@ -400,10 +397,8 @@ function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined 
 
 function parseStyleMatrixRef(el: Element): StyleMatrixReferenceOptions {
   const idx = attrNum(el, "idx") ?? 0;
-  const opts: StyleMatrixReferenceOptions = { idx };
-  for (const child of el.elements ?? []) {
-    opts.color = serializeChild(child);
-    break;
-  }
+  const color = parseColorChoice(el, EMPTY_READ_CTX);
+  const opts: StyleMatrixReferenceOptions =
+    color && Object.keys(color).length > 0 ? { index: idx, color } : { index: idx };
   return opts;
 }

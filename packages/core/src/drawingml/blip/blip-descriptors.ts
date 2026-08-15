@@ -180,7 +180,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.alphaReplace) {
-    parts.push(`<a:alphaRepl a="${emitPercent(opts.alphaReplace.amount)}"/>`);
+    parts.push(`<a:alphaRepl a="${emitPercent(opts.alphaReplace.alpha)}"/>`);
   }
 
   if (opts.alphaBiLevel) {
@@ -287,7 +287,7 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
 
   const alphaRepl = findChild(el, "a:alphaRepl");
   if (alphaRepl?.attributes?.["a"] !== undefined) {
-    result.alphaReplace = { amount: parsePercent(alphaRepl.attributes["a"])! };
+    result.alphaReplace = { alpha: parsePercent(alphaRepl.attributes["a"])! };
   }
 
   const alphaBiLevel = findChild(el, "a:alphaBiLevel");

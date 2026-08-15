@@ -11,7 +11,7 @@ export {
   type FontSchemeOptions,
   type FormatSchemeOptions,
   type ObjectDefaultsOptions,
-  type ShapeStyleOptions,
+  type DefaultShapeStyleOptions,
   type StyleMatrixReferenceOptions,
   type SupplementalFontOptions,
   type TextFontOptions,

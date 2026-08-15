@@ -25,7 +25,7 @@ import type {
   EffectStyleOptions,
   FontReferenceOptions,
   FormatSchemeOptions,
-  ShapeStyleOptions,
+  DefaultShapeStyleOptions,
   StyleMatrixReferenceOptions,
 } from "./theme-options";
 
@@ -74,7 +74,7 @@ function parseFontReference(
 
 // ── Shape style (a:style / CT_ShapeStyle) ──
 
-export function stringifyShapeStyle(opts: ShapeStyleOptions, ctx: WriteContext): string {
+export function stringifyShapeStyle(opts: DefaultShapeStyleOptions, ctx: WriteContext): string {
   const lnRef = stringifyStyleMatrixReference("a:lnRef", opts.lineReference, ctx);
   const fillRef = stringifyStyleMatrixReference("a:fillRef", opts.fillReference, ctx);
   const effectRef = stringifyStyleMatrixReference("a:effectRef", opts.effectReference, ctx);
@@ -85,7 +85,7 @@ export function stringifyShapeStyle(opts: ShapeStyleOptions, ctx: WriteContext):
 export function parseShapeStyle(
   el: XmlElement | undefined,
   ctx: ReadContext,
-): ShapeStyleOptions | undefined {
+): DefaultShapeStyleOptions | undefined {
   if (!el) return undefined;
   const lineReference = parseStyleMatrixReference(findChild(el, "a:lnRef"), ctx);
   const fillReference = parseStyleMatrixReference(findChild(el, "a:fillRef"), ctx);

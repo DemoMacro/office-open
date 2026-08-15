@@ -104,8 +104,8 @@ export interface BiLevelEffectOptions {
  * ```
  */
 export interface AlphaReplaceEffectOptions {
-  /** Alpha percentage (0 = fully transparent, 100 = fully opaque). */
-  amount: number;
+  /** Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to @a. */
+  alpha: number;
 }
 
 /**
@@ -303,7 +303,7 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   }
 
   if (options.alphaReplace) {
-    children.push(`<a:alphaRepl a="${options.alphaReplace.amount}"/>`);
+    children.push(`<a:alphaRepl a="${options.alphaReplace.alpha}"/>`);
   }
 
   if (options.alphaBiLevel) {

@@ -12,7 +12,7 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "emitDeclarationOnly": true,
+    "noEmit": true,
 
     /* Linting */
     "strict": true,
@@ -27,7 +27,6 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "declaration": true,
-    "composite": true,
     "declarationMap": true,
     "esModuleInterop": true,
     "paths": {
@@ -35,7 +34,10 @@
       "@export/*": ["./src/export/*"],
       "@parts/*": ["./src/parts/*"],
       "@shared/*": ["./src/shared/*"],
-      "tests/*": ["./src/tests/*"]
+      "tests/*": ["./src/tests/*"],
+      "@office-open/core": ["../core/src/index.ts"],
+      "@office-open/core/*": ["../core/src/*/index.ts"],
+      "@office-open/xml": ["../xml/src/index.ts"]
     }
   },
   "include": ["src", "demo"]

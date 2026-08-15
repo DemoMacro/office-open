@@ -23,7 +23,7 @@ export type {
   FontSchemeOptions,
   FormatSchemeOptions,
   ObjectDefaultsOptions,
-  ShapeStyleOptions,
+  DefaultShapeStyleOptions,
   StyleMatrixReferenceOptions,
   SupplementalFontOptions,
   TextFontOptions,
