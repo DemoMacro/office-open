@@ -1,12 +1,12 @@
 {
   "name": "office-open",
   "version": "0.10.15",
-  "description": "Unified Office document toolkit — CLI, AI SDK tools, Zod schemas, and all packages in one install",
+  "description": "Unified Office document toolkit — CLI, AI SDK tools, JSON schemas, and all packages in one install",
   "keywords": [
     "ai",
     "cli",
     "docx",
-    "llm",
+    "json-schema",
     "office",
     "office-open",
     "ooxml",
@@ -95,8 +95,9 @@
     "@office-open/pptx": "workspace:*",
     "@office-open/xlsx": "workspace:*",
     "@office-open/xml": "workspace:*",
-    "citty": "0.2.2",
-    "zod": "4.4.3"
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "citty": "0.2.2"
   },
   "peerDependencies": {
     "ai": "^6.0.0"

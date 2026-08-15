@@ -1,14 +1,12 @@
 import type { DocumentOptions } from "@office-open/docx";
 import type { PresentationOptions } from "@office-open/pptx";
 import type { WorkbookOptions } from "@office-open/xlsx";
-import { tool } from "ai";
+import { jsonSchema, tool } from "ai";
 
 export { formatToolError } from "./error";
 
 import { generate } from "../generate";
-import { docxSchema } from "../schemas/docx";
-import { pptxSchema } from "../schemas/pptx";
-import { xlsxSchema } from "../schemas/xlsx";
+import { docxSchema, pptxSchema, xlsxSchema } from "../schemas";
 import { formatToolError } from "./error";
 
 export const docxTool = tool({
@@ -22,7 +20,7 @@ export const docxTool = tool({
     "The 'text' key is required in run objects. Plain strings are also accepted. " +
     "Colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
     "Optional metadata: title, creator, subject, styles, numbering, comments, footnotes, endnotes, background, features.",
-  inputSchema: docxSchema,
+  inputSchema: jsonSchema<DocumentOptions>(docxSchema),
   execute: async (options) => {
     try {
       const base64 = (await generate({
@@ -51,7 +49,7 @@ export const pptxTool = tool({
     "Colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
     "Fill can be a hex color string or a fill object: '4472C4' or { type: 'solidFill', color: '4472C4' }. " +
     "Optional: size ('16:9' or '4:3' or { width, height }), title, creator, masters, show.",
-  inputSchema: pptxSchema,
+  inputSchema: jsonSchema<PresentationOptions>(pptxSchema),
   execute: async (options) => {
     try {
       const base64 = (await generate({
@@ -79,7 +77,7 @@ export const xlsxTool = tool({
     "Cells can be shorthand values (string, number, boolean) or objects: { value: 'hello', style: { ... } }. " +
     "Column widths use 'width' as a number. " +
     "Optional: columns, mergeCells, freezePanes, autoFilter, images, charts, dataValidations, conditionalFormats.",
-  inputSchema: xlsxSchema,
+  inputSchema: jsonSchema<WorkbookOptions>(xlsxSchema),
   execute: async (options) => {
     try {
       const base64 = (await generate({
