@@ -2,10 +2,16 @@
  * SmartArtRun types for WordprocessingML documents.
  *
  * SmartArt data is stored in `word/diagrams/data{n}.xml`.
- * Layout, style, and colors reference Word's built-in definitions.
+ * Layout, style, and colors reference Word's built-in definitions or carry
+ * full custom definitions.
  *
  * @module
  */
+import type {
+  ColorDefinitionOptions,
+  LayoutDefinitionOptions,
+  StyleDefinitionOptions,
+} from "@office-open/core/smartart";
 import type { Floating } from "@parts/drawing";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { MediaTransformation } from "@shared/media";
@@ -34,10 +40,10 @@ export interface SmartArtOptions {
   floating?: Floating;
   /** Alternative text for accessibility */
   altText?: DocPropertiesOptions;
-  /** Layout ID (e.g. "default", "process1", "hierarchy1") */
-  layout?: string;
-  /** Quick style ID (e.g. "simple1", "moderate1") */
-  style?: string;
-  /** Color transform ID (e.g. "accent1_2", "colorful1") */
-  color?: string;
+  /** Built-in layout ID ("default", "process1") or a custom layout definition. */
+  layout?: string | LayoutDefinitionOptions;
+  /** Built-in quick style ID ("simple1") or a custom style definition. */
+  style?: string | StyleDefinitionOptions;
+  /** Built-in color transform ID ("accent1_2") or a custom color definition. */
+  color?: string | ColorDefinitionOptions;
 }

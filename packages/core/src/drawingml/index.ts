@@ -240,7 +240,7 @@ export type {
   StyleDefinitionHeaderListOptions,
   DiagramStyleOptions,
   ColorListOptions,
-  DiagramStyleLabelOptions,
+  ColorStyleLabelOptions,
   DiagramRelationshipIdsOptions,
   DiagramExtensionListOptions,
   DiagramExtensionOptions,

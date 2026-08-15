@@ -33,6 +33,9 @@ import {
   getColorXml,
   getLayoutXml,
   getStyleXml,
+  stringifyColorDefinitionPart,
+  stringifyLayoutDefinitionPart,
+  stringifyStyleDefinitionPart,
 } from "@office-open/core/smartart";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { DocumentOptions } from "@parts/core-properties";
@@ -684,15 +687,24 @@ function xmlifyContext(
             path: `word/diagrams/data${i + 1}.xml`,
           })),
           DiagramLayout: ctx.smartArts.array.map((smartArtData, i) => ({
-            data: getLayoutXml(smartArtData.layout),
+            data:
+              typeof smartArtData.layout === "string"
+                ? getLayoutXml(smartArtData.layout)
+                : stringifyLayoutDefinitionPart(smartArtData.layout),
             path: `word/diagrams/layout${i + 1}.xml`,
           })),
           DiagramStyle: ctx.smartArts.array.map((smartArtData, i) => ({
-            data: getStyleXml(smartArtData.style),
+            data:
+              typeof smartArtData.style === "string"
+                ? getStyleXml(smartArtData.style)
+                : stringifyStyleDefinitionPart(smartArtData.style),
             path: `word/diagrams/quickStyle${i + 1}.xml`,
           })),
           DiagramColors: ctx.smartArts.array.map((smartArtData, i) => ({
-            data: getColorXml(smartArtData.color),
+            data:
+              typeof smartArtData.color === "string"
+                ? getColorXml(smartArtData.color)
+                : stringifyColorDefinitionPart(smartArtData.color),
             path: `word/diagrams/colors${i + 1}.xml`,
           })),
           DiagramDrawing: ctx.smartArts.array.map((_, i) => ({

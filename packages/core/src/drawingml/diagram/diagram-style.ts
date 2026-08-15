@@ -7,7 +7,9 @@
  * @module
  */
 import { element } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
+import { parseColorChoiceElement } from "../color/color-descriptors";
 import { SchemeColor } from "../color/scheme-color";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
@@ -107,7 +109,7 @@ export interface ColorListOptions {
 }
 
 /** Creates a generic CT_Colors element with the given tag. */
-const createColorList = (tag: string, options?: ColorListOptions): string => {
+export const createColorList = (tag: string, options?: ColorListOptions): string => {
   const children: string[] = [];
   if (options?.colors) {
     for (const c of options.colors) {
@@ -121,6 +123,30 @@ const createColorList = (tag: string, options?: ColorListOptions): string => {
   if (options?.hueDir) attrs.hueDir = options.hueDir;
 
   return element(tag, hasAttrs ? attrs : undefined, children.length > 0 ? children : undefined);
+};
+
+/**
+ * Parses a CT_Colors element (fillClrLst/linClrLst/…) back into options.
+ * Colors parse in document order.
+ */
+export const parseColorList = (el: Element): ColorListOptions => {
+  const result: ColorListOptions = {};
+  if (el.attributes?.meth !== undefined) result.meth = el.attributes.meth as ColorMethod;
+  if (el.attributes?.hueDir !== undefined) result.hueDir = el.attributes.hueDir as HueDirection;
+  const colors: SolidFillOptions[] = [];
+  for (const child of el.elements ?? []) {
+    const color = parseColorChoiceElement(child, NOOP_READ_CTX);
+    if (color) colors.push(color);
+  }
+  if (colors.length) result.colors = colors;
+  return result;
+};
+
+// Noop context: color elements never resolve relationships or parts.
+const NOOP_READ_CTX = {
+  resolveRelationship: () => undefined,
+  getPart: () => undefined,
+  getRaw: () => undefined,
 };
 
 // ---------------------------------------------------------------------------
@@ -148,11 +174,11 @@ export const createTextEffectColorList = (options?: ColorListOptions): string =>
   createColorList("dgm:txEffectClrLst", options);
 
 // ---------------------------------------------------------------------------
-// dgm:styleLbl — style label (CT_StyleLabel)
+// dgm:styleLbl — color-transform style label (CT_CTStyleLabel)
 // ---------------------------------------------------------------------------
 
-export interface DiagramStyleLabelOptions {
-  /** Label name (required) */
+export interface ColorStyleLabelOptions {
+  /** Label name referenced by dgm:layoutNode @styleLbl (required) */
   name: string;
   fillColorList?: ColorListOptions;
   lineColorList?: ColorListOptions;
@@ -195,7 +221,7 @@ export interface DiagramStyleLabelOptions {
  * </xsd:complexType>
  * ```
  */
-export const createStyleLabel = (options: DiagramStyleLabelOptions): string => {
+export const createStyleLabel = (options: ColorStyleLabelOptions): string => {
   const children: string[] = [];
   if (options.fillColorList) children.push(createFillColorList(options.fillColorList));
   if (options.lineColorList) children.push(createLineColorList(options.lineColorList));

@@ -14,7 +14,7 @@ import { toUint8Array } from "@office-open/core";
 import { TargetModeType } from "@office-open/core";
 import { uniqueId } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
-import { createDataModel } from "@office-open/core/smartart";
+import { createDataModel, definitionId } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type {
@@ -575,18 +575,22 @@ export function stringifyChildDispatch(
       type: "smartart",
     };
 
-    // Register SmartArt
-    const layoutId = opts.layout ?? "default";
-    const styleId = opts.style ?? "simple1";
-    const colorId = opts.color ?? "accent1_2";
+    // Register SmartArt — custom definitions embed their own id in the doc
+    // point's type ids.
+    const layoutId =
+      typeof opts.layout === "object" ? definitionId(opts.layout) : (opts.layout ?? "default");
+    const styleId =
+      typeof opts.style === "object" ? definitionId(opts.style) : (opts.style ?? "simple1");
+    const colorId =
+      typeof opts.color === "object" ? definitionId(opts.color) : (opts.color ?? "accent1_2");
     const dataModelXml = createDataModel(opts.data.nodes, layoutId, styleId, colorId);
 
     ctx.file.smartArts.addSmartArt(smartArtKey, {
       dataModelXml,
       key: smartArtKey,
-      layout: layoutId,
-      style: styleId,
-      color: colorId,
+      layout: opts.layout ?? "default",
+      style: opts.style ?? "simple1",
+      color: opts.color ?? "accent1_2",
     });
 
     const drawingXml = drawingDesc.stringify(
@@ -1077,7 +1081,14 @@ function serializeDirChildren(
 
 /** Hash SmartArt data for unique key generation (duplicated from SmartArtRun). */
 function hashSmartArtData(options: SmartArtOptions): number {
-  const data = JSON.stringify(options.data);
+  // Layout/style/color participate: two diagrams with the same nodes but
+  // different definitions are distinct parts.
+  const data = JSON.stringify({
+    data: options.data,
+    layout: options.layout,
+    style: options.style,
+    color: options.color,
+  });
   let hash = 0;
   for (let i = 0; i < data.length; i++) {
     const char = data.charCodeAt(i);

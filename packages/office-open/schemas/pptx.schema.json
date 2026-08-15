@@ -28,6 +28,21 @@
       "required": ["x", "y"],
       "type": "object"
     },
+    "AdjustOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "idx": {
+          "description": "1-based index (required)",
+          "type": "number"
+        },
+        "val": {
+          "description": "Adjustment value (required)",
+          "type": "number"
+        }
+      },
+      "required": ["idx", "val"],
+      "type": "object"
+    },
     "AdjustPoint": {
       "additionalProperties": false,
       "description": "An adjustable point (CT_AdjPoint2D).\n\nCoordinates can be absolute values or references to geometry guide names.",
@@ -43,6 +58,61 @@
       },
       "required": ["x", "y"],
       "type": "object"
+    },
+    "AlgorithmOptions": {
+      "additionalProperties": false,
+      "description": "dgm:alg (CT_Algorithm).",
+      "properties": {
+        "parameters": {
+          "description": "Algorithm parameters (dgm:param*).",
+          "items": {
+            "$ref": "#/definitions/AlgorithmParameterOptions"
+          },
+          "type": "array"
+        },
+        "revision": {
+          "description": "Revision counter (dgm:alg",
+          "type": "number"
+        },
+        "type": {
+          "$ref": "#/definitions/AlgorithmType",
+          "description": "Layout algorithm (dgm:alg"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
+    "AlgorithmParameterOptions": {
+      "additionalProperties": false,
+      "description": "dgm:param (CT_Parameter) — inlined in AlgorithmOptions.parameters.",
+      "properties": {
+        "type": {
+          "description": "Parameter name (dgm:param",
+          "type": "string"
+        },
+        "value": {
+          "description": "Parameter value (dgm:param",
+          "type": ["string", "number", "boolean"]
+        }
+      },
+      "required": ["type", "value"],
+      "type": "object"
+    },
+    "AlgorithmType": {
+      "description": "ST_AlgorithmType (dgm:alg",
+      "enum": [
+        "composite",
+        "conn",
+        "cycle",
+        "hierChild",
+        "hierRoot",
+        "pyra",
+        "lin",
+        "sp",
+        "tx",
+        "snake"
+      ],
+      "type": "string"
     },
     "AlphaBiLevelEffectOptions": {
       "additionalProperties": false,
@@ -100,6 +170,10 @@
       },
       "required": ["alpha"],
       "type": "object"
+    },
+    "AnimateOneByOne": {
+      "enum": ["none", "one", "branch"],
+      "type": "string"
     },
     "AnimationBuildOptions": {
       "additionalProperties": false,
@@ -223,6 +297,10 @@
         }
       },
       "type": "object"
+    },
+    "AnimationLevel": {
+      "enum": ["none", "lvl", "ctr"],
+      "type": "string"
     },
     "AnimationOptions": {
       "additionalProperties": false,
@@ -2432,6 +2510,33 @@
       ],
       "type": "string"
     },
+    "ChildOrder": {
+      "description": "ST_ChildOrderType (dgm:layoutNode",
+      "enum": ["b", "t"],
+      "type": "string"
+    },
+    "ChooseOptions": {
+      "additionalProperties": false,
+      "description": "dgm:choose (CT_Choose): pick the first matching condition.",
+      "properties": {
+        "conditions": {
+          "description": "Alternatives in priority order (dgm:if*, CT_When).",
+          "items": {
+            "$ref": "#/definitions/WhenOptions"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "otherwise": {
+          "$ref": "#/definitions/OtherwiseOptions",
+          "description": "Fallback branch (dgm:else, CT_Otherwise)."
+        }
+      },
+      "required": ["conditions"],
+      "type": "object"
+    },
     "ColorChangeEffectOptions": {
       "additionalProperties": false,
       "description": "Options for color change effect.\n\n## XSD: CT_ColorChangeEffect ```xml <xsd:element name=\"clrFrom\" type=\"CT_Color\"/> <xsd:element name=\"clrTo\" type=\"CT_Color\"/> <xsd:attribute name=\"useA\" type=\"xsd:boolean\" default=\"true\"/> ```",
@@ -2450,6 +2555,74 @@
         }
       },
       "required": ["from", "to"],
+      "type": "object"
+    },
+    "ColorDefinitionOptions": {
+      "additionalProperties": false,
+      "description": "dgm:colorsDef (CT_ColorTransform) — the colors part root.",
+      "properties": {
+        "categories": {
+          "description": "Gallery categories (dgm:catLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramCategoryOptions"
+          },
+          "type": "array"
+        },
+        "descriptions": {
+          "description": "Localized descriptions (dgm:desc*).",
+          "items": {
+            "$ref": "#/definitions/DiagramDescriptionOptions"
+          },
+          "type": "array"
+        },
+        "ext": {
+          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "type": "string"
+        },
+        "minVer": {
+          "description": "Minimum Office version (dgm:colorsDef",
+          "type": "string"
+        },
+        "styleLabels": {
+          "description": "Color slots, at least one in a real part (dgm:styleLbl*).",
+          "items": {
+            "$ref": "#/definitions/ColorStyleLabelOptions"
+          },
+          "type": "array"
+        },
+        "titles": {
+          "description": "Localized titles (dgm:title*).",
+          "items": {
+            "$ref": "#/definitions/DiagramNameOptions"
+          },
+          "type": "array"
+        },
+        "uniqueId": {
+          "description": "Color-transform identity URI (dgm:colorsDef",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ColorListOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "colors": {
+          "description": "Colors (EG_ColorChoice items)",
+          "items": {
+            "$ref": "#/definitions/SolidFillOptions"
+          },
+          "type": "array"
+        },
+        "hueDir": {
+          "$ref": "#/definitions/HueDirection",
+          "description": "Hue direction (default: cw)"
+        },
+        "meth": {
+          "$ref": "#/definitions/ColorMethod",
+          "description": "Color method (default: span)"
+        }
+      },
       "type": "object"
     },
     "ColorMappingOverrideOptions": {
@@ -2520,6 +2693,10 @@
           "type": "object"
         }
       ]
+    },
+    "ColorMethod": {
+      "enum": ["span", "cycle", "repeat"],
+      "type": "string"
     },
     "ColorReplaceEffectOptions": {
       "additionalProperties": false,
@@ -2596,6 +2773,35 @@
           "type": "string"
         }
       },
+      "type": "object"
+    },
+    "ColorStyleLabelOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "effectColorList": {
+          "$ref": "#/definitions/ColorListOptions"
+        },
+        "fillColorList": {
+          "$ref": "#/definitions/ColorListOptions"
+        },
+        "lineColorList": {
+          "$ref": "#/definitions/ColorListOptions"
+        },
+        "name": {
+          "description": "Label name referenced by dgm:layoutNode",
+          "type": "string"
+        },
+        "textEffectColorList": {
+          "$ref": "#/definitions/ColorListOptions"
+        },
+        "textFillColorList": {
+          "$ref": "#/definitions/ColorListOptions"
+        },
+        "textLineColorList": {
+          "$ref": "#/definitions/ColorListOptions"
+        }
+      },
+      "required": ["name"],
       "type": "object"
     },
     "ColorTransformOptions": {
@@ -2722,6 +2928,16 @@
       "enum": ["single", "double", "thickThin", "thinThick", "triple"],
       "type": "string"
     },
+    "ConditionFunction": {
+      "description": "ST_FunctionType (dgm:if",
+      "enum": ["cnt", "pos", "revPos", "posEven", "posOdd", "var", "depth", "maxDepth"],
+      "type": "string"
+    },
+    "ConditionOperator": {
+      "description": "ST_FunctionOperator (dgm:if",
+      "enum": ["equ", "neq", "gt", "lt", "gte", "lte"],
+      "type": "string"
+    },
     "ConnectionSite": {
       "additionalProperties": false,
       "description": "Connection site (CT_ConnectionSite).\n\nDefines a point on the shape boundary where connectors can attach.",
@@ -2821,6 +3037,138 @@
         }
       },
       "type": "object"
+    },
+    "ConstraintOperator": {
+      "description": "ST_BoolOperator (dgm:constr",
+      "enum": ["none", "equ", "gte", "lte"],
+      "type": "string"
+    },
+    "ConstraintOptions": {
+      "additionalProperties": false,
+      "description": "dgm:constr (CT_Constraint).",
+      "properties": {
+        "factor": {
+          "description": "Factor applied to the reference (dgm:constr",
+          "type": "number"
+        },
+        "for": {
+          "$ref": "#/definitions/ConstraintRelationship",
+          "description": "Related point the constraint applies to (dgm:constr"
+        },
+        "forName": {
+          "description": "Layout-node name the constraint applies to (dgm:constr",
+          "type": "string"
+        },
+        "operation": {
+          "$ref": "#/definitions/ConstraintOperator",
+          "description": "How the reference combines with val (dgm:constr"
+        },
+        "pointType": {
+          "description": "Point kinds the constraint applies to (dgm:constr",
+          "type": "string"
+        },
+        "referenceFor": {
+          "$ref": "#/definitions/ConstraintRelationship",
+          "description": "Relationship of the referenced point (dgm:constr"
+        },
+        "referenceForName": {
+          "description": "Layout-node name of the referenced point (dgm:constr",
+          "type": "string"
+        },
+        "referencePointType": {
+          "description": "Point kinds of the referenced point (dgm:constr",
+          "type": "string"
+        },
+        "referenceType": {
+          "$ref": "#/definitions/ConstraintType",
+          "description": "Referenced dimension (dgm:constr"
+        },
+        "type": {
+          "$ref": "#/definitions/ConstraintType",
+          "description": "Constrained dimension (dgm:constr"
+        },
+        "value": {
+          "description": "Absolute value (dgm:constr",
+          "type": "number"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
+    "ConstraintRelationship": {
+      "description": "ST_ConstraintRelationship (dgm:constr",
+      "enum": ["self", "ch", "des"],
+      "type": "string"
+    },
+    "ConstraintType": {
+      "description": "ST_ConstraintType (dgm:constr/@type/@refType, dgm:rule",
+      "enum": [
+        "none",
+        "alignOff",
+        "begMarg",
+        "bendDist",
+        "begPad",
+        "b",
+        "bMarg",
+        "bOff",
+        "ctrX",
+        "ctrXOff",
+        "ctrY",
+        "ctrYOff",
+        "connDist",
+        "diam",
+        "endMarg",
+        "endPad",
+        "h",
+        "hArH",
+        "hOff",
+        "l",
+        "lMarg",
+        "lOff",
+        "r",
+        "rMarg",
+        "rOff",
+        "primFontSz",
+        "pyraAcctRatio",
+        "secFontSz",
+        "sibSp",
+        "secSibSp",
+        "sp",
+        "stemThick",
+        "t",
+        "tMarg",
+        "tOff",
+        "userA",
+        "userB",
+        "userC",
+        "userD",
+        "userE",
+        "userF",
+        "userG",
+        "userH",
+        "userI",
+        "userJ",
+        "userK",
+        "userL",
+        "userM",
+        "userN",
+        "userO",
+        "userP",
+        "userQ",
+        "userR",
+        "userS",
+        "userT",
+        "userU",
+        "userV",
+        "userW",
+        "userX",
+        "userY",
+        "userZ",
+        "w",
+        "wArH",
+        "wOff"
+      ],
+      "type": "string"
     },
     "ControlOptions": {
       "additionalProperties": false,
@@ -3074,6 +3422,25 @@
       },
       "type": "object"
     },
+    "DataModelOptions": {
+      "additionalProperties": false,
+      "description": "dgm:dataModel — structured point/connection model (CT_DataModel).",
+      "properties": {
+        "connections": {
+          "items": {
+            "$ref": "#/definitions/ModelConnectionOptions"
+          },
+          "type": "array"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/definitions/ModelPointOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "DataPointOptions": {
       "additionalProperties": false,
       "description": "Per-point override (CT_DPt). Field order follows the XSD content model.",
@@ -3176,6 +3543,81 @@
         }
       },
       "required": ["lineReference", "fillReference", "effectReference", "fontReference"],
+      "type": "object"
+    },
+    "DiagramCategoryOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "pri": {
+          "type": "number"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "pri"],
+      "type": "object"
+    },
+    "DiagramDescriptionOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "lang": {
+          "type": "string"
+        },
+        "val": {
+          "type": "string"
+        }
+      },
+      "required": ["val"],
+      "type": "object"
+    },
+    "DiagramDirection": {
+      "description": "ST_Direction (dgm:dir",
+      "enum": ["norm", "rev"],
+      "type": "string"
+    },
+    "DiagramIterationOptions": {
+      "additionalProperties": false,
+      "description": "AG_IteratorAttributes — the traversal selector shared by presOf, forEach, and when-branches. List-typed XSD attributes (axis, ptType, hideLastTrans, st, cnt, step) surface as strings; single values read fine too.",
+      "properties": {
+        "axis": {
+          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "type": "string"
+        },
+        "count": {
+          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "type": "string"
+        },
+        "hideLastTransition": {
+          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "type": "string"
+        },
+        "pointType": {
+          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "type": "string"
+        },
+        "start": {
+          "description": "Start index (dgm:@st, ST_Ints).",
+          "type": "string"
+        },
+        "step": {
+          "description": "Index step (dgm:@step, ST_Ints).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "DiagramNameOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "lang": {
+          "type": "string"
+        },
+        "val": {
+          "type": "string"
+        }
+      },
+      "required": ["val"],
       "type": "object"
     },
     "DisplayBlanksAs": {
@@ -3945,6 +4387,50 @@
       },
       "type": "object"
     },
+    "ForEachOptions": {
+      "additionalProperties": false,
+      "description": "dgm:forEach (CT_ForEach) — apply children to each selected point.",
+      "properties": {
+        "axis": {
+          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "type": "string"
+        },
+        "children": {
+          "items": {
+            "$ref": "#/definitions/LayoutNodeChild"
+          },
+          "type": "array"
+        },
+        "count": {
+          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "type": "string"
+        },
+        "hideLastTransition": {
+          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "pointType": {
+          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "type": "string"
+        },
+        "reference": {
+          "description": "Reference to a named layout node instead of inline children (dgm:@ref).",
+          "type": "string"
+        },
+        "start": {
+          "description": "Start index (dgm:@st, ST_Ints).",
+          "type": "string"
+        },
+        "step": {
+          "description": "Index step (dgm:@step, ST_Ints).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "FormatSchemeOptions": {
       "additionalProperties": false,
       "description": "Format scheme / style matrix — a:fmtScheme (CT_StyleMatrix).",
@@ -4379,6 +4865,10 @@
       "required": ["name", "count"],
       "type": "object"
     },
+    "HierBranch": {
+      "enum": ["l", "r", "hang", "std", "init"],
+      "type": "string"
+    },
     "HslColorOptions": {
       "additionalProperties": false,
       "description": "Options for HSL color.",
@@ -4420,6 +4910,10 @@
         }
       },
       "type": "object"
+    },
+    "HueDirection": {
+      "enum": ["cw", "ccw"],
+      "type": "string"
     },
     "InnerShadowEffectOptions": {
       "additionalProperties": false,
@@ -4564,9 +5058,213 @@
       },
       "type": "object"
     },
+    "LayoutDefinitionOptions": {
+      "additionalProperties": false,
+      "description": "dgm:layoutDef (CT_DiagramDefinition) — the layoutDef part root.",
+      "properties": {
+        "categories": {
+          "description": "Gallery categories (dgm:catLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramCategoryOptions"
+          },
+          "type": "array"
+        },
+        "colorData": {
+          "$ref": "#/definitions/SampleDataOptions",
+          "description": "Sample data colored for the colors preview (dgm:clrData)."
+        },
+        "defaultStyle": {
+          "description": "Default quick-style label (dgm:layoutDef",
+          "type": "string"
+        },
+        "descriptions": {
+          "description": "Localized descriptions (dgm:desc*).",
+          "items": {
+            "$ref": "#/definitions/DiagramDescriptionOptions"
+          },
+          "type": "array"
+        },
+        "ext": {
+          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "type": "string"
+        },
+        "layoutNode": {
+          "$ref": "#/definitions/LayoutNodeOptions",
+          "description": "The layout tree (dgm:layoutNode, required)."
+        },
+        "minVer": {
+          "description": "Minimum Office version (dgm:layoutDef",
+          "type": "string"
+        },
+        "sampleData": {
+          "$ref": "#/definitions/SampleDataOptions",
+          "description": "Sample data shown in the picker (dgm:sampData)."
+        },
+        "styleData": {
+          "$ref": "#/definitions/SampleDataOptions",
+          "description": "Sample data styled for the quick style preview (dgm:styleData)."
+        },
+        "titles": {
+          "description": "Localized titles (dgm:title*).",
+          "items": {
+            "$ref": "#/definitions/DiagramNameOptions"
+          },
+          "type": "array"
+        },
+        "uniqueId": {
+          "description": "Layout identity URI (dgm:layoutDef",
+          "type": "string"
+        }
+      },
+      "required": ["layoutNode"],
+      "type": "object"
+    },
     "LayoutMode": {
       "enum": ["edge", "factor"],
       "type": "string"
+    },
+    "LayoutNodeChild": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "algorithm": {
+              "$ref": "#/definitions/AlgorithmOptions"
+            }
+          },
+          "required": ["algorithm"],
+          "title": "algorithm",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "shape": {
+              "$ref": "#/definitions/LayoutShapeOptions"
+            }
+          },
+          "required": ["shape"],
+          "title": "shape",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "presentationOf": {
+              "$ref": "#/definitions/DiagramIterationOptions"
+            }
+          },
+          "required": ["presentationOf"],
+          "title": "presentationOf",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "constraints": {
+              "items": {
+                "$ref": "#/definitions/ConstraintOptions"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["constraints"],
+          "title": "constraints",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "rules": {
+              "items": {
+                "$ref": "#/definitions/LayoutRuleOptions"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["rules"],
+          "title": "rules",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "variables": {
+              "$ref": "#/definitions/VariableListOptions"
+            }
+          },
+          "required": ["variables"],
+          "title": "variables",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "forEach": {
+              "$ref": "#/definitions/ForEachOptions"
+            }
+          },
+          "required": ["forEach"],
+          "title": "forEach",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "layoutNode": {
+              "$ref": "#/definitions/LayoutNodeOptions"
+            }
+          },
+          "required": ["layoutNode"],
+          "title": "layoutNode",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "choose": {
+              "$ref": "#/definitions/ChooseOptions"
+            }
+          },
+          "required": ["choose"],
+          "title": "choose",
+          "type": "object"
+        }
+      ],
+      "description": "The unordered, repeatable choice content of dgm:layoutNode / dgm:forEach / dgm:if / dgm:else, as single-key objects so both order and repetition round-trip (same pattern as paragraph children in the format packages)."
+    },
+    "LayoutNodeOptions": {
+      "additionalProperties": false,
+      "description": "dgm:layoutNode (CT_LayoutNode) — one node of the layout tree.",
+      "properties": {
+        "childOrder": {
+          "$ref": "#/definitions/ChildOrder",
+          "description": "Child ordering: bottom-first \"b\" or top-first \"t\" (dgm:@chOrder)."
+        },
+        "children": {
+          "items": {
+            "$ref": "#/definitions/LayoutNodeChild"
+          },
+          "type": "array"
+        },
+        "ext": {
+          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "type": "string"
+        },
+        "moveWith": {
+          "description": "Move with another named layout node (dgm:@moveWith).",
+          "type": "string"
+        },
+        "name": {
+          "description": "Unique name referenced by constraints and moveWith (dgm:@name).",
+          "type": "string"
+        },
+        "styleLabel": {
+          "description": "Formatting slot from styleDef/colorsDef (dgm:@styleLbl).",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "LayoutPlaceholderOptions": {
       "additionalProperties": false,
@@ -4636,6 +5334,81 @@
               "type": "boolean"
             }
           ]
+        }
+      },
+      "type": "object"
+    },
+    "LayoutRuleOptions": {
+      "additionalProperties": false,
+      "description": "dgm:rule (CT_NumericRule).",
+      "properties": {
+        "factor": {
+          "description": "Multiplied factor (dgm:rule",
+          "type": "number"
+        },
+        "for": {
+          "$ref": "#/definitions/ConstraintRelationship"
+        },
+        "forName": {
+          "type": "string"
+        },
+        "maximum": {
+          "description": "Upper bound (dgm:rule",
+          "type": "number"
+        },
+        "pointType": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ConstraintType",
+          "description": "Rule dimension (dgm:rule"
+        },
+        "value": {
+          "description": "Preferred value (dgm:rule",
+          "type": "number"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
+    "LayoutShapeOptions": {
+      "additionalProperties": false,
+      "description": "dgm:shape (CT_Shape) — the geometry template a layout node renders as.",
+      "properties": {
+        "adjustments": {
+          "description": "Geometry adjustment values (dgm:adjLst).",
+          "items": {
+            "$ref": "#/definitions/AdjustOptions"
+          },
+          "type": "array"
+        },
+        "blip": {
+          "description": "Preview picture relationship id (dgm:shape",
+          "type": "string"
+        },
+        "blipPlaceholder": {
+          "description": "Use the picture placeholder (dgm:shape",
+          "type": "boolean"
+        },
+        "hideGeometry": {
+          "description": "Hide the shape geometry, keep the text (dgm:shape",
+          "type": "boolean"
+        },
+        "lockTextEntry": {
+          "description": "Lock text entry (dgm:shape",
+          "type": "boolean"
+        },
+        "rotation": {
+          "description": "Shape rotation as a raw double (dgm:shape",
+          "type": "number"
+        },
+        "type": {
+          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape",
+          "type": "string"
+        },
+        "zOrderOffset": {
+          "description": "Z-order offset (dgm:shape",
+          "type": "number"
         }
       },
       "type": "object"
@@ -5283,6 +6056,69 @@
       "enum": ["playAudio", "playVideo", "play"],
       "type": "string"
     },
+    "ModelConnectionOptions": {
+      "additionalProperties": false,
+      "description": "dgm:cxn — one data-model connection (CT_Cxn).",
+      "properties": {
+        "destinationId": {
+          "type": "string"
+        },
+        "destinationOrder": {
+          "type": "number"
+        },
+        "modelId": {
+          "type": "string"
+        },
+        "parentTransitionId": {
+          "type": "string"
+        },
+        "presentationId": {
+          "type": "string"
+        },
+        "siblingTransitionId": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "sourceOrder": {
+          "type": "number"
+        },
+        "type": {
+          "description": "Connection kind (dgm:cxn",
+          "type": "string"
+        }
+      },
+      "required": ["modelId", "sourceId", "destinationId"],
+      "type": "object"
+    },
+    "ModelPointOptions": {
+      "additionalProperties": false,
+      "description": "dgm:pt — one data-model point (dgm:pt, CT_Pt).",
+      "properties": {
+        "connectionId": {
+          "description": "Transition point owning connection (dgm:pt",
+          "type": "string"
+        },
+        "modelId": {
+          "description": "Point identity (dgm:pt",
+          "type": "string"
+        },
+        "propertySet": {
+          "$ref": "#/definitions/PointPropertySetOptions"
+        },
+        "text": {
+          "description": "Point text (dgm:t).",
+          "type": "string"
+        },
+        "type": {
+          "description": "Point kind (dgm:pt",
+          "type": "string"
+        }
+      },
+      "required": ["modelId"],
+      "type": "object"
+    },
     "ModifyVerifierOptions": {
       "additionalProperties": false,
       "properties": {
@@ -5675,6 +6511,22 @@
     "OnOffStyleType": {
       "enum": ["on", "off", "def"],
       "type": "string"
+    },
+    "OtherwiseOptions": {
+      "additionalProperties": false,
+      "description": "dgm:else (CT_Otherwise).",
+      "properties": {
+        "children": {
+          "items": {
+            "$ref": "#/definitions/LayoutNodeChild"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "OuterShadowEffectOptions": {
       "additionalProperties": false,
@@ -6456,6 +7308,114 @@
       "required": ["x", "y", "z"],
       "type": "object"
     },
+    "PointPropertySetOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "coherent3DOffset": {
+          "type": "boolean"
+        },
+        "colorStyleCategoryId": {
+          "type": "string"
+        },
+        "colorStyleTypeId": {
+          "type": "string"
+        },
+        "customAngle": {
+          "type": "number"
+        },
+        "customFlipHorizontal": {
+          "type": "boolean"
+        },
+        "customFlipVertical": {
+          "type": "boolean"
+        },
+        "customLinearFactorNeighborX": {
+          "type": "number"
+        },
+        "customLinearFactorNeighborY": {
+          "type": "number"
+        },
+        "customLinearFactorX": {
+          "type": "number"
+        },
+        "customLinearFactorY": {
+          "type": "number"
+        },
+        "customRadialScaleIncrement": {
+          "type": "number"
+        },
+        "customRadialScaleRadius": {
+          "type": "number"
+        },
+        "customScaleX": {
+          "type": "number"
+        },
+        "customScaleY": {
+          "type": "number"
+        },
+        "customSizeX": {
+          "type": "number"
+        },
+        "customSizeY": {
+          "type": "number"
+        },
+        "customText": {
+          "type": "boolean"
+        },
+        "hideGeometry": {
+          "type": "boolean"
+        },
+        "hideLastTransition": {
+          "type": "boolean"
+        },
+        "layoutCategoryId": {
+          "type": "string"
+        },
+        "layoutTypeId": {
+          "type": "string"
+        },
+        "lockTextEntry": {
+          "type": "boolean"
+        },
+        "moveWith": {
+          "type": "string"
+        },
+        "placeholder": {
+          "type": "boolean"
+        },
+        "placeholderText": {
+          "type": "string"
+        },
+        "presentationAssociationId": {
+          "type": "string"
+        },
+        "presentationName": {
+          "type": "string"
+        },
+        "presentationStyleCount": {
+          "type": "number"
+        },
+        "presentationStyleIndex": {
+          "type": "number"
+        },
+        "presentationStyleLabel": {
+          "type": "string"
+        },
+        "quickStyleCategoryId": {
+          "type": "string"
+        },
+        "quickStyleTypeId": {
+          "type": "string"
+        },
+        "useDefault": {
+          "type": "boolean"
+        },
+        "zOrderOffset": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "PolarAdjustHandle": {
       "additionalProperties": false,
       "description": "Polar adjust handle (CT_PolarAdjustHandle).\n\nAllows the user to drag a handle in radius/angle directions.",
@@ -7182,6 +8142,11 @@
       },
       "type": "object"
     },
+    "ResizeHandles": {
+      "description": "ST_ResizeHandlesStr (dgm:resizeHandles",
+      "enum": ["exact", "rel"],
+      "type": "string"
+    },
     "RgbColorOptions": {
       "additionalProperties": false,
       "description": "Options for RGB color.",
@@ -7491,6 +8456,20 @@
             }
           ],
           "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
+        }
+      },
+      "type": "object"
+    },
+    "SampleDataOptions": {
+      "additionalProperties": false,
+      "description": "dgm:sampData / dgm:styleData / dgm:clrData (CT_SampleData).",
+      "properties": {
+        "dataModel": {
+          "$ref": "#/definitions/DataModelOptions"
+        },
+        "useDefault": {
+          "description": "Use the data model of the containing layout as sample (dgm:@useDef).",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -8489,8 +9468,15 @@
       "description": "Options for a SmartArt diagram (p:graphicFrame).\n\nThe single source of truth for both the public slide-child entry and the descriptor — extends  {@link  NonVisualDrawingPropertiesOptions }  so the drawing's cNvPr (name/description/title/hidden) is authored uniformly with every other drawing and survives a cross-format copy. `id`/`smartArtKey` are auto-generated by the descriptor when omitted.",
       "properties": {
         "color": {
-          "description": "Color transform ID (e.g. \"accent1_2\", \"colorful1\")",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/ColorDefinitionOptions"
+            }
+          ],
+          "description": "Built-in color transform ID (\"accent1_2\") or a custom color definition."
         },
         "description": {
           "description": "XSD",
@@ -8511,8 +9497,15 @@
           "type": "number"
         },
         "layout": {
-          "description": "Layout ID (e.g. \"default\", \"process1\", \"hierarchy1\")",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/LayoutDefinitionOptions"
+            }
+          ],
+          "description": "Built-in layout ID (\"default\", \"process1\") or a custom layout definition."
         },
         "name": {
           "description": "XSD",
@@ -8530,8 +9523,15 @@
           "type": "string"
         },
         "style": {
-          "description": "Quick style ID (e.g. \"simple1\", \"moderate1\")",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/StyleDefinitionOptions"
+            }
+          ],
+          "description": "Built-in quick style ID (\"simple1\") or a custom style definition."
         },
         "title": {
           "description": "XSD",
@@ -8658,6 +9658,89 @@
         }
       },
       "required": ["name", "val"],
+      "type": "object"
+    },
+    "StyleDefinitionOptions": {
+      "additionalProperties": false,
+      "description": "dgm:styleDef (CT_StyleDefinition) — the quickStyle part root.",
+      "properties": {
+        "categories": {
+          "description": "Gallery categories (dgm:catLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramCategoryOptions"
+          },
+          "type": "array"
+        },
+        "descriptions": {
+          "description": "Localized descriptions (dgm:desc*).",
+          "items": {
+            "$ref": "#/definitions/DiagramDescriptionOptions"
+          },
+          "type": "array"
+        },
+        "ext": {
+          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "type": "string"
+        },
+        "minVer": {
+          "description": "Minimum Office version (dgm:styleDef",
+          "type": "string"
+        },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions",
+          "description": "Shared 3D scene for the whole style (dgm:scene3d)."
+        },
+        "styleLabels": {
+          "description": "Style slots, at least one in a real part (dgm:styleLbl*).",
+          "items": {
+            "$ref": "#/definitions/StyleLabelOptions"
+          },
+          "type": "array"
+        },
+        "titles": {
+          "description": "Localized titles (dgm:title*).",
+          "items": {
+            "$ref": "#/definitions/DiagramNameOptions"
+          },
+          "type": "array"
+        },
+        "uniqueId": {
+          "description": "Style identity URI (dgm:styleDef",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "StyleLabelOptions": {
+      "additionalProperties": false,
+      "description": "dgm:styleLbl (CT_StyleLabel) — formatting for one style slot.",
+      "properties": {
+        "ext": {
+          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Slot name referenced by dgm:layoutNode",
+          "type": "string"
+        },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions",
+          "description": "Shared 3D scene for this label (dgm:scene3d)."
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions",
+          "description": "3D shape properties (dgm:sp3d)."
+        },
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions",
+          "description": "Theme style-matrix references (dgm:style, a:CT_ShapeStyle)."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextProperties3DOptions",
+          "description": "3D text properties (dgm:txPr)."
+        }
+      },
+      "required": ["name"],
       "type": "object"
     },
     "StyleMatrixReferenceOptions": {
@@ -9576,6 +10659,21 @@
       },
       "type": "object"
     },
+    "TextProperties3DOptions": {
+      "additionalProperties": false,
+      "description": "dgm:txPr (CT_TextProps) — a choice of 3D text treatments (EG_Text3D).",
+      "properties": {
+        "flatText": {
+          "description": "Flatten text to a plane at this z coordinate, EMU (a:flatTx",
+          "type": "number"
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions",
+          "description": "3D shape properties for the label text (a:sp3d)."
+        }
+      },
+      "type": "object"
+    },
     "TextTabAlignment": {
       "enum": ["l", "ctr", "r", "dec"],
       "type": "string"
@@ -9974,6 +11072,49 @@
       "pattern": "^-?(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi|px)$",
       "type": "string"
     },
+    "VariableListOptions": {
+      "additionalProperties": false,
+      "description": "dgm:varLst (CT_LayoutVariablePropertySet).",
+      "properties": {
+        "animateLevel": {
+          "$ref": "#/definitions/AnimationLevel",
+          "description": "Animate by level or from center (dgm:animLvl"
+        },
+        "animateOne": {
+          "$ref": "#/definitions/AnimateOneByOne",
+          "description": "Animate siblings one by one or as a branch (dgm:animOne"
+        },
+        "bulletEnabled": {
+          "description": "Bullets enabled on text nodes (dgm:bulletEnabled",
+          "type": "boolean"
+        },
+        "childMaximum": {
+          "description": "Maximum children per parent (dgm:chMax",
+          "type": "number"
+        },
+        "childPreferred": {
+          "description": "Preferred children per parent (dgm:chPref",
+          "type": "number"
+        },
+        "direction": {
+          "$ref": "#/definitions/DiagramDirection",
+          "description": "Reading direction (dgm:dir"
+        },
+        "hierarchyBranchStyle": {
+          "$ref": "#/definitions/HierBranch",
+          "description": "Branch style for hierarchy layouts (dgm:hierBranch"
+        },
+        "organizationChart": {
+          "description": "This is an organization chart (dgm:orgChart",
+          "type": "boolean"
+        },
+        "resizeHandles": {
+          "$ref": "#/definitions/ResizeHandles",
+          "description": "Resize-handle behavior (dgm:resizeHandles"
+        }
+      },
+      "type": "object"
+    },
     "VariantValue": {
       "anyOf": [
         {
@@ -10252,6 +11393,63 @@
           "type": "boolean"
         }
       },
+      "type": "object"
+    },
+    "WhenOptions": {
+      "additionalProperties": false,
+      "description": "One alternative inside a choose — dgm:if (CT_When); `if` is a reserved word.",
+      "properties": {
+        "argument": {
+          "description": "Function argument, usually a variable name (dgm:if",
+          "type": "string"
+        },
+        "axis": {
+          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "type": "string"
+        },
+        "children": {
+          "items": {
+            "$ref": "#/definitions/LayoutNodeChild"
+          },
+          "type": "array"
+        },
+        "count": {
+          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "type": "string"
+        },
+        "function": {
+          "$ref": "#/definitions/ConditionFunction",
+          "description": "Selection function (dgm:if"
+        },
+        "hideLastTransition": {
+          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/definitions/ConditionOperator",
+          "description": "Comparison operator (dgm:if"
+        },
+        "pointType": {
+          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "type": "string"
+        },
+        "start": {
+          "description": "Start index (dgm:@st, ST_Ints).",
+          "type": "string"
+        },
+        "step": {
+          "description": "Index step (dgm:@step, ST_Ints).",
+          "type": "string"
+        },
+        "value": {
+          "description": "Comparison value (dgm:if",
+          "type": "string"
+        }
+      },
+      "required": ["function", "operator", "value"],
       "type": "object"
     },
     "XYAdjustHandle": {

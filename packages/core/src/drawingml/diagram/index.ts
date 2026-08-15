@@ -63,13 +63,15 @@ export {
   createTextFillColorList,
   createTextLineColorList,
   createTextEffectColorList,
+  createColorList,
+  parseColorList,
   createStyleLabel,
   FontCollectionIndex,
 } from "./diagram-style";
 export type {
   DiagramStyleOptions,
   ColorListOptions,
-  DiagramStyleLabelOptions,
+  ColorStyleLabelOptions,
   StyleMatrixIndex,
   ColorMethod,
   HueDirection,

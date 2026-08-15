@@ -26,6 +26,14 @@ import type {
   SourceRectangleOptions,
 } from "@office-open/core/drawingml";
 import { parseNonVisualContentPartProperties } from "@office-open/core/drawingml";
+import {
+  COLOR_CATEGORIES,
+  LAYOUT_CATEGORIES,
+  STYLE_CATEGORIES,
+  parseColorDefinition,
+  parseLayoutDefinition,
+  parseStyleDefinition,
+} from "@office-open/core/smartart";
 import { attr, attrBool, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
@@ -60,7 +68,7 @@ import { parseBodyProperties } from "./inline/graphic/graphic-data/wps/body-prop
 import type { NonVisualShapePropertiesOptions } from "./inline/graphic/graphic-data/wps/non-visual-shape-properties";
 import type {
   ShapeStyleOptions,
-  StyleMatrixReferenceOptions,
+  ShapeStyleReferenceOptions,
   ShapeCoreOptions,
 } from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingType } from "./text-wrap";
@@ -513,13 +521,13 @@ function readShapeFill(parent: Element, ctx: DocxReadContext) {
  * Read a single style-matrix reference (a:lnRef/a:fillRef/a:effectRef/a:fontRef):
  * the `idx` attribute plus an optional EG_ColorChoice color override.
  */
-function parseStyleRef(el: Element, ctx: DocxReadContext): StyleMatrixReferenceOptions | undefined {
+function parseStyleRef(el: Element, ctx: DocxReadContext): ShapeStyleReferenceOptions | undefined {
   const idx = attr(el, "idx");
   if (idx === undefined) return undefined;
-  const result: StyleMatrixReferenceOptions = { idx };
+  const result: ShapeStyleReferenceOptions = { idx };
   const color = parseColorChoice(el, ctx);
   if (color && Object.keys(color).length > 0) result.color = color;
-  return result as StyleMatrixReferenceOptions;
+  return result as ShapeStyleReferenceOptions;
 }
 
 /**
@@ -1274,6 +1282,27 @@ function parseSmartArtDrawing(
   const opts = parseSmartArtDataXml(dataEl);
   if (!opts) return undefined;
 
+  // Custom definitions come back structured; built-in stubs fold to their id
+  // string so round-tripping a built-in diagram keeps the compact form.
+  const layoutEl = readDiagramPart(ctx, relIds, "r:lo", ctx.docx.partRefs.diagramLayout);
+  if (layoutEl) {
+    const layout = parseLayoutDefinition(layoutEl);
+    const id = layout.uniqueId?.split("/").pop();
+    opts.layout = id && id in LAYOUT_CATEGORIES ? id : layout;
+  }
+  const styleEl = readDiagramPart(ctx, relIds, "r:qs", ctx.docx.partRefs.diagramQuickStyle);
+  if (styleEl) {
+    const style = parseStyleDefinition(styleEl);
+    const id = style.uniqueId?.split("/").pop();
+    opts.style = id && id in STYLE_CATEGORIES ? id : style;
+  }
+  const colorEl = readDiagramPart(ctx, relIds, "r:cs", ctx.docx.partRefs.diagramColors);
+  if (colorEl) {
+    const color = parseColorDefinition(colorEl);
+    const id = color.uniqueId?.split("/").pop();
+    opts.color = id && id in COLOR_CATEGORIES ? id : color;
+  }
+
   const ext = getDrawingExtent(el);
   if (ext.width !== undefined || ext.height !== undefined) {
     (opts as Record<string, unknown>).transformation = {
@@ -1282,6 +1311,19 @@ function parseSmartArtDrawing(
   }
 
   return { smartArt: opts as unknown as SmartArtOptions };
+}
+
+/** Resolve a dgm:relIds attribute through a part-kind map to its element. */
+function readDiagramPart(
+  ctx: DocxReadContext,
+  relIds: Element,
+  attrName: "r:lo" | "r:qs" | "r:cs",
+  refs: Map<string, string>,
+): Element | undefined {
+  const rId = attr(relIds, attrName);
+  if (!rId) return undefined;
+  const path = lookupRId(refs, rId);
+  return path ? ctx.docx.doc.get(path) : undefined;
 }
 
 /**

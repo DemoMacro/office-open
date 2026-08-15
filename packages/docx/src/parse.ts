@@ -52,6 +52,12 @@ export interface DocxPartRefs {
   charts: Map<string, string>;
   /** word/diagrams/dataN.xml keyed by rId */
   diagramData: Map<string, string>;
+  /** word/diagrams/layoutN.xml keyed by rId */
+  diagramLayout: Map<string, string>;
+  /** word/diagrams/quickStyleN.xml keyed by rId */
+  diagramQuickStyle: Map<string, string>;
+  /** word/diagrams/colorsN.xml keyed by rId */
+  diagramColors: Map<string, string>;
   /** word/media/* keyed by rId (from document.xml.rels) */
   media: Map<string, string>;
   /**
@@ -137,6 +143,9 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     hyperlinks: new Map(),
     charts: new Map(),
     diagramData: new Map(),
+    diagramLayout: new Map(),
+    diagramQuickStyle: new Map(),
+    diagramColors: new Map(),
     media: new Map(),
     partMedia: new Map(),
     afChunks: new Map(),
@@ -169,6 +178,12 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       refs.charts.set(id, path);
     } else if (type.includes("/diagramData")) {
       refs.diagramData.set(id, path);
+    } else if (type.includes("/diagramLayout")) {
+      refs.diagramLayout.set(id, path);
+    } else if (type.includes("/diagramQuickStyle")) {
+      refs.diagramQuickStyle.set(id, path);
+    } else if (type.includes("/diagramColors")) {
+      refs.diagramColors.set(id, path);
     } else if (type.includes("/image") || type.includes("/media")) {
       refs.media.set(id, path);
     } else if (type.includes("/aFChunk")) {

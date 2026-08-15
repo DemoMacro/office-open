@@ -14,7 +14,17 @@ import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import { createDataModel, type TreeNode } from "@office-open/core/smartart";
+import {
+  COLOR_CATEGORIES,
+  LAYOUT_CATEGORIES,
+  STYLE_CATEGORIES,
+  createDataModel,
+  definitionId,
+  parseColorDefinition,
+  parseLayoutDefinition,
+  parseStyleDefinition,
+  type TreeNode,
+} from "@office-open/core/smartart";
 import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -39,9 +49,13 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     const name = opts.name ?? `Diagram ${id}`;
     const saKey = opts.smartArtKey ?? pptxCtx.nextSmartArtKey();
 
-    const layoutId = opts.layout ?? "default";
-    const styleId = opts.style ?? "simple1";
-    const colorId = opts.color ?? "accent1_2";
+    // Custom definitions embed their own id in the doc point's type ids.
+    const layoutId =
+      typeof opts.layout === "object" ? definitionId(opts.layout) : (opts.layout ?? "default");
+    const styleId =
+      typeof opts.style === "object" ? definitionId(opts.style) : (opts.style ?? "simple1");
+    const colorId =
+      typeof opts.color === "object" ? definitionId(opts.color) : (opts.color ?? "accent1_2");
 
     // Register SmartArt data with context
     if (opts.nodes && opts.nodes.length > 0) {
@@ -52,9 +66,9 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
       pptxCtx.addSmartArt(saKey, {
         key: saKey,
         dataModelXml,
-        layout: layoutId,
-        style: styleId,
-        color: colorId,
+        layout: opts.layout ?? "default",
+        style: opts.style ?? "simple1",
+        color: opts.color ?? "accent1_2",
       });
     }
 
@@ -100,7 +114,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
       Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
     }
 
-    // SmartArt data via dgm:relIds → r:dm
+    // SmartArt data via dgm:relIds → r:dm, plus the layout/style/colors parts
     const relIds = findFirst(el, "dgm:relIds");
     if (relIds) {
       const rId = attr(relIds, "r:dm");
@@ -113,11 +127,47 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
           }
         }
       }
+
+      // Custom definitions come back structured; built-in stubs fold to their
+      // id string so round-tripping a built-in diagram keeps the compact form.
+      const layoutEl = readRelatedPart(_ctx, relIds, "r:lo");
+      if (layoutEl) {
+        const layout = parseLayoutDefinition(layoutEl);
+        const id = layout.uniqueId?.split("/").pop();
+        result.layout = id && id in LAYOUT_CATEGORIES ? id : layout;
+      }
+      const styleEl = readRelatedPart(_ctx, relIds, "r:qs");
+      if (styleEl) {
+        const style = parseStyleDefinition(styleEl);
+        const id = style.uniqueId?.split("/").pop();
+        result.style = id && id in STYLE_CATEGORIES ? id : style;
+      }
+      const colorEl = readRelatedPart(_ctx, relIds, "r:cs");
+      if (colorEl) {
+        const color = parseColorDefinition(colorEl);
+        const id = color.uniqueId?.split("/").pop();
+        result.color = id && id in COLOR_CATEGORIES ? id : color;
+      }
     }
 
     return result as SmartArtOptions;
   },
 };
+
+/** Resolve a dgm:relIds relationship attribute to its parsed part element. */
+function readRelatedPart(
+  ctx: {
+    resolveRelationship(rId: string): string | undefined;
+    getPart(path: string): Element | undefined;
+  },
+  relIds: Element,
+  attrName: "r:lo" | "r:qs" | "r:cs",
+): Element | undefined {
+  const rId = attr(relIds, attrName);
+  if (!rId) return undefined;
+  const path = ctx.resolveRelationship(rId);
+  return path ? ctx.getPart(path) : undefined;
+}
 
 /** Parse SmartArt data XML into options. */
 function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtOptions>): void {

@@ -1,4 +1,17 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type {
+  ColorDefinitionOptions,
+  LayoutDefinitionOptions,
+  StyleDefinitionOptions,
+} from "@office-open/core/smartart";
+import {
+  getColorXml,
+  getLayoutXml,
+  getStyleXml,
+  stringifyColorDefinitionPart,
+  stringifyLayoutDefinitionPart,
+  stringifyStyleDefinitionPart,
+} from "@office-open/core/smartart";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -114,5 +127,117 @@ describe("smartArtDesc round-trip", () => {
     expect(result.y).toBe(768);
     expect(result.width).toBe(1920);
     expect(result.height).toBe(1080);
+  });
+});
+
+describe("smartArtDesc custom definitions", () => {
+  const customLayout: LayoutDefinitionOptions = {
+    uniqueId: "urn:microsoft.com/office/officeart/2005/8/layout/customSteps",
+    layoutNode: { name: "diagram", children: [{ algorithm: { type: "snake" } }] },
+  };
+  const customStyle: StyleDefinitionOptions = {
+    uniqueId: "urn:microsoft.com/office/officeart/2005/8/quickstyle/customSteps",
+    styleLabels: [{ name: "step" }],
+  };
+  const customColors: ColorDefinitionOptions = {
+    uniqueId: "urn:microsoft.com/office/officeart/2005/8/colors/customSteps",
+    styleLabels: [{ name: "step", fillColorList: { colors: [{ value: "accent1" }] } }],
+  };
+
+  it("registers custom definitions verbatim in the SmartArt entry", () => {
+    smartArtRegistry.clear();
+    const opts: SmartArtOptions = {
+      id: 600,
+      nodes: [{ text: "Step" }],
+      layout: customLayout,
+      style: customStyle,
+      color: customColors,
+    };
+    smartArtDesc.stringify(opts, writeCtx);
+    const entry = smartArtRegistry.get("smartart_1024") as {
+      layout: unknown;
+      style: unknown;
+      color: unknown;
+    };
+    expect(entry.layout).toBe(customLayout);
+    expect(entry.style).toBe(customStyle);
+    expect(entry.color).toBe(customColors);
+  });
+
+  it("parses custom definition parts back into structured options", () => {
+    const xml = smartArtDesc.stringify(
+      {
+        id: 601,
+        nodes: [{ text: "Step" }],
+        layout: customLayout,
+        style: customStyle,
+        color: customColors,
+      },
+      writeCtx,
+    );
+    if (!xml) throw new Error("stringify returned undefined");
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const partFor = (body: string) => parseXml(body).elements?.[0];
+    const ctx = {
+      resolveRelationship: (rid: string) => {
+        if (rid.startsWith("{smartart-lo:")) return "ppt/diagrams/layout1.xml";
+        if (rid.startsWith("{smartart-qs:")) return "ppt/diagrams/quickStyle1.xml";
+        if (rid.startsWith("{smartart-cs:")) return "ppt/diagrams/colors1.xml";
+        return undefined;
+      },
+      getPart: (path: string) => {
+        if (path.endsWith("layout1.xml"))
+          return partFor(stringifyLayoutDefinitionPart(customLayout));
+        if (path.endsWith("quickStyle1.xml"))
+          return partFor(stringifyStyleDefinitionPart(customStyle));
+        if (path.endsWith("colors1.xml"))
+          return partFor(stringifyColorDefinitionPart(customColors));
+        return undefined;
+      },
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+
+    const result = smartArtDesc.parse(el, ctx);
+    expect(result.layout).toEqual(customLayout);
+    expect(result.style).toEqual(customStyle);
+    expect(result.color).toEqual(customColors);
+  });
+
+  it("folds built-in definition stubs back to their id string", () => {
+    const xml = smartArtDesc.stringify(
+      {
+        id: 602,
+        nodes: [{ text: "Step" }],
+        layout: "process1",
+        style: "simple1",
+        color: "accent1_2",
+      },
+      writeCtx,
+    );
+    if (!xml) throw new Error("stringify returned undefined");
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const partFor = (body: string) => parseXml(body).elements?.[0];
+    const ctx = {
+      resolveRelationship: (rid: string) => {
+        if (rid.startsWith("{smartart-lo:")) return "ppt/diagrams/layout1.xml";
+        if (rid.startsWith("{smartart-qs:")) return "ppt/diagrams/quickStyle1.xml";
+        if (rid.startsWith("{smartart-cs:")) return "ppt/diagrams/colors1.xml";
+        return undefined;
+      },
+      getPart: (path: string) => {
+        if (path.endsWith("layout1.xml")) return partFor(getLayoutXml("process1"));
+        if (path.endsWith("quickStyle1.xml")) return partFor(getStyleXml("simple1"));
+        if (path.endsWith("colors1.xml")) return partFor(getColorXml("accent1_2"));
+        return undefined;
+      },
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+
+    const result = smartArtDesc.parse(el, ctx);
+    expect(result.layout).toBe("process1");
+    expect(result.style).toBe("simple1");
+    expect(result.color).toBe("accent1_2");
   });
 });

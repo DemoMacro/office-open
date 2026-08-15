@@ -68,7 +68,7 @@ import {
 import type { NonVisualShapePropertiesOptions } from "./inline/graphic/graphic-data/wps/non-visual-shape-properties";
 import type {
   ShapeStyleOptions,
-  StyleMatrixReferenceOptions,
+  ShapeStyleReferenceOptions,
   ShapeCoreOptions,
 } from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingSide, TextWrappingType } from "./text-wrap";
@@ -457,7 +457,7 @@ function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions
 }
 
 /** Stringify a single style-matrix reference (a:lnRef/a:fillRef/...). */
-function stringifyStyleRef(name: string, ref: StyleMatrixReferenceOptions | undefined): string {
+function stringifyStyleRef(name: string, ref: ShapeStyleReferenceOptions | undefined): string {
   if (!ref) return "";
   const idx = escapeXml(ref.idx);
   const colorXml = ref.color ? createColorElement(ref.color) : "";

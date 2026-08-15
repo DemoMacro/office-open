@@ -25,7 +25,7 @@ import type { NonVisualShapePropertiesOptions } from "./non-visual-shape-propert
  * A style-matrix reference (CT_StyleMatrixReference): an `idx` into the theme
  * style matrix plus an optional color override.
  */
-export interface StyleMatrixReferenceOptions {
+export interface ShapeStyleReferenceOptions {
   /** Style index ("0","1","2",…; or "minor"/"major" for font references). */
   idx: string;
   /** Color (EG_ColorChoice) — schemeClr/srgbClr/hslClr/sysClr/prstClr/scRgbClr. */
@@ -37,10 +37,10 @@ export interface StyleMatrixReferenceOptions {
  * document's theme. Word emits this for every shape that inherits theme styling.
  */
 export interface ShapeStyleOptions {
-  lineReference?: StyleMatrixReferenceOptions;
-  fillReference?: StyleMatrixReferenceOptions;
-  effectReference?: StyleMatrixReferenceOptions;
-  fontReference?: StyleMatrixReferenceOptions;
+  lineReference?: ShapeStyleReferenceOptions;
+  fillReference?: ShapeStyleReferenceOptions;
+  effectReference?: ShapeStyleReferenceOptions;
+  fontReference?: ShapeStyleReferenceOptions;
 }
 
 export interface ShapeCoreOptions {

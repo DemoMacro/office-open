@@ -45,6 +45,11 @@ import {
 import type { XmlifyedFile, Zippable } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
 import { SmartArtCollection } from "@office-open/core/smartart";
+import {
+  stringifyColorDefinitionPart,
+  stringifyLayoutDefinitionPart,
+  stringifyStyleDefinitionPart,
+} from "@office-open/core/smartart";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import type { PresentationPartOptions, PresentationSectionGroup } from "@parts/presentation";
@@ -1138,9 +1143,17 @@ export function compilePresentation(
   ];
   for (const [i, sa] of allSmartArts.entries()) {
     files[`ppt/diagrams/data${i + 1}.xml`] = encoder.encode(sa.dataModelXml);
-    files[`ppt/diagrams/layout${i + 1}.xml`] = encoder.encode(getLayoutXml(sa.layout));
-    files[`ppt/diagrams/quickStyle${i + 1}.xml`] = encoder.encode(getStyleXml(sa.style));
-    files[`ppt/diagrams/colors${i + 1}.xml`] = encoder.encode(getColorXml(sa.color));
+    files[`ppt/diagrams/layout${i + 1}.xml`] = encoder.encode(
+      typeof sa.layout === "string"
+        ? getLayoutXml(sa.layout)
+        : stringifyLayoutDefinitionPart(sa.layout),
+    );
+    files[`ppt/diagrams/quickStyle${i + 1}.xml`] = encoder.encode(
+      typeof sa.style === "string" ? getStyleXml(sa.style) : stringifyStyleDefinitionPart(sa.style),
+    );
+    files[`ppt/diagrams/colors${i + 1}.xml`] = encoder.encode(
+      typeof sa.color === "string" ? getColorXml(sa.color) : stringifyColorDefinitionPart(sa.color),
+    );
     files[`ppt/diagrams/drawing${i + 1}.xml`] = encoder.encode(DEFAULT_DRAWING_XML);
   }
 

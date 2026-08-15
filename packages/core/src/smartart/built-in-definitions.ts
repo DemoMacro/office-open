@@ -1,207 +1,325 @@
 /**
  * SmartArt built-in definitions — layout, quick style, and color transforms.
  *
- * Provides XML generators for layoutDef, styleDef, and colorsDef stubs.
- * The "default" layout uses a full embedded XML; all others use minimal stubs
- * that carry only the uniqueId — Office applications resolve these to built-in definitions.
+ * Emits layoutDef, styleDef, and colorsDef parts from typed constants through
+ * the structured descriptors. All entries carry only the uniqueId plus a
+ * schema-valid minimal body — Office applications resolve these to built-in
+ * definitions; the "default" layout ships its full layout tree.
  *
  * @module
  */
 
 export { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 
-import { OOXML_XML_DECLARATION } from "@office-open/xml";
-
-import { LAYOUT_CATEGORIES, STYLE_CATEGORIES, COLOR_CATEGORIES } from "./categories";
+import type { ColorListOptions } from "../drawingml/diagram/diagram-style";
+import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
+import { stringifyColorDefinitionPart, type ColorDefinitionOptions } from "./color-definition";
+import { stringifyLayoutDefinitionPart, type LayoutDefinitionOptions } from "./layout-definition";
+import { stringifyStyleDefinitionPart, type StyleDefinitionOptions } from "./style-definition";
 
 // ---------------------------------------------------------------------------
 // Layout XML — full for "default", stubs for everything else
 // ---------------------------------------------------------------------------
 
-const DGM_NS = "http://schemas.openxmlformats.org/drawingml/2006/diagram";
-const A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
+const BUILTIN_ACCENTS = ["accent1", "accent2", "accent3", "accent4", "accent5", "accent6"] as const;
 
-/** Full default list layout (urn:microsoft.com/office/officeart/2005/8/layout/default) */
-const FULL_DEFAULT_LAYOUT_XML =
-  '<dgm:layoutDef xmlns:dgm="' +
-  DGM_NS +
-  '" xmlns:a="' +
-  A_NS +
-  '" uniqueId="urn:microsoft.com/office/officeart/2005/8/layout/default">' +
-  '<dgm:title val=""/><dgm:desc val=""/>' +
-  '<dgm:catLst><dgm:cat type="list" pri="400"/></dgm:catLst>' +
-  '<dgm:sampData><dgm:dataModel><dgm:ptLst><dgm:pt modelId="0" type="doc"/><dgm:pt modelId="1"><dgm:prSet phldr="1"/></dgm:pt><dgm:pt modelId="2"><dgm:prSet phldr="1"/></dgm:pt><dgm:pt modelId="3"><dgm:prSet phldr="1"/></dgm:pt><dgm:pt modelId="4"><dgm:prSet phldr="1"/></dgm:pt><dgm:pt modelId="5"><dgm:prSet phldr="1"/></dgm:pt></dgm:ptLst><dgm:cxnLst><dgm:cxn modelId="6" srcId="0" destId="1" srcOrd="0" destOrd="0"/><dgm:cxn modelId="7" srcId="0" destId="2" srcOrd="1" destOrd="0"/><dgm:cxn modelId="8" srcId="0" destId="3" srcOrd="2" destOrd="0"/><dgm:cxn modelId="9" srcId="0" destId="4" srcOrd="3" destOrd="0"/><dgm:cxn modelId="10" srcId="0" destId="5" srcOrd="4" destOrd="0"/></dgm:cxnLst><dgm:bg/><dgm:whole/></dgm:dataModel></dgm:sampData>' +
-  '<dgm:styleData><dgm:dataModel><dgm:ptLst><dgm:pt modelId="0" type="doc"/><dgm:pt modelId="1"/><dgm:pt modelId="2"/></dgm:ptLst><dgm:cxnLst><dgm:cxn modelId="3" srcId="0" destId="1" srcOrd="0" destOrd="0"/><dgm:cxn modelId="4" srcId="0" destId="2" srcOrd="1" destOrd="0"/></dgm:cxnLst><dgm:bg/><dgm:whole/></dgm:dataModel></dgm:styleData>' +
-  '<dgm:clrData><dgm:dataModel><dgm:ptLst><dgm:pt modelId="0" type="doc"/><dgm:pt modelId="1"/><dgm:pt modelId="2"/><dgm:pt modelId="3"/><dgm:pt modelId="4"/><dgm:pt modelId="5"/><dgm:pt modelId="6"/></dgm:ptLst><dgm:cxnLst><dgm:cxn modelId="7" srcId="0" destId="1" srcOrd="0" destOrd="0"/><dgm:cxn modelId="8" srcId="0" destId="2" srcOrd="1" destOrd="0"/><dgm:cxn modelId="9" srcId="0" destId="3" srcOrd="2" destOrd="0"/><dgm:cxn modelId="10" srcId="0" destId="4" srcOrd="3" destOrd="0"/><dgm:cxn modelId="11" srcId="0" destId="5" srcOrd="4" destOrd="0"/><dgm:cxn modelId="12" srcId="0" destId="6" srcOrd="5" destOrd="0"/></dgm:cxnLst><dgm:bg/><dgm:whole/></dgm:dataModel></dgm:clrData>' +
-  '<dgm:layoutNode name="diagram" chOrder="b"><dgm:varLst><dgm:dir/><dgm:resizeHandles val="exact"/></dgm:varLst>' +
-  '<dgm:choose name="Name0"><dgm:if name="Name1" func="var" arg="dir" op="equ" val="norm"><dgm:alg type="snake"><dgm:param type="grDir" val="tL"/><dgm:param type="flowDir" val="row"/><dgm:param type="contDir" val="sameDir"/><dgm:param type="off" val="ctr"/></dgm:alg></dgm:if><dgm:else name="Name2"><dgm:alg type="snake"><dgm:param type="grDir" val="tR"/><dgm:param type="flowDir" val="row"/><dgm:param type="contDir" val="sameDir"/><dgm:param type="off" val="ctr"/></dgm:alg></dgm:else></dgm:choose>' +
-  '<dgm:shape blipPhldr="false" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:blip=""><dgm:adjLst/></dgm:shape><dgm:presOf/>' +
-  '<dgm:constrLst><dgm:constr type="w" for="ch" forName="node" refType="w" refPtType="all"/><dgm:constr type="h" for="ch" forName="node" refType="w" refFor="ch" refForName="node" fact="0.6"/><dgm:constr type="w" for="ch" forName="sibTrans" refType="w" refFor="ch" refForName="node" fact="0.1"/><dgm:constr type="sp" refType="w" refFor="ch" refForName="sibTrans"/><dgm:constr type="primFontSz" for="ch" forName="node" op="equ" val="65"/></dgm:constrLst><dgm:ruleLst/>' +
-  '<dgm:forEach name="Name3" axis="ch" ptType="node" st="1">' +
-  '<dgm:layoutNode name="node"><dgm:varLst><dgm:bulletEnabled val="1"/></dgm:varLst>' +
-  '<dgm:alg type="tx"/><dgm:shape type="rect" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:blip="">' +
-  '<dgm:adjLst/></dgm:shape><dgm:presOf axis="desOrSelf" ptType="node"/>' +
-  '<dgm:constrLst><dgm:constr type="lMarg" refType="primFontSz" fact="0.3"/>' +
-  '<dgm:constr type="rMarg" refType="primFontSz" fact="0.3"/>' +
-  '<dgm:constr type="tMarg" refType="primFontSz" fact="0.3"/>' +
-  '<dgm:constr type="bMarg" refType="primFontSz" fact="0.3"/></dgm:constrLst>' +
-  '<dgm:ruleLst><dgm:rule type="primFontSz" val="5" fact="NaN" max="NaN"/></dgm:ruleLst></dgm:layoutNode>' +
-  '<dgm:forEach name="Name4" axis="followSib" ptType="sibTrans" cnt="1">' +
-  '<dgm:layoutNode name="sibTrans"><dgm:alg type="sp"/>' +
-  '<dgm:shape xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:blip="">' +
-  "<dgm:adjLst/></dgm:shape><dgm:presOf/><dgm:constrLst/><dgm:ruleLst/>" +
-  "</dgm:layoutNode></dgm:forEach></dgm:layoutNode></dgm:layoutDef>";
+/** Sample-model point list shared by the layout stubs: a doc point plus placeholders. */
+function samplePoints(count: number): LayoutDefinitionOptions["sampleData"] {
+  const points = [
+    { modelId: "0", type: "doc" },
+    ...Array.from({ length: count }, (_, i) => ({
+      modelId: String(i + 1),
+      propertySet: { placeholder: true },
+    })),
+  ];
+  const connections = Array.from({ length: count }, (_, i) => ({
+    modelId: String(count + 1 + i),
+    sourceId: "0",
+    destinationId: String(i + 1),
+    sourceOrder: i,
+    destinationOrder: 0,
+  }));
+  return { dataModel: { points, connections } };
+}
 
 /**
- * Returns layout XML. Full XML for "default", minimal stub for others.
- * Stub has no layoutNode so PowerPoint falls back to built-in definitions
- * based on the uniqueId / loTypeId in the data model.
+ * Full default list layout (urn:microsoft.com/office/officeart/2005/8/layout/default).
+ */
+const DEFAULT_LAYOUT: LayoutDefinitionOptions = {
+  uniqueId: "urn:microsoft.com/office/officeart/2005/8/layout/default",
+  titles: [{ val: "" }],
+  descriptions: [{ val: "" }],
+  categories: [{ type: "list", pri: 400 }],
+  sampleData: samplePoints(5),
+  styleData: {
+    dataModel: {
+      points: [{ modelId: "0", type: "doc" }, { modelId: "1" }, { modelId: "2" }],
+      connections: [
+        { modelId: "3", sourceId: "0", destinationId: "1", sourceOrder: 0, destinationOrder: 0 },
+        { modelId: "4", sourceId: "0", destinationId: "2", sourceOrder: 1, destinationOrder: 0 },
+      ],
+    },
+  },
+  colorData: {
+    dataModel: {
+      points: [
+        { modelId: "0", type: "doc" },
+        ...Array.from({ length: 6 }, (_, i) => ({ modelId: String(i + 1) })),
+      ],
+      connections: Array.from({ length: 6 }, (_, i) => ({
+        modelId: String(7 + i),
+        sourceId: "0",
+        destinationId: String(i + 1),
+        sourceOrder: i,
+        destinationOrder: 0,
+      })),
+    },
+  },
+  layoutNode: {
+    name: "diagram",
+    childOrder: "b",
+    children: [
+      { variables: { direction: "norm", resizeHandles: "exact" } },
+      {
+        choose: {
+          name: "Name0",
+          conditions: [
+            {
+              name: "Name1",
+              function: "var",
+              argument: "dir",
+              operator: "equ",
+              value: "norm",
+              children: [
+                {
+                  algorithm: {
+                    type: "snake",
+                    parameters: [
+                      { type: "grDir", value: "tL" },
+                      { type: "flowDir", value: "row" },
+                      { type: "contDir", value: "sameDir" },
+                      { type: "off", value: "ctr" },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+          otherwise: {
+            name: "Name2",
+            children: [
+              {
+                algorithm: {
+                  type: "snake",
+                  parameters: [
+                    { type: "grDir", value: "tR" },
+                    { type: "flowDir", value: "row" },
+                    { type: "contDir", value: "sameDir" },
+                    { type: "off", value: "ctr" },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
+      { shape: { blipPlaceholder: false, adjustments: [] } },
+      { presentationOf: {} },
+      {
+        constraints: [
+          { type: "w", for: "ch", forName: "node", referenceType: "w", referencePointType: "all" },
+          {
+            type: "h",
+            for: "ch",
+            forName: "node",
+            referenceType: "w",
+            referenceFor: "ch",
+            referenceForName: "node",
+            factor: 0.6,
+          },
+          {
+            type: "w",
+            for: "ch",
+            forName: "sibTrans",
+            referenceType: "w",
+            referenceFor: "ch",
+            referenceForName: "node",
+            factor: 0.1,
+          },
+          {
+            type: "sp",
+            referenceType: "w",
+            referenceFor: "ch",
+            referenceForName: "sibTrans",
+          },
+          { type: "primFontSz", for: "ch", forName: "node", operation: "equ", value: 65 },
+        ],
+      },
+      { rules: [] },
+      {
+        forEach: {
+          name: "Name3",
+          axis: "ch",
+          pointType: "node",
+          start: "1",
+          children: [
+            {
+              layoutNode: {
+                name: "node",
+                children: [
+                  { variables: { bulletEnabled: true } },
+                  { algorithm: { type: "tx" } },
+                  { shape: { type: "rect", adjustments: [] } },
+                  { presentationOf: { axis: "desOrSelf", pointType: "node" } },
+                  {
+                    constraints: [
+                      { type: "lMarg", referenceType: "primFontSz", factor: 0.3 },
+                      { type: "rMarg", referenceType: "primFontSz", factor: 0.3 },
+                      { type: "tMarg", referenceType: "primFontSz", factor: 0.3 },
+                      { type: "bMarg", referenceType: "primFontSz", factor: 0.3 },
+                    ],
+                  },
+                  // rule @fact/@max default to NaN in the XSD, so omitting them
+                  // means "unbounded" — same as the explicit NaN in Office's copy.
+                  { rules: [{ type: "primFontSz", value: 5 }] },
+                ],
+              },
+            },
+            {
+              forEach: {
+                name: "Name4",
+                axis: "followSib",
+                pointType: "sibTrans",
+                count: "1",
+                children: [
+                  {
+                    layoutNode: {
+                      name: "sibTrans",
+                      children: [
+                        { algorithm: { type: "sp" } },
+                        { shape: { adjustments: [] } },
+                        { presentationOf: {} },
+                        { constraints: [] },
+                        { rules: [] },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ],
+  },
+};
+
+/**
+ * Returns layout XML. Full layout tree for "default", minimal stub for others.
+ * Stubs keep a schema-required empty layoutNode; PowerPoint resolves built-in
+ * definitions from the uniqueId / loTypeId in the data model.
  */
 export function getLayoutXml(layoutId: string): string {
-  if (layoutId === "default") {
-    return OOXML_XML_DECLARATION + FULL_DEFAULT_LAYOUT_XML;
-  }
-  const cat = LAYOUT_CATEGORIES[layoutId] ?? "list";
-  return (
-    OOXML_XML_DECLARATION +
-    '<dgm:layoutDef xmlns:dgm="' +
-    DGM_NS +
-    '" xmlns:a="' +
-    A_NS +
-    '" uniqueId="urn:microsoft.com/office/officeart/2005/8/layout/' +
-    layoutId +
-    '">' +
-    '<dgm:title val=""/><dgm:desc val=""/>' +
-    '<dgm:catLst><dgm:cat type="' +
-    cat +
-    '" pri="400"/></dgm:catLst>' +
-    '<dgm:sampData><dgm:dataModel><dgm:ptLst><dgm:pt modelId="0" type="doc"/><dgm:pt modelId="1"><dgm:prSet phldr="1"/></dgm:pt><dgm:pt modelId="2"><dgm:prSet phldr="1"/></dgm:pt></dgm:ptLst><dgm:cxnLst><dgm:cxn modelId="3" srcId="0" destId="1" srcOrd="0" destOrd="0"/><dgm:cxn modelId="4" srcId="0" destId="2" srcOrd="1" destOrd="0"/></dgm:cxnLst><dgm:bg/><dgm:whole/></dgm:dataModel></dgm:sampData>' +
-    "</dgm:layoutDef>"
-  );
+  if (layoutId === "default") return stringifyLayoutDefinitionPart(DEFAULT_LAYOUT);
+  const layout: LayoutDefinitionOptions = {
+    uniqueId: `urn:microsoft.com/office/officeart/2005/8/layout/${layoutId}`,
+    titles: [{ val: "" }],
+    descriptions: [{ val: "" }],
+    categories: [{ type: LAYOUT_CATEGORIES[layoutId] ?? "list", pri: 400 }],
+    sampleData: samplePoints(2),
+    layoutNode: {},
+  };
+  return stringifyLayoutDefinitionPart(layout);
 }
 
+// ---------------------------------------------------------------------------
+// Style XML
+// ---------------------------------------------------------------------------
+
+const STYLE_SCENE_3D = {
+  camera: { preset: "orthographicFront" },
+  lightRig: { rig: "threePt", direction: "t" },
+};
+
 /**
- * Returns style XML with basic style definitions (fillClrLst, linClrLst, etc.)
- * that allow PowerPoint to correctly render SmartArt colors and effects.
+ * Returns style XML. Each label node0…node5 ties one accent color into the
+ * theme style matrix (line in tx1, fill in the accent), so PowerPoint renders
+ * SmartArt shapes with themed fills and effects.
  */
 export function getStyleXml(styleId: string): string {
-  const cat = STYLE_CATEGORIES[styleId] ?? "simple";
-
-  // Basic style content: fill color list + line color list + effect + font color
-  const styleContent =
-    "<dgm:fillClrLst>" +
-    '<a:solidFill><a:schemeClr val="accent1"/></a:solidFill>' +
-    '<a:solidFill><a:schemeClr val="accent2"/></a:solidFill>' +
-    '<a:solidFill><a:schemeClr val="accent3"/></a:solidFill>' +
-    '<a:solidFill><a:schemeClr val="accent4"/></a:solidFill>' +
-    '<a:solidFill><a:schemeClr val="accent5"/></a:solidFill>' +
-    '<a:solidFill><a:schemeClr val="accent6"/></a:solidFill>' +
-    "</dgm:fillClrLst>" +
-    '<dgm:linClrLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:linClrLst>' +
-    '<dgm:effectClrLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:effectClrLst>' +
-    "<dgm:fontClrLst>" +
-    '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>' +
-    '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>' +
-    '<a:solidFill><a:schemeClr val="tx1"/></a:solidFill>' +
-    "</dgm:fontClrLst>";
-
-  return (
-    OOXML_XML_DECLARATION +
-    '<dgm:styleDef xmlns:dgm="' +
-    DGM_NS +
-    '" xmlns:a="' +
-    A_NS +
-    '" uniqueId="urn:microsoft.com/office/officeart/2005/8/quickstyle/' +
-    styleId +
-    '">' +
-    '<dgm:title val=""/><dgm:desc val=""/>' +
-    '<dgm:catLst><dgm:cat type="' +
-    cat +
-    '" pri="10100"/></dgm:catLst>' +
-    '<dgm:scene3d><a:camera prst="orthographicFront"/><a:lightRig rig="threePt" dir="t"/></dgm:scene3d>' +
-    styleContent +
-    "</dgm:styleDef>"
-  );
+  const style: StyleDefinitionOptions = {
+    uniqueId: `urn:microsoft.com/office/officeart/2005/8/quickstyle/${styleId}`,
+    titles: [{ val: "" }],
+    descriptions: [{ val: "" }],
+    categories: [{ type: STYLE_CATEGORIES[styleId] ?? "simple", pri: 10100 }],
+    scene3d: STYLE_SCENE_3D,
+    styleLabels: BUILTIN_ACCENTS.map((accent, i) => ({
+      name: `node${i}`,
+      style: {
+        lineReference: { index: 2, color: { value: "tx1" } },
+        fillReference: { index: 1, color: { value: accent } },
+        effectReference: { index: 0, color: { value: "tx1" } },
+        fontReference: { collection: "minor" as const, color: { value: "tx1" } },
+      },
+    })),
+  };
+  return stringifyStyleDefinitionPart(style);
 }
 
+// ---------------------------------------------------------------------------
+// Color XML
+// ---------------------------------------------------------------------------
+
+const TINTED_TEXT = { value: "tx1", transforms: { tint: 75 } };
+
 /**
- * Returns color XML with basic color definitions (fillLst, linLst, etc.)
- * that allow PowerPoint to correctly render SmartArt with the specified color scheme.
+ * Returns color XML mapping the node0 label to color lists for the requested
+ * color scheme (accent / colorful / dark / fallback).
  */
 export function getColorXml(colorId: string): string {
-  const cat = COLOR_CATEGORIES[colorId] ?? "accent1";
+  const accent = colorId.match(/^(accent\d)/)?.[1] ?? "accent1";
 
-  // Resolve the accent color index from colorId (e.g., "accent1_2" → "accent1")
-  const accentMatch = colorId.match(/^(accent\d)/);
-  const accentVal = accentMatch ? accentMatch[1] : "accent1";
-
-  // Build color content based on colorId patterns
-  let colorContent: string;
-  if (colorId.startsWith("accent")) {
-    // Accent-based: fill with the specified accent color
-    colorContent =
-      "<dgm:fillLst>" +
-      `<a:solidFill><a:schemeClr val="${accentVal}"/></a:solidFill>` +
-      "</dgm:fillLst>" +
-      '<dgm:linLst><a:solidFill><a:schemeClr val="tx1"><a:tint val="75000"/></a:schemeClr></a:solidFill></dgm:linLst>' +
-      '<dgm:effectLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:effectLst>' +
-      '<dgm:txFillLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:txFillLst>' +
-      '<dgm:txLinLst><a:solidFill><a:schemeClr val="tx1"><a:tint val="75000"/></a:schemeClr></a:solidFill></dgm:txLinLst>' +
-      '<dgm:txEffectLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:txEffectLst>';
-  } else if (colorId.startsWith("colorful")) {
-    // Colorful: cycle through all accent colors
-    colorContent =
-      "<dgm:fillLst>" +
-      '<a:solidFill><a:schemeClr val="accent1"/></a:solidFill>' +
-      '<a:solidFill><a:schemeClr val="accent2"/></a:solidFill>' +
-      '<a:solidFill><a:schemeClr val="accent3"/></a:solidFill>' +
-      '<a:solidFill><a:schemeClr val="accent4"/></a:solidFill>' +
-      '<a:solidFill><a:schemeClr val="accent5"/></a:solidFill>' +
-      "</dgm:fillLst>" +
-      '<dgm:linLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:linLst>' +
-      '<dgm:effectLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:effectLst>' +
-      '<dgm:txFillLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:txFillLst>' +
-      "<dgm:txLinLst/>" +
-      "<dgm:txEffectLst/>";
+  let fillColorList: ColorListOptions;
+  let lineColorList: ColorListOptions;
+  let textFillColorList: ColorListOptions;
+  if (colorId.startsWith("colorful")) {
+    fillColorList = { colors: BUILTIN_ACCENTS.slice(0, 5).map((a) => ({ value: a })) };
+    lineColorList = { colors: [{ value: "lt1" }] };
+    textFillColorList = { colors: [{ value: "tx1" }] };
   } else if (colorId.startsWith("dark")) {
-    // Dark: dark backgrounds
-    colorContent =
-      "<dgm:fillLst>" +
-      '<a:solidFill><a:schemeClr val="dk1"/></a:solidFill>' +
-      '<a:solidFill><a:schemeClr val="dk2"/></a:solidFill>' +
-      "</dgm:fillLst>" +
-      '<dgm:linLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:linLst>' +
-      '<dgm:effectLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:effectLst>' +
-      '<dgm:txFillLst><a:solidFill><a:schemeClr val="lt1"/></a:solidFill></dgm:txFillLst>' +
-      "<dgm:txLinLst/>" +
-      "<dgm:txEffectLst/>";
+    fillColorList = { colors: [{ value: "dk1" }, { value: "dk2" }] };
+    lineColorList = { colors: [{ value: "lt1" }] };
+    textFillColorList = { colors: [{ value: "lt1" }] };
+  } else if (colorId.startsWith("accent")) {
+    fillColorList = { colors: [{ value: accent }] };
+    lineColorList = { colors: [TINTED_TEXT] };
+    textFillColorList = { colors: [{ value: "tx1" }] };
   } else {
-    // Default/primary/gray: use accent color
-    colorContent =
-      '<dgm:fillLst><a:solidFill><a:schemeClr val="accent1"/></a:solidFill></dgm:fillLst>' +
-      '<dgm:linLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:linLst>' +
-      '<dgm:effectLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:effectLst>' +
-      '<dgm:txFillLst><a:solidFill><a:schemeClr val="tx1"/></a:solidFill></dgm:txFillLst>' +
-      "<dgm:txLinLst/>" +
-      "<dgm:txEffectLst/>";
+    fillColorList = { colors: [{ value: "accent1" }] };
+    lineColorList = { colors: [{ value: "tx1" }] };
+    textFillColorList = { colors: [{ value: "tx1" }] };
   }
 
-  return (
-    OOXML_XML_DECLARATION +
-    '<dgm:colorsDef xmlns:dgm="' +
-    DGM_NS +
-    '" xmlns:a="' +
-    A_NS +
-    '" uniqueId="urn:microsoft.com/office/officeart/2005/8/colors/' +
-    colorId +
-    '">' +
-    '<dgm:title val=""/><dgm:desc val=""/>' +
-    '<dgm:catLst><dgm:cat type="' +
-    cat +
-    '" pri="11200"/></dgm:catLst>' +
-    colorContent +
-    "</dgm:colorsDef>"
-  );
+  const colors: ColorDefinitionOptions = {
+    uniqueId: `urn:microsoft.com/office/officeart/2005/8/colors/${colorId}`,
+    titles: [{ val: "" }],
+    descriptions: [{ val: "" }],
+    categories: [{ type: COLOR_CATEGORIES[colorId] ?? "accent1", pri: 11200 }],
+    styleLabels: [
+      {
+        name: "node0",
+        fillColorList,
+        lineColorList,
+        effectColorList: lineColorList,
+        textFillColorList,
+        textLineColorList: colorId.startsWith("accent")
+          ? { colors: [TINTED_TEXT] }
+          : { colors: [] },
+        textEffectColorList: textFillColorList,
+      },
+    ],
+  };
+  return stringifyColorDefinitionPart(colors);
 }
 
 /** Minimal drawing cache for SmartArt (Office apps auto-regenerate this on open) */

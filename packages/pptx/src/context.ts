@@ -7,6 +7,11 @@
 import { EmbeddingCollection, Media } from "@office-open/core";
 import type { BaseMediaEntry, EmbeddingData } from "@office-open/core";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type {
+  ColorDefinitionOptions,
+  LayoutDefinitionOptions,
+  StyleDefinitionOptions,
+} from "@office-open/core/smartart";
 
 import type { PptxDocument } from "./parse";
 
@@ -41,9 +46,12 @@ export interface ChartEntry {
 export interface SmartArtEntry {
   key: string;
   dataModelXml: string;
-  layout: string;
-  style: string;
-  color: string;
+  /** Built-in layout id or a full custom layout definition. */
+  layout: string | LayoutDefinitionOptions;
+  /** Built-in quick-style id or a full custom style definition. */
+  style: string | StyleDefinitionOptions;
+  /** Built-in color-transform id or a full custom color definition. */
+  color: string | ColorDefinitionOptions;
 }
 
 export interface HyperlinkEntry {

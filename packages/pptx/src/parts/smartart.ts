@@ -1,6 +1,11 @@
 import type { UniversalMeasure } from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
-import type { TreeNode } from "@office-open/core/smartart";
+import type {
+  ColorDefinitionOptions,
+  LayoutDefinitionOptions,
+  StyleDefinitionOptions,
+  TreeNode,
+} from "@office-open/core/smartart";
 
 export {
   getLayoutXml,
@@ -36,10 +41,10 @@ export interface SmartArtOptions extends NonVisualDrawingPropertiesOptions {
   height?: number | UniversalMeasure;
   /** Tree-shaped data for the diagram content. */
   nodes: TreeNode[];
-  /** Layout ID (e.g. "default", "process1", "hierarchy1") */
-  layout?: string;
-  /** Quick style ID (e.g. "simple1", "moderate1") */
-  style?: string;
-  /** Color transform ID (e.g. "accent1_2", "colorful1") */
-  color?: string;
+  /** Built-in layout ID ("default", "process1") or a custom layout definition. */
+  layout?: string | LayoutDefinitionOptions;
+  /** Built-in quick style ID ("simple1") or a custom style definition. */
+  style?: string | StyleDefinitionOptions;
+  /** Built-in color transform ID ("accent1_2") or a custom color definition. */
+  color?: string | ColorDefinitionOptions;
 }

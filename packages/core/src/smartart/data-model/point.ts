@@ -45,9 +45,13 @@ export function stringifyPoint(
   text: string,
   type: string = "node",
   propertySet?: PointPropertySetOptions,
+  connectionId?: string,
 ): string {
+  const cxnAttr = connectionId ? ` cxnId="${escapeXml(connectionId)}"` : "";
   const parts: string[] = [];
-  parts.push(`<dgm:pt modelId="${escapeXml(String(modelId))}" type="${escapeXml(type)}">`);
+  parts.push(
+    `<dgm:pt modelId="${escapeXml(String(modelId))}"${cxnAttr} type="${escapeXml(type)}">`,
+  );
   if (propertySet) {
     parts.push(stringifyPropertySet(propertySet));
   }

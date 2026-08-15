@@ -243,6 +243,32 @@ export function stringifyColorChoice(color: SolidFillOptions, ctx: WriteContext)
 }
 
 /**
+ * Parse a single EG_ColorChoice element (a:srgbClr, a:schemeClr, …) into
+ * options; returns undefined for any other element.
+ */
+export function parseColorChoiceElement(
+  el: XmlElement,
+  ctx: ReadContext,
+): SolidFillOptions | undefined {
+  switch (el.name) {
+    case "a:srgbClr":
+      return rgbColorDesc.parse(el, ctx);
+    case "a:schemeClr":
+      return schemeColorDesc.parse(el, ctx);
+    case "a:hslClr":
+      return hslColorDesc.parse(el, ctx);
+    case "a:sysClr":
+      return systemColorDesc.parse(el, ctx);
+    case "a:prstClr":
+      return presetColorDesc.parse(el, ctx);
+    case "a:scrgbClr":
+      return scRgbColorDesc.parse(el, ctx);
+    default:
+      return undefined;
+  }
+}
+
+/**
  * Parse an EG_ColorChoice from an element's direct children. Handles all six
  * color element kinds (srgbClr/schemeClr/hslClr/sysClr/prstClr/scrgbClr) —
  * used both by {@link solidFillDesc} (under a:solidFill) and by fill
@@ -251,20 +277,8 @@ export function stringifyColorChoice(color: SolidFillOptions, ctx: WriteContext)
 export function parseColorChoice(el: XmlElement, ctx: ReadContext): SolidFillOptions {
   if (!el.elements) return {} as SolidFillOptions;
   for (const child of el.elements) {
-    switch (child.name) {
-      case "a:srgbClr":
-        return rgbColorDesc.parse(child, ctx);
-      case "a:schemeClr":
-        return schemeColorDesc.parse(child, ctx);
-      case "a:hslClr":
-        return hslColorDesc.parse(child, ctx);
-      case "a:sysClr":
-        return systemColorDesc.parse(child, ctx);
-      case "a:prstClr":
-        return presetColorDesc.parse(child, ctx);
-      case "a:scrgbClr":
-        return scRgbColorDesc.parse(child, ctx);
-    }
+    const color = parseColorChoiceElement(child, ctx);
+    if (color) return color;
   }
   return {} as SolidFillOptions;
 }
