@@ -756,6 +756,12 @@ export interface TupleCacheEntryOptions {
   type: "m" | "n" | "e" | "s";
   /** Value (required for n/s, optional for e) */
   value?: number | string;
+  /** Member-property count/caption index (CT_Number @cp) — OLAP caches only */
+  cp?: number;
+  /** Property index (CT_Number @in) — OLAP caches only */
+  in?: number;
+  /** Underline flag (CT_Number @un) */
+  un?: boolean;
 }
 
 /** Deleted field (CT_DeletedField) */

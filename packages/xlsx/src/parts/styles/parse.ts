@@ -50,6 +50,7 @@ export function parseFont(el: XmlElement): FontOptions {
         break;
       case "color":
         result.color = parseColorHex(child);
+        if (parseOnOff(attr(child, "auto"))) result.autoColor = true;
         break;
       case "name":
         result.font = attr(child, "val") ?? undefined;

@@ -16,6 +16,8 @@ export interface FontOptions {
   strike?: boolean;
   size?: number;
   color?: string;
+  /** Automatic (system) color instead of an explicit RGB (CT_Color @auto) */
+  autoColor?: boolean;
   font?: string;
   /** Character set (CT_Font/charset @val) */
   charset?: number;
@@ -233,6 +235,8 @@ export interface CustomTableStyleOptions {
   name: string;
   /** Pivot style (vs table style) */
   pivot?: boolean;
+  /** Applies to tables (CT_TableStyle @table, default true) */
+  table?: boolean;
   /** Table style elements */
   elements?: TableStyleElementOptions[];
 }

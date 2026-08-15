@@ -168,6 +168,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     if (bv.showSheetTabs === false) bvAttrs.push('showSheetTabs="0"');
     if (bv.showVerticalScroll === false) bvAttrs.push('showVerticalScroll="0"');
     if (bv.tabRatio !== undefined) bvAttrs.push(`tabRatio="${bv.tabRatio}"`);
+    if (bv.visibility && bv.visibility !== "visible") bvAttrs.push(`visibility="${bv.visibility}"`);
     parts.push(`<bookViews><workbookView ${bvAttrs.join(" ")}/></bookViews>`);
   } else {
     parts.push(

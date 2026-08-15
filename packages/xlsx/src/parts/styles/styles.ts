@@ -509,6 +509,7 @@ export class Styles {
       for (const ts of this.tableStyles) {
         const tsAttrs: string[] = [`name="${escapeXml(ts.name)}"`];
         if (ts.pivot) tsAttrs.push('pivot="1"');
+        if (ts.table === false) tsAttrs.push('table="0"');
         if (ts.elements && ts.elements.length > 0) {
           tsParts.push(`<tableStyle ${tsAttrs.join(" ")}>`);
           for (const el of ts.elements) {
@@ -583,7 +584,8 @@ export class Styles {
     if (f.condense) parts.push("<condense/>");
     if (f.extend) parts.push("<extend/>");
     if (f.size) parts.push(`<sz val="${f.size}"/>`);
-    if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
+    if (f.autoColor) parts.push('<color auto="1"/>');
+    else if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
     if (f.font) parts.push(`<name val="${escapeXml(f.font)}"/>`);
     if (f.charset !== undefined) parts.push(`<charset val="${f.charset}"/>`);
     if (f.family !== undefined) parts.push(`<family val="${f.family}"/>`);

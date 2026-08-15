@@ -260,7 +260,7 @@ export interface ProtectedRangeOptions {
   saltValue?: string;
   /** Modern encryption: spin count */
   spinCount?: number;
-  /** Security descriptor (SID string) */
+  /** Security descriptor (SID string, emitted as the attribute form) */
   securityDescriptor?: string;
 }
 
@@ -617,6 +617,10 @@ export interface ConditionalFormatRule {
   rank?: number;
   /** Equal average flag (CT_CfRule @equalAverage) */
   equalAverage?: boolean;
+  /** Above average flag (CT_CfRule @aboveAverage, default true for aboveAverage rules) */
+  aboveAverage?: boolean;
+  /** Standard deviations for above-average rules (CT_CfRule @stdDev) */
+  stdDev?: number;
 }
 
 export interface ConditionalFormatOptions {

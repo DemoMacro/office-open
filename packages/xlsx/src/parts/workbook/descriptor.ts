@@ -134,6 +134,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (String(attr(bvEl, "showSheetTabs")) === "0") bv.showSheetTabs = false;
         const tr = attrNum(bvEl, "tabRatio");
         if (tr !== undefined) bv.tabRatio = tr;
+        const vis = attr(bvEl, "visibility");
+        if (vis !== undefined) bv.visibility = vis as WorkbookViewOptions["visibility"];
         result.bookView = bv;
       }
     }

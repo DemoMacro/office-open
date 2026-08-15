@@ -6,6 +6,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs } from "@office-open/xml";
 
@@ -18,6 +19,8 @@ export interface CalcCell {
   sheetIndex: number;
   /** Array formula */
   array?: boolean;
+  /** Child chain — calculations farmed out to another thread (CT_CalcCell @l) */
+  childChain?: boolean;
 }
 
 export interface CalcChainOptions {
@@ -39,6 +42,7 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
         i: cell.sheetIndex,
       };
       if (cell.array) cellAttrs.a = true;
+      if (cell.childChain) cellAttrs.l = true;
       parts.push(`<c${attrs(cellAttrs)}/>`);
     }
     parts.push("</calcChain>");
@@ -58,6 +62,7 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
           sheetIndex: Number(i),
         };
         if (child.attributes?.["a"]) cell.array = true;
+        if (parseOnOff(child.attributes?.["l"])) cell.childChain = true;
         cells.push(cell);
       }
     }

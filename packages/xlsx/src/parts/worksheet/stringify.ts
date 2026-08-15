@@ -391,6 +391,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       prAttrs.saltValue = pr.saltValue ?? prDerived?.saltValue;
       if (pr.spinCount !== undefined) prAttrs.spinCount = pr.spinCount;
       else if (prDerived) prAttrs.spinCount = prDerived.spinCount;
+      if (pr.securityDescriptor) prAttrs.securityDescriptor = pr.securityDescriptor;
       const hasSecurityDescriptor = !!pr.securityDescriptor;
       if (hasSecurityDescriptor) {
         prParts.push(
@@ -480,6 +481,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         if (rule.timePeriod) ruleAttrs.timePeriod = rule.timePeriod;
         if (rule.rank !== undefined) ruleAttrs.rank = rule.rank;
         if (rule.equalAverage) ruleAttrs.equalAverage = 1;
+        if (rule.aboveAverage === false) ruleAttrs.aboveAverage = 0;
+        if (rule.stdDev !== undefined) ruleAttrs.stdDev = rule.stdDev;
 
         // Color scale
         if (rule.type === "colorScale" && rule.colorScale) {

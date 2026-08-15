@@ -231,6 +231,41 @@ describe("dialogsheet round-trip", () => {
   });
 });
 
+describe("scattered attribute round-trip", () => {
+  it("round-trips book-view visibility and conditional-format rule flags", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "S",
+          rows: [{ cells: [{ reference: "A1", value: 5 }] }],
+          conditionalFormats: [
+            {
+              sqref: "A1:A5",
+              rules: [
+                { type: "aboveAverage", aboveAverage: false, stdDev: 2, dxfId: 0 },
+                { type: "top10", rank: 5 },
+              ],
+            },
+          ],
+          protectedRanges: [{ sqref: "A1:A5", name: "Guarded", securityDescriptor: "O=ORG" }],
+        },
+      ],
+    };
+
+    const parsed = await roundTrip(opts);
+    const sheet = parsed.worksheets![0]!;
+    expect(sheet.conditionalFormats![0]!.rules[0]).toMatchObject({
+      type: "aboveAverage",
+      aboveAverage: false,
+      stdDev: 2,
+    });
+    expect(sheet.protectedRanges![0]).toMatchObject({
+      name: "Guarded",
+      securityDescriptor: "O=ORG",
+    });
+  });
+});
+
 describe("theme round-trip", () => {
   it("preserves a custom source theme instead of replacing it with the default", async () => {
     const opts: WorkbookOptions = {

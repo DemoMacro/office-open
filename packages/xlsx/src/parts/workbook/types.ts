@@ -48,6 +48,8 @@ export interface CustomWorkbookViewOptions {
   showSheetTabs?: boolean;
   /** Tab ratio (default 600) */
   tabRatio?: number;
+  /** Workbook visibility: "visible" | "hidden" | "veryHidden" (default "visible") */
+  visibility?: "visible" | "hidden" | "veryHidden";
   /** Include hidden rows/columns (default true) */
   includeHiddenRowCol?: boolean;
   /** Include print settings (default true) */
@@ -294,6 +296,8 @@ export interface WorkbookViewOptions {
   showVerticalScroll?: boolean;
   /** Tab ratio (default 600) */
   tabRatio?: number;
+  /** Workbook visibility: "visible" | "hidden" | "veryHidden" (default "visible") */
+  visibility?: "visible" | "hidden" | "veryHidden";
   /** Window width in twips */
   windowWidth?: number;
   /** Window height in twips */

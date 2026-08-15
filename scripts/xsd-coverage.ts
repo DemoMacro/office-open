@@ -641,6 +641,21 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
         found.add(m[2]);
       }
 
+      // Pattern 9b: reader-callback helpers — readStr(el, "name", cb),
+      // readBool(el, "name", cb), readNum(el, "name", cb). revision-log parse
+      // reads attributes through this shape; the name is the XML attribute.
+      const readerCbRe = /\bread(?:Str|Bool|Num)\(\s*[^,)]+,\s*["']([a-zA-Z][a-zA-Z0-9]*)["']/g;
+      while ((m = readerCbRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 9c: string-attr emit helper — xstring(value, "name") builds
+      // ` name="value"` from a variable indirection.
+      const xstringRe = /\bxstring\(\s*[^,)]+,\s*["']([a-zA-Z][a-zA-Z0-9]*)["']\)/g;
+      while ((m = xstringRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
       // Pattern 10: pure string-array constants — key lists driving dynamic
       // serialization (locking key arrays) and mapping tables. Over-extraction
       // is harmless: found is intersected with the XSD attribute list.

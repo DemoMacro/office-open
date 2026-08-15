@@ -527,6 +527,9 @@ function buildPivotHierarchies(hierarchies: PivotHierarchyOptions[]): string {
               if (mp.showCell) mpAttrs.push('showCell="1"');
               if (mp.showTip) mpAttrs.push('showTip="1"');
               if (mp.showAsCaption) mpAttrs.push('showAsCaption="1"');
+              if (mp.nameLen !== undefined) mpAttrs.push(`nameLen="${mp.nameLen}"`);
+              if (mp.pPos !== undefined) mpAttrs.push(`pPos="${mp.pPos}"`);
+              if (mp.pLen !== undefined) mpAttrs.push(`pLen="${mp.pLen}"`);
               return `<mp ${mpAttrs.join(" ")}/>`;
             })
             .join("")}</mps>`

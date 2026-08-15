@@ -83,6 +83,8 @@ export interface TextPropertiesOptions {
   sourceFile?: string;
   /** Tab-delimited (default true) */
   delimited?: boolean;
+  /** User-defined delimiter character (CT_TextPr @delimiter) */
+  delimiter?: string;
   /** Decimal separator (default ".") */
   decimal?: string;
   /** Thousands separator (default ",") */
@@ -270,6 +272,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
         if (t.firstRow !== undefined) tAttrs.push(`firstRow="${t.firstRow}"`);
         if (t.sourceFile !== undefined) tAttrs.push(`sourceFile="${escapeXml(t.sourceFile)}"`);
         if (t.delimited === false) tAttrs.push('delimited="0"');
+        if (t.delimiter !== undefined) tAttrs.push(`delimiter="${escapeXml(t.delimiter)}"`);
         if (t.decimal !== undefined) tAttrs.push(`decimal="${escapeXml(t.decimal)}"`);
         if (t.thousands !== undefined) tAttrs.push(`thousands="${escapeXml(t.thousands)}"`);
         if (t.tab === false) tAttrs.push('tab="0"');
@@ -401,6 +404,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
         if (fr !== undefined) t.firstRow = fr;
         if (attr(textEl, "sourceFile") !== undefined) t.sourceFile = attr(textEl, "sourceFile");
         if (String(attr(textEl, "delimited")) === "0") t.delimited = false;
+        if (attr(textEl, "delimiter") !== undefined) t.delimiter = attr(textEl, "delimiter");
         if (attr(textEl, "decimal") !== undefined) t.decimal = attr(textEl, "decimal");
         if (attr(textEl, "thousands") !== undefined) t.thousands = attr(textEl, "thousands");
         if (String(attr(textEl, "tab")) === "0") t.tab = false;

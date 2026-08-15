@@ -90,6 +90,8 @@ export interface QueryTableOptions {
   connectionId: number;
   /** Auto format applied */
   autoFormat?: boolean;
+  /** Intermediate rows preserved (CT_QueryTable @intermediate) */
+  intermediate?: boolean;
   /** Refresh info (CT_QueryTableRefresh) */
   queryTableRefresh?: QueryTableRefreshOptions;
 }
@@ -115,6 +117,7 @@ export const queryTableDesc: CustomDescriptor<QueryTableOptions> = {
     if (opts.preserveFormatting === false) attrs.push('preserveFormatting="0"');
     if (opts.adjustColumnWidth) attrs.push('adjustColumnWidth="1"');
     if (opts.autoFormat) attrs.push('autoFormat="1"');
+    if (opts.intermediate) attrs.push('intermediate="1"');
     attrs.push(`connectionId="${opts.connectionId}"`);
 
     let inner = "";
@@ -182,6 +185,7 @@ export const queryTableDesc: CustomDescriptor<QueryTableOptions> = {
     if (String(attr(el, "preserveFormatting")) === "0") result.preserveFormatting = false;
     if (parseOnOff(attr(el, "adjustColumnWidth"))) result.adjustColumnWidth = true;
     if (parseOnOff(attr(el, "autoFormat"))) result.autoFormat = true;
+    if (parseOnOff(attr(el, "intermediate"))) result.intermediate = true;
     const cid = attrNum(el, "connectionId");
     if (cid !== undefined) result.connectionId = cid;
 

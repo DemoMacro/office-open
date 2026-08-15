@@ -603,9 +603,15 @@ function stringifyPivotCacheDef(
     if (hasEntries) {
       const entParts: string[] = [`<entries count="${cd!.entries!.length}">`];
       for (const ent of cd!.entries!) {
-        if (ent.type === "m") entParts.push("<m/>");
-        else if (ent.type === "e") entParts.push(`<e v="${escapeXml(String(ent.value ?? ""))}"/>`);
-        else if (ent.value !== undefined) entParts.push(`<${ent.type} v="${ent.value}"/>`);
+        const olapAttrs =
+          (ent.cp !== undefined ? ` cp="${ent.cp}"` : "") +
+          (ent.in !== undefined ? ` in="${ent.in}"` : "") +
+          (ent.un ? ' un="1"' : "");
+        if (ent.type === "m") entParts.push(`<m${olapAttrs}/>`);
+        else if (ent.type === "e")
+          entParts.push(`<e v="${escapeXml(String(ent.value ?? ""))}"${olapAttrs}/>`);
+        else if (ent.value !== undefined)
+          entParts.push(`<${ent.type} v="${ent.value}"${olapAttrs}/>`);
       }
       entParts.push("</entries>");
       p.push(entParts.join(""));

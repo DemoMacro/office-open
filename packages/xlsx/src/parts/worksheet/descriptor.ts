@@ -365,6 +365,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (attr(rEl, "saltValue")) r.saltValue = attr(rEl, "saltValue");
         const spinCount = attrNum(rEl, "spinCount");
         if (spinCount !== undefined) r.spinCount = spinCount;
+        const sdAttr = attr(rEl, "securityDescriptor");
+        if (sdAttr !== undefined) r.securityDescriptor = sdAttr;
         const sdEl = findChild(rEl, "securityDescriptor");
         if (sdEl) r.securityDescriptor = textOf(sdEl) ?? undefined;
         ranges.push(r);
@@ -418,6 +420,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const rank = attrNum(ruleEl, "rank");
           if (rank !== undefined) rule.rank = rank;
           if (parseOnOff(attr(ruleEl, "equalAverage"))) rule.equalAverage = true;
+          if (String(attr(ruleEl, "aboveAverage")) === "0") rule.aboveAverage = false;
+          const stdDev = attrNum(ruleEl, "stdDev");
+          if (stdDev !== undefined) rule.stdDev = stdDev;
 
           // Color scale
           const csEl = findChild(ruleEl, "colorScale");
