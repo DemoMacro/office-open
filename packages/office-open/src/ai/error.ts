@@ -20,7 +20,7 @@ export function formatToolError(type: string, error: unknown): string {
       `Invalid paragraph child "${keys}". ` +
       `Paragraph children must use a wrapper key: ` +
       `{ paragraph: { children: [{ text: "...", bold?: true }] } }, ` +
-      `{ table: { rows: [...] } }, { image: { ... } }, ` +
+      `{ table: { rows: [...] } }, { picture: { ... } }, ` +
       `{ toc: { ... } }, { textbox: { ... } }, ` +
       `{ pageBreak: true }, { columnBreak: true }, etc. ` +
       `Do not use raw property names like { bold: ... } as paragraph children.`
@@ -41,7 +41,7 @@ export function formatToolError(type: string, error: unknown): string {
     return (
       `Unknown section child. ` +
       `Section children must use a wrapper key: ` +
-      `{ paragraph: { ... } }, { table: { ... } }, { image: { ... } }, ` +
+      `{ paragraph: { ... } }, { table: { ... } }, ` +
       `{ toc: { ... } }, { textbox: { ... } }, { pageBreak: true }, ` +
       `{ sdt: { ... } }, { altChunk: { ... } }, etc.`
     );
