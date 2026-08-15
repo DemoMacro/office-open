@@ -96,6 +96,8 @@ export type {
   MdxSetOptions,
   MdxMemberPropOptions,
   MdxKpiOptions,
+  MdxFunctionType,
+  MdxKpiProperty,
   FutureMetadataOptions,
   FutureMetadataBlockOptions,
   MetadataBlockOptions,

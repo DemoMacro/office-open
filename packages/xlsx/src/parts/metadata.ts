@@ -125,30 +125,36 @@ export interface MdxSetOptions {
   stringIndexes?: MetadataStringIndexOptions[];
 }
 
+/** ST_MdxFunctionType — the MDX function discriminator on mdx @f. */
+export type MdxFunctionType = "m" | "v" | "s" | "c" | "r" | "p" | "k";
+
+/** ST_MdxKPIProperty — the KPI property kind on k @p. */
+export type MdxKpiProperty = "v" | "g" | "s" | "t" | "w" | "m";
+
 /** MDX member property (CT_MdxMemeberProp, the p child of mdx). */
 export interface MdxMemberPropOptions {
-  /** Name index (required) */
-  n: number;
-  /** Name pair index (required) */
-  np: number;
+  /** Index into metadataStrings for the member name (@n, required) */
+  nameIndex: number;
+  /** Name pair index (@np, required) */
+  namePairIndex: number;
 }
 
 /** MDX KPI (CT_MdxKPI, the k child of mdx). */
 export interface MdxKpiOptions {
-  /** Name index (required) */
-  n: number;
-  /** Name pair index (required) */
-  np: number;
-  /** KPI property (required) */
-  p: string;
+  /** Index into metadataStrings for the member name (@n, required) */
+  nameIndex: number;
+  /** Name pair index (@np, required) */
+  namePairIndex: number;
+  /** KPI property kind (@p, required) */
+  property: MdxKpiProperty;
 }
 
 /** MDX metadata entry (CT_Mdx). */
 export interface MdxOptions {
-  /** MDX function type: "m" | "v" | "s" | "c" | "r" | "p" | "k" (required) */
-  f: string;
-  /** Metadata string index (required) */
-  n: number;
+  /** MDX function type (@f, required) */
+  functionType: MdxFunctionType;
+  /** Metadata string index (@n, required) */
+  stringIndex: number;
   /** MDX tuple (t) */
   tuple?: MdxTupleOptions;
   /** MDX set (ms) */
@@ -266,7 +272,7 @@ export const metadataDesc: CustomDescriptor<MetadataOptions> = {
     if (opts.mdx && opts.mdx.length > 0) {
       p.push(`<mdxMetadata count="${opts.mdx.length}">`);
       for (const m of opts.mdx) {
-        const attrs: string[] = [`n="${m.n}"`, `f="${escapeXml(m.f)}"`];
+        const attrs: string[] = [`n="${m.stringIndex}"`, `f="${m.functionType}"`];
         let inner = "";
         if (m.tuple) {
           const t = m.tuple;
@@ -291,9 +297,9 @@ export const metadataDesc: CustomDescriptor<MetadataOptions> = {
           const idxXml = stringifyStringIndexes(s.stringIndexes);
           inner = idxXml ? `<ms ${sAttrs.join(" ")}>${idxXml}</ms>` : `<ms ${sAttrs.join(" ")}/>`;
         } else if (m.memberProp) {
-          inner = `<p n="${m.memberProp.n}" np="${m.memberProp.np}"/>`;
+          inner = `<p n="${m.memberProp.nameIndex}" np="${m.memberProp.namePairIndex}"/>`;
         } else if (m.kpi) {
-          inner = `<k n="${m.kpi.n}" np="${m.kpi.np}" p="${escapeXml(m.kpi.p)}"/>`;
+          inner = `<k n="${m.kpi.nameIndex}" np="${m.kpi.namePairIndex}" p="${m.kpi.property}"/>`;
         }
         p.push(`<mdx ${attrs.join(" ")}>${inner}</mdx>`);
       }
@@ -364,7 +370,10 @@ export const metadataDesc: CustomDescriptor<MetadataOptions> = {
       const mdx: MdxOptions[] = [];
       for (const mEl of mdxEl.elements ?? []) {
         if (mEl.name !== "mdx") continue;
-        const m: Partial<MdxOptions> = { n: attrNum(mEl, "n") ?? 0, f: attr(mEl, "f") ?? "m" };
+        const m: Partial<MdxOptions> = {
+          stringIndex: attrNum(mEl, "n") ?? 0,
+          functionType: (attr(mEl, "f") ?? "m") as MdxFunctionType,
+        };
         const tEl = findChild(mEl, "t");
         if (tEl) {
           const t: Partial<MdxTupleOptions> = {};
@@ -397,14 +406,17 @@ export const metadataDesc: CustomDescriptor<MetadataOptions> = {
         }
         const pEl = findChild(mEl, "p");
         if (pEl) {
-          m.memberProp = { n: attrNum(pEl, "n") ?? 0, np: attrNum(pEl, "np") ?? 0 };
+          m.memberProp = {
+            nameIndex: attrNum(pEl, "n") ?? 0,
+            namePairIndex: attrNum(pEl, "np") ?? 0,
+          };
         }
         const kEl = findChild(mEl, "k");
         if (kEl) {
           m.kpi = {
-            n: attrNum(kEl, "n") ?? 0,
-            np: attrNum(kEl, "np") ?? 0,
-            p: attr(kEl, "p") ?? "",
+            nameIndex: attrNum(kEl, "n") ?? 0,
+            namePairIndex: attrNum(kEl, "np") ?? 0,
+            property: (attr(kEl, "p") ?? "v") as MdxKpiProperty,
           };
         }
         mdx.push(m as MdxOptions);

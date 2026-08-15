@@ -69,8 +69,8 @@ describe("metadataDesc", () => {
     const parsed = roundTrip({
       mdx: [
         {
-          f: "m",
-          n: 0,
+          functionType: "m",
+          stringIndex: 0,
           tuple: {
             count: 2,
             culture: "en-US",
@@ -85,13 +85,17 @@ describe("metadataDesc", () => {
             stringIndexes: [{ x: 0, show: true }, { x: 1 }],
           },
         },
-        { f: "s", n: 1, set: { namespaceCount: 3, count: 4, order: "na" } },
-        { f: "p", n: 2, memberProp: { n: 0, np: 1 } },
-        { f: "k", n: 3, kpi: { n: 0, np: 1, p: "goal" } },
+        { functionType: "s", stringIndex: 1, set: { namespaceCount: 3, count: 4, order: "na" } },
+        { functionType: "p", stringIndex: 2, memberProp: { nameIndex: 0, namePairIndex: 1 } },
+        {
+          functionType: "k",
+          stringIndex: 3,
+          kpi: { nameIndex: 0, namePairIndex: 1, property: "g" },
+        },
       ],
     });
     const [tuple, set, memberProp, kpi] = parsed.mdx!;
-    expect(tuple!.f).toBe("m");
+    expect(tuple!.functionType).toBe("m");
     expect(tuple!.tuple).toMatchObject({
       count: 2,
       culture: "en-US",
@@ -106,8 +110,8 @@ describe("metadataDesc", () => {
     });
     expect(tuple!.tuple!.stringIndexes).toEqual([{ x: 0, show: true }, { x: 1 }]);
     expect(set!.set).toMatchObject({ namespaceCount: 3, count: 4, order: "na" });
-    expect(memberProp!.memberProp).toEqual({ n: 0, np: 1 });
-    expect(kpi!.kpi).toEqual({ n: 0, np: 1, p: "goal" });
+    expect(memberProp!.memberProp).toEqual({ nameIndex: 0, namePairIndex: 1 });
+    expect(kpi!.kpi).toEqual({ nameIndex: 0, namePairIndex: 1, property: "g" });
   });
 
   it("round-trips future metadata blocks and cell/value metadata records", () => {
