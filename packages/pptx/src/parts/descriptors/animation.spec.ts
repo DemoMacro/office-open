@@ -16,6 +16,13 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
+function parseTimingXml(xml: string) {
+  const doc = parseXml(xml);
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
+  return timingDesc.parse(el, readCtx);
+}
+
 function roundTrip(opts: TimingDescriptorOptions) {
   const xml = timingDesc.stringify(opts, writeCtx)!;
   if (!xml) return { entries: [] };
@@ -80,5 +87,36 @@ describe("timingDesc round-trip", () => {
     expect(entry?.options.type).toBe("wipe");
     expect(entry?.options.direction).toBe("left");
     expect(entry?.options.duration).toBe(700);
+  });
+
+  it("parses animate behavior attributes (calcmode/valueType/from/to/by)", () => {
+    const xml = `<p:timing><p:tnLst><p:par><p:cTn><p:childTnLst><p:seq><p:cTn nodeType="mainSeq"><p:childTnLst><p:par><p:cTn><p:childTnLst><p:par><p:cTn nodeType="clickEffect" presetClass="entr" presetID="10"><p:childTnLst><p:anim calcmode="lin" valueType="num" from="0" to="1" by="0.5"><p:cBhvr><p:cTn dur="500"/><p:tgtEl><p:spTgt spid="4"/></p:tgtEl><p:attrNameLst><p:attrName>ppt_w</p:attrName></p:attrNameLst></p:cBhvr></p:anim></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
+    const result = parseTimingXml(xml);
+    const [entry] = result.entries;
+    expect(entry?.shapeId).toBe(4);
+    expect(entry?.options.calcMode).toBe("lin");
+    expect(entry?.options.valueType).toBe("num");
+    expect(entry?.options.from).toBe("0");
+    expect(entry?.options.to).toBe("1");
+    expect(entry?.options.animBy).toBe("0.5");
+    expect(entry?.options.attributeName).toBe("ppt_w");
+  });
+
+  it("parses animate-color color space and command behavior", () => {
+    const xml = `<p:timing><p:tnLst><p:par><p:cTn><p:childTnLst><p:seq><p:cTn nodeType="mainSeq"><p:childTnLst><p:par><p:cTn><p:childTnLst><p:par><p:cTn nodeType="withEffect" presetClass="emph" presetID="29"><p:childTnLst><p:animClr clrSpc="hsl"><p:cBhvr><p:cTn dur="300"/><p:tgtEl><p:spTgt spid="7"/></p:tgtEl></p:cBhvr></p:animClr><p:cmd type="call" cmd="play"><p:cBhvr><p:cTn dur="300"/><p:tgtEl><p:spTgt spid="7"/></p:tgtEl></p:cBhvr></p:cmd></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
+    const result = parseTimingXml(xml);
+    const [entry] = result.entries;
+    expect(entry?.options.colorSpace).toBe("hsl");
+    expect(entry?.options.emphasisType).toBe("colorChange");
+    expect(entry?.options.commandType).toBe("call");
+    expect(entry?.options.command).toBe("play");
+  });
+
+  it("parses iterate container attributes", () => {
+    const xml = `<p:timing><p:tnLst><p:par><p:cTn><p:childTnLst><p:seq><p:cTn nodeType="mainSeq"><p:childTnLst><p:par><p:cTn><p:childTnLst><p:par><p:cTn nodeType="clickEffect" presetClass="entr" presetID="10"><p:childTnLst><p:anim calcmode="lin"><p:cBhvr><p:cTn dur="500"/><p:tgtEl><p:spTgt spid="9"/></p:tgtEl></p:cBhvr></p:anim><p:iterate type="lt" backwards="1"><p:tmAbs tm="200"/></p:iterate></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
+    const result = parseTimingXml(xml);
+    const [entry] = result.entries;
+    expect(entry?.shapeId).toBe(9);
+    expect(entry?.options.iterate).toEqual({ type: "lt", backwards: true });
   });
 });

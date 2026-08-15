@@ -168,6 +168,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   customShows?: CustomShowOptions[];
   kinsoku?: KinsokuOptions[];
   customerData?: CustomerDataOptions;
+  /** Smart tags (p:smartTags) — r:id to the smart-tags part. */
+  smartTags?: { rId: string };
   colorMru?: string[];
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;

@@ -499,6 +499,7 @@ function buildPresAttrOpts(
     | "customShows"
     | "kinsoku"
     | "customerData"
+    | "smartTags"
   >
 > {
   if (
@@ -519,7 +520,8 @@ function buildPresAttrOpts(
     options.embeddedFonts === undefined &&
     options.customShows === undefined &&
     options.kinsoku === undefined &&
-    options.customerData === undefined
+    options.customerData === undefined &&
+    options.smartTags === undefined
   ) {
     return {};
   }
@@ -542,6 +544,7 @@ function buildPresAttrOpts(
     customShows: options.customShows,
     kinsoku: options.kinsoku,
     customerData: options.customerData,
+    smartTags: options.smartTags,
   };
 }
 

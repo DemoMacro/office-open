@@ -114,6 +114,8 @@ export interface PresentationPartOptions {
   customerData?: CustomerDataOptions;
   /** Slide sections (p14:sectionLst); slides are grouped by name. */
   sections?: PresentationSectionGroup[];
+  /** Smart tags (p:smartTags) — r:id to the smart-tags part. */
+  smartTags?: { rId: string };
 }
 
 /** A named group of slides forming one p14:section in presentation.xml. */

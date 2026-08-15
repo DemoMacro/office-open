@@ -608,10 +608,29 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
       }
 
       // Pattern 8: builder object property assignment — `xxxAttrs.name = val`
-      // (and `xxxAttrs.name?:` ternaries). xlsx/pptx build attribute maps as
-      // plain objects whose keys ARE the emitted XML attribute names.
-      const builderPropRe = /\b\w*Attrs\.([a-zA-Z]\w*)\s*[?:=]/g;
+      // (and `xxxAttrs.name?:` ternaries, lowercase `attrs.name`). xlsx/pptx
+      // build attribute maps as plain objects whose keys ARE the emitted XML
+      // attribute names.
+      const builderPropRe = /\b\w*[Aa]ttrs\.([a-zA-Z]\w*)\s*[?:=]/g;
       while ((m = builderPropRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
+
+      // Pattern 8b: shorthand object-literal keys — `{ transition, filter, }`
+      // passed to an XML builder as the attribute map.
+      const shorthandRe = /\{\s*((?:[a-zA-Z]\w*\s*,\s*)*[a-zA-Z]\w*)\s*,?\s*\}/g;
+      while ((m = shorthandRe.exec(src)) !== null) {
+        for (const ident of m[1]!.split(",")) {
+          const name = ident.trim();
+          if (name) found.add(name);
+        }
+      }
+
+      // Pattern 8c: object-literal keys with literal values — `{ origin: "layout",
+      // concurrent: 1 }` attribute maps initialized inline.
+      const literalKeyRe =
+        /\b([a-zA-Z][a-zA-Z0-9]*)\s*:\s*(?:"[^"]*"|'[^']*'|-?\d|true|false|null|undefined)/g;
+      while ((m = literalKeyRe.exec(src)) !== null) {
         found.add(m[1]);
       }
 

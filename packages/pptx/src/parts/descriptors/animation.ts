@@ -4,6 +4,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -228,9 +229,21 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
           break;
         }
         case "p:anim": {
-          const subCTn = findChild(sub, "p:cTn");
-          if (subCTn) {
-            const attrName = findChild(subCTn, "p:attrNameLst");
+          // CT_TLAnimateBehavior attributes — from/to/by/calcmode/valueType
+          const calcMode = attr(sub, "calcmode");
+          if (calcMode) opts.calcMode = calcMode as AnimationOptions["calcMode"];
+          const valueType = attr(sub, "valueType");
+          if (valueType) opts.valueType = valueType as AnimationOptions["valueType"];
+          const fromAttr = attr(sub, "from");
+          if (fromAttr) opts.from = fromAttr;
+          const toAttr = attr(sub, "to");
+          if (toAttr) opts.to = toAttr;
+          const byAttr = attr(sub, "by");
+          if (byAttr) opts.animBy = byAttr;
+
+          const cBhvr = findChild(sub, "p:cBhvr");
+          if (cBhvr) {
+            const attrName = findChild(cBhvr, "p:attrNameLst");
             if (attrName) {
               const name = findChild(attrName, "p:attrName");
               if (name) {
@@ -278,12 +291,26 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
         }
         case "p:animClr": {
           opts.emphasisType = "colorChange" as EmphasisType;
+          const clrSpc = attr(sub, "clrSpc");
+          if (clrSpc) opts.colorSpace = clrSpc as AnimationOptions["colorSpace"];
           readSubDuration(sub, opts);
           break;
         }
         case "p:cmd": {
           const cmdType = attr(sub, "type");
           if (cmdType === "call") opts.mediaType = "play";
+          if (cmdType) opts.commandType = cmdType as AnimationOptions["commandType"];
+          const cmdStr = attr(sub, "cmd");
+          if (cmdStr) opts.command = cmdStr;
+          break;
+        }
+        case "p:iterate": {
+          // CT_TLIterateData — text-level iteration
+          const iterate: NonNullable<AnimationOptions["iterate"]> = {};
+          const iterType = attr(sub, "type");
+          if (iterType) iterate.type = iterType as NonNullable<AnimationOptions["iterate"]>["type"];
+          if (parseOnOff(attr(sub, "backwards"))) iterate.backwards = true;
+          opts.iterate = iterate;
           break;
         }
       }

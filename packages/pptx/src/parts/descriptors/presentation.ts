@@ -116,6 +116,11 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
   parts.push(`<p:sldSz cx="${cx}" cy="${cy}"/>`);
   parts.push('<p:notesSz cx="6858000" cy="9144000"/>');
 
+  // smartTags (CT_SmartTags — r:id to the smart-tags part)
+  if (opts.smartTags) {
+    parts.push(`<p:smartTags r:id="${opts.smartTags.rId}"/>`);
+  }
+
   // embeddedFontLst
   if (opts.embeddedFonts && opts.embeddedFonts.length > 0) {
     parts.push("<p:embeddedFontLst>");
@@ -306,6 +311,13 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
   if (sldSz?.attributes) {
     if (sldSz.attributes["cx"] !== undefined) result.slideWidth = Number(sldSz.attributes["cx"]);
     if (sldSz.attributes["cy"] !== undefined) result.slideHeight = Number(sldSz.attributes["cy"]);
+  }
+
+  // smartTags — r:id to the smart-tags part
+  const smartTags = findChild(el, "p:smartTags");
+  if (smartTags) {
+    const rId = attr(smartTags, "r:id");
+    if (rId) result.smartTags = { rId };
   }
 
   // sldIdLst

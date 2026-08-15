@@ -76,4 +76,19 @@ describe("presentationDesc round-trip", () => {
     const result = roundTrip(opts);
     expect(result.firstSlideNum).toBe(5);
   });
+
+  it("round-trips smartTags", () => {
+    const opts: PresentationDescriptorOptions = {
+      slideIds: [256],
+      masterCount: 1,
+      smartTags: { rId: "rId9" },
+    };
+    const xml = presentationDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<p:smartTags r:id="rId9"/>');
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = presentationDesc.parse(el, readCtx);
+    expect(result.smartTags).toEqual({ rId: "rId9" });
+  });
 });
