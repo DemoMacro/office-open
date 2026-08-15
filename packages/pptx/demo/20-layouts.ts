@@ -42,6 +42,10 @@ const options: PresentationOptions = {
         {
           name: "Hero",
           type: "blank",
+          // Per-layout theme deviation — emits ppt/theme/themeOverride1.xml
+          themeOverride: {
+            colorScheme: { accent1: "C0504D", dark1: "1B2A4A" },
+          },
           children: [
             {
               shape: {

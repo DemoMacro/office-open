@@ -14,6 +14,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
 import { buildThemeXml } from "./build-theme-xml";
 import { parseColorScheme } from "./color-scheme";
+import { parseCustomColors } from "./custom-color";
 import { parseExtraColorSchemes } from "./extra-color-scheme";
 import { parseFontScheme } from "./font-scheme";
 import { parseObjectDefaults } from "./object-defaults";
@@ -48,6 +49,9 @@ export const themeDesc: CustomDescriptor<ThemeOptions, WriteContext, ThemeOption
 
     const extraColorSchemes = parseExtraColorSchemes(findChild(el, "a:extraClrSchemeLst"));
     if (extraColorSchemes) result.extraColorSchemes = extraColorSchemes;
+
+    const customColors = parseCustomColors(findChild(el, "a:custClrLst"), ctx);
+    if (customColors) result.customColors = customColors;
 
     return result as ThemeOptions;
   },

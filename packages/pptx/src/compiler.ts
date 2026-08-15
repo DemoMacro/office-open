@@ -37,6 +37,7 @@ import {
   contentTypesDesc,
   deriveContentTypes,
   resolverFromRegistry,
+  themeOverrideDesc,
   PPTX_PARTS,
 } from "@office-open/core";
 import type { XmlifyedFile, Zippable } from "@office-open/core";
@@ -95,6 +96,8 @@ interface LayoutInfo {
   index: number;
   masterIndex: number;
   def: LayoutDefinition;
+  /** Serialized themeOverride part XML, when the layout deviates from its master's theme. */
+  themeOverride?: string;
 }
 
 interface MasterInfo {
@@ -255,21 +258,31 @@ function buildMasterMap(
     for (const [li, key] of layoutKeys.entries()) {
       const layoutDef = layoutDefs?.[li];
       const slideLayoutType = (layoutDef?.type ?? key) as SlideLayoutType;
+      const themeOverride = layoutDef?.themeOverride
+        ? (themeOverrideDesc.stringify(layoutDef.themeOverride, ctx) ?? undefined)
+        : undefined;
       layouts.push({
         key,
         index: globalLayoutIndex,
         masterIndex: mi,
         def: resolveLayoutDef(layoutDef, slideLayoutType, slideWidth),
+        themeOverride,
       });
-      layoutRels.push(
-        buildRels([
-          {
-            id: 1,
-            type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
-            target: `../slideMasters/slideMaster${mi + 1}.xml`,
-          },
-        ]),
-      );
+      const layoutRelEntries: RelEntry[] = [
+        {
+          id: 1,
+          type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
+          target: `../slideMasters/slideMaster${mi + 1}.xml`,
+        },
+      ];
+      if (themeOverride) {
+        layoutRelEntries.push({
+          id: 2,
+          type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride",
+          target: `../theme/themeOverride${globalLayoutIndex + 1}.xml`,
+        });
+      }
+      layoutRels.push(buildRels(layoutRelEntries));
       globalLayoutIndex++;
     }
 
@@ -798,6 +811,12 @@ export function compilePresentation(
       data: XML_DECL + allLayoutRels[li]!.serialize(),
       path: `ppt/slideLayouts/_rels/slideLayout${li + 1}.xml.rels`,
     };
+    if (layoutInfo.themeOverride) {
+      mapping[`SlideLayoutThemeOverride${li}`] = {
+        data: XML_DECL + layoutInfo.themeOverride,
+        path: `ppt/theme/themeOverride${li + 1}.xml`,
+      };
+    }
   }
 
   // Notes Master

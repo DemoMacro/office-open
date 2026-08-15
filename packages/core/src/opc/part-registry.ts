@@ -256,6 +256,18 @@ export const PPTX_PARTS = {
       presence: { kind: "repeated", countFrom: "masters + notes/handout masters" },
     },
     {
+      // Per-layout theme deviations (CT_BaseStylesOverride subset).
+      path: "ppt/theme/themeOverride${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.themeOverride+xml",
+      presence: { kind: "conditional", flag: "layout-level theme overrides" },
+    },
+    {
+      // Legacy empty theme manager part (CT_EmptyElement) from pre-2010 files.
+      path: "ppt/theme/themeManager1.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.themeManager+xml",
+      presence: { kind: "conditional", flag: "legacy themeManager part" },
+    },
+    {
       path: "ppt/presProps.xml",
       contentType: "application/vnd.openxmlformats-officedocument.presentationml.presProps+xml",
       presence: { kind: "conditional", flag: "freshCompile" },

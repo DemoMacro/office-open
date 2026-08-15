@@ -10,7 +10,7 @@ import {
 import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
-import { themeDesc } from "@office-open/core/theme";
+import { themeDesc, themeOverrideDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import { attr, attrNum, findChild } from "@office-open/xml";
 
@@ -471,8 +471,13 @@ export function parsePresentation(data: DataType): PresentationOptions {
   }
 
   // 4. Build relationship maps
-  const masterThemePaths = resolveRelTargets(pptx.doc, pptx.slideMasters, (t) =>
-    t.includes("/theme"),
+  const masterThemePaths = resolveRelTargets(
+    pptx.doc,
+    pptx.slideMasters,
+    (t) => t.includes("/theme") && !t.includes("/themeOverride") && !t.includes("/themeManager"),
+  );
+  const layoutThemeOverridePaths = resolveRelTargets(pptx.doc, pptx.slideLayouts, (t) =>
+    t.includes("/themeOverride"),
   );
   const layoutMasterPaths = resolveRelTargets(pptx.doc, pptx.slideLayouts, (t) =>
     t.includes("/slideMaster"),
@@ -506,7 +511,13 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (layoutEl) {
         // Fully structured def (children/background/clrMapOvr/transition/...).
         // The compiler re-stringifies from structure, so edits survive round-trip.
-        masterLayouts.push(slideLayoutDesc.parse(layoutEl, masterReadCtx));
+        const layoutDef = slideLayoutDesc.parse(layoutEl, masterReadCtx);
+        const themeOverridePath = layoutThemeOverridePaths.get(layoutPath);
+        const themeOverrideEl = themeOverridePath ? pptx.doc.get(themeOverridePath) : undefined;
+        if (themeOverrideEl) {
+          layoutDef.themeOverride = themeOverrideDesc.parse(themeOverrideEl, masterReadCtx);
+        }
+        masterLayouts.push(layoutDef);
       }
     }
 

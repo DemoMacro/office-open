@@ -10,6 +10,7 @@
  */
 import type { WriteContext } from "../descriptor";
 import { stringifyColorScheme } from "./color-scheme";
+import { stringifyCustomColors } from "./custom-color";
 import { stringifyExtraColorSchemes } from "./extra-color-scheme";
 import { stringifyFontScheme } from "./font-scheme";
 import { stringifyObjectDefaults } from "./object-defaults";
@@ -63,10 +64,13 @@ export function buildThemeXml(options?: ThemeOptions, ctx?: WriteContext): strin
     ? stringifyObjectDefaults(opts.objectDefaults, requireCtx(ctx, "objectDefaults"))
     : "<a:objectDefaults/>";
   const extraClrSchemeLst = stringifyExtraColorSchemes(opts.extraColorSchemes, name);
+  const custClrLst = opts.customColors
+    ? stringifyCustomColors(opts.customColors, requireCtx(ctx, "customColors"))
+    : "";
 
   return (
     `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="${name}">` +
     `<a:themeElements>${clrScheme}${fontScheme}${fmtScheme}</a:themeElements>` +
-    `${objectDefaults}${extraClrSchemeLst}</a:theme>`
+    `${objectDefaults}${extraClrSchemeLst}${custClrLst}</a:theme>`
   );
 }

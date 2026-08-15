@@ -3,6 +3,7 @@ import type {
   AppPropertiesOptions,
   CorePropertiesOptions,
   CustomPropertyOptions,
+  ThemeOverrideOptions,
   UniversalMeasure,
 } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
@@ -77,6 +78,8 @@ export interface LayoutDefinition {
   placeholders?: LayoutPlaceholderOptions;
   /** Verbatim layout XML; when set, the compiler parses this instead of synthesizing layout XML from the structured fields. */
   layout?: string;
+  /** Theme override (themeOverride{n}.xml part) — per-layout deviations from the owning master's theme. */
+  themeOverride?: ThemeOverrideOptions;
 }
 
 export interface MasterDefinition extends SlideMasterOptions {

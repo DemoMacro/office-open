@@ -169,6 +169,14 @@ export interface ExtraColorSchemeOptions {
   colorMapping?: Partial<ColorMappingOptions>;
 }
 
+/** Custom color entry (CT_CustomColor) — a named color in the theme's palette. */
+export interface CustomColorOptions {
+  /** Palette display name (CT_CustomColor @name, default "") */
+  name?: string;
+  /** Color value (EG_ColorChoice) */
+  color: SolidFillOptions;
+}
+
 /** Theme customization options (a:theme). */
 export interface ThemeOptions {
   name?: string;
@@ -177,4 +185,11 @@ export interface ThemeOptions {
   formatScheme?: FormatSchemeOptions;
   objectDefaults?: ObjectDefaultsOptions;
   extraColorSchemes?: ExtraColorSchemeOptions[];
+  customColors?: CustomColorOptions[];
 }
+
+/** Theme override (a:themeOverride / CT_BaseStylesOverride) — a per-part subset of the theme. */
+export type ThemeOverrideOptions = Pick<
+  ThemeOptions,
+  "colorScheme" | "fontScheme" | "formatScheme"
+>;

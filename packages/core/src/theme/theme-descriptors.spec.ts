@@ -4,7 +4,8 @@ import { describe, it, expect } from "vite-plus/test";
 import { stringify, parse, type ReadContext, type WriteContext } from "../descriptor";
 import { buildThemeXml } from "./build-theme-xml";
 import { themeDesc } from "./theme-descriptors";
-import type { ThemeOptions } from "./theme-options";
+import type { ThemeOptions, ThemeOverrideOptions } from "./theme-options";
+import { themeManagerDesc, themeOverrideDesc } from "./theme-override";
 
 function roundTrip(opts: ThemeOptions): ThemeOptions {
   const xml = stringify(themeDesc, opts, {} as WriteContext);
@@ -128,5 +129,57 @@ describe("themeDesc", () => {
     expect(result.name).toBe("Custom Theme");
     expect(result.colorScheme?.accent1).toBe("FF0000");
     expect(result.fontScheme?.majorFont?.latin?.typeface).toBe("Arial");
+  });
+});
+
+describe("custom colors", () => {
+  it("round-trips custClrLst entries", () => {
+    const opts: ThemeOptions = {
+      customColors: [
+        { name: "Brand Red", color: { value: "FF0000" } },
+        { color: { value: "00FF00" } },
+      ],
+    };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('<a:custClr name="Brand Red">');
+
+    const result = roundTrip(opts);
+    expect(result.customColors).toHaveLength(2);
+    expect(result.customColors?.[0]).toMatchObject({ name: "Brand Red" });
+    expect(result.customColors?.[1]?.name).toBeUndefined();
+  });
+
+  it("omits custClrLst when no custom colors set", () => {
+    const xml = stringify(themeDesc, {}, {} as WriteContext)!;
+    expect(xml).not.toContain("custClrLst");
+  });
+});
+
+describe("themeOverrideDesc", () => {
+  it("round-trips the base-styles subset", () => {
+    const opts: ThemeOverrideOptions = {
+      colorScheme: { accent1: "123456", dark1: "000000" },
+      fontScheme: { majorFont: { latin: { typeface: "Arial" } } },
+    };
+    const xml = stringify(themeOverrideDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain("<a:themeOverride ");
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root element");
+    const result = parse(themeOverrideDesc, el, {} as ReadContext);
+    expect(result.colorScheme?.accent1).toBe("123456");
+    expect(result.fontScheme?.majorFont?.latin?.typeface).toBe("Arial");
+    expect(result.formatScheme).toBeUndefined();
+  });
+});
+
+describe("themeManagerDesc", () => {
+  it("serializes the empty legacy element and parses back empty", () => {
+    const xml = stringify(themeManagerDesc, {}, {} as WriteContext)!;
+    expect(xml).toBe(
+      '<a:themeManager xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/>',
+    );
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root element");
+    expect(parse(themeManagerDesc, el, {} as ReadContext)).toEqual({});
   });
 });
