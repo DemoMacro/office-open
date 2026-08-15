@@ -4,13 +4,17 @@
  * @module
  */
 
-import type { NonVisualDrawingPropertiesOptions, UniversalMeasure } from "@office-open/core";
+import type {
+  DataType,
+  NonVisualDrawingPropertiesOptions,
+  UniversalMeasure,
+} from "@office-open/core";
 
 // ── Options ──
 
 export interface OleEmbedOptions {
-  /** Relationship ID for the embedded OLE data */
-  rId: string;
+  /** OLE container binary — registered as ppt/embeddings/oleObjectN.bin. */
+  data: DataType;
 }
 
 export interface OleLinkOptions {
@@ -18,6 +22,13 @@ export interface OleLinkOptions {
   rId: string;
   /** Automatic or manual update */
   autoUpdate?: boolean;
+}
+
+export interface OleIconImageOptions {
+  /** Icon/preview image bytes (binary or base64 data URL). */
+  data: DataType;
+  /** Image type / extension (e.g. "png", "emf"). */
+  type: string;
 }
 
 /**
@@ -44,18 +55,16 @@ export interface OleOptions extends NonVisualDrawingPropertiesOptions {
   imgW?: number;
   /** Image height (EMU) for icon/preview */
   imgH?: number;
-  /** Embed mode (provides rId for embedded OLE) */
+  /** Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). */
   embed?: OleEmbedOptions;
-  /** Link mode (provides rId for linked OLE) */
+  /** Link mode (provides rId for linked OLE data) */
   link?: OleLinkOptions;
-  /** Relationship ID for the preview/icon image */
-  imgRId?: string;
-  /** Follow color scheme: "none", "full", or "textAndBackground" */
+  /**
+   * Icon/preview image (p:pic under p:oleObj). MS Office refuses to open a
+   * presentation whose oleObj has no picture, so this is effectively required
+   * for embedded objects.
+   */
+  iconImage?: OleIconImageOptions;
+  /** Follow color scheme (p:embed/@followColorScheme): "none", "full", or "textAndBackground" */
   followColorScheme?: "none" | "full" | "textAndBackground";
-}
-
-export interface OleData {
-  key: string;
-  rId: string;
-  progId?: string;
 }

@@ -129,7 +129,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // p:transition (optional, after clrMapOvr).
     if (opts.transition) {
-      const transitionXml = stringifyTransition(opts.transition);
+      const transitionXml = stringifyTransition(opts.transition, ctx);
       if (transitionXml) parts.push(transitionXml);
     }
 
@@ -247,7 +247,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // p:transition.
     const transition = findChild(el, "p:transition");
-    if (transition) result.transition = readTransition(transition);
+    if (transition) result.transition = readTransition(transition, ctx);
 
     // p:timing.
     const timing = findChild(el, "p:timing");

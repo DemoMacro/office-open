@@ -9,7 +9,8 @@ import { oleDesc } from "./ole";
 
 const writeCtx = {
   addRelationship: () => "rId1",
-  addMedia: () => "",
+  addMedia: () => "{image1.png}",
+  addOle: () => "{ole:oleObject1.bin}",
 } as unknown as WriteContext;
 
 const readCtx = {
@@ -18,16 +19,35 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: OleOptions) {
+const OLE_BYTES = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0]);
+const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+
+// Descriptor-level parse sees the {ole:…} placeholder as the raw r:id — map it
+// the way the compiler would map the rewritten relationship id.
+const readCtxWithEmbedding = {
+  resolveRelationship: (rId: string) => {
+    if (rId === "{ole:oleObject1.bin}") return "../embeddings/oleObject1.bin";
+    if (rId === "{image1.png}") return "../media/image1.png";
+    return undefined;
+  },
+  getPart: () => undefined,
+  getRaw: (path: string) => {
+    if (path === "../embeddings/oleObject1.bin") return OLE_BYTES;
+    if (path === "../media/image1.png") return PNG_BYTES;
+    return undefined;
+  },
+} as unknown as ReadContext;
+
+function roundTrip(opts: OleOptions, ctx: ReadContext = readCtx) {
   const xml = oleDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return oleDesc.parse(el, readCtx);
+  return { parsed: oleDesc.parse(el, ctx), xml };
 }
 
 describe("oleDesc round-trip", () => {
-  it("round-trips basic embedded OLE object", () => {
+  it("registers embedded OLE binary and reads it back on parse", () => {
     const opts: OleOptions = {
       id: 100,
       name: "Test OLE",
@@ -36,19 +56,29 @@ describe("oleDesc round-trip", () => {
       width: 200,
       height: 150,
       progId: "Excel.Sheet.12",
-      embed: { rId: "rId2" },
+      embed: { data: OLE_BYTES },
+      followColorScheme: "full",
+      iconImage: { data: PNG_BYTES, type: "png" },
     };
-    const result = roundTrip(opts);
+    const { parsed, xml } = roundTrip(opts, readCtxWithEmbedding);
 
-    expect(result.id).toBe(100);
-    expect(result.name).toBe("Test OLE");
-    expect(result.x).toBe(50);
-    expect(result.y).toBe(60);
-    expect(result.width).toBe(200);
-    expect(result.height).toBe(150);
-    expect(result.progId).toBe("Excel.Sheet.12");
-    expect(result.embed).toBeDefined();
-    expect(result.embed!.rId).toBe("rId2");
+    expect(xml).toContain('r:id="{ole:oleObject1.bin}"');
+    // followColorScheme lives on p:embed, not on p:oleObj
+    expect(xml).toContain('<p:embed followColorScheme="full"/>');
+    expect(xml).toContain('<a:blip r:embed="{image1.png}"/>');
+    expect(parsed.id).toBe(100);
+    expect(parsed.name).toBe("Test OLE");
+    expect(parsed.x).toBe(50);
+    expect(parsed.y).toBe(60);
+    expect(parsed.width).toBe(200);
+    expect(parsed.height).toBe(150);
+    expect(parsed.progId).toBe("Excel.Sheet.12");
+    expect(parsed.embed).toBeDefined();
+    expect(parsed.embed!.data).toEqual(OLE_BYTES);
+    expect(parsed.followColorScheme).toBe("full");
+    expect(parsed.iconImage).toBeDefined();
+    expect(parsed.iconImage!.data).toEqual(PNG_BYTES);
+    expect(parsed.iconImage!.type).toBe("png");
   });
 
   it("round-trips linked OLE object", () => {
@@ -62,14 +92,14 @@ describe("oleDesc round-trip", () => {
       progId: "Word.Document.12",
       link: { rId: "rId3", autoUpdate: true },
     };
-    const result = roundTrip(opts);
+    const { parsed } = roundTrip(opts);
 
-    expect(result.id).toBe(200);
-    expect(result.name).toBe("Linked OLE");
-    expect(result.progId).toBe("Word.Document.12");
-    expect(result.link).toBeDefined();
-    expect(result.link!.rId).toBe("rId3");
-    expect(result.link!.autoUpdate).toBe(true);
+    expect(parsed.id).toBe(200);
+    expect(parsed.name).toBe("Linked OLE");
+    expect(parsed.progId).toBe("Word.Document.12");
+    expect(parsed.link).toBeDefined();
+    expect(parsed.link!.rId).toBe("rId3");
+    expect(parsed.link!.autoUpdate).toBe(true);
   });
 
   it("round-trips linked OLE without autoUpdate", () => {
@@ -77,11 +107,11 @@ describe("oleDesc round-trip", () => {
       id: 250,
       link: { rId: "rId4" },
     };
-    const result = roundTrip(opts);
+    const { parsed } = roundTrip(opts);
 
-    expect(result.link).toBeDefined();
-    expect(result.link!.rId).toBe("rId4");
-    expect(result.link!.autoUpdate).toBeUndefined();
+    expect(parsed.link).toBeDefined();
+    expect(parsed.link!.rId).toBe("rId4");
+    expect(parsed.link!.autoUpdate).toBeUndefined();
   });
 
   it("round-trips OLE with showAsIcon", () => {
@@ -91,52 +121,52 @@ describe("oleDesc round-trip", () => {
       showAsIcon: true,
       imgW: 64,
       imgH: 64,
-      embed: { rId: "rId5" },
+      embed: { data: OLE_BYTES },
     };
-    const result = roundTrip(opts);
+    const { parsed } = roundTrip(opts);
 
-    expect(result.id).toBe(300);
-    expect(result.showAsIcon).toBe(true);
-    expect(result.imgW).toBe(64);
-    expect(result.imgH).toBe(64);
+    expect(parsed.id).toBe(300);
+    expect(parsed.showAsIcon).toBe(true);
+    expect(parsed.imgW).toBe(64);
+    expect(parsed.imgH).toBe(64);
   });
 
   it("round-trips OLE with shapeId", () => {
     const opts: OleOptions = {
       id: 400,
       shapeId: "_x0000_s1025",
-      embed: { rId: "rId6" },
+      embed: { data: OLE_BYTES },
     };
-    const result = roundTrip(opts);
+    const { parsed } = roundTrip(opts);
 
-    expect(result.shapeId).toBe("_x0000_s1025");
+    expect(parsed.shapeId).toBe("_x0000_s1025");
   });
 
   it("round-trips OLE with followColorScheme", () => {
     const opts: OleOptions = {
       id: 500,
       followColorScheme: "full",
-      embed: { rId: "rId7" },
+      embed: { data: OLE_BYTES },
     };
-    const result = roundTrip(opts);
+    const { parsed } = roundTrip(opts);
 
-    expect(result.followColorScheme).toBe("full");
+    expect(parsed.followColorScheme).toBe("full");
   });
 
   it("round-trips position with defaults", () => {
     const opts: OleOptions = {
       id: 700,
-      embed: { rId: "rId10" },
+      embed: { data: OLE_BYTES },
     };
-    const result = roundTrip(opts);
+    const { parsed } = roundTrip(opts);
 
-    expect(result.id).toBe(700);
-    expect(result.name).toBe("Object 700");
-    expect(result.x).toBe(0);
-    expect(result.y).toBe(0);
+    expect(parsed.id).toBe(700);
+    expect(parsed.name).toBe("Object 700");
+    expect(parsed.x).toBe(0);
+    expect(parsed.y).toBe(0);
     // default 100px = 952500 EMU
-    expect(result.width).toBe(952500);
-    expect(result.height).toBe(952500);
+    expect(parsed.width).toBe(952500);
+    expect(parsed.height).toBe(952500);
   });
 
   it("round-trips EMU conversion correctly", () => {
@@ -146,13 +176,13 @@ describe("oleDesc round-trip", () => {
       y: 768,
       width: 1920,
       height: 1080,
-      embed: { rId: "rId11" },
+      embed: { data: OLE_BYTES },
     };
-    const result = roundTrip(opts);
+    const { parsed } = roundTrip(opts);
 
-    expect(result.x).toBe(1024);
-    expect(result.y).toBe(768);
-    expect(result.width).toBe(1920);
-    expect(result.height).toBe(1080);
+    expect(parsed.x).toBe(1024);
+    expect(parsed.y).toBe(768);
+    expect(parsed.width).toBe(1920);
+    expect(parsed.height).toBe(1080);
   });
 });

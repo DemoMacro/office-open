@@ -6,14 +6,15 @@
  * @module
  */
 
-import { convertToEmu } from "@office-open/core";
+import { convertToEmu, toUint8Array } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
-import { attr, attrBool, attrNum, escapeXml, findChild } from "@office-open/xml";
+import { attr, attrBool, attrNum, escapeXml, findChild, type Element } from "@office-open/xml";
 
+import type { PptxWriteContext } from "../../context";
 import type { OleOptions } from "../ole-frame";
 
 // ── ID counter ──
@@ -25,7 +26,7 @@ let _nextOleId = 2048;
 export const oleDesc: CustomDescriptor<OleOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
+  stringify(opts, ctx) {
     const id = opts.id ?? _nextOleId++;
     const name = opts.name ?? `Object ${id}`;
 
@@ -54,21 +55,39 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     if (opts.imgW !== undefined) oleAttrs.push(`imgW="${opts.imgW}"`);
     if (opts.imgH !== undefined) oleAttrs.push(`imgH="${opts.imgH}"`);
     if (opts.progId) oleAttrs.push(`progId="${opts.progId}"`);
-    if (opts.followColorScheme) oleAttrs.push(`followColorScheme="${opts.followColorScheme}"`);
-    const rId = opts.embed?.rId ?? opts.link?.rId;
-    if (rId) oleAttrs.push(`r:id="${rId}"`);
 
+    // Embedded OLE: register the binary as ppt/embeddings/oleObjectN.bin and
+    // emit a {ole:…} placeholder — the compiler rewrites it to a real r:id and
+    // adds the oleObject relationship. Linked OLE keeps its external rId as-is.
+    // followColorScheme is CT_OleObjectEmbed's attribute, not oleObj's.
     const oleChildren: string[] = [];
     if (opts.embed) {
-      oleChildren.push("<p:embed/>");
+      const pptxCtx = ctx as PptxWriteContext;
+      const ref = pptxCtx.addOle(toUint8Array(opts.embed.data) as Uint8Array, opts.progId);
+      oleAttrs.push(`r:id="${ref}"`);
+      const fcs = opts.followColorScheme ? ` followColorScheme="${opts.followColorScheme}"` : "";
+      oleChildren.push(`<p:embed${fcs}/>`);
     } else if (opts.link) {
+      oleAttrs.push(`r:id="${opts.link.rId}"`);
       const linkAttrs = opts.link.autoUpdate ? ' updateAutomatic="1"' : "";
       oleChildren.push(`<p:link${linkAttrs}/>`);
     }
 
-    if (opts.imgRId) {
+    // Icon/preview picture — MS Office refuses to open the presentation when
+    // an oleObj carries no picture, so it is emitted whenever iconImage is
+    // supplied. Registered as media; the {fileName} placeholder is rewritten
+    // by the compiler's image pass.
+    if (opts.iconImage) {
+      const pptxCtx = ctx as PptxWriteContext;
+      const imageRef = pptxCtx.addMedia(
+        toUint8Array(opts.iconImage.data) as Uint8Array,
+        opts.iconImage.type,
+      );
       oleChildren.push(
-        `<p:pic><p:nvPicPr><p:cNvPr id="2" name="${escapeXml(name)}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr></p:pic>`,
+        `<p:pic><p:nvPicPr><p:cNvPr id="0" name=""/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>` +
+          `<p:blipFill><a:blip r:embed="${imageRef}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>` +
+          `<p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
+          `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`,
       );
     }
 
@@ -81,7 +100,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     return `<p:graphicFrame>${parts.join("")}</p:graphicFrame>`;
   },
 
-  parse(el, _ctx) {
+  parse(el, ctx) {
     const result: Partial<OleOptions> = {};
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
@@ -128,15 +147,18 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
       if (imgW !== undefined) result.imgW = imgW;
       const imgH = attrNum(oleObj, "imgH");
       if (imgH !== undefined) result.imgH = imgH;
-      const followCS = attr(oleObj, "followColorScheme");
-      if (followCS !== undefined)
-        result.followColorScheme = followCS as "none" | "full" | "textAndBackground";
 
-      // embed/link
+      // embed/link — embedded OLE reads the binary back through the
+      // relationship so generate re-registers it in a fresh package.
       const embedEl = findChild(oleObj, "p:embed");
       if (embedEl) {
         const rId = attr(oleObj, "r:id");
-        if (rId !== undefined) result.embed = { rId };
+        const mediaPath = rId ? ctx.resolveRelationship(rId) : undefined;
+        const raw = mediaPath ? ctx.getRaw(mediaPath) : undefined;
+        if (raw) result.embed = { data: raw };
+        const followCS = attr(embedEl, "followColorScheme");
+        if (followCS !== undefined)
+          result.followColorScheme = followCS as "none" | "full" | "textAndBackground";
       } else {
         const linkEl = findChild(oleObj, "p:link");
         if (linkEl) {
@@ -146,11 +168,15 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
         }
       }
 
-      // imgRId: search for r:id in p:pic subtree
+      // iconImage: read the picture bytes back through the blip relationship
       const pic = findChild(oleObj, "p:pic");
       if (pic) {
-        const picRId = findDeepAttr(pic, "r:id");
-        if (picRId !== undefined) result.imgRId = picRId;
+        const blip = findChildDeep(pic, "a:blip");
+        const blipRId = blip ? attr(blip, "r:embed") : undefined;
+        const imagePath = blipRId ? ctx.resolveRelationship(blipRId) : undefined;
+        const raw = imagePath ? ctx.getRaw(imagePath) : undefined;
+        const type = imagePath?.split(".").pop();
+        if (raw && type) result.iconImage = { data: raw, type };
       }
     }
 
@@ -158,22 +184,12 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
   },
 };
 
-/** Search for an attribute value in the element or any descendant. */
-function findDeepAttr(
-  el: {
-    attributes?: Record<string, string | number | undefined>;
-    elements?: Array<{
-      attributes?: Record<string, string | number | undefined>;
-      elements?: Array<unknown>;
-    }>;
-  },
-  name: string,
-): string | undefined {
-  const v = el.attributes?.[name];
-  if (v !== undefined) return String(v);
+/** Find a descendant element by name at any depth. */
+function findChildDeep(el: Element, name: string): Element | undefined {
   for (const child of el.elements ?? []) {
-    const found = findDeepAttr(child as Parameters<typeof findDeepAttr>[0], name);
-    if (found !== undefined) return found;
+    if (child.name === name) return child;
+    const found = findChildDeep(child, name);
+    if (found) return found;
   }
   return undefined;
 }

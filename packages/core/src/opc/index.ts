@@ -8,6 +8,7 @@ export {
 } from "./relationships";
 export type { RelationshipType } from "./relationships";
 export { Media, type BaseMediaEntry } from "./media";
+export { EmbeddingCollection, type EmbeddingData } from "./embeddings";
 
 // Core properties (OPC metadata)
 export {

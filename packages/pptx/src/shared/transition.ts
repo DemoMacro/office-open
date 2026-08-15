@@ -1,3 +1,7 @@
+import type { DataType } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
+import type { WriteContext } from "@office-open/core/descriptor";
+
 const ORIENT_TYPES = new Set(["blinds", "checker", "comb", "randomBar"]);
 
 const SIDE_DIR_TYPES = new Set(["push", "wipe"]);
@@ -62,7 +66,10 @@ export interface TransitionOptions {
   thruBlk?: boolean;
   spokes?: number;
   startSound?: {
-    rId: string;
+    /** Audio content: base64 string, data URL, or raw bytes. */
+    data: DataType;
+    /** Audio container format — becomes the media part extension. */
+    type: "mp3" | "wav" | "wma" | "aac";
     name?: string;
     loop?: boolean;
   };
@@ -101,7 +108,7 @@ function buildTransitionElement(
   return attrs.length > 0 ? `<p:${type} ${attrs.join(" ")}/>` : `<p:${type}/>`;
 }
 
-export function buildTransition(options: TransitionOptions): string {
+export function buildTransition(options: TransitionOptions, ctx?: WriteContext): string {
   const attrParts: string[] = [];
   if (options.speed)
     // OOXML ST_TransitionSpeed uses "med"; the friendly API token is "medium".
@@ -123,9 +130,13 @@ export function buildTransition(options: TransitionOptions): string {
     );
   }
 
-  // Sound action (sndAc: stSnd | endSnd)
-  if (options.startSound) {
-    const sndAttrs: string[] = [`r:embed="${options.startSound.rId}"`];
+  // Sound action (sndAc: stSnd | endSnd). The sound bytes are registered as
+  // media through the write context; the {audio:…} placeholder is rewritten to
+  // a real relationship id (and the audio relationship added) by the compiler.
+  if (options.startSound && ctx) {
+    const ref = ctx.addMedia(toUint8Array(options.startSound.data), options.startSound.type);
+    const audioRef = `{audio:${ref.slice(1, -1)}}`;
+    const sndAttrs: string[] = [`r:embed="${audioRef}"`];
     if (options.startSound.name) sndAttrs.push(` name="${options.startSound.name}"`);
     const stSndAttrs: string[] = [];
     if (options.startSound.loop) stSndAttrs.push(' loop="1"');

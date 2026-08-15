@@ -134,7 +134,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
     // p:transition (optional, after sldLayoutIdLst).
     if (opts.transition) {
-      const transitionXml = stringifyTransition(opts.transition);
+      const transitionXml = stringifyTransition(opts.transition, ctx);
       if (transitionXml) parts.push(transitionXml);
     }
 
@@ -255,7 +255,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
     // p:transition.
     const transition = findChild(el, "p:transition");
-    if (transition) result.transition = readTransition(transition);
+    if (transition) result.transition = readTransition(transition, ctx);
 
     // p:timing.
     const timing = findChild(el, "p:timing");

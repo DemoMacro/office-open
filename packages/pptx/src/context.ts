@@ -4,8 +4,8 @@
  * @module
  */
 
-import { Media } from "@office-open/core";
-import type { BaseMediaEntry } from "@office-open/core";
+import { EmbeddingCollection, Media } from "@office-open/core";
+import type { BaseMediaEntry, EmbeddingData } from "@office-open/core";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 
 import type { PptxDocument } from "./parse";
@@ -64,6 +64,7 @@ export interface HyperlinkEntry {
  */
 export class PptxWriteContext implements WriteContext {
   private _media = new Media<MediaEntry>();
+  private _embeddings = new EmbeddingCollection();
   private _charts = new Map<string, ChartEntry>();
   private _smartArts = new Map<string, SmartArtEntry>();
   private _hyperlinks = new Map<string, HyperlinkEntry>();
@@ -98,6 +99,22 @@ export class PptxWriteContext implements WriteContext {
   }
 
   // ── PPTX-specific registration ──
+
+  /**
+   * Register an OLE embedding (ppt/embeddings/oleObjectN.bin) and return a
+   * `{ole:oleObjectN.bin}` placeholder. The compiler rewrites the placeholder
+   * to a real relationship id and adds the oleObject relationship per slide.
+   */
+  public addOle(data: Uint8Array, progId?: string): string {
+    const fileName = this._embeddings.nextEmbeddingName();
+    const entry: EmbeddingData = {
+      fileName,
+      data,
+      ...(progId !== undefined ? { progId } : {}),
+    };
+    this._embeddings.addEmbedding(fileName, entry);
+    return `{ole:${fileName}}`;
+  }
 
   public addImage(key: string, entry: MediaEntry): MediaEntry {
     return this._media.addMedia(
@@ -142,6 +159,11 @@ export class PptxWriteContext implements WriteContext {
   /** Underlying deduplicated collection — used by the compiler for media output. */
   public get mediaCollection(): Media<MediaEntry> {
     return this._media;
+  }
+
+  /** Registered OLE embeddings — output as ppt/embeddings/*.bin by the compiler. */
+  public get embeddings(): EmbeddingData[] {
+    return this._embeddings.array;
   }
 
   public get charts(): ChartEntry[] {

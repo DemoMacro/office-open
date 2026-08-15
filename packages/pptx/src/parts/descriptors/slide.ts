@@ -5,7 +5,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
-import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
+import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { TextBodyOptions } from "@office-open/core/drawingml";
 import { attr, attrNum, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -128,7 +128,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
 
     // p:transition (optional)
     if (opts.transition) {
-      parts.push(stringifyTransition(opts.transition));
+      parts.push(stringifyTransition(opts.transition, ctx));
     }
 
     // p:extLst — verbatim round-trip
@@ -188,7 +188,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
 
     // p:transition
     const transition = findChild(el, "p:transition");
-    if (transition) result.transition = readTransition(transition);
+    if (transition) result.transition = readTransition(transition, _ctx);
 
     // p:timing → animations
     const timing = findChild(el, "p:timing");
@@ -257,9 +257,9 @@ function stringifySlideChild(child: SlideChild, ctx: WriteContext): string | und
 
 // ── Transition helpers ──
 
-export function stringifyTransition(opts: TransitionOptions): string {
+export function stringifyTransition(opts: TransitionOptions, ctx?: WriteContext): string {
   if (!opts.type) return "";
-  return buildTransition(opts);
+  return buildTransition(opts, ctx);
 }
 
 // Reverse of DIRECTION_MAP in @shared/transition (dir attribute → semantic direction).
@@ -303,7 +303,7 @@ const TRANSITION_ELEMENT_TYPES = [
   "cut",
 ] as const;
 
-export function readTransition(el: XmlElement): TransitionOptions {
+export function readTransition(el: XmlElement, ctx?: ReadContext): TransitionOptions {
   const result: TransitionOptions = {};
 
   if (el.attributes) {
@@ -335,18 +335,28 @@ export function readTransition(el: XmlElement): TransitionOptions {
   }
 
   // Sound action (p:sndAc: stSnd with embedded sound, or endSnd to stop previous).
+  // The audio part bytes are read back so generate re-registers the media —
+  // a bare rId would point at the wrong relationship in a fresh package.
   const sndAc = findChild(el, "p:sndAc");
   if (sndAc) {
     const stSnd = findChild(sndAc, "p:stSnd");
     if (stSnd) {
       const snd = findChild(stSnd, "p:snd");
       const rId = snd ? attr(snd, "r:embed") : undefined;
-      if (rId) {
-        const startSound: NonNullable<TransitionOptions["startSound"]> = { rId };
-        const name = snd ? attr(snd, "name") : undefined;
-        if (name) startSound.name = name;
-        if (parseOnOff(attr(stSnd, "loop"))) startSound.loop = true;
-        result.startSound = startSound;
+      if (rId && ctx) {
+        const mediaPath = ctx.resolveRelationship(rId);
+        const raw = mediaPath ? ctx.getRaw(mediaPath) : undefined;
+        const type = mediaPath?.split(".").pop();
+        if (raw && (type === "mp3" || type === "wav" || type === "wma" || type === "aac")) {
+          const startSound: NonNullable<TransitionOptions["startSound"]> = {
+            data: raw,
+            type,
+          };
+          const name = attr(snd, "name");
+          if (name) startSound.name = name;
+          if (parseOnOff(attr(stSnd, "loop"))) startSound.loop = true;
+          result.startSound = startSound;
+        }
       }
     } else if (findChild(sndAc, "p:endSnd")) {
       result.stopPreviousSound = true;

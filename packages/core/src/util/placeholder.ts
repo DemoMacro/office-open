@@ -305,6 +305,15 @@ export function replaceAudioPlaceholders(
   return replacePrefixedPlaceholders(xml, mediaData, offset, "audio:");
 }
 
+/** Replace `{ole:fileName}` placeholders with relationship IDs. */
+export function replaceOlePlaceholders(
+  xml: string,
+  embeddings: { fileName: string }[],
+  offset: number,
+): string {
+  return replacePrefixedPlaceholders(xml, embeddings, offset, "ole:");
+}
+
 function replacePrefixedPlaceholders(
   xml: string,
   mediaData: { fileName: string }[],
@@ -341,6 +350,14 @@ export function getAudioRefs(
   mediaArray: { fileName: string }[],
 ): { fileName: string }[] {
   return collectPrefixedRefs(xml, "audio:", mediaArray);
+}
+
+/** Collect OLE embeddings referenced by `{ole:...}` placeholders in XML. */
+export function getOleRefs(
+  xml: string,
+  embeddings: { fileName: string }[],
+): { fileName: string }[] {
+  return collectPrefixedRefs(xml, "ole:", embeddings);
 }
 
 function collectPrefixedRefs(

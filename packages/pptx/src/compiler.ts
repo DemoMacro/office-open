@@ -24,6 +24,7 @@ import {
   getReferencedMedia,
   getAudioRefs,
   getMediaRefs,
+  getOleRefs,
   getVideoRefs,
   hasPlaceholders,
   replaceAudioPlaceholders,
@@ -31,6 +32,7 @@ import {
   replaceHyperlinkPlaceholders,
   replaceImagePlaceholders,
   replaceMediaPlaceholders,
+  replaceOlePlaceholders,
   replaceSmartArtPlaceholders,
   replaceVideoPlaceholders,
   addSmartArtRelationships,
@@ -447,6 +449,7 @@ const PPTX_MEDIA_CONTENT_TYPES: Record<string, string> = {
   wav: "audio/wav",
   wma: "audio/x-ms-wma",
   aac: "audio/aac",
+  bin: "application/vnd.openxmlformats-officedocument.oleObject",
 };
 
 function initPresRels(masters: MasterInfo[], slideCount: number): Relationships {
@@ -624,7 +627,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   parts.push("<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>");
 
   if (slideOpts.transition) {
-    parts.push(buildTransition(slideOpts.transition));
+    parts.push(buildTransition(slideOpts.transition, ctx));
   }
 
   if (slideOpts.animations && slideOpts.animations.length > 0) {
@@ -1051,6 +1054,20 @@ export function compilePresentation(
           );
         }
       }
+
+      // OLE embeddings
+      const slideOleRefs = getOleRefs(replacedSlideXml, descCtx.embeddings);
+      if (slideOleRefs.length > 0) {
+        const oleOffset = currentSlideRels.relationshipCount + 1;
+        replacedSlideXml = replaceOlePlaceholders(replacedSlideXml, slideOleRefs, oleOffset);
+        for (const [oi, oleRef] of slideOleRefs.entries()) {
+          currentSlideRels.addRelationship(
+            oleOffset + oi,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
+            `../embeddings/${oleRef.fileName}`,
+          );
+        }
+      }
     }
 
     mapping[`Slide${i}`] = {
@@ -1212,6 +1229,11 @@ export function compilePresentation(
       ).fallback;
       addBinaryFile(files, `ppt/media/${fallback.fileName}`, fallback.data, mediaLevel);
     }
+  }
+
+  // OLE embedding binaries (ppt/embeddings/oleObjectN.bin)
+  for (const embedding of descCtx.embeddings) {
+    addBinaryFile(files, `ppt/embeddings/${embedding.fileName}`, embedding.data, mediaLevel);
   }
 
   // Derive [Content_Types].xml from the actual parts written — the file set is
