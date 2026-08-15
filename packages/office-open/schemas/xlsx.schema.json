@@ -2241,7 +2241,7 @@
     },
     "ColorTransformOptions": {
       "additionalProperties": false,
-      "description": "Options for color transforms.\n\nPercent fields take integer percent (e.g., `40` = 40%); the library scales to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) take degrees; the library scales to the XSD 1/60000th-of-a-degree unit.\n\nReference: ISO/IEC 29500-4, dml-main.xsd, EG_ColorTransform",
+      "description": "Options for color transforms.\n\nPercent fields take integer percent (e.g., `40` = 40%); the library scales to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) take degrees; the library scales to the XSD 1/60000th-of-a-degree unit. Boolean fields emit value-less switch elements.\n\nReference: ISO/IEC 29500-4, dml-main.xsd, EG_ColorTransform",
       "properties": {
         "alpha": {
           "description": "Alpha: sets transparency (0-100, where 0 = transparent)",

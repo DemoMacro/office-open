@@ -12,50 +12,12 @@
 import { emitAngle, emitPercent } from "../../util/converters";
 
 /**
- * Transform keys classified by XSD unit — the single source of truth shared by
- * stringify and parse. Percent keys take integer percent (e.g. `50` = 50%,
- * scaled ×1000); angle keys take degrees (scaled ×60000); value-less boolean
- * keys (comp/inv/gray/gamma/invGamma) belong to neither set.
- */
-export const PERCENT_TRANSFORMS: ReadonlySet<string> = new Set([
-  "tint",
-  "shade",
-  "alpha",
-  "alphaOff",
-  "alphaMod",
-  "hueMod",
-  "sat",
-  "satOff",
-  "satMod",
-  "lum",
-  "lumOff",
-  "lumMod",
-  "red",
-  "redOff",
-  "redMod",
-  "green",
-  "greenOff",
-  "greenMod",
-  "blue",
-  "blueOff",
-  "blueMod",
-]);
-
-export const ANGLE_TRANSFORMS: ReadonlySet<string> = new Set(["hue", "hueOff"]);
-
-/** Scale a transform value to its XSD unit; non-percent/angle keys pass through. */
-export function emitTransformValue(key: string, value: number): number {
-  if (PERCENT_TRANSFORMS.has(key)) return emitPercent(value);
-  if (ANGLE_TRANSFORMS.has(key)) return emitAngle(value);
-  return value;
-}
-
-/**
  * Options for color transforms.
  *
  * Percent fields take integer percent (e.g., `40` = 40%); the library scales
  * to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) take
- * degrees; the library scales to the XSD 1/60000th-of-a-degree unit.
+ * degrees; the library scales to the XSD 1/60000th-of-a-degree unit. Boolean
+ * fields emit value-less switch elements.
  *
  * Reference: ISO/IEC 29500-4, dml-main.xsd, EG_ColorTransform
  */
@@ -118,6 +80,56 @@ export interface ColorTransformOptions {
   invGamma?: boolean;
 }
 
+type TransformKey = keyof ColorTransformOptions & string;
+
+/**
+ * Transform keys classified by XSD unit — the single source of truth shared by
+ * stringify and parse. Percent keys take integer percent (e.g. `50` = 50%,
+ * scaled ×1000); angle keys take degrees (scaled ×60000); value-less boolean
+ * keys (comp/inv/gray/gamma/invGamma) belong to neither set.
+ */
+export const PERCENT_TRANSFORMS: ReadonlySet<TransformKey> = new Set<TransformKey>([
+  "tint",
+  "shade",
+  "alpha",
+  "alphaOff",
+  "alphaMod",
+  "hueMod",
+  "sat",
+  "satOff",
+  "satMod",
+  "lum",
+  "lumOff",
+  "lumMod",
+  "red",
+  "redOff",
+  "redMod",
+  "green",
+  "greenOff",
+  "greenMod",
+  "blue",
+  "blueOff",
+  "blueMod",
+]);
+
+export const ANGLE_TRANSFORMS: ReadonlySet<TransformKey> = new Set<TransformKey>(["hue", "hueOff"]);
+
+/** Value-less switch transforms (empty elements — presence is the semantics). */
+export const BOOLEAN_TRANSFORMS: ReadonlySet<TransformKey> = new Set<TransformKey>([
+  "comp",
+  "inv",
+  "gray",
+  "gamma",
+  "invGamma",
+]);
+
+/** Scale a transform value to its XSD unit; non-percent/angle keys pass through. */
+export function emitTransformValue(key: TransformKey, value: number): number {
+  if (PERCENT_TRANSFORMS.has(key)) return emitPercent(value);
+  if (ANGLE_TRANSFORMS.has(key)) return emitAngle(value);
+  return value;
+}
+
 /**
  * Serialize color transforms, preserving the key order of the options object.
  *
@@ -137,7 +149,8 @@ export interface ColorTransformOptions {
 export const createColorTransforms = (options: ColorTransformOptions): readonly string[] => {
   const t: string[] = [];
 
-  for (const [key, value] of Object.entries(options)) {
+  for (const [name, value] of Object.entries(options)) {
+    const key = name as TransformKey;
     if (value === undefined || value === false) continue;
     if (value === true) {
       t.push(`<a:${key}/>`);

@@ -10,7 +10,12 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify } from "../../descriptor";
 import { emitAngle, emitPercent, parseAngle, parsePercent } from "../../util/converters";
-import { ANGLE_TRANSFORMS, createColorTransforms, PERCENT_TRANSFORMS } from "./color-transform";
+import {
+  ANGLE_TRANSFORMS,
+  BOOLEAN_TRANSFORMS,
+  createColorTransforms,
+  PERCENT_TRANSFORMS,
+} from "./color-transform";
 import type { ColorTransformOptions } from "./color-transform";
 import type { HslColorOptions } from "./hsl-color";
 import type { PresetColorOptions } from "./preset-color";
@@ -25,35 +30,12 @@ import { SystemColor } from "./system-color";
 
 // ── Color transform helpers ──
 
+// The parse whitelist is the union of the three unit classes — the Sets in
+// color-transform.ts are the single source of truth for the full key space.
 const TRANSFORM_KEYS: readonly (keyof ColorTransformOptions & string)[] = [
-  "tint",
-  "shade",
-  "comp",
-  "inv",
-  "gray",
-  "alpha",
-  "alphaOff",
-  "alphaMod",
-  "hue",
-  "hueOff",
-  "hueMod",
-  "sat",
-  "satOff",
-  "satMod",
-  "lum",
-  "lumOff",
-  "lumMod",
-  "red",
-  "redOff",
-  "redMod",
-  "green",
-  "greenOff",
-  "greenMod",
-  "blue",
-  "blueOff",
-  "blueMod",
-  "gamma",
-  "invGamma",
+  ...PERCENT_TRANSFORMS,
+  ...ANGLE_TRANSFORMS,
+  ...BOOLEAN_TRANSFORMS,
 ];
 
 // Transform key classification (percent vs angle) lives in color-transform.ts
