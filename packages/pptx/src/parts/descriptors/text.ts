@@ -8,7 +8,7 @@
  * @module
  */
 
-export { runPropertiesDesc, textRunDesc, paragraphDesc } from "@office-open/core/drawingml";
+export { runPropertiesDesc, textRunDesc, paragraphDesc } from "@office-open/core/drawing";
 
 export type {
   ParagraphDescriptorOptions,
@@ -20,4 +20,4 @@ export type {
   RunOptions,
   TextHyperlinkOptions,
   RunPropertiesOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";

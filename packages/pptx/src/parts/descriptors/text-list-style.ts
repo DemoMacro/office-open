@@ -13,7 +13,7 @@ export {
   stringifyTextListStyle,
   parseTextListStyle,
   DEFAULT_TEXT_LIST_STYLE,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 
 export type {
   TextListStyleOptions,
@@ -21,4 +21,4 @@ export type {
   TextListStyleLevelOptions,
   TextListStyleBulletOptions,
   TextListStyleRunOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";

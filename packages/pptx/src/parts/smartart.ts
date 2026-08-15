@@ -1,5 +1,5 @@
 import type { UniversalMeasure } from "@office-open/core";
-import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawingml";
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawing";
 import type {
   ColorDefinitionOptions,
   LayoutDefinitionOptions,

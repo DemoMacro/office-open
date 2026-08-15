@@ -1,5 +1,5 @@
-import type { EffectListOptions } from "@office-open/core/drawingml";
-import type { FillOptions } from "@shared/drawingml/fill";
+import type { EffectListOptions } from "@office-open/core/drawing";
+import type { FillOptions } from "@shared/drawing/fill";
 
 export interface BackgroundOptions {
   fill?: FillOptions;

@@ -11,8 +11,8 @@
 
 import type { UniversalMeasure } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
-import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawingml";
-import type { ShapePropertiesOptions, TextBodyOptions } from "@office-open/core/drawingml";
+import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
+import type { ShapePropertiesOptions, TextBodyOptions } from "@office-open/core/drawing";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 

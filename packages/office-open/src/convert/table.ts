@@ -37,7 +37,7 @@ import {
   ThemeColor,
 } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
-import type { ParagraphDescriptorOptions } from "@office-open/core/drawingml";
+import type { ParagraphDescriptorOptions } from "@office-open/core/drawing";
 import type {
   ParagraphOptions,
   SectionChild,

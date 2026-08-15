@@ -6,7 +6,7 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
-import type { TextBodyOptions } from "@office-open/core/drawingml";
+import type { TextBodyOptions } from "@office-open/core/drawing";
 import { attr, attrNum, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { ControlOptions } from "@parts/slide/slide";

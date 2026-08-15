@@ -8,7 +8,7 @@ import type {
   NonVisualDrawingPropertiesOptions,
   OutlineOptions,
   SourceRectangleOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import type { GraphicFrameLocksOptions, GroupShapeLocksOptions } from "@parts/drawing/descriptor";
 import type {
   ChildExtent,

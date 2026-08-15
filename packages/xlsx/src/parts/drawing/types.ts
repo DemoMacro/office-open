@@ -13,7 +13,7 @@ import type {
   NonVisualDrawingPropertiesOptions,
   ShapePropertiesOptions,
   TextBodyOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 
 // ── Types (used by compiler) ──
 

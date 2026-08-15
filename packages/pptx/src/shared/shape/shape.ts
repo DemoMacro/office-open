@@ -12,7 +12,7 @@ import type {
   Scene3DOptions,
   Shape3DOptions,
   FillOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 
 /**
  * Shape options type for PPTX.

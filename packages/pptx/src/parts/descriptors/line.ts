@@ -16,7 +16,7 @@ import {
   stringifyEndpointConnection,
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import { attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ConnectorOptions, LineShapeOptions } from "@shared/shape/line-shape";

@@ -1,5 +1,5 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
-import type { ReflectionEffectOptions } from "@office-open/core/drawingml";
+import type { ReflectionEffectOptions } from "@office-open/core/drawing";
 import { parse as parseXml } from "@office-open/xml";
 import type { ShapeOptions } from "@shared/shape/shape";
 import { describe, expect, it, beforeEach } from "vite-plus/test";

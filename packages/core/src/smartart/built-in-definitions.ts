@@ -11,7 +11,7 @@
 
 export { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 
-import type { ColorListOptions } from "../drawingml/diagram/diagram-style";
+import type { ColorListOptions } from "../drawing/diagram/diagram-style";
 import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 import { stringifyColorDefinitionPart, type ColorDefinitionOptions } from "./color-definition";
 import { stringifyLayoutDefinitionPart, type LayoutDefinitionOptions } from "./layout-definition";

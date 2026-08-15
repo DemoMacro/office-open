@@ -13,7 +13,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import {
   COLOR_CATEGORIES,
   LAYOUT_CATEGORIES,

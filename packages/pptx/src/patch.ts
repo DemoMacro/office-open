@@ -22,7 +22,7 @@ import type {
 } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
-import type { RunOptions } from "@office-open/core/drawingml";
+import type { RunOptions } from "@office-open/core/drawing";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import { findChild, stringify, parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";

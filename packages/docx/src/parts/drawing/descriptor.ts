@@ -27,7 +27,7 @@ import type {
   OutlineOptions,
   SourceRectangleOptions,
   TileOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import {
   calculateEffectExtent,
   createColorElement,
@@ -35,7 +35,7 @@ import {
   shapePropertiesDesc,
   stringifyNonVisualContentPartProperties,
   stringifyNonVisualDrawingProperties,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import { escapeXml } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";

@@ -28,7 +28,7 @@ import type {
   ParagraphDescriptorOptions,
   TextBodyOptions,
   ShapePropertiesOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import type {
   ShapeOptions as DocxShapeRunOptions,
   ShapeCoreOptions,

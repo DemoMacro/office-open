@@ -11,7 +11,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import { attr, attrBool, attrNum, escapeXml, findChild, type Element } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";

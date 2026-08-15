@@ -10,8 +10,8 @@ import {
   groupShapePropertiesDesc,
   parseNonVisualDrawingProperties,
   stringifyNonVisualDrawingProperties,
-} from "@office-open/core/drawingml";
-import type { BlackWhiteMode } from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
+import type { BlackWhiteMode } from "@office-open/core/drawing";
 import { attrNum, findChild } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 import type { GroupOptions } from "@shared/shape/group-shape";

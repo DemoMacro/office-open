@@ -16,7 +16,7 @@ import { stringify } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";

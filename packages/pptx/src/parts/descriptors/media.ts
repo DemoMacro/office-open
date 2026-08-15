@@ -16,7 +16,7 @@ import {
   shapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import { attr, attrNum, escapeXml, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AudioCdOptions, AudioFrameOptions, AudioType } from "@shared/media/audio-frame";

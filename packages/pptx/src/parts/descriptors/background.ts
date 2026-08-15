@@ -7,10 +7,10 @@
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { parse as coreParse } from "@office-open/core/descriptor";
-import { createEffectList, effectListDesc, fillDesc } from "@office-open/core/drawingml";
+import { createEffectList, effectListDesc, fillDesc } from "@office-open/core/drawing";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { buildFill } from "@shared/drawingml/fill";
+import { buildFill } from "@shared/drawing/fill";
 
 import type { BackgroundOptions } from "../background";
 

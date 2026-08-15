@@ -14,12 +14,12 @@ import {
   parseNonVisualDrawingProperties,
   shapePropertiesDesc,
   textBodyDesc,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import type {
   ConnectorLockingOptions,
   EndpointConnectionOptions,
   NonVisualDrawingPropertiesOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 

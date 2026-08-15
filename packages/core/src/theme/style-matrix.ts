@@ -19,8 +19,8 @@ import {
   scene3DDesc,
   shape3DDesc,
   stringifyColorChoice,
-} from "../drawingml";
-import type { SolidFillOptions } from "../drawingml";
+} from "../drawing";
+import type { SolidFillOptions } from "../drawing";
 import type {
   EffectStyleOptions,
   FontReferenceOptions,

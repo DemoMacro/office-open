@@ -22,10 +22,10 @@ import type {
   DiagramCategoryOptions,
   DiagramDescriptionOptions,
   DiagramNameOptions,
-} from "../drawingml/diagram/headers";
-import type { Scene3DOptions } from "../drawingml/three-d/scene-3d";
-import type { Shape3DOptions } from "../drawingml/three-d/shape-3d";
-import { scene3DDesc, shape3DDesc } from "../drawingml/three-d/three-d-descriptors";
+} from "../drawing/diagram/headers";
+import type { Scene3DOptions } from "../drawing/three-d/scene-3d";
+import type { Shape3DOptions } from "../drawing/three-d/shape-3d";
+import { scene3DDesc, shape3DDesc } from "../drawing/three-d/three-d-descriptors";
 import { parseShapeStyle, stringifyShapeStyle } from "../theme/style-matrix";
 import type { DefaultShapeStyleOptions } from "../theme/theme-options";
 import { withDiagramNamespaces } from "./layout-definition";

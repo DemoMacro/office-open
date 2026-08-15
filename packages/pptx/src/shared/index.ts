@@ -14,7 +14,7 @@ export {
 } from "./file";
 
 // DrawingML — re-exports from core
-export { createOutline, type OutlineOptions } from "@office-open/core/drawingml";
+export { createOutline, type OutlineOptions } from "@office-open/core/drawing";
 export {
   createGradientFill,
   createGradientStop,
@@ -22,29 +22,25 @@ export {
   type GradientStop,
   type PathShade,
   type TileFlipMode,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 export {
   type LineCap,
   type CompoundLine,
   type PenAlignment,
   type PresetDash,
   type LineJoin,
-} from "@office-open/core/drawingml";
-export { createScene3D, type Scene3DOptions } from "@office-open/core/drawingml";
-export {
-  createShape3D,
-  type Shape3DOptions,
-  type PresetMaterial,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
+export { createScene3D, type Scene3DOptions } from "@office-open/core/drawing";
+export { createShape3D, type Shape3DOptions, type PresetMaterial } from "@office-open/core/drawing";
 export {
   createBevel,
   createBottomBevel,
   type BevelOptions,
   type BevelPreset,
-} from "@office-open/core/drawingml";
-export { createEffectList, type EffectListOptions } from "@office-open/core/drawingml";
-export { createColorElement } from "@office-open/core/drawingml";
-export { createColorTransforms, type ColorTransformOptions } from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
+export { createEffectList, type EffectListOptions } from "@office-open/core/drawing";
+export { createColorElement } from "@office-open/core/drawing";
+export { createColorTransforms, type ColorTransformOptions } from "@office-open/core/drawing";
 
 // DrawingML — fill API
 export {
@@ -54,11 +50,11 @@ export {
   type BlipFillMediaData,
   type FillOptions,
   type GradientStopOptions,
-} from "./drawingml/fill";
+} from "./drawing/fill";
 
 // DrawingML — local aliases + core re-exports
-export { stringifyPresetGeometry } from "@office-open/core/drawingml";
-export type { ShapePropertiesOptions } from "@office-open/core/drawingml";
+export { stringifyPresetGeometry } from "@office-open/core/drawing";
+export type { ShapePropertiesOptions } from "@office-open/core/drawing";
 
 // Shape types — text/run types re-exported from core DrawingML
 export type { ShapeOptions } from "./shape/shape";
@@ -66,15 +62,15 @@ export type {
   TextBodyOptions,
   ParagraphDescriptorOptions,
   RunOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 export {
   type UnderlineStyle,
   type StrikeStyle,
   type TextCapitalization,
   type RunPropertiesOptions,
   type TextHyperlinkOptions,
-} from "@office-open/core/drawingml";
-export type { TextAlignment, ParagraphPropertiesOptions } from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
+export type { TextAlignment, ParagraphPropertiesOptions } from "@office-open/core/drawing";
 export type { GroupOptions } from "./shape/group-shape";
 export type { LineShapeOptions, ConnectorOptions } from "./shape/line-shape";
 

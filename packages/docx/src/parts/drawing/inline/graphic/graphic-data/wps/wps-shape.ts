@@ -8,7 +8,7 @@ import type {
   Scene3DOptions,
   Shape3DOptions,
   SolidFillOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 
 /**

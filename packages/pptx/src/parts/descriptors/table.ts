@@ -17,7 +17,7 @@ import {
   parseNonVisualDrawingProperties,
   parseTableStyle,
   stringifyNonVisualDrawingProperties,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import {
   attr,
   attrBool,

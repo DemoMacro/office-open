@@ -1,7 +1,7 @@
 import type { BaseTableCellOptions, UniversalMeasure } from "@office-open/core";
-import type { Cell3DOptions, ParagraphDescriptorOptions } from "@office-open/core/drawingml";
+import type { Cell3DOptions, ParagraphDescriptorOptions } from "@office-open/core/drawing";
 
-import type { FillOptions } from "../drawingml/fill";
+import type { FillOptions } from "../drawing/fill";
 import type { CellBorderOptions } from "./table-cell-properties";
 
 export type VerticalAlignment = "top" | "center" | "bottom" | "justify" | "distribute";

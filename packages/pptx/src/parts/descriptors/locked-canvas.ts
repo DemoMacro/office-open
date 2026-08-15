@@ -13,7 +13,7 @@ import {
   parseNonVisualDrawingProperties,
   shapePropertiesDesc,
   textBodyDesc,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import { attrNum, findChild } from "@office-open/xml";
 
 import type { LockedCanvasFrameOptions, LockedCanvasShapeOptions } from "../locked-canvas-frame";

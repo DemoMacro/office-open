@@ -3,7 +3,7 @@
  *
  * @module
  */
-import type { EffectListOptions, FillOptions } from "@office-open/core/drawingml";
+import type { EffectListOptions, FillOptions } from "@office-open/core/drawing";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";

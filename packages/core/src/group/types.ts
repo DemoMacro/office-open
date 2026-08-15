@@ -1,5 +1,5 @@
-import { pickNonVisualDrawingProperties } from "../drawingml";
-import type { NonVisualDrawingPropertiesOptions } from "../drawingml";
+import { pickNonVisualDrawingProperties } from "../drawing";
+import type { NonVisualDrawingPropertiesOptions } from "../drawing";
 
 /**
  * Base group options — the shared shape across pptx (p:grpSp), xlsx (xdr:grpSp),

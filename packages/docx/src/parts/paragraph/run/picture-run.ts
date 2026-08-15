@@ -6,7 +6,7 @@ import type {
   OutlineOptions,
   SourceRectangleOptions,
   TileOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 /**
  * Picture (pic:pic) run types for WordprocessingML documents.
  *

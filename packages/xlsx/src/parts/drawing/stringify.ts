@@ -14,14 +14,14 @@ import {
   stringifyEndpointConnection,
   stringifyNonVisualDrawingProperties,
   textBodyDesc,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import type {
   ConnectorLockingOptions,
   EndpointConnectionOptions,
   NonVisualDrawingPropertiesOptions,
   ShapePropertiesOptions,
   TextBodyOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import { escapeXml } from "@office-open/xml";
 
 import type {

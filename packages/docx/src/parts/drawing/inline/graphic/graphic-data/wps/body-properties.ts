@@ -17,17 +17,17 @@ export {
   type TextBodyWrapping,
   parseBodyProperties,
   bodyPropertiesDesc,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 export type {
   VerticalAnchor,
   NormalAutofitOptions,
   PresetTextShapeOptions,
   FlatTextOptions,
   BodyPropertiesOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 
-import type { BodyPropertiesOptions } from "@office-open/core/drawingml";
-import { createBodyProperties as coreCreateBodyProperties } from "@office-open/core/drawingml";
+import type { BodyPropertiesOptions } from "@office-open/core/drawing";
+import { createBodyProperties as coreCreateBodyProperties } from "@office-open/core/drawing";
 
 /**
  * Create a wps:bodyPr element. DOCX uses the wps: prefix (WordprocessingML

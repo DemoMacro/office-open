@@ -1,4 +1,4 @@
-import type { NonVisualDrawingPropertiesOptions } from "../drawingml";
+import type { NonVisualDrawingPropertiesOptions } from "../drawing";
 import type { DataType } from "../util/data-type";
 
 /**

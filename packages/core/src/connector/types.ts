@@ -1,9 +1,9 @@
-import { pickNonVisualDrawingProperties } from "../drawingml";
+import { pickNonVisualDrawingProperties } from "../drawing";
 import type {
   ConnectorLockingOptions,
   EndpointConnectionOptions,
   NonVisualDrawingPropertiesOptions,
-} from "../drawingml";
+} from "../drawing";
 
 /**
  * Base connector options — the shared shape across pptx (p:cxnSp) and xlsx

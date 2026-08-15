@@ -11,7 +11,7 @@ import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../descriptor";
-import { bodyPropertiesDesc, shapePropertiesDesc, textListStyleDesc } from "../drawingml";
+import { bodyPropertiesDesc, shapePropertiesDesc, textListStyleDesc } from "../drawing";
 import { parseShapeStyle, stringifyShapeStyle } from "./style-matrix";
 import type { DefaultShapeDefinitionOptions, ObjectDefaultsOptions } from "./theme-options";
 

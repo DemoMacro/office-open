@@ -1,5 +1,5 @@
 import type { BaseGroupOptions, UniversalMeasure } from "@office-open/core";
-import type { BlackWhiteMode, EffectListOptions, FillOptions } from "@office-open/core/drawingml";
+import type { BlackWhiteMode, EffectListOptions, FillOptions } from "@office-open/core/drawing";
 import type { SlideChild } from "@parts/slide/slide-child";
 
 /**

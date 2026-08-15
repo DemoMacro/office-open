@@ -19,9 +19,9 @@ import type {
   SolidFillOptions,
   StyleMatrixReferenceOptions,
   TextListStyleOptions,
-} from "../drawingml";
+} from "../drawing";
 
-export type { StyleMatrixReferenceOptions } from "../drawingml";
+export type { StyleMatrixReferenceOptions } from "../drawing";
 
 /** Single font slot — a:latin / a:ea / a:cs / a:sym (CT_TextFont). */
 export interface TextFontOptions {

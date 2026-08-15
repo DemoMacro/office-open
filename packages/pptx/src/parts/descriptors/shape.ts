@@ -27,7 +27,7 @@ import {
   parseNonVisualDrawingProperties,
   createSolidFill,
   stringifyColorChoice,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr, stringify } from "@office-open/xml";
 import type { PictureOptions } from "@shared/picture";

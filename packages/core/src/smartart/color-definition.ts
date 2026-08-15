@@ -17,13 +17,13 @@ import { stringify as stringifyInnerXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
-import { createColorList, parseColorList } from "../drawingml/diagram/diagram-style";
-import type { ColorListOptions, ColorStyleLabelOptions } from "../drawingml/diagram/diagram-style";
+import { createColorList, parseColorList } from "../drawing/diagram/diagram-style";
+import type { ColorListOptions, ColorStyleLabelOptions } from "../drawing/diagram/diagram-style";
 import type {
   DiagramCategoryOptions,
   DiagramDescriptionOptions,
   DiagramNameOptions,
-} from "../drawingml/diagram/headers";
+} from "../drawing/diagram/headers";
 import { withDiagramNamespaces } from "./layout-definition";
 
 /** dgm:colorsDef (CT_ColorTransform) — the colors part root. */

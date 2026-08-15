@@ -19,13 +19,13 @@ import {
   parseNonVisualDrawingProperties,
   presetGeometryDesc,
 } from "@office-open/core";
-import { scene3DDesc, shape3DDesc } from "@office-open/core/drawingml";
+import { scene3DDesc, shape3DDesc } from "@office-open/core/drawing";
 import type {
   BlackWhiteMode,
   NonVisualContentPartPropertiesOptions,
   SourceRectangleOptions,
-} from "@office-open/core/drawingml";
-import { parseNonVisualContentPartProperties } from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";
+import { parseNonVisualContentPartProperties } from "@office-open/core/drawing";
 import {
   COLOR_CATEGORIES,
   LAYOUT_CATEGORIES,

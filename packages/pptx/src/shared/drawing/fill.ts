@@ -5,4 +5,4 @@ export {
   type BlipFillMediaData,
   type FillOptions,
   type GradientStopOptions,
-} from "@office-open/core/drawingml";
+} from "@office-open/core/drawing";

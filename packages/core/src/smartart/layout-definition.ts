@@ -21,13 +21,13 @@ import type {
   DiagramCategoryOptions,
   DiagramDescriptionOptions,
   DiagramNameOptions,
-} from "../drawingml/diagram/headers";
+} from "../drawing/diagram/headers";
 import type {
   AdjustOptions,
   AnimateOneByOne,
   AnimationLevel,
   HierBranch,
-} from "../drawingml/diagram/layout-vars";
+} from "../drawing/diagram/layout-vars";
 import { parseDataModelOptions, stringifyDataModelOptions } from "./data-model";
 import type { DataModelOptions } from "./data-model";
 
@@ -148,7 +148,7 @@ export type ResizeHandles = "exact" | "rel";
 
 // dgm:title / dgm:desc reuse DiagramNameOptions / DiagramDescriptionOptions
 // (same CT_Name shape as the headers), dgm:cat reuses DiagramCategoryOptions,
-// and dgm:adjLst reuses AdjustOptions — all from drawingml/diagram.
+// and dgm:adjLst reuses AdjustOptions — all from drawing/diagram.
 
 // ── Shared building blocks ──
 

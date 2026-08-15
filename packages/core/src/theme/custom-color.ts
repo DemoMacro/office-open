@@ -9,8 +9,8 @@
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../descriptor";
-import { parseColorChoice, stringifyColorChoice } from "../drawingml";
-import type { SolidFillOptions } from "../drawingml";
+import { parseColorChoice, stringifyColorChoice } from "../drawing";
+import type { SolidFillOptions } from "../drawing";
 import type { CustomColorOptions } from "./theme-options";
 
 /** Serialize a:custClrLst. Returns "" when no custom colors set (optional element). */
