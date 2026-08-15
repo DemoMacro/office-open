@@ -40,6 +40,7 @@ import type { MetadataOptions } from "./metadata";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
 import type { WorksheetOptions } from "./worksheet";
+import type { MapInfoOptions } from "./xml-mapping";
 
 export interface WorkbookOptions extends CorePropertiesOptions {
   worksheets?: WorksheetOptions[];
@@ -67,6 +68,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   connections?: ConnectionOptions[];
   /** Rich metadata block (xl/metadata.xml) */
   metadata?: MetadataOptions;
+  /** XML mappings (xl/xmlMaps.xml) */
+  xmlMaps?: MapInfoOptions;
   /** Custom workbook views */
   customWorkbookViews?: CustomWorkbookViewOptions[];
   /** File recovery properties */

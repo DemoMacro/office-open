@@ -48,6 +48,8 @@ import type { TableOptions } from "@parts/table";
 import { workbookDesc } from "@parts/workbook";
 import { worksheetDesc } from "@parts/worksheet";
 import type { WorksheetChartOptions, PictureOptions, WorksheetOptions } from "@parts/worksheet";
+import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
+import type { SingleXmlCellOptions } from "@parts/xml-mapping";
 
 import { XlsxReadContext } from "./context";
 
@@ -361,6 +363,18 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       if (queryTables.length > 0) wsOpts.queryTables = queryTables;
     }
 
+    // Single-cell XML tables
+    const singleXmlCellRels = readContext.getWorksheetRelsByType(wsPath, "/tableSingleCells");
+    if (singleXmlCellRels.length > 0) {
+      const singleXmlCells: SingleXmlCellOptions[] = [];
+      for (const sxr of singleXmlCellRels) {
+        const sxEl = xlsx.doc.get(sxr.target);
+        if (!sxEl) continue;
+        singleXmlCells.push(...singleXmlCellsDesc.parse(sxEl, readContext).cells);
+      }
+      if (singleXmlCells.length > 0) wsOpts.singleXmlCells = singleXmlCells;
+    }
+
     // Pivot tables
     const pivotRels = readContext.getWorksheetRelsByType(wsPath, "/pivotTable");
     if (pivotRels.length > 0) {
@@ -457,6 +471,12 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   if (metadataEl) {
     const metadataData = metadataDesc.parse(metadataEl, readContext);
     opts.metadata = metadataData;
+  }
+
+  // XML mappings (xl/xmlMaps.xml)
+  const xmlMapsEl = xlsx.doc.get("xl/xmlMaps.xml");
+  if (xmlMapsEl) {
+    opts.xmlMaps = mapInfoDesc.parse(xmlMapsEl, readContext);
   }
 
   // External links

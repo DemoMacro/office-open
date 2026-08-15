@@ -55,6 +55,7 @@ import type { TablePartReference, SheetDefinition } from "@parts/workbook";
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
 import { buildWorksheetXml, type WorksheetContext } from "@parts/worksheet";
 import type { RowOptions, WorksheetOptions } from "@parts/worksheet";
+import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
 import { columnToLetter } from "@util/index";
 
 import { XlsxWriteContext } from "./context";
@@ -162,6 +163,7 @@ export function compileWorkbook(
   let globalPivotCacheIdx = 0;
   let globalTableIdx = 0;
   let globalQueryTableIdx = 0;
+  let globalSingleXmlCellsIdx = 0;
   const pivotCacheDataMap = new Map<string, { cacheId: number; cacheIdx: number }>();
   const calcCells: CalcCell[] = [];
   const allTableParts: TablePartReference[] = [];
@@ -212,6 +214,7 @@ export function compileWorkbook(
     const hasTables = tableOpts.length > 0;
     const queryTableOpts = wsOpts.queryTables ?? [];
     const hasQueryTables = queryTableOpts.length > 0;
+    const singleXmlCellOpts = wsOpts.singleXmlCells ?? [];
     const bgImg = wsOpts.backgroundImage;
 
     // Worksheet-level relationships
@@ -225,6 +228,7 @@ export function compileWorkbook(
       hasPivots ||
       hasTables ||
       hasQueryTables ||
+      singleXmlCellOpts.length > 0 ||
       bgImg
     ) {
       wsRels = new Relationships();
@@ -570,6 +574,21 @@ export function compileWorkbook(
       }
     }
 
+    // Single-cell XML tables
+    if (singleXmlCellOpts.length > 0) {
+      globalSingleXmlCellsIdx++;
+      mapping[`TableSingleCells${globalSingleXmlCellsIdx}`] = {
+        data: XML_DECL + singleXmlCellsDesc.stringify({ cells: singleXmlCellOpts }, ctx),
+        path: `xl/tables/tableSingleCells${globalSingleXmlCellsIdx}.xml`,
+      };
+      const sxcRid = ++nextRid;
+      wsRels!.addRelationship(
+        sxcRid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells",
+        `../tables/tableSingleCells${globalSingleXmlCellsIdx}.xml`,
+      );
+    }
+
     // Pre-render pivot table data into sheetData
     if (hasPivots) {
       const rendered = renderPivotSheetData(
@@ -738,6 +757,20 @@ export function compileWorkbook(
     mapping["Metadata"] = {
       data: XML_DECL + metadataDesc.stringify(options.metadata, ctx),
       path: "xl/metadata.xml",
+    };
+  }
+
+  // XML mappings — xl/xmlMaps.xml (single part, workbook-level relationship)
+  if (options.xmlMaps) {
+    const xRid = ctx.workbookRels.relationshipCount + 1;
+    ctx.workbookRels.addRelationship(
+      xRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/xmlMaps",
+      "xmlMaps.xml",
+    );
+    mapping["XmlMaps"] = {
+      data: XML_DECL + mapInfoDesc.stringify(options.xmlMaps, ctx),
+      path: "xl/xmlMaps.xml",
     };
   }
 

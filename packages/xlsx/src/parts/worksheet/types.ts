@@ -18,6 +18,7 @@ import type { QueryTableOptions } from "../query-table";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles, StyleOptions } from "../styles";
 import type { TableOptions } from "../table";
+import type { SingleXmlCellOptions } from "../xml-mapping";
 
 // ── Option interfaces ──
 
@@ -1152,6 +1153,8 @@ export interface WorksheetOptions {
   smartTags?: CellSmartTagsOptions[];
   /** Query tables on this sheet (xl/queryTables/queryTableN.xml) */
   queryTables?: QueryTableOptions[];
+  /** Single-cell XML tables on this sheet (xl/tables/tableSingleCellsN.xml) */
+  singleXmlCells?: SingleXmlCellOptions[];
   /** Sheet calc properties (CT_SheetCalcPr) */
   sheetCalcPr?: SheetCalculationPropertiesOptions;
   /** Extension list (extLst) */

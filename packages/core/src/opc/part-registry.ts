@@ -483,6 +483,17 @@ export const XLSX_PARTS = {
       presence: { kind: "conditional", flag: "metadata" },
     },
     {
+      path: "xl/xmlMaps.xml",
+      contentType: "application/xml",
+      presence: { kind: "conditional", flag: "xmlMaps" },
+    },
+    {
+      path: "xl/tables/tableSingleCells${i}.xml",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.tableSingleCells+xml",
+      presence: { kind: "repeated", countFrom: "singleXmlCells" },
+    },
+    {
       path: "xl/calcChain.xml",
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml",
       presence: { kind: "conditional", flag: "any formula cell" },

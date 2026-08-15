@@ -171,6 +171,40 @@ describe("metadata round-trip", () => {
   });
 });
 
+describe("xml mapping round-trip", () => {
+  it("round-trips xmlMaps and per-sheet single-cell XML tables", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "S",
+          rows: [{ cells: [{ reference: "A1", value: "x" }] }],
+          singleXmlCells: [
+            {
+              id: 1,
+              r: "B2",
+              connectionId: 1,
+              xmlCellPr: { id: 1, xmlPr: { mapId: 1, xpath: "/root/name", xmlDataType: "string" } },
+            },
+          ],
+        },
+      ],
+      xmlMaps: {
+        selectionNamespaces: 'xmlns:m="http://example.com"',
+        schemas: [{ id: "S1", namespace: "http://example.com" }],
+        maps: [{ id: 1, name: "M1", rootElement: "root", schemaId: "S1" }],
+      },
+    };
+
+    const parsed = await roundTrip(opts);
+    expect(parsed.xmlMaps?.selectionNamespaces).toBe('xmlns:m="http://example.com"');
+    expect(parsed.xmlMaps?.schemas![0]).toMatchObject({ id: "S1" });
+    expect(parsed.xmlMaps?.maps![0]).toMatchObject({ id: 1, name: "M1", rootElement: "root" });
+    const cell = parsed.worksheets![0]!.singleXmlCells![0]!;
+    expect(cell).toMatchObject({ id: 1, r: "B2", connectionId: 1 });
+    expect(cell.xmlCellPr.xmlPr).toMatchObject({ mapId: 1, xpath: "/root/name" });
+  });
+});
+
 describe("theme round-trip", () => {
   it("preserves a custom source theme instead of replacing it with the default", async () => {
     const opts: WorkbookOptions = {

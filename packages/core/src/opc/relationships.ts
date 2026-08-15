@@ -69,7 +69,9 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/users"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/queryTable"
-  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/metadata";
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/metadata"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/xmlMaps"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells";
 
 export const TargetModeType = {
   EXTERNAL: "External",

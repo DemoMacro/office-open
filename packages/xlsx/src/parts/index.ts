@@ -158,13 +158,15 @@ export type {
   RevisionDefinedNameOptions,
   RevisionLogOptions,
 } from "./revision-log";
+export { mapInfoDesc, singleXmlCellsDesc } from "./xml-mapping";
 export type {
   MapInfoOptions,
   SchemaOptions,
   MapOptions,
   DataBindingOptions,
+  SingleXmlCellsOptions,
+  SingleXmlCellOptions,
   XmlPropertiesOptions,
   XmlCellPropertiesOptions,
-  SingleXmlCellOptions,
   XmlColumnPropertiesOptions,
 } from "./xml-mapping";
