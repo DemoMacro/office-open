@@ -468,6 +468,16 @@ export const XLSX_PARTS = {
       presence: { kind: "repeated", countFrom: "externalLinks.length" },
     },
     {
+      path: "xl/connections.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.connections+xml",
+      presence: { kind: "conditional", flag: "connections" },
+    },
+    {
+      path: "xl/queryTables/queryTable${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.queryTable+xml",
+      presence: { kind: "repeated", countFrom: "queryTables" },
+    },
+    {
       path: "xl/calcChain.xml",
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml",
       presence: { kind: "conditional", flag: "any formula cell" },

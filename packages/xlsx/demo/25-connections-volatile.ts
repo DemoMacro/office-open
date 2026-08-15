@@ -1,4 +1,4 @@
-// Volatile dependencies and web publish objects.
+// Volatile dependencies, web publish objects, and workbook connections with query tables.
 
 import { writeFileSync } from "node:fs";
 
@@ -8,6 +8,20 @@ const buffer = await generateWorkbook({
   worksheets: [
     {
       name: "Data",
+      queryTables: [
+        {
+          name: "PriceQuery",
+          fillFormulas: true,
+          connectionId: 1,
+          queryTableRefresh: {
+            nextId: 3,
+            queryTableFields: [
+              { id: 1, name: "Product" },
+              { id: 2, name: "Price" },
+            ],
+          },
+        },
+      ],
       rows: [
         { cells: [{ value: "Product" }, { value: "Price" }] },
         { cells: [{ value: "Widget" }, { value: 9.99 }] },
@@ -30,6 +44,21 @@ const buffer = await generateWorkbook({
           ],
         },
       ],
+    },
+  ],
+  connections: [
+    {
+      id: 1,
+      name: "Price source",
+      type: 2,
+      refreshedVersion: 6,
+      keepAlive: true,
+      interval: 5,
+      dbPr: {
+        connection: "Provider=SQLOLEDB;Data Source=localhost",
+        command: "SELECT Product, Price FROM Prices",
+        commandType: 2,
+      },
     },
   ],
   webPublishObjects: [

@@ -32,6 +32,7 @@ import type { CalcCell } from "@parts/calc-chain";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
+import { connectionsDesc } from "@parts/connection";
 import type { DrawingPictureOptions, ChartAnchorOptions } from "@parts/drawing";
 import { drawingDesc } from "@parts/drawing";
 import { A_NS, R_NS, XDR_NS, graphicFrameXml, wrapAnchor } from "@parts/drawing/stringify";
@@ -41,6 +42,7 @@ import { aggregate, collectUniqueValues } from "@parts/pivot";
 import type { PivotSourceData, PivotTableOptions } from "@parts/pivot";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
+import { queryTableDesc } from "@parts/query-table";
 import { revisionHeadersDesc, revisionLogDesc, usersDesc } from "@parts/revision-log";
 import { sharedStringsDesc } from "@parts/shared-strings";
 import type { SharedStrings } from "@parts/shared-strings";
@@ -157,6 +159,7 @@ export function compileWorkbook(
   let globalPivotIdx = 0;
   let globalPivotCacheIdx = 0;
   let globalTableIdx = 0;
+  let globalQueryTableIdx = 0;
   const pivotCacheDataMap = new Map<string, { cacheId: number; cacheIdx: number }>();
   const calcCells: CalcCell[] = [];
   const allTableParts: TablePartReference[] = [];
@@ -205,13 +208,23 @@ export function compileWorkbook(
     const hasPivots = pivotOpts.length > 0;
     const tableOpts = wsOpts.tables ?? [];
     const hasTables = tableOpts.length > 0;
+    const queryTableOpts = wsOpts.queryTables ?? [];
+    const hasQueryTables = queryTableOpts.length > 0;
     const bgImg = wsOpts.backgroundImage;
 
     // Worksheet-level relationships
     let wsRels: Relationships | undefined;
     let nextRid = 0;
 
-    if (hasMedia || hasExternalHyperlinks || hasComments || hasPivots || hasTables || bgImg) {
+    if (
+      hasMedia ||
+      hasExternalHyperlinks ||
+      hasComments ||
+      hasPivots ||
+      hasTables ||
+      hasQueryTables ||
+      bgImg
+    ) {
       wsRels = new Relationships();
     }
 
@@ -538,6 +551,23 @@ export function compileWorkbook(
       }
     }
 
+    // Query tables
+    if (hasQueryTables) {
+      for (const qt of queryTableOpts) {
+        globalQueryTableIdx++;
+        mapping[`QueryTable${globalQueryTableIdx}`] = {
+          data: XML_DECL + queryTableDesc.stringify(qt, ctx),
+          path: `xl/queryTables/queryTable${globalQueryTableIdx}.xml`,
+        };
+        const qtRid = ++nextRid;
+        wsRels!.addRelationship(
+          qtRid,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/queryTable",
+          `../queryTables/queryTable${globalQueryTableIdx}.xml`,
+        );
+      }
+    }
+
     // Pre-render pivot table data into sheetData
     if (hasPivots) {
       const rendered = renderPivotSheetData(
@@ -680,6 +710,20 @@ export function compileWorkbook(
       },
       ctx,
     ) ?? "";
+
+  // Connections — xl/connections.xml (single part, workbook-level relationship)
+  if (options.connections && options.connections.length > 0) {
+    const cRid = ctx.workbookRels.relationshipCount + 1;
+    ctx.workbookRels.addRelationship(
+      cRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections",
+      "connections.xml",
+    );
+    mapping["Connections"] = {
+      data: XML_DECL + connectionsDesc.stringify({ connections: options.connections }, ctx),
+      path: "xl/connections.xml",
+    };
+  }
 
   // External links — generate XML files and inject externalReferences into workbook
   const extLinks = options.externalLinks ?? [];

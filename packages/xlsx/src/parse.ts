@@ -21,6 +21,7 @@ import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc } from "@parts/comments";
+import { connectionsDesc } from "@parts/connection";
 import { drawingDesc } from "@parts/drawing";
 import { externalLinkDesc } from "@parts/external-link";
 import type { ExternalLinkOptions } from "@parts/external-link";
@@ -30,6 +31,8 @@ import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "@pa
 import { pivotTableDesc } from "@parts/pivot-table";
 import type { PivotTableParseResult } from "@parts/pivot-table";
 import type { PivotTableOptions } from "@parts/pivot/pivot-utils";
+import { queryTableDesc } from "@parts/query-table";
+import type { QueryTableOptions } from "@parts/query-table";
 import {
   revisionHeadersDesc,
   revisionLogDesc,
@@ -345,6 +348,18 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       if (tables.length > 0) wsOpts.tables = tables;
     }
 
+    // Query tables
+    const queryTableRels = readContext.getWorksheetRelsByType(wsPath, "/queryTable");
+    if (queryTableRels.length > 0) {
+      const queryTables: QueryTableOptions[] = [];
+      for (const qtr of queryTableRels) {
+        const qtEl = xlsx.doc.get(qtr.target);
+        if (!qtEl) continue;
+        queryTables.push(queryTableDesc.parse(qtEl, readContext));
+      }
+      if (queryTables.length > 0) wsOpts.queryTables = queryTables;
+    }
+
     // Pivot tables
     const pivotRels = readContext.getWorksheetRelsByType(wsPath, "/pivotTable");
     if (pivotRels.length > 0) {
@@ -427,6 +442,13 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   if (calcChainEl) {
     const calcData = calcChainDesc.parse(calcChainEl, readContext);
     if (calcData.cells) opts.calcChain = calcData.cells;
+  }
+
+  // Connections (xl/connections.xml)
+  const connectionsEl = xlsx.doc.get("xl/connections.xml");
+  if (connectionsEl) {
+    const connData = connectionsDesc.parse(connectionsEl, readContext);
+    if (connData.connections.length > 0) opts.connections = connData.connections;
   }
 
   // External links

@@ -14,6 +14,7 @@ import type {
 import type { ConnectorOptions, GroupOptions, ShapeOptions } from "../drawing";
 import type { PivotTableOptions } from "../pivot";
 import type { PivotAreaOptions } from "../pivot/pivot-utils";
+import type { QueryTableOptions } from "../query-table";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles, StyleOptions } from "../styles";
 import type { TableOptions } from "../table";
@@ -1145,6 +1146,8 @@ export interface WorksheetOptions {
   pivotSelection?: PivotSelectionOptions;
   /** Cell smart tags (CT_SmartTags) */
   smartTags?: CellSmartTagsOptions[];
+  /** Query tables on this sheet (xl/queryTables/queryTableN.xml) */
+  queryTables?: QueryTableOptions[];
   /** Sheet calc properties (CT_SheetCalcPr) */
   sheetCalcPr?: SheetCalculationPropertiesOptions;
   /** Extension list (extLst) */
