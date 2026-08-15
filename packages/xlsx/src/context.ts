@@ -65,7 +65,11 @@ export class XlsxWriteContext implements WriteContext {
   }
 
   public addHyperlink(key: string, target: HyperlinkTarget): void {
-    // XLSX has no slide concept — only the external URL leg is reachable.
+    // XLSX has no slide concept; stringify is strict, so reject the slide leg
+    // instead of silently dropping it.
+    if (target.slide !== undefined) {
+      throw new Error("xlsx text hyperlinks cannot target slides — use url instead");
+    }
     this._hyperlinks.set(key, { key, url: target.url ?? "", tooltip: target.tooltip });
   }
 

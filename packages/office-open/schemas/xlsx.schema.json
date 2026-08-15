@@ -13127,7 +13127,7 @@
           "type": "string"
         },
         "slide": {
-          "description": "Internal slide target, 1-based slide number (mutually exclusive with url). Emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\".",
+          "description": "Internal slide target, 1-based slide number (mutually exclusive with url). Emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\".\n\nPPTX only — slides exist in no other format. Formats without slides reject the field at generate time instead of silently dropping it.",
           "type": "number"
         },
         "tooltip": {

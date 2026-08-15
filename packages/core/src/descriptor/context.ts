@@ -10,7 +10,10 @@ import type { Element as XmlElement } from "@office-open/xml";
 export interface HyperlinkTarget {
   /** External URL (mutually exclusive with slide). */
   url?: string;
-  /** Internal slide number, 1-based (mutually exclusive with url). */
+  /**
+   * Internal slide number, 1-based (mutually exclusive with url). PPTX only —
+   * formats without slides reject it at generate time.
+   */
   slide?: number;
   /** Optional tooltip. */
   tooltip?: string;
