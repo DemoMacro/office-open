@@ -1,6 +1,6 @@
 // Text Frame (Text Box) example
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
   AlignmentType,
@@ -183,4 +183,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/61-text-frame.docx", buffer);

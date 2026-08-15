@@ -1,6 +1,6 @@
 // Add image to table cell in a header and body
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -92,4 +92,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/36-picture-to-table-cell.docx", buffer);

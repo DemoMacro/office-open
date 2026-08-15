@@ -1,7 +1,7 @@
 // Smart tags and proof errors: SmartTagRun wraps recognized text,
 // ProofError marks spelling/grammar error ranges.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { ProofErrorType, generateDocument } from "@office-open/docx";
 
@@ -67,4 +67,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/129-smart-tag-proof-error.docx", buffer);

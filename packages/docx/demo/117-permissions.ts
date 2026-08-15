@@ -2,7 +2,7 @@
 // Demonstrates PermStart and PermEnd for defining editable regions.
 // Note: documentProtection must be enabled in features for permissions to take effect.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { EditGroupType, generateDocument } from "@office-open/docx";
 
@@ -74,7 +74,7 @@ const buffer = await generateDocument({
         {
           paragraph: {
             children: [
-              { permStart: { id: 1, ed: "john@example.com" } },
+              { permStart: { id: 1, editor: "john@example.com" } },
               "Only john@example.com can edit this text.",
               { permEnd: 1 },
             ],
@@ -120,4 +120,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/117-permissions.docx", buffer);

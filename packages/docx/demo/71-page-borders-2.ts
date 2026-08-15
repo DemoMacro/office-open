@@ -1,6 +1,6 @@
 // Example demonstrating page borders with style, colors and size
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
   BorderStyle,
@@ -65,4 +65,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/71-page-borders-2.docx", buffer);

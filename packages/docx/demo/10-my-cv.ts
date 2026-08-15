@@ -1,6 +1,6 @@
 // Generate a CV
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import type { DocumentOptions, SectionChild } from "@office-open/docx";
 import {
@@ -437,4 +437,5 @@ const documentCreator = new DocumentCreator();
 const options = documentCreator.create([experiences, education, skills, achievements]);
 
 const buffer = await generateDocument(options);
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/10-my-cv.docx", buffer);

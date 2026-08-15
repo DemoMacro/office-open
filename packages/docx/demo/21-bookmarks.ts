@@ -1,6 +1,6 @@
 // This demo shows how to create bookmarks then link to them with internal hyperlinks
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { HeadingLevel, generateDocument } from "@office-open/docx";
 
@@ -98,4 +98,5 @@ const buffer = await generateDocument({
   ],
   title: "Sample Document",
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/21-bookmarks.docx", buffer);

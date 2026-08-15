@@ -1,7 +1,7 @@
 // Demo: Ignored errors, phonetic properties, sheet background, file sharing,
 // file recovery, web publishing, custom workbook views, and function groups.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateWorkbook } from "@office-open/xlsx";
 
@@ -63,4 +63,5 @@ const buffer = await generateWorkbook({
   ],
 });
 
-writeFileSync("My Workbook.xlsx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/22-advanced-settings.xlsx", buffer);

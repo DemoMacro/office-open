@@ -132,17 +132,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# Documents
-My Document.docx
-My Document (round-trip).docx
-
-# Presentation
-My Presentation.pptx
-My Presentation (round-trip).pptx
-
-# Workbook
-My Workbook.xlsx
-
 # Temporary folder
 tmp
 

@@ -1,6 +1,6 @@
 // Add custom borders and no-borders to the table itself
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
   BorderStyle,
@@ -163,4 +163,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/49-table-borders.docx", buffer);

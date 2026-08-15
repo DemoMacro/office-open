@@ -1,5 +1,5 @@
 // Image tile fill mode (repeating image pattern)
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -148,4 +148,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/104-picture-tile-fill.docx", buffer);

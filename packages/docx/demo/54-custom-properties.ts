@@ -3,7 +3,7 @@
 // To the document in Word after the document has been generated. Standard properties (such as creator, title
 // And subject) cover typical use cases, but sometimes custom properties are required.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -21,4 +21,5 @@ const buffer = await generateDocument(
     title: "Title",
   },
 );
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/54-custom-properties.docx", buffer);

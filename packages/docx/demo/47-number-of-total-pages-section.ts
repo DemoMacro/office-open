@@ -1,6 +1,6 @@
 // Multiple sections with total number of pages in each section
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { AlignmentType, NumberFormat, PageNumber, generateDocument } from "@office-open/docx";
 
@@ -73,4 +73,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/47-number-of-total-pages-section.docx", buffer);

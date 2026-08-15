@@ -1,6 +1,6 @@
 // Advanced workbook options: custom views, file recovery, file sharing, function groups.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateWorkbook } from "@office-open/xlsx";
 
@@ -51,4 +51,5 @@ const buffer = await generateWorkbook({
   },
 });
 
-writeFileSync("My Workbook.xlsx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/26-advanced-workbook.xlsx", buffer);

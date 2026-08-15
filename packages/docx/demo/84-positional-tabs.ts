@@ -1,6 +1,6 @@
 // Simple example apply positional tabs to a document
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
   generateDocument,
@@ -58,4 +58,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/84-positional-tabs.docx", buffer);

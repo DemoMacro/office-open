@@ -1,6 +1,6 @@
 // Demo: group-nested chart frames (wpg:graphicFrame), linked text boxes
 // (wps:linkedTxbx + normalEastAsianFlow), and content part references
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -91,4 +91,5 @@ const buffer = await generateDocument({
   ],
 });
 
-writeFileSync("demo/127-grouped-drawing-frames.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/127-grouped-drawing-frames.docx", buffer);

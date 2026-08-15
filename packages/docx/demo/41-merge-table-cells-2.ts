@@ -1,6 +1,6 @@
 // Multiple cells merging in the same table - Rows and Columns
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -160,4 +160,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/41-merge-table-cells-2.docx", buffer);

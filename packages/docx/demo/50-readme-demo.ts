@@ -1,6 +1,6 @@
 // The demo on the README.md
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { HeadingLevel, VerticalAlignTable, generateDocument } from "@office-open/docx";
 
@@ -110,4 +110,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/50-readme-demo.docx", buffer);

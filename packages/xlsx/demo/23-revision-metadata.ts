@@ -4,7 +4,7 @@
 // the three parts that record tracked changes in a shared workbook.
 // Reference: OOXML transitional sml.xsd — CT_RevisionHeaders / CT_Revisions / CT_Users.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateWorkbook } from "@office-open/xlsx";
 
@@ -80,4 +80,5 @@ const buffer = await generateWorkbook({
   },
 });
 
-writeFileSync("My Workbook.xlsx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/23-revision-metadata.xlsx", buffer);

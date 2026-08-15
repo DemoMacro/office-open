@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateWorkbook } from "@office-open/xlsx";
 
@@ -68,4 +68,5 @@ const buffer = await generateWorkbook({
   ],
 });
 
-writeFileSync("My Workbook.xlsx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/18-table.xlsx", buffer);

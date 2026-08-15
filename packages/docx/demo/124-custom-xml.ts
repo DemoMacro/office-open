@@ -7,7 +7,7 @@
 //
 // Use cases: interoperability with non-Microsoft tools that support custom XML.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -154,4 +154,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/124-custom-xml.docx", buffer);

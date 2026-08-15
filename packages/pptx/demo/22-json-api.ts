@@ -470,4 +470,5 @@ const pres: PresentationOptions = {
 };
 
 const buffer = await generatePresentation(pres);
-fs.writeFileSync("My Presentation.pptx", buffer);
+fs.mkdirSync(".temp", { recursive: true });
+fs.writeFileSync(".temp/22-json-api.pptx", buffer);

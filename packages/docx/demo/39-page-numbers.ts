@@ -1,6 +1,6 @@
 // Example how to display page numbers
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { AlignmentType, NumberFormat, PageNumber, generateDocument } from "@office-open/docx";
 
@@ -80,4 +80,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/39-page-numbers.docx", buffer);

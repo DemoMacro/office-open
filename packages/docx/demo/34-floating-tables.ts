@@ -1,6 +1,6 @@
 // Example of how you would create a table with float positions
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
   OverlapType,
@@ -53,4 +53,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/34-floating-tables.docx", buffer);

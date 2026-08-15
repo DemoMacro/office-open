@@ -1463,8 +1463,10 @@ assert("round-trip ZIPs match", diffs.length === 0);
 
 console.log(`\n=== Results: ${pass} passed, ${fail} failed ===`);
 
-fs.writeFileSync("My Presentation.pptx", buffer);
-fs.writeFileSync("My Presentation (round-trip).pptx", buffer2);
+fs.mkdirSync(".temp", { recursive: true });
+fs.writeFileSync(".temp/16-round-trip.pptx", buffer);
+fs.mkdirSync(".temp", { recursive: true });
+fs.writeFileSync(".temp/16-round-trip (round-trip).pptx", buffer2);
 console.log("\nSaved original and round-trip PPTX files");
 
 if (fail > 0) process.exit(1);

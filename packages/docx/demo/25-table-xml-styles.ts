@@ -1,6 +1,6 @@
 // Example of how you would create a table and add data to it
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { WidthType, generateDocument } from "@office-open/docx";
 
@@ -39,4 +39,5 @@ const buffer = await generateDocument({
   ],
   title: "Title",
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/25-table-xml-styles.docx", buffer);

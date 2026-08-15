@@ -1,7 +1,7 @@
 // Glossary document: building blocks that appear in Word's Quick Parts gallery.
 // Open the document and go to Insert > Quick Parts to see the entries.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { DocPartGallery, DocPartBehavior, DocPartType, generateDocument } from "@office-open/docx";
 
@@ -86,4 +86,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/125-glossary-document.docx", buffer);

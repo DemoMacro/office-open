@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { generateWorkbook, patchWorkbook } from "@office-open/xlsx";
 
@@ -22,7 +22,8 @@ const buffer = await generateWorkbook({
   ],
 });
 
-writeFileSync("My Workbook.xlsx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/9-patch.xlsx", buffer);
 
 // Step 2: Patch placeholders, replace the "Notes" sheet, and append a "Summary".
 //          worksheets.replace keys are sheet names (as declared in workbook.xml);
@@ -30,7 +31,7 @@ writeFileSync("My Workbook.xlsx", buffer);
 //          shared-strings table is rebuilt so indexing continues correctly.
 const patched = await patchWorkbook({
   outputType: "uint8array",
-  data: readFileSync("My Workbook.xlsx"),
+  data: readFileSync(".temp/9-patch.xlsx"),
   placeholders: {
     number: "INV-2024-001",
     customer: "Acme Corp",
@@ -45,4 +46,5 @@ const patched = await patchWorkbook({
   },
 });
 
-writeFileSync("My Workbook.xlsx", patched);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/9-patch.xlsx", patched);

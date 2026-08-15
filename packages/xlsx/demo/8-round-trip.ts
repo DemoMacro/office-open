@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { parseArchive } from "@office-open/core";
 import { generateWorkbook, parseWorkbook, parseXlsx } from "@office-open/xlsx";
@@ -187,7 +187,9 @@ assert("round-trip ZIPs match", diffs.length === 0);
 
 console.log(`\n=== Results: ${pass} passed, ${fail} failed ===`);
 
-writeFileSync("My Workbook.xlsx", buffer);
-writeFileSync("My Workbook (round-trip).xlsx", buffer2);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/8-round-trip.xlsx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/8-round-trip (round-trip).xlsx", buffer2);
 
 if (fail > 0) process.exit(1);

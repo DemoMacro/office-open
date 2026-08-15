@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFile, execSync } from "node:child_process";
 /**
  * Run all demos and validate ALL generated XML against OOXML XSD schemas.
  *
@@ -23,8 +23,10 @@ import { execSync } from "node:child_process";
  *   npx tsx scripts/validate.ts xlsx <file> [n]   # validate specific xlsx file
  */
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
 import { unzipSync } from "fflate";
 import { XmlDocument, XsdValidator } from "libxml2-wasm";
@@ -33,6 +35,8 @@ import { xmlRegisterFsInputProviders } from "libxml2-wasm/lib/nodejs.mjs";
 // Relative source import so tsx always sees the latest OPC validator without
 // depending on a prior @office-open/core dist build.
 import { validateOpcConsistency, PART_REGISTRIES } from "../packages/core/src/opc";
+
+const execFileAsync = promisify(execFile);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "..");
@@ -321,7 +325,8 @@ interface PackageConfig {
   name: string;
   format: "docx" | "pptx" | "xlsx";
   dir: string;
-  outputFile: string;
+  /** Demo output extension — each demo writes `<pkg>/.temp/<demo-stem><ext>` */
+  ext: string;
   buildCmd: string;
 }
 
@@ -330,24 +335,40 @@ const PACKAGES: Record<string, PackageConfig> = {
     name: "PPTX",
     format: "pptx",
     dir: path.resolve(ROOT_DIR, "packages/pptx"),
-    outputFile: "My Presentation.pptx",
+    ext: ".pptx",
     buildCmd: "pnpm -F @office-open/pptx build",
   },
   docx: {
     name: "DOCX",
     format: "docx",
     dir: path.resolve(ROOT_DIR, "packages/docx"),
-    outputFile: "My Document.docx",
+    ext: ".docx",
     buildCmd: "pnpm -F @office-open/docx build",
   },
   xlsx: {
     name: "XLSX",
     format: "xlsx",
     dir: path.resolve(ROOT_DIR, "packages/xlsx"),
-    outputFile: "My Workbook.xlsx",
+    ext: ".xlsx",
     buildCmd: "pnpm -F @office-open/xlsx build",
   },
 };
+
+/**
+ * Run tasks through a fixed-concurrency pool. tsx process startup dominates
+ * per-demo cost, so parallelizing demo runs is the big win; unique .temp
+ * output names mean demos no longer race on a shared output file.
+ */
+async function runPool<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const item = items[next++]!;
+      await fn(item);
+    }
+  });
+  await Promise.all(workers);
+}
 
 // ── Validate all XML parts in a ZIP ──
 
@@ -387,40 +408,52 @@ function validateAllXmlParts(
   return { pass: totalPass, fail: totalFail, failures };
 }
 
-function validatePackage(pkg: PackageConfig) {
+async function validatePackage(pkg: PackageConfig) {
   console.log(`\n--- ${pkg.name} ---`);
 
   const demos = getDemoFiles(path.join(pkg.dir, "demo"));
+  const runFailures: string[] = [];
+
+  // Each demo writes its own uniquely named file under .temp/, so demo runs
+  // are independent and can execute through a concurrency pool.
+  await runPool(demos, Math.min(8, os.cpus().length), async (demo) => {
+    try {
+      await execFileAsync("npx", ["tsx", `demo/${demo}`], {
+        cwd: pkg.dir,
+        windowsHide: true,
+        shell: true, // Windows: npx is a .cmd shim execFile cannot spawn directly
+      });
+    } catch {
+      runFailures.push(demo);
+    }
+  });
+
   let totalPass = 0;
   let totalFail = 0;
   const allFailures: string[] = [];
 
   for (const demo of demos) {
-    try {
-      execSync(`npx tsx "demo/${demo}"`, { cwd: pkg.dir, stdio: "pipe" });
-    } catch {
+    if (runFailures.includes(demo)) {
       console.error(`  RUN FAIL: ${demo}`);
       continue;
     }
 
-    const outputPath = path.join(pkg.dir, pkg.outputFile);
-    // Also check for round-trip variant files
-    const candidates = [outputPath];
-    const rtPath = outputPath.replace(
-      path.extname(pkg.outputFile),
-      ` (round-trip)${path.extname(pkg.outputFile)}`,
-    );
-    if (fs.existsSync(rtPath)) candidates.push(rtPath);
+    // Demo outputs live at .temp/<stem><ext>; round-trip variants append
+    // " (round-trip)" before the extension. Files are kept (gitignored)
+    // for manual inspection — no rename/delete dance needed.
+    const stem = demo.slice(0, -".ts".length);
+    const outputPath = path.join(pkg.dir, ".temp", `${stem}${pkg.ext}`);
+    const rtPath = path.join(pkg.dir, ".temp", `${stem} (round-trip)${pkg.ext}`);
+    const candidates: Array<[string, string]> = [
+      [outputPath, ""],
+      [rtPath, " [round-trip]"],
+    ];
 
-    for (const candidate of candidates) {
+    for (const [candidate, partLabel] of candidates) {
       if (!fs.existsSync(candidate)) continue;
-      const tmpFile = path.join(pkg.dir, `__validate_tmp__${path.basename(candidate)}`);
-      fs.renameSync(candidate, tmpFile);
-
-      const partLabel = candidate === outputPath ? "" : " [round-trip]";
       try {
-        const result = validateAllXmlParts(tmpFile, demo);
-        const opcFailures = validateOpcPhase(tmpFile, pkg.format, `${demo}${partLabel}`);
+        const result = validateAllXmlParts(candidate, demo);
+        const opcFailures = validateOpcPhase(candidate, pkg.format, `${demo}${partLabel}`);
         const opcErrors = opcFailures.filter((f) => f.includes("OPC-ERR")).length;
         const status =
           result.fail === 0 && opcErrors === 0
@@ -432,10 +465,8 @@ function validatePackage(pkg: PackageConfig) {
         totalFail += result.fail + opcErrors;
         allFailures.push(...result.failures, ...opcFailures);
       } catch {
-        console.error(`  ZIP FAIL: ${demo}`);
+        console.error(`  ZIP FAIL: ${demo}${partLabel}`);
       }
-
-      fs.unlinkSync(tmpFile);
     }
   }
 
@@ -468,7 +499,7 @@ function validateSingleFile(filePath: string, format: "docx" | "pptx" | "xlsx") 
   }
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
 
   // Single file validation mode
@@ -502,7 +533,7 @@ function main() {
   for (const target of targets) {
     const pkg = PACKAGES[target];
     execSync(pkg.buildCmd, { cwd: ROOT_DIR, stdio: "pipe" });
-    const result = validatePackage(pkg);
+    const result = await validatePackage(pkg);
     grandPass += result.totalPass;
     grandFail += result.totalFail;
     allFailures.push(...result.failures.map((f) => `[${target}] ${f}`));
@@ -521,4 +552,4 @@ function main() {
   disposeAllValidators();
 }
 
-main();
+await main();

@@ -1,6 +1,6 @@
 // Example of a continuous header
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { SectionType, generateDocument } from "@office-open/docx";
 
@@ -163,4 +163,5 @@ const buffer = await generateDocument({
   ],
   title: "Title",
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/81-continuous-header.docx", buffer);

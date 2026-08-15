@@ -5,7 +5,7 @@
 
 // Note that if the OS have not install `KaiTi` font, this demo doesn't work.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { HeadingLevel, generateDocument } from "@office-open/docx";
 
@@ -93,4 +93,5 @@ const buffer = await generateDocument({
     ],
   },
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/53-chinese.docx", buffer);

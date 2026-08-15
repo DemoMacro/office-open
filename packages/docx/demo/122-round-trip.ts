@@ -1,6 +1,6 @@
 // Round-trip demo — one document with all content types, export → parse → verify → re-export.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { generateDocument, parseDocument, parseArchive } from "@office-open/docx";
 import type { SectionOptions } from "@office-open/docx";
@@ -1013,8 +1013,10 @@ async function main() {
   console.log(`Re-exported DOCX: ${buffer2.length} bytes`);
 
   // Save files
-  writeFileSync("My Document.docx", buffer);
-  writeFileSync("My Document (round-trip).docx", buffer2);
+  mkdirSync(".temp", { recursive: true });
+  writeFileSync(".temp/122-round-trip.docx", buffer);
+  mkdirSync(".temp", { recursive: true });
+  writeFileSync(".temp/122-round-trip (round-trip).docx", buffer2);
 
   // Compare media counts (filenames are non-deterministic)
   const zip1 = parseArchive(buffer);
@@ -1034,7 +1036,7 @@ async function main() {
 
   console.log(`\n=== Results: ${pass} passed, ${fail} failed ===`);
   if (fail > 0) process.exit(1);
-  console.log("\nSaved My Document.docx and My Document (round-trip).docx");
+  console.log("\nSaved .temp/122-round-trip.docx and .temp/122-round-trip (round-trip).docx");
 }
 
 main().catch(console.error);

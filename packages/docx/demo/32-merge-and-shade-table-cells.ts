@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 // Example of how you would merge cells together (Rows and Columns) and apply shading
 // Also includes an example on how to center tables
 
@@ -378,4 +378,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/32-merge-and-shade-table-cells.docx", buffer);

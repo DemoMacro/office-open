@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 import type { DocumentOptions } from "@office-open/docx";
@@ -120,4 +120,5 @@ const doc: DocumentOptions = {
 };
 
 const buffer = await generateDocument(doc);
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/134-ole-object.docx", buffer);

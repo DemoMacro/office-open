@@ -1,6 +1,6 @@
 // Patch a document: append block-level content before the final section break.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument, patchDocument } from "@office-open/docx";
 
@@ -40,4 +40,5 @@ const patched = await patchDocument({
   ],
 });
 
-writeFileSync("My Document.docx", patched);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/132-patch-append.docx", patched);

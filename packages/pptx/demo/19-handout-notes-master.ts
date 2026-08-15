@@ -1,7 +1,7 @@
 // Parameterized Handout Master and Notes Master with custom options.
 // Also demonstrates SmartArt with explicit color and style IDs.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generatePresentation } from "@office-open/pptx";
 import type { PresentationOptions } from "@office-open/pptx";
@@ -74,4 +74,5 @@ const options: PresentationOptions = {
 };
 
 const buffer = await generatePresentation(options);
-writeFileSync("My Presentation.pptx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/19-handout-notes-master.pptx", buffer);

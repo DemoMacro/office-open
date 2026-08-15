@@ -1,7 +1,7 @@
 // Track Revisions for paragraph properties, section properties, tables
 // Docs/usage/change-tracking.md
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
   AlignmentType,
@@ -539,4 +539,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/98-track-revisions-2.docx", buffer);

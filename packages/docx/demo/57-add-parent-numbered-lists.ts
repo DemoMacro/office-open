@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 // Numbered lists - Add parent number in sub number
 
 import { AlignmentType, HeadingLevel, LevelFormat, generateDocument } from "@office-open/docx";
@@ -98,4 +98,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/57-add-parent-numbered-lists.docx", buffer);

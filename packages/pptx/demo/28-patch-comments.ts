@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generatePresentation, patchPresentation } from "@office-open/pptx";
 
@@ -37,7 +37,8 @@ const buffer = await generatePresentation({
   ],
 });
 
-writeFileSync("My Presentation.pptx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/28-patch-comments.pptx", buffer);
 
 const patched = await patchPresentation({
   outputType: "nodebuffer",
@@ -48,4 +49,5 @@ const patched = await patchPresentation({
   },
 });
 
-writeFileSync("My Presentation.pptx", patched);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/28-patch-comments.pptx", patched);

@@ -1,6 +1,6 @@
 // This example shows 3 styles using XML styles
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { generateDocument, HeadingLevel } from "@office-open/docx";
 
@@ -34,4 +34,5 @@ const buffer = await generateDocument({
   ],
   title: "Title",
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/13-xml-styles.docx", buffer);

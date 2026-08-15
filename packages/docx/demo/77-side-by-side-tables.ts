@@ -1,6 +1,6 @@
 // Exporting the document as a stream
 
-import { createWriteStream } from "node:fs";
+import { createWriteStream, mkdirSync } from "node:fs";
 import { Readable } from "stream";
 import type { ReadableStream as WebReadableStream } from "stream/web";
 
@@ -120,6 +120,7 @@ const stream = generateDocumentStream({
     },
   ],
 });
+mkdirSync(".temp", { recursive: true });
 Readable.fromWeb(stream as unknown as WebReadableStream).pipe(
-  createWriteStream("My Document.docx"),
+  createWriteStream(".temp/77-side-by-side-tables.docx"),
 );

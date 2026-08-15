@@ -1,7 +1,7 @@
 // Demo: Move Revisions (Track Changes - Move operations)
 // Demonstrates MovedFromTextRun, MovedToTextRun, and move range markers.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -195,4 +195,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/116-move-revisions.docx", buffer);

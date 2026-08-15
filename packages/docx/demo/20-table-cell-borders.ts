@@ -1,6 +1,6 @@
 // Add custom borders to table cell
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { BorderStyle, generateDocument } from "@office-open/docx";
 
@@ -100,4 +100,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/20-table-cell-borders.docx", buffer);

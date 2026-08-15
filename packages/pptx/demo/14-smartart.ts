@@ -475,4 +475,5 @@ const options: PresentationOptions = {
 };
 
 const buffer = await generatePresentation(options);
-fs.writeFileSync("My Presentation.pptx", buffer);
+fs.mkdirSync(".temp", { recursive: true });
+fs.writeFileSync(".temp/14-smartart.pptx", buffer);

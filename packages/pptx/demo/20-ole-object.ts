@@ -1,6 +1,6 @@
 // OLE Object on a slide, docx Frameset, and docx Object embedding.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generatePresentation } from "@office-open/pptx";
 import type { PresentationOptions } from "@office-open/pptx";
@@ -43,4 +43,5 @@ const options: PresentationOptions = {
 };
 
 const buffer = await generatePresentation(options);
-writeFileSync("My Presentation.pptx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/20-ole-object.pptx", buffer);

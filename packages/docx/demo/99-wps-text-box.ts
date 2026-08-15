@@ -1,6 +1,6 @@
 // WPS (WordProcessing Shape) text boxes - modern DrawingML-based alternative to legacy VML text boxes (demo 94)
 // Demonstrates: basic text box, styled fill/outline, rotation, floating positioning, and vertical alignment
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import {
   generateDocument,
@@ -249,4 +249,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/99-wps-text-box.docx", buffer);

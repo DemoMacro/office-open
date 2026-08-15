@@ -30,4 +30,5 @@ const options: WorkbookOptions = {
 };
 
 const buffer = await generateWorkbook(options);
-fs.writeFileSync("My Workbook.xlsx", buffer);
+fs.mkdirSync(".temp", { recursive: true });
+fs.writeFileSync(".temp/29-connector-connections.xlsx", buffer);

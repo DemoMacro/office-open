@@ -1,6 +1,6 @@
 // Example of how to change page borders
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument, HeadingLevel } from "@office-open/docx";
 
@@ -45,4 +45,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/6-page-borders.docx", buffer);

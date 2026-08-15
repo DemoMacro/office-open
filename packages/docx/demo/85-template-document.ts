@@ -1,6 +1,6 @@
 // Patch a document with patches
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { HeadingLevel, TextDirection, VerticalAlignTable, patchDocument } from "@office-open/docx";
 
@@ -146,4 +146,5 @@ const doc = await patchDocument({
     },
   },
 });
-writeFileSync("My Document.docx", doc);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/85-template-document.docx", doc);

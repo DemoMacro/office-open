@@ -1,5 +1,5 @@
 // DrawingML Advanced Features - image cropping, effects, 3D, gradient fill, enhanced outline
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -535,4 +535,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/101-drawingml-effects.docx", buffer);

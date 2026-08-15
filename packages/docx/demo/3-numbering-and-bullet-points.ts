@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 // Numbering and bullet points example
 
 import { AlignmentType, HeadingLevel, LevelFormat, generateDocument } from "@office-open/docx";
@@ -348,4 +348,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/3-numbering-and-bullet-points.docx", buffer);

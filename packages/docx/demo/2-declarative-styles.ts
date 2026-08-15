@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 // Example on how to customize the look at feel using Styles
 
 import {
@@ -293,4 +293,5 @@ const buffer = await generateDocument({
   },
   title: "Sample Document",
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/2-declarative-styles.docx", buffer);

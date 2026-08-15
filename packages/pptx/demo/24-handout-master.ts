@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generatePresentation } from "@office-open/pptx";
 import type { PresentationOptions } from "@office-open/pptx";
@@ -36,4 +36,5 @@ const options: PresentationOptions = {
 };
 
 const buffer = await generatePresentation(options);
-writeFileSync("My Presentation.pptx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/24-handout-master.pptx", buffer);

@@ -1,6 +1,6 @@
 // Example of how you would create a table and add data to it
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
   HeadingLevel,
@@ -87,4 +87,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/31-tables.docx", buffer);

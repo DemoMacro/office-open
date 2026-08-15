@@ -1,6 +1,6 @@
 // Page numbers - Start from 0 on a new section
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import {
   AlignmentType,
@@ -97,4 +97,5 @@ const buffer = await generateDocument({
     },
   ],
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/42-restart-page-numbers.docx", buffer);

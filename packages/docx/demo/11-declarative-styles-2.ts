@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 // Setting styles with JavaScript configuration
 
 import {
@@ -345,4 +345,5 @@ const buffer = await generateDocument({
     ],
   },
 });
-writeFileSync("My Document.docx", buffer);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/11-declarative-styles-2.docx", buffer);

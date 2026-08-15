@@ -1,6 +1,6 @@
 // Patch a document with patches
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import type { Patch } from "@office-open/docx";
 import { patchDocument } from "@office-open/docx";
@@ -31,4 +31,5 @@ const doc = await patchDocument({
   outputType: "nodebuffer",
   placeholders: patches,
 });
-writeFileSync("My Document.docx", doc);
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/88-template-document.docx", doc);

@@ -1,6 +1,6 @@
 // Export to base64 string - Useful in a browser environment.
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
@@ -30,4 +30,5 @@ const buffer = await generateDocument(
   },
   { type: "base64" },
 );
-writeFileSync("My Document.docx", Buffer.from(buffer, "base64"));
+mkdirSync(".temp", { recursive: true });
+writeFileSync(".temp/19-export-to-base64.docx", Buffer.from(buffer, "base64"));
