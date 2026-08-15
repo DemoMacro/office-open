@@ -130,6 +130,7 @@ export type { BlackWhiteMode } from "./black-white-mode";
 export {
   createTableStyle,
   createTableStyleList,
+  parseTableStyle,
   parseTableStyleList,
   type TableStyleOptions,
   type TableStyleListOptions,

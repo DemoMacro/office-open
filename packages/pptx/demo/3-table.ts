@@ -53,6 +53,10 @@ const options: PresentationOptions = {
                   {
                     text: "Name",
                     fill: "4472C4",
+                    cell3D: {
+                      prstMaterial: "metal",
+                      bevel: { w: 25400, h: 19050, prst: "circle" },
+                    },
                   },
                   { text: "Age" },
                   { text: "City" },

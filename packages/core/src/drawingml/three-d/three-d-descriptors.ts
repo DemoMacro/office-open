@@ -24,6 +24,7 @@ import type {
   Vector3D,
 } from "./scene-3d";
 import type { Shape3DOptions } from "./shape-3d";
+import type { PresetMaterial } from "./shape-3d";
 
 // ── SphereCoords helper ──
 
@@ -199,6 +200,46 @@ const lightRigDesc: CustomDescriptor<LightRigOptions> = {
     const rot = findChild(el, "a:rot");
     if (rot) result.rotation = readSphereCoords(rot);
     return result as LightRigOptions;
+  },
+};
+
+// ── Cell3D descriptor (a:cell3D — table cell bevel) ──
+
+export interface Cell3DOptions {
+  /** Cell bevel (required CT_Bevel) */
+  bevel: BevelOptions;
+  /** Light rig (CT_LightRig) */
+  lightRig?: LightRigOptions;
+  /** Preset material (@prstMaterial, default "plastic") */
+  prstMaterial?: PresetMaterial;
+}
+
+export const cell3DDesc: CustomDescriptor<Cell3DOptions> = {
+  kind: "custom",
+  stringify(opts, ctx) {
+    const attrParts: string[] = [];
+    if (opts.prstMaterial !== undefined) attrParts.push(`prstMaterial="${opts.prstMaterial}"`);
+    const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
+
+    const parts: string[] = [];
+    const bevelXml = stringify(bevelDesc, opts.bevel, ctx);
+    if (bevelXml) parts.push(bevelXml);
+    if (opts.lightRig) {
+      const lightRigXml = stringify(lightRigDesc, opts.lightRig, ctx);
+      if (lightRigXml) parts.push(lightRigXml);
+    }
+    return `<a:cell3D${attrStr}>${parts.join("")}</a:cell3D>`;
+  },
+  parse(el, ctx) {
+    const result: Partial<Cell3DOptions> = {};
+    if (el.attributes?.["prstMaterial"] !== undefined) {
+      result.prstMaterial = String(el.attributes["prstMaterial"]) as PresetMaterial;
+    }
+    const bevel = findChild(el, "a:bevel");
+    if (bevel) result.bevel = parse(bevelDesc, bevel, ctx);
+    const lightRig = findChild(el, "a:lightRig");
+    if (lightRig) result.lightRig = parse(lightRigDesc, lightRig, ctx);
+    return result as Cell3DOptions;
   },
 };
 

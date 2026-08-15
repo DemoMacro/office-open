@@ -11,6 +11,16 @@
 import { attr, attrNum, element, findChild, stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import type { ReadContext, WriteContext } from "../descriptor";
+import { parse as parseDesc, stringify as stringifyDesc } from "../descriptor";
+import { cell3DDesc } from "./three-d/three-d-descriptors";
+import type { Cell3DOptions } from "./three-d/three-d-descriptors";
+
+// cell3DDesc's stringify/parse never touch the context (bevel/lightRig are
+// pure attribute emitters), so bare stubs satisfy the descriptor signature.
+const EMPTY_WRITE_CTX = {} as WriteContext;
+const EMPTY_READ_CTX = {} as ReadContext;
+
 // ── Options ──
 
 export type TableStyleRegion =
@@ -56,6 +66,8 @@ export interface TableCellStyleOptions {
   fillReference?: StyleMatrixReferenceOptions;
   /** Direct fill */
   fill?: string;
+  /** Cell bevel (CT_Cell3D) */
+  cell3D?: Cell3DOptions;
 }
 
 export interface TableCellBorderOptions {
@@ -172,6 +184,7 @@ function buildCellStyle(opts: TableCellStyleOptions): string {
   if (opts.borders) children.push(buildCellBorders(opts.borders));
   if (opts.fillReference) children.push(createStyleMatrixRef("fillRef", opts.fillReference));
   else if (opts.fill) children.push(toStr(opts.fill));
+  if (opts.cell3D) children.push(stringifyDesc(cell3DDesc, opts.cell3D, EMPTY_WRITE_CTX) ?? "");
   return element("a:tcStyle", undefined, children);
 }
 
@@ -220,8 +233,8 @@ const REGION_ELEMENTS: Record<TableStyleRegion, string> = {
   nwCell: "a:nwCell",
 };
 
-/** Create a single table style (CT_TableStyle) */
-export function createTableStyle(opts: TableStyleOptions): string {
+/** Create a single table style (CT_TableStyle). `elementName` covers the part-list form (a:tblStyle) and the inline a:tblPr form (a:tableStyle). */
+export function createTableStyle(opts: TableStyleOptions, elementName = "a:tblStyle"): string {
   const children: string[] = [];
   if (opts.regions) {
     for (const region of REGION_ORDER) {
@@ -231,7 +244,7 @@ export function createTableStyle(opts: TableStyleOptions): string {
     }
   }
   return element(
-    "a:tblStyle",
+    elementName,
     { styleId: opts.styleId, styleName: opts.styleName },
     children.length > 0 ? children : undefined,
   );
@@ -283,7 +296,7 @@ export function parseTableStyleList(el: Element): TableStyleListOptions {
   return { defaultStyleId, ...(styles.length > 0 ? { styles } : {}) };
 }
 
-function parseTableStyle(el: Element): TableStyleOptions | undefined {
+export function parseTableStyle(el: Element): TableStyleOptions | undefined {
   const styleId = attr(el, "styleId");
   const styleName = attr(el, "styleName");
   if (styleId === undefined || styleName === undefined) return undefined;
@@ -342,14 +355,16 @@ function parseTableCellStyle(el: Element): TableCellStyleOptions | undefined {
   if (fillRefEl) {
     opts.fillReference = parseStyleMatrixRef(fillRefEl);
   } else {
-    // fill: first non-tcBdr child element, serialized (buildCellStyle pushes
-    // opts.fill verbatim).
+    // fill: first non-tcBdr/non-cell3D child element, serialized
+    // (buildCellStyle pushes opts.fill verbatim).
     for (const child of el.elements ?? []) {
-      if (child.name === "a:tcBdr") continue;
+      if (child.name === "a:tcBdr" || child.name === "a:cell3D") continue;
       opts.fill = serializeChild(child);
       break;
     }
   }
+  const cell3DEl = findChild(el, "a:cell3D");
+  if (cell3DEl) opts.cell3D = parseDesc(cell3DDesc, cell3DEl, EMPTY_READ_CTX);
   return Object.keys(opts).length > 0 ? opts : undefined;
 }
 

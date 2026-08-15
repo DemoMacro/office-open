@@ -10,10 +10,13 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
 import {
+  cell3DDesc,
   createBodyProperties,
+  createTableStyle,
   fillDesc,
-  stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
+  parseTableStyle,
+  stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawingml";
 import {
   attr,
@@ -146,6 +149,12 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       if (tableStyleIdEl) {
         const styleId = textOf(tableStyleIdEl);
         if (styleId) result.tableStyleId = styleId;
+      } else {
+        const tableStyleEl = findChild(tblPr, "a:tableStyle");
+        if (tableStyleEl) {
+          const style = parseTableStyle(tableStyleEl);
+          if (style) result.tableStyle = style;
+        }
       }
 
       // Table-level borders
@@ -213,11 +222,13 @@ function stringifyTblPr(opts: TableOptions): string {
   if (opts.firstCol !== undefined) attrs.push(`firstCol="${opts.firstCol ? 1 : 0}"`);
   if (opts.lastCol !== undefined) attrs.push(`lastCol="${opts.lastCol ? 1 : 0}"`);
   if (opts.bandCol !== undefined) attrs.push(`bandCol="${opts.bandCol ? 1 : 0}"`);
-  if (attrs.length === 0 && !opts.tableStyleId) return "<a:tblPr/>";
   const styleId = opts.tableStyleId
     ? `<a:tableStyleId>${escapeXml(opts.tableStyleId)}</a:tableStyleId>`
     : "";
-  return `<a:tblPr ${attrs.join(" ")}>${styleId}</a:tblPr>`;
+  // Inline CT_TableStyle — alternative to referencing a tableStyles part entry.
+  const style = opts.tableStyle ? createTableStyle(opts.tableStyle, "a:tableStyle") : "";
+  if (attrs.length === 0 && !styleId && !style) return "<a:tblPr/>";
+  return `<a:tblPr ${attrs.join(" ")}>${styleId}${style}</a:tblPr>`;
 }
 
 function stringifyRow(row: TableRowOptions, ctx: PptxWriteContext): string {
@@ -297,6 +308,11 @@ function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
       parts.push(buildBorderLine("a:lnTlToBr", cell.borders.diagonalTopLeftToBottomRight, ctx));
     if (cell.borders.diagonalBottomLeftToTopRight)
       parts.push(buildBorderLine("a:lnBlToTr", cell.borders.diagonalBottomLeftToTopRight, ctx));
+  }
+
+  if (cell.cell3D) {
+    const cell3DXml = stringify(cell3DDesc, cell.cell3D, ctx);
+    if (cell3DXml) parts.push(cell3DXml);
   }
 
   if (cell.fill !== undefined) {
@@ -448,6 +464,9 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
       findChild(tcPr, "a:pattFill") ||
       findChild(tcPr, "a:blipFill");
     if (fillChild) result.fill = parse(fillDesc, tcPr, ctx);
+
+    const cell3DEl = findChild(tcPr, "a:cell3D");
+    if (cell3DEl) result.cell3D = parse(cell3DDesc, cell3DEl, ctx);
 
     // Cell borders
     const borders: CellBorders = {};

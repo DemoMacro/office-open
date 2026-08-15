@@ -81,6 +81,26 @@ export interface AnimationBuildOptions {
   oleChartAnimateBackground?: boolean;
   // graphic-specific
   graphicBuildAsOne?: boolean;
+  /** Sub-element build (p:bldSub) — a:bldDgm or a:bldChart; required unless graphicBuildAsOne. */
+  graphicSubBuild?: AnimationGraphicSubBuildOptions;
+}
+
+/** a:bldDgm / a:bldChart inside p:bldSub (CT_AnimationGraphicalObjectBuildProperties). */
+export interface AnimationGraphicSubBuildOptions {
+  /** Diagram build (a:bldDgm). */
+  diagram?: {
+    /** Build type (ST_AnimationDgmBuildType, default "allAtOnce") */
+    build?: string;
+    /** Reverse build order (@rev, default false) */
+    reverse?: boolean;
+  };
+  /** Chart build (a:bldChart). */
+  chart?: {
+    /** Build type (ST_AnimationChartBuildType, default "allAtOnce") */
+    build?: string;
+    /** Animate chart background (@animBg, default true) */
+    animateBackground?: boolean;
+  };
 }
 
 export interface AnimationTemplateOptions {
@@ -229,8 +249,25 @@ export interface AnimationOptions {
   soundTarget?: string;
   /** Sub-shape ID (p:subSp @spid). */
   subShapeId?: number;
-  /** Graphic element type (p:graphicEl). */
-  graphicElementType?: string;
+  /** Graphic element target (p:graphicEl → a:dgm / a:chart). */
+  graphicElement?: {
+    /** Diagram element (a:dgm). */
+    diagram?: {
+      /** Diagram node GUID (a:dgm @id) */
+      id?: string;
+      /** Build step (a:dgm @bldStep, default "sp") */
+      buildStep?: "sp" | "bg";
+    };
+    /** Chart element (a:chart). */
+    chart?: {
+      /** Series index (a:chart @seriesIdx, default -1) */
+      seriesIndex?: number;
+      /** Category index (a:chart @categoryIdx, default -1) */
+      categoryIndex?: number;
+      /** Build step (required) */
+      buildStep: "category" | "ptInCategory" | "series" | "ptInSeries" | "allPts" | "gridLegend";
+    };
+  };
   /** OLE chart element type (p:oleChartEl @type). */
   oleChartElementType?: string;
   /** OLE chart element level (p:oleChartEl @lvl). */

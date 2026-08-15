@@ -184,10 +184,21 @@ function buildTargetElement(spid: number, options?: AnimationOptions): string {
     );
   } else if (options?.subShapeId !== undefined) {
     spTgtChildren.push(`<p:subSp spid="${options.subShapeId}"/>`);
-  } else if (options?.graphicElementType !== undefined) {
-    spTgtChildren.push(
-      buildXml("p:graphicEl", undefined, [`<a:graphicEl type="${options.graphicElementType}"/>`]),
-    );
+  } else if (options?.graphicElement !== undefined) {
+    const ge = options.graphicElement;
+    if (ge.diagram) {
+      const dgmAttrs: Record<string, string> = {};
+      if (ge.diagram.id) dgmAttrs.id = ge.diagram.id;
+      if (ge.diagram.buildStep) dgmAttrs.bldStep = ge.diagram.buildStep;
+      spTgtChildren.push(buildXml("p:graphicEl", undefined, [buildXml("a:dgm", dgmAttrs)]));
+    } else if (ge.chart) {
+      const chartAttrs: Record<string, string | number> = {
+        bldStep: ge.chart.buildStep,
+      };
+      if (ge.chart.seriesIndex !== undefined) chartAttrs.seriesIdx = ge.chart.seriesIndex;
+      if (ge.chart.categoryIndex !== undefined) chartAttrs.categoryIdx = ge.chart.categoryIndex;
+      spTgtChildren.push(buildXml("p:graphicEl", undefined, [buildXml("a:chart", chartAttrs)]));
+    }
   } else if (options?.oleChartElementType !== undefined) {
     const oleChartAttrs: Record<string, string | number> = {
       type: options.oleChartElementType,
@@ -798,7 +809,25 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
         if (bld.graphicBuildAsOne) {
           bldChildrenInner.push(`<p:bldAsOne/>`);
         } else {
-          bldChildrenInner.push(`<p:bldSub/>`);
+          const sub = bld.graphicSubBuild;
+          if (sub?.diagram) {
+            const dgmAttrs: Record<string, string | number> = {};
+            if (sub.diagram.build) dgmAttrs.bld = sub.diagram.build;
+            if (sub.diagram.reverse) dgmAttrs.rev = 1;
+            bldChildrenInner.push(
+              buildXml("p:bldSub", undefined, [buildXml("a:bldDgm", dgmAttrs)]),
+            );
+          } else if (sub?.chart) {
+            const chartAttrs: Record<string, string | number> = {};
+            if (sub.chart.build) chartAttrs.bld = sub.chart.build;
+            if (sub.chart.animateBackground !== undefined)
+              chartAttrs.animBg = sub.chart.animateBackground ? 1 : 0;
+            bldChildrenInner.push(
+              buildXml("p:bldSub", undefined, [buildXml("a:bldChart", chartAttrs)]),
+            );
+          } else {
+            bldChildrenInner.push(`<p:bldSub/>`);
+          }
         }
         break;
       }

@@ -1,6 +1,7 @@
 import type {
   BaseTableOptions,
   NonVisualDrawingPropertiesOptions,
+  TableStyleOptions,
   UniversalMeasure,
 } from "@office-open/core";
 
@@ -23,6 +24,8 @@ export interface TableOptions
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
   tableStyleId?: string;
+  /** Inline table style (a:tableStyle in a:tblPr) — alternative to tableStyleId. */
+  tableStyle?: TableStyleOptions;
   borders?: {
     top?: CellBorderOptions;
     bottom?: CellBorderOptions;

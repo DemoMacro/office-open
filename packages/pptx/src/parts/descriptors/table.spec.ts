@@ -316,6 +316,46 @@ describe("tableDesc round-trip", () => {
     expect(margins.left).toBe(90000);
   });
 
+  it("round-trips cell 3D bevel (a:cell3D)", () => {
+    const opts: TableOptions = {
+      rows: [
+        {
+          cells: [
+            {
+              text: "A1",
+              cell3D: {
+                prstMaterial: "metal",
+                bevel: { w: 25400, h: 19050, prst: "circle" },
+                lightRig: { rig: "threePt", direction: "t" },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    expect(result.rows[0]!.cells[0]!.cell3D).toMatchObject({
+      prstMaterial: "metal",
+      bevel: { w: 25400, h: 19050, prst: "circle" },
+      lightRig: { rig: "threePt", direction: "t" },
+    });
+  });
+
+  it("round-trips inline table style (a:tableStyle in a:tblPr)", () => {
+    const opts: TableOptions = {
+      rows: [{ cells: [{ text: "A1" }] }],
+      tableStyle: {
+        styleId: "{5940675A-B579-460E-94D1-54222C63F5DA}",
+        styleName: "Inline Style",
+        regions: { wholeTbl: { text: { bold: "on" } } },
+      },
+    };
+    const result = roundTrip(opts);
+    expect(result.tableStyle?.styleId).toBe("{5940675A-B579-460E-94D1-54222C63F5DA}");
+    expect(result.tableStyle?.styleName).toBe("Inline Style");
+    expect(result.tableStyle?.regions?.wholeTbl?.text?.bold).toBe("on");
+  });
+
   it("round-trips tableStyleId (a:tableStyleId)", () => {
     const opts: TableOptions = {
       rows: [{ cells: [{ text: "A1" }] }],
