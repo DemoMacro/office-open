@@ -22,6 +22,8 @@ import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
+import { dialogsheetDesc } from "@parts/dialogsheet";
+import type { DialogsheetOptions } from "@parts/dialogsheet";
 import { drawingDesc } from "@parts/drawing";
 import { externalLinkDesc } from "@parts/external-link";
 import type { ExternalLinkOptions } from "@parts/external-link";
@@ -421,6 +423,19 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       chartsheets.push(csData);
     }
     if (chartsheets.length > 0) opts.chartsheets = chartsheets;
+  }
+
+  // Dialogsheets — parse legacy dialog sheet parts
+  const dialogsheetPaths = xlsx.doc.keys("xl/dialogSheets/").filter((k) => k.endsWith(".xml"));
+  if (dialogsheetPaths.length > 0) {
+    const dialogsheets: DialogsheetOptions[] = [];
+    for (const dsPath of dialogsheetPaths) {
+      const dsEl = xlsx.doc.get(dsPath);
+      if (!dsEl) continue;
+      const dsData = dialogsheetDesc.parse(dsEl, readContext);
+      dialogsheets.push(dsData);
+    }
+    if (dialogsheets.length > 0) opts.dialogsheets = dialogsheets;
   }
 
   // Pivot cache definitions and records

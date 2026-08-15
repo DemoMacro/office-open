@@ -144,7 +144,13 @@ export type {
   ChartsheetProtectionOptions,
   ChartsheetHeaderFooterOptions,
 } from "./chartsheet";
-export type { DialogsheetOptions } from "./dialogsheet";
+export { dialogsheetDesc } from "./dialogsheet";
+export type {
+  DialogsheetOptions,
+  DialogsheetPageMargins,
+  DialogsheetPageSetup,
+  DialogsheetProtectionOptions,
+} from "./dialogsheet";
 export type {
   RevisionHeadersOptions,
   RevisionHeaderEntry,

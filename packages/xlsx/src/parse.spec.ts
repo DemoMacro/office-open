@@ -205,6 +205,32 @@ describe("xml mapping round-trip", () => {
   });
 });
 
+describe("dialogsheet round-trip", () => {
+  it("round-trips a legacy dialog sheet with protection and page setup", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [{ name: "S", rows: [{ cells: [{ value: 1 }] }] }],
+      dialogsheets: [
+        {
+          name: "Dialog1",
+          tabColor: "FF404040",
+          codeName: "Dialog1",
+          sheetProtection: { objects: true },
+          pageMargins: { left: 0.5 },
+          pageSetup: { paperSize: 9, orientation: "portrait" },
+        },
+      ],
+    };
+
+    const parsed = await roundTrip(opts);
+    const ds = parsed.dialogsheets![0]!;
+    expect(ds.tabColor).toBe("FF404040");
+    expect(ds.codeName).toBe("Dialog1");
+    expect(ds.sheetProtection).toEqual({ objects: true });
+    expect(ds.pageMargins?.left).toBe(0.5);
+    expect(ds.pageSetup).toMatchObject({ paperSize: 9, orientation: "portrait" });
+  });
+});
+
 describe("theme round-trip", () => {
   it("preserves a custom source theme instead of replacing it with the default", async () => {
     const opts: WorkbookOptions = {

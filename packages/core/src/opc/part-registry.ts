@@ -420,6 +420,11 @@ export const XLSX_PARTS = {
       presence: { kind: "repeated", countFrom: "chartsheets.length" },
     },
     {
+      path: "xl/dialogSheets/sheet${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.dialogsheet+xml",
+      presence: { kind: "repeated", countFrom: "dialogsheets.length" },
+    },
+    {
       path: "xl/drawings/drawing${i}.xml",
       contentType: "application/vnd.openxmlformats-officedocument.drawing+xml",
       presence: { kind: "conditional", flag: "worksheet has drawing" },

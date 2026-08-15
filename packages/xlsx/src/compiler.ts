@@ -33,6 +33,7 @@ import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
+import { dialogsheetDesc } from "@parts/dialogsheet";
 import type { DrawingPictureOptions, ChartAnchorOptions } from "@parts/drawing";
 import { drawingDesc } from "@parts/drawing";
 import { A_NS, R_NS, XDR_NS, graphicFrameXml, wrapAnchor } from "@parts/drawing/stringify";
@@ -90,6 +91,7 @@ export function compileWorkbook(
 
   const worksheetConfigs = options.worksheets ?? [];
   const chartsheetConfigs = options.chartsheets ?? [];
+  const dialogsheetConfigs = options.dialogsheets ?? [];
   const hasCustomProperties = !!options.customProperties && options.customProperties.length > 0;
 
   // Core properties
@@ -135,7 +137,12 @@ export function compileWorkbook(
   if (options.styleExtensions) ctx.styles.setExtensions(options.styleExtensions);
 
   // Build workbook relationships
-  buildWorkbookRelationships(ctx.workbookRels, worksheetConfigs.length, chartsheetConfigs.length);
+  buildWorkbookRelationships(
+    ctx.workbookRels,
+    worksheetConfigs.length,
+    chartsheetConfigs.length,
+    dialogsheetConfigs.length,
+  );
 
   // Build sheet definitions for workbook XML
   const sheets: SheetDefinition[] = [];
@@ -151,6 +158,13 @@ export function compileWorkbook(
   for (const cs of chartsheetConfigs) {
     sheets.push({
       name: cs.name ?? `Chart${sheetId}`,
+      sheetId: sheetId++,
+      rId: `rId${rId++}`,
+    });
+  }
+  for (const ds of dialogsheetConfigs) {
+    sheets.push({
+      name: ds.name ?? `Dialog${sheetId}`,
       sheetId: sheetId++,
       rId: `rId${rId++}`,
     });
@@ -713,6 +727,14 @@ export function compileWorkbook(
     };
   }
 
+  // Dialogsheets — legacy Excel 5.0 dialog sheets
+  for (const [i, dsOpts] of dialogsheetConfigs.entries()) {
+    mapping[`Dialogsheet${i}`] = {
+      data: XML_DECL + dialogsheetDesc.stringify(dsOpts, ctx),
+      path: `xl/dialogSheets/sheet${i + 1}.xml`,
+    };
+  }
+
   // Workbook XML (via descriptor)
   let wbXml =
     workbookDesc.stringify(
@@ -950,7 +972,12 @@ export function compileWorkbook(
 
 // ── Pure helper functions ──
 
-function buildWorkbookRelationships(rels: Relationships, wsCount: number, csCount: number): void {
+function buildWorkbookRelationships(
+  rels: Relationships,
+  wsCount: number,
+  csCount: number,
+  dsCount: number = 0,
+): void {
   let rid = 1;
   for (let i = 0; i < wsCount; i++) {
     rels.addRelationship(
@@ -964,6 +991,13 @@ function buildWorkbookRelationships(rels: Relationships, wsCount: number, csCoun
       rid++,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartsheet",
       `chartsheets/sheet${i + 1}.xml`,
+    );
+  }
+  for (let i = 0; i < dsCount; i++) {
+    rels.addRelationship(
+      rid++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/dialogsheet",
+      `dialogSheets/sheet${i + 1}.xml`,
     );
   }
   rels.addRelationship(

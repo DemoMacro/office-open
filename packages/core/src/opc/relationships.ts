@@ -54,6 +54,7 @@ export type RelationshipType =
   // SpreadsheetML specific
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartsheet"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/dialogsheet"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing"

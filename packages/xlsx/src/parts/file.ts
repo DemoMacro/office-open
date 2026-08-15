@@ -35,6 +35,7 @@ import type {
 import type { CalcCell } from "./calc-chain";
 import type { ChartsheetOptions } from "./chartsheet";
 import type { ConnectionOptions } from "./connection";
+import type { DialogsheetOptions } from "./dialogsheet";
 import type { ExternalLinkOptions } from "./external-link";
 import type { MetadataOptions } from "./metadata";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
@@ -46,6 +47,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   worksheets?: WorksheetOptions[];
   /** Chart-only sheets (no cells, just a chart) */
   chartsheets?: ChartsheetOptions[];
+  /** Legacy Excel 5.0 dialog sheets (xl/dialogSheets/sheetN.xml) */
+  dialogsheets?: DialogsheetOptions[];
   /** Pre-defined differential formats for conditional formatting */
   dxfs?: DxfOptions[];
   /** Custom color palette (CT_Colors) */
