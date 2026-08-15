@@ -136,6 +136,41 @@ describe("parseWorkbook round-trip", () => {
   });
 });
 
+describe("metadata round-trip", () => {
+  it("round-trips the metadata part and cell cm/vm references", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "S",
+          rows: [
+            {
+              cells: [{ reference: "A1", value: "x", cellMetadataId: 1, valueMetadataId: 1 }],
+            },
+          ],
+        },
+      ],
+      metadata: {
+        types: [{ name: "XLDAPROPERTY", minSupportedVersion: 1 }],
+        strings: [{ value: "s1" }],
+        futureMetadata: [{ name: "XLDAPROPERTY", blocks: [{}] }],
+        cellMetadata: [{ records: [{ t: 0, v: 0 }] }],
+        valueMetadata: [{ records: [{ t: 0, v: 0 }] }],
+      },
+    };
+
+    const parsed = await roundTrip(opts);
+    expect(parsed.metadata?.types![0]).toMatchObject({
+      name: "XLDAPROPERTY",
+      minSupportedVersion: 1,
+    });
+    expect(parsed.metadata?.futureMetadata![0]).toMatchObject({ name: "XLDAPROPERTY" });
+    expect(parsed.metadata?.cellMetadata![0]!.records).toEqual([{ t: 0, v: 0 }]);
+    const cell = parsed.worksheets![0]!.rows![0]!.cells![0]!;
+    expect(cell.cellMetadataId).toBe(1);
+    expect(cell.valueMetadataId).toBe(1);
+  });
+});
+
 describe("theme round-trip", () => {
   it("preserves a custom source theme instead of replacing it with the default", async () => {
     const opts: WorkbookOptions = {

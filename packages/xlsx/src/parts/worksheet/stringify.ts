@@ -1010,6 +1010,9 @@ function buildCellString(
   } else if (cell.styleIndex !== undefined) {
     sAttr = ` s="${cell.styleIndex}"`;
   }
+  let mdAttr = "";
+  if (cell.cellMetadataId !== undefined) mdAttr += ` cm="${cell.cellMetadataId}"`;
+  if (cell.valueMetadataId !== undefined) mdAttr += ` vm="${cell.valueMetadataId}"`;
 
   const value = cell.value;
 
@@ -1017,7 +1020,7 @@ function buildCellString(
   if (cell.formula) {
     const fStr = buildFormulaString(cell.formula);
     if (value === null || value === undefined) {
-      return `<c${rAttr}${sAttr}>${fStr}</c>`;
+      return `<c${rAttr}${sAttr}${mdAttr}>${fStr}</c>`;
     }
     let vStr = "";
     let tAttr = "";
@@ -1033,14 +1036,14 @@ function buildCellString(
       vStr = `<v>${dateToSerialNumber(value)}</v>`;
     }
     if (vStr) {
-      return `<c${rAttr}${sAttr}${tAttr}>${fStr}${vStr}</c>`;
+      return `<c${rAttr}${sAttr}${mdAttr}${tAttr}>${fStr}${vStr}</c>`;
     }
-    return `<c${rAttr}${sAttr}>${fStr}</c>`;
+    return `<c${rAttr}${sAttr}${mdAttr}>${fStr}</c>`;
   }
 
   if (value === null || value === undefined) {
     if (cell.styleIndex !== undefined) {
-      return `<c${rAttr}${sAttr}/>`;
+      return `<c${rAttr}${sAttr}${mdAttr}/>`;
     }
     return "";
   }
@@ -1049,30 +1052,30 @@ function buildCellString(
   if (typeof value === "object" && !(value instanceof Date)) {
     if (sharedStrings) {
       const idx = sharedStrings.registerRich(value);
-      return `<c${rAttr}${sAttr} t="s"><v>${idx}</v></c>`;
+      return `<c${rAttr}${sAttr}${mdAttr} t="s"><v>${idx}</v></c>`;
     }
-    return `<c${rAttr}${sAttr} t="inlineStr"><is>${buildRstXml(value)}</is></c>`;
+    return `<c${rAttr}${sAttr}${mdAttr} t="inlineStr"><is>${buildRstXml(value)}</is></c>`;
   }
 
   if (typeof value === "string") {
     if (sharedStrings) {
       const idx = sharedStrings.register(value);
-      return `<c${rAttr}${sAttr} t="s"><v>${idx}</v></c>`;
+      return `<c${rAttr}${sAttr}${mdAttr} t="s"><v>${idx}</v></c>`;
     }
-    return `<c${rAttr}${sAttr} t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`;
+    return `<c${rAttr}${sAttr}${mdAttr} t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`;
   }
 
   if (typeof value === "number") {
-    return `<c${rAttr}${sAttr}><v>${value}</v></c>`;
+    return `<c${rAttr}${sAttr}${mdAttr}><v>${value}</v></c>`;
   }
 
   if (typeof value === "boolean") {
-    return `<c${rAttr}${sAttr} t="b"><v>${value ? 1 : 0}</v></c>`;
+    return `<c${rAttr}${sAttr}${mdAttr} t="b"><v>${value ? 1 : 0}</v></c>`;
   }
 
   if (value instanceof Date) {
     const serial = dateToSerialNumber(value);
-    return `<c${rAttr}${sAttr}><v>${serial}</v></c>`;
+    return `<c${rAttr}${sAttr}${mdAttr}><v>${serial}</v></c>`;
   }
 
   return "";

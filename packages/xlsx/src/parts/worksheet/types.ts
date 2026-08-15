@@ -123,6 +123,10 @@ export interface CellOptions {
   style?: StyleOptions;
   /** Formula options. When set, value becomes the cached result. */
   formula?: FormulaOptions;
+  /** Cell metadata block id, 1-based index into metadata.cellMetadata (CT_Cell @cm) */
+  cellMetadataId?: number;
+  /** Value metadata block id, 1-based index into metadata.valueMetadata (CT_Cell @vm) */
+  valueMetadataId?: number;
 }
 
 /** Cell formula type (maps to ST_CellFormulaType). */

@@ -26,6 +26,7 @@ import { drawingDesc } from "@parts/drawing";
 import { externalLinkDesc } from "@parts/external-link";
 import type { ExternalLinkOptions } from "@parts/external-link";
 import type { SharedWorkbookOptions, WorkbookOptions } from "@parts/file";
+import { metadataDesc } from "@parts/metadata";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
@@ -449,6 +450,13 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   if (connectionsEl) {
     const connData = connectionsDesc.parse(connectionsEl, readContext);
     if (connData.connections.length > 0) opts.connections = connData.connections;
+  }
+
+  // Rich metadata (xl/metadata.xml)
+  const metadataEl = xlsx.doc.get("xl/metadata.xml");
+  if (metadataEl) {
+    const metadataData = metadataDesc.parse(metadataEl, readContext);
+    opts.metadata = metadataData;
   }
 
   // External links

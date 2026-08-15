@@ -478,6 +478,11 @@ export const XLSX_PARTS = {
       presence: { kind: "repeated", countFrom: "queryTables" },
     },
     {
+      path: "xl/metadata.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.metadata+xml",
+      presence: { kind: "conditional", flag: "metadata" },
+    },
+    {
       path: "xl/calcChain.xml",
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml",
       presence: { kind: "conditional", flag: "any formula cell" },

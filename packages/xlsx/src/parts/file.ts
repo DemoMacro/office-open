@@ -36,6 +36,7 @@ import type { CalcCell } from "./calc-chain";
 import type { ChartsheetOptions } from "./chartsheet";
 import type { ConnectionOptions } from "./connection";
 import type { ExternalLinkOptions } from "./external-link";
+import type { MetadataOptions } from "./metadata";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
 import type { WorksheetOptions } from "./worksheet";
@@ -64,6 +65,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   externalLinks?: ExternalLinkOptions[];
   /** Workbook data connections (xl/connections.xml) */
   connections?: ConnectionOptions[];
+  /** Rich metadata block (xl/metadata.xml) */
+  metadata?: MetadataOptions;
   /** Custom workbook views */
   customWorkbookViews?: CustomWorkbookViewOptions[];
   /** File recovery properties */

@@ -238,6 +238,16 @@ export function parseSheetDataRows(
               if (!isNaN(n)) styleIdx = n;
               break;
             }
+            case "cm": {
+              const n = Number(v2);
+              if (!isNaN(n)) cell.cellMetadataId = n;
+              break;
+            }
+            case "vm": {
+              const n = Number(v2);
+              if (!isNaN(n)) cell.valueMetadataId = n;
+              break;
+            }
           }
         });
 

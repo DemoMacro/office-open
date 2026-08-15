@@ -67,6 +67,40 @@ export {
   type EditAsType,
 } from "./drawing";
 export { externalLinkDesc } from "./external-link";
+export { connectionsDesc } from "./connection";
+export type {
+  ConnectionsOptions,
+  ConnectionOptions,
+  DatabasePropertiesOptions,
+  WebPropertiesOptions,
+  TextPropertiesOptions,
+  TextFieldOptions,
+  ParameterOptions,
+  WebTableSelection,
+} from "./connection";
+export { queryTableDesc } from "./query-table";
+export type {
+  QueryTableOptions,
+  QueryTableRefreshOptions,
+  QueryTableFieldOptions,
+  QueryTableDeletedFieldOptions,
+} from "./query-table";
+export { metadataDesc } from "./metadata";
+export type {
+  MetadataOptions,
+  MetadataTypeOptions,
+  MetadataStringOptions,
+  MetadataStringIndexOptions,
+  MdxOptions,
+  MdxTupleOptions,
+  MdxSetOptions,
+  MdxMemberPropOptions,
+  MdxKpiOptions,
+  FutureMetadataOptions,
+  FutureMetadataBlockOptions,
+  MetadataBlockOptions,
+  MetadataRecordOptions,
+} from "./metadata";
 export { pivotTableDesc, type PivotTableDescriptorOptions } from "./pivot-table";
 export {
   pivotCacheDefDesc,
@@ -111,13 +145,6 @@ export type {
   ChartsheetHeaderFooterOptions,
 } from "./chartsheet";
 export type { DialogsheetOptions } from "./dialogsheet";
-export type { QueryTableOptions } from "./query-table";
-export type {
-  MetadataOptions,
-  MetadataTypeOptions,
-  MetadataStringOptions,
-  FutureMetadataOptions,
-} from "./metadata";
 export type {
   RevisionHeadersOptions,
   RevisionHeaderEntry,
@@ -131,12 +158,6 @@ export type {
   RevisionDefinedNameOptions,
   RevisionLogOptions,
 } from "./revision-log";
-export type {
-  ConnectionOptions,
-  DatabasePropertiesOptions,
-  WebPropertiesOptions,
-  ParameterOptions,
-} from "./connection";
 export type {
   MapInfoOptions,
   SchemaOptions,

@@ -38,6 +38,8 @@ import { drawingDesc } from "@parts/drawing";
 import { A_NS, R_NS, XDR_NS, graphicFrameXml, wrapAnchor } from "@parts/drawing/stringify";
 import { externalLinkDesc } from "@parts/external-link";
 import type { WorkbookOptions } from "@parts/file";
+import { metadataDesc } from "@parts/metadata";
+import type { MetadataOptions } from "@parts/metadata";
 import { aggregate, collectUniqueValues } from "@parts/pivot";
 import type { PivotSourceData, PivotTableOptions } from "@parts/pivot";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
@@ -725,6 +727,20 @@ export function compileWorkbook(
     };
   }
 
+  // Metadata — xl/metadata.xml (single part, workbook-level relationship)
+  if (options.metadata && hasMetadataContent(options.metadata)) {
+    const mRid = ctx.workbookRels.relationshipCount + 1;
+    ctx.workbookRels.addRelationship(
+      mRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/metadata",
+      "metadata.xml",
+    );
+    mapping["Metadata"] = {
+      data: XML_DECL + metadataDesc.stringify(options.metadata, ctx),
+      path: "xl/metadata.xml",
+    };
+  }
+
   // External links — generate XML files and inject externalReferences into workbook
   const extLinks = options.externalLinks ?? [];
   if (extLinks.length > 0) {
@@ -931,6 +947,17 @@ function buildWorkbookRelationships(rels: Relationships, wsCount: number, csCoun
     rid++,
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
     "sharedStrings.xml",
+  );
+}
+
+function hasMetadataContent(metadata: MetadataOptions): boolean {
+  return (
+    (metadata.types?.length ?? 0) > 0 ||
+    (metadata.strings?.length ?? 0) > 0 ||
+    (metadata.mdx?.length ?? 0) > 0 ||
+    (metadata.futureMetadata?.length ?? 0) > 0 ||
+    (metadata.cellMetadata?.length ?? 0) > 0 ||
+    (metadata.valueMetadata?.length ?? 0) > 0
   );
 }
 
