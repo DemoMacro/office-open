@@ -608,8 +608,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   }
 
   if (slideOpts.animations && slideOpts.animations.length > 0) {
-    const entries = slideOpts.animations.map((a) => ({ shapeId: a.shapeId, options: a.options }));
-    parts.push(timingDesc.stringify({ entries }, ctx) ?? "");
+    parts.push(timingDesc.stringify({ entries: slideOpts.animations }, ctx) ?? "");
   }
 
   parts.push("</p:sld>");
@@ -697,12 +696,13 @@ export function compilePresentation(
   const smartArts = new SmartArtCollection();
 
   const presPropsFullOpts =
-    options.web || options.print || options.htmlPublish || options.colorMru
+    options.web || options.print || options.htmlPublish || options.colorMru || options.show
       ? {
           web: options.web,
           print: options.print,
           htmlPublish: options.htmlPublish,
           colorMru: options.colorMru,
+          show: options.show,
         }
       : undefined;
 

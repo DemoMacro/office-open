@@ -3,7 +3,6 @@ import type {
   NonVisualDrawingPropertiesOptions,
   UniversalMeasure,
 } from "@office-open/core";
-import type { AnimationOptions } from "@shared/animation/types";
 import type { MediaData } from "@shared/media/data";
 
 /**
@@ -20,5 +19,4 @@ export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions
   height?: number | UniversalMeasure;
   data: DataType;
   type: MediaData["type"];
-  animation?: AnimationOptions;
 }

@@ -273,7 +273,7 @@ export class Numbering {
 
 // ── Types ──
 
-/** Extra options for abstract numbering. Re-exported from abstract-numbering module. */
+/** Extra options for abstract numbering (w:abstractNum attributes + w15 restart). */
 interface AbstractNumberingExtraOptions {
   nsid?: string;
   /** w:multiLevelType value (singleLevel/multilevel/hybridMultilevel). */

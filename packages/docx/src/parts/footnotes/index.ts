@@ -9,5 +9,4 @@
  *
  * @module
  */
-export * from "./footnote";
 export * from "./descriptor";

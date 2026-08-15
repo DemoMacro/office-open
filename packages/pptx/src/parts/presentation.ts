@@ -7,8 +7,6 @@
  * @module
  */
 
-import type { Relationships } from "@office-open/core";
-
 export interface PhotoAlbumOptions {
   blackWhite?: boolean;
   showCaptions?: boolean;
@@ -123,11 +121,4 @@ export interface PresentationSectionGroup {
   name: string;
   /** Indices into PresentationPartOptions.slideIds belonging to this section. */
   slideIndices: number[];
-}
-
-// ── Legacy types ──
-
-export interface ViewWrapper {
-  view: { currentOptions: unknown };
-  relationships: Relationships;
 }

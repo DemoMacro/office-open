@@ -11,15 +11,11 @@ import type { NonVisualDrawingPropertiesOptions, UniversalMeasure } from "@offic
 export interface OleEmbedOptions {
   /** Relationship ID for the embedded OLE data */
   rId: string;
-  /** Last update in document (ISO 8601) */
-  lastEdited?: string;
 }
 
 export interface OleLinkOptions {
   /** Relationship ID for the linked OLE data */
   rId: string;
-  /** Last update in document (ISO 8601) */
-  updateLastEdited?: string;
   /** Automatic or manual update */
   autoUpdate?: boolean;
 }

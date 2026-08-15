@@ -149,8 +149,6 @@ export type ChartType =
   | "surface"
   | "ofPie";
 
-export type AxisChartType = Exclude<ChartType, "bubble">;
-
 // ── ChartSpace options ──
 
 export interface ChartSpaceOptions {

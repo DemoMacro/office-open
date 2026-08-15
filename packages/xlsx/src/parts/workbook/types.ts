@@ -246,8 +246,6 @@ export interface WebPublishObjectOptions {
   title?: string;
   /** Source object reference */
   sourceObject?: string;
-  /** App name (default: "Excel") */
-  appName?: string;
 }
 
 /** Calculation properties (CT_CalcPr) */

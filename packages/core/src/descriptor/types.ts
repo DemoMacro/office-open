@@ -35,10 +35,3 @@ export interface CustomDescriptor<TInput, Ctx = WriteContext, TOutput = TInput> 
   stringify(value: TInput, ctx: Ctx): string | undefined;
   parse(el: XmlElement, ctx: ReadContext): TOutput;
 }
-
-/** Alias for "any descriptor" — retained for call-site readability. */
-export type Descriptor<TInput, Ctx = WriteContext, TOutput = TInput> = CustomDescriptor<
-  TInput,
-  Ctx,
-  TOutput
->;

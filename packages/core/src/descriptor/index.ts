@@ -5,7 +5,7 @@
  */
 
 // Types
-export type { CustomDescriptor, Descriptor } from "./types";
+export type { CustomDescriptor } from "./types";
 
 // Runtime
 export { parse, stringify } from "./runtime";

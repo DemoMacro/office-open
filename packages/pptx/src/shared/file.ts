@@ -30,7 +30,7 @@ import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
 import type { ViewPropertiesOptions } from "@parts/view-properties";
-import type { AnimationOptions } from "@shared/animation/types";
+import type { AnimationEntry } from "@shared/animation/timing";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 import type { PlaceholderDefinition } from "@shared/placeholder";
 import type { ShapeOptions } from "@shared/shape/shape";
@@ -95,10 +95,8 @@ export interface SlideCommentOptions {
   modified?: boolean;
 }
 
-export interface SlideAnimation {
-  shapeId: number;
-  options: AnimationOptions;
-}
+// Alias of AnimationEntry — the slide-level timing entry is structurally identical.
+export type SlideAnimation = AnimationEntry;
 
 export interface SlideOptions {
   children?: SlideChild[];

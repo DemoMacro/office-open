@@ -190,11 +190,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     if (timing) {
       const timingOpts = timingDesc.parse(timing, _ctx);
       if (timingOpts.entries && timingOpts.entries.length > 0) {
-        const animations: SlideAnimation[] = [];
-        for (const entry of timingOpts.entries) {
-          animations.push({ shapeId: entry.shapeId, options: entry.options });
-        }
-        result.animations = animations;
+        result.animations = timingOpts.entries;
       }
     }
 

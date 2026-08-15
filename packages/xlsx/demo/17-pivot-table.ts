@@ -117,13 +117,6 @@ const buffer = await generateWorkbook({
       ],
       sheetView: {
         tabSelected: true,
-        pivotSelections: [
-          {
-            pane: "topLeft",
-            axis: "axisRow",
-            activeRow: 3,
-          },
-        ],
       },
     },
   ],

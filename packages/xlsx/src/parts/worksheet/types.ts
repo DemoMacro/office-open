@@ -313,46 +313,6 @@ export interface SheetViewOptions {
   zoomScaleSheetLayoutView?: number;
   /** Zoom scale for page layout view (CT_SheetView @zoomScalePageLayoutView) */
   zoomScalePageLayoutView?: number;
-  /** Pivot selections (CT_PivotSelection) */
-  pivotSelections?: PivotSelectionOptions[];
-}
-
-/** Pivot selection in sheet view (CT_PivotSelection) */
-export interface PivotSelectionOptions {
-  /** Pane (default: "topLeft") */
-  pane?: "bottomRight" | "topRight" | "bottomLeft" | "topLeft";
-  /** Show header (default: false) */
-  showHeader?: boolean;
-  /** Label selected (default: false) */
-  label?: boolean;
-  /** Data selected (default: false) */
-  data?: boolean;
-  /** Extendable (default: false) */
-  extendable?: boolean;
-  /** Selection count */
-  count?: number;
-  /** Axis */
-  axis?: "axisRow" | "axisCol" | "axisPage" | "axisValues";
-  /** Dimension */
-  dimension?: number;
-  /** Start index */
-  start?: number;
-  /** Min index */
-  min?: number;
-  /** Max index */
-  max?: number;
-  /** Active row */
-  activeRow?: number;
-  /** Active column */
-  activeCol?: number;
-  /** Previous row */
-  previousRow?: number;
-  /** Previous column */
-  previousCol?: number;
-  /** Clicked row */
-  click?: number;
-  /** Relationship ID (maps to r:id in XML) */
-  rId?: string;
 }
 
 export type HyperlinkTarget =
@@ -1012,11 +972,11 @@ export interface DataConsolidateOptions {
     | "sum"
     | "var"
     | "varp";
-  /** Use top row labels (CT_DataConsolidate @startLabels) */
+  /** Use top row labels (CT_DataConsolidate @topLabels) */
   topLabels?: boolean;
   /** Use left column labels (CT_DataConsolidate @leftLabels) */
   leftLabels?: boolean;
-  /** Use labels in first row (CT_DataConsolidate @startLabels alias) */
+  /** Use start labels (CT_DataConsolidate @startLabels) */
   startLabels?: boolean;
   /** Link to source data (CT_DataConsolidate @link) */
   link?: boolean;

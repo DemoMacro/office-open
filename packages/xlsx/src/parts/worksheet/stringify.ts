@@ -19,7 +19,6 @@ import type {
   CellOptions,
   CfvoOptions,
   FormulaOptions,
-  PivotSelectionOptions,
   RowOptions,
   SelectionOptions,
   SheetViewOptions,
@@ -140,9 +139,6 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   }
 
   // Sheet views
-  const pivotSelXml = opts.sheetView?.pivotSelections
-    ? opts.sheetView.pivotSelections.map((ps) => buildPivotSelectionXml(ps)).join("")
-    : "";
   if (opts.freezePanes) {
     const fp = opts.freezePanes;
     const ySplit = fp.row ? fp.row : 0;
@@ -157,12 +153,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       `<sheetViews><sheetView${svAttrs}>`,
       `<pane ySplit="${ySplit}" xSplit="${xSplit}" topLeftCell="${topLeftCell}" activePane="${activePane}" state="frozen"/>`,
       opts.selection ? buildSelectionXml(opts.selection) : "",
-      pivotSelXml,
       "</sheetView></sheetViews>",
     );
   } else {
     const svAttrs = buildSheetViewAttrs(opts.sheetView);
-    const innerXml = (opts.selection ? buildSelectionXml(opts.selection) : "") + pivotSelXml;
+    const innerXml = opts.selection ? buildSelectionXml(opts.selection) : "";
     if (innerXml) {
       p.push(`<sheetViews><sheetView${svAttrs}>${innerXml}</sheetView></sheetViews>`);
     } else {
@@ -199,6 +194,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         colAttrs.width = col.width;
         colAttrs.customWidth = 1;
       }
+      // A column can carry customWidth="1" without a width (parse fills it);
+      // preserve the explicit flag so round-trip does not drop the attribute.
+      if (col.customWidth) colAttrs.customWidth = 1;
       if (col.hidden) {
         colAttrs.hidden = 1;
       }
@@ -860,12 +858,6 @@ function buildSelectionXml(sel: SelectionOptions): string {
   if (sel.activeCellId !== undefined) selAttrs.activeCellId = sel.activeCellId;
   if (sel.sqref) selAttrs.sqref = sel.sqref;
   return `<selection${attrs(selAttrs)}/>`;
-}
-
-function buildPivotSelectionXml(_ps: PivotSelectionOptions): string {
-  // pivotSelection is optional; omit if no meaningful pivotArea can be constructed.
-  // An empty <pivotArea/> causes Excel to reject the file.
-  return "";
 }
 
 function buildFormulaString(fOpts: FormulaOptions): string {

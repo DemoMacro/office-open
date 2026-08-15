@@ -131,9 +131,8 @@ export class SharedStrings {
   }
 
   /** Return a serializable snapshot for the descriptor. */
-  public toDescriptorOptions(): { entries: SstEntry[]; uniqueCount: number } {
-    // uniqueCount = number of <si> entries (plain + rich), matching parse.
-    return { entries: this.entries, uniqueCount: this.entries.length };
+  public toDescriptorOptions(): { entries: SstEntry[] } {
+    return { entries: this.entries };
   }
 
   /** Serialize to xl/sharedStrings.xml content (without XML declaration). */
@@ -157,12 +156,11 @@ export class SharedStrings {
 
 // ── Descriptor Types ──
 
-/** Serializable snapshot of the shared string table. */
+/** Serializable snapshot of the shared string table. uniqueCount is not
+ * stored — it always equals entries.length and is derived at emit time. */
 export interface SharedStringsDocOptions {
   /** All entries (plain strings and rich text), in registration order. */
   entries: (string | RichTextOptions)[];
-  /** Number of unique plain-string entries (for uniqueCount attribute). */
-  uniqueCount: number;
 }
 
 // ── Descriptor ──
@@ -175,7 +173,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
 
     const p: string[] = [
       '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
-      ` count="${opts.entries.length}" uniqueCount="${opts.uniqueCount}">`,
+      ` count="${opts.entries.length}" uniqueCount="${opts.entries.length}">`,
     ];
 
     for (const entry of opts.entries) {
@@ -233,10 +231,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
       }
     }
 
-    return {
-      entries,
-      uniqueCount: entries.length,
-    };
+    return { entries };
   },
 };
 

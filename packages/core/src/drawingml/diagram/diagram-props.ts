@@ -21,7 +21,6 @@ export interface DiagramExtensionListOptions {
 
 export interface DiagramExtensionOptions {
   uri: string;
-  content?: string;
 }
 
 /**
@@ -55,7 +54,7 @@ export const createDiagramShape3D = (options: Shape3DOptions): string => createS
 // ---------------------------------------------------------------------------
 
 export interface DiagramTextPropertiesOptions {
-  /** 3D text properties (flat text, no 3D) — empty element */
+  /** Flat text (a:flatTx, the no-3D member of EG_Text3D) — empty marker element */
   flat?: boolean;
 }
 
@@ -71,5 +70,5 @@ export interface DiagramTextPropertiesOptions {
  * </xsd:complexType>
  * ```
  */
-export const createDiagramTextProperties = (_options?: DiagramTextPropertiesOptions): string =>
-  "<dgm:txPr/>";
+export const createDiagramTextProperties = (options?: DiagramTextPropertiesOptions): string =>
+  options?.flat ? "<dgm:txPr><a:flatTx/></dgm:txPr>" : "<dgm:txPr/>";

@@ -105,8 +105,6 @@ export interface BodyPropertiesOptions {
   upright?: boolean;
   compatLnSpc?: boolean;
 
-  /** Vertical anchor position (alias for `anchor`). */
-  verticalAnchor?: VerticalAnchor;
   /** Margins shorthand. */
   margins?: {
     top?: number | UniversalMeasure;
@@ -165,7 +163,7 @@ export const createBodyProperties = (
   options: BodyPropertiesOptions = {},
   tagName = "a:bodyPr",
 ): string => {
-  const anchor = options.anchor ?? options.verticalAnchor;
+  const anchor = options.anchor;
   const lIns = options.lIns ?? options.margins?.left;
   const tIns = options.tIns ?? options.margins?.top;
   const rIns = options.rIns ?? options.margins?.right;

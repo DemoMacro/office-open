@@ -303,7 +303,6 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (parseOnOff(attr(wo, "autoRepublish"))) obj.autoRepublish = true;
         if (attr(wo, "title")) obj.title = attr(wo, "title");
         if (attr(wo, "sourceObject")) obj.sourceObject = attr(wo, "sourceObject");
-        if (attr(wo, "appName")) obj.appName = attr(wo, "appName");
         objs.push(obj);
       }
       if (objs.length > 0) result.webPublishObjects = objs;

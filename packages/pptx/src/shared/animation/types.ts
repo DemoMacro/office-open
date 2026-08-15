@@ -190,9 +190,7 @@ export interface AnimationOptions {
   /** Override mode: "normal", "childStyle". */
   override?: "normal" | "childStyle";
 
-  // Animation build and formula
-  /** Paragraph build type: "whole", "allAtOnce", "p", "cust". */
-  paragraphBuild?: "whole" | "allAtOnce" | "p" | "cust";
+  // Animation formula
   /** Formula for animation. */
   formula?: string;
   /** Color space for color animation. */
@@ -245,8 +243,6 @@ export interface AnimationOptions {
   variantInt?: number;
   /** Variant float value (p:fltVal). */
   variantFloat?: number;
-  /** Variant color value (p:clrVal → a:srgbClr). */
-  variantColor?: string;
   /** Color animation from (a:srgbClr hex). */
   colorFrom?: string;
   /** Color animation to (a:srgbClr hex). */

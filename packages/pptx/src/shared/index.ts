@@ -57,7 +57,6 @@ export {
 } from "./drawingml/fill";
 
 // DrawingML — local aliases + core re-exports
-export type { Transform2DOptions } from "./drawingml/transform-2d";
 export { stringifyPresetGeometry } from "@office-open/core/drawingml";
 export type { ShapePropertiesOptions } from "@office-open/core/drawingml";
 
