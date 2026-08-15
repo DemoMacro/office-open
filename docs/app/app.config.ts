@@ -15,6 +15,9 @@ export default defineAppConfig({
   },
   navigation: { sub: "header" },
   ui: {
+    colors: {
+      primary: "sky",
+    },
     prose: {
       codeIcon: {
         // Office document types
