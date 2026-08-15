@@ -75,7 +75,7 @@ describe("singleXmlCellsDesc", () => {
         cells: [
           {
             id: 1,
-            r: "A1",
+            reference: "A1",
             connectionId: 2,
             xmlCellPr: {
               id: 1,
@@ -89,7 +89,7 @@ describe("singleXmlCellsDesc", () => {
     );
     const parsed = singleXmlCellsDesc.parse(parseRoot(xml), readCtx);
     expect(parsed.cells).toHaveLength(1);
-    expect(parsed.cells[0]).toMatchObject({ id: 1, r: "A1", connectionId: 2 });
+    expect(parsed.cells[0]).toMatchObject({ id: 1, reference: "A1", connectionId: 2 });
     expect(parsed.cells[0]!.xmlCellPr).toMatchObject({ id: 1, uniqueName: "PriceCell" });
     expect(parsed.cells[0]!.xmlCellPr.xmlPr).toEqual({
       mapId: 1,

@@ -113,7 +113,7 @@ const options: PresentationOptions = {
             width: "2cm",
             height: "2cm",
             name: "CD Clip",
-            cd: { start: { track: 1, time: 30 }, end: { track: 3, time: 245 } },
+            audioCd: { start: { track: 1, time: 30 }, end: { track: 3, time: 245 } },
           },
         },
       ],

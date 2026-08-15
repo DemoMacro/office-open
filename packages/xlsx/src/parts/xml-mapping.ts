@@ -101,8 +101,8 @@ export interface XmlCellPropertiesOptions {
 export interface SingleXmlCellOptions {
   /** Table ID (required) */
   id: number;
-  /** Cell reference, e.g. "A1" (required) */
-  r: string;
+  /** Cell reference, e.g. "A1" (CT_SingleXmlCell @r, required) */
+  reference: string;
   /** Connection ID (required) */
   connectionId: number;
   /** Cell properties (required) */
@@ -239,7 +239,7 @@ export const singleXmlCellsDesc: CustomDescriptor<SingleXmlCellsOptions> = {
       const prAttrs: string[] = [`id="${pr.id}"`];
       if (pr.uniqueName !== undefined) prAttrs.push(`uniqueName="${escapeXml(pr.uniqueName)}"`);
       p.push(
-        `<singleXmlCell id="${c.id}" r="${escapeXml(c.r)}" connectionId="${c.connectionId}">` +
+        `<singleXmlCell id="${c.id}" r="${escapeXml(c.reference)}" connectionId="${c.connectionId}">` +
           `<xmlCellPr ${prAttrs.join(" ")}>` +
           `<xmlPr mapId="${pr.xmlPr.mapId}" xpath="${escapeXml(pr.xmlPr.xpath)}" xmlDataType="${escapeXml(pr.xmlPr.xmlDataType)}"/>` +
           `</xmlCellPr></singleXmlCell>`,
@@ -266,7 +266,7 @@ export const singleXmlCellsDesc: CustomDescriptor<SingleXmlCellsOptions> = {
       };
       cells.push({
         id: attrNum(cEl, "id") ?? 0,
-        r: attr(cEl, "r") ?? "",
+        reference: attr(cEl, "r") ?? "",
         connectionId: attrNum(cEl, "connectionId") ?? 0,
         xmlCellPr: pr as XmlCellPropertiesOptions,
       });

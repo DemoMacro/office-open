@@ -257,10 +257,10 @@ function stringifyPivotCacheDef(
     conParts.push(`<rangeSets count="${con.rangeSets.length}">`);
     for (const rs of con.rangeSets) {
       const rsAttrs: string[] = [];
-      if (rs.i1 !== undefined) rsAttrs.push(`i1="${rs.i1}"`);
-      if (rs.i2 !== undefined) rsAttrs.push(`i2="${rs.i2}"`);
-      if (rs.i3 !== undefined) rsAttrs.push(`i3="${rs.i3}"`);
-      if (rs.i4 !== undefined) rsAttrs.push(`i4="${rs.i4}"`);
+      if (rs.pageFieldIndex1 !== undefined) rsAttrs.push(`i1="${rs.pageFieldIndex1}"`);
+      if (rs.pageFieldIndex2 !== undefined) rsAttrs.push(`i2="${rs.pageFieldIndex2}"`);
+      if (rs.pageFieldIndex3 !== undefined) rsAttrs.push(`i3="${rs.pageFieldIndex3}"`);
+      if (rs.pageFieldIndex4 !== undefined) rsAttrs.push(`i4="${rs.pageFieldIndex4}"`);
       if (rs.ref) rsAttrs.push(`ref="${escapeXml(rs.ref)}"`);
       if (rs.name) rsAttrs.push(`name="${escapeXml(rs.name)}"`);
       if (rs.sheet) rsAttrs.push(`sheet="${escapeXml(rs.sheet)}"`);

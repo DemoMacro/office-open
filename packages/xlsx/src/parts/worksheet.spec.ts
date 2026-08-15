@@ -714,8 +714,8 @@ describe("Worksheet", () => {
               user: "analyst",
               comment: "Optimistic forecast",
               inputCells: [
-                { r: "B2", val: 100 },
-                { r: "B3", val: "q1" },
+                { reference: "B2", val: 100 },
+                { reference: "B3", val: "q1" },
               ],
             },
           ],
@@ -731,8 +731,8 @@ describe("Worksheet", () => {
             user: "analyst",
             comment: "Optimistic forecast",
             inputCells: [
-              { r: "B2", val: 100 },
-              { r: "B3", val: "q1" },
+              { reference: "B2", val: 100 },
+              { reference: "B3", val: "q1" },
             ],
           },
         ],

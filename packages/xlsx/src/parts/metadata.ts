@@ -81,8 +81,8 @@ export interface MetadataStringOptions {
 
 /** Metadata string index reference (CT_MetadataStringIndex). */
 export interface MetadataStringIndexOptions {
-  /** Index into metadataStrings (required) */
-  x: number;
+  /** Index into metadataStrings (@x, required) */
+  index: number;
   /** Show string flag */
   show?: boolean;
 }
@@ -452,14 +452,14 @@ export const metadataDesc: CustomDescriptor<MetadataOptions> = {
 
 function stringifyStringIndexes(indexes: MetadataStringIndexOptions[] | undefined): string {
   if (!indexes || indexes.length === 0) return "";
-  return indexes.map((i) => `<n x="${i.x}"${i.show ? ' s="1"' : ""}/>`).join("");
+  return indexes.map((i) => `<n x="${i.index}"${i.show ? ' s="1"' : ""}/>`).join("");
 }
 
 function parseStringIndexes(parent: Element): MetadataStringIndexOptions[] | undefined {
   const out: MetadataStringIndexOptions[] = [];
   for (const nEl of parent.elements ?? []) {
     if (nEl.name !== "n") continue;
-    const idx: MetadataStringIndexOptions = { x: attrNum(nEl, "x") ?? 0 };
+    const idx: MetadataStringIndexOptions = { index: attrNum(nEl, "x") ?? 0 };
     if (parseOnOff(attr(nEl, "s"))) idx.show = true;
     out.push(idx);
   }

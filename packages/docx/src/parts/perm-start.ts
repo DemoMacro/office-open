@@ -35,8 +35,8 @@ export interface PermStartOptions {
   id: string | number;
   /** Editing group that can edit this range */
   editGroup?: EditGroup;
-  /** Individual user who can edit this range */
-  ed?: string;
+  /** Individual user who can edit this range (CT_PermStart @ed) */
+  editor?: string;
   /** First column this range covers (for table cells) */
   colFirst?: number;
   /** Last column this range covers (for table cells) */

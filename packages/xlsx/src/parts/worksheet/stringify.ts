@@ -426,7 +426,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       const sParts: string[] = [`<scenario${attrs(sAttrs)}>`];
       for (const cell of scenario.inputCells) {
         const icAttrs: Record<string, string | number | boolean | undefined> = {
-          r: cell.r,
+          r: cell.reference,
           val: String(cell.val),
         };
         if (cell.deleted) icAttrs.deleted = true;
@@ -932,9 +932,9 @@ function buildFormulaString(fOpts: FormulaOptions): string {
   if (fOpts.dtr) fAttrs.dtr = 1;
   if (fOpts.del1) fAttrs.del1 = 1;
   if (fOpts.del2) fAttrs.del2 = 1;
-  if (fOpts.r1) fAttrs.r1 = fOpts.r1;
-  if (fOpts.r2) fAttrs.r2 = fOpts.r2;
-  if (fOpts.ca) fAttrs.ca = 1;
+  if (fOpts.inputCell1) fAttrs.r1 = fOpts.inputCell1;
+  if (fOpts.inputCell2) fAttrs.r2 = fOpts.inputCell2;
+  if (fOpts.calculateCell) fAttrs.ca = 1;
   if (fOpts.arrayContext) fAttrs.bx = 1;
 
   const hasContent = fOpts.formula !== undefined && fOpts.formula !== "";

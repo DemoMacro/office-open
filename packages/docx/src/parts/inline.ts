@@ -821,7 +821,7 @@ export function stringifyChildDispatch(
   if ("permStart" in child) {
     const ps = child.permStart;
     const a: string[] = [`w:id="${ps.id}"`];
-    if (ps.ed !== undefined) a.push(`w:ed="${escapeXml(String(ps.ed))}"`);
+    if (ps.editor !== undefined) a.push(`w:ed="${escapeXml(String(ps.editor))}"`);
     if (ps.editGroup !== undefined) a.push(`w:edGrp="${ps.editGroup}"`);
     if (ps.colFirst !== undefined) a.push(`w:colFirst="${ps.colFirst}"`);
     if (ps.colLast !== undefined) a.push(`w:colLast="${ps.colLast}"`);

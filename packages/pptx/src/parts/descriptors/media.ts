@@ -209,8 +209,8 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
 
     // p:nvPicPr — EG_Media choice, then the p14:media extension
     let mediaEl: string;
-    if (opts.cd) {
-      mediaEl = stringifyAudioCd(opts.cd);
+    if (opts.audioCd) {
+      mediaEl = stringifyAudioCd(opts.audioCd);
     } else if (mediaFileName) {
       mediaEl = stringifyAudioFile(mediaFileName, opts.type ?? "mp3", opts);
     } else {
@@ -268,7 +268,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
           start: readAudioCdTime(stEl),
           end: readAudioCdTime(endEl),
         };
-        result.cd = cd;
+        result.audioCd = cd;
       }
       return result as AudioFrameOptions;
     }

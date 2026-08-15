@@ -162,10 +162,10 @@ describe("audioDesc round-trip", () => {
     const result = roundTripAudio({
       id: 205,
       name: "CD Clip",
-      cd: { start: { track: 1, time: 30 }, end: { track: 3, time: 245 } },
+      audioCd: { start: { track: 1, time: 30 }, end: { track: 3, time: 245 } },
     });
 
-    expect(result.cd).toEqual({
+    expect(result.audioCd).toEqual({
       start: { track: 1, time: 30 },
       end: { track: 3, time: 245 },
     });

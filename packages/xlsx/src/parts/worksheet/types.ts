@@ -97,10 +97,10 @@ export interface RichTextRunOptions {
 
 /** Phonetics run for CJK (CT_PhoneticRun → rPh). */
 export interface PhoneticRunOptions {
-  /** Start byte offset in base text */
-  sb: number;
-  /** End byte offset in base text */
-  eb: number;
+  /** Start byte offset in base text (CT_PhoneticRun @sb) */
+  startByte: number;
+  /** End byte offset in base text (CT_PhoneticRun @eb) */
+  endByte: number;
   /** Phonetic text */
   text: string;
 }
@@ -160,19 +160,19 @@ export interface FormulaOptions {
   /** Delete input cell 2 (CT_CellFormula @del2) */
   del2?: boolean;
   /** Input cell 1 reference (CT_CellFormula @r1) */
-  r1?: string;
+  inputCell1?: string;
   /** Input cell 2 reference (CT_CellFormula @r2) */
-  r2?: string;
+  inputCell2?: string;
   /** Calculate cell (CT_CellFormula @ca) */
-  ca?: boolean;
+  calculateCell?: boolean;
   /** Array formula context (CT_CellFormula @bx) */
   arrayContext?: boolean;
 }
 
 /** Input cell for a what-if scenario (maps to CT_InputCells). */
 export interface ScenarioCellOptions {
-  /** Cell reference, e.g. "B2" */
-  r: string;
+  /** Cell reference, e.g. "B2" (CT_InputCells @r) */
+  reference: string;
   /** Cell value for this scenario */
   val: string | number;
   /** Whether the value is deleted */

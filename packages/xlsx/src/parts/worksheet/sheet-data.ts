@@ -321,7 +321,7 @@ export function parseSheetDataRows(
                     if (isOn(v3)) f.aca = true;
                     break;
                   case "ca":
-                    if (isOn(v3)) f.ca = true;
+                    if (isOn(v3)) f.calculateCell = true;
                     break;
                   case "bx":
                     if (isOn(v3)) f.arrayContext = true;

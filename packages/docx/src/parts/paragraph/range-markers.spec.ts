@@ -47,7 +47,7 @@ describe("range markers parse", () => {
     );
     expect(cs[0]?.permStart).toMatchObject({
       id: "1",
-      ed: "user1",
+      editor: "user1",
       editGroup: "editors",
       colFirst: 0,
       colLast: 1,

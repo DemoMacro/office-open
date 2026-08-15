@@ -1588,7 +1588,7 @@ function parseRunLevelChildren(
         if (id !== undefined) {
           const ps: PermStartInlineOptions = { id };
           const ed = attr(child, "w:ed");
-          if (ed !== undefined) ps.ed = ed;
+          if (ed !== undefined) ps.editor = ed;
           const editGroup = attr(child, "w:edGrp");
           if (editGroup !== undefined) ps.editGroup = editGroup;
           const colFirst = attrNum(child, "w:colFirst");

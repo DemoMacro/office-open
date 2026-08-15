@@ -99,7 +99,7 @@ export type ParagraphChild =
   | {
       permStart: {
         id: number | string;
-        ed?: string;
+        editor?: string;
         editGroup?: string;
         colFirst?: number;
         colLast?: number;

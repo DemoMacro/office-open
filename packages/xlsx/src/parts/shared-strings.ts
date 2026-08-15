@@ -73,7 +73,7 @@ export function buildRstXml(rst: RichTextOptions): string {
   // rPh (phonetics)
   if (rst.phonetics) {
     for (const ph of rst.phonetics) {
-      parts.push(`<rPh sb="${ph.sb}" eb="${ph.eb}"><t>${escapeXml(ph.text)}</t></rPh>`);
+      parts.push(`<rPh sb="${ph.startByte}" eb="${ph.endByte}"><t>${escapeXml(ph.text)}</t></rPh>`);
     }
   }
   return parts.join("");
@@ -215,13 +215,13 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
       }
 
       // Phonetics: <rPh sb="..." eb="..."><t>...</t></rPh>
-      const phonetics: { sb: number; eb: number; text: string }[] = [];
+      const phonetics: { startByte: number; endByte: number; text: string }[] = [];
       for (const rPh of si.elements ?? []) {
         if (rPh.name !== "rPh") continue;
         const sb = attrNum(rPh, "sb") ?? 0;
         const eb = attrNum(rPh, "eb") ?? 0;
         const rPhT = findChild(rPh, "t");
-        phonetics.push({ sb, eb, text: rPhT ? (textOf(rPhT) ?? "") : "" });
+        phonetics.push({ startByte: sb, endByte: eb, text: rPhT ? (textOf(rPhT) ?? "") : "" });
       }
 
       if (runs.length > 0) {

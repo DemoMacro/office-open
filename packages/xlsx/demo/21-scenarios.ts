@@ -34,18 +34,18 @@ const buffer = await generateWorkbook({
             name: "Low Rate",
             count: 1,
             inputCells: [
-              { r: "B1", val: "0.035" },
-              { r: "B2", val: "15" },
-              { r: "B3", val: "200000" },
+              { reference: "B1", val: "0.035" },
+              { reference: "B2", val: "15" },
+              { reference: "B3", val: "200000" },
             ],
           },
           {
             name: "High Rate",
             count: 2,
             inputCells: [
-              { r: "B1", val: "0.075" },
-              { r: "B2", val: "30" },
-              { r: "B3", val: "350000" },
+              { reference: "B1", val: "0.075" },
+              { reference: "B2", val: "30" },
+              { reference: "B3", val: "350000" },
             ],
           },
           {
@@ -54,9 +54,9 @@ const buffer = await generateWorkbook({
             user: "Analyst",
             comment: "Aggressive payoff scenario",
             inputCells: [
-              { r: "B1", val: "0.05" },
-              { r: "B2", val: "10" },
-              { r: "B3", val: "250000" },
+              { reference: "B1", val: "0.05" },
+              { reference: "B2", val: "10" },
+              { reference: "B3", val: "250000" },
             ],
           },
         ],

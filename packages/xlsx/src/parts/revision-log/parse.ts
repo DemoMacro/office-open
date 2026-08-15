@@ -37,15 +37,15 @@ function parseNestedChildren(el: XmlElement): RevisionNestedChild[] {
       const undo: Partial<RevisionUndoOptions> = {
         index: Number(attr(child, "index") ?? "0"),
         expression: (attr(child, "exp") ?? "ref") as RevisionUndoOptions["expression"],
-        dr: attr(child, "dr") ?? "",
+        undoRange: attr(child, "dr") ?? "",
       };
       readBool(child, "ref3D", (v) => (undo.ref3D = v));
       readBool(child, "array", (v) => (undo.array = v));
-      readBool(child, "v", (v) => (undo.v = v));
-      readBool(child, "nf", (v) => (undo.nf = v));
-      readBool(child, "cs", (v) => (undo.cs = v));
-      readStr(child, "dn", (v) => (undo.dn = v));
-      readStr(child, "r", (v) => (undo.r = v));
+      readBool(child, "v", (v) => (undo.value = v));
+      readBool(child, "nf", (v) => (undo.numberFormat = v));
+      readBool(child, "cs", (v) => (undo.conditionalStyle = v));
+      readStr(child, "dn", (v) => (undo.definedName = v));
+      readStr(child, "r", (v) => (undo.reference = v));
       readNum(child, "sId", (v) => (undo.sId = v));
       children.push({ kind: "undo", data: undo as RevisionUndoOptions });
     } else if (child.name === "rcc") {

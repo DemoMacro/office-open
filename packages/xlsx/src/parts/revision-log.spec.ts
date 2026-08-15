@@ -170,7 +170,13 @@ describe("revisionLogDesc round-trip", () => {
             children: [
               {
                 kind: "undo",
-                data: { index: 1, expression: "ref", dr: "A2:B2", ref3D: true, nf: true },
+                data: {
+                  index: 1,
+                  expression: "ref",
+                  undoRange: "A2:B2",
+                  ref3D: true,
+                  numberFormat: true,
+                },
               },
               {
                 kind: "cellChange",
@@ -190,7 +196,7 @@ describe("revisionLogDesc round-trip", () => {
     expect(d.children).toHaveLength(3);
     expect(d.children![0]).toMatchObject({
       kind: "undo",
-      data: { index: 1, expression: "ref", dr: "A2:B2", ref3D: true, nf: true },
+      data: { index: 1, expression: "ref", undoRange: "A2:B2", ref3D: true, numberFormat: true },
     });
     expect(d.children![1]?.kind).toBe("cellChange");
     expect(d.children![2]?.kind).toBe("formatting");

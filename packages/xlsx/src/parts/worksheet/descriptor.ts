@@ -783,7 +783,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const valRaw = attr(icEl, "val");
           if (r === undefined || valRaw === undefined) continue;
           const num = Number(valRaw);
-          const cell: ScenarioCellOptions = { r, val: String(num) === valRaw ? num : valRaw };
+          const cell: ScenarioCellOptions = {
+            reference: r,
+            val: String(num) === valRaw ? num : valRaw,
+          };
           if (parseOnOff(attr(icEl, "deleted"))) cell.deleted = true;
           if (parseOnOff(attr(icEl, "undone"))) cell.undone = true;
           scenario.inputCells.push(cell);

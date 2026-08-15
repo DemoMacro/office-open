@@ -82,7 +82,7 @@ describe("metadataDesc", () => {
             underline: true,
             strikethrough: true,
             bold: true,
-            stringIndexes: [{ x: 0, show: true }, { x: 1 }],
+            stringIndexes: [{ index: 0, show: true }, { index: 1 }],
           },
         },
         { functionType: "s", stringIndex: 1, set: { namespaceCount: 3, count: 4, order: "na" } },
@@ -108,7 +108,7 @@ describe("metadataDesc", () => {
       strikethrough: true,
       bold: true,
     });
-    expect(tuple!.tuple!.stringIndexes).toEqual([{ x: 0, show: true }, { x: 1 }]);
+    expect(tuple!.tuple!.stringIndexes).toEqual([{ index: 0, show: true }, { index: 1 }]);
     expect(set!.set).toMatchObject({ namespaceCount: 3, count: 4, order: "na" });
     expect(memberProp!.memberProp).toEqual({ nameIndex: 0, namePairIndex: 1 });
     expect(kpi!.kpi).toEqual({ nameIndex: 0, namePairIndex: 1, property: "g" });

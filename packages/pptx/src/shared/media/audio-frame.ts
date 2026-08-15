@@ -26,7 +26,7 @@ export interface AudioFrameOptions extends Omit<MediaFrameBaseOptions, "data" | 
   /** Audio format (required when data is set) */
   type?: AudioType;
   /** CD audio playback (a:audioCd) — mutually exclusive with data */
-  cd?: AudioCdOptions;
+  audioCd?: AudioCdOptions;
   /** MIME content type of the linked audio (CT_AudioFile @contentType) */
   contentType?: string;
   /** Original audio file name (CT_EmbeddedWAVAudioFile @name, wav only) */

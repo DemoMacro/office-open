@@ -96,22 +96,22 @@ export interface RevisionUndoOptions {
   index: number;
   /** Expression kind (required, ST_FormulaExpression). */
   expression: "ref" | "refError" | "area" | "areaError" | "computedArea";
-  /** Undo range (required, ST_RefA). */
-  dr: string;
+  /** Undo range (CT_UndoInfo @dr, required, ST_RefA). */
+  undoRange: string;
   /** 3D reference (default false). */
   ref3D?: boolean;
   /** Array formula (default false). */
   array?: boolean;
-  /** Value (default false). */
-  v?: boolean;
-  /** Number format (default false). */
-  nf?: boolean;
-  /** Conditional style (default false). */
-  cs?: boolean;
-  /** Defined name (optional). */
-  dn?: string;
-  /** Cell reference (optional). */
-  r?: string;
+  /** Value (CT_UndoInfo @v, default false). */
+  value?: boolean;
+  /** Number format (CT_UndoInfo @nf, default false). */
+  numberFormat?: boolean;
+  /** Conditional style (CT_UndoInfo @cs, default false). */
+  conditionalStyle?: boolean;
+  /** Defined name (CT_UndoInfo @dn, optional). */
+  definedName?: string;
+  /** Cell reference (CT_UndoInfo @r, optional). */
+  reference?: string;
   /** Sheet ID (optional). */
   sId?: number;
 }

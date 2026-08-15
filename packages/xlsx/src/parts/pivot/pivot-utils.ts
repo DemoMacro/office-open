@@ -710,14 +710,14 @@ export interface PivotDimensionOptions {
 
 /** Range set for consolidation source (CT_RangeSet) */
 export interface RangeSetOptions {
-  /** Index for page field 1 */
-  i1?: number;
-  /** Index for page field 2 */
-  i2?: number;
-  /** Index for page field 3 */
-  i3?: number;
-  /** Index for page field 4 */
-  i4?: number;
+  /** Index for page field 1 (CT_RangeSet @i1) */
+  pageFieldIndex1?: number;
+  /** Index for page field 2 (CT_RangeSet @i2) */
+  pageFieldIndex2?: number;
+  /** Index for page field 3 (CT_RangeSet @i3) */
+  pageFieldIndex3?: number;
+  /** Index for page field 4 (CT_RangeSet @i4) */
+  pageFieldIndex4?: number;
   /** Cell reference */
   ref?: string;
   /** Named range */

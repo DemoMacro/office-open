@@ -22,14 +22,14 @@ function agRevData(data: { rId: number; undo?: boolean; rejected?: boolean }): s
 }
 
 function stringifyUndo(d: RevisionUndoOptions): string {
-  let a = ` index="${d.index}" exp="${d.expression}" dr="${escapeXml(d.dr)}"`;
+  let a = ` index="${d.index}" exp="${d.expression}" dr="${escapeXml(d.undoRange)}"`;
   if (d.ref3D) a += ` ref3D="1"`;
   if (d.array) a += ` array="1"`;
-  if (d.v) a += ` v="1"`;
-  if (d.nf) a += ` nf="1"`;
-  if (d.cs) a += ` cs="1"`;
-  if (d.dn !== undefined) a += ` dn="${escapeXml(d.dn)}"`;
-  if (d.r !== undefined) a += ` r="${escapeXml(d.r)}"`;
+  if (d.value) a += ` v="1"`;
+  if (d.numberFormat) a += ` nf="1"`;
+  if (d.conditionalStyle) a += ` cs="1"`;
+  if (d.definedName !== undefined) a += ` dn="${escapeXml(d.definedName)}"`;
+  if (d.reference !== undefined) a += ` r="${escapeXml(d.reference)}"`;
   if (d.sId !== undefined) a += ` sId="${d.sId}"`;
   return `<undo${a}/>`;
 }
