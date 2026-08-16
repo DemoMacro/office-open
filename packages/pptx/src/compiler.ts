@@ -65,6 +65,7 @@ import {
   type SlideOptions,
   type SlideSize,
 } from "@shared/file";
+import { buildHeaderFooterShapes } from "@shared/header-footer";
 import type { MediaData } from "@shared/media/data";
 import { createThemeXml } from "@shared/theme";
 import { buildTransition } from "@shared/transition";
@@ -73,6 +74,7 @@ import { PptxWriteContext } from "./context";
 import { timingDesc } from "./parts/descriptors/animation";
 import { backgroundDesc } from "./parts/descriptors/background";
 import { stringifyChild } from "./parts/descriptors/bridge";
+import { colorMappingOverrideDesc } from "./parts/descriptors/color-map-override";
 import { commentAuthorsDesc, slideCommentsDesc } from "./parts/descriptors/comments";
 import { handoutMasterDesc } from "./parts/descriptors/handout-master";
 import { notesMasterDesc } from "./parts/descriptors/notes-master";
@@ -606,13 +608,33 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
     }
   }
 
+  // Per-slide header/footer: instantiate the dt/ftr/sldNum placeholder shapes
+  // after the children (spTree tail, ids continue the child sequence). A type
+  // the children already carry — a round-tripped placeholder shape — is left
+  // untouched so re-serialization never duplicates it.
+  if (slideOpts.headerFooter) {
+    const present = new Set(
+      (slideOpts.children ?? []).flatMap((c) =>
+        "shape" in c && c.shape?.placeholder ? [c.shape.placeholder] : [],
+      ),
+    );
+    for (const shape of buildHeaderFooterShapes(slideOpts.headerFooter)) {
+      if (present.has(shape.placeholder!)) continue;
+      const xml = stringifyChild({ shape }, ctx);
+      if (xml) parts.push(xml);
+    }
+  }
+
   parts.push("</p:spTree>");
 
   parts.push(stringifyCustDataLst(slideOpts.customerData));
   parts.push(stringifyControls(slideOpts.controls));
 
   parts.push("</p:cSld>");
-  parts.push("<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>");
+  parts.push(
+    colorMappingOverrideDesc.stringify(slideOpts.colorMappingOverride, ctx) ??
+      "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>",
+  );
 
   if (slideOpts.transition) {
     parts.push(buildTransition(slideOpts.transition, ctx));

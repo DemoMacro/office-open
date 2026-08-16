@@ -110,6 +110,8 @@ export interface SlideOptions {
   notes?: string | NotesSlideOptions;
   transition?: TransitionOptions;
   headerFooter?: SlideHeaderFooterOptions;
+  /** p:clrMapOvr — override the master color mapping for this slide. */
+  colorMappingOverride?: ColorMappingOverrideOptions;
   comments?: SlideCommentOptions[];
   layout?: SlideLayoutType | string;
   master?: string;

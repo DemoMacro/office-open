@@ -9269,7 +9269,6 @@
     },
     "SlideHeaderFooterOptions": {
       "additionalProperties": false,
-      "description": "Slide header/footer types.",
       "properties": {
         "dateTime": {
           "type": "boolean"
@@ -9323,6 +9322,10 @@
             "$ref": "#/definitions/SlideChild"
           },
           "type": "array"
+        },
+        "colorMappingOverride": {
+          "$ref": "#/definitions/ColorMappingOverrideOptions",
+          "description": "p:clrMapOvr — override the master color mapping for this slide."
         },
         "comments": {
           "items": {

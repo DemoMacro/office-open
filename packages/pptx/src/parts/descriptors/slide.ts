@@ -25,6 +25,7 @@ import type { BackgroundOptions } from "../background";
 import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild } from "./bridge";
+import { colorMappingOverrideDesc, type ColorMappingOverrideOptions } from "./color-map-override";
 
 // ── Types ──
 
@@ -36,7 +37,10 @@ export interface SlideDescriptorOptions {
   showMasterPlaceholderAnimations?: boolean;
   controls?: ControlOptions[];
   customerData?: { rId: string }[];
+  /** Instantiates dt/ftr/sldNum placeholder shapes on the slide (CT_Slide has
+   * no p:hf — per-slide visibility lives in the placeholder shapes). */
   headerFooter?: SlideHeaderFooterOptions;
+  colorMappingOverride?: ColorMappingOverrideOptions;
   animations?: SlideAnimation[];
   /** Hidden slide — excluded from slideshow (emits p:sld/@show="0"). */
   hidden?: boolean;
@@ -106,6 +110,10 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
       result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
       result.controls = parseControls(findChild(cSld, "p:controls"));
     }
+
+    // p:clrMapOvr (between cSld and transition per CT_Slide).
+    const clrMapOvr = findChild(el, "p:clrMapOvr");
+    if (clrMapOvr) result.colorMappingOverride = colorMappingOverrideDesc.parse(clrMapOvr, _ctx);
 
     // p:transition
     const transition = findChild(el, "p:transition");

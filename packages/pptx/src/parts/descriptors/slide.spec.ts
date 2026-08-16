@@ -114,13 +114,51 @@ describe("slideDesc round-trip", () => {
     expect(result.transition!.advanceOnClick).toBe(true);
   });
 
-  it("does not emit slide-level headerFooter (p:hf is master/layout-level per CT_Slide)", () => {
+  it("instantiates dt/ftr/sldNum placeholders for headerFooter (no p:hf on CT_Slide)", () => {
     const opts: SlideDescriptorOptions = {
-      headerFooter: { slideNumber: true, footer: true, header: true, dateTime: true },
+      headerFooter: { slideNumber: true, footer: "Confidential", dateTime: true },
     };
     const xml = slideDesc.stringify(opts, writeCtx) ?? "";
 
     expect(xml).not.toContain("<p:hf");
+    expect(xml).toContain('<p:ph type="dt" idx="10" sz="half"/>');
+    expect(xml).toContain('<p:ph type="ftr" idx="11" sz="quarter"/>');
+    expect(xml).toContain('<p:ph type="sldNum" idx="12" sz="quarter"/>');
+    expect(xml).toContain('type="datetimeFigureOut"');
+    expect(xml).toContain('type="slidenum"');
+    expect(xml).toContain("<a:t>Confidential</a:t>");
+  });
+
+  it("skips headerFooter placeholders the children already carry", () => {
+    const opts: SlideDescriptorOptions = {
+      headerFooter: { slideNumber: true, footer: "Confidential", dateTime: true },
+      children: [{ shape: { placeholder: "sldNum" } }],
+    };
+    const xml = slideDesc.stringify(opts, writeCtx) ?? "";
+
+    expect(xml.match(/<p:ph type="sldNum"/g)).toHaveLength(1);
+    expect(xml).toContain('<p:ph type="dt"');
+    expect(xml).toContain('<p:ph type="ftr"');
+  });
+
+  it("round-trips colorMappingOverride", () => {
+    const opts: SlideDescriptorOptions = {
+      colorMappingOverride: { kind: "override", colorMapping: { text1: "dark2" } },
+    };
+    const result = roundTrip(opts);
+
+    // Parse normalizes the partial override to the full 12-slot mapping
+    // (unspecified slots fall back to their a:overrideClrMapping defaults).
+    expect(result.colorMappingOverride).toMatchObject({
+      kind: "override",
+      colorMapping: { text1: "dark2" },
+    });
+  });
+
+  it("defaults clrMapOvr to masterClrMapping on stringify", () => {
+    const xml = slideDesc.stringify({}, writeCtx) ?? "";
+
+    expect(xml).toContain("<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>");
   });
 
   it("round-trips customerData inside p:cSld", () => {
