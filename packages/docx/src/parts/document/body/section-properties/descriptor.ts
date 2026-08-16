@@ -341,7 +341,7 @@ export const sectionPropertiesDesc: CustomDescriptor<SectionPropertiesOptions, B
   kind: "custom",
 
   stringify(opts, _ctx) {
-    return stringifySectionPropertiesXml(opts);
+    return stringifySectionProperties(opts);
   },
 
   parse(el, _ctx) {
@@ -350,7 +350,7 @@ export const sectionPropertiesDesc: CustomDescriptor<SectionPropertiesOptions, B
 };
 
 /** Standalone stringify — no context needed, pure options → XML. */
-export function stringifySectionPropertiesXml(opts: SectionPropertiesOptions): string {
+export function stringifySectionProperties(opts: SectionPropertiesOptions): string {
   const inner = stringifySectionPropertiesInner(opts);
 
   const attrs: string[] = [];

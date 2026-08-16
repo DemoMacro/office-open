@@ -16,18 +16,14 @@ import {
   unzipSync,
   zipAndConvert,
 } from "@office-open/core";
-import type {
-  BasePatchOptions,
-  CorePropertiesOptions,
-  OutputByType,
-  OutputType,
-} from "@office-open/core";
+import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import { escapeXml, stringify, parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { commentsDesc } from "@parts/comments";
 import { DocumentAttributeNamespaces } from "@parts/document";
+import { stringifySectionProperties } from "@parts/document/body/section-properties/descriptor";
 import {
   stringifyChildDispatch,
   stringifyParagraphInline,
@@ -41,7 +37,7 @@ import { tableDesc } from "@parts/table/descriptor";
 import type { TableOptions } from "@parts/table/table";
 import { Media } from "@shared/media";
 import type { MediaData } from "@shared/media/data";
-import type { SectionChild } from "@shared/section";
+import type { SectionChild, SectionOptions } from "@shared/section";
 
 import type { BodyContext } from "../context";
 import type { ViewWrapper } from "../context";
@@ -147,6 +143,10 @@ const docxReplacer = createReplacer({
   formatChild: formatChildElement,
 });
 
+/** Locate the `<w:body>` element of a parsed word/document.xml part. */
+const bodyElementOf = (root: Element): Element | undefined =>
+  root.elements?.find((e) => e.name === "w:document")?.elements?.find((e) => e.name === "w:body");
+
 /**
  * Splice block-level children into `<w:body>` before the trailing `<w:sectPr>`
  * (the final section properties). If the body has no trailing sectPr, append at
@@ -154,8 +154,7 @@ const docxReplacer = createReplacer({
  * relationship/media sinks apply as placeholder patches.
  */
 const appendToBody = (root: Element, children: SectionChild[]): void => {
-  const docEl = root.elements?.find((e) => e.name === "w:document");
-  const body = docEl?.elements?.find((e) => e.name === "w:body");
+  const body = bodyElementOf(root);
   if (!body) return;
   const els = body.elements ?? (body.elements = []);
   const newEls: Element[] = [];
@@ -176,6 +175,142 @@ const appendToBody = (root: Element, children: SectionChild[]): void => {
 
 /** Current patch context — set per file in the main loop. */
 let currentPatchCtx: BodyContext;
+
+// ── Section collection edits (replace / append) ──
+
+/** A detected section: body children [start, end) plus its sectPr element. */
+interface BodySectionSpan {
+  start: number;
+  /** Exclusive; for a non-final section this includes its break paragraph. */
+  end: number;
+  /** From the break paragraph's pPr, or body-level for the final section. */
+  sectPr: Element | undefined;
+  /** True when this is the final section (sectPr at body level). */
+  final: boolean;
+}
+
+/**
+ * Scan body children into section spans. A non-final section ends at the
+ * paragraph whose pPr carries a sectPr (the section-break paragraph); the
+ * trailing body-level sectPr closes the final section.
+ */
+const scanBodySections = (body: Element): BodySectionSpan[] => {
+  const els = body.elements ?? [];
+  const spans: BodySectionSpan[] = [];
+  let start = 0;
+  for (const [i, el] of els.entries()) {
+    if (el.name !== "w:p") continue;
+    const pPr = el.elements?.find((c) => c.name === "w:pPr");
+    const sectPr = pPr?.elements?.find((c) => c.name === "w:sectPr");
+    if (sectPr) {
+      spans.push({ start, end: i + 1, sectPr, final: false });
+      start = i + 1;
+    }
+  }
+  const bodySectPrIndex = els.findIndex((e) => e.name === "w:sectPr");
+  spans.push({
+    start,
+    end: bodySectPrIndex >= 0 ? bodySectPrIndex : els.length,
+    sectPr: bodySectPrIndex >= 0 ? els[bodySectPrIndex] : undefined,
+    final: true,
+  });
+  return spans;
+};
+
+/** A paragraph whose only role is hosting a section break: `<w:p><w:pPr><sectPr/></w:pPr></w:p>`. */
+const makeBreakParagraph = (sectPr: Element): Element => ({
+  type: "element",
+  name: "w:p",
+  elements: [{ type: "element", name: "w:pPr", elements: [sectPr] }],
+});
+
+/** Serialize section properties into a sectPr element (or undefined when absent). */
+const sectPrElement = (opts: SectionOptions): Element | undefined => {
+  if (!opts.properties) return undefined;
+  const xml = stringifySectionProperties(opts.properties);
+  return parse(xml, { captureSpacesBetweenElements: true }).elements?.[0];
+};
+
+const assertPatchableSection = (opts: SectionOptions): void => {
+  if (opts.headers || opts.footers) {
+    throw new Error(
+      "patchDocument: patch sections do not support headers/footers — generate the document instead",
+    );
+  }
+};
+
+/** Serialize section children through the patch pipeline (shared with append/placeholder paths). */
+const sectionChildrenElements = (opts: SectionOptions): Element[] => {
+  const out: Element[] = [];
+  for (const child of opts.children ?? []) {
+    out.push(...formatChildElement(child));
+  }
+  return out;
+};
+
+/**
+ * Replace one section by index. Without `properties` the section keeps its
+ * existing sectPr (page setup); with `properties` the new one takes over.
+ * Non-final sections end in a dedicated break paragraph — the same shape the
+ * generate path falls back to when a section does not end in a paragraph.
+ */
+const replaceBodySection = (body: Element, index: number, opts: SectionOptions): void => {
+  const spans = scanBodySections(body);
+  const span = spans[index];
+  if (!span) {
+    throw new Error(`patchDocument: no section at index ${index}`);
+  }
+  assertPatchableSection(opts);
+
+  const newSectPr = sectPrElement(opts);
+  const sectPr = newSectPr ?? (span.sectPr ? structuredClone(span.sectPr) : undefined);
+  const els = body.elements ?? (body.elements = []);
+  const replacement = sectionChildrenElements(opts);
+
+  if (span.final) {
+    // Keep the body-level sectPr in place; swap it only when properties were given.
+    els.splice(span.start, span.end - span.start, ...replacement);
+    if (newSectPr && span.sectPr) {
+      els[els.indexOf(span.sectPr)] = newSectPr;
+    } else if (newSectPr) {
+      els.push(newSectPr);
+    }
+  } else {
+    if (sectPr) replacement.push(makeBreakParagraph(sectPr));
+    els.splice(span.start, span.end - span.start, ...replacement);
+  }
+};
+
+/**
+ * Append sections after the last existing one, each closed by its own break
+ * paragraph, inserted before the final body-level sectPr. Sections without
+ * `properties` inherit the final section's page setup.
+ */
+const appendBodySections = (body: Element, sections: readonly SectionOptions[]): void => {
+  const els = body.elements ?? (body.elements = []);
+  // Insert before the trailing body-level <w:sectPr>; otherwise at the end.
+  let insertAt = els.length;
+  for (let i = els.length - 1; i >= 0; i--) {
+    if (els[i] && els[i]!.name === "w:sectPr") {
+      insertAt = i;
+      break;
+    }
+  }
+  const bodySectPr = insertAt < els.length ? els[insertAt] : undefined;
+
+  const additions: Element[] = [];
+  for (const opts of sections) {
+    assertPatchableSection(opts);
+    additions.push(...sectionChildrenElements(opts));
+    const sectPr =
+      sectPrElement(opts) ??
+      (bodySectPr
+        ? structuredClone(bodySectPr)
+        : { type: "element", name: "w:sectPr", elements: [] });
+    additions.push(makeBreakParagraph(sectPr));
+  }
+  els.splice(insertAt, 0, ...additions);
+};
 
 /**
  * A patch operation: replace a placeholder with either inline run-level
@@ -198,19 +333,25 @@ interface HyperlinkRelationshipAddition {
   hyperlink: { id: string; link: string };
 }
 
-export interface PatchDocumentOptions<
-  T extends OutputType = OutputType,
-> extends BasePatchOptions<T> {
-  /** Placeholder substitutions: `{{key}}` (per delimiters) → patch content. */
-  placeholders?: Readonly<Record<string, Patch>>;
-  /** Literal find/replace: the find string → patch content (no delimiters added). */
-  findReplace?: Readonly<Record<string, Patch>>;
-  /** Core-properties metadata override (merged over the existing docProps/core.xml). */
-  coreProperties?: Partial<CorePropertiesOptions>;
+export interface PatchDocumentOptions<T extends OutputType = OutputType> extends BasePatchOptions<
+  T,
+  Patch
+> {
   keepOriginalStyles?: boolean;
-  recursive?: boolean;
   /** Block-level content appended to the document body, before the final section break. */
   append?: SectionChild[];
+  /**
+   * Section collection edits. Children serialize through the same pipeline as
+   * placeholder patches, so they may carry images, hyperlinks, and the full
+   * paragraph/table vocabulary. `headers`/`footers` are not supported here —
+   * they need new parts, which patching cannot create; generate instead.
+   */
+  sections?: {
+    /** Replace sections keyed by 0-based index (0 = from the document start). */
+    replace?: Readonly<Record<number, SectionOptions>>;
+    /** Append sections after the last existing one, before the final body sectPr. */
+    append?: Readonly<SectionOptions[]>;
+  };
   /**
    * Comments to inject. `paragraphs` anchors a comment to the Nth body paragraph
    * (0-based, wraps the whole paragraph); `placeholders` anchors to the run
@@ -250,10 +391,10 @@ export const patchDocument = async <T extends OutputType = OutputType>({
   findReplace,
   coreProperties,
   append,
+  sections,
   comments,
   keepOriginalStyles = true,
   placeholderDelimiters = { end: "}}", start: "{{" } as const,
-  recursive = true,
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
   const zipContent = unzipSync(toUint8Array(data));
   const contexts = new Map<string, BodyContext>();
@@ -369,7 +510,7 @@ export const patchDocument = async <T extends OutputType = OutputType>({
             patch: patchValue,
             patchText,
           });
-          if (!recursive || !didFindOccurrence) {
+          if (!didFindOccurrence) {
             break;
           }
         }
@@ -385,6 +526,22 @@ export const patchDocument = async <T extends OutputType = OutputType>({
         for (const ac of assignedComments) {
           if (ac.anchor.kind === "paragraph") {
             wrapParagraphComment(json, ac.anchor.index, ac.id);
+          }
+        }
+      }
+
+      // Section edits run last — comment anchors wrap the input paragraph
+      // positions before sections reshape the body.
+      if (sections && key === "word/document.xml") {
+        const body = bodyElementOf(json);
+        if (body) {
+          if (sections.replace) {
+            for (const [index, opts] of Object.entries(sections.replace)) {
+              replaceBodySection(body, Number(index), opts);
+            }
+          }
+          if (sections.append) {
+            appendBodySections(body, sections.append);
           }
         }
       }

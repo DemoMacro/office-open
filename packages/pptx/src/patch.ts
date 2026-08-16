@@ -8,18 +8,14 @@ import {
   createReplacer,
   getNextRelationshipIndex,
   nextNumericId,
+  removeOverride,
   replaceHyperlinkPlaceholders,
   strFromU8,
   toJson,
   unzipSync,
   zipAndConvert,
 } from "@office-open/core";
-import type {
-  BasePatchOptions,
-  CorePropertiesOptions,
-  OutputByType,
-  OutputType,
-} from "@office-open/core";
+import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import type { RunOptions } from "@office-open/core/drawing";
@@ -69,13 +65,7 @@ export type Patch = RunOptions | RunOptions[] | string;
 
 export interface PatchPresentationOptions<
   T extends OutputType = OutputType,
-> extends BasePatchOptions<T> {
-  /** Placeholder substitutions: `{{key}}` (per delimiters) → run content. */
-  placeholders?: Readonly<Record<string, Patch>>;
-  /** Literal find/replace: the find string → run content (no delimiters added). */
-  findReplace?: Readonly<Record<string, Patch>>;
-  /** Core-properties metadata override (merged over the existing docProps/core.xml). */
-  coreProperties?: Partial<CorePropertiesOptions>;
+> extends BasePatchOptions<T, Patch> {
   /**
    * Slide collection edits. Appended slides inherit the template's first slide
    * layout; replaced slides keep their existing identity (sldId/rId/rels).
@@ -85,6 +75,8 @@ export interface PatchPresentationOptions<
     replace?: Readonly<Record<number, SlideOptions>>;
     /** Append slides after the last existing slide. */
     append?: Readonly<SlideOptions[]>;
+    /** Remove slides by 0-based index in the slide list (sldIdLst order). */
+    remove?: readonly number[];
   };
   /**
    * Comments to append per slide, keyed by 0-based slide index (sldIdLst order).
@@ -257,6 +249,87 @@ const replaceSlideInMap = (
 ): void => {
   const slidePath = resolveSlidePath(xmlMap, index);
   xmlMap.set(slidePath, toJson(stringifySlide(slideOpts, ctx)));
+};
+
+/** Resolve a relationship Target against the directory of its source part. */
+const resolveTargetPath = (sourceDir: string, target: string): string => {
+  if (target.startsWith("/")) return target.slice(1);
+  const base = sourceDir.split("/").filter(Boolean);
+  for (const seg of target.split("/")) {
+    if (seg === "..") base.pop();
+    else if (seg !== ".") base.push(seg);
+  }
+  return base.join("/");
+};
+
+/**
+ * Remove a part from the package: the part itself, its rels, and its
+ * `[Content_Types].xml` Override. Parts the rels point at are NOT touched —
+ * layouts, media, and charts are shared across slides; they simply lose one
+ * referencing slide, and unreferenced leftovers are inert in OPC packages.
+ */
+const removePart = (xmlMap: Map<string, Element>, partPath: string): void => {
+  xmlMap.delete(partPath);
+  xmlMap.delete(relsKeyFor(partPath));
+  const contentTypes = xmlMap.get("[Content_Types].xml");
+  if (contentTypes) removeOverride(contentTypes, `/${partPath}`);
+};
+
+const NOTES_SLIDE_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide";
+
+/**
+ * Remove slides by 0-based index (positions in the deck as it entered the
+ * patch). Drops each sldIdLst entry, the presentation relationship, and the
+ * slide part with its rels. The slide's notesSlide — which no other slide
+ * references — is removed with it; shared parts (layouts, media, …) stay.
+ * Run after replace/append — those operate on the same original indices,
+ * which the trailing slide removals do not disturb.
+ */
+const removeSlidesFromMap = (xmlMap: Map<string, Element>, indices: readonly number[]): void => {
+  // Resolve every index before touching sldIdLst — removing entries mid-loop
+  // would shift the positions of later ones.
+  const presRoot = rootElement(xmlMap.get("ppt/presentation.xml"), "p:presentation");
+  const sldIdLst = findChild(presRoot, "p:sldIdLst");
+  const sldIds = (sldIdLst?.elements ?? []).filter((e) => e.name === "p:sldId");
+  const presRelsKey = "ppt/_rels/presentation.xml.rels";
+
+  const doomedEntries = new Set<Element>();
+  const doomedRIds = new Set<string>();
+  const slidePaths: string[] = [];
+  for (const index of indices) {
+    const entry = sldIds[index];
+    const rId = entry?.attributes?.["r:id"];
+    if (!rId) {
+      throw new Error(`patchPresentation: no slide at index ${index}`);
+    }
+    const target = resolveRelTarget(xmlMap.get(presRelsKey), rId);
+    if (!target) {
+      throw new Error(`patchPresentation: slide ${index} relationship target not found`);
+    }
+    doomedEntries.add(entry);
+    doomedRIds.add(String(rId));
+    slidePaths.push(resolveTargetPath("ppt", target));
+  }
+
+  if (sldIdLst?.elements) {
+    sldIdLst.elements = sldIdLst.elements.filter((e) => !doomedEntries.has(e));
+  }
+  const presRelsRoot = rootElement(xmlMap.get(presRelsKey), "Relationships");
+  if (presRelsRoot?.elements) {
+    presRelsRoot.elements = presRelsRoot.elements.filter(
+      (e) => !(e.name === "Relationship" && doomedRIds.has(String(e.attributes?.["Id"]))),
+    );
+  }
+  for (const slidePath of slidePaths) {
+    // The notesSlide is owned by exactly this slide — take it with us.
+    const slideRelsRoot = rootElement(xmlMap.get(relsKeyFor(slidePath)), "Relationships");
+    const notesTarget = findRelByType(slideRelsRoot, NOTES_SLIDE_REL_TYPE)?.target;
+    if (notesTarget) {
+      removePart(xmlMap, resolveTargetPath("ppt/slides", notesTarget));
+    }
+    removePart(xmlMap, slidePath);
+  }
 };
 
 /** Build the rels part path for a given part path (…/_rels/<file>.rels). */
@@ -435,13 +508,17 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
     if (!json) continue;
 
     for (const { find, patch } of entries) {
-      pptxReplacer({
-        context,
-        json,
-        keepOriginalStyles,
-        patch,
-        patchText: find,
-      });
+      // Replace every occurrence — loop until the replacer finds no more.
+      while (true) {
+        const { didFindOccurrence } = pptxReplacer({
+          context,
+          json,
+          keepOriginalStyles,
+          patch,
+          patchText: find,
+        });
+        if (!didFindOccurrence) break;
+      }
     }
   }
 
@@ -479,7 +556,9 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
     }
   }
 
-  // Slide collection edits — reuse the slide stringifier (no compiler re-run)
+  // Slide collection edits — reuse the slide stringifier (no compiler re-run).
+  // Removal runs last: replace/append address the original slide indices,
+  // which the removals (dropping entries) would otherwise shift.
   if (slides) {
     if (slides.replace) {
       for (const [index, slideOpts] of Object.entries(slides.replace)) {
@@ -490,6 +569,9 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
       for (const slideOpts of slides.append) {
         appendSlideToMap(xmlMap, slideOpts, currentPatchCtx);
       }
+    }
+    if (slides.remove) {
+      removeSlidesFromMap(xmlMap, slides.remove);
     }
   }
 

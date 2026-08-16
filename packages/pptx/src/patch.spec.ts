@@ -73,6 +73,64 @@ describe("patchPresentation slides", () => {
       }),
     ).rejects.toThrow(/index 5/);
   });
+
+  it("replaces every occurrence of a placeholder, not just the first", async () => {
+    const twice = (text: string): SlideOptions => ({
+      children: [
+        { shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text } } },
+        { shape: { x: 0, y: 120, width: 200, height: 100, textBody: { text } } },
+      ],
+    });
+    const buffer = await generatePresentation(template([twice("{{name}}")]));
+    const patched = await patchPresentation({
+      data: buffer,
+      outputType: "uint8array",
+      placeholders: { name: "Alice" },
+    });
+
+    const slide1 = decodeEntry(patched, "ppt/slides/slide1.xml");
+    expect((slide1.match(/<a:t>Alice<\/a:t>/g) ?? []).length).toBe(2);
+    expect(slide1).not.toContain("{{name}}");
+  });
+
+  it("removes slides and unwires sldIdLst, rels, and content types", async () => {
+    const buffer = await generatePresentation(template([slide("A"), slide("B"), slide("C")]));
+    const patched = await patchPresentation({
+      data: buffer,
+      outputType: "uint8array",
+      slides: { remove: [0, 2] },
+    });
+
+    // Only the middle slide survives, first in the deck.
+    const parsed = parsePresentation(patched);
+    expect(parsed.slides?.length).toBe(1);
+    expect(decodeEntry(patched, "ppt/slides/slide2.xml")).toContain("<a:t>B</a:t>");
+
+    // sldIdLst shrank to one entry pointing at the surviving slide.
+    const pres = decodeEntry(patched, "ppt/presentation.xml");
+    expect((pres.match(/<p:sldId /g) ?? []).length).toBe(1);
+
+    // Removed parts, their rels, and their Overrides are gone.
+    const unzipped = unzipSync(patched);
+    expect(unzipped["ppt/slides/slide1.xml"]).toBeUndefined();
+    expect(unzipped["ppt/slides/slide3.xml"]).toBeUndefined();
+    expect(unzipped["ppt/slides/_rels/slide1.xml.rels"]).toBeUndefined();
+    expect(decodeEntry(patched, "ppt/_rels/presentation.xml.rels")).not.toContain(
+      "slides/slide1.xml",
+    );
+    expect(decodeEntry(patched, "[Content_Types].xml")).not.toContain("/ppt/slides/slide1.xml");
+  });
+
+  it("throws when removing a non-existent index", async () => {
+    const buffer = await generatePresentation(template([slide("A")]));
+    await expect(
+      patchPresentation({
+        data: buffer,
+        outputType: "uint8array",
+        slides: { remove: [9] },
+      }),
+    ).rejects.toThrow(/index 9/);
+  });
 });
 
 describe("patchPresentation comments", () => {

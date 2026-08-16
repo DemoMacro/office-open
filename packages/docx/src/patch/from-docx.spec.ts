@@ -796,6 +796,137 @@ describe("from-docx", () => {
       });
     });
 
+    describe("sections", () => {
+      // Two sections: MOCK_XML's content closed by a letter-size break
+      // paragraph, then the original body sectPr (A4, header references)
+      // closing an empty final section.
+      const SECTION_BREAK = `<w:p><w:pPr><w:sectPr><w:pgSz w:w="12240" w:h="15840"/></w:sectPr></w:pPr></w:p>`;
+      const TWO_SECTION_XML = MOCK_XML.replace("<w:sectPr", `${SECTION_BREAK}<w:sectPr`);
+
+      let realUnzip: typeof import("fflate").unzipSync;
+
+      beforeEach(async () => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            ["word/document.xml", TWO_SECTION_XML],
+            ["[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`],
+          ]),
+        );
+        realUnzip = (await vi.importActual<typeof import("fflate")>("fflate")).unzipSync;
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      const decodeDoc = async (output: unknown): Promise<string> => {
+        const unzipped = realUnzip(output as Uint8Array);
+        const entry = unzipped["word/document.xml"];
+        expect(entry, "word/document.xml should be zipped").toBeDefined();
+        return new TextDecoder().decode(entry);
+      };
+
+      it("replaces a section's content, keeping its sectPr when no properties are given", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          sections: {
+            replace: {
+              0: { children: [{ paragraph: { children: ["REPLACED_SECTION"] } }] },
+            },
+          },
+        });
+
+        const xml = await decodeDoc(output);
+        expect(xml).toContain("REPLACED_SECTION");
+        expect(xml).not.toContain("Hello World");
+        // The original first-section page size survived (kept sectPr), and the
+        // final body sectPr with its header references is untouched.
+        expect(xml).toContain('w:w="12240"');
+        expect(xml).toContain("headerReference");
+        expect((xml.match(/<w:sectPr/g) ?? []).length).toBe(2);
+      });
+
+      it("replaces a non-final section's sectPr when properties are given", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          sections: {
+            replace: {
+              0: {
+                children: [{ paragraph: { children: ["NEW_CONTENT"] } }],
+                properties: { page: { size: { width: 9000, height: 12000 } } },
+              },
+            },
+          },
+        });
+
+        const xml = await decodeDoc(output);
+        expect(xml).toContain('w:w="9000"');
+        expect(xml).not.toContain('w:w="12240"');
+      });
+
+      it("replaces the final section in place, keeping the body-level sectPr", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          sections: {
+            replace: {
+              1: { children: [{ paragraph: { children: ["FINAL_SECTION_CONTENT"] } }] },
+            },
+          },
+        });
+
+        const xml = await decodeDoc(output);
+        expect(xml).toContain("FINAL_SECTION_CONTENT");
+        // Content lands before the body sectPr; both original sectPrs remain.
+        expect(xml.indexOf("FINAL_SECTION_CONTENT")).toBeLessThan(xml.indexOf("headerReference"));
+        expect((xml.match(/<w:sectPr/g) ?? []).length).toBe(2);
+      });
+
+      it("appends sections before the final body sectPr", async () => {
+        const output = await patchDocument({
+          data: Buffer.from(""),
+          outputType: "uint8array",
+          sections: {
+            append: [
+              {
+                children: [{ paragraph: { children: ["APPENDED_SECTION"] } }],
+                properties: { page: { size: { width: 8000, height: 8000 } } },
+              },
+            ],
+          },
+        });
+
+        const xml = await decodeDoc(output);
+        expect(xml).toContain("APPENDED_SECTION");
+        // The appended content and its break paragraph precede the body sectPr.
+        expect(xml.indexOf("APPENDED_SECTION")).toBeLessThan(xml.indexOf("headerReference"));
+        expect(xml).toContain('w:w="8000"');
+        expect((xml.match(/<w:sectPr/g) ?? []).length).toBe(3);
+      });
+
+      it("throws on sections carrying headers/footers", async () => {
+        await expect(
+          patchDocument({
+            data: Buffer.from(""),
+            outputType: "uint8array",
+            sections: { append: [{ children: [], headers: { default: [] } }] },
+          }),
+        ).rejects.toThrow(/headers\/footers/);
+      });
+
+      it("throws on a missing section index", async () => {
+        await expect(
+          patchDocument({
+            data: Buffer.from(""),
+            outputType: "uint8array",
+            sections: { replace: { 5: { children: [] } } },
+          }),
+        ).rejects.toThrow(/index 5/);
+      });
+    });
+
     describe("comments", () => {
       let realUnzip: typeof import("fflate").unzipSync;
       const CT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>`;

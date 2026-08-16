@@ -102,6 +102,80 @@ describe("patchWorkbook worksheets", () => {
       }),
     ).rejects.toThrow(/Missing/);
   });
+
+  it("removes worksheets and unwires sheets, rels, and content types", async () => {
+    const template = (await generateWorkbook(
+      {
+        worksheets: [
+          { name: "Keep", rows: [{ cells: [{ reference: "A1", value: "KEPT" }] }] },
+          { name: "Drop", rows: [{ cells: [{ reference: "A1", value: "DROPPED" }] }] },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    const patched = await patchWorkbook({
+      data: template,
+      outputType: "uint8array",
+      worksheets: { remove: ["Drop"] },
+    });
+
+    const parsed = parseWorkbook(patched);
+    expect(parsed.worksheets?.length).toBe(1);
+    expect(cellValue(patched, 0)).toBe("KEPT");
+
+    // The part, its rels, and its Override are gone from the package.
+    const unzipped = unzipSync(patched);
+    expect(unzipped["xl/worksheets/sheet2.xml"]).toBeUndefined();
+    expect(decodeEntry(patched, "xl/workbook.xml")).not.toContain('name="Drop"');
+    expect(decodeEntry(patched, "xl/_rels/workbook.xml.rels")).not.toContain(
+      "worksheets/sheet2.xml",
+    );
+    expect(decodeEntry(patched, "[Content_Types].xml")).not.toContain("/xl/worksheets/sheet2.xml");
+  });
+
+  it("renumbers definedName localSheetId and drops names scoped to removed sheets", async () => {
+    const template = (await generateWorkbook(
+      {
+        worksheets: [
+          { name: "First", rows: [{ cells: [{ reference: "A1", value: "a" }] }] },
+          { name: "Second", rows: [{ cells: [{ reference: "A1", value: "b" }] }] },
+          { name: "Third", rows: [{ cells: [{ reference: "A1", value: "c" }] }] },
+        ],
+        definedNames: [
+          { name: "OnThird", value: "Third!A1", localSheetId: 2 },
+          { name: "OnFirst", value: "First!A1", localSheetId: 0 },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    const patched = await patchWorkbook({
+      data: template,
+      outputType: "uint8array",
+      worksheets: { remove: ["First"] },
+    });
+
+    const wb = decodeEntry(patched, "xl/workbook.xml");
+    // Scoped to a removed sheet — dropped; the survivor renumbers 2 → 1.
+    expect(wb).not.toContain("OnFirst");
+    expect(wb).toContain('name="OnThird" localSheetId="1"');
+  });
+
+  it("throws when removing a non-existent worksheet name", async () => {
+    const template = (await generateWorkbook(
+      { worksheets: [{ name: "Only", rows: [] }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    await expect(
+      patchWorkbook({
+        data: template,
+        outputType: "uint8array",
+        worksheets: { remove: ["Nope"] },
+      }),
+    ).rejects.toThrow(/Nope/);
+  });
 });
 
 describe("patchWorkbook comments", () => {

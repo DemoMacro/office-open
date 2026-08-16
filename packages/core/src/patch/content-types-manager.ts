@@ -71,3 +71,25 @@ export const appendOverride = (element: Element, partName: string, contentType: 
     type: "element",
   });
 };
+
+/**
+ * Remove an `<Override>` from a `[Content_Types].xml` root by `PartName`
+ * (case-insensitive). Sibling to {@link appendOverride} for patch paths that
+ * drop a part from the package.
+ */
+export const removeOverride = (element: Element, partName: string): void => {
+  const els = typesChildren(element);
+  if (!els) return;
+
+  const kept = els.filter(
+    (el) =>
+      !(
+        el.type === "element" &&
+        el.name === "Override" &&
+        String(el?.attributes?.PartName ?? "").toLowerCase() === partName.toLowerCase()
+      ),
+  );
+  if (kept.length !== els.length) {
+    element.elements!.find((e) => e.name === "Types")!.elements = kept;
+  }
+};

@@ -26,7 +26,7 @@ export {
   nextNumericId,
 } from "./xml-patch-utils";
 
-export { appendContentType, appendOverride } from "./content-types-manager";
+export { appendContentType, appendOverride, removeOverride } from "./content-types-manager";
 
 export { getNextRelationshipIndex, appendRelationship } from "./relationship-manager";
 

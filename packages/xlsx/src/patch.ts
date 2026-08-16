@@ -19,17 +19,13 @@ import {
   applyCorePropertiesOverride,
   getNextRelationshipIndex,
   nextNumericId,
+  removeOverride,
   strFromU8,
   toJson,
   unzipSync,
   zipAndConvert,
 } from "@office-open/core";
-import type {
-  BasePatchOptions,
-  CorePropertiesOptions,
-  OutputByType,
-  OutputType,
-} from "@office-open/core";
+import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
@@ -50,15 +46,10 @@ export type ScalarValue = string | number | boolean | Date;
 /** A patch value is just a scalar. */
 export type Patch = ScalarValue;
 
-export interface PatchWorkbookOptions<
-  T extends OutputType = OutputType,
-> extends BasePatchOptions<T> {
-  /** Placeholder substitutions: `{{key}}` (per delimiters) → value. */
-  placeholders?: Readonly<Record<string, ScalarValue>>;
-  /** Literal find/replace: the find string → value (no delimiters added). */
-  findReplace?: Readonly<Record<string, ScalarValue>>;
-  /** Core-properties metadata override (merged over the existing docProps/core.xml). */
-  coreProperties?: Partial<CorePropertiesOptions>;
+export interface PatchWorkbookOptions<T extends OutputType = OutputType> extends BasePatchOptions<
+  T,
+  ScalarValue
+> {
   /**
    * Worksheet collection edits. The shared-strings table is rebuilt from the
    * template first, so appended/replaced worksheets continue indexing strings
@@ -70,6 +61,8 @@ export interface PatchWorkbookOptions<
     replace?: Readonly<Record<string, WorksheetOptions>>;
     /** Append worksheets after the last existing sheet. */
     append?: Readonly<WorksheetOptions[]>;
+    /** Remove worksheets by name (as declared in workbook.xml). */
+    remove?: readonly string[];
   };
   /**
    * Cell comments (notes) to append per worksheet. Existing comments on the
@@ -186,6 +179,8 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
 
   // Worksheet collection edits — rebuild shared strings first so appended/
   // replaced worksheets continue indexing at the right offset, then serialize.
+  // Removal runs last: replace addresses the original sheet list, which the
+  // removals (dropping entries) would otherwise change.
   if (worksheets) {
     const sharedStrings = rebuildSharedStrings(xmlMap);
     if (worksheets.replace) {
@@ -199,6 +194,9 @@ export const patchWorkbook = async <T extends OutputType = OutputType>({
       }
     }
     rewriteSharedStrings(xmlMap, sharedStrings);
+    if (worksheets.remove) {
+      removeWorksheetsFromMap(xmlMap, worksheets.remove);
+    }
   }
 
   // Cell comments — append per worksheet, merging with any existing comments.
@@ -578,6 +576,108 @@ function replaceWorksheetInMap(
 ): void {
   const sheetPath = resolveSheetPath(xmlMap, name);
   xmlMap.set(sheetPath, toJson(buildWorksheetXml(wsOpts, { sharedStrings })));
+}
+
+/**
+ * Remove worksheets by name: drop each `<sheet>` entry, the workbook
+ * relationship, and the sheet part with its rels. `definedName` entries scoped
+ * to a removed sheet are dropped and the survivors' `localSheetId` (and the
+ * workbook view's `activeTab`) are renumbered to the post-removal indices.
+ * Parts the sheet's rels point at (comments, drawings, …) are left in place —
+ * they may be referenced elsewhere and unreferenced parts are inert in OPC.
+ */
+function removeWorksheetsFromMap(xmlMap: Map<string, Element>, names: readonly string[]): void {
+  const wbRoot = rootOf(xmlMap.get("xl/workbook.xml"));
+  const wbSheets = wbRoot && findLocalChild(wbRoot, "sheets");
+  const sheetEls = (wbSheets?.elements ?? []).filter((e) => localName(e) === "sheet");
+  const wbRelsKey = "xl/_rels/workbook.xml.rels";
+
+  // Resolve every name before touching <sheets> so positions stay stable.
+  const doomedEntries = new Set<Element>();
+  const doomedRIds = new Set<string>();
+  const doomedPositions = new Set<number>();
+  const sheetPaths: string[] = [];
+  for (const name of names) {
+    const entry = sheetEls.find((e) => String(e.attributes?.["name"] ?? "") === name);
+    const rId = entry?.attributes?.["r:id"];
+    if (!entry || !rId) {
+      throw new Error(`patchWorkbook: no worksheet named "${name}"`);
+    }
+    const relTarget = resolveRelTarget(rootOf(xmlMap.get(wbRelsKey)), String(rId));
+    if (!relTarget) {
+      throw new Error(`patchWorkbook: worksheet "${name}" relationship target not found`);
+    }
+    doomedEntries.add(entry);
+    doomedRIds.add(String(rId));
+    doomedPositions.add(sheetEls.indexOf(entry));
+    sheetPaths.push(
+      relTarget.startsWith("/")
+        ? relTarget.slice(1)
+        : relTarget.startsWith("xl/")
+          ? relTarget
+          : `xl/${relTarget}`,
+    );
+  }
+
+  if (wbSheets?.elements) {
+    wbSheets.elements = wbSheets.elements.filter((e) => !doomedEntries.has(e));
+  }
+  const wbRelsRoot = rootOf(xmlMap.get(wbRelsKey));
+  if (wbRelsRoot?.elements) {
+    wbRelsRoot.elements = wbRelsRoot.elements.filter(
+      (e) => !(localName(e) === "Relationship" && doomedRIds.has(String(e.attributes?.["Id"]))),
+    );
+  }
+
+  // Remap sheet positions for definedName@localSheetId and bookView@activeTab.
+  const remapIndex = (index: number): number | undefined => {
+    if (doomedPositions.has(index)) return undefined;
+    let kept = 0;
+    for (let p = 0; p < index; p++) {
+      if (!doomedPositions.has(p)) kept++;
+    }
+    return kept;
+  };
+  if (wbRoot) {
+    const definedNames = findLocalChild(wbRoot, "definedNames");
+    if (definedNames?.elements) {
+      definedNames.elements = definedNames.elements.flatMap((dn) => {
+        if (localName(dn) !== "definedName") return [dn];
+        const localSheetId = dn.attributes?.["localSheetId"];
+        if (localSheetId !== undefined) {
+          const mapped = remapIndex(Number(localSheetId));
+          if (mapped === undefined) return []; // scoped to a removed sheet — drop
+          if (mapped !== Number(localSheetId)) {
+            dn.attributes!["localSheetId"] = String(mapped);
+          }
+        }
+        return [dn];
+      });
+      // An emptied container is not valid — drop it entirely.
+      if (definedNames.elements.length === 0) {
+        wbRoot.elements = (wbRoot.elements ?? []).filter((e) => e !== definedNames);
+      }
+    }
+    const bookViews = findLocalChild(wbRoot, "bookViews");
+    for (const view of bookViews?.elements ?? []) {
+      if (localName(view) !== "workbookView") continue;
+      const activeTab = view.attributes?.["activeTab"];
+      if (activeTab === undefined) continue;
+      const mapped = remapIndex(Number(activeTab));
+      if (mapped === undefined) {
+        delete view.attributes!["activeTab"]; // was on a removed sheet — reset
+      } else if (mapped !== Number(activeTab)) {
+        view.attributes!["activeTab"] = String(mapped);
+      }
+    }
+  }
+
+  for (const sheetPath of sheetPaths) {
+    xmlMap.delete(sheetPath);
+    xmlMap.delete(relsKeyFor(sheetPath));
+    const contentTypes = xmlMap.get("[Content_Types].xml");
+    if (contentTypes) removeOverride(contentTypes, `/${sheetPath}`);
+  }
 }
 
 /** Build the rels part path for a given part path (…/_rels/<file>.rels). */
