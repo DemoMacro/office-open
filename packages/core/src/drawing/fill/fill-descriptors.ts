@@ -13,6 +13,7 @@ import { parse } from "../../descriptor";
 import { emitAngle, emitPercent, parseAngle, parsePercent } from "../../util/converters";
 import { toUint8Array } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
+import { imageTypeFromPath } from "../../util/image-type";
 import { xsdPattern } from "../../util/mappings";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { blipFillDesc } from "../blip/blip-descriptors";
@@ -157,36 +158,6 @@ export const patternFillDesc: CustomDescriptor<PatternFillOptions> = {
 };
 
 // ── Fill (EG_FillProperties) descriptor ──
-
-// Infer the image-type token from a media path's file extension. Mirrors the
-// docx imageTypeFromPath helper; kept local to avoid a cross-package import.
-function imageTypeFromPath(
-  path: string,
-): "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf" {
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-  switch (ext) {
-    case "png":
-      return "png";
-    case "jpg":
-    case "jpeg":
-      return "jpg";
-    case "gif":
-      return "gif";
-    case "bmp":
-      return "bmp";
-    case "tif":
-    case "tiff":
-      return "tif";
-    case "ico":
-      return "ico";
-    case "emf":
-      return "emf";
-    case "wmf":
-      return "wmf";
-    default:
-      return "png";
-  }
-}
 
 // ── Fill (EG_FillProperties) serialization — single source ──
 

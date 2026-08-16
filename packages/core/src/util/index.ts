@@ -3,6 +3,7 @@ export * from "./converters";
 export * from "./crypto";
 export * from "./data-type";
 export * from "./generators";
+export * from "./image-type";
 export * from "./mappings";
 export * from "./placeholder";
 export * from "./values";
