@@ -296,25 +296,18 @@ export function stringifyParagraphProperties(
 
   let s = "";
 
-  // Style / heading / bullet / numbering style references
-  if (options.heading) {
-    s += `<w:pStyle w:val="${escapeXml(options.heading)}"/>`;
-  }
-
-  if (options.bullet) {
-    s += '<w:pStyle w:val="ListParagraph"/>';
-  }
-
-  if (options.numbering) {
-    if (!options.style && !options.heading) {
-      if (!options.numbering.custom) {
-        s += '<w:pStyle w:val="ListParagraph"/>';
-      }
-    }
-  }
-
-  if (options.style) {
-    s += `<w:pStyle w:val="${escapeXml(options.style)}"/>`;
+  // Style / heading / bullet / numbering style references.
+  // Single w:pStyle writer (CT_PPrBase allows exactly one): heading/bullet/
+  // numbering are sugars over style — an explicit style wins, then heading,
+  // then the ListParagraph convenience applied to plain list paragraphs.
+  const pStyle =
+    options.style ??
+    options.heading ??
+    (options.bullet || (options.numbering && !options.numbering.custom)
+      ? "ListParagraph"
+      : undefined);
+  if (pStyle) {
+    s += `<w:pStyle w:val="${escapeXml(pStyle)}"/>`;
   }
 
   // CT_PPrBase element order per XSD (wml.xsd) — strictly ordered sequence.
@@ -330,11 +323,9 @@ export function stringifyParagraphProperties(
   // 6: widowControl
   if (options.widowControl !== undefined) s += onOff("w:widowControl", options.widowControl);
 
-  // 7: numPr
-  if (options.bullet) {
-    s += `<w:numPr><w:ilvl w:val="${Math.min(options.bullet.level, 9)}"/><w:numId w:val="1"/></w:numPr>`;
-  }
-
+  // 7: numPr — single writer (CT_PPrBase allows exactly one). An explicit
+  // numbering (or false = remove) wins over the bullet sugar, which pins the
+  // built-in bullet list (numId 1).
   if (options.numbering) {
     (numberingReferences ??= []).push({
       instance: options.numbering.instance ?? 0,
@@ -345,26 +336,32 @@ export function stringifyParagraphProperties(
     s += numPrStr(numId, options.numbering.level, options.numbering.numberingChange);
   } else if (options.numbering === false) {
     s += numPrStr(0, 0);
+  } else if (options.bullet) {
+    s += `<w:numPr><w:ilvl w:val="${Math.min(options.bullet.level, 9)}"/><w:numId w:val="1"/></w:numPr>`;
   }
 
   // 8: suppressLineNumbers
   if (options.suppressLineNumbers !== undefined)
     s += onOff("w:suppressLineNumbers", options.suppressLineNumbers);
 
-  // 9: pBdr
-  if (options.border) {
+  // 9: pBdr — single writer (CT_PPrBase allows exactly one). thematicBreak is
+  // sugar for a bottom single border; an explicit border wins per edge and
+  // thematicBreak fills a missing bottom.
+  if (options.border || options.thematicBreak) {
     const bParts: string[] = [];
-    if (options.border.top) bParts.push(borderStr("w:top", options.border.top));
-    if (options.border.left) bParts.push(borderStr("w:left", options.border.left));
-    if (options.border.bottom) bParts.push(borderStr("w:bottom", options.border.bottom));
-    if (options.border.right) bParts.push(borderStr("w:right", options.border.right));
-    if (options.border.between) bParts.push(borderStr("w:between", options.border.between));
-    if (options.border.bar) bParts.push(borderStr("w:bar", options.border.bar));
+    if (options.border?.top) bParts.push(borderStr("w:top", options.border.top));
+    if (options.border?.left) bParts.push(borderStr("w:left", options.border.left));
+    if (options.border?.bottom) {
+      bParts.push(borderStr("w:bottom", options.border.bottom));
+    } else if (options.thematicBreak) {
+      bParts.push(
+        borderStr("w:bottom", { color: "auto", size: 6, space: 1, style: BorderStyle.SINGLE }),
+      );
+    }
+    if (options.border?.right) bParts.push(borderStr("w:right", options.border.right));
+    if (options.border?.between) bParts.push(borderStr("w:between", options.border.between));
+    if (options.border?.bar) bParts.push(borderStr("w:bar", options.border.bar));
     if (bParts.length) s += `<w:pBdr>${bParts.join("")}</w:pBdr>`;
-  }
-
-  if (options.thematicBreak) {
-    s += `<w:pBdr>${borderStr("w:bottom", { color: "auto", size: 6, space: 1, style: BorderStyle.SINGLE })}</w:pBdr>`;
   }
 
   // 10: shd

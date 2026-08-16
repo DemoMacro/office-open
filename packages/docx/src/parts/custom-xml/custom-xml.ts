@@ -38,6 +38,8 @@ export interface CustomXmlAttributeOptions {
 export interface CustomXmlPropertiesOptions {
   /** Placeholder text */
   placeholder?: string;
+  /** XML data binding (CT_CustomXmlPr/w:dataBinding) */
+  dataBinding?: CustomXmlDataBindingOptions;
   /** Custom attributes */
   attributes?: CustomXmlAttributeOptions[];
 }

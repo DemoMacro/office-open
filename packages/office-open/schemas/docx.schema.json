@@ -3,6 +3,36 @@
   "$ref": "#/definitions/DocumentOptions",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
+    "AbstractNumberingPropertiesOptions": {
+      "additionalProperties": false,
+      "description": "w:abstractNum attributes + child elements + w15 restart (CT_AbstractNum).",
+      "properties": {
+        "multiLevelType": {
+          "description": "w:multiLevelType value (singleLevel/multilevel/hybridMultilevel).",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "nsid": {
+          "type": "string"
+        },
+        "numStyleLink": {
+          "type": "string"
+        },
+        "restartNumberingAfterBreak": {
+          "description": "w15:restartNumberingAfterBreak attribute on w:abstractNum. Omitted when undefined.",
+          "type": "boolean"
+        },
+        "styleLink": {
+          "type": "string"
+        },
+        "tmpl": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "AdjustHandle": {
       "anyOf": [
         {
@@ -3736,6 +3766,26 @@
       "required": ["element"],
       "type": "object"
     },
+    "CustomXmlDataBindingOptions": {
+      "additionalProperties": false,
+      "description": "Data binding configuration (CT_DataBinding)",
+      "properties": {
+        "prefixMappings": {
+          "description": "Namespace prefix mappings",
+          "type": "string"
+        },
+        "storeItemID": {
+          "description": "Store item ID for the data binding",
+          "type": "string"
+        },
+        "xpath": {
+          "description": "XPath expression for the data binding",
+          "type": "string"
+        }
+      },
+      "required": ["xpath", "storeItemID"],
+      "type": "object"
+    },
     "CustomXmlPropertiesOptions": {
       "additionalProperties": false,
       "description": "Custom XML properties (CT_CustomXmlProperties)",
@@ -3746,6 +3796,10 @@
             "$ref": "#/definitions/CustomXmlAttributeOptions"
           },
           "type": "array"
+        },
+        "dataBinding": {
+          "$ref": "#/definitions/CustomXmlDataBindingOptions",
+          "description": "XML data binding (CT_CustomXmlPr/w:dataBinding)"
         },
         "placeholder": {
           "description": "Placeholder text",
@@ -9311,41 +9365,14 @@
           "items": {
             "additionalProperties": false,
             "properties": {
-              "extraOptions": {
-                "additionalProperties": false,
-                "description": "Extra options for abstract numbering (w:abstractNum attributes + w15 restart).",
-                "properties": {
-                  "multiLevelType": {
-                    "description": "w:multiLevelType value (singleLevel/multilevel/hybridMultilevel).",
-                    "type": "string"
-                  },
-                  "name": {
-                    "type": "string"
-                  },
-                  "nsid": {
-                    "type": "string"
-                  },
-                  "numStyleLink": {
-                    "type": "string"
-                  },
-                  "restartNumberingAfterBreak": {
-                    "description": "w15:restartNumberingAfterBreak attribute on w:abstractNum. Omitted when undefined.",
-                    "type": "boolean"
-                  },
-                  "styleLink": {
-                    "type": "string"
-                  },
-                  "tmpl": {
-                    "type": "string"
-                  }
-                },
-                "type": "object"
-              },
               "levels": {
                 "items": {
                   "$ref": "#/definitions/LevelsOptions"
                 },
                 "type": "array"
+              },
+              "properties": {
+                "$ref": "#/definitions/AbstractNumberingPropertiesOptions"
               },
               "reference": {
                 "type": "string"
@@ -16536,7 +16563,7 @@
         },
         "characterSpacingControl": {
           "description": "Controls whether punctuation is compressed at line ends",
-          "enum": ["compressPunctuation", "doNotCompress"],
+          "enum": ["compressPunctuation", "compressPunctuationAndJapaneseKana", "doNotCompress"],
           "type": "string"
         },
         "clickAndTypeStyle": {
@@ -17003,8 +17030,21 @@
           "type": "object"
         },
         "stylePaneSortMethod": {
-          "description": "Style pane sort method",
-          "enum": ["name", "priority", "default", "font"],
+          "description": "Style pane sort method (ST_StyleSort)",
+          "enum": [
+            "name",
+            "priority",
+            "default",
+            "font",
+            "basedOn",
+            "type",
+            "0000",
+            "0001",
+            "0002",
+            "0003",
+            "0004",
+            "0005"
+          ],
           "type": "string"
         },
         "summaryLength": {
@@ -17739,7 +17779,7 @@
         },
         "lineRule": {
           "description": "How to interpret the line spacing value",
-          "enum": ["atLeast", "exactly", "exact", "auto"],
+          "enum": ["atLeast", "exact", "auto"],
           "type": "string"
         }
       },

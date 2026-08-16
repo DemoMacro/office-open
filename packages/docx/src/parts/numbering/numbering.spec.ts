@@ -218,7 +218,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
         {
           reference: "linked-list",
           levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }],
-          extraOptions: { name: "My List", styleLink: "ListStyle", numStyleLink: "NumStyle" },
+          properties: { name: "My List", styleLink: "ListStyle", numStyleLink: "NumStyle" },
         },
       ],
     });
@@ -228,10 +228,10 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     if (!el) throw new Error("parsed document has no root element");
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
 
-    const linked = opts?.config.find((c) => c.extraOptions?.name === "My List");
+    const linked = opts?.config.find((c) => c.properties?.name === "My List");
     expect(linked).toBeDefined();
-    expect(linked?.extraOptions?.styleLink).toBe("ListStyle");
-    expect(linked?.extraOptions?.numStyleLink).toBe("NumStyle");
+    expect(linked?.properties?.styleLink).toBe("ListStyle");
+    expect(linked?.properties?.numStyleLink).toBe("NumStyle");
   });
 
   it("applies per-instance lvlOverride/startOverride over the abstract level start", () => {

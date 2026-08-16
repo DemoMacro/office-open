@@ -70,7 +70,10 @@ export interface SettingsOptions {
   /** Hyphenation settings */
   hyphenation?: HyphenationOptions;
   /** Controls whether punctuation is compressed at line ends */
-  characterSpacingControl?: "compressPunctuation" | "doNotCompress";
+  characterSpacingControl?:
+    | "compressPunctuation"
+    | "compressPunctuationAndJapaneseKana"
+    | "doNotCompress";
   /** Document protection settings */
   documentProtection?: DocumentProtectionOptions;
   /** Default document view mode */
@@ -260,8 +263,20 @@ export interface SettingsOptions {
     alternateStyleNames?: boolean;
     latentStyles?: boolean;
   };
-  /** Style pane sort method */
-  stylePaneSortMethod?: "name" | "priority" | "default" | "font";
+  /** Style pane sort method (ST_StyleSort) */
+  stylePaneSortMethod?:
+    | "name"
+    | "priority"
+    | "default"
+    | "font"
+    | "basedOn"
+    | "type"
+    | "0000"
+    | "0001"
+    | "0002"
+    | "0003"
+    | "0004"
+    | "0005";
   /** Document type classification */
   documentType?: "letter" | "eMail" | "notSpecified";
   /** Do not use margins for drawing grid origin */

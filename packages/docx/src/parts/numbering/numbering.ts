@@ -31,7 +31,7 @@ export interface NumberingOptions {
   config: {
     levels: LevelsOptions[];
     reference: string;
-    extraOptions?: AbstractNumberingExtraOptions;
+    properties?: AbstractNumberingPropertiesOptions;
   }[];
   /** Numbering cleanup ID (w:numIdMacAtCleanup) */
   numIdMacAtCleanup?: number;
@@ -142,7 +142,7 @@ const DEFAULT_BULLET_LEVELS: LevelsOptions[] = [
 export class Numbering {
   private abstractNumberingData = new Map<
     string,
-    { id: number; levels: LevelsOptions[]; extraOptions?: AbstractNumberingExtraOptions }
+    { id: number; levels: LevelsOptions[]; properties?: AbstractNumberingPropertiesOptions }
   >();
   private concreteNumberingData = new Map<
     string,
@@ -186,7 +186,7 @@ export class Numbering {
       this.abstractNumberingData.set(con.reference, {
         id: this.abstractNumUniqueNumericId(),
         levels: con.levels,
-        extraOptions: con.extraOptions,
+        properties: con.properties,
       });
       this.referenceConfigMap.set(con.reference, con.levels);
     }
@@ -212,7 +212,7 @@ export class Numbering {
     }
 
     for (const an of this.abstractNumberingData.values()) {
-      parts.push(stringifyAbstractNumbering(an.id, an.levels, an.extraOptions));
+      parts.push(stringifyAbstractNumbering(an.id, an.levels, an.properties));
     }
     for (const cn of this.concreteNumberingData.values()) {
       parts.push(stringifyConcreteNumbering(cn));
@@ -269,8 +269,8 @@ export class Numbering {
 
 // ── Types ──
 
-/** Extra options for abstract numbering (w:abstractNum attributes + w15 restart). */
-interface AbstractNumberingExtraOptions {
+/** w:abstractNum attributes + child elements + w15 restart (CT_AbstractNum). */
+export interface AbstractNumberingPropertiesOptions {
   nsid?: string;
   /** w:multiLevelType value (singleLevel/multilevel/hybridMultilevel). */
   multiLevelType?: string;
@@ -297,32 +297,32 @@ const ABSTRACT_EXTRA_PROPS = [
 function stringifyAbstractNumbering(
   id: number,
   levels: LevelsOptions[],
-  extraOptions?: AbstractNumberingExtraOptions,
+  properties?: AbstractNumberingPropertiesOptions,
 ): string {
   const parts: string[] = [];
   // w15:restartNumberingAfterBreak is optional (w15 extension); only emit when
   // explicitly carried so round-trip matches sources that omit it.
   const restartAttr =
-    extraOptions?.restartNumberingAfterBreak !== undefined
-      ? ` w15:restartNumberingAfterBreak="${extraOptions.restartNumberingAfterBreak ? 1 : 0}"`
+    properties?.restartNumberingAfterBreak !== undefined
+      ? ` w15:restartNumberingAfterBreak="${properties.restartNumberingAfterBreak ? 1 : 0}"`
       : "";
   parts.push(`<w:abstractNum w:abstractNumId="${decimalNumber(id)}"${restartAttr}>`);
 
-  if (extraOptions?.nsid !== undefined) {
-    parts.push(`<w:nsid w:val="${extraOptions.nsid}"/>`);
+  if (properties?.nsid !== undefined) {
+    parts.push(`<w:nsid w:val="${properties.nsid}"/>`);
   }
-  parts.push(`<w:multiLevelType w:val="${extraOptions?.multiLevelType ?? "hybridMultilevel"}"/>`);
-  if (extraOptions?.tmpl !== undefined) {
-    parts.push(`<w:tmpl w:val="${extraOptions.tmpl}"/>`);
+  parts.push(`<w:multiLevelType w:val="${properties?.multiLevelType ?? "hybridMultilevel"}"/>`);
+  if (properties?.tmpl !== undefined) {
+    parts.push(`<w:tmpl w:val="${properties.tmpl}"/>`);
   }
-  if (extraOptions?.name !== undefined) {
-    parts.push(`<w:name w:val="${extraOptions.name}"/>`);
+  if (properties?.name !== undefined) {
+    parts.push(`<w:name w:val="${properties.name}"/>`);
   }
-  if (extraOptions?.styleLink !== undefined) {
-    parts.push(`<w:styleLink w:val="${extraOptions.styleLink}"/>`);
+  if (properties?.styleLink !== undefined) {
+    parts.push(`<w:styleLink w:val="${properties.styleLink}"/>`);
   }
-  if (extraOptions?.numStyleLink !== undefined) {
-    parts.push(`<w:numStyleLink w:val="${extraOptions.numStyleLink}"/>`);
+  if (properties?.numStyleLink !== undefined) {
+    parts.push(`<w:numStyleLink w:val="${properties.numStyleLink}"/>`);
   }
 
   for (const level of levels) {
@@ -471,14 +471,14 @@ export function parseNumberingDefinitions(
     }
 
     if (levels.length > 0) {
-      const extraOptions: AbstractNumberingExtraOptions = {};
+      const properties: AbstractNumberingPropertiesOptions = {};
       for (const [tag, key] of ABSTRACT_EXTRA_PROPS) {
         const childEl = findChild(abstractEl, tag);
         const v = childEl ? attr(childEl, "w:val") : undefined;
-        if (v) extraOptions[key] = v;
+        if (v) properties[key] = v;
       }
       const restartVal = attrBool(abstractEl, "w15:restartNumberingAfterBreak");
-      if (restartVal !== undefined) extraOptions.restartNumberingAfterBreak = restartVal;
+      if (restartVal !== undefined) properties.restartNumberingAfterBreak = restartVal;
       // Apply per-instance level start overrides. The abstract level defines
       // the default start; a concrete num may re-pin it via lvlOverride, and
       // dropping it silently reverts the list's restart numbering.
@@ -493,7 +493,7 @@ export function parseNumberingDefinitions(
         const level = levels.find((l) => l.level === ilvl);
         if (level) level.start = val;
       }
-      configs.push({ reference: `list_${numId}`, levels, extraOptions });
+      configs.push({ reference: `list_${numId}`, levels, properties });
     }
   }
 

@@ -501,6 +501,14 @@ export function parseCustomXmlProperties(el: Element): CustomXmlPropertiesOption
     const val = attr(placeholder, "w:val");
     if (val) opts.placeholder = val;
   }
+  const dataBinding = findChild(el, "w:dataBinding");
+  if (dataBinding) {
+    opts.dataBinding = {
+      xpath: attr(dataBinding, "w:xpath") ?? "",
+      storeItemID: attr(dataBinding, "w:storeItemID") ?? "",
+      prefixMappings: attr(dataBinding, "w:prefixMappings"),
+    };
+  }
   const attributes: { name: string; val: string; uri?: string }[] = [];
   for (const child of el.elements ?? []) {
     if (child.name !== "w:attr") continue;
@@ -608,6 +616,16 @@ function buildCustomXmlPropertiesXml(pr: CustomXmlPropertiesOptions): string {
   const parts: string[] = ["<w:customXmlPr>"];
   if (pr.placeholder !== undefined) {
     parts.push(`<w:placeholder w:val="${escapeXml(pr.placeholder)}"/>`);
+  }
+  if (pr.dataBinding) {
+    const dbParts: string[] = [
+      `w:xpath="${escapeXml(pr.dataBinding.xpath)}"`,
+      `w:storeItemID="${escapeXml(pr.dataBinding.storeItemID)}"`,
+    ];
+    if (pr.dataBinding.prefixMappings !== undefined) {
+      dbParts.push(`w:prefixMappings="${escapeXml(pr.dataBinding.prefixMappings)}"`);
+    }
+    parts.push(`<w:dataBinding ${dbParts.join(" ")}/>`);
   }
   if (pr.attributes) {
     for (const attr of pr.attributes) {

@@ -20,9 +20,7 @@ import type { PositiveUniversalMeasure } from "@office-open/core";
 export const LineRuleType = {
   /** Line spacing is at least the specified value */
   AT_LEAST: "atLeast",
-  /** Line spacing is exactly the specified value */
-  EXACTLY: "exactly",
-  /** Line spacing is exactly the specified value (alias for EXACTLY) */
+  /** Line spacing is exactly the specified value (ST_LineSpacingRule "exact") */
   EXACT: "exact",
   /** Line spacing is automatically determined based on content */
   AUTO: "auto",
