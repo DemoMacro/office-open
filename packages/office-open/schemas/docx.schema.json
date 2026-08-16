@@ -307,35 +307,7 @@
         "data": {
           "anyOf": [
             {
-              "additionalProperties": {
-                "type": "number"
-              },
-              "properties": {
-                "BYTES_PER_ELEMENT": {
-                  "type": "number"
-                },
-                "buffer": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "byteLength": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["byteLength"],
-                  "type": "object"
-                },
-                "byteLength": {
-                  "type": "number"
-                },
-                "byteOffset": {
-                  "type": "number"
-                },
-                "length": {
-                  "type": "number"
-                }
-              },
-              "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-              "type": "object"
+              "$ref": "#/definitions/DataType"
             },
             {
               "type": "string"
@@ -6455,35 +6427,7 @@
           "additionalProperties": false,
           "properties": {
             "data": {
-              "additionalProperties": {
-                "type": "number"
-              },
-              "properties": {
-                "BYTES_PER_ELEMENT": {
-                  "type": "number"
-                },
-                "buffer": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "byteLength": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["byteLength"],
-                  "type": "object"
-                },
-                "byteLength": {
-                  "type": "number"
-                },
-                "byteOffset": {
-                  "type": "number"
-                },
-                "length": {
-                  "type": "number"
-                }
-              },
-              "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-              "type": "object"
+              "$ref": "#/definitions/DataType"
             },
             "fileName": {
               "type": "string"
@@ -6523,70 +6467,14 @@
           "additionalProperties": false,
           "properties": {
             "data": {
-              "additionalProperties": {
-                "type": "number"
-              },
-              "properties": {
-                "BYTES_PER_ELEMENT": {
-                  "type": "number"
-                },
-                "buffer": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "byteLength": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["byteLength"],
-                  "type": "object"
-                },
-                "byteLength": {
-                  "type": "number"
-                },
-                "byteOffset": {
-                  "type": "number"
-                },
-                "length": {
-                  "type": "number"
-                }
-              },
-              "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-              "type": "object"
+              "$ref": "#/definitions/DataType"
             },
             "fallback": {
               "additionalProperties": false,
               "description": "Fallback image for Word processors that do not support SVG. This ensures the document displays correctly in all viewers.",
               "properties": {
                 "data": {
-                  "additionalProperties": {
-                    "type": "number"
-                  },
-                  "properties": {
-                    "BYTES_PER_ELEMENT": {
-                      "type": "number"
-                    },
-                    "buffer": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "byteLength": {
-                          "type": "number"
-                        }
-                      },
-                      "required": ["byteLength"],
-                      "type": "object"
-                    },
-                    "byteLength": {
-                      "type": "number"
-                    },
-                    "byteOffset": {
-                      "type": "number"
-                    },
-                    "length": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-                  "type": "object"
+                  "$ref": "#/definitions/DataType"
                 },
                 "fileName": {
                   "type": "string"
@@ -9797,35 +9685,7 @@
         "data": {
           "anyOf": [
             {
-              "additionalProperties": {
-                "type": "number"
-              },
-              "properties": {
-                "BYTES_PER_ELEMENT": {
-                  "type": "number"
-                },
-                "buffer": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "byteLength": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["byteLength"],
-                  "type": "object"
-                },
-                "byteLength": {
-                  "type": "number"
-                },
-                "byteOffset": {
-                  "type": "number"
-                },
-                "length": {
-                  "type": "number"
-                }
-              },
-              "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-              "type": "object"
+              "$ref": "#/definitions/DataType"
             },
             {
               "type": "string"
@@ -9864,35 +9724,7 @@
         "data": {
           "anyOf": [
             {
-              "additionalProperties": {
-                "type": "number"
-              },
-              "properties": {
-                "BYTES_PER_ELEMENT": {
-                  "type": "number"
-                },
-                "buffer": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "byteLength": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["byteLength"],
-                  "type": "object"
-                },
-                "byteLength": {
-                  "type": "number"
-                },
-                "byteOffset": {
-                  "type": "number"
-                },
-                "length": {
-                  "type": "number"
-                }
-              },
-              "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-              "type": "object"
+              "$ref": "#/definitions/DataType"
             },
             {
               "type": "string"
@@ -9918,35 +9750,7 @@
         "data": {
           "anyOf": [
             {
-              "additionalProperties": {
-                "type": "number"
-              },
-              "properties": {
-                "BYTES_PER_ELEMENT": {
-                  "type": "number"
-                },
-                "buffer": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "byteLength": {
-                      "type": "number"
-                    }
-                  },
-                  "required": ["byteLength"],
-                  "type": "object"
-                },
-                "byteLength": {
-                  "type": "number"
-                },
-                "byteOffset": {
-                  "type": "number"
-                },
-                "length": {
-                  "type": "number"
-                }
-              },
-              "required": ["BYTES_PER_ELEMENT", "buffer", "byteLength", "byteOffset", "length"],
-              "type": "object"
+              "$ref": "#/definitions/DataType"
             },
             {
               "type": "string"

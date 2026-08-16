@@ -167,6 +167,18 @@ function postProcess(schema: Record<string, unknown>) {
     // resolve as a reference host. Only the root envelope carries an $id.
     delete obj.$id;
 
+    // P4b: bare `Uint8Array` fields (e.g. BaseMediaEntry["data"]) are inlined
+    // by tsj as the typed-array runtime shape (BYTES_PER_ELEMENT/buffer/…).
+    // The JSON-representable inputs for such a field are what DataType
+    // describes, so replace the whole node with a DataType reference.
+    // BYTES_PER_ELEMENT alongside buffer is the typed-array fingerprint.
+    const props = obj.properties as Record<string, unknown> | undefined;
+    if (props && typeof props === "object" && "BYTES_PER_ELEMENT" in props && "buffer" in props) {
+      for (const key of Object.keys(obj)) delete obj[key];
+      Object.assign(obj, { $ref: "#/definitions/DataType" });
+      return;
+    }
+
     // P2: anyOf whose branches each require exactly one property — the
     // tagged-union shape. Title each branch after its required tag.
     if (Array.isArray(obj.anyOf)) {
@@ -302,6 +314,9 @@ function generateFormat(config: FormatConfig): FormatResult {
   assertRefsResolve(schema, new Set(Object.keys(definitions)));
 
   const metrics = postProcess(schema);
+  // P0 again after post-processing: P4b rewrites nodes into DataType refs,
+  // and those must resolve just like the generator-produced ones.
+  assertRefsResolve(schema, new Set(Object.keys(definitions as Record<string, unknown>)));
 
   // P3: envelope — consumer-facing only; no repo-workflow wording here
   schema.$schema = "http://json-schema.org/draft-07/schema#";
