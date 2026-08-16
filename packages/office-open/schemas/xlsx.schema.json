@@ -1416,12 +1416,14 @@
     },
     "CellFillOptions": {
       "additionalProperties": false,
+      "description": "Worksheet fill description. `color` alone is a solid fill; `patternType` + `bgColor` describe a pattern fill; `stops` + `gradientType` describe a gradient fill.",
       "properties": {
         "bgColor": {
           "description": "Background color for pattern fill (CT_PatternFill/bgColor)",
           "type": "string"
         },
         "color": {
+          "description": "Foreground color hex without alpha, e.g. \"C6EFCE\"",
           "type": "string"
         },
         "colorIndexed": {
@@ -3047,7 +3049,7 @@
     },
     "CustomCellStyleOptions": {
       "additionalProperties": false,
-      "description": "Custom cell style (CT_CellStyle)",
+      "description": "Custom cell style (CT_CellStyle) — a named reference to a cell-style XF.",
       "properties": {
         "builtinId": {
           "description": "Built-in ID",
@@ -3066,7 +3068,7 @@
           "type": "string"
         },
         "xfId": {
-          "description": "XF index to apply",
+          "description": "Index into cellStyleXfs; the referenced entry holds the format.",
           "type": "number"
         }
       },
@@ -4283,7 +4285,7 @@
     },
     "DxfOptions": {
       "additionalProperties": false,
-      "description": "Differential format — used by conditional formatting to specify what changes.",
+      "description": "Differential format — used by conditional formatting to specify what changes. Example: `{ font: { color: \"9C0006\", bold: true }, fill: { color: \"C6EFCE\" } }`.",
       "properties": {
         "border": {
           "$ref": "#/definitions/BorderSideOptions"

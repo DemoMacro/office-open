@@ -45,8 +45,14 @@ export interface CellGradientStopOptions {
   color: string;
 }
 
+/**
+ * Worksheet fill description. `color` alone is a solid fill; `patternType` +
+ * `bgColor` describe a pattern fill; `stops` + `gradientType` describe a
+ * gradient fill.
+ */
 export interface CellFillOptions {
   type?: "solid" | "pattern" | "gradient";
+  /** Foreground color hex without alpha, e.g. "C6EFCE" */
   color?: string;
   patternType?: string;
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
@@ -170,7 +176,10 @@ export interface ColorsOptions {
   mruColors?: string[];
 }
 
-/** Differential format — used by conditional formatting to specify what changes. */
+/**
+ * Differential format — used by conditional formatting to specify what changes.
+ * Example: `{ font: { color: "9C0006", bold: true }, fill: { color: "C6EFCE" } }`.
+ */
 export interface DxfOptions {
   font?: FontOptions;
   fill?: CellFillOptions;
@@ -241,11 +250,11 @@ export interface CustomTableStyleOptions {
   elements?: TableStyleElementOptions[];
 }
 
-/** Custom cell style (CT_CellStyle) */
+/** Custom cell style (CT_CellStyle) — a named reference to a cell-style XF. */
 export interface CustomCellStyleOptions {
   /** Style name */
   name: string;
-  /** XF index to apply */
+  /** Index into cellStyleXfs; the referenced entry holds the format. */
   xfId: number;
   /** Built-in ID */
   builtinId?: number;
