@@ -124,10 +124,12 @@ export interface RichTextOptions {
 export interface CellOptions {
   value?: string | number | boolean | Date | RichTextOptions | null;
   reference?: string;
-  /** Direct style index (for pre-resolved styles) */
-  styleIndex?: number;
-  /** Style options (resolved to index at compile time) */
-  style?: StyleOptions;
+  /**
+   * Cell style: either style options (resolved to an index at compile time)
+   * or, as a round-trip fallback, the raw styles.xml cellXfs index carried
+   * from a source workbook whose style table could not be resolved.
+   */
+  style?: StyleOptions | number;
   /**
    * Formula options. When set, value becomes the cached result. A bare string
    * is shorthand for `{ formula: "..." }`.

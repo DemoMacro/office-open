@@ -253,11 +253,10 @@ export function parseSheetDataRows(
 
         if (styleIdx !== undefined) {
           // Resolve to a concrete StyleOptions so re-stringify registers it in
-          // the fresh Styles table (whose indices may differ). Keep styleIndex
-          // as a fallback when the styles table cannot be resolved.
+          // the fresh Styles table (whose indices may differ). Fall back to the
+          // raw index when the styles table cannot be resolved.
           const resolved = ctx ? ctx.resolveStyle(styleIdx) : undefined;
-          if (resolved) cell.style = resolved;
-          else cell.styleIndex = styleIdx;
+          cell.style = resolved ?? styleIdx;
         }
 
         let cellEnd = cellTagEnd + 1;

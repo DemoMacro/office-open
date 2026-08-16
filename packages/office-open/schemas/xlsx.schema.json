@@ -1470,12 +1470,15 @@
           "type": "string"
         },
         "style": {
-          "$ref": "#/definitions/StyleOptions",
-          "description": "Style options (resolved to index at compile time)"
-        },
-        "styleIndex": {
-          "description": "Direct style index (for pre-resolved styles)",
-          "type": "number"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/StyleOptions"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "Cell style: either style options (resolved to an index at compile time) or, as a round-trip fallback, the raw styles.xml cellXfs index carried from a source workbook whose style table could not be resolved."
         },
         "value": {
           "anyOf": [

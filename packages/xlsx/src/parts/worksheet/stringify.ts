@@ -1013,10 +1013,11 @@ function buildCellString(
   // the dynamic-shape objects were a dominant Scavenge source.
   const rAttr = ` r="${ref}"`;
   let sAttr = "";
-  if (cell.style !== undefined && styles) {
+  if (typeof cell.style === "number") {
+    // Round-trip fallback: emit the carried cellXfs index verbatim.
+    sAttr = ` s="${cell.style}"`;
+  } else if (cell.style !== undefined && styles) {
     sAttr = ` s="${styles.register(cell.style)}"`;
-  } else if (cell.styleIndex !== undefined) {
-    sAttr = ` s="${cell.styleIndex}"`;
   }
   let mdAttr = "";
   if (cell.cellMetadataId !== undefined) mdAttr += ` cm="${cell.cellMetadataId}"`;
@@ -1050,7 +1051,7 @@ function buildCellString(
   }
 
   if (value === null || value === undefined) {
-    if (cell.styleIndex !== undefined) {
+    if (cell.style !== undefined) {
       return `<c${rAttr}${sAttr}${mdAttr}/>`;
     }
     return "";

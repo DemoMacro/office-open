@@ -1,5 +1,6 @@
 import { unzipSync, zipSync } from "@office-open/core";
 import type { WorkbookOptions } from "@parts/file";
+import type { StyleOptions } from "@parts/styles";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook } from "./generate";
@@ -50,8 +51,8 @@ describe("parseWorkbook round-trip", () => {
 
   it("resolves cell.style so a fresh Styles table keeps the right formatting", async () => {
     // Two cells with distinct styles. After parse→regenerate the Styles table
-    // is rebuilt from scratch (indices may differ), so cell.styleIndex alone
-    // would point at the wrong xf. The fix resolves cell.style instead.
+    // is rebuilt from scratch (indices may differ), so a carried raw index
+    // alone would point at the wrong xf. The fix resolves style options.
     const opts: WorkbookOptions = {
       worksheets: [
         {
@@ -84,14 +85,14 @@ describe("parseWorkbook round-trip", () => {
     // Resolved style objects must be present (not just raw indices).
     expect(a1?.style).toBeDefined();
     expect(a2?.style).toBeDefined();
-    expect(a1!.style!.font?.bold).toBe(true);
-    expect(a2!.style!.font?.italic).toBe(true);
+    expect((a1!.style as StyleOptions).font?.bold).toBe(true);
+    expect((a2!.style as StyleOptions).font?.italic).toBe(true);
 
     // And the formatting survives a second generate→parse cycle intact.
     const reparsed = await roundTrip(parsed);
     const r2 = reparsed.worksheets![0]!.rows![0]!.cells!;
-    expect(r2[0]!.style!.font?.bold).toBe(true);
-    expect(r2[1]!.style!.font?.italic).toBe(true);
+    expect((r2[0]!.style as StyleOptions).font?.bold).toBe(true);
+    expect((r2[1]!.style as StyleOptions).font?.italic).toBe(true);
   });
 
   it("round-trips dxfs from options through the workbook", async () => {
