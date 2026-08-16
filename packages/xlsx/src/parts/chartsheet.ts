@@ -9,27 +9,42 @@
  */
 
 import { parseOnOff } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
+import { derivePasswordHash } from "@office-open/core";
+import type { PositiveUniversalMeasure } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attrs, attr, attrNum, escapeXml, findChild, textOf } from "@office-open/xml";
+import { attrs, attr, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
+import { hashPassword } from "@util/index";
+
+import { parseHeaderFooterEl } from "./worksheet/descriptor";
+import { stringifyHeaderFooterXml } from "./worksheet/stringify";
+import type { HeaderFooterOptions, PageMarginsOptions, PageOrientation } from "./worksheet/types";
 
 // ── Types ──
 
-export interface ChartsheetPageMargins {
-  left?: number | UniversalMeasure;
-  right?: number | UniversalMeasure;
-  top?: number | UniversalMeasure;
-  bottom?: number | UniversalMeasure;
-  header?: number | UniversalMeasure;
-  footer?: number | UniversalMeasure;
-}
-
+/**
+ * Chartsheet page setup (CT_CsPageSetup) — the chartsheet-specific variant of
+ * pageSetup: paper size/orientation plus printer flags, no scale/fit fields.
+ */
 export interface ChartsheetPageSetup {
   /** Paper size (1=Letter, 9=A4, etc.) */
   paperSize?: number;
-  /** Orientation ("default" | "portrait" | "landscape") */
-  orientation?: string;
+  /** Paper height (ST_PositiveUniversalMeasure) */
+  paperHeight?: number | PositiveUniversalMeasure;
+  /** Paper width (ST_PositiveUniversalMeasure) */
+  paperWidth?: number | PositiveUniversalMeasure;
+  /** First page number */
+  firstPageNumber?: number;
+  /** Orientation (ST_Orientation) */
+  orientation?: PageOrientation;
+  /** Use printer defaults */
+  usePrinterDefaults?: boolean;
+  /** Black and white printing */
+  blackAndWhite?: boolean;
+  /** Draft quality printing */
+  draft?: boolean;
+  /** Use firstPageNumber as the starting page number */
+  useFirstPageNumber?: boolean;
   /** Horizontal DPI */
   horizontalDpi?: number;
   /** Vertical DPI */
@@ -39,21 +54,24 @@ export interface ChartsheetPageSetup {
 }
 
 export interface ChartsheetProtectionOptions {
+  /**
+   * Plain-text password — legacy Excel hash is computed automatically on
+   * stringify. Authoring-only: not carried back by parse (see
+   * SheetProtectionOptions); use the algorithmName quadruplet for round-trip.
+   */
+  password?: string;
+  /** Modern encryption: algorithm name (e.g. "SHA-512") */
+  algorithmName?: string;
+  /** Modern encryption: base64-encoded hash value */
+  hashValue?: string;
+  /** Modern encryption: base64-encoded salt value */
+  saltValue?: string;
+  /** Modern encryption: spin count for hash iteration */
+  spinCount?: number;
   /** Content is protected */
   content?: boolean;
   /** Objects are protected */
   objects?: boolean;
-}
-
-export interface ChartsheetHeaderFooterOptions {
-  /** Different first page header/footer */
-  differentFirst?: boolean;
-  /** Different odd/even page headers/footers */
-  differentOddEven?: boolean;
-  /** Odd page header */
-  oddHeader?: string;
-  /** Odd page footer */
-  oddFooter?: string;
 }
 
 export interface ChartsheetOptions {
@@ -62,11 +80,11 @@ export interface ChartsheetOptions {
   /** Tab color (hex ARGB, e.g. "FF4472C4") */
   tabColor?: string;
   /** Page margins */
-  pageMargins?: ChartsheetPageMargins;
+  pageMargins?: PageMarginsOptions;
   /** Page setup */
   pageSetup?: ChartsheetPageSetup;
   /** Header/footer */
-  headerFooter?: ChartsheetHeaderFooterOptions;
+  headerFooter?: HeaderFooterOptions;
   /** Sheet protection */
   sheetProtection?: ChartsheetProtectionOptions;
   /** Published to server (CT_ChartsheetPr `@published`) */
@@ -120,14 +138,24 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     if (opts.zoomToFit) svAttrs.push('zoomToFit="1"');
     p.push(`<sheetViews><sheetView ${svAttrs.join(" ")}/></sheetViews>`);
 
-    // sheetProtection (optional)
+    // sheetProtection (optional) — CT_ChartsheetProtection
     if (opts.sheetProtection) {
       const sp = opts.sheetProtection;
-      const spAttrs: string[] = [];
-      if (sp.content) spAttrs.push(` content="1"`);
-      if (sp.objects) spAttrs.push(` objects="1"`);
-      if (spAttrs.length > 0) {
-        p.push(`<sheetProtection${spAttrs.join("")}/>`);
+      const spAttrs: Record<string, string | number | boolean | undefined> = {};
+      if (sp.password) spAttrs.password = hashPassword(sp.password);
+      let derived: ReturnType<typeof derivePasswordHash> | undefined;
+      if (sp.password !== undefined && sp.hashValue === undefined) {
+        derived = derivePasswordHash(sp.password);
+      }
+      spAttrs.algorithmName = sp.algorithmName ?? derived?.algorithmName;
+      spAttrs.hashValue = sp.hashValue ?? derived?.hashValue;
+      spAttrs.saltValue = sp.saltValue ?? derived?.saltValue;
+      if (sp.spinCount !== undefined) spAttrs.spinCount = sp.spinCount;
+      else if (derived) spAttrs.spinCount = derived.spinCount;
+      if (sp.content) spAttrs.content = 1;
+      if (sp.objects) spAttrs.objects = 1;
+      if (Object.keys(spAttrs).length > 0) {
+        p.push(`<sheetProtection${attrs(spAttrs)}/>`);
       }
     }
 
@@ -146,30 +174,29 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       );
     }
 
-    // pageSetup (optional)
+    // pageSetup (optional) — CT_CsPageSetup
     if (opts.pageSetup) {
       const ps = opts.pageSetup;
-      p.push(
-        `<pageSetup${attrs({
-          paperSize: ps.paperSize,
-          orientation: ps.orientation,
-          horizontalDpi: ps.horizontalDpi,
-          verticalDpi: ps.verticalDpi,
-          copies: ps.copies,
-        })}/>`,
-      );
+      const psAttrs: Record<string, string | number | boolean | undefined> = {};
+      if (ps.paperSize !== undefined) psAttrs.paperSize = ps.paperSize;
+      if (ps.paperHeight !== undefined) psAttrs.paperHeight = ps.paperHeight;
+      if (ps.paperWidth !== undefined) psAttrs.paperWidth = ps.paperWidth;
+      if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
+      if (ps.orientation && ps.orientation !== "default") psAttrs.orientation = ps.orientation;
+      if (ps.usePrinterDefaults) psAttrs.usePrinterDefaults = 1;
+      if (ps.blackAndWhite) psAttrs.blackAndWhite = 1;
+      if (ps.draft) psAttrs.draft = 1;
+      if (ps.useFirstPageNumber) psAttrs.useFirstPageNumber = 1;
+      if (ps.horizontalDpi !== undefined) psAttrs.horizontalDpi = ps.horizontalDpi;
+      if (ps.verticalDpi !== undefined) psAttrs.verticalDpi = ps.verticalDpi;
+      if (ps.copies !== undefined) psAttrs.copies = ps.copies;
+      p.push(`<pageSetup${attrs(psAttrs)}/>`);
     }
 
-    // headerFooter (optional)
+    // headerFooter (optional) — CT_HeaderFooter, shared with worksheet
     if (opts.headerFooter) {
-      const hf = opts.headerFooter;
-      const hfParts: string[] = [];
-      if (hf.differentFirst) hfParts.push(` differentFirst="1"`);
-      if (hf.differentOddEven) hfParts.push(` differentOddEven="1"`);
-      const hfContent: string[] = [];
-      if (hf.oddHeader) hfContent.push(`<oddHeader>${escapeXml(hf.oddHeader)}</oddHeader>`);
-      if (hf.oddFooter) hfContent.push(`<oddFooter>${escapeXml(hf.oddFooter)}</oddFooter>`);
-      p.push(`<headerFooter${hfParts.join("")}>${hfContent.join("")}</headerFooter>`);
+      const hfXml = stringifyHeaderFooterXml(opts.headerFooter);
+      if (hfXml) p.push(hfXml);
     }
 
     // drawing (required)
@@ -203,10 +230,19 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (sv && parseOnOff(attr(sv, "zoomToFit"))) result.zoomToFit = true;
     }
 
-    // sheetProtection
+    // sheetProtection — CT_ChartsheetProtection
     const sheetProtectionEl = findChild(el, "sheetProtection");
     if (sheetProtectionEl) {
       const sp: Partial<ChartsheetProtectionOptions> = {};
+      // @password (legacy hash) not read back — see parseSheetProtectionEl note.
+      const an = attr(sheetProtectionEl, "algorithmName");
+      if (an) sp.algorithmName = an;
+      const hv = attr(sheetProtectionEl, "hashValue");
+      if (hv) sp.hashValue = hv;
+      const sv = attr(sheetProtectionEl, "saltValue");
+      if (sv) sp.saltValue = sv;
+      const sc = attrNum(sheetProtectionEl, "spinCount");
+      if (sc !== undefined) sp.spinCount = sc;
       if (parseOnOff(attr(sheetProtectionEl, "content"))) sp.content = true;
       if (parseOnOff(attr(sheetProtectionEl, "objects"))) sp.objects = true;
       result.sheetProtection = sp;
@@ -215,7 +251,7 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     // pageMargins
     const pageMarginsEl = findChild(el, "pageMargins");
     if (pageMarginsEl) {
-      const pm: Partial<ChartsheetPageMargins> = {};
+      const pm: Partial<PageMarginsOptions> = {};
       const ml = attrNum(pageMarginsEl, "left");
       if (ml !== undefined) pm.left = ml;
       const mr = attrNum(pageMarginsEl, "right");
@@ -231,14 +267,24 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       result.pageMargins = pm;
     }
 
-    // pageSetup
+    // pageSetup — CT_CsPageSetup
     const pageSetupEl = findChild(el, "pageSetup");
     if (pageSetupEl) {
       const ps: Partial<ChartsheetPageSetup> = {};
       const pz = attrNum(pageSetupEl, "paperSize");
       if (pz !== undefined) ps.paperSize = pz;
+      const ph = attrMeasure(pageSetupEl, "paperHeight");
+      if (ph !== undefined) ps.paperHeight = ph as number | PositiveUniversalMeasure;
+      const pw = attrMeasure(pageSetupEl, "paperWidth");
+      if (pw !== undefined) ps.paperWidth = pw as number | PositiveUniversalMeasure;
+      const fpn = attrNum(pageSetupEl, "firstPageNumber");
+      if (fpn !== undefined) ps.firstPageNumber = fpn;
       const orient = attr(pageSetupEl, "orientation");
-      if (orient) ps.orientation = orient;
+      if (orient) ps.orientation = orient as PageOrientation;
+      if (parseOnOff(attr(pageSetupEl, "usePrinterDefaults"))) ps.usePrinterDefaults = true;
+      if (parseOnOff(attr(pageSetupEl, "blackAndWhite"))) ps.blackAndWhite = true;
+      if (parseOnOff(attr(pageSetupEl, "draft"))) ps.draft = true;
+      if (parseOnOff(attr(pageSetupEl, "useFirstPageNumber"))) ps.useFirstPageNumber = true;
       const hdpi = attrNum(pageSetupEl, "horizontalDpi");
       if (hdpi !== undefined) ps.horizontalDpi = hdpi;
       const vdpi = attrNum(pageSetupEl, "verticalDpi");
@@ -248,17 +294,10 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       result.pageSetup = ps;
     }
 
-    // headerFooter
+    // headerFooter — CT_HeaderFooter, shared with worksheet
     const headerFooterEl = findChild(el, "headerFooter");
     if (headerFooterEl) {
-      const hf: Partial<ChartsheetHeaderFooterOptions> = {};
-      if (parseOnOff(attr(headerFooterEl, "differentFirst"))) hf.differentFirst = true;
-      if (parseOnOff(attr(headerFooterEl, "differentOddEven"))) hf.differentOddEven = true;
-      const oh = findChild(headerFooterEl, "oddHeader");
-      if (oh) hf.oddHeader = textOf(oh);
-      const of2 = findChild(headerFooterEl, "oddFooter");
-      if (of2) hf.oddFooter = textOf(of2);
-      result.headerFooter = hf;
+      result.headerFooter = parseHeaderFooterEl(headerFooterEl);
     }
 
     return result as ChartsheetDescriptorOptions;

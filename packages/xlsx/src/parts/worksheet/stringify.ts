@@ -20,9 +20,12 @@ import type {
   CellOptions,
   CfvoOptions,
   FormulaOptions,
+  HeaderFooterOptions,
+  PageSetupOptions,
   PivotSelectionOptions,
   RowOptions,
   SelectionOptions,
+  SheetProtectionOptions,
   SheetViewOptions,
   WorksheetContext,
   WorksheetOptions,
@@ -340,36 +343,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 
   // Sheet protection (after sheetData, before protectedRanges per XSD sequence)
   if (opts.protection) {
-    const prot = opts.protection;
-    const protAttrs: Record<string, string | number | boolean | undefined> = {};
-    if (prot.password) protAttrs.password = hashPassword(prot.password);
-    // Auto-derive modern hash when password provided without explicit hashValue
-    let derived: ReturnType<typeof derivePasswordHash> | undefined;
-    if (prot.password !== undefined && prot.hashValue === undefined) {
-      derived = derivePasswordHash(prot.password);
-    }
-    protAttrs.algorithmName = prot.algorithmName ?? derived?.algorithmName;
-    protAttrs.hashValue = prot.hashValue ?? derived?.hashValue;
-    protAttrs.saltValue = prot.saltValue ?? derived?.saltValue;
-    if (prot.spinCount !== undefined) protAttrs.spinCount = prot.spinCount;
-    else if (derived) protAttrs.spinCount = derived.spinCount;
-    if (prot.sheet) protAttrs.sheet = 1;
-    if (prot.objects) protAttrs.objects = 1;
-    if (prot.scenarios) protAttrs.scenarios = 1;
-    if (prot.formatCells === false) protAttrs.formatCells = 0;
-    if (prot.formatColumns === false) protAttrs.formatColumns = 0;
-    if (prot.formatRows === false) protAttrs.formatRows = 0;
-    if (prot.insertColumns === false) protAttrs.insertColumns = 0;
-    if (prot.insertRows === false) protAttrs.insertRows = 0;
-    if (prot.insertHyperlinks === false) protAttrs.insertHyperlinks = 0;
-    if (prot.deleteColumns === false) protAttrs.deleteColumns = 0;
-    if (prot.deleteRows === false) protAttrs.deleteRows = 0;
-    if (prot.selectLockedCells) protAttrs.selectLockedCells = 1;
-    if (prot.sort === false) protAttrs.sort = 0;
-    if (prot.autoFilter === false) protAttrs.autoFilter = 0;
-    if (prot.pivotTables === false) protAttrs.pivotTables = 0;
-    if (prot.selectUnlockedCells) protAttrs.selectUnlockedCells = 1;
-    p.push(selfCloseElement("sheetProtection", attrs(protAttrs)));
+    p.push(stringifySheetProtectionXml(opts.protection));
   }
 
   // Protected ranges (after sheetProtection per XSD sequence)
@@ -633,46 +607,13 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 
   // Page setup
   if (opts.pageSetup) {
-    const ps = opts.pageSetup;
-    const psAttrs: Record<string, string | number | boolean | undefined> = {};
-    if (ps.paperSize !== undefined) psAttrs.paperSize = ps.paperSize;
-    if (ps.orientation && ps.orientation !== "default") psAttrs.orientation = ps.orientation;
-    if (ps.scale !== undefined) psAttrs.scale = ps.scale;
-    if (ps.fitToWidth !== undefined) psAttrs.fitToWidth = ps.fitToWidth;
-    if (ps.fitToHeight !== undefined) psAttrs.fitToHeight = ps.fitToHeight;
-    if (ps.pageOrder && ps.pageOrder !== "downThenOver") psAttrs.pageOrder = ps.pageOrder;
-    if (ps.useFirstPageNumber) psAttrs.useFirstPageNumber = 1;
-    if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
-    if (ps.paperHeight !== undefined) psAttrs.paperHeight = ps.paperHeight;
-    if (ps.paperWidth !== undefined) psAttrs.paperWidth = ps.paperWidth;
-    if (ps.usePrinterDefaults) psAttrs.usePrinterDefaults = 1;
-    if (ps.blackAndWhite) psAttrs.blackAndWhite = 1;
-    if (ps.draft) psAttrs.draft = 1;
-    if (ps.cellComments && ps.cellComments !== "none") psAttrs.cellComments = ps.cellComments;
-    if (ps.errors && ps.errors !== "displayed") psAttrs.errors = ps.errors;
-    p.push(selfCloseElement("pageSetup", attrs(psAttrs)));
+    p.push(stringifyPageSetupXml(opts.pageSetup));
   }
 
   // Header/footer
   if (opts.headerFooter) {
-    const hf = opts.headerFooter;
-    const hfAttrs: Record<string, string | number | boolean | undefined> = {};
-    if (hf.differentOddEven) hfAttrs.differentOddEven = 1;
-    if (hf.differentFirst) hfAttrs.differentFirst = 1;
-    if (hf.scaleWithDoc === false) hfAttrs.scaleWithDoc = 0;
-    if (hf.alignWithMargins === false) hfAttrs.alignWithMargins = 0;
-    const inner: string[] = [];
-    if (hf.oddHeader) inner.push(`<oddHeader>${escapeXml(hf.oddHeader)}</oddHeader>`);
-    if (hf.oddFooter) inner.push(`<oddFooter>${escapeXml(hf.oddFooter)}</oddFooter>`);
-    if (hf.evenHeader) inner.push(`<evenHeader>${escapeXml(hf.evenHeader)}</evenHeader>`);
-    if (hf.evenFooter) inner.push(`<evenFooter>${escapeXml(hf.evenFooter)}</evenFooter>`);
-    if (hf.firstHeader) inner.push(`<firstHeader>${escapeXml(hf.firstHeader)}</firstHeader>`);
-    if (hf.firstFooter) inner.push(`<firstFooter>${escapeXml(hf.firstFooter)}</firstFooter>`);
-    if (inner.length > 0) {
-      p.push(`<headerFooter${attrs(hfAttrs)}>`, ...inner, "</headerFooter>");
-    } else if (hfAttrs.differentOddEven || hfAttrs.differentFirst) {
-      p.push(selfCloseElement("headerFooter", attrs(hfAttrs)));
-    }
+    const hfXml = stringifyHeaderFooterXml(opts.headerFooter);
+    if (hfXml) p.push(hfXml);
   }
 
   // Drawing in header/footer (after headerFooter per XSD sequence)
@@ -1092,4 +1033,86 @@ function buildCellString(
 
 function defaultCellRef(row: number, col: number): string {
   return columnToLetter(col) + row;
+}
+
+// ── Shared page-setup helpers (worksheet / dialogsheet / chartsheet) ──
+
+/** Stringify CT_PageSetup attributes (worksheet + dialogsheet pageSetup). */
+export function stringifyPageSetupXml(ps: PageSetupOptions): string {
+  const psAttrs: Record<string, string | number | boolean | undefined> = {};
+  if (ps.paperSize !== undefined) psAttrs.paperSize = ps.paperSize;
+  if (ps.orientation && ps.orientation !== "default") psAttrs.orientation = ps.orientation;
+  if (ps.scale !== undefined) psAttrs.scale = ps.scale;
+  if (ps.fitToWidth !== undefined) psAttrs.fitToWidth = ps.fitToWidth;
+  if (ps.fitToHeight !== undefined) psAttrs.fitToHeight = ps.fitToHeight;
+  if (ps.pageOrder && ps.pageOrder !== "downThenOver") psAttrs.pageOrder = ps.pageOrder;
+  if (ps.useFirstPageNumber) psAttrs.useFirstPageNumber = 1;
+  if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
+  if (ps.paperHeight !== undefined) psAttrs.paperHeight = ps.paperHeight;
+  if (ps.paperWidth !== undefined) psAttrs.paperWidth = ps.paperWidth;
+  if (ps.usePrinterDefaults) psAttrs.usePrinterDefaults = 1;
+  if (ps.blackAndWhite) psAttrs.blackAndWhite = 1;
+  if (ps.draft) psAttrs.draft = 1;
+  if (ps.cellComments && ps.cellComments !== "none") psAttrs.cellComments = ps.cellComments;
+  if (ps.errors && ps.errors !== "displayed") psAttrs.errors = ps.errors;
+  if (ps.horizontalDpi !== undefined) psAttrs.horizontalDpi = ps.horizontalDpi;
+  if (ps.verticalDpi !== undefined) psAttrs.verticalDpi = ps.verticalDpi;
+  if (ps.copies !== undefined) psAttrs.copies = ps.copies;
+  return selfCloseElement("pageSetup", attrs(psAttrs));
+}
+
+/** Stringify a CT_HeaderFooter element; undefined when it carries no content. */
+export function stringifyHeaderFooterXml(hf: HeaderFooterOptions): string | undefined {
+  const hfAttrs: Record<string, string | number | boolean | undefined> = {};
+  if (hf.differentOddEven) hfAttrs.differentOddEven = 1;
+  if (hf.differentFirst) hfAttrs.differentFirst = 1;
+  if (hf.scaleWithDoc === false) hfAttrs.scaleWithDoc = 0;
+  if (hf.alignWithMargins === false) hfAttrs.alignWithMargins = 0;
+  const inner: string[] = [];
+  if (hf.oddHeader) inner.push(`<oddHeader>${escapeXml(hf.oddHeader)}</oddHeader>`);
+  if (hf.oddFooter) inner.push(`<oddFooter>${escapeXml(hf.oddFooter)}</oddFooter>`);
+  if (hf.evenHeader) inner.push(`<evenHeader>${escapeXml(hf.evenHeader)}</evenHeader>`);
+  if (hf.evenFooter) inner.push(`<evenFooter>${escapeXml(hf.evenFooter)}</evenFooter>`);
+  if (hf.firstHeader) inner.push(`<firstHeader>${escapeXml(hf.firstHeader)}</firstHeader>`);
+  if (hf.firstFooter) inner.push(`<firstFooter>${escapeXml(hf.firstFooter)}</firstFooter>`);
+  if (inner.length > 0) {
+    return `<headerFooter${attrs(hfAttrs)}>${inner.join("")}</headerFooter>`;
+  }
+  if (hfAttrs.differentOddEven || hfAttrs.differentFirst) {
+    return selfCloseElement("headerFooter", attrs(hfAttrs));
+  }
+  return undefined;
+}
+
+/** Stringify a CT_SheetProtection element (worksheet + dialogsheet). */
+export function stringifySheetProtectionXml(prot: SheetProtectionOptions): string {
+  const protAttrs: Record<string, string | number | boolean | undefined> = {};
+  if (prot.password) protAttrs.password = hashPassword(prot.password);
+  // Auto-derive modern hash when password provided without explicit hashValue
+  let derived: ReturnType<typeof derivePasswordHash> | undefined;
+  if (prot.password !== undefined && prot.hashValue === undefined) {
+    derived = derivePasswordHash(prot.password);
+  }
+  protAttrs.algorithmName = prot.algorithmName ?? derived?.algorithmName;
+  protAttrs.hashValue = prot.hashValue ?? derived?.hashValue;
+  protAttrs.saltValue = prot.saltValue ?? derived?.saltValue;
+  if (prot.spinCount !== undefined) protAttrs.spinCount = prot.spinCount;
+  else if (derived) protAttrs.spinCount = derived.spinCount;
+  if (prot.sheet) protAttrs.sheet = 1;
+  if (prot.objects) protAttrs.objects = 1;
+  if (prot.scenarios) protAttrs.scenarios = 1;
+  if (prot.formatCells === false) protAttrs.formatCells = 0;
+  if (prot.formatColumns === false) protAttrs.formatColumns = 0;
+  if (prot.formatRows === false) protAttrs.formatRows = 0;
+  if (prot.insertColumns === false) protAttrs.insertColumns = 0;
+  if (prot.insertRows === false) protAttrs.insertRows = 0;
+  if (prot.insertHyperlinks === false) protAttrs.insertHyperlinks = 0;
+  if (prot.deleteColumns === false) protAttrs.deleteColumns = 0;
+  if (prot.deleteRows === false) protAttrs.deleteRows = 0;
+  if (prot.selectLockedCells) protAttrs.selectLockedCells = 1;
+  if (prot.sort === false) protAttrs.sort = 0;
+  if (prot.autoFilter === false) protAttrs.autoFilter = 0;
+  if (prot.pivotTables === false) protAttrs.pivotTables = 0;
+  if (prot.selectUnlockedCells) protAttrs.selectUnlockedCells = 1;
+  return selfCloseElement("sheetProtection", attrs(protAttrs));
 }

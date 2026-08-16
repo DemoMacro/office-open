@@ -1890,28 +1890,6 @@
       ],
       "type": "string"
     },
-    "ChartsheetHeaderFooterOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "differentFirst": {
-          "description": "Different first page header/footer",
-          "type": "boolean"
-        },
-        "differentOddEven": {
-          "description": "Different odd/even page headers/footers",
-          "type": "boolean"
-        },
-        "oddFooter": {
-          "description": "Odd page footer",
-          "type": "string"
-        },
-        "oddHeader": {
-          "description": "Odd page header",
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
     "ChartsheetOptions": {
       "additionalProperties": false,
       "properties": {
@@ -1959,7 +1937,7 @@
           "type": "string"
         },
         "headerFooter": {
-          "$ref": "#/definitions/ChartsheetHeaderFooterOptions",
+          "$ref": "#/definitions/HeaderFooterOptions",
           "description": "Header/footer"
         },
         "name": {
@@ -1967,7 +1945,7 @@
           "type": "string"
         },
         "pageMargins": {
-          "$ref": "#/definitions/ChartsheetPageMargins",
+          "$ref": "#/definitions/PageMarginsOptions",
           "description": "Page margins"
         },
         "pageSetup": {
@@ -1994,77 +1972,24 @@
       "required": ["chart"],
       "type": "object"
     },
-    "ChartsheetPageMargins": {
-      "additionalProperties": false,
-      "properties": {
-        "bottom": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "footer": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "header": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "left": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "right": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "top": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        }
-      },
-      "type": "object"
-    },
     "ChartsheetPageSetup": {
       "additionalProperties": false,
+      "description": "Chartsheet page setup (CT_CsPageSetup) — the chartsheet-specific variant of pageSetup: paper size/orientation plus printer flags, no scale/fit fields.",
       "properties": {
+        "blackAndWhite": {
+          "description": "Black and white printing",
+          "type": "boolean"
+        },
         "copies": {
           "description": "Copies to print",
+          "type": "number"
+        },
+        "draft": {
+          "description": "Draft quality printing",
+          "type": "boolean"
+        },
+        "firstPageNumber": {
+          "description": "First page number",
           "type": "number"
         },
         "horizontalDpi": {
@@ -2072,12 +1997,42 @@
           "type": "number"
         },
         "orientation": {
-          "description": "Orientation (\"default\" | \"portrait\" | \"landscape\")",
-          "type": "string"
+          "$ref": "#/definitions/PageOrientation",
+          "description": "Orientation (ST_Orientation)"
+        },
+        "paperHeight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Paper height (ST_PositiveUniversalMeasure)"
         },
         "paperSize": {
           "description": "Paper size (1=Letter, 9=A4, etc.)",
           "type": "number"
+        },
+        "paperWidth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Paper width (ST_PositiveUniversalMeasure)"
+        },
+        "useFirstPageNumber": {
+          "description": "Use firstPageNumber as the starting page number",
+          "type": "boolean"
+        },
+        "usePrinterDefaults": {
+          "description": "Use printer defaults",
+          "type": "boolean"
         },
         "verticalDpi": {
           "description": "Vertical DPI",
@@ -2089,13 +2044,33 @@
     "ChartsheetProtectionOptions": {
       "additionalProperties": false,
       "properties": {
+        "algorithmName": {
+          "description": "Modern encryption: algorithm name (e.g. \"SHA-512\")",
+          "type": "string"
+        },
         "content": {
           "description": "Content is protected",
           "type": "boolean"
         },
+        "hashValue": {
+          "description": "Modern encryption: base64-encoded hash value",
+          "type": "string"
+        },
         "objects": {
           "description": "Objects are protected",
           "type": "boolean"
+        },
+        "password": {
+          "description": "Plain-text password — legacy Excel hash is computed automatically on stringify. Authoring-only: not carried back by parse (see SheetProtectionOptions); use the algorithmName quadruplet for round-trip.",
+          "type": "string"
+        },
+        "saltValue": {
+          "description": "Modern encryption: base64-encoded salt value",
+          "type": "string"
+        },
+        "spinCount": {
+          "description": "Modern encryption: spin count for hash iteration",
+          "type": "number"
         }
       },
       "type": "object"
@@ -4033,11 +4008,11 @@
           "type": "string"
         },
         "pageMargins": {
-          "$ref": "#/definitions/DialogsheetPageMargins",
+          "$ref": "#/definitions/PageMarginsOptions",
           "description": "Page margins"
         },
         "pageSetup": {
-          "$ref": "#/definitions/DialogsheetPageSetup",
+          "$ref": "#/definitions/PageSetupOptions",
           "description": "Page setup"
         },
         "published": {
@@ -4045,122 +4020,12 @@
           "type": "boolean"
         },
         "sheetProtection": {
-          "$ref": "#/definitions/DialogsheetProtectionOptions",
+          "$ref": "#/definitions/SheetProtectionOptions",
           "description": "Sheet protection"
         },
         "tabColor": {
           "description": "Tab color (hex ARGB)",
           "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "DialogsheetPageMargins": {
-      "additionalProperties": false,
-      "properties": {
-        "bottom": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "footer": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "header": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "left": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "right": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "top": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        }
-      },
-      "type": "object"
-    },
-    "DialogsheetPageSetup": {
-      "additionalProperties": false,
-      "properties": {
-        "copies": {
-          "description": "Copies to print",
-          "type": "number"
-        },
-        "horizontalDpi": {
-          "description": "Horizontal DPI",
-          "type": "number"
-        },
-        "orientation": {
-          "description": "Orientation (\"default\" | \"portrait\" | \"landscape\")",
-          "type": "string"
-        },
-        "paperSize": {
-          "description": "Paper size (1=Letter, 9=A4, etc.)",
-          "type": "number"
-        },
-        "verticalDpi": {
-          "description": "Vertical DPI",
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "DialogsheetProtectionOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "content": {
-          "description": "Content is protected",
-          "type": "boolean"
-        },
-        "objects": {
-          "description": "Objects are protected",
-          "type": "boolean"
-        },
-        "scenarios": {
-          "description": "Scenarios are protected",
-          "type": "boolean"
         }
       },
       "type": "object"
@@ -7497,6 +7362,10 @@
           "enum": ["none", "asDisplayed", "atEnd"],
           "type": "string"
         },
+        "copies": {
+          "description": "Number of copies to print (CT_PageSetup `@copies`)",
+          "type": "number"
+        },
         "draft": {
           "description": "Draft quality printing (CT_PageSetup `@draft`)",
           "type": "boolean"
@@ -7517,6 +7386,10 @@
           "type": "boolean"
         },
         "fitToWidth": {
+          "type": "number"
+        },
+        "horizontalDpi": {
+          "description": "Horizontal print DPI (CT_PageSetup `@horizontalDpi`)",
           "type": "number"
         },
         "orientation": {
@@ -7560,6 +7433,10 @@
         "usePrinterDefaults": {
           "description": "Use printer defaults (CT_PageSetup `@usePrinterDefaults`)",
           "type": "boolean"
+        },
+        "verticalDpi": {
+          "description": "Vertical print DPI (CT_PageSetup `@verticalDpi`)",
+          "type": "number"
         }
       },
       "type": "object"
@@ -9839,7 +9716,7 @@
           "type": "string"
         },
         "password": {
-          "description": "Plain-text password — legacy hash computed automatically",
+          "description": "Plain-text password — legacy hash computed automatically on stringify. Authoring-only: not carried back by parse (see SheetProtectionOptions).",
           "type": "string"
         },
         "saltValue": {
@@ -12348,7 +12225,7 @@
           "type": "boolean"
         },
         "password": {
-          "description": "Plain-text password — legacy Excel hash is computed automatically",
+          "description": "Plain-text password — legacy Excel hash is computed automatically on stringify. Authoring-only: not carried back by parse (the source stores a hash; re-hashing it would corrupt it). Use the algorithmName quadruplet below for round-trip.",
           "type": "string"
         },
         "pivotTables": {

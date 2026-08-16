@@ -9,43 +9,19 @@
  */
 
 import { parseOnOff } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, attr, attrNum, escapeXml, findChild, stringifyElement } from "@office-open/xml";
 
+import { parsePageSetupEl, parseSheetProtectionEl } from "./worksheet/descriptor";
+import { stringifyPageSetupXml, stringifySheetProtectionXml } from "./worksheet/stringify";
+import type {
+  PageMarginsOptions,
+  PageSetupOptions,
+  SheetProtectionOptions,
+} from "./worksheet/types";
+
 // ── Types ──
-
-export interface DialogsheetPageMargins {
-  left?: number | UniversalMeasure;
-  right?: number | UniversalMeasure;
-  top?: number | UniversalMeasure;
-  bottom?: number | UniversalMeasure;
-  header?: number | UniversalMeasure;
-  footer?: number | UniversalMeasure;
-}
-
-export interface DialogsheetPageSetup {
-  /** Paper size (1=Letter, 9=A4, etc.) */
-  paperSize?: number;
-  /** Orientation ("default" | "portrait" | "landscape") */
-  orientation?: string;
-  /** Horizontal DPI */
-  horizontalDpi?: number;
-  /** Vertical DPI */
-  verticalDpi?: number;
-  /** Copies to print */
-  copies?: number;
-}
-
-export interface DialogsheetProtectionOptions {
-  /** Content is protected */
-  content?: boolean;
-  /** Objects are protected */
-  objects?: boolean;
-  /** Scenarios are protected */
-  scenarios?: boolean;
-}
 
 export interface DialogsheetOptions {
   /** Sheet name */
@@ -57,11 +33,11 @@ export interface DialogsheetOptions {
   /** VBA code name (CT_SheetPr `@codeName`) */
   codeName?: string;
   /** Page margins */
-  pageMargins?: DialogsheetPageMargins;
+  pageMargins?: PageMarginsOptions;
   /** Page setup */
-  pageSetup?: DialogsheetPageSetup;
+  pageSetup?: PageSetupOptions;
   /** Sheet protection */
-  sheetProtection?: DialogsheetProtectionOptions;
+  sheetProtection?: SheetProtectionOptions;
   /** Raw extension list preserved verbatim (extLst) */
   extLst?: string;
 }
@@ -87,16 +63,9 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
       p.push(`<sheetPr${prAttrs.join("")}>${prChildren.join("")}</sheetPr>`);
     }
 
-    // sheetProtection (optional)
+    // sheetProtection (optional) — CT_SheetProtection, shared with worksheet
     if (opts.sheetProtection) {
-      const sp = opts.sheetProtection;
-      const spAttrs: string[] = [];
-      if (sp.content) spAttrs.push(` content="1"`);
-      if (sp.objects) spAttrs.push(` objects="1"`);
-      if (sp.scenarios) spAttrs.push(` scenarios="1"`);
-      if (spAttrs.length > 0) {
-        p.push(`<sheetProtection${spAttrs.join("")}/>`);
-      }
+      p.push(stringifySheetProtectionXml(opts.sheetProtection));
     }
 
     // pageMargins (optional)
@@ -114,18 +83,9 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
       );
     }
 
-    // pageSetup (optional)
+    // pageSetup (optional) — CT_PageSetup, shared with worksheet
     if (opts.pageSetup) {
-      const ps = opts.pageSetup;
-      p.push(
-        `<pageSetup${attrs({
-          paperSize: ps.paperSize,
-          orientation: ps.orientation,
-          horizontalDpi: ps.horizontalDpi,
-          verticalDpi: ps.verticalDpi,
-          copies: ps.copies,
-        })}/>`,
-      );
+      p.push(stringifyPageSetupXml(opts.pageSetup));
     }
 
     if (opts.extLst) p.push(opts.extLst);
@@ -146,20 +106,16 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
       if (tcEl && attr(tcEl, "rgb")) result.tabColor = attr(tcEl, "rgb");
     }
 
-    // sheetProtection
+    // sheetProtection — CT_SheetProtection, shared with worksheet
     const spEl = findChild(el, "sheetProtection");
-    if (spEl) {
-      const sp: Partial<DialogsheetProtectionOptions> = {};
-      if (parseOnOff(attr(spEl, "content"))) sp.content = true;
-      if (parseOnOff(attr(spEl, "objects"))) sp.objects = true;
-      if (parseOnOff(attr(spEl, "scenarios"))) sp.scenarios = true;
-      result.sheetProtection = sp;
+    if (spEl?.attributes) {
+      result.sheetProtection = parseSheetProtectionEl(spEl);
     }
 
     // pageMargins
     const pmEl = findChild(el, "pageMargins");
     if (pmEl) {
-      const pm: Partial<DialogsheetPageMargins> = {};
+      const pm: Partial<PageMarginsOptions> = {};
       const ml = attrNum(pmEl, "left");
       if (ml !== undefined) pm.left = ml;
       const mr = attrNum(pmEl, "right");
@@ -175,21 +131,10 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
       result.pageMargins = pm;
     }
 
-    // pageSetup
+    // pageSetup — CT_PageSetup, shared with worksheet
     const psEl = findChild(el, "pageSetup");
     if (psEl) {
-      const ps: Partial<DialogsheetPageSetup> = {};
-      const pz = attrNum(psEl, "paperSize");
-      if (pz !== undefined) ps.paperSize = pz;
-      const orient = attr(psEl, "orientation");
-      if (orient) ps.orientation = orient;
-      const hdpi = attrNum(psEl, "horizontalDpi");
-      if (hdpi !== undefined) ps.horizontalDpi = hdpi;
-      const vdpi = attrNum(psEl, "verticalDpi");
-      if (vdpi !== undefined) ps.verticalDpi = vdpi;
-      const copies = attrNum(psEl, "copies");
-      if (copies !== undefined) ps.copies = copies;
-      result.pageSetup = ps;
+      result.pageSetup = parsePageSetupEl(psEl);
     }
 
     // extLst — preserved verbatim

@@ -226,7 +226,12 @@ export interface MergeCellOptions {
 }
 
 export interface SheetProtectionOptions {
-  /** Plain-text password — legacy Excel hash is computed automatically */
+  /**
+   * Plain-text password — legacy Excel hash is computed automatically on
+   * stringify. Authoring-only: not carried back by parse (the source stores a
+   * hash; re-hashing it would corrupt it). Use the algorithmName quadruplet
+   * below for round-trip.
+   */
   password?: string;
   /** Modern encryption: algorithm name (e.g. "SHA-512") */
   algorithmName?: string;
@@ -261,7 +266,10 @@ export interface ProtectedRangeOptions {
   sqref: string;
   /** Range name (required) */
   name: string;
-  /** Plain-text password — legacy hash computed automatically */
+  /**
+   * Plain-text password — legacy hash computed automatically on stringify.
+   * Authoring-only: not carried back by parse (see SheetProtectionOptions).
+   */
   password?: string;
   /** Modern encryption: algorithm name */
   algorithmName?: string;
@@ -390,6 +398,12 @@ export interface PageSetupOptions {
   cellComments?: "none" | "asDisplayed" | "atEnd";
   /** Print error display mode (CT_PageSetup `@errors`) */
   errors?: "displayed" | "blank" | "dash" | "NA";
+  /** Horizontal print DPI (CT_PageSetup `@horizontalDpi`) */
+  horizontalDpi?: number;
+  /** Vertical print DPI (CT_PageSetup `@verticalDpi`) */
+  verticalDpi?: number;
+  /** Number of copies to print (CT_PageSetup `@copies`) */
+  copies?: number;
   /** Auto page breaks (CT_PageSetUpPr `@autoPageBreaks`) */
   autoPageBreaks?: boolean;
   /** Fit to page (CT_PageSetUpPr `@fitToPage`) */

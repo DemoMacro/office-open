@@ -11,6 +11,7 @@ import { parseOnOff } from "@office-open/core";
 import type { PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrMeasure, attrNum, findChild, stringify, textOf } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import type { XlsxReadContext } from "../../context";
 import { parseAutoFilter } from "../auto-filter";
@@ -323,29 +324,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Sheet protection
     const protEl = findChild(el, "sheetProtection");
     if (protEl?.attributes) {
-      const prot: SheetProtectionOptions = {};
-      if (attr(protEl, "password")) prot.password = attr(protEl, "password");
-      if (attr(protEl, "algorithmName")) prot.algorithmName = attr(protEl, "algorithmName");
-      if (attr(protEl, "hashValue")) prot.hashValue = attr(protEl, "hashValue");
-      if (attr(protEl, "saltValue")) prot.saltValue = attr(protEl, "saltValue");
-      if (attrNum(protEl, "spinCount") !== undefined) prot.spinCount = attrNum(protEl, "spinCount");
-      if (parseOnOff(attr(protEl, "sheet"))) prot.sheet = true;
-      if (parseOnOff(attr(protEl, "objects"))) prot.objects = true;
-      if (parseOnOff(attr(protEl, "scenarios"))) prot.scenarios = true;
-      if (String(attr(protEl, "formatCells")) === "0") prot.formatCells = false;
-      if (String(attr(protEl, "formatColumns")) === "0") prot.formatColumns = false;
-      if (String(attr(protEl, "formatRows")) === "0") prot.formatRows = false;
-      if (String(attr(protEl, "insertColumns")) === "0") prot.insertColumns = false;
-      if (String(attr(protEl, "insertRows")) === "0") prot.insertRows = false;
-      if (String(attr(protEl, "insertHyperlinks")) === "0") prot.insertHyperlinks = false;
-      if (String(attr(protEl, "deleteColumns")) === "0") prot.deleteColumns = false;
-      if (String(attr(protEl, "deleteRows")) === "0") prot.deleteRows = false;
-      if (parseOnOff(attr(protEl, "selectLockedCells"))) prot.selectLockedCells = true;
-      if (String(attr(protEl, "sort")) === "0") prot.sort = false;
-      if (String(attr(protEl, "autoFilter")) === "0") prot.autoFilter = false;
-      if (String(attr(protEl, "pivotTables")) === "0") prot.pivotTables = false;
-      if (parseOnOff(attr(protEl, "selectUnlockedCells"))) prot.selectUnlockedCells = true;
-      result.protection = prot;
+      result.protection = parseSheetProtectionEl(protEl);
     }
 
     // Protected ranges
@@ -551,28 +530,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Page setup
     const psEl = findChild(el, "pageSetup");
     if (psEl) {
-      const ps: PageSetupOptions = {};
-      const pz = attrNum(psEl, "paperSize");
-      if (pz !== undefined) ps.paperSize = pz;
-      const ph = attrMeasure(psEl, "paperHeight");
-      if (ph !== undefined) ps.paperHeight = ph as number | PositiveUniversalMeasure;
-      const pw = attrMeasure(psEl, "paperWidth");
-      if (pw !== undefined) ps.paperWidth = pw as number | PositiveUniversalMeasure;
-      const orientVal = attr(psEl, "orientation");
-      if (orientVal) ps.orientation = orientVal as PageOrientation;
-      const sc = attrNum(psEl, "scale");
-      if (sc !== undefined) ps.scale = sc;
-      const ftw = attrNum(psEl, "fitToWidth");
-      if (ftw !== undefined) ps.fitToWidth = ftw;
-      const fth = attrNum(psEl, "fitToHeight");
-      if (fth !== undefined) ps.fitToHeight = fth;
-      const pageOrderVal = attr(psEl, "pageOrder");
-      if (pageOrderVal) ps.pageOrder = pageOrderVal as PageSetupOptions["pageOrder"];
-      if (parseOnOff(attr(psEl, "useFirstPageNumber"))) ps.useFirstPageNumber = true;
-      const fpn = attrNum(psEl, "firstPageNumber");
-      if (fpn !== undefined) ps.firstPageNumber = fpn;
-      if (pageSetUpPrCache) Object.assign(ps, pageSetUpPrCache);
-      result.pageSetup = ps;
+      result.pageSetup = parsePageSetupEl(psEl, pageSetUpPrCache);
     } else if (pageSetUpPrCache) {
       result.pageSetup = pageSetUpPrCache;
     }
@@ -580,24 +538,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Header/footer
     const hfEl = findChild(el, "headerFooter");
     if (hfEl) {
-      const hf: HeaderFooterOptions = {};
-      if (parseOnOff(attr(hfEl, "differentOddEven"))) hf.differentOddEven = true;
-      if (parseOnOff(attr(hfEl, "differentFirst"))) hf.differentFirst = true;
-      if (String(attr(hfEl, "scaleWithDoc")) === "0") hf.scaleWithDoc = false;
-      if (String(attr(hfEl, "alignWithMargins")) === "0") hf.alignWithMargins = false;
-      const oh = findChild(hfEl, "oddHeader");
-      if (oh) hf.oddHeader = textOf(oh);
-      const of2 = findChild(hfEl, "oddFooter");
-      if (of2) hf.oddFooter = textOf(of2);
-      const eh = findChild(hfEl, "evenHeader");
-      if (eh) hf.evenHeader = textOf(eh);
-      const ef = findChild(hfEl, "evenFooter");
-      if (ef) hf.evenFooter = textOf(ef);
-      const fh = findChild(hfEl, "firstHeader");
-      if (fh) hf.firstHeader = textOf(fh);
-      const ff = findChild(hfEl, "firstFooter");
-      if (ff) hf.firstFooter = textOf(ff);
-      result.headerFooter = hf;
+      result.headerFooter = parseHeaderFooterEl(hfEl);
     }
 
     // Ignored errors
@@ -968,3 +909,104 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     return result as WorksheetOptions;
   },
 };
+
+// ── Shared page-setup parse helpers (worksheet / dialogsheet / chartsheet) ──
+
+/**
+ * Parse a CT_PageSetup element. `pageSetUpPrCache` carries the sheetPr-level
+ * CT_PageSetUpPr flags (fitToPage/autoPageBreaks) parsed earlier so they merge
+ * into the same PageSetupOptions object.
+ */
+export function parsePageSetupEl(
+  el: Element,
+  pageSetUpPrCache?: Partial<PageSetupOptions>,
+): PageSetupOptions {
+  const ps: PageSetupOptions = {};
+  const pz = attrNum(el, "paperSize");
+  if (pz !== undefined) ps.paperSize = pz;
+  const ph = attrMeasure(el, "paperHeight");
+  if (ph !== undefined) ps.paperHeight = ph as number | PositiveUniversalMeasure;
+  const pw = attrMeasure(el, "paperWidth");
+  if (pw !== undefined) ps.paperWidth = pw as number | PositiveUniversalMeasure;
+  const orientVal = attr(el, "orientation");
+  if (orientVal) ps.orientation = orientVal as PageOrientation;
+  const sc = attrNum(el, "scale");
+  if (sc !== undefined) ps.scale = sc;
+  const ftw = attrNum(el, "fitToWidth");
+  if (ftw !== undefined) ps.fitToWidth = ftw;
+  const fth = attrNum(el, "fitToHeight");
+  if (fth !== undefined) ps.fitToHeight = fth;
+  const pageOrderVal = attr(el, "pageOrder");
+  if (pageOrderVal) ps.pageOrder = pageOrderVal as PageSetupOptions["pageOrder"];
+  if (parseOnOff(attr(el, "useFirstPageNumber"))) ps.useFirstPageNumber = true;
+  const fpn = attrNum(el, "firstPageNumber");
+  if (fpn !== undefined) ps.firstPageNumber = fpn;
+  if (parseOnOff(attr(el, "usePrinterDefaults"))) ps.usePrinterDefaults = true;
+  if (parseOnOff(attr(el, "blackAndWhite"))) ps.blackAndWhite = true;
+  if (parseOnOff(attr(el, "draft"))) ps.draft = true;
+  const cc = attr(el, "cellComments");
+  if (cc) ps.cellComments = cc as PageSetupOptions["cellComments"];
+  const err = attr(el, "errors");
+  if (err) ps.errors = err as PageSetupOptions["errors"];
+  const hdpi = attrNum(el, "horizontalDpi");
+  if (hdpi !== undefined) ps.horizontalDpi = hdpi;
+  const vdpi = attrNum(el, "verticalDpi");
+  if (vdpi !== undefined) ps.verticalDpi = vdpi;
+  const copies = attrNum(el, "copies");
+  if (copies !== undefined) ps.copies = copies;
+  if (pageSetUpPrCache) Object.assign(ps, pageSetUpPrCache);
+  return ps;
+}
+
+/** Parse a CT_HeaderFooter element. */
+export function parseHeaderFooterEl(el: Element): HeaderFooterOptions {
+  const hf: HeaderFooterOptions = {};
+  if (parseOnOff(attr(el, "differentOddEven"))) hf.differentOddEven = true;
+  if (parseOnOff(attr(el, "differentFirst"))) hf.differentFirst = true;
+  if (String(attr(el, "scaleWithDoc")) === "0") hf.scaleWithDoc = false;
+  if (String(attr(el, "alignWithMargins")) === "0") hf.alignWithMargins = false;
+  const oh = findChild(el, "oddHeader");
+  if (oh) hf.oddHeader = textOf(oh);
+  const of2 = findChild(el, "oddFooter");
+  if (of2) hf.oddFooter = textOf(of2);
+  const eh = findChild(el, "evenHeader");
+  if (eh) hf.evenHeader = textOf(eh);
+  const ef = findChild(el, "evenFooter");
+  if (ef) hf.evenFooter = textOf(ef);
+  const fh = findChild(el, "firstHeader");
+  if (fh) hf.firstHeader = textOf(fh);
+  const ff = findChild(el, "firstFooter");
+  if (ff) hf.firstFooter = textOf(ff);
+  return hf;
+}
+
+/** Parse a CT_SheetProtection element. */
+export function parseSheetProtectionEl(el: Element): SheetProtectionOptions {
+  const prot: SheetProtectionOptions = {};
+  // NOTE: @password (legacy hash) is deliberately not read back — the
+  // password field is plaintext authoring input and stringify hashes it,
+  // so carrying the hash would double-hash on round-trip. The modern
+  // algorithmName/hashValue/saltValue/spinCount quadruplet round-trips as-is.
+  if (attr(el, "algorithmName")) prot.algorithmName = attr(el, "algorithmName");
+  if (attr(el, "hashValue")) prot.hashValue = attr(el, "hashValue");
+  if (attr(el, "saltValue")) prot.saltValue = attr(el, "saltValue");
+  const spin = attrNum(el, "spinCount");
+  if (spin !== undefined) prot.spinCount = spin;
+  if (parseOnOff(attr(el, "sheet"))) prot.sheet = true;
+  if (parseOnOff(attr(el, "objects"))) prot.objects = true;
+  if (parseOnOff(attr(el, "scenarios"))) prot.scenarios = true;
+  if (String(attr(el, "formatCells")) === "0") prot.formatCells = false;
+  if (String(attr(el, "formatColumns")) === "0") prot.formatColumns = false;
+  if (String(attr(el, "formatRows")) === "0") prot.formatRows = false;
+  if (String(attr(el, "insertColumns")) === "0") prot.insertColumns = false;
+  if (String(attr(el, "insertRows")) === "0") prot.insertRows = false;
+  if (String(attr(el, "insertHyperlinks")) === "0") prot.insertHyperlinks = false;
+  if (String(attr(el, "deleteColumns")) === "0") prot.deleteColumns = false;
+  if (String(attr(el, "deleteRows")) === "0") prot.deleteRows = false;
+  if (parseOnOff(attr(el, "selectLockedCells"))) prot.selectLockedCells = true;
+  if (String(attr(el, "sort")) === "0") prot.sort = false;
+  if (String(attr(el, "autoFilter")) === "0") prot.autoFilter = false;
+  if (String(attr(el, "pivotTables")) === "0") prot.pivotTables = false;
+  if (parseOnOff(attr(el, "selectUnlockedCells"))) prot.selectUnlockedCells = true;
+  return prot;
+}

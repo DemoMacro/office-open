@@ -164,18 +164,11 @@ export type {
 } from "./external-link";
 export type {
   ChartsheetOptions,
-  ChartsheetPageMargins,
   ChartsheetPageSetup,
   ChartsheetProtectionOptions,
-  ChartsheetHeaderFooterOptions,
 } from "./chartsheet";
 export { dialogsheetDesc } from "./dialogsheet";
-export type {
-  DialogsheetOptions,
-  DialogsheetPageMargins,
-  DialogsheetPageSetup,
-  DialogsheetProtectionOptions,
-} from "./dialogsheet";
+export type { DialogsheetOptions } from "./dialogsheet";
 export type {
   RevisionHeadersOptions,
   RevisionHeaderEntry,
