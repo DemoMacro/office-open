@@ -7,6 +7,7 @@ import type {
   BasePictureOptions,
   ChartSpaceOptions,
   DataType,
+  NonVisualDrawingPropertiesOptions,
   PositiveUniversalMeasure,
   UniversalMeasure,
 } from "@office-open/core";
@@ -292,7 +293,16 @@ export interface PictureOptions extends Omit<BasePictureOptions, "type">, Drawin
   type: "png" | "jpg";
 }
 
-export interface WorksheetChartOptions extends ChartSpaceOptions, DrawingAnchorOptions {}
+/**
+ * Chart anchored to a worksheet. `title` stays the chart title (c:title);
+ * the graphicFrame's cNvPr `@title` is too weak to justify a name clash, so
+ * only name/description/hidden flow through to the drawing's cNvPr.
+ */
+export interface WorksheetChartOptions
+  extends
+    ChartSpaceOptions,
+    DrawingAnchorOptions,
+    Omit<NonVisualDrawingPropertiesOptions, "title"> {}
 
 export interface SheetViewOptions {
   showGridLines?: boolean;
@@ -396,6 +406,11 @@ export interface TabColorOptions {
 }
 
 /** Cell corner marker (CT_Marker): 0-based column/row plus EMU offsets. */
+/**
+ * Note anchor corner (CT_Marker). Mirrors the XML verbatim: 0-based col/row,
+ * offsets in EMU — unlike DrawingAnchorOptions, which is 1-based for
+ * authoring convenience. Same concept, two bases; the XML is 0-based either way.
+ */
 export interface AnchorMarkerOptions {
   /** 0-based column index */
   col: number;

@@ -113,6 +113,7 @@ export {
 export type {
   PivotTableOptions,
   PivotDataField,
+  PivotPageFieldOptions,
   ConsolidateFunction,
   PivotFilterOptions,
 } from "./pivot";

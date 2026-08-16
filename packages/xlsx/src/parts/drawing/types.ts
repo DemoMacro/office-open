@@ -38,7 +38,11 @@ export const EDIT_AS_TYPES = {
 } as const;
 export type EditAsType = (typeof EDIT_AS_TYPES)[keyof typeof EDIT_AS_TYPES];
 
-/** Shared anchor fields for all anchored drawing objects. */
+/**
+ * Shared anchor fields for all anchored drawing objects. 1-based col/row for
+ * authoring convenience (the XML marker is 0-based; the descriptor subtracts).
+ * Note anchors (NoteAnchorOptions) mirror the XML's 0-based CT_Marker instead.
+ */
 export interface DrawingAnchorOptions {
   /** 1-based column (from marker) */
   col: number;

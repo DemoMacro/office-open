@@ -107,6 +107,33 @@ describe("drawingDesc round-trip", () => {
     expect(charts[0]?.rowOffset).toBe(20000);
   });
 
+  it("round-trips chart to corner, editAs and cNvPr", () => {
+    const opts: DrawingOptions = {
+      charts: [
+        {
+          col: 2,
+          row: 3,
+          toCol: 15,
+          toRow: 18,
+          toColOffset: 5000,
+          editAs: "twoCell",
+          name: "SalesChart",
+          description: "Q3 sales",
+          rId: "rId7",
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const chart = result.charts![0]!;
+
+    expect(chart.toCol).toBe(15);
+    expect(chart.toRow).toBe(18);
+    expect(chart.toColOffset).toBe(5000);
+    expect(chart.editAs).toBe("twoCell");
+    expect(chart.name).toBe("SalesChart");
+    expect(chart.description).toBe("Q3 sales");
+  });
+
   it("round-trips mixed images and charts", () => {
     const opts: DrawingOptions = {
       images: [{ col: 1, row: 1, rId: "rId1" }],

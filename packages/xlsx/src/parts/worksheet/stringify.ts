@@ -584,10 +584,13 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     let hlIdx = 0;
     for (const hl of hyperlinks) {
       const hlAttrs: Record<string, string | number | boolean | undefined> = { ref: hl.cell };
+      // CT_Hyperlink's @r:id and @location are independent optional attrs —
+      // an external workbook plus an internal jump target is a legal pair.
       if (hl.url !== undefined) {
         hlIdx++;
         hlAttrs["r:id"] = `rId${hlIdx}`;
-      } else if (hl.location !== undefined) {
+      }
+      if (hl.location !== undefined) {
         hlAttrs.location = hl.location;
       }
       if (hl.tooltip) hlAttrs.tooltip = hl.tooltip;

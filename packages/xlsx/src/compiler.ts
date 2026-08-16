@@ -538,8 +538,13 @@ function compileWorksheetPart(
         `../charts/chart${state.globalChartIdx + 1}.xml`,
       );
 
+      // cNvPr @title stays unbridged: WorksheetChartOptions.title is the chart
+      // title (c:title), not the graphicFrame's weak @title.
+      const chartCnvPr = pickNonVisualDrawingProperties(chart);
+      delete chartCnvPr.title;
       drawingCharts.push({
         ...pickAnchorOptions(chart),
+        ...chartCnvPr,
         rId: `rId${rid}`,
       });
       rid++;

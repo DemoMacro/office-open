@@ -10,7 +10,11 @@ import {
   parseCorePropsElement,
 } from "@office-open/core";
 import type { ParsedArchive } from "@office-open/core";
-import { partPathToRelsPath, toUint8Array } from "@office-open/core";
+import {
+  partPathToRelsPath,
+  pickNonVisualDrawingProperties,
+  toUint8Array,
+} from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
 import type { ChartSeriesData } from "@office-open/core/chart";
@@ -389,7 +393,11 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
           if (!chartEl) continue;
           const chartSpace = chartSpaceDesc.parse(chartEl, readContext);
-          charts.push({ ...chartSpace, ...pickAnchorOptions(anchor) });
+          // cNvPr @title stays unbridged (same rule as the compiler leg):
+          // WorksheetChartOptions.title is the chart title, not the frame's.
+          const chartCnvPr = pickNonVisualDrawingProperties(anchor);
+          delete chartCnvPr.title;
+          charts.push({ ...chartSpace, ...pickAnchorOptions(anchor), ...chartCnvPr });
         }
         if (charts.length > 0) wsOpts.charts = charts;
       }

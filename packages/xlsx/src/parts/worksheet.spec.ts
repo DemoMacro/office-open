@@ -167,6 +167,20 @@ describe("Worksheet", () => {
       expect(xml).toContain('display="Example Site"');
     });
 
+    it("emits both r:id and location when url+location are set together", () => {
+      // CT_Hyperlink's @r:id and @location are independent — an external
+      // workbook plus an internal jump target is a legal combination.
+      const xml = buildWorksheetXml(
+        {
+          hyperlinks: [{ cell: "A1", url: "https://example.com", location: "Sheet2!A1" }],
+          rows: [{ cells: [{ value: "A" }] }],
+        },
+        {},
+      );
+      expect(xml).toContain('r:id="rId1"');
+      expect(xml).toContain('location="Sheet2!A1"');
+    });
+
     it("handles mixed external and internal hyperlinks", () => {
       const xml = buildWorksheetXml(
         {
