@@ -9,10 +9,8 @@ const buffer = await generateDocument({
     {
       children: [{ paragraph: "Hello World" }],
       properties: {
-        page: {
-          size: {
-            orientation: PageOrientation.LANDSCAPE,
-          },
+        pageSize: {
+          orientation: PageOrientation.LANDSCAPE,
         },
       },
     },

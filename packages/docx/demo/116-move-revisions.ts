@@ -9,7 +9,7 @@ const REVISION_AUTHOR = "Firstname Lastname";
 const REVISION_DATE = "2026-05-02T10:00:00Z";
 
 const buffer = await generateDocument({
-  features: {
+  settings: {
     trackRevisions: true,
   },
   sections: [

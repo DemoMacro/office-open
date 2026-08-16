@@ -45,22 +45,21 @@ describe("sectionPropertiesDesc round-trip", () => {
 
   it("round-trips page size", () => {
     const result = roundTrip({
-      page: { size: { width: 12240, height: 15840 } },
+      pageSize: { width: 12240, height: 15840 },
     });
-    expect(result.page).toBeDefined();
-    expect(result.page!.size!.width).toBe(12240);
-    expect(result.page!.size!.height).toBe(15840);
+    expect(result.pageSize!.width).toBe(12240);
+    expect(result.pageSize!.height).toBe(15840);
   });
 
   it("round-trips landscape orientation (swaps w/h and swaps back)", () => {
     const result = roundTrip({
-      page: { size: { width: 12240, height: 15840, orientation: "landscape" } },
+      pageSize: { width: 12240, height: 15840, orientation: "landscape" },
     });
     // Logical width/height (portrait perspective) must survive the stringify
     // swap (w:w=height, w:h=width) and the parse swap-back.
-    expect(result.page!.size!.orientation).toBe("landscape");
-    expect(result.page!.size!.width).toBe(12240);
-    expect(result.page!.size!.height).toBe(15840);
+    expect(result.pageSize!.orientation).toBe("landscape");
+    expect(result.pageSize!.width).toBe(12240);
+    expect(result.pageSize!.height).toBe(15840);
   });
 
   it("parses a Word-emitted landscape page size (physical w > h)", () => {
@@ -73,9 +72,9 @@ describe("sectionPropertiesDesc round-trip", () => {
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = sectionPropertiesDesc.parse(el, readCtx);
-    expect(result.page!.size!.orientation).toBe("landscape");
-    expect(result.page!.size!.width).toBe(12240);
-    expect(result.page!.size!.height).toBe(15840);
+    expect(result.pageSize!.orientation).toBe("landscape");
+    expect(result.pageSize!.width).toBe(12240);
+    expect(result.pageSize!.height).toBe(15840);
   });
 
   it("parses portrait page size without swapping (w = logical width)", () => {
@@ -85,9 +84,9 @@ describe("sectionPropertiesDesc round-trip", () => {
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = sectionPropertiesDesc.parse(el, readCtx);
-    expect(result.page!.size!.width).toBe(12240);
-    expect(result.page!.size!.height).toBe(15840);
-    expect(result.page!.size!.orientation).toBeUndefined();
+    expect(result.pageSize!.width).toBe(12240);
+    expect(result.pageSize!.height).toBe(15840);
+    expect(result.pageSize!.orientation).toBeUndefined();
   });
 
   it("round-trips portrait page size with UniversalMeasure (mm → twips)", () => {
@@ -95,36 +94,34 @@ describe("sectionPropertiesDesc round-trip", () => {
     // the attrNum-based parse reads it back). 210/297mm floor to 11905/16837
     // twips (convertMillimetersToTwip uses Math.floor).
     const result = roundTrip({
-      page: { size: { width: "210mm", height: "297mm" } },
+      pageSize: { width: "210mm", height: "297mm" },
     });
-    expect(result.page!.size!.width).toBe(11905);
-    expect(result.page!.size!.height).toBe(16837);
+    expect(result.pageSize!.width).toBe(11905);
+    expect(result.pageSize!.height).toBe(16837);
     // orientation defaults to portrait when omitted.
-    expect(result.page!.size!.orientation).toBe("portrait");
+    expect(result.pageSize!.orientation).toBe("portrait");
   });
 
   it("round-trips page size code (printer paper code)", () => {
     const result = roundTrip({
-      page: { size: { width: 12240, height: 15840, code: 1 } },
+      pageSize: { width: 12240, height: 15840, code: 1 },
     });
-    expect(result.page!.size!.code).toBe(1);
+    expect(result.pageSize!.code).toBe(1);
   });
 
   it("round-trips page margins", () => {
     const result = roundTrip({
-      page: {
-        margin: {
-          top: 1440,
-          right: 1440,
-          bottom: 1440,
-          left: 1440,
-          header: 720,
-          footer: 720,
-          gutter: 0,
-        },
+      pageMargin: {
+        top: 1440,
+        right: 1440,
+        bottom: 1440,
+        left: 1440,
+        header: 720,
+        footer: 720,
+        gutter: 0,
       },
     });
-    const margin = result.page!.margin!;
+    const margin = result.pageMargin!;
     expect(margin.top).toBe(1440);
     expect(margin.right).toBe(1440);
     expect(margin.bottom).toBe(1440);
@@ -199,11 +196,11 @@ describe("sectionPropertiesDesc round-trip", () => {
 
   it("round-trips line numbers", () => {
     const result = roundTrip({
-      lineNumbers: { countBy: 5, start: 1, restart: "continuous", distance: 360 },
+      lineNumberType: { countBy: 5, start: 1, restart: "continuous", distance: 360 },
     });
-    expect(result.lineNumbers).toBeDefined();
-    expect(result.lineNumbers!.countBy).toBe(5);
-    expect(result.lineNumbers!.start).toBe(1);
+    expect(result.lineNumberType).toBeDefined();
+    expect(result.lineNumberType!.countBy).toBe(5);
+    expect(result.lineNumberType!.start).toBe(1);
   });
 
   it("round-trips docGrid", () => {
@@ -219,11 +216,11 @@ describe("sectionPropertiesDesc round-trip", () => {
 
   it("round-trips page numbers", () => {
     const result = roundTrip({
-      page: { pageNumbers: { start: 10, formatType: "decimal" } },
+      pageNumberType: { start: 10, formatType: "decimal" },
     });
-    expect(result.page!.pageNumbers).toBeDefined();
-    expect(result.page!.pageNumbers!.start).toBe(10);
-    expect(result.page!.pageNumbers!.formatType).toBe("decimal");
+    expect(result.pageNumberType).toBeDefined();
+    expect(result.pageNumberType!.start).toBe(10);
+    expect(result.pageNumberType!.formatType).toBe("decimal");
   });
 
   it("round-trips paperSrc", () => {
@@ -251,17 +248,15 @@ describe("sectionPropertiesDesc round-trip", () => {
       type: "continuous",
       titlePage: true,
       verticalAlign: "both",
-      page: {
-        size: { width: 11906, height: 16838 },
-        margin: {
-          top: 1440,
-          right: 1800,
-          bottom: 1440,
-          left: 1800,
-          header: 720,
-          footer: 720,
-          gutter: 0,
-        },
+      pageSize: { width: 11906, height: 16838 },
+      pageMargin: {
+        top: 1440,
+        right: 1800,
+        bottom: 1440,
+        left: 1800,
+        header: 720,
+        footer: 720,
+        gutter: 0,
       },
     });
     expect(result.type).toBe("continuous");

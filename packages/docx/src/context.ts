@@ -14,7 +14,7 @@ import { SmartArtCollection } from "@office-open/core/smartart";
 import type { Element } from "@office-open/xml";
 import { AltChunkCollection } from "@parts/alt-chunk/alt-chunk-collection";
 import type { DocumentOptions } from "@parts/core-properties";
-import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
+import type { SectionPropertiesDescriptorOptions } from "@parts/document/body/section-properties/descriptor";
 import type { EndnoteSeparator } from "@parts/endnotes/descriptor";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
 import type { FootnoteSeparator } from "@parts/footnotes/descriptor";
@@ -183,8 +183,8 @@ export class DocxWriteContext implements WriteContext {
   declare public webSettings: WebSettingsOptions | undefined;
 
   // --- Section properties (one per section, raw options for descriptor pipeline) ---
-  private _sectionProperties: SectionPropertiesOptions[] = [];
-  public get sectionProperties(): readonly SectionPropertiesOptions[] {
+  private _sectionProperties: SectionPropertiesDescriptorOptions[] = [];
+  public get sectionProperties(): readonly SectionPropertiesDescriptorOptions[] {
     return this._sectionProperties;
   }
 
@@ -250,7 +250,7 @@ export class DocxWriteContext implements WriteContext {
     this.comments = {
       relationships: new Relationships(),
       entries: [],
-      nextId: maxCommentId(options.comments?.children) + 1,
+      nextId: maxCommentId(options.comments) + 1,
     };
     const scan: DocumentTreeScan = { maxRangeId: -1, maxMoveRunId: -1, hasCommentSugar: false };
     scanDocumentTree(options.sections, scan);
@@ -263,31 +263,11 @@ export class DocxWriteContext implements WriteContext {
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };
     this.document = { relationships: new Relationships() };
+    // Settings.xml content has a single entry point: `settings`. The
+    // background fallback turns the display flag on when a background image
+    // needs showing; an explicit settings value wins via the spread.
     this._settingsOptions = {
-      compatibility: options.compatibility,
-      defaultTabStop: options.defaultTabStop,
-      evenAndOddHeaders: options.evenAndOddHeaderAndFooters || undefined,
-      characterSpacingControl: options.characterSpacingControl,
-      hyphenation: {
-        autoHyphenation: options.hyphenation?.autoHyphenation,
-        consecutiveHyphenLimit: options.hyphenation?.consecutiveHyphenLimit,
-        doNotHyphenateCaps: options.hyphenation?.doNotHyphenateCaps,
-        hyphenationZone: options.hyphenation?.hyphenationZone,
-      },
-      trackRevisions: options.features?.trackRevisions,
-      updateFields: options.features?.updateFields,
-      documentProtection: options.features?.documentProtection,
-      view: options.view,
-      zoom: options.zoom,
-      writeProtection: options.writeProtection,
-      displayBackgroundShape:
-        options.displayBackgroundShape ?? (options.background?.image ? true : undefined),
-      embedTrueTypeFonts: options.embedTrueTypeFonts,
-      embedSystemFonts: options.embedSystemFonts,
-      saveSubsetFonts: options.saveSubsetFonts,
-      docVars: options.docVars,
-      colorSchemeMapping: options.colorSchemeMapping,
-      mailMerge: options.mailMerge,
+      displayBackgroundShape: options.background?.image ? true : undefined,
       ...options.settings,
     };
 
@@ -394,27 +374,28 @@ export class DocxWriteContext implements WriteContext {
       this.addSection(section);
     }
 
+    // Note ids: round-tripped entries carry theirs; fresh entries auto-assign
+    // after the highest id seen (matching Word's sequential footnote ids).
     if (options.footnotes) {
-      for (const key in options.footnotes) {
-        // Skip the round-tripped separator markers (they carry no .children).
-        if (key === "separator" || key === "continuationSeparator") continue;
-        const note = options.footnotes[key];
-        if (!note) continue;
-        this.footNotes.notes.set(parseFloat(key), note.children);
+      let nextNoteId = 1;
+      for (const note of options.footnotes) {
+        const id = note.id ?? nextNoteId;
+        nextNoteId = Math.max(nextNoteId, id + 1);
+        this.footNotes.notes.set(id, note.children);
       }
-      this.footNotes.separator = options.footnotes.separator;
-      this.footNotes.continuationSeparator = options.footnotes.continuationSeparator;
+      this.footNotes.separator = options.footnoteSeparators?.separator;
+      this.footNotes.continuationSeparator = options.footnoteSeparators?.continuationSeparator;
     }
 
     if (options.endnotes) {
-      for (const key in options.endnotes) {
-        if (key === "separator" || key === "continuationSeparator") continue;
-        const note = options.endnotes[key];
-        if (!note) continue;
-        this.endnotes.notes.set(parseFloat(key), note.children);
+      let nextNoteId = 1;
+      for (const note of options.endnotes) {
+        const id = note.id ?? nextNoteId;
+        nextNoteId = Math.max(nextNoteId, id + 1);
+        this.endnotes.notes.set(id, note.children);
       }
-      this.endnotes.separator = options.endnotes.separator;
-      this.endnotes.continuationSeparator = options.endnotes.continuationSeparator;
+      this.endnotes.separator = options.endnoteSeparators?.separator;
+      this.endnotes.continuationSeparator = options.endnoteSeparators?.continuationSeparator;
     }
 
     this.fontTable = new FontWrapper(options.fonts ?? []);
@@ -449,14 +430,14 @@ export class DocxWriteContext implements WriteContext {
   // --- Private helpers ---
 
   private addSection({ headers = {}, footers = {}, properties }: SectionOptions): void {
-    const sectPrOptions: SectionPropertiesOptions = {
+    const sectPrOptions: SectionPropertiesDescriptorOptions = {
       ...properties,
-      footerWrapperGroup: {
+      footerReferences: {
         default: footers.default ? this.createFooter(footers.default) : undefined,
         even: footers.even ? this.createFooter(footers.even) : undefined,
         first: footers.first ? this.createFooter(footers.first) : undefined,
       },
-      headerWrapperGroup: {
+      headerReferences: {
         default: headers.default ? this.createHeader(headers.default) : undefined,
         even: headers.even ? this.createHeader(headers.even) : undefined,
         first: headers.first ? this.createHeader(headers.first) : undefined,
@@ -542,7 +523,7 @@ export class DocxWriteContext implements WriteContext {
     // produces an orphan comments.xml that Word rejects as an OPC violation
     // (empty part with no [Content_Types] Override when content types are
     // passed through from the source on round-trip).
-    if (this._options.comments?.children?.length || this._hasCommentSugar) {
+    if (this._options.comments?.length || this._hasCommentSugar) {
       this.document.relationships.addRelationship(
         this._currentRelationshipId++,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",

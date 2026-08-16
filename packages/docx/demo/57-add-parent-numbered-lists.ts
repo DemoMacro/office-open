@@ -12,10 +12,8 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.DECIMAL,
             level: 0,
-            style: {
-              paragraph: {
-                indent: { hanging: 260, left: "0.5in" },
-              },
+            paragraph: {
+              indent: { hanging: 260, left: "0.5in" },
             },
             text: "%1",
           },
@@ -23,18 +21,16 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.DECIMAL,
             level: 1,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: 1.25 * 260,
-                  left: 1.25 * 720, // 0.5in = 720 twips
-                },
+            paragraph: {
+              indent: {
+                hanging: 1.25 * 260,
+                left: 1.25 * 720, // 0.5in = 720 twips
               },
-              run: {
-                bold: true,
-                font: "Times New Roman",
-                size: 9,
-              },
+            },
+            run: {
+              bold: true,
+              font: "Times New Roman",
+              size: 9,
             },
             text: "%1.%2",
           },

@@ -38,23 +38,17 @@ const doc: DocumentOptions = {
       },
     ],
   },
-  footnotes: {
-    1: { children: ["Footnote body with detail."] },
-  },
-  endnotes: {
-    1: { children: ["Endnote body."] },
-  },
-  comments: {
-    children: [
-      {
-        id: 0,
-        author: "Max",
-        initials: "M",
-        date: new Date(),
-        children: [{ children: [{ text: "Document-level comment body." }] }],
-      },
-    ],
-  },
+  footnotes: [{ id: 1, children: ["Footnote body with detail."] }],
+  endnotes: [{ id: 1, children: ["Endnote body."] }],
+  comments: [
+    {
+      id: 0,
+      author: "Max",
+      initials: "M",
+      date: new Date(),
+      children: [{ children: [{ text: "Document-level comment body." }] }],
+    },
+  ],
   settings: {
     defaultTabStop: 720,
     trackRevisions: true,
@@ -68,7 +62,7 @@ const doc: DocumentOptions = {
     // ── Section 1: every run/block domain in one flow ──
     {
       properties: {
-        page: { margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 } },
+        pageMargin: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
         titlePage: true,
       },
       headers: {
@@ -407,11 +401,9 @@ const doc: DocumentOptions = {
     {
       properties: {
         type: "nextPage",
-        page: {
-          size: { orientation: "landscape", width: 15840, height: 12240 },
-          pageNumbers: { start: 1 },
-          borders: { top: { style: "double", size: 4, color: "2E74B5" } },
-        },
+        pageSize: { orientation: "landscape", width: 15840, height: 12240 },
+        pageNumberType: { start: 1 },
+        pageBorders: { top: { style: "double", size: 4, color: "2E74B5" } },
         column: { count: 2, space: 360 },
       },
       children: [

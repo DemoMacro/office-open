@@ -13,12 +13,10 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.UPPER_ROMAN,
             level: 0,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: "0.18in",
-                  left: "0.5in",
-                },
+            paragraph: {
+              indent: {
+                hanging: "0.18in",
+                left: "0.5in",
               },
             },
             text: "%1",
@@ -32,12 +30,10 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.DECIMAL,
             level: 0,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: "0.18in",
-                  left: "0.5in",
-                },
+            paragraph: {
+              indent: {
+                hanging: "0.18in",
+                left: "0.5in",
               },
             },
             text: "%1",
@@ -51,12 +47,10 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.DECIMAL_ZERO,
             level: 0,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: "0.18in",
-                  left: "0.5in",
-                },
+            paragraph: {
+              indent: {
+                hanging: "0.18in",
+                left: "0.5in",
               },
             },
             text: "[%1]",

@@ -87,11 +87,9 @@ const buffer = await generateDocument({
         ],
       },
       properties: {
-        page: {
-          pageNumbers: {
-            separator: PageNumberSeparator.EM_DASH,
-            start: 1,
-          },
+        pageNumberType: {
+          separator: PageNumberSeparator.EM_DASH,
+          start: 1,
         },
       },
     },

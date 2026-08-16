@@ -5,14 +5,24 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { generateDocument } from "@office-open/docx";
 
 const buffer = await generateDocument({
-  endnotes: {
-    1: { children: ["This is the first endnote with some detailed explanation."] },
-    2: {
+  endnotes: [
+    {
+      id: 1,
+      children: ["This is the first endnote with some detailed explanation."],
+    },
+    {
+      id: 2,
       children: ["Second endnote", "With multiple paragraphs for more complex content."],
     },
-    3: { children: ["Third endnote referencing important source material."] },
-    4: { children: ["Fourth endnote from a different section."] },
-  },
+    {
+      id: 3,
+      children: ["Third endnote referencing important source material."],
+    },
+    {
+      id: 4,
+      children: ["Fourth endnote from a different section."],
+    },
+  ],
   sections: [
     {
       children: [
@@ -52,13 +62,11 @@ const buffer = await generateDocument({
           numRestart: "eachSect",
           pos: "docEnd",
         },
-        page: {
-          margin: {
-            bottom: "2.5cm",
-            left: "2.5cm",
-            right: "2.5cm",
-            top: "2.5cm",
-          },
+        pageMargin: {
+          bottom: "2.5cm",
+          left: "2.5cm",
+          right: "2.5cm",
+          top: "2.5cm",
         },
       },
     },

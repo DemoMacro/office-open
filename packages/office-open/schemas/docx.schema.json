@@ -2996,21 +2996,6 @@
       "required": ["id", "children"],
       "type": "object"
     },
-    "CommentsOptions": {
-      "additionalProperties": false,
-      "description": "Options for creating a comments container.",
-      "properties": {
-        "children": {
-          "description": "Array of comment definitions",
-          "items": {
-            "$ref": "#/definitions/CommentOptions"
-          },
-          "type": "array"
-        }
-      },
-      "required": ["children"],
-      "type": "object"
-    },
     "CompatSettingOptions": {
       "additionalProperties": false,
       "description": "A single w:compatSetting entry (CT_CompatSetting).\n\nCaptures Word version-specific compatibility flags as name/value pairs.",
@@ -4604,7 +4589,7 @@
     },
     "DocumentOptions": {
       "additionalProperties": false,
-      "description": "Options for configuring document properties.",
+      "description": "Options for configuring document properties.\n\nAll settings.xml content is configured through the single  {@link  settings }  entry (SettingsOptions) — mirroring the OOXML part structure, where word/settings.xml is a standalone part and the document body carries none of it.",
       "properties": {
         "appProperties": {
           "$ref": "#/definitions/AppPropertiesOptions",
@@ -4616,59 +4601,11 @@
         "bibliography": {
           "$ref": "#/definitions/BibliographyOptions"
         },
-        "characterSpacingControl": {
-          "description": "Controls whether punctuation is compressed at line ends",
-          "enum": ["compressPunctuation", "doNotCompress"],
-          "type": "string"
-        },
-        "colorSchemeMapping": {
-          "additionalProperties": false,
-          "description": "Theme color scheme remapping",
-          "properties": {
-            "accent1": {
-              "type": "string"
-            },
-            "accent2": {
-              "type": "string"
-            },
-            "accent3": {
-              "type": "string"
-            },
-            "accent4": {
-              "type": "string"
-            },
-            "accent5": {
-              "type": "string"
-            },
-            "accent6": {
-              "type": "string"
-            },
-            "bg1": {
-              "type": "string"
-            },
-            "bg2": {
-              "type": "string"
-            },
-            "followedHyperlink": {
-              "type": "string"
-            },
-            "hyperlink": {
-              "type": "string"
-            },
-            "t1": {
-              "type": "string"
-            },
-            "t2": {
-              "type": "string"
-            }
-          },
-          "type": "object"
-        },
         "comments": {
-          "$ref": "#/definitions/CommentsOptions"
-        },
-        "compatibility": {
-          "$ref": "#/definitions/CompatibilityOptions"
+          "items": {
+            "$ref": "#/definitions/CommentOptions"
+          },
+          "type": "array"
         },
         "conformance": {
           "description": "Document conformance class (w:document/@w:conformance).",
@@ -4692,65 +4629,31 @@
           },
           "type": "array"
         },
-        "defaultTabStop": {
-          "type": "number"
-        },
         "description": {
           "type": "string"
         },
-        "displayBackgroundShape": {
-          "description": "Whether to display the background shape in print layout",
-          "type": "boolean"
-        },
-        "docVars": {
-          "description": "Document variables (key-value pairs stored in the document)",
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "val": {
-                "type": "string"
-              }
-            },
-            "required": ["name", "val"],
-            "type": "object"
-          },
-          "type": "array"
-        },
-        "embedSystemFonts": {
-          "description": "Whether to embed system fonts in the document",
-          "type": "boolean"
-        },
-        "embedTrueTypeFonts": {
-          "description": "Whether to embed TrueType fonts in the document",
-          "type": "boolean"
-        },
-        "endnotes": {
-          "additionalProperties": {
-            "type": "object"
-          },
+        "endnoteSeparators": {
+          "additionalProperties": false,
+          "description": "Separator endnotes — round-tripped verbatim from the source.",
           "properties": {
             "continuationSeparator": {
-              "$ref": "#/definitions/EndnoteSeparator",
-              "description": "Continuation separator endnote — round-tripped verbatim from the source."
+              "$ref": "#/definitions/EndnoteSeparator"
             },
             "separator": {
-              "$ref": "#/definitions/EndnoteSeparator",
-              "description": "Separator endnote — id + content round-tripped verbatim from the source."
+              "$ref": "#/definitions/EndnoteSeparator"
             }
           },
           "type": "object"
         },
-        "evenAndOddHeaderAndFooters": {
-          "type": "boolean"
+        "endnotes": {
+          "description": "User endnotes (word/endnotes.xml). `id` auto-assigns 1, 2, … when omitted.",
+          "items": {
+            "$ref": "#/definitions/EndnoteOptions"
+          },
+          "type": "array"
         },
         "externalStyles": {
           "type": "string"
-        },
-        "features": {
-          "$ref": "#/definitions/FeaturesOptions"
         },
         "fonts": {
           "items": {
@@ -4758,28 +4661,29 @@
           },
           "type": "array"
         },
-        "footnotes": {
-          "additionalProperties": {
-            "type": "object"
-          },
+        "footnoteSeparators": {
+          "additionalProperties": false,
+          "description": "Separator footnotes — id + content round-tripped verbatim from the source so the generated id stays consistent with settings.footnotePr, which references it. Omit for freshly generated documents (defaults apply).",
           "properties": {
             "continuationSeparator": {
-              "$ref": "#/definitions/FootnoteSeparator",
-              "description": "Continuation separator footnote — round-tripped verbatim from the source."
+              "$ref": "#/definitions/FootnoteSeparator"
             },
             "separator": {
-              "$ref": "#/definitions/FootnoteSeparator",
-              "description": "Separator footnote — id + content round-tripped verbatim from the source so the generated id stays consistent with settings.footnotePr, which references it. Omit for freshly generated documents (defaults apply)."
+              "$ref": "#/definitions/FootnoteSeparator"
             }
           },
           "type": "object"
         },
+        "footnotes": {
+          "description": "User footnotes (word/footnotes.xml). `id` auto-assigns 1, 2, … when omitted.",
+          "items": {
+            "$ref": "#/definitions/FootnoteOptions"
+          },
+          "type": "array"
+        },
         "glossary": {
           "$ref": "#/definitions/GlossaryDocumentOptions",
           "description": "Glossary document — building blocks (Quick Parts)"
-        },
-        "hyphenation": {
-          "$ref": "#/definitions/HyphenationOptions"
         },
         "keywords": {
           "type": "string"
@@ -4789,10 +4693,6 @@
         },
         "lastPrinted": {
           "type": "string"
-        },
-        "mailMerge": {
-          "$ref": "#/definitions/MailMergeOptions",
-          "description": "Mail merge configuration"
         },
         "modified": {
           "description": "Last modified timestamp (W3CDTF), round-tripped from dcterms:modified.",
@@ -4821,10 +4721,6 @@
         "revision": {
           "type": "number"
         },
-        "saveSubsetFonts": {
-          "description": "Whether to save only a subset of the embedded fonts",
-          "type": "boolean"
-        },
         "sections": {
           "items": {
             "$ref": "#/definitions/SectionOptions"
@@ -4833,7 +4729,7 @@
         },
         "settings": {
           "$ref": "#/definitions/SettingsOptions",
-          "description": "Additional document settings passed through to the settings.xml part"
+          "description": "Document settings (word/settings.xml)."
         },
         "styles": {
           "$ref": "#/definitions/StylesOptions"
@@ -4844,32 +4740,9 @@
         "title": {
           "type": "string"
         },
-        "view": {
-          "description": "Default document view mode",
-          "enum": ["none", "print", "outline", "masterPages", "normal", "web"],
-          "type": "string"
-        },
         "webSettings": {
           "$ref": "#/definitions/WebSettingsOptions",
           "description": "Web settings for browser rendering (word/webSettings.xml)"
-        },
-        "writeProtection": {
-          "$ref": "#/definitions/WriteProtectionOptions",
-          "description": "Write protection recommendation (not enforcement)"
-        },
-        "zoom": {
-          "additionalProperties": false,
-          "description": "Default zoom level (percentage) and type",
-          "properties": {
-            "percent": {
-              "type": "number"
-            },
-            "val": {
-              "enum": ["none", "fullPage", "bestFit", "textFit"],
-              "type": "string"
-            }
-          },
-          "type": "object"
         }
       },
       "required": ["sections"],
@@ -5326,6 +5199,30 @@
       "required": ["name"],
       "type": "object"
     },
+    "EndnoteOptions": {
+      "additionalProperties": false,
+      "description": "A user endnote. `id` is auto-assigned (1, 2, …) when omitted; round-tripped entries carry theirs.",
+      "properties": {
+        "children": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/ParagraphOptions"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "number"
+        }
+      },
+      "required": ["children"],
+      "type": "object"
+    },
     "EndnotePropertiesOptions": {
       "additionalProperties": false,
       "properties": {
@@ -5470,22 +5367,6 @@
         }
       },
       "required": ["relationshipId"],
-      "type": "object"
-    },
-    "FeaturesOptions": {
-      "additionalProperties": false,
-      "description": "Document-level feature toggles parsed from settings.xml.",
-      "properties": {
-        "documentProtection": {
-          "$ref": "#/definitions/DocumentProtectionOptions"
-        },
-        "trackRevisions": {
-          "type": "boolean"
-        },
-        "updateFields": {
-          "type": "boolean"
-        }
-      },
       "type": "object"
     },
     "FillEffectOptions": {
@@ -5901,6 +5782,30 @@
         }
       },
       "required": ["id"],
+      "type": "object"
+    },
+    "FootnoteOptions": {
+      "additionalProperties": false,
+      "description": "A user footnote. `id` is auto-assigned (1, 2, …) when omitted; round-tripped entries carry theirs.",
+      "properties": {
+        "children": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/ParagraphOptions"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "number"
+        }
+      },
+      "required": ["children"],
       "type": "object"
     },
     "FootnotePropertiesOptions": {
@@ -6762,33 +6667,6 @@
           "type": "number"
         }
       },
-      "type": "object"
-    },
-    "HeaderFooterGroup<HeaderFooterReference>": {
-      "additionalProperties": false,
-      "description": "Header/footer group for specifying different headers/footers for default, first, and even pages.",
-      "properties": {
-        "default": {
-          "$ref": "#/definitions/HeaderFooterReference"
-        },
-        "even": {
-          "$ref": "#/definitions/HeaderFooterReference"
-        },
-        "first": {
-          "$ref": "#/definitions/HeaderFooterReference"
-        }
-      },
-      "type": "object"
-    },
-    "HeaderFooterReference": {
-      "additionalProperties": false,
-      "description": "Reference to a header or footer from a section — just the relationship id needed to emit `<w:headerReference r:id=\"...\">`. Parse fills only this; the full header/footer entry (with children/relationships) is the generate-side shape ( {@link  HeaderFooterEntry } ).",
-      "properties": {
-        "referenceId": {
-          "type": "number"
-        }
-      },
-      "required": ["referenceId"],
       "type": "object"
     },
     "HeadingPairOptions": {
@@ -7661,28 +7539,21 @@
           "description": "Restart numbering after this level (0-based level index).",
           "type": "number"
         },
+        "paragraph": {
+          "$ref": "#/definitions/LevelParagraphStylePropertiesOptions",
+          "description": "Paragraph properties for the level (w:pPr)."
+        },
         "paragraphStyle": {
           "description": "Paragraph style ID this level is linked to (CT_Lvl pStyle).",
           "type": "string"
         },
+        "run": {
+          "$ref": "#/definitions/RunStylePropertiesOptions",
+          "description": "Run properties for the numbering text (w:rPr)."
+        },
         "start": {
           "description": "Starting number for this level.",
           "type": "number"
-        },
-        "style": {
-          "additionalProperties": false,
-          "description": "Run and paragraph style properties.",
-          "properties": {
-            "paragraph": {
-              "$ref": "#/definitions/LevelParagraphStylePropertiesOptions",
-              "description": "Paragraph style properties for the level."
-            },
-            "run": {
-              "$ref": "#/definitions/RunStylePropertiesOptions",
-              "description": "Run style properties for the numbering text."
-            }
-          },
-          "type": "object"
         },
         "suffix": {
           "description": "Character(s) following the numbering.",
@@ -16378,9 +16249,6 @@
         "endnotePr": {
           "$ref": "#/definitions/EndnotePropertiesOptions"
         },
-        "footerWrapperGroup": {
-          "$ref": "#/definitions/HeaderFooterGroup%3CHeaderFooterReference%3E"
-        },
         "footnotePr": {
           "$ref": "#/definitions/FootnotePropertiesOptions"
         },
@@ -16399,40 +16267,31 @@
           ],
           "description": "Document grid. Three states: omitted (fresh generation emits Word's CJK default line grid — linePitch 312, type \"lines\"); a DocGridProperties object (emits provided values, e.g. from a parsed source); or false (explicit off — a parsed source with no w:docGrid is preserved by emitting nothing)."
         },
-        "headerWrapperGroup": {
-          "$ref": "#/definitions/HeaderFooterGroup%3CHeaderFooterReference%3E"
-        },
         "id": {
           "description": "Unique identifier for this change (must be unique within the document)",
           "type": "number"
         },
-        "lineNumbers": {
+        "lineNumberType": {
           "$ref": "#/definitions/LineNumberProperties"
         },
         "noEndnote": {
           "type": "boolean"
         },
-        "page": {
-          "additionalProperties": false,
-          "properties": {
-            "borders": {
-              "$ref": "#/definitions/PageBordersOptions"
-            },
-            "margin": {
-              "$ref": "#/definitions/PageMarginProperties"
-            },
-            "pageNumbers": {
-              "$ref": "#/definitions/PageNumberTypeProperties"
-            },
-            "size": {
-              "$ref": "#/definitions/PageSizeProperties"
-            },
-            "textDirection": {
-              "enum": ["lrTb", "tbRl"],
-              "type": "string"
-            }
-          },
-          "type": "object"
+        "pageBorders": {
+          "$ref": "#/definitions/PageBordersOptions",
+          "description": "Page borders (w:pgBorders)."
+        },
+        "pageMargin": {
+          "$ref": "#/definitions/PageMarginProperties",
+          "description": "Page margins in twips (w:pgMar). Defaults to Word's standard margins."
+        },
+        "pageNumberType": {
+          "$ref": "#/definitions/PageNumberTypeProperties",
+          "description": "Page numbering (w:pgNumType)."
+        },
+        "pageSize": {
+          "$ref": "#/definitions/PageSizeProperties",
+          "description": "Page size (w:pgSz). Defaults to A4 portrait."
         },
         "paperSrc": {
           "additionalProperties": false,
@@ -16459,6 +16318,11 @@
           "type": "string"
         },
         "sectionRsid": {
+          "type": "string"
+        },
+        "textDirection": {
+          "description": "Section text flow direction (w:textDirection).",
+          "enum": ["lrTb", "tbRl"],
           "type": "string"
         },
         "titlePage": {
@@ -16490,9 +16354,6 @@
         "endnotePr": {
           "$ref": "#/definitions/EndnotePropertiesOptions"
         },
-        "footerWrapperGroup": {
-          "$ref": "#/definitions/HeaderFooterGroup%3CHeaderFooterReference%3E"
-        },
         "footnotePr": {
           "$ref": "#/definitions/FootnotePropertiesOptions"
         },
@@ -16511,36 +16372,27 @@
           ],
           "description": "Document grid. Three states: omitted (fresh generation emits Word's CJK default line grid — linePitch 312, type \"lines\"); a DocGridProperties object (emits provided values, e.g. from a parsed source); or false (explicit off — a parsed source with no w:docGrid is preserved by emitting nothing)."
         },
-        "headerWrapperGroup": {
-          "$ref": "#/definitions/HeaderFooterGroup%3CHeaderFooterReference%3E"
-        },
-        "lineNumbers": {
+        "lineNumberType": {
           "$ref": "#/definitions/LineNumberProperties"
         },
         "noEndnote": {
           "type": "boolean"
         },
-        "page": {
-          "additionalProperties": false,
-          "properties": {
-            "borders": {
-              "$ref": "#/definitions/PageBordersOptions"
-            },
-            "margin": {
-              "$ref": "#/definitions/PageMarginProperties"
-            },
-            "pageNumbers": {
-              "$ref": "#/definitions/PageNumberTypeProperties"
-            },
-            "size": {
-              "$ref": "#/definitions/PageSizeProperties"
-            },
-            "textDirection": {
-              "enum": ["lrTb", "tbRl"],
-              "type": "string"
-            }
-          },
-          "type": "object"
+        "pageBorders": {
+          "$ref": "#/definitions/PageBordersOptions",
+          "description": "Page borders (w:pgBorders)."
+        },
+        "pageMargin": {
+          "$ref": "#/definitions/PageMarginProperties",
+          "description": "Page margins in twips (w:pgMar). Defaults to Word's standard margins."
+        },
+        "pageNumberType": {
+          "$ref": "#/definitions/PageNumberTypeProperties",
+          "description": "Page numbering (w:pgNumType)."
+        },
+        "pageSize": {
+          "$ref": "#/definitions/PageSizeProperties",
+          "description": "Page size (w:pgSz). Defaults to A4 portrait."
         },
         "paperSrc": {
           "additionalProperties": false,
@@ -16570,6 +16422,11 @@
           "type": "string"
         },
         "sectionRsid": {
+          "type": "string"
+        },
+        "textDirection": {
+          "description": "Section text flow direction (w:textDirection).",
+          "enum": ["lrTb", "tbRl"],
           "type": "string"
         },
         "titlePage": {

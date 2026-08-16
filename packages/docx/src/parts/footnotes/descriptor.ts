@@ -13,10 +13,17 @@
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { createNotesDesc, type NoteSeparator, type NotesData } from "@parts/notes/shared";
+import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 
 import type { BodyContext } from "../../context";
 
 // ── Input (aliases of the shared notes types) ──
+
+/** A user footnote. `id` is auto-assigned (1, 2, …) when omitted; round-tripped entries carry theirs. */
+export interface FootnoteOptions {
+  id?: number;
+  children: (ParagraphOptions | string)[];
+}
 
 /** System footnote (separator / continuationSeparator). Round-tripped verbatim. */
 export type FootnoteSeparator = NoteSeparator;

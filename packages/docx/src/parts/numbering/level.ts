@@ -210,11 +210,8 @@ export interface LevelsOptions {
   w15Tentative?: boolean;
   /** Legacy spacing/indent settings. `enabled` maps to the required CT_LvlLegacy @w:legacy flag. */
   legacy?: { enabled?: boolean; space?: number; indent?: number };
-  /** Run and paragraph style properties. */
-  style?: {
-    /** Run style properties for the numbering text. */
-    run?: RunStylePropertiesOptions;
-    /** Paragraph style properties for the level. */
-    paragraph?: LevelParagraphStylePropertiesOptions;
-  };
+  /** Run properties for the numbering text (w:rPr). */
+  run?: RunStylePropertiesOptions;
+  /** Paragraph properties for the level (w:pPr). */
+  paragraph?: LevelParagraphStylePropertiesOptions;
 }

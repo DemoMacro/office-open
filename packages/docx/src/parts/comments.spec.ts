@@ -4,7 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { BodyContext } from "../context";
 import { commentsDesc } from "./comments";
-import type { CommentsOptions } from "./paragraph/run/comment-run";
+import type { CommentOptions } from "./paragraph/run/comment-run";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -19,7 +19,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: CommentsOptions): CommentsOptions {
+function roundTrip(opts: CommentOptions[]): CommentOptions[] {
   const xml = commentsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
@@ -29,38 +29,34 @@ function roundTrip(opts: CommentsOptions): CommentsOptions {
 
 describe("commentsDesc round-trip", () => {
   it("round-trips comment with author and date", () => {
-    const result = roundTrip({
-      children: [{ id: 1, author: "John", date: "2024-01-15T10:30:00Z", children: [] }],
-    });
-    expect(result.children).toHaveLength(1);
-    expect(result.children[0]?.id).toBe(1);
-    expect(result.children[0]?.author).toBe("John");
-    expect(result.children[0]?.date).toBe("2024-01-15T10:30:00Z");
+    const result = roundTrip([
+      { id: 1, author: "John", date: "2024-01-15T10:30:00Z", children: [] },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.id).toBe(1);
+    expect(result[0]?.author).toBe("John");
+    expect(result[0]?.date).toBe("2024-01-15T10:30:00Z");
   });
 
   it("round-trips comment with initials", () => {
-    const result = roundTrip({
-      children: [
-        { id: 2, author: "Jane", initials: "JD", date: "2024-02-01T12:00:00Z", children: [] },
-      ],
-    });
-    expect(result.children[0]?.initials).toBe("JD");
+    const result = roundTrip([
+      { id: 2, author: "Jane", initials: "JD", date: "2024-02-01T12:00:00Z", children: [] },
+    ]);
+    expect(result[0]?.initials).toBe("JD");
   });
 
   it("round-trips multiple comments", () => {
-    const result = roundTrip({
-      children: [
-        { id: 1, author: "A", date: "2024-01-01T00:00:00Z", children: [] },
-        { id: 2, author: "B", date: "2024-02-01T00:00:00Z", children: [] },
-      ],
-    });
-    expect(result.children).toHaveLength(2);
-    expect(result.children[0]?.author).toBe("A");
-    expect(result.children[1]?.author).toBe("B");
+    const result = roundTrip([
+      { id: 1, author: "A", date: "2024-01-01T00:00:00Z", children: [] },
+      { id: 2, author: "B", date: "2024-02-01T00:00:00Z", children: [] },
+    ]);
+    expect(result).toHaveLength(2);
+    expect(result[0]?.author).toBe("A");
+    expect(result[1]?.author).toBe("B");
   });
 
   it("round-trips empty comments", () => {
-    const result = roundTrip({ children: [] });
-    expect(result.children).toHaveLength(0);
+    const result = roundTrip([]);
+    expect(result).toHaveLength(0);
   });
 });

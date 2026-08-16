@@ -20,10 +20,8 @@ const buffer = await generateDocument({
             levelRestart: 0,
             // Legacy compatibility spacing and indent
             legacy: { space: 720, indent: 360 },
-            style: {
-              paragraph: {
-                indent: { left: 720, hanging: 360 },
-              },
+            paragraph: {
+              indent: { left: 720, hanging: 360 },
             },
           },
           {
@@ -34,10 +32,8 @@ const buffer = await generateDocument({
             start: 1,
             levelRestart: 0,
             legacy: { space: 360, indent: 180 },
-            style: {
-              paragraph: {
-                indent: { left: 1440, hanging: 360 },
-              },
+            paragraph: {
+              indent: { left: 1440, hanging: 360 },
             },
           },
         ],

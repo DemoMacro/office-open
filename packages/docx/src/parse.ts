@@ -383,9 +383,8 @@ export function parseDocument(data: DataType): DocumentOptions {
       const commentsResult = ctx.withPart(docx.partRefs.comments, () =>
         commentsDesc.parse(commentsEl, ctx),
       );
-      const children = commentsResult.children;
-      if (children && children.length > 0) {
-        opts.comments = { children };
+      if (commentsResult.length > 0) {
+        opts.comments = commentsResult;
       }
     }
   }
@@ -397,21 +396,18 @@ export function parseDocument(data: DataType): DocumentOptions {
       const fnResult = ctx.withPart(docx.partRefs.footnotes, () =>
         footnotesDesc.parse(footnotesEl, ctx),
       );
-      const footnotesMap: NonNullable<DocumentOptions["footnotes"]> = {};
+      const footnotes: NonNullable<DocumentOptions["footnotes"]> = [];
       for (const [id, paragraphs] of fnResult.notes) {
-        footnotesMap[String(id)] = { children: paragraphs };
+        footnotes.push({ id, children: paragraphs });
       }
+      if (footnotes.length > 0) opts.footnotes = footnotes;
       // Preserve round-tripped separators so the generated ids stay consistent
       // with settings.footnotePr (which references them).
-      if (
-        Object.keys(footnotesMap).length > 0 ||
-        fnResult.separator ||
-        fnResult.continuationSeparator
-      ) {
-        if (fnResult.separator) footnotesMap.separator = fnResult.separator;
-        if (fnResult.continuationSeparator)
-          footnotesMap.continuationSeparator = fnResult.continuationSeparator;
-        opts.footnotes = footnotesMap;
+      if (fnResult.separator || fnResult.continuationSeparator) {
+        opts.footnoteSeparators = {
+          separator: fnResult.separator,
+          continuationSeparator: fnResult.continuationSeparator,
+        };
       }
     }
   }
@@ -423,19 +419,16 @@ export function parseDocument(data: DataType): DocumentOptions {
       const enResult = ctx.withPart(docx.partRefs.endnotes, () =>
         endnotesDesc.parse(endnotesEl, ctx),
       );
-      const endnotesMap: NonNullable<DocumentOptions["endnotes"]> = {};
+      const endnotes: NonNullable<DocumentOptions["endnotes"]> = [];
       for (const [id, paragraphs] of enResult.notes) {
-        endnotesMap[String(id)] = { children: paragraphs };
+        endnotes.push({ id, children: paragraphs });
       }
-      if (
-        Object.keys(endnotesMap).length > 0 ||
-        enResult.separator ||
-        enResult.continuationSeparator
-      ) {
-        if (enResult.separator) endnotesMap.separator = enResult.separator;
-        if (enResult.continuationSeparator)
-          endnotesMap.continuationSeparator = enResult.continuationSeparator;
-        opts.endnotes = endnotesMap;
+      if (endnotes.length > 0) opts.endnotes = endnotes;
+      if (enResult.separator || enResult.continuationSeparator) {
+        opts.endnoteSeparators = {
+          separator: enResult.separator,
+          continuationSeparator: enResult.continuationSeparator,
+        };
       }
     }
   }

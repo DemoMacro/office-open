@@ -10,7 +10,7 @@ import { HeadingLevel, generateDocument } from "@office-open/docx";
 // Let's define the properties for generate a TOC for heading 1-5 and MySpectacularStyle,
 // Making the entries be hyperlinks for the paragraph
 const buffer = await generateDocument({
-  features: {
+  settings: {
     updateFields: true,
   },
   sections: [

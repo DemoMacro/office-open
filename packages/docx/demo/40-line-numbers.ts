@@ -24,7 +24,7 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        lineNumbers: {
+        lineNumberType: {
           countBy: 1,
           restart: LineNumberRestartFormat.CONTINUOUS,
         },

@@ -617,9 +617,7 @@ async function main() {
     // Section 8: paragraph formatting (indent, spacing, tabStops, border, shading)
     {
       properties: {
-        page: {
-          margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
-        },
+        pageMargin: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
       },
       children: [
         { paragraph: { heading: "Heading1", children: ["Paragraph Formatting"] } },
@@ -749,14 +747,12 @@ async function main() {
     // Section 10: page setup — landscape orientation + page borders
     {
       properties: {
-        page: {
-          size: { orientation: "landscape" },
-          borders: {
-            top: { color: "4472C4", size: 24, space: 24, style: "single" },
-            bottom: { color: "4472C4", size: 24, space: 24, style: "single" },
-            left: { color: "4472C4", size: 24, space: 24, style: "single" },
-            right: { color: "4472C4", size: 24, space: 24, style: "single" },
-          },
+        pageSize: { orientation: "landscape" },
+        pageBorders: {
+          top: { color: "4472C4", size: 24, space: 24, style: "single" },
+          bottom: { color: "4472C4", size: 24, space: 24, style: "single" },
+          left: { color: "4472C4", size: 24, space: 24, style: "single" },
+          right: { color: "4472C4", size: 24, space: 24, style: "single" },
         },
       },
       children: [
@@ -769,7 +765,7 @@ async function main() {
     {
       properties: {
         column: { count: 2, space: 708 },
-        lineNumbers: { countBy: 1 },
+        lineNumberType: { countBy: 1 },
       },
       children: [
         { paragraph: { heading: "Heading1", children: ["Columns + Line Numbers"] } },
@@ -874,10 +870,8 @@ async function main() {
     // Section 15: customXml block + textDirection
     {
       properties: {
-        page: {
-          margin: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
-          textDirection: "lrTb",
-        },
+        pageMargin: { top: 1440, bottom: 1440, left: 1440, right: 1440 },
+        textDirection: "lrTb",
       },
       children: [
         { paragraph: { heading: "Heading1", children: ["Custom XML Block"] } },
@@ -901,22 +895,16 @@ async function main() {
   // 2. Create document and export
   const buffer = await generateDocument({
     background: { color: "FFFFFF" },
-    footnotes: {
-      "1": { children: ["This is a footnote."] },
-    },
-    endnotes: {
-      "1": { children: ["This is an endnote."] },
-    },
-    comments: {
-      children: [
-        {
-          id: 0,
-          author: "Demo Author",
-          initials: "DA",
-          children: ["This is a comment via JSON API."],
-        },
-      ],
-    },
+    footnotes: [{ id: 1, children: ["This is a footnote."] }],
+    endnotes: [{ id: 1, children: ["This is an endnote."] }],
+    comments: [
+      {
+        id: 0,
+        author: "Demo Author",
+        initials: "DA",
+        children: ["This is a comment via JSON API."],
+      },
+    ],
     styles: {
       default: {
         document: {
@@ -958,14 +946,14 @@ async function main() {
         },
       ],
     },
-    evenAndOddHeaderAndFooters: true,
+    settings: {
+      evenAndOddHeaders: true,
+      trackRevisions: true,
+    },
     customProperties: [
       { name: "Project", value: "Round-trip Test" },
       { name: "Version", value: "1.0" },
     ],
-    features: {
-      trackRevisions: true,
-    },
     webSettings: { optimizeForBrowser: true, allowPNG: true, pixelsPerInch: 96 },
     sections,
   });
@@ -996,7 +984,7 @@ async function main() {
 
   // Verify section properties textDirection
   const sec15Props = sec15.properties as any;
-  assert("textDirection parsed", sec15Props?.page?.textDirection === "lrTb");
+  assert("textDirection parsed", sec15Props?.textDirection === "lrTb");
 
   // Verify webSettings
   assert("webSettings parsed", (parsed as any).webSettings !== undefined);

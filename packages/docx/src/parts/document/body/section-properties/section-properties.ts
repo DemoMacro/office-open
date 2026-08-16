@@ -8,7 +8,6 @@
  *
  * @module
  */
-import type { HeaderFooterReference } from "@parts/header-footer";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 import type { SectionVerticalAlign } from "@shared/vertical-align";
 
@@ -42,13 +41,16 @@ export interface SectionPropertiesOptionsBase {
   deletionRsid?: string;
   rsid?: string;
   sectionRsid?: string;
-  page?: {
-    size?: PageSizeProperties;
-    margin?: PageMarginProperties;
-    pageNumbers?: PageNumberTypeProperties;
-    borders?: PageBordersOptions;
-    textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
-  };
+  /** Page size (w:pgSz). Defaults to A4 portrait. */
+  pageSize?: PageSizeProperties;
+  /** Page margins in twips (w:pgMar). Defaults to Word's standard margins. */
+  pageMargin?: PageMarginProperties;
+  /** Page numbering (w:pgNumType). */
+  pageNumberType?: PageNumberTypeProperties;
+  /** Page borders (w:pgBorders). */
+  pageBorders?: PageBordersOptions;
+  /** Section text flow direction (w:textDirection). */
+  textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
   /**
    * Document grid. Three states: omitted (fresh generation emits Word's CJK
    * default line grid — linePitch 312, type "lines"); a DocGridProperties object
@@ -56,9 +58,7 @@ export interface SectionPropertiesOptionsBase {
    * a parsed source with no w:docGrid is preserved by emitting nothing).
    */
   grid?: DocGridProperties | false;
-  headerWrapperGroup?: HeaderFooterGroup<HeaderFooterReference>;
-  footerWrapperGroup?: HeaderFooterGroup<HeaderFooterReference>;
-  lineNumbers?: LineNumberProperties;
+  lineNumberType?: LineNumberProperties;
   titlePage?: boolean;
   verticalAlign?: SectionVerticalAlign;
   column?: ColumnsProperties;

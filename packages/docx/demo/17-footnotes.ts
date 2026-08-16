@@ -4,9 +4,13 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { AlignmentType, LevelFormat, generateDocument } from "@office-open/docx";
 
 const buffer = await generateDocument({
-  footnotes: {
-    1: { children: ["Foo", "Bar"] },
-    2: {
+  footnotes: [
+    {
+      id: 1,
+      children: ["Foo", "Bar"],
+    },
+    {
+      id: 2,
       children: [
         "This footnote contains a numbered list:",
         {
@@ -32,7 +36,8 @@ const buffer = await generateDocument({
         },
       ],
     },
-    3: {
+    {
+      id: 3,
       children: [
         {
           children: [
@@ -46,17 +51,24 @@ const buffer = await generateDocument({
                 type: "jpg",
               },
             },
-            {
-              text: "It's a cat",
-            },
+            { text: "It's a cat" },
           ],
         },
       ],
     },
-    4: { children: ["Foo1"] },
-    5: { children: ["Test1"] },
-    6: { children: ["My amazing reference1"] },
-  },
+    {
+      id: 4,
+      children: ["Foo1"],
+    },
+    {
+      id: 5,
+      children: ["Test1"],
+    },
+    {
+      id: 6,
+      children: ["My amazing reference1"],
+    },
+  ],
   numbering: {
     config: [
       {
@@ -66,12 +78,10 @@ const buffer = await generateDocument({
             format: LevelFormat.DECIMAL,
             text: "%1.",
             alignment: AlignmentType.START,
-            style: {
-              paragraph: {
-                indent: {
-                  left: "0.5in",
-                  hanging: "0.18in",
-                },
+            paragraph: {
+              indent: {
+                left: "0.5in",
+                hanging: "0.18in",
               },
             },
           },

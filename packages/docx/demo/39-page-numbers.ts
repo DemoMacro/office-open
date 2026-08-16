@@ -70,11 +70,9 @@ const buffer = await generateDocument({
         ],
       },
       properties: {
-        page: {
-          pageNumbers: {
-            formatType: NumberFormat.DECIMAL,
-            start: 1,
-          },
+        pageNumberType: {
+          formatType: NumberFormat.DECIMAL,
+          start: 1,
         },
       },
     },

@@ -41,11 +41,9 @@ const buffer = await generateDocument({
         ],
       },
       properties: {
-        page: {
-          margin: {
-            footer: "0.1cm",
-            header: "0.2cm",
-          },
+        pageMargin: {
+          footer: "0.1cm",
+          header: "0.2cm",
         },
       },
     },

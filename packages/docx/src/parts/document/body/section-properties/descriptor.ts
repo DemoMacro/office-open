@@ -99,7 +99,7 @@ function verticalAlignXml(val: string): string {
   return `<w:vAlign w:val="${val}"/>`;
 }
 
-function lineNumberXml(opts: NonNullable<SectionPropertiesOptions["lineNumbers"]>): string {
+function lineNumberXml(opts: NonNullable<SectionPropertiesOptions["lineNumberType"]>): string {
   const attrs: string[] = [];
   if (opts.countBy !== undefined) attrs.push(`w:countBy="${opts.countBy}"`);
   if (opts.start !== undefined) attrs.push(`w:start="${opts.start}"`);
@@ -187,14 +187,22 @@ function pageBordersXml(opts: NonNullable<PageBordersOptions>): string {
 
 // ── Header/footer references ──
 
+/**
+ * Descriptor input for section properties: the public options plus the
+ * header/footer part wiring owned by {@link BodyContext} (users author
+ * headers/footers on the section, not reference ids). Parse never emits
+ * the reference fields — round-trip re-creates them from the parsed
+ * header/footer parts.
+ */
+export interface SectionPropertiesDescriptorOptions extends SectionPropertiesOptions {
+  headerReferences?: HeaderFooterGroup<HeaderFooterReference>;
+  footerReferences?: HeaderFooterGroup<HeaderFooterReference>;
+}
+
 function appendHeaderFooterRefs(
   parts: string[],
   type: "w:headerReference" | "w:footerReference",
-  group?: {
-    default?: HeaderFooterReference;
-    first?: HeaderFooterReference;
-    even?: HeaderFooterReference;
-  },
+  group?: HeaderFooterGroup<HeaderFooterReference>,
 ): void {
   if (!group) return;
   if (group.default) parts.push(headerFooterRefXml(type, group.default.referenceId, "default"));
@@ -212,22 +220,22 @@ function stringifySectionPropertiesChange(opts: SectionPropertiesChangeOptions):
 
 // ── Core XML builder ──
 
-function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string {
+function stringifySectionPropertiesInner(opts: SectionPropertiesDescriptorOptions): string {
   const parts: string[] = [];
 
   // Header/footer references
-  appendHeaderFooterRefs(parts, "w:headerReference", opts.headerWrapperGroup);
-  appendHeaderFooterRefs(parts, "w:footerReference", opts.footerWrapperGroup);
+  appendHeaderFooterRefs(parts, "w:headerReference", opts.headerReferences);
+  appendHeaderFooterRefs(parts, "w:footerReference", opts.footerReferences);
 
   // Destructure page options with defaults
   const {
-    size: {
+    pageSize: {
       width = sectionPageSizeDefaults.WIDTH,
       height = sectionPageSizeDefaults.HEIGHT,
       orientation = sectionPageSizeDefaults.ORIENTATION,
       code,
     } = {},
-    margin: {
+    pageMargin: {
       top = sectionMarginDefaults.TOP,
       right = sectionMarginDefaults.RIGHT,
       bottom = sectionMarginDefaults.BOTTOM,
@@ -236,10 +244,10 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
       footer = sectionMarginDefaults.FOOTER,
       gutter = sectionMarginDefaults.GUTTER,
     } = {},
-    pageNumbers = {},
-    borders,
+    pageNumberType = {},
+    pageBorders: borders,
     textDirection,
-  } = opts.page ?? {};
+  } = opts;
 
   const {
     linePitch = 312,
@@ -270,10 +278,10 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
   if (borders) parts.push(pageBordersXml(borders));
 
   // Line numbers
-  if (opts.lineNumbers) parts.push(lineNumberXml(opts.lineNumbers));
+  if (opts.lineNumberType) parts.push(lineNumberXml(opts.lineNumberType));
 
   // Page numbers
-  parts.push(pageNumberXml(pageNumbers));
+  parts.push(pageNumberXml(pageNumberType));
 
   // Columns
   if (opts.column) parts.push(columnsXml(opts.column));
@@ -337,7 +345,11 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesOptions): string
  * const xml = sectionPropertiesDesc.stringify(sectPrOpts, ctx);
  * ```
  */
-export const sectionPropertiesDesc: CustomDescriptor<SectionPropertiesOptions, BodyContext> = {
+export const sectionPropertiesDesc: CustomDescriptor<
+  SectionPropertiesDescriptorOptions,
+  BodyContext,
+  SectionPropertiesOptions
+> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -350,7 +362,7 @@ export const sectionPropertiesDesc: CustomDescriptor<SectionPropertiesOptions, B
 };
 
 /** Standalone stringify — no context needed, pure options → XML. */
-export function stringifySectionProperties(opts: SectionPropertiesOptions): string {
+export function stringifySectionProperties(opts: SectionPropertiesDescriptorOptions): string {
   const inner = stringifySectionPropertiesInner(opts);
 
   const attrs: string[] = [];
@@ -383,7 +395,6 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Page properties — pgSz, pgMar, pgNumType are independent per CT_SectPr
   // (each minOccurs=0). Do not gate pgMar/pgNumType on pgSz: a sectPr that
   // omits <w:pgSz> must still round-trip its margins and page-number type.
-  const page: NonNullable<SectionPropertiesOptions["page"]> = {};
 
   // Page size
   const pgSz = findChild(el, "w:pgSz");
@@ -402,7 +413,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (orient) size.orientation = orient as PageSizeProperties["orientation"];
     const code = attrNum(pgSz, "w:code");
     if (code !== undefined) size.code = code;
-    if (Object.keys(size).length > 0) page.size = size;
+    if (Object.keys(size).length > 0) opts.pageSize = size;
   }
 
   // Page margins
@@ -421,29 +432,27 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
       const val = attrNum(pgMar, a);
       if (val !== undefined) margin[o] = val;
     }
-    if (Object.keys(margin).length > 0) page.margin = margin;
+    if (Object.keys(margin).length > 0) opts.pageMargin = margin;
   }
 
   // Page number type
   const pgNumType = findChild(el, "w:pgNumType");
   if (pgNumType) {
-    const pageNumbers: PageNumberTypeProperties = {};
+    const pageNumberType: PageNumberTypeProperties = {};
     const start = attrNum(pgNumType, "w:start");
-    if (start !== undefined) pageNumbers.start = start;
+    if (start !== undefined) pageNumberType.start = start;
     const fmt = attr(pgNumType, "w:fmt");
     if (fmt && PAGE_NUMBER_FORMATS.includes(fmt)) {
-      pageNumbers.formatType = fmt as PageNumberTypeProperties["formatType"];
+      pageNumberType.formatType = fmt as PageNumberTypeProperties["formatType"];
     }
     const chapSep = attr(pgNumType, "w:chapSep");
     if (chapSep && PAGE_NUMBER_SEPARATORS.includes(chapSep)) {
-      pageNumbers.separator = chapSep as PageNumberTypeProperties["separator"];
+      pageNumberType.separator = chapSep as PageNumberTypeProperties["separator"];
     }
     const chapStyle = attrNum(pgNumType, "w:chapStyle");
-    if (chapStyle !== undefined) pageNumbers.chapStyle = chapStyle;
-    if (Object.keys(pageNumbers).length > 0) page.pageNumbers = pageNumbers;
+    if (chapStyle !== undefined) pageNumberType.chapStyle = chapStyle;
+    if (Object.keys(pageNumberType).length > 0) opts.pageNumberType = pageNumberType;
   }
-
-  if (Object.keys(page).length > 0) opts.page = page;
 
   // Columns
   const cols = findChild(el, "w:cols");
@@ -513,16 +522,16 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Line numbers
   const lnNumType = findChild(el, "w:lnNumType");
   if (lnNumType) {
-    const lineNumbers: LineNumberProperties = {};
+    const lineNumberType: LineNumberProperties = {};
     const countBy = attrNum(lnNumType, "w:countBy");
-    if (countBy !== undefined) lineNumbers.countBy = countBy;
+    if (countBy !== undefined) lineNumberType.countBy = countBy;
     const start = attrNum(lnNumType, "w:start");
-    if (start !== undefined) lineNumbers.start = start;
+    if (start !== undefined) lineNumberType.start = start;
     const restart = attr(lnNumType, "w:restart");
-    if (restart) lineNumbers.restart = restart as LineNumberProperties["restart"];
+    if (restart) lineNumberType.restart = restart as LineNumberProperties["restart"];
     const distance = attrNum(lnNumType, "w:distance");
-    if (distance !== undefined) lineNumbers.distance = distance;
-    if (Object.keys(lineNumbers).length > 0) opts.lineNumbers = lineNumbers;
+    if (distance !== undefined) lineNumberType.distance = distance;
+    if (Object.keys(lineNumberType).length > 0) opts.lineNumberType = lineNumberType;
   }
 
   // Page borders
@@ -549,11 +558,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (offsetFrom) borders.offsetFrom = offsetFrom as PageBordersOptions["offsetFrom"];
     const zOrder = attr(pgBorders, "w:zOrder");
     if (zOrder) borders.zOrder = zOrder as PageBordersOptions["zOrder"];
-    if (Object.keys(borders).length > 0) {
-      const page: NonNullable<SectionPropertiesOptions["page"]> = opts.page ?? {};
-      page.borders = borders;
-      opts.page = page;
-    }
+    if (Object.keys(borders).length > 0) opts.pageBorders = borders as PageBordersOptions;
   }
 
   // Vertical align
@@ -567,11 +572,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   const textDirection = findChild(el, "w:textDirection");
   if (textDirection) {
     const val = attr(textDirection, "w:val");
-    if (val) {
-      const page: NonNullable<SectionPropertiesOptions["page"]> = opts.page ?? {};
-      page.textDirection = val as NonNullable<SectionPropertiesOptions["page"]>["textDirection"];
-      opts.page = page;
-    }
+    if (val) opts.textDirection = val as SectionPropertiesOptions["textDirection"];
   }
 
   // Footnote properties
@@ -604,22 +605,9 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (rId) opts.printerSettingsId = rId;
   }
 
-  // Header/footer references
-  const headerGroup: HeaderFooterGroup<HeaderFooterReference> = {};
-  const footerGroup: HeaderFooterGroup<HeaderFooterReference> = {};
-  for (const child of el.elements ?? []) {
-    const type = attr(child, "w:type") as "default" | "first" | "even" | undefined;
-    const rId = attr(child, "r:id");
-    if (!type || !rId) continue;
-    const referenceId = parseInt(rId.replace("rId", ""), 10);
-    if (child.name === "w:headerReference") {
-      headerGroup[type] = { referenceId };
-    } else if (child.name === "w:footerReference") {
-      footerGroup[type] = { referenceId };
-    }
-  }
-  if (Object.keys(headerGroup).length > 0) opts.headerWrapperGroup = headerGroup;
-  if (Object.keys(footerGroup).length > 0) opts.footerWrapperGroup = footerGroup;
+  // Header/footer references are not emitted: users author headers/footers
+  // on the section (SectionOptions.headers/footers), and the round-trip path
+  // re-creates the wiring from the parsed header/footer parts (parse/body.ts).
 
   // Revision (w:sectPrChange) — symmetric with stringifySectionPropertiesChange
   const sectPrChange = findChild(el, "w:sectPrChange");

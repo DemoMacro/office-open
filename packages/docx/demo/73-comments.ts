@@ -5,95 +5,93 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { generateDocument } from "@office-open/docx";
 
 const buffer = await generateDocument({
-  comments: {
-    children: [
-      {
-        author: "Ray Chen",
-        children: [
-          {
-            children: [
-              {
-                text: "some initial text content",
-              },
-            ],
-          },
-          {
-            children: [
-              {
-                picture: {
-                  data: readFileSync("./demo/images/cat.jpg"),
-                  transformation: {
-                    height: "2.6cm",
-                    width: "2.6cm",
-                  },
-                  type: "jpg",
+  comments: [
+    {
+      author: "Ray Chen",
+      children: [
+        {
+          children: [
+            {
+              text: "some initial text content",
+            },
+          ],
+        },
+        {
+          children: [
+            {
+              picture: {
+                data: readFileSync("./demo/images/cat.jpg"),
+                transformation: {
+                  height: "2.6cm",
+                  width: "2.6cm",
                 },
+                type: "jpg",
               },
-              {
-                text: "comment text content",
-              },
-              { break: 1, text: "" },
-              {
-                bold: true,
-                text: "More text here",
-              },
-            ],
-          },
-        ],
-        date: new Date(),
-        id: 0,
-      },
-      {
-        author: "Bob Ross",
-        children: [
-          {
-            children: [
-              {
-                text: "Some initial text content",
-              },
-            ],
-          },
-          {
-            children: [
-              {
-                text: "comment text content",
-              },
-            ],
-          },
-        ],
-        date: new Date(),
-        id: 1,
-      },
-      {
-        author: "John Doe",
-        children: [
-          {
-            children: [
-              {
-                text: "Hello World",
-              },
-            ],
-          },
-        ],
-        date: new Date(),
-        id: 2,
-      },
-      {
-        author: "Beatriz",
-        children: [
-          {
-            children: [
-              {
-                text: "Another reply",
-              },
-            ],
-          },
-        ],
-        date: new Date(),
-        id: 3,
-      },
-    ],
-  },
+            },
+            {
+              text: "comment text content",
+            },
+            { break: 1, text: "" },
+            {
+              bold: true,
+              text: "More text here",
+            },
+          ],
+        },
+      ],
+      date: new Date(),
+      id: 0,
+    },
+    {
+      author: "Bob Ross",
+      children: [
+        {
+          children: [
+            {
+              text: "Some initial text content",
+            },
+          ],
+        },
+        {
+          children: [
+            {
+              text: "comment text content",
+            },
+          ],
+        },
+      ],
+      date: new Date(),
+      id: 1,
+    },
+    {
+      author: "John Doe",
+      children: [
+        {
+          children: [
+            {
+              text: "Hello World",
+            },
+          ],
+        },
+      ],
+      date: new Date(),
+      id: 2,
+    },
+    {
+      author: "Beatriz",
+      children: [
+        {
+          children: [
+            {
+              text: "Another reply",
+            },
+          ],
+        },
+      ],
+      date: new Date(),
+      id: 3,
+    },
+  ],
   sections: [
     {
       children: [

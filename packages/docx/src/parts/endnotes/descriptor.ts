@@ -13,10 +13,17 @@
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { createNotesDesc, type NoteSeparator, type NotesData } from "@parts/notes/shared";
+import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 
 import type { BodyContext } from "../../context";
 
 // ── Input (aliases of the shared notes types) ──
+
+/** A user endnote. `id` is auto-assigned (1, 2, …) when omitted; round-tripped entries carry theirs. */
+export interface EndnoteOptions {
+  id?: number;
+  children: (ParagraphOptions | string)[];
+}
 
 /** System endnote (separator / continuationSeparator). Round-tripped verbatim. */
 export type EndnoteSeparator = NoteSeparator;

@@ -28,11 +28,6 @@ export interface CommentOptions {
 /**
  * Options for creating a comments container.
  */
-export interface CommentsOptions {
-  /** Array of comment definitions */
-  children: CommentOptions[];
-}
-
 /**
  * A comment authored as a single inline paragraph child. The library allocates
  * the comment id, emits the range markers + reference, and registers the comment

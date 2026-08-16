@@ -40,11 +40,9 @@ const buffer = await generateDocument({
         default: header,
       },
       properties: {
-        page: {
-          pageNumbers: {
-            formatType: NumberFormat.DECIMAL,
-            start: 1,
-          },
+        pageNumberType: {
+          formatType: NumberFormat.DECIMAL,
+          start: 1,
         },
       },
     },
@@ -63,11 +61,9 @@ const buffer = await generateDocument({
         default: header,
       },
       properties: {
-        page: {
-          pageNumbers: {
-            formatType: NumberFormat.DECIMAL,
-            start: 1,
-          },
+        pageNumberType: {
+          formatType: NumberFormat.DECIMAL,
+          start: 1,
         },
       },
     },

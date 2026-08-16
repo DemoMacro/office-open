@@ -33,13 +33,11 @@ const buffer = await generateDocument({
         { paragraph: "Github is the best" },
       ],
       properties: {
-        page: {
-          margin: {
-            bottom: 0,
-            left: 0,
-            right: 0,
-            top: 0,
-          },
+        pageMargin: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
         },
       },
     },

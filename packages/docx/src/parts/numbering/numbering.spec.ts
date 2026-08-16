@@ -135,10 +135,8 @@ describe("parseNumberingDefinitions (round-trip)", () => {
               templateCode: "0409000F",
               isLegalNumberingStyle: true,
               legacy: { space: 0, indent: 0 },
-              style: {
-                run: { font: "Arial", bold: true },
-                paragraph: { indent: { left: 720, hanging: 360 } },
-              },
+              run: { font: "Arial", bold: true },
+              paragraph: { indent: { left: 720, hanging: 360 } },
             },
           ],
         },
@@ -171,13 +169,13 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect(lvl.templateCode).toBe("0409000F");
     expect(lvl.isLegalNumberingStyle).toBe(true);
     expect(lvl.legacy).toEqual({ enabled: true, space: 0, indent: 0 });
-    expect(lvl.style?.run?.bold).toBe(true);
+    expect(lvl.run?.bold).toBe(true);
     // font:"Arial" serializes as w:rFonts ascii+hAnsi (Word convention: hAnsi
     // defaults to the ascii font), so it round-trips as a multi-field object —
     // assert the ascii facet survives.
-    const runFont = lvl.style?.run?.font as { ascii?: string } | string | undefined;
+    const runFont = lvl.run?.font as { ascii?: string } | string | undefined;
     expect(typeof runFont === "string" ? runFont : runFont?.ascii).toBe("Arial");
-    expect(lvl.style?.paragraph?.indent).toEqual({ left: 720, hanging: 360 });
+    expect(lvl.paragraph?.indent).toEqual({ left: 720, hanging: 360 });
   });
 
   it("round-trips numPicBullets (pict) and numIdMacAtCleanup", () => {

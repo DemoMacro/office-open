@@ -775,7 +775,7 @@ function mergeCommentsPart(
 ): void {
   const newOpts: CommentOptions[] = assigned.map((ac) => ({ id: ac.id, ...ac.options }));
   const ctx = createPatchContext(file, []);
-  const newXml = commentsDesc.stringify({ children: newOpts }, ctx) ?? "";
+  const newXml = commentsDesc.stringify(newOpts, ctx) ?? "";
   const existingEl = map.get("word/comments.xml");
   const wasNew = !existingEl;
 

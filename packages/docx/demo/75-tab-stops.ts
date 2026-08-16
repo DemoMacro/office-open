@@ -26,7 +26,9 @@ const receiptTabStops = [
 const twoTabStops = [{ position: TabStopPosition.MAX, type: TabStopType.RIGHT }];
 
 const stream = generateDocumentStream({
-  defaultTabStop: 0,
+  settings: {
+    defaultTabStop: 0,
+  },
   sections: [
     {
       children: [

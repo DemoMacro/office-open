@@ -855,7 +855,7 @@ describe("from-docx", () => {
             replace: {
               0: {
                 children: [{ paragraph: { children: ["NEW_CONTENT"] } }],
-                properties: { page: { size: { width: 9000, height: 12000 } } },
+                properties: { pageSize: { width: 9000, height: 12000 } },
               },
             },
           },
@@ -892,7 +892,7 @@ describe("from-docx", () => {
             append: [
               {
                 children: [{ paragraph: { children: ["APPENDED_SECTION"] } }],
-                properties: { page: { size: { width: 8000, height: 8000 } } },
+                properties: { pageSize: { width: 8000, height: 8000 } },
               },
             ],
           },

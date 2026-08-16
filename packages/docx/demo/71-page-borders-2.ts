@@ -34,32 +34,30 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        page: {
-          borders: {
-            bottom: {
-              style: BorderStyle.SINGLE,
-              size: 2 * 8, //2pt;
-              color: "000000",
-            },
-            left: {
-              style: BorderStyle.SINGLE,
-              size: 1 * 8, //1pt;
-              color: "000000",
-            },
-            right: {
-              style: BorderStyle.SINGLE,
-              size: 1 * 8, //1pt;
-              color: "FF00AA",
-            },
-            top: {
-              style: BorderStyle.SINGLE,
-              size: 1 * 8, //1pt;
-              color: "000000",
-            },
-            display: PageBorderDisplay.ALL_PAGES,
-            offsetFrom: PageBorderOffsetFrom.TEXT,
-            zOrder: PageBorderZOrder.FRONT,
+        pageBorders: {
+          bottom: {
+            style: BorderStyle.SINGLE,
+            size: 2 * 8, //2pt;
+            color: "000000",
           },
+          left: {
+            style: BorderStyle.SINGLE,
+            size: 1 * 8, //1pt;
+            color: "000000",
+          },
+          right: {
+            style: BorderStyle.SINGLE,
+            size: 1 * 8, //1pt;
+            color: "FF00AA",
+          },
+          top: {
+            style: BorderStyle.SINGLE,
+            size: 1 * 8, //1pt;
+            color: "000000",
+          },
+          display: PageBorderDisplay.ALL_PAGES,
+          offsetFrom: PageBorderOffsetFrom.TEXT,
+          zOrder: PageBorderZOrder.FRONT,
         },
       },
     },

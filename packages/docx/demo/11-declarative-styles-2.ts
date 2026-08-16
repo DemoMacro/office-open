@@ -205,13 +205,11 @@ const buffer = await generateDocument({
         ],
       },
       properties: {
-        page: {
-          margin: {
-            bottom: "1.2cm",
-            left: "1.2cm",
-            right: "1.2cm",
-            top: "1.2cm",
-          },
+        pageMargin: {
+          bottom: "1.2cm",
+          left: "1.2cm",
+          right: "1.2cm",
+          top: "1.2cm",
         },
       },
     },

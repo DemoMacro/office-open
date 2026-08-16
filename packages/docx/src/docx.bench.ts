@@ -684,7 +684,7 @@ const buildLargeTableDocCompetitor = () =>
 
 const buildLargeSectionsDoc = (): DocumentOptions => ({
   sections: Array.from({ length: 20 }, (_, si) => ({
-    properties: { page: { margin: { top: 1440, bottom: 1440 } } },
+    properties: { pageMargin: { top: 1440, bottom: 1440 } },
     headers: {
       default: [
         {

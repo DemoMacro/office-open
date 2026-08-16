@@ -5,7 +5,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { generateDocument } from "@office-open/docx";
 
 const buffer = await generateDocument({
-  evenAndOddHeaderAndFooters: true,
+  settings: {
+    evenAndOddHeaders: true,
+  },
   sections: [
     {
       children: [

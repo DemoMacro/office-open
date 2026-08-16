@@ -9,7 +9,7 @@ import { AlignmentType, PageNumber, ShadingType, generateDocument } from "@offic
     - https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.insertedrun
     - https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.deletedrun
 
-    The setting `features: { trackRevisions: true }` adds an element `<w:trackRevisions />` to the `settings.xml` file.
+    The setting `settings: { trackRevisions: true }` adds an element `<w:trackRevisions />` to the `settings.xml` file.
     This specifies that the application shall track *new* revisions made to the existing document.
     See also https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.trackrevisions
 
@@ -45,11 +45,12 @@ const paragraph = {
 };
 
 const buffer = await generateDocument({
-  features: {
+  settings: {
     trackRevisions: true,
   },
-  footnotes: {
-    1: {
+  footnotes: [
+    {
+      id: 1,
       children: [
         {
           children: [
@@ -74,7 +75,7 @@ const buffer = await generateDocument({
         },
       ],
     },
-  },
+  ],
   sections: [
     {
       children: [

@@ -12,12 +12,10 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.UPPER_ROMAN,
             level: 0,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: "0.18in",
-                  left: "0.5in",
-                },
+            paragraph: {
+              indent: {
+                hanging: "0.18in",
+                left: "0.5in",
               },
             },
             text: "%1",
@@ -26,12 +24,10 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.DECIMAL,
             level: 1,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: "0.68in",
-                  left: "1in",
-                },
+            paragraph: {
+              indent: {
+                hanging: "0.68in",
+                left: "1in",
               },
             },
             text: "%2.",
@@ -40,12 +36,10 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.LOWER_LETTER,
             level: 2,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: "1.18in",
-                  left: "1.5in",
-                },
+            paragraph: {
+              indent: {
+                hanging: "1.18in",
+                left: "1.5in",
               },
             },
             text: "%3)",
@@ -54,10 +48,8 @@ const buffer = await generateDocument({
             alignment: AlignmentType.START,
             format: LevelFormat.UPPER_LETTER,
             level: 3,
-            style: {
-              paragraph: {
-                indent: { hanging: 2420, left: 2880 },
-              },
+            paragraph: {
+              indent: { hanging: 2420, left: 2880 },
             },
             text: "%4)",
           },
@@ -70,12 +62,10 @@ const buffer = await generateDocument({
             alignment: AlignmentType.LEFT,
             format: LevelFormat.BULLET,
             level: 0,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: "0.25in",
-                  left: "0.5in",
-                },
+            paragraph: {
+              indent: {
+                hanging: "0.25in",
+                left: "0.5in",
               },
             },
             text: "ὠ",
@@ -84,12 +74,10 @@ const buffer = await generateDocument({
             alignment: AlignmentType.LEFT,
             format: LevelFormat.BULLET,
             level: 1,
-            style: {
-              paragraph: {
-                indent: {
-                  hanging: "0.25in",
-                  left: "1in",
-                },
+            paragraph: {
+              indent: {
+                hanging: "0.25in",
+                left: "1in",
               },
             },
             text: "¥",
@@ -98,10 +86,8 @@ const buffer = await generateDocument({
             alignment: AlignmentType.LEFT,
             format: LevelFormat.BULLET,
             level: 2,
-            style: {
-              paragraph: {
-                indent: { hanging: "0.25in", left: 2160 },
-              },
+            paragraph: {
+              indent: { hanging: "0.25in", left: 2160 },
             },
             text: "✿",
           },
@@ -109,10 +95,8 @@ const buffer = await generateDocument({
             alignment: AlignmentType.LEFT,
             format: LevelFormat.BULLET,
             level: 3,
-            style: {
-              paragraph: {
-                indent: { hanging: "0.25in", left: 2880 },
-              },
+            paragraph: {
+              indent: { hanging: "0.25in", left: 2880 },
             },
             text: "♺",
           },
@@ -120,10 +104,8 @@ const buffer = await generateDocument({
             alignment: AlignmentType.LEFT,
             format: LevelFormat.BULLET,
             level: 4,
-            style: {
-              paragraph: {
-                indent: { hanging: "0.25in", left: 3600 },
-              },
+            paragraph: {
+              indent: { hanging: "0.25in", left: 3600 },
             },
             text: "☃",
           },

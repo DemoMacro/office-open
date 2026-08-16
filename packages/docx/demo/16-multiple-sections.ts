@@ -19,11 +19,9 @@ const buffer = await generateDocument({
       },
 
       properties: {
-        page: {
-          pageNumbers: {
-            formatType: NumberFormat.DECIMAL,
-            start: 1,
-          },
+        pageNumberType: {
+          formatType: NumberFormat.DECIMAL,
+          start: 1,
         },
       },
     },
@@ -36,14 +34,12 @@ const buffer = await generateDocument({
         default: [{ paragraph: "Second Default Header on another page" }],
       },
       properties: {
-        page: {
-          pageNumbers: {
-            formatType: NumberFormat.DECIMAL,
-            start: 1,
-          },
-          size: {
-            orientation: PageOrientation.LANDSCAPE,
-          },
+        pageNumberType: {
+          formatType: NumberFormat.DECIMAL,
+          start: 1,
+        },
+        pageSize: {
+          orientation: PageOrientation.LANDSCAPE,
         },
       },
     },
@@ -69,10 +65,8 @@ const buffer = await generateDocument({
       },
 
       properties: {
-        page: {
-          size: {
-            orientation: PageOrientation.PORTRAIT,
-          },
+        pageSize: {
+          orientation: PageOrientation.PORTRAIT,
         },
       },
     },
@@ -97,13 +91,11 @@ const buffer = await generateDocument({
         ],
       },
       properties: {
-        page: {
-          pageNumbers: {
-            formatType: NumberFormat.UPPER_ROMAN,
-          },
-          size: {
-            orientation: PageOrientation.PORTRAIT,
-          },
+        pageNumberType: {
+          formatType: NumberFormat.UPPER_ROMAN,
+        },
+        pageSize: {
+          orientation: PageOrientation.PORTRAIT,
         },
       },
     },
@@ -128,14 +120,12 @@ const buffer = await generateDocument({
         ],
       },
       properties: {
-        page: {
-          pageNumbers: {
-            formatType: NumberFormat.DECIMAL,
-            start: 25,
-          },
-          size: {
-            orientation: PageOrientation.PORTRAIT,
-          },
+        pageNumberType: {
+          formatType: NumberFormat.DECIMAL,
+          start: 25,
+        },
+        pageSize: {
+          orientation: PageOrientation.PORTRAIT,
         },
       },
     },

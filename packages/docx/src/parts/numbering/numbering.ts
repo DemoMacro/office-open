@@ -72,67 +72,63 @@ const DEFAULT_BULLET_LEVELS: LevelsOptions[] = [
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 0,
-    style: {
-      paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: convertInchesToTwip(0.5) } },
-    },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: convertInchesToTwip(0.5) } },
     text: "●",
   },
   {
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 1,
-    style: {
-      paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: convertInchesToTwip(1) } },
-    },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: convertInchesToTwip(1) } },
     text: "○",
   },
   {
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 2,
-    style: { paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 2160 } } },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 2160 } },
     text: "■",
   },
   {
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 3,
-    style: { paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 2880 } } },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 2880 } },
     text: "●",
   },
   {
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 4,
-    style: { paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 3600 } } },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 3600 } },
     text: "○",
   },
   {
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 5,
-    style: { paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 4320 } } },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 4320 } },
     text: "■",
   },
   {
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 6,
-    style: { paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 5040 } } },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 5040 } },
     text: "●",
   },
   {
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 7,
-    style: { paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 5760 } } },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 5760 } },
     text: "●",
   },
   {
     alignment: AlignmentType.LEFT,
     format: LevelFormat.BULLET,
     level: 8,
-    style: { paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 6480 } } },
+    paragraph: { indent: { hanging: convertInchesToTwip(0.25), left: 6480 } },
     text: "●",
   },
 ];
@@ -392,8 +388,8 @@ function stringifyLevel(opts: LevelsOptions): string {
   children.push(`<w:lvlJc w:val="${opts.alignment ?? AlignmentType.START}"/>`);
 
   // Paragraph/run properties — use compile-path pure string builders
-  const pPrXml = stringifyParagraphProperties(opts.style && opts.style.paragraph).xml;
-  const rPrXml = stringifyRunProperties(opts.style && opts.style.run);
+  const pPrXml = stringifyParagraphProperties(opts.paragraph).xml;
+  const rPrXml = stringifyRunProperties(opts.run);
   if (pPrXml) children.push(pPrXml);
   if (rPrXml) children.push(rPrXml);
 
@@ -599,20 +595,18 @@ function parseLevelEl(
   // Run + paragraph properties — reuse the complete parse helpers for full
   // fidelity (stringifyLevel delegates to stringifyRunProperties /
   // stringifyParagraphProperties, so parse must use the matching readers).
-  const style: NonNullable<LevelsOptions["style"]> = {};
   const rPr = findChild(el, "w:rPr");
   if (rPr) {
     const runOpts = parseRunProperties(rPr);
-    if (Object.keys(runOpts).length > 0) style.run = runOpts;
+    if (Object.keys(runOpts).length > 0) opts.run = runOpts;
   }
   const pPr = findChild(el, "w:pPr");
   if (pPr) {
     const paraOpts = parseParagraphProperties(pPr, ctx);
     if (Object.keys(paraOpts).length > 0) {
-      style.paragraph = paraOpts;
+      opts.paragraph = paraOpts;
     }
   }
-  if (Object.keys(style).length > 0) opts.style = style;
 
   return Object.keys(opts).length > 0 ? (opts as LevelsOptions) : undefined;
 }

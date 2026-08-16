@@ -2,7 +2,7 @@
   "title": "Comprehensive Document",
   "creator": "office-open",
   "description": "A feature-rich document demonstrating JSON API capabilities",
-  "evenAndOddHeaderAndFooters": true,
+  "settings": { "evenAndOddHeaders": true },
   "background": { "color": "FFFFFF" },
   "styles": {
     "default": {
@@ -35,12 +35,8 @@
       }
     ]
   },
-  "footnotes": {
-    "1": { "children": ["This is a footnote."] }
-  },
-  "endnotes": {
-    "1": { "children": ["This is an endnote."] }
-  },
+  "footnotes": [{ "id": 1, "children": ["This is a footnote."] }],
+  "endnotes": [{ "id": 1, "children": ["This is an endnote."] }],
   "sections": [
     {
       "headers": {
@@ -50,10 +46,8 @@
         "default": [{ "paragraph": { "children": ["Footer text"] } }]
       },
       "properties": {
-        "page": {
-          "size": { "width": 11900, "height": 16840 },
-          "margin": { "top": 1440, "bottom": 1440, "left": 1440, "right": 1440 }
-        }
+        "pageSize": { "width": 11900, "height": 16840 },
+        "pageMargin": { "top": 1440, "bottom": 1440, "left": 1440, "right": 1440 }
       },
       "children": [
         {

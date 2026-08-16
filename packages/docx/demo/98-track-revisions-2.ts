@@ -16,7 +16,7 @@ const REVISION_DATE = "2020-10-06T09:00:00Z";
 const REVISION_AUTHOR = "Firstname Lastname";
 
 const buffer = await generateDocument({
-  features: {
+  settings: {
     trackRevisions: true,
   },
   sections: [
@@ -510,29 +510,25 @@ const buffer = await generateDocument({
         { paragraph: { text: "Paragraph in different section with revision properties" } },
       ],
       properties: {
-        page: {
-          margin: {
-            bottom: "4.3cm",
-            left: "4.3cm",
-            right: "4.3cm",
-            top: "4.3cm",
-          },
-          size: {
-            height: "21cm",
-            width: "29.7cm",
-          },
+        pageMargin: {
+          bottom: "4.3cm",
+          left: "4.3cm",
+          right: "4.3cm",
+          top: "4.3cm",
+        },
+        pageSize: {
+          height: "21cm",
+          width: "29.7cm",
         },
         revision: {
           author: REVISION_AUTHOR,
           date: REVISION_DATE,
           id: 20,
-          page: {
-            margin: {
-              bottom: "2.5cm",
-              left: "2.5cm",
-              right: "2.5cm",
-              top: "2.5cm",
-            },
+          pageMargin: {
+            bottom: "2.5cm",
+            left: "2.5cm",
+            right: "2.5cm",
+            top: "2.5cm",
           },
         },
       },

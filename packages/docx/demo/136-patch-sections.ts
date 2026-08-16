@@ -12,7 +12,7 @@ const templateBuffer = await generateDocument({
   sections: [
     {
       children: [{ paragraph: { children: ["Chapter 1 — placeholder content."] } }],
-      properties: { page: { size: { width: 11906, height: 16838 } } },
+      properties: { pageSize: { width: 11906, height: 16838 } },
     },
     {
       children: [{ paragraph: { children: ["Chapter 2 — stays as-is."] } }],
@@ -41,7 +41,7 @@ const patched = await patchDocument({
           { paragraph: { heading: "Heading1", children: ["Appendix — appended section"] } },
           { paragraph: { children: [{ text: "Landscape page.", italic: true }] } },
         ],
-        properties: { page: { size: { width: 16838, height: 11906 } } },
+        properties: { pageSize: { width: 16838, height: 11906 } },
       },
     ],
   },

@@ -1,7 +1,7 @@
 /**
  * Comments descriptor — produces word/comments.xml.
  *
- * Stringifies pure JSON CommentsOptions into XML without creating
+ * Stringifies pure JSON comment options into XML without creating
  * Comment/Comments class instances.
  *
  * @module
@@ -10,7 +10,7 @@
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml } from "@office-open/xml";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
-import type { CommentsOptions, CommentOptions } from "@parts/paragraph/run/comment-run";
+import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 
 import { parseParagraph } from "../body";
 import type { BodyContext } from "../context";
@@ -75,13 +75,13 @@ function stringifyComment(opts: CommentOptions, ctx: BodyContext): string {
 
 // ── Descriptor ──
 
-export const commentsDesc: CustomDescriptor<CommentsOptions, BodyContext> = {
+export const commentsDesc: CustomDescriptor<CommentOptions[], BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
     const parts: string[] = [`<w:comments ${COMMENTS_NS}>`];
 
-    for (const child of opts.children) {
+    for (const child of opts) {
       parts.push(stringifyComment(child, ctx));
     }
 
@@ -112,6 +112,6 @@ export const commentsDesc: CustomDescriptor<CommentsOptions, BodyContext> = {
       comment.children = children;
       comments.push(comment as CommentOptions);
     }
-    return { children: comments };
+    return comments;
   },
 };

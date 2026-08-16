@@ -7,7 +7,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { EditGroupType, generateDocument } from "@office-open/docx";
 
 const buffer = await generateDocument({
-  features: {
+  settings: {
     trackRevisions: true,
     documentProtection: {
       edit: "readOnly",

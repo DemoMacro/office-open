@@ -5,8 +5,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { generateDocument } from "@office-open/docx";
 
 const buffer = await generateDocument({
-  footnotes: {
-    1: {
+  footnotes: [
+    {
+      id: 1,
       children: [
         {
           children: [
@@ -21,7 +22,7 @@ const buffer = await generateDocument({
         },
       ],
     },
-  },
+  ],
   sections: [
     {
       children: [

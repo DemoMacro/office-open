@@ -194,7 +194,7 @@ interface XmlifyedFileMapping {
  * [Content_Types] comments Override, which must stay in sync (OPC consistency).
  */
 function mergedCommentChildren(ctx: DocxWriteContext): CommentOptions[] {
-  return [...(ctx._options.comments?.children ?? []), ...ctx.comments.entries];
+  return [...(ctx._options.comments ?? []), ...ctx.comments.entries];
 }
 
 /**
@@ -280,7 +280,7 @@ function xmlifyContext(
     : 0;
   const commentCtx = hasComments ? mkCtx({ relationships: ctx.comments.relationships }) : null;
   const commentXmlData = commentCtx
-    ? XML_DECL + commentsDesc.stringify({ children: mergedCommentChildrenList }, commentCtx)
+    ? XML_DECL + commentsDesc.stringify(mergedCommentChildrenList, commentCtx)
     : "";
 
   const footnoteRelationshipCount = ctx.footNotes.relationships.relationshipCount + 1;

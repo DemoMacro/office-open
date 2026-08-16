@@ -16,19 +16,19 @@ const buffer = await generateDocument({
       shapedefaults: { ext: "edit", spidmax: 3074 },
       shapelayout: { ext: "edit", idmap: { ext: "edit", data: "1" } },
     },
+    displayBackgroundShape: true,
+    view: "print",
+    zoom: {
+      percent: 150,
+    },
+    embedTrueTypeFonts: true,
+    saveSubsetFonts: true,
+    docVars: [
+      { name: "Title", val: "Settings Demo" },
+      { name: "Version", val: "1.0" },
+      { name: "Author", val: "Test User" },
+    ],
   },
-  displayBackgroundShape: true,
-  view: "print",
-  zoom: {
-    percent: 150,
-  },
-  embedTrueTypeFonts: true,
-  saveSubsetFonts: true,
-  docVars: [
-    { name: "Title", val: "Settings Demo" },
-    { name: "Version", val: "1.0" },
-    { name: "Author", val: "Test User" },
-  ],
   sections: [
     {
       children: [

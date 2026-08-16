@@ -7,25 +7,27 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { generateDocument } from "@office-open/docx";
 
 const buffer = await generateDocument({
-  mailMerge: {
-    mainDocumentType: "formLetters",
-    dataType: "spreadsheet",
-    connectString: "DSN=Excel Files;DBQ=data.xlsx",
-    query: "SELECT * FROM `Sheet1$`",
-    dataSource: "data.xlsx",
-    destination: "newDocument",
-    addressFieldName: "Email",
-    mailSubject: "Monthly Report",
-    linkToQuery: true,
-    doNotSuppressBlankLines: true,
-    odso: {
-      udl: "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=data.xlsx",
-      table: "Sheet1$",
-      type: "database",
-      fieldMapData: [
-        { type: "dbColumn", name: "FirstName", mappedName: "First Name", column: 0 },
-        { type: "dbColumn", name: "LastName", mappedName: "Last Name", column: 1 },
-      ],
+  settings: {
+    mailMerge: {
+      mainDocumentType: "formLetters",
+      dataType: "spreadsheet",
+      connectString: "DSN=Excel Files;DBQ=data.xlsx",
+      query: "SELECT * FROM `Sheet1$`",
+      dataSource: "data.xlsx",
+      destination: "newDocument",
+      addressFieldName: "Email",
+      mailSubject: "Monthly Report",
+      linkToQuery: true,
+      doNotSuppressBlankLines: true,
+      odso: {
+        udl: "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=data.xlsx",
+        table: "Sheet1$",
+        type: "database",
+        fieldMapData: [
+          { type: "dbColumn", name: "FirstName", mappedName: "First Name", column: 0 },
+          { type: "dbColumn", name: "LastName", mappedName: "Last Name", column: 1 },
+        ],
+      },
     },
   },
   sections: [

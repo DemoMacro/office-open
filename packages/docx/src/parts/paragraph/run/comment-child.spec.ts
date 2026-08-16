@@ -107,9 +107,7 @@ describe("{ comment } child — library allocates id, pairs markers, registers e
   it("continues ids above explicit comments and merges both into comments.xml", async () => {
     const output = await generateDocument(
       {
-        comments: {
-          children: [{ id: 5, author: "Explicit", date: "2024-01-01T00:00:00Z", children: [] }],
-        },
+        comments: [{ id: 5, author: "Explicit", date: "2024-01-01T00:00:00Z", children: [] }],
         sections: [
           {
             children: [
@@ -174,8 +172,8 @@ describe("{ comment } child — library allocates id, pairs markers, registers e
     );
 
     const parsed = parseDocument(output);
-    expect(parsed.comments?.children).toHaveLength(1);
-    expect(parsed.comments?.children[0]?.author).toBe("Roundtrip");
-    expect(parsed.comments?.children[0]?.id).toBe(0);
+    expect(parsed.comments).toHaveLength(1);
+    expect(parsed.comments?.[0]?.author).toBe("Roundtrip");
+    expect(parsed.comments?.[0]?.id).toBe(0);
   });
 });
