@@ -32,9 +32,9 @@ const options: PresentationOptions = {
       slideNumber: true,
     },
     notesStyle: [
-      { fontSize: 1400, marginLeft: 0, alignment: "l" },
-      { fontSize: 1200, marginLeft: 457200 },
-      { fontSize: 1200, marginLeft: 914400 },
+      { fontSize: 14, marginLeft: 0, alignment: "l" },
+      { fontSize: 12, marginLeft: 457200 },
+      { fontSize: 12, marginLeft: 914400 },
     ],
   },
   slides: [

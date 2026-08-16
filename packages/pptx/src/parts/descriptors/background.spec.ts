@@ -66,6 +66,16 @@ describe("backgroundDesc round-trip", () => {
     expect(result.blackWhiteMode).toBe("gray");
   });
 
+  it("emits unprefixed bwMode on p:bg", () => {
+    // CT_Background declares @bwMode in no namespace, not p:bwMode.
+    const xml = backgroundDesc.stringify(
+      { fill: { type: "solid", color: "000000" }, blackWhiteMode: "gray" },
+      {} as never,
+    );
+    expect(xml).toContain('<p:bg bwMode="gray">');
+    expect(xml).not.toContain("p:bwMode");
+  });
+
   it("round-trips gradientFill", () => {
     const opts: BackgroundOptions = {
       fill: {

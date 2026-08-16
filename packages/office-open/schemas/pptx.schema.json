@@ -1681,8 +1681,8 @@
       "additionalProperties": false,
       "properties": {
         "blackWhiteMode": {
-          "enum": ["clr", "gray", "ltGray", "invGray", "gmGray", "bw", "auto", "black", "white"],
-          "type": "string"
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "`@bwMode` (ST_BlackWhiteMode) — unprefixed attribute on `p:bg`."
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions"
@@ -6698,15 +6698,8 @@
           "type": "string"
         },
         "fontSize": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Font size in hundredths of a point (e.g., 1200 = 12pt), ST_TextPoint"
+          "description": "Font size in points (e.g., 12 = 12pt), ST_TextPoint",
+          "type": "number"
         },
         "marginLeft": {
           "anyOf": [
@@ -9136,20 +9129,8 @@
       "additionalProperties": false,
       "properties": {
         "blackWhiteMode": {
-          "enum": [
-            "clr",
-            "auto",
-            "gray",
-            "ltGray",
-            "invGray",
-            "grayWhite",
-            "blackGray",
-            "blackWhite",
-            "black",
-            "white",
-            "hidden"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "`@bwMode` (ST_BlackWhiteMode) on `p:spPr` — how the shape renders in black-and-white view/print."
         },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"

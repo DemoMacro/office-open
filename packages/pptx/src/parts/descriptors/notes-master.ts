@@ -4,7 +4,7 @@
  * @module
  */
 
-import { parseColorMapping } from "@office-open/core";
+import { convertToPt, parseColorMapping } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrMeasure, findChild } from "@office-open/xml";
@@ -54,8 +54,13 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterOptions> = {
           const lvl: Partial<NotesLevelProperties> = {};
           const defRPr = findChild(lvlEl, "a:defRPr");
           if (defRPr) {
+            // ST_TextPoint: unqualified int is 1/100 pt; a UniversalMeasure
+            // string converts to points.
             const sz = attrMeasure(defRPr, "sz");
-            if (sz !== undefined) lvl.fontSize = sz as number | UniversalMeasure;
+            if (sz !== undefined) {
+              lvl.fontSize =
+                typeof sz === "number" ? sz / 100 : convertToPt(sz as UniversalMeasure);
+            }
           }
           const marL = attrMeasure(lvlEl, "marL");
           if (marL !== undefined) lvl.marginLeft = marL as number | UniversalMeasure;

@@ -12,6 +12,7 @@ import type {
   Scene3DOptions,
   Shape3DOptions,
   FillOptions,
+  BlackWhiteMode,
 } from "@office-open/core/drawing";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -81,18 +82,11 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   userDrawn?: boolean;
   hasCustomPrompt?: boolean;
   style?: ShapeStyleOptions;
-  blackWhiteMode?:
-    | "clr"
-    | "auto"
-    | "gray"
-    | "ltGray"
-    | "invGray"
-    | "grayWhite"
-    | "blackGray"
-    | "blackWhite"
-    | "black"
-    | "white"
-    | "hidden";
+  /**
+   * `@bwMode` (ST_BlackWhiteMode) on `p:spPr` — how the shape renders in
+   * black-and-white view/print.
+   */
+  blackWhiteMode?: BlackWhiteMode;
 }
 
 /**

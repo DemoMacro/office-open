@@ -31,8 +31,9 @@ export const backgroundDesc: CustomDescriptor<BackgroundOptions> = {
 // ── Stringify ──
 
 function stringifyBackgroundInner(opts: BackgroundOptions): string {
+  // CT_Background declares an unprefixed @bwMode (a:ST_BlackWhiteMode).
   const bgAttrs: string[] = [];
-  if (opts.blackWhiteMode) bgAttrs.push(` p:bwMode="${opts.blackWhiteMode}"`);
+  if (opts.blackWhiteMode) bgAttrs.push(` bwMode="${opts.blackWhiteMode}"`);
 
   const bgPrAttrs: string[] = [];
   if (opts.shadeToTitle) bgPrAttrs.push(' shadeToTitle="1"');
@@ -52,10 +53,8 @@ function stringifyBackgroundInner(opts: BackgroundOptions): string {
 function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundOptions {
   const result: Partial<BackgroundOptions> = {};
 
-  if (el.attributes?.["p:bwMode"]) {
-    result.blackWhiteMode = String(
-      el.attributes["p:bwMode"],
-    ) as BackgroundOptions["blackWhiteMode"];
+  if (el.attributes?.["bwMode"]) {
+    result.blackWhiteMode = String(el.attributes["bwMode"]) as BackgroundOptions["blackWhiteMode"];
   }
 
   const bgPr = findChild(el, "p:bgPr");

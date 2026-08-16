@@ -152,7 +152,16 @@ describe("shapeDesc round-trip", () => {
     expect(result.flipHorizontal).toBe(true);
   });
 
-  it("round-trips shape with blackWhiteMode", () => {
+  it("round-trips shape with blackWhiteMode on spPr", () => {
+    // @bwMode is a CT_ShapeProperties attribute; CT_Shape itself only has
+    // @useBgFill.
+    const xml = shapeDesc.stringify(
+      { x: 0, y: 0, width: 100, height: 100, blackWhiteMode: "gray" },
+      {} as never,
+    );
+    expect(xml).toContain('<p:spPr bwMode="gray">');
+    expect(xml).not.toMatch(/<p:sp [^>]*bwMode/);
+
     const result = roundTrip({
       x: 0,
       y: 0,

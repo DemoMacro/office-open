@@ -8,8 +8,8 @@ export type { HeaderFooterOptions };
 
 /** Notes style level override */
 export interface NotesLevelProperties {
-  /** Font size in hundredths of a point (e.g., 1200 = 12pt), ST_TextPoint */
-  fontSize?: number | UniversalMeasure;
+  /** Font size in points (e.g., 12 = 12pt), ST_TextPoint */
+  fontSize?: number;
   /** Left margin (ST_Coordinate32) */
   marginLeft?: number | UniversalMeasure;
   /** Alignment ("l" | "ctr" | "r" | "just") */
@@ -36,7 +36,7 @@ function buildNotesStyleXml(levels?: NotesLevelProperties[]): string {
     const level = levels?.[i];
     const marL = level?.marginLeft ?? DEFAULT_LEVEL_MARGINS[i];
     const algn = level?.alignment ?? "l";
-    const sz = level?.fontSize ?? 1200;
+    const sz = Math.round((level?.fontSize ?? 12) * 100);
     parts.push(
       `<a:lvl${i + 1}pPr marL="${marL}" algn="${algn}" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1">` +
         `<a:defRPr sz="${sz}" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill>` +

@@ -77,7 +77,6 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
     // ── Root attributes ──
     const spAttrs: string[] = [];
     if (opts.useBackgroundFill) spAttrs.push(' useBgFill="1"');
-    if (opts.blackWhiteMode) spAttrs.push(` bwMode="${opts.blackWhiteMode}"`);
 
     return `<p:sp${spAttrs.join("")}>${parts.join("")}</p:sp>`;
   },
@@ -89,8 +88,6 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
     if (el.attributes) {
       if (el.attributes["useBgFill"] !== undefined)
         result.useBackgroundFill = parseOnOff(el.attributes["useBgFill"]) ?? false;
-      if (el.attributes["bwMode"] !== undefined)
-        result.blackWhiteMode = String(el.attributes["bwMode"]) as ShapeOptions["blackWhiteMode"];
     }
 
     // p:nvSpPr
@@ -344,8 +341,11 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
     ctx,
   );
 
-  if (!spPrContent) return "<p:spPr/>";
-  return `<p:spPr>${spPrContent}</p:spPr>`;
+  // @bwMode is a CT_ShapeProperties container attribute (CT_Shape itself only
+  // has @useBgFill).
+  const bwAttr = opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : "";
+  if (!spPrContent) return bwAttr ? `<p:spPr${bwAttr}/>` : "<p:spPr/>";
+  return `<p:spPr${bwAttr}>${spPrContent}</p:spPr>`;
 }
 
 // ── Shape helper: p:style ──
@@ -476,6 +476,12 @@ export function readNvSpPr(nvSpPr: XmlElement): ShapeOptions {
 /** Parse p:spPr via the shared core descriptor. */
 function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeOptions {
   const result = parse(shapePropertiesDesc, spPr, ctx) as ShapeOptions;
+
+  // @bwMode lives on the spPr container, not the p:sp root.
+  const bwMode = spPr.attributes?.["bwMode"];
+  if (bwMode !== undefined) {
+    result.blackWhiteMode = String(bwMode) as ShapeOptions["blackWhiteMode"];
+  }
 
   // Collapse a preset geometry without adjustment values to the bare string
   // shorthand the public options accept.
