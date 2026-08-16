@@ -8,20 +8,12 @@
  */
 
 import { convertEmuToPixels, convertToEmu, parseOnOff, toUint8Array } from "@office-open/core";
-import type { ShapeLockingOptions } from "@office-open/core";
+import type { NonVisualDrawingPropertiesOptions, ShapeLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { parse } from "@office-open/core/descriptor";
 import {
-  transform2DDesc,
-  fillDesc,
-  findFillChild,
-  presetGeometryDesc,
-  customGeometryDesc,
-  outlineDesc,
   shapeLockingDesc,
   effectListDesc,
-  scene3DDesc,
-  shape3DDesc,
   shapePropertiesDesc,
   textBodyDesc,
   stringifyNonVisualDrawingProperties,
@@ -30,9 +22,10 @@ import {
   stringifyColorChoice,
 } from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, findFirst, escapeXml, attrNum, attr, stringify } from "@office-open/xml";
+import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
+import { imageTypeFromPath } from "@shared/media/image-type";
 import type { PictureOptions } from "@shared/picture";
-import type { ShapeOptions, ShapeStyleOptions } from "@shared/shape/shape";
+import { readShapeStyle, type ShapeOptions, type ShapeStyleOptions } from "@shared/shape/shape";
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
 
@@ -125,7 +118,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
 
     // p:style
     const style = findChild(el, "p:style");
-    if (style) result.style = readStyle(style);
+    if (style) result.style = readShapeStyle(style);
 
     // p:txBody
     const txBody = findChild(el, "p:txBody");
@@ -412,14 +405,35 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
 
 // ── Read helpers ──
 
+/**
+ * Read the non-visual drawing properties (id/name/description/title/hidden…)
+ * from the first parent tag that holds a p:cNvPr (a:cNvPr tolerated); with no
+ * parent tags, el itself is the non-visual properties container. Shared
+ * probe+parse by every slide-child descriptor.
+ */
+export function readCnvPr(
+  el: XmlElement,
+  ...parentTags: string[]
+): NonVisualDrawingPropertiesOptions & { id?: number } {
+  const parents = parentTags.length ? parentTags.map((tag) => findChild(el, tag)) : [el];
+  for (const parent of parents) {
+    if (!parent) continue;
+    const cNvPr = findChild(parent, "p:cNvPr") ?? findChild(parent, "a:cNvPr");
+    if (!cNvPr) continue;
+    const result: NonVisualDrawingPropertiesOptions & { id?: number } = {
+      ...parseNonVisualDrawingProperties(cNvPr),
+    };
+    const id = attrNum(cNvPr, "id");
+    if (id !== undefined) result.id = id;
+    return result;
+  }
+  return {};
+}
+
 export function readNvSpPr(nvSpPr: XmlElement): ShapeOptions {
   const result: ShapeOptions = {};
 
-  const cNvPr = findChild(nvSpPr, "p:cNvPr");
-  Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-  if (cNvPr?.attributes && cNvPr.attributes["id"] !== undefined) {
-    result.id = Number(cNvPr.attributes["id"]);
-  }
+  Object.assign(result, readCnvPr(nvSpPr));
 
   const nvPr = findChild(nvSpPr, "p:nvPr");
   if (nvPr) {
@@ -457,76 +471,20 @@ export function readNvSpPr(nvSpPr: XmlElement): ShapeOptions {
   return result;
 }
 
-export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeOptions {
-  const result: ShapeOptions = {};
+/** Parse p:spPr via the shared core descriptor. */
+function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeOptions {
+  const result = parse(shapePropertiesDesc, spPr, ctx) as ShapeOptions;
 
-  // Transform
-  const xfrm = findChild(spPr, "a:xfrm");
-  if (xfrm) {
-    const transformOpts = parse(transform2DDesc, xfrm, ctx);
-    if (transformOpts.x !== undefined) result.x = transformOpts.x;
-    if (transformOpts.y !== undefined) result.y = transformOpts.y;
-    if (transformOpts.width !== undefined) result.width = transformOpts.width;
-    if (transformOpts.height !== undefined) result.height = transformOpts.height;
-    if (transformOpts.flipHorizontal !== undefined)
-      result.flipHorizontal = transformOpts.flipHorizontal;
-    if (transformOpts.rotation !== undefined) result.rotation = transformOpts.rotation;
+  // Collapse a preset geometry without adjustment values to the bare string
+  // shorthand the public options accept.
+  const geometry = result.geometry;
+  if (
+    typeof geometry === "object" &&
+    (!geometry.adjustmentValues || geometry.adjustmentValues.length === 0) &&
+    geometry.preset
+  ) {
+    result.geometry = geometry.preset;
   }
-
-  // Geometry: EG_Geometry choice — custGeom | prstGeom
-  const custGeom = findChild(spPr, "a:custGeom");
-  if (custGeom) {
-    result.customGeometry = parse(customGeometryDesc, custGeom, ctx);
-  } else {
-    const prstGeom = findChild(spPr, "a:prstGeom");
-    if (prstGeom) {
-      const geomOpts = parse(presetGeometryDesc, prstGeom, ctx);
-      // Preserve adjustmentValues as an object; fall back to bare string for back-comat.
-      if (geomOpts.adjustmentValues && geomOpts.adjustmentValues.length > 0) {
-        result.geometry = geomOpts;
-      } else if (geomOpts.preset) {
-        result.geometry = geomOpts.preset;
-      }
-    }
-  }
-
-  // Fill — guard against fillDesc returning { type: "none" } for an empty spPr,
-  // which would spuriously emit <a:noFill/> on re-stringify.
-  const fillChild = findFillChild(spPr);
-  if (fillChild) {
-    result.fill = parse(fillDesc, fillChild, ctx) as ShapeOptions["fill"];
-  }
-
-  // Outline
-  const ln = findChild(spPr, "a:ln");
-  if (ln) {
-    result.outline = parse(outlineDesc, ln, ctx);
-  }
-
-  // Effects (2D effect list, 3D scene, 3D shape properties)
-  const effectLst = findChild(spPr, "a:effectLst");
-  if (effectLst) {
-    const effects = parse(effectListDesc, effectLst, ctx);
-    if (effects) result.effects = effects;
-  }
-  const scene3d = findChild(spPr, "a:scene3d");
-  if (scene3d) {
-    const scene = parse(scene3DDesc, scene3d, ctx);
-    if (scene) result.scene3d = scene;
-  }
-  const sp3d = findChild(spPr, "a:sp3d");
-  if (sp3d) {
-    const shape3d = parse(shape3DDesc, sp3d, ctx);
-    if (shape3d) result.shape3d = shape3d;
-  }
-
-  // a:extLst — verbatim inner XML for unmodeled extensions.
-  const extLst = findChild(spPr, "a:extLst");
-  if (extLst) {
-    const inner = stringify(extLst);
-    if (inner) result.ext = inner;
-  }
-
   return result;
 }
 
@@ -550,67 +508,4 @@ export function readPositionFromXfrm(xfrm: XmlElement): Record<string, number> {
   return result;
 }
 
-function readStyle(styleEl: XmlElement): ShapeStyleOptions {
-  const result: ShapeStyleOptions = {};
-
-  const lnRef = findChild(styleEl, "a:lnRef");
-  if (lnRef?.attributes) {
-    result.lineReference = { index: Number(lnRef.attributes["idx"] ?? 0) };
-    const srgbClr = findChild(lnRef, "a:srgbClr");
-    if (srgbClr?.attributes?.["val"])
-      result.lineReference.color = String(srgbClr.attributes["val"]);
-  }
-
-  const fillRef = findChild(styleEl, "a:fillRef");
-  if (fillRef?.attributes) {
-    result.fillReference = { index: Number(fillRef.attributes["idx"] ?? 0) };
-    const srgbClr = findChild(fillRef, "a:srgbClr");
-    if (srgbClr?.attributes?.["val"])
-      result.fillReference.color = String(srgbClr.attributes["val"]);
-  }
-
-  const effectRef = findChild(styleEl, "a:effectRef");
-  if (effectRef?.attributes) {
-    result.effectReference = { index: Number(effectRef.attributes["idx"] ?? 0) };
-    const srgbClr = findChild(effectRef, "a:srgbClr");
-    if (srgbClr?.attributes?.["val"])
-      result.effectReference.color = String(srgbClr.attributes["val"]);
-  }
-
-  const fontRef = findChild(styleEl, "a:fontRef");
-  if (fontRef?.attributes) {
-    result.fontReference = { index: Number(fontRef.attributes["idx"] ?? 0) };
-    const solidFill = findChild(fontRef, "a:solidFill");
-    if (solidFill) {
-      const srgbClr = findChild(solidFill, "a:srgbClr");
-      if (srgbClr?.attributes?.["val"])
-        result.fontReference.color = String(srgbClr.attributes["val"]);
-    }
-  }
-
-  return result;
-}
-
 // ── Image type helper ──
-
-/** Map file extension to PictureOptions type. */
-function imageTypeFromPath(path: string): "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf" {
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-  switch (ext) {
-    case "jpg":
-    case "jpeg":
-      return "jpg";
-    case "png":
-      return "png";
-    case "gif":
-      return "gif";
-    case "bmp":
-      return "bmp";
-    case "emf":
-      return "emf";
-    case "wmf":
-      return "wmf";
-    default:
-      return "png";
-  }
-}

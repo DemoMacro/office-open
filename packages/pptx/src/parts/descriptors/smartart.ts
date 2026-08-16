@@ -10,10 +10,7 @@
 
 import { convertToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import {
-  stringifyNonVisualDrawingProperties,
-  parseNonVisualDrawingProperties,
-} from "@office-open/core/drawing";
+import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
 import {
   COLOR_CATEGORIES,
   LAYOUT_CATEGORIES,
@@ -30,7 +27,7 @@ import type { Element } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { SmartArtOptions } from "../smartart";
-import { readPositionFromXfrm } from "./shape";
+import { readCnvPr, readPositionFromXfrm } from "./shape";
 
 // ── Types ──
 
@@ -108,11 +105,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
 
     // Name from p:nvGraphicFramePr → p:cNvPr
-    const nvGfxFramePr = findChild(el, "p:nvGraphicFramePr");
-    if (nvGfxFramePr) {
-      const cNvPr = findChild(nvGfxFramePr, "p:cNvPr");
-      Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-    }
+    Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
 
     // SmartArt data via dgm:relIds → r:dm, plus the layout/style/colors parts
     const relIds = findFirst(el, "dgm:relIds");

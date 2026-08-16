@@ -8,16 +8,16 @@ import { convertToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   groupShapePropertiesDesc,
-  parseNonVisualDrawingProperties,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
 import type { BlackWhiteMode } from "@office-open/core/drawing";
-import { attrNum, findChild } from "@office-open/xml";
+import { findChild } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 import type { GroupOptions } from "@shared/shape/group-shape";
 
 import type { PptxWriteContext } from "../../context";
 import { parseChild, stringifyChild } from "./bridge";
+import { readCnvPr } from "./shape";
 
 // ── ID counter ──
 
@@ -85,15 +85,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
     const result: Partial<GroupOptions> = {};
 
     // id + name from p:nvGrpSpPr/p:cNvPr
-    const nvGrpSpPr = findChild(el, "p:nvGrpSpPr");
-    if (nvGrpSpPr) {
-      const cNvPr = findChild(nvGrpSpPr, "p:cNvPr");
-      if (cNvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-        const id = attrNum(cNvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
-    }
+    Object.assign(result, readCnvPr(el, "p:nvGrpSpPr"));
 
     const grpSpPr = findChild(el, "p:grpSpPr");
     if (grpSpPr) {

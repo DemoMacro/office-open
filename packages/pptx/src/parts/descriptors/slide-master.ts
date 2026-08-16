@@ -15,14 +15,19 @@
 
 import { parseColorMapping, parseOnOff, stringifyColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild, stringify as stringifyXml } from "@office-open/xml";
+import { attr, findChild, stringify as stringifyXml } from "@office-open/xml";
 import {
   buildBackgroundXml,
   buildPlaceholderShapes,
   type MasterPlaceholderOptions,
   type SlideMasterOptions,
 } from "@parts/slide-master";
-import type { ControlOptions } from "@parts/slide/slide";
+import {
+  parseControls,
+  parseCustDataLst,
+  stringifyControls,
+  stringifyCustDataLst,
+} from "@parts/slide/c-sld";
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 import type { MasterChild } from "@shared/file";
@@ -98,28 +103,9 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     }
     parts.push("</p:spTree>");
 
-    // custDataLst (inside cSld per CT_CommonSlideData).
-    if (opts.customerData && opts.customerData.length > 0) {
-      const cdItems = opts.customerData.map((d) => `<p:custData r:id="${d.rId}"/>`).join("");
-      parts.push(`<p:custDataLst>${cdItems}</p:custDataLst>`);
-    }
-
-    // controls (inside cSld).
-    if (opts.controls && opts.controls.length > 0) {
-      const ctrlItems = opts.controls
-        .map((c) => {
-          const a: string[] = [];
-          if (c.shapeId !== undefined) a.push(`spid="${c.shapeId}"`);
-          if (c.name) a.push(`name="${c.name}"`);
-          if (c.showAsIcon) a.push('showAsIcon="1"');
-          if (c.rId) a.push(`r:id="${c.rId}"`);
-          if (c.imageWidth !== undefined) a.push(`imgW="${c.imageWidth}"`);
-          if (c.imageHeight !== undefined) a.push(`imgH="${c.imageHeight}"`);
-          return `<p:control ${a.join(" ")}/>`;
-        })
-        .join("");
-      parts.push(`<p:controls>${ctrlItems}</p:controls>`);
-    }
+    // custDataLst + controls (inside cSld per CT_CommonSlideData).
+    parts.push(stringifyCustDataLst(opts.customerData));
+    parts.push(stringifyControls(opts.controls));
 
     parts.push("</p:cSld>");
 
@@ -200,41 +186,9 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
         if (Object.keys(placeholders).length > 0) result.placeholders = placeholders;
       }
 
-      // custDataLst (inside cSld).
-      const custDataLst = findChild(cSld, "p:custDataLst");
-      if (custDataLst) {
-        const items: { rId: string }[] = [];
-        for (const cd of custDataLst.elements ?? []) {
-          if (cd.name === "p:custData") {
-            const rId = attr(cd, "r:id");
-            if (rId) items.push({ rId });
-          }
-        }
-        if (items.length > 0) result.customerData = items;
-      }
-
-      // controls (inside cSld).
-      const controls = findChild(cSld, "p:controls");
-      if (controls) {
-        const items: ControlOptions[] = [];
-        for (const ctrl of controls.elements ?? []) {
-          if (ctrl.name !== "p:control") continue;
-          const item: ControlOptions = {};
-          const spid = attrNum(ctrl, "spid");
-          if (spid !== undefined) item.shapeId = spid;
-          const ctrlName = attr(ctrl, "name");
-          if (ctrlName) item.name = ctrlName;
-          if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;
-          const rId = attr(ctrl, "r:id");
-          if (rId) item.rId = rId;
-          const imgW = attrNum(ctrl, "imgW");
-          if (imgW !== undefined) item.imageWidth = imgW;
-          const imgH = attrNum(ctrl, "imgH");
-          if (imgH !== undefined) item.imageHeight = imgH;
-          items.push(item);
-        }
-        if (items.length > 0) result.controls = items;
-      }
+      // custDataLst + controls (inside cSld).
+      result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
+      result.controls = parseControls(findChild(cSld, "p:controls"));
     }
 
     // EG_TopLevelSlide — p:clrMap (required).

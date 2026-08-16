@@ -13,6 +13,8 @@ import type {
   Shape3DOptions,
   FillOptions,
 } from "@office-open/core/drawing";
+import { attr, attrNum, findChild } from "@office-open/xml";
+import type { Element as XmlElement } from "@office-open/xml";
 
 /**
  * Shape options type for PPTX.
@@ -91,4 +93,59 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
     | "black"
     | "white"
     | "hidden";
+}
+
+/**
+ * Parse a p:style element (a:lnRef/a:fillRef/a:effectRef/a:fontRef) into
+ * ShapeStyleOptions. Shared by the shape descriptor and placeholder
+ * inheritance — idx is required per CT_StyleMatrixReference/CT_FontReference,
+ * so refs without it are skipped.
+ */
+export function readShapeStyle(styleEl: XmlElement): ShapeStyleOptions {
+  const style: ShapeStyleOptions = {};
+  const lnRef = findChild(styleEl, "a:lnRef");
+  if (lnRef) {
+    const idx = attrNum(lnRef, "idx");
+    if (idx !== undefined) {
+      const color = readStyleSrgbClr(lnRef);
+      style.lineReference = color !== undefined ? { index: idx, color } : { index: idx };
+    }
+  }
+  const fillRef = findChild(styleEl, "a:fillRef");
+  if (fillRef) {
+    const idx = attrNum(fillRef, "idx");
+    if (idx !== undefined) {
+      const color = readStyleSrgbClr(fillRef);
+      style.fillReference = color !== undefined ? { index: idx, color } : { index: idx };
+    }
+  }
+  const effectRef = findChild(styleEl, "a:effectRef");
+  if (effectRef) {
+    const idx = attrNum(effectRef, "idx");
+    if (idx !== undefined) {
+      const color = readStyleSrgbClr(effectRef);
+      style.effectReference = color !== undefined ? { index: idx, color } : { index: idx };
+    }
+  }
+  const fontRef = findChild(styleEl, "a:fontRef");
+  if (fontRef) {
+    const idx = attrNum(fontRef, "idx");
+    if (idx !== undefined) {
+      const color = readStyleSrgbClr(fontRef);
+      style.fontReference = color !== undefined ? { index: idx, color } : { index: idx };
+    }
+  }
+  return style;
+}
+
+/** Read an srgbClr val from a style ref (direct child or nested in a:solidFill). */
+function readStyleSrgbClr(refEl: XmlElement): string | undefined {
+  const direct = findChild(refEl, "a:srgbClr");
+  if (direct) return attr(direct, "val");
+  const solidFill = findChild(refEl, "a:solidFill");
+  if (solidFill) {
+    const inner = findChild(solidFill, "a:srgbClr");
+    if (inner) return attr(inner, "val");
+  }
+  return undefined;
 }

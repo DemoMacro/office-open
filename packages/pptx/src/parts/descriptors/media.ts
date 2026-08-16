@@ -15,16 +15,16 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   shapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
-  parseNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
 import { attr, attrNum, escapeXml, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AudioCdOptions, AudioFrameOptions, AudioType } from "@shared/media/audio-frame";
+import { imageTypeFromPath } from "@shared/media/image-type";
 import type { MediaFrameBaseOptions } from "@shared/media/media-frame-base";
-import type { PosterType, VideoFrameOptions, VideoType } from "@shared/media/video-frame";
+import type { VideoFrameOptions, VideoType } from "@shared/media/video-frame";
 
 import type { MediaEntry, PptxWriteContext } from "../../context";
-import { readPositionFromXfrm } from "./shape";
+import { readCnvPr, readPositionFromXfrm } from "./shape";
 
 // ── ID counters ──
 
@@ -132,15 +132,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     }
 
     // id + name from p:nvPicPr → a:cNvPr or p:cNvPr
-    const nvPicPr = findChild(el, "p:nvPicPr");
-    if (nvPicPr) {
-      const cNvPr = findChild(nvPicPr, "a:cNvPr") ?? findChild(nvPicPr, "p:cNvPr");
-      if (cNvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-        const id = attrNum(cNvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
-    }
+    Object.assign(result, readCnvPr(el, "p:nvPicPr"));
 
     // Media data from a:videoFile (r:link) or p14:media (r:embed)
     const quickTimeEl = findFirst(el, "a:quickTimeFile");
@@ -176,7 +168,9 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
           if (posterPath) {
             const posterData = _ctx.getRaw(posterPath);
             if (posterData) result.poster = posterData;
-            result.posterType = imageTypeFromPath(posterPath) as PosterType;
+            // PosterType only allows png/jpg — other extensions fall back to png.
+            const posterType = imageTypeFromPath(posterPath);
+            result.posterType = posterType === "jpg" ? "jpg" : "png";
           }
         }
       }
@@ -248,15 +242,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     }
 
     // id + name from p:nvPicPr
-    const nvPicPr = findChild(el, "p:nvPicPr");
-    if (nvPicPr) {
-      const cNvPr = findChild(nvPicPr, "a:cNvPr") ?? findChild(nvPicPr, "p:cNvPr");
-      if (cNvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-        const id = attrNum(cNvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
-    }
+    Object.assign(result, readCnvPr(el, "p:nvPicPr"));
 
     // CD audio (a:audioCd) — track/time, no media file
     const audioCdEl = findFirst(el, "a:audioCd");
@@ -363,10 +349,4 @@ function mediaTypeFromPath(path: string, kind: "video" | "audio"): VideoType | A
   }
   if (["mp3", "wav", "wma", "aac"].includes(ext)) return ext as AudioType;
   return "mp3";
-}
-
-function imageTypeFromPath(path: string): string {
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-  if (["png", "jpg", "jpeg", "gif", "bmp", "svg"].includes(ext)) return ext;
-  return "png";
 }

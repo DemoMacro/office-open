@@ -13,8 +13,12 @@ import type {
 } from "./types";
 
 // --- Preset ID mappings ---
+// Single source for both stringify (here) and parse (descriptors/animation.ts
+// builds reverse maps from these). Entrance zoom = 53: PowerPoint assigns 10
+// to fade, so the pre-unification value collided and round-tripped as fade;
+// 53 is the "fade and zoom" entrance preset in PowerPoint's ID space.
 
-const ENTR_PRESET_IDS: Record<AnimationType, number> = {
+export const ENTR_PRESET_IDS: Record<AnimationType, number> = {
   appear: 1,
   fade: 10,
   fly: 2,
@@ -25,13 +29,13 @@ const ENTR_PRESET_IDS: Record<AnimationType, number> = {
   checker: 26,
   randomBars: 24,
   wheel: 27,
-  zoom: 10,
+  zoom: 53,
   cover: 28,
   push: 19,
   strips: 23,
 };
 
-const EXIT_PRESET_IDS: Record<AnimationType, number> = {
+export const EXIT_PRESET_IDS: Record<AnimationType, number> = {
   appear: 53,
   fade: 59,
   fly: 51,
@@ -48,7 +52,7 @@ const EXIT_PRESET_IDS: Record<AnimationType, number> = {
   strips: 73,
 };
 
-const EMPH_PRESET_IDS: Record<EmphasisType, number> = {
+export const EMPH_PRESET_IDS: Record<EmphasisType, number> = {
   growShrink: 53,
   spin: 54,
   growWithTurn: 56,
@@ -59,7 +63,7 @@ const EMPH_PRESET_IDS: Record<EmphasisType, number> = {
   pulse: 58,
 };
 
-const PATH_PRESET_IDS: Record<PathAnimationType, number> = {
+export const PATH_PRESET_IDS: Record<PathAnimationType, number> = {
   customPath: 200,
   arc: 201,
   bounce: 202,
@@ -70,7 +74,7 @@ const PATH_PRESET_IDS: Record<PathAnimationType, number> = {
   loop: 207,
 };
 
-const DIRECTION_SUBTYPES: Record<string, number> = {
+export const DIRECTION_SUBTYPES: Record<string, number> = {
   left: 4,
   right: 8,
   up: 2,

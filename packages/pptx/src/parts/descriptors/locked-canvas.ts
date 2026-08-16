@@ -10,13 +10,13 @@ import { convertToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   stringifyNonVisualDrawingProperties,
-  parseNonVisualDrawingProperties,
   shapePropertiesDesc,
   textBodyDesc,
 } from "@office-open/core/drawing";
-import { attrNum, findChild } from "@office-open/xml";
+import { findChild } from "@office-open/xml";
 
 import type { LockedCanvasFrameOptions, LockedCanvasShapeOptions } from "../locked-canvas-frame";
+import { readCnvPr, readPositionFromXfrm } from "./shape";
 
 // ── ID counters ──
 
@@ -70,34 +70,11 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
     const result: Partial<LockedCanvasFrameOptions> = {};
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
-    const nvGrFrm = findChild(el, "p:nvGraphicFramePr");
-    if (nvGrFrm) {
-      const cnvPr = findChild(nvGrFrm, "p:cNvPr");
-      if (cnvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cnvPr));
-        const id = attrNum(cnvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
-    }
+    Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
 
     // x, y, width, height from p:xfrm
     const xfrm = findChild(el, "p:xfrm");
-    if (xfrm) {
-      const off = findChild(xfrm, "a:off");
-      if (off) {
-        const x = attrNum(off, "x");
-        if (x !== undefined) result.x = x;
-        const y = attrNum(off, "y");
-        if (y !== undefined) result.y = y;
-      }
-      const ext = findChild(xfrm, "a:ext");
-      if (ext) {
-        const cx = attrNum(ext, "cx");
-        if (cx !== undefined) result.width = cx;
-        const cy = attrNum(ext, "cy");
-        if (cy !== undefined) result.height = cy;
-      }
-    }
+    if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
 
     // Navigate to a:graphic/a:graphicData/lc:lockedCanvas
     const graphic = findChild(el, "a:graphic");

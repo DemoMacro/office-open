@@ -10,6 +10,13 @@ import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { AnimationEntry } from "@shared/animation/timing";
 import { SlideTiming } from "@shared/animation/timing";
+import {
+  DIRECTION_SUBTYPES,
+  EMPH_PRESET_IDS,
+  ENTR_PRESET_IDS,
+  EXIT_PRESET_IDS,
+  PATH_PRESET_IDS,
+} from "@shared/animation/timing";
 import type {
   AnimationClass,
   AnimationOptions,
@@ -25,80 +32,23 @@ export interface TimingDescriptorOptions {
 }
 
 // ── Reverse lookup maps: presetID → type name ──
+// Built from the single stringify-side tables in shared/animation/timing.ts.
 
 const ENTR_PRESET_TO_TYPE = new Map<number, AnimationType>();
 const EXIT_PRESET_TO_TYPE = new Map<number, AnimationType>();
 const EMPH_PRESET_TO_ID = new Map<number, EmphasisType>();
 const PATH_PRESET_TO_TYPE = new Map<number, PathAnimationType>();
 
-const ENTR_IDS: Record<AnimationType, number> = {
-  appear: 1,
-  fade: 10,
-  fly: 2,
-  wipe: 22,
-  dissolve: 34,
-  split: 21,
-  blinds: 25,
-  checker: 26,
-  randomBars: 24,
-  wheel: 27,
-  zoom: 53,
-  cover: 28,
-  push: 19,
-  strips: 23,
-};
-const EXIT_IDS: Record<AnimationType, number> = {
-  appear: 53,
-  fade: 59,
-  fly: 51,
-  wipe: 72,
-  dissolve: 84,
-  split: 71,
-  blinds: 75,
-  checker: 76,
-  randomBars: 74,
-  wheel: 77,
-  zoom: 60,
-  cover: 78,
-  push: 69,
-  strips: 73,
-};
-const EMPH_IDS: Record<EmphasisType, number> = {
-  growShrink: 53,
-  spin: 54,
-  growWithTurn: 56,
-  colorChange: 29,
-  transparency: 57,
-  boldFlash: 50,
-  wave: 55,
-  pulse: 58,
-};
-const PATH_IDS: Record<PathAnimationType, number> = {
-  customPath: 200,
-  arc: 201,
-  bounce: 202,
-  circle: 203,
-  curve: 204,
-  figureEight: 205,
-  line: 206,
-  loop: 207,
-};
-
-for (const [k, v] of Object.entries(ENTR_IDS)) ENTR_PRESET_TO_TYPE.set(v, k as AnimationType);
-for (const [k, v] of Object.entries(EXIT_IDS)) EXIT_PRESET_TO_TYPE.set(v, k as AnimationType);
-for (const [k, v] of Object.entries(EMPH_IDS)) EMPH_PRESET_TO_ID.set(v, k as EmphasisType);
-for (const [k, v] of Object.entries(PATH_IDS)) PATH_PRESET_TO_TYPE.set(v, k as PathAnimationType);
+for (const [k, v] of Object.entries(ENTR_PRESET_IDS))
+  ENTR_PRESET_TO_TYPE.set(v, k as AnimationType);
+for (const [k, v] of Object.entries(EXIT_PRESET_IDS))
+  EXIT_PRESET_TO_TYPE.set(v, k as AnimationType);
+for (const [k, v] of Object.entries(EMPH_PRESET_IDS)) EMPH_PRESET_TO_ID.set(v, k as EmphasisType);
+for (const [k, v] of Object.entries(PATH_PRESET_IDS))
+  PATH_PRESET_TO_TYPE.set(v, k as PathAnimationType);
 
 // Direction subtype reverse map
 const SUBTYPE_TO_DIRECTION = new Map<number, string>();
-const DIRECTION_SUBTYPES: Record<string, number> = {
-  left: 4,
-  right: 8,
-  up: 2,
-  down: 1,
-  horizontal: 16,
-  vertical: 32,
-};
 for (const [k, v] of Object.entries(DIRECTION_SUBTYPES)) SUBTYPE_TO_DIRECTION.set(v, k);
 
 // ── Parse helpers ──

@@ -3,13 +3,12 @@ import type { ColorMappingOptions, UniversalMeasure } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
 import type { ShapePropertiesOptions } from "@office-open/core/drawing";
-import { createEffectList } from "@office-open/core/drawing";
 import type { BackgroundOptions } from "@parts/background";
 import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
+import { backgroundDesc } from "@parts/descriptors/background";
 import { stringifyShapeStyle } from "@parts/descriptors/shape";
 import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
 import type { ControlOptions } from "@parts/slide/slide";
-import { buildFill } from "@shared/drawing/fill";
 import type { MasterChild } from "@shared/file";
 import type { PlaceholderDefinition } from "@shared/placeholder";
 import type { TransitionOptions } from "@shared/transition";
@@ -265,15 +264,7 @@ export function buildPlaceholderShapes(
 
 /** Emit p:bg. Undefined background emits the MS Office default bgRef idx="1001". */
 export function buildBackgroundXml(bg?: BackgroundOptions): string {
-  if (!bg) return '<p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>';
-  const bgAttrs: string[] = [];
-  if (bg.blackWhiteMode) bgAttrs.push(` p:bwMode="${bg.blackWhiteMode}"`);
-  const bgPrAttrs: string[] = [];
-  if (bg.shadeToTitle) bgPrAttrs.push(' shadeToTitle="1"');
-  const fillXml = buildFill(bg.fill ?? { type: "none" });
-  let effectsXml = "";
-  if (bg.effects) {
-    effectsXml = createEffectList(bg.effects);
-  }
-  return `<p:bg${bgAttrs.join("")}><p:bgPr${bgPrAttrs.join("")}>${fillXml}${effectsXml}</p:bgPr></p:bg>`;
+  return bg
+    ? (backgroundDesc.stringify(bg, undefined as never) ?? "")
+    : '<p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>';
 }

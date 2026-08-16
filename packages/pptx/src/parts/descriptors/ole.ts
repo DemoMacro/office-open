@@ -8,14 +8,12 @@
 
 import { convertToEmu, toUint8Array } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import {
-  stringifyNonVisualDrawingProperties,
-  parseNonVisualDrawingProperties,
-} from "@office-open/core/drawing";
+import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
 import { attr, attrBool, attrNum, escapeXml, findChild, type Element } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { OleOptions } from "../ole-frame";
+import { readCnvPr, readPositionFromXfrm } from "./shape";
 
 // ── ID counter ──
 
@@ -104,34 +102,11 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     const result: Partial<OleOptions> = {};
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
-    const nvGrFrm = findChild(el, "p:nvGraphicFramePr");
-    if (nvGrFrm) {
-      const cnvPr = findChild(nvGrFrm, "p:cNvPr");
-      if (cnvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cnvPr));
-        const id = attrNum(cnvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
-    }
+    Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
 
     // x, y, width, height from p:xfrm (in EMU)
     const xfrm = findChild(el, "p:xfrm");
-    if (xfrm) {
-      const off = findChild(xfrm, "a:off");
-      if (off) {
-        const x = attrNum(off, "x");
-        if (x !== undefined) result.x = x;
-        const y = attrNum(off, "y");
-        if (y !== undefined) result.y = y;
-      }
-      const ext = findChild(xfrm, "a:ext");
-      if (ext) {
-        const cx = attrNum(ext, "cx");
-        if (cx !== undefined) result.width = cx;
-        const cy = attrNum(ext, "cy");
-        if (cy !== undefined) result.height = cy;
-      }
-    }
+    if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
 
     // Navigate to a:graphic/a:graphicData/p:oleObj
     const graphic = findChild(el, "a:graphic");

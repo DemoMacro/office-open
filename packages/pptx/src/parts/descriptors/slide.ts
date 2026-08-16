@@ -7,23 +7,24 @@
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { TextBodyOptions } from "@office-open/core/drawing";
-import { attr, attrNum, findChild, stringify } from "@office-open/xml";
+import { attr, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
+import { parseControls, parseCustDataLst } from "@parts/slide/c-sld";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
-import { SP_TREE_HEADER } from "@shared/constants";
-import type { SlideAnimation } from "@shared/file";
+import type { SlideAnimation, SlideOptions } from "@shared/file";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 import type { PictureOptions } from "@shared/picture";
 import type { ShapeOptions } from "@shared/shape/shape";
 import type { TransitionDirection, TransitionOptions } from "@shared/transition";
 import { buildTransition } from "@shared/transition";
 
+import { stringifySlide } from "../../compiler";
+import type { PptxWriteContext } from "../../context";
 import type { BackgroundOptions } from "../background";
 import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild } from "./bridge";
-import { shapeDesc, pictureDesc } from "./shape";
 
 // ── Types ──
 
@@ -56,86 +57,10 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const parts: string[] = [];
-
-    // Opening tag with namespace declarations
-    const sldAttrs: string[] = [];
-    if (opts.showMasterShapes === false) sldAttrs.push(' showMasterSp="0"');
-    if (opts.showMasterPlaceholderAnimations === false) sldAttrs.push(' showMasterPhAnim="0"');
-    if (opts.hidden) sldAttrs.push(' show="0"');
-    parts.push(
-      `<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${sldAttrs.join("")}>`,
-    );
-
-    // p:cSld — common slide data
-    parts.push("<p:cSld>");
-
-    if (opts.background) {
-      parts.push(backgroundDesc.stringify(opts.background, ctx) ?? "");
-    }
-
-    // p:spTree — shape tree
-    parts.push("<p:spTree>");
-    parts.push(SP_TREE_HEADER);
-
-    if (opts.children) {
-      for (const child of opts.children) {
-        const xml = stringifySlideChild(child, ctx);
-        if (xml) parts.push(xml);
-      }
-    }
-
-    parts.push("</p:spTree>");
-
-    // custDataLst
-    if (opts.customerData && opts.customerData.length > 0) {
-      const cdItems = opts.customerData.map((d) => `<p:custData r:id="${d.rId}"/>`).join("");
-      parts.push(`<p:custDataLst>${cdItems}</p:custDataLst>`);
-    }
-
-    // controls
-    if (opts.controls && opts.controls.length > 0) {
-      const ctrlItems = opts.controls
-        .map((c) => {
-          const attrs: string[] = [];
-          if (c.shapeId !== undefined) attrs.push(`spid="${c.shapeId}"`);
-          if (c.name) attrs.push(`name="${c.name}"`);
-          if (c.showAsIcon) attrs.push('showAsIcon="1"');
-          if (c.rId) attrs.push(`r:id="${c.rId}"`);
-          if (c.imageWidth !== undefined) attrs.push(`imgW="${c.imageWidth}"`);
-          if (c.imageHeight !== undefined) attrs.push(`imgH="${c.imageHeight}"`);
-          return `<p:control ${attrs.join(" ")}/>`;
-        })
-        .join("");
-      parts.push(`<p:controls>${ctrlItems}</p:controls>`);
-    }
-
-    // Header/Footer (p:hf)
-    if (opts.headerFooter) {
-      const hf = opts.headerFooter;
-      const hfChildren: string[] = [];
-      if (hf.slideNumber) hfChildren.push("<p:sldNum/>");
-      if (hf.dateTime) hfChildren.push("<p:dt/>");
-      if (hf.footer) hfChildren.push("<p:ftr/>");
-      if (hf.header) hfChildren.push("<p:hdr/>");
-      if (hfChildren.length > 0) parts.push(`<p:hf>${hfChildren.join("")}</p:hf>`);
-    }
-
-    parts.push("</p:cSld>");
-
-    // p:clrMapOvr
-    parts.push("<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>");
-
-    // p:transition (optional)
-    if (opts.transition) {
-      parts.push(stringifyTransition(opts.transition, ctx));
-    }
-
-    // p:extLst — verbatim round-trip
-    if (opts.ext) parts.push(`<p:extLst>${opts.ext}</p:extLst>`);
-
-    parts.push("</p:sld>");
-    return parts.join("");
+    // Single implementation lives in compiler.stringifySlide — the descriptor
+    // used to keep a near-copy that silently dropped p:timing (animations)
+    // and emitted a p:hf that CT_Slide's content model does not allow.
+    return stringifySlide(opts as unknown as SlideOptions, ctx as unknown as PptxWriteContext);
   },
 
   parse(el, _ctx) {
@@ -173,17 +98,13 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
         if (children.length > 0) result.children = children;
       }
 
-      // Header/Footer (p:hf)
-      const hf = findChild(cSld, "p:hf");
-      if (hf) {
-        const hfOpts: SlideHeaderFooterOptions = {};
-        if (findChild(hf, "p:sldNum")) hfOpts.slideNumber = true;
-        if (findChild(hf, "p:dt")) hfOpts.dateTime = true;
-        if (findChild(hf, "p:ftr")) hfOpts.footer = true;
-        if (findChild(hf, "p:hdr")) hfOpts.header = true;
-        if (hfOpts.slideNumber || hfOpts.dateTime || hfOpts.footer || hfOpts.header)
-          result.headerFooter = hfOpts;
-      }
+      // p:hf is master/layout/notes-level (CT_Slide has no hf child) — nothing
+      // to read at slide level.
+
+      // custDataLst / controls — children of cSld per CT_CommonSlideData
+      // (its own stringify writes them there; read from the same place).
+      result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
+      result.controls = parseControls(findChild(cSld, "p:controls"));
     }
 
     // p:transition
@@ -199,42 +120,6 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
       }
     }
 
-    // custDataLst
-    const custDataLst = findChild(el, "p:custDataLst");
-    if (custDataLst) {
-      const items: { rId: string }[] = [];
-      for (const cd of custDataLst.elements ?? []) {
-        if (cd.name === "p:custData") {
-          const rId = attr(cd, "r:id");
-          if (rId) items.push({ rId });
-        }
-      }
-      if (items.length > 0) result.customerData = items;
-    }
-
-    // controls
-    const controls = findChild(el, "p:controls");
-    if (controls) {
-      const items: ControlOptions[] = [];
-      for (const ctrl of controls.elements ?? []) {
-        if (ctrl.name !== "p:control") continue;
-        const item: ControlOptions = {};
-        const spid = attrNum(ctrl, "spid");
-        if (spid !== undefined) item.shapeId = spid;
-        const name = attr(ctrl, "name");
-        if (name) item.name = name;
-        if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;
-        const rId = attr(ctrl, "r:id");
-        if (rId) item.rId = rId;
-        const imgW = attrNum(ctrl, "imgW");
-        if (imgW !== undefined) item.imageWidth = imgW;
-        const imgH = attrNum(ctrl, "imgH");
-        if (imgH !== undefined) item.imageHeight = imgH;
-        items.push(item);
-      }
-      if (items.length > 0) result.controls = items;
-    }
-
     // extLst — verbatim inner XML for unmodeled extensions
     const extLst = findChild(el, "p:extLst");
     if (extLst) {
@@ -245,15 +130,6 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     return result as unknown as SlideDescriptorOptions;
   },
 };
-
-// ── Child serializer ──
-
-function stringifySlideChild(child: SlideChild, ctx: WriteContext): string | undefined {
-  if ("shape" in child) return shapeDesc.stringify(child.shape, ctx);
-  if ("picture" in child) return pictureDesc.stringify(child.picture, ctx);
-  if ("contentPart" in child) return `<p:contentPart r:id="${child.contentPart.rId}"/>`;
-  return undefined;
-}
 
 // ── Transition helpers ──
 

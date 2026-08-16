@@ -15,7 +15,6 @@ import {
   createTableStyle,
   fillDesc,
   findFillChild,
-  parseNonVisualDrawingProperties,
   parseTableStyle,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
@@ -40,7 +39,7 @@ import type { TableOptions } from "@shared/table/table-frame";
 import type { TableRowOptions } from "@shared/table/table-row";
 
 import type { PptxWriteContext } from "../../context";
-import { readPositionFromXfrm } from "./shape";
+import { readCnvPr, readPositionFromXfrm } from "./shape";
 import { paragraphDesc, type ParagraphDescriptorOptions } from "./text";
 
 // ── Internal aliases ──
@@ -123,15 +122,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
 
     // Name from p:nvGraphicFramePr → p:cNvPr
-    const nvGfxFramePr = findChild(el, "p:nvGraphicFramePr");
-    if (nvGfxFramePr) {
-      const cNvPr = findChild(nvGfxFramePr, "p:cNvPr");
-      if (cNvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-        const id = attrNum(cNvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
-    }
+    Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
 
     // Find a:tbl inside a:graphicData
     const graphicData = findChild(el, "a:graphic");

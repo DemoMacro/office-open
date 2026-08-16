@@ -54,6 +54,7 @@ import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import type { PresentationPartOptions, PresentationSectionGroup } from "@parts/presentation";
 import { buildCustomLayoutXml, buildLayoutXml, type SlideLayoutType } from "@parts/slide-layout";
+import { stringifyControls, stringifyCustDataLst } from "@parts/slide/c-sld";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
 import { getColorXml, getLayoutXml, getStyleXml, DEFAULT_DRAWING_XML } from "@parts/smartart";
 import { SP_TREE_HEADER } from "@shared/constants";
@@ -607,26 +608,8 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
 
   parts.push("</p:spTree>");
 
-  if (slideOpts.customerData && slideOpts.customerData.length > 0) {
-    const cdItems = slideOpts.customerData.map((d) => `<p:custData r:id="${d.rId}"/>`).join("");
-    parts.push(`<p:custDataLst>${cdItems}</p:custDataLst>`);
-  }
-
-  if (slideOpts.controls && slideOpts.controls.length > 0) {
-    const ctrlItems = slideOpts.controls
-      .map((c) => {
-        const attrs: string[] = [];
-        if (c.shapeId !== undefined) attrs.push(`spid="${c.shapeId}"`);
-        if (c.name) attrs.push(`name="${c.name}"`);
-        if (c.showAsIcon) attrs.push('showAsIcon="1"');
-        if (c.rId) attrs.push(`r:id="${c.rId}"`);
-        if (c.imageWidth !== undefined) attrs.push(`imgW="${c.imageWidth}"`);
-        if (c.imageHeight !== undefined) attrs.push(`imgH="${c.imageHeight}"`);
-        return `<p:control ${attrs.join(" ")}/>`;
-      })
-      .join("");
-    parts.push(`<p:controls>${ctrlItems}</p:controls>`);
-  }
+  parts.push(stringifyCustDataLst(slideOpts.customerData));
+  parts.push(stringifyControls(slideOpts.controls));
 
   parts.push("</p:cSld>");
   parts.push("<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>");

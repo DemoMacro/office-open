@@ -114,20 +114,21 @@ describe("slideDesc round-trip", () => {
     expect(result.transition!.advanceOnClick).toBe(true);
   });
 
-  it("round-trips headerFooter (p:hf)", () => {
+  it("does not emit slide-level headerFooter (p:hf is master/layout-level per CT_Slide)", () => {
     const opts: SlideDescriptorOptions = {
       headerFooter: { slideNumber: true, footer: true, header: true, dateTime: true },
     };
-    const result = roundTrip(opts);
+    const xml = slideDesc.stringify(opts, writeCtx) ?? "";
 
-    expect(result.headerFooter).toBeDefined();
-    expect(result.headerFooter!.slideNumber).toBe(true);
-    expect(result.headerFooter!.footer).toBe(true);
-    expect(result.headerFooter!.header).toBe(true);
-    expect(result.headerFooter!.dateTime).toBe(true);
+    expect(xml).not.toContain("<p:hf");
   });
 
-  // Note: customerData/controls are lossy in round-trip.
-  // - customerData/controls: stringify places them inside p:cSld,
-  //   but parse searches from p:sld root via findChild (direct children only)
+  it("round-trips customerData inside p:cSld", () => {
+    const opts: SlideDescriptorOptions = {
+      customerData: [{ rId: "rId7" }],
+    };
+    const result = roundTrip(opts);
+
+    expect(result.customerData).toEqual([{ rId: "rId7" }]);
+  });
 });

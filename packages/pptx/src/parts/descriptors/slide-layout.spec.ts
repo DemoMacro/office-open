@@ -104,6 +104,23 @@ describe("slideLayoutDesc stringify/parse", () => {
     expect(result.transition).toEqual({ type: "fade", speed: "slow" });
   });
 
+  it("emits p:hf in attribute form per CT_HeaderFooter and round-trips it", () => {
+    const xml = slideLayoutDesc.stringify(
+      { type: "blank", headerFooter: { slideNumber: true, dateTime: false } },
+      writeCtx,
+    )!;
+    expect(xml).toContain('<p:hf sldNum="1" dt="0"/>');
+    const result = parseXmlDef(xml);
+    expect(result.headerFooter).toEqual({ slideNumber: true, dateTime: false });
+  });
+
+  it("parses the legacy element-form p:hf this library used to emit", () => {
+    const result = parseXmlDef(
+      `<p:sldLayout ${NS}><p:cSld/><p:hf><p:sldNum/><p:ftr/></p:hf></p:sldLayout>`,
+    );
+    expect(result.headerFooter).toEqual({ slideNumber: true, footer: true });
+  });
+
   it("parses spTree children and derives placeholder positions", () => {
     const result = parseXmlDef(LAYOUT_WITH_PLACEHOLDERS);
     expect(result.type).toBe("title");

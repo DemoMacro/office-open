@@ -13,15 +13,12 @@ import { chartSpaceDesc } from "@office-open/core/chart";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringify } from "@office-open/core/descriptor";
-import {
-  stringifyNonVisualDrawingProperties,
-  parseNonVisualDrawingProperties,
-} from "@office-open/core/drawing";
-import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
+import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
+import { attr, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { ChartOptions } from "../chart-frame";
-import { readPositionFromXfrm } from "./shape";
+import { readCnvPr, readPositionFromXfrm } from "./shape";
 
 // ── ID counter ──
 
@@ -75,15 +72,7 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     const result: Partial<ChartOptions> = {};
 
     // id + name from p:nvGraphicFramePr/p:cNvPr
-    const nvGfxFramePr = findChild(el, "p:nvGraphicFramePr");
-    if (nvGfxFramePr) {
-      const cNvPr = findChild(nvGfxFramePr, "p:cNvPr");
-      if (cNvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-        const id = attrNum(cNvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
-    }
+    Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");

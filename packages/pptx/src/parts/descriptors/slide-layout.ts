@@ -11,19 +11,19 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
-import {
-  attr,
-  attrNum,
-  findChild,
-  parse as parseXml,
-  stringify as stringifyXml,
-} from "@office-open/xml";
+import { attr, findChild, parse as parseXml, stringify as stringifyXml } from "@office-open/xml";
 import { NS } from "@parts/slide-layout";
-import type { ControlOptions } from "@parts/slide/slide";
+import {
+  parseControls,
+  parseCustDataLst,
+  parseSlideHf,
+  stringifyControls,
+  stringifyCustDataLst,
+  stringifySlideHf,
+} from "@parts/slide/c-sld";
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 import type { LayoutDefinition, LayoutPlaceholderOptions } from "@shared/file";
-import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 import { extractPlaceholderDefinition } from "@shared/placeholder";
 
 import type { PptxWriteContext } from "../../context";
@@ -96,28 +96,9 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     }
     parts.push("</p:spTree>");
 
-    // custDataLst (inside cSld per CT_CommonSlideData).
-    if (opts.customerData && opts.customerData.length > 0) {
-      const cdItems = opts.customerData.map((d) => `<p:custData r:id="${d.rId}"/>`).join("");
-      parts.push(`<p:custDataLst>${cdItems}</p:custDataLst>`);
-    }
-
-    // controls (inside cSld).
-    if (opts.controls && opts.controls.length > 0) {
-      const ctrlItems = opts.controls
-        .map((c) => {
-          const a: string[] = [];
-          if (c.shapeId !== undefined) a.push(`spid="${c.shapeId}"`);
-          if (c.name) a.push(`name="${c.name}"`);
-          if (c.showAsIcon) a.push('showAsIcon="1"');
-          if (c.rId) a.push(`r:id="${c.rId}"`);
-          if (c.imageWidth !== undefined) a.push(`imgW="${c.imageWidth}"`);
-          if (c.imageHeight !== undefined) a.push(`imgH="${c.imageHeight}"`);
-          return `<p:control ${a.join(" ")}/>`;
-        })
-        .join("");
-      parts.push(`<p:controls>${ctrlItems}</p:controls>`);
-    }
+    // custDataLst + controls (inside cSld per CT_CommonSlideData).
+    parts.push(stringifyCustDataLst(opts.customerData));
+    parts.push(stringifyControls(opts.controls));
 
     parts.push("</p:cSld>");
 
@@ -138,16 +119,9 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       parts.push(timingDesc.stringify(opts.timing, ctx) ?? "");
     }
 
-    // p:hf (optional, sibling of cSld per CT_SlideLayout).
-    if (opts.headerFooter) {
-      const hf = opts.headerFooter;
-      const hfChildren: string[] = [];
-      if (hf.slideNumber) hfChildren.push("<p:sldNum/>");
-      if (hf.dateTime) hfChildren.push("<p:dt/>");
-      if (hf.footer) hfChildren.push("<p:ftr/>");
-      if (hf.header) hfChildren.push("<p:hdr/>");
-      if (hfChildren.length > 0) parts.push(`<p:hf>${hfChildren.join("")}</p:hf>`);
-    }
+    // p:hf (optional, sibling of cSld per CT_SlideLayout; attribute form per
+    // CT_HeaderFooter).
+    parts.push(stringifySlideHf(opts.headerFooter));
 
     // p:extLst — verbatim round-trip (last child per CT_SlideLayout sequence).
     if (opts.ext) parts.push(`<p:extLst>${opts.ext}</p:extLst>`);
@@ -204,41 +178,9 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
         if (Object.keys(placeholders).length > 0) result.placeholders = placeholders;
       }
 
-      // custDataLst (inside cSld).
-      const custDataLst = findChild(cSld, "p:custDataLst");
-      if (custDataLst) {
-        const items: { rId: string }[] = [];
-        for (const cd of custDataLst.elements ?? []) {
-          if (cd.name === "p:custData") {
-            const rId = attr(cd, "r:id");
-            if (rId) items.push({ rId });
-          }
-        }
-        if (items.length > 0) result.customerData = items;
-      }
-
-      // controls (inside cSld).
-      const controls = findChild(cSld, "p:controls");
-      if (controls) {
-        const items: ControlOptions[] = [];
-        for (const ctrl of controls.elements ?? []) {
-          if (ctrl.name !== "p:control") continue;
-          const item: ControlOptions = {};
-          const spid = attrNum(ctrl, "spid");
-          if (spid !== undefined) item.shapeId = spid;
-          const ctrlName = attr(ctrl, "name");
-          if (ctrlName) item.name = ctrlName;
-          if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;
-          const rId = attr(ctrl, "r:id");
-          if (rId) item.rId = rId;
-          const imgW = attrNum(ctrl, "imgW");
-          if (imgW !== undefined) item.imageWidth = imgW;
-          const imgH = attrNum(ctrl, "imgH");
-          if (imgH !== undefined) item.imageHeight = imgH;
-          items.push(item);
-        }
-        if (items.length > 0) result.controls = items;
-      }
+      // custDataLst + controls (inside cSld).
+      result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
+      result.controls = parseControls(findChild(cSld, "p:controls"));
     }
 
     // EG_ChildSlide — p:clrMapOvr.
@@ -253,18 +195,8 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     const timing = findChild(el, "p:timing");
     if (timing) result.timing = timingDesc.parse(timing, ctx);
 
-    // p:hf (sibling of cSld).
-    const hf = findChild(el, "p:hf");
-    if (hf) {
-      const hfOpts: SlideHeaderFooterOptions = {};
-      if (findChild(hf, "p:sldNum")) hfOpts.slideNumber = true;
-      if (findChild(hf, "p:dt")) hfOpts.dateTime = true;
-      if (findChild(hf, "p:ftr")) hfOpts.footer = true;
-      if (findChild(hf, "p:hdr")) hfOpts.header = true;
-      if (hfOpts.slideNumber || hfOpts.dateTime || hfOpts.footer || hfOpts.header) {
-        result.headerFooter = hfOpts;
-      }
-    }
+    // p:hf (sibling of cSld; attribute form per CT_HeaderFooter).
+    result.headerFooter = parseSlideHf(findChild(el, "p:hf"));
 
     // p:extLst — verbatim inner XML for unmodeled extensions.
     const extLst = findChild(el, "p:extLst");

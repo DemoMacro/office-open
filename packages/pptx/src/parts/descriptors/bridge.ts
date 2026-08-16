@@ -70,6 +70,9 @@ export function stringifyChild(child: LegacySlideChild, ctx: PptxWriteContext): 
   if ("lockedCanvas" in child && child.lockedCanvas) {
     return lockedCanvasDesc.stringify(child.lockedCanvas, ctx);
   }
+  if ("contentPart" in child && child.contentPart) {
+    return `<p:contentPart r:id="${child.contentPart.rId}"/>`;
+  }
   if ("rawXml" in child && child.rawXml) {
     return child.rawXml;
   }

@@ -13,11 +13,11 @@ import type { UniversalMeasure } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
 import type { ShapePropertiesOptions, TextBodyOptions } from "@office-open/core/drawing";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { LayoutDefinition, MasterDefinition } from "./file";
-import type { ShapeStyleOptions } from "./shape/shape";
+import { readShapeStyle, type ShapeStyleOptions } from "./shape/shape";
 
 /**
  * Maps a `p:ph/@type` token to the matching key on
@@ -228,7 +228,7 @@ export function extractPlaceholderDefinition(
 
   // p:style — placeholders default to none; carry whenever present.
   const styleEl = findChild(spEl, "p:style");
-  if (styleEl) def.style = parsePlaceholderStyle(styleEl);
+  if (styleEl) def.style = readShapeStyle(styleEl);
 
   // A placeholder definition requires a concrete position.
   if (
@@ -251,54 +251,4 @@ function hasTextContent(txBody: XmlElement): boolean {
     }
   }
   return false;
-}
-
-/** Parse p:style (a:lnRef/a:fillRef/a:effectRef/a:fontRef) into a ShapeStyleOptions. */
-function parsePlaceholderStyle(styleEl: XmlElement): ShapeStyleOptions {
-  const style: ShapeStyleOptions = {};
-  const lnRef = findChild(styleEl, "a:lnRef");
-  if (lnRef) {
-    const idx = attrNum(lnRef, "idx");
-    if (idx !== undefined) {
-      const color = readSrgbClr(lnRef);
-      style.lineReference = color !== undefined ? { index: idx, color } : { index: idx };
-    }
-  }
-  const fillRef = findChild(styleEl, "a:fillRef");
-  if (fillRef) {
-    const idx = attrNum(fillRef, "idx");
-    if (idx !== undefined) {
-      const color = readSrgbClr(fillRef);
-      style.fillReference = color !== undefined ? { index: idx, color } : { index: idx };
-    }
-  }
-  const effectRef = findChild(styleEl, "a:effectRef");
-  if (effectRef) {
-    const idx = attrNum(effectRef, "idx");
-    if (idx !== undefined) {
-      const color = readSrgbClr(effectRef);
-      style.effectReference = color !== undefined ? { index: idx, color } : { index: idx };
-    }
-  }
-  const fontRef = findChild(styleEl, "a:fontRef");
-  if (fontRef) {
-    const idx = attrNum(fontRef, "idx");
-    if (idx !== undefined) {
-      const color = readSrgbClr(fontRef);
-      style.fontReference = color !== undefined ? { index: idx, color } : { index: idx };
-    }
-  }
-  return style;
-}
-
-/** Read an srgbClr val from a style ref (direct child or nested in a:solidFill). */
-function readSrgbClr(refEl: XmlElement): string | undefined {
-  const direct = findChild(refEl, "a:srgbClr");
-  if (direct) return attr(direct, "val");
-  const solidFill = findChild(refEl, "a:solidFill");
-  if (solidFill) {
-    const inner = findChild(solidFill, "a:srgbClr");
-    if (inner) return attr(inner, "val");
-  }
-  return undefined;
 }

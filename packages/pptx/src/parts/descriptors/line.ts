@@ -16,11 +16,12 @@ import {
   parseEndpointConnection,
   stringifyEndpointConnection,
   stringifyNonVisualDrawingProperties,
-  parseNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
 import { attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ConnectorOptions, LineShapeOptions } from "@shared/shape/line-shape";
+
+import { readCnvPr } from "./shape";
 
 // ── ID counters ──
 
@@ -127,15 +128,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     const result: Partial<LineShapeOptions> = {};
 
     // p:nvSpPr → id, name
-    const nvSpPr = findChild(el, "p:nvSpPr");
-    if (nvSpPr) {
-      const cNvPr = findChild(nvSpPr, "p:cNvPr");
-      if (cNvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-        const id = attrNum(cNvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
-    }
+    Object.assign(result, readCnvPr(el, "p:nvSpPr"));
 
     // p:spPr → endpoints (off/ext + flip) + fill/outline
     const spPr = findChild(el, "p:spPr");
@@ -207,12 +200,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     // p:nvCxnSpPr → id, name, and optional cNvCxnSpPr (locks + connections)
     const nvCxnSpPr = findChild(el, "p:nvCxnSpPr");
     if (nvCxnSpPr) {
-      const cNvPr = findChild(nvCxnSpPr, "p:cNvPr");
-      if (cNvPr) {
-        Object.assign(result, parseNonVisualDrawingProperties(cNvPr));
-        const id = attrNum(cNvPr, "id");
-        if (id !== undefined) result.id = id;
-      }
+      Object.assign(result, readCnvPr(nvCxnSpPr));
       const cNvCxnSpPr = findChild(nvCxnSpPr, "p:cNvCxnSpPr");
       if (cNvCxnSpPr) {
         const cxnSpLocks = findChild(cNvCxnSpPr, "a:cxnSpLocks");
