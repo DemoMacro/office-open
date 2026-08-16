@@ -210,7 +210,7 @@ export interface Cell3DOptions {
   bevel: BevelOptions;
   /** Light rig (CT_LightRig) */
   lightRig?: LightRigOptions;
-  /** Preset material (@prstMaterial, default "plastic") */
+  /** Preset material (`@prstMaterial`, default "plastic") */
   prstMaterial?: PresetMaterial;
 }
 

@@ -9,7 +9,7 @@
  * @module
  */
 
-/** ST_BlackWhiteMode — the 11 token values for the @bwMode attribute. */
+/** ST_BlackWhiteMode — the 11 token values for the `@bwMode` attribute. */
 export type BlackWhiteMode =
   | "clr"
   | "auto"

@@ -4,7 +4,7 @@
  * Implements ECMA-376 Agile Encryption password derivation.
  * Passwords are encoded as UTF-16LE per the OOXML specification.
  *
- * Uses @noble/hashes for SHA-512 — audited, cross-platform,
+ * Uses `@noble`/hashes for SHA-512 — audited, cross-platform,
  * and comparable in speed to node:crypto for this workload.
  *
  * @module

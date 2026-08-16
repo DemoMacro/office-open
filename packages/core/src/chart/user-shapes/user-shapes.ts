@@ -78,13 +78,13 @@ export interface AbsoluteSizeAnchorOptions {
 
 // ── Object choices (EG_ObjectChoices) ──
 
-/** Fields shared by every user-shape object (cNvPr @id + @macro/@fPublished). */
+/** Fields shared by every user-shape object (cNvPr `@id` + `@macro`/`@fPublished`). */
 interface ObjectCommonAttributes {
   /** cNvPr drawing id (schema-required) */
   id: number;
-  /** Macro reference (@macro) */
+  /** Macro reference (`@macro`) */
   macro?: string;
-  /** Published as a server-side shape (@fPublished, default false) */
+  /** Published as a server-side shape (`@fPublished`, default false) */
   published?: boolean;
 }
 
@@ -92,14 +92,14 @@ export interface UserShapeShapeOptions extends ObjectCommonAttributes {
   type: "shape";
   /** cNvPr — id is required by the schema */
   nonVisualProperties?: NonVisualDrawingPropertiesOptions;
-  /** Text-box marker (cdr:cNvSpPr @txBox) */
+  /** Text-box marker (cdr:cNvSpPr `@txBox`) */
   textBox?: boolean;
   shapeProperties: ShapePropertiesOptions;
   style?: DefaultShapeStyleOptions;
   textBody?: TextBodyOptions;
-  /** Formula linking the text to a cell (@textlink) */
+  /** Formula linking the text to a cell (`@textlink`) */
   textLink?: string;
-  /** Text locking (@fLocksText, default true) */
+  /** Text locking (`@fLocksText`, default true) */
   locksText?: boolean;
 }
 

@@ -6,7 +6,7 @@ import type { CellBorderOptions } from "./table-cell-properties";
 
 export type VerticalAlignment = "top" | "center" | "bottom" | "justify" | "distribute";
 
-/** ST_TextVerticalType — text direction within a cell (a:tcPr @vert). */
+/** ST_TextVerticalType — text direction within a cell (a:tcPr `@vert`). */
 export type TextVerticalType = "horz" | "vert" | "vert270" | "wordArt" | "wordArtV";
 
 /** pptx cell extends the base cell contract (span from base); verticalAlign
@@ -14,7 +14,7 @@ export type TextVerticalType = "horz" | "vert" | "vert270" | "wordArt" | "wordAr
  *  margins/content are a:-domain types. */
 export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAlign"> {
   verticalAlign?: VerticalAlignment;
-  /** @vert — text direction (ST_TextVerticalType). */
+  /** `@vert` — text direction (ST_TextVerticalType). */
   vertical?: TextVerticalType;
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];

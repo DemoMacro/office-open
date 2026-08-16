@@ -79,7 +79,7 @@ export interface DocumentOptions extends CorePropertiesOptions {
   background?: DocumentBackgroundOptions;
   customProperties?: CustomPropertyOptions[];
   fonts?: EmbeddedFontOptions[];
-  /** Document conformance class (w:document/@w:conformance). */
+  /** Document conformance class (w:document/`@w:conformance`). */
   conformance?: "strict" | "transitional";
   /** Glossary document — building blocks (Quick Parts) */
   glossary?: GlossaryDocumentOptions;

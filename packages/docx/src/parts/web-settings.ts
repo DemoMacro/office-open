@@ -25,7 +25,7 @@ export interface DivBorderOptions {
  * Options for a div element (CT_Div).
  */
 export interface DivOptions {
-  /** Unique div identifier (required by CT_Div/@id) */
+  /** Unique div identifier (required by CT_Div/`@id`) */
   id: number;
   marginLeft: number | UniversalMeasure;
   marginRight: number | UniversalMeasure;
@@ -59,12 +59,12 @@ export const TargetScreenSize = {
 /**
  * Options for the w:optimizeForBrowser element.
  *
- * CT_OptimizeForBrowser extends CT_OnOff with an optional @w:target attribute.
+ * CT_OptimizeForBrowser extends CT_OnOff with an optional `@w:target` attribute.
  */
 export interface OptimizeForBrowserOptions {
   /** On/off value — defaults to true when omitted (CT_OnOff). */
   value?: boolean;
-  /** Target screen resolution name (w:optimizeForBrowser/@w:target). */
+  /** Target screen resolution name (w:optimizeForBrowser/`@w:target`). */
   target?: string;
 }
 

@@ -9,12 +9,12 @@ import type { ChartSpaceOptions } from "@office-open/core/chart";
  * both the public slide-child entry and the descriptor.
  *
  * `title` is the chart title (c:title) inherited from ChartSpaceOptions — the
- * cNvPr @title attribute is deliberately not exposed here so one JSON key
+ * cNvPr `@title` attribute is deliberately not exposed here so one JSON key
  * cannot mean two XML attributes (alt text goes in `description`).
  */
 export interface ChartOptions
   extends ChartSpaceOptions, Omit<NonVisualDrawingPropertiesOptions, "title"> {
-  /** Chart frame id (p:cNvPr @id). Auto-generated if omitted. */
+  /** Chart frame id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;

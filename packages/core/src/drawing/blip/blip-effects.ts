@@ -104,7 +104,7 @@ export interface BiLevelEffectOptions {
  * ```
  */
 export interface AlphaReplaceEffectOptions {
-  /** Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to @a. */
+  /** Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to `@a`. */
   alpha: number;
 }
 

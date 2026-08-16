@@ -104,7 +104,7 @@ export interface RunPropertiesOptions {
   underlineLine?: true | OutlineOptions;
   /** EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill. */
   underlineFill?: true | FillOptions;
-  /** @kern — kerning threshold in points (ST_TextNonNegativePoint). */
+  /** `@kern` — kerning threshold in points (ST_TextNonNegativePoint). */
   kern?: number;
   /** a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips. */
   outline?: true | OutlineOptions;
@@ -118,9 +118,9 @@ export interface RunPropertiesOptions {
   normalizeHeight?: boolean;
   bookmarkMark?: string;
   smartTagId?: string;
-  /** @err — spelling error flag. */
+  /** `@err` — spelling error flag. */
   err?: boolean;
-  /** @smtClean — smart tag clean flag (XSD default true). */
+  /** `@smtClean` — smart tag clean flag (XSD default true). */
   smtClean?: boolean;
 }
 
@@ -139,13 +139,13 @@ export type BulletStyleOptions = {
   color?: string;
   /** a:buClrTx — bullet color follows the text run color. */
   colorFollowsText?: boolean;
-  /** a:buSzPct @val — bullet size as a percentage of the text size. */
+  /** a:buSzPct `@val` — bullet size as a percentage of the text size. */
   size?: number;
   /** a:buSzTx — bullet size follows the text run size. */
   sizeFollowsText?: boolean;
-  /** a:buSzPts @val — bullet size in points. */
+  /** a:buSzPts `@val` — bullet size in points. */
   sizePoints?: number;
-  /** a:buFont @typeface — bullet font (defaults to Arial on fresh char/autoNum). */
+  /** a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum). */
   font?: string;
   /** a:buFontTx — bullet font follows the text run font. */
   fontFollowsText?: boolean;
@@ -181,9 +181,9 @@ export type BulletOptions =
 export type TextTabAlignment = "l" | "ctr" | "r" | "dec";
 
 export interface TabStopOptions {
-  /** a:tab @pos — tab stop position in EMU. */
+  /** a:tab `@pos` — tab stop position in EMU. */
   position?: number;
-  /** a:tab @algn — tab alignment (l/ctr/r/dec). */
+  /** a:tab `@algn` — tab alignment (l/ctr/r/dec). */
   alignment?: TextTabAlignment;
 }
 
@@ -204,27 +204,27 @@ export interface ParagraphPropertiesOptions {
   marginIndent?: number;
   marginRight?: number;
   defTabSize?: number;
-  /** @indent — first-line indent (ST_TextIndent, EMU). */
+  /** `@indent` — first-line indent (ST_TextIndent, EMU). */
   indent?: number;
   /** a:tabLst — explicit tab stops (emitted after bullets, before defRPr). */
   tabStops?: TabStopOptions[];
   /** a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties). */
   defaultRunProperties?: RunPropertiesOptions;
   fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
-  /** @rtl — paragraph right-to-left. */
+  /** `@rtl` — paragraph right-to-left. */
   rightToLeft?: boolean;
-  /** @eaLnBrk — East Asian line break. */
+  /** `@eaLnBrk` — East Asian line break. */
   eastAsianLineBreak?: boolean;
-  /** @latinLnBrk — Latin line break. */
+  /** `@latinLnBrk` — Latin line break. */
   latinLineBreak?: boolean;
 }
 
 // ── Text field (a:fld) ──
 
 export interface TextFieldOptions {
-  /** a:fld @type — field type token (e.g. "datetimeFigureOut", "slidenum"). */
+  /** a:fld `@type` — field type token (e.g. "datetimeFigureOut", "slidenum"). */
   type: string;
-  /** a:fld @id — GUID identifier. */
+  /** a:fld `@id` — GUID identifier. */
   id?: string;
   /** a:t — display text (often a placeholder such as "‹#›" or "1/27/13"). */
   text?: string;

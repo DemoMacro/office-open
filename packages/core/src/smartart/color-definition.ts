@@ -28,9 +28,9 @@ import { withDiagramNamespaces } from "./layout-definition";
 
 /** dgm:colorsDef (CT_ColorTransform) — the colors part root. */
 export interface ColorDefinitionOptions {
-  /** Color-transform identity URI (dgm:colorsDef @uniqueId). */
+  /** Color-transform identity URI (dgm:colorsDef `@uniqueId`). */
   uniqueId?: string;
-  /** Minimum Office version (dgm:colorsDef @minVer). */
+  /** Minimum Office version (dgm:colorsDef `@minVer`). */
   minVer?: string;
   /** Localized titles (dgm:title*). */
   titles?: DiagramNameOptions[];

@@ -9,8 +9,8 @@ export interface SimpleFieldOptions {
   instruction: string;
   /** Optional cached field value */
   cachedValue?: string;
-  /** Lock the field to prevent updates (CT_SimpleField @fldLock) */
+  /** Lock the field to prevent updates (CT_SimpleField `@fldLock`) */
   fieldLock?: boolean;
-  /** Field result is out of date (CT_SimpleField @dirty) */
+  /** Field result is out of date (CT_SimpleField `@dirty`) */
   dirty?: boolean;
 }

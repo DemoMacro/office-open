@@ -11,7 +11,7 @@ import type { WorkbookOptions } from "@parts/file";
 import { compileWorkbook } from "./compiler";
 import { canStreamWorkbook, streamWorkbook } from "./stream";
 
-/** @internal Packer instance for XLSX generation. */
+/** `@internal` Packer instance for XLSX generation. */
 const Packer = createPacker<WorkbookOptions>({
   compile: (options, overrides, mediaLevel) => compileWorkbook(options, overrides, mediaLevel),
   mimeType: OoxmlMimeType.XLSX,
@@ -28,7 +28,7 @@ const Packer = createPacker<WorkbookOptions>({
  *
  * @example
  * ```typescript
- * import { generateWorkbook } from "@office-open/xlsx";
+ * import { generateWorkbook } from "`@office`-open/xlsx";
  *
  * const buffer = await generateWorkbook({ worksheets: [...] });
  * const bytes = await generateWorkbook({ worksheets: [...] }, { type: "uint8array" });

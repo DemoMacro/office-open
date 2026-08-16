@@ -16,20 +16,20 @@ export interface FontOptions {
   strike?: boolean;
   size?: number;
   color?: string;
-  /** Automatic (system) color instead of an explicit RGB (CT_Color @auto) */
+  /** Automatic (system) color instead of an explicit RGB (CT_Color `@auto`) */
   autoColor?: boolean;
   font?: string;
-  /** Character set (CT_Font/charset @val) */
+  /** Character set (CT_Font/charset `@val`) */
   charset?: number;
-  /** Font family (CT_Font/family @val) */
+  /** Font family (CT_Font/family `@val`) */
   family?: number;
   /** Condense (macOS, CT_Font/condense) */
   condense?: boolean;
   /** Extend (macOS, CT_Font/extend) */
   extend?: boolean;
-  /** Vertical alignment: superscript/subscript (CT_Font/vertAlign @val) */
+  /** Vertical alignment: superscript/subscript (CT_Font/vertAlign `@val`) */
   vertAlign?: "superscript" | "subscript" | "baseline";
-  /** Font scheme (CT_Font/scheme @val) */
+  /** Font scheme (CT_Font/scheme `@val`) */
   scheme?: "major" | "minor" | "none";
   /** Font shadow (CT_Font/shadow) */
   shadow?: boolean;
@@ -57,21 +57,21 @@ export interface CellFillOptions {
   patternType?: string;
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
   bgColor?: string;
-  /** Background color indexed (CT_Color @indexed) */
+  /** Background color indexed (CT_Color `@indexed`) */
   colorIndexed?: number;
   /** Gradient stops (CT_GradientFill/stop) */
   stops?: CellGradientStopOptions[];
-  /** Gradient type (CT_GradientFill @type) */
+  /** Gradient type (CT_GradientFill `@type`) */
   gradientType?: "linear" | "path";
-  /** Gradient degree for linear (CT_GradientFill @degree) */
+  /** Gradient degree for linear (CT_GradientFill `@degree`) */
   gradientDegree?: number;
-  /** Gradient left position for path (CT_GradientFill @left) */
+  /** Gradient left position for path (CT_GradientFill `@left`) */
   gradientLeft?: number;
-  /** Gradient right position for path (CT_GradientFill @right) */
+  /** Gradient right position for path (CT_GradientFill `@right`) */
   gradientRight?: number;
-  /** Gradient top position for path (CT_GradientFill @top) */
+  /** Gradient top position for path (CT_GradientFill `@top`) */
   gradientTop?: number;
-  /** Gradient bottom position for path (CT_GradientFill @bottom) */
+  /** Gradient bottom position for path (CT_GradientFill `@bottom`) */
   gradientBottom?: number;
 }
 
@@ -100,9 +100,9 @@ export interface BorderSideOptions {
   left?: BorderOptions;
   right?: BorderOptions;
   diagonal?: BorderOptions;
-  /** Diagonal up (CT_Border @diagonalUp) — on the parent border element */
+  /** Diagonal up (CT_Border `@diagonalUp`) — on the parent border element */
   diagonalUp?: boolean;
-  /** Diagonal down (CT_Border @diagonalDown) — on the parent border element */
+  /** Diagonal down (CT_Border `@diagonalDown`) — on the parent border element */
   diagonalDown?: boolean;
   /** Leading edge border (CT_Border/start, for RTL support) */
   start?: BorderOptions;
@@ -128,13 +128,13 @@ export interface AlignmentOptions {
   wrapText?: boolean;
   textRotation?: number;
   indent?: number;
-  /** Relative indent (CT_CellAlignment @relativeIndent) */
+  /** Relative indent (CT_CellAlignment `@relativeIndent`) */
   relativeIndent?: number;
-  /** Justify last line (CT_CellAlignment @justifyLastLine) */
+  /** Justify last line (CT_CellAlignment `@justifyLastLine`) */
   justifyLastLine?: boolean;
-  /** Shrink to fit (CT_CellAlignment @shrinkToFit) */
+  /** Shrink to fit (CT_CellAlignment `@shrinkToFit`) */
   shrinkToFit?: boolean;
-  /** Reading order (CT_CellAlignment @readingOrder) */
+  /** Reading order (CT_CellAlignment `@readingOrder`) */
   readingOrder?: number;
 }
 
@@ -144,11 +144,11 @@ export interface StyleOptions {
   border?: BorderSideOptions;
   numFmt?: string;
   alignment?: AlignmentOptions;
-  /** Quote prefix (CT_Xf @quotePrefix) */
+  /** Quote prefix (CT_Xf `@quotePrefix`) */
   quotePrefix?: boolean;
-  /** Pivot button (CT_Xf @pivotButton) */
+  /** Pivot button (CT_Xf `@pivotButton`) */
   pivotButton?: boolean;
-  /** Apply protection (CT_Xf @applyProtection) */
+  /** Apply protection (CT_Xf `@applyProtection`) */
   applyProtection?: boolean;
   /** Cell protection (CT_CellProtection) */
   protection?: CellProtectionOptions;
@@ -156,9 +156,9 @@ export interface StyleOptions {
 
 /** Cell-level protection settings (CT_CellProtection) */
 export interface CellProtectionOptions {
-  /** Cell is locked (CT_CellProtection @locked) */
+  /** Cell is locked (CT_CellProtection `@locked`) */
   locked?: boolean;
-  /** Cell formula is hidden (CT_CellProtection @hidden) */
+  /** Cell formula is hidden (CT_CellProtection `@hidden`) */
   hidden?: boolean;
 }
 
@@ -244,7 +244,7 @@ export interface CustomTableStyleOptions {
   name: string;
   /** Pivot style (vs table style) */
   pivot?: boolean;
-  /** Applies to tables (CT_TableStyle @table, default true) */
+  /** Applies to tables (CT_TableStyle `@table`, default true) */
   table?: boolean;
   /** Table style elements */
   elements?: TableStyleElementOptions[];
@@ -258,11 +258,11 @@ export interface CustomCellStyleOptions {
   xfId: number;
   /** Built-in ID */
   builtinId?: number;
-  /** Custom built-in (CT_CellStyle @customBuiltin) */
+  /** Custom built-in (CT_CellStyle `@customBuiltin`) */
   customBuiltin?: boolean;
-  /** Outline level (CT_CellStyle @iLevel) */
+  /** Outline level (CT_CellStyle `@iLevel`) */
   iLevel?: number;
-  /** Hidden style (CT_CellStyle @hidden) */
+  /** Hidden style (CT_CellStyle `@hidden`) */
   hidden?: boolean;
 }
 

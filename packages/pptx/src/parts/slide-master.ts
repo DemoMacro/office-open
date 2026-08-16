@@ -45,7 +45,7 @@ export interface SlideMasterOptions {
    * carry their own so custom typography (fonts, indents, bullets) survives.
    */
   textStyles?: TextListStyleOptions;
-  /** @preserve — keep this master even when no slide references it. */
+  /** `@preserve` — keep this master even when no slide references it. */
   preserve?: boolean;
   /** p:transition — slide-transition defaults inherited by slides. */
   transition?: TransitionOptions;

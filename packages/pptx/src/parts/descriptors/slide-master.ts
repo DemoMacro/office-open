@@ -4,7 +4,7 @@
  * CT_SlideMaster — fully structured, mirroring {@link slideLayoutDesc}:
  * stringify builds cSld/bg/spTree(placeholders+children)/custDataLst/controls +
  * clrMap(EG_TopLevelSlide, required) + sldLayoutIdLst + transition + timing +
- * hf + txStyles with the @preserve attribute; parse extracts the same.
+ * hf + txStyles with the `@preserve` attribute; parse extracts the same.
  *
  * Placeholder positions are scaled to the slide width on fresh generation and
  * re-derived from spTree on parse (round-trip). The master's standard text
@@ -48,7 +48,7 @@ import {
 
 /** Slide master options — structured form (CT_SlideMaster). */
 export type SlideMasterDescriptorOptions = SlideMasterOptions & {
-  /** cSld/@name. */
+  /** cSld/`@name`. */
   name?: string;
   /** sldLayoutIdLst — layout ids + relationship ids owned by this master. */
   slideLayoutIds?: { id: number; relationshipId: string }[];
@@ -70,7 +70,7 @@ const NS =
   'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
   'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
 
-/** Placeholder @type → MasterPlaceholderOptions key. */
+/** Placeholder `@type` → MasterPlaceholderOptions key. */
 const PH_TYPE_TO_KEY: Record<string, keyof MasterPlaceholderOptions> = {
   title: "title",
   ctrTitle: "title",

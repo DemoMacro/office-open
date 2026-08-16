@@ -31,7 +31,7 @@ export type { TreeNode };
  * @publicApi
  */
 export interface SmartArtOptions extends NonVisualDrawingPropertiesOptions {
-  /** Diagram id (p:cNvPr @id). Auto-generated if omitted. */
+  /** Diagram id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   /** Pre-generated SmartArt key (e.g. "smartart_1024"). Auto-generated if omitted. */
   smartArtKey?: string;

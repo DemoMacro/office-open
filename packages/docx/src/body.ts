@@ -448,7 +448,7 @@ const HEADING_MAP: Record<string, (typeof HeadingLevel)[keyof typeof HeadingLeve
   Title: HeadingLevel.TITLE,
 };
 
-/** Valid w:spacing/@w:lineRule values (ST_LineSpacingRule). */
+/** Valid w:spacing/`@w:lineRule` values (ST_LineSpacingRule). */
 const LINE_RULES = Object.values(LineRuleType) as readonly string[];
 
 // On/off paragraph properties: XML child tag → options key.

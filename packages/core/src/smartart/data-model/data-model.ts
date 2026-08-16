@@ -30,11 +30,11 @@ export function stringifyDataModel(
 
 /** dgm:pt — one data-model point (dgm:pt, CT_Pt). */
 export interface ModelPointOptions {
-  /** Point identity (dgm:pt @modelId). */
+  /** Point identity (dgm:pt `@modelId`). */
   modelId: string;
-  /** Point kind (dgm:pt @type, ST_PtType: node | doc | asst | parTrans | sibTrans). */
+  /** Point kind (dgm:pt `@type`, ST_PtType: node | doc | asst | parTrans | sibTrans). */
   type?: string;
-  /** Transition point owning connection (dgm:pt @cxnId, transition points only). */
+  /** Transition point owning connection (dgm:pt `@cxnId`, transition points only). */
   connectionId?: string;
   /** Point text (dgm:t). */
   text?: string;
@@ -46,7 +46,7 @@ export interface ModelConnectionOptions {
   modelId: string;
   sourceId: string;
   destinationId: string;
-  /** Connection kind (dgm:cxn @type, ST_CxnType: parOf | presOf | unknownRelationship). */
+  /** Connection kind (dgm:cxn `@type`, ST_CxnType: parOf | presOf | unknownRelationship). */
   type?: string;
   sourceOrder?: number;
   destinationOrder?: number;

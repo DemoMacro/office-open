@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { generateDocument, Paragraph, TextRun } from "@office-open/docx";
+ * import { generateDocument, Paragraph, TextRun } from "`@office`-open/docx";
  *
  * // Generate a document buffer
  * const buffer = await generateDocument({

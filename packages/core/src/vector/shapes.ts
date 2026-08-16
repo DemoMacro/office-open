@@ -193,7 +193,7 @@ export interface VmlShapeOptions extends VmlBaseShapeFields {
   adj?: string;
   /** o:gfxdata — base64 shape geometry payload (UI cache). */
   gfxdata?: string;
-  /** @equationxml — alternative-equation string attribute. */
+  /** `@equationxml` — alternative-equation string attribute. */
   equationxml?: string;
   /** o:ink child — Tablet PC ink annotation. */
   ink?: VmlInkOptions;

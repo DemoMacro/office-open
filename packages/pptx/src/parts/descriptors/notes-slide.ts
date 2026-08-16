@@ -36,7 +36,7 @@ export interface NotesSlideOptions {
   colorMappingOverride?: ColorMappingOverrideOptions;
   showMasterShapes?: boolean;
   showMasterPlaceholderAnimations?: boolean;
-  /** Hidden notes slide (p:notes/@show="0"). */
+  /** Hidden notes slide (p:notes/`@show`="0"). */
   show?: boolean;
 }
 

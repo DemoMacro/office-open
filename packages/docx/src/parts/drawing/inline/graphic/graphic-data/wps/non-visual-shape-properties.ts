@@ -1,13 +1,13 @@
 export interface NonVisualShapePropertiesOptions {
-  /** Drawing id (wps:cNvPr @id). */
+  /** Drawing id (wps:cNvPr `@id`). */
   id?: number;
-  /** Drawing name (wps:cNvPr @name). */
+  /** Drawing name (wps:cNvPr `@name`). */
   name?: string;
-  /** Alt-text description (wps:cNvPr @descr). */
+  /** Alt-text description (wps:cNvPr `@descr`). */
   description?: string;
-  /** Alt-text title (wps:cNvPr @title). */
+  /** Alt-text title (wps:cNvPr `@title`). */
   title?: string;
-  /** Shape type marker (wps:cNvSpPr @txBox) — "1" marks a text box. */
+  /** Shape type marker (wps:cNvSpPr `@txBox`) — "1" marks a text box. */
   textBox?: string;
   /**
    * Connector shape marker — when true the shape emits wps:cNvCnPr (connector

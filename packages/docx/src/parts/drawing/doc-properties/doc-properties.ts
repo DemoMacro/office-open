@@ -28,7 +28,7 @@ export interface HyperlinkOptions {
  */
 export interface DocPropertiesOptions extends NonVisualDrawingPropertiesOptions {
   /**
-   * Name of the drawing element (wp:docPr @name is XSD-required). Re-declared
+   * Name of the drawing element (wp:docPr `@name` is XSD-required). Re-declared
    * required to keep the docx API strict, overriding the base optional.
    */
   name: string;

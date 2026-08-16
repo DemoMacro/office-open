@@ -38,7 +38,7 @@ export interface OleIconImageOptions {
  * both the public slide-child entry and the descriptor.
  */
 export interface OleOptions extends NonVisualDrawingPropertiesOptions {
-  /** OLE frame id (p:cNvPr @id). Auto-generated if omitted. */
+  /** OLE frame id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   /** Position and size */
   x?: number | UniversalMeasure;
@@ -65,6 +65,6 @@ export interface OleOptions extends NonVisualDrawingPropertiesOptions {
    * for embedded objects.
    */
   iconImage?: OleIconImageOptions;
-  /** Follow color scheme (p:embed/@followColorScheme): "none", "full", or "textAndBackground" */
+  /** Follow color scheme (p:embed/`@followColorScheme`): "none", "full", or "textAndBackground" */
   followColorScheme?: "none" | "full" | "textAndBackground";
 }

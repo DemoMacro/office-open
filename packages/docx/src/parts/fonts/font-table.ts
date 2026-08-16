@@ -45,7 +45,7 @@ export interface EmbeddedFontOptions {
   data?: DataType;
   /** Character set/encoding for the font */
   characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
-  /** IANA character set name (w:charset/@w:characterSet, e.g. "ISO-8859-1"). */
+  /** IANA character set name (w:charset/`@w:characterSet`, e.g. "ISO-8859-1"). */
   characterSetName?: string;
   /** Font family classification (e.g. "auto", "roman", "swiss") */
   family?: string;
@@ -71,7 +71,7 @@ export interface EmbeddedFontOptions {
    */
   fontKey?: string;
   /**
-   * Embedded font is subsetted rather than complete (CT_FontRel @subsetted).
+   * Embedded font is subsetted rather than complete (CT_FontRel `@subsetted`).
    * Round-trip flag preserved from source embedRegular.
    */
   subsetted?: boolean;

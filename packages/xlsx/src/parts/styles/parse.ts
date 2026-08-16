@@ -178,7 +178,7 @@ export function parseProtection(el: XmlElement): CellProtectionOptions {
 }
 
 /**
- * Read an sml color element's @rgb, stripping the alpha prefix when present
+ * Read an sml color element's `@rgb`, stripping the alpha prefix when present
  * (FF000000 → 000000). Shared by all xlsx color-attr parse sites.
  */
 export function parseColorHex(el: XmlElement): string | undefined {

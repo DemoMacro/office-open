@@ -35,9 +35,9 @@ export interface ColumnOptions {
   customWidth?: boolean;
   outlineLevel?: number;
   collapsed?: boolean;
-  /** Best-fit column width (CT_Col @bestFit) */
+  /** Best-fit column width (CT_Col `@bestFit`) */
   bestFit?: boolean;
-  /** Phonetic text for CJK (CT_Col @phonetic) */
+  /** Phonetic text for CJK (CT_Col `@phonetic`) */
   phonetic?: boolean;
 }
 
@@ -46,15 +46,15 @@ export interface RowOptions {
   height?: number | UniversalMeasure;
   hidden?: boolean;
   rowNumber?: number;
-  /** Spans for the row, e.g. "1:15" (CT_Row @spans) */
+  /** Spans for the row, e.g. "1:15" (CT_Row `@spans`) */
   spans?: string;
-  /** Custom format applied (CT_Row @customFormat) */
+  /** Custom format applied (CT_Row `@customFormat`) */
   customFormat?: boolean;
-  /** Thick top border (CT_Row @thickTop) */
+  /** Thick top border (CT_Row `@thickTop`) */
   thickTop?: boolean;
-  /** Thick bottom border (CT_Row @thickBot) */
+  /** Thick bottom border (CT_Row `@thickBot`) */
   thickBot?: boolean;
-  /** Phonetic text (CT_Row @ph) */
+  /** Phonetic text (CT_Row `@ph`) */
   phonetic?: boolean;
 }
 
@@ -102,9 +102,9 @@ export interface RichTextRunOptions {
 
 /** Phonetics run for CJK (CT_PhoneticRun → rPh). */
 export interface PhoneticRunOptions {
-  /** Start byte offset in base text (CT_PhoneticRun @sb) */
+  /** Start byte offset in base text (CT_PhoneticRun `@sb`) */
   startByte: number;
-  /** End byte offset in base text (CT_PhoneticRun @eb) */
+  /** End byte offset in base text (CT_PhoneticRun `@eb`) */
   endByte: number;
   /** Phonetic text */
   text: string;
@@ -132,9 +132,9 @@ export interface CellOptions {
    * is shorthand for `{ formula: "..." }`.
    */
   formula?: string | FormulaOptions;
-  /** Cell metadata block id, 1-based index into metadata.cellMetadata (CT_Cell @cm) */
+  /** Cell metadata block id, 1-based index into metadata.cellMetadata (CT_Cell `@cm`) */
   cellMetadataId?: number;
-  /** Value metadata block id, 1-based index into metadata.valueMetadata (CT_Cell @vm) */
+  /** Value metadata block id, 1-based index into metadata.valueMetadata (CT_Cell `@vm`) */
   valueMetadataId?: number;
 }
 
@@ -157,35 +157,35 @@ export interface FormulaOptions {
   reference?: string;
   /** Shared formula group index (required for shared formulas) */
   sharedIndex?: number;
-  /** Always calculate array (CT_CellFormula @aca) */
+  /** Always calculate array (CT_CellFormula `@aca`) */
   aca?: boolean;
-  /** 2-D data table (CT_CellFormula @dt2D) */
+  /** 2-D data table (CT_CellFormula `@dt2D`) */
   dt2D?: boolean;
-  /** Data table row (CT_CellFormula @dtr) */
+  /** Data table row (CT_CellFormula `@dtr`) */
   dtr?: boolean;
-  /** Delete input cell 1 (CT_CellFormula @del1) */
+  /** Delete input cell 1 (CT_CellFormula `@del1`) */
   del1?: boolean;
-  /** Delete input cell 2 (CT_CellFormula @del2) */
+  /** Delete input cell 2 (CT_CellFormula `@del2`) */
   del2?: boolean;
-  /** Input cell 1 reference (CT_CellFormula @r1) */
+  /** Input cell 1 reference (CT_CellFormula `@r1`) */
   inputCell1?: string;
-  /** Input cell 2 reference (CT_CellFormula @r2) */
+  /** Input cell 2 reference (CT_CellFormula `@r2`) */
   inputCell2?: string;
-  /** Calculate cell (CT_CellFormula @ca) */
+  /** Calculate cell (CT_CellFormula `@ca`) */
   calculateCell?: boolean;
-  /** Array formula context (CT_CellFormula @bx) */
+  /** Array formula context (CT_CellFormula `@bx`) */
   arrayContext?: boolean;
 }
 
 /** Input cell for a what-if scenario (maps to CT_InputCells). */
 export interface ScenarioCellOptions {
-  /** Cell reference, e.g. "B2" (CT_InputCells @r) */
+  /** Cell reference, e.g. "B2" (CT_InputCells `@r`) */
   reference: string;
   /** Cell value for this scenario */
   val: string | number;
   /** Whether the value is deleted */
   deleted?: boolean;
-  /** Whether undone (CT_InputCells @undone) */
+  /** Whether undone (CT_InputCells `@undone`) */
   undone?: boolean;
 }
 
@@ -301,36 +301,36 @@ export interface SheetViewOptions {
   zoomScale?: number;
   tabSelected?: boolean;
   rightToLeft?: boolean;
-  /** Window protection (CT_SheetView @windowProtection) */
+  /** Window protection (CT_SheetView `@windowProtection`) */
   windowProtection?: boolean;
-  /** Show formulas instead of values (CT_SheetView @showFormulas) */
+  /** Show formulas instead of values (CT_SheetView `@showFormulas`) */
   showFormulas?: boolean;
-  /** Show ruler (CT_SheetView @showRuler) */
+  /** Show ruler (CT_SheetView `@showRuler`) */
   showRuler?: boolean;
-  /** Show outline symbols (CT_SheetView @showOutlineSymbols) */
+  /** Show outline symbols (CT_SheetView `@showOutlineSymbols`) */
   showOutlineSymbols?: boolean;
-  /** Default grid color (CT_SheetView @defaultGridColor) */
+  /** Default grid color (CT_SheetView `@defaultGridColor`) */
   defaultGridColor?: boolean;
-  /** Show white space (CT_SheetView @showWhiteSpace) */
+  /** Show white space (CT_SheetView `@showWhiteSpace`) */
   showWhiteSpace?: boolean;
-  /** View type (CT_SheetView @view) */
+  /** View type (CT_SheetView `@view`) */
   view?: "normal" | "pageBreakPreview" | "pageLayout";
-  /** Tab color ID (CT_SheetView @colorId) */
+  /** Tab color ID (CT_SheetView `@colorId`) */
   colorId?: number;
-  /** Zoom scale for normal view (CT_SheetView @zoomScaleNormal) */
+  /** Zoom scale for normal view (CT_SheetView `@zoomScaleNormal`) */
   zoomScaleNormal?: number;
-  /** Zoom scale for sheet layout view (CT_SheetView @zoomScaleSheetLayoutView) */
+  /** Zoom scale for sheet layout view (CT_SheetView `@zoomScaleSheetLayoutView`) */
   zoomScaleSheetLayoutView?: number;
-  /** Zoom scale for page layout view (CT_SheetView @zoomScalePageLayoutView) */
+  /** Zoom scale for page layout view (CT_SheetView `@zoomScalePageLayoutView`) */
   zoomScalePageLayoutView?: number;
 }
 
 export interface HyperlinkOptions {
   /** Cell reference, e.g. "A1" */
   cell: string;
-  /** External target URL (CT_Hyperlink @r:id, mutually exclusive with location) */
+  /** External target URL (CT_Hyperlink `@r:id`, mutually exclusive with location) */
   url?: string;
-  /** Internal target, e.g. "Data!A1" (CT_Hyperlink @location, mutually exclusive with url) */
+  /** Internal target, e.g. "Data!A1" (CT_Hyperlink `@location`, mutually exclusive with url) */
   location?: string;
   /** Tooltip text */
   tooltip?: string;
@@ -347,9 +347,9 @@ export interface HeaderFooterOptions {
   firstFooter?: string;
   differentOddEven?: boolean;
   differentFirst?: boolean;
-  /** Scale header/footer with document (CT_HeaderFooter @scaleWithDoc) */
+  /** Scale header/footer with document (CT_HeaderFooter `@scaleWithDoc`) */
   scaleWithDoc?: boolean;
-  /** Align with page margins (CT_HeaderFooter @alignWithMargins) */
+  /** Align with page margins (CT_HeaderFooter `@alignWithMargins`) */
   alignWithMargins?: boolean;
 }
 
@@ -364,23 +364,23 @@ export interface PageSetupOptions {
   pageOrder?: "downThenOver" | "overThenDown";
   useFirstPageNumber?: boolean;
   firstPageNumber?: number;
-  /** Paper height (CT_PageSetup @paperHeight, ST_PositiveUniversalMeasure) */
+  /** Paper height (CT_PageSetup `@paperHeight`, ST_PositiveUniversalMeasure) */
   paperHeight?: number | PositiveUniversalMeasure;
-  /** Paper width (CT_PageSetup @paperWidth, ST_PositiveUniversalMeasure) */
+  /** Paper width (CT_PageSetup `@paperWidth`, ST_PositiveUniversalMeasure) */
   paperWidth?: number | PositiveUniversalMeasure;
-  /** Use printer defaults (CT_PageSetup @usePrinterDefaults) */
+  /** Use printer defaults (CT_PageSetup `@usePrinterDefaults`) */
   usePrinterDefaults?: boolean;
-  /** Black and white printing (CT_PageSetup @blackAndWhite) */
+  /** Black and white printing (CT_PageSetup `@blackAndWhite`) */
   blackAndWhite?: boolean;
-  /** Draft quality printing (CT_PageSetup @draft) */
+  /** Draft quality printing (CT_PageSetup `@draft`) */
   draft?: boolean;
-  /** Print cell comments mode (CT_PageSetup @cellComments) */
+  /** Print cell comments mode (CT_PageSetup `@cellComments`) */
   cellComments?: "none" | "asDisplayed" | "atEnd";
-  /** Print error display mode (CT_PageSetup @errors) */
+  /** Print error display mode (CT_PageSetup `@errors`) */
   errors?: "displayed" | "blank" | "dash" | "NA";
-  /** Auto page breaks (CT_PageSetUpPr @autoPageBreaks) */
+  /** Auto page breaks (CT_PageSetUpPr `@autoPageBreaks`) */
   autoPageBreaks?: boolean;
-  /** Fit to page (CT_PageSetUpPr @fitToPage) */
+  /** Fit to page (CT_PageSetUpPr `@fitToPage`) */
   fitToPage?: boolean;
 }
 
@@ -391,7 +391,7 @@ export interface TabColorOptions {
   theme?: number;
   /** Tint value (-1.0 to 1.0) */
   tint?: number;
-  /** Indexed color (CT_Color @indexed) */
+  /** Indexed color (CT_Color `@indexed`) */
   indexed?: number;
 }
 
@@ -524,9 +524,9 @@ export interface DataValidationOptions {
   showInputMessage?: boolean;
   promptTitle?: string;
   prompt?: string;
-  /** Error style (CT_DataValidation @errorStyle) */
+  /** Error style (CT_DataValidation `@errorStyle`) */
   errorStyle?: "stop" | "warning" | "information";
-  /** IME mode (CT_DataValidation @imeMode) */
+  /** IME mode (CT_DataValidation `@imeMode`) */
   imeMode?:
     | "noControl"
     | "on"
@@ -539,7 +539,7 @@ export interface DataValidationOptions {
     | "halfAlpha"
     | "fullHangul"
     | "halfHangul";
-  /** Show drop-down (CT_DataValidation @showDropDown — note inverted semantics in OOXML) */
+  /** Show drop-down (CT_DataValidation `@showDropDown` — note inverted semantics in OOXML) */
   showDropDown?: boolean;
 }
 
@@ -647,9 +647,9 @@ export interface ConditionalFormatRule {
   dataBar?: DataBarOptions;
   /** Icon set configuration (when type is "iconSet") */
   iconSet?: IconSetOptions;
-  /** Stop if true — skip remaining rules (CT_CfRule @stopIfTrue) */
+  /** Stop if true — skip remaining rules (CT_CfRule `@stopIfTrue`) */
   stopIfTrue?: boolean;
-  /** Time period for date-based highlighting (CT_CfRule @timePeriod) */
+  /** Time period for date-based highlighting (CT_CfRule `@timePeriod`) */
   timePeriod?:
     | "today"
     | "yesterday"
@@ -661,13 +661,13 @@ export interface ConditionalFormatRule {
     | "thisWeek"
     | "lastWeek"
     | "nextWeek";
-  /** Rank for top/bottom rules (CT_CfRule @rank) */
+  /** Rank for top/bottom rules (CT_CfRule `@rank`) */
   rank?: number;
-  /** Equal average flag (CT_CfRule @equalAverage) */
+  /** Equal average flag (CT_CfRule `@equalAverage`) */
   equalAverage?: boolean;
-  /** Above average flag (CT_CfRule @aboveAverage, default true for aboveAverage rules) */
+  /** Above average flag (CT_CfRule `@aboveAverage`, default true for aboveAverage rules) */
   aboveAverage?: boolean;
-  /** Standard deviations for above-average rules (CT_CfRule @stdDev) */
+  /** Standard deviations for above-average rules (CT_CfRule `@stdDev`) */
   stdDev?: number;
 }
 
@@ -682,11 +682,11 @@ export interface Top10FilterOptions {
   top?: boolean;
   percent?: boolean;
   val: number;
-  /** Filter value (CT_Top10 @filterVal) */
+  /** Filter value (CT_Top10 `@filterVal`) */
   filterVal?: number;
-  /** Hide auto-filter button (CT_FilterColumn @hiddenButton) */
+  /** Hide auto-filter button (CT_FilterColumn `@hiddenButton`) */
   hiddenButton?: boolean;
-  /** Show filter button (CT_FilterColumn @showButton) */
+  /** Show filter button (CT_FilterColumn `@showButton`) */
   showButton?: boolean;
 }
 
@@ -702,9 +702,9 @@ export interface CustomFilterOptions {
   val?: string;
   and?: boolean;
   val2?: string;
-  /** Hide auto-filter button (CT_FilterColumn @hiddenButton) */
+  /** Hide auto-filter button (CT_FilterColumn `@hiddenButton`) */
   hiddenButton?: boolean;
-  /** Show filter button (CT_FilterColumn @showButton) */
+  /** Show filter button (CT_FilterColumn `@showButton`) */
   showButton?: boolean;
 }
 
@@ -712,11 +712,11 @@ export interface SortCondition {
   /** Cell reference for the sort column, e.g. "B1" */
   ref: string;
   descending?: boolean;
-  /** Sort by (CT_SortCondition @sortBy) */
+  /** Sort by (CT_SortCondition `@sortBy`) */
   sortBy?: "value" | "cellColor" | "fontColor" | "icon";
-  /** Custom sort list (CT_SortCondition @customList) */
+  /** Custom sort list (CT_SortCondition `@customList`) */
   customList?: string;
-  /** Icon set index (CT_SortCondition @iconId) */
+  /** Icon set index (CT_SortCondition `@iconId`) */
   iconId?: number;
 }
 
@@ -746,7 +746,7 @@ export interface ColorFilterOptions {
   colId: number;
   /** Cell color RGB (dxfId used if not set) */
   dxfId?: number;
-  /** Filter by cell color (CT_ColorFilter @cellColor) */
+  /** Filter by cell color (CT_ColorFilter `@cellColor`) */
   cellColor?: boolean;
 }
 
@@ -754,9 +754,9 @@ export interface ColorFilterOptions {
 export interface IconFilterOptions {
   /** Column ID */
   colId: number;
-  /** Icon set index (CT_IconFilter @iconSet) */
+  /** Icon set index (CT_IconFilter `@iconSet`) */
   iconSet: number;
-  /** Icon ID within set (CT_IconFilter @iconId) */
+  /** Icon ID within set (CT_IconFilter `@iconId`) */
   iconId?: number;
 }
 
@@ -764,9 +764,9 @@ export interface IconFilterOptions {
 export interface FilterItemsOptions {
   /** Column ID */
   colId: number;
-  /** Blank filter (CT_Filters @blank) */
+  /** Blank filter (CT_Filters `@blank`) */
   blank?: boolean;
-  /** Calendar type (CT_Filters @calendarType) */
+  /** Calendar type (CT_Filters `@calendarType`) */
   calendarType?: string;
   /** Filter values */
   values?: string[];
@@ -776,7 +776,7 @@ export interface FilterItemsOptions {
 export interface DynamicFilterOptions {
   /** Column ID */
   colId: number;
-  /** Dynamic filter type (CT_DynamicFilter @type) */
+  /** Dynamic filter type (CT_DynamicFilter `@type`) */
   type:
     | "null"
     | "aboveAverage"
@@ -813,13 +813,13 @@ export interface DynamicFilterOptions {
     | "M10"
     | "M11"
     | "M12";
-  /** Max value (CT_DynamicFilter @val) */
+  /** Max value (CT_DynamicFilter `@val`) */
   val?: number;
-  /** Max value as date ISO string (CT_DynamicFilter @maxVal) */
+  /** Max value as date ISO string (CT_DynamicFilter `@maxVal`) */
   maxVal?: number;
-  /** Value ISO date string (CT_DynamicFilter @valIso) */
+  /** Value ISO date string (CT_DynamicFilter `@valIso`) */
   valIso?: string;
-  /** Max value ISO date string (CT_DynamicFilter @maxValIso) */
+  /** Max value ISO date string (CT_DynamicFilter `@maxValIso`) */
   maxValIso?: string;
 }
 
@@ -827,29 +827,29 @@ export interface DynamicFilterOptions {
 export interface DateGroupFilterOptions {
   /** Column ID */
   colId: number;
-  /** Date grouping level (CT_DateGroupItem @dateTimeGrouping) */
+  /** Date grouping level (CT_DateGroupItem `@dateTimeGrouping`) */
   dateTimeGrouping: "year" | "month" | "day" | "hour" | "minute" | "second";
-  /** Year (CT_DateGroupItem @year) */
+  /** Year (CT_DateGroupItem `@year`) */
   year?: number;
-  /** Month (1-12, CT_DateGroupItem @month) */
+  /** Month (1-12, CT_DateGroupItem `@month`) */
   month?: number;
-  /** Day (1-31, CT_DateGroupItem @day) */
+  /** Day (1-31, CT_DateGroupItem `@day`) */
   day?: number;
-  /** Hour (0-23, CT_DateGroupItem @hour) */
+  /** Hour (0-23, CT_DateGroupItem `@hour`) */
   hour?: number;
-  /** Minute (0-59, CT_DateGroupItem @minute) */
+  /** Minute (0-59, CT_DateGroupItem `@minute`) */
   minute?: number;
-  /** Second (0-59, CT_DateGroupItem @second) */
+  /** Second (0-59, CT_DateGroupItem `@second`) */
   second?: number;
 }
 
 /** Sort state configuration (CT_SortState) */
 export interface SortStateOptions {
-  /** Column sort mode (CT_SortState @columnSort) */
+  /** Column sort mode (CT_SortState `@columnSort`) */
   columnSort?: boolean;
-  /** Case sensitive sorting (CT_SortState @caseSensitive) */
+  /** Case sensitive sorting (CT_SortState `@caseSensitive`) */
   caseSensitive?: boolean;
-  /** Sort method (CT_SortState @sortMethod) */
+  /** Sort method (CT_SortState `@sortMethod`) */
   sortMethod?: "pinYin" | "stroke" | "none";
 }
 
@@ -869,49 +869,49 @@ export interface PrintOptions {
 
 /** Sheet format properties (CT_SheetFormatPr) */
 export interface SheetFormatPropertiesOptions {
-  /** Base column width (CT_SheetFormatPr @baseColWidth) */
+  /** Base column width (CT_SheetFormatPr `@baseColWidth`) */
   baseColWidth?: number;
-  /** Default column width (CT_SheetFormatPr @defaultColWidth) */
+  /** Default column width (CT_SheetFormatPr `@defaultColWidth`) */
   defaultColWidth?: number;
   /** Default row height */
   defaultRowHeight?: number;
-  /** Zero height rows hidden (CT_SheetFormatPr @zeroHeight) */
+  /** Zero height rows hidden (CT_SheetFormatPr `@zeroHeight`) */
   zeroHeight?: boolean;
-  /** Thick top borders (CT_SheetFormatPr @thickTop) */
+  /** Thick top borders (CT_SheetFormatPr `@thickTop`) */
   thickTop?: boolean;
-  /** Thick bottom borders (CT_SheetFormatPr @thickBottom) */
+  /** Thick bottom borders (CT_SheetFormatPr `@thickBottom`) */
   thickBottom?: boolean;
-  /** Outline level row (CT_SheetFormatPr @outlineLevelRow) */
+  /** Outline level row (CT_SheetFormatPr `@outlineLevelRow`) */
   outlineLevelRow?: number;
-  /** Outline level column (CT_SheetFormatPr @outlineLevelCol) */
+  /** Outline level column (CT_SheetFormatPr `@outlineLevelCol`) */
   outlineLevelCol?: number;
 }
 
 /** Sheet properties extended options (CT_SheetPr attributes) */
 export interface SheetPropertiesOptions {
-  /** Sync horizontal scroll (CT_SheetPr @syncHorizontal) */
+  /** Sync horizontal scroll (CT_SheetPr `@syncHorizontal`) */
   syncHorizontal?: boolean;
-  /** Sync vertical scroll (CT_SheetPr @syncVertical) */
+  /** Sync vertical scroll (CT_SheetPr `@syncVertical`) */
   syncVertical?: boolean;
-  /** Sync reference (CT_SheetPr @syncRef) */
+  /** Sync reference (CT_SheetPr `@syncRef`) */
   syncRef?: string;
-  /** Transition evaluation mode (CT_SheetPr @transitionEvaluation) */
+  /** Transition evaluation mode (CT_SheetPr `@transitionEvaluation`) */
   transitionEvaluation?: boolean;
-  /** Transition entry mode (CT_SheetPr @transitionEntry) */
+  /** Transition entry mode (CT_SheetPr `@transitionEntry`) */
   transitionEntry?: boolean;
-  /** Published to server (CT_SheetPr @published) */
+  /** Published to server (CT_SheetPr `@published`) */
   published?: boolean;
-  /** Filter mode (CT_SheetPr @filterMode) */
+  /** Filter mode (CT_SheetPr `@filterMode`) */
   filterMode?: boolean;
-  /** Enable format conditions calculation (CT_SheetPr @enableFormatConditionsCalculation) */
+  /** Enable format conditions calculation (CT_SheetPr `@enableFormatConditionsCalculation`) */
   enableFormatConditionsCalculation?: boolean;
-  /** Outline apply styles (CT_OutlinePr @applyStyles) */
+  /** Outline apply styles (CT_OutlinePr `@applyStyles`) */
   outlineApplyStyles?: boolean;
-  /** Outline show symbols (CT_OutlinePr @showOutlineSymbols) */
+  /** Outline show symbols (CT_OutlinePr `@showOutlineSymbols`) */
   outlineShowSymbols?: boolean;
-  /** Outline summary rows below detail (CT_OutlinePr @summaryBelow) */
+  /** Outline summary rows below detail (CT_OutlinePr `@summaryBelow`) */
   outlineSummaryBelow?: boolean;
-  /** Outline summary columns right of detail (CT_OutlinePr @summaryRight) */
+  /** Outline summary columns right of detail (CT_OutlinePr `@summaryRight`) */
   outlineSummaryRight?: boolean;
 }
 
@@ -950,31 +950,31 @@ export interface SheetBackgroundImageOptions {
 export interface PageBreakOptions {
   /** Row or column ID (1-based) */
   id: number;
-  /** Min value (CT_Break @min) */
+  /** Min value (CT_Break `@min`) */
   min?: number;
-  /** Max value (CT_Break @max) */
+  /** Max value (CT_Break `@max`) */
   max?: number;
-  /** Manual break (CT_Break @man) */
+  /** Manual break (CT_Break `@man`) */
   manual?: boolean;
-  /** Pivot break (CT_Break @pt) */
+  /** Pivot break (CT_Break `@pt`) */
   pivot?: boolean;
 }
 
 /** Selection in sheet view (CT_Selection) */
 export interface SelectionOptions {
-  /** Pane (CT_Selection @pane) */
+  /** Pane (CT_Selection `@pane`) */
   pane?: "bottomRight" | "topRight" | "bottomLeft" | "topLeft";
-  /** Active cell (CT_Selection @activeCell) */
+  /** Active cell (CT_Selection `@activeCell`) */
   activeCell?: string;
-  /** Active cell index (CT_Selection @activeCellId) */
+  /** Active cell index (CT_Selection `@activeCellId`) */
   activeCellId?: number;
-  /** Selected range (CT_Selection @sqref) */
+  /** Selected range (CT_Selection `@sqref`) */
   sqref?: string;
 }
 
 /** Pivot selection in sheet view (CT_PivotSelection) */
 export interface PivotSelectionOptions {
-  /** Pane (CT_PivotSelection @pane, default "topLeft") */
+  /** Pane (CT_PivotSelection `@pane`, default "topLeft") */
   pane?: "bottomRight" | "topRight" | "bottomLeft" | "topLeft";
   /** Show header (default false) */
   showHeader?: boolean;
@@ -1042,51 +1042,51 @@ export interface CellSmartTagsOptions {
 
 /** Custom sheet view (CT_CustomSheetView) */
 export interface CustomSheetViewOptions {
-  /** GUID identifier (required, CT_CustomSheetView @guid) */
+  /** GUID identifier (required, CT_CustomSheetView `@guid`) */
   guid: string;
-  /** Zoom scale (CT_CustomSheetView @scale) */
+  /** Zoom scale (CT_CustomSheetView `@scale`) */
   scale?: number;
-  /** Show page breaks (CT_CustomSheetView @showPageBreaks) */
+  /** Show page breaks (CT_CustomSheetView `@showPageBreaks`) */
   showPageBreaks?: boolean;
-  /** Show formulas (CT_CustomSheetView @showFormulas) */
+  /** Show formulas (CT_CustomSheetView `@showFormulas`) */
   showFormulas?: boolean;
-  /** Show grid lines (CT_CustomSheetView @showGridLines) */
+  /** Show grid lines (CT_CustomSheetView `@showGridLines`) */
   showGridLines?: boolean;
-  /** Show row/column headers (CT_CustomSheetView @showRowCol) */
+  /** Show row/column headers (CT_CustomSheetView `@showRowCol`) */
   showRowColHeaders?: boolean;
-  /** Show outline symbols (CT_CustomSheetView @outlineSymbols) */
+  /** Show outline symbols (CT_CustomSheetView `@outlineSymbols`) */
   outlineSymbols?: boolean;
-  /** Show zero values (CT_CustomSheetView @zeroValues) */
+  /** Show zero values (CT_CustomSheetView `@zeroValues`) */
   zeroValues?: boolean;
-  /** Fit to page (CT_CustomSheetView @fitToPage) */
+  /** Fit to page (CT_CustomSheetView `@fitToPage`) */
   fitToPage?: boolean;
-  /** Print area (CT_CustomSheetView @printArea) */
+  /** Print area (CT_CustomSheetView `@printArea`) */
   printArea?: boolean;
-  /** Filter applied (CT_CustomSheetView @filter) */
+  /** Filter applied (CT_CustomSheetView `@filter`) */
   filter?: boolean;
-  /** Show auto filter (CT_CustomSheetView @showAutoFilter) */
+  /** Show auto filter (CT_CustomSheetView `@showAutoFilter`) */
   showAutoFilter?: boolean;
-  /** Hidden rows (CT_CustomSheetView @hiddenRows) */
+  /** Hidden rows (CT_CustomSheetView `@hiddenRows`) */
   hiddenRows?: boolean;
-  /** Hidden columns (CT_CustomSheetView @hiddenColumns) */
+  /** Hidden columns (CT_CustomSheetView `@hiddenColumns`) */
   hiddenColumns?: boolean;
-  /** Sheet state (CT_CustomSheetView @state) */
+  /** Sheet state (CT_CustomSheetView `@state`) */
   state?: "visible" | "hidden" | "veryHidden";
-  /** Filter unique (CT_CustomSheetView @filterUnique) */
+  /** Filter unique (CT_CustomSheetView `@filterUnique`) */
   filterUnique?: boolean;
-  /** View type (CT_CustomSheetView @view) */
+  /** View type (CT_CustomSheetView `@view`) */
   view?: "normal" | "pageBreakPreview" | "pageLayout";
 }
 
 /** Cell watch entry (CT_CellWatch) */
 export interface CellWatchOptions {
-  /** Cell reference, e.g. "A1" (CT_CellWatch @r) */
+  /** Cell reference, e.g. "A1" (CT_CellWatch `@r`) */
   reference: string;
 }
 
 /** Data consolidation (CT_DataConsolidate) */
 export interface DataConsolidateOptions {
-  /** Consolidation function (CT_DataConsolidate @function) */
+  /** Consolidation function (CT_DataConsolidate `@function`) */
   function?:
     | "average"
     | "count"
@@ -1099,13 +1099,13 @@ export interface DataConsolidateOptions {
     | "sum"
     | "var"
     | "varp";
-  /** Use top row labels (CT_DataConsolidate @topLabels) */
+  /** Use top row labels (CT_DataConsolidate `@topLabels`) */
   topLabels?: boolean;
-  /** Use left column labels (CT_DataConsolidate @leftLabels) */
+  /** Use left column labels (CT_DataConsolidate `@leftLabels`) */
   leftLabels?: boolean;
-  /** Use start labels (CT_DataConsolidate @startLabels) */
+  /** Use start labels (CT_DataConsolidate `@startLabels`) */
   startLabels?: boolean;
-  /** Link to source data (CT_DataConsolidate @link) */
+  /** Link to source data (CT_DataConsolidate `@link`) */
   link?: boolean;
   /** Source data references */
   refs?: string[];
@@ -1157,7 +1157,7 @@ export interface WorksheetOptions {
   /** Anchored groups (xdr:grpSp): group transform + nested children. */
   groups?: GroupOptions[];
   dataValidations?: DataValidationOptions[];
-  /** Disable data validation prompts (CT_DataValidations @disablePrompts) */
+  /** Disable data validation prompts (CT_DataValidations `@disablePrompts`) */
   dataValidationsDisablePrompts?: boolean;
   conditionalFormats?: ConditionalFormatOptions[];
   hyperlinks?: HyperlinkOptions[];
@@ -1237,29 +1237,29 @@ export interface PageMarginsOptions {
 
 /** Sheet calc properties (CT_SheetCalcPr) */
 export interface SheetCalculationPropertiesOptions {
-  /** Full calc on load (CT_SheetCalcPr @fullCalcOnLoad) */
+  /** Full calc on load (CT_SheetCalcPr `@fullCalcOnLoad`) */
   fullCalcOnLoad?: boolean;
 }
 
 /** Form control object (CT_Control) */
 export interface ControlOptions {
-  /** Shape ID (CT_Control @shapeId) */
+  /** Shape ID (CT_Control `@shapeId`) */
   shapeId: number;
-  /** Control r:id (CT_ControlPr @r:id) */
+  /** Control r:id (CT_ControlPr `@r:id`) */
   rId: string;
-  /** Control name (CT_ControlPr @name) */
+  /** Control name (CT_ControlPr `@name`) */
   name?: string;
-  /** Locked (CT_ControlPr @locked) */
+  /** Locked (CT_ControlPr `@locked`) */
   locked?: boolean;
-  /** UI-locked (CT_ControlPr @uiObject) */
+  /** UI-locked (CT_ControlPr `@uiObject`) */
   uiObject?: boolean;
-  /** Recalc always (CT_ControlPr @recalcAlways) */
+  /** Recalc always (CT_ControlPr `@recalcAlways`) */
   recalcAlways?: boolean;
-  /** Linked cell (CT_ControlPr @linkedCell) */
+  /** Linked cell (CT_ControlPr `@linkedCell`) */
   linkedCell?: string;
-  /** List fill range (CT_ControlPr @listFillRange) */
+  /** List fill range (CT_ControlPr `@listFillRange`) */
   listFillRange?: string;
-  /** Control formula (CT_ControlPr @cf) */
+  /** Control formula (CT_ControlPr `@cf`) */
   formula?: string;
 }
 
@@ -1273,19 +1273,19 @@ export interface CustomSheetPropertyOptions {
 
 /** OLE object (CT_OleObject) */
 export interface OleObjectOptions {
-  /** Program ID (CT_OleObject @progId) */
+  /** Program ID (CT_OleObject `@progId`) */
   progId?: string;
-  /** Display aspect (CT_OleObject @dvAspect) */
+  /** Display aspect (CT_OleObject `@dvAspect`) */
   dvAspect?: "DVASPECT_CONTENT" | "DVASPECT_ICON";
-  /** Linked source (CT_OleObject @link) */
+  /** Linked source (CT_OleObject `@link`) */
   link?: string;
-  /** OLE update mode (CT_OleObject @oleUpdate) */
+  /** OLE update mode (CT_OleObject `@oleUpdate`) */
   oleUpdate?: "OLEUPDATE_ALWAYS" | "OLEUPDATE_ONCALL";
-  /** Auto load (CT_OleObject @autoLoad) */
+  /** Auto load (CT_OleObject `@autoLoad`) */
   autoLoad?: boolean;
-  /** Shape ID (CT_OleObject @shapeId) */
+  /** Shape ID (CT_OleObject `@shapeId`) */
   shapeId: number;
-  /** Relationship ID (CT_OleObject @r:id) */
+  /** Relationship ID (CT_OleObject `@r:id`) */
   rId?: string;
   /** Object properties (CT_ObjectPr) */
   objectPr?: OleObjectPropertiesOptions;

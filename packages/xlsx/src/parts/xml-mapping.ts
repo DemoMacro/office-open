@@ -19,11 +19,11 @@ import { attr, attrNum, escapeXml, findChild, stringifyElement } from "@office-o
 export interface SchemaOptions {
   /** Unique schema ID (required) */
   id: string;
-  /** Schema reference (CT_Schema @SchemaRef) */
+  /** Schema reference (CT_Schema `@SchemaRef`) */
   schemaRef?: string;
-  /** Namespace URI (CT_Schema @Namespace) */
+  /** Namespace URI (CT_Schema `@Namespace`) */
   namespace?: string;
-  /** Schema language (CT_Schema @SchemaLanguage) */
+  /** Schema language (CT_Schema `@SchemaLanguage`) */
   schemaLanguage?: string;
   /** Raw schema content preserved verbatim (xsd:any inner XML) */
   content?: string;
@@ -33,11 +33,11 @@ export interface SchemaOptions {
 export interface DataBindingOptions {
   /** Data binding name (CT_DataBinding@DataBindingName) */
   dataBindingName?: string;
-  /** Whether this is a file binding (CT_DataBinding @FileBinding) */
+  /** Whether this is a file binding (CT_DataBinding `@FileBinding`) */
   fileBinding?: boolean;
-  /** Connection ID (CT_DataBinding @ConnectionID) */
+  /** Connection ID (CT_DataBinding `@ConnectionID`) */
   connectionId?: number;
-  /** File binding name (CT_DataBinding @FileBindingName) */
+  /** File binding name (CT_DataBinding `@FileBindingName`) */
   fileBindingName?: string;
   /** Load mode (CT_DataBinding@DataBindingLoadMode, required by XSD) */
   dataBindingLoadMode: number;
@@ -55,13 +55,13 @@ export interface MapOptions {
   schemaId: string;
   /** Show import/export validation errors (required by XSD) */
   showImportExportValidationErrors?: boolean;
-  /** Auto-fit columns (CT_Map @AutoFit, required by XSD) */
+  /** Auto-fit columns (CT_Map `@AutoFit`, required by XSD) */
   autoFit?: boolean;
-  /** Append new data (CT_Map @Append, required by XSD) */
+  /** Append new data (CT_Map `@Append`, required by XSD) */
   append?: boolean;
-  /** Preserve sort/autofilter layout (CT_Map @PreserveSortAFLayout, required by XSD) */
+  /** Preserve sort/autofilter layout (CT_Map `@PreserveSortAFLayout`, required by XSD) */
   preserveSortAFLayout?: boolean;
-  /** Preserve formatting (CT_Map @PreserveFormat, required by XSD) */
+  /** Preserve formatting (CT_Map `@PreserveFormat`, required by XSD) */
   preserveFormat?: boolean;
   /** Data binding (DataBinding child) */
   dataBinding?: DataBindingOptions;
@@ -91,7 +91,7 @@ export interface XmlPropertiesOptions {
 export interface XmlCellPropertiesOptions {
   /** Table ID (required) */
   id: number;
-  /** Unique name (CT_XmlCellPr @uniqueName) */
+  /** Unique name (CT_XmlCellPr `@uniqueName`) */
   uniqueName?: string;
   /** XML properties (required) */
   xmlPr: XmlPropertiesOptions;
@@ -101,7 +101,7 @@ export interface XmlCellPropertiesOptions {
 export interface SingleXmlCellOptions {
   /** Table ID (required) */
   id: number;
-  /** Cell reference, e.g. "A1" (CT_SingleXmlCell @r, required) */
+  /** Cell reference, e.g. "A1" (CT_SingleXmlCell `@r`, required) */
   reference: string;
   /** Connection ID (required) */
   connectionId: number;
@@ -123,7 +123,7 @@ export interface XmlColumnPropertiesOptions {
   xmlDataType: string;
   /** Owning map ID (required) */
   mapId: number;
-  /** Denormalized (CT_XmlColumnPr @denormalized) */
+  /** Denormalized (CT_XmlColumnPr `@denormalized`) */
   denormalized?: boolean;
 }
 

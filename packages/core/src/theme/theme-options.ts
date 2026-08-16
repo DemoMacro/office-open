@@ -70,7 +70,7 @@ export interface ColorSchemeOptions {
   accent6?: string;
   hyperlink?: string;
   followedHyperlink?: string;
-  /** clrScheme/@name (defaults to the theme name). */
+  /** clrScheme/`@name` (defaults to the theme name). */
   name?: string;
 }
 
@@ -166,7 +166,7 @@ export interface ExtraColorSchemeOptions {
 
 /** Custom color entry (CT_CustomColor) — a named color in the theme's palette. */
 export interface CustomColorOptions {
-  /** Palette display name (CT_CustomColor @name, default "") */
+  /** Palette display name (CT_CustomColor `@name`, default "") */
   name?: string;
   /** Color value (EG_ColorChoice) */
   color: SolidFillOptions;

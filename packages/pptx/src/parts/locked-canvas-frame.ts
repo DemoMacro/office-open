@@ -21,7 +21,7 @@ export interface LockedCanvasShapeOptions extends ShapePropertiesOptions {
  * both the public slide-child entry and the descriptor.
  */
 export interface LockedCanvasFrameOptions extends NonVisualDrawingPropertiesOptions {
-  /** Locked canvas frame id (p:cNvPr @id). Auto-generated if omitted. */
+  /** Locked canvas frame id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;

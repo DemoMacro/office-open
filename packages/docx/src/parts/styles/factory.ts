@@ -80,9 +80,9 @@ export interface StyleOptions {
   hidden?: boolean;
   /** CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim). */
   rsid?: string;
-  /** CT_Style @w:default — the default style for its type (CT_OnOff). */
+  /** CT_Style `@w:default` — the default style for its type (CT_OnOff). */
   default?: boolean;
-  /** CT_Style @w:customStyle — a user-defined custom style (CT_OnOff). */
+  /** CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff). */
   customStyle?: boolean;
 }
 
@@ -173,7 +173,7 @@ export function stringifyCharacterStyle(
 
 // ── Table style (CT_Style type="table") ──
 
-/** ST_TblStyleOverrideType — OOXML tokens verbatim (CT_TblStylePr @w:type). */
+/** ST_TblStyleOverrideType — OOXML tokens verbatim (CT_TblStylePr `@w:type`). */
 export type TableStyleOverrideType =
   | "wholeTable"
   | "firstRow"
@@ -191,7 +191,7 @@ export type TableStyleOverrideType =
 
 /** Conditional table style format (CT_TblStylePr). */
 export interface ConditionalTableStyleOptions {
-  /** Which region this format applies to (CT_TblStylePr @w:type, required). */
+  /** Which region this format applies to (CT_TblStylePr `@w:type`, required). */
   type: TableStyleOverrideType;
   /** Paragraph properties (CT_PPrGeneral). */
   paragraph?: ParagraphStylePropertiesOptions;

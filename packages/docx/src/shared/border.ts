@@ -163,14 +163,14 @@ export const BorderStyle = {
 
 // ── Parse helper ──
 
-/** Valid border @w:val values (ST_Border). */
+/** Valid border `@w:val` values (ST_Border). */
 const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
-/** Valid border @w:themeColor values (ST_ThemeColor). */
+/** Valid border `@w:themeColor` values (ST_ThemeColor). */
 const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
 
 /**
  * Parse one CT_Border side element. Returns undefined when the element is
- * malformed (missing/unknown @w:val) so callers skip the side.
+ * malformed (missing/unknown `@w:val`) so callers skip the side.
  */
 export function parseBorderSide(sideEl: Element): BorderOptions | undefined {
   const style = attr(sideEl, "w:val");

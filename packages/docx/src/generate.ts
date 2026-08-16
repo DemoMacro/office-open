@@ -10,7 +10,7 @@ import type { DocumentOptions } from "@parts/core-properties";
 
 import { compileDocument } from "./compiler";
 
-/** @internal Packer instance for DOCX generation. */
+/** `@internal` Packer instance for DOCX generation. */
 const Packer = createPacker<DocumentOptions>({
   compile: (options, overrides, mediaLevel) => compileDocument(options, overrides, mediaLevel),
   mimeType: OoxmlMimeType.DOCX,
@@ -27,7 +27,7 @@ const Packer = createPacker<DocumentOptions>({
  *
  * @example
  * ```typescript
- * import { generateDocument } from "@office-open/docx";
+ * import { generateDocument } from "`@office`-open/docx";
  *
  * const buffer = await generateDocument({ sections: [...] });
  * const bytes = await generateDocument({ sections: [...] }, { type: "uint8array" });

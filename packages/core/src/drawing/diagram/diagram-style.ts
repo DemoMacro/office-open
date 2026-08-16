@@ -28,7 +28,7 @@ export const FontCollectionIndex = {
 
 /** Reference into the theme style matrix (a:lnRef/fillRef/effectRef). */
 export interface DiagramStyleReferenceOptions {
-  /** Index into the theme style matrix (a:*Ref @idx) */
+  /** Index into the theme style matrix (a:*Ref `@idx`) */
   idx: number;
 }
 
@@ -178,7 +178,7 @@ export const createTextEffectColorList = (options?: ColorListOptions): string =>
 // ---------------------------------------------------------------------------
 
 export interface ColorStyleLabelOptions {
-  /** Label name referenced by dgm:layoutNode @styleLbl (required) */
+  /** Label name referenced by dgm:layoutNode `@styleLbl` (required) */
   name: string;
   fillColorList?: ColorListOptions;
   lineColorList?: ColorListOptions;

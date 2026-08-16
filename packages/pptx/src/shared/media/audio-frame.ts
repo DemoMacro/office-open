@@ -8,7 +8,7 @@ export type AudioType = "mp3" | "wav" | "wma" | "aac";
 export interface AudioCdTimeOptions {
   /** 1-based track number (required) */
   track: number;
-  /** Offset within the track, in seconds (CT_AudioCDTime @time, default 0) */
+  /** Offset within the track, in seconds (CT_AudioCDTime `@time`, default 0) */
   time?: number;
 }
 
@@ -27,8 +27,8 @@ export interface AudioFrameOptions extends Omit<MediaFrameBaseOptions, "data" | 
   type?: AudioType;
   /** CD audio playback (a:audioCd) — mutually exclusive with data */
   audioCd?: AudioCdOptions;
-  /** MIME content type of the linked audio (CT_AudioFile @contentType) */
+  /** MIME content type of the linked audio (CT_AudioFile `@contentType`) */
   contentType?: string;
-  /** Original audio file name (CT_EmbeddedWAVAudioFile @name, wav only) */
+  /** Original audio file name (CT_EmbeddedWAVAudioFile `@name`, wav only) */
   audioFileName?: string;
 }

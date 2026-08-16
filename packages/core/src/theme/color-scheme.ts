@@ -13,7 +13,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { DEFAULT_COLORS } from "./default-colors";
 import type { ColorSchemeOptions } from "./theme-options";
 
-/** Color keys excluding the clrScheme/@name attribute. */
+/** Color keys excluding the clrScheme/`@name` attribute. */
 type ColorKey = Exclude<keyof ColorSchemeOptions, "name">;
 
 /** clrScheme child tag → ColorSchemeOptions key, in schema order. */

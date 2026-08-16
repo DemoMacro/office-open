@@ -71,12 +71,12 @@
           "type": "array"
         },
         "revision": {
-          "description": "Revision counter (dgm:alg",
+          "description": "Revision counter (dgm:alg `@rev`).",
           "type": "number"
         },
         "type": {
           "$ref": "#/definitions/AlgorithmType",
-          "description": "Layout algorithm (dgm:alg"
+          "description": "Layout algorithm (dgm:alg `@type`)."
         }
       },
       "required": ["type"],
@@ -87,11 +87,11 @@
       "description": "dgm:param (CT_Parameter) — inlined in AlgorithmOptions.parameters.",
       "properties": {
         "type": {
-          "description": "Parameter name (dgm:param",
+          "description": "Parameter name (dgm:param `@type`, ST_ParameterId).",
           "type": "string"
         },
         "value": {
-          "description": "Parameter value (dgm:param",
+          "description": "Parameter value (dgm:param `@val`, ST_ParameterVal — a union of direction tokens, numbers, and booleans, so it stays polymorphic).",
           "type": ["string", "number", "boolean"]
         }
       },
@@ -99,7 +99,7 @@
       "type": "object"
     },
     "AlgorithmType": {
-      "description": "ST_AlgorithmType (dgm:alg",
+      "description": "ST_AlgorithmType (dgm:alg `@type`).",
       "enum": [
         "composite",
         "conn",
@@ -288,7 +288,7 @@
       "description": "Options for alpha replace effect.\n\n## XSD: CT_AlphaReplaceEffect ```xml <xsd:attribute name=\"a\" type=\"ST_PositiveFixedPercentage\" use=\"required\"/> ```",
       "properties": {
         "alpha": {
-          "description": "Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to",
+          "description": "Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to `@a`.",
           "type": "number"
         }
       },
@@ -798,7 +798,7 @@
       "type": "object"
     },
     "BlackWhiteMode": {
-      "description": "ST_BlackWhiteMode — the 11 token values for the",
+      "description": "ST_BlackWhiteMode — the 11 token values for the `@bwMode` attribute.",
       "enum": [
         "clr",
         "auto",
@@ -1103,19 +1103,19 @@
       "description": "A bookmark authored as a single inline paragraph child. The library allocates the bookmark id and emits the paired bookmarkStart/bookmarkEnd with one shared id — the caller never touches an id or pairs markers.\n\n`wrap` is the anchored document content the bookmark range wraps (inline runs/text, emitted between the markers). Bookmarks are pure markup: they add no part or relationship, only the two markers in document.xml.\n\nReference: wml.xsd CT_Bookmark, CT_BookmarkRange, EG_RangeMarkupElements.",
       "properties": {
         "colFirst": {
-          "description": "First column of a table-cell bookmark scope (CT_BookmarkRange",
+          "description": "First column of a table-cell bookmark scope (CT_BookmarkRange `@w:colFirst`).",
           "type": "number"
         },
         "colLast": {
-          "description": "Last column of a table-cell bookmark scope (CT_BookmarkRange",
+          "description": "Last column of a table-cell bookmark scope (CT_BookmarkRange `@w:colLast`).",
           "type": "number"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange"
+          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
         },
         "name": {
-          "description": "Bookmark name used for reference (CT_Bookmark",
+          "description": "Bookmark name used for reference (CT_Bookmark `@w:name`, required).",
           "type": "string"
         },
         "wrap": {
@@ -1141,23 +1141,23 @@
       "description": "Options for a bookmark start (w:bookmarkStart).\n\nMaps to CT_Bookmark = CT_BookmarkRange (colFirst/colLast) + name. The column range scopes a bookmark to specific table columns so Word preserves the exact cell span on round-trip rather than recomputing it.\n\nReference: wml.xsd CT_Bookmark, CT_BookmarkRange",
       "properties": {
         "colFirst": {
-          "description": "First column of a table-cell bookmark scope (CT_BookmarkRange",
+          "description": "First column of a table-cell bookmark scope (CT_BookmarkRange `@w:colFirst`).",
           "type": "number"
         },
         "colLast": {
-          "description": "Last column of a table-cell bookmark scope (CT_BookmarkRange",
+          "description": "Last column of a table-cell bookmark scope (CT_BookmarkRange `@w:colLast`).",
           "type": "number"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange"
+          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
         },
         "id": {
-          "description": "Marker identifier (CT_Markup",
+          "description": "Marker identifier (CT_Markup `@w:id`, required).",
           "type": "number"
         },
         "name": {
-          "description": "Bookmark name used for reference (CT_Bookmark",
+          "description": "Bookmark name used for reference (CT_Bookmark `@w:name`, required).",
           "type": "string"
         }
       },
@@ -1287,7 +1287,7 @@
       "type": "object"
     },
     "BreakClear": {
-      "description": "w:br/@w:clear values (ST_BrClear) — clears floating content on the given side(s).",
+      "description": "w:br/`@w:clear` values (ST_BrClear) — clears floating content on the given side(s).",
       "enum": ["none", "left", "right", "all"],
       "type": "string"
     },
@@ -1297,7 +1297,7 @@
       "properties": {
         "clear": {
           "$ref": "#/definitions/BreakClear",
-          "description": "Clear floating content (w:br/@w:clear)."
+          "description": "Clear floating content (w:br/`@w:clear`)."
         },
         "count": {
           "description": "Number of `<w:br/>` elements (defaults to 1).",
@@ -1539,11 +1539,11 @@
           "type": "string"
         },
         "customStyle": {
-          "description": "CT_Style",
+          "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
           "type": "boolean"
         },
         "default": {
-          "description": "CT_Style",
+          "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
           "type": "boolean"
         },
         "hidden": {
@@ -2396,7 +2396,7 @@
       "type": "object"
     },
     "ChildOrder": {
-      "description": "ST_ChildOrderType (dgm:layoutNode",
+      "description": "ST_ChildOrderType (dgm:layoutNode `@chOrder`).",
       "enum": ["b", "t"],
       "type": "string"
     },
@@ -2567,7 +2567,7 @@
           "type": "string"
         },
         "minVer": {
-          "description": "Minimum Office version (dgm:colorsDef",
+          "description": "Minimum Office version (dgm:colorsDef `@minVer`).",
           "type": "string"
         },
         "styleLabels": {
@@ -2585,7 +2585,7 @@
           "type": "array"
         },
         "uniqueId": {
-          "description": "Color-transform identity URI (dgm:colorsDef",
+          "description": "Color-transform identity URI (dgm:colorsDef `@uniqueId`).",
           "type": "string"
         }
       },
@@ -2697,7 +2697,7 @@
           "$ref": "#/definitions/ColorListOptions"
         },
         "name": {
-          "description": "Label name referenced by dgm:layoutNode",
+          "description": "Label name referenced by dgm:layoutNode `@styleLbl` (required)",
           "type": "string"
         },
         "textEffectColorList": {
@@ -2899,7 +2899,7 @@
       "description": "A comment authored as a single inline paragraph child. The library allocates the comment id, emits the range markers + reference, and registers the comment entry in word/comments.xml — the caller never touches an id or pairs markers.\n\n`children` is the comment reply (stored in the comments part, same shape as  {@link  CommentOptions.children } ); `wrap` is the anchored document content the comment range wraps (inline runs/text, emitted between the range markers).\n\nReference: wml.xsd CT_Markup, CT_Comment, EG_RangeMarkupElements.",
       "properties": {
         "author": {
-          "description": "Comment author (CT_Comment",
+          "description": "Comment author (CT_Comment `@w:author` — required by XSD, defaults to \"\").",
           "type": "string"
         },
         "children": {
@@ -2926,10 +2926,10 @@
               "type": "string"
             }
           ],
-          "description": "Creation date (CT_Comment"
+          "description": "Creation date (CT_Comment `@w:date`); defaults to the current time."
         },
         "initials": {
-          "description": "Author initials (CT_Comment",
+          "description": "Author initials (CT_Comment `@w:initials`).",
           "type": "string"
         },
         "wrap": {
@@ -3312,12 +3312,12 @@
       "type": "string"
     },
     "ConditionFunction": {
-      "description": "ST_FunctionType (dgm:if",
+      "description": "ST_FunctionType (dgm:if `@func`).",
       "enum": ["cnt", "pos", "revPos", "posEven", "posOdd", "var", "depth", "maxDepth"],
       "type": "string"
     },
     "ConditionOperator": {
-      "description": "ST_FunctionOperator (dgm:if",
+      "description": "ST_FunctionOperator (dgm:if `@op`).",
       "enum": ["equ", "neq", "gt", "lt", "gte", "lte"],
       "type": "string"
     },
@@ -3347,7 +3347,7 @@
         },
         "type": {
           "$ref": "#/definitions/TableStyleOverrideType",
-          "description": "Which region this format applies to (CT_TblStylePr"
+          "description": "Which region this format applies to (CT_TblStylePr `@w:type`, required)."
         }
       },
       "required": ["type"],
@@ -3370,7 +3370,7 @@
       "type": "object"
     },
     "ConstraintOperator": {
-      "description": "ST_BoolOperator (dgm:constr",
+      "description": "ST_BoolOperator (dgm:constr `@op`).",
       "enum": ["none", "equ", "gte", "lte"],
       "type": "string"
     },
@@ -3379,47 +3379,47 @@
       "description": "dgm:constr (CT_Constraint).",
       "properties": {
         "factor": {
-          "description": "Factor applied to the reference (dgm:constr",
+          "description": "Factor applied to the reference (dgm:constr `@fact`).",
           "type": "number"
         },
         "for": {
           "$ref": "#/definitions/ConstraintRelationship",
-          "description": "Related point the constraint applies to (dgm:constr"
+          "description": "Related point the constraint applies to (dgm:constr `@for`)."
         },
         "forName": {
-          "description": "Layout-node name the constraint applies to (dgm:constr",
+          "description": "Layout-node name the constraint applies to (dgm:constr `@forName`).",
           "type": "string"
         },
         "operation": {
           "$ref": "#/definitions/ConstraintOperator",
-          "description": "How the reference combines with val (dgm:constr"
+          "description": "How the reference combines with val (dgm:constr `@op`)."
         },
         "pointType": {
-          "description": "Point kinds the constraint applies to (dgm:constr",
+          "description": "Point kinds the constraint applies to (dgm:constr `@ptType`).",
           "type": "string"
         },
         "referenceFor": {
           "$ref": "#/definitions/ConstraintRelationship",
-          "description": "Relationship of the referenced point (dgm:constr"
+          "description": "Relationship of the referenced point (dgm:constr `@refFor`)."
         },
         "referenceForName": {
-          "description": "Layout-node name of the referenced point (dgm:constr",
+          "description": "Layout-node name of the referenced point (dgm:constr `@refForName`).",
           "type": "string"
         },
         "referencePointType": {
-          "description": "Point kinds of the referenced point (dgm:constr",
+          "description": "Point kinds of the referenced point (dgm:constr `@refPtType`).",
           "type": "string"
         },
         "referenceType": {
           "$ref": "#/definitions/ConstraintType",
-          "description": "Referenced dimension (dgm:constr"
+          "description": "Referenced dimension (dgm:constr `@refType`)."
         },
         "type": {
           "$ref": "#/definitions/ConstraintType",
-          "description": "Constrained dimension (dgm:constr"
+          "description": "Constrained dimension (dgm:constr `@type`)."
         },
         "value": {
-          "description": "Absolute value (dgm:constr",
+          "description": "Absolute value (dgm:constr `@val`).",
           "type": "number"
         }
       },
@@ -3427,12 +3427,12 @@
       "type": "object"
     },
     "ConstraintRelationship": {
-      "description": "ST_ConstraintRelationship (dgm:constr",
+      "description": "ST_ConstraintRelationship (dgm:constr `@for`/`@refFor`).",
       "enum": ["self", "ch", "des"],
       "type": "string"
     },
     "ConstraintType": {
-      "description": "ST_ConstraintType (dgm:constr/@type/@refType, dgm:rule",
+      "description": "ST_ConstraintType (dgm:constr/`@type`/`@refType`, dgm:rule `@type`).",
       "enum": [
         "none",
         "alignOff",
@@ -3510,7 +3510,7 @@
       "properties": {
         "blackWhiteMode": {
           "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black-and-white mode (@bwMode)."
+          "description": "Black-and-white mode (`@bwMode`)."
         },
         "nonVisualProperties": {
           "additionalProperties": false,
@@ -3520,14 +3520,18 @@
               "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
             },
             "description": {
-              "description": "XSD",
+              "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
               "type": "string"
+            },
+            "hidden": {
+              "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+              "type": "boolean"
             },
             "id": {
               "type": "number"
             },
             "name": {
-              "description": "XSD",
+              "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
               "type": "string"
             },
             "preferRelativeResize": {
@@ -3535,8 +3539,7 @@
               "type": "boolean"
             },
             "title": {
-              "description": "XSD",
-              "title": ".",
+              "description": "XSD `@title`.",
               "type": "string"
             }
           },
@@ -4074,7 +4077,7 @@
       "type": "object"
     },
     "DiagramDirection": {
-      "description": "ST_Direction (dgm:dir",
+      "description": "ST_Direction (dgm:dir `@val`).",
       "enum": ["norm", "rev"],
       "type": "string"
     },
@@ -4083,27 +4086,27 @@
       "description": "AG_IteratorAttributes — the traversal selector shared by presOf, forEach, and when-branches. List-typed XSD attributes (axis, ptType, hideLastTrans, st, cnt, step) surface as strings; single values read fine too.",
       "properties": {
         "axis": {
-          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "description": "Selection axes, space-separated (dgm:`@axis`, ST_AxisTypes).",
           "type": "string"
         },
         "count": {
-          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "description": "Iteration count (dgm:`@cnt`, ST_UnsignedInts).",
           "type": "string"
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`, ST_Booleans).",
           "type": "string"
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`, ST_ElementTypes).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:@st, ST_Ints).",
+          "description": "Start index (dgm:`@st`, ST_Ints).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:@step, ST_Ints).",
+          "description": "Index step (dgm:`@step`, ST_Ints).",
           "type": "string"
         }
       },
@@ -4262,7 +4265,7 @@
           "type": "array"
         },
         "id": {
-          "description": "Unique div identifier (required by CT_Div/@id)",
+          "description": "Unique div identifier (required by CT_Div/`@id`)",
           "type": "number"
         },
         "marginBottom": {
@@ -4444,8 +4447,12 @@
       "description": "Options for configuring document properties of a drawing.",
       "properties": {
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
+        },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
         },
         "hyperlink": {
           "$ref": "#/definitions/HyperlinkOptions",
@@ -4455,12 +4462,11 @@
           "type": "string"
         },
         "name": {
-          "description": "Name of the drawing element (wp:docPr",
+          "description": "Name of the drawing element (wp:docPr `@name` is XSD-required). Re-declared required to keep the docx API strict, overriding the base optional.",
           "type": "string"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         }
       },
@@ -4608,7 +4614,7 @@
           "type": "array"
         },
         "conformance": {
-          "description": "Document conformance class (w:document/@w:conformance).",
+          "description": "Document conformance class (w:document/`@w:conformance`).",
           "enum": ["strict", "transitional"],
           "type": "string"
         },
@@ -5149,7 +5155,7 @@
           "type": "string"
         },
         "characterSetName": {
-          "description": "IANA character set name (w:charset/@w:characterSet, e.g. \"ISO-8859-1\").",
+          "description": "IANA character set name (w:charset/`@w:characterSet`, e.g. \"ISO-8859-1\").",
           "type": "string"
         },
         "data": {
@@ -5189,7 +5195,7 @@
           "description": "Font signature (Unicode/code-page bitfields)"
         },
         "subsetted": {
-          "description": "Embedded font is subsetted rather than complete (CT_FontRel",
+          "description": "Embedded font is subsetted rather than complete (CT_FontRel `@subsetted`). Round-trip flag preserved from source embedRegular.",
           "type": "boolean"
         }
       },
@@ -5774,7 +5780,7 @@
           "type": "boolean"
         },
         "id": {
-          "description": "Footnote/endnote id (w:footnoteReference/@w:id or w:endnoteReference/@w:id, required).",
+          "description": "Footnote/endnote id (w:footnoteReference/`@w:id` or w:endnoteReference/`@w:id`, required).",
           "type": "number"
         }
       },
@@ -5901,7 +5907,7 @@
       "description": "dgm:forEach (CT_ForEach) — apply children to each selected point.",
       "properties": {
         "axis": {
-          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "description": "Selection axes, space-separated (dgm:`@axis`, ST_AxisTypes).",
           "type": "string"
         },
         "children": {
@@ -5911,30 +5917,30 @@
           "type": "array"
         },
         "count": {
-          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "description": "Iteration count (dgm:`@cnt`, ST_UnsignedInts).",
           "type": "string"
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`, ST_Booleans).",
           "type": "string"
         },
         "name": {
           "type": "string"
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`, ST_ElementTypes).",
           "type": "string"
         },
         "reference": {
-          "description": "Reference to a named layout node instead of inline children (dgm:@ref).",
+          "description": "Reference to a named layout node instead of inline children (dgm:`@ref`).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:@st, ST_Ints).",
+          "description": "Start index (dgm:`@st`, ST_Ints).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:@step, ST_Ints).",
+          "description": "Index step (dgm:`@step`, ST_Ints).",
           "type": "string"
         }
       },
@@ -6490,7 +6496,7 @@
           "properties": {
             "blackWhiteMode": {
               "$ref": "#/definitions/BlackWhiteMode",
-              "description": "Black-and-white mode (@bwMode)."
+              "description": "Black-and-white mode (`@bwMode`)."
             },
             "fill": {
               "$ref": "#/definitions/FillOptions"
@@ -6503,14 +6509,18 @@
                   "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
                 },
                 "description": {
-                  "description": "XSD",
+                  "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
                   "type": "string"
+                },
+                "hidden": {
+                  "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+                  "type": "boolean"
                 },
                 "id": {
                   "type": "number"
                 },
                 "name": {
-                  "description": "XSD",
+                  "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
                   "type": "string"
                 },
                 "preferRelativeResize": {
@@ -6518,8 +6528,7 @@
                   "type": "boolean"
                 },
                 "title": {
-                  "description": "XSD",
-                  "title": ".",
+                  "description": "XSD `@title`.",
                   "type": "string"
                 }
               },
@@ -6947,7 +6956,7 @@
           "description": "Sample data colored for the colors preview (dgm:clrData)."
         },
         "defaultStyle": {
-          "description": "Default quick-style label (dgm:layoutDef",
+          "description": "Default quick-style label (dgm:layoutDef `@defStyle`).",
           "type": "string"
         },
         "descriptions": {
@@ -6966,7 +6975,7 @@
           "description": "The layout tree (dgm:layoutNode, required)."
         },
         "minVer": {
-          "description": "Minimum Office version (dgm:layoutDef",
+          "description": "Minimum Office version (dgm:layoutDef `@minVer`).",
           "type": "string"
         },
         "sampleData": {
@@ -6985,7 +6994,7 @@
           "type": "array"
         },
         "uniqueId": {
-          "description": "Layout identity URI (dgm:layoutDef",
+          "description": "Layout identity URI (dgm:layoutDef `@uniqueId`).",
           "type": "string"
         }
       },
@@ -7112,7 +7121,7 @@
       "properties": {
         "childOrder": {
           "$ref": "#/definitions/ChildOrder",
-          "description": "Child ordering: bottom-first \"b\" or top-first \"t\" (dgm:@chOrder)."
+          "description": "Child ordering: bottom-first \"b\" or top-first \"t\" (dgm:`@chOrder`)."
         },
         "children": {
           "items": {
@@ -7125,15 +7134,15 @@
           "type": "string"
         },
         "moveWith": {
-          "description": "Move with another named layout node (dgm:@moveWith).",
+          "description": "Move with another named layout node (dgm:`@moveWith`).",
           "type": "string"
         },
         "name": {
-          "description": "Unique name referenced by constraints and moveWith (dgm:@name).",
+          "description": "Unique name referenced by constraints and moveWith (dgm:`@name`).",
           "type": "string"
         },
         "styleLabel": {
-          "description": "Formatting slot from styleDef/colorsDef (dgm:@styleLbl).",
+          "description": "Formatting slot from styleDef/colorsDef (dgm:`@styleLbl`).",
           "type": "string"
         }
       },
@@ -7144,7 +7153,7 @@
       "description": "dgm:rule (CT_NumericRule).",
       "properties": {
         "factor": {
-          "description": "Multiplied factor (dgm:rule",
+          "description": "Multiplied factor (dgm:rule `@fact`).",
           "type": "number"
         },
         "for": {
@@ -7154,7 +7163,7 @@
           "type": "string"
         },
         "maximum": {
-          "description": "Upper bound (dgm:rule",
+          "description": "Upper bound (dgm:rule `@max`).",
           "type": "number"
         },
         "pointType": {
@@ -7162,10 +7171,10 @@
         },
         "type": {
           "$ref": "#/definitions/ConstraintType",
-          "description": "Rule dimension (dgm:rule"
+          "description": "Rule dimension (dgm:rule `@type`)."
         },
         "value": {
-          "description": "Preferred value (dgm:rule",
+          "description": "Preferred value (dgm:rule `@val`).",
           "type": "number"
         }
       },
@@ -7184,31 +7193,31 @@
           "type": "array"
         },
         "blip": {
-          "description": "Preview picture relationship id (dgm:shape",
+          "description": "Preview picture relationship id (dgm:shape `@r:blip`).",
           "type": "string"
         },
         "blipPlaceholder": {
-          "description": "Use the picture placeholder (dgm:shape",
+          "description": "Use the picture placeholder (dgm:shape `@blipPhldr`).",
           "type": "boolean"
         },
         "hideGeometry": {
-          "description": "Hide the shape geometry, keep the text (dgm:shape",
+          "description": "Hide the shape geometry, keep the text (dgm:shape `@hideGeom`).",
           "type": "boolean"
         },
         "lockTextEntry": {
-          "description": "Lock text entry (dgm:shape",
+          "description": "Lock text entry (dgm:shape `@lkTxEntry`).",
           "type": "boolean"
         },
         "rotation": {
-          "description": "Shape rotation as a raw double (dgm:shape",
+          "description": "Shape rotation as a raw double (dgm:shape `@rot`).",
           "type": "number"
         },
         "type": {
-          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape",
+          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape `@type`, ST_LayoutShapeType).",
           "type": "string"
         },
         "zOrderOffset": {
-          "description": "Z-order offset (dgm:shape",
+          "description": "Z-order offset (dgm:shape `@zOrderOff`).",
           "type": "number"
         }
       },
@@ -7510,7 +7519,7 @@
         },
         "legacy": {
           "additionalProperties": false,
-          "description": "Legacy spacing/indent settings. `enabled` maps to the required CT_LvlLegacy",
+          "description": "Legacy spacing/indent settings. `enabled` maps to the required CT_LvlLegacy `@w:legacy` flag.",
           "properties": {
             "enabled": {
               "type": "boolean"
@@ -7570,7 +7579,7 @@
           "type": "string"
         },
         "textNull": {
-          "description": "Whether this level emits no text (CT_LevelText",
+          "description": "Whether this level emits no text (CT_LevelText `@w:null`).",
           "type": "boolean"
         },
         "w15Tentative": {
@@ -7943,10 +7952,10 @@
       "properties": {
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange"
+          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
         },
         "id": {
-          "description": "Marker identifier (CT_Markup",
+          "description": "Marker identifier (CT_Markup `@w:id`, required).",
           "type": "number"
         }
       },
@@ -9064,7 +9073,7 @@
           "type": "number"
         },
         "type": {
-          "description": "Connection kind (dgm:cxn",
+          "description": "Connection kind (dgm:cxn `@type`, ST_CxnType: parOf | presOf | unknownRelationship).",
           "type": "string"
         }
       },
@@ -9076,11 +9085,11 @@
       "description": "dgm:pt — one data-model point (dgm:pt, CT_Pt).",
       "properties": {
         "connectionId": {
-          "description": "Transition point owning connection (dgm:pt",
+          "description": "Transition point owning connection (dgm:pt `@cxnId`, transition points only).",
           "type": "string"
         },
         "modelId": {
-          "description": "Point identity (dgm:pt",
+          "description": "Point identity (dgm:pt `@modelId`).",
           "type": "string"
         },
         "propertySet": {
@@ -9091,7 +9100,7 @@
           "type": "string"
         },
         "type": {
-          "description": "Point kind (dgm:pt",
+          "description": "Point kind (dgm:pt `@type`, ST_PtType: node | doc | asst | parTrans | sibTrans).",
           "type": "string"
         }
       },
@@ -9103,27 +9112,27 @@
       "description": "A move revision authored as a single inline paragraph child. The library allocates the range id and the move-run id, then emits the paired range markers with the moved run between them — the caller never touches an id.\n\nUsed by both the `{ moveFrom }` (source) and `{ moveTo }` (destination) sugars. `wrap` is the moved content carried by the move run. `author` and `date` apply to both the range start (CT_MoveBookmark) and the move run (CT_TrackChange). `name` is required by XSD (CT_Bookmark); the source (`moveFrom`) and destination (`moveTo`) of one logical move MUST share a name so Word pairs them as a single move.\n\nReference: wml.xsd CT_MoveBookmark, CT_TrackChange, EG_RangeMarkupElements.",
       "properties": {
         "author": {
-          "description": "Author of the move (CT_MoveBookmark + move run",
+          "description": "Author of the move (CT_MoveBookmark + move run `@w:author`, required).",
           "type": "string"
         },
         "colFirst": {
-          "description": "First column of a table-cell move range scope (CT_BookmarkRange",
+          "description": "First column of a table-cell move range scope (CT_BookmarkRange `@w:colFirst`).",
           "type": "number"
         },
         "colLast": {
-          "description": "Last column of a table-cell move range scope (CT_BookmarkRange",
+          "description": "Last column of a table-cell move range scope (CT_BookmarkRange `@w:colLast`).",
           "type": "number"
         },
         "date": {
-          "description": "Date of the move (CT_MoveBookmark + move run",
+          "description": "Date of the move (CT_MoveBookmark + move run `@w:date`, required).",
           "type": "string"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange"
+          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
         },
         "name": {
-          "description": "Move range name (CT_Bookmark",
+          "description": "Move range name (CT_Bookmark `@w:name`, required). Share it across the matching `moveFrom`/`moveTo` pair so Word links them into one move.",
           "type": "string"
         },
         "wrap": {
@@ -9149,31 +9158,31 @@
       "description": "Options for a move revision range start (w:moveFromRangeStart / w:moveToRangeStart).\n\nMaps to CT_MoveBookmark = CT_Bookmark (name, colFirst, colLast, displacedByCustomXml) + author + date. `name` is optional in practice: Word does not always emit one for auto-generated move ranges.\n\nReference: wml.xsd CT_MoveBookmark, EG_RangeMarkupElements",
       "properties": {
         "author": {
-          "description": "Author of the move (CT_MoveBookmark",
+          "description": "Author of the move (CT_MoveBookmark `@w:author`).",
           "type": "string"
         },
         "colFirst": {
-          "description": "First column of a table-cell move range scope (CT_BookmarkRange",
+          "description": "First column of a table-cell move range scope (CT_BookmarkRange `@w:colFirst`).",
           "type": "number"
         },
         "colLast": {
-          "description": "Last column of a table-cell move range scope (CT_BookmarkRange",
+          "description": "Last column of a table-cell move range scope (CT_BookmarkRange `@w:colLast`).",
           "type": "number"
         },
         "date": {
-          "description": "Date of the move (CT_MoveBookmark",
+          "description": "Date of the move (CT_MoveBookmark `@w:date`).",
           "type": "string"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange"
+          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
         },
         "id": {
-          "description": "Move range identifier (CT_Markup",
+          "description": "Move range identifier (CT_Markup `@w:id`, required).",
           "type": "number"
         },
         "name": {
-          "description": "Move range name (CT_Bookmark",
+          "description": "Move range name (CT_Bookmark `@w:name` — required by XSD, often absent in Word).",
           "type": "string"
         }
       },
@@ -9184,7 +9193,7 @@
       "additionalProperties": false,
       "properties": {
         "isComment": {
-          "description": "Whether the content part hosts a comment (@isComment, default true). Only `false` deviates from the default and is emitted explicitly.",
+          "description": "Whether the content part hosts a comment (`@isComment`, default true). Only `false` deviates from the default and is emitted explicitly.",
           "type": "boolean"
         },
         "locks": {
@@ -9199,14 +9208,18 @@
       "description": "Round-trip of `pic:cNvPr` — the picture non-visual id/name/description. All fields optional to mirror the source element: `description` is omitted when absent rather than emitted as an empty attribute (Word never writes it empty).",
       "properties": {
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
+        },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
         },
         "id": {
           "type": "number"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "preferRelativeResize": {
@@ -9214,8 +9227,7 @@
           "type": "boolean"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         }
       },
@@ -9229,24 +9241,23 @@
           "type": "boolean"
         },
         "description": {
-          "description": "Alt-text description (wps:cNvPr",
+          "description": "Alt-text description (wps:cNvPr `@descr`).",
           "type": "string"
         },
         "id": {
-          "description": "Drawing id (wps:cNvPr",
+          "description": "Drawing id (wps:cNvPr `@id`).",
           "type": "number"
         },
         "name": {
-          "description": "Drawing name (wps:cNvPr",
+          "description": "Drawing name (wps:cNvPr `@name`).",
           "type": "string"
         },
         "textBox": {
-          "description": "Shape type marker (wps:cNvSpPr",
+          "description": "Shape type marker (wps:cNvSpPr `@txBox`) — \"1\" marks a text box.",
           "type": "string"
         },
         "title": {
-          "description": "Alt-text title (wps:cNvPr",
-          "title": ").",
+          "description": "Alt-text title (wps:cNvPr `@title`).",
           "type": "string"
         }
       },
@@ -9389,11 +9400,11 @@
           "type": "string"
         },
         "customStyle": {
-          "description": "CT_Style",
+          "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
           "type": "boolean"
         },
         "default": {
-          "description": "CT_Style",
+          "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
           "type": "boolean"
         },
         "hidden": {
@@ -9456,7 +9467,7 @@
       "additionalProperties": false,
       "properties": {
         "name": {
-          "description": "Control name (w:control/@name).",
+          "description": "Control name (w:control/`@name`).",
           "type": "string"
         },
         "rId": {
@@ -9464,7 +9475,7 @@
           "type": "string"
         },
         "shapeid": {
-          "description": "Shape id (w:control/@shapeid).",
+          "description": "Shape id (w:control/`@shapeid`).",
           "type": "string"
         }
       },
@@ -9479,11 +9490,11 @@
           "description": "ActiveX control reference (w:control)."
         },
         "dxaOrig": {
-          "description": "Original width in twips (w:object/@w:dxaOrig).",
+          "description": "Original width in twips (w:object/`@w:dxaOrig`).",
           "type": "number"
         },
         "dyaOrig": {
-          "description": "Original height in twips (w:object/@w:dyaOrig).",
+          "description": "Original height in twips (w:object/`@w:dyaOrig`).",
           "type": "number"
         },
         "embed": {
@@ -9510,11 +9521,11 @@
           "description": "Linked OLE object (o:OLEObject Type=\"Link\")."
         },
         "movie": {
-          "description": "Movie relationship id — CT_Rel (w:movie/@r:id). External.",
+          "description": "Movie relationship id — CT_Rel (w:movie/`@r:id`). External.",
           "type": "string"
         },
         "shapeId": {
-          "description": "VML shape id (v:shape/@id). Defaults to a generated id.",
+          "description": "VML shape id (v:shape/`@id`). Defaults to a generated id.",
           "type": "string"
         },
         "width": {
@@ -9555,7 +9566,7 @@
           "type": "string"
         },
         "objectId": {
-          "description": "OLE object id (o:OLEObject/@ObjectID). Defaults to a generated id.",
+          "description": "OLE object id (o:OLEObject/`@ObjectID`). Defaults to a generated id.",
           "type": "string"
         },
         "progId": {
@@ -9563,7 +9574,7 @@
           "type": "string"
         },
         "shapeId": {
-          "description": "Shape id (o:OLEObject/@ShapeID). Defaults to the preview shape's id.",
+          "description": "Shape id (o:OLEObject/`@ShapeID`). Defaults to the preview shape's id.",
           "type": "string"
         }
       },
@@ -9585,7 +9596,7 @@
           "description": "Preview image bytes (binary or base64 data URL)."
         },
         "title": {
-          "description": "Title for v:imagedata/@o:title.",
+          "description": "Title for v:imagedata/`@o:title`.",
           "type": "string"
         },
         "type": {
@@ -9624,7 +9635,7 @@
           "type": "boolean"
         },
         "objectId": {
-          "description": "OLE object id (o:OLEObject/@ObjectID). Defaults to a generated id.",
+          "description": "OLE object id (o:OLEObject/`@ObjectID`). Defaults to a generated id.",
           "type": "string"
         },
         "progId": {
@@ -9632,7 +9643,7 @@
           "type": "string"
         },
         "shapeId": {
-          "description": "Shape id (o:OLEObject/@ShapeID). Defaults to the preview shape's id.",
+          "description": "Shape id (o:OLEObject/`@ShapeID`). Defaults to the preview shape's id.",
           "type": "string"
         },
         "updateMode": {
@@ -9721,10 +9732,10 @@
     },
     "OptimizeForBrowserOptions": {
       "additionalProperties": false,
-      "description": "Options for the w:optimizeForBrowser element.\n\nCT_OptimizeForBrowser extends CT_OnOff with an optional",
+      "description": "Options for the w:optimizeForBrowser element.\n\nCT_OptimizeForBrowser extends CT_OnOff with an optional `@w:target` attribute.",
       "properties": {
         "target": {
-          "description": "Target screen resolution name (w:optimizeForBrowser/@w:target).",
+          "description": "Target screen resolution name (w:optimizeForBrowser/`@w:target`).",
           "type": "string"
         },
         "value": {
@@ -10417,15 +10428,15 @@
                   "type": "array"
                 },
                 "docLocation": {
-                  "description": "Location within the target document (CT_Hyperlink",
+                  "description": "Location within the target document (CT_Hyperlink `@docLocation`)",
                   "type": "string"
                 },
                 "history": {
-                  "description": "Add the target to the navigation history (CT_Hyperlink",
+                  "description": "Add the target to the navigation history (CT_Hyperlink `@history`)",
                   "type": "boolean"
                 },
                 "targetFrame": {
-                  "description": "Target frame for the hyperlink (CT_Hyperlink",
+                  "description": "Target frame for the hyperlink (CT_Hyperlink `@tgtFrame`)",
                   "type": "string"
                 },
                 "tooltip": {
@@ -12229,11 +12240,11 @@
           "type": "string"
         },
         "customStyle": {
-          "description": "CT_Style",
+          "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
           "type": "boolean"
         },
         "default": {
-          "description": "CT_Style",
+          "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
           "type": "boolean"
         },
         "hidden": {
@@ -13650,7 +13661,7 @@
       "type": "object"
     },
     "ResizeHandles": {
-      "description": "ST_ResizeHandlesStr (dgm:resizeHandles",
+      "description": "ST_ResizeHandlesStr (dgm:resizeHandles `@val`).",
       "enum": ["exact", "rel"],
       "type": "string"
     },
@@ -15031,7 +15042,7 @@
           "$ref": "#/definitions/DataModelOptions"
         },
         "useDefault": {
-          "description": "Use the data model of the containing layout as sample (dgm:@useDef).",
+          "description": "Use the data model of the containing layout as sample (dgm:`@useDef`).",
           "type": "boolean"
         }
       },
@@ -17034,7 +17045,7 @@
           "type": "string"
         },
         "w14DocId": {
-          "description": "Word 2010 document identifier (w14:docId/@w14:val, e.g. \"1A190769\")",
+          "description": "Word 2010 document identifier (w14:docId/`@w14:val`, e.g. \"1A190769\")",
           "type": "string"
         },
         "w15ChartTrackingRefBased": {
@@ -17042,7 +17053,7 @@
           "type": "boolean"
         },
         "w15DocId": {
-          "description": "Word 2013 document identifier (w15:docId/@w15:val, GUID format)",
+          "description": "Word 2013 document identifier (w15:docId/`@w15:val`, GUID format)",
           "type": "string"
         },
         "writeProtection": {
@@ -17258,11 +17269,11 @@
           "description": "Linked text box chain (wps:linkedTxbx) — the shape's text lives in the linked part instead of inline w:txbxContent. XSD choice: exclusive with inline text content.",
           "properties": {
             "id": {
-              "description": "Chain id shared by all boxes in the link (@id, required).",
+              "description": "Chain id shared by all boxes in the link (`@id`, required).",
               "type": "number"
             },
             "sequence": {
-              "description": "Position of this box in the chain (@seq, required).",
+              "description": "Position of this box in the chain (`@seq`, required).",
               "type": "number"
             }
           },
@@ -17273,7 +17284,7 @@
           "$ref": "#/definitions/NonVisualShapePropertiesOptions"
         },
         "normalEastAsianFlow": {
-          "description": "East-Asian vertical text flow (wps:wsp",
+          "description": "East-Asian vertical text flow (wps:wsp `@normalEastAsianFlow`, default false).",
           "type": "boolean"
         },
         "outline": {
@@ -17365,11 +17376,11 @@
           "description": "Linked text box chain (wps:linkedTxbx) — the shape's text lives in the linked part instead of inline w:txbxContent. XSD choice: exclusive with inline text content.",
           "properties": {
             "id": {
-              "description": "Chain id shared by all boxes in the link (@id, required).",
+              "description": "Chain id shared by all boxes in the link (`@id`, required).",
               "type": "number"
             },
             "sequence": {
-              "description": "Position of this box in the chain (@seq, required).",
+              "description": "Position of this box in the chain (`@seq`, required).",
               "type": "number"
             }
           },
@@ -17384,7 +17395,7 @@
           "$ref": "#/definitions/NonVisualShapePropertiesOptions"
         },
         "normalEastAsianFlow": {
-          "description": "East-Asian vertical text flow (wps:wsp",
+          "description": "East-Asian vertical text flow (wps:wsp `@normalEastAsianFlow`, default false).",
           "type": "boolean"
         },
         "outline": {
@@ -17469,11 +17480,11 @@
           "type": "string"
         },
         "dirty": {
-          "description": "Field result is out of date (CT_SimpleField",
+          "description": "Field result is out of date (CT_SimpleField `@dirty`)",
           "type": "boolean"
         },
         "fieldLock": {
-          "description": "Lock the field to prevent updates (CT_SimpleField",
+          "description": "Lock the field to prevent updates (CT_SimpleField `@fldLock`)",
           "type": "boolean"
         },
         "instruction": {
@@ -17781,7 +17792,7 @@
           "type": "string"
         },
         "minVer": {
-          "description": "Minimum Office version (dgm:styleDef",
+          "description": "Minimum Office version (dgm:styleDef `@minVer`).",
           "type": "string"
         },
         "scene3d": {
@@ -17803,7 +17814,7 @@
           "type": "array"
         },
         "uniqueId": {
-          "description": "Style identity URI (dgm:styleDef",
+          "description": "Style identity URI (dgm:styleDef `@uniqueId`).",
           "type": "string"
         }
       },
@@ -17818,7 +17829,7 @@
           "type": "string"
         },
         "name": {
-          "description": "Slot name referenced by dgm:layoutNode",
+          "description": "Slot name referenced by dgm:layoutNode `@styleLbl` (required).",
           "type": "string"
         },
         "scene3d": {
@@ -17892,11 +17903,11 @@
                 "type": "string"
               },
               "customStyle": {
-                "description": "CT_Style",
+                "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
                 "type": "boolean"
               },
               "default": {
-                "description": "CT_Style",
+                "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
                 "type": "boolean"
               },
               "hidden": {
@@ -18011,11 +18022,11 @@
                 "type": "string"
               },
               "customStyle": {
-                "description": "CT_Style",
+                "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
                 "type": "boolean"
               },
               "default": {
-                "description": "CT_Style",
+                "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
                 "type": "boolean"
               },
               "hidden": {
@@ -19990,11 +20001,11 @@
           "type": "array"
         },
         "customStyle": {
-          "description": "CT_Style",
+          "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
           "type": "boolean"
         },
         "default": {
-          "description": "CT_Style",
+          "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
           "type": "boolean"
         },
         "hidden": {
@@ -20062,7 +20073,7 @@
       "type": "object"
     },
     "TableStyleOverrideType": {
-      "description": "ST_TblStyleOverrideType — OOXML tokens verbatim (CT_TblStylePr",
+      "description": "ST_TblStyleOverrideType — OOXML tokens verbatim (CT_TblStylePr `@w:type`).",
       "enum": [
         "wholeTable",
         "firstRow",
@@ -20152,7 +20163,7 @@
       "description": "dgm:txPr (CT_TextProps) — a choice of 3D text treatments (EG_Text3D).",
       "properties": {
         "flatText": {
-          "description": "Flatten text to a plane at this z coordinate, EMU (a:flatTx",
+          "description": "Flatten text to a plane at this z coordinate, EMU (a:flatTx `@z`).",
           "type": "number"
         },
         "shape3d": {
@@ -20381,39 +20392,39 @@
       "properties": {
         "animateLevel": {
           "$ref": "#/definitions/AnimationLevel",
-          "description": "Animate by level or from center (dgm:animLvl"
+          "description": "Animate by level or from center (dgm:animLvl `@val`)."
         },
         "animateOne": {
           "$ref": "#/definitions/AnimateOneByOne",
-          "description": "Animate siblings one by one or as a branch (dgm:animOne"
+          "description": "Animate siblings one by one or as a branch (dgm:animOne `@val`)."
         },
         "bulletEnabled": {
-          "description": "Bullets enabled on text nodes (dgm:bulletEnabled",
+          "description": "Bullets enabled on text nodes (dgm:bulletEnabled `@val`).",
           "type": "boolean"
         },
         "childMaximum": {
-          "description": "Maximum children per parent (dgm:chMax",
+          "description": "Maximum children per parent (dgm:chMax `@val`).",
           "type": "number"
         },
         "childPreferred": {
-          "description": "Preferred children per parent (dgm:chPref",
+          "description": "Preferred children per parent (dgm:chPref `@val`).",
           "type": "number"
         },
         "direction": {
           "$ref": "#/definitions/DiagramDirection",
-          "description": "Reading direction (dgm:dir"
+          "description": "Reading direction (dgm:dir `@val`)."
         },
         "hierarchyBranchStyle": {
           "$ref": "#/definitions/HierBranch",
-          "description": "Branch style for hierarchy layouts (dgm:hierBranch"
+          "description": "Branch style for hierarchy layouts (dgm:hierBranch `@val`)."
         },
         "organizationChart": {
-          "description": "This is an organization chart (dgm:orgChart",
+          "description": "This is an organization chart (dgm:orgChart `@val`).",
           "type": "boolean"
         },
         "resizeHandles": {
           "$ref": "#/definitions/ResizeHandles",
-          "description": "Resize-handle behavior (dgm:resizeHandles"
+          "description": "Resize-handle behavior (dgm:resizeHandles `@val`)."
         }
       },
       "type": "object"
@@ -21739,11 +21750,11 @@
       "description": "One alternative inside a choose — dgm:if (CT_When); `if` is a reserved word.",
       "properties": {
         "argument": {
-          "description": "Function argument, usually a variable name (dgm:if",
+          "description": "Function argument, usually a variable name (dgm:if `@arg`).",
           "type": "string"
         },
         "axis": {
-          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "description": "Selection axes, space-separated (dgm:`@axis`, ST_AxisTypes).",
           "type": "string"
         },
         "children": {
@@ -21753,15 +21764,15 @@
           "type": "array"
         },
         "count": {
-          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "description": "Iteration count (dgm:`@cnt`, ST_UnsignedInts).",
           "type": "string"
         },
         "function": {
           "$ref": "#/definitions/ConditionFunction",
-          "description": "Selection function (dgm:if"
+          "description": "Selection function (dgm:if `@func`)."
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`, ST_Booleans).",
           "type": "string"
         },
         "name": {
@@ -21769,22 +21780,22 @@
         },
         "operator": {
           "$ref": "#/definitions/ConditionOperator",
-          "description": "Comparison operator (dgm:if"
+          "description": "Comparison operator (dgm:if `@op`)."
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`, ST_ElementTypes).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:@st, ST_Ints).",
+          "description": "Start index (dgm:`@st`, ST_Ints).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:@step, ST_Ints).",
+          "description": "Index step (dgm:`@step`, ST_Ints).",
           "type": "string"
         },
         "value": {
-          "description": "Comparison value (dgm:if",
+          "description": "Comparison value (dgm:if `@val`, ST_FunctionValue union).",
           "type": "string"
         }
       },

@@ -73,7 +73,7 @@ export interface MetadataTypeOptions {
   cellMeta?: boolean;
 }
 
-/** Metadata string entry (CT_MetadataStrings → s, CT_XStringElement @v). */
+/** Metadata string entry (CT_MetadataStrings → s, CT_XStringElement `@v`). */
 export interface MetadataStringOptions {
   /** String value (required) */
   value: string;
@@ -81,7 +81,7 @@ export interface MetadataStringOptions {
 
 /** Metadata string index reference (CT_MetadataStringIndex). */
 export interface MetadataStringIndexOptions {
-  /** Index into metadataStrings (@x, required) */
+  /** Index into metadataStrings (`@x`, required) */
   index: number;
   /** Show string flag */
   show?: boolean;
@@ -91,15 +91,15 @@ export interface MetadataStringIndexOptions {
 export interface MdxTupleOptions {
   /** Tuple count */
   count?: number;
-  /** Culture (CT_MdxTuple @ct) */
+  /** Culture (CT_MdxTuple `@ct`) */
   culture?: string;
-  /** Style index (CT_MdxTuple @si) */
+  /** Style index (CT_MdxTuple `@si`) */
   styleIndex?: number;
-  /** Format index (CT_MdxTuple @fi) */
+  /** Format index (CT_MdxTuple `@fi`) */
   formatIndex?: number;
-  /** Background color ARGB hex (CT_MdxTuple @bc) */
+  /** Background color ARGB hex (CT_MdxTuple `@bc`) */
   backgroundColor?: string;
-  /** Foreground color ARGB hex (CT_MdxTuple @fc) */
+  /** Foreground color ARGB hex (CT_MdxTuple `@fc`) */
   foregroundColor?: string;
   /** Italic */
   italic?: boolean;
@@ -125,35 +125,35 @@ export interface MdxSetOptions {
   stringIndexes?: MetadataStringIndexOptions[];
 }
 
-/** ST_MdxFunctionType — the MDX function discriminator on mdx @f. */
+/** ST_MdxFunctionType — the MDX function discriminator on mdx `@f`. */
 export type MdxFunctionType = "m" | "v" | "s" | "c" | "r" | "p" | "k";
 
-/** ST_MdxKPIProperty — the KPI property kind on k @p. */
+/** ST_MdxKPIProperty — the KPI property kind on k `@p`. */
 export type MdxKpiProperty = "v" | "g" | "s" | "t" | "w" | "m";
 
 /** MDX member property (CT_MdxMemeberProp, the p child of mdx). */
 export interface MdxMemberPropOptions {
-  /** Index into metadataStrings for the member name (@n, required) */
+  /** Index into metadataStrings for the member name (`@n`, required) */
   nameIndex: number;
-  /** Name pair index (@np, required) */
+  /** Name pair index (`@np`, required) */
   namePairIndex: number;
 }
 
 /** MDX KPI (CT_MdxKPI, the k child of mdx). */
 export interface MdxKpiOptions {
-  /** Index into metadataStrings for the member name (@n, required) */
+  /** Index into metadataStrings for the member name (`@n`, required) */
   nameIndex: number;
-  /** Name pair index (@np, required) */
+  /** Name pair index (`@np`, required) */
   namePairIndex: number;
-  /** KPI property kind (@p, required) */
+  /** KPI property kind (`@p`, required) */
   property: MdxKpiProperty;
 }
 
 /** MDX metadata entry (CT_Mdx). */
 export interface MdxOptions {
-  /** MDX function type (@f, required) */
+  /** MDX function type (`@f`, required) */
   functionType: MdxFunctionType;
-  /** Metadata string index (@n, required) */
+  /** Metadata string index (`@n`, required) */
   stringIndex: number;
   /** MDX tuple (t) */
   tuple?: MdxTupleOptions;
@@ -181,9 +181,9 @@ export interface FutureMetadataOptions {
 
 /** Metadata record (CT_MetadataRecord, the rc child of bk). */
 export interface MetadataRecordOptions {
-  /** Metadata type index (@t, required) */
+  /** Metadata type index (`@t`, required) */
   typeIndex: number;
-  /** Metadata value index (@v, required) */
+  /** Metadata value index (`@v`, required) */
   valueIndex: number;
 }
 

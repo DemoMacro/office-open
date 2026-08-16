@@ -644,7 +644,7 @@ function stringifyChildXfrm(prefix: "wp" | "wpg", t: MediaDataTransformation): s
 
 /**
  * Stringify a wpg:contentPart child (CT_WordprocessingContentPart) inside a
- * group: nvContentPartPr (cNvPr + cNvContentPartPr) + a:xfrm + @bwMode/@r:id.
+ * group: nvContentPartPr (cNvPr + cNvContentPartPr) + a:xfrm + `@bwMode`/`@r:id`.
  * A content part never appears at the wp:inline/wp:anchor root (CT_Inline and
  * CT_Anchor take a:graphic only) — the run-level form is w:contentPart.
  */

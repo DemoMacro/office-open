@@ -37,11 +37,11 @@ export interface CommentOptions {
  * Reference: wml.xsd CT_Markup, CT_Comment, EG_RangeMarkupElements.
  */
 export interface CommentChildOptions {
-  /** Comment author (CT_Comment @w:author — required by XSD, defaults to ""). */
+  /** Comment author (CT_Comment `@w:author` — required by XSD, defaults to ""). */
   author?: string;
-  /** Author initials (CT_Comment @w:initials). */
+  /** Author initials (CT_Comment `@w:initials`). */
   initials?: string;
-  /** Creation date (CT_Comment @w:date); defaults to the current time. */
+  /** Creation date (CT_Comment `@w:date`); defaults to the current time. */
   date?: Date | string;
   /** Comment reply content stored in word/comments.xml (maps to CommentOptions.children). */
   children: (string | ParagraphOptions)[];

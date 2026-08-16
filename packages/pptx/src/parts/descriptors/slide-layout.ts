@@ -50,7 +50,7 @@ const NAME_TO_TYPE: Record<string, string> = {
   "Title and Text": "tx",
 };
 
-/** Placeholder @type → LayoutPlaceholderOptions key. */
+/** Placeholder `@type` → LayoutPlaceholderOptions key. */
 const PH_TYPE_TO_KEY: Record<string, keyof LayoutPlaceholderOptions> = {
   title: "title",
   ctrTitle: "title",

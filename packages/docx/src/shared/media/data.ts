@@ -187,7 +187,7 @@ export interface ContentPartOptions {
   nonVisualProperties?: NonVisualPropertiesOptions & {
     contentPart?: NonVisualContentPartPropertiesOptions;
   };
-  /** Black-and-white mode (@bwMode). */
+  /** Black-and-white mode (`@bwMode`). */
   blackWhiteMode?: BlackWhiteMode;
 }
 

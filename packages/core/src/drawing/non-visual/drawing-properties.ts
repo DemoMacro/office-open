@@ -18,13 +18,13 @@ import { parseOnOff } from "../../util/values";
 
 /** Mirrors a:CT_NonVisualDrawingProps — name/descr/title/hidden. id is runtime; hyperlinks stay package-side. */
 export interface NonVisualDrawingPropertiesOptions {
-  /** XSD @name (required in XML); API-optional, the descriptor synthesizes a fallback. */
+  /** XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback. */
   name?: string;
-  /** XSD @descr — alt text for accessibility; emitted only when present. */
+  /** XSD `@descr` — alt text for accessibility; emitted only when present. */
   description?: string;
-  /** XSD @title. */
+  /** XSD `@title`. */
   title?: string;
-  /** XSD @hidden (default false); emitted as "1" only when true. */
+  /** XSD `@hidden` (default false); emitted as "1" only when true. */
   hidden?: boolean;
 }
 

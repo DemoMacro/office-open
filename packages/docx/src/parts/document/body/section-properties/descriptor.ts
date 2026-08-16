@@ -40,9 +40,9 @@ import type { BorderOptions } from "@shared/border";
 import { NumberFormat } from "@shared/constants";
 import type { BodyContext } from "@shared/index";
 
-/** Valid page-number @w:fmt values (ST_NumberFormat). */
+/** Valid page-number `@w:fmt` values (ST_NumberFormat). */
 const PAGE_NUMBER_FORMATS = Object.values(NumberFormat) as readonly string[];
-/** Valid page-number @w:chapSep values (ST_ChapterSep). */
+/** Valid page-number `@w:chapSep` values (ST_ChapterSep). */
 const PAGE_NUMBER_SEPARATORS = Object.values(PageNumberSeparator) as readonly string[];
 
 // ── Border XML helper ──
@@ -198,7 +198,7 @@ export interface SectionPropertiesDescriptorOptions extends SectionPropertiesOpt
   headerReferences?: HeaderFooterGroup<HeaderFooterReference>;
   footerReferences?: HeaderFooterGroup<HeaderFooterReference>;
   /**
-   * printerSettings relationship id (w:printerSettings @r:id) — compiler wiring
+   * printerSettings relationship id (w:printerSettings `@r:id`) — compiler wiring
    * that only the descriptor consumes. Dropped on parse: the printerSettings
    * binary part is not round-tripped, so a carried-over id would dangle.
    */

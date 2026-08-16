@@ -19,7 +19,7 @@ export interface CalcCell {
   sheetIndex: number;
   /** Array formula */
   array?: boolean;
-  /** Child chain — calculations farmed out to another thread (CT_CalcCell @l) */
+  /** Child chain — calculations farmed out to another thread (CT_CalcCell `@l`) */
   childChain?: boolean;
 }
 

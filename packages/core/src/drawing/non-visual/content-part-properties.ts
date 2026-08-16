@@ -21,7 +21,7 @@ export interface NonVisualContentPartPropertiesOptions {
   /** Locking flags (a:cpLocks — CT_ContentPartLocking) */
   locks?: ContentPartLockingOptions;
   /**
-   * Whether the content part hosts a comment (@isComment, default true).
+   * Whether the content part hosts a comment (`@isComment`, default true).
    * Only `false` deviates from the default and is emitted explicitly.
    */
   isComment?: boolean;

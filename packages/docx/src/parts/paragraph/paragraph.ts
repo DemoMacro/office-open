@@ -43,7 +43,7 @@ export interface SdtRunOptions {
 
 /** Options for a footnote/endnote reference (CT_FtnEdnRef). */
 export interface FootnoteEndnoteReferenceOptions {
-  /** Footnote/endnote id (w:footnoteReference/@w:id or w:endnoteReference/@w:id, required). */
+  /** Footnote/endnote id (w:footnoteReference/`@w:id` or w:endnoteReference/`@w:id`, required). */
   id: number;
   /** Whether a custom reference mark follows the reference (w:customMarkFollows). */
   customMarkFollows?: boolean;
@@ -71,11 +71,11 @@ export type ParagraphChild =
         url?: string;
         anchor?: string;
         tooltip?: string;
-        /** Target frame for the hyperlink (CT_Hyperlink @tgtFrame) */
+        /** Target frame for the hyperlink (CT_Hyperlink `@tgtFrame`) */
         targetFrame?: string;
-        /** Location within the target document (CT_Hyperlink @docLocation) */
+        /** Location within the target document (CT_Hyperlink `@docLocation`) */
         docLocation?: string;
-        /** Add the target to the navigation history (CT_Hyperlink @history) */
+        /** Add the target to the navigation history (CT_Hyperlink `@history`) */
         history?: boolean;
         children?: (RunOptions | string)[];
       };

@@ -52,9 +52,9 @@ export interface DialogsheetOptions {
   name?: string;
   /** Tab color (hex ARGB) */
   tabColor?: string;
-  /** Published to a server (CT_SheetPr @published) */
+  /** Published to a server (CT_SheetPr `@published`) */
   published?: boolean;
-  /** VBA code name (CT_SheetPr @codeName) */
+  /** VBA code name (CT_SheetPr `@codeName`) */
   codeName?: string;
   /** Page margins */
   pageMargins?: DialogsheetPageMargins;

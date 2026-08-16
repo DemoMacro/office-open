@@ -29,7 +29,7 @@ export interface PivotDataField {
   summarize?: ConsolidateFunction;
   /** Custom name for the data field (default: "Sum of {field}") */
   name?: string;
-  /** Show data as (CT_DataField @showDataAs) */
+  /** Show data as (CT_DataField `@showDataAs`) */
   showDataAs?: string;
   /** Base field index for "show data as" calculations */
   baseField?: number;
@@ -43,69 +43,69 @@ export interface PivotDataField {
 export interface PivotFieldOverrideOptions {
   /** Field name to match (required) */
   field: string;
-  /** All drilled (CT_PivotField @allDrilled) */
+  /** All drilled (CT_PivotField `@allDrilled`) */
   allDrilled?: boolean;
-  /** Auto show (CT_PivotField @autoShow) */
+  /** Auto show (CT_PivotField `@autoShow`) */
   autoShow?: boolean;
-  /** Count subtotal (CT_PivotField @countSubtotal) */
+  /** Count subtotal (CT_PivotField `@countSubtotal`) */
   countSubtotal?: boolean;
-  /** Average subtotal (CT_PivotField @avgSubtotal) */
+  /** Average subtotal (CT_PivotField `@avgSubtotal`) */
   avgSubtotal?: boolean;
-  /** CountA subtotal (CT_PivotField @countASubtotal) */
+  /** CountA subtotal (CT_PivotField `@countASubtotal`) */
   countASubtotal?: boolean;
-  /** Max subtotal (CT_PivotField @maxSubtotal) */
+  /** Max subtotal (CT_PivotField `@maxSubtotal`) */
   maxSubtotal?: boolean;
-  /** Min subtotal (CT_PivotField @minSubtotal) */
+  /** Min subtotal (CT_PivotField `@minSubtotal`) */
   minSubtotal?: boolean;
-  /** Sum subtotal (CT_PivotField @sumSubtotal) */
+  /** Sum subtotal (CT_PivotField `@sumSubtotal`) */
   sumSubtotal?: boolean;
-  /** Data source sort (CT_PivotField @dataSourceSort) */
+  /** Data source sort (CT_PivotField `@dataSourceSort`) */
   dataSourceSort?: boolean;
-  /** Default attribute drill state (CT_PivotField @defaultAttributeDrillState) */
+  /** Default attribute drill state (CT_PivotField `@defaultAttributeDrillState`) */
   defaultAttributeDrillState?: boolean;
-  /** Hidden level (CT_PivotField @hiddenLevel) */
+  /** Hidden level (CT_PivotField `@hiddenLevel`) */
   hiddenLevel?: boolean;
-  /** Hide new items (CT_PivotField @hideNewItems) */
+  /** Hide new items (CT_PivotField `@hideNewItems`) */
   hideNewItems?: boolean;
-  /** Insert blank row (CT_PivotField @insertBlankRow) */
+  /** Insert blank row (CT_PivotField `@insertBlankRow`) */
   insertBlankRow?: boolean;
-  /** Insert page break (CT_PivotField @insertPageBreak) */
+  /** Insert page break (CT_PivotField `@insertPageBreak`) */
   insertPageBreak?: boolean;
-  /** Item page count (CT_PivotField @itemPageCount) */
+  /** Item page count (CT_PivotField `@itemPageCount`) */
   itemPageCount?: boolean;
-  /** Measure filter (CT_PivotField @measureFilter) */
+  /** Measure filter (CT_PivotField `@measureFilter`) */
   measureFilter?: boolean;
-  /** Non auto sort default (CT_PivotField @nonAutoSortDefault) */
+  /** Non auto sort default (CT_PivotField `@nonAutoSortDefault`) */
   nonAutoSortDefault?: boolean;
-  /** Product subtotal (CT_PivotField @productSubtotal) */
+  /** Product subtotal (CT_PivotField `@productSubtotal`) */
   productSubtotal?: boolean;
-  /** Rank by (CT_PivotField @rankBy) */
+  /** Rank by (CT_PivotField `@rankBy`) */
   rankBy?: number;
-  /** Server field (CT_PivotField @serverField) */
+  /** Server field (CT_PivotField `@serverField`) */
   serverField?: boolean;
-  /** Show drop downs (CT_PivotField @showDropDowns) */
+  /** Show drop downs (CT_PivotField `@showDropDowns`) */
   showDropDowns?: boolean;
-  /** Show property as caption (CT_PivotField @showPropAsCaption) */
+  /** Show property as caption (CT_PivotField `@showPropAsCaption`) */
   showPropAsCaption?: boolean;
-  /** Show property cell (CT_PivotField @showPropCell) */
+  /** Show property cell (CT_PivotField `@showPropCell`) */
   showPropCell?: boolean;
-  /** Show property tip (CT_PivotField @showPropTip) */
+  /** Show property tip (CT_PivotField `@showPropTip`) */
   showPropTip?: boolean;
-  /** StdDevP subtotal (CT_PivotField @stdDevPSubtotal) */
+  /** StdDevP subtotal (CT_PivotField `@stdDevPSubtotal`) */
   stdDevPSubtotal?: boolean;
-  /** StdDev subtotal (CT_PivotField @stdDevSubtotal) */
+  /** StdDev subtotal (CT_PivotField `@stdDevSubtotal`) */
   stdDevSubtotal?: boolean;
-  /** Subtotal caption (CT_PivotField @subtotalCaption) */
+  /** Subtotal caption (CT_PivotField `@subtotalCaption`) */
   subtotalCaption?: string;
-  /** Top auto show (CT_PivotField @topAutoShow) */
+  /** Top auto show (CT_PivotField `@topAutoShow`) */
   topAutoShow?: boolean;
-  /** Unique member property (CT_PivotField @uniqueMemberProperty) */
+  /** Unique member property (CT_PivotField `@uniqueMemberProperty`) */
   uniqueMemberProperty?: boolean;
-  /** VarP subtotal (CT_PivotField @varPSubtotal) */
+  /** VarP subtotal (CT_PivotField `@varPSubtotal`) */
   varPSubtotal?: boolean;
-  /** Var subtotal (CT_PivotField @varSubtotal) */
+  /** Var subtotal (CT_PivotField `@varSubtotal`) */
   varSubtotal?: boolean;
-  /** Show detail for default item (CT_Item @sd) */
+  /** Show detail for default item (CT_Item `@sd`) */
   defaultItemSd?: boolean;
 }
 
@@ -209,11 +209,11 @@ export interface PivotFilterOptions {
 
 /** Page/report filter field (CT_PageField). */
 export interface PivotPageFieldOptions {
-  /** Field name to use as a page filter (CT_PageField @fld) */
+  /** Field name to use as a page filter (CT_PageField `@fld`) */
   field: string;
-  /** Caption override (CT_PageField @cap) */
+  /** Caption override (CT_PageField `@cap`) */
   caption?: string;
-  /** Selected item index (CT_PageField @item) */
+  /** Selected item index (CT_PageField `@item`) */
   item?: number;
 }
 
@@ -239,7 +239,7 @@ export interface PivotTableOptions {
   filters?: PivotFilterOptions[];
   /** Page/report filter fields (CT_PivotTableDefinition → pageFields) */
   pages?: PivotPageFieldOptions[];
-  /** Data fields on rows instead of columns (CT_PivotTableDefinition @dataOnRows) */
+  /** Data fields on rows instead of columns (CT_PivotTableDefinition `@dataOnRows`) */
   dataOnRows?: boolean;
   /** Grand total caption text */
   grandTotalCaption?: string;
@@ -319,13 +319,13 @@ export interface PivotTableOptions {
   mdxSubqueries?: boolean;
   /** Custom list sort */
   customListSort?: boolean;
-  /** Asterisk totals (CT_PivotTableDefinition @asteriskTotals) */
+  /** Asterisk totals (CT_PivotTableDefinition `@asteriskTotals`) */
   asteriskTotals?: boolean;
-  /** Data position (CT_PivotTableDefinition @dataPosition) */
+  /** Data position (CT_PivotTableDefinition `@dataPosition`) */
   dataPosition?: number;
-  /** Immersive (CT_PivotTableDefinition @immersive) */
+  /** Immersive (CT_PivotTableDefinition `@immersive`) */
   immersive?: boolean;
-  /** Vacated style (CT_PivotTableDefinition @vacatedStyle) */
+  /** Vacated style (CT_PivotTableDefinition `@vacatedStyle`) */
   vacatedStyle?: string;
   /** Calculated items (CT_CalculatedItems) */
   calculatedItems?: CalculatedItemOptions[];
@@ -337,9 +337,9 @@ export interface PivotTableOptions {
   pivotConditionalFormats?: PivotConditionalFormatOptions[];
   /** Chart formats (CT_ChartFormats) */
   chartFormats?: ChartFormatOptions[];
-  /** Chart format applied (CT_PivotTableDefinition @chartFormat) */
+  /** Chart format applied (CT_PivotTableDefinition `@chartFormat`) */
   chartFormat?: boolean;
-  /** Preserve formatting on refresh (CT_PivotTableDefinition @preserveFormatting, default true) */
+  /** Preserve formatting on refresh (CT_PivotTableDefinition `@preserveFormatting`, default true) */
   preserveFormatting?: boolean;
   /** Auto sort scope (CT_AutoSortScope) */
   autoSortScope?: PivotAreaOptions;
@@ -351,9 +351,9 @@ export interface PivotTableOptions {
   rowHierarchiesUsage?: HierarchyUsageOptions[];
   /** Column hierarchy usage (CT_ColHierarchiesUsage) */
   colHierarchiesUsage?: HierarchyUsageOptions[];
-  /** Location column page count (CT_Location @colPageCount) */
+  /** Location column page count (CT_Location `@colPageCount`) */
   locationColPageCount?: number;
-  /** Location row page count (CT_Location @rowPageCount) */
+  /** Location row page count (CT_Location `@rowPageCount`) */
   locationRowPageCount?: number;
   /** Per-field overrides for pivotField (CT_PivotField attributes) */
   fieldOverrides?: PivotFieldOverrideOptions[];
@@ -431,7 +431,7 @@ export interface PivotHierarchyOptions {
 export interface MemberOptions {
   /** Member name (required) */
   name: string;
-  /** Level (CT_Member @level) */
+  /** Level (CT_Member `@level`) */
   level?: number;
 }
 
@@ -445,13 +445,13 @@ export interface MemberPropertyOptions {
   showCell?: boolean;
   /** Show tip? */
   showTip?: boolean;
-  /** Show as caption (CT_MemberProperty @showAsCaption) */
+  /** Show as caption (CT_MemberProperty `@showAsCaption`) */
   showAsCaption?: boolean;
-  /** Name length (CT_MemberProperty @nameLen) */
+  /** Name length (CT_MemberProperty `@nameLen`) */
   nameLen?: number;
-  /** Property position (CT_MemberProperty @pPos) */
+  /** Property position (CT_MemberProperty `@pPos`) */
   pPos?: number;
-  /** Property length (CT_MemberProperty @pLen) */
+  /** Property length (CT_MemberProperty `@pLen`) */
   pLen?: number;
 }
 
@@ -509,17 +509,17 @@ export interface PivotAreaReferenceOptions {
   maxSubtotal?: boolean;
   /** Min subtotal */
   minSubtotal?: boolean;
-  /** Count subtotal (CT_Reference @countSubtotal) */
+  /** Count subtotal (CT_Reference `@countSubtotal`) */
   countSubtotal?: boolean;
-  /** Product subtotal (CT_Reference @productSubtotal) */
+  /** Product subtotal (CT_Reference `@productSubtotal`) */
   productSubtotal?: boolean;
-  /** StdDevP subtotal (CT_Reference @stdDevPSubtotal) */
+  /** StdDevP subtotal (CT_Reference `@stdDevPSubtotal`) */
   stdDevPSubtotal?: boolean;
-  /** StdDev subtotal (CT_Reference @stdDevSubtotal) */
+  /** StdDev subtotal (CT_Reference `@stdDevSubtotal`) */
   stdDevSubtotal?: boolean;
-  /** VarP subtotal (CT_Reference @varPSubtotal) */
+  /** VarP subtotal (CT_Reference `@varPSubtotal`) */
   varPSubtotal?: boolean;
-  /** Var subtotal (CT_Reference @varSubtotal) */
+  /** Var subtotal (CT_Reference `@varSubtotal`) */
   varSubtotal?: boolean;
   /** X indices */
   x?: number[];
@@ -589,11 +589,11 @@ export interface CacheHierarchyOptions {
   oneField?: boolean;
   /** Hidden (default: false) */
   hidden?: boolean;
-  /** Member value datatype (CT_CacheHierarchy @memberValueDatatype) */
+  /** Member value datatype (CT_CacheHierarchy `@memberValueDatatype`) */
   memberValueDatatype?: "string" | "number" | "integer" | "boolean" | "error";
-  /** Unbalanced (CT_CacheHierarchy @unbalanced) */
+  /** Unbalanced (CT_CacheHierarchy `@unbalanced`) */
   unbalanced?: boolean;
-  /** Unbalanced group (CT_CacheHierarchy @unbalancedGroup) */
+  /** Unbalanced group (CT_CacheHierarchy `@unbalancedGroup`) */
   unbalancedGroup?: boolean;
   /** Group levels (CT_GroupLevels) */
   groupLevels?: GroupLevelOptions[];
@@ -654,9 +654,9 @@ export interface SetOptions {
     | "descendingNatural";
   /** Query failed (default: false) */
   queryFailed?: boolean;
-  /** Sort/filter tuples (CT_Set @tpls → CT_Tuples) */
+  /** Sort/filter tuples (CT_Set `@tpls` → CT_Tuples) */
   tpls?: TupleOptions[];
-  /** Sort-by tuples (CT_Set @sortByTuple → CT_Tuples) */
+  /** Sort-by tuples (CT_Set `@sortByTuple` → CT_Tuples) */
   sortByTuple?: TupleOptions[];
 }
 
@@ -716,13 +716,13 @@ export interface PivotDimensionOptions {
 
 /** Range set for consolidation source (CT_RangeSet) */
 export interface RangeSetOptions {
-  /** Index for page field 1 (CT_RangeSet @i1) */
+  /** Index for page field 1 (CT_RangeSet `@i1`) */
   pageFieldIndex1?: number;
-  /** Index for page field 2 (CT_RangeSet @i2) */
+  /** Index for page field 2 (CT_RangeSet `@i2`) */
   pageFieldIndex2?: number;
-  /** Index for page field 3 (CT_RangeSet @i3) */
+  /** Index for page field 3 (CT_RangeSet `@i3`) */
   pageFieldIndex3?: number;
-  /** Index for page field 4 (CT_RangeSet @i4) */
+  /** Index for page field 4 (CT_RangeSet `@i4`) */
   pageFieldIndex4?: number;
   /** Cell reference */
   ref?: string;
@@ -762,11 +762,11 @@ export interface TupleCacheEntryOptions {
   type: "m" | "n" | "e" | "s";
   /** Value (required for n/s, optional for e) */
   value?: number | string;
-  /** Member-property count/caption index (CT_Number @cp) — OLAP caches only */
+  /** Member-property count/caption index (CT_Number `@cp`) — OLAP caches only */
   captionIndex?: number;
-  /** Property index (CT_Number @in) — OLAP caches only */
+  /** Property index (CT_Number `@in`) — OLAP caches only */
   propertyIndex?: number;
-  /** Underline flag (CT_Number @un) */
+  /** Underline flag (CT_Number `@un`) */
   underline?: boolean;
 }
 
@@ -866,7 +866,7 @@ export interface OLAPPropertiesOptions {
   rowDrillCount?: number;
   /** Column dimensions */
   colDrillCount?: number;
-  /** Local refresh (CT_OlapPr @localRefresh) */
+  /** Local refresh (CT_OlapPr `@localRefresh`) */
   localRefresh?: boolean;
   /** Use server fill formatting */
   serverFill?: boolean;
@@ -967,42 +967,42 @@ function sampleVariance(values: number[]): number {
 // ── PivotCacheDefinition types (extracted from pivot-cache-definition-xml) ──
 
 export interface CacheFieldExtraAttrs {
-  /** Database field (CT_CacheField @databaseField) */
+  /** Database field (CT_CacheField `@databaseField`) */
   databaseField?: boolean;
-  /** Level (CT_CacheField @level) */
+  /** Level (CT_CacheField `@level`) */
   level?: number;
-  /** Mapping count (CT_CacheField @mappingCount) */
+  /** Mapping count (CT_CacheField `@mappingCount`) */
   mappingCount?: number;
-  /** Member property field (CT_CacheField @memberPropertyField) */
+  /** Member property field (CT_CacheField `@memberPropertyField`) */
   memberPropertyField?: number;
-  /** Property name (CT_CacheField @propertyName) */
+  /** Property name (CT_CacheField `@propertyName`) */
   propertyName?: string;
-  /** Server field (CT_CacheField @serverField) */
+  /** Server field (CT_CacheField `@serverField`) */
   serverField?: boolean;
-  /** Unique list (CT_CacheField @uniqueList) */
+  /** Unique list (CT_CacheField `@uniqueList`) */
   uniqueList?: boolean;
-  /** SQL data type (CT_CacheField @sqlType) */
+  /** SQL data type (CT_CacheField `@sqlType`) */
   sqlType?: number;
-  /** Shared items contains mixed types (CT_SharedItems @containsMixedTypes) */
+  /** Shared items contains mixed types (CT_SharedItems `@containsMixedTypes`) */
   containsMixedTypes?: boolean;
-  /** Shared items contains non-date (CT_SharedItems @containsNonDate) */
+  /** Shared items contains non-date (CT_SharedItems `@containsNonDate`) */
   containsNonDate?: boolean;
-  /** Shared items long text (CT_SharedItems @longText) */
+  /** Shared items long text (CT_SharedItems `@longText`) */
   longText?: boolean;
-  /** Shared items max date (CT_SharedItems @maxDate) */
+  /** Shared items max date (CT_SharedItems `@maxDate`) */
   maxDate?: string;
-  /** Shared items min date (CT_SharedItems @minDate) */
+  /** Shared items min date (CT_SharedItems `@minDate`) */
   minDate?: string;
 }
 
 export interface PivotCacheDefinitionOptions {
-  /** Cache is invalid (CT_PivotCacheDefinition @invalid) */
+  /** Cache is invalid (CT_PivotCacheDefinition `@invalid`) */
   invalid?: boolean;
-  /** Save data with cache (CT_PivotCacheDefinition @saveData) */
+  /** Save data with cache (CT_PivotCacheDefinition `@saveData`) */
   saveData?: boolean;
-  /** Optimize memory usage (CT_PivotCacheDefinition @optimizeMemory) */
+  /** Optimize memory usage (CT_PivotCacheDefinition `@optimizeMemory`) */
   optimizeMemory?: boolean;
-  /** Enable refresh (CT_PivotCacheDefinition @enableRefresh) */
+  /** Enable refresh (CT_PivotCacheDefinition `@enableRefresh`) */
   enableRefresh?: boolean;
   /** User who last refreshed */
   refreshedBy?: string;
@@ -1010,7 +1010,7 @@ export interface PivotCacheDefinitionOptions {
   refreshedDate?: number;
   /** Date of last refresh (ISO 8601) */
   refreshedDateIso?: string;
-  /** Background query (CT_PivotCacheDefinition @backgroundQuery) */
+  /** Background query (CT_PivotCacheDefinition `@backgroundQuery`) */
   backgroundQuery?: boolean;
   /** Missing items limit */
   missingItemsLimit?: number;
@@ -1020,9 +1020,9 @@ export interface PivotCacheDefinitionOptions {
   supportSubquery?: boolean;
   /** Support advanced drill */
   supportAdvancedDrill?: boolean;
-  /** Refresh cache when the workbook opens (CT_PivotCacheDefinition @refreshOnLoad) */
+  /** Refresh cache when the workbook opens (CT_PivotCacheDefinition `@refreshOnLoad`) */
   refreshOnLoad?: boolean;
-  /** Tuple cache is stored (CT_PivotCacheDefinition @tupleCache) */
+  /** Tuple cache is stored (CT_PivotCacheDefinition `@tupleCache`) */
   tupleCache?: boolean;
   /** Cache hierarchies (CT_CacheHierarchies) */
   cacheHierarchies?: CacheHierarchyOptions[];

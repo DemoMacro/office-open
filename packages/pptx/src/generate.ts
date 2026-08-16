@@ -10,7 +10,7 @@ import type { PresentationOptions } from "@shared/file";
 
 import { compilePresentation } from "./compiler";
 
-/** @internal Packer instance for PPTX generation. */
+/** `@internal` Packer instance for PPTX generation. */
 const Packer = createPacker<PresentationOptions>({
   compile: (options, overrides, mediaLevel) => compilePresentation(options, overrides, mediaLevel),
   mimeType: OoxmlMimeType.PPTX,
@@ -27,7 +27,7 @@ const Packer = createPacker<PresentationOptions>({
  *
  * @example
  * ```typescript
- * import { generatePresentation } from "@office-open/pptx";
+ * import { generatePresentation } from "`@office`-open/pptx";
  *
  * const buffer = await generatePresentation({ slides: [...] });
  * const bytes = await generatePresentation({ slides: [...] }, { type: "uint8array" });

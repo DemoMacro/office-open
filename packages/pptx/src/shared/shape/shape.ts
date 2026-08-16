@@ -53,7 +53,7 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   rotation?: number;
   textBody?: TextBodyOptions;
   locking?: ShapeLockingOptions;
-  /** CT_Placeholder @type — ST_PlaceholderType. */
+  /** CT_Placeholder `@type` — ST_PlaceholderType. */
   placeholder?:
     | "title"
     | "body"
@@ -72,9 +72,9 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
     | "sldImg"
     | "pic";
   placeholderIndex?: number;
-  /** CT_Placeholder @sz — sizing hint (default "full"). */
+  /** CT_Placeholder `@sz` — sizing hint (default "full"). */
   placeholderSize?: "full" | "half" | "quarter";
-  /** CT_Placeholder @orient — orientation hint (default "horz"). */
+  /** CT_Placeholder `@orient` — orientation hint (default "horz"). */
   placeholderOrientation?: "horz" | "vert";
   useBackgroundFill?: boolean;
   isPhoto?: boolean;

@@ -234,7 +234,7 @@ const SCHEME_TO_THEME: Record<string, (typeof ThemeColor)[keyof typeof ThemeColo
 };
 
 /** pptx FillOptions (a:fill) → docx ShadingProperties (w:shd). RGB hex and
- *  RgbColorOptions → @fill; SchemeColorOptions → @themeColor (token mapped);
+ *  RgbColorOptions → `@fill`; SchemeColorOptions → `@themeColor` (token mapped);
  *  hsl/system/preset/scRgb/phClr and color transforms → dropped (docx shading
  *  is RGB-hex or theme-color only). */
 function pptxFillToDocxShading(

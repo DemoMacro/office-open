@@ -18,7 +18,7 @@ export interface DatabasePropertiesOptions {
   connection: string;
   /** Command text */
   command?: string;
-  /** Server command text (CT_DbPr @serverCommand) */
+  /** Server command text (CT_DbPr `@serverCommand`) */
   serverCommand?: string;
   /** Command type: 1=cube, 2=SQL, 3=table (default 2) */
   commandType?: number;
@@ -29,31 +29,31 @@ export type WebTableSelection = string | number | null;
 
 /** Web query properties (CT_WebPr). */
 export interface WebPropertiesOptions {
-  /** Source URL (CT_WebPr @url) */
+  /** Source URL (CT_WebPr `@url`) */
   url?: string;
-  /** XML source query (CT_WebPr @xml) */
+  /** XML source query (CT_WebPr `@xml`) */
   xml?: boolean;
-  /** Source data included (CT_WebPr @sourceData) */
+  /** Source data included (CT_WebPr `@sourceData`) */
   sourceData?: boolean;
-  /** Parse PRE tags into columns (CT_WebPr @parsePre) */
+  /** Parse PRE tags into columns (CT_WebPr `@parsePre`) */
   parsePre?: boolean;
-  /** Consecutive delimiters as one (CT_WebPr @consecutive) */
+  /** Consecutive delimiters as one (CT_WebPr `@consecutive`) */
   consecutive?: boolean;
-  /** First row contains headers (CT_WebPr @firstRow) */
+  /** First row contains headers (CT_WebPr `@firstRow`) */
   firstRow?: boolean;
-  /** XL97 compatible (CT_WebPr @xl97) */
+  /** XL97 compatible (CT_WebPr `@xl97`) */
   xl97?: boolean;
-  /** Dates as text (CT_WebPr @textDates) */
+  /** Dates as text (CT_WebPr `@textDates`) */
   textDates?: boolean;
-  /** XL2000 compatible (CT_WebPr @xl2000) */
+  /** XL2000 compatible (CT_WebPr `@xl2000`) */
   xl2000?: boolean;
-  /** POST request body (CT_WebPr @post) */
+  /** POST request body (CT_WebPr `@post`) */
   post?: string;
-  /** HTML tables only (CT_WebPr @htmlTables) */
+  /** HTML tables only (CT_WebPr `@htmlTables`) */
   htmlTables?: boolean;
   /** HTML formatting: "all" | "rtf" | "none" (default "none") */
   htmlFormat?: string;
-  /** Edit page URL (CT_WebPr @editPage) */
+  /** Edit page URL (CT_WebPr `@editPage`) */
   editPage?: string;
   /** Selected tables (CT_Tables: string name, number index, null = all/missing) */
   tables?: WebTableSelection[];
@@ -83,7 +83,7 @@ export interface TextPropertiesOptions {
   sourceFile?: string;
   /** Tab-delimited (default true) */
   delimited?: boolean;
-  /** User-defined delimiter character (CT_TextPr @delimiter) */
+  /** User-defined delimiter character (CT_TextPr `@delimiter`) */
   delimiter?: string;
   /** Decimal separator (default ".") */
   decimal?: string;
@@ -165,15 +165,15 @@ export interface ConnectionOptions {
   new?: boolean;
   /** Connection deleted (default false) */
   deleted?: boolean;
-  /** Source file path (CT_Connection @sourceFile) */
+  /** Source file path (CT_Connection `@sourceFile`) */
   sourceFile?: string;
-  /** ODC file path (CT_Connection @odcFile) */
+  /** ODC file path (CT_Connection `@odcFile`) */
   odcFile?: string;
   /** Only use the connection file (default false) */
   onlyUseConnectionFile?: boolean;
   /** Reconnection method (default 1) */
   reconnectionMethod?: number;
-  /** Single sign-on ID (CT_Connection @singleSignOnId) */
+  /** Single sign-on ID (CT_Connection `@singleSignOnId`) */
   singleSignOnId?: string;
   /** Database properties (CT_DbPr) */
   dbPr?: DatabasePropertiesOptions;

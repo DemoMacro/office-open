@@ -69,11 +69,11 @@ export interface ChartsheetOptions {
   headerFooter?: ChartsheetHeaderFooterOptions;
   /** Sheet protection */
   sheetProtection?: ChartsheetProtectionOptions;
-  /** Published to server (CT_ChartsheetPr @published) */
+  /** Published to server (CT_ChartsheetPr `@published`) */
   published?: boolean;
-  /** VBA code name (CT_ChartsheetPr @codeName) */
+  /** VBA code name (CT_ChartsheetPr `@codeName`) */
   codeName?: string;
-  /** Zoom to fit (CT_ChartsheetView @zoomToFit) */
+  /** Zoom to fit (CT_ChartsheetView `@zoomToFit`) */
   zoomToFit?: boolean;
   /** Chart definition (type, title, series, etc.) */
   chart: {

@@ -26,9 +26,9 @@ export type DisplacedByCustomXml = "before" | "after";
  * Reference: wml.xsd CT_MarkupRange, EG_RangeMarkupElements
  */
 export interface MarkupRangeOptions {
-  /** Marker identifier (CT_Markup @w:id, required). */
+  /** Marker identifier (CT_Markup `@w:id`, required). */
   id: number;
-  /** Displacement relative to a sibling customXml (CT_MarkupRange @w:displacedByCustomXml). */
+  /** Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`). */
   displacedByCustomXml?: DisplacedByCustomXml;
 }
 
@@ -42,11 +42,11 @@ export interface MarkupRangeOptions {
  * Reference: wml.xsd CT_Bookmark, CT_BookmarkRange
  */
 export interface BookmarkStartOptions extends MarkupRangeOptions {
-  /** Bookmark name used for reference (CT_Bookmark @w:name, required). */
+  /** Bookmark name used for reference (CT_Bookmark `@w:name`, required). */
   name: string;
-  /** First column of a table-cell bookmark scope (CT_BookmarkRange @w:colFirst). */
+  /** First column of a table-cell bookmark scope (CT_BookmarkRange `@w:colFirst`). */
   colFirst?: number;
-  /** Last column of a table-cell bookmark scope (CT_BookmarkRange @w:colLast). */
+  /** Last column of a table-cell bookmark scope (CT_BookmarkRange `@w:colLast`). */
   colLast?: number;
 }
 
@@ -60,19 +60,19 @@ export interface BookmarkStartOptions extends MarkupRangeOptions {
  * Reference: wml.xsd CT_MoveBookmark, EG_RangeMarkupElements
  */
 export interface MoveRangeStartOptions {
-  /** Move range identifier (CT_Markup @w:id, required). */
+  /** Move range identifier (CT_Markup `@w:id`, required). */
   id: number;
-  /** Move range name (CT_Bookmark @w:name — required by XSD, often absent in Word). */
+  /** Move range name (CT_Bookmark `@w:name` — required by XSD, often absent in Word). */
   name?: string;
-  /** Author of the move (CT_MoveBookmark @w:author). */
+  /** Author of the move (CT_MoveBookmark `@w:author`). */
   author?: string;
-  /** Date of the move (CT_MoveBookmark @w:date). */
+  /** Date of the move (CT_MoveBookmark `@w:date`). */
   date?: string;
-  /** Displacement relative to a sibling customXml (CT_MarkupRange @w:displacedByCustomXml). */
+  /** Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`). */
   displacedByCustomXml?: DisplacedByCustomXml;
-  /** First column of a table-cell move range scope (CT_BookmarkRange @w:colFirst). */
+  /** First column of a table-cell move range scope (CT_BookmarkRange `@w:colFirst`). */
   colFirst?: number;
-  /** Last column of a table-cell move range scope (CT_BookmarkRange @w:colLast). */
+  /** Last column of a table-cell move range scope (CT_BookmarkRange `@w:colLast`). */
   colLast?: number;
 }
 
@@ -88,15 +88,15 @@ export interface MoveRangeStartOptions {
  * Reference: wml.xsd CT_Bookmark, CT_BookmarkRange, EG_RangeMarkupElements.
  */
 export interface BookmarkOptions {
-  /** Bookmark name used for reference (CT_Bookmark @w:name, required). */
+  /** Bookmark name used for reference (CT_Bookmark `@w:name`, required). */
   name: string;
   /** Anchored document content the bookmark range wraps (inline runs/text). */
   wrap?: (string | RunOptions)[];
-  /** Displacement relative to a sibling customXml (CT_MarkupRange @w:displacedByCustomXml). */
+  /** Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`). */
   displacedByCustomXml?: DisplacedByCustomXml;
-  /** First column of a table-cell bookmark scope (CT_BookmarkRange @w:colFirst). */
+  /** First column of a table-cell bookmark scope (CT_BookmarkRange `@w:colFirst`). */
   colFirst?: number;
-  /** Last column of a table-cell bookmark scope (CT_BookmarkRange @w:colLast). */
+  /** Last column of a table-cell bookmark scope (CT_BookmarkRange `@w:colLast`). */
   colLast?: number;
 }
 
@@ -115,19 +115,19 @@ export interface BookmarkOptions {
  * Reference: wml.xsd CT_MoveBookmark, CT_TrackChange, EG_RangeMarkupElements.
  */
 export interface MoveRangeOptions {
-  /** Author of the move (CT_MoveBookmark + move run @w:author, required). */
+  /** Author of the move (CT_MoveBookmark + move run `@w:author`, required). */
   author: string;
-  /** Date of the move (CT_MoveBookmark + move run @w:date, required). */
+  /** Date of the move (CT_MoveBookmark + move run `@w:date`, required). */
   date: string;
   /** Moved content carried by the move run (inline runs/text). */
   wrap?: (string | RunOptions)[];
-  /** Move range name (CT_Bookmark @w:name, required). Share it across the
+  /** Move range name (CT_Bookmark `@w:name`, required). Share it across the
    * matching `moveFrom`/`moveTo` pair so Word links them into one move. */
   name: string;
-  /** Displacement relative to a sibling customXml (CT_MarkupRange @w:displacedByCustomXml). */
+  /** Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`). */
   displacedByCustomXml?: DisplacedByCustomXml;
-  /** First column of a table-cell move range scope (CT_BookmarkRange @w:colFirst). */
+  /** First column of a table-cell move range scope (CT_BookmarkRange `@w:colFirst`). */
   colFirst?: number;
-  /** Last column of a table-cell move range scope (CT_BookmarkRange @w:colLast). */
+  /** Last column of a table-cell move range scope (CT_BookmarkRange `@w:colLast`). */
   colLast?: number;
 }

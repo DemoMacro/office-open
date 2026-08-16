@@ -62,13 +62,13 @@ export interface TableColumnOptions {
   calculatedColumnFormula?: string;
   /** Totals row formula (CT_TableColumn/totalsRowFormula, used when totalsRowFunction is "custom") */
   totalsRowFormula?: string;
-  /** Whether totals row formula is array (CT_TableFormula @array) */
+  /** Whether totals row formula is array (CT_TableFormula `@array`) */
   totalsRowFormulaArray?: boolean;
-  /** Whether calculated column formula is array (CT_TableFormula @array) */
+  /** Whether calculated column formula is array (CT_TableFormula `@array`) */
   calculatedColumnFormulaArray?: boolean;
-  /** Unique column name for structured references (CT_TableColumn @uniqueName) */
+  /** Unique column name for structured references (CT_TableColumn `@uniqueName`) */
   uniqueName?: string;
-  /** Query table field ID (CT_TableColumn @queryTableFieldId) */
+  /** Query table field ID (CT_TableColumn `@queryTableFieldId`) */
   queryTableFieldId?: number;
   /** Header row differential format index */
   headerRowDxfId?: number;
@@ -105,7 +105,7 @@ export interface TableOptions {
   name?: string;
   /** Display name (required by XSD, defaults to name if not set) */
   displayName: string;
-  /** Table comment (CT_Table @comment) */
+  /** Table comment (CT_Table `@comment`) */
   comment?: string;
   /** Data range, e.g. "A1:D10" */
   ref: string;
@@ -113,7 +113,7 @@ export interface TableOptions {
   columns: TableColumnOptions[];
   /** Number of header rows (default: 1) */
   headerRowCount?: number;
-  /** Insert row allowed (CT_Table @insertRow) */
+  /** Insert row allowed (CT_Table `@insertRow`) */
   insertRow?: boolean;
   /** Number of totals rows (default: 0) */
   totalsRowCount?: number;
@@ -125,9 +125,9 @@ export interface TableOptions {
   style?: TableStyleInfoOptions;
   /** Auto-filter (ref shorthand or structured filter columns/sort state) */
   autoFilter?: string | AutoFilterOptions;
-  /** Insert row shifts existing rows (CT_Table @insertRowShift) */
+  /** Insert row shifts existing rows (CT_Table `@insertRowShift`) */
   insertRowShift?: boolean;
-  /** Published to server (CT_Table @published) */
+  /** Published to server (CT_Table `@published`) */
   published?: boolean;
   /** Header row differential format index */
   headerRowDxfId?: number;
@@ -147,7 +147,7 @@ export interface TableOptions {
   dataCellStyle?: string;
   /** Totals row cell style name */
   totalsRowCellStyle?: string;
-  /** Query table connection ID (CT_Table @connectionId) */
+  /** Query table connection ID (CT_Table `@connectionId`) */
   connectionId?: number;
 }
 

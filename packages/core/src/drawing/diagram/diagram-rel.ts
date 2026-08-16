@@ -11,13 +11,13 @@
 // ---------------------------------------------------------------------------
 
 export interface DiagramRelationshipIdsOptions {
-  /** Relationship to data model part (@r:dm) */
+  /** Relationship to data model part (`@r:dm`) */
   dataModel: string;
-  /** Relationship to layout definition part (@r:lo) */
+  /** Relationship to layout definition part (`@r:lo`) */
   layout: string;
-  /** Relationship to quick style part (@r:qs) */
+  /** Relationship to quick style part (`@r:qs`) */
   quickStyle: string;
-  /** Relationship to color transform part (@r:cs) */
+  /** Relationship to color transform part (`@r:cs`) */
   colorStyle: string;
 }
 

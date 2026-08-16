@@ -71,12 +71,12 @@
           "type": "array"
         },
         "revision": {
-          "description": "Revision counter (dgm:alg",
+          "description": "Revision counter (dgm:alg `@rev`).",
           "type": "number"
         },
         "type": {
           "$ref": "#/definitions/AlgorithmType",
-          "description": "Layout algorithm (dgm:alg"
+          "description": "Layout algorithm (dgm:alg `@type`)."
         }
       },
       "required": ["type"],
@@ -87,11 +87,11 @@
       "description": "dgm:param (CT_Parameter) — inlined in AlgorithmOptions.parameters.",
       "properties": {
         "type": {
-          "description": "Parameter name (dgm:param",
+          "description": "Parameter name (dgm:param `@type`, ST_ParameterId).",
           "type": "string"
         },
         "value": {
-          "description": "Parameter value (dgm:param",
+          "description": "Parameter value (dgm:param `@val`, ST_ParameterVal — a union of direction tokens, numbers, and booleans, so it stays polymorphic).",
           "type": ["string", "number", "boolean"]
         }
       },
@@ -99,7 +99,7 @@
       "type": "object"
     },
     "AlgorithmType": {
-      "description": "ST_AlgorithmType (dgm:alg",
+      "description": "ST_AlgorithmType (dgm:alg `@type`).",
       "enum": [
         "composite",
         "conn",
@@ -164,7 +164,7 @@
       "description": "Options for alpha replace effect.\n\n## XSD: CT_AlphaReplaceEffect ```xml <xsd:attribute name=\"a\" type=\"ST_PositiveFixedPercentage\" use=\"required\"/> ```",
       "properties": {
         "alpha": {
-          "description": "Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to",
+          "description": "Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to `@a`.",
           "type": "number"
         }
       },
@@ -446,11 +446,11 @@
                   "type": "string"
                 },
                 "categoryIndex": {
-                  "description": "Category index (a:chart",
+                  "description": "Category index (a:chart `@categoryIdx`, default -1)",
                   "type": "number"
                 },
                 "seriesIndex": {
-                  "description": "Series index (a:chart",
+                  "description": "Series index (a:chart `@seriesIdx`, default -1)",
                   "type": "number"
                 }
               },
@@ -462,12 +462,12 @@
               "description": "Diagram element (a:dgm).",
               "properties": {
                 "buildStep": {
-                  "description": "Build step (a:dgm",
+                  "description": "Build step (a:dgm `@bldStep`, default \"sp\")",
                   "enum": ["sp", "bg"],
                   "type": "string"
                 },
                 "id": {
-                  "description": "Diagram node GUID (a:dgm",
+                  "description": "Diagram node GUID (a:dgm `@id`)",
                   "type": "string"
                 }
               },
@@ -481,7 +481,7 @@
           "type": "number"
         },
         "inkTargetShapeId": {
-          "description": "Ink target shape ID (p:inkTgt",
+          "description": "Ink target shape ID (p:inkTgt `@spid`).",
           "type": "number"
         },
         "isNarration": {
@@ -555,11 +555,11 @@
           "type": "number"
         },
         "oleChartElementLevel": {
-          "description": "OLE chart element level (p:oleChartEl",
+          "description": "OLE chart element level (p:oleChartEl `@lvl`).",
           "type": "number"
         },
         "oleChartElementType": {
-          "description": "OLE chart element type (p:oleChartEl",
+          "description": "OLE chart element type (p:oleChartEl `@type`).",
           "type": "string"
         },
         "override": {
@@ -652,7 +652,7 @@
           "type": "number"
         },
         "subShapeId": {
-          "description": "Sub-shape ID (p:subSp",
+          "description": "Sub-shape ID (p:subSp `@spid`).",
           "type": "number"
         },
         "subTimeNodes": {
@@ -721,7 +721,7 @@
           "description": "Chart build (a:bldChart).",
           "properties": {
             "animateBackground": {
-              "description": "Animate chart background (@animBg, default true)",
+              "description": "Animate chart background (`@animBg`, default true)",
               "type": "boolean"
             },
             "build": {
@@ -740,7 +740,7 @@
               "type": "string"
             },
             "reverse": {
-              "description": "Reverse build order (@rev, default false)",
+              "description": "Reverse build order (`@rev`, default false)",
               "type": "boolean"
             }
           },
@@ -950,11 +950,11 @@
                   "type": "string"
                 },
                 "categoryIndex": {
-                  "description": "Category index (a:chart",
+                  "description": "Category index (a:chart `@categoryIdx`, default -1)",
                   "type": "number"
                 },
                 "seriesIndex": {
-                  "description": "Series index (a:chart",
+                  "description": "Series index (a:chart `@seriesIdx`, default -1)",
                   "type": "number"
                 }
               },
@@ -966,12 +966,12 @@
               "description": "Diagram element (a:dgm).",
               "properties": {
                 "buildStep": {
-                  "description": "Build step (a:dgm",
+                  "description": "Build step (a:dgm `@bldStep`, default \"sp\")",
                   "enum": ["sp", "bg"],
                   "type": "string"
                 },
                 "id": {
-                  "description": "Diagram node GUID (a:dgm",
+                  "description": "Diagram node GUID (a:dgm `@id`)",
                   "type": "string"
                 }
               },
@@ -985,7 +985,7 @@
           "type": "number"
         },
         "inkTargetShapeId": {
-          "description": "Ink target shape ID (p:inkTgt",
+          "description": "Ink target shape ID (p:inkTgt `@spid`).",
           "type": "number"
         },
         "isNarration": {
@@ -1059,11 +1059,11 @@
           "type": "number"
         },
         "oleChartElementLevel": {
-          "description": "OLE chart element level (p:oleChartEl",
+          "description": "OLE chart element level (p:oleChartEl `@lvl`).",
           "type": "number"
         },
         "oleChartElementType": {
-          "description": "OLE chart element type (p:oleChartEl",
+          "description": "OLE chart element type (p:oleChartEl `@type`).",
           "type": "string"
         },
         "override": {
@@ -1153,7 +1153,7 @@
           "type": "number"
         },
         "subShapeId": {
-          "description": "Sub-shape ID (p:subSp",
+          "description": "Sub-shape ID (p:subSp `@spid`).",
           "type": "number"
         },
         "subTimeNodes": {
@@ -1406,7 +1406,7 @@
       "description": "A point on an audio CD (CT_AudioCDTime).",
       "properties": {
         "time": {
-          "description": "Offset within the track, in seconds (CT_AudioCDTime",
+          "description": "Offset within the track, in seconds (CT_AudioCDTime `@time`, default 0)",
           "type": "number"
         },
         "track": {
@@ -1425,11 +1425,11 @@
           "description": "CD audio playback (a:audioCd) — mutually exclusive with data"
         },
         "audioFileName": {
-          "description": "Original audio file name (CT_EmbeddedWAVAudioFile",
+          "description": "Original audio file name (CT_EmbeddedWAVAudioFile `@name`, wav only)",
           "type": "string"
         },
         "contentType": {
-          "description": "MIME content type of the linked audio (CT_AudioFile",
+          "description": "MIME content type of the linked audio (CT_AudioFile `@contentType`)",
           "type": "string"
         },
         "data": {
@@ -1437,7 +1437,7 @@
           "description": "Audio bytes — required for file-based audio, omitted for CD audio"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "height": {
@@ -1450,16 +1450,19 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
           "type": "number"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "type": {
@@ -1804,7 +1807,7 @@
       "type": "object"
     },
     "BlackWhiteMode": {
-      "description": "ST_BlackWhiteMode — the 11 token values for the",
+      "description": "ST_BlackWhiteMode — the 11 token values for the `@bwMode` attribute.",
       "enum": [
         "clr",
         "auto",
@@ -2220,7 +2223,7 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont",
+          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
           "type": "string"
         },
         "fontFollowsText": {
@@ -2231,7 +2234,7 @@
           "type": "string"
         },
         "size": {
-          "description": "a:buSzPct",
+          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -2239,7 +2242,7 @@
           "type": "boolean"
         },
         "sizePoints": {
-          "description": "a:buSzPts",
+          "description": "a:buSzPts `@val` — bullet size in points.",
           "type": "number"
         },
         "startAt": {
@@ -2268,7 +2271,7 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont",
+          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
           "type": "string"
         },
         "fontFollowsText": {
@@ -2276,7 +2279,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct",
+          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -2284,7 +2287,7 @@
           "type": "boolean"
         },
         "sizePoints": {
-          "description": "a:buSzPts",
+          "description": "a:buSzPts `@val` — bullet size in points.",
           "type": "number"
         },
         "type": {
@@ -2338,7 +2341,7 @@
           "type": "string"
         },
         "font": {
-          "description": "a:buFont",
+          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
           "type": "string"
         },
         "fontFollowsText": {
@@ -2346,7 +2349,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct",
+          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -2354,7 +2357,7 @@
           "type": "boolean"
         },
         "sizePoints": {
-          "description": "a:buSzPts",
+          "description": "a:buSzPts `@val` — bullet size in points.",
           "type": "number"
         },
         "type": {
@@ -2402,7 +2405,7 @@
         },
         "prstMaterial": {
           "$ref": "#/definitions/PresetMaterial",
-          "description": "Preset material (@prstMaterial, default \"plastic\")"
+          "description": "Preset material (`@prstMaterial`, default \"plastic\")"
         }
       },
       "required": ["bevel"],
@@ -2475,7 +2478,7 @@
     },
     "ChartOptions": {
       "additionalProperties": false,
-      "description": "Chart frame options for pptx slides (p:graphicFrame referencing a c:chartSpace). The chart payload comes from  {@link  ChartSpaceOptions }  (core shared model, identical XML across packages); the cNvPr fields from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.\n\n`title` is the chart title (c:title) inherited from ChartSpaceOptions — the cNvPr",
+      "description": "Chart frame options for pptx slides (p:graphicFrame referencing a c:chartSpace). The chart payload comes from  {@link  ChartSpaceOptions }  (core shared model, identical XML across packages); the cNvPr fields from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.\n\n`title` is the chart title (c:title) inherited from ChartSpaceOptions — the cNvPr `@title` attribute is deliberately not exposed here so one JSON key cannot mean two XML attributes (alt text goes in `description`).",
       "properties": {
         "axes": {
           "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
@@ -2571,7 +2574,7 @@
           "description": "Plot-area data table (c:dTable)."
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "displayBlanksAs": {
@@ -2612,6 +2615,10 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "highLowLines": {
           "description": "High-low lines (c:hiLowLines, line/stock 2D).",
           "type": "boolean"
@@ -2621,7 +2628,7 @@
           "type": "number"
         },
         "id": {
-          "description": "Chart frame id (p:cNvPr",
+          "description": "Chart frame id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
         "legendEntries": {
@@ -2646,7 +2653,7 @@
           "type": "array"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "ofPieType": {
@@ -2798,7 +2805,6 @@
         }
       },
       "required": ["series", "type"],
-      "title": "attribute is deliberately not exposed here so one JSON key\ncannot mean two XML attributes (alt text goes in `description`).",
       "type": "object"
     },
     "ChartPageMarginsOptions": {
@@ -2963,7 +2969,7 @@
       "type": "string"
     },
     "ChildOrder": {
-      "description": "ST_ChildOrderType (dgm:layoutNode",
+      "description": "ST_ChildOrderType (dgm:layoutNode `@chOrder`).",
       "enum": ["b", "t"],
       "type": "string"
     },
@@ -3032,7 +3038,7 @@
           "type": "string"
         },
         "minVer": {
-          "description": "Minimum Office version (dgm:colorsDef",
+          "description": "Minimum Office version (dgm:colorsDef `@minVer`).",
           "type": "string"
         },
         "styleLabels": {
@@ -3050,7 +3056,7 @@
           "type": "array"
         },
         "uniqueId": {
-          "description": "Color-transform identity URI (dgm:colorsDef",
+          "description": "Color-transform identity URI (dgm:colorsDef `@uniqueId`).",
           "type": "string"
         }
       },
@@ -3221,7 +3227,7 @@
           "type": "string"
         },
         "name": {
-          "description": "clrScheme/@name (defaults to the theme name).",
+          "description": "clrScheme/`@name` (defaults to the theme name).",
           "type": "string"
         }
       },
@@ -3240,7 +3246,7 @@
           "$ref": "#/definitions/ColorListOptions"
         },
         "name": {
-          "description": "Label name referenced by dgm:layoutNode",
+          "description": "Label name referenced by dgm:layoutNode `@styleLbl` (required)",
           "type": "string"
         },
         "textEffectColorList": {
@@ -3381,12 +3387,12 @@
       "type": "string"
     },
     "ConditionFunction": {
-      "description": "ST_FunctionType (dgm:if",
+      "description": "ST_FunctionType (dgm:if `@func`).",
       "enum": ["cnt", "pos", "revPos", "posEven", "posOdd", "var", "depth", "maxDepth"],
       "type": "string"
     },
     "ConditionOperator": {
-      "description": "ST_FunctionOperator (dgm:if",
+      "description": "ST_FunctionOperator (dgm:if `@op`).",
       "enum": ["equ", "neq", "gt", "lt", "gte", "lte"],
       "type": "string"
     },
@@ -3414,7 +3420,7 @@
       "description": "Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint connection fields come from  {@link  BaseConnectorOptions } ; the rest is the pptx two-endpoint positioning model plus line fill/outline.",
       "properties": {
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "endConnection": {
@@ -3424,6 +3430,10 @@
         "fill": {
           "$ref": "#/definitions/FillOptions"
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
           "type": "number"
         },
@@ -3432,7 +3442,7 @@
           "description": "a:cxnSpLocks — connector locking (inside cNvCxnSpPr)."
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "outline": {
@@ -3443,8 +3453,7 @@
           "description": "a:stCxn — start endpoint glued to a shape connection site."
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "x1": {
@@ -3491,7 +3500,7 @@
       "type": "object"
     },
     "ConstraintOperator": {
-      "description": "ST_BoolOperator (dgm:constr",
+      "description": "ST_BoolOperator (dgm:constr `@op`).",
       "enum": ["none", "equ", "gte", "lte"],
       "type": "string"
     },
@@ -3500,47 +3509,47 @@
       "description": "dgm:constr (CT_Constraint).",
       "properties": {
         "factor": {
-          "description": "Factor applied to the reference (dgm:constr",
+          "description": "Factor applied to the reference (dgm:constr `@fact`).",
           "type": "number"
         },
         "for": {
           "$ref": "#/definitions/ConstraintRelationship",
-          "description": "Related point the constraint applies to (dgm:constr"
+          "description": "Related point the constraint applies to (dgm:constr `@for`)."
         },
         "forName": {
-          "description": "Layout-node name the constraint applies to (dgm:constr",
+          "description": "Layout-node name the constraint applies to (dgm:constr `@forName`).",
           "type": "string"
         },
         "operation": {
           "$ref": "#/definitions/ConstraintOperator",
-          "description": "How the reference combines with val (dgm:constr"
+          "description": "How the reference combines with val (dgm:constr `@op`)."
         },
         "pointType": {
-          "description": "Point kinds the constraint applies to (dgm:constr",
+          "description": "Point kinds the constraint applies to (dgm:constr `@ptType`).",
           "type": "string"
         },
         "referenceFor": {
           "$ref": "#/definitions/ConstraintRelationship",
-          "description": "Relationship of the referenced point (dgm:constr"
+          "description": "Relationship of the referenced point (dgm:constr `@refFor`)."
         },
         "referenceForName": {
-          "description": "Layout-node name of the referenced point (dgm:constr",
+          "description": "Layout-node name of the referenced point (dgm:constr `@refForName`).",
           "type": "string"
         },
         "referencePointType": {
-          "description": "Point kinds of the referenced point (dgm:constr",
+          "description": "Point kinds of the referenced point (dgm:constr `@refPtType`).",
           "type": "string"
         },
         "referenceType": {
           "$ref": "#/definitions/ConstraintType",
-          "description": "Referenced dimension (dgm:constr"
+          "description": "Referenced dimension (dgm:constr `@refType`)."
         },
         "type": {
           "$ref": "#/definitions/ConstraintType",
-          "description": "Constrained dimension (dgm:constr"
+          "description": "Constrained dimension (dgm:constr `@type`)."
         },
         "value": {
-          "description": "Absolute value (dgm:constr",
+          "description": "Absolute value (dgm:constr `@val`).",
           "type": "number"
         }
       },
@@ -3548,12 +3557,12 @@
       "type": "object"
     },
     "ConstraintRelationship": {
-      "description": "ST_ConstraintRelationship (dgm:constr",
+      "description": "ST_ConstraintRelationship (dgm:constr `@for`/`@refFor`).",
       "enum": ["self", "ch", "des"],
       "type": "string"
     },
     "ConstraintType": {
-      "description": "ST_ConstraintType (dgm:constr/@type/@refType, dgm:rule",
+      "description": "ST_ConstraintType (dgm:constr/`@type`/`@refType`, dgm:rule `@type`).",
       "enum": [
         "none",
         "alignOff",
@@ -3655,7 +3664,7 @@
           "description": "Color value (EG_ColorChoice)"
         },
         "name": {
-          "description": "Palette display name (CT_CustomColor",
+          "description": "Palette display name (CT_CustomColor `@name`, default \"\")",
           "type": "string"
         }
       },
@@ -4024,7 +4033,7 @@
       "type": "object"
     },
     "DiagramDirection": {
-      "description": "ST_Direction (dgm:dir",
+      "description": "ST_Direction (dgm:dir `@val`).",
       "enum": ["norm", "rev"],
       "type": "string"
     },
@@ -4033,27 +4042,27 @@
       "description": "AG_IteratorAttributes — the traversal selector shared by presOf, forEach, and when-branches. List-typed XSD attributes (axis, ptType, hideLastTrans, st, cnt, step) surface as strings; single values read fine too.",
       "properties": {
         "axis": {
-          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "description": "Selection axes, space-separated (dgm:`@axis`, ST_AxisTypes).",
           "type": "string"
         },
         "count": {
-          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "description": "Iteration count (dgm:`@cnt`, ST_UnsignedInts).",
           "type": "string"
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`, ST_Booleans).",
           "type": "string"
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`, ST_ElementTypes).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:@st, ST_Ints).",
+          "description": "Start index (dgm:`@st`, ST_Ints).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:@step, ST_Ints).",
+          "description": "Index step (dgm:`@step`, ST_Ints).",
           "type": "string"
         }
       },
@@ -4844,7 +4853,7 @@
       "description": "dgm:forEach (CT_ForEach) — apply children to each selected point.",
       "properties": {
         "axis": {
-          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "description": "Selection axes, space-separated (dgm:`@axis`, ST_AxisTypes).",
           "type": "string"
         },
         "children": {
@@ -4854,30 +4863,30 @@
           "type": "array"
         },
         "count": {
-          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "description": "Iteration count (dgm:`@cnt`, ST_UnsignedInts).",
           "type": "string"
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`, ST_Booleans).",
           "type": "string"
         },
         "name": {
           "type": "string"
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`, ST_ElementTypes).",
           "type": "string"
         },
         "reference": {
-          "description": "Reference to a named layout node instead of inline children (dgm:@ref).",
+          "description": "Reference to a named layout node instead of inline children (dgm:`@ref`).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:@st, ST_Ints).",
+          "description": "Start index (dgm:`@st`, ST_Ints).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:@step, ST_Ints).",
+          "description": "Index step (dgm:`@step`, ST_Ints).",
           "type": "string"
         }
       },
@@ -5065,7 +5074,8 @@
       "description": "Group shape options for pptx slides (p:grpSp). The cNvPr fields (name/description/title/hidden) come from  {@link  BaseGroupOptions } ; the rest is the pptx flat positioning model plus the group's children. The single source of truth for both the public slide-child entry and the descriptor.",
       "properties": {
         "bwMode": {
-          "$ref": "#/definitions/BlackWhiteMode"
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "`@bwMode` container attribute (ST_BlackWhiteMode) on p:grpSpPr."
         },
         "childExtent": {
           "additionalProperties": false,
@@ -5130,7 +5140,7 @@
           "type": "array"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "effects": {
@@ -5154,12 +5164,16 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
-          "description": "Group id (p:cNvPr",
+          "description": "Group id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "rotation": {
@@ -5167,8 +5181,7 @@
           "type": "number"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "width": {
@@ -5529,7 +5542,7 @@
           "description": "Sample data colored for the colors preview (dgm:clrData)."
         },
         "defaultStyle": {
-          "description": "Default quick-style label (dgm:layoutDef",
+          "description": "Default quick-style label (dgm:layoutDef `@defStyle`).",
           "type": "string"
         },
         "descriptions": {
@@ -5548,7 +5561,7 @@
           "description": "The layout tree (dgm:layoutNode, required)."
         },
         "minVer": {
-          "description": "Minimum Office version (dgm:layoutDef",
+          "description": "Minimum Office version (dgm:layoutDef `@minVer`).",
           "type": "string"
         },
         "sampleData": {
@@ -5567,7 +5580,7 @@
           "type": "array"
         },
         "uniqueId": {
-          "description": "Layout identity URI (dgm:layoutDef",
+          "description": "Layout identity URI (dgm:layoutDef `@uniqueId`).",
           "type": "string"
         }
       },
@@ -5694,7 +5707,7 @@
       "properties": {
         "childOrder": {
           "$ref": "#/definitions/ChildOrder",
-          "description": "Child ordering: bottom-first \"b\" or top-first \"t\" (dgm:@chOrder)."
+          "description": "Child ordering: bottom-first \"b\" or top-first \"t\" (dgm:`@chOrder`)."
         },
         "children": {
           "items": {
@@ -5707,15 +5720,15 @@
           "type": "string"
         },
         "moveWith": {
-          "description": "Move with another named layout node (dgm:@moveWith).",
+          "description": "Move with another named layout node (dgm:`@moveWith`).",
           "type": "string"
         },
         "name": {
-          "description": "Unique name referenced by constraints and moveWith (dgm:@name).",
+          "description": "Unique name referenced by constraints and moveWith (dgm:`@name`).",
           "type": "string"
         },
         "styleLabel": {
-          "description": "Formatting slot from styleDef/colorsDef (dgm:@styleLbl).",
+          "description": "Formatting slot from styleDef/colorsDef (dgm:`@styleLbl`).",
           "type": "string"
         }
       },
@@ -5799,7 +5812,7 @@
       "description": "dgm:rule (CT_NumericRule).",
       "properties": {
         "factor": {
-          "description": "Multiplied factor (dgm:rule",
+          "description": "Multiplied factor (dgm:rule `@fact`).",
           "type": "number"
         },
         "for": {
@@ -5809,7 +5822,7 @@
           "type": "string"
         },
         "maximum": {
-          "description": "Upper bound (dgm:rule",
+          "description": "Upper bound (dgm:rule `@max`).",
           "type": "number"
         },
         "pointType": {
@@ -5817,10 +5830,10 @@
         },
         "type": {
           "$ref": "#/definitions/ConstraintType",
-          "description": "Rule dimension (dgm:rule"
+          "description": "Rule dimension (dgm:rule `@type`)."
         },
         "value": {
-          "description": "Preferred value (dgm:rule",
+          "description": "Preferred value (dgm:rule `@val`).",
           "type": "number"
         }
       },
@@ -5839,31 +5852,31 @@
           "type": "array"
         },
         "blip": {
-          "description": "Preview picture relationship id (dgm:shape",
+          "description": "Preview picture relationship id (dgm:shape `@r:blip`).",
           "type": "string"
         },
         "blipPlaceholder": {
-          "description": "Use the picture placeholder (dgm:shape",
+          "description": "Use the picture placeholder (dgm:shape `@blipPhldr`).",
           "type": "boolean"
         },
         "hideGeometry": {
-          "description": "Hide the shape geometry, keep the text (dgm:shape",
+          "description": "Hide the shape geometry, keep the text (dgm:shape `@hideGeom`).",
           "type": "boolean"
         },
         "lockTextEntry": {
-          "description": "Lock text entry (dgm:shape",
+          "description": "Lock text entry (dgm:shape `@lkTxEntry`).",
           "type": "boolean"
         },
         "rotation": {
-          "description": "Shape rotation as a raw double (dgm:shape",
+          "description": "Shape rotation as a raw double (dgm:shape `@rot`).",
           "type": "number"
         },
         "type": {
-          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape",
+          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape `@type`, ST_LayoutShapeType).",
           "type": "string"
         },
         "zOrderOffset": {
-          "description": "Z-order offset (dgm:shape",
+          "description": "Z-order offset (dgm:shape `@zOrderOff`).",
           "type": "number"
         }
       },
@@ -5961,25 +5974,28 @@
       "additionalProperties": false,
       "properties": {
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
           "type": "number"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "x1": {
@@ -6051,7 +6067,7 @@
           "type": "array"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "height": {
@@ -6064,17 +6080,20 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
-          "description": "Locked canvas frame id (p:cNvPr",
+          "description": "Locked canvas frame id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "width": {
@@ -6429,6 +6448,7 @@
           "$ref": "#/definitions/MasterPlaceholderOptions"
         },
         "preserve": {
+          "description": "`@preserve` — keep this master even when no slide references it.",
           "type": "boolean"
         },
         "textStyles": {
@@ -6539,7 +6559,7 @@
           "type": "number"
         },
         "type": {
-          "description": "Connection kind (dgm:cxn",
+          "description": "Connection kind (dgm:cxn `@type`, ST_CxnType: parOf | presOf | unknownRelationship).",
           "type": "string"
         }
       },
@@ -6551,11 +6571,11 @@
       "description": "dgm:pt — one data-model point (dgm:pt, CT_Pt).",
       "properties": {
         "connectionId": {
-          "description": "Transition point owning connection (dgm:pt",
+          "description": "Transition point owning connection (dgm:pt `@cxnId`, transition points only).",
           "type": "string"
         },
         "modelId": {
-          "description": "Point identity (dgm:pt",
+          "description": "Point identity (dgm:pt `@modelId`).",
           "type": "string"
         },
         "propertySet": {
@@ -6566,7 +6586,7 @@
           "type": "string"
         },
         "type": {
-          "description": "Point kind (dgm:pt",
+          "description": "Point kind (dgm:pt `@type`, ST_PtType: node | doc | asst | parTrans | sibTrans).",
           "type": "string"
         }
       },
@@ -6780,7 +6800,7 @@
           "$ref": "#/definitions/ColorMappingOverrideOptions"
         },
         "show": {
-          "description": "Hidden notes slide (p:notes/@show=\"0\").",
+          "description": "Hidden notes slide (p:notes/`@show`=\"0\").",
           "type": "boolean"
         },
         "showMasterPlaceholderAnimations": {
@@ -6865,7 +6885,7 @@
       "description": "OLE Object frame options for pptx slides (p:graphicFrame with p:oleObj). The cNvPr fields (name/description/title/hidden) come from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.",
       "properties": {
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "embed": {
@@ -6873,7 +6893,7 @@
           "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin)."
         },
         "followColorScheme": {
-          "description": "Follow color scheme (p:embed/@followColorScheme): \"none\", \"full\", or \"textAndBackground\"",
+          "description": "Follow color scheme (p:embed/`@followColorScheme`): \"none\", \"full\", or \"textAndBackground\"",
           "enum": ["none", "full", "textAndBackground"],
           "type": "string"
         },
@@ -6887,12 +6907,16 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "iconImage": {
           "$ref": "#/definitions/OleIconImageOptions",
           "description": "Icon/preview image (p:pic under p:oleObj). MS Office refuses to open a presentation whose oleObj has no picture, so this is effectively required for embedded objects."
         },
         "id": {
-          "description": "OLE frame id (p:cNvPr",
+          "description": "OLE frame id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
         "imgH": {
@@ -6908,7 +6932,7 @@
           "description": "Link mode (provides rId for linked OLE data)"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "progId": {
@@ -6924,8 +6948,7 @@
           "type": "boolean"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "width": {
@@ -7190,6 +7213,7 @@
           "description": "a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties)."
         },
         "eastAsianLineBreak": {
+          "description": "`@eaLnBrk` — East Asian line break.",
           "type": "boolean"
         },
         "fontAlignment": {
@@ -7197,12 +7221,14 @@
           "type": "string"
         },
         "indent": {
+          "description": "`@indent` — first-line indent (ST_TextIndent, EMU).",
           "type": "number"
         },
         "indentLevel": {
           "type": "number"
         },
         "latinLineBreak": {
+          "description": "`@latinLnBrk` — Latin line break.",
           "type": "boolean"
         },
         "lineSpacingPercent": {
@@ -7220,6 +7246,7 @@
           "type": "number"
         },
         "rightToLeft": {
+          "description": "`@rtl` — paragraph right-to-left.",
           "type": "boolean"
         },
         "spaceAfter": {
@@ -7557,7 +7584,7 @@
           "description": "Image binary (base64 string, data URL, or Uint8Array)."
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "effects": {
@@ -7574,17 +7601,20 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
-          "description": "Picture id (p:cNvPr",
+          "description": "Picture id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "type": {
@@ -8597,7 +8627,7 @@
       "type": "object"
     },
     "ResizeHandles": {
-      "description": "ST_ResizeHandlesStr (dgm:resizeHandles",
+      "description": "ST_ResizeHandlesStr (dgm:resizeHandles `@val`).",
       "enum": ["exact", "rel"],
       "type": "string"
     },
@@ -8666,6 +8696,7 @@
           "type": "boolean"
         },
         "err": {
+          "description": "`@err` — spelling error flag.",
           "type": "boolean"
         },
         "fill": {
@@ -8685,6 +8716,7 @@
           "type": "boolean"
         },
         "kern": {
+          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
           "type": "number"
         },
         "kumimoji": {
@@ -8738,6 +8770,7 @@
           "type": "string"
         },
         "smtClean": {
+          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
           "type": "boolean"
         },
         "spacing": {
@@ -8803,6 +8836,7 @@
           "type": "boolean"
         },
         "err": {
+          "description": "`@err` — spelling error flag.",
           "type": "boolean"
         },
         "fill": {
@@ -8822,6 +8856,7 @@
           "type": "boolean"
         },
         "kern": {
+          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
           "type": "number"
         },
         "kumimoji": {
@@ -8875,6 +8910,7 @@
           "type": "string"
         },
         "smtClean": {
+          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
           "type": "boolean"
         },
         "spacing": {
@@ -8922,7 +8958,7 @@
           "$ref": "#/definitions/DataModelOptions"
         },
         "useDefault": {
-          "description": "Use the data model of the containing layout as sample (dgm:@useDef).",
+          "description": "Use the data model of the containing layout as sample (dgm:`@useDef`).",
           "type": "boolean"
         }
       },
@@ -9119,7 +9155,7 @@
           "$ref": "#/definitions/CustomGeometryOptions"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "effects": {
@@ -9158,6 +9194,10 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
           "type": "number"
         },
@@ -9168,14 +9208,14 @@
           "$ref": "#/definitions/ShapeLockingOptions"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
         "placeholder": {
-          "description": "CT_Placeholder",
+          "description": "CT_Placeholder `@type` — ST_PlaceholderType.",
           "enum": [
             "title",
             "body",
@@ -9200,12 +9240,12 @@
           "type": "number"
         },
         "placeholderOrientation": {
-          "description": "CT_Placeholder",
+          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\").",
           "enum": ["horz", "vert"],
           "type": "string"
         },
         "placeholderSize": {
-          "description": "CT_Placeholder",
+          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\").",
           "enum": ["full", "half", "quarter"],
           "type": "string"
         },
@@ -9226,8 +9266,7 @@
           "$ref": "#/definitions/TextBodyOptions"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "useBackgroundFill": {
@@ -9815,7 +9854,7 @@
           "$ref": "#/definitions/SlideHeaderFooterOptions"
         },
         "hidden": {
-          "description": "Hidden slide — excluded from slideshow (emits p:sld/@show=\"0\").",
+          "description": "Hidden slide — excluded from slideshow (emits p:sld/`@show`=\"0\").",
           "type": "boolean"
         },
         "layout": {
@@ -9937,7 +9976,7 @@
           "description": "Built-in color transform ID (\"accent1_2\") or a custom color definition."
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "height": {
@@ -9950,8 +9989,12 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
-          "description": "Diagram id (p:cNvPr",
+          "description": "Diagram id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
         "layout": {
@@ -9966,7 +10009,7 @@
           "description": "Built-in layout ID (\"default\", \"process1\") or a custom layout definition."
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "nodes": {
@@ -9992,8 +10035,7 @@
           "description": "Built-in quick style ID (\"simple1\") or a custom style definition."
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "width": {
@@ -10141,7 +10183,7 @@
           "type": "string"
         },
         "minVer": {
-          "description": "Minimum Office version (dgm:styleDef",
+          "description": "Minimum Office version (dgm:styleDef `@minVer`).",
           "type": "string"
         },
         "scene3d": {
@@ -10163,7 +10205,7 @@
           "type": "array"
         },
         "uniqueId": {
-          "description": "Style identity URI (dgm:styleDef",
+          "description": "Style identity URI (dgm:styleDef `@uniqueId`).",
           "type": "string"
         }
       },
@@ -10178,7 +10220,7 @@
           "type": "string"
         },
         "name": {
-          "description": "Slot name referenced by dgm:layoutNode",
+          "description": "Slot name referenced by dgm:layoutNode `@styleLbl` (required).",
           "type": "string"
         },
         "scene3d": {
@@ -10299,10 +10341,10 @@
       "properties": {
         "alignment": {
           "$ref": "#/definitions/TextTabAlignment",
-          "description": "a:tab"
+          "description": "a:tab `@algn` — tab alignment (l/ctr/r/dec)."
         },
         "position": {
-          "description": "a:tab",
+          "description": "a:tab `@pos` — tab stop position in EMU.",
           "type": "number"
         }
       },
@@ -10442,7 +10484,8 @@
           "type": "string"
         },
         "vertical": {
-          "$ref": "#/definitions/TextVerticalType"
+          "$ref": "#/definitions/TextVerticalType",
+          "description": "`@vert` — text direction (ST_TextVerticalType)."
         },
         "verticalAlign": {
           "$ref": "#/definitions/VerticalAlignment"
@@ -10519,7 +10562,7 @@
           "type": "array"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "firstCol": {
@@ -10539,8 +10582,12 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
-          "description": "Table id (p:cNvPr",
+          "description": "Table id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
         "lastCol": {
@@ -10550,7 +10597,7 @@
           "type": "boolean"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "rows": {
@@ -10567,8 +10614,7 @@
           "type": "string"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "width": {
@@ -10872,7 +10918,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "description": "a:fld",
+          "description": "a:fld `@id` — GUID identifier.",
           "type": "string"
         },
         "properties": {
@@ -10884,7 +10930,7 @@
           "type": "string"
         },
         "type": {
-          "description": "a:fld",
+          "description": "a:fld `@type` — field type token (e.g. \"datetimeFigureOut\", \"slidenum\").",
           "type": "string"
         }
       },
@@ -11122,7 +11168,7 @@
       "description": "dgm:txPr (CT_TextProps) — a choice of 3D text treatments (EG_Text3D).",
       "properties": {
         "flatText": {
-          "description": "Flatten text to a plane at this z coordinate, EMU (a:flatTx",
+          "description": "Flatten text to a plane at this z coordinate, EMU (a:flatTx `@z`).",
           "type": "number"
         },
         "shape3d": {
@@ -11155,7 +11201,7 @@
       "type": "string"
     },
     "TextVerticalType": {
-      "description": "ST_TextVerticalType — text direction within a cell (a:tcPr",
+      "description": "ST_TextVerticalType — text direction within a cell (a:tcPr `@vert`).",
       "enum": ["horz", "vert", "vert270", "wordArt", "wordArtV"],
       "type": "string"
     },
@@ -11523,39 +11569,39 @@
       "properties": {
         "animateLevel": {
           "$ref": "#/definitions/AnimationLevel",
-          "description": "Animate by level or from center (dgm:animLvl"
+          "description": "Animate by level or from center (dgm:animLvl `@val`)."
         },
         "animateOne": {
           "$ref": "#/definitions/AnimateOneByOne",
-          "description": "Animate siblings one by one or as a branch (dgm:animOne"
+          "description": "Animate siblings one by one or as a branch (dgm:animOne `@val`)."
         },
         "bulletEnabled": {
-          "description": "Bullets enabled on text nodes (dgm:bulletEnabled",
+          "description": "Bullets enabled on text nodes (dgm:bulletEnabled `@val`).",
           "type": "boolean"
         },
         "childMaximum": {
-          "description": "Maximum children per parent (dgm:chMax",
+          "description": "Maximum children per parent (dgm:chMax `@val`).",
           "type": "number"
         },
         "childPreferred": {
-          "description": "Preferred children per parent (dgm:chPref",
+          "description": "Preferred children per parent (dgm:chPref `@val`).",
           "type": "number"
         },
         "direction": {
           "$ref": "#/definitions/DiagramDirection",
-          "description": "Reading direction (dgm:dir"
+          "description": "Reading direction (dgm:dir `@val`)."
         },
         "hierarchyBranchStyle": {
           "$ref": "#/definitions/HierBranch",
-          "description": "Branch style for hierarchy layouts (dgm:hierBranch"
+          "description": "Branch style for hierarchy layouts (dgm:hierBranch `@val`)."
         },
         "organizationChart": {
-          "description": "This is an organization chart (dgm:orgChart",
+          "description": "This is an organization chart (dgm:orgChart `@val`).",
           "type": "boolean"
         },
         "resizeHandles": {
           "$ref": "#/definitions/ResizeHandles",
-          "description": "Resize-handle behavior (dgm:resizeHandles"
+          "description": "Resize-handle behavior (dgm:resizeHandles `@val`)."
         }
       },
       "type": "object"
@@ -11608,14 +11654,14 @@
       "additionalProperties": false,
       "properties": {
         "contentType": {
-          "description": "MIME content type of the linked video (CT_VideoFile",
+          "description": "MIME content type of the linked video (CT_VideoFile `@contentType`)",
           "type": "string"
         },
         "data": {
           "$ref": "#/definitions/DataType"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "height": {
@@ -11628,11 +11674,15 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "id": {
           "type": "number"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "poster": {
@@ -11642,8 +11692,7 @@
           "$ref": "#/definitions/PosterType"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "type": {
@@ -11845,11 +11894,11 @@
       "description": "One alternative inside a choose — dgm:if (CT_When); `if` is a reserved word.",
       "properties": {
         "argument": {
-          "description": "Function argument, usually a variable name (dgm:if",
+          "description": "Function argument, usually a variable name (dgm:if `@arg`).",
           "type": "string"
         },
         "axis": {
-          "description": "Selection axes, space-separated (dgm:@axis, ST_AxisTypes).",
+          "description": "Selection axes, space-separated (dgm:`@axis`, ST_AxisTypes).",
           "type": "string"
         },
         "children": {
@@ -11859,15 +11908,15 @@
           "type": "array"
         },
         "count": {
-          "description": "Iteration count (dgm:@cnt, ST_UnsignedInts).",
+          "description": "Iteration count (dgm:`@cnt`, ST_UnsignedInts).",
           "type": "string"
         },
         "function": {
           "$ref": "#/definitions/ConditionFunction",
-          "description": "Selection function (dgm:if"
+          "description": "Selection function (dgm:if `@func`)."
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:@hideLastTrans, ST_Booleans).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`, ST_Booleans).",
           "type": "string"
         },
         "name": {
@@ -11875,22 +11924,22 @@
         },
         "operator": {
           "$ref": "#/definitions/ConditionOperator",
-          "description": "Comparison operator (dgm:if"
+          "description": "Comparison operator (dgm:if `@op`)."
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`, ST_ElementTypes).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:@st, ST_Ints).",
+          "description": "Start index (dgm:`@st`, ST_Ints).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:@step, ST_Ints).",
+          "description": "Index step (dgm:`@step`, ST_Ints).",
           "type": "string"
         },
         "value": {
-          "description": "Comparison value (dgm:if",
+          "description": "Comparison value (dgm:if `@val`, ST_FunctionValue union).",
           "type": "string"
         }
       },

@@ -60,15 +60,15 @@ export interface CustomWorkbookViewOptions {
   maximized?: boolean;
   /** Minimized (default false) */
   minimized?: boolean;
-  /** Auto update (CT_CustomWorkbookView @autoUpdate) */
+  /** Auto update (CT_CustomWorkbookView `@autoUpdate`) */
   autoUpdate?: boolean;
-  /** Merge interval (CT_CustomWorkbookView @mergeInterval) */
+  /** Merge interval (CT_CustomWorkbookView `@mergeInterval`) */
   mergeInterval?: number;
-  /** Changes saved in window (CT_CustomWorkbookView @changesSavedWin) */
+  /** Changes saved in window (CT_CustomWorkbookView `@changesSavedWin`) */
   changesSavedWin?: boolean;
-  /** Only sync (CT_CustomWorkbookView @onlySync) */
+  /** Only sync (CT_CustomWorkbookView `@onlySync`) */
   onlySync?: boolean;
-  /** Show comments (CT_CustomWorkbookView @showComments) */
+  /** Show comments (CT_CustomWorkbookView `@showComments`) */
   showComments?: string;
 }
 
@@ -99,13 +99,13 @@ export interface WorkbookProtectionOptions {
   revisionsSaltValue?: string;
   /** Revisions modern encryption: spin count */
   revisionsSpinCount?: number;
-  /** Workbook password character set (CT_WorkbookProtection @workbookPasswordCharacterSet) */
+  /** Workbook password character set (CT_WorkbookProtection `@workbookPasswordCharacterSet`) */
   workbookPasswordCharacterSet?: string;
-  /** Revisions password character set (CT_WorkbookProtection @revisionsPasswordCharacterSet) */
+  /** Revisions password character set (CT_WorkbookProtection `@revisionsPasswordCharacterSet`) */
   revisionsPasswordCharacterSet?: string;
 }
 
-/** Workbook conformance level (CT_Workbook @conformance) */
+/** Workbook conformance level (CT_Workbook `@conformance`) */
 export type WorkbookConformance = "strict" | "transitional";
 
 /** File recovery properties (CT_FileRecoveryPr) */
@@ -178,25 +178,25 @@ export interface WorkbookPropertiesOptions {
   backupFile?: boolean;
   /** Code name */
   codeName?: string;
-  /** Show border unselected tables (CT_WorkbookPr @showBorderUnselectedTables) */
+  /** Show border unselected tables (CT_WorkbookPr `@showBorderUnselectedTables`) */
   showBorderUnselectedTables?: boolean;
-  /** Prompted solutions (CT_WorkbookPr @promptedSolutions) */
+  /** Prompted solutions (CT_WorkbookPr `@promptedSolutions`) */
   promptedSolutions?: boolean;
-  /** Show ink annotation (CT_WorkbookPr @showInkAnnotation) */
+  /** Show ink annotation (CT_WorkbookPr `@showInkAnnotation`) */
   showInkAnnotation?: boolean;
-  /** Save external link values (CT_WorkbookPr @saveExternalLinkValues) */
+  /** Save external link values (CT_WorkbookPr `@saveExternalLinkValues`) */
   saveExternalLinkValues?: boolean;
-  /** Update links mode (CT_WorkbookPr @updateLinks) */
+  /** Update links mode (CT_WorkbookPr `@updateLinks`) */
   updateLinks?: string;
-  /** Show pivot chart filter (CT_WorkbookPr @showPivotChartFilter) */
+  /** Show pivot chart filter (CT_WorkbookPr `@showPivotChartFilter`) */
   showPivotChartFilter?: boolean;
-  /** Publish items (CT_WorkbookPr @publishItems) */
+  /** Publish items (CT_WorkbookPr `@publishItems`) */
   publishItems?: boolean;
-  /** Check compatibility (CT_WorkbookPr @checkCompatibility) */
+  /** Check compatibility (CT_WorkbookPr `@checkCompatibility`) */
   checkCompatibility?: boolean;
-  /** Auto compress pictures (CT_WorkbookPr @autoCompressPictures) */
+  /** Auto compress pictures (CT_WorkbookPr `@autoCompressPictures`) */
   autoCompressPictures?: boolean;
-  /** Refresh all connections (CT_WorkbookPr @refreshAllConnections) */
+  /** Refresh all connections (CT_WorkbookPr `@refreshAllConnections`) */
   refreshAllConnections?: boolean;
 }
 
@@ -276,7 +276,7 @@ export interface CalculationPropertiesOptions {
   refMode?: string;
   /** Full precision (default true) */
   fullPrecision?: boolean;
-  /** Calc completed (CT_CalcPr @calcCompleted) */
+  /** Calc completed (CT_CalcPr `@calcCompleted`) */
   calcCompleted?: boolean;
 }
 
@@ -321,17 +321,17 @@ export interface DefinedNameOptions {
   value: string;
   /** Name (required) */
   name: string;
-  /** Comment (CT_DefinedName @comment) */
+  /** Comment (CT_DefinedName `@comment`) */
   comment?: string;
-  /** Custom menu text (CT_DefinedName @customMenu) */
+  /** Custom menu text (CT_DefinedName `@customMenu`) */
   customMenu?: string;
-  /** Description (CT_DefinedName @description) */
+  /** Description (CT_DefinedName `@description`) */
   description?: string;
-  /** Help text (CT_DefinedName @help) */
+  /** Help text (CT_DefinedName `@help`) */
   help?: string;
-  /** Status bar text (CT_DefinedName @statusBar) */
+  /** Status bar text (CT_DefinedName `@statusBar`) */
   statusBar?: string;
-  /** Local scope: 0-based sheet index; omit for workbook scope (CT_DefinedName @localSheetId) */
+  /** Local scope: 0-based sheet index; omit for workbook scope (CT_DefinedName `@localSheetId`) */
   localSheetId?: number;
   /** Hidden from the name manager (default false) */
   hidden?: boolean;
@@ -341,9 +341,9 @@ export interface DefinedNameOptions {
   vbProcedure?: boolean;
   /** XLM macro (default false) */
   xlm?: boolean;
-  /** Function group ID (CT_DefinedName @functionGroupId) */
+  /** Function group ID (CT_DefinedName `@functionGroupId`) */
   functionGroupId?: number;
-  /** Shortcut key (CT_DefinedName @shortcutKey) */
+  /** Shortcut key (CT_DefinedName `@shortcutKey`) */
   shortcutKey?: string;
   /** Publish to SharePoint server (default false) */
   publishToServer?: boolean;
@@ -358,7 +358,7 @@ export interface FileVersionOptions {
   rupBuild?: number;
 }
 
-/** ST_SmartTagShow — smart tag display policy (CT_SmartTagPr/@show). */
+/** ST_SmartTagShow — smart tag display policy (CT_SmartTagPr/`@show`). */
 export type SmartTagShow = "all" | "none" | "noIndicator";
 
 /** CT_SmartTagPr — workbook-level smart tag embed and display policy. */

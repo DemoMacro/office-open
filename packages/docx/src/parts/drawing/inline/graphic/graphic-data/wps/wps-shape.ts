@@ -63,11 +63,11 @@ export interface ShapeCoreOptions {
    * inline text content.
    */
   linkedTextBox?: {
-    /** Chain id shared by all boxes in the link (@id, required). */
+    /** Chain id shared by all boxes in the link (`@id`, required). */
     id: number;
-    /** Position of this box in the chain (@seq, required). */
+    /** Position of this box in the chain (`@seq`, required). */
     sequence: number;
   };
-  /** East-Asian vertical text flow (wps:wsp @normalEastAsianFlow, default false). */
+  /** East-Asian vertical text flow (wps:wsp `@normalEastAsianFlow`, default false). */
   normalEastAsianFlow?: boolean;
 }

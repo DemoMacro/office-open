@@ -64,19 +64,19 @@
           "type": "number"
         },
         "justifyLastLine": {
-          "description": "Justify last line (CT_CellAlignment",
+          "description": "Justify last line (CT_CellAlignment `@justifyLastLine`)",
           "type": "boolean"
         },
         "readingOrder": {
-          "description": "Reading order (CT_CellAlignment",
+          "description": "Reading order (CT_CellAlignment `@readingOrder`)",
           "type": "number"
         },
         "relativeIndent": {
-          "description": "Relative indent (CT_CellAlignment",
+          "description": "Relative indent (CT_CellAlignment `@relativeIndent`)",
           "type": "number"
         },
         "shrinkToFit": {
-          "description": "Shrink to fit (CT_CellAlignment",
+          "description": "Shrink to fit (CT_CellAlignment `@shrinkToFit`)",
           "type": "boolean"
         },
         "textRotation": {
@@ -142,7 +142,7 @@
       "description": "Options for alpha replace effect.\n\n## XSD: CT_AlphaReplaceEffect ```xml <xsd:attribute name=\"a\" type=\"ST_PositiveFixedPercentage\" use=\"required\"/> ```",
       "properties": {
         "alpha": {
-          "description": "Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to",
+          "description": "Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to `@a`.",
           "type": "number"
         }
       },
@@ -957,11 +957,11 @@
           "$ref": "#/definitions/BorderOptions"
         },
         "diagonalDown": {
-          "description": "Diagonal down (CT_Border",
+          "description": "Diagonal down (CT_Border `@diagonalDown`) — on the parent border element",
           "type": "boolean"
         },
         "diagonalUp": {
-          "description": "Diagonal up (CT_Border",
+          "description": "Diagonal up (CT_Border `@diagonalUp`) — on the parent border element",
           "type": "boolean"
         },
         "end": {
@@ -1108,7 +1108,7 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont",
+          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
           "type": "string"
         },
         "fontFollowsText": {
@@ -1119,7 +1119,7 @@
           "type": "string"
         },
         "size": {
-          "description": "a:buSzPct",
+          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1127,7 +1127,7 @@
           "type": "boolean"
         },
         "sizePoints": {
-          "description": "a:buSzPts",
+          "description": "a:buSzPts `@val` — bullet size in points.",
           "type": "number"
         },
         "startAt": {
@@ -1156,7 +1156,7 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont",
+          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
           "type": "string"
         },
         "fontFollowsText": {
@@ -1164,7 +1164,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct",
+          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1172,7 +1172,7 @@
           "type": "boolean"
         },
         "sizePoints": {
-          "description": "a:buSzPts",
+          "description": "a:buSzPts `@val` — bullet size in points.",
           "type": "number"
         },
         "type": {
@@ -1226,7 +1226,7 @@
           "type": "string"
         },
         "font": {
-          "description": "a:buFont",
+          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
           "type": "string"
         },
         "fontFollowsText": {
@@ -1234,7 +1234,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct",
+          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1242,7 +1242,7 @@
           "type": "boolean"
         },
         "sizePoints": {
-          "description": "a:buSzPts",
+          "description": "a:buSzPts `@val` — bullet size in points.",
           "type": "number"
         },
         "type": {
@@ -1261,7 +1261,7 @@
           "type": "boolean"
         },
         "childChain": {
-          "description": "Child chain — calculations farmed out to another thread (CT_CalcCell",
+          "description": "Child chain — calculations farmed out to another thread (CT_CalcCell `@l`)",
           "type": "boolean"
         },
         "reference": {
@@ -1336,7 +1336,7 @@
       "description": "Calculation properties (CT_CalcPr)",
       "properties": {
         "calcCompleted": {
-          "description": "Calc completed (CT_CalcPr",
+          "description": "Calc completed (CT_CalcPr `@calcCompleted`)",
           "type": "boolean"
         },
         "calcId": {
@@ -1427,31 +1427,31 @@
           "type": "string"
         },
         "colorIndexed": {
-          "description": "Background color indexed (CT_Color",
+          "description": "Background color indexed (CT_Color `@indexed`)",
           "type": "number"
         },
         "gradientBottom": {
-          "description": "Gradient bottom position for path (CT_GradientFill",
+          "description": "Gradient bottom position for path (CT_GradientFill `@bottom`)",
           "type": "number"
         },
         "gradientDegree": {
-          "description": "Gradient degree for linear (CT_GradientFill",
+          "description": "Gradient degree for linear (CT_GradientFill `@degree`)",
           "type": "number"
         },
         "gradientLeft": {
-          "description": "Gradient left position for path (CT_GradientFill",
+          "description": "Gradient left position for path (CT_GradientFill `@left`)",
           "type": "number"
         },
         "gradientRight": {
-          "description": "Gradient right position for path (CT_GradientFill",
+          "description": "Gradient right position for path (CT_GradientFill `@right`)",
           "type": "number"
         },
         "gradientTop": {
-          "description": "Gradient top position for path (CT_GradientFill",
+          "description": "Gradient top position for path (CT_GradientFill `@top`)",
           "type": "number"
         },
         "gradientType": {
-          "description": "Gradient type (CT_GradientFill",
+          "description": "Gradient type (CT_GradientFill `@type`)",
           "enum": ["linear", "path"],
           "type": "string"
         },
@@ -1492,7 +1492,7 @@
       "additionalProperties": false,
       "properties": {
         "cellMetadataId": {
-          "description": "Cell metadata block id, 1-based index into metadata.cellMetadata (CT_Cell",
+          "description": "Cell metadata block id, 1-based index into metadata.cellMetadata (CT_Cell `@cm`)",
           "type": "number"
         },
         "formula": {
@@ -1541,7 +1541,7 @@
           ]
         },
         "valueMetadataId": {
-          "description": "Value metadata block id, 1-based index into metadata.valueMetadata (CT_Cell",
+          "description": "Value metadata block id, 1-based index into metadata.valueMetadata (CT_Cell `@vm`)",
           "type": "number"
         }
       },
@@ -1551,8 +1551,12 @@
       "additionalProperties": false,
       "description": "Cell-level protection settings (CT_CellProtection)",
       "properties": {
+        "hidden": {
+          "description": "Cell formula is hidden (CT_CellProtection `@hidden`)",
+          "type": "boolean"
+        },
         "locked": {
-          "description": "Cell is locked (CT_CellProtection",
+          "description": "Cell is locked (CT_CellProtection `@locked`)",
           "type": "boolean"
         }
       },
@@ -1674,7 +1678,7 @@
       "description": "Cell watch entry (CT_CellWatch)",
       "properties": {
         "reference": {
-          "description": "Cell reference, e.g. \"A1\" (CT_CellWatch",
+          "description": "Cell reference, e.g. \"A1\" (CT_CellWatch `@r`)",
           "type": "string"
         }
       },
@@ -1988,7 +1992,7 @@
           "type": "object"
         },
         "codeName": {
-          "description": "VBA code name (CT_ChartsheetPr",
+          "description": "VBA code name (CT_ChartsheetPr `@codeName`)",
           "type": "string"
         },
         "headerFooter": {
@@ -2008,7 +2012,7 @@
           "description": "Page setup"
         },
         "published": {
-          "description": "Published to server (CT_ChartsheetPr",
+          "description": "Published to server (CT_ChartsheetPr `@published`)",
           "type": "boolean"
         },
         "sheetProtection": {
@@ -2020,7 +2024,7 @@
           "type": "string"
         },
         "zoomToFit": {
-          "description": "Zoom to fit (CT_ChartsheetView",
+          "description": "Zoom to fit (CT_ChartsheetView `@zoomToFit`)",
           "type": "boolean"
         }
       },
@@ -2158,7 +2162,7 @@
       "description": "Color filter (CT_ColorFilter)",
       "properties": {
         "cellColor": {
-          "description": "Filter by cell color (CT_ColorFilter",
+          "description": "Filter by cell color (CT_ColorFilter `@cellColor`)",
           "type": "boolean"
         },
         "colId": {
@@ -2266,7 +2270,7 @@
           "type": "string"
         },
         "name": {
-          "description": "clrScheme/@name (defaults to the theme name).",
+          "description": "clrScheme/`@name` (defaults to the theme name).",
           "type": "string"
         }
       },
@@ -2416,7 +2420,7 @@
       "additionalProperties": false,
       "properties": {
         "bestFit": {
-          "description": "Best-fit column width (CT_Col",
+          "description": "Best-fit column width (CT_Col `@bestFit`)",
           "type": "boolean"
         },
         "collapsed": {
@@ -2438,7 +2442,7 @@
           "type": "number"
         },
         "phonetic": {
-          "description": "Phonetic text for CJK (CT_Col",
+          "description": "Phonetic text for CJK (CT_Col `@phonetic`)",
           "type": "boolean"
         },
         "width": {
@@ -2604,7 +2608,7 @@
       "additionalProperties": false,
       "properties": {
         "aboveAverage": {
-          "description": "Above average flag (CT_CfRule",
+          "description": "Above average flag (CT_CfRule `@aboveAverage`, default true for aboveAverage rules)",
           "type": "boolean"
         },
         "colorScale": {
@@ -2620,7 +2624,7 @@
           "type": "number"
         },
         "equalAverage": {
-          "description": "Equal average flag (CT_CfRule",
+          "description": "Equal average flag (CT_CfRule `@equalAverage`)",
           "type": "boolean"
         },
         "formulas": {
@@ -2641,19 +2645,19 @@
           "type": "number"
         },
         "rank": {
-          "description": "Rank for top/bottom rules (CT_CfRule",
+          "description": "Rank for top/bottom rules (CT_CfRule `@rank`)",
           "type": "number"
         },
         "stdDev": {
-          "description": "Standard deviations for above-average rules (CT_CfRule",
+          "description": "Standard deviations for above-average rules (CT_CfRule `@stdDev`)",
           "type": "number"
         },
         "stopIfTrue": {
-          "description": "Stop if true — skip remaining rules (CT_CfRule",
+          "description": "Stop if true — skip remaining rules (CT_CfRule `@stopIfTrue`)",
           "type": "boolean"
         },
         "timePeriod": {
-          "description": "Time period for date-based highlighting (CT_CfRule",
+          "description": "Time period for date-based highlighting (CT_CfRule `@timePeriod`)",
           "enum": [
             "today",
             "yesterday",
@@ -2737,7 +2741,7 @@
           "type": "boolean"
         },
         "odcFile": {
-          "description": "ODC file path (CT_Connection",
+          "description": "ODC file path (CT_Connection `@odcFile`)",
           "type": "string"
         },
         "onlyUseConnectionFile": {
@@ -2772,11 +2776,11 @@
           "type": "boolean"
         },
         "singleSignOnId": {
-          "description": "Single sign-on ID (CT_Connection",
+          "description": "Single sign-on ID (CT_Connection `@singleSignOnId`)",
           "type": "string"
         },
         "sourceFile": {
-          "description": "Source file path (CT_Connection",
+          "description": "Source file path (CT_Connection `@sourceFile`)",
           "type": "string"
         },
         "textPr": {
@@ -2875,7 +2879,7 @@
           "description": "Column offset in EMU (default 0)"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "editAs": {
@@ -2908,6 +2912,10 @@
           ],
           "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "locking": {
           "$ref": "#/definitions/ConnectorLockingOptions",
           "description": "a:cxnSpLocks — connector locking (inside cNvCxnSpPr)."
@@ -2921,7 +2929,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "printsWithSheet": {
@@ -2952,8 +2960,7 @@
           "description": "a:stCxn — start endpoint glued to a shape connection site."
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "toCol": {
@@ -3012,39 +3019,39 @@
       "description": "Form control object (CT_Control)",
       "properties": {
         "formula": {
-          "description": "Control formula (CT_ControlPr",
+          "description": "Control formula (CT_ControlPr `@cf`)",
           "type": "string"
         },
         "linkedCell": {
-          "description": "Linked cell (CT_ControlPr",
+          "description": "Linked cell (CT_ControlPr `@linkedCell`)",
           "type": "string"
         },
         "listFillRange": {
-          "description": "List fill range (CT_ControlPr",
+          "description": "List fill range (CT_ControlPr `@listFillRange`)",
           "type": "string"
         },
         "locked": {
-          "description": "Locked (CT_ControlPr",
+          "description": "Locked (CT_ControlPr `@locked`)",
           "type": "boolean"
         },
         "name": {
-          "description": "Control name (CT_ControlPr",
+          "description": "Control name (CT_ControlPr `@name`)",
           "type": "string"
         },
         "rId": {
-          "description": "Control r:id (CT_ControlPr",
+          "description": "Control r:id (CT_ControlPr `@r:id`)",
           "type": "string"
         },
         "recalcAlways": {
-          "description": "Recalc always (CT_ControlPr",
+          "description": "Recalc always (CT_ControlPr `@recalcAlways`)",
           "type": "boolean"
         },
         "shapeId": {
-          "description": "Shape ID (CT_Control",
+          "description": "Shape ID (CT_Control `@shapeId`)",
           "type": "number"
         },
         "uiObject": {
-          "description": "UI-locked (CT_ControlPr",
+          "description": "UI-locked (CT_ControlPr `@uiObject`)",
           "type": "boolean"
         }
       },
@@ -3060,11 +3067,15 @@
           "type": "number"
         },
         "customBuiltin": {
-          "description": "Custom built-in (CT_CellStyle",
+          "description": "Custom built-in (CT_CellStyle `@customBuiltin`)",
+          "type": "boolean"
+        },
+        "hidden": {
+          "description": "Hidden style (CT_CellStyle `@hidden`)",
           "type": "boolean"
         },
         "iLevel": {
-          "description": "Outline level (CT_CellStyle",
+          "description": "Outline level (CT_CellStyle `@iLevel`)",
           "type": "number"
         },
         "name": {
@@ -3088,7 +3099,7 @@
           "description": "Color value (EG_ColorChoice)"
         },
         "name": {
-          "description": "Palette display name (CT_CustomColor",
+          "description": "Palette display name (CT_CustomColor `@name`, default \"\")",
           "type": "string"
         }
       },
@@ -3105,7 +3116,7 @@
           "type": "number"
         },
         "hiddenButton": {
-          "description": "Hide auto-filter button (CT_FilterColumn",
+          "description": "Hide auto-filter button (CT_FilterColumn `@hiddenButton`)",
           "type": "boolean"
         },
         "operator": {
@@ -3120,7 +3131,7 @@
           "type": "string"
         },
         "showButton": {
-          "description": "Show filter button (CT_FilterColumn",
+          "description": "Show filter button (CT_FilterColumn `@showButton`)",
           "type": "boolean"
         },
         "val": {
@@ -3217,73 +3228,73 @@
       "description": "Custom sheet view (CT_CustomSheetView)",
       "properties": {
         "filter": {
-          "description": "Filter applied (CT_CustomSheetView",
+          "description": "Filter applied (CT_CustomSheetView `@filter`)",
           "type": "boolean"
         },
         "filterUnique": {
-          "description": "Filter unique (CT_CustomSheetView",
+          "description": "Filter unique (CT_CustomSheetView `@filterUnique`)",
           "type": "boolean"
         },
         "fitToPage": {
-          "description": "Fit to page (CT_CustomSheetView",
+          "description": "Fit to page (CT_CustomSheetView `@fitToPage`)",
           "type": "boolean"
         },
         "guid": {
-          "description": "GUID identifier (required, CT_CustomSheetView",
+          "description": "GUID identifier (required, CT_CustomSheetView `@guid`)",
           "type": "string"
         },
         "hiddenColumns": {
-          "description": "Hidden columns (CT_CustomSheetView",
+          "description": "Hidden columns (CT_CustomSheetView `@hiddenColumns`)",
           "type": "boolean"
         },
         "hiddenRows": {
-          "description": "Hidden rows (CT_CustomSheetView",
+          "description": "Hidden rows (CT_CustomSheetView `@hiddenRows`)",
           "type": "boolean"
         },
         "outlineSymbols": {
-          "description": "Show outline symbols (CT_CustomSheetView",
+          "description": "Show outline symbols (CT_CustomSheetView `@outlineSymbols`)",
           "type": "boolean"
         },
         "printArea": {
-          "description": "Print area (CT_CustomSheetView",
+          "description": "Print area (CT_CustomSheetView `@printArea`)",
           "type": "boolean"
         },
         "scale": {
-          "description": "Zoom scale (CT_CustomSheetView",
+          "description": "Zoom scale (CT_CustomSheetView `@scale`)",
           "type": "number"
         },
         "showAutoFilter": {
-          "description": "Show auto filter (CT_CustomSheetView",
+          "description": "Show auto filter (CT_CustomSheetView `@showAutoFilter`)",
           "type": "boolean"
         },
         "showFormulas": {
-          "description": "Show formulas (CT_CustomSheetView",
+          "description": "Show formulas (CT_CustomSheetView `@showFormulas`)",
           "type": "boolean"
         },
         "showGridLines": {
-          "description": "Show grid lines (CT_CustomSheetView",
+          "description": "Show grid lines (CT_CustomSheetView `@showGridLines`)",
           "type": "boolean"
         },
         "showPageBreaks": {
-          "description": "Show page breaks (CT_CustomSheetView",
+          "description": "Show page breaks (CT_CustomSheetView `@showPageBreaks`)",
           "type": "boolean"
         },
         "showRowColHeaders": {
-          "description": "Show row/column headers (CT_CustomSheetView",
+          "description": "Show row/column headers (CT_CustomSheetView `@showRowCol`)",
           "type": "boolean"
         },
         "state": {
-          "description": "Sheet state (CT_CustomSheetView",
+          "description": "Sheet state (CT_CustomSheetView `@state`)",
           "enum": ["visible", "hidden", "veryHidden"],
           "type": "string"
         },
         "view": {
-          "description": "View type (CT_CustomSheetView",
+          "description": "View type (CT_CustomSheetView `@view`)",
           "enum": ["normal", "pageBreakPreview", "pageLayout"],
           "type": "string"
         },
         "zeroValues": {
-          "description": "Show zero values (CT_CustomSheetView",
+          "description": "Show zero values (CT_CustomSheetView `@zeroValues`)",
           "type": "boolean"
         }
       },
@@ -3309,7 +3320,7 @@
           "type": "boolean"
         },
         "table": {
-          "description": "Applies to tables (CT_TableStyle",
+          "description": "Applies to tables (CT_TableStyle `@table`, default true)",
           "type": "boolean"
         }
       },
@@ -3325,11 +3336,11 @@
           "type": "number"
         },
         "autoUpdate": {
-          "description": "Auto update (CT_CustomWorkbookView",
+          "description": "Auto update (CT_CustomWorkbookView `@autoUpdate`)",
           "type": "boolean"
         },
         "changesSavedWin": {
-          "description": "Changes saved in window (CT_CustomWorkbookView",
+          "description": "Changes saved in window (CT_CustomWorkbookView `@changesSavedWin`)",
           "type": "boolean"
         },
         "guid": {
@@ -3349,7 +3360,7 @@
           "type": "boolean"
         },
         "mergeInterval": {
-          "description": "Merge interval (CT_CustomWorkbookView",
+          "description": "Merge interval (CT_CustomWorkbookView `@mergeInterval`)",
           "type": "number"
         },
         "minimized": {
@@ -3361,7 +3372,7 @@
           "type": "string"
         },
         "onlySync": {
-          "description": "Only sync (CT_CustomWorkbookView",
+          "description": "Only sync (CT_CustomWorkbookView `@onlySync`)",
           "type": "boolean"
         },
         "personalView": {
@@ -3369,7 +3380,7 @@
           "type": "boolean"
         },
         "showComments": {
-          "description": "Show comments (CT_CustomWorkbookView",
+          "description": "Show comments (CT_CustomWorkbookView `@showComments`)",
           "type": "string"
         },
         "showFormulaBar": {
@@ -3475,7 +3486,7 @@
       "description": "Data binding (CT_DataBinding).",
       "properties": {
         "connectionId": {
-          "description": "Connection ID (CT_DataBinding",
+          "description": "Connection ID (CT_DataBinding `@ConnectionID`)",
           "type": "number"
         },
         "dataBindingLoadMode": {
@@ -3487,11 +3498,11 @@
           "type": "string"
         },
         "fileBinding": {
-          "description": "Whether this is a file binding (CT_DataBinding",
+          "description": "Whether this is a file binding (CT_DataBinding `@FileBinding`)",
           "type": "boolean"
         },
         "fileBindingName": {
-          "description": "File binding name (CT_DataBinding",
+          "description": "File binding name (CT_DataBinding `@FileBindingName`)",
           "type": "string"
         }
       },
@@ -3503,7 +3514,7 @@
       "description": "Data consolidation (CT_DataConsolidate)",
       "properties": {
         "function": {
-          "description": "Consolidation function (CT_DataConsolidate",
+          "description": "Consolidation function (CT_DataConsolidate `@function`)",
           "enum": [
             "average",
             "count",
@@ -3520,11 +3531,11 @@
           "type": "string"
         },
         "leftLabels": {
-          "description": "Use left column labels (CT_DataConsolidate",
+          "description": "Use left column labels (CT_DataConsolidate `@leftLabels`)",
           "type": "boolean"
         },
         "link": {
-          "description": "Link to source data (CT_DataConsolidate",
+          "description": "Link to source data (CT_DataConsolidate `@link`)",
           "type": "boolean"
         },
         "refs": {
@@ -3535,11 +3546,11 @@
           "type": "array"
         },
         "startLabels": {
-          "description": "Use start labels (CT_DataConsolidate",
+          "description": "Use start labels (CT_DataConsolidate `@startLabels`)",
           "type": "boolean"
         },
         "topLabels": {
-          "description": "Use top row labels (CT_DataConsolidate",
+          "description": "Use top row labels (CT_DataConsolidate `@topLabels`)",
           "type": "boolean"
         }
       },
@@ -3704,7 +3715,7 @@
           "type": "string"
         },
         "errorStyle": {
-          "description": "Error style (CT_DataValidation",
+          "description": "Error style (CT_DataValidation `@errorStyle`)",
           "enum": ["stop", "warning", "information"],
           "type": "string"
         },
@@ -3718,7 +3729,7 @@
           "type": "string"
         },
         "imeMode": {
-          "description": "IME mode (CT_DataValidation",
+          "description": "IME mode (CT_DataValidation `@imeMode`)",
           "enum": [
             "noControl",
             "on",
@@ -3744,7 +3755,7 @@
           "type": "string"
         },
         "showDropDown": {
-          "description": "Show drop-down (CT_DataValidation",
+          "description": "Show drop-down (CT_DataValidation `@showDropDown` — note inverted semantics in OOXML)",
           "type": "boolean"
         },
         "showErrorMessage": {
@@ -3785,7 +3796,7 @@
           "type": "string"
         },
         "serverCommand": {
-          "description": "Server command text (CT_DbPr",
+          "description": "Server command text (CT_DbPr `@serverCommand`)",
           "type": "string"
         }
       },
@@ -3801,32 +3812,32 @@
           "type": "number"
         },
         "dateTimeGrouping": {
-          "description": "Date grouping level (CT_DateGroupItem",
+          "description": "Date grouping level (CT_DateGroupItem `@dateTimeGrouping`)",
           "enum": ["year", "month", "day", "hour", "minute", "second"],
           "type": "string"
         },
         "day": {
-          "description": "Day (1-31, CT_DateGroupItem",
+          "description": "Day (1-31, CT_DateGroupItem `@day`)",
           "type": "number"
         },
         "hour": {
-          "description": "Hour (0-23, CT_DateGroupItem",
+          "description": "Hour (0-23, CT_DateGroupItem `@hour`)",
           "type": "number"
         },
         "minute": {
-          "description": "Minute (0-59, CT_DateGroupItem",
+          "description": "Minute (0-59, CT_DateGroupItem `@minute`)",
           "type": "number"
         },
         "month": {
-          "description": "Month (1-12, CT_DateGroupItem",
+          "description": "Month (1-12, CT_DateGroupItem `@month`)",
           "type": "number"
         },
         "second": {
-          "description": "Second (0-59, CT_DateGroupItem",
+          "description": "Second (0-59, CT_DateGroupItem `@second`)",
           "type": "number"
         },
         "year": {
-          "description": "Year (CT_DateGroupItem",
+          "description": "Year (CT_DateGroupItem `@year`)",
           "type": "number"
         }
       },
@@ -3966,16 +3977,15 @@
       "description": "A named range, constant, or formula (CT_DefinedName, sml.xsd:4317).\n\nThe element text holds the formula or reference (ST_Formula); the attributes carry metadata (scope, visibility, function metadata).",
       "properties": {
         "comment": {
-          "$comment": ")",
-          "description": "Comment (CT_DefinedName",
+          "description": "Comment (CT_DefinedName `@comment`)",
           "type": "string"
         },
         "customMenu": {
-          "description": "Custom menu text (CT_DefinedName",
+          "description": "Custom menu text (CT_DefinedName `@customMenu`)",
           "type": "string"
         },
         "description": {
-          "description": ")",
+          "description": "Description (CT_DefinedName `@description`)",
           "type": "string"
         },
         "function": {
@@ -3983,11 +3993,11 @@
           "type": "boolean"
         },
         "functionGroupId": {
-          "description": "Function group ID (CT_DefinedName",
+          "description": "Function group ID (CT_DefinedName `@functionGroupId`)",
           "type": "number"
         },
         "help": {
-          "description": "Help text (CT_DefinedName",
+          "description": "Help text (CT_DefinedName `@help`)",
           "type": "string"
         },
         "hidden": {
@@ -3995,7 +4005,7 @@
           "type": "boolean"
         },
         "localSheetId": {
-          "description": "Local scope: 0-based sheet index; omit for workbook scope (CT_DefinedName",
+          "description": "Local scope: 0-based sheet index; omit for workbook scope (CT_DefinedName `@localSheetId`)",
           "type": "number"
         },
         "name": {
@@ -4007,11 +4017,11 @@
           "type": "boolean"
         },
         "shortcutKey": {
-          "description": "Shortcut key (CT_DefinedName",
+          "description": "Shortcut key (CT_DefinedName `@shortcutKey`)",
           "type": "string"
         },
         "statusBar": {
-          "description": "Status bar text (CT_DefinedName",
+          "description": "Status bar text (CT_DefinedName `@statusBar`)",
           "type": "string"
         },
         "value": {
@@ -4038,7 +4048,7 @@
       "additionalProperties": false,
       "properties": {
         "codeName": {
-          "description": "VBA code name (CT_SheetPr",
+          "description": "VBA code name (CT_SheetPr `@codeName`)",
           "type": "string"
         },
         "extLst": {
@@ -4058,7 +4068,7 @@
           "description": "Page setup"
         },
         "published": {
-          "description": "Published to a server (CT_SheetPr",
+          "description": "Published to a server (CT_SheetPr `@published`)",
           "type": "boolean"
         },
         "sheetProtection": {
@@ -4315,15 +4325,15 @@
           "type": "number"
         },
         "maxVal": {
-          "description": "Max value as date ISO string (CT_DynamicFilter",
+          "description": "Max value as date ISO string (CT_DynamicFilter `@maxVal`)",
           "type": "number"
         },
         "maxValIso": {
-          "description": "Max value ISO date string (CT_DynamicFilter",
+          "description": "Max value ISO date string (CT_DynamicFilter `@maxValIso`)",
           "type": "string"
         },
         "type": {
-          "description": "Dynamic filter type (CT_DynamicFilter",
+          "description": "Dynamic filter type (CT_DynamicFilter `@type`)",
           "enum": [
             "null",
             "aboveAverage",
@@ -4364,11 +4374,11 @@
           "type": "string"
         },
         "val": {
-          "description": "Max value (CT_DynamicFilter",
+          "description": "Max value (CT_DynamicFilter `@val`)",
           "type": "number"
         },
         "valIso": {
-          "description": "Value ISO date string (CT_DynamicFilter",
+          "description": "Value ISO date string (CT_DynamicFilter `@valIso`)",
           "type": "string"
         }
       },
@@ -4718,7 +4728,7 @@
           "type": "string"
         },
         "valueMetadataIndex": {
-          "description": "Value metadata index (CT_ExternalCell",
+          "description": "Value metadata index (CT_ExternalCell `@vm`)",
           "type": "number"
         }
       },
@@ -4746,7 +4756,7 @@
           "type": "string"
         },
         "publishToServer": {
-          "description": "Publish to server (CT_DefinedName",
+          "description": "Publish to server (CT_DefinedName `@publishToServer`)",
           "type": "boolean"
         },
         "refersTo": {
@@ -4756,15 +4766,15 @@
           "type": "number"
         },
         "vbProcedure": {
-          "description": "VBA procedure (CT_DefinedName",
+          "description": "VBA procedure (CT_DefinedName `@vbProcedure`)",
           "type": "boolean"
         },
         "workbookParameter": {
-          "description": "Workbook parameter (CT_DefinedName",
+          "description": "Workbook parameter (CT_DefinedName `@workbookParameter`)",
           "type": "boolean"
         },
         "xlm": {
-          "description": "XLM macro (CT_DefinedName",
+          "description": "XLM macro (CT_DefinedName `@xlm`)",
           "type": "boolean"
         }
       },
@@ -5177,11 +5187,11 @@
       "description": "Filter items (CT_Filters)",
       "properties": {
         "blank": {
-          "description": "Blank filter (CT_Filters",
+          "description": "Blank filter (CT_Filters `@blank`)",
           "type": "boolean"
         },
         "calendarType": {
-          "description": "Calendar type (CT_Filters",
+          "description": "Calendar type (CT_Filters `@calendarType`)",
           "type": "string"
         },
         "colId": {
@@ -5243,14 +5253,14 @@
       "description": "Styles — option types for xl/styles.xml.\n\nXLSX uses an index-based style system: cells reference style entries via the `s` attribute, which is an index into `cellXfs`.",
       "properties": {
         "autoColor": {
-          "description": "Automatic (system) color instead of an explicit RGB (CT_Color",
+          "description": "Automatic (system) color instead of an explicit RGB (CT_Color `@auto`)",
           "type": "boolean"
         },
         "bold": {
           "type": "boolean"
         },
         "charset": {
-          "description": "Character set (CT_Font/charset",
+          "description": "Character set (CT_Font/charset `@val`)",
           "type": "number"
         },
         "color": {
@@ -5265,7 +5275,7 @@
           "type": "boolean"
         },
         "family": {
-          "description": "Font family (CT_Font/family",
+          "description": "Font family (CT_Font/family `@val`)",
           "type": "number"
         },
         "font": {
@@ -5279,7 +5289,7 @@
           "type": "boolean"
         },
         "scheme": {
-          "description": "Font scheme (CT_Font/scheme",
+          "description": "Font scheme (CT_Font/scheme `@val`)",
           "enum": ["major", "minor", "none"],
           "type": "string"
         },
@@ -5297,7 +5307,7 @@
           "type": "boolean"
         },
         "vertAlign": {
-          "description": "Vertical alignment: superscript/subscript (CT_Font/vertAlign",
+          "description": "Vertical alignment: superscript/subscript (CT_Font/vertAlign `@val`)",
           "enum": ["superscript", "subscript", "baseline"],
           "type": "string"
         }
@@ -5380,31 +5390,31 @@
       "description": "Options for a cell formula (maps to CT_CellFormula).",
       "properties": {
         "aca": {
-          "description": "Always calculate array (CT_CellFormula",
+          "description": "Always calculate array (CT_CellFormula `@aca`)",
           "type": "boolean"
         },
         "arrayContext": {
-          "description": "Array formula context (CT_CellFormula",
+          "description": "Array formula context (CT_CellFormula `@bx`)",
           "type": "boolean"
         },
         "calculateCell": {
-          "description": "Calculate cell (CT_CellFormula",
+          "description": "Calculate cell (CT_CellFormula `@ca`)",
           "type": "boolean"
         },
         "del1": {
-          "description": "Delete input cell 1 (CT_CellFormula",
+          "description": "Delete input cell 1 (CT_CellFormula `@del1`)",
           "type": "boolean"
         },
         "del2": {
-          "description": "Delete input cell 2 (CT_CellFormula",
+          "description": "Delete input cell 2 (CT_CellFormula `@del2`)",
           "type": "boolean"
         },
         "dt2D": {
-          "description": "2-D data table (CT_CellFormula",
+          "description": "2-D data table (CT_CellFormula `@dt2D`)",
           "type": "boolean"
         },
         "dtr": {
-          "description": "Data table row (CT_CellFormula",
+          "description": "Data table row (CT_CellFormula `@dtr`)",
           "type": "boolean"
         },
         "formula": {
@@ -5412,11 +5422,11 @@
           "type": "string"
         },
         "inputCell1": {
-          "description": "Input cell 1 reference (CT_CellFormula",
+          "description": "Input cell 1 reference (CT_CellFormula `@r1`)",
           "type": "string"
         },
         "inputCell2": {
-          "description": "Input cell 2 reference (CT_CellFormula",
+          "description": "Input cell 2 reference (CT_CellFormula `@r2`)",
           "type": "string"
         },
         "reference": {
@@ -5627,12 +5637,16 @@
       "description": "Connector nested inside a group (no anchor).",
       "properties": {
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "endConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:endCxn — end endpoint glued to a shape connection site."
+        },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
         },
         "locking": {
           "$ref": "#/definitions/ConnectorLockingOptions",
@@ -5642,7 +5656,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "spPr": {
@@ -5653,8 +5667,7 @@
           "description": "a:stCxn — start endpoint glued to a shape connection site."
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         }
       },
@@ -5714,7 +5727,7 @@
           "type": "array"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "editAs": {
@@ -5747,12 +5760,16 @@
           "$ref": "#/definitions/GroupTransform2DOptions",
           "description": "Group shape properties (a:CT_GroupShapeProperties: group xfrm + fill/ln)."
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
           "type": "boolean"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "printsWithSheet": {
@@ -5782,8 +5799,7 @@
           "type": "array"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "toCol": {
@@ -5825,14 +5841,18 @@
       "description": "Shape nested inside a group (no anchor — positioned via spPr.xfrm).",
       "properties": {
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
+        },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
         },
         "macro": {
           "type": "string"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "spPr": {
@@ -5845,8 +5865,7 @@
           "type": "string"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         }
       },
@@ -5972,7 +5991,7 @@
       "additionalProperties": false,
       "properties": {
         "alignWithMargins": {
-          "description": "Align with page margins (CT_HeaderFooter",
+          "description": "Align with page margins (CT_HeaderFooter `@alignWithMargins`)",
           "type": "boolean"
         },
         "differentFirst": {
@@ -6000,7 +6019,7 @@
           "type": "string"
         },
         "scaleWithDoc": {
-          "description": "Scale header/footer with document (CT_HeaderFooter",
+          "description": "Scale header/footer with document (CT_HeaderFooter `@scaleWithDoc`)",
           "type": "boolean"
         }
       },
@@ -6070,7 +6089,7 @@
           "type": "string"
         },
         "location": {
-          "description": "Internal target, e.g. \"Data!A1\" (CT_Hyperlink",
+          "description": "Internal target, e.g. \"Data!A1\" (CT_Hyperlink `@location`, mutually exclusive with url)",
           "type": "string"
         },
         "tooltip": {
@@ -6078,7 +6097,7 @@
           "type": "string"
         },
         "url": {
-          "description": "External target URL (CT_Hyperlink",
+          "description": "External target URL (CT_Hyperlink `@r:id`, mutually exclusive with location)",
           "type": "string"
         }
       },
@@ -6094,11 +6113,11 @@
           "type": "number"
         },
         "iconId": {
-          "description": "Icon ID within set (CT_IconFilter",
+          "description": "Icon ID within set (CT_IconFilter `@iconId`)",
           "type": "number"
         },
         "iconSet": {
-          "description": "Icon set index (CT_IconFilter",
+          "description": "Icon set index (CT_IconFilter `@iconSet`)",
           "type": "number"
         }
       },
@@ -6435,11 +6454,11 @@
       "description": "XML map (CT_Map).",
       "properties": {
         "append": {
-          "description": "Append new data (CT_Map",
+          "description": "Append new data (CT_Map `@Append`, required by XSD)",
           "type": "boolean"
         },
         "autoFit": {
-          "description": "Auto-fit columns (CT_Map",
+          "description": "Auto-fit columns (CT_Map `@AutoFit`, required by XSD)",
           "type": "boolean"
         },
         "dataBinding": {
@@ -6455,11 +6474,11 @@
           "type": "string"
         },
         "preserveFormat": {
-          "description": "Preserve formatting (CT_Map",
+          "description": "Preserve formatting (CT_Map `@PreserveFormat`, required by XSD)",
           "type": "boolean"
         },
         "preserveSortAFLayout": {
-          "description": "Preserve sort/autofilter layout (CT_Map",
+          "description": "Preserve sort/autofilter layout (CT_Map `@PreserveSortAFLayout`, required by XSD)",
           "type": "boolean"
         },
         "rootElement": {
@@ -6509,7 +6528,7 @@
       "type": "string"
     },
     "MdxFunctionType": {
-      "description": "ST_MdxFunctionType — the MDX function discriminator on mdx",
+      "description": "ST_MdxFunctionType — the MDX function discriminator on mdx `@f`.",
       "enum": ["m", "v", "s", "c", "r", "p", "k"],
       "type": "string"
     },
@@ -6518,23 +6537,23 @@
       "description": "MDX KPI (CT_MdxKPI, the k child of mdx).",
       "properties": {
         "nameIndex": {
-          "description": "Index into metadataStrings for the member name (@n, required)",
+          "description": "Index into metadataStrings for the member name (`@n`, required)",
           "type": "number"
         },
         "namePairIndex": {
-          "description": "Name pair index (@np, required)",
+          "description": "Name pair index (`@np`, required)",
           "type": "number"
         },
         "property": {
           "$ref": "#/definitions/MdxKpiProperty",
-          "description": "KPI property kind (@p, required)"
+          "description": "KPI property kind (`@p`, required)"
         }
       },
       "required": ["nameIndex", "namePairIndex", "property"],
       "type": "object"
     },
     "MdxKpiProperty": {
-      "description": "ST_MdxKPIProperty — the KPI property kind on k",
+      "description": "ST_MdxKPIProperty — the KPI property kind on k `@p`.",
       "enum": ["v", "g", "s", "t", "w", "m"],
       "type": "string"
     },
@@ -6543,11 +6562,11 @@
       "description": "MDX member property (CT_MdxMemeberProp, the p child of mdx).",
       "properties": {
         "nameIndex": {
-          "description": "Index into metadataStrings for the member name (@n, required)",
+          "description": "Index into metadataStrings for the member name (`@n`, required)",
           "type": "number"
         },
         "namePairIndex": {
-          "description": "Name pair index (@np, required)",
+          "description": "Name pair index (`@np`, required)",
           "type": "number"
         }
       },
@@ -6560,7 +6579,7 @@
       "properties": {
         "functionType": {
           "$ref": "#/definitions/MdxFunctionType",
-          "description": "MDX function type (@f, required)"
+          "description": "MDX function type (`@f`, required)"
         },
         "kpi": {
           "$ref": "#/definitions/MdxKpiOptions",
@@ -6575,7 +6594,7 @@
           "description": "MDX set (ms)"
         },
         "stringIndex": {
-          "description": "Metadata string index (@n, required)",
+          "description": "Metadata string index (`@n`, required)",
           "type": "number"
         },
         "tuple": {
@@ -6618,7 +6637,7 @@
       "description": "MDX tuple (CT_MdxTuple, the t child of mdx).",
       "properties": {
         "backgroundColor": {
-          "description": "Background color ARGB hex (CT_MdxTuple",
+          "description": "Background color ARGB hex (CT_MdxTuple `@bc`)",
           "type": "string"
         },
         "bold": {
@@ -6630,15 +6649,15 @@
           "type": "number"
         },
         "culture": {
-          "description": "Culture (CT_MdxTuple",
+          "description": "Culture (CT_MdxTuple `@ct`)",
           "type": "string"
         },
         "foregroundColor": {
-          "description": "Foreground color ARGB hex (CT_MdxTuple",
+          "description": "Foreground color ARGB hex (CT_MdxTuple `@fc`)",
           "type": "string"
         },
         "formatIndex": {
-          "description": "Format index (CT_MdxTuple",
+          "description": "Format index (CT_MdxTuple `@fi`)",
           "type": "number"
         },
         "italic": {
@@ -6657,7 +6676,7 @@
           "type": "array"
         },
         "styleIndex": {
-          "description": "Style index (CT_MdxTuple",
+          "description": "Style index (CT_MdxTuple `@si`)",
           "type": "number"
         },
         "underline": {
@@ -6672,7 +6691,7 @@
       "description": "Member in pivot hierarchy (CT_Member)",
       "properties": {
         "level": {
-          "description": "Level (CT_Member",
+          "description": "Level (CT_Member `@level`)",
           "type": "number"
         },
         "name": {
@@ -6696,19 +6715,19 @@
           "type": "string"
         },
         "nameLen": {
-          "description": "Name length (CT_MemberProperty",
+          "description": "Name length (CT_MemberProperty `@nameLen`)",
           "type": "number"
         },
         "pLen": {
-          "description": "Property length (CT_MemberProperty",
+          "description": "Property length (CT_MemberProperty `@pLen`)",
           "type": "number"
         },
         "pPos": {
-          "description": "Property position (CT_MemberProperty",
+          "description": "Property position (CT_MemberProperty `@pPos`)",
           "type": "number"
         },
         "showAsCaption": {
-          "description": "Show as caption (CT_MemberProperty",
+          "description": "Show as caption (CT_MemberProperty `@showAsCaption`)",
           "type": "boolean"
         },
         "showCell": {
@@ -6802,11 +6821,11 @@
       "description": "Metadata record (CT_MetadataRecord, the rc child of bk).",
       "properties": {
         "typeIndex": {
-          "description": "Metadata type index (@t, required)",
+          "description": "Metadata type index (`@t`, required)",
           "type": "number"
         },
         "valueIndex": {
-          "description": "Metadata value index (@v, required)",
+          "description": "Metadata value index (`@v`, required)",
           "type": "number"
         }
       },
@@ -6818,7 +6837,7 @@
       "description": "Metadata string index reference (CT_MetadataStringIndex).",
       "properties": {
         "index": {
-          "description": "Index into metadataStrings (@x, required)",
+          "description": "Index into metadataStrings (`@x`, required)",
           "type": "number"
         },
         "show": {
@@ -6831,7 +6850,7 @@
     },
     "MetadataStringOptions": {
       "additionalProperties": false,
-      "description": "Metadata string entry (CT_MetadataStrings → s, CT_XStringElement",
+      "description": "Metadata string entry (CT_MetadataStrings → s, CT_XStringElement `@v`).",
       "properties": {
         "value": {
           "description": "String value (required)",
@@ -7072,7 +7091,7 @@
           "type": "array"
         },
         "progId": {
-          "description": "OLE program identifier (CT_OleLink",
+          "description": "OLE program identifier (CT_OleLink `@progId`)",
           "type": "string"
         }
       },
@@ -7083,16 +7102,16 @@
       "description": "OLE object (CT_OleObject)",
       "properties": {
         "autoLoad": {
-          "description": "Auto load (CT_OleObject",
+          "description": "Auto load (CT_OleObject `@autoLoad`)",
           "type": "boolean"
         },
         "dvAspect": {
-          "description": "Display aspect (CT_OleObject",
+          "description": "Display aspect (CT_OleObject `@dvAspect`)",
           "enum": ["DVASPECT_CONTENT", "DVASPECT_ICON"],
           "type": "string"
         },
         "link": {
-          "description": "Linked source (CT_OleObject",
+          "description": "Linked source (CT_OleObject `@link`)",
           "type": "string"
         },
         "objectPr": {
@@ -7100,20 +7119,20 @@
           "description": "Object properties (CT_ObjectPr)"
         },
         "oleUpdate": {
-          "description": "OLE update mode (CT_OleObject",
+          "description": "OLE update mode (CT_OleObject `@oleUpdate`)",
           "enum": ["OLEUPDATE_ALWAYS", "OLEUPDATE_ONCALL"],
           "type": "string"
         },
         "progId": {
-          "description": "Program ID (CT_OleObject",
+          "description": "Program ID (CT_OleObject `@progId`)",
           "type": "string"
         },
         "rId": {
-          "description": "Relationship ID (CT_OleObject",
+          "description": "Relationship ID (CT_OleObject `@r:id`)",
           "type": "string"
         },
         "shapeId": {
-          "description": "Shape ID (CT_OleObject",
+          "description": "Shape ID (CT_OleObject `@shapeId`)",
           "type": "number"
         }
       },
@@ -7327,19 +7346,19 @@
           "type": "number"
         },
         "manual": {
-          "description": "Manual break (CT_Break",
+          "description": "Manual break (CT_Break `@man`)",
           "type": "boolean"
         },
         "max": {
-          "description": "Max value (CT_Break",
+          "description": "Max value (CT_Break `@max`)",
           "type": "number"
         },
         "min": {
-          "description": "Min value (CT_Break",
+          "description": "Min value (CT_Break `@min`)",
           "type": "number"
         },
         "pivot": {
-          "description": "Pivot break (CT_Break",
+          "description": "Pivot break (CT_Break `@pt`)",
           "type": "boolean"
         }
       },
@@ -7421,24 +7440,24 @@
       "additionalProperties": false,
       "properties": {
         "autoPageBreaks": {
-          "description": "Auto page breaks (CT_PageSetUpPr",
+          "description": "Auto page breaks (CT_PageSetUpPr `@autoPageBreaks`)",
           "type": "boolean"
         },
         "blackAndWhite": {
-          "description": "Black and white printing (CT_PageSetup",
+          "description": "Black and white printing (CT_PageSetup `@blackAndWhite`)",
           "type": "boolean"
         },
         "cellComments": {
-          "description": "Print cell comments mode (CT_PageSetup",
+          "description": "Print cell comments mode (CT_PageSetup `@cellComments`)",
           "enum": ["none", "asDisplayed", "atEnd"],
           "type": "string"
         },
         "draft": {
-          "description": "Draft quality printing (CT_PageSetup",
+          "description": "Draft quality printing (CT_PageSetup `@draft`)",
           "type": "boolean"
         },
         "errors": {
-          "description": "Print error display mode (CT_PageSetup",
+          "description": "Print error display mode (CT_PageSetup `@errors`)",
           "enum": ["displayed", "blank", "dash", "NA"],
           "type": "string"
         },
@@ -7449,7 +7468,7 @@
           "type": "number"
         },
         "fitToPage": {
-          "description": "Fit to page (CT_PageSetUpPr",
+          "description": "Fit to page (CT_PageSetUpPr `@fitToPage`)",
           "type": "boolean"
         },
         "fitToWidth": {
@@ -7471,7 +7490,7 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "Paper height (CT_PageSetup"
+          "description": "Paper height (CT_PageSetup `@paperHeight`, ST_PositiveUniversalMeasure)"
         },
         "paperSize": {
           "type": "number"
@@ -7485,7 +7504,7 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "Paper width (CT_PageSetup"
+          "description": "Paper width (CT_PageSetup `@paperWidth`, ST_PositiveUniversalMeasure)"
         },
         "scale": {
           "type": "number"
@@ -7494,7 +7513,7 @@
           "type": "boolean"
         },
         "usePrinterDefaults": {
-          "description": "Use printer defaults (CT_PageSetup",
+          "description": "Use printer defaults (CT_PageSetup `@usePrinterDefaults`)",
           "type": "boolean"
         }
       },
@@ -7565,6 +7584,7 @@
           "description": "a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties)."
         },
         "eastAsianLineBreak": {
+          "description": "`@eaLnBrk` — East Asian line break.",
           "type": "boolean"
         },
         "fontAlignment": {
@@ -7572,12 +7592,14 @@
           "type": "string"
         },
         "indent": {
+          "description": "`@indent` — first-line indent (ST_TextIndent, EMU).",
           "type": "number"
         },
         "indentLevel": {
           "type": "number"
         },
         "latinLineBreak": {
+          "description": "`@latinLnBrk` — Latin line break.",
           "type": "boolean"
         },
         "lineSpacingPercent": {
@@ -7595,6 +7617,7 @@
           "type": "number"
         },
         "rightToLeft": {
+          "description": "`@rtl` — paragraph right-to-left.",
           "type": "boolean"
         },
         "spaceAfter": {
@@ -7960,11 +7983,11 @@
       "description": "Phonetics run for CJK (CT_PhoneticRun → rPh).",
       "properties": {
         "endByte": {
-          "description": "End byte offset in base text (CT_PhoneticRun",
+          "description": "End byte offset in base text (CT_PhoneticRun `@eb`)",
           "type": "number"
         },
         "startByte": {
-          "description": "Start byte offset in base text (CT_PhoneticRun",
+          "description": "Start byte offset in base text (CT_PhoneticRun `@sb`)",
           "type": "number"
         },
         "text": {
@@ -8029,7 +8052,7 @@
           "description": "Image binary (base64 string, data URL, or Uint8Array)."
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "editAs": {
@@ -8058,12 +8081,16 @@
           ],
           "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
           "type": "boolean"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "printsWithSheet": {
@@ -8086,8 +8113,7 @@
           "description": "Row offset in EMU (default 0)"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "toCol": {
@@ -8236,7 +8262,7 @@
           "type": "boolean"
         },
         "countSubtotal": {
-          "description": "Count subtotal (CT_Reference",
+          "description": "Count subtotal (CT_Reference `@countSubtotal`)",
           "type": "boolean"
         },
         "defaultSubtotal": {
@@ -8256,7 +8282,7 @@
           "type": "boolean"
         },
         "productSubtotal": {
-          "description": "Product subtotal (CT_Reference",
+          "description": "Product subtotal (CT_Reference `@productSubtotal`)",
           "type": "boolean"
         },
         "relative": {
@@ -8268,11 +8294,11 @@
           "type": "boolean"
         },
         "stdDevPSubtotal": {
-          "description": "StdDevP subtotal (CT_Reference",
+          "description": "StdDevP subtotal (CT_Reference `@stdDevPSubtotal`)",
           "type": "boolean"
         },
         "stdDevSubtotal": {
-          "description": "StdDev subtotal (CT_Reference",
+          "description": "StdDev subtotal (CT_Reference `@stdDevSubtotal`)",
           "type": "boolean"
         },
         "sumSubtotal": {
@@ -8280,11 +8306,11 @@
           "type": "boolean"
         },
         "varPSubtotal": {
-          "description": "VarP subtotal (CT_Reference",
+          "description": "VarP subtotal (CT_Reference `@varPSubtotal`)",
           "type": "boolean"
         },
         "varSubtotal": {
-          "description": "Var subtotal (CT_Reference",
+          "description": "Var subtotal (CT_Reference `@varSubtotal`)",
           "type": "boolean"
         },
         "x": {
@@ -8533,7 +8559,7 @@
           "type": "string"
         },
         "showDataAs": {
-          "description": "Show data as (CT_DataField",
+          "description": "Show data as (CT_DataField `@showDataAs`)",
           "type": "string"
         },
         "sortByTupleItems": {
@@ -8556,35 +8582,35 @@
       "description": "Per-field overrides for pivotField XML attributes (CT_PivotField).",
       "properties": {
         "allDrilled": {
-          "description": "All drilled (CT_PivotField",
+          "description": "All drilled (CT_PivotField `@allDrilled`)",
           "type": "boolean"
         },
         "autoShow": {
-          "description": "Auto show (CT_PivotField",
+          "description": "Auto show (CT_PivotField `@autoShow`)",
           "type": "boolean"
         },
         "avgSubtotal": {
-          "description": "Average subtotal (CT_PivotField",
+          "description": "Average subtotal (CT_PivotField `@avgSubtotal`)",
           "type": "boolean"
         },
         "countASubtotal": {
-          "description": "CountA subtotal (CT_PivotField",
+          "description": "CountA subtotal (CT_PivotField `@countASubtotal`)",
           "type": "boolean"
         },
         "countSubtotal": {
-          "description": "Count subtotal (CT_PivotField",
+          "description": "Count subtotal (CT_PivotField `@countSubtotal`)",
           "type": "boolean"
         },
         "dataSourceSort": {
-          "description": "Data source sort (CT_PivotField",
+          "description": "Data source sort (CT_PivotField `@dataSourceSort`)",
           "type": "boolean"
         },
         "defaultAttributeDrillState": {
-          "description": "Default attribute drill state (CT_PivotField",
+          "description": "Default attribute drill state (CT_PivotField `@defaultAttributeDrillState`)",
           "type": "boolean"
         },
         "defaultItemSd": {
-          "description": "Show detail for default item (CT_Item",
+          "description": "Show detail for default item (CT_Item `@sd`)",
           "type": "boolean"
         },
         "field": {
@@ -8592,99 +8618,99 @@
           "type": "string"
         },
         "hiddenLevel": {
-          "description": "Hidden level (CT_PivotField",
+          "description": "Hidden level (CT_PivotField `@hiddenLevel`)",
           "type": "boolean"
         },
         "hideNewItems": {
-          "description": "Hide new items (CT_PivotField",
+          "description": "Hide new items (CT_PivotField `@hideNewItems`)",
           "type": "boolean"
         },
         "insertBlankRow": {
-          "description": "Insert blank row (CT_PivotField",
+          "description": "Insert blank row (CT_PivotField `@insertBlankRow`)",
           "type": "boolean"
         },
         "insertPageBreak": {
-          "description": "Insert page break (CT_PivotField",
+          "description": "Insert page break (CT_PivotField `@insertPageBreak`)",
           "type": "boolean"
         },
         "itemPageCount": {
-          "description": "Item page count (CT_PivotField",
+          "description": "Item page count (CT_PivotField `@itemPageCount`)",
           "type": "boolean"
         },
         "maxSubtotal": {
-          "description": "Max subtotal (CT_PivotField",
+          "description": "Max subtotal (CT_PivotField `@maxSubtotal`)",
           "type": "boolean"
         },
         "measureFilter": {
-          "description": "Measure filter (CT_PivotField",
+          "description": "Measure filter (CT_PivotField `@measureFilter`)",
           "type": "boolean"
         },
         "minSubtotal": {
-          "description": "Min subtotal (CT_PivotField",
+          "description": "Min subtotal (CT_PivotField `@minSubtotal`)",
           "type": "boolean"
         },
         "nonAutoSortDefault": {
-          "description": "Non auto sort default (CT_PivotField",
+          "description": "Non auto sort default (CT_PivotField `@nonAutoSortDefault`)",
           "type": "boolean"
         },
         "productSubtotal": {
-          "description": "Product subtotal (CT_PivotField",
+          "description": "Product subtotal (CT_PivotField `@productSubtotal`)",
           "type": "boolean"
         },
         "rankBy": {
-          "description": "Rank by (CT_PivotField",
+          "description": "Rank by (CT_PivotField `@rankBy`)",
           "type": "number"
         },
         "serverField": {
-          "description": "Server field (CT_PivotField",
+          "description": "Server field (CT_PivotField `@serverField`)",
           "type": "boolean"
         },
         "showDropDowns": {
-          "description": "Show drop downs (CT_PivotField",
+          "description": "Show drop downs (CT_PivotField `@showDropDowns`)",
           "type": "boolean"
         },
         "showPropAsCaption": {
-          "description": "Show property as caption (CT_PivotField",
+          "description": "Show property as caption (CT_PivotField `@showPropAsCaption`)",
           "type": "boolean"
         },
         "showPropCell": {
-          "description": "Show property cell (CT_PivotField",
+          "description": "Show property cell (CT_PivotField `@showPropCell`)",
           "type": "boolean"
         },
         "showPropTip": {
-          "description": "Show property tip (CT_PivotField",
+          "description": "Show property tip (CT_PivotField `@showPropTip`)",
           "type": "boolean"
         },
         "stdDevPSubtotal": {
-          "description": "StdDevP subtotal (CT_PivotField",
+          "description": "StdDevP subtotal (CT_PivotField `@stdDevPSubtotal`)",
           "type": "boolean"
         },
         "stdDevSubtotal": {
-          "description": "StdDev subtotal (CT_PivotField",
+          "description": "StdDev subtotal (CT_PivotField `@stdDevSubtotal`)",
           "type": "boolean"
         },
         "subtotalCaption": {
-          "description": "Subtotal caption (CT_PivotField",
+          "description": "Subtotal caption (CT_PivotField `@subtotalCaption`)",
           "type": "string"
         },
         "sumSubtotal": {
-          "description": "Sum subtotal (CT_PivotField",
+          "description": "Sum subtotal (CT_PivotField `@sumSubtotal`)",
           "type": "boolean"
         },
         "topAutoShow": {
-          "description": "Top auto show (CT_PivotField",
+          "description": "Top auto show (CT_PivotField `@topAutoShow`)",
           "type": "boolean"
         },
         "uniqueMemberProperty": {
-          "description": "Unique member property (CT_PivotField",
+          "description": "Unique member property (CT_PivotField `@uniqueMemberProperty`)",
           "type": "boolean"
         },
         "varPSubtotal": {
-          "description": "VarP subtotal (CT_PivotField",
+          "description": "VarP subtotal (CT_PivotField `@varPSubtotal`)",
           "type": "boolean"
         },
         "varSubtotal": {
-          "description": "Var subtotal (CT_PivotField",
+          "description": "Var subtotal (CT_PivotField `@varSubtotal`)",
           "type": "boolean"
         }
       },
@@ -8906,15 +8932,15 @@
       "description": "Page/report filter field (CT_PageField).",
       "properties": {
         "caption": {
-          "description": "Caption override (CT_PageField",
+          "description": "Caption override (CT_PageField `@cap`)",
           "type": "string"
         },
         "field": {
-          "description": "Field name to use as a page filter (CT_PageField",
+          "description": "Field name to use as a page filter (CT_PageField `@fld`)",
           "type": "string"
         },
         "item": {
-          "description": "Selected item index (CT_PageField",
+          "description": "Selected item index (CT_PageField `@item`)",
           "type": "number"
         }
       },
@@ -8971,7 +8997,7 @@
           "type": "number"
         },
         "pane": {
-          "description": "Pane (CT_PivotSelection",
+          "description": "Pane (CT_PivotSelection `@pane`, default \"topLeft\")",
           "enum": ["bottomRight", "topRight", "bottomLeft", "topLeft"],
           "type": "string"
         },
@@ -9021,7 +9047,7 @@
       "description": "Options for a single pivot table on a worksheet.",
       "properties": {
         "asteriskTotals": {
-          "description": "Asterisk totals (CT_PivotTableDefinition",
+          "description": "Asterisk totals (CT_PivotTableDefinition `@asteriskTotals`)",
           "type": "boolean"
         },
         "autoSortScope": {
@@ -9043,7 +9069,7 @@
           "type": "array"
         },
         "chartFormat": {
-          "description": "Chart format applied (CT_PivotTableDefinition",
+          "description": "Chart format applied (CT_PivotTableDefinition `@chartFormat`)",
           "type": "boolean"
         },
         "chartFormats": {
@@ -9083,11 +9109,11 @@
           "type": "array"
         },
         "dataOnRows": {
-          "description": "Data fields on rows instead of columns (CT_PivotTableDefinition",
+          "description": "Data fields on rows instead of columns (CT_PivotTableDefinition `@dataOnRows`)",
           "type": "boolean"
         },
         "dataPosition": {
-          "description": "Data position (CT_PivotTableDefinition",
+          "description": "Data position (CT_PivotTableDefinition `@dataPosition`)",
           "type": "number"
         },
         "disableFieldList": {
@@ -9152,7 +9178,7 @@
           "type": "boolean"
         },
         "immersive": {
-          "description": "Immersive (CT_PivotTableDefinition",
+          "description": "Immersive (CT_PivotTableDefinition `@immersive`)",
           "type": "boolean"
         },
         "location": {
@@ -9160,11 +9186,11 @@
           "type": "string"
         },
         "locationColPageCount": {
-          "description": "Location column page count (CT_Location",
+          "description": "Location column page count (CT_Location `@colPageCount`)",
           "type": "number"
         },
         "locationRowPageCount": {
-          "description": "Location row page count (CT_Location",
+          "description": "Location row page count (CT_Location `@rowPageCount`)",
           "type": "number"
         },
         "mdxSubqueries": {
@@ -9232,7 +9258,7 @@
           "type": "string"
         },
         "preserveFormatting": {
-          "description": "Preserve formatting on refresh (CT_PivotTableDefinition",
+          "description": "Preserve formatting on refresh (CT_PivotTableDefinition `@preserveFormatting`, default true)",
           "type": "boolean"
         },
         "printDrill": {
@@ -9334,7 +9360,7 @@
           "type": "string"
         },
         "vacatedStyle": {
-          "description": "Vacated style (CT_PivotTableDefinition",
+          "description": "Vacated style (CT_PivotTableDefinition `@vacatedStyle`)",
           "type": "string"
         },
         "visualTotals": {
@@ -9907,7 +9933,7 @@
           "type": "boolean"
         },
         "intermediate": {
-          "description": "Intermediate rows preserved (CT_QueryTable",
+          "description": "Intermediate rows preserved (CT_QueryTable `@intermediate`)",
           "type": "boolean"
         },
         "name": {
@@ -10993,11 +11019,11 @@
           "type": "boolean"
         },
         "conditionalStyle": {
-          "description": "Conditional style (CT_UndoInfo",
+          "description": "Conditional style (CT_UndoInfo `@cs`, default false).",
           "type": "boolean"
         },
         "definedName": {
-          "description": "Defined name (CT_UndoInfo",
+          "description": "Defined name (CT_UndoInfo `@dn`, optional).",
           "type": "string"
         },
         "expression": {
@@ -11010,7 +11036,7 @@
           "type": "number"
         },
         "numberFormat": {
-          "description": "Number format (CT_UndoInfo",
+          "description": "Number format (CT_UndoInfo `@nf`, default false).",
           "type": "boolean"
         },
         "ref3D": {
@@ -11018,7 +11044,7 @@
           "type": "boolean"
         },
         "reference": {
-          "description": "Cell reference (CT_UndoInfo",
+          "description": "Cell reference (CT_UndoInfo `@r`, optional).",
           "type": "string"
         },
         "sId": {
@@ -11026,11 +11052,11 @@
           "type": "number"
         },
         "undoRange": {
-          "description": "Undo range (CT_UndoInfo",
+          "description": "Undo range (CT_UndoInfo `@dr`, required, ST_RefA).",
           "type": "string"
         },
         "value": {
-          "description": "Value (CT_UndoInfo",
+          "description": "Value (CT_UndoInfo `@v`, default false).",
           "type": "boolean"
         }
       },
@@ -11179,7 +11205,7 @@
           "type": "array"
         },
         "customFormat": {
-          "description": "Custom format applied (CT_Row",
+          "description": "Custom format applied (CT_Row `@customFormat`)",
           "type": "boolean"
         },
         "height": {
@@ -11196,22 +11222,22 @@
           "type": "boolean"
         },
         "phonetic": {
-          "description": "Phonetic text (CT_Row",
+          "description": "Phonetic text (CT_Row `@ph`)",
           "type": "boolean"
         },
         "rowNumber": {
           "type": "number"
         },
         "spans": {
-          "description": "Spans for the row, e.g. \"1:15\" (CT_Row",
+          "description": "Spans for the row, e.g. \"1:15\" (CT_Row `@spans`)",
           "type": "string"
         },
         "thickBot": {
-          "description": "Thick bottom border (CT_Row",
+          "description": "Thick bottom border (CT_Row `@thickBot`)",
           "type": "boolean"
         },
         "thickTop": {
-          "description": "Thick top border (CT_Row",
+          "description": "Thick top border (CT_Row `@thickTop`)",
           "type": "boolean"
         }
       },
@@ -11266,6 +11292,7 @@
           "type": "boolean"
         },
         "err": {
+          "description": "`@err` — spelling error flag.",
           "type": "boolean"
         },
         "fill": {
@@ -11285,6 +11312,7 @@
           "type": "boolean"
         },
         "kern": {
+          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
           "type": "number"
         },
         "kumimoji": {
@@ -11338,6 +11366,7 @@
           "type": "string"
         },
         "smtClean": {
+          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
           "type": "boolean"
         },
         "spacing": {
@@ -11403,6 +11432,7 @@
           "type": "boolean"
         },
         "err": {
+          "description": "`@err` — spelling error flag.",
           "type": "boolean"
         },
         "fill": {
@@ -11422,6 +11452,7 @@
           "type": "boolean"
         },
         "kern": {
+          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
           "type": "number"
         },
         "kumimoji": {
@@ -11475,6 +11506,7 @@
           "type": "string"
         },
         "smtClean": {
+          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
           "type": "boolean"
         },
         "spacing": {
@@ -11547,11 +11579,11 @@
           "type": "boolean"
         },
         "reference": {
-          "description": "Cell reference, e.g. \"B2\" (CT_InputCells",
+          "description": "Cell reference, e.g. \"B2\" (CT_InputCells `@r`)",
           "type": "string"
         },
         "undone": {
-          "description": "Whether undone (CT_InputCells",
+          "description": "Whether undone (CT_InputCells `@undone`)",
           "type": "boolean"
         },
         "val": {
@@ -11657,15 +11689,15 @@
           "type": "string"
         },
         "namespace": {
-          "description": "Namespace URI (CT_Schema",
+          "description": "Namespace URI (CT_Schema `@Namespace`)",
           "type": "string"
         },
         "schemaLanguage": {
-          "description": "Schema language (CT_Schema",
+          "description": "Schema language (CT_Schema `@SchemaLanguage`)",
           "type": "string"
         },
         "schemaRef": {
-          "description": "Schema reference (CT_Schema",
+          "description": "Schema reference (CT_Schema `@SchemaRef`)",
           "type": "string"
         }
       },
@@ -11712,20 +11744,20 @@
       "description": "Selection in sheet view (CT_Selection)",
       "properties": {
         "activeCell": {
-          "description": "Active cell (CT_Selection",
+          "description": "Active cell (CT_Selection `@activeCell`)",
           "type": "string"
         },
         "activeCellId": {
-          "description": "Active cell index (CT_Selection",
+          "description": "Active cell index (CT_Selection `@activeCellId`)",
           "type": "number"
         },
         "pane": {
-          "description": "Pane (CT_Selection",
+          "description": "Pane (CT_Selection `@pane`)",
           "enum": ["bottomRight", "topRight", "bottomLeft", "topLeft"],
           "type": "string"
         },
         "sqref": {
-          "description": "Selected range (CT_Selection",
+          "description": "Selected range (CT_Selection `@sqref`)",
           "type": "string"
         }
       },
@@ -11816,7 +11848,7 @@
           "description": "Column offset in EMU (default 0)"
         },
         "description": {
-          "description": "XSD",
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
         "editAs": {
@@ -11845,6 +11877,10 @@
           ],
           "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
           "type": "boolean"
@@ -11854,7 +11890,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD",
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "printsWithSheet": {
@@ -11889,8 +11925,7 @@
           "type": "string"
         },
         "title": {
-          "description": "XSD",
-          "title": ".",
+          "description": "XSD `@title`.",
           "type": "string"
         },
         "toCol": {
@@ -12126,7 +12161,7 @@
       "description": "Sheet calc properties (CT_SheetCalcPr)",
       "properties": {
         "fullCalcOnLoad": {
-          "description": "Full calc on load (CT_SheetCalcPr",
+          "description": "Full calc on load (CT_SheetCalcPr `@fullCalcOnLoad`)",
           "type": "boolean"
         }
       },
@@ -12137,11 +12172,11 @@
       "description": "Sheet format properties (CT_SheetFormatPr)",
       "properties": {
         "baseColWidth": {
-          "description": "Base column width (CT_SheetFormatPr",
+          "description": "Base column width (CT_SheetFormatPr `@baseColWidth`)",
           "type": "number"
         },
         "defaultColWidth": {
-          "description": "Default column width (CT_SheetFormatPr",
+          "description": "Default column width (CT_SheetFormatPr `@defaultColWidth`)",
           "type": "number"
         },
         "defaultRowHeight": {
@@ -12149,23 +12184,23 @@
           "type": "number"
         },
         "outlineLevelCol": {
-          "description": "Outline level column (CT_SheetFormatPr",
+          "description": "Outline level column (CT_SheetFormatPr `@outlineLevelCol`)",
           "type": "number"
         },
         "outlineLevelRow": {
-          "description": "Outline level row (CT_SheetFormatPr",
+          "description": "Outline level row (CT_SheetFormatPr `@outlineLevelRow`)",
           "type": "number"
         },
         "thickBottom": {
-          "description": "Thick bottom borders (CT_SheetFormatPr",
+          "description": "Thick bottom borders (CT_SheetFormatPr `@thickBottom`)",
           "type": "boolean"
         },
         "thickTop": {
-          "description": "Thick top borders (CT_SheetFormatPr",
+          "description": "Thick top borders (CT_SheetFormatPr `@thickTop`)",
           "type": "boolean"
         },
         "zeroHeight": {
-          "description": "Zero height rows hidden (CT_SheetFormatPr",
+          "description": "Zero height rows hidden (CT_SheetFormatPr `@zeroHeight`)",
           "type": "boolean"
         }
       },
@@ -12176,51 +12211,51 @@
       "description": "Sheet properties extended options (CT_SheetPr attributes)",
       "properties": {
         "enableFormatConditionsCalculation": {
-          "description": "Enable format conditions calculation (CT_SheetPr",
+          "description": "Enable format conditions calculation (CT_SheetPr `@enableFormatConditionsCalculation`)",
           "type": "boolean"
         },
         "filterMode": {
-          "description": "Filter mode (CT_SheetPr",
+          "description": "Filter mode (CT_SheetPr `@filterMode`)",
           "type": "boolean"
         },
         "outlineApplyStyles": {
-          "description": "Outline apply styles (CT_OutlinePr",
+          "description": "Outline apply styles (CT_OutlinePr `@applyStyles`)",
           "type": "boolean"
         },
         "outlineShowSymbols": {
-          "description": "Outline show symbols (CT_OutlinePr",
+          "description": "Outline show symbols (CT_OutlinePr `@showOutlineSymbols`)",
           "type": "boolean"
         },
         "outlineSummaryBelow": {
-          "description": "Outline summary rows below detail (CT_OutlinePr",
+          "description": "Outline summary rows below detail (CT_OutlinePr `@summaryBelow`)",
           "type": "boolean"
         },
         "outlineSummaryRight": {
-          "description": "Outline summary columns right of detail (CT_OutlinePr",
+          "description": "Outline summary columns right of detail (CT_OutlinePr `@summaryRight`)",
           "type": "boolean"
         },
         "published": {
-          "description": "Published to server (CT_SheetPr",
+          "description": "Published to server (CT_SheetPr `@published`)",
           "type": "boolean"
         },
         "syncHorizontal": {
-          "description": "Sync horizontal scroll (CT_SheetPr",
+          "description": "Sync horizontal scroll (CT_SheetPr `@syncHorizontal`)",
           "type": "boolean"
         },
         "syncRef": {
-          "description": "Sync reference (CT_SheetPr",
+          "description": "Sync reference (CT_SheetPr `@syncRef`)",
           "type": "string"
         },
         "syncVertical": {
-          "description": "Sync vertical scroll (CT_SheetPr",
+          "description": "Sync vertical scroll (CT_SheetPr `@syncVertical`)",
           "type": "boolean"
         },
         "transitionEntry": {
-          "description": "Transition entry mode (CT_SheetPr",
+          "description": "Transition entry mode (CT_SheetPr `@transitionEntry`)",
           "type": "boolean"
         },
         "transitionEvaluation": {
-          "description": "Transition evaluation mode (CT_SheetPr",
+          "description": "Transition evaluation mode (CT_SheetPr `@transitionEvaluation`)",
           "type": "boolean"
         }
       },
@@ -12305,36 +12340,36 @@
       "additionalProperties": false,
       "properties": {
         "colorId": {
-          "description": "Tab color ID (CT_SheetView",
+          "description": "Tab color ID (CT_SheetView `@colorId`)",
           "type": "number"
         },
         "defaultGridColor": {
-          "description": "Default grid color (CT_SheetView",
+          "description": "Default grid color (CT_SheetView `@defaultGridColor`)",
           "type": "boolean"
         },
         "rightToLeft": {
           "type": "boolean"
         },
         "showFormulas": {
-          "description": "Show formulas instead of values (CT_SheetView",
+          "description": "Show formulas instead of values (CT_SheetView `@showFormulas`)",
           "type": "boolean"
         },
         "showGridLines": {
           "type": "boolean"
         },
         "showOutlineSymbols": {
-          "description": "Show outline symbols (CT_SheetView",
+          "description": "Show outline symbols (CT_SheetView `@showOutlineSymbols`)",
           "type": "boolean"
         },
         "showRowColHeaders": {
           "type": "boolean"
         },
         "showRuler": {
-          "description": "Show ruler (CT_SheetView",
+          "description": "Show ruler (CT_SheetView `@showRuler`)",
           "type": "boolean"
         },
         "showWhiteSpace": {
-          "description": "Show white space (CT_SheetView",
+          "description": "Show white space (CT_SheetView `@showWhiteSpace`)",
           "type": "boolean"
         },
         "showZeros": {
@@ -12344,27 +12379,27 @@
           "type": "boolean"
         },
         "view": {
-          "description": "View type (CT_SheetView",
+          "description": "View type (CT_SheetView `@view`)",
           "enum": ["normal", "pageBreakPreview", "pageLayout"],
           "type": "string"
         },
         "windowProtection": {
-          "description": "Window protection (CT_SheetView",
+          "description": "Window protection (CT_SheetView `@windowProtection`)",
           "type": "boolean"
         },
         "zoomScale": {
           "type": "number"
         },
         "zoomScaleNormal": {
-          "description": "Zoom scale for normal view (CT_SheetView",
+          "description": "Zoom scale for normal view (CT_SheetView `@zoomScaleNormal`)",
           "type": "number"
         },
         "zoomScalePageLayoutView": {
-          "description": "Zoom scale for page layout view (CT_SheetView",
+          "description": "Zoom scale for page layout view (CT_SheetView `@zoomScalePageLayoutView`)",
           "type": "number"
         },
         "zoomScaleSheetLayoutView": {
-          "description": "Zoom scale for sheet layout view (CT_SheetView",
+          "description": "Zoom scale for sheet layout view (CT_SheetView `@zoomScaleSheetLayoutView`)",
           "type": "number"
         }
       },
@@ -12383,7 +12418,7 @@
           "type": "number"
         },
         "reference": {
-          "description": "Cell reference, e.g. \"A1\" (CT_SingleXmlCell",
+          "description": "Cell reference, e.g. \"A1\" (CT_SingleXmlCell `@r`, required)",
           "type": "string"
         },
         "xmlCellPr": {
@@ -12425,14 +12460,14 @@
       "additionalProperties": false,
       "properties": {
         "customList": {
-          "description": "Custom sort list (CT_SortCondition",
+          "description": "Custom sort list (CT_SortCondition `@customList`)",
           "type": "string"
         },
         "descending": {
           "type": "boolean"
         },
         "iconId": {
-          "description": "Icon set index (CT_SortCondition",
+          "description": "Icon set index (CT_SortCondition `@iconId`)",
           "type": "number"
         },
         "ref": {
@@ -12440,7 +12475,7 @@
           "type": "string"
         },
         "sortBy": {
-          "description": "Sort by (CT_SortCondition",
+          "description": "Sort by (CT_SortCondition `@sortBy`)",
           "enum": ["value", "cellColor", "fontColor", "icon"],
           "type": "string"
         }
@@ -12453,15 +12488,15 @@
       "description": "Sort state configuration (CT_SortState)",
       "properties": {
         "caseSensitive": {
-          "description": "Case sensitive sorting (CT_SortState",
+          "description": "Case sensitive sorting (CT_SortState `@caseSensitive`)",
           "type": "boolean"
         },
         "columnSort": {
-          "description": "Column sort mode (CT_SortState",
+          "description": "Column sort mode (CT_SortState `@columnSort`)",
           "type": "boolean"
         },
         "sortMethod": {
-          "description": "Sort method (CT_SortState",
+          "description": "Sort method (CT_SortState `@sortMethod`)",
           "enum": ["pinYin", "stroke", "none"],
           "type": "string"
         }
@@ -12558,7 +12593,7 @@
           "$ref": "#/definitions/AlignmentOptions"
         },
         "applyProtection": {
-          "description": "Apply protection (CT_Xf",
+          "description": "Apply protection (CT_Xf `@applyProtection`)",
           "type": "boolean"
         },
         "border": {
@@ -12574,7 +12609,7 @@
           "type": "string"
         },
         "pivotButton": {
-          "description": "Pivot button (CT_Xf",
+          "description": "Pivot button (CT_Xf `@pivotButton`)",
           "type": "boolean"
         },
         "protection": {
@@ -12582,7 +12617,7 @@
           "description": "Cell protection (CT_CellProtection)"
         },
         "quotePrefix": {
-          "description": "Quote prefix (CT_Xf",
+          "description": "Quote prefix (CT_Xf `@quotePrefix`)",
           "type": "boolean"
         }
       },
@@ -12669,7 +12704,7 @@
       "additionalProperties": false,
       "properties": {
         "indexed": {
-          "description": "Indexed color (CT_Color",
+          "description": "Indexed color (CT_Color `@indexed`)",
           "type": "number"
         },
         "rgb": {
@@ -12692,10 +12727,10 @@
       "properties": {
         "alignment": {
           "$ref": "#/definitions/TextTabAlignment",
-          "description": "a:tab"
+          "description": "a:tab `@algn` — tab alignment (l/ctr/r/dec)."
         },
         "position": {
-          "description": "a:tab",
+          "description": "a:tab `@pos` — tab stop position in EMU.",
           "type": "number"
         }
       },
@@ -12709,7 +12744,7 @@
           "type": "string"
         },
         "calculatedColumnFormulaArray": {
-          "description": "Whether calculated column formula is array (CT_TableFormula",
+          "description": "Whether calculated column formula is array (CT_TableFormula `@array`)",
           "type": "boolean"
         },
         "dataCellStyle": {
@@ -12733,7 +12768,7 @@
           "type": "string"
         },
         "queryTableFieldId": {
-          "description": "Query table field ID (CT_TableColumn",
+          "description": "Query table field ID (CT_TableColumn `@queryTableFieldId`)",
           "type": "number"
         },
         "totalsRowCellStyle": {
@@ -12749,7 +12784,7 @@
           "type": "string"
         },
         "totalsRowFormulaArray": {
-          "description": "Whether totals row formula is array (CT_TableFormula",
+          "description": "Whether totals row formula is array (CT_TableFormula `@array`)",
           "type": "boolean"
         },
         "totalsRowFunction": {
@@ -12761,7 +12796,7 @@
           "type": "string"
         },
         "uniqueName": {
-          "description": "Unique column name for structured references (CT_TableColumn",
+          "description": "Unique column name for structured references (CT_TableColumn `@uniqueName`)",
           "type": "string"
         },
         "xmlColumnPr": {
@@ -12794,12 +12829,11 @@
           "type": "array"
         },
         "comment": {
-          "$comment": ")",
-          "description": "Table comment (CT_Table",
+          "description": "Table comment (CT_Table `@comment`)",
           "type": "string"
         },
         "connectionId": {
-          "description": "Query table connection ID (CT_Table",
+          "description": "Query table connection ID (CT_Table `@connectionId`)",
           "type": "number"
         },
         "dataCellStyle": {
@@ -12835,11 +12869,11 @@
           "type": "number"
         },
         "insertRow": {
-          "description": "Insert row allowed (CT_Table",
+          "description": "Insert row allowed (CT_Table `@insertRow`)",
           "type": "boolean"
         },
         "insertRowShift": {
-          "description": "Insert row shifts existing rows (CT_Table",
+          "description": "Insert row shifts existing rows (CT_Table `@insertRowShift`)",
           "type": "boolean"
         },
         "name": {
@@ -12847,7 +12881,7 @@
           "type": "string"
         },
         "published": {
-          "description": "Published to server (CT_Table",
+          "description": "Published to server (CT_Table `@published`)",
           "type": "boolean"
         },
         "ref": {
@@ -13096,7 +13130,7 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "description": "a:fld",
+          "description": "a:fld `@id` — GUID identifier.",
           "type": "string"
         },
         "properties": {
@@ -13108,7 +13142,7 @@
           "type": "string"
         },
         "type": {
-          "description": "a:fld",
+          "description": "a:fld `@type` — field type token (e.g. \"datetimeFigureOut\", \"slidenum\").",
           "type": "string"
         }
       },
@@ -13370,7 +13404,7 @@
           "type": "boolean"
         },
         "delimiter": {
-          "description": "User-defined delimiter character (CT_TextPr",
+          "description": "User-defined delimiter character (CT_TextPr `@delimiter`)",
           "type": "string"
         },
         "fileType": {
@@ -13568,18 +13602,18 @@
           "type": "number"
         },
         "filterVal": {
-          "description": "Filter value (CT_Top10",
+          "description": "Filter value (CT_Top10 `@filterVal`)",
           "type": "number"
         },
         "hiddenButton": {
-          "description": "Hide auto-filter button (CT_FilterColumn",
+          "description": "Hide auto-filter button (CT_FilterColumn `@hiddenButton`)",
           "type": "boolean"
         },
         "percent": {
           "type": "boolean"
         },
         "showButton": {
-          "description": "Show filter button (CT_FilterColumn",
+          "description": "Show filter button (CT_FilterColumn `@showButton`)",
           "type": "boolean"
         },
         "top": {
@@ -13867,15 +13901,15 @@
       "description": "Web query properties (CT_WebPr).",
       "properties": {
         "consecutive": {
-          "description": "Consecutive delimiters as one (CT_WebPr",
+          "description": "Consecutive delimiters as one (CT_WebPr `@consecutive`)",
           "type": "boolean"
         },
         "editPage": {
-          "description": "Edit page URL (CT_WebPr",
+          "description": "Edit page URL (CT_WebPr `@editPage`)",
           "type": "string"
         },
         "firstRow": {
-          "description": "First row contains headers (CT_WebPr",
+          "description": "First row contains headers (CT_WebPr `@firstRow`)",
           "type": "boolean"
         },
         "htmlFormat": {
@@ -13883,19 +13917,19 @@
           "type": "string"
         },
         "htmlTables": {
-          "description": "HTML tables only (CT_WebPr",
+          "description": "HTML tables only (CT_WebPr `@htmlTables`)",
           "type": "boolean"
         },
         "parsePre": {
-          "description": "Parse PRE tags into columns (CT_WebPr",
+          "description": "Parse PRE tags into columns (CT_WebPr `@parsePre`)",
           "type": "boolean"
         },
         "post": {
-          "description": "POST request body (CT_WebPr",
+          "description": "POST request body (CT_WebPr `@post`)",
           "type": "string"
         },
         "sourceData": {
-          "description": "Source data included (CT_WebPr",
+          "description": "Source data included (CT_WebPr `@sourceData`)",
           "type": "boolean"
         },
         "tables": {
@@ -13906,23 +13940,23 @@
           "type": "array"
         },
         "textDates": {
-          "description": "Dates as text (CT_WebPr",
+          "description": "Dates as text (CT_WebPr `@textDates`)",
           "type": "boolean"
         },
         "url": {
-          "description": "Source URL (CT_WebPr",
+          "description": "Source URL (CT_WebPr `@url`)",
           "type": "string"
         },
         "xl2000": {
-          "description": "XL2000 compatible (CT_WebPr",
+          "description": "XL2000 compatible (CT_WebPr `@xl2000`)",
           "type": "boolean"
         },
         "xl97": {
-          "description": "XL97 compatible (CT_WebPr",
+          "description": "XL97 compatible (CT_WebPr `@xl97`)",
           "type": "boolean"
         },
         "xml": {
-          "description": "XML source query (CT_WebPr",
+          "description": "XML source query (CT_WebPr `@xml`)",
           "type": "boolean"
         }
       },
@@ -14284,7 +14318,7 @@
           "type": "boolean"
         },
         "autoCompressPictures": {
-          "description": "Auto compress pictures (CT_WorkbookPr",
+          "description": "Auto compress pictures (CT_WorkbookPr `@autoCompressPictures`)",
           "type": "boolean"
         },
         "backupFile": {
@@ -14292,7 +14326,7 @@
           "type": "boolean"
         },
         "checkCompatibility": {
-          "description": "Check compatibility (CT_WorkbookPr",
+          "description": "Check compatibility (CT_WorkbookPr `@checkCompatibility`)",
           "type": "boolean"
         },
         "codeName": {
@@ -14316,27 +14350,27 @@
           "type": "boolean"
         },
         "promptedSolutions": {
-          "description": "Prompted solutions (CT_WorkbookPr",
+          "description": "Prompted solutions (CT_WorkbookPr `@promptedSolutions`)",
           "type": "boolean"
         },
         "publishItems": {
-          "description": "Publish items (CT_WorkbookPr",
+          "description": "Publish items (CT_WorkbookPr `@publishItems`)",
           "type": "boolean"
         },
         "refreshAllConnections": {
-          "description": "Refresh all connections (CT_WorkbookPr",
+          "description": "Refresh all connections (CT_WorkbookPr `@refreshAllConnections`)",
           "type": "boolean"
         },
         "saveExternalLinkValues": {
-          "description": "Save external link values (CT_WorkbookPr",
+          "description": "Save external link values (CT_WorkbookPr `@saveExternalLinkValues`)",
           "type": "boolean"
         },
         "showBorderUnselectedTables": {
-          "description": "Show border unselected tables (CT_WorkbookPr",
+          "description": "Show border unselected tables (CT_WorkbookPr `@showBorderUnselectedTables`)",
           "type": "boolean"
         },
         "showInkAnnotation": {
-          "description": "Show ink annotation (CT_WorkbookPr",
+          "description": "Show ink annotation (CT_WorkbookPr `@showInkAnnotation`)",
           "type": "boolean"
         },
         "showObjects": {
@@ -14344,11 +14378,11 @@
           "type": "string"
         },
         "showPivotChartFilter": {
-          "description": "Show pivot chart filter (CT_WorkbookPr",
+          "description": "Show pivot chart filter (CT_WorkbookPr `@showPivotChartFilter`)",
           "type": "boolean"
         },
         "updateLinks": {
-          "description": "Update links mode (CT_WorkbookPr",
+          "description": "Update links mode (CT_WorkbookPr `@updateLinks`)",
           "type": "string"
         }
       },
@@ -14382,7 +14416,7 @@
           "type": "string"
         },
         "revisionsPasswordCharacterSet": {
-          "description": "Revisions password character set (CT_WorkbookProtection",
+          "description": "Revisions password character set (CT_WorkbookProtection `@revisionsPasswordCharacterSet`)",
           "type": "string"
         },
         "revisionsSaltValue": {
@@ -14406,7 +14440,7 @@
           "type": "string"
         },
         "workbookPasswordCharacterSet": {
-          "description": "Workbook password character set (CT_WorkbookProtection",
+          "description": "Workbook password character set (CT_WorkbookProtection `@workbookPasswordCharacterSet`)",
           "type": "string"
         },
         "workbookSaltValue": {
@@ -14961,7 +14995,7 @@
           "type": "array"
         },
         "dataValidationsDisablePrompts": {
-          "description": "Disable data validation prompts (CT_DataValidations",
+          "description": "Disable data validation prompts (CT_DataValidations `@disablePrompts`)",
           "type": "boolean"
         },
         "dimension": {
@@ -15193,7 +15227,7 @@
           "type": "number"
         },
         "uniqueName": {
-          "description": "Unique name (CT_XmlCellPr",
+          "description": "Unique name (CT_XmlCellPr `@uniqueName`)",
           "type": "string"
         },
         "xmlPr": {

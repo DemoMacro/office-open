@@ -502,7 +502,7 @@ function maybeDerive(
 
 // ── Complex sub-elements ──
 
-/** Valid w:documentProtection/@w:edit values (ST_DocProtect). */
+/** Valid w:documentProtection/`@w:edit` values (ST_DocProtect). */
 const DOC_PROTECT_EDITS = ["none", "readOnly", "comments", "trackedChanges", "forms"] as const;
 
 function stringifyDocProtect(opts: DocumentProtectionOptions): string {

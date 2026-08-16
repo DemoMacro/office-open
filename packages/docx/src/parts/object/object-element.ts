@@ -36,9 +36,9 @@ export interface ObjectEmbedOptions {
   progId?: string;
   /** Draw aspect — how the object displays. */
   drawAspect?: "content" | "icon";
-  /** Shape id (o:OLEObject/@ShapeID). Defaults to the preview shape's id. */
+  /** Shape id (o:OLEObject/`@ShapeID`). Defaults to the preview shape's id. */
   shapeId?: string;
-  /** OLE object id (o:OLEObject/@ObjectID). Defaults to a generated id. */
+  /** OLE object id (o:OLEObject/`@ObjectID`). Defaults to a generated id. */
   objectId?: string;
   /** Field codes (o:OLEObject/o:FieldCodes child). */
   fieldCodes?: string;
@@ -52,9 +52,9 @@ export interface ObjectLinkOptions extends ObjectEmbedOptions {
 }
 
 export interface ObjectControlOptions {
-  /** Control name (w:control/@name). */
+  /** Control name (w:control/`@name`). */
   name?: string;
-  /** Shape id (w:control/@shapeid). */
+  /** Shape id (w:control/`@shapeid`). */
   shapeid?: string;
   /** Relationship id to the ActiveX part (external — not auto-registered). */
   rId: string;
@@ -65,16 +65,16 @@ export interface ObjectIconImageOptions {
   data: Uint8Array | string;
   /** Image type / extension (e.g. "png", "emf"). */
   type: string;
-  /** Title for v:imagedata/@o:title. */
+  /** Title for v:imagedata/`@o:title`. */
   title?: string;
 }
 
 export interface ObjectElementOptions {
-  /** Original width in twips (w:object/@w:dxaOrig). */
+  /** Original width in twips (w:object/`@w:dxaOrig`). */
   dxaOrig?: number;
-  /** Original height in twips (w:object/@w:dyaOrig). */
+  /** Original height in twips (w:object/`@w:dyaOrig`). */
   dyaOrig?: number;
-  /** VML shape id (v:shape/@id). Defaults to a generated id. */
+  /** VML shape id (v:shape/`@id`). Defaults to a generated id. */
   shapeId?: string;
   /** Display width (px or universal measure) for v:shape style + icon size. */
   width?: number | UniversalMeasure;
@@ -88,7 +88,7 @@ export interface ObjectElementOptions {
   link?: ObjectLinkOptions;
   /** ActiveX control reference (w:control). */
   control?: ObjectControlOptions;
-  /** Movie relationship id — CT_Rel (w:movie/@r:id). External. */
+  /** Movie relationship id — CT_Rel (w:movie/`@r:id`). External. */
   movie?: string;
 }
 

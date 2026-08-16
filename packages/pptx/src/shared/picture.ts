@@ -10,7 +10,7 @@ import type { BasePictureOptions, EffectListOptions, UniversalMeasure } from "@o
  * slide-child entry and the descriptor.
  */
 export interface PictureOptions extends BasePictureOptions {
-  /** Picture id (p:cNvPr @id). Auto-generated if omitted. */
+  /** Picture id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;

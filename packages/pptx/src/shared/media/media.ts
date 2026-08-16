@@ -2,7 +2,7 @@
  * Media module for PresentationML documents.
  *
  * Provides transformation helpers for embedded media. The deduplicated
- * {@link Media} collection lives in @office-open/core and is shared across all
+ * {@link Media} collection lives in `@office`-open/core and is shared across all
  * format packages.
  *
  * @module

@@ -130,7 +130,16 @@ function assertRefsResolve(schema: unknown, definitions: Set<string>, at = "$") 
   if (schema && typeof schema === "object") {
     const obj = schema as Record<string, unknown>;
     const ref = obj.$ref;
-    if (typeof ref === "string" && ref.startsWith("#/definitions/")) {
+    if (typeof ref === "string") {
+      if (!ref.startsWith("#/definitions/")) {
+        // A $ref pointing anywhere else is not a definition link. The one
+        // producer seen in the wild: ts-json-schema-generator turns a JSDoc
+        // "@ref" in a description into "$ref": "<text after the tag>" — keep
+        // bare @attr references in backticks so they stay description text.
+        throw new Error(
+          `Non-definition $ref "${ref}" at ${at} — JSDoc @tag leaked into the schema`,
+        );
+      }
       // Generic types produce definition keys like "Foo<Bar>"; the $ref is a
       // JSON-pointer fragment, so the angle brackets arrive percent-encoded.
       const name = decodeURIComponent(ref.slice("#/definitions/".length));

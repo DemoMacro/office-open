@@ -91,14 +91,14 @@ export interface AnimationGraphicSubBuildOptions {
   diagram?: {
     /** Build type (ST_AnimationDgmBuildType, default "allAtOnce") */
     build?: string;
-    /** Reverse build order (@rev, default false) */
+    /** Reverse build order (`@rev`, default false) */
     reverse?: boolean;
   };
   /** Chart build (a:bldChart). */
   chart?: {
     /** Build type (ST_AnimationChartBuildType, default "allAtOnce") */
     build?: string;
-    /** Animate chart background (@animBg, default true) */
+    /** Animate chart background (`@animBg`, default true) */
     animateBackground?: boolean;
   };
 }
@@ -243,34 +243,34 @@ export interface AnimationOptions {
   exclusiveMode?: boolean;
 
   // Animation target extensions (A3)
-  /** Ink target shape ID (p:inkTgt @spid). */
+  /** Ink target shape ID (p:inkTgt `@spid`). */
   inkTargetShapeId?: number;
   /** Sound target r:id (p:sndTgt). */
   soundTarget?: string;
-  /** Sub-shape ID (p:subSp @spid). */
+  /** Sub-shape ID (p:subSp `@spid`). */
   subShapeId?: number;
   /** Graphic element target (p:graphicEl → a:dgm / a:chart). */
   graphicElement?: {
     /** Diagram element (a:dgm). */
     diagram?: {
-      /** Diagram node GUID (a:dgm @id) */
+      /** Diagram node GUID (a:dgm `@id`) */
       id?: string;
-      /** Build step (a:dgm @bldStep, default "sp") */
+      /** Build step (a:dgm `@bldStep`, default "sp") */
       buildStep?: "sp" | "bg";
     };
     /** Chart element (a:chart). */
     chart?: {
-      /** Series index (a:chart @seriesIdx, default -1) */
+      /** Series index (a:chart `@seriesIdx`, default -1) */
       seriesIndex?: number;
-      /** Category index (a:chart @categoryIdx, default -1) */
+      /** Category index (a:chart `@categoryIdx`, default -1) */
       categoryIndex?: number;
       /** Build step (required) */
       buildStep: "category" | "ptInCategory" | "series" | "ptInSeries" | "allPts" | "gridLegend";
     };
   };
-  /** OLE chart element type (p:oleChartEl @type). */
+  /** OLE chart element type (p:oleChartEl `@type`). */
   oleChartElementType?: string;
-  /** OLE chart element level (p:oleChartEl @lvl). */
+  /** OLE chart element level (p:oleChartEl `@lvl`). */
   oleChartElementLevel?: number;
 
   // Animation variant values (A4)

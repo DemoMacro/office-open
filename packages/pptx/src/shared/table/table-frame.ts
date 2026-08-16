@@ -17,7 +17,7 @@ import type { TableRowOptions } from "./table-row";
  */
 export interface TableOptions
   extends BaseTableOptions<TableRowOptions>, NonVisualDrawingPropertiesOptions {
-  /** Table id (p:cNvPr @id). Auto-generated if omitted. */
+  /** Table id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;

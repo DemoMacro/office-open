@@ -12,14 +12,14 @@ import type { ObjectElementOptions } from "@parts/object";
  */
 import type { ParagraphRunPropertiesOptions, RunPropertiesOptions } from "./properties";
 
-/** w:br/@w:clear values (ST_BrClear) — clears floating content on the given side(s). */
+/** w:br/`@w:clear` values (ST_BrClear) — clears floating content on the given side(s). */
 export type BreakClear = "none" | "left" | "right" | "all";
 
 /** Options for a line break with optional float-clearing (CT_Br). */
 export interface BreakOptions {
   /** Number of `<w:br/>` elements (defaults to 1). */
   count?: number;
-  /** Clear floating content (w:br/@w:clear). */
+  /** Clear floating content (w:br/`@w:clear`). */
   clear?: BreakClear;
 }
 

@@ -90,7 +90,7 @@ export interface QueryTableOptions {
   connectionId: number;
   /** Auto format applied */
   autoFormat?: boolean;
-  /** Intermediate rows preserved (CT_QueryTable @intermediate) */
+  /** Intermediate rows preserved (CT_QueryTable `@intermediate`) */
   intermediate?: boolean;
   /** Refresh info (CT_QueryTableRefresh) */
   queryTableRefresh?: QueryTableRefreshOptions;

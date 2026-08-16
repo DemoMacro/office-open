@@ -9,7 +9,7 @@ import type { SlideChild } from "@parts/slide/slide-child";
  * source of truth for both the public slide-child entry and the descriptor.
  */
 export interface GroupOptions extends BaseGroupOptions {
-  /** Group id (p:cNvPr @id). Auto-generated if omitted. */
+  /** Group id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
@@ -26,7 +26,7 @@ export interface GroupOptions extends BaseGroupOptions {
   fill?: FillOptions;
   /** Group-level effects (EG_EffectProperties on grpSpPr). */
   effects?: EffectListOptions;
-  /** @bwMode container attribute (ST_BlackWhiteMode) on p:grpSpPr. */
+  /** `@bwMode` container attribute (ST_BlackWhiteMode) on p:grpSpPr. */
   bwMode?: BlackWhiteMode;
   children: SlideChild[];
 }

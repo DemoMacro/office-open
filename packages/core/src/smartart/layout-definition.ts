@@ -33,7 +33,7 @@ import type { DataModelOptions } from "./data-model";
 
 // ── Enumerations (ST_* from dml-diagram.xsd, verbatim token values) ──
 
-/** ST_AlgorithmType (dgm:alg @type). */
+/** ST_AlgorithmType (dgm:alg `@type`). */
 export type AlgorithmType =
   | "composite"
   | "conn"
@@ -46,10 +46,10 @@ export type AlgorithmType =
   | "tx"
   | "snake";
 
-/** ST_ConstraintRelationship (dgm:constr @for/@refFor). */
+/** ST_ConstraintRelationship (dgm:constr `@for`/`@refFor`). */
 export type ConstraintRelationship = "self" | "ch" | "des";
 
-/** ST_ConstraintType (dgm:constr/@type/@refType, dgm:rule @type). */
+/** ST_ConstraintType (dgm:constr/`@type`/`@refType`, dgm:rule `@type`). */
 export type ConstraintType =
   | "none"
   | "alignOff"
@@ -116,13 +116,13 @@ export type ConstraintType =
   | "wArH"
   | "wOff";
 
-/** ST_BoolOperator (dgm:constr @op). */
+/** ST_BoolOperator (dgm:constr `@op`). */
 export type ConstraintOperator = "none" | "equ" | "gte" | "lte";
 
-/** ST_ChildOrderType (dgm:layoutNode @chOrder). */
+/** ST_ChildOrderType (dgm:layoutNode `@chOrder`). */
 export type ChildOrder = "b" | "t";
 
-/** ST_FunctionType (dgm:if @func). */
+/** ST_FunctionType (dgm:if `@func`). */
 export type ConditionFunction =
   | "cnt"
   | "pos"
@@ -133,13 +133,13 @@ export type ConditionFunction =
   | "depth"
   | "maxDepth";
 
-/** ST_FunctionOperator (dgm:if @op). */
+/** ST_FunctionOperator (dgm:if `@op`). */
 export type ConditionOperator = "equ" | "neq" | "gt" | "lt" | "gte" | "lte";
 
-/** ST_Direction (dgm:dir @val). */
+/** ST_Direction (dgm:dir `@val`). */
 export type DiagramDirection = "norm" | "rev";
 
-/** ST_ResizeHandlesStr (dgm:resizeHandles @val). */
+/** ST_ResizeHandlesStr (dgm:resizeHandles `@val`). */
 export type ResizeHandles = "exact" | "rel";
 
 // ST_FunctionArgument / ST_FunctionValue are unions of every layout-parameter
@@ -154,7 +154,7 @@ export type ResizeHandles = "exact" | "rel";
 
 /** dgm:sampData / dgm:styleData / dgm:clrData (CT_SampleData). */
 export interface SampleDataOptions {
-  /** Use the data model of the containing layout as sample (dgm:@useDef). */
+  /** Use the data model of the containing layout as sample (dgm:`@useDef`). */
   useDefault?: boolean;
   dataModel?: DataModelOptions;
 }
@@ -165,25 +165,25 @@ export interface SampleDataOptions {
  * st, cnt, step) surface as strings; single values read fine too.
  */
 export interface DiagramIterationOptions {
-  /** Selection axes, space-separated (dgm:@axis, ST_AxisTypes). */
+  /** Selection axes, space-separated (dgm:`@axis`, ST_AxisTypes). */
   axis?: string;
-  /** Selected point kinds, space-separated (dgm:@ptType, ST_ElementTypes). */
+  /** Selected point kinds, space-separated (dgm:`@ptType`, ST_ElementTypes). */
   pointType?: string;
-  /** Hide the last transition point (dgm:@hideLastTrans, ST_Booleans). */
+  /** Hide the last transition point (dgm:`@hideLastTrans`, ST_Booleans). */
   hideLastTransition?: string;
-  /** Start index (dgm:@st, ST_Ints). */
+  /** Start index (dgm:`@st`, ST_Ints). */
   start?: string;
-  /** Iteration count (dgm:@cnt, ST_UnsignedInts). */
+  /** Iteration count (dgm:`@cnt`, ST_UnsignedInts). */
   count?: string;
-  /** Index step (dgm:@step, ST_Ints). */
+  /** Index step (dgm:`@step`, ST_Ints). */
   step?: string;
 }
 
 /** dgm:alg (CT_Algorithm). */
 export interface AlgorithmOptions {
-  /** Layout algorithm (dgm:alg @type). */
+  /** Layout algorithm (dgm:alg `@type`). */
   type: AlgorithmType;
-  /** Revision counter (dgm:alg @rev). */
+  /** Revision counter (dgm:alg `@rev`). */
   revision?: number;
   /** Algorithm parameters (dgm:param*). */
   parameters?: AlgorithmParameterOptions[];
@@ -191,10 +191,10 @@ export interface AlgorithmOptions {
 
 /** dgm:param (CT_Parameter) — inlined in AlgorithmOptions.parameters. */
 export interface AlgorithmParameterOptions {
-  /** Parameter name (dgm:param @type, ST_ParameterId). */
+  /** Parameter name (dgm:param `@type`, ST_ParameterId). */
   type: string;
   /**
-   * Parameter value (dgm:param @val, ST_ParameterVal — a union of direction
+   * Parameter value (dgm:param `@val`, ST_ParameterVal — a union of direction
    * tokens, numbers, and booleans, so it stays polymorphic).
    */
   value: string | number | boolean;
@@ -202,19 +202,19 @@ export interface AlgorithmParameterOptions {
 
 /** dgm:shape (CT_Shape) — the geometry template a layout node renders as. */
 export interface LayoutShapeOptions {
-  /** Shape rotation as a raw double (dgm:shape @rot). */
+  /** Shape rotation as a raw double (dgm:shape `@rot`). */
   rotation?: number;
-  /** Preset geometry name or "none"/"conn" (dgm:shape @type, ST_LayoutShapeType). */
+  /** Preset geometry name or "none"/"conn" (dgm:shape `@type`, ST_LayoutShapeType). */
   type?: string;
-  /** Preview picture relationship id (dgm:shape @r:blip). */
+  /** Preview picture relationship id (dgm:shape `@r:blip`). */
   blip?: string;
-  /** Z-order offset (dgm:shape @zOrderOff). */
+  /** Z-order offset (dgm:shape `@zOrderOff`). */
   zOrderOffset?: number;
-  /** Hide the shape geometry, keep the text (dgm:shape @hideGeom). */
+  /** Hide the shape geometry, keep the text (dgm:shape `@hideGeom`). */
   hideGeometry?: boolean;
-  /** Lock text entry (dgm:shape @lkTxEntry). */
+  /** Lock text entry (dgm:shape `@lkTxEntry`). */
   lockTextEntry?: boolean;
-  /** Use the picture placeholder (dgm:shape @blipPhldr). */
+  /** Use the picture placeholder (dgm:shape `@blipPhldr`). */
   blipPlaceholder?: boolean;
   /** Geometry adjustment values (dgm:adjLst). */
   adjustments?: AdjustOptions[];
@@ -222,77 +222,77 @@ export interface LayoutShapeOptions {
 
 /** dgm:constr (CT_Constraint). */
 export interface ConstraintOptions {
-  /** Constrained dimension (dgm:constr @type). */
+  /** Constrained dimension (dgm:constr `@type`). */
   type: ConstraintType;
-  /** Related point the constraint applies to (dgm:constr @for). */
+  /** Related point the constraint applies to (dgm:constr `@for`). */
   for?: ConstraintRelationship;
-  /** Layout-node name the constraint applies to (dgm:constr @forName). */
+  /** Layout-node name the constraint applies to (dgm:constr `@forName`). */
   forName?: string;
-  /** Point kinds the constraint applies to (dgm:constr @ptType). */
+  /** Point kinds the constraint applies to (dgm:constr `@ptType`). */
   pointType?: string;
-  /** Referenced dimension (dgm:constr @refType). */
+  /** Referenced dimension (dgm:constr `@refType`). */
   referenceType?: ConstraintType;
-  /** Relationship of the referenced point (dgm:constr @refFor). */
+  /** Relationship of the referenced point (dgm:constr `@refFor`). */
   referenceFor?: ConstraintRelationship;
-  /** Layout-node name of the referenced point (dgm:constr @refForName). */
+  /** Layout-node name of the referenced point (dgm:constr `@refForName`). */
   referenceForName?: string;
-  /** Point kinds of the referenced point (dgm:constr @refPtType). */
+  /** Point kinds of the referenced point (dgm:constr `@refPtType`). */
   referencePointType?: string;
-  /** How the reference combines with val (dgm:constr @op). */
+  /** How the reference combines with val (dgm:constr `@op`). */
   operation?: ConstraintOperator;
-  /** Absolute value (dgm:constr @val). */
+  /** Absolute value (dgm:constr `@val`). */
   value?: number;
-  /** Factor applied to the reference (dgm:constr @fact). */
+  /** Factor applied to the reference (dgm:constr `@fact`). */
   factor?: number;
 }
 
 /** dgm:rule (CT_NumericRule). */
 export interface LayoutRuleOptions {
-  /** Rule dimension (dgm:rule @type). */
+  /** Rule dimension (dgm:rule `@type`). */
   type: ConstraintType;
   for?: ConstraintRelationship;
   forName?: string;
   pointType?: string;
-  /** Preferred value (dgm:rule @val). */
+  /** Preferred value (dgm:rule `@val`). */
   value?: number;
-  /** Multiplied factor (dgm:rule @fact). */
+  /** Multiplied factor (dgm:rule `@fact`). */
   factor?: number;
-  /** Upper bound (dgm:rule @max). */
+  /** Upper bound (dgm:rule `@max`). */
   maximum?: number;
 }
 
 /** dgm:varLst (CT_LayoutVariablePropertySet). */
 export interface VariableListOptions {
-  /** This is an organization chart (dgm:orgChart @val). */
+  /** This is an organization chart (dgm:orgChart `@val`). */
   organizationChart?: boolean;
-  /** Maximum children per parent (dgm:chMax @val). */
+  /** Maximum children per parent (dgm:chMax `@val`). */
   childMaximum?: number;
-  /** Preferred children per parent (dgm:chPref @val). */
+  /** Preferred children per parent (dgm:chPref `@val`). */
   childPreferred?: number;
-  /** Bullets enabled on text nodes (dgm:bulletEnabled @val). */
+  /** Bullets enabled on text nodes (dgm:bulletEnabled `@val`). */
   bulletEnabled?: boolean;
-  /** Reading direction (dgm:dir @val). */
+  /** Reading direction (dgm:dir `@val`). */
   direction?: DiagramDirection;
-  /** Branch style for hierarchy layouts (dgm:hierBranch @val). */
+  /** Branch style for hierarchy layouts (dgm:hierBranch `@val`). */
   hierarchyBranchStyle?: HierBranch;
-  /** Animate siblings one by one or as a branch (dgm:animOne @val). */
+  /** Animate siblings one by one or as a branch (dgm:animOne `@val`). */
   animateOne?: AnimateOneByOne;
-  /** Animate by level or from center (dgm:animLvl @val). */
+  /** Animate by level or from center (dgm:animLvl `@val`). */
   animateLevel?: AnimationLevel;
-  /** Resize-handle behavior (dgm:resizeHandles @val). */
+  /** Resize-handle behavior (dgm:resizeHandles `@val`). */
   resizeHandles?: ResizeHandles;
 }
 
 /** One alternative inside a choose — dgm:if (CT_When); `if` is a reserved word. */
 export interface WhenOptions extends DiagramIterationOptions {
   name?: string;
-  /** Selection function (dgm:if @func). */
+  /** Selection function (dgm:if `@func`). */
   function: ConditionFunction;
-  /** Function argument, usually a variable name (dgm:if @arg). */
+  /** Function argument, usually a variable name (dgm:if `@arg`). */
   argument?: string;
-  /** Comparison operator (dgm:if @op). */
+  /** Comparison operator (dgm:if `@op`). */
   operator: ConditionOperator;
-  /** Comparison value (dgm:if @val, ST_FunctionValue union). */
+  /** Comparison value (dgm:if `@val`, ST_FunctionValue union). */
   value: string;
   children?: LayoutNodeChild[];
 }
@@ -330,13 +330,13 @@ export type LayoutNodeChild =
 
 /** dgm:layoutNode (CT_LayoutNode) — one node of the layout tree. */
 export interface LayoutNodeOptions {
-  /** Unique name referenced by constraints and moveWith (dgm:@name). */
+  /** Unique name referenced by constraints and moveWith (dgm:`@name`). */
   name?: string;
-  /** Formatting slot from styleDef/colorsDef (dgm:@styleLbl). */
+  /** Formatting slot from styleDef/colorsDef (dgm:`@styleLbl`). */
   styleLabel?: string;
-  /** Child ordering: bottom-first "b" or top-first "t" (dgm:@chOrder). */
+  /** Child ordering: bottom-first "b" or top-first "t" (dgm:`@chOrder`). */
   childOrder?: ChildOrder;
-  /** Move with another named layout node (dgm:@moveWith). */
+  /** Move with another named layout node (dgm:`@moveWith`). */
   moveWith?: string;
   children?: LayoutNodeChild[];
   /** Raw a:extLst inner XML — verbatim round-trip. */
@@ -346,18 +346,18 @@ export interface LayoutNodeOptions {
 /** dgm:forEach (CT_ForEach) — apply children to each selected point. */
 export interface ForEachOptions extends DiagramIterationOptions {
   name?: string;
-  /** Reference to a named layout node instead of inline children (dgm:@ref). */
+  /** Reference to a named layout node instead of inline children (dgm:`@ref`). */
   reference?: string;
   children?: LayoutNodeChild[];
 }
 
 /** dgm:layoutDef (CT_DiagramDefinition) — the layoutDef part root. */
 export interface LayoutDefinitionOptions {
-  /** Layout identity URI (dgm:layoutDef @uniqueId). */
+  /** Layout identity URI (dgm:layoutDef `@uniqueId`). */
   uniqueId?: string;
-  /** Minimum Office version (dgm:layoutDef @minVer). */
+  /** Minimum Office version (dgm:layoutDef `@minVer`). */
   minVer?: string;
-  /** Default quick-style label (dgm:layoutDef @defStyle). */
+  /** Default quick-style label (dgm:layoutDef `@defStyle`). */
   defaultStyle?: string;
   /** Localized titles (dgm:title*). */
   titles?: DiagramNameOptions[];

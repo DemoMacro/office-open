@@ -15,13 +15,13 @@ export interface ExternalDefinedNameOptions {
   name: string;
   refersTo?: string;
   sheetId?: number;
-  /** Publish to server (CT_DefinedName @publishToServer) */
+  /** Publish to server (CT_DefinedName `@publishToServer`) */
   publishToServer?: boolean;
-  /** VBA procedure (CT_DefinedName @vbProcedure) */
+  /** VBA procedure (CT_DefinedName `@vbProcedure`) */
   vbProcedure?: boolean;
-  /** Workbook parameter (CT_DefinedName @workbookParameter) */
+  /** Workbook parameter (CT_DefinedName `@workbookParameter`) */
   workbookParameter?: boolean;
-  /** XLM macro (CT_DefinedName @xlm) */
+  /** XLM macro (CT_DefinedName `@xlm`) */
   xlm?: boolean;
 }
 
@@ -32,7 +32,7 @@ export interface ExternalCellOptions {
   type?: string;
   /** Cell value */
   value?: string;
-  /** Value metadata index (CT_ExternalCell @vm) */
+  /** Value metadata index (CT_ExternalCell `@vm`) */
   valueMetadataIndex?: number;
 }
 
@@ -125,7 +125,7 @@ export interface OleItemOptions {
 }
 
 export interface OleLinkOptions {
-  /** OLE program identifier (CT_OleLink @progId) */
+  /** OLE program identifier (CT_OleLink `@progId`) */
   progId?: string;
   /** OLE items */
   oleItems?: OleItemOptions[];

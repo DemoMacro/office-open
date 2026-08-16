@@ -5,7 +5,7 @@ import { convertEmuToPixels, convertToEmu } from "@office-open/core";
  * Media module for WordprocessingML documents.
  *
  * Provides transformation helpers for embedded media (images). The deduplicated
- * media collection itself ({@link Media}) lives in @office-open/core and is
+ * media collection itself ({@link Media}) lives in `@office`-open/core and is
  * re-exported from this package's index so every format package shares one
  * content-based dedup implementation.
  *

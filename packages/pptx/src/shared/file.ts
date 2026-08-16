@@ -116,7 +116,7 @@ export interface SlideOptions {
   master?: string;
   showMasterShapes?: boolean;
   showMasterPlaceholderAnimations?: boolean;
-  /** Hidden slide — excluded from slideshow (emits p:sld/@show="0"). */
+  /** Hidden slide — excluded from slideshow (emits p:sld/`@show`="0"). */
   hidden?: boolean;
   controls?: ControlOptions[];
   customerData?: { rId: string }[];

@@ -34,13 +34,13 @@ import { withDiagramNamespaces } from "./layout-definition";
 export interface TextProperties3DOptions {
   /** 3D shape properties for the label text (a:sp3d). */
   shape3d?: Shape3DOptions;
-  /** Flatten text to a plane at this z coordinate, EMU (a:flatTx @z). */
+  /** Flatten text to a plane at this z coordinate, EMU (a:flatTx `@z`). */
   flatText?: number;
 }
 
 /** dgm:styleLbl (CT_StyleLabel) — formatting for one style slot. */
 export interface StyleLabelOptions {
-  /** Slot name referenced by dgm:layoutNode @styleLbl (required). */
+  /** Slot name referenced by dgm:layoutNode `@styleLbl` (required). */
   name: string;
   /** Shared 3D scene for this label (dgm:scene3d). */
   scene3d?: Scene3DOptions;
@@ -56,9 +56,9 @@ export interface StyleLabelOptions {
 
 /** dgm:styleDef (CT_StyleDefinition) — the quickStyle part root. */
 export interface StyleDefinitionOptions {
-  /** Style identity URI (dgm:styleDef @uniqueId). */
+  /** Style identity URI (dgm:styleDef `@uniqueId`). */
   uniqueId?: string;
-  /** Minimum Office version (dgm:styleDef @minVer). */
+  /** Minimum Office version (dgm:styleDef `@minVer`). */
   minVer?: string;
   /** Localized titles (dgm:title*). */
   titles?: DiagramNameOptions[];
