@@ -89,11 +89,12 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   webPublishObjects?: WebPublishObjectOptions[];
   /** Defined names — named ranges, constants, formulas (CT_DefinedNames) */
   definedNames?: DefinedNameOptions[];
-  /** Workbook view (CT_BookView) — parse-only; compiler does not round-trip this field */
+  /** Workbook view (CT_BookView) */
   bookView?: WorkbookViewOptions;
-  /** Calculation properties (CT_CalcPr) — parse-only */
+  /** Calculation properties (CT_CalcPr) */
   calcPr?: CalculationPropertiesOptions;
-  /** Workbook properties (CT_WorkbookPr) — parse-only */
+  /** Workbook properties (CT_WorkbookPr) — includes defaultThemeVersion, which Excel
+   * requires when the package carries a theme (dropping it makes the file unopenable) */
   workbookPr?: WorkbookPropertiesOptions;
   /** Calculation chain cells (xl/calcChain.xml) — parse-only; compiler rebuilds from formulas */
   calcChain?: CalcCell[];

@@ -7,6 +7,12 @@
  * string → vt:lpwstr, boolean → vt:bool, Date → vt:filetime, integers →
  * vt:i4, other numbers → vt:r8.
  *
+ * The two domains spell strings differently and Excel enforces the split:
+ * app.xml vectors (CT_VectorLpstr) must carry vt:lpstr — Excel refuses to
+ * open a file whose HeadingPairs/TitlesOfParts use vt:lpwstr — while
+ * custom.xml property values use vt:lpwstr, the spelling Office itself
+ * writes there.
+ *
  * @module
  */
 
@@ -36,10 +42,11 @@ const NUMERIC_VT_TAGS = new Set([
 ]);
 
 /**
- * Serialize a JS value as its vt:* element (stringify side).
+ * Serialize a JS value as its vt:* element (stringify side, custom.xml domain).
  *
- * Strings stay lpwstr (Office's default), integers become i4, other numbers
- * r8, booleans bool, and Dates filetime (xsd:dateTime form).
+ * Strings stay lpwstr (the spelling Office writes for custom property
+ * values), integers become i4, other numbers r8, booleans bool, and Dates
+ * filetime (xsd:dateTime form).
  */
 export function stringifyVariantValue(value: VariantValue): string {
   if (typeof value === "string") return `<vt:lpwstr>${escapeXml(value)}</vt:lpwstr>`;
@@ -72,10 +79,14 @@ export function parseVariantValue(el: Element): VariantValue | undefined {
   }
 }
 
-/** Serialize a vt:vector of lpwstr entries (the TitlesOfParts shape). */
+/**
+ * Serialize a vt:vector of lpstr entries (the TitlesOfParts shape).
+ * lpstr is required: Excel refuses to open a file whose app.xml vectors
+ * carry lpwstr (CT_VectorLpstr).
+ */
 export function stringifyStringVector(values: readonly string[]): string {
-  const items = values.map((v) => `<vt:lpwstr>${escapeXml(v)}</vt:lpwstr>`).join("");
-  return `<vt:vector size="${values.length}" baseType="lpwstr">${items}</vt:vector>`;
+  const items = values.map((v) => `<vt:lpstr>${escapeXml(v)}</vt:lpstr>`).join("");
+  return `<vt:vector size="${values.length}" baseType="lpstr">${items}</vt:vector>`;
 }
 
 /** Parse a vt:vector with any scalar baseType into its JS values. */

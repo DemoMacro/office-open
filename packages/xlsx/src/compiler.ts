@@ -750,6 +750,9 @@ export function compileWorkbook(
         volTypes: options.volTypes,
         webPublishObjects: options.webPublishObjects,
         definedNames: options.definedNames,
+        workbookPr: options.workbookPr,
+        calcPr: options.calcPr,
+        bookView: options.bookView,
       },
       ctx,
     ) ?? "";

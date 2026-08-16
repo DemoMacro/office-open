@@ -421,11 +421,11 @@ export interface ObjectAnchorOptions {
 /**
  * Comment property (CT_CommentPr).
  *
- * Round-trip support only: serializing a commentPr alongside the sheet's
- * legacy VML note drawing produces a file Excel refuses to open — commentPr
- * and the VML note shape are rival property systems for the same note, and
- * Excel reads note properties from the shape's x:ClientData. Parsed from
- * third-party files that carry it, never emitted by demos.
+ * Parsed but never re-emitted: a commentPr alongside the sheet's legacy VML
+ * note drawing produces a file Excel refuses to open — commentPr and the VML
+ * note shape are rival property systems for the same note, and Excel reads
+ * note properties from the shape's x:ClientData. The fields survive parse so
+ * callers can inspect them; stringify always drops them.
  */
 export interface CommentPropertiesOptions {
   /** Locked */
@@ -463,7 +463,7 @@ export interface CommentOptions {
   author: string;
   /** Comment text (plain string or rich text) */
   text: string | RichTextOptions;
-  /** Comment properties (CT_CommentPr) */
+  /** Comment properties (CT_CommentPr) — parsed but never re-emitted (see CommentPropertiesOptions) */
   commentPr?: CommentPropertiesOptions;
   /**
    * Note shape anchor (x:Anchor in the VML part) — 8 numbers: fromColumn,

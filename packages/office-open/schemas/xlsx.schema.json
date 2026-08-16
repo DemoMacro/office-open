@@ -2459,7 +2459,7 @@
         },
         "commentPr": {
           "$ref": "#/definitions/CommentPropertiesOptions",
-          "description": "Comment properties (CT_CommentPr)"
+          "description": "Comment properties (CT_CommentPr) — parsed but never re-emitted (see CommentPropertiesOptions)"
         },
         "size": {
           "additionalProperties": false,
@@ -2496,7 +2496,7 @@
     },
     "CommentPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Comment property (CT_CommentPr).\n\nRound-trip support only: serializing a commentPr alongside the sheet's legacy VML note drawing produces a file Excel refuses to open — commentPr and the VML note shape are rival property systems for the same note, and Excel reads note properties from the shape's x:ClientData. Parsed from third-party files that carry it, never emitted by demos.",
+      "description": "Comment property (CT_CommentPr).\n\nParsed but never re-emitted: a commentPr alongside the sheet's legacy VML note drawing produces a file Excel refuses to open — commentPr and the VML note shape are rival property systems for the same note, and Excel reads note properties from the shape's x:ClientData. The fields survive parse so callers can inspect them; stringify always drops them.",
       "properties": {
         "altText": {
           "description": "Alt text",
@@ -13970,7 +13970,7 @@
         },
         "bookView": {
           "$ref": "#/definitions/WorkbookViewOptions",
-          "description": "Workbook view (CT_BookView) — parse-only; compiler does not round-trip this field"
+          "description": "Workbook view (CT_BookView)"
         },
         "calcChain": {
           "description": "Calculation chain cells (xl/calcChain.xml) — parse-only; compiler rebuilds from formulas",
@@ -13981,7 +13981,7 @@
         },
         "calcPr": {
           "$ref": "#/definitions/CalculationPropertiesOptions",
-          "description": "Calculation properties (CT_CalcPr) — parse-only"
+          "description": "Calculation properties (CT_CalcPr)"
         },
         "cellStyleXfs": {
           "description": "Named cell-style templates (CT_CellStyleXfs) — definitions referenced by cellStyles",
@@ -14164,7 +14164,7 @@
         },
         "workbookPr": {
           "$ref": "#/definitions/WorkbookPropertiesOptions",
-          "description": "Workbook properties (CT_WorkbookPr) — parse-only"
+          "description": "Workbook properties (CT_WorkbookPr) — includes defaultThemeVersion, which Excel requires when the package carries a theme (dropping it makes the file unopenable)"
         },
         "workbookProtection": {
           "$ref": "#/definitions/WorkbookProtectionOptions",

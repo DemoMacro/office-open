@@ -119,10 +119,12 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
     if (opts.scaleCrop !== undefined)
       p.push(`<ScaleCrop>${xsdBoolean(opts.scaleCrop)}</ScaleCrop>`);
     if (opts.headingPairs !== undefined && opts.headingPairs.length > 0) {
+      // vt:lpstr is required here: Excel refuses to open a file whose
+      // HeadingPairs variants carry lpwstr.
       const items = opts.headingPairs
         .map(
           (pair) =>
-            `<vt:variant><vt:lpwstr>${escapeXml(pair.name)}</vt:lpwstr></vt:variant>` +
+            `<vt:variant><vt:lpstr>${escapeXml(pair.name)}</vt:lpstr></vt:variant>` +
             `<vt:variant><vt:i4>${pair.count}</vt:i4></vt:variant>`,
         )
         .join("");

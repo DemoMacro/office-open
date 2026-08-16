@@ -141,29 +141,38 @@ describe("commentsDesc round-trip", () => {
     expect(props1.strike).toBe(true);
   });
 
-  it("round-trips commentPr with properties and anchor", () => {
-    const opts: CommentsDocOptions = {
-      comments: [
-        {
-          cell: "A1",
-          author: "Alice",
-          text: "note",
-          commentPr: {
-            locked: false,
-            print: false,
-            textHAlign: "center",
-            anchor: {
-              moveWithCells: true,
-              sizeWithCells: false,
-              from: { col: 1, row: 1, colOff: 0 },
-              to: { col: 3, row: 4 },
-            },
+  it("parses commentPr but never re-emits it", () => {
+    // stringify drops commentPr: Excel refuses to open it beside the VML note
+    // drawing the compiler always writes. Parse keeps the fields for inspection.
+    const emitted = commentsDesc.stringify(
+      {
+        comments: [
+          {
+            cell: "A1",
+            author: "Alice",
+            text: "note",
+            commentPr: { locked: false, print: false, textHAlign: "center" },
           },
-        },
-      ],
-    };
-    const result = roundTrip(opts);
-    const pr = result.comments![0]!.commentPr!;
+        ],
+      },
+      writeCtx,
+    )!;
+    expect(emitted).not.toContain("commentPr");
+
+    const xml =
+      `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
+      ` xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing">` +
+      `<authors><author>Alice</author></authors><commentList>` +
+      `<comment ref="A1" authorId="0"><text><t>note</t></text>` +
+      `<commentPr locked="0" print="0" textHAlign="center">` +
+      `<anchor moveWithCells="1" sizeWithCells="0">` +
+      `<xdr:from><xdr:col>1</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>1</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>` +
+      `<xdr:to><xdr:col>3</xdr:col><xdr:row>4</xdr:row></xdr:to>` +
+      `</anchor></commentPr></comment></commentList></comments>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = commentsDesc.parse(el, readCtx);
+    const pr = result.comments[0]!.commentPr!;
     expect(pr.locked).toBe(false);
     expect(pr.print).toBe(false);
     expect(pr.textHAlign).toBe("center");

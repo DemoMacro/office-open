@@ -51,7 +51,7 @@ const buffer = await generateWorkbook({
               { text: "Premium grade material" },
             ],
           },
-          // commentPr is intentionally omitted: Excel rejects a commentPr
+          // commentPr is parsed but never re-emitted: Excel rejects a commentPr
           // alongside the sheet's legacy VML note drawing (the two are rival
           // property systems for the same note; Excel reads note properties
           // from the VML shape's x:ClientData).

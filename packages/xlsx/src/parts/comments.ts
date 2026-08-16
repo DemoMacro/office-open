@@ -59,10 +59,12 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
         typeof entry.text === "string"
           ? `<t>${escapeXml(entry.text)}</t>`
           : buildRstXml(entry.text);
-      // CT_Comment model is text then commentPr (sml.xsd:290-294).
-      const commentPrXml = entry.commentPr ? buildCommentPrXml(entry.commentPr) : "";
+      // commentPr is parsed but never re-emitted: Excel refuses to open a
+      // third-party file carrying commentPr beside the VML note drawing this
+      // compiler always writes (rival property systems — it reads the VML
+      // shape's x:ClientData instead).
       p.push(
-        `<comment ref="${entry.cell}" authorId="${authorId}"><text>${textXml}</text>${commentPrXml}</comment>`,
+        `<comment ref="${entry.cell}" authorId="${authorId}"><text>${textXml}</text></comment>`,
       );
     }
 
@@ -262,41 +264,7 @@ function collectAuthors(comments: CommentOptions[]): string[] {
   return result.length > 0 ? result : [""];
 }
 
-// ── Comment properties (CT_CommentPr) helpers ──
-
-/** Serialize CT_CommentPr. anchor is required (CT_ObjectAnchor), defaults to empty. */
-function buildCommentPrXml(pr: CommentPropertiesOptions): string {
-  const attrs: string[] = [];
-  if (pr.locked !== undefined) attrs.push(`locked="${pr.locked ? 1 : 0}"`);
-  if (pr.defaultSize !== undefined) attrs.push(`defaultSize="${pr.defaultSize ? 1 : 0}"`);
-  if (pr.print !== undefined) attrs.push(`print="${pr.print ? 1 : 0}"`);
-  if (pr.disabled !== undefined) attrs.push(`disabled="${pr.disabled ? 1 : 0}"`);
-  if (pr.autoFill !== undefined) attrs.push(`autoFill="${pr.autoFill ? 1 : 0}"`);
-  if (pr.autoLine !== undefined) attrs.push(`autoLine="${pr.autoLine ? 1 : 0}"`);
-  if (pr.altText !== undefined) attrs.push(`altText="${escapeXml(pr.altText)}"`);
-  if (pr.textHAlign !== undefined) attrs.push(`textHAlign="${pr.textHAlign}"`);
-  if (pr.textVAlign !== undefined) attrs.push(`textVAlign="${pr.textVAlign}"`);
-  if (pr.lockText !== undefined) attrs.push(`lockText="${pr.lockText ? 1 : 0}"`);
-  if (pr.justLastX !== undefined) attrs.push(`justLastX="${pr.justLastX ? 1 : 0}"`);
-  if (pr.autoScale !== undefined) attrs.push(`autoScale="${pr.autoScale ? 1 : 0}"`);
-  return `<commentPr ${attrs.join(" ")}>${buildAnchorXml(pr.anchor)}</commentPr>`;
-}
-
-/** Serialize CT_ObjectAnchor — an sml-local `anchor` element wrapping xdr:from/xdr:to markers. */
-function buildAnchorXml(anchor: ObjectAnchorOptions | undefined): string {
-  const a = anchor ?? {};
-  const attrs = ` moveWithCells="${a.moveWithCells ? 1 : 0}" sizeWithCells="${a.sizeWithCells ? 1 : 0}"`;
-  return `<anchor${attrs}>${markerXml("xdr:from", a.from)}${markerXml("xdr:to", a.to)}</anchor>`;
-}
-
-/** Serialize one CT_Marker (xdr:from / xdr:to) — child-element text, not attributes. */
-function markerXml(tag: string, marker: AnchorMarkerOptions | undefined): string {
-  const m = marker ?? { col: 0, row: 0 };
-  return (
-    `<${tag}><xdr:col>${m.col}</xdr:col><xdr:colOff>${m.colOff ?? 0}</xdr:colOff>` +
-    `<xdr:row>${m.row}</xdr:row><xdr:rowOff>${m.rowOff ?? 0}</xdr:rowOff></${tag}>`
-  );
-}
+// ── Comment properties (CT_CommentPr) parse — stringify never emits it (see above) ──
 
 function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
   const pr: CommentPropertiesOptions = {};
