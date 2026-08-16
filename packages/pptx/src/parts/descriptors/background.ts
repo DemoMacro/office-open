@@ -64,11 +64,9 @@ function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundOptions {
       result.shadeToTitle = true;
     }
 
-    // Fill
-    const fillResult = coreParse(fillDesc, bgPr, ctx);
-    if (fillResult && Object.keys(fillResult).length > 0) {
-      result.fill = fillResult;
-    }
+    // Fill — CT_BackgroundProperties requires an EG_FillProperties child, so
+    // parse always yields one ({ type: "none" } for a:noFill).
+    result.fill = coreParse(fillDesc, bgPr, ctx);
 
     // Effects (a:effectLst)
     const effectLst = findChild(bgPr, "a:effectLst");

@@ -91,67 +91,66 @@ function stringifyDeletedRun(c: RunOptions | string): string {
 }
 
 export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
-  const parts: string[] = [];
+  let body = "";
 
   const rPr = stringifyRunProperties(opts);
-  if (rPr) parts.push(rPr);
+  if (rPr) body += rPr;
 
-  if (opts.break) parts.push(breakXml(opts.break));
+  if (opts.break) body += breakXml(opts.break);
 
   if (opts.children) {
     for (const child of opts.children) {
       if (typeof child === "string") {
-        parts.push(`<w:t xml:space="preserve">${escapeXml(child)}</w:t>`);
+        body += `<w:t xml:space="preserve">${escapeXml(child)}</w:t>`;
       } else if (typeof child === "object" && child !== null) {
         // Bare run-inner elements — emit directly inside this <w:r>. Must run
         // before stringifyChildDispatch, which wraps paragraph-level children
         // in their own <w:r> (correct for paragraphs, nested/invalid in a run).
         if ("tab" in child) {
-          parts.push("<w:tab/>");
+          body += "<w:tab/>";
           continue;
         }
         if ("pageBreak" in child) {
-          parts.push('<w:br w:type="page"/>');
+          body += '<w:br w:type="page"/>';
           continue;
         }
         if ("columnBreak" in child) {
-          parts.push('<w:br w:type="column"/>');
+          body += '<w:br w:type="column"/>';
           continue;
         }
         if ("break" in child) {
-          parts.push(breakXml((child as { break: number | BreakOptions }).break));
+          body += breakXml((child as { break: number | BreakOptions }).break);
           continue;
         }
         // Empty run elements — separator, noBreakHyphen, pgNum, etc.
-        const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0] ?? ""];
+        let firstKey: string | undefined;
+        for (const key in child) {
+          firstKey = key;
+          break;
+        }
+        const emptyXml = firstKey !== undefined ? EMPTY_RUN_ELEMENTS[firstKey] : undefined;
         if (emptyXml) {
-          parts.push(emptyXml);
+          body += emptyXml;
           continue;
         }
         // JSON child dispatch (images, charts, hyperlinks, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
-          if (Array.isArray(jsonResult)) {
-            parts.push(...jsonResult);
-          } else {
-            parts.push(jsonResult);
-          }
+          body += Array.isArray(jsonResult) ? jsonResult.join("") : jsonResult;
         } else if ("text" in child || "children" in child || "break" in child) {
-          parts.push(stringifyRunInline(child as RunOptions, ctx));
+          body += stringifyRunInline(child as RunOptions, ctx);
         }
       }
     }
   } else if (opts.text !== undefined) {
-    parts.push(`<w:t xml:space="preserve">${escapeXml(String(opts.text))}</w:t>`);
+    body += `<w:t xml:space="preserve">${escapeXml(String(opts.text))}</w:t>`;
   }
 
-  const rsidAttrs: string[] = [];
-  if (opts.rsid) rsidAttrs.push(` w:rsidR="${opts.rsid}"`);
-  if (opts.runPropertiesRsid) rsidAttrs.push(` w:rsidRPr="${opts.runPropertiesRsid}"`);
-  if (opts.deletionRsid) rsidAttrs.push(` w:rsidDel="${opts.deletionRsid}"`);
-  const attr = rsidAttrs.join("");
+  let attr = "";
+  if (opts.rsid) attr += ` w:rsidR="${opts.rsid}"`;
+  if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
+  if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
 
-  const body = parts.join("");
   return body.length === 0 ? (attr ? `<w:r${attr}/>` : "<w:r/>") : `<w:r${attr}>${body}</w:r>`;
 }
 
@@ -743,9 +742,7 @@ export function stringifyChildDispatch(
   // Inserted text run(s) — w:ins wraps one or more runs (CT_RunTrackChange)
   if ("insertion" in child) {
     const { id, author, date, children } = child.insertion;
-    const body = children
-      .map((c) => stringifyRunInline(typeof c === "string" ? { text: c } : c, ctx))
-      .join("");
+    const body = stringifyInlineWrap(children, ctx);
     return `<w:ins w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:ins>`;
   }
 
@@ -843,16 +840,12 @@ export function stringifyChildDispatch(
   // ── Move revision text runs ──
   if ("movedFrom" in child) {
     const { id, author, date, children } = child.movedFrom;
-    const body = children
-      .map((c) => stringifyRunInline(typeof c === "string" ? { text: c } : c, ctx))
-      .join("");
+    const body = stringifyInlineWrap(children, ctx);
     return `<w:moveFrom w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveFrom>`;
   }
   if ("movedTo" in child) {
     const { id, author, date, children } = child.movedTo;
-    const body = children
-      .map((c) => stringifyRunInline(typeof c === "string" ? { text: c } : c, ctx))
-      .join("");
+    const body = stringifyInlineWrap(children, ctx);
     return `<w:moveTo w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveTo>`;
   }
 
@@ -1096,10 +1089,10 @@ export function stringifyParagraphInline(
   ctx: BodyContext,
 ): string {
   const resolved: ParagraphOptions = typeof opts === "string" ? { text: opts } : opts;
-  const parts: string[] = [];
+  let body = "";
 
   const props = stringifyParagraphProperties(resolved);
-  if (props.xml) parts.push(props.xml);
+  if (props.xml) body += props.xml;
 
   // Register numbering references from inline paragraphs (footnotes, endnotes, etc.)
   // so that concrete numbering instances are created and placeholders get resolved.
@@ -1110,29 +1103,24 @@ export function stringifyParagraphInline(
   }
 
   if (resolved.text !== undefined) {
-    parts.push(stringifyRunInline({ text: resolved.text }, ctx));
+    body += stringifyRunInline({ text: resolved.text }, ctx);
   }
 
   if (resolved.children) {
     for (const child of resolved.children) {
       if (typeof child === "string") {
-        parts.push(stringifyRunInline({ text: child }, ctx));
+        body += stringifyRunInline({ text: child }, ctx);
       } else if (typeof child === "object" && child !== null) {
         // Try JSON child dispatch first (image, chart, hyperlink, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
-          if (Array.isArray(jsonResult)) {
-            parts.push(...jsonResult);
-          } else {
-            parts.push(jsonResult);
-          }
+          body += Array.isArray(jsonResult) ? jsonResult.join("") : jsonResult;
         } else if ("text" in child || "children" in child || "break" in child) {
-          parts.push(stringifyRunInline(child as RunOptions, ctx));
+          body += stringifyRunInline(child as RunOptions, ctx);
         }
       }
     }
   }
 
-  const body = parts.join("");
   return body ? `<w:p>${body}</w:p>` : "<w:p/>";
 }

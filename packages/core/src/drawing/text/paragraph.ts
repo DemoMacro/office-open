@@ -17,7 +17,7 @@ import { emitPercent, parsePercent } from "../../util/converters";
 import { xsdTextAlign } from "../../util/mappings";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { stringifyTextRun, textRunDesc } from "./run";
-import { runPropertiesDesc } from "./run-properties";
+import { runPropertiesDesc, stringifyRunProperties } from "./run-properties";
 import type { Mutable } from "./run-properties";
 import type {
   BulletAutoNumOptions,
@@ -103,8 +103,8 @@ function stringifyParagraphProperties(
 
   // Default run properties — last child of a:pPr (CT_TextParagraphProperties).
   if (options.defaultRunProperties) {
-    const rPr = runPropertiesDesc.stringify(options.defaultRunProperties, ctx) ?? "";
-    children.push(rPr.replaceAll("<a:rPr", "<a:defRPr").replaceAll("</a:rPr>", "</a:defRPr>"));
+    const rPr = stringifyRunProperties("a:defRPr", options.defaultRunProperties, ctx);
+    if (rPr) children.push(rPr);
   }
 
   if (attrs.length === 0 && children.length === 0) return "";
@@ -440,11 +440,9 @@ function readBreak(el: XmlElement, ctx: ReadContext): BreakOptions {
 }
 
 // a:endParaRPr has the same CT_TextCharacterProperties shape as a:rPr; reuse
-// runPropertiesDesc and relabel the emitted tag.
+// the run-properties serializer under the endParaRPr tag.
 function stringifyEndParaRPr(opts: RunPropertiesOptions, ctx: WriteContext): string {
-  const rPr = runPropertiesDesc.stringify(opts, ctx) ?? "";
-  if (!rPr) return "<a:endParaRPr/>";
-  return rPr.replaceAll("<a:rPr", "<a:endParaRPr").replaceAll("</a:rPr>", "</a:endParaRPr>");
+  return stringifyRunProperties("a:endParaRPr", opts, ctx) || "<a:endParaRPr/>";
 }
 
 function stringifyTextField(opts: TextFieldOptions, ctx: WriteContext): string {

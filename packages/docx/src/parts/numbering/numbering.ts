@@ -286,6 +286,16 @@ interface AbstractNumberingExtraOptions {
   numStyleLink?: string;
 }
 
+// String-valued w:abstractNum child elements: XML tag → options key.
+const ABSTRACT_EXTRA_PROPS = [
+  ["w:nsid", "nsid"],
+  ["w:multiLevelType", "multiLevelType"],
+  ["w:tmpl", "tmpl"],
+  ["w:name", "name"],
+  ["w:styleLink", "styleLink"],
+  ["w:numStyleLink", "numStyleLink"],
+] as const;
+
 // ── Pure function serializers ──
 
 function stringifyAbstractNumbering(
@@ -466,38 +476,13 @@ export function parseNumberingDefinitions(
 
     if (levels.length > 0) {
       const extraOptions: AbstractNumberingExtraOptions = {};
-      const nsidEl = findChild(abstractEl, "w:nsid");
-      if (nsidEl) {
-        const v = attr(nsidEl, "w:val");
-        if (v) extraOptions.nsid = v;
-      }
-      const multiLevelTypeEl = findChild(abstractEl, "w:multiLevelType");
-      if (multiLevelTypeEl) {
-        const v = attr(multiLevelTypeEl, "w:val");
-        if (v) extraOptions.multiLevelType = v;
+      for (const [tag, key] of ABSTRACT_EXTRA_PROPS) {
+        const childEl = findChild(abstractEl, tag);
+        const v = childEl ? attr(childEl, "w:val") : undefined;
+        if (v) extraOptions[key] = v;
       }
       const restartVal = attrBool(abstractEl, "w15:restartNumberingAfterBreak");
       if (restartVal !== undefined) extraOptions.restartNumberingAfterBreak = restartVal;
-      const tmplEl = findChild(abstractEl, "w:tmpl");
-      if (tmplEl) {
-        const v = attr(tmplEl, "w:val");
-        if (v) extraOptions.tmpl = v;
-      }
-      const nameEl = findChild(abstractEl, "w:name");
-      if (nameEl) {
-        const v = attr(nameEl, "w:val");
-        if (v) extraOptions.name = v;
-      }
-      const styleLinkEl = findChild(abstractEl, "w:styleLink");
-      if (styleLinkEl) {
-        const v = attr(styleLinkEl, "w:val");
-        if (v) extraOptions.styleLink = v;
-      }
-      const numStyleLinkEl = findChild(abstractEl, "w:numStyleLink");
-      if (numStyleLinkEl) {
-        const v = attr(numStyleLinkEl, "w:val");
-        if (v) extraOptions.numStyleLink = v;
-      }
       // Apply per-instance level start overrides. The abstract level defines
       // the default start; a concrete num may re-pin it via lvlOverride, and
       // dropping it silently reverts the list's restart numbering.

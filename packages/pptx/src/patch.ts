@@ -8,6 +8,7 @@ import {
   createReplacer,
   getNextRelationshipIndex,
   nextNumericId,
+  partPathToRelsPath,
   removeOverride,
   replaceHyperlinkPlaceholders,
   strFromU8,
@@ -270,7 +271,7 @@ const resolveTargetPath = (sourceDir: string, target: string): string => {
  */
 const removePart = (xmlMap: Map<string, Element>, partPath: string): void => {
   xmlMap.delete(partPath);
-  xmlMap.delete(relsKeyFor(partPath));
+  xmlMap.delete(partPathToRelsPath(partPath));
   const contentTypes = xmlMap.get("[Content_Types].xml");
   if (contentTypes) removeOverride(contentTypes, `/${partPath}`);
 };
@@ -323,19 +324,13 @@ const removeSlidesFromMap = (xmlMap: Map<string, Element>, indices: readonly num
   }
   for (const slidePath of slidePaths) {
     // The notesSlide is owned by exactly this slide — take it with us.
-    const slideRelsRoot = rootElement(xmlMap.get(relsKeyFor(slidePath)), "Relationships");
+    const slideRelsRoot = rootElement(xmlMap.get(partPathToRelsPath(slidePath)), "Relationships");
     const notesTarget = findRelByType(slideRelsRoot, NOTES_SLIDE_REL_TYPE)?.target;
     if (notesTarget) {
       removePart(xmlMap, resolveTargetPath("ppt/slides", notesTarget));
     }
     removePart(xmlMap, slidePath);
   }
-};
-
-/** Build the rels part path for a given part path (…/_rels/<file>.rels). */
-const relsKeyFor = (partPath: string): string => {
-  const slash = partPath.lastIndexOf("/");
-  return `${partPath.substring(0, slash)}/_rels/${partPath.substring(slash + 1)}.rels`;
 };
 
 /** Find an existing relationship of a type in a Relationships root. */
@@ -419,7 +414,7 @@ const appendCommentsToMap = (
       `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${slideCommentsDesc.stringify(mergedEntries, ctx)}`,
     ),
   );
-  const slideRelsKey = relsKeyFor(slidePath);
+  const slideRelsKey = partPathToRelsPath(slidePath);
   const slideRels = xmlMap.get(slideRelsKey) ?? createRelationshipFile();
   xmlMap.set(slideRelsKey, slideRels);
   if (!findRelByType(slideRels, COMMENTS_REL_TYPE)) {
@@ -538,8 +533,7 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
     if (targetHlinks.length === 0) continue;
 
     // Generalized rels path: ppt/<dir>/_rels/<file>.rels
-    const lastSlash = targetPath.lastIndexOf("/");
-    const relsKey = `${targetPath.substring(0, lastSlash)}/_rels/${targetPath.substring(lastSlash + 1)}.rels`;
+    const relsKey = partPathToRelsPath(targetPath);
     const relsJson = xmlMap.get(relsKey) ?? createRelationshipFile();
     xmlMap.set(relsKey, relsJson);
     const offset = getNextRelationshipIndex(relsJson);

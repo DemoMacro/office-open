@@ -17,13 +17,15 @@ import type { Element as XmlElement } from "@office-open/xml";
 import {
   stringifyVmlAttributes,
   parseVmlAttributes,
+  stringifyVmlTrueFalseBlank,
+  parseVmlTrueFalseBlank,
   type VmlAttrSpec,
   type VmlColor,
   type VmlTrueFalse,
 } from "./attributes";
 import { stringifyVmlFill, parseVmlFill, type VmlFillOptions } from "./shape-elements/fill";
-import type { VmlExtAttribute } from "./shape-elements/office-elements";
 import {
+  EXT_ATTR,
   stringifyVmlSkew,
   parseVmlSkew,
   stringifyVmlExtrusion,
@@ -32,6 +34,7 @@ import {
   parseVmlCallout,
   stringifyVmlLock,
   parseVmlLock,
+  type VmlExtAttribute,
   type VmlSkewOptions,
   type VmlExtrusionOptions,
   type VmlCalloutOptions,
@@ -72,7 +75,7 @@ export interface VmlShapeDefaultsOptions extends VmlExtAttribute {
 }
 
 const SHAPEDEFAULTS_ATTRS: readonly VmlAttrSpec[] = [
-  { field: "ext", attr: "v:ext", kind: "string" },
+  ...EXT_ATTR,
   { field: "spidmax", attr: "spidmax", kind: "number" },
   { field: "style", attr: "style", kind: "string" },
   { field: "fill", attr: "fill", kind: "trueFalse" },
@@ -153,7 +156,7 @@ export interface VmlColorMruOptions extends VmlExtAttribute {
 /** Serialize o:colormru. */
 export function stringifyVmlColorMru(opts: VmlColorMruOptions): string {
   return `<o:colormru${stringifyVmlAttributes(opts as Record<string, unknown>, [
-    { field: "ext", attr: "v:ext", kind: "string" },
+    ...EXT_ATTR,
     { field: "colors", attr: "colors", kind: "string" },
   ])}/>`;
 }
@@ -161,14 +164,7 @@ export function stringifyVmlColorMru(opts: VmlColorMruOptions): string {
 /** Parse an o:colormru element. */
 export function parseVmlColorMru(el: XmlElement): VmlColorMruOptions {
   const out: Record<string, unknown> = {};
-  parseVmlAttributes(
-    el,
-    [
-      { field: "ext", attr: "v:ext", kind: "string" },
-      { field: "colors", attr: "colors", kind: "string" },
-    ],
-    out,
-  );
+  parseVmlAttributes(el, [...EXT_ATTR, { field: "colors", attr: "colors", kind: "string" }], out);
   return out as VmlColorMruOptions;
 }
 
@@ -181,7 +177,7 @@ export interface VmlColorMenuOptions extends VmlExtAttribute {
 }
 
 const COLORMENU_ATTRS: readonly VmlAttrSpec[] = [
-  { field: "ext", attr: "v:ext", kind: "string" },
+  ...EXT_ATTR,
   { field: "strokecolor", attr: "strokecolor", kind: "string" },
   { field: "fillcolor", attr: "fillcolor", kind: "string" },
   { field: "shadowcolor", attr: "shadowcolor", kind: "string" },
@@ -262,7 +258,7 @@ export interface VmlShapeLayoutOptions extends VmlExtAttribute {
 /** Serialize an o:idmap. */
 function stringifyVmlIdMap(opts: VmlIdMapOptions): string {
   return `<o:idmap${stringifyVmlAttributes(opts as Record<string, unknown>, [
-    { field: "ext", attr: "v:ext", kind: "string" },
+    ...EXT_ATTR,
     { field: "data", attr: "data", kind: "string" },
   ])}/>`;
 }
@@ -270,14 +266,7 @@ function stringifyVmlIdMap(opts: VmlIdMapOptions): string {
 /** Parse an o:idmap element. */
 function parseVmlIdMap(el: XmlElement): VmlIdMapOptions {
   const out: Record<string, unknown> = {};
-  parseVmlAttributes(
-    el,
-    [
-      { field: "ext", attr: "v:ext", kind: "string" },
-      { field: "data", attr: "data", kind: "string" },
-    ],
-    out,
-  );
+  parseVmlAttributes(el, [...EXT_ATTR, { field: "data", attr: "data", kind: "string" }], out);
   return out as VmlIdMapOptions;
 }
 
@@ -289,16 +278,14 @@ function stringifyVmlRegroupTable(opts: VmlRegroupTableOptions): string {
         `<o:entry${stringifyVmlAttributes(entry as Record<string, unknown>, ENTRY_ATTRS)}/>`,
     )
     .join("");
-  const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, [
-    { field: "ext", attr: "v:ext", kind: "string" },
-  ]);
+  const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, EXT_ATTR);
   return `<o:regrouptable${attrStr}>${entries}</o:regrouptable>`;
 }
 
 /** Parse an o:regrouptable element. */
 function parseVmlRegroupTable(el: XmlElement): VmlRegroupTableOptions {
   const out: Record<string, unknown> = {};
-  parseVmlAttributes(el, [{ field: "ext", attr: "v:ext", kind: "string" }], out);
+  parseVmlAttributes(el, EXT_ATTR, out);
   const entries: VmlRegroupEntryOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.type === "element" && child.name === "o:entry") {
@@ -315,10 +302,10 @@ function parseVmlRegroupTable(el: XmlElement): VmlRegroupTableOptions {
 function stringifyVmlRuleProxy(proxy: VmlRuleProxyOptions): string {
   const attrs: string[] = [];
   if (proxy.start !== undefined) {
-    attrs.push(`start="${proxy.start === "" ? "" : proxy.start ? "t" : "f"}"`);
+    attrs.push(`start="${stringifyVmlTrueFalseBlank(proxy.start)}"`);
   }
   if (proxy.end !== undefined) {
-    attrs.push(`end="${proxy.end === "" ? "" : proxy.end ? "t" : "f"}"`);
+    attrs.push(`end="${stringifyVmlTrueFalseBlank(proxy.end)}"`);
   }
   if (proxy.idref !== undefined) attrs.push(`idref="${proxy.idref}"`);
   if (proxy.connectloc !== undefined) attrs.push(`connectloc="${proxy.connectloc}"`);
@@ -329,14 +316,8 @@ function stringifyVmlRuleProxy(proxy: VmlRuleProxyOptions): string {
 function parseVmlRuleProxy(el: XmlElement): VmlRuleProxyOptions {
   const out: VmlRuleProxyOptions = {};
   const attrs = el.attributes ?? {};
-  if (attrs.start !== undefined) {
-    const raw = String(attrs.start);
-    out.start = raw === "" ? "" : raw === "t" || raw === "true" || raw === "1";
-  }
-  if (attrs.end !== undefined) {
-    const raw = String(attrs.end);
-    out.end = raw === "" ? "" : raw === "t" || raw === "true" || raw === "1";
-  }
+  if (attrs.start !== undefined) out.start = parseVmlTrueFalseBlank(String(attrs.start));
+  if (attrs.end !== undefined) out.end = parseVmlTrueFalseBlank(String(attrs.end));
   if (attrs.idref !== undefined) out.idref = String(attrs.idref);
   if (attrs.connectloc !== undefined) out.connectloc = Number(attrs.connectloc);
   return out;
@@ -373,16 +354,14 @@ function parseVmlRule(el: XmlElement): VmlRuleOptions {
 /** Serialize an o:rules block. */
 function stringifyVmlRulesBlock(opts: VmlRulesOptions): string {
   const rules = (opts.rules ?? []).map(stringifyVmlRule).join("");
-  const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, [
-    { field: "ext", attr: "v:ext", kind: "string" },
-  ]);
+  const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, EXT_ATTR);
   return `<o:rules${attrStr}>${rules}</o:rules>`;
 }
 
 /** Parse an o:rules element. */
 function parseVmlRulesBlock(el: XmlElement): VmlRulesOptions {
   const out: Record<string, unknown> = {};
-  parseVmlAttributes(el, [{ field: "ext", attr: "v:ext", kind: "string" }], out);
+  parseVmlAttributes(el, EXT_ATTR, out);
   const rules: VmlRuleOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.type === "element" && child.name === "o:r") {
@@ -399,9 +378,7 @@ export function stringifyVmlShapeLayout(opts: VmlShapeLayoutOptions): string {
   if (opts.idmap !== undefined) children.push(stringifyVmlIdMap(opts.idmap));
   if (opts.regrouptable !== undefined) children.push(stringifyVmlRegroupTable(opts.regrouptable));
   if (opts.rules !== undefined) children.push(stringifyVmlRulesBlock(opts.rules));
-  const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, [
-    { field: "ext", attr: "v:ext", kind: "string" },
-  ]);
+  const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, EXT_ATTR);
   return children.length > 0
     ? `<o:shapelayout${attrStr}>${children.join("")}</o:shapelayout>`
     : `<o:shapelayout${attrStr}/>`;
@@ -410,7 +387,7 @@ export function stringifyVmlShapeLayout(opts: VmlShapeLayoutOptions): string {
 /** Parse an o:shapelayout element. */
 export function parseVmlShapeLayout(el: XmlElement): VmlShapeLayoutOptions {
   const out: Record<string, unknown> = {};
-  parseVmlAttributes(el, [{ field: "ext", attr: "v:ext", kind: "string" }], out);
+  parseVmlAttributes(el, EXT_ATTR, out);
   for (const child of el.elements ?? []) {
     if (child.type !== "element") continue;
     if (child.name === "o:idmap") out.idmap = parseVmlIdMap(child);

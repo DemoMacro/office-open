@@ -326,6 +326,8 @@ export type Patch =
 interface ImageRelationshipAddition {
   key: string;
   mediaDatas: { fileName: string }[];
+  /** Serialized part snapshot from the first pass — reused by the media pass. */
+  xml: string;
 }
 
 interface HyperlinkRelationshipAddition {
@@ -554,12 +556,14 @@ export const patchDocument = async <T extends OutputType = OutputType>({
         });
       }
 
-      const mediaDatas = getReferencedMedia(JSON.stringify(json), media.array);
+      const jsonStr = JSON.stringify(json);
+      const mediaDatas = getReferencedMedia(jsonStr, media.array);
       if (mediaDatas.length > 0) {
         hasMedia = true;
         imageRelationshipAdditions.push({
           key,
           mediaDatas,
+          xml: jsonStr,
         });
       }
     }
@@ -572,18 +576,16 @@ export const patchDocument = async <T extends OutputType = OutputType>({
     mergeCommentsPart(map, assignedComments, file);
   }
 
-  for (const { key, mediaDatas } of imageRelationshipAdditions) {
+  for (const { key, mediaDatas, xml } of imageRelationshipAdditions) {
     const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
     const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
     map.set(relationshipKey, relationshipsJson);
 
     const index = getNextRelationshipIndex(relationshipsJson);
-    const newJson = replaceImagePlaceholders(
-      JSON.stringify(map.get(key)),
-      mediaDatas,
-      index,
-      "plain",
-    );
+    // The cached snapshot predates the comments merge — re-serialize that one
+    // part so the merge survives the placeholder rewrite.
+    const sourceXml = key === "word/comments.xml" ? JSON.stringify(map.get(key)) : xml;
+    const newJson = replaceImagePlaceholders(sourceXml, mediaDatas, index, "plain");
     map.set(key, JSON.parse(newJson) as Element);
 
     for (const [i, media] of mediaDatas.entries()) {

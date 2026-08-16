@@ -8,7 +8,7 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { findChild, attr, attrNum, textOf, escapeXml } from "@office-open/xml";
+import { findChild, attr, attrNum, attrs, textOf, escapeXml } from "@office-open/xml";
 
 import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
 import type { AutoFilterOptions } from "./worksheet";
@@ -151,17 +151,6 @@ export interface TableOptions {
   connectionId?: number;
 }
 
-// ── Helper ──
-
-function buildAttrs(attrsMap: Record<string, string | number | boolean | undefined>): string {
-  const parts: string[] = [];
-  for (const [k, v] of Object.entries(attrsMap)) {
-    if (v === undefined) continue;
-    parts.push(` ${k}="${typeof v === "string" ? escapeXml(v) : String(v)}"`);
-  }
-  return parts.join("");
-}
-
 // ── Descriptor ──
 
 export const tableDesc: CustomDescriptor<TableOptions> = {
@@ -211,7 +200,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         ` xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"` +
         ` mc:Ignorable="xr xr2"` +
         ` xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"` +
-        ` xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"${buildAttrs(rootAttrs)}>`,
+        ` xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"${attrs(rootAttrs)}>`,
     );
 
     // autoFilter (optional, before tableColumns per XSD sequence)
@@ -269,9 +258,9 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       }
 
       if (inner.length > 0) {
-        p.push(`<tableColumn${buildAttrs(colAttrs)}>${inner.join("")}</tableColumn>`);
+        p.push(`<tableColumn${attrs(colAttrs)}>${inner.join("")}</tableColumn>`);
       } else {
-        p.push(`<tableColumn${buildAttrs(colAttrs)}/>`);
+        p.push(`<tableColumn${attrs(colAttrs)}/>`);
       }
     }
     p.push("</tableColumns>");
@@ -285,7 +274,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       if (s.showLastColumn) styleAttrs.showLastColumn = 1;
       if (s.showRowStripes !== false) styleAttrs.showRowStripes = 1;
       if (s.showColumnStripes) styleAttrs.showColumnStripes = 1;
-      p.push(`<tableStyleInfo${buildAttrs(styleAttrs)}/>`);
+      p.push(`<tableStyleInfo${attrs(styleAttrs)}/>`);
     }
 
     p.push("</table>");

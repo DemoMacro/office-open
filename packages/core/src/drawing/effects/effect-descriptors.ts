@@ -16,7 +16,7 @@ import {
   emitPercent,
   mapOptional,
   parseAngle,
-  parsePercent,
+  parsePercentAttr,
 } from "../../util/converters";
 import { xsdBlendMode, xsdPresetShadow, xsdRectAlignment } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
@@ -31,14 +31,6 @@ import type { InnerShadowEffectOptions } from "./inner-shadow";
 import type { OuterShadowEffectOptions } from "./outer-shadow";
 import type { PresetShadowEffectOptions } from "./preset-shadow";
 import type { ReflectionEffectOptions } from "./reflection";
-
-// Parse an ST_Percentage attr that may be a numeric scalar or "50%" literal.
-function parsePercentAttr(raw: string | number | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const s = typeof raw === "number" ? String(raw) : raw;
-  if (s.endsWith("%")) return Number(s.slice(0, -1));
-  return parsePercent(Number(s));
-}
 
 // ── Helper: stringify a color into an effect element ──
 

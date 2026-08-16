@@ -10,7 +10,7 @@ import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
-import { emitAngle, emitPercent, parseAngle } from "../../util/converters";
+import { emitAngle, emitPercent, parseAngle, parsePercentAttr } from "../../util/converters";
 import { xsdRectAlignment } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
 import { solidFillDesc } from "../color/color-descriptors";
@@ -49,8 +49,8 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
     const result: TileOptions = {};
     if (el.attributes?.["tx"] !== undefined) result.tx = Number(el.attributes["tx"]);
     if (el.attributes?.["ty"] !== undefined) result.ty = Number(el.attributes["ty"]);
-    if (el.attributes?.["sx"] !== undefined) result.sx = parsePercent(el.attributes["sx"])!;
-    if (el.attributes?.["sy"] !== undefined) result.sy = parsePercent(el.attributes["sy"])!;
+    if (el.attributes?.["sx"] !== undefined) result.sx = parsePercentAttr(el.attributes["sx"])!;
+    if (el.attributes?.["sy"] !== undefined) result.sy = parsePercentAttr(el.attributes["sy"])!;
     if (el.attributes?.["flip"] !== undefined)
       result.flip = String(el.attributes["flip"]) as TileOptions["flip"];
     if (el.attributes?.["algn"] !== undefined)
@@ -76,10 +76,10 @@ export const sourceRectangleDesc: CustomDescriptor<SourceRectangleOptions> = {
   },
   parse(el, _ctx) {
     const result: SourceRectangleOptions = {};
-    if (el.attributes?.["l"] !== undefined) result.left = parsePercent(el.attributes["l"])!;
-    if (el.attributes?.["t"] !== undefined) result.top = parsePercent(el.attributes["t"])!;
-    if (el.attributes?.["r"] !== undefined) result.right = parsePercent(el.attributes["r"])!;
-    if (el.attributes?.["b"] !== undefined) result.bottom = parsePercent(el.attributes["b"])!;
+    if (el.attributes?.["l"] !== undefined) result.left = parsePercentAttr(el.attributes["l"])!;
+    if (el.attributes?.["t"] !== undefined) result.top = parsePercentAttr(el.attributes["t"])!;
+    if (el.attributes?.["r"] !== undefined) result.right = parsePercentAttr(el.attributes["r"])!;
+    if (el.attributes?.["b"] !== undefined) result.bottom = parsePercentAttr(el.attributes["b"])!;
     return result;
   },
 };
@@ -214,15 +214,6 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   return parts.join("");
 }
 
-// Parse an ST_Percentage attribute that may be a 1/1000th integer ("50000")
-// or a percent literal ("50%"); both are XSD-valid. Returns integer percent.
-function parsePercent(raw: string | number | undefined): number | undefined {
-  if (raw === undefined) return undefined;
-  const s = typeof raw === "number" ? String(raw) : raw;
-  if (s.endsWith("%")) return Number(s.slice(0, -1));
-  return Number(s) / 1000;
-}
-
 function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions | undefined {
   const result: BlipEffectsOptions = {};
 
@@ -231,9 +222,9 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   const lum = findChild(el, "a:lum");
   if (lum) {
     const opts: LuminanceEffectOptions = {};
-    const bright = parsePercent(lum.attributes?.["bright"]);
+    const bright = parsePercentAttr(lum.attributes?.["bright"]);
     if (bright !== undefined) opts.bright = bright;
-    const contrast = parsePercent(lum.attributes?.["contrast"]);
+    const contrast = parsePercentAttr(lum.attributes?.["contrast"]);
     if (contrast !== undefined) opts.contrast = contrast;
     result.luminance = opts;
   }
@@ -242,9 +233,9 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   if (hsl) {
     const opts: HSLEffectOptions = {};
     if (hsl.attributes?.["hue"] !== undefined) opts.hue = parseAngle(Number(hsl.attributes["hue"]));
-    const sat = parsePercent(hsl.attributes?.["sat"]);
+    const sat = parsePercentAttr(hsl.attributes?.["sat"]);
     if (sat !== undefined) opts.saturation = sat;
-    const l = parsePercent(hsl.attributes?.["lum"]);
+    const l = parsePercentAttr(hsl.attributes?.["lum"]);
     if (l !== undefined) opts.luminance = l;
     result.hsl = opts;
   }
@@ -254,14 +245,14 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
     const opts: TintEffectOptions = {};
     if (tint.attributes?.["hue"] !== undefined)
       opts.hue = parseAngle(Number(tint.attributes["hue"]));
-    const amt = parsePercent(tint.attributes?.["amt"]);
+    const amt = parsePercentAttr(tint.attributes?.["amt"]);
     if (amt !== undefined) opts.amount = amt;
     result.tint = opts;
   }
 
   const biLevel = findChild(el, "a:biLevel");
   if (biLevel?.attributes?.["thresh"] !== undefined) {
-    result.biLevel = { threshold: parsePercent(biLevel.attributes["thresh"])! };
+    result.biLevel = { threshold: parsePercentAttr(biLevel.attributes["thresh"])! };
   }
 
   if (findChild(el, "a:alphaCeiling")) result.alphaCeiling = true;
@@ -280,19 +271,19 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
   const alphaModFix = findChild(el, "a:alphaModFix");
   if (alphaModFix) {
     const opts: AlphaModulateFixedEffectOptions = {};
-    const amt = parsePercent(alphaModFix.attributes?.["amt"]);
+    const amt = parsePercentAttr(alphaModFix.attributes?.["amt"]);
     if (amt !== undefined) opts.amount = amt;
     result.alphaModulateFixed = opts;
   }
 
   const alphaRepl = findChild(el, "a:alphaRepl");
   if (alphaRepl?.attributes?.["a"] !== undefined) {
-    result.alphaReplace = { alpha: parsePercent(alphaRepl.attributes["a"])! };
+    result.alphaReplace = { alpha: parsePercentAttr(alphaRepl.attributes["a"])! };
   }
 
   const alphaBiLevel = findChild(el, "a:alphaBiLevel");
   if (alphaBiLevel?.attributes?.["thresh"] !== undefined) {
-    result.alphaBiLevel = { threshold: parsePercent(alphaBiLevel.attributes["thresh"])! };
+    result.alphaBiLevel = { threshold: parsePercentAttr(alphaBiLevel.attributes["thresh"])! };
   }
 
   const clrChange = findChild(el, "a:clrChange");

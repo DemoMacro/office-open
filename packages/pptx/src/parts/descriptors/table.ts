@@ -133,7 +133,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     }
 
     // Find a:tbl inside a:graphicData
-    const graphicData = findChild(el, "a:graphic") ? findChild(el, "a:graphic") : undefined;
+    const graphicData = findChild(el, "a:graphic");
     const gd = graphicData ? findChild(graphicData, "a:graphicData") : undefined;
     const tbl = gd ? findChild(gd, "a:tbl") : undefined;
     if (!tbl) return result as TableOptions;

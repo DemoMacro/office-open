@@ -358,12 +358,15 @@ const ALL_SHAPE_ATTRS: readonly VmlAttrSpec[] = [
   ...VML_OFFICE_SHAPE_ATTRS,
 ];
 
+/** The AG_Path attribute — always emitted after the shared vocabulary. */
+const PATH_ATTR: readonly VmlAttrSpec[] = [{ field: "path", attr: "path", kind: "string" }];
+
 /** Serialize the shared attribute vocabulary (style special-cased) plus extras. */
 function stringifyShapeAttrs(
   opts: Record<string, unknown>,
   extraSpecs: readonly VmlAttrSpec[] = [],
 ): string {
-  let attrStr = stringifyVmlAttributes(opts, [...ALL_SHAPE_ATTRS, ...extraSpecs]);
+  let attrStr = stringifyVmlAttributes(opts, [...ALL_SHAPE_ATTRS, ...extraSpecs, ...PATH_ATTR]);
   const style = opts.style as VmlShapeStyle | undefined;
   if (style !== undefined) {
     attrStr += ` style="${escapeXml(stringifyVmlStyle(style))}"`;
@@ -414,11 +417,10 @@ function parseShapeAttrs(
   out: Record<string, unknown>,
   extraSpecs: readonly VmlAttrSpec[] = [],
 ): void {
-  parseVmlAttributes(el, [...ALL_SHAPE_ATTRS, ...extraSpecs], out);
+  parseVmlAttributes(el, [...ALL_SHAPE_ATTRS, ...extraSpecs, ...PATH_ATTR], out);
   if (el.attributes?.style !== undefined) {
     out.style = parseVmlShapeStyle(parseVmlStyle(String(el.attributes.style)));
   }
-  if (el.attributes?.path !== undefined) out.path = String(el.attributes.path);
 }
 
 /** Parse the EG_ShapeElements children from `el` onto `out`. */
@@ -502,17 +504,14 @@ function parseShapeElements(el: XmlElement, out: Record<string, unknown>): void 
   }
 }
 
-/** Generic shape element serializer: tag + shared/extra attrs + @path + children. */
+/** Generic shape element serializer: tag + shared/extra attrs + children. */
 function stringifyShapeElement(
   tag: string,
   opts: Record<string, unknown>,
   extraSpecs: readonly VmlAttrSpec[] = [],
-  extraAttrStrings: string[] = [],
   childrenXml = "",
 ): string {
-  const attrStr =
-    stringifyShapeAttrs(opts, extraSpecs) +
-    (extraAttrStrings.length > 0 ? " " + extraAttrStrings.join(" ") : "");
+  const attrStr = stringifyShapeAttrs(opts, extraSpecs);
   return childrenXml !== "" ? `<${tag}${attrStr}>${childrenXml}</${tag}>` : `<${tag}${attrStr}/>`;
 }
 
@@ -527,7 +526,6 @@ const SHAPE_EXTRA_ATTRS: readonly VmlAttrSpec[] = [
 
 /** Serialize v:shape. */
 export function stringifyVmlShape(opts: VmlShapeOptions): string {
-  const extra = opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [];
   let children = stringifyShapeElements(opts);
   if (opts.ink !== undefined) children += stringifyVmlInk(opts.ink);
   if (opts.equationxmlElement !== undefined) {
@@ -538,7 +536,6 @@ export function stringifyVmlShape(opts: VmlShapeOptions): string {
     "v:shape",
     opts as unknown as Record<string, unknown>,
     SHAPE_EXTRA_ATTRS,
-    extra,
     children,
   );
 }
@@ -563,7 +560,6 @@ const SHAPETYPE_EXTRA_ATTRS: readonly VmlAttrSpec[] = [
 
 /** Serialize v:shapetype. */
 export function stringifyVmlShapetype(opts: VmlShapetypeOptions): string {
-  const extra = opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [];
   // CT_Shapetype is a sequence: the o:complex extension slot comes last.
   let children = stringifyShapeElements(opts);
   if (opts.complex !== undefined) children += stringifyVmlComplex(opts.complex);
@@ -571,7 +567,6 @@ export function stringifyVmlShapetype(opts: VmlShapetypeOptions): string {
     "v:shapetype",
     opts as unknown as Record<string, unknown>,
     SHAPETYPE_EXTRA_ATTRS,
-    extra,
     children,
   );
 }
@@ -615,6 +610,7 @@ const GROUP_ATTRS: readonly VmlAttrSpec[] = [
   { field: "editas", attr: "editas", kind: "string" },
   { field: "tableproperties", attr: "o:tableproperties", kind: "string" },
   { field: "tablelimits", attr: "o:tablelimits", kind: "string" },
+  ...PATH_ATTR,
 ];
 
 /** Serialize v:group. */
@@ -622,9 +618,7 @@ export function stringifyVmlGroup(opts: VmlGroupOptions): string {
   let children =
     (opts.children ?? []).map(stringifyGroupChild).join("") + stringifyShapeElements(opts);
   if (opts.diagram !== undefined) children += stringifyVmlDiagram(opts.diagram);
-  const attrStr =
-    stringifyVmlAttributes(opts as Record<string, unknown>, GROUP_ATTRS) +
-    (opts.path !== undefined ? ` path="${escapeXml(opts.path)}"` : "");
+  const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, GROUP_ATTRS);
   const style = opts.style;
   const styleStr = style !== undefined ? ` style="${escapeXml(stringifyVmlStyle(style))}"` : "";
   return children !== ""
@@ -638,9 +632,6 @@ export function parseVmlGroup(el: XmlElement): VmlGroupOptions {
   parseVmlAttributes(el, GROUP_ATTRS, out);
   if (el.attributes?.style !== undefined) {
     out.style = parseVmlShapeStyle(parseVmlStyle(String(el.attributes.style)));
-  }
-  if (el.attributes?.path !== undefined && out.path === undefined) {
-    out.path = String(el.attributes.path);
   }
   parseShapeElements(el, out);
 
@@ -738,7 +729,6 @@ export function stringifyVmlArc(opts: VmlArcOptions): string {
     "v:arc",
     opts as unknown as Record<string, unknown>,
     ARC_ATTRS,
-    opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [],
     stringifyShapeElements(opts),
   );
 }
@@ -757,7 +747,6 @@ export function stringifyVmlCurve(opts: VmlCurveOptions): string {
     "v:curve",
     opts as unknown as Record<string, unknown>,
     CURVE_ATTRS,
-    opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [],
     stringifyShapeElements(opts),
   );
 }
@@ -776,7 +765,6 @@ export function stringifyVmlImage(opts: VmlImageOptions): string {
     "v:image",
     opts as unknown as Record<string, unknown>,
     IMAGE_ATTRS,
-    opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [],
     stringifyShapeElements(opts),
   );
 }
@@ -795,7 +783,6 @@ export function stringifyVmlLine(opts: VmlLineOptions): string {
     "v:line",
     opts as unknown as Record<string, unknown>,
     LINE_ATTRS,
-    opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [],
     stringifyShapeElements(opts),
   );
 }
@@ -814,7 +801,6 @@ export function stringifyVmlOval(opts: VmlOvalOptions): string {
     "v:oval",
     opts as unknown as Record<string, unknown>,
     [],
-    opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [],
     stringifyShapeElements(opts),
   );
 }
@@ -835,7 +821,6 @@ export function stringifyVmlPolyline(opts: VmlPolylineOptions): string {
     "v:polyline",
     opts as unknown as Record<string, unknown>,
     POLYLINE_ATTRS,
-    opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [],
     children,
   );
 }
@@ -860,7 +845,6 @@ export function stringifyVmlRect(opts: VmlRectOptions): string {
     "v:rect",
     opts as unknown as Record<string, unknown>,
     [],
-    opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [],
     stringifyShapeElements(opts),
   );
 }
@@ -879,7 +863,6 @@ export function stringifyVmlRoundRect(opts: VmlRoundRectOptions): string {
     "v:roundrect",
     opts as unknown as Record<string, unknown>,
     ROUNDRECT_ATTRS,
-    opts.path !== undefined ? [`path="${escapeXml(opts.path)}"`] : [],
     stringifyShapeElements(opts),
   );
 }

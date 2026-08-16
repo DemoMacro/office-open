@@ -147,7 +147,12 @@ export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
 
         // Empty run elements — self-closing XML with no attributes
         // { noBreakHyphen: true } → <w:noBreakHyphen/>, etc.
-        const emptyXml = EMPTY_RUN_ELEMENTS[Object.keys(child)[0] ?? ""];
+        let firstKey: string | undefined;
+        for (const key in child) {
+          firstKey = key;
+          break;
+        }
+        const emptyXml = firstKey !== undefined ? EMPTY_RUN_ELEMENTS[firstKey] : undefined;
         if (emptyXml) {
           body += emptyXml;
           continue;
@@ -503,7 +508,8 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
   // <w:body> — children go straight into `parts` (single join, no intermediate)
   parts.push("<w:body>");
 
-  for (const [si, section] of sections.entries()) {
+  for (let si = 0; si < sections.length; si++) {
+    const section = sections[si]!;
     const children = section.children ?? [];
     const sectPrOpts = bodySections[si];
     const sectPrXml = sectPrOpts ? (sectionPropertiesDesc.stringify(sectPrOpts, docCtx) ?? "") : "";
@@ -515,7 +521,8 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     // the section is empty or ends in a non-paragraph child. The last section
     // emits its sectPr at the body level.
     let sectPrHosted = isLast || !sectPrXml;
-    for (const [ci, child] of children.entries()) {
+    for (let ci = 0; ci < children.length; ci++) {
+      const child = children[ci]!;
       const inject = !isLast && sectPrXml && ci === children.length - 1 && "paragraph" in child;
       if (inject) sectPrHosted = true;
       parts.push(stringifyBodyChild(child, docCtx, inject ? sectPrXml : undefined));
@@ -553,6 +560,31 @@ const LINE_RULES = Object.values(LineRuleType) as readonly string[];
 const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
 /** Valid border @w:themeColor values (ST_ThemeColor). */
 const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
+
+// On/off paragraph properties: XML child tag → options key.
+const ON_OFF_PARAGRAPH_PROPS = [
+  ["w:keepNext", "keepNext"],
+  ["w:keepLines", "keepLines"],
+  ["w:pageBreakBefore", "pageBreakBefore"],
+  ["w:widowControl", "widowControl"],
+  ["w:suppressLineNumbers", "suppressLineNumbers"],
+  ["w:contextualSpacing", "contextualSpacing"],
+  ["w:bidi", "bidirectional"],
+  ["w:wordWrap", "wordWrap"],
+  ["w:suppressAutoHyphens", "suppressAutoHyphens"],
+  ["w:adjustRightInd", "adjustRightInd"],
+  ["w:snapToGrid", "snapToGrid"],
+  ["w:mirrorIndents", "mirrorIndents"],
+  ["w:kinsoku", "kinsoku"],
+  ["w:topLinePunct", "topLinePunct"],
+  ["w:autoSpaceDE", "autoSpaceDE"],
+  ["w:autoSpaceDN", "autoSpaceEastAsianText"],
+  ["w:overflowPunct", "overflowPunctuation"],
+  ["w:suppressOverlap", "suppressOverlap"],
+] as const;
+
+// pBdr side element names (CT_PBdr children order).
+const PBDR_SIDES = ["top", "bottom", "left", "right", "between", "bar"] as const;
 
 /**
  * Reverse of inline.ts's deleted-page-number field map: maps a w:delInstrText
@@ -740,26 +772,7 @@ export function parseParagraphProperties(
   }
 
   // On/off properties
-  for (const [name, optKey] of [
-    ["w:keepNext", "keepNext"],
-    ["w:keepLines", "keepLines"],
-    ["w:pageBreakBefore", "pageBreakBefore"],
-    ["w:widowControl", "widowControl"],
-    ["w:suppressLineNumbers", "suppressLineNumbers"],
-    ["w:contextualSpacing", "contextualSpacing"],
-    ["w:bidi", "bidirectional"],
-    ["w:wordWrap", "wordWrap"],
-    ["w:suppressAutoHyphens", "suppressAutoHyphens"],
-    ["w:adjustRightInd", "adjustRightInd"],
-    ["w:snapToGrid", "snapToGrid"],
-    ["w:mirrorIndents", "mirrorIndents"],
-    ["w:kinsoku", "kinsoku"],
-    ["w:topLinePunct", "topLinePunct"],
-    ["w:autoSpaceDE", "autoSpaceDE"],
-    ["w:autoSpaceDN", "autoSpaceEastAsianText"],
-    ["w:overflowPunct", "overflowPunctuation"],
-    ["w:suppressOverlap", "suppressOverlap"],
-  ] as const) {
+  for (const [name, optKey] of ON_OFF_PARAGRAPH_PROPS) {
     const child = findChild(el, name);
     if (child) opts[optKey] = attrBool(child, "w:val") ?? true;
   }
@@ -768,7 +781,7 @@ export function parseParagraphProperties(
   const pBdr = findChild(el, "w:pBdr");
   if (pBdr) {
     const border: BordersOptions = {};
-    for (const side of ["top", "bottom", "left", "right", "between", "bar"] as const) {
+    for (const side of PBDR_SIDES) {
       const sideEl = findChild(pBdr, `w:${side}`);
       if (!sideEl) continue;
       // CT_Border requires w:val (style); skip malformed sides
@@ -1735,12 +1748,18 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
   // single opts.text (the canonical ParagraphOptions form) instead of a
   // children array.
   if (childList.length > 0) {
-    if (childList.every(isTextOnlyRun)) {
-      const combined = childList.map((c) => (isTextOnlyRun(c) ? c.text : "")).join("");
-      if (combined) {
-        opts.text = combined;
-        return opts as ParagraphOptions;
+    let combined = "";
+    let allText = true;
+    for (const c of childList) {
+      if (!isTextOnlyRun(c)) {
+        allText = false;
+        break;
       }
+      combined += c.text;
+    }
+    if (allText && combined) {
+      opts.text = combined;
+      return opts as ParagraphOptions;
     }
     opts.children = childList;
   }

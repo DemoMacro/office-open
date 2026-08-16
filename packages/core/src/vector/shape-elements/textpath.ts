@@ -54,6 +54,10 @@ const TEXT_PATH_STYLE_MAP: Record<keyof VmlTextPathStyle, string> = {
   vTextSpacingMode: "v-text-spacing-mode",
 };
 
+const KEY_TO_TEXT_PATH_FIELD = Object.fromEntries(
+  Object.entries(TEXT_PATH_STYLE_MAP).map(([field, key]) => [key, field]),
+) as Record<string, keyof VmlTextPathStyle>;
+
 /** Serialize a VmlTextPathStyle to its CSS-stream form. */
 function stringifyVmlTextPathStyle(style: VmlTextPathStyle): string {
   return Object.entries(style)
@@ -63,14 +67,11 @@ function stringifyVmlTextPathStyle(style: VmlTextPathStyle): string {
 
 /** Parse a CSS stream into a VmlTextPathStyle; unmapped keys drop. */
 function parseVmlTextPathStyle(styleStr: string): VmlTextPathStyle {
-  const reverse = Object.fromEntries(
-    Object.entries(TEXT_PATH_STYLE_MAP).map(([field, key]) => [key, field]),
-  ) as Record<string, keyof VmlTextPathStyle>;
   const style: Partial<VmlTextPathStyle> = {};
   for (const part of styleStr.split(";")) {
     const [key, val] = part.split(":").map((s) => s.trim());
     if (!key || !val) continue;
-    const field = reverse[key];
+    const field = KEY_TO_TEXT_PATH_FIELD[key];
     if (field) style[field] = val;
   }
   return style as VmlTextPathStyle;

@@ -297,11 +297,6 @@ function stringifyScaling(opts: AxisScalingOptions | undefined): string {
   return `<c:scaling>${parts.join("")}</c:scaling>`;
 }
 
-function stringifyAxisTitle(title: string): string {
-  // Same c:rich run shape as the chart title so parse reuses readTitleText.
-  return `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>`;
-}
-
 function stringifyDisplayUnits(opts: DisplayUnitsOptions): string {
   const parts: string[] = [];
   if (opts.customUnit !== undefined) parts.push(valEl("c:custUnit", opts.customUnit));
@@ -323,7 +318,7 @@ function stringifyAxis(opts: AxisOptions): string {
   if (opts.position !== undefined) parts.push(valEl("c:axPos", opts.position));
   if (opts.majorGridlines) parts.push(emptyEl("c:majorGridlines"));
   if (opts.minorGridlines) parts.push(emptyEl("c:minorGridlines"));
-  if (opts.title !== undefined) parts.push(stringifyAxisTitle(opts.title));
+  if (opts.title !== undefined) parts.push(stringifyTitle(opts.title));
   if (opts.numberFormat !== undefined)
     parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="1"/>`);
   if (opts.majorTickMark !== undefined) parts.push(valEl("c:majorTickMark", opts.majorTickMark));
@@ -750,6 +745,7 @@ function stringifySeries(
 
 // ── Title XML ──
 
+// Same c:rich run shape for chart and axis titles so parse reuses readTitleText.
 function stringifyTitle(title: string): string {
   return `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>`;
 }
@@ -888,8 +884,8 @@ function readStrCache(el: XmlElement): string[] {
   if (!strCache?.elements) return [];
   const result: string[] = [];
   for (const pt of strCache.elements) {
-    if (pt.name === "c:pt" && pt.elements) {
-      const v = pt.elements.find((c) => c.name === "c:v");
+    if (pt.name === "c:pt") {
+      const v = findChild(pt, "c:v");
       const text = v ? textOf(v) : "";
       if (text !== "") result.push(text);
     }
@@ -939,8 +935,8 @@ function readNumCache(el: XmlElement): number[] {
   if (!numCache?.elements) return [];
   const result: number[] = [];
   for (const pt of numCache.elements) {
-    if (pt.name === "c:pt" && pt.elements) {
-      const v = pt.elements.find((c) => c.name === "c:v");
+    if (pt.name === "c:pt") {
+      const v = findChild(pt, "c:v");
       const text = v ? textOf(v) : "";
       if (text !== "") result.push(Number(text));
     }
@@ -959,19 +955,15 @@ function readTitleText(titleEl: XmlElement): string | undefined {
   const tx = findChild(titleEl, "c:tx");
   if (!tx?.elements) return undefined;
   for (const child of tx.elements) {
-    if (child.name === "c:rich" && child.elements) {
-      for (const sub of child.elements) {
-        if (sub.name === "a:p" && sub.elements) {
-          for (const r of sub.elements) {
-            if (r.name === "a:r" && r.elements) {
-              for (const t of r.elements) {
-                if (t.name === "a:t") {
-                  const text = textOf(t);
-                  if (text) return text;
-                }
-              }
-            }
-          }
+    if (child.name !== "c:rich") continue;
+    for (const sub of child.elements ?? []) {
+      if (sub.name !== "a:p") continue;
+      for (const r of sub.elements ?? []) {
+        if (r.name !== "a:r") continue;
+        const t = findChild(r, "a:t");
+        if (t) {
+          const text = textOf(t);
+          if (text) return text;
         }
       }
     }
@@ -1009,8 +1001,8 @@ function readNumLit(el: XmlElement, childName: string): number | undefined {
   const numLit = findChild(child, "c:numLit");
   if (!numLit?.elements) return undefined;
   for (const pt of numLit.elements) {
-    if (pt.name === "c:pt" && pt.elements) {
-      const v = pt.elements.find((c) => c.name === "c:v");
+    if (pt.name === "c:pt") {
+      const v = findChild(pt, "c:v");
       if (v) {
         const text = textOf(v);
         if (text) return Number(text);

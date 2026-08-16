@@ -302,6 +302,15 @@ function readCnvPr(el: XmlElement | undefined): ParsedCnvPr | undefined {
   return { id: Number(attrs["id"]), nvp: nvp as NonVisualDrawingPropertiesOptions };
 }
 
+/** macro/fPublished attributes shared by every non-group user-shape object. */
+function readCommonAttrs(el: XmlElement): { macro?: string; published?: boolean } {
+  const out: { macro?: string; published?: boolean } = {};
+  if (el.attributes?.["macro"] !== undefined) out.macro = String(el.attributes["macro"]);
+  if (el.attributes?.["fPublished"] !== undefined)
+    out.published = parseOnOff(el.attributes["fPublished"]) ?? false;
+  return out;
+}
+
 function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | undefined {
   switch (el.name) {
     case "cdr:sp": {
@@ -323,13 +332,11 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
       const txBody = findChild(el, "cdr:txBody");
       if (txBody) result.textBody = parse(textBodyDesc, txBody, ctx);
-      if (el.attributes?.["macro"] !== undefined) result.macro = String(el.attributes["macro"]);
+      Object.assign(result, readCommonAttrs(el));
       if (el.attributes?.["textlink"] !== undefined)
         result.textLink = String(el.attributes["textlink"]);
       if (el.attributes?.["fLocksText"] !== undefined)
         result.locksText = parseOnOff(el.attributes["fLocksText"]) ?? true;
-      if (el.attributes?.["fPublished"] !== undefined)
-        result.published = parseOnOff(el.attributes["fPublished"]) ?? false;
       return result;
     }
     case "cdr:cxnSp": {
@@ -346,9 +353,7 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
       };
       const styleEl = findChild(el, "a:style");
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
-      if (el.attributes?.["macro"] !== undefined) result.macro = String(el.attributes["macro"]);
-      if (el.attributes?.["fPublished"] !== undefined)
-        result.published = parseOnOff(el.attributes["fPublished"]) ?? false;
+      Object.assign(result, readCommonAttrs(el));
       return result;
     }
     case "cdr:pic": {
@@ -370,9 +375,7 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
       if (Object.keys(blipFillOpts).length > 0) result.blipFill = blipFillOpts;
       const styleEl = findChild(el, "a:style");
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
-      if (el.attributes?.["macro"] !== undefined) result.macro = String(el.attributes["macro"]);
-      if (el.attributes?.["fPublished"] !== undefined)
-        result.published = parseOnOff(el.attributes["fPublished"]) ?? false;
+      Object.assign(result, readCommonAttrs(el));
       return result;
     }
     case "cdr:graphicFrame": {
@@ -411,9 +414,7 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
           result.graphicFrameLocks = {};
         }
       }
-      if (el.attributes?.["macro"] !== undefined) result.macro = String(el.attributes["macro"]);
-      if (el.attributes?.["fPublished"] !== undefined)
-        result.published = parseOnOff(el.attributes["fPublished"]) ?? false;
+      Object.assign(result, readCommonAttrs(el));
       return result;
     }
     case "cdr:grpSp": {

@@ -47,16 +47,3 @@ export const VerticalAlignSection = {
 export type TableVerticalAlign = (typeof VerticalAlignTable)[keyof typeof VerticalAlignTable];
 
 export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof VerticalAlignSection];
-
-/**
- * Creates a vertical alignment element in a WordprocessingML document.
- *
- * Used in table cells and sections to control vertical text positioning.
- *
- * @example
- * ```typescript
- * createVerticalAlign(VerticalAlignTable.CENTER);
- * ```
- */
-export const createVerticalAlign = (value: TableVerticalAlign | SectionVerticalAlign): string =>
-  `<w:vAlign w:val="${value}"/>`;

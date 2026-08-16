@@ -6,6 +6,7 @@
 import { parseOnOff } from "@office-open/core";
 import { attr, attrNum } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
+import { letterToColumn } from "@util/index";
 
 import type { CfvoOptions, CfvoType, PageBreakOptions } from "./types";
 
@@ -39,11 +40,5 @@ export function parseCfvo(el: XmlElement): CfvoOptions {
 export function parseCellRef(ref: string): { row: number; col: number } | undefined {
   const match = ref.match(/^([A-Z]+)(\d+)$/);
   if (!match) return undefined;
-  const colStr = match[1] ?? "";
-  const row = parseInt(match[2] ?? "0", 10);
-  let col = 0;
-  for (let i = 0; i < colStr.length; i++) {
-    col = col * 26 + (colStr.charCodeAt(i) - 64);
-  }
-  return { row, col };
+  return { row: parseInt(match[2] ?? "0", 10), col: letterToColumn(match[1] ?? "") };
 }

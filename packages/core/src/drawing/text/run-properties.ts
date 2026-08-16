@@ -11,9 +11,9 @@
 import { escapeXml, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import type { CustomDescriptor, ReadContext } from "../../descriptor";
+import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { parse, stringify } from "../../descriptor";
-import { emitPercent } from "../../util/converters";
+import { emitPercent, parsePercentAttr } from "../../util/converters";
 import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
 import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
@@ -126,139 +126,151 @@ function parseFontElement(el: XmlElement | undefined): TextFont | undefined {
   return font;
 }
 
+/**
+ * Serialize CT_TextCharacterProperties under a caller-chosen root tag
+ * (a:rPr / a:defRPr / a:endParaRPr — same content model).
+ */
+export function stringifyRunProperties(
+  tag: string,
+  opts: RunPropertiesOptions,
+  ctx: WriteContext,
+): string {
+  // Side-effect: register hyperlinks (click + hover). Only relational targets
+  // (url/slide) need a relationship; action-only hyperlinks carry no r:id.
+  let hyperlinkKey: string | undefined;
+  if (opts.hyperlink) {
+    const hl = opts.hyperlink;
+    if (hl.url !== undefined || hl.slide !== undefined) {
+      hyperlinkKey = hl.referenceId ?? `hlink_${nextHyperlinkId++}`;
+      ctx.addHyperlink(hyperlinkKey, { url: hl.url, slide: hl.slide, tooltip: hl.tooltip });
+    }
+  }
+  let mouseoverKey: string | undefined;
+  if (opts.mouseoverHyperlink) {
+    const mhl = opts.mouseoverHyperlink;
+    if (mhl.url !== undefined || mhl.slide !== undefined) {
+      mouseoverKey = mhl.referenceId ?? `hlink_${nextHyperlinkId++}`;
+      ctx.addHyperlink(mouseoverKey, { url: mhl.url, slide: mhl.slide, tooltip: mhl.tooltip });
+    }
+  }
+
+  const attrParts: string[] = [];
+  if (opts.size) attrParts.push(`sz="${Math.round(opts.size * 100)}"`);
+  if (opts.bold !== undefined) attrParts.push(`b="${opts.bold ? 1 : 0}"`);
+  if (opts.italic !== undefined) attrParts.push(`i="${opts.italic ? 1 : 0}"`);
+  if (opts.underline) attrParts.push(`u="${xsdUnderlineStyle.to(opts.underline)}"`);
+  if (opts.lang) attrParts.push(`lang="${opts.lang}"`);
+  if (opts.strike) attrParts.push(`strike="${xsdStrikeStyle.to(opts.strike)}"`);
+  if (opts.baseline !== undefined) attrParts.push(`baseline="${emitPercent(opts.baseline)}"`);
+  if (opts.capitalization) attrParts.push(`cap="${xsdTextCaps.to(opts.capitalization)}"`);
+  if (opts.spacing !== undefined) attrParts.push(`spc="${Math.round(opts.spacing * 100)}"`);
+  if (opts.kern !== undefined) attrParts.push(`kern="${Math.round(opts.kern * 100)}"`);
+  if (opts.noProof !== undefined) attrParts.push(`noProof="${opts.noProof ? 1 : 0}"`);
+  if (opts.dirty !== undefined) attrParts.push(`dirty="${opts.dirty ? 1 : 0}"`);
+  if (opts.kumimoji !== undefined) attrParts.push(`kumimoji="${opts.kumimoji ? 1 : 0}"`);
+  if (opts.alternateLanguage) attrParts.push(`altLang="${opts.alternateLanguage}"`);
+  if (opts.normalizeHeight !== undefined)
+    attrParts.push(`normalizeH="${opts.normalizeHeight ? 1 : 0}"`);
+  if (opts.bookmarkMark) attrParts.push(`bmk="${opts.bookmarkMark}"`);
+  if (opts.smartTagId) attrParts.push(`smtId="${opts.smartTagId}"`);
+  if (opts.err !== undefined) attrParts.push(`err="${opts.err ? 1 : 0}"`);
+  if (opts.smtClean !== undefined) attrParts.push(`smtClean="${opts.smtClean ? 1 : 0}"`);
+
+  const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
+
+  const parts: string[] = [];
+
+  // XSD order: ln -> fill -> effect -> latin/ea/cs/sym -> hlinkClick -> rtl
+  if (opts.outline !== undefined) {
+    const outlineOpts: OutlineOptions =
+      opts.outline === true
+        ? { width: DEFAULT_OUTLINE_WIDTH, type: "solidFill", color: { value: "000000" } }
+        : opts.outline;
+    const outlineXml = stringify(outlineDesc, outlineOpts, ctx);
+    if (outlineXml) parts.push(outlineXml);
+  }
+
+  if (opts.fill !== undefined) {
+    const fillXml = stringify(fillDesc, opts.fill, ctx);
+    if (fillXml) parts.push(fillXml);
+  }
+
+  if (opts.shadow !== undefined) {
+    const effectOpts: EffectListOptions =
+      opts.shadow === true
+        ? {
+            outerShadow: {
+              blurRadius: DEFAULT_SHADOW_BLUR_RADIUS,
+              distance: DEFAULT_SHADOW_DISTANCE,
+              direction: DEFAULT_SHADOW_DIRECTION,
+              color: { value: "000000", transforms: { alpha: DEFAULT_SHADOW_ALPHA } },
+            },
+          }
+        : opts.shadow;
+    const effectXml = stringify(effectListDesc, effectOpts, ctx);
+    if (effectXml) parts.push(effectXml);
+  }
+
+  // XSD order: highlight (CT_Color) comes after effects, before fonts.
+  if (opts.highlight !== undefined) {
+    const hlXml = stringifyColorChoice(opts.highlight, ctx);
+    if (hlXml) parts.push(`<a:highlight>${hlXml}</a:highlight>`);
+  }
+
+  // EG_TextUnderlineLine / EG_TextUnderlineFill — after highlight, before fonts.
+  if (opts.underlineLine !== undefined) {
+    if (opts.underlineLine === true) {
+      parts.push("<a:uLnTx/>");
+    } else {
+      // a:uLn is itself a CT_LineProperties — same content, different root tag.
+      const uLnXml = stringifyLineProperties("a:uLn", opts.underlineLine, ctx);
+      if (uLnXml) parts.push(uLnXml);
+    }
+  }
+  if (opts.underlineFill !== undefined) {
+    if (opts.underlineFill === true) {
+      parts.push("<a:uFillTx/>");
+    } else {
+      const uFillXml = stringify(fillDesc, opts.underlineFill, ctx);
+      if (uFillXml) parts.push(`<a:uFill>${uFillXml}</a:uFill>`);
+    }
+  }
+
+  if (opts.font !== undefined) {
+    const scripts: {
+      latin?: TextFont;
+      eastAsia?: TextFont;
+      complexScript?: TextFont;
+      symbol?: TextFont;
+    } = typeof opts.font === "string" ? { latin: opts.font, eastAsia: opts.font } : opts.font;
+    if (scripts.latin) parts.push(stringifyFontElement("a:latin", scripts.latin));
+    if (scripts.eastAsia) parts.push(stringifyFontElement("a:ea", scripts.eastAsia));
+    if (scripts.complexScript) parts.push(stringifyFontElement("a:cs", scripts.complexScript));
+    if (scripts.symbol) parts.push(stringifyFontElement("a:sym", scripts.symbol));
+  }
+
+  if (opts.hyperlink) {
+    parts.push(buildHyperlinkElement("a:hlinkClick", opts.hyperlink, hyperlinkKey));
+  }
+  if (opts.mouseoverHyperlink) {
+    parts.push(buildHyperlinkElement("a:hlinkMouseOver", opts.mouseoverHyperlink, mouseoverKey));
+  }
+
+  if (opts.rightToLeft !== undefined) {
+    parts.push(`<a:rtl val="${opts.rightToLeft ? 1 : 0}"/>`);
+  }
+
+  if (attrParts.length === 0 && parts.length === 0) return "";
+
+  if (parts.length === 0) return `<${tag}${attrStr}/>`;
+  return `<${tag}${attrStr}>${parts.join("")}</${tag}>`;
+}
+
 export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    // Side-effect: register hyperlinks (click + hover). Only relational targets
-    // (url/slide) need a relationship; action-only hyperlinks carry no r:id.
-    let hyperlinkKey: string | undefined;
-    if (opts.hyperlink) {
-      const hl = opts.hyperlink;
-      if (hl.url !== undefined || hl.slide !== undefined) {
-        hyperlinkKey = hl.referenceId ?? `hlink_${nextHyperlinkId++}`;
-        ctx.addHyperlink(hyperlinkKey, { url: hl.url, slide: hl.slide, tooltip: hl.tooltip });
-      }
-    }
-    let mouseoverKey: string | undefined;
-    if (opts.mouseoverHyperlink) {
-      const mhl = opts.mouseoverHyperlink;
-      if (mhl.url !== undefined || mhl.slide !== undefined) {
-        mouseoverKey = mhl.referenceId ?? `hlink_${nextHyperlinkId++}`;
-        ctx.addHyperlink(mouseoverKey, { url: mhl.url, slide: mhl.slide, tooltip: mhl.tooltip });
-      }
-    }
-
-    const attrParts: string[] = [];
-    if (opts.size) attrParts.push(`sz="${Math.round(opts.size * 100)}"`);
-    if (opts.bold !== undefined) attrParts.push(`b="${opts.bold ? 1 : 0}"`);
-    if (opts.italic !== undefined) attrParts.push(`i="${opts.italic ? 1 : 0}"`);
-    if (opts.underline) attrParts.push(`u="${xsdUnderlineStyle.to(opts.underline)}"`);
-    if (opts.lang) attrParts.push(`lang="${opts.lang}"`);
-    if (opts.strike) attrParts.push(`strike="${xsdStrikeStyle.to(opts.strike)}"`);
-    if (opts.baseline !== undefined) attrParts.push(`baseline="${emitPercent(opts.baseline)}"`);
-    if (opts.capitalization) attrParts.push(`cap="${xsdTextCaps.to(opts.capitalization)}"`);
-    if (opts.spacing !== undefined) attrParts.push(`spc="${Math.round(opts.spacing * 100)}"`);
-    if (opts.kern !== undefined) attrParts.push(`kern="${Math.round(opts.kern * 100)}"`);
-    if (opts.noProof !== undefined) attrParts.push(`noProof="${opts.noProof ? 1 : 0}"`);
-    if (opts.dirty !== undefined) attrParts.push(`dirty="${opts.dirty ? 1 : 0}"`);
-    if (opts.kumimoji !== undefined) attrParts.push(`kumimoji="${opts.kumimoji ? 1 : 0}"`);
-    if (opts.alternateLanguage) attrParts.push(`altLang="${opts.alternateLanguage}"`);
-    if (opts.normalizeHeight !== undefined)
-      attrParts.push(`normalizeH="${opts.normalizeHeight ? 1 : 0}"`);
-    if (opts.bookmarkMark) attrParts.push(`bmk="${opts.bookmarkMark}"`);
-    if (opts.smartTagId) attrParts.push(`smtId="${opts.smartTagId}"`);
-    if (opts.err !== undefined) attrParts.push(`err="${opts.err ? 1 : 0}"`);
-    if (opts.smtClean !== undefined) attrParts.push(`smtClean="${opts.smtClean ? 1 : 0}"`);
-
-    const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
-
-    const parts: string[] = [];
-
-    // XSD order: ln -> fill -> effect -> latin/ea/cs/sym -> hlinkClick -> rtl
-    if (opts.outline !== undefined) {
-      const outlineOpts: OutlineOptions =
-        opts.outline === true
-          ? { width: DEFAULT_OUTLINE_WIDTH, type: "solidFill", color: { value: "000000" } }
-          : opts.outline;
-      const outlineXml = stringify(outlineDesc, outlineOpts, ctx);
-      if (outlineXml) parts.push(outlineXml);
-    }
-
-    if (opts.fill !== undefined) {
-      const fillXml = stringify(fillDesc, opts.fill, ctx);
-      if (fillXml) parts.push(fillXml);
-    }
-
-    if (opts.shadow !== undefined) {
-      const effectOpts: EffectListOptions =
-        opts.shadow === true
-          ? {
-              outerShadow: {
-                blurRadius: DEFAULT_SHADOW_BLUR_RADIUS,
-                distance: DEFAULT_SHADOW_DISTANCE,
-                direction: DEFAULT_SHADOW_DIRECTION,
-                color: { value: "000000", transforms: { alpha: DEFAULT_SHADOW_ALPHA } },
-              },
-            }
-          : opts.shadow;
-      const effectXml = stringify(effectListDesc, effectOpts, ctx);
-      if (effectXml) parts.push(effectXml);
-    }
-
-    // XSD order: highlight (CT_Color) comes after effects, before fonts.
-    if (opts.highlight !== undefined) {
-      const hlXml = stringifyColorChoice(opts.highlight, ctx);
-      if (hlXml) parts.push(`<a:highlight>${hlXml}</a:highlight>`);
-    }
-
-    // EG_TextUnderlineLine / EG_TextUnderlineFill — after highlight, before fonts.
-    if (opts.underlineLine !== undefined) {
-      if (opts.underlineLine === true) {
-        parts.push("<a:uLnTx/>");
-      } else {
-        // a:uLn is itself a CT_LineProperties — same content, different root tag.
-        const uLnXml = stringifyLineProperties("a:uLn", opts.underlineLine, ctx);
-        if (uLnXml) parts.push(uLnXml);
-      }
-    }
-    if (opts.underlineFill !== undefined) {
-      if (opts.underlineFill === true) {
-        parts.push("<a:uFillTx/>");
-      } else {
-        const uFillXml = stringify(fillDesc, opts.underlineFill, ctx);
-        if (uFillXml) parts.push(`<a:uFill>${uFillXml}</a:uFill>`);
-      }
-    }
-
-    if (opts.font !== undefined) {
-      const scripts: {
-        latin?: TextFont;
-        eastAsia?: TextFont;
-        complexScript?: TextFont;
-        symbol?: TextFont;
-      } = typeof opts.font === "string" ? { latin: opts.font, eastAsia: opts.font } : opts.font;
-      if (scripts.latin) parts.push(stringifyFontElement("a:latin", scripts.latin));
-      if (scripts.eastAsia) parts.push(stringifyFontElement("a:ea", scripts.eastAsia));
-      if (scripts.complexScript) parts.push(stringifyFontElement("a:cs", scripts.complexScript));
-      if (scripts.symbol) parts.push(stringifyFontElement("a:sym", scripts.symbol));
-    }
-
-    if (opts.hyperlink) {
-      parts.push(buildHyperlinkElement("a:hlinkClick", opts.hyperlink, hyperlinkKey));
-    }
-    if (opts.mouseoverHyperlink) {
-      parts.push(buildHyperlinkElement("a:hlinkMouseOver", opts.mouseoverHyperlink, mouseoverKey));
-    }
-
-    if (opts.rightToLeft !== undefined) {
-      parts.push(`<a:rtl val="${opts.rightToLeft ? 1 : 0}"/>`);
-    }
-
-    if (attrParts.length === 0 && parts.length === 0) return "";
-
-    if (parts.length === 0) return `<a:rPr${attrStr}/>`;
-    return `<a:rPr${attrStr}>${parts.join("")}</a:rPr>`;
+    return stringifyRunProperties("a:rPr", opts, ctx);
   },
 
   parse(el, _ctx) {
@@ -282,9 +294,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
           String(el.attributes["strike"]),
         ) as RunPropertiesOptions["strike"];
       if (el.attributes["baseline"] !== undefined) {
-        const raw = el.attributes["baseline"];
-        const s = typeof raw === "number" ? String(raw) : raw;
-        result.baseline = s.endsWith("%") ? Number(s.slice(0, -1)) : Number(s) / 1000;
+        result.baseline = parsePercentAttr(el.attributes["baseline"])!;
       }
       if (el.attributes["cap"] !== undefined)
         result.capitalization = xsdTextCaps.from(

@@ -57,7 +57,7 @@ import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@p
 import { buildWorksheetXml, type WorksheetContext } from "@parts/worksheet";
 import type { RowOptions, WorksheetOptions } from "@parts/worksheet";
 import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
-import { columnToLetter } from "@util/index";
+import { columnToLetter, letterToColumn } from "@util/index";
 
 import { XlsxWriteContext } from "./context";
 
@@ -199,10 +199,13 @@ export function compileWorkbook(
     // Collect formula cells for calcChain
     const sheetIdx = i + 1;
     const wsRows = wsOpts.rows ?? [];
-    for (const [ri, rowOpts] of wsRows.entries()) {
+    for (let ri = 0; ri < wsRows.length; ri++) {
+      const rowOpts = wsRows[ri]!;
       const rowNumber = rowOpts.rowNumber ?? ri + 1;
-      if (!rowOpts.cells) continue;
-      for (const [ci, cell] of rowOpts.cells.entries()) {
+      const cells = rowOpts.cells;
+      if (!cells) continue;
+      for (let ci = 0; ci < cells.length; ci++) {
+        const cell = cells[ci]!;
         if (!cell.formula) continue;
         const ref = cell.reference ?? columnToLetter(ci + 1) + rowNumber;
         calcCells.push({
@@ -440,9 +443,7 @@ export function compileWorkbook(
 
         // Extract source data from source sheet
         const sourceSheet = pt.sourceSheet ?? sheetName;
-        const sourceWsIdx = worksheetConfigs.findIndex(
-          (ws) => (ws.name ?? `Sheet${worksheetConfigs.indexOf(ws) + 1}`) === sourceSheet,
-        );
+        const sourceWsIdx = findWorksheetIndex(worksheetConfigs, sourceSheet);
         if (sourceWsIdx === -1) continue;
         const sourceWs = worksheetConfigs[sourceWsIdx];
         if (!sourceWs) continue;
@@ -1041,8 +1042,8 @@ function extractPivotSourceData(rows: RowOptions[], sourceRef: string): PivotSou
 
   const startRow = parseInt(startMatch[2] ?? "1", 10) - 1;
   const endRow = endMatch ? parseInt(endMatch[2] ?? "1", 10) - 1 : startRow;
-  const startCol = colLetterToIndex(startMatch[1] ?? "A");
-  const endCol = endMatch ? colLetterToIndex(endMatch[1] ?? "A") : startCol;
+  const startCol = letterToColumn(startMatch[1] ?? "A") - 1;
+  const endCol = endMatch ? letterToColumn(endMatch[1] ?? "A") - 1 : startCol;
   const colCount = endCol - startCol + 1;
 
   // First row is headers
@@ -1085,12 +1086,13 @@ function extractPivotSourceData(rows: RowOptions[], sourceRef: string): PivotSou
   return { fieldNames, records };
 }
 
-function colLetterToIndex(letters: string): number {
-  let col = 0;
-  for (let i = 0; i < letters.length; i++) {
-    col = col * 26 + (letters.charCodeAt(i) - 64);
+/** Find a worksheet config by name, honoring the `Sheet${i+1}` default naming. */
+function findWorksheetIndex(configs: WorksheetOptions[], name: string): number {
+  for (let i = 0; i < configs.length; i++) {
+    const ws = configs[i]!;
+    if ((ws.name ?? `Sheet${i + 1}`) === name) return i;
   }
-  return col - 1;
+  return -1;
 }
 
 function renderPivotSheetData(
@@ -1110,15 +1112,13 @@ function renderPivotSheetData(
     const locMatch = location.match(/^([A-Z]+)(\d+)$/);
     if (!locMatch) continue;
 
-    const startCol = colLetterToIndex(locMatch[1] ?? "A");
+    const startCol = letterToColumn(locMatch[1] ?? "A") - 1;
     const startRow = parseInt(locMatch[2] ?? "1", 10);
     const rowFieldNames = pt.rows;
     const dataFields = pt.data;
 
     const sourceSheetName = pt.sourceSheet ?? currentSheetName;
-    const sourceWsIdx = worksheetConfigs.findIndex(
-      (ws) => (ws.name ?? `Sheet${worksheetConfigs.indexOf(ws) + 1}`) === sourceSheetName,
-    );
+    const sourceWsIdx = findWorksheetIndex(worksheetConfigs, sourceSheetName);
     if (sourceWsIdx === -1) continue;
 
     const sourceRows = worksheetConfigs[sourceWsIdx]?.rows ?? [];

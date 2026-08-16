@@ -137,21 +137,26 @@ export class SharedStrings {
 
   /** Serialize to xl/sharedStrings.xml content (without XML declaration). */
   public serialize(): string {
-    const p: string[] = [
-      '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
-      ` count="${this.entries.length}" uniqueCount="${this.entries.length}">`,
-    ];
-    for (const entry of this.entries) {
-      if (typeof entry === "string") {
-        p.push(`<si><t>${escapeXml(entry)}</t></si>`);
-      } else {
-        // Rich text (CT_Rst)
-        p.push(`<si>${buildRstXml(entry)}</si>`);
-      }
-    }
-    p.push("</sst>");
-    return p.join("");
+    return serializeSstEntries(this.entries);
   }
+}
+
+/** Serialize entry list to the <sst> part body shared by both emit paths. */
+function serializeSstEntries(entries: (string | RichTextOptions)[]): string {
+  const p: string[] = [
+    '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
+    ` count="${entries.length}" uniqueCount="${entries.length}">`,
+  ];
+  for (const entry of entries) {
+    if (typeof entry === "string") {
+      p.push(`<si><t>${escapeXml(entry)}</t></si>`);
+    } else {
+      // Rich text (CT_Rst)
+      p.push(`<si>${buildRstXml(entry)}</si>`);
+    }
+  }
+  p.push("</sst>");
+  return p.join("");
 }
 
 // ── Descriptor Types ──
@@ -170,22 +175,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
 
   stringify(opts, _ctx) {
     if (opts.entries.length === 0) return undefined;
-
-    const p: string[] = [
-      '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
-      ` count="${opts.entries.length}" uniqueCount="${opts.entries.length}">`,
-    ];
-
-    for (const entry of opts.entries) {
-      if (typeof entry === "string") {
-        p.push(`<si><t>${escapeXml(entry)}</t></si>`);
-      } else {
-        p.push(`<si>${buildRstXml(entry)}</si>`);
-      }
-    }
-
-    p.push("</sst>");
-    return p.join("");
+    return serializeSstEntries(opts.entries);
   },
 
   parse(el, _ctx) {

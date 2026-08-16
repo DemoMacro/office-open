@@ -29,26 +29,10 @@ import type { PresetGeometryOptions } from "./preset-geometry";
 const adjustmentValuesDesc: CustomDescriptor<readonly GeometryGuide[]> = {
   kind: "custom",
   stringify(guides, _ctx) {
-    if (!guides || guides.length === 0) return "<a:avLst/>";
-    const inner = guides
-      .map((g) => `<a:gd name="${escapeXml(g.name)}" fmla="${escapeXml(g.formula)}"/>`)
-      .join("");
-    return `<a:avLst>${inner}</a:avLst>`;
+    return stringifyGuideList("a:avLst", guides ?? []);
   },
   parse(el, _ctx) {
-    const result: GeometryGuide[] = [];
-    if (el.elements) {
-      for (const child of el.elements) {
-        if (child.name === "a:gd" && child.attributes) {
-          const name = child.attributes["name"];
-          const fmla = child.attributes["fmla"];
-          if (name !== undefined && fmla !== undefined) {
-            result.push({ name: String(name), formula: String(fmla) });
-          }
-        }
-      }
-    }
-    return result as readonly GeometryGuide[];
+    return readGuideList(el) as readonly GeometryGuide[];
   },
 };
 

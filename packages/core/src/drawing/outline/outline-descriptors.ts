@@ -152,14 +152,14 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     if (findChild(el, "a:noFill")) {
       result.type = "noFill";
     }
-    if (findChild(el, "a:gradFill")) {
+    const gradFill = findChild(el, "a:gradFill");
+    if (gradFill) {
       result.type = "gradFill";
-      const gradFill = findChild(el, "a:gradFill")!;
       result.gradientFill = parse(gradientFillDesc, gradFill, _ctx);
     }
-    if (findChild(el, "a:pattFill")) {
+    const pattFill = findChild(el, "a:pattFill");
+    if (pattFill) {
       result.type = "pattFill";
-      const pattFill = findChild(el, "a:pattFill")!;
       result.patternFill = parse(patternFillDesc, pattFill, _ctx);
     }
 

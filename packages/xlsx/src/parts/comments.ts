@@ -20,6 +20,7 @@ import { findChild, attr, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
+import { letterToColumn } from "../util/index";
 import type {
   AnchorMarkerOptions,
   CommentOptions,
@@ -325,9 +326,7 @@ function parseMarker(el: XmlElement): AnchorMarkerOptions {
 function cellRefToVmlCoords(ref: string): { col: number; row: number } {
   let i = 0;
   while (i < ref.length && ref.charCodeAt(i) >= 65 && ref.charCodeAt(i) <= 90) i++;
-  let col = 0;
-  for (let j = 0; j < i; j++) col = col * 26 + (ref.charCodeAt(j) - 64);
-  return { col: col - 1, row: parseInt(ref.slice(i), 10) - 1 };
+  return { col: letterToColumn(ref.slice(0, i)) - 1, row: parseInt(ref.slice(i), 10) - 1 };
 }
 
 /** Build rich text (CT_Rst) XML from runs. */

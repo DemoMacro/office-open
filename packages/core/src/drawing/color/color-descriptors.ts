@@ -9,7 +9,13 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify } from "../../descriptor";
-import { emitAngle, emitPercent, parseAngle, parsePercent } from "../../util/converters";
+import {
+  emitAngle,
+  emitPercent,
+  parseAngle,
+  parsePercent,
+  parsePercentAttr,
+} from "../../util/converters";
 import {
   ANGLE_TRANSFORMS,
   BOOLEAN_TRANSFORMS,
@@ -32,11 +38,11 @@ import { SystemColor } from "./system-color";
 
 // The parse whitelist is the union of the three unit classes — the Sets in
 // color-transform.ts are the single source of truth for the full key space.
-const TRANSFORM_KEYS: readonly (keyof ColorTransformOptions & string)[] = [
+const TRANSFORM_KEYS: ReadonlySet<keyof ColorTransformOptions & string> = new Set([
   ...PERCENT_TRANSFORMS,
   ...ANGLE_TRANSFORMS,
   ...BOOLEAN_TRANSFORMS,
-];
+]);
 
 // Transform key classification (percent vs angle) lives in color-transform.ts
 // so stringify and parse share one source of truth.
@@ -45,10 +51,7 @@ const TRANSFORM_KEYS: readonly (keyof ColorTransformOptions & string)[] = [
 // ("50000" = 50%) or a percent literal ("50%"); both are XSD-valid. Returns
 // the caller-facing integer percent.
 function parsePercentChannel(raw: string | number | undefined): number {
-  if (raw === undefined) return 0;
-  const s = typeof raw === "number" ? String(raw) : raw;
-  if (s.endsWith("%")) return Number(s.slice(0, -1));
-  return Number(s) / 1000;
+  return parsePercentAttr(raw) ?? 0;
 }
 
 function stringifyTransforms(opts: ColorTransformOptions): string {
@@ -63,7 +66,7 @@ function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
   for (const child of el.elements) {
     if (!child.name || !child.name.startsWith("a:")) continue;
     const key = child.name.slice(2) as keyof ColorTransformOptions & string;
-    if (!TRANSFORM_KEYS.includes(key)) continue;
+    if (!TRANSFORM_KEYS.has(key)) continue;
     const val = child.attributes?.["val"];
     if (val !== undefined) {
       const raw = Number(val);

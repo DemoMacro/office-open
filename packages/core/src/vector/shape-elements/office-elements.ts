@@ -54,7 +54,7 @@ export interface VmlExtAttribute {
 }
 
 /** AG_Ext as a spec entry — prepend to every o: element's spec list. */
-const EXT_ATTR: readonly VmlAttrSpec[] = [{ field: "ext", attr: "v:ext", kind: "string" }];
+export const EXT_ATTR: readonly VmlAttrSpec[] = [{ field: "ext", attr: "v:ext", kind: "string" }];
 
 // ── o:skew ──
 

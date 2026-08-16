@@ -140,15 +140,15 @@ function stringifyCellChild(child: SectionChild, ctx: BodyContext): string {
 // ── Cell stringification ──
 
 function stringifyTableCell(cell: TableCellOptions, ctx: BodyContext): string {
-  const parts: string[] = [];
+  let body = "";
 
   const tcPr = stringifyTableCellProperties(cell);
-  if (tcPr) parts.push(tcPr);
+  if (tcPr) body += tcPr;
 
   const children = cell.children as SectionChild[] | undefined;
   if (children) {
     for (const child of children) {
-      parts.push(stringifyCellChild(child, ctx));
+      body += stringifyCellChild(child, ctx);
     }
   }
 
@@ -157,10 +157,10 @@ function stringifyTableCell(cell: TableCellOptions, ctx: BodyContext): string {
   const endsWithParagraph =
     last && typeof last !== "string" && ("paragraph" in last || "table" in last);
   if (!endsWithParagraph) {
-    parts.push("<w:p/>");
+    body += "<w:p/>";
   }
 
-  return `<w:tc>${parts.join("")}</w:tc>`;
+  return `<w:tc>${body}</w:tc>`;
 }
 
 // ── Row stringification ──
@@ -207,12 +207,11 @@ function stringifyTableRow(
   }
 
   // rsid attributes
-  const rsidAttrs: string[] = [];
-  if (row.runPropertiesRsid) rsidAttrs.push(` w:rsidRPr="${row.runPropertiesRsid}"`);
-  if (row.rsid) rsidAttrs.push(` w:rsidR="${row.rsid}"`);
-  if (row.deletionRsid) rsidAttrs.push(` w:rsidDel="${row.deletionRsid}"`);
-  if (row.tableRowRsid) rsidAttrs.push(` w:rsidTr="${row.tableRowRsid}"`);
-  const attr = rsidAttrs.join("");
+  let attr = "";
+  if (row.runPropertiesRsid) attr += ` w:rsidRPr="${row.runPropertiesRsid}"`;
+  if (row.rsid) attr += ` w:rsidR="${row.rsid}"`;
+  if (row.deletionRsid) attr += ` w:rsidDel="${row.deletionRsid}"`;
+  if (row.tableRowRsid) attr += ` w:rsidTr="${row.tableRowRsid}"`;
 
   const body = parts.join("");
   return body ? `<w:tr${attr}>${body}</w:tr>` : attr ? `<w:tr${attr}/>` : "<w:tr/>";

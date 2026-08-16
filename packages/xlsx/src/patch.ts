@@ -19,6 +19,7 @@ import {
   applyCorePropertiesOverride,
   getNextRelationshipIndex,
   nextNumericId,
+  partPathToRelsPath,
   removeOverride,
   strFromU8,
   toJson,
@@ -258,12 +259,11 @@ function rewriteTypedCells(
       const text = effectiveCellText(cell, sharedTextByIndex);
       if (text === undefined) continue;
 
-      for (const [placeholder, value] of patchMap) {
-        if (typeof value === "string") continue; // Pass B handles string values
-        if (text === placeholder) {
-          rewriteCellToValue(cell, value);
-          break; // a pure cell holds a single placeholder
-        }
+      // Text is fully resolved here, so an exact match is a single Map lookup.
+      // A pure cell holds a single placeholder; string values are Pass B's.
+      const value = patchMap.get(text);
+      if (value !== undefined && typeof value !== "string") {
+        rewriteCellToValue(cell, value);
       }
     }
   }
@@ -674,16 +674,10 @@ function removeWorksheetsFromMap(xmlMap: Map<string, Element>, names: readonly s
 
   for (const sheetPath of sheetPaths) {
     xmlMap.delete(sheetPath);
-    xmlMap.delete(relsKeyFor(sheetPath));
+    xmlMap.delete(partPathToRelsPath(sheetPath));
     const contentTypes = xmlMap.get("[Content_Types].xml");
     if (contentTypes) removeOverride(contentTypes, `/${sheetPath}`);
   }
-}
-
-/** Build the rels part path for a given part path (…/_rels/<file>.rels). */
-function relsKeyFor(partPath: string): string {
-  const slash = partPath.lastIndexOf("/");
-  return `${partPath.substring(0, slash)}/_rels/${partPath.substring(slash + 1)}.rels`;
 }
 
 /** Find an existing relationship of a type in a rels root: { id, target }. */
@@ -755,7 +749,7 @@ function appendCommentsToMap(
   commentOpts: CommentOptions[],
 ): void {
   const sheetPath = resolveSheetPath(xmlMap, sheetName);
-  const wsRelsKey = relsKeyFor(sheetPath);
+  const wsRelsKey = partPathToRelsPath(sheetPath);
   const wsRels = xmlMap.get(wsRelsKey) ?? createRelationshipFile();
   xmlMap.set(wsRelsKey, wsRels);
 

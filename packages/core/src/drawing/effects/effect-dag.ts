@@ -22,20 +22,14 @@ import { createNoFill } from "../fill/no-fill";
 import { createPatternFill } from "../fill/pattern-fill";
 import type { PatternFillOptions } from "../fill/pattern-fill";
 import type { BlurEffectOptions } from "./effect-list";
+import { appendCommonEffects } from "./effect-list";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
 import { BlendMode } from "./fill-overlay";
-import { createFillOverlayEffect } from "./fill-overlay";
 import type { GlowEffectOptions } from "./glow";
-import { createGlowEffect } from "./glow";
 import type { InnerShadowEffectOptions } from "./inner-shadow";
-import { createInnerShadowEffect } from "./inner-shadow";
 import type { OuterShadowEffectOptions } from "./outer-shadow";
-import { createOuterShadowEffect } from "./outer-shadow";
 import type { PresetShadowEffectOptions } from "./preset-shadow";
-import { createPresetShadowEffect } from "./preset-shadow";
 import type { ReflectionEffectOptions } from "./reflection";
-import { createReflectionEffect } from "./reflection";
-import { createSoftEdgeEffect } from "./soft-edge";
 
 // ─── Effect Container Type ──────────────────────────────────────────────────
 
@@ -351,15 +345,6 @@ const createTransformEffect = (options?: TransformEffectOptions): string => {
 const createEffectReference = (options: EffectReferenceOptions): string =>
   `<a:effect ref="${options.ref}"/>`;
 
-// ─── Blur Effect (from effect-list, re-implemented for DAG) ─────────────────
-
-const createBlurEffect = (options: BlurEffectOptions): string => {
-  const attrs: Record<string, number> = {};
-  if (options.radius !== undefined) attrs.rad = options.radius;
-  if (options.grow === false) attrs.grow = 0;
-  return element("a:blur", Object.keys(attrs).length > 0 ? attrs : undefined);
-};
-
 // ─── Effect Container ───────────────────────────────────────────────────────
 
 /**
@@ -387,33 +372,8 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
 
   const children: string[] = [];
 
-  // ── Existing effects (also in CT_EffectList) ──
-  if (options.blur) {
-    children.push(createBlurEffect(options.blur));
-  }
-  if (options.fillOverlay) {
-    children.push(createFillOverlayEffect(options.fillOverlay));
-  }
-  if (options.glow) {
-    children.push(createGlowEffect(options.glow));
-  }
-  if (options.innerShadow) {
-    children.push(createInnerShadowEffect(options.innerShadow));
-  }
-  if (options.outerShadow) {
-    children.push(createOuterShadowEffect(options.outerShadow));
-  }
-  if (options.presetShadow) {
-    children.push(createPresetShadowEffect(options.presetShadow));
-  }
-  if (options.reflection) {
-    children.push(
-      createReflectionEffect(options.reflection === true ? undefined : options.reflection),
-    );
-  }
-  if (options.softEdge !== undefined) {
-    children.push(createSoftEdgeEffect(options.softEdge));
-  }
+  // The eight CT_EffectList effects, then the DAG-only ones below.
+  appendCommonEffects(options, children);
 
   // ── New effects for CT_EffectContainer ──
   if (options.containers) {

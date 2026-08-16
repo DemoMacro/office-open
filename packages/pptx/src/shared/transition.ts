@@ -86,13 +86,12 @@ function buildTransitionElement(
   const dir = direction ? DIRECTION_MAP[direction] : undefined;
   const attrs: string[] = [];
 
-  if (ORIENT_TYPES.has(type) && dir && dir !== "horz") {
-    attrs.push(`dir="${dir}"`);
-  } else if (SIDE_DIR_TYPES.has(type) && dir && dir !== "l") {
-    attrs.push(`dir="${dir}"`);
-  } else if (EIGHT_DIR_TYPES.has(type) && dir && dir !== "l") {
-    attrs.push(`dir="${dir}"`);
-  } else if (type === "strips" && dir && dir !== "lu") {
+  if (
+    dir &&
+    (ORIENT_TYPES.has(type) ||
+      ((SIDE_DIR_TYPES.has(type) || EIGHT_DIR_TYPES.has(type)) && dir !== "l") ||
+      (type === "strips" && dir !== "lu"))
+  ) {
     attrs.push(`dir="${dir}"`);
   } else if ((type === "fade" || type === "cut") && thruBlk !== undefined) {
     attrs.push(`thruBlk="${thruBlk ? 1 : 0}"`);

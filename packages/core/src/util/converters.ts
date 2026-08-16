@@ -30,6 +30,17 @@ export const emitPercent = (percent: number): number => Math.round(percent * 100
 export const parsePercent = (value: number): number => value / 1000;
 
 /**
+ * Parse an ST_Percentage attribute that may arrive as either a 1/1000th
+ * integer ("50000" = 50%) or a percent literal ("50%"); both are XSD-valid.
+ * Returns the caller-facing integer percent.
+ */
+export const parsePercentAttr = (raw: string | number | undefined): number | undefined => {
+  if (raw === undefined) return undefined;
+  const s = typeof raw === "number" ? String(raw) : raw;
+  return s.endsWith("%") ? Number(s.slice(0, -1)) : parsePercent(Number(s));
+};
+
+/**
  * Convert public degrees to OOXML ST_Angle / ST_FixedAngle scalar (1/60000).
  * Math.round ensures JSON-first float input produces exact integer output.
  */

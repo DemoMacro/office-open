@@ -30,6 +30,26 @@ import type { DocxReadContext } from "../../../context";
 import { stringifyElement } from "../../../util/stringify-element";
 import type { LanguageOptions } from "./language";
 
+// On/off run properties: XML child tag → options key.
+const ON_OFF_RUN_PROPS: readonly (readonly [string, keyof RunPropertiesOptions & string])[] = [
+  ["w:strike", "strike"],
+  ["w:dstrike", "doubleStrike"],
+  ["w:outline", "outline"],
+  ["w:shadow", "shadow"],
+  ["w:emboss", "emboss"],
+  ["w:imprint", "imprint"],
+  ["w:vanish", "vanish"],
+  ["w:webHidden", "webHidden"],
+  ["w:noProof", "noProof"],
+  ["w:snapToGrid", "snapToGrid"],
+  ["w:smallCaps", "smallCaps"],
+  ["w:caps", "allCaps"],
+  ["w:rtl", "rightToLeft"],
+  ["w:cs", "complexScript"],
+  ["w:specVanish", "specVanish"],
+  ["w:oMath", "math"],
+];
+
 /**
  * Parse a w:rPr element into RunPropertiesOptions.
  */
@@ -100,24 +120,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   }
 
   // On/off properties
-  for (const [name, optKey] of [
-    ["w:strike", "strike"],
-    ["w:dstrike", "doubleStrike"],
-    ["w:outline", "outline"],
-    ["w:shadow", "shadow"],
-    ["w:emboss", "emboss"],
-    ["w:imprint", "imprint"],
-    ["w:vanish", "vanish"],
-    ["w:webHidden", "webHidden"],
-    ["w:noProof", "noProof"],
-    ["w:snapToGrid", "snapToGrid"],
-    ["w:smallCaps", "smallCaps"],
-    ["w:caps", "allCaps"],
-    ["w:rtl", "rightToLeft"],
-    ["w:cs", "complexScript"],
-    ["w:specVanish", "specVanish"],
-    ["w:oMath", "math"],
-  ] as const) {
+  for (const [name, optKey] of ON_OFF_RUN_PROPS) {
     const child = findChild(el, name);
     if (child) opts[optKey] = attrBool(child, "w:val") ?? true;
   }

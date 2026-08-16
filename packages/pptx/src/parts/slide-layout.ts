@@ -1,6 +1,5 @@
 import { convertToEmu } from "@office-open/core";
 import type { MasterPlaceholderPosition } from "@parts/slide-master";
-import { buildMasterChildrenXml } from "@parts/slide/coerce";
 import type { LayoutDefinition } from "@shared/file";
 
 export type SlideLayoutType =
@@ -377,13 +376,6 @@ export function buildCustomLayoutXml(def: LayoutDefinition): string {
     } else {
       shapes.push(sldNumPlaceholder(nextId++));
     }
-  }
-
-  // Children shapes — shift ids
-  const childrenXml = buildMasterChildrenXml(def.children);
-  if (childrenXml) {
-    const offset = nextId - 1;
-    shapes.push(childrenXml.replace(/ id="(\d+)"/g, (_, n) => ` id="${parseInt(n) + offset}"`));
   }
 
   const matchingAttr = def.matchingName !== undefined ? ` matchingName="${def.matchingName}"` : "";

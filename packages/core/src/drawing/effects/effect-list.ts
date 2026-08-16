@@ -159,7 +159,7 @@ export interface EffectListOptions {
  * </xsd:complexType>
  * ```
  */
-const createBlurEffect = (options: BlurEffectOptions): string => {
+export const createBlurEffect = (options: BlurEffectOptions): string => {
   const attrs: Record<string, number> = {};
   if (options.radius !== undefined) attrs.rad = options.radius;
   if (options.grow === false) attrs.grow = 0;
@@ -189,9 +189,11 @@ const createBlurEffect = (options: BlurEffectOptions): string => {
  * </xsd:complexType>
  * ```
  */
-export const createEffectList = (options: EffectListOptions): string => {
-  const children: string[] = [];
-
+/**
+ * Append the eight CT_EffectList effects (also valid in CT_EffectContainer),
+ * in XSD sequence order. Shared by createEffectList and the DAG container.
+ */
+export const appendCommonEffects = (options: EffectListOptions, children: string[]): void => {
   if (options.blur) {
     children.push(createBlurEffect(options.blur));
   }
@@ -218,6 +220,10 @@ export const createEffectList = (options: EffectListOptions): string => {
   if (options.softEdge !== undefined) {
     children.push(createSoftEdgeEffect(options.softEdge));
   }
+};
 
+export const createEffectList = (options: EffectListOptions): string => {
+  const children: string[] = [];
+  appendCommonEffects(options, children);
   return element("a:effectLst", undefined, children);
 };

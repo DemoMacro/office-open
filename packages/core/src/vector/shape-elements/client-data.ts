@@ -192,6 +192,10 @@ const STRING_FIELDS = [
   "CF",
 ] as const;
 
+const TRUE_FALSE_BLANK_FIELD_SET = new Set<string>(TRUE_FALSE_BLANK_FIELDS);
+const INTEGER_FIELD_SET = new Set<string>(INTEGER_FIELDS);
+const STRING_FIELD_SET = new Set<string>(STRING_FIELDS);
+
 /** Serialize x:ClientData. */
 export function stringifyVmlClientData(opts: VmlClientDataOptions): string {
   const children: string[] = [];
@@ -217,19 +221,17 @@ export function parseVmlClientData(el: XmlElement): VmlClientDataOptions {
   const out: VmlClientDataOptions = {
     objectType: String(el.attributes?.ObjectType ?? "") as VmlClientObjectType,
   };
-  const tfbFields = new Set<string>(TRUE_FALSE_BLANK_FIELDS);
-  const intFields = new Set<string>(INTEGER_FIELDS);
   const extras: Record<string, unknown> = {};
   for (const child of el.elements ?? []) {
     if (child.type !== "element") continue;
     const local = child.name?.startsWith("x:") ? child.name.slice(2) : null;
     if (local === null) continue;
     const text = (child.elements ?? []).map((c) => String(c.text ?? "")).join("");
-    if (tfbFields.has(local)) {
+    if (TRUE_FALSE_BLANK_FIELD_SET.has(local)) {
       extras[local] = parseVmlTrueFalseBlank(text);
-    } else if (intFields.has(local)) {
+    } else if (INTEGER_FIELD_SET.has(local)) {
       extras[local] = Number(text);
-    } else if ((STRING_FIELDS as readonly string[]).includes(local)) {
+    } else if (STRING_FIELD_SET.has(local)) {
       extras[local] = text;
     }
   }
