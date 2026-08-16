@@ -162,14 +162,52 @@ The same concept uses the **same name in every package** — picture/shape/conne
 
 ## Options Interface Design
 
+The `*Options` JSON is the document's data model, consumed three ways: humans writing TypeScript, AI agents generating JSON against the published schemas (`packages/office-open/schemas/`), and the docen editor persisting documents through it. Structural rules below serve all three; when a rule and taste disagree, the XSD content model decides.
+
+### Part-Mirrored Roots
+
+A root field on `DocumentOptions`/`WorkbookOptions`/`PresentationOptions` maps to a package part (`styles`, `numbering`, `settings`, `footnotes`, `comments`, `webSettings`, `glossary`) or to document-body-level XML (`sections`, `background`, `conformance`). Nothing else gets a root field.
+
+settings.xml content is reachable only through the `settings` entry — mirroring the Open XML SDK, where settings live on `MainDocumentPart.DocumentSettingsPart` and the document classes carry no settings sugar (CT_Document has only `w:background` + `w:body`; none of view/zoom/mailMerge exists in document.xml).
+
+### Single Source of Truth, No Sugar
+
+One configuration, one writable location. Convenience mirrors create three failures:
+
+- **Silent override** — merge order (`{ ...defaults, ...options.settings }`) lets one entry quietly win
+- **Name drift** — `evenAndOddHeaderAndFooters` at the root vs `evenAndOddHeaders` (the SDK name) in settings
+- **Two right answers** — schema-driven generation becomes nondeterministic
+
+Wiring that only the compiler can produce (header/footer reference ids, relationship ids) lives on descriptor-input types (`SectionPropertiesDescriptorOptions`), never on the public Options.
+
 ### Flat vs Nested
 
-| Pattern    | When to use                                      | Example                                     |
-| ---------- | ------------------------------------------------ | ------------------------------------------- |
-| **Flat**   | Simple, independent properties                   | `{ alignment, spacing, indent }`            |
-| **Nested** | Properties map to a single XSD container element | `{ borders: { top, bottom, left, right } }` |
+| Pattern    | When to use                                    | Example                                                                   |
+| ---------- | ---------------------------------------------- | ------------------------------------------------------------------------- |
+| **Flat**   | No XSD container groups the properties         | `{ pageSize, pageMargin, pageNumbers }` (CT_SectPr children are siblings) |
+| **Nested** | The XSD has a real container element/CT for it | `{ pageBorders: { top, left, bottom, right } }` (CT_PageBorders)          |
 
-Rule: if 3+ properties share the same prefix, nest them under a property that names the concept and matches the XSD container.
+**Rule: nesting requires an XSD container.** Every nested Options object corresponds to one XSD complex type. A grouping with no backing element is an invented shell and gets flattened:
+
+```typescript
+// ✗ invented shells — no such container in CT_SectPr / CT_Lvl
+page: {
+  (size, margin, pageNumbers, borders, textDirection);
+}
+style: {
+  (run, paragraph);
+}
+
+// ✓ flattened to siblings, matching the XSD content model
+{
+  (pageSize, pageMargin, pageNumbers, pageBorders, textDirection);
+}
+{
+  (run, paragraph);
+}
+```
+
+A shared name prefix (3+ properties starting with `page…`) is a smell that prompts a check, never the justification for nesting.
 
 ### Container Field Naming
 
@@ -179,6 +217,28 @@ Rule: if 3+ properties share the same prefix, nest them under a property that na
 | Homogeneous   | Domain name | Single element type | `TableOptions.rows`       |
 
 Domain names follow the XSD element: `rows` for `w:tr`/`x:row`, `cells` for `w:tc`/`x:c`.
+
+### Collections: Arrays with Explicit Ids
+
+An element's identity is a field on the item, not a Record key:
+
+```typescript
+// ✓ identity is a field (w:footnote/@w:id), order is the array's
+footnotes: [{ id: 1, children: ["…"] }]
+
+// ✗ number-keyed Record + mixed key space — hostile to diff/patch/schema
+footnotes: { "1": { children: [...] }, separator: {...} }
+```
+
+Number-keyed Records and mixed key spaces (numeric ids alongside named entries like `separator`) are anti-patterns for diffing, JSON Patch, and schema generation. Unordered lookup maps are internal-only; public collections are arrays. Separator/continuation entries that round-trip verbatim become sibling top-level fields, not Record keys.
+
+### Humans, AI Agents, and Editors
+
+Three consumers shape the same JSON:
+
+- **Humans** — names and units a person would say out loud (see [Measurement Units](#measurement-units)); nesting depth spent on real structure, not wrapper layers.
+- **AI agents** — variant shapes carry a discriminant field (`type`-style); LLM structured output degrades on deep nesting plus wide unions, so wrappers with no XML counterpart actively hurt generation accuracy.
+- **Editors** — options are plain serializable data (no class instances, functions, or context-dependent fields), field names are stable addresses (JSON Patch targets), and every subtree (a section, a cell, a run) is valid in isolation so partial updates can be persisted.
 
 ## Measurement Units
 
