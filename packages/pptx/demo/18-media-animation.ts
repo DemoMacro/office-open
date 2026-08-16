@@ -39,14 +39,7 @@ const options: PresentationOptions = {
         },
       ],
       animations: [
-        {
-          shapeId: 100,
-          options: {
-            mediaType: "playVideo",
-            trigger: "withPrevious",
-            showWhenStopped: true,
-          },
-        },
+        { shapeId: 100, mediaType: "playVideo", trigger: "withPrevious", showWhenStopped: true },
       ],
     },
 
@@ -78,14 +71,12 @@ const options: PresentationOptions = {
       animations: [
         {
           shapeId: 2,
-          options: {
-            attributeName: "style.opacity",
-            calcMode: "lin",
-            valueType: "num",
-            from: "1",
-            to: "0.3",
-            duration: 1000,
-          },
+          attributeName: "style.opacity",
+          calcMode: "lin",
+          valueType: "num",
+          from: "1",
+          to: "0.3",
+          duration: 1000,
         },
       ],
     },
@@ -124,16 +115,7 @@ const options: PresentationOptions = {
           },
         },
       ],
-      animations: [
-        {
-          shapeId: 2,
-          options: {
-            type: "fade",
-            charRange: [0, 5],
-            duration: 500,
-          },
-        },
-      ],
+      animations: [{ shapeId: 2, type: "fade", charRange: [0, 5], duration: 500 }],
     },
   ],
 };

@@ -67,9 +67,9 @@ describe("resolvePlaceholder", () => {
   });
 
   it("returns empty when master placeholder is boolean (no explicit position)", () => {
-    // Master fresh API allows `true` (use reference position) which carries no
-    // concrete coordinates — resolvePlaceholder cannot synthesize them.
-    const master: MasterDefinition = { placeholders: { title: true } };
+    // A master without placeholder definitions carries no concrete
+    // coordinates — resolvePlaceholder cannot synthesize them.
+    const master: MasterDefinition = {};
     expect(resolvePlaceholder("title", undefined, master)).toEqual({});
   });
 });

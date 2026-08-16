@@ -14,10 +14,6 @@ import type { NotesMasterOptions, NotesLevelProperties } from "@parts/notes-mast
 
 // ── Types ──
 
-export interface NotesMasterDescriptorOptions {
-  options?: NotesMasterOptions;
-}
-
 const LEVEL_TAGS = [
   "a:lvl1pPr",
   "a:lvl2pPr",
@@ -32,15 +28,14 @@ const LEVEL_TAGS = [
 
 // ── Descriptor ──
 
-export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
+export const notesMasterDesc: CustomDescriptor<NotesMasterOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    return buildNotesMasterXml(opts.options);
+    return buildNotesMasterXml(opts);
   },
 
   parse(el, _ctx) {
-    const result: Partial<NotesMasterDescriptorOptions> = {};
     const options: Partial<NotesMasterOptions> = {};
 
     const colorMapping = parseColorMapping(findChild(el, "p:clrMap"));
@@ -72,7 +67,6 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterDescriptorOptions> = {
       if (levels.length > 0) options.notesStyle = levels;
     }
 
-    if (Object.keys(options).length > 0) result.options = options as NotesMasterOptions;
-    return result as NotesMasterDescriptorOptions;
+    return options as NotesMasterOptions;
   },
 };

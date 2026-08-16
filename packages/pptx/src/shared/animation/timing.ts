@@ -847,9 +847,9 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
 
 // --- Main class ---
 
-export interface AnimationEntry {
+/** One animated shape: the animation settings plus the target shape id. */
+export interface AnimationEntry extends AnimationOptions {
   shapeId: number;
-  options: AnimationOptions;
 }
 
 /**
@@ -869,15 +869,15 @@ export class SlideTiming {
     const seqCtnId = id++;
 
     // Check for builds from first entry
-    const builds = entries[0]?.options.builds;
-    const previousAction = entries[0]?.options.previousAction;
+    const builds = entries[0]?.builds;
+    const previousAction = entries[0]?.previousAction;
 
     const animationNodes: string[] = [];
     const mediaStateNodes: string[] = [];
     let clickGroupDelay = 0;
 
     for (const [i, entry] of entries.entries()) {
-      const { shapeId: spid, options } = entry;
+      const { shapeId: spid, ...options } = entry;
 
       const nodeType =
         options.trigger === "withPrevious"

@@ -1,9 +1,9 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
+import type { SlideOptions } from "@shared/file";
 import { describe, expect, it } from "vite-plus/test";
 
 import { slideDesc } from "./slide";
-import type { SlideDescriptorOptions } from "./slide";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -16,7 +16,7 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
-function roundTrip(opts: SlideDescriptorOptions) {
+function roundTrip(opts: SlideOptions) {
   const xml = slideDesc.stringify(opts, writeCtx);
   if (!xml) throw new Error("stringify returned undefined");
   const doc = parseXml(xml);
@@ -27,14 +27,14 @@ function roundTrip(opts: SlideDescriptorOptions) {
 
 describe("slideDesc round-trip", () => {
   it("round-trips an empty slide", () => {
-    const opts: SlideDescriptorOptions = {};
+    const opts: SlideOptions = {};
     const result = roundTrip(opts);
 
     expect(result).toBeDefined();
   });
 
   it("round-trips showMasterShapes=false", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       showMasterShapes: false,
     };
     const result = roundTrip(opts);
@@ -43,7 +43,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("round-trips showMasterPlaceholderAnimations=false", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       showMasterPlaceholderAnimations: false,
     };
     const result = roundTrip(opts);
@@ -52,7 +52,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("round-trips background with solid fill", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       background: { fill: { type: "solid", color: "FF5733" } },
     };
     const result = roundTrip(opts);
@@ -64,7 +64,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("round-trips transition fade", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       transition: { type: "fade", speed: "medium" },
     };
     const result = roundTrip(opts);
@@ -75,7 +75,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("round-trips transition wipe with advance settings", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       transition: {
         type: "wipe",
         speed: "fast",
@@ -93,7 +93,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("round-trips transition dissolve", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       transition: { type: "dissolve", speed: "slow" },
     };
     const result = roundTrip(opts);
@@ -104,7 +104,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("round-trips transition push", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       transition: { type: "push", advanceOnClick: true },
     };
     const result = roundTrip(opts);
@@ -115,7 +115,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("instantiates dt/ftr/sldNum placeholders for headerFooter (no p:hf on CT_Slide)", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       headerFooter: { slideNumber: true, footer: "Confidential", dateTime: true },
     };
     const xml = slideDesc.stringify(opts, writeCtx) ?? "";
@@ -130,7 +130,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("skips headerFooter placeholders the children already carry", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       headerFooter: { slideNumber: true, footer: "Confidential", dateTime: true },
       children: [{ shape: { placeholder: "sldNum" } }],
     };
@@ -142,7 +142,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("round-trips colorMappingOverride", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       colorMappingOverride: { kind: "override", colorMapping: { text1: "dark2" } },
     };
     const result = roundTrip(opts);
@@ -162,7 +162,7 @@ describe("slideDesc round-trip", () => {
   });
 
   it("round-trips customerData inside p:cSld", () => {
-    const opts: SlideDescriptorOptions = {
+    const opts: SlideOptions = {
       customerData: [{ rId: "rId7" }],
     };
     const result = roundTrip(opts);

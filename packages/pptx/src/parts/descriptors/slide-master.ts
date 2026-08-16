@@ -30,7 +30,6 @@ import {
 } from "@parts/slide/c-sld";
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
-import type { MasterChild } from "@shared/file";
 import { extractPlaceholderDefinition } from "@shared/placeholder";
 
 import type { PptxWriteContext } from "../../context";
@@ -54,6 +53,17 @@ export type SlideMasterDescriptorOptions = SlideMasterOptions & {
   /** sldLayoutIdLst — layout ids + relationship ids owned by this master. */
   slideLayoutIds?: { id: number; relationshipId: string }[];
 };
+
+/**
+ * Assign an explicit cNvPr id to a single-key slide-child wrapper (master
+ * children start after the placeholder ids so ids stay unique per part).
+ * Verbatim/rawXml children have no id slot and pass through unchanged.
+ */
+function withChildId(child: SlideChild, id: number): SlideChild {
+  const [key, value] = Object.entries(child)[0] as [string, { id?: number } | string];
+  if (typeof value !== "object") return child;
+  return { [key]: { ...value, id: value.id ?? id } } as SlideChild;
+}
 
 const NS =
   'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
@@ -97,8 +107,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     // never collide with the module-level shape id counter or the placeholders.
     let childId = nextId;
     for (const child of opts.children ?? []) {
-      const shapeOpts = { ...child.shape, id: child.shape.id ?? childId++ };
-      const xml = stringifyChild({ shape: shapeOpts } as SlideChild, ctx);
+      const xml = stringifyChild(withChildId(child, childId++), ctx);
       if (xml) parts.push(xml);
     }
     parts.push("</p:spTree>");
@@ -125,8 +134,8 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     }
 
     // p:timing (optional).
-    if (opts.timing) {
-      parts.push(timingDesc.stringify(opts.timing, ctx) ?? "");
+    if (opts.animations?.length) {
+      parts.push(timingDesc.stringify(opts.animations, ctx) ?? "");
     }
 
     // p:hf (defaults to all-hidden when omitted).
@@ -179,10 +188,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
           const parsed = parseChild(child, ctx);
           if (parsed !== undefined) children.push(parsed);
         }
-        // MasterChild (shared) declares only { shape }; parse yields the full
-        // SlideChild union (parts-layer). The shared/parts split prevents unifying
-        // them, so the cast stays local to this known impedance.
-        if (children.length > 0) result.children = children as unknown as MasterChild[];
+        if (children.length > 0) result.children = children;
         if (Object.keys(placeholders).length > 0) result.placeholders = placeholders;
       }
 
@@ -213,7 +219,10 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
     // p:timing.
     const timing = findChild(el, "p:timing");
-    if (timing) result.timing = timingDesc.parse(timing, ctx);
+    if (timing) {
+      const entries = timingDesc.parse(timing, ctx);
+      if (entries.length > 0) result.animations = entries;
+    }
 
     // p:hf.
     const headerFooter = parseHeaderFooter(findChild(el, "p:hf"));

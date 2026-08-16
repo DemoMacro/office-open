@@ -250,15 +250,466 @@
     },
     "AnimationEntry": {
       "additionalProperties": false,
+      "description": "One animated shape: the animation settings plus the target shape id.",
       "properties": {
-        "options": {
-          "$ref": "#/definitions/AnimationOptions"
+        "acceleration": {
+          "description": "Acceleration as integer percent (default 0).",
+          "type": "number"
+        },
+        "accumulate": {
+          "description": "Accumulate mode: \"none\", \"always\".",
+          "enum": ["none", "always"],
+          "type": "string"
+        },
+        "additive": {
+          "description": "Additive mode: \"base\", \"sum\", \"repl\", \"mult\", \"none\".",
+          "enum": ["base", "sum", "repl", "mult", "none"],
+          "type": "string"
+        },
+        "advanceAfterTime": {
+          "description": "Automatically advance time.",
+          "type": "string"
+        },
+        "afterEffect": {
+          "description": "Whether this is an after-effect node.",
+          "type": "boolean"
+        },
+        "animBy": {
+          "type": "string"
+        },
+        "animateBackground": {
+          "description": "Animate background.",
+          "type": "boolean"
+        },
+        "attributeName": {
+          "type": "string"
+        },
+        "autoReverse": {
+          "type": "boolean"
+        },
+        "autoUpdateAnimationBackground": {
+          "description": "Auto-update animation background.",
+          "type": "boolean"
+        },
+        "buildLevel": {
+          "description": "Build level for animation.",
+          "type": "number"
+        },
+        "builds": {
+          "items": {
+            "$ref": "#/definitions/AnimationBuildOptions"
+          },
+          "type": "array"
+        },
+        "calcMode": {
+          "$ref": "#/definitions/AnimationCalcMode"
+        },
+        "charRange": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        "class": {
+          "$ref": "#/definitions/AnimationClass"
+        },
+        "color": {
+          "type": "string"
+        },
+        "colorByHsl": {
+          "additionalProperties": false,
+          "description": "Color by HSL transform (p:by → p:hsl).",
+          "properties": {
+            "h": {
+              "type": "string"
+            },
+            "l": {
+              "type": "string"
+            },
+            "s": {
+              "type": "string"
+            }
+          },
+          "required": ["h", "s", "l"],
+          "type": "object"
+        },
+        "colorByRgb": {
+          "additionalProperties": false,
+          "description": "Color by RGB transform (p:by → p:rgb).",
+          "properties": {
+            "b": {
+              "type": "string"
+            },
+            "g": {
+              "type": "string"
+            },
+            "r": {
+              "type": "string"
+            }
+          },
+          "required": ["r", "g", "b"],
+          "type": "object"
+        },
+        "colorFrom": {
+          "description": "Color animation from (a:srgbClr hex).",
+          "type": "string"
+        },
+        "colorSpace": {
+          "description": "Color space for color animation.",
+          "enum": ["rgb", "hsl"],
+          "type": "string"
+        },
+        "colorTo": {
+          "description": "Color animation to (a:srgbClr hex).",
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "commandType": {
+          "enum": ["call", "evt", "verb"],
+          "type": "string"
+        },
+        "deceleration": {
+          "description": "Deceleration as integer percent (default 0).",
+          "type": "number"
+        },
+        "delay": {
+          "type": "number"
+        },
+        "direction": {
+          "$ref": "#/definitions/AnimationDirection"
+        },
+        "display": {
+          "description": "Display state.",
+          "type": "boolean"
+        },
+        "duration": {
+          "type": "number"
+        },
+        "effectProgress": {
+          "$ref": "#/definitions/AnimationVariantOptions",
+          "description": "Effect progress (p:progress)."
+        },
+        "emphasisType": {
+          "$ref": "#/definitions/EmphasisType"
+        },
+        "endConditions": {
+          "description": "End conditions list (p:endCondLst).",
+          "items": {
+            "$ref": "#/definitions/EndConditionOptions"
+          },
+          "type": "array"
+        },
+        "endSyncCondition": {
+          "$ref": "#/definitions/EndConditionOptions",
+          "description": "End sync condition (p:endSync)."
+        },
+        "eventFilter": {
+          "description": "Event filter string.",
+          "type": "string"
+        },
+        "exclusiveMode": {
+          "description": "Exclusive mode wrapper (p:excl).",
+          "type": "boolean"
+        },
+        "formula": {
+          "description": "Formula for animation.",
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "fullScreen": {
+          "type": "boolean"
+        },
+        "graphicElement": {
+          "additionalProperties": false,
+          "description": "Graphic element target (p:graphicEl → a:dgm / a:chart).",
+          "properties": {
+            "chart": {
+              "additionalProperties": false,
+              "description": "Chart element (a:chart).",
+              "properties": {
+                "buildStep": {
+                  "description": "Build step (required)",
+                  "enum": [
+                    "category",
+                    "ptInCategory",
+                    "series",
+                    "ptInSeries",
+                    "allPts",
+                    "gridLegend"
+                  ],
+                  "type": "string"
+                },
+                "categoryIndex": {
+                  "description": "Category index (a:chart",
+                  "type": "number"
+                },
+                "seriesIndex": {
+                  "description": "Series index (a:chart",
+                  "type": "number"
+                }
+              },
+              "required": ["buildStep"],
+              "type": "object"
+            },
+            "diagram": {
+              "additionalProperties": false,
+              "description": "Diagram element (a:dgm).",
+              "properties": {
+                "buildStep": {
+                  "description": "Build step (a:dgm",
+                  "enum": ["sp", "bg"],
+                  "type": "string"
+                },
+                "id": {
+                  "description": "Diagram node GUID (a:dgm",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "groupId": {
+          "description": "Group ID.",
+          "type": "number"
+        },
+        "inkTargetShapeId": {
+          "description": "Ink target shape ID (p:inkTgt",
+          "type": "number"
+        },
+        "isNarration": {
+          "type": "boolean"
+        },
+        "iterate": {
+          "additionalProperties": false,
+          "properties": {
+            "backwards": {
+              "type": "boolean"
+            },
+            "interval": {
+              "type": "number"
+            },
+            "iteratePercentage": {
+              "description": "Iterate step as integer percent (0–100).",
+              "type": "number"
+            },
+            "type": {
+              "enum": ["el", "wd", "lt"],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "masterRelation": {
+          "description": "Master relationship: \"clearConn\", \"keepConn\", \"resume\".",
+          "enum": ["clearConn", "keepConn", "resume"],
+          "type": "string"
+        },
+        "mediaType": {
+          "$ref": "#/definitions/MediaAnimationType"
+        },
+        "motionFrom": {
+          "additionalProperties": false,
+          "description": "Motion path from point (p:from).",
+          "properties": {
+            "x": {
+              "type": "string"
+            },
+            "y": {
+              "type": "string"
+            }
+          },
+          "required": ["x", "y"],
+          "type": "object"
+        },
+        "motionRotationCenter": {
+          "additionalProperties": false,
+          "description": "Motion path rotation center (p:rCtr).",
+          "properties": {
+            "x": {
+              "type": "string"
+            },
+            "y": {
+              "type": "string"
+            }
+          },
+          "required": ["x", "y"],
+          "type": "object"
+        },
+        "mute": {
+          "type": "boolean"
+        },
+        "nodePlaceholder": {
+          "description": "Node placeholder.",
+          "type": "boolean"
+        },
+        "numberOfSlides": {
+          "description": "Number of slides.",
+          "type": "number"
+        },
+        "oleChartElementLevel": {
+          "description": "OLE chart element level (p:oleChartEl",
+          "type": "number"
+        },
+        "oleChartElementType": {
+          "description": "OLE chart element type (p:oleChartEl",
+          "type": "string"
+        },
+        "override": {
+          "description": "Override mode: \"normal\", \"childStyle\".",
+          "enum": ["normal", "childStyle"],
+          "type": "string"
+        },
+        "paragraphRange": {
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        "path": {
+          "type": "string"
+        },
+        "pathEditMode": {
+          "description": "Path edit mode.",
+          "enum": ["relative", "fixed", "none"],
+          "type": "string"
+        },
+        "pathType": {
+          "$ref": "#/definitions/PathAnimationType"
+        },
+        "pointsTypes": {
+          "description": "Points types.",
+          "type": "string"
+        },
+        "previousAction": {
+          "description": "Previous action.",
+          "enum": ["none", "skipTimed"],
+          "type": "string"
+        },
+        "propertyList": {
+          "description": "Property list.",
+          "type": "string"
+        },
+        "repeatCount": {
+          "type": "number"
+        },
+        "repeatDuration": {
+          "description": "Repeat duration (\"indefinite\" or milliseconds).",
+          "type": "string"
+        },
+        "restart": {
+          "description": "Restart behavior: \"always\", \"whenNotActive\", \"never\".",
+          "enum": ["always", "whenNotActive", "never"],
+          "type": "string"
+        },
+        "rotationAngle": {
+          "description": "Rotation angle.",
+          "type": "number"
+        },
+        "runtimeContext": {
+          "description": "Runtime context string.",
+          "type": "string"
+        },
+        "setBehavior": {
+          "additionalProperties": false,
+          "properties": {
+            "attributeName": {
+              "type": "string"
+            },
+            "toType": {
+              "enum": ["string", "number"],
+              "type": "string"
+            },
+            "toValue": {
+              "type": "string"
+            }
+          },
+          "required": ["attributeName", "toValue"],
+          "type": "object"
         },
         "shapeId": {
           "type": "number"
+        },
+        "showWhenStopped": {
+          "description": "Show when stopped (for media).",
+          "type": "boolean"
+        },
+        "soundTarget": {
+          "description": "Sound target r:id (p:sndTgt).",
+          "type": "string"
+        },
+        "speed": {
+          "description": "Animation speed as integer percent (100 = normal speed).",
+          "type": "number"
+        },
+        "subShapeId": {
+          "description": "Sub-shape ID (p:subSp",
+          "type": "number"
+        },
+        "subTimeNodes": {
+          "description": "Sub time nodes (p:subTnLst).",
+          "items": {
+            "$ref": "#/definitions/AnimationOptions"
+          },
+          "type": "array"
+        },
+        "syncBehavior": {
+          "description": "Sync behavior: \"canSlip\", \"isLocked\", \"stoppable\".",
+          "enum": ["canSlip", "isLocked", "stoppable"],
+          "type": "string"
+        },
+        "timeFilter": {
+          "description": "Time filter string.",
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "transformType": {
+          "description": "Transform type: \"pt\", \"img\".",
+          "enum": ["pt", "img"],
+          "type": "string"
+        },
+        "trigger": {
+          "$ref": "#/definitions/AnimationTrigger"
+        },
+        "type": {
+          "$ref": "#/definitions/AnimationType"
+        },
+        "valueType": {
+          "$ref": "#/definitions/AnimationValueType"
+        },
+        "variantBool": {
+          "description": "Variant boolean value (p:boolVal).",
+          "type": "boolean"
+        },
+        "variantFloat": {
+          "description": "Variant float value (p:fltVal).",
+          "type": "number"
+        },
+        "variantInt": {
+          "description": "Variant integer value (p:intVal).",
+          "type": "number"
+        },
+        "volume": {
+          "description": "Media volume as integer percent (0-100).",
+          "type": "number"
+        },
+        "zoomContents": {
+          "description": "Zoom contents.",
+          "type": "boolean"
         }
       },
-      "required": ["shapeId", "options"],
+      "required": ["shapeId"],
       "type": "object"
     },
     "AnimationGraphicSubBuildOptions": {
@@ -2024,7 +2475,7 @@
     },
     "ChartOptions": {
       "additionalProperties": false,
-      "description": "Chart frame options for pptx slides (p:graphicFrame referencing a c:chartSpace). The chart payload comes from  {@link  ChartSpaceOptions }  (core shared model, identical XML across packages); the cNvPr fields from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.",
+      "description": "Chart frame options for pptx slides (p:graphicFrame referencing a c:chartSpace). The chart payload comes from  {@link  ChartSpaceOptions }  (core shared model, identical XML across packages); the cNvPr fields from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.\n\n`title` is the chart title (c:title) inherited from ChartSpaceOptions — the cNvPr",
       "properties": {
         "axes": {
           "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
@@ -2347,6 +2798,7 @@
         }
       },
       "required": ["series", "type"],
+      "title": "attribute is deliberately not exposed here so one JSON key\ncannot mean two XML attributes (alt text goes in `description`).",
       "type": "object"
     },
     "ChartPageMarginsOptions": {
@@ -4972,6 +5424,12 @@
     "LayoutDefinition": {
       "additionalProperties": false,
       "properties": {
+        "animations": {
+          "items": {
+            "$ref": "#/definitions/AnimationEntry"
+          },
+          "type": "array"
+        },
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
         },
@@ -5035,9 +5493,6 @@
         "themeOverride": {
           "$ref": "#/definitions/ThemeOverrideOptions",
           "description": "Theme override (themeOverride{n}.xml part) — per-layout deviations from the owning master's theme."
-        },
-        "timing": {
-          "$ref": "#/definitions/TimingDescriptorOptions"
         },
         "transition": {
           "$ref": "#/definitions/TransitionOptions"
@@ -5268,6 +5723,7 @@
     },
     "LayoutPlaceholderOptions": {
       "additionalProperties": false,
+      "description": "Placeholder slot map — `false` hides the slot, a definition overrides its position and facets, omitted shows the default. Same value shape as  {@link  MasterPlaceholderOptions  } .",
       "properties": {
         "body": {
           "anyOf": [
@@ -5869,25 +6325,22 @@
       ],
       "type": "string"
     },
-    "MasterChild": {
-      "additionalProperties": false,
-      "properties": {
-        "shape": {
-          "$ref": "#/definitions/ShapeOptions"
-        }
-      },
-      "required": ["shape"],
-      "type": "object"
-    },
     "MasterDefinition": {
       "additionalProperties": false,
       "properties": {
+        "animations": {
+          "description": "p:timing — animation timeline.",
+          "items": {
+            "$ref": "#/definitions/AnimationEntry"
+          },
+          "type": "array"
+        },
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
         },
         "children": {
           "items": {
-            "$ref": "#/definitions/MasterChild"
+            "$ref": "#/definitions/SlideChild"
           },
           "type": "array"
         },
@@ -5985,10 +6438,6 @@
         "theme": {
           "$ref": "#/definitions/ThemeOptions"
         },
-        "timing": {
-          "$ref": "#/definitions/TimingDescriptorOptions",
-          "description": "p:timing — animation timeline."
-        },
         "transition": {
           "$ref": "#/definitions/TransitionOptions",
           "description": "p:transition — slide-transition defaults inherited by slides."
@@ -6002,50 +6451,55 @@
         "body": {
           "anyOf": [
             {
-              "type": "boolean"
+              "$ref": "#/definitions/PlaceholderDefinition"
             },
             {
-              "$ref": "#/definitions/PlaceholderDefinition"
+              "const": false,
+              "type": "boolean"
             }
           ]
         },
         "date": {
           "anyOf": [
             {
-              "type": "boolean"
+              "$ref": "#/definitions/PlaceholderDefinition"
             },
             {
-              "$ref": "#/definitions/PlaceholderDefinition"
+              "const": false,
+              "type": "boolean"
             }
           ]
         },
         "footer": {
           "anyOf": [
             {
-              "type": "boolean"
+              "$ref": "#/definitions/PlaceholderDefinition"
             },
             {
-              "$ref": "#/definitions/PlaceholderDefinition"
+              "const": false,
+              "type": "boolean"
             }
           ]
         },
         "slideNumber": {
           "anyOf": [
             {
-              "type": "boolean"
+              "$ref": "#/definitions/PlaceholderDefinition"
             },
             {
-              "$ref": "#/definitions/PlaceholderDefinition"
+              "const": false,
+              "type": "boolean"
             }
           ]
         },
         "title": {
           "anyOf": [
             {
-              "type": "boolean"
+              "$ref": "#/definitions/PlaceholderDefinition"
             },
             {
-              "$ref": "#/definitions/PlaceholderDefinition"
+              "const": false,
+              "type": "boolean"
             }
           ]
         }
@@ -10841,19 +11295,6 @@
     "TimeUnit": {
       "enum": ["days", "months", "years"],
       "type": "string"
-    },
-    "TimingDescriptorOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "entries": {
-          "items": {
-            "$ref": "#/definitions/AnimationEntry"
-          },
-          "type": "array"
-        }
-      },
-      "required": ["entries"],
-      "type": "object"
     },
     "TintEffectOptions": {
       "additionalProperties": false,

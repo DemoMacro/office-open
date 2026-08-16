@@ -603,9 +603,9 @@ const slides: SlideOptions[] = [
       },
     ],
     animations: [
-      { shapeId: 2, options: { type: "fly", class: "entr", direction: "left", duration: 500 } },
-      { shapeId: 3, options: { type: "appear", class: "entr", trigger: "afterPrevious" } },
-      { shapeId: 4, options: { type: "fade", class: "exit", duration: 750 } },
+      { shapeId: 2, type: "fly", class: "entr", direction: "left", duration: 500 },
+      { shapeId: 3, type: "appear", class: "entr", trigger: "afterPrevious" },
+      { shapeId: 4, type: "fade", class: "exit", duration: 750 },
     ],
   },
 
@@ -1084,13 +1084,10 @@ const slides: SlideOptions[] = [
       },
     ],
     animations: [
-      { shapeId: 2, options: { class: "emph", emphasisType: "growShrink", duration: 800 } },
-      { shapeId: 3, options: { class: "emph", emphasisType: "spin", duration: 1000 } },
-      {
-        shapeId: 4,
-        options: { class: "emph", emphasisType: "colorChange", color: "FF0000", duration: 800 },
-      },
-      { shapeId: 5, options: { class: "emph", emphasisType: "pulse", duration: 500 } },
+      { shapeId: 2, class: "emph", emphasisType: "growShrink", duration: 800 },
+      { shapeId: 3, class: "emph", emphasisType: "spin", duration: 1000 },
+      { shapeId: 4, class: "emph", emphasisType: "colorChange", color: "FF0000", duration: 800 },
+      { shapeId: 5, class: "emph", emphasisType: "pulse", duration: 500 },
     ],
   },
 

@@ -148,7 +148,7 @@ function hasStructuredLayoutContent(def: LayoutDefinition): boolean {
     (def.children !== undefined && def.children.length > 0) ||
     def.background !== undefined ||
     def.transition !== undefined ||
-    def.timing !== undefined ||
+    def.animations !== undefined ||
     def.ext !== undefined ||
     def.headerFooter !== undefined ||
     def.colorMappingOverride !== undefined ||
@@ -252,7 +252,7 @@ function buildMasterMap(
           textStyles: def.textStyles,
           preserve: def.preserve,
           transition: def.transition,
-          timing: def.timing,
+          animations: def.animations,
           customerData: def.customerData,
           controls: def.controls,
           ext: def.ext,
@@ -641,7 +641,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   }
 
   if (slideOpts.animations && slideOpts.animations.length > 0) {
-    parts.push(timingDesc.stringify({ entries: slideOpts.animations }, ctx) ?? "");
+    parts.push(timingDesc.stringify(slideOpts.animations, ctx) ?? "");
   }
 
   // p:extLst — verbatim round-trip (last child per CT_Slide sequence)
@@ -841,9 +841,7 @@ export function compilePresentation(
     presOptions.notesMasterRId = notesMasterRId;
     const notesMasterThemeIndex = themes.length + 1;
     mapping["NotesMaster"] = {
-      data:
-        XML_DECL +
-        (notesMasterDesc.stringify({ options: options.notesMasterOptions }, descCtx) ?? ""),
+      data: XML_DECL + (notesMasterDesc.stringify(options.notesMasterOptions ?? {}, descCtx) ?? ""),
       path: "ppt/notesMasters/notesMaster1.xml",
     };
     const notesMasterThemeXml = createThemeXml();

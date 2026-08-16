@@ -9,7 +9,6 @@ export {
   type MasterDefinition,
   type LayoutDefinition,
   type LayoutPlaceholderOptions,
-  type MasterChild,
   type SlideSize,
 } from "./file";
 

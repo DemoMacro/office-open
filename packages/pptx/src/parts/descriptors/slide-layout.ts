@@ -115,8 +115,8 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     }
 
     // p:timing (optional).
-    if (opts.timing) {
-      parts.push(timingDesc.stringify(opts.timing, ctx) ?? "");
+    if (opts.animations?.length) {
+      parts.push(timingDesc.stringify(opts.animations, ctx) ?? "");
     }
 
     // p:hf (optional, sibling of cSld per CT_SlideLayout; attribute form per
@@ -193,7 +193,10 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // p:timing.
     const timing = findChild(el, "p:timing");
-    if (timing) result.timing = timingDesc.parse(timing, ctx);
+    if (timing) {
+      const entries = timingDesc.parse(timing, ctx);
+      if (entries.length > 0) result.animations = entries;
+    }
 
     // p:hf (sibling of cSld; attribute form per CT_HeaderFooter).
     result.headerFooter = parseSlideHf(findChild(el, "p:hf"));

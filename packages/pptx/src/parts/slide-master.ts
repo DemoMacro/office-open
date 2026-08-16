@@ -4,12 +4,12 @@ import type { WriteContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
 import type { ShapePropertiesOptions } from "@office-open/core/drawing";
 import type { BackgroundOptions } from "@parts/background";
-import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
 import { backgroundDesc } from "@parts/descriptors/background";
 import { stringifyShapeStyle } from "@parts/descriptors/shape";
 import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
 import type { ControlOptions } from "@parts/slide/slide";
-import type { MasterChild } from "@shared/file";
+import type { SlideChild } from "@parts/slide/slide-child";
+import type { AnimationEntry } from "@shared/animation/timing";
 import type { PlaceholderDefinition } from "@shared/placeholder";
 import type { TransitionOptions } from "@shared/transition";
 
@@ -24,16 +24,16 @@ export interface MasterPlaceholderPosition {
 }
 
 export interface MasterPlaceholderOptions {
-  title?: boolean | PlaceholderDefinition;
-  body?: boolean | PlaceholderDefinition;
-  date?: boolean | PlaceholderDefinition;
-  footer?: boolean | PlaceholderDefinition;
-  slideNumber?: boolean | PlaceholderDefinition;
+  title?: PlaceholderDefinition | false;
+  body?: PlaceholderDefinition | false;
+  date?: PlaceholderDefinition | false;
+  footer?: PlaceholderDefinition | false;
+  slideNumber?: PlaceholderDefinition | false;
 }
 
 export interface SlideMasterOptions {
   background?: BackgroundOptions;
-  children?: MasterChild[];
+  children?: SlideChild[];
   placeholders?: MasterPlaceholderOptions;
   /** Color mapping overrides (p:clrMap); defaults to the standard mapping. */
   colorMapping?: Partial<ColorMappingOptions>;
@@ -50,7 +50,7 @@ export interface SlideMasterOptions {
   /** p:transition — slide-transition defaults inherited by slides. */
   transition?: TransitionOptions;
   /** p:timing — animation timeline. */
-  timing?: TimingDescriptorOptions;
+  animations?: AnimationEntry[];
   /** cSld/custDataLst — relationship references to customer data parts. */
   customerData?: { rId: string }[];
   /** cSld/controls — embedded controls (ActiveX/legacy). */
@@ -105,13 +105,13 @@ export function resolvePos(
  * reference position; an explicit definition preserves its facets for emit.
  */
 function resolveDef(
-  opt: boolean | PlaceholderDefinition | undefined,
+  opt: PlaceholderDefinition | false | undefined,
   ref: { x: number; y: number; cx: number; cy: number },
   slideWidth: number,
 ): PlaceholderDefinition | null {
   if (opt === false) return null;
   const def: Partial<PlaceholderDefinition> = {};
-  if (opt === undefined || opt === true) {
+  if (opt === undefined) {
     def.x = sx(ref.x, slideWidth);
     def.y = ref.y;
     def.width = sx(ref.cx, slideWidth);

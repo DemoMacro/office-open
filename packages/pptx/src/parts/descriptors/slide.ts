@@ -6,65 +6,33 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
-import type { TextBodyOptions } from "@office-open/core/drawing";
 import { attr, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { parseControls, parseCustDataLst } from "@parts/slide/c-sld";
-import type { ControlOptions } from "@parts/slide/slide";
-import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
-import type { SlideAnimation, SlideOptions } from "@shared/file";
-import type { SlideHeaderFooterOptions } from "@shared/header-footer";
-import type { PictureOptions } from "@shared/picture";
-import type { ShapeOptions } from "@shared/shape/shape";
+import type { SlideChild } from "@parts/slide/slide-child";
+import type { SlideOptions } from "@shared/file";
 import type { TransitionDirection, TransitionOptions } from "@shared/transition";
 import { buildTransition } from "@shared/transition";
 
 import { stringifySlide } from "../../compiler";
 import type { PptxWriteContext } from "../../context";
-import type { BackgroundOptions } from "../background";
 import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild } from "./bridge";
-import { colorMappingOverrideDesc, type ColorMappingOverrideOptions } from "./color-map-override";
+import { colorMappingOverrideDesc } from "./color-map-override";
 
 // ── Types ──
 
-export interface SlideDescriptorOptions {
-  children?: SlideChild[];
-  background?: BackgroundOptions;
-  transition?: TransitionOptions;
-  showMasterShapes?: boolean;
-  showMasterPlaceholderAnimations?: boolean;
-  controls?: ControlOptions[];
-  customerData?: { rId: string }[];
-  /** Instantiates dt/ftr/sldNum placeholder shapes on the slide (CT_Slide has
-   * no p:hf — per-slide visibility lives in the placeholder shapes). */
-  headerFooter?: SlideHeaderFooterOptions;
-  colorMappingOverride?: ColorMappingOverrideOptions;
-  animations?: SlideAnimation[];
-  /** Hidden slide — excluded from slideshow (emits p:sld/@show="0"). */
-  hidden?: boolean;
-  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
-  ext?: string;
-}
-
-/** Discriminated union for slide children (JSON-friendly). */
-export type SlideChild =
-  | { shape: ShapeOptions }
-  | { picture: PictureOptions }
-  | { text: TextBodyOptions }
-  | { contentPart: { rId: string } };
-
 // ── Slide (p:sld) descriptor ──
 
-export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
+export const slideDesc: CustomDescriptor<SlideOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
     // Single implementation lives in compiler.stringifySlide — the descriptor
     // used to keep a near-copy that silently dropped p:timing (animations)
     // and emitted a p:hf that CT_Slide's content model does not allow.
-    return stringifySlide(opts as unknown as SlideOptions, ctx as unknown as PptxWriteContext);
+    return stringifySlide(opts, ctx as unknown as PptxWriteContext);
   },
 
   parse(el, _ctx) {
@@ -90,7 +58,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
       // Shape tree
       const spTree = findChild(cSld, "p:spTree");
       if (spTree) {
-        const children: LegacySlideChild[] = [];
+        const children: SlideChild[] = [];
         if (spTree.elements) {
           for (const child of spTree.elements) {
             // Skip tree container structure
@@ -122,10 +90,8 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
     // p:timing → animations
     const timing = findChild(el, "p:timing");
     if (timing) {
-      const timingOpts = timingDesc.parse(timing, _ctx);
-      if (timingOpts.entries && timingOpts.entries.length > 0) {
-        result.animations = timingOpts.entries;
-      }
+      const entries = timingDesc.parse(timing, _ctx);
+      if (entries.length > 0) result.animations = entries;
     }
 
     // extLst — verbatim inner XML for unmodeled extensions
@@ -135,7 +101,7 @@ export const slideDesc: CustomDescriptor<SlideDescriptorOptions> = {
       if (inner) result.ext = inner;
     }
 
-    return result as unknown as SlideDescriptorOptions;
+    return result as Partial<SlideOptions> as SlideOptions;
   },
 };
 

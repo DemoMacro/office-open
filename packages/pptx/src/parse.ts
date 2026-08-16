@@ -525,9 +525,6 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const masterDef: Partial<MasterDefinition> = {
       name: masterName,
       background: masterOpts.background,
-      // MasterChild (shared) declares only { shape }; the descriptor parses the
-      // full SlideChild union (parts-layer). The shared/parts split prevents
-      // unifying them, so the cast stays local to this known impedance.
       children: masterOpts.children,
       placeholders: masterOpts.placeholders,
       colorMapping: masterOpts.colorMapping,
@@ -535,7 +532,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
       textStyles: masterOpts.textStyles,
       preserve: masterOpts.preserve,
       transition: masterOpts.transition,
-      timing: masterOpts.timing,
+      animations: masterOpts.animations,
       customerData: masterOpts.customerData,
       controls: masterOpts.controls,
       ext: masterOpts.ext,
@@ -555,9 +552,9 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const nmEl = pptx.doc.get(nmPath);
     if (nmEl) {
       const nmOpts = notesMasterDesc.parse(nmEl, masterReadCtx);
-      if (nmOpts.options) {
+      if (Object.keys(nmOpts).length > 0) {
         opts.includeNotesMaster = true;
-        opts.notesMasterOptions = nmOpts.options;
+        opts.notesMasterOptions = nmOpts;
       }
     }
   }
@@ -586,11 +583,9 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const slideRels = parseSlideRelMap(pptx.doc, slidePath);
     const ctx = new ParseContext(pptx, slideRels);
     const readCtx = new PptxReadContext(ctx);
-    // slideDesc.parse returns SlideDescriptorOptions (internal descriptor type:
-    // 4-variant SlideChild, no layout/master/comments/notes/section). We enrich
-    // it with those public-API fields below and coerce to SlideOptions at push.
-    // Record bridges this descriptor/public impedance — slide.ts itself is a
-    // known stringify≠parse split, so the wrapper stays until that is resolved.
+    // slideDesc.parse returns the slide-part fields of SlideOptions (children/
+    // background/transition/animations/…). The public-API-only fields (layout,
+    // master, comments, notes, section) are enriched below before the push.
     const slideOpts = slideDesc.parse(slideEl, readCtx) as Record<string, unknown>;
 
     // Resolve layout → master

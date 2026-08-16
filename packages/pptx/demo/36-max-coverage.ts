@@ -60,7 +60,7 @@ const options: PresentationOptions = {
           line: { id: 4, x1: "2cm", y1: "6cm", x2: "12cm", y2: "6cm" },
         },
       ],
-      animations: [{ shapeId: 2, options: { type: "fade", duration: 800 } }],
+      animations: [{ shapeId: 2, type: "fade", duration: 800 }],
       transition: { type: "fade", speed: "medium" },
       notes: "Speaker notes for the title slide.",
     },

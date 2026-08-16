@@ -7,7 +7,6 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
-import type { TimingDescriptorOptions } from "@parts/descriptors/animation";
 import type { ColorMappingOverrideOptions } from "@parts/descriptors/color-map-override";
 import type { NotesSlideOptions } from "@parts/descriptors/notes-slide";
 import type { HandoutMasterOptions } from "@parts/handout-master";
@@ -34,16 +33,16 @@ import type { ViewPropertiesOptions } from "@parts/view-properties";
 import type { AnimationEntry } from "@shared/animation/timing";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 import type { PlaceholderDefinition } from "@shared/placeholder";
-import type { ShapeOptions } from "@shared/shape/shape";
 import type { ThemeOptions } from "@shared/theme";
 import type { TransitionOptions } from "@shared/transition";
 
 // ── Public interfaces ──
 
-export type MasterChild = { shape: ShapeOptions };
-
 export type SlideSize = "16:9" | "4:3" | { width: number; height: number };
 
+/** Placeholder slot map — `false` hides the slot, a definition overrides its
+ * position and facets, omitted shows the default. Same value shape as
+ * {@link MasterPlaceholderOptions}. */
 export interface LayoutPlaceholderOptions {
   title?: PlaceholderDefinition | false;
   body?: PlaceholderDefinition | false;
@@ -71,7 +70,7 @@ export interface LayoutDefinition {
   // Child slide elements
   colorMappingOverride?: ColorMappingOverrideOptions;
   transition?: TransitionOptions;
-  timing?: TimingDescriptorOptions;
+  animations?: AnimationEntry[];
   /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
   ext?: string;
   // Fresh API (placeholder-template generation)

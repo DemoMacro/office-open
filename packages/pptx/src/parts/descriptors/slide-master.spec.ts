@@ -54,7 +54,7 @@ describe("slideMasterDesc fresh emit", () => {
 
 describe("slideMasterDesc round-trip", () => {
   it("round-trips placeholders (positions derived from spTree)", () => {
-    const result = roundTrip({ placeholders: { title: true, body: true } });
+    const result = roundTrip({ placeholders: {} });
     expect(result.placeholders).toBeDefined();
     const title = result.placeholders?.title;
     const body = result.placeholders?.body;
@@ -149,7 +149,7 @@ describe("slide-master placeholder facets round-trip", () => {
   it("does not carry the default rect geometry as a facet", () => {
     // rect is the placeholder default — extraction omits it so the fresh emit
     // path stays byte-equivalent with MS Office's master output.
-    const result = roundTrip({ placeholders: { title: true } });
+    const result = roundTrip({ placeholders: {} });
     expect((result.placeholders?.title as { geometry?: string })?.geometry).toBeUndefined();
   });
 });

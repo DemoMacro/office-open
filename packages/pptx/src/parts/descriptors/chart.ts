@@ -48,9 +48,11 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
 
     const parts: string[] = [];
 
-    // p:nvGraphicFramePr
+    // p:nvGraphicFramePr — strip the chart title so it stays a c:title-only
+    // field and never leaks into the cNvPr @title attribute.
+    const { title: _chartTitle, ...cNvPrProps } = opts;
     parts.push(
-      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
+      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, cNvPrProps, name)}` +
         `<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>` +
         `<p:nvPr/></p:nvGraphicFramePr>`,
     );
@@ -71,8 +73,10 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
   parse(el, _ctx) {
     const result: Partial<ChartOptions> = {};
 
-    // id + name from p:nvGraphicFramePr/p:cNvPr
-    Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
+    // id + name from p:nvGraphicFramePr/p:cNvPr — drop the cNvPr @title so the
+    // chart title (parsed from the chart part below) stays the single source.
+    const { title: _cNvPrTitle, ...cNvPrProps } = readCnvPr(el, "p:nvGraphicFramePr");
+    Object.assign(result, cNvPrProps);
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");

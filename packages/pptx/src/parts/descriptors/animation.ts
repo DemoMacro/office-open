@@ -25,12 +25,6 @@ import type {
   PathAnimationType,
 } from "@shared/animation/types";
 
-// ── Types ──
-
-export interface TimingDescriptorOptions {
-  entries: AnimationEntry[];
-}
-
 // ── Reverse lookup maps: presetID → type name ──
 // Built from the single stringify-side tables in shared/animation/timing.ts.
 
@@ -314,12 +308,12 @@ function parseDuration(val: string): number | undefined {
 
 // ── Descriptor ──
 
-export const timingDesc: CustomDescriptor<TimingDescriptorOptions> = {
+export const timingDesc: CustomDescriptor<AnimationEntry[]> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
-    if (opts.entries.length === 0) return "";
-    const timing = new SlideTiming(opts.entries);
+  stringify(entries, _ctx) {
+    if (entries.length === 0) return "";
+    const timing = new SlideTiming(entries);
     return timing.toXml();
   },
 
@@ -327,8 +321,8 @@ export const timingDesc: CustomDescriptor<TimingDescriptorOptions> = {
     const animMap = parseTiming(el);
     const entries: AnimationEntry[] = [];
     for (const [shapeId, options] of animMap) {
-      entries.push({ shapeId, options });
+      entries.push({ shapeId, ...options });
     }
-    return { entries } as TimingDescriptorOptions;
+    return entries;
   },
 };
