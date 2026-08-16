@@ -238,10 +238,12 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
 // ── Shape helper: p:nvSpPr ──
 
 function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions): string {
-  // nvPr
+  // nvPr — p:ph @type is optional (XSD default "obj"), so a placeholder keyed
+  // only by idx must still emit <p:ph/> without a type attribute.
   let nvPrContent = "<p:nvPr/>";
-  if (opts.placeholder) {
-    const phAttrs: string[] = [`type="${opts.placeholder}"`];
+  if (opts.placeholder || opts.placeholderIndex !== undefined) {
+    const phAttrs: string[] = [];
+    if (opts.placeholder) phAttrs.push(`type="${opts.placeholder}"`);
     if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
     if (opts.placeholderSize !== undefined) phAttrs.push(`sz="${opts.placeholderSize}"`);
     if (opts.placeholderOrientation !== undefined)

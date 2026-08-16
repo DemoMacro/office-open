@@ -12,6 +12,7 @@ export type SlideLayoutType =
   | "secHead"
   | "chart"
   | "tbl"
+  | "clipArtAndTx"
   | "picTx"
   | "twoObj"
   | "twoTxTwoObj"
@@ -80,13 +81,25 @@ function typedBodyPlaceholder(
   y: number,
   cx: number,
   cy: number,
+  sz?: "half" | "quarter",
+  orient?: "vert",
 ): string {
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Text Placeholder ${id - 1}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="${idx}"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
+  const szAttr = sz ? ` sz="${sz}"` : "";
+  const orientAttr = orient ? ` orient="${orient}"` : "";
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Text Placeholder ${id - 1}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body"${szAttr}${orientAttr} idx="${idx}"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
 }
 
 // Title with xfrm
-function titlePlaceholderAt(id: number, x: number, y: number, cx: number, cy: number): string {
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Title 1"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
+function titlePlaceholderAt(
+  id: number,
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  orient?: "vert",
+): string {
+  const orientAttr = orient ? ` orient="${orient}"` : "";
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Title 1"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"${orientAttr}/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
 }
 
 // ctrTitle — centered title for title layout
@@ -109,6 +122,22 @@ function picPlaceholder(
   cy: number,
 ): string {
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="Picture Placeholder ${id - 1}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="pic" idx="${idx}"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
+}
+
+// Typed content placeholder (clipArt/chart/tbl) with xfrm
+function typedContentPlaceholder(
+  id: number,
+  type: "clipArt" | "chart" | "tbl",
+  idx: number,
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  sz?: "half" | "quarter",
+): string {
+  const label = type === "clipArt" ? "Clip Art" : type === "chart" ? "Chart" : "Table";
+  const szAttr = sz ? ` sz="${sz}"` : "";
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${label} Placeholder ${id - 1}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="${type}"${szAttr} idx="${idx}"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`;
 }
 
 // ── Layout definitions (16:9 reference positions) ──
@@ -183,30 +212,57 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
       bodyPlaceholderAt(3, 1, sx(5183188, sw), 987425, sx(6172200, sw), 4873625) +
       typedBodyPlaceholder(4, 2, sx(839788, sw), 2057400, sx(3932237, sw), 3811588),
   },
-  // 9. picTx — title + pic + text
+  // 9. picTx — pic on top, title and text caption below
   picTx: {
     type: "picTx",
     name: "Picture with Caption",
     buildShapes: (sw) =>
-      titlePlaceholderAt(2, sx(839788, sw), 457200, sx(3932237, sw), 1600200) +
-      picPlaceholder(3, 1, sx(5183188, sw), 987425, sx(6172200, sw), 4873625) +
-      typedBodyPlaceholder(4, 2, sx(839788, sw), 2057400, sx(3932237, sw), 3811588),
+      titlePlaceholderAt(2, sx(2389717, sw), 4800600, sx(7315200, sw), 566738) +
+      picPlaceholder(3, 1, sx(2389717, sw), 612775, sx(7315200, sw), 4114800) +
+      typedBodyPlaceholder(4, 2, sx(2389717, sw), 5367338, sx(7315200, sw), 804862, "half"),
   },
-  // 10. vertTx — title + body (vertical text)
+  // 10. clipArtAndTx — full-width title, clip art left, text right
+  clipArtAndTx: {
+    type: "clipArtAndTx",
+    name: "Title, Clip Art and Text",
+    buildShapes: (sw) =>
+      titlePlaceholderAt(2, sx(1534584, sw), 617538, sx(10390716, sw), 1143000) +
+      typedContentPlaceholder(
+        3,
+        "clipArt",
+        1,
+        sx(1576917, sw),
+        2017713,
+        sx(5080000, sw),
+        4114800,
+        "half",
+      ) +
+      typedBodyPlaceholder(4, 2, sx(6860117, sw), 2017713, sx(5080000, sw), 4114800, "half"),
+  },
+  // 11. vertTx — title + body (vertical text)
   vertTx: {
     type: "vertTx",
     name: "Vertical Text",
     buildShapes: () =>
       titlePlaceholder(2) +
-      `<p:sp><p:nvSpPr><p:cNvPr id="3" name="Text Placeholder 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`,
+      `<p:sp><p:nvSpPr><p:cNvPr id="3" name="Text Placeholder 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" orient="vert" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`,
   },
-  // 11. vertTitleAndTx — vertical title + body
+  // 12. vertTitleAndTx — vertical title + body
   vertTitleAndTx: {
     type: "vertTitleAndTx",
     name: "Vertical Title and Text",
     buildShapes: (sw) =>
-      titlePlaceholderAt(2, sx(8724900, sw), 365125, sx(2628900, sw), 5811838) +
-      typedBodyPlaceholder(3, 1, sx(838200, sw), 365125, sx(7734300, sw), 5811838),
+      titlePlaceholderAt(2, sx(8724900, sw), 365125, sx(2628900, sw), 5811838, "vert") +
+      typedBodyPlaceholder(
+        3,
+        1,
+        sx(838200, sw),
+        365125,
+        sx(7734300, sw),
+        5811838,
+        undefined,
+        "vert",
+      ),
   },
   // Aliases / simplified versions
   tx: {
@@ -216,13 +272,17 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
   },
   chart: {
     type: "chart",
-    name: "Content with Caption",
-    buildShapes: () => titlePlaceholder(2) + bodyPlaceholder(3, 1),
+    name: "Title and Chart",
+    buildShapes: (sw) =>
+      titlePlaceholderAt(2, sx(1534584, sw), 617538, sx(10390716, sw), 1143000) +
+      typedContentPlaceholder(3, "chart", 1, sx(1576917, sw), 2017713, sx(10363200, sw), 4114800),
   },
   tbl: {
     type: "tbl",
-    name: "Content with Caption",
-    buildShapes: () => titlePlaceholder(2) + bodyPlaceholder(3, 1),
+    name: "Title and Table",
+    buildShapes: (sw) =>
+      titlePlaceholderAt(2, sx(1534584, sw), 617538, sx(10390716, sw), 1143000) +
+      typedContentPlaceholder(3, "tbl", 1, sx(1576917, sw), 2017713, sx(10363200, sw), 4114800),
   },
   twoColTx: {
     type: "twoColTx",
@@ -235,7 +295,10 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
 };
 
 export function buildLayoutXml(layoutType: SlideLayoutType, slideWidth: number = SW_REF): string {
-  const def = LAYOUT_DEFS[layoutType];
+  // LayoutDefinition.type accepts any ST_SlideLayoutType string, so a parsed
+  // layout may carry a type we model no shapes for — fall back to blank.
+  const def =
+    (LAYOUT_DEFS as Record<string, LayoutDef | undefined>)[layoutType] ?? LAYOUT_DEFS.blank;
   const contentShapes = def.buildShapes(slideWidth);
   // Count content shapes to determine starting ID for footer placeholders
   const contentCount = contentShapes ? (contentShapes.match(/<p:sp>/g) || []).length : 0;
