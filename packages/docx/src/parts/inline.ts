@@ -17,6 +17,7 @@ import { chartSpaceDesc } from "@office-open/core/chart";
 import { createDataModel, definitionId } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
+import { objectDesc, type ObjectElementOptions } from "@parts/object";
 import type {
   BookmarkOptions,
   BookmarkStartOptions,
@@ -93,7 +94,20 @@ function stringifyDeletedRun(c: RunOptions | string): string {
 export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   let body = "";
 
-  const rPr = stringifyRunProperties(opts);
+  // Pre-scan children for commentReference — needs CommentReference style in rPr
+  let commentRefStyle = false;
+  if (opts.children) {
+    for (const child of opts.children) {
+      if (typeof child === "object" && child !== null && "commentReference" in child) {
+        commentRefStyle = true;
+        break;
+      }
+    }
+  }
+
+  // Run properties — inject CommentReference style if needed
+  const runOpts = commentRefStyle ? { ...opts, style: "CommentReference" as const } : opts;
+  const rPr = stringifyRunProperties(runOpts);
   if (rPr) body += rPr;
 
   if (opts.break) body += breakXml(opts.break);
@@ -122,6 +136,10 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           body += breakXml((child as { break: number | BreakOptions }).break);
           continue;
         }
+        if ("commentReference" in child) {
+          body += `<w:commentReference w:id="${Number(child.commentReference)}"/>`;
+          continue;
+        }
         // Empty run elements — separator, noBreakHyphen, pgNum, etc.
         let firstKey: string | undefined;
         for (const key in child) {
@@ -133,6 +151,14 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           body += emptyXml;
           continue;
         }
+        // OLE object — w:object (VML shape + objectEmbed/link/control/movie)
+        if ("object" in child) {
+          // RunOptions.children carries Record<string, unknown>, so `in`
+          // narrows to unknown — cast back to the object variant payload.
+          body +=
+            objectDesc.stringify((child as { object: ObjectElementOptions }).object, ctx) ?? "";
+          continue;
+        }
         // JSON child dispatch (images, charts, hyperlinks, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
@@ -140,6 +166,9 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         } else if ("text" in child || "children" in child || "break" in child) {
           body += stringifyRunInline(child as RunOptions, ctx);
         }
+        // Anything else is an unknown field — silent no-op (runtime convention
+        // for unrecognized JSON: TS excess-property checks guard authoring,
+        // unknown runtime fields pass through without emitting).
       }
     }
   } else if (opts.text !== undefined) {
@@ -944,12 +973,12 @@ export function stringifyChildDispatch(
   // ── Bidirectional text containers ──
   if ("dir" in child) {
     const d = child.dir;
-    const childXml = serializeDirChildren(d.children, ctx);
+    const childXml = serializeDispatchChildren(d.children, ctx);
     return `<w:dir w:val="${d.val}">${childXml}</w:dir>`;
   }
   if ("bdo" in child) {
     const b = child.bdo;
-    const childXml = serializeDirChildren(b.children, ctx);
+    const childXml = serializeDispatchChildren(b.children, ctx);
     return `<w:bdo w:val="${b.val}">${childXml}</w:bdo>`;
   }
 
@@ -971,44 +1000,14 @@ export function stringifyChildDispatch(
       }
       parts.push(`<w:smartTagPr>${propParts.join("")}</w:smartTagPr>`);
     }
-    if (st.children) {
-      for (const c of st.children) {
-        if (typeof c === "string") {
-          parts.push(stringifyRunInline({ text: c }, ctx));
-        } else {
-          const jr = stringifyChildDispatch(c, ctx);
-          parts.push(
-            jr !== undefined
-              ? Array.isArray(jr)
-                ? jr.join("")
-                : jr
-              : stringifyRunInline(c as RunOptions, ctx),
-          );
-        }
-      }
-    }
+    parts.push(serializeDispatchChildren(st.children, ctx));
     return `<w:smartTag ${attrs.join(" ")}>${parts.join("")}</w:smartTag>`;
   }
 
   // ── Custom XML run (CT_CustomXmlRun) ──
   if ("customXml" in child) {
     const cx = child.customXml;
-    const contentParts: string[] = [];
-    if (cx.children) {
-      for (const c of cx.children) {
-        if (typeof c === "string") {
-          contentParts.push(stringifyRunInline({ text: c }, ctx));
-        } else {
-          const jr = stringifyChildDispatch(c as ParagraphChild, ctx);
-          if (jr !== undefined) {
-            contentParts.push(Array.isArray(jr) ? jr.join("") : jr);
-          } else {
-            contentParts.push(stringifyRunInline(c as RunOptions, ctx));
-          }
-        }
-      }
-    }
-    return stringifyCustomXmlShell(cx, contentParts.join(""));
+    return stringifyCustomXmlShell(cx, serializeDispatchChildren(cx.children, ctx));
   }
 
   // ── Inline structured document tag (CT_SdtRun) ──
@@ -1040,28 +1039,32 @@ export function stringifyChildDispatch(
   return undefined;
 }
 
-/** Serialize children of Dir/Bdo containers. */
-function serializeDirChildren(
+/**
+ * Serialize `(ParagraphChild | string)[]` content: each child goes through the
+ * JSON dispatch, with an unconditional run fallback for unrecognized wrappers
+ * (shared by Dir/Bdo, smartTag and customXml). Sdt and paragraph children use
+ * their own loops — their fallback-drop semantics differ.
+ */
+function serializeDispatchChildren(
   children: (ParagraphChild | string)[] | undefined,
   ctx: BodyContext,
 ): string {
   if (!children) return "";
-  const parts: string[] = [];
+  let body = "";
   for (const c of children) {
     if (typeof c === "string") {
-      parts.push(stringifyRunInline({ text: c }, ctx));
-    } else {
-      const jr = stringifyChildDispatch(c, ctx);
-      parts.push(
-        jr !== undefined
-          ? Array.isArray(jr)
-            ? jr.join("")
-            : jr
-          : stringifyRunInline(c as RunOptions, ctx),
-      );
+      body += stringifyRunInline({ text: c }, ctx);
+      continue;
     }
+    const jr = stringifyChildDispatch(c, ctx);
+    body +=
+      jr !== undefined
+        ? Array.isArray(jr)
+          ? jr.join("")
+          : jr
+        : stringifyRunInline(c as RunOptions, ctx);
   }
-  return parts.join("");
+  return body;
 }
 
 /** Hash SmartArt data for unique key generation (duplicated from SmartArtRun). */

@@ -7,7 +7,7 @@
  * @module
  */
 
-import { convertToTwip, ThemeColor } from "@office-open/core";
+import { convertToTwip } from "@office-open/core";
 import { xsdVerticalMergeRev } from "@office-open/core";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
@@ -40,8 +40,7 @@ import type { SdtRowOptions, TableRowOptions } from "@parts/table/table-row/tabl
 import type { CnfStyleOptions } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { widthFiftiethsToPct } from "@parts/table/table-width";
-import { BorderStyle } from "@shared/border";
-import type { BorderOptions } from "@shared/border";
+import { parseBorderSide } from "@shared/border";
 import type { SectionChild } from "@shared/section";
 import { parseShading, type ShadingProperties } from "@shared/shading";
 import type { CellMergeAttributes } from "@shared/track-revision";
@@ -66,10 +65,6 @@ import type {
   TableRowPropertiesChangeOptions,
   TableRowPropertiesOptions,
 } from "./table-row/table-row-properties";
-
-// Valid border @w:val (ST_Border / BorderStyle) and @w:themeColor (ST_ThemeColor) values.
-const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
-const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
 
 /** Parse track-change attributes (id/author/date) from w:ins/w:del/w:cellIns/w:cellDel. */
 function parseChangeAttrs(el: Element): Partial<ChangedProperties> {
@@ -548,28 +543,8 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
     for (const [xmlSide, key] of SIDE_KEYS) {
       const sideEl = findChild(tblBorders, `w:${xmlSide}`);
       if (!sideEl) continue;
-      // CT_Border requires w:val (style); skip malformed sides
-      const style = attr(sideEl, "w:val");
-      if (!style || !BORDER_STYLES.includes(style)) continue;
-      const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
-      const color = attr(sideEl, "w:color");
-      if (color) sideOpts.color = color;
-      const size = attrNum(sideEl, "w:sz");
-      if (size !== undefined) sideOpts.size = size;
-      const space = attrNum(sideEl, "w:space");
-      if (space !== undefined) sideOpts.space = space;
-      const themeColor = attr(sideEl, "w:themeColor");
-      if (themeColor && THEME_COLORS.includes(themeColor)) {
-        sideOpts.themeColor = themeColor as BorderOptions["themeColor"];
-      }
-      const themeTint = attr(sideEl, "w:themeTint");
-      if (themeTint) sideOpts.themeTint = themeTint;
-      const themeShade = attr(sideEl, "w:themeShade");
-      if (themeShade) sideOpts.themeShade = themeShade;
-      const shadow = attrBool(sideEl, "w:shadow");
-      if (shadow !== undefined) sideOpts.shadow = shadow;
-      const frame = attrBool(sideEl, "w:frame");
-      if (frame !== undefined) sideOpts.frame = frame;
+      const sideOpts = parseBorderSide(sideEl);
+      if (!sideOpts) continue;
       borders[key] = sideOpts;
     }
     if (Object.keys(borders).length > 0) opts.borders = borders;
@@ -924,28 +899,8 @@ export function parseTableCellPropertiesEl(el: Element): TableCellPropertiesOpti
     for (const [xmlSide, key] of SIDE_KEYS) {
       const sideEl = findChild(tcBorders, `w:${xmlSide}`);
       if (!sideEl) continue;
-      // CT_Border requires w:val (style); skip malformed sides
-      const style = attr(sideEl, "w:val");
-      if (!style || !BORDER_STYLES.includes(style)) continue;
-      const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
-      const color = attr(sideEl, "w:color");
-      if (color) sideOpts.color = color;
-      const size = attrNum(sideEl, "w:sz");
-      if (size !== undefined) sideOpts.size = size;
-      const space = attrNum(sideEl, "w:space");
-      if (space !== undefined) sideOpts.space = space;
-      const themeColor = attr(sideEl, "w:themeColor");
-      if (themeColor && THEME_COLORS.includes(themeColor)) {
-        sideOpts.themeColor = themeColor as BorderOptions["themeColor"];
-      }
-      const themeTint = attr(sideEl, "w:themeTint");
-      if (themeTint) sideOpts.themeTint = themeTint;
-      const themeShade = attr(sideEl, "w:themeShade");
-      if (themeShade) sideOpts.themeShade = themeShade;
-      const shadow = attrBool(sideEl, "w:shadow");
-      if (shadow !== undefined) sideOpts.shadow = shadow;
-      const frame = attrBool(sideEl, "w:frame");
-      if (frame !== undefined) sideOpts.frame = frame;
+      const sideOpts = parseBorderSide(sideEl);
+      if (!sideOpts) continue;
       borders[key] = sideOpts;
     }
     if (Object.keys(borders).length > 0) opts.borders = borders;

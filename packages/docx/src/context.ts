@@ -608,6 +608,8 @@ export class DocxReadContext implements ReadContext {
     public docx: DocxDocument,
     public styleCache: Map<string, Element>,
     public numberingCache: Map<string, Element>,
+    /** numId → abstractNumId ("" when the w:num lacks the child). */
+    public numIdCache: Map<string, string>,
   ) {}
 
   resolveRelationship(rId: string): string | undefined {

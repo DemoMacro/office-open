@@ -5414,28 +5414,8 @@
       "type": "object"
     },
     "EndnoteSeparator": {
-      "additionalProperties": false,
-      "description": "System endnote (separator / continuationSeparator). Round-tripped verbatim.",
-      "properties": {
-        "id": {
-          "type": "number"
-        },
-        "paragraphs": {
-          "items": {
-            "anyOf": [
-              {
-                "$ref": "#/definitions/ParagraphOptions"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "type": "array"
-        }
-      },
-      "required": ["id", "paragraphs"],
-      "type": "object"
+      "$ref": "#/definitions/NoteSeparator",
+      "description": "System endnote (separator / continuationSeparator). Round-tripped verbatim."
     },
     "ErrorBarDirection": {
       "enum": ["both", "x", "y"],
@@ -6011,28 +5991,8 @@
       "type": "object"
     },
     "FootnoteSeparator": {
-      "additionalProperties": false,
-      "description": "System footnote (separator / continuationSeparator). Round-tripped verbatim.",
-      "properties": {
-        "id": {
-          "type": "number"
-        },
-        "paragraphs": {
-          "items": {
-            "anyOf": [
-              {
-                "$ref": "#/definitions/ParagraphOptions"
-              },
-              {
-                "type": "string"
-              }
-            ]
-          },
-          "type": "array"
-        }
-      },
-      "required": ["id", "paragraphs"],
-      "type": "object"
+      "$ref": "#/definitions/NoteSeparator",
+      "description": "System footnote (separator / continuationSeparator). Round-tripped verbatim."
     },
     "ForEachOptions": {
       "additionalProperties": false,
@@ -9437,6 +9397,30 @@
           "type": "number"
         }
       },
+      "type": "object"
+    },
+    "NoteSeparator": {
+      "additionalProperties": false,
+      "description": "System note (separator / continuationSeparator). Round-tripped verbatim.",
+      "properties": {
+        "id": {
+          "type": "number"
+        },
+        "paragraphs": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/ParagraphOptions"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": ["id", "paragraphs"],
       "type": "object"
     },
     "NumberingOptions": {

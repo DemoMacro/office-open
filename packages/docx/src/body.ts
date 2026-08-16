@@ -10,7 +10,6 @@
 import type { UniversalMeasure } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { hexColorValue, uCharHexNumber } from "@office-open/core";
-import { ThemeColor } from "@office-open/core";
 import { stringifyVmlShape } from "@office-open/core";
 import { stringifyVmlBackground } from "@office-open/core";
 import { nextVmlShapeId } from "@office-open/core";
@@ -33,7 +32,6 @@ import type {
 } from "@parts/document/document-background";
 import { parseDrawingRun } from "@parts/drawing/drawing-parse";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
-import { objectDesc, type ObjectElementOptions } from "@parts/object";
 import type { BordersOptions } from "@parts/paragraph/formatting/border";
 import type { IndentProperties } from "@parts/paragraph/formatting/indent";
 import { LineRuleType } from "@parts/paragraph/formatting/spacing";
@@ -54,17 +52,11 @@ import type {
 import { parseFormFieldData } from "@parts/paragraph/run/form-field";
 import type { FormFieldOptions } from "@parts/paragraph/run/form-field";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
-import {
-  breakXml,
-  EMPTY_RUN_ELEMENTS,
-  type BreakOptions,
-  type RunOptions,
-} from "@parts/paragraph/run/run";
+import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
-import type { BorderOptions } from "@shared/border";
-import { BorderStyle } from "@shared/border";
+import { parseBorderSide } from "@shared/border";
 import type { MediaData } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
 import { parseShading } from "@shared/shading";
@@ -72,14 +64,10 @@ import { parseShading } from "@shared/shading";
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
 import { parseCustomXmlProperties } from "./parts/bodychildren";
-import { stringifyChildDispatch } from "./parts/inline";
+import { stringifyChildDispatch, stringifyRunInline } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
 import type { ParagraphChild, SdtRunOptions } from "./parts/paragraph/paragraph";
-import {
-  EMPTY_PPR_RESULT,
-  stringifyParagraphProperties,
-  stringifyRunProperties,
-} from "./parts/paragraph/stringify";
+import { EMPTY_PPR_RESULT, stringifyParagraphProperties } from "./parts/paragraph/stringify";
 import { replaceRelsWithPlaceholders } from "./util/replace-media-placeholders";
 import { stringifyElement } from "./util/stringify-element";
 
@@ -93,101 +81,7 @@ export type { BodyContext } from "./context";
  * Handles text, children, breaks, and run properties.
  */
 export function stringifyRun(opts: RunOptions, ctx: BodyContext): string {
-  let body = "";
-
-  // Pre-scan children for commentReference — needs CommentReference style in rPr
-  let commentRefStyle = false;
-  if (opts.children) {
-    for (const child of opts.children) {
-      if (typeof child === "object" && child !== null && "commentReference" in child) {
-        commentRefStyle = true;
-        break;
-      }
-    }
-  }
-
-  // Run properties — inject CommentReference style if needed
-  const runOpts = commentRefStyle ? { ...opts, style: "CommentReference" as const } : opts;
-  const rPr = stringifyRunProperties(runOpts);
-  if (rPr) body += rPr;
-
-  // Breaks (w:br) — count shorthand or structured with clear (CT_Br)
-  if (opts.break) {
-    body += breakXml(opts.break);
-  }
-
-  // Children or text
-  if (opts.children) {
-    for (const child of opts.children) {
-      if (typeof child === "string") {
-        // Simple text string — direct output
-        body += `<w:t xml:space="preserve">${escapeXml(child)}</w:t>`;
-      } else if (typeof child === "object" && child !== null) {
-        // Simple run-level elements — bare content, no <w:r> wrapper
-        if ("tab" in child) {
-          body += "<w:tab/>";
-          continue;
-        }
-        if ("pageBreak" in child) {
-          body += '<w:br w:type="page"/>';
-          continue;
-        }
-        if ("columnBreak" in child) {
-          body += '<w:br w:type="column"/>';
-          continue;
-        }
-        if ("break" in child) {
-          body += breakXml((child as { break: number | BreakOptions }).break);
-          continue;
-        }
-        if ("commentReference" in child) {
-          body += `<w:commentReference w:id="${Number(child.commentReference)}"/>`;
-          continue;
-        }
-
-        // Empty run elements — self-closing XML with no attributes
-        // { noBreakHyphen: true } → <w:noBreakHyphen/>, etc.
-        let firstKey: string | undefined;
-        for (const key in child) {
-          firstKey = key;
-          break;
-        }
-        const emptyXml = firstKey !== undefined ? EMPTY_RUN_ELEMENTS[firstKey] : undefined;
-        if (emptyXml) {
-          body += emptyXml;
-          continue;
-        }
-
-        // OLE object — w:object (VML shape + objectEmbed/link/control/movie)
-        if ("object" in child) {
-          // RunOptions.children carries Record<string, unknown>, so `in`
-          // narrows to unknown — cast back to the object variant payload.
-          body +=
-            objectDesc.stringify((child as { object: ObjectElementOptions }).object, ctx) ?? "";
-          continue;
-        }
-
-        // JSON child dispatch (images, charts, etc.)
-        const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
-        if (jsonResult !== undefined) {
-          body += Array.isArray(jsonResult) ? jsonResult.join("") : jsonResult;
-        } else {
-          // Fallback: treat as an object-tree-like value — should not happen in JSON path
-          throw new Error(`Unsupported run child type: ${Object.keys(child).join(", ")}`);
-        }
-      }
-    }
-  } else if (opts.text !== undefined) {
-    body += `<w:t xml:space="preserve">${escapeXml(String(opts.text))}</w:t>`;
-  }
-
-  // rsid attributes on <w:r>
-  let attr = "";
-  if (opts.rsid) attr += ` w:rsidR="${opts.rsid}"`;
-  if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
-  if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
-
-  return body.length === 0 ? (attr ? `<w:r${attr}/>` : "<w:r/>") : `<w:r${attr}>${body}</w:r>`;
+  return stringifyRunInline(opts, ctx);
 }
 
 // ── Paragraph ──
@@ -556,10 +450,6 @@ const HEADING_MAP: Record<string, (typeof HeadingLevel)[keyof typeof HeadingLeve
 
 /** Valid w:spacing/@w:lineRule values (ST_LineSpacingRule). */
 const LINE_RULES = Object.values(LineRuleType) as readonly string[];
-/** Valid border @w:val values (ST_Border). */
-const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
-/** Valid border @w:themeColor values (ST_ThemeColor). */
-const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
 
 // On/off paragraph properties: XML child tag → options key.
 const ON_OFF_PARAGRAPH_PROPS = [
@@ -706,45 +596,34 @@ export function parseParagraphProperties(
       // back to a bullet (which would inject ListParagraph + numId=1).
       opts.numbering = false;
     } else if (numId !== undefined && ctx.numberingCache.size > 0) {
-      const numEl = ctx.docx.numbering;
-      if (numEl) {
-        let abstractNumId: string | undefined;
-        for (const child of numEl.elements ?? []) {
-          if (child.name !== "w:num") continue;
-          if (attr(child, "w:numId") === numId) {
-            const absRef = findChild(child, "w:abstractNumId");
-            abstractNumId = absRef ? attr(absRef, "w:val") : undefined;
-            break;
-          }
+      // Cache lookup ("" = a w:num lacking the abstractNumId child → treated
+      // like an unknown id, falling to the bullet, same as the old inline scan).
+      const abstractNumId = ctx.numIdCache.get(numId);
+      if (abstractNumId) {
+        // custom: true suppresses the ListParagraph pStyle auto-injection in
+        // stringifyParagraphProperties. Round-tripped list paragraphs carry
+        // no pStyle in the source (the list formatting lives in numbering);
+        // injecting ListParagraph would reference a style that round-tripped
+        // styles.xml may not define → dangling reference Word rejects.
+        const numberingOpts: {
+          reference: string;
+          level: number;
+          custom: boolean;
+          numberingChange?: { original: string; id: string; author: string; date?: string };
+        } = { reference: `list_${numId}`, level, custom: true };
+        // w:numberingChange (CT_TrackChangeNumbering) — child of w:numPr
+        const numberingChangeEl = findChild(numPr, "w:numberingChange");
+        if (numberingChangeEl) {
+          const nc: { original: string; id: string; author: string; date?: string } = {
+            original: attr(numberingChangeEl, "w:original") ?? "",
+            id: attr(numberingChangeEl, "w:id") ?? "",
+            author: attr(numberingChangeEl, "w:author") ?? "",
+          };
+          const ncDate = attr(numberingChangeEl, "w:date");
+          if (ncDate) nc.date = ncDate;
+          numberingOpts.numberingChange = nc;
         }
-        if (abstractNumId !== undefined) {
-          // custom: true suppresses the ListParagraph pStyle auto-injection in
-          // stringifyParagraphProperties. Round-tripped list paragraphs carry
-          // no pStyle in the source (the list formatting lives in numbering);
-          // injecting ListParagraph would reference a style that round-tripped
-          // styles.xml may not define → dangling reference Word rejects.
-          const numberingOpts: {
-            reference: string;
-            level: number;
-            custom: boolean;
-            numberingChange?: { original: string; id: string; author: string; date?: string };
-          } = { reference: `list_${numId}`, level, custom: true };
-          // w:numberingChange (CT_TrackChangeNumbering) — child of w:numPr
-          const numberingChangeEl = findChild(numPr, "w:numberingChange");
-          if (numberingChangeEl) {
-            const nc: { original: string; id: string; author: string; date?: string } = {
-              original: attr(numberingChangeEl, "w:original") ?? "",
-              id: attr(numberingChangeEl, "w:id") ?? "",
-              author: attr(numberingChangeEl, "w:author") ?? "",
-            };
-            const ncDate = attr(numberingChangeEl, "w:date");
-            if (ncDate) nc.date = ncDate;
-            numberingOpts.numberingChange = nc;
-          }
-          opts.numbering = numberingOpts;
-        } else {
-          opts.bullet = { level };
-        }
+        opts.numbering = numberingOpts;
       } else {
         opts.bullet = { level };
       }
@@ -784,28 +663,8 @@ export function parseParagraphProperties(
     for (const side of PBDR_SIDES) {
       const sideEl = findChild(pBdr, `w:${side}`);
       if (!sideEl) continue;
-      // CT_Border requires w:val (style); skip malformed sides
-      const style = attr(sideEl, "w:val");
-      if (!style || !BORDER_STYLES.includes(style)) continue;
-      const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
-      const color = attr(sideEl, "w:color");
-      if (color) sideOpts.color = color;
-      const size = attrNum(sideEl, "w:sz");
-      if (size !== undefined) sideOpts.size = size;
-      const space = attrNum(sideEl, "w:space");
-      if (space !== undefined) sideOpts.space = space;
-      const themeColor = attr(sideEl, "w:themeColor");
-      if (themeColor && THEME_COLORS.includes(themeColor)) {
-        sideOpts.themeColor = themeColor as BorderOptions["themeColor"];
-      }
-      const themeTint = attr(sideEl, "w:themeTint");
-      if (themeTint) sideOpts.themeTint = themeTint;
-      const themeShade = attr(sideEl, "w:themeShade");
-      if (themeShade) sideOpts.themeShade = themeShade;
-      const shadow = attrBool(sideEl, "w:shadow");
-      if (shadow !== undefined) sideOpts.shadow = shadow;
-      const frame = attrBool(sideEl, "w:frame");
-      if (frame !== undefined) sideOpts.frame = frame;
+      const sideOpts = parseBorderSide(sideEl);
+      if (!sideOpts) continue;
       border[side] = sideOpts;
     }
     if (Object.keys(border).length > 0) opts.border = border;

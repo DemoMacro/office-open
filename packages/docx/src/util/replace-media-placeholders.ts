@@ -9,9 +9,10 @@
  * carried source rIds dangle — they are not defined in the generated rels and
  * Word rejects the package as unreadable.
  */
+import { imageTypeFromPath } from "@office-open/core";
+
 import type { DocxReadContext } from "../context";
 import type { BackgroundRawMediaOptions } from "../parts/document/document-background/document-background";
-import { imageTypeFromPath } from "../parts/drawing/drawing-parse";
 
 const REL_ATTR_RE = /\br:(id|embed|link)="([^"]+)"/g;
 

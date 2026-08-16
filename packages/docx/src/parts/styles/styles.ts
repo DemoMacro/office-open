@@ -204,6 +204,27 @@ export function buildNumberingCache(numberingEl: Element | undefined): Map<strin
   return cache;
 }
 
+/**
+ * Build a numId → abstractNumId cache from a numbering part's w:num elements.
+ * First match wins for (invalid) duplicate numIds. A w:num without the child
+ * maps to the empty string so the lookup distinguishes it from an unknown id.
+ */
+export function buildNumIdCache(numberingEl: Element | undefined): Map<string, string> {
+  const cache = new Map<string, string>();
+  if (!numberingEl) return cache;
+
+  for (const child of numberingEl.elements ?? []) {
+    if (child.name !== "w:num") continue;
+    const numId = attr(child, "w:numId");
+    if (numId === undefined || cache.has(numId)) continue;
+    const abstractNumIdEl = (child.elements ?? []).find((c) => c.name === "w:abstractNumId");
+    const abstractNumId = abstractNumIdEl ? attr(abstractNumIdEl, "w:val") : undefined;
+    cache.set(numId, abstractNumId ?? "");
+  }
+
+  return cache;
+}
+
 /** Parsed style — concrete shape (not Record) with a transient _type marker. */
 interface ParsedStyle {
   _type?: string;

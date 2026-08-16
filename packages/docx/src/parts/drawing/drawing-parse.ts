@@ -13,6 +13,7 @@ import {
   customGeometryDesc,
   effectListDesc,
   fillDesc,
+  imageTypeFromPath,
   outlineDesc,
   parseAngle,
   parseColorChoice,
@@ -117,37 +118,6 @@ export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild
     return parseWpsShapeDrawing(el, ctx);
   }
   return parsePictureRun(el, ctx);
-}
-
-/**
- * Determine image type from file extension or MIME type.
- */
-export function imageTypeFromPath(
-  path: string,
-): "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf" {
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-  switch (ext) {
-    case "jpg":
-    case "jpeg":
-      return "jpg";
-    case "png":
-      return "png";
-    case "gif":
-      return "gif";
-    case "bmp":
-      return "bmp";
-    case "tif":
-    case "tiff":
-      return "tif";
-    case "ico":
-      return "ico";
-    case "emf":
-      return "emf";
-    case "wmf":
-      return "wmf";
-    default:
-      return "png"; // fallback
-  }
 }
 
 /**

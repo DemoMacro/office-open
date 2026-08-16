@@ -19,7 +19,12 @@ import { footnotesDesc } from "@parts/footnotes/descriptor";
 import { glossaryDesc } from "@parts/glossary-document";
 import { parseNumberingDefinitions } from "@parts/numbering/numbering";
 import { settingsDesc } from "@parts/settings/descriptor";
-import { buildStyleCache, buildNumberingCache, parseStyleDefinitions } from "@parts/styles/styles";
+import {
+  buildStyleCache,
+  buildNumberingCache,
+  buildNumIdCache,
+  parseStyleDefinitions,
+} from "@parts/styles/styles";
 import { setTableParseChild } from "@parts/table/descriptor";
 import { webSettingsDesc } from "@parts/web-settings";
 
@@ -275,6 +280,7 @@ export function parseDocument(data: DataType): DocumentOptions {
     docx,
     buildStyleCache(docx.styles),
     buildNumberingCache(docx.numbering),
+    buildNumIdCache(docx.numbering),
   );
 
   // Register the child parser for table and body child descriptors

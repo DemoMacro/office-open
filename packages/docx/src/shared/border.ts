@@ -28,7 +28,9 @@
  *
  * @module
  */
-import type { ThemeColor } from "@office-open/core";
+import { ThemeColor } from "@office-open/core";
+import { attr, attrBool, attrNum } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 /**
  * Options for configuring a border element.
@@ -158,3 +160,39 @@ export const BorderStyle = {
   /** A wavy line */
   WAVE: "wave",
 } as const;
+
+// ── Parse helper ──
+
+/** Valid border @w:val values (ST_Border). */
+const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
+/** Valid border @w:themeColor values (ST_ThemeColor). */
+const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
+
+/**
+ * Parse one CT_Border side element. Returns undefined when the element is
+ * malformed (missing/unknown @w:val) so callers skip the side.
+ */
+export function parseBorderSide(sideEl: Element): BorderOptions | undefined {
+  const style = attr(sideEl, "w:val");
+  if (!style || !BORDER_STYLES.includes(style)) return undefined;
+  const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
+  const color = attr(sideEl, "w:color");
+  if (color) sideOpts.color = color;
+  const size = attrNum(sideEl, "w:sz");
+  if (size !== undefined) sideOpts.size = size;
+  const space = attrNum(sideEl, "w:space");
+  if (space !== undefined) sideOpts.space = space;
+  const themeColor = attr(sideEl, "w:themeColor");
+  if (themeColor && THEME_COLORS.includes(themeColor)) {
+    sideOpts.themeColor = themeColor as BorderOptions["themeColor"];
+  }
+  const themeTint = attr(sideEl, "w:themeTint");
+  if (themeTint) sideOpts.themeTint = themeTint;
+  const themeShade = attr(sideEl, "w:themeShade");
+  if (themeShade) sideOpts.themeShade = themeShade;
+  const shadow = attrBool(sideEl, "w:shadow");
+  if (shadow !== undefined) sideOpts.shadow = shadow;
+  const frame = attrBool(sideEl, "w:frame");
+  if (frame !== undefined) sideOpts.frame = frame;
+  return sideOpts;
+}
