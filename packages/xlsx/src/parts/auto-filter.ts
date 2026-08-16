@@ -241,7 +241,11 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
           af.colorFilters.push(cf2);
         } else if (fc.name === "iconFilter") {
           af.iconFilters ??= [];
-          const if_: IconFilterOptions = { colId, iconSet: attrNum(fc, "iconSet") ?? 0 };
+          // @iconSet is ST_IconSetType (a string enum), not a number.
+          const if_: IconFilterOptions = {
+            colId,
+            iconSet: (attr(fc, "iconSet") ?? "3Arrows") as IconFilterOptions["iconSet"],
+          };
           const iconId = attrNum(fc, "iconId");
           if (iconId !== undefined) if_.iconId = iconId;
           af.iconFilters.push(if_);

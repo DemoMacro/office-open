@@ -535,12 +535,13 @@ describe("Worksheet", () => {
     });
 
     it("round-trips iconFilter", () => {
+      // @iconSet is ST_IconSetType — a string enum, never a number.
       const result = roundTrip({
-        autoFilter: { ref: "A1:D10", iconFilters: [{ colId: 3, iconSet: 4, iconId: 2 }] },
+        autoFilter: { ref: "A1:D10", iconFilters: [{ colId: 3, iconSet: "4Arrows", iconId: 2 }] },
         rows: [{ cells: [{ value: "A" }] }],
       });
       const af = result.autoFilter as AutoFilterOptions;
-      expect(af.iconFilters).toEqual([{ colId: 3, iconSet: 4, iconId: 2 }]);
+      expect(af.iconFilters).toEqual([{ colId: 3, iconSet: "4Arrows", iconId: 2 }]);
     });
 
     it("round-trips dynamicFilter", () => {

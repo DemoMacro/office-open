@@ -678,6 +678,12 @@ export interface ConditionalFormatRule {
     | "nextWeek";
   /** Rank for top/bottom rules (CT_CfRule `@rank`) */
   rank?: number;
+  /** Bottom N instead of top N for top10 rules (CT_CfRule `@bottom`) */
+  bottom?: boolean;
+  /** Percent instead of item count for top10 rules (CT_CfRule `@percent`) */
+  percent?: boolean;
+  /** Search text for containsText/notContains/beginsWith/endsWith rules (CT_CfRule `@text`) */
+  text?: string;
   /** Equal average flag (CT_CfRule `@equalAverage`) */
   equalAverage?: boolean;
   /** Above average flag (CT_CfRule `@aboveAverage`, default true for aboveAverage rules) */
@@ -769,8 +775,8 @@ export interface ColorFilterOptions {
 export interface IconFilterOptions {
   /** Column ID */
   colId: number;
-  /** Icon set index (CT_IconFilter `@iconSet`) */
-  iconSet: number;
+  /** Icon set name (CT_IconFilter `@iconSet`, ST_IconSetType — required) */
+  iconSet: IconSetType;
   /** Icon ID within set (CT_IconFilter `@iconId`) */
   iconId?: number;
 }

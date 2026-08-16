@@ -48,8 +48,8 @@ export interface CustomWorkbookViewOptions {
   showSheetTabs?: boolean;
   /** Tab ratio (default 600) */
   tabRatio?: number;
-  /** Workbook visibility: "visible" | "hidden" | "veryHidden" (default "visible") */
-  visibility?: "visible" | "hidden" | "veryHidden";
+  /** Object display mode (CT_CustomWorkbookView `@showObjects`, ST_Objects) */
+  showObjects?: "all" | "placeholders" | "none";
   /** Include hidden rows/columns (default true) */
   includeHiddenRowCol?: boolean;
   /** Include print settings (default true) */
@@ -68,8 +68,8 @@ export interface CustomWorkbookViewOptions {
   changesSavedWin?: boolean;
   /** Only sync (CT_CustomWorkbookView `@onlySync`) */
   onlySync?: boolean;
-  /** Show comments (CT_CustomWorkbookView `@showComments`) */
-  showComments?: string;
+  /** Show comments (CT_CustomWorkbookView `@showComments`, ST_Comments) */
+  showComments?: "none" | "indicator" | "comment";
 }
 
 export interface WorkbookProtectionOptions {

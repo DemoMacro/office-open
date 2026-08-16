@@ -437,7 +437,7 @@ function stringifyPivotCacheDef(
   if (cacheDefOpts?.olapPr) {
     const ol = cacheDefOpts.olapPr;
     const olAttrs: string[] = [];
-    if (ol.local) olAttrs.push(` local="${escapeXml(ol.local)}"`);
+    if (ol.local !== undefined) olAttrs.push(` local="${ol.local ? 1 : 0}"`);
     if (ol.localConnection) olAttrs.push(` localConnection="${escapeXml(ol.localConnection)}"`);
     if (ol.sendLocale) olAttrs.push(' sendLocale="1"');
     if (ol.rowDrillCount !== undefined) olAttrs.push(` rowDrillCount="${ol.rowDrillCount}"`);

@@ -266,6 +266,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
       if (v.showVerticalScroll === false) vAttrs.push('showVerticalScroll="0"');
       if (v.showSheetTabs === false) vAttrs.push('showSheetTabs="0"');
       if (v.tabRatio !== undefined) vAttrs.push(`tabRatio="${v.tabRatio}"`);
+      if (v.showObjects) vAttrs.push(`showObjects="${v.showObjects}"`);
       if (v.includeHiddenRowCol === false) vAttrs.push('includeHiddenRowCol="0"');
       if (v.includePrintSettings === false) vAttrs.push('includePrintSettings="0"');
       if (v.personalView) vAttrs.push('personalView="1"');

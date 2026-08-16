@@ -188,6 +188,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (String(attr(v, "showSheetTabs")) === "0") view.showSheetTabs = false;
         const tabRatio = attrNum(v, "tabRatio");
         if (tabRatio !== undefined) view.tabRatio = tabRatio;
+        const so = attr(v, "showObjects");
+        if (so) view.showObjects = so as CustomWorkbookViewOptions["showObjects"];
         if (String(attr(v, "includeHiddenRowCol")) === "0") view.includeHiddenRowCol = false;
         if (String(attr(v, "includePrintSettings")) === "0") view.includePrintSettings = false;
         if (parseOnOff(attr(v, "personalView"))) view.personalView = true;
@@ -198,7 +200,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (mi !== undefined) view.mergeInterval = mi;
         if (parseOnOff(attr(v, "changesSavedWin"))) view.changesSavedWin = true;
         if (parseOnOff(attr(v, "onlySync"))) view.onlySync = true;
-        if (attr(v, "showComments")) view.showComments = attr(v, "showComments");
+        const sc = attr(v, "showComments");
+        if (sc) view.showComments = sc as CustomWorkbookViewOptions["showComments"];
         views.push(view);
       }
       if (views.length > 0) result.customViews = views;

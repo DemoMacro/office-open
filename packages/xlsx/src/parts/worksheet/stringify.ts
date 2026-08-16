@@ -80,6 +80,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   const hasPageSetUpPr =
     !!opts.pageSetup?.fitToWidth ||
     !!opts.pageSetup?.fitToHeight ||
+    !!opts.pageSetup?.fitToPage ||
     !!opts.pageSetup?.autoPageBreaks;
   if (hasTabColor || hasOutline || hasSheetPrAttrs || hasPageSetUpPr) {
     const prParts: string[] = [];
@@ -112,14 +113,13 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (sp?.outlineShowSymbols === false) outAttrs.showOutlineSymbols = 0;
       prParts.push(`<outlinePr${attrs(outAttrs)}/>`);
     }
-    // pageSetUpPr (inside sheetPr when fitToPage or autoPageBreaks needed)
-    if (
-      opts.pageSetup?.fitToWidth ||
-      opts.pageSetup?.fitToHeight ||
-      opts.pageSetup?.autoPageBreaks
-    ) {
+    // pageSetUpPr (inside sheetPr when any of its attributes is requested).
+    // fitToPage alone is meaningful: files parsed with fitToWidth/fitToHeight
+    // at their XSD defaults (1/1, attributes omitted) must re-emit the flag.
+    if (hasPageSetUpPr) {
       const psupAttrs: Record<string, string | number | boolean | undefined> = {};
-      if (opts.pageSetup?.fitToWidth || opts.pageSetup?.fitToHeight) psupAttrs.fitToPage = 1;
+      if (opts.pageSetup?.fitToWidth || opts.pageSetup?.fitToHeight || opts.pageSetup?.fitToPage)
+        psupAttrs.fitToPage = 1;
       if (opts.pageSetup?.autoPageBreaks) psupAttrs.autoPageBreaks = 1;
       prParts.push(`<pageSetUpPr${attrs(psupAttrs)}/>`);
     }
@@ -478,6 +478,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         if (rule.stopIfTrue) ruleAttrs.stopIfTrue = 1;
         if (rule.timePeriod) ruleAttrs.timePeriod = rule.timePeriod;
         if (rule.rank !== undefined) ruleAttrs.rank = rule.rank;
+        if (rule.bottom) ruleAttrs.bottom = 1;
+        if (rule.percent) ruleAttrs.percent = 1;
+        if (rule.text !== undefined) ruleAttrs.text = rule.text;
         if (rule.equalAverage) ruleAttrs.equalAverage = 1;
         if (rule.aboveAverage === false) ruleAttrs.aboveAverage = 0;
         if (rule.stdDev !== undefined) ruleAttrs.stdDev = rule.stdDev;

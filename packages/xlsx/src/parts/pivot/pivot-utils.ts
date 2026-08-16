@@ -856,9 +856,9 @@ export interface MeasureDimensionMapOptions {
 
 /** OLAP properties for pivot cache (CT_OlapPr) */
 export interface OLAPPropertiesOptions {
-  /** Local cube connection string */
-  local?: string;
-  /** Local connection string */
+  /** Use the local cube connection (CT_OlapPr `@local`, boolean) */
+  local?: boolean;
+  /** Local cube connection string (CT_OlapPr `@localConnection`) */
   localConnection?: string;
   /** Send locale info to OLAP server */
   sendLocale?: boolean;

@@ -413,6 +413,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (tpVal) rule.timePeriod = tpVal as ConditionalFormatRule["timePeriod"];
           const rank = attrNum(ruleEl, "rank");
           if (rank !== undefined) rule.rank = rank;
+          if (parseOnOff(attr(ruleEl, "bottom"))) rule.bottom = true;
+          if (parseOnOff(attr(ruleEl, "percent"))) rule.percent = true;
+          const textVal = attr(ruleEl, "text");
+          if (textVal) rule.text = textVal;
           if (parseOnOff(attr(ruleEl, "equalAverage"))) rule.equalAverage = true;
           if (String(attr(ruleEl, "aboveAverage")) === "0") rule.aboveAverage = false;
           const stdDev = attrNum(ruleEl, "stdDev");

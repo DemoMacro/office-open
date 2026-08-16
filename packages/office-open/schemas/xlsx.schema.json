@@ -2611,6 +2611,10 @@
           "description": "Above average flag (CT_CfRule `@aboveAverage`, default true for aboveAverage rules)",
           "type": "boolean"
         },
+        "bottom": {
+          "description": "Bottom N instead of top N for top10 rules (CT_CfRule `@bottom`)",
+          "type": "boolean"
+        },
         "colorScale": {
           "$ref": "#/definitions/ColorScaleOptions",
           "description": "Color scale configuration (when type is \"colorScale\")"
@@ -2641,6 +2645,10 @@
         "operator": {
           "$ref": "#/definitions/ConditionalFormatOperator"
         },
+        "percent": {
+          "description": "Percent instead of item count for top10 rules (CT_CfRule `@percent`)",
+          "type": "boolean"
+        },
         "priority": {
           "type": "number"
         },
@@ -2655,6 +2663,10 @@
         "stopIfTrue": {
           "description": "Stop if true — skip remaining rules (CT_CfRule `@stopIfTrue`)",
           "type": "boolean"
+        },
+        "text": {
+          "description": "Search text for containsText/notContains/beginsWith/endsWith rules (CT_CfRule `@text`)",
+          "type": "string"
         },
         "timePeriod": {
           "description": "Time period for date-based highlighting (CT_CfRule `@timePeriod`)",
@@ -3380,7 +3392,8 @@
           "type": "boolean"
         },
         "showComments": {
-          "description": "Show comments (CT_CustomWorkbookView `@showComments`)",
+          "description": "Show comments (CT_CustomWorkbookView `@showComments`, ST_Comments)",
+          "enum": ["none", "indicator", "comment"],
           "type": "string"
         },
         "showFormulaBar": {
@@ -3390,6 +3403,11 @@
         "showHorizontalScroll": {
           "description": "Show horizontal scroll (default true)",
           "type": "boolean"
+        },
+        "showObjects": {
+          "description": "Object display mode (CT_CustomWorkbookView `@showObjects`, ST_Objects)",
+          "enum": ["all", "placeholders", "none"],
+          "type": "string"
         },
         "showSheetTabs": {
           "description": "Show sheet tabs (default true)",
@@ -3406,11 +3424,6 @@
         "tabRatio": {
           "description": "Tab ratio (default 600)",
           "type": "number"
-        },
-        "visibility": {
-          "description": "Workbook visibility: \"visible\" | \"hidden\" | \"veryHidden\" (default \"visible\")",
-          "enum": ["visible", "hidden", "veryHidden"],
-          "type": "string"
         },
         "windowHeight": {
           "description": "Window height in twips",
@@ -6117,8 +6130,8 @@
           "type": "number"
         },
         "iconSet": {
-          "description": "Icon set index (CT_IconFilter `@iconSet`)",
-          "type": "number"
+          "$ref": "#/definitions/IconSetType",
+          "description": "Icon set name (CT_IconFilter `@iconSet`, ST_IconSetType — required)"
         }
       },
       "required": ["colId", "iconSet"],
