@@ -787,8 +787,22 @@ export interface FilterItemsOptions {
   colId: number;
   /** Blank filter (CT_Filters `@blank`) */
   blank?: boolean;
-  /** Calendar type (CT_Filters `@calendarType`) */
-  calendarType?: string;
+  /** Calendar type (CT_Filters `@calendarType`, ST_CalendarType) */
+  calendarType?:
+    | "gregorian"
+    | "gregorianUs"
+    | "gregorianMeFrench"
+    | "gregorianArabic"
+    | "hijri"
+    | "hebrew"
+    | "taiwan"
+    | "japan"
+    | "thai"
+    | "korea"
+    | "saka"
+    | "gregorianXlitEnglish"
+    | "gregorianXlitFrench"
+    | "none";
   /** Filter values */
   values?: string[];
 }
@@ -834,9 +848,9 @@ export interface DynamicFilterOptions {
     | "M10"
     | "M11"
     | "M12";
-  /** Max value (CT_DynamicFilter `@val`) */
+  /** Filter value (CT_DynamicFilter `@val`) */
   val?: number;
-  /** Max value as date ISO string (CT_DynamicFilter `@maxVal`) */
+  /** Maximum value (CT_DynamicFilter `@maxVal`) */
   maxVal?: number;
   /** Value ISO date string (CT_DynamicFilter `@valIso`) */
   valIso?: string;
@@ -1027,7 +1041,11 @@ export interface PivotSelectionOptions {
   previousCol?: number;
   /** Click count (default 0) */
   click?: number;
-  /** Relationship id (r:id, OLAP pivot selection part) */
+  /**
+   * Relationship id (r:id, OLAP pivot selection part). Round-trip only: the
+   * referenced part is not re-emitted, so the id is not resolvable in a
+   * freshly generated workbook.
+   */
   rId?: string;
   /** Pivot area (required child) */
   pivotArea?: PivotAreaOptions;
@@ -1132,27 +1150,57 @@ export interface DataConsolidateOptions {
   refs?: string[];
 }
 
-/** Drawing in header/footer (CT_DrawingHF) */
+/**
+ * Drawing in header/footer (CT_DrawingHF).
+ *
+ * The 18 counters are XML attribute names verbatim: first letter l/c/r is the
+ * header/footer section (left/center/right), second h/f is header vs footer,
+ * third o/e/f is the page flavor (odd/even/first). Each holds the 1-based
+ * picture number within that slot (e.g. `lho` = 2nd picture in the left
+ * section of the header on odd pages).
+ */
 export interface DrawingHfOptions {
-  /** Relationship ID for the drawing (required) */
+  /**
+   * Relationship ID for the drawing. Round-trip only: carried from the parsed
+   * package's rels; a freshly generated workbook has no matching relationship
+   * until an embedding API exists.
+   */
   rId: string;
+  /** Picture number, left header odd pages (`@lho`) */
   lho?: number;
+  /** Picture number, left header even pages (`@lhe`) */
   lhe?: number;
+  /** Picture number, left header first page (`@lhf`) */
   lhf?: number;
+  /** Picture number, center header odd pages (`@cho`) */
   cho?: number;
+  /** Picture number, center header even pages (`@che`) */
   che?: number;
+  /** Picture number, center header first page (`@chf`) */
   chf?: number;
+  /** Picture number, right header odd pages (`@rho`) */
   rho?: number;
+  /** Picture number, right header even pages (`@rhe`) */
   rhe?: number;
+  /** Picture number, right header first page (`@rhf`) */
   rhf?: number;
+  /** Picture number, left footer odd pages (`@lfo`) */
   lfo?: number;
+  /** Picture number, left footer even pages (`@lfe`) */
   lfe?: number;
+  /** Picture number, left footer first page (`@lff`) */
   lff?: number;
+  /** Picture number, center footer odd pages (`@cfo`) */
   cfo?: number;
+  /** Picture number, center footer even pages (`@cfe`) */
   cfe?: number;
+  /** Picture number, center footer first page (`@cff`) */
   cff?: number;
+  /** Picture number, right footer odd pages (`@rfo`) */
   rfo?: number;
+  /** Picture number, right footer even pages (`@rfe`) */
   rfe?: number;
+  /** Picture number, right footer first page (`@rff`) */
   rff?: number;
 }
 
@@ -1216,7 +1264,10 @@ export interface WorksheetOptions {
   oleSize?: string;
   /** Drawing in header/footer (CT_DrawingHF) */
   drawingHF?: DrawingHfOptions;
-  /** Legacy drawing for header/footer r:id (CT_LegacyDrawingHF) */
+  /**
+   * Legacy drawing for header/footer r:id (CT_LegacyDrawingHF). Round-trip
+   * only: the referenced VML part is not re-emitted by the compiler.
+   */
   legacyDrawingHF?: string;
   /** Selection in sheet view (CT_Selection) */
   selection?: SelectionOptions;
@@ -1266,7 +1317,11 @@ export interface SheetCalculationPropertiesOptions {
 export interface ControlOptions {
   /** Shape ID (CT_Control `@shapeId`) */
   shapeId: number;
-  /** Control r:id (CT_ControlPr `@r:id`) */
+  /**
+   * Control r:id (CT_ControlPr `@r:id`). Round-trip only: the control's VML
+   * and binary parts are not re-emitted, so the id is not resolvable in a
+   * freshly generated workbook.
+   */
   rId: string;
   /** Control name (CT_ControlPr `@name`) */
   name?: string;
@@ -1288,7 +1343,10 @@ export interface ControlOptions {
 export interface CustomSheetPropertyOptions {
   /** Property name */
   name: string;
-  /** Relationship ID to binary data */
+  /**
+   * Relationship ID to the binary property part. Round-trip only: the part
+   * is not re-emitted by the compiler.
+   */
   rId: string;
 }
 
@@ -1306,7 +1364,11 @@ export interface OleObjectOptions {
   autoLoad?: boolean;
   /** Shape ID (CT_OleObject `@shapeId`) */
   shapeId: number;
-  /** Relationship ID (CT_OleObject `@r:id`) */
+  /**
+   * Relationship ID (CT_OleObject `@r:id`). Round-trip only: the embedded
+   * object part is not re-emitted, so the id is not resolvable in a freshly
+   * generated workbook.
+   */
   rId?: string;
   /** Object properties (CT_ObjectPr) */
   objectPr?: OleObjectPropertiesOptions;
@@ -1336,7 +1398,7 @@ export interface OleObjectPropertiesOptions {
   altText?: string;
   /** DDE */
   dde?: boolean;
-  /** Relationship ID */
+  /** Relationship ID (round-trip only; the target part is not re-emitted) */
   rId?: string;
 }
 

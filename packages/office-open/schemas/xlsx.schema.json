@@ -3051,7 +3051,7 @@
           "type": "string"
         },
         "rId": {
-          "description": "Control r:id (CT_ControlPr `@r:id`)",
+          "description": "Control r:id (CT_ControlPr `@r:id`). Round-trip only: the control's VML and binary parts are not re-emitted, so the id is not resolvable in a freshly generated workbook.",
           "type": "string"
         },
         "recalcAlways": {
@@ -3228,7 +3228,7 @@
           "type": "string"
         },
         "rId": {
-          "description": "Relationship ID to binary data",
+          "description": "Relationship ID to the binary property part. Round-trip only: the part is not re-emitted by the compiler.",
           "type": "string"
         }
       },
@@ -4230,64 +4230,82 @@
     },
     "DrawingHfOptions": {
       "additionalProperties": false,
-      "description": "Drawing in header/footer (CT_DrawingHF)",
+      "description": "Drawing in header/footer (CT_DrawingHF).\n\nThe 18 counters are XML attribute names verbatim: first letter l/c/r is the header/footer section (left/center/right), second h/f is header vs footer, third o/e/f is the page flavor (odd/even/first). Each holds the 1-based picture number within that slot (e.g. `lho` = 2nd picture in the left section of the header on odd pages).",
       "properties": {
         "cfe": {
+          "description": "Picture number, center footer even pages (`@cfe`)",
           "type": "number"
         },
         "cff": {
+          "description": "Picture number, center footer first page (`@cff`)",
           "type": "number"
         },
         "cfo": {
+          "description": "Picture number, center footer odd pages (`@cfo`)",
           "type": "number"
         },
         "che": {
+          "description": "Picture number, center header even pages (`@che`)",
           "type": "number"
         },
         "chf": {
+          "description": "Picture number, center header first page (`@chf`)",
           "type": "number"
         },
         "cho": {
+          "description": "Picture number, center header odd pages (`@cho`)",
           "type": "number"
         },
         "lfe": {
+          "description": "Picture number, left footer even pages (`@lfe`)",
           "type": "number"
         },
         "lff": {
+          "description": "Picture number, left footer first page (`@lff`)",
           "type": "number"
         },
         "lfo": {
+          "description": "Picture number, left footer odd pages (`@lfo`)",
           "type": "number"
         },
         "lhe": {
+          "description": "Picture number, left header even pages (`@lhe`)",
           "type": "number"
         },
         "lhf": {
+          "description": "Picture number, left header first page (`@lhf`)",
           "type": "number"
         },
         "lho": {
+          "description": "Picture number, left header odd pages (`@lho`)",
           "type": "number"
         },
         "rId": {
-          "description": "Relationship ID for the drawing (required)",
+          "description": "Relationship ID for the drawing. Round-trip only: carried from the parsed package's rels; a freshly generated workbook has no matching relationship until an embedding API exists.",
           "type": "string"
         },
         "rfe": {
+          "description": "Picture number, right footer even pages (`@rfe`)",
           "type": "number"
         },
         "rff": {
+          "description": "Picture number, right footer first page (`@rff`)",
           "type": "number"
         },
         "rfo": {
+          "description": "Picture number, right footer odd pages (`@rfo`)",
           "type": "number"
         },
         "rhe": {
+          "description": "Picture number, right header even pages (`@rhe`)",
           "type": "number"
         },
         "rhf": {
+          "description": "Picture number, right header first page (`@rhf`)",
           "type": "number"
         },
         "rho": {
+          "description": "Picture number, right header odd pages (`@rho`)",
           "type": "number"
         }
       },
@@ -4338,7 +4356,7 @@
           "type": "number"
         },
         "maxVal": {
-          "description": "Max value as date ISO string (CT_DynamicFilter `@maxVal`)",
+          "description": "Maximum value (CT_DynamicFilter `@maxVal`)",
           "type": "number"
         },
         "maxValIso": {
@@ -4387,7 +4405,7 @@
           "type": "string"
         },
         "val": {
-          "description": "Max value (CT_DynamicFilter `@val`)",
+          "description": "Filter value (CT_DynamicFilter `@val`)",
           "type": "number"
         },
         "valIso": {
@@ -5204,7 +5222,23 @@
           "type": "boolean"
         },
         "calendarType": {
-          "description": "Calendar type (CT_Filters `@calendarType`)",
+          "description": "Calendar type (CT_Filters `@calendarType`, ST_CalendarType)",
+          "enum": [
+            "gregorian",
+            "gregorianUs",
+            "gregorianMeFrench",
+            "gregorianArabic",
+            "hijri",
+            "hebrew",
+            "taiwan",
+            "japan",
+            "thai",
+            "korea",
+            "saka",
+            "gregorianXlitEnglish",
+            "gregorianXlitFrench",
+            "none"
+          ],
           "type": "string"
         },
         "colId": {
@@ -7141,7 +7175,7 @@
           "type": "string"
         },
         "rId": {
-          "description": "Relationship ID (CT_OleObject `@r:id`)",
+          "description": "Relationship ID (CT_OleObject `@r:id`). Round-trip only: the embedded object part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
           "type": "string"
         },
         "shapeId": {
@@ -7197,7 +7231,7 @@
           "type": "boolean"
         },
         "rId": {
-          "description": "Relationship ID",
+          "description": "Relationship ID (round-trip only; the target part is not re-emitted)",
           "type": "string"
         },
         "uiObject": {
@@ -9027,7 +9061,7 @@
           "type": "number"
         },
         "rId": {
-          "description": "Relationship id (r:id, OLAP pivot selection part)",
+          "description": "Relationship id (r:id, OLAP pivot selection part). Round-trip only: the referenced part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
           "type": "string"
         },
         "showHeader": {
@@ -15069,7 +15103,7 @@
           "type": "array"
         },
         "legacyDrawingHF": {
-          "description": "Legacy drawing for header/footer r:id (CT_LegacyDrawingHF)",
+          "description": "Legacy drawing for header/footer r:id (CT_LegacyDrawingHF). Round-trip only: the referenced VML part is not re-emitted by the compiler.",
           "type": "string"
         },
         "mergeCells": {

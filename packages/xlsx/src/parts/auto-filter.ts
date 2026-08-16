@@ -199,7 +199,7 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
           const fi: FilterItemsOptions = { colId };
           if (parseOnOff(attr(fc, "blank"))) fi.blank = true;
           const cal = attr(fc, "calendarType");
-          if (cal) fi.calendarType = cal;
+          if (cal) fi.calendarType = cal as FilterItemsOptions["calendarType"];
           const values: string[] = [];
           for (const f of fc.elements ?? []) {
             if (f.name === "filter") {
