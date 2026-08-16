@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/xlsx)
 ![npm license](https://img.shields.io/npm/l/@office-open/xlsx)
 
-> Generate and parse .xlsx spreadsheets with a declarative TypeScript API. Works in Node.js and browsers.
+> Create Excel spreadsheets (.xlsx) in TypeScript and JavaScript — generate, parse, and patch from plain JSON, no Microsoft Office required. Built for AI agents and hand-written code alike; runs in Node.js, browsers, Deno, and Bun.
 
 ## Features
 

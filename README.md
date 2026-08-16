@@ -3,33 +3,32 @@
 ![GitHub](https://img.shields.io/github/license/DemoMacro/office-open)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
-> The all-in-one TypeScript toolkit for Office documents.
-> Generate, parse, and patch .docx, .pptx, .xlsx files — fully typed, spec-compliant, and works everywhere. Compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace.
+> AI-native Office documents for TypeScript and JavaScript.
+> Create Word, Excel, and PowerPoint files (.docx, .xlsx, .pptx) from plain JSON or fully typed APIs — generate, parse, and patch. Built for AI agents, LLM tool-calling, and hand-written code alike; no Microsoft Office required, opens in every major office suite.
 
 ## Features
 
-- 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API, no Office dependency
-- 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500), compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace
-- 🧭 **Full Vocabulary Coverage** — Every element and attribute defined by the OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, and the deprecated VML vector vocabulary) is implemented for both generation and parsing, tracked by automated XSD coverage tooling
+- 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API — no server required, works offline
+- 🤖 **AI Tooling** — Draft-07 JSON Schemas frozen from the TypeScript API, on-demand schema slicing for LLM context budgets (CLI + SDK tool), Vercel AI SDK tool definitions, and an installable Agent Skill
+- 🧭 **100% OOXML Coverage** — All 2,191 elements and 1,923 attributes across the 18 OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, and VML) are implemented for both generation and parsing — tracked by automated XSD coverage tooling
+- 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500) and is verified to open in Microsoft Office, WPS Office, LibreOffice, and Google Workspace
 - 🔒 **Fully Typed** — Comprehensive TypeScript definitions for autocomplete and type safety across every API
-- 🎯 **Pure JSON API** — Define documents as plain JSON objects, zero class instantiation, designed for AI agents
-- 🤖 **AI-Native** — Draft-07 JSON Schemas frozen from the TypeScript API, on-demand schema slicing for LLM context budgets (CLI + SDK tool), Vercel AI SDK tool definitions, and an installable Agent Skill
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
-- 🔀 **Cross-Format Copy** — Convert pictures, shapes, tables, and text between .docx, .pptx, and .xlsx; each format keeps its native types, conversions reuse shared `core` domains
-- ⚡ **High Performance** — Optimized for large documents and batch processing with native zlib compression
+- 🔀 **Cross-Format Copy** — Convert pictures, shapes, tables, and text between formats; each format keeps its native types, conversions reuse shared `core` domains — no unified model layer
+- ⚡ **High Performance** — Pure string concatenation for XML generation, no intermediate AST, native zlib compression
 - 🌐 **Cross-Platform** — Node.js, browsers, Deno, Bun. Export to Buffer, Blob, Base64, stream, or string
 
 ## Packages
 
 | Package                                         | Version                                                | Description                                          |
 | ----------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | Umbrella: all packages + CLI + AI SDK tools          |
 | [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word document generation, parsing, and patching      |
 | [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint generation, parsing, and patching         |
 | [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | Spreadsheet generation, parsing, and patching        |
 | [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters |
 | [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization              |
-| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | Umbrella: all packages + CLI + AI SDK tools          |
 
 ## Quick Start
 
@@ -49,124 +48,11 @@ bun add office-open
 
 The `office-open` package bundles all three format packages plus the CLI, JSON Schemas, and AI SDK tools. Prefer a smaller footprint? See [Packages](#packages) for the per-format `@office-open/*` packages.
 
-### DOCX Generation
-
 ```typescript
 import { generateDocumentSync } from "office-open/docx";
 import { writeFileSync } from "node:fs";
 
-const buffer = generateDocumentSync({
-  sections: [
-    {
-      children: [{ paragraph: { children: [{ text: "Hello World", bold: true }] } }],
-    },
-  ],
-});
-writeFileSync("document.docx", buffer);
-```
-
-### PPTX Generation
-
-```typescript
-import { generatePresentationSync } from "office-open/pptx";
-import { writeFileSync } from "node:fs";
-
-const buffer = generatePresentationSync({
-  slides: [
-    {
-      children: [
-        {
-          shape: {
-            x: 100,
-            y: 100,
-            width: 600,
-            height: 400,
-            textBody: { children: [{ paragraph: { children: ["Hello World"] } }] },
-            fill: "4472C4",
-          },
-        },
-      ],
-    },
-  ],
-});
-writeFileSync("presentation.pptx", buffer);
-```
-
-### XLSX Generation
-
-```typescript
-import { generateWorkbookSync } from "office-open/xlsx";
-import { writeFileSync } from "node:fs";
-
-const buffer = generateWorkbookSync({
-  worksheets: [
-    {
-      name: "Sheet1",
-      rows: [
-        { cells: [{ value: "Name" }, { value: "Score" }] },
-        { cells: [{ value: "Alice" }, { value: 95 }] },
-        { cells: [{ value: "Bob" }, { value: 87 }] },
-      ],
-    },
-  ],
-});
-writeFileSync("workbook.xlsx", buffer);
-```
-
-### Unified API & CLI
-
-The same package also exposes a type-dispatched `generate` helper and a CLI:
-
-```typescript
-import { generate } from "office-open/generate";
-import { writeFileSync } from "node:fs";
-
-const buffer = await generate({
-  type: "docx",
-  options: {
-    sections: [{ children: [{ paragraph: "Hello from office-open!" }] }],
-  },
-  outputType: "nodebuffer",
-});
-writeFileSync("output.docx", buffer);
-```
-
-```bash
-# CLI usage
-npx office-open xlsx input.json "output.xlsx"
-```
-
-## Parse Existing Files
-
-Read and inspect existing `.docx`, `.pptx`, and `.xlsx` files into structured objects:
-
-```typescript
-// DOCX
-import { parseDocument } from "office-open/docx";
-const opts = parseDocument(buffer);
-// opts.sections — document sections
-// opts.title, opts.creator — core properties
-
-// PPTX
-import { parsePresentation } from "office-open/pptx";
-const opts = parsePresentation(buffer);
-// opts.slides — slide array
-// opts.size, opts.title — presentation properties
-
-// XLSX
-import { parseWorkbook } from "office-open/xlsx";
-const opts = parseWorkbook(buffer);
-// opts.worksheets — worksheet array
-// opts.worksheets[0].rows — row/cell data
-```
-
-## JSON API
-
-Define documents as plain JSON objects — zero class instantiation, pure data in and binary out:
-
-```typescript
-import { generateDocumentSync } from "office-open/docx";
-
+// Options are plain JSON objects — zero class instantiation
 const buffer = generateDocumentSync({
   sections: [
     {
@@ -185,16 +71,64 @@ const buffer = generateDocumentSync({
     },
   ],
 });
+writeFileSync("document.docx", buffer);
 ```
 
-## Project Philosophy
+PowerPoint and Excel follow the same shape — `generatePresentationSync({ slides: [...] })` and `generateWorkbookSync({ worksheets: [...] })`; see the per-package READMEs linked above. There is also a type-dispatched `generate()` helper and a CLI:
 
-1. **OOXML Compliance**: Strict adherence to the ISO/IEC 29500 OOXML specification
-2. **Type Safety**: Full TypeScript support with comprehensive types and autocomplete
-3. **Pure JSON API**: Define documents as plain data objects — zero class instantiation, designed for AI agents
-4. **Performance First**: Pure string concatenation for XML generation, native zlib compression, no intermediate AST
-5. **Modular Design**: Shared `core` domains across DOCX, PPTX, XLSX; cross-format copy reuses them via per-package conversions — no unified model layer
-6. **Cross-Platform**: Works in Node.js and browsers. Export to Buffer, Blob, Base64, stream, or string
+```bash
+npx office-open xlsx input.json "output.xlsx"
+```
+
+## Parse Existing Files
+
+Read existing files back into the same structured options for inspection or round-trip editing — `parsePresentation` (pptx) and `parseWorkbook` (xlsx) mirror it:
+
+```typescript
+import { parseDocument } from "office-open/docx";
+
+const opts = parseDocument(buffer);
+// opts.sections — document sections and content
+// opts.title, opts.creator — core properties
+```
+
+## AI Integration
+
+Give AI agents first-class Office document abilities — four ways, no glue code:
+
+**Vercel AI SDK tools** — let Claude, GPT, and other models generate valid documents with schema-validated retries:
+
+```typescript
+import { generateText } from "ai";
+import { officeOpenTools } from "office-open/ai";
+
+const result = await generateText({
+  model,
+  prompt: "Create a quarterly report document",
+  tools: officeOpenTools, // generate-docx / generate-pptx / generate-xlsx + schema lookup
+});
+```
+
+**MCP server** — connect the documentation to Claude Code, Cursor, or any MCP client:
+
+```bash
+claude mcp add --transport http office-open https://www.office-open.com/mcp
+```
+
+**Agent Skill** — installable skill with curated API references for docx, pptx, and xlsx:
+
+```bash
+npx skills add https://www.office-open.com
+```
+
+**JSON Schemas** — frozen draft-07 schemas for your own tool-calling, sliced on demand to fit LLM context budgets:
+
+```bash
+npx office-open schema index docx
+npx office-open schema slice docx ParagraphOptions
+```
+
+See the [AI integration guide](https://www.office-open.com/en/getting-started/ai-integration) for details.
 
 ## Versioning
 
@@ -202,49 +136,13 @@ This project follows [Semantic Versioning](https://semver.org/). While the major
 
 ## Development
 
-### Prerequisites
-
-- **Node.js** 18.x or higher
-- **pnpm** 9.x or higher (recommended package manager)
-- **Git** for version control
-
-### Getting Started
-
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/DemoMacro/office-open.git
-   cd office-open
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   pnpm install
-   ```
-
-3. **Development mode**:
-
-   ```bash
-   pnpm dev
-   ```
-
-4. **Build all packages**:
-
-   ```bash
-   pnpm build
-   ```
-
-5. **Test locally**:
-
-   ```bash
-   # Run tests
-   pnpm test
-   ```
-
-### Development Commands
+Requires Node.js 18+ and pnpm 9+.
 
 ```bash
+git clone https://github.com/DemoMacro/office-open.git
+cd office-open
+pnpm install
+
 pnpm dev            # Development mode with watch
 pnpm build          # Build all packages
 pnpm test           # Run tests
@@ -253,51 +151,21 @@ pnpm check          # Lint & format
 
 ## Contributing
 
-We welcome contributions! Here's how to get started:
+We welcome contributions! [Fork the repository](https://github.com/DemoMacro/office-open/fork), clone your fork, and add the upstream remote:
 
-### Quick Setup
+```bash
+git clone https://github.com/YOUR_USERNAME/office-open.git
+cd office-open
+git remote add upstream https://github.com/DemoMacro/office-open.git
+pnpm install
+```
 
-1. **Fork the repository** on GitHub
-2. **Clone your fork**:
-
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/office-open.git
-   cd office-open
-   ```
-
-3. **Add upstream remote**:
-
-   ```bash
-   git remote add upstream https://github.com/DemoMacro/office-open.git
-   ```
-
-4. **Install dependencies**:
-
-   ```bash
-   pnpm install
-   ```
-
-5. **Development mode**:
-
-   ```bash
-   pnpm dev
-   ```
-
-### Development Workflow
-
-1. **Code**: Follow our project standards
-2. **Test**: `pnpm build && pnpm test`
-3. **Commit**: Use conventional commits (`feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`, `build:`, `ci:`, `chore:`, `revert:`)
-4. **Push**: Push to your fork
-5. **Submit**: Create a Pull Request to upstream repository
+Then follow the workflow: code to the project standards, run `pnpm build && pnpm test`, commit with [conventional commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `refactor:`, …), push to your fork, and open a Pull Request against upstream.
 
 ## Support & Community
 
 - [Documentation](https://www.office-open.com) — guides, API reference, and AI integration docs
 - [Report Issues](https://github.com/DemoMacro/office-open/issues)
-- [DOCX Documentation](./packages/docx/README.md)
-- [PPTX Documentation](./packages/pptx/README.md)
-- [XLSX Documentation](./packages/xlsx/README.md)
 
 ## License
 

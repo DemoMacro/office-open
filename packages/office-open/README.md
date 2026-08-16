@@ -4,14 +4,14 @@
 ![npm downloads](https://img.shields.io/npm/dw/office-open)
 ![npm license](https://img.shields.io/npm/l/office-open)
 
-> Umbrella package for Office Open XML — all packages, CLI, AI SDK tools, and JSON schemas in one install.
+> Everything for AI-native Office documents in one install — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) generation from JSON, plus a CLI, Vercel AI SDK tools, and frozen JSON Schemas for LLM tool-calling.
 
 ## Features
 
-- **Unified Re-exports** — Import from `office-open/docx`, `office-open/pptx`, `office-open/xlsx`
+- **One Install** — Import from `office-open/docx`, `office-open/pptx`, `office-open/xlsx`; no Microsoft Office required
+- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, ready for AI agents and chatbots
+- **JSON Schemas** — Draft-07 input validation for all document types, with on-demand schema slicing for LLM context budgets
 - **CLI** — Generate files from JSON via `npx office-open`
-- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`
-- **JSON Schemas** — Input validation for all document types, with on-demand schema slicing
 - **Generate Function** — Type-agnostic `generate()` for dynamic document creation
 
 ## Installation
@@ -78,6 +78,16 @@ const result = await generateText({
 ```
 
 The generate tools carry skeleton input schemas (top-level shape + wrapper keys, ~5K tokens instead of the ~170K-token full schema); the `office-open-schema-lookup` tool fetches precise option schemas on demand.
+
+Two more agent entry points live on the documentation site:
+
+```bash
+# MCP server for Claude Code, Cursor, and other MCP clients
+claude mcp add --transport http office-open https://www.office-open.com/mcp
+
+# Installable Agent Skill with curated API references
+npx skills add https://www.office-open.com
+```
 
 ### JSON Schemas
 

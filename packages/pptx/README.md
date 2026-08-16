@@ -1,6 +1,10 @@
 # @office-open/pptx
 
-> Generate and parse .pptx presentations with a declarative TypeScript API. Works in Node.js and browsers.
+![npm version](https://img.shields.io/npm/v/@office-open/pptx)
+![npm downloads](https://img.shields.io/npm/dw/@office-open/pptx)
+![npm license](https://img.shields.io/npm/l/@office-open/pptx)
+
+> Create PowerPoint presentations (.pptx) in TypeScript and JavaScript — generate, parse, and patch from plain JSON, no Microsoft Office required. Built for AI agents and hand-written code alike; runs in Node.js, browsers, Deno, and Bun.
 
 ## Features
 
