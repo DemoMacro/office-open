@@ -14,6 +14,7 @@ import {
   createBodyProperties,
   createTableStyle,
   fillDesc,
+  findFillChild,
   parseNonVisualDrawingProperties,
   parseTableStyle,
   stringifyNonVisualDrawingProperties,
@@ -460,13 +461,8 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
 
     // Fill — guard against fillDesc returning { type: "none" } for a tcPr with
     // no fill child, which would spuriously emit <a:noFill/> on re-stringify.
-    const fillChild =
-      findChild(tcPr, "a:solidFill") ||
-      findChild(tcPr, "a:noFill") ||
-      findChild(tcPr, "a:gradFill") ||
-      findChild(tcPr, "a:pattFill") ||
-      findChild(tcPr, "a:blipFill");
-    if (fillChild) result.fill = parse(fillDesc, tcPr, ctx);
+    const fillChild = findFillChild(tcPr);
+    if (fillChild) result.fill = parse(fillDesc, fillChild, ctx);
 
     const cell3DEl = findChild(tcPr, "a:cell3D");
     if (cell3DEl) result.cell3D = parse(cell3DDesc, cell3DEl, ctx);

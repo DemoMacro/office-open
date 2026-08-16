@@ -21,7 +21,7 @@ import { createEffectDag } from "./effects/effect-dag";
 import type { EffectDagOptions } from "./effects/effect-dag";
 import { effectListDesc } from "./effects/effect-descriptors";
 import type { EffectListOptions } from "./effects/effect-list";
-import { fillDesc } from "./fill/fill-descriptors";
+import { fillDesc, findFillChild } from "./fill/fill-descriptors";
 import type { FillOptions } from "./fill/fill-options";
 import type { CustomGeometryOptions } from "./geometry/custom-geometry";
 import { presetGeometryDesc, customGeometryDesc } from "./geometry/geometry-descriptors";
@@ -193,15 +193,9 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
 
     // EG_FillProperties — fillDesc always returns a value (defaults to none),
     // so probe for a fill child first to avoid synthesizing a spurious fill.
-    const fillChild =
-      findChild(el, "a:noFill") ??
-      findChild(el, "a:solidFill") ??
-      findChild(el, "a:gradFill") ??
-      findChild(el, "a:pattFill") ??
-      findChild(el, "a:grpFill") ??
-      findChild(el, "a:blipFill");
+    const fillChild = findFillChild(el);
     if (fillChild) {
-      result.fill = parse(fillDesc, el, ctx);
+      result.fill = parse(fillDesc, fillChild, ctx);
     }
 
     // a:ln

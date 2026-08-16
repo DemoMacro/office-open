@@ -20,7 +20,7 @@ import { parseColorChoice, stringifyColorChoice } from "../color/color-descripto
 import type { SolidFillOptions } from "../color/solid-fill";
 import { effectListDesc } from "../effects/effect-descriptors";
 import type { EffectListOptions } from "../effects/effect-list";
-import { fillDesc } from "../fill/fill-descriptors";
+import { fillDesc, findFillChild } from "../fill/fill-descriptors";
 import type { FillOptions } from "../fill/fill-options";
 import type { OutlineOptions } from "../outline/outline";
 import { outlineDesc, stringifyLineProperties } from "../outline/outline-descriptors";
@@ -321,15 +321,11 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     const ln = findChild(el, "a:ln");
     if (ln) result.outline = parse(outlineDesc, ln, _ctx) as OutlineOptions;
 
-    // Fill
-    if (
-      findChild(el, "a:solidFill") ||
-      findChild(el, "a:noFill") ||
-      findChild(el, "a:gradFill") ||
-      findChild(el, "a:pattFill")
-    ) {
-      const fillResult = parse(fillDesc, el, _ctx);
-      result.fill = fillResult as FillOptions;
+    // Fill — CT_TextCharacterProperties references the full EG_FillProperties
+    // choice, so accept all six fill kinds (grpFill/blipFill included).
+    const fillChild = findFillChild(el);
+    if (fillChild) {
+      result.fill = parse(fillDesc, fillChild, _ctx) as FillOptions;
     }
 
     // Shadow — full EG_EffectProperties round-trip

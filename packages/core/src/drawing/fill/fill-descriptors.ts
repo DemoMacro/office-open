@@ -4,20 +4,24 @@
  * @module
  */
 
-import { escapeXml } from "@office-open/xml";
+import { element, escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext } from "../../descriptor";
-import { stringify, parse } from "../../descriptor";
+import { parse } from "../../descriptor";
 import { emitAngle, emitPercent, parseAngle, parsePercent } from "../../util/converters";
 import { toUint8Array } from "../../util/data-type";
+import { uniqueId } from "../../util/generators";
 import { xsdPattern } from "../../util/mappings";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { blipFillDesc } from "../blip/blip-descriptors";
-import { solidFillDesc, parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
+import { createBlipEffects } from "../blip/blip-effects";
+import { createSourceRectangle } from "../blip/source-rectangle";
+import { createTileInfo } from "../blip/tile";
+import { solidFillDesc, parseColorChoice, emitColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
-import { buildFill, type BlipFillConfigOptions, type FillOptions } from "./fill-options";
+import type { BlipFillConfigOptions, FillOptions } from "./fill-options";
 import type {
   GradientFillOptions,
   GradientShadeOptions,
@@ -70,33 +74,8 @@ function stringifyShade(shade: GradientShadeOptions): string {
 
 export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
   kind: "custom",
-  stringify(opts, ctx) {
-    const parts: string[] = [];
-
-    // Gradient stop list — a:gs expects EG_ColorChoice (direct color), NOT solidFill
-    const stopsXml = opts.stops
-      .map((stop) => {
-        const colorXml = stringifyColorChoice(stop.color, ctx);
-        if (!colorXml) return `<a:gs pos="${emitPercent(stop.position)}"/>`;
-        return `<a:gs pos="${emitPercent(stop.position)}">${colorXml}</a:gs>`;
-      })
-      .join("");
-    parts.push(`<a:gsLst>${stopsXml}</a:gsLst>`);
-
-    // Shade
-    if (opts.shade) parts.push(stringifyShade(opts.shade));
-
-    // Tile rect
-    if (opts.tileRectangle) parts.push(stringifyRelativeRect("a:tileRect", opts.tileRectangle));
-
-    // Attributes
-    const attrParts: string[] = [];
-    if (opts.flip) attrParts.push(`flip="${escapeXml(opts.flip)}"`);
-    if (opts.rotateWithShape !== undefined)
-      attrParts.push(`rotWithShape="${opts.rotateWithShape ? 1 : 0}"`);
-    const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
-
-    return `<a:gradFill${attrStr}>${parts.join("")}</a:gradFill>`;
+  stringify(opts, _ctx) {
+    return emitGradientFillXml(opts);
   },
   parse(el, ctx) {
     const result: Partial<GradientFillOptions> = {};
@@ -154,22 +133,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
 
 export const patternFillDesc: CustomDescriptor<PatternFillOptions> = {
   kind: "custom",
-  stringify(opts, ctx) {
-    const parts: string[] = [];
-    const prst = xsdPattern.to(opts.pattern);
-
-    // a:fgClr/a:bgClr expect EG_ColorChoice (direct color), NOT solidFill
-    if (opts.foregroundColor) {
-      const colorXml = stringifyColorChoice(opts.foregroundColor, ctx);
-      if (colorXml) parts.push(`<a:fgClr>${colorXml}</a:fgClr>`);
-    }
-    if (opts.backgroundColor) {
-      const colorXml = stringifyColorChoice(opts.backgroundColor, ctx);
-      if (colorXml) parts.push(`<a:bgClr>${colorXml}</a:bgClr>`);
-    }
-
-    const inner = parts.join("");
-    return `<a:pattFill prst="${escapeXml(prst)}">${inner}</a:pattFill>`;
+  stringify(opts, _ctx) {
+    return emitPatternFillXml(opts);
   },
   parse(el, ctx) {
     const result: Partial<PatternFillOptions> = {};
@@ -223,147 +188,255 @@ function imageTypeFromPath(
   }
 }
 
+// ── Fill (EG_FillProperties) serialization — single source ──
+
+/**
+ * Serialize any FillOptions (string shorthand or object union, blip included)
+ * without a write context. The blip variant takes the embed placeholder
+ * directly — callers with a write context get it from `ctx.addMedia`.
+ */
+export function emitFillXml(options: FillOptions, embedPlaceholder?: string): string {
+  // String shorthand → solid fill
+  if (typeof options === "string") {
+    return `<a:solidFill>${emitColorChoice({ value: stripColorHashPrefix(options) } as SolidFillOptions)}</a:solidFill>`;
+  }
+
+  switch (options.type) {
+    case "none":
+      return "<a:noFill/>";
+
+    case "solid": {
+      const color =
+        typeof options.color === "string"
+          ? ({ value: stripColorHashPrefix(options.color) } as SolidFillOptions)
+          : options.color;
+      return `<a:solidFill>${emitColorChoice(color)}</a:solidFill>`;
+    }
+
+    case "gradient": {
+      // Core API variant
+      if ("options" in options) {
+        return emitGradientFillXml(options.options);
+      }
+      // Simplified API variant
+      const gradOpts: GradientFillOptions = {
+        stops: options.stops.map((stop) => ({
+          position: stop.position,
+          color:
+            typeof stop.color === "string"
+              ? ({ value: stripColorHashPrefix(stop.color) } as SolidFillOptions)
+              : stop.color,
+        })),
+      };
+      if (!options.path && options.angle !== undefined) {
+        gradOpts.shade = { angle: options.angle, scaled: options.scaled ?? true };
+      }
+      if (options.path) {
+        gradOpts.shade = { path: options.path };
+      }
+      return emitGradientFillXml(gradOpts);
+    }
+
+    case "blip":
+      return emitBlipFill(options, embedPlaceholder);
+
+    case "pattern": {
+      const patternOpts: PatternFillOptions = {
+        pattern: options.pattern as PatternFillOptions["pattern"],
+        ...(options.foregroundColor && {
+          foregroundColor:
+            typeof options.foregroundColor === "string"
+              ? ({ value: stripColorHashPrefix(options.foregroundColor) } as SolidFillOptions)
+              : options.foregroundColor,
+        }),
+        ...(options.backgroundColor && {
+          backgroundColor:
+            typeof options.backgroundColor === "string"
+              ? ({ value: stripColorHashPrefix(options.backgroundColor) } as SolidFillOptions)
+              : options.backgroundColor,
+        }),
+      };
+      return emitPatternFillXml(patternOpts);
+    }
+
+    case "group":
+      return "<a:grpFill/>";
+  }
+}
+
+/** Serialize a:gradFill from full GradientFillOptions (descriptor emission). */
+function emitGradientFillXml(opts: GradientFillOptions): string {
+  const parts: string[] = [];
+
+  // Gradient stop list — a:gs expects EG_ColorChoice (direct color), NOT solidFill
+  const stopsXml = opts.stops
+    .map((stop) => {
+      const colorXml = emitColorChoice(stop.color);
+      if (!colorXml) return `<a:gs pos="${emitPercent(stop.position)}"/>`;
+      return `<a:gs pos="${emitPercent(stop.position)}">${colorXml}</a:gs>`;
+    })
+    .join("");
+  parts.push(`<a:gsLst>${stopsXml}</a:gsLst>`);
+
+  // Shade
+  if (opts.shade) parts.push(stringifyShade(opts.shade));
+
+  // Tile rect
+  if (opts.tileRectangle) parts.push(stringifyRelativeRect("a:tileRect", opts.tileRectangle));
+
+  // Attributes
+  const attrParts: string[] = [];
+  if (opts.flip) attrParts.push(`flip="${escapeXml(opts.flip)}"`);
+  if (opts.rotateWithShape !== undefined)
+    attrParts.push(`rotWithShape="${opts.rotateWithShape ? 1 : 0}"`);
+  const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
+
+  return `<a:gradFill${attrStr}>${parts.join("")}</a:gradFill>`;
+}
+
+/** Serialize a:pattFill from PatternFillOptions (descriptor emission). */
+function emitPatternFillXml(opts: PatternFillOptions): string {
+  const parts: string[] = [];
+  const prst = xsdPattern.to(opts.pattern);
+
+  // a:fgClr/a:bgClr expect EG_ColorChoice (direct color), NOT solidFill
+  if (opts.foregroundColor) {
+    const colorXml = emitColorChoice(opts.foregroundColor);
+    if (colorXml) parts.push(`<a:fgClr>${colorXml}</a:fgClr>`);
+  }
+  if (opts.backgroundColor) {
+    const colorXml = emitColorChoice(opts.backgroundColor);
+    if (colorXml) parts.push(`<a:bgClr>${colorXml}</a:bgClr>`);
+  }
+
+  const inner = parts.join("");
+  return `<a:pattFill prst="${escapeXml(prst)}">${inner}</a:pattFill>`;
+}
+
+/** Serialize a:blipFill with the given embed reference (descriptor emission). */
+function emitBlipFill(options: BlipFillConfigOptions & { type: "blip" }, embed?: string): string {
+  // Build a:blip with {fileName} placeholder — the packer's ImageReplacer
+  // replaces `{fileName}` with `rId{N}` and creates the relationship. When the
+  // caller supplies embed (a media reference already registered with the write
+  // context, e.g. `{image1.png}`), use it verbatim so the emitted reference
+  // matches the registration.
+  const fileName = `${uniqueId()}.${options.imageType}`;
+  const embedRef = embed ?? `{${fileName}}`;
+
+  const blipChildren: string[] = [];
+  if (options.blipEffects) {
+    blipChildren.push(...createBlipEffects(options.blipEffects));
+  }
+  const blip = element(
+    "a:blip",
+    { cstate: "none", "r:embed": embedRef },
+    blipChildren.length > 0 ? blipChildren : undefined,
+  );
+
+  const children: string[] = [blip, createSourceRectangle(options.sourceRectangle)];
+  if (options.tile) {
+    children.push(createTileInfo(options.tile));
+  } else {
+    children.push("<a:stretch><a:fillRect/></a:stretch>");
+  }
+  const attrs: Record<string, string | number | undefined> = {};
+  if (options.dpi !== undefined) attrs.dpi = options.dpi;
+  if (options.rotWithShape !== undefined) attrs.rotWithShape = options.rotWithShape ? 1 : 0;
+  return element("a:blipFill", attrs, children);
+}
+
 export const fillDesc: CustomDescriptor<FillOptions> = {
   kind: "custom",
   stringify(opts, ctx) {
-    // String shorthand → solid fill
-    if (typeof opts === "string") {
-      return stringify(
-        solidFillDesc,
-        { value: stripColorHashPrefix(opts) } as SolidFillOptions,
-        ctx,
+    if (typeof opts !== "string" && opts.type === "blip") {
+      // Register the image media via the write context, then emit a:blipFill
+      // with the returned {fileName} placeholder. The format-package compiler
+      // replaces the placeholder with a relationship rId at pack time.
+      const placeholder = ctx.addMedia(
+        toUint8Array(opts.data, { encoding: "base64" }),
+        opts.imageType,
       );
+      return emitBlipFill(opts, placeholder);
     }
-
-    switch (opts.type) {
-      case "none":
-        return "<a:noFill/>";
-
-      case "solid": {
-        const color =
-          typeof opts.color === "string"
-            ? ({ value: stripColorHashPrefix(opts.color) } as SolidFillOptions)
-            : opts.color;
-        return stringify(solidFillDesc, color, ctx);
-      }
-
-      case "gradient": {
-        // Core API variant
-        if ("options" in opts) {
-          return stringify(gradientFillDesc, opts.options, ctx);
-        }
-        // Simplified API variant
-        const gradOpts: GradientFillOptions = {
-          stops: opts.stops.map((stop) => ({
-            position: stop.position,
-            color:
-              typeof stop.color === "string"
-                ? ({ value: stripColorHashPrefix(stop.color) } as SolidFillOptions)
-                : stop.color,
-          })),
-        };
-        if (!opts.path && opts.angle !== undefined) {
-          gradOpts.shade = { angle: opts.angle, scaled: opts.scaled ?? true };
-        }
-        if (opts.path) {
-          gradOpts.shade = { path: opts.path };
-        }
-        return stringify(gradientFillDesc, gradOpts, ctx);
-      }
-
-      case "blip": {
-        // Register the image media via the write context, then emit a:blipFill
-        // with the returned {fileName} placeholder. The format-package compiler
-        // replaces the placeholder with a relationship rId at pack time.
-        const placeholder = ctx.addMedia(
-          toUint8Array(opts.data, { encoding: "base64" }),
-          opts.imageType,
-        );
-        return buildFill(opts, placeholder);
-      }
-
-      case "pattern": {
-        const patternOpts: PatternFillOptions = {
-          pattern: opts.pattern as PatternFillOptions["pattern"],
-          ...(opts.foregroundColor && {
-            foregroundColor:
-              typeof opts.foregroundColor === "string"
-                ? ({ value: stripColorHashPrefix(opts.foregroundColor) } as SolidFillOptions)
-                : opts.foregroundColor,
-          }),
-          ...(opts.backgroundColor && {
-            backgroundColor:
-              typeof opts.backgroundColor === "string"
-                ? ({ value: stripColorHashPrefix(opts.backgroundColor) } as SolidFillOptions)
-                : opts.backgroundColor,
-          }),
-        };
-        return stringify(patternFillDesc, patternOpts, ctx);
-      }
-
-      case "group":
-        return "<a:grpFill/>";
-    }
+    return emitFillXml(opts);
   },
   parse(el, ctx) {
-    // Resolve fill element — either el itself or a child
-    const resolve = (tag: string): XmlElement | undefined =>
-      el.name === tag ? el : findChild(el, tag);
+    // Resolve fill element — either el itself or its first fill child
+    const fillEl = el.name !== undefined && FILL_TAGS.has(el.name) ? el : findFillChild(el);
+    if (!fillEl) return { type: "none" };
 
-    const noFill = resolve("a:noFill");
-    if (noFill) {
-      return { type: "none" };
-    }
+    switch (fillEl.name) {
+      case "a:noFill":
+        return { type: "none" };
 
-    const solidFill = resolve("a:solidFill");
-    if (solidFill) {
-      const color = parse(solidFillDesc, solidFill, ctx);
-      return { type: "solid", color };
-    }
+      case "a:solidFill":
+        return { type: "solid", color: parse(solidFillDesc, fillEl, ctx) };
 
-    const gradFill = resolve("a:gradFill");
-    if (gradFill) {
-      const gradOpts = parse(gradientFillDesc, gradFill, ctx);
-      return { type: "gradient", options: gradOpts as GradientFillOptions };
-    }
-
-    const pattFill = resolve("a:pattFill");
-    if (pattFill) {
-      const pattOpts = parse(patternFillDesc, pattFill, ctx);
-      return { type: "pattern", ...(pattOpts as PatternFillOptions) };
-    }
-
-    const grpFill = resolve("a:grpFill");
-    if (grpFill) {
-      return { type: "group" };
-    }
-
-    // Blip fill (image) — resolve r:embed to binary media via the read context
-    const blipFill = resolve("a:blipFill");
-    if (blipFill) {
-      const blipOpts = parse(blipFillDesc, blipFill, ctx);
-      const mediaPath = blipOpts.referenceId
-        ? ctx.resolveRelationship(blipOpts.referenceId)
-        : undefined;
-      const data = mediaPath ? ctx.getRaw(mediaPath) : undefined;
-      if (mediaPath && data) {
-        const blip: BlipFillConfigOptions & { type: "blip" } = {
-          type: "blip",
-          data,
-          imageType: imageTypeFromPath(mediaPath),
+      case "a:gradFill":
+        return {
+          type: "gradient",
+          options: parse(gradientFillDesc, fillEl, ctx) as GradientFillOptions,
         };
-        if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
-        if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
-        if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
-        if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
-        if (blipOpts.tile) blip.tile = blipOpts.tile;
-        return blip;
-      }
-    }
 
-    return { type: "none" };
+      case "a:pattFill":
+        return { type: "pattern", ...(parse(patternFillDesc, fillEl, ctx) as PatternFillOptions) };
+
+      case "a:grpFill":
+        return { type: "group" };
+
+      case "a:blipFill": {
+        // Blip fill (image) — resolve r:embed to binary media via the read context
+        const blipOpts = parse(blipFillDesc, fillEl, ctx);
+        const mediaPath = blipOpts.referenceId
+          ? ctx.resolveRelationship(blipOpts.referenceId)
+          : undefined;
+        const data = mediaPath ? ctx.getRaw(mediaPath) : undefined;
+        if (mediaPath && data) {
+          const blip: BlipFillConfigOptions & { type: "blip" } = {
+            type: "blip",
+            data,
+            imageType: imageTypeFromPath(mediaPath),
+          };
+          if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
+          if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
+          if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
+          if (blipOpts.tile) blip.tile = blipOpts.tile;
+          return blip;
+        }
+        return { type: "none" };
+      }
+
+      default:
+        return { type: "none" };
+    }
   },
 };
+
+// ── Fill child discovery ──
+
+const FILL_TAGS: ReadonlySet<string> = new Set([
+  "a:noFill",
+  "a:solidFill",
+  "a:gradFill",
+  "a:pattFill",
+  "a:grpFill",
+  "a:blipFill",
+]);
+
+/**
+ * Find the first EG_FillProperties child of an element (any of the six fill
+ * kinds) in a single scan — the shared existence probe for sites that only
+ * parse a fill when one is present.
+ */
+export function findFillChild(el: XmlElement): XmlElement | undefined {
+  for (const child of el.elements ?? []) {
+    if (child.type === "element" && child.name !== undefined && FILL_TAGS.has(child.name)) {
+      return child;
+    }
+  }
+  return undefined;
+}
 
 // ── Helper: read EG_ColorChoice directly from an element ──
 

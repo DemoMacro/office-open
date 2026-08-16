@@ -10,17 +10,12 @@
  */
 import { element } from "@office-open/xml";
 
-import { createHslColor } from "./hsl-color";
+import { emitColorChoice } from "./color-descriptors";
 import type { HslColorOptions } from "./hsl-color";
-import { createPresetColor, PresetColor } from "./preset-color";
 import type { PresetColorOptions } from "./preset-color";
-import { createRgbColor } from "./rgb-color";
 import type { RgbColorOptions } from "./rgb-color";
-import { createScRgbColor } from "./sc-rgb-color";
 import type { ScRgbColorOptions } from "./sc-rgb-color";
-import { createSchemeColor, SchemeColor } from "./scheme-color";
 import type { SchemeColorOptions } from "./scheme-color";
-import { createSystemColor, SystemColor } from "./system-color";
 import type { SystemColorOptions } from "./system-color";
 
 /**
@@ -38,32 +33,10 @@ export type SolidFillOptions =
   | PresetColorOptions;
 
 /**
- * Creates the color child element for a solid fill based on the color type.
+ * Creates the color child element for a solid fill — thin delegate to the
+ * single EG_ColorChoice discrimination in the color descriptors.
  */
-const SYSTEM_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SystemColor));
-const PRESET_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(PresetColor));
-const SCHEME_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SchemeColor));
-
-export const createColorElement = (color: SolidFillOptions): string => {
-  if ("hue" in color && "saturation" in color && "luminance" in color) {
-    return createHslColor(color);
-  }
-  if ("r" in color && "g" in color && "b" in color) {
-    return createScRgbColor(color);
-  }
-  // At this point, color is guaranteed to have a string value property
-  const colorValue = (color as { readonly value: string }).value;
-  if (SYSTEM_COLOR_VALUES.has(colorValue)) {
-    return createSystemColor(color as SystemColorOptions);
-  }
-  if (PRESET_COLOR_VALUES.has(colorValue)) {
-    return createPresetColor(color as PresetColorOptions);
-  }
-  if (SCHEME_COLOR_VALUES.has(colorValue)) {
-    return createSchemeColor(color as SchemeColorOptions);
-  }
-  return createRgbColor(color as RgbColorOptions);
-};
+export const createColorElement = (color: SolidFillOptions): string => emitColorChoice(color);
 
 /**
  * Creates a solid fill element as an XML string.

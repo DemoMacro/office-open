@@ -1,21 +1,12 @@
-import { element } from "@office-open/xml";
-
 import { toUint8Array } from "../../util/data-type";
 import type { DataType } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
-import { stripColorHashPrefix } from "../../util/values";
-import { createBlipEffects } from "../blip/blip-effects";
 import type { BlipEffectsOptions } from "../blip/blip-effects";
-import { createSourceRectangle } from "../blip/source-rectangle";
 import type { SourceRectangleOptions } from "../blip/source-rectangle";
-import { createTileInfo } from "../blip/tile";
 import type { TileOptions } from "../blip/tile";
 import type { SolidFillOptions } from "../color/solid-fill";
-import { createSolidFill } from "../color/solid-fill";
-import { createGradientFill } from "./gradient-fill";
+import { emitFillXml } from "./fill-descriptors";
 import type { GradientFillOptions } from "./gradient-fill";
-import type { PatternFillOptions } from "./pattern-fill";
-import { createPatternFill } from "./pattern-fill";
 
 /**
  * Gradient stop options (simplified API).
@@ -103,10 +94,6 @@ export type FillOptions =
     }
   | { type: "group" };
 
-function normalizeColor(color: string | SolidFillOptions): SolidFillOptions {
-  return typeof color === "string" ? { value: stripColorHashPrefix(color) } : color;
-}
-
 /**
  * Extracts media data from a blip fill option, if present.
  * Returns undefined for non-blip fills.
@@ -133,79 +120,9 @@ export const extractBlipFillMedia = (
 
 /**
  * Builds a DrawingML fill XML string from a FillOptions config.
+ * Thin delegate to the single serializer in the fill descriptors — kept as the
+ * context-free public entry (blip fills mint a `{fileName}` embed placeholder
+ * unless the caller supplies one).
  */
-export const buildFill = (options: FillOptions, embedPlaceholder?: string): string => {
-  if (typeof options === "string") {
-    return createSolidFill({ value: stripColorHashPrefix(options) });
-  }
-
-  switch (options.type) {
-    case "solid":
-      return createSolidFill(normalizeColor(options.color));
-    case "none":
-      return "<a:noFill/>";
-    case "gradient":
-      if ("options" in options) {
-        return createGradientFill(options.options);
-      }
-      return createGradientFill({
-        stops: options.stops.map((stop) => ({
-          position: stop.position,
-          color: normalizeColor(stop.color),
-        })),
-        ...(!options.path &&
-          options.angle !== undefined && {
-            shade: { angle: options.angle, scaled: options.scaled ?? true },
-          }),
-        ...(options.path && {
-          shade: { path: options.path as "shape" | "circle" | "rect" },
-        }),
-      });
-    case "blip": {
-      const fileName = `${uniqueId()}.${options.imageType}`;
-
-      // Build a:blip with {fileName} placeholder — the packer's ImageReplacer
-      // will replace `{fileName}` with `rId{N}` and create the relationship.
-      // We do NOT use createBlip here because it prefixes "rId" to the value,
-      // which would produce "rIdrId{N}" after replacement. When the caller
-      // supplies embedPlaceholder (a media reference already registered with
-      // the write context, e.g. `{image1.png}`), use it verbatim instead of
-      // minting a fresh id so the emitted reference matches the registration.
-      const embed = embedPlaceholder ?? `{${fileName}}`;
-      const blipChildren: string[] = [];
-      if (options.blipEffects) {
-        blipChildren.push(...createBlipEffects(options.blipEffects));
-      }
-      const blip = element(
-        "a:blip",
-        { cstate: "none", "r:embed": embed },
-        blipChildren.length > 0 ? blipChildren : undefined,
-      );
-
-      const children: string[] = [blip, createSourceRectangle(options.sourceRectangle)];
-      if (options.tile) {
-        children.push(createTileInfo(options.tile));
-      } else {
-        children.push("<a:stretch><a:fillRect/></a:stretch>");
-      }
-      const attrs: Record<string, string | number | undefined> = {};
-      if (options.dpi !== undefined) attrs.dpi = options.dpi;
-      if (options.rotWithShape !== undefined) attrs.rotWithShape = options.rotWithShape ? 1 : 0;
-      return element("a:blipFill", attrs, children);
-    }
-    case "pattern": {
-      const coreOpts: PatternFillOptions = {
-        pattern: options.pattern as PatternFillOptions["pattern"],
-        ...(options.foregroundColor && {
-          foregroundColor: normalizeColor(options.foregroundColor),
-        }),
-        ...(options.backgroundColor && {
-          backgroundColor: normalizeColor(options.backgroundColor),
-        }),
-      };
-      return createPatternFill(coreOpts);
-    }
-    case "group":
-      return "<a:grpFill/>";
-  }
-};
+export const buildFill = (options: FillOptions, embedPlaceholder?: string): string =>
+  emitFillXml(options, embedPlaceholder);

@@ -14,6 +14,7 @@ import { parse } from "@office-open/core/descriptor";
 import {
   transform2DDesc,
   fillDesc,
+  findFillChild,
   presetGeometryDesc,
   customGeometryDesc,
   outlineDesc,
@@ -491,14 +492,9 @@ export function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeOptions {
 
   // Fill — guard against fillDesc returning { type: "none" } for an empty spPr,
   // which would spuriously emit <a:noFill/> on re-stringify.
-  const fillChild =
-    findChild(spPr, "a:solidFill") ||
-    findChild(spPr, "a:noFill") ||
-    findChild(spPr, "a:gradFill") ||
-    findChild(spPr, "a:pattFill") ||
-    findChild(spPr, "a:blipFill");
+  const fillChild = findFillChild(spPr);
   if (fillChild) {
-    result.fill = parse(fillDesc, spPr, ctx) as ShapeOptions["fill"];
+    result.fill = parse(fillDesc, fillChild, ctx) as ShapeOptions["fill"];
   }
 
   // Outline
