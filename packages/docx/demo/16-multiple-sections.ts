@@ -20,7 +20,7 @@ const buffer = await generateDocument({
 
       properties: {
         pageNumberType: {
-          formatType: NumberFormat.DECIMAL,
+          format: NumberFormat.DECIMAL,
           start: 1,
         },
       },
@@ -35,7 +35,7 @@ const buffer = await generateDocument({
       },
       properties: {
         pageNumberType: {
-          formatType: NumberFormat.DECIMAL,
+          format: NumberFormat.DECIMAL,
           start: 1,
         },
         pageSize: {
@@ -92,7 +92,7 @@ const buffer = await generateDocument({
       },
       properties: {
         pageNumberType: {
-          formatType: NumberFormat.UPPER_ROMAN,
+          format: NumberFormat.UPPER_ROMAN,
         },
         pageSize: {
           orientation: PageOrientation.PORTRAIT,
@@ -121,7 +121,7 @@ const buffer = await generateDocument({
       },
       properties: {
         pageNumberType: {
-          formatType: NumberFormat.DECIMAL,
+          format: NumberFormat.DECIMAL,
           start: 25,
         },
         pageSize: {

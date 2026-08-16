@@ -74,6 +74,12 @@ export interface StylesOptions {
    */
   docDefaultsXml?: string;
   /**
+   * Full verbatim styles.xml content. When set, it wins over every other
+   * field except `default`: factory builtins fill only styleIds the external
+   * XML doesn't define. This is the styles part's one verbatim entry point.
+   */
+  external?: string;
+  /**
    * @internal — set by parseStyleDefinitions to mark a round-trip origin so
    * context.ts consumes the parsed structured styles directly (no factory
    * builtin rebuild). Fresh generation never sets this.

@@ -15,7 +15,7 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        column: {
+        columns: {
           count: 2,
           space: "1.2cm",
         },
@@ -30,7 +30,7 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        column: {
+        columns: {
           count: 3,
           space: "1.2cm",
         },
@@ -45,7 +45,7 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        column: {
+        columns: {
           count: 2,
           separate: true,
           space: "1.2cm",

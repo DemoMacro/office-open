@@ -4652,9 +4652,6 @@
           },
           "type": "array"
         },
-        "externalStyles": {
-          "type": "string"
-        },
         "fonts": {
           "items": {
             "$ref": "#/definitions/EmbeddedFontOptions"
@@ -10026,7 +10023,7 @@
           "description": "Heading style ID for chapter numbering",
           "type": "number"
         },
-        "formatType": {
+        "format": {
           "description": "Number format (decimal, roman, letter, etc., default: decimal)",
           "enum": [
             "aiueo",
@@ -16236,7 +16233,7 @@
         "bidi": {
           "type": "boolean"
         },
-        "column": {
+        "columns": {
           "$ref": "#/definitions/ColumnsProperties"
         },
         "date": {
@@ -16305,9 +16302,6 @@
           },
           "type": "object"
         },
-        "printerSettingsId": {
-          "type": "string"
-        },
         "rsid": {
           "type": "string"
         },
@@ -16345,7 +16339,7 @@
         "bidi": {
           "type": "boolean"
         },
-        "column": {
+        "columns": {
           "$ref": "#/definitions/ColumnsProperties"
         },
         "deletionRsid": {
@@ -16405,9 +16399,6 @@
             }
           },
           "type": "object"
-        },
-        "printerSettingsId": {
-          "type": "string"
         },
         "revision": {
           "$ref": "#/definitions/SectionPropertiesChangeOptions"
@@ -17967,6 +17958,10 @@
         },
         "docDefaultsXml": {
           "description": "Verbatim `<w:docDefaults>` XML. When set (from parse), generate uses it in place of the default factory's document defaults so rPrDefault/pPrDefault round-trip byte-for-byte.",
+          "type": "string"
+        },
+        "external": {
+          "description": "Full verbatim styles.xml content. When set, it wins over every other field except `default`: factory builtins fill only styleIds the external XML doesn't define. This is the styles part's one verbatim entry point.",
           "type": "string"
         },
         "importedStyles": {

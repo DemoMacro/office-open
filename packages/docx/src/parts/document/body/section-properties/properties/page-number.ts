@@ -46,14 +46,14 @@ export const PageNumberSeparator = {
  * Options for configuring page numbering.
  *
  * @property start - Starting page number for the section
- * @property formatType - Number format (decimal, roman, letter, etc.)
+ * @property format - Number format (decimal, roman, letter, etc.)
  * @property separator - Separator between chapter and page number
  */
 export interface PageNumberTypeProperties {
   /** Starting page number for the section */
   start?: number;
   /** Number format (decimal, roman, letter, etc., default: decimal) */
-  formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
+  format?: (typeof NumberFormat)[keyof typeof NumberFormat];
   /** Separator between chapter and page number (default: hyphen) */
   separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
   /** Heading style ID for chapter numbering */
@@ -83,19 +83,19 @@ export interface PageNumberTypeProperties {
  * // Start page numbering at 5 with lowercase roman numerals
  * createPageNumberType({
  *   start: 5,
- *   formatType: NumberFormat.LOWER_ROMAN
+ *   format: NumberFormat.LOWER_ROMAN
  * });
  * ```
  */
 export const createPageNumberType = ({
   start,
-  formatType,
+  format,
   separator,
   chapStyle,
 }: PageNumberTypeProperties): string =>
   element("w:pgNumType", {
     "w:chapStyle": chapStyle === undefined ? undefined : decimalNumber(chapStyle),
-    "w:fmt": formatType,
+    "w:fmt": format,
     "w:chapSep": separator,
     "w:start": start === undefined ? undefined : decimalNumber(start),
   });

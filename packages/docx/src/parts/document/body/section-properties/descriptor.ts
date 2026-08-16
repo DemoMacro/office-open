@@ -111,7 +111,7 @@ function lineNumberXml(opts: NonNullable<SectionPropertiesOptions["lineNumberTyp
 function pageNumberXml(opts: NonNullable<PageNumberTypeProperties>): string {
   const attrs: string[] = [];
   if (opts.start !== undefined) attrs.push(`w:start="${opts.start}"`);
-  if (opts.formatType !== undefined) attrs.push(`w:fmt="${opts.formatType}"`);
+  if (opts.format !== undefined) attrs.push(`w:fmt="${opts.format}"`);
   if (opts.separator !== undefined) attrs.push(`w:chapSep="${opts.separator}"`);
   if (opts.chapStyle !== undefined) attrs.push(`w:chapStyle="${opts.chapStyle}"`);
   // No attributes → omit pgNumType (never fabricate an empty element).
@@ -125,7 +125,7 @@ function docGridXml(linePitch: number, charSpace?: number, type?: string): strin
   return `<w:docGrid ${attrs.join(" ")}/>`;
 }
 
-function columnsXml(opts: NonNullable<SectionPropertiesOptions["column"]>): string {
+function columnsXml(opts: NonNullable<SectionPropertiesOptions["columns"]>): string {
   const attrs: string[] = [];
   if (opts.space !== undefined) attrs.push(`w:space="${convertToTwip(opts.space)}"`);
   if (opts.count !== undefined) attrs.push(`w:num="${opts.count}"`);
@@ -197,6 +197,12 @@ function pageBordersXml(opts: NonNullable<PageBordersOptions>): string {
 export interface SectionPropertiesDescriptorOptions extends SectionPropertiesOptions {
   headerReferences?: HeaderFooterGroup<HeaderFooterReference>;
   footerReferences?: HeaderFooterGroup<HeaderFooterReference>;
+  /**
+   * printerSettings relationship id (w:printerSettings @r:id) — compiler wiring
+   * that only the descriptor consumes. Dropped on parse: the printerSettings
+   * binary part is not round-tripped, so a carried-over id would dangle.
+   */
+  printerSettingsId?: string;
 }
 
 function appendHeaderFooterRefs(
@@ -284,7 +290,7 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesDescriptorOption
   parts.push(pageNumberXml(pageNumberType));
 
   // Columns
-  if (opts.column) parts.push(columnsXml(opts.column));
+  if (opts.columns) parts.push(columnsXml(opts.columns));
 
   // Vertical alignment
   if (opts.verticalAlign) parts.push(verticalAlignXml(opts.verticalAlign));
@@ -443,7 +449,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (start !== undefined) pageNumberType.start = start;
     const fmt = attr(pgNumType, "w:fmt");
     if (fmt && PAGE_NUMBER_FORMATS.includes(fmt)) {
-      pageNumberType.formatType = fmt as PageNumberTypeProperties["formatType"];
+      pageNumberType.format = fmt as PageNumberTypeProperties["format"];
     }
     const chapSep = attr(pgNumType, "w:chapSep");
     if (chapSep && PAGE_NUMBER_SEPARATORS.includes(chapSep)) {
@@ -477,7 +483,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
       colChildren.push(colAttr);
     }
     if (colChildren.length > 0) column.children = colChildren;
-    if (Object.keys(column).length > 0) opts.column = column;
+    if (Object.keys(column).length > 0) opts.columns = column;
   }
 
   // Section type
@@ -598,12 +604,9 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (Object.keys(ps).length > 0) opts.paperSrc = ps;
   }
 
-  // Printer settings
-  const printerSettings = findChild(el, "w:printerSettings");
-  if (printerSettings) {
-    const rId = attr(printerSettings, "r:id");
-    if (rId) opts.printerSettingsId = rId;
-  }
+  // Printer settings (w:printerSettings) is not round-tripped: the binary
+  // part behind the r:id is not carried over, so keeping the reference would
+  // emit a dangling id.
 
   // Header/footer references are not emitted: users author headers/footers
   // on the section (SectionOptions.headers/footers), and the round-trip path

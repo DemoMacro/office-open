@@ -26,14 +26,17 @@ const patched = await patchDocument({
   data: buffer,
   placeholders: { name: { type: "paragraph", children: ["reviewer"] } },
   comments: {
-    paragraphs: {
-      0: [
-        {
-          author: "Alice",
-          children: [{ children: ["Comment anchored to the first paragraph."] }],
-        },
-      ],
-    },
+    paragraphs: [
+      {
+        index: 0,
+        comments: [
+          {
+            author: "Alice",
+            children: [{ children: ["Comment anchored to the first paragraph."] }],
+          },
+        ],
+      },
+    ],
     placeholders: {
       name: [
         {

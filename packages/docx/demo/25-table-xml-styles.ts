@@ -7,7 +7,7 @@ import { WidthType, generateDocument } from "@office-open/docx";
 const styles = readFileSync("./demo/assets/custom-styles.xml", "utf8");
 
 const buffer = await generateDocument({
-  externalStyles: styles,
+  styles: { external: styles },
   sections: [
     {
       children: [

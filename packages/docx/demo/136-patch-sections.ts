@@ -27,14 +27,17 @@ const patched = await patchDocument({
   outputType: "nodebuffer",
   data: templateBuffer,
   sections: {
-    replace: {
-      0: {
-        children: [
-          { paragraph: { heading: "Heading1", children: ["Chapter 1 — replaced"] } },
-          { paragraph: { children: ["Content patched in over the original section."] } },
-        ],
+    replace: [
+      {
+        index: 0,
+        section: {
+          children: [
+            { paragraph: { heading: "Heading1", children: ["Chapter 1 — replaced"] } },
+            { paragraph: { children: ["Content patched in over the original section."] } },
+          ],
+        },
       },
-    },
+    ],
     append: [
       {
         children: [

@@ -61,7 +61,7 @@ export interface SectionPropertiesOptionsBase {
   lineNumberType?: LineNumberProperties;
   titlePage?: boolean;
   verticalAlign?: SectionVerticalAlign;
-  column?: ColumnsProperties;
+  columns?: ColumnsProperties;
   type?: (typeof SectionType)[keyof typeof SectionType];
   noEndnote?: boolean;
   formProtection?: boolean;
@@ -73,7 +73,6 @@ export interface SectionPropertiesOptionsBase {
   };
   footnotePr?: FootnotePropertiesOptions;
   endnotePr?: EndnotePropertiesOptions;
-  printerSettingsId?: string;
 }
 
 export type SectionPropertiesChangeOptions = ChangedProperties & SectionPropertiesOptionsBase;

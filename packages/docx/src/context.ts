@@ -278,8 +278,8 @@ export class DocxWriteContext implements WriteContext {
     this.altChunks = new AltChunkCollection();
     this.subDocs = new SubDocCollection();
 
-    if (options.externalStyles !== undefined) {
-      const externalStyles = new ExternalStylesFactory().newInstance(options.externalStyles);
+    if (options.styles?.external !== undefined) {
+      const externalStyles = new ExternalStylesFactory().newInstance(options.styles.external);
       const defaultStyles = new DefaultStylesFactory().newInstance(options.styles?.default ?? {});
       // External (user-provided full styles.xml) wins; factory builtins fill
       // any gaps. Drop factory builtins whose styleId the external XML already

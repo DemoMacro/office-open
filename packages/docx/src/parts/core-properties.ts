@@ -42,7 +42,6 @@ import type { WebSettingsOptions } from "./web-settings";
  * @property lastModifiedBy - User who last modified the document
  * @property revision - Revision number
  * @property lastPrinted - Last printed timestamp (W3CDTF), round-tripped from cp:lastPrinted
- * @property externalStyles - External stylesheet reference
  * @property styles - Document styles configuration
  * @property numbering - Numbering configuration
  * @property comments - Document comments (word/comments.xml)
@@ -55,7 +54,6 @@ import type { WebSettingsOptions } from "./web-settings";
  */
 export interface DocumentOptions extends CorePropertiesOptions {
   sections: SectionOptions[];
-  externalStyles?: string;
   styles?: StylesOptions;
   numbering?: NumberingOptions;
   comments?: CommentOptions[];

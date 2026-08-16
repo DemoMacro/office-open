@@ -168,27 +168,27 @@ describe("sectionPropertiesDesc round-trip", () => {
 
   it("round-trips column properties", () => {
     const result = roundTrip({
-      column: { count: 3, space: 720 },
+      columns: { count: 3, space: 720 },
     });
-    expect(result.column).toBeDefined();
-    expect(result.column!.count).toBe(3);
-    expect(result.column!.space).toBe(720);
+    expect(result.columns).toBeDefined();
+    expect(result.columns!.count).toBe(3);
+    expect(result.columns!.space).toBe(720);
   });
 
   it("normalizes column space UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({
-      column: { count: 2, space: "5mm" },
+      columns: { count: 2, space: "5mm" },
     });
-    expect(result.column!.space).toBe(283);
+    expect(result.columns!.space).toBe(283);
   });
 
   it("normalizes custom column width/space UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({
-      column: {
+      columns: {
         children: [{ width: "30mm", space: "2.5mm" }, { width: "40mm" }],
       },
     });
-    const children = result.column!.children!;
+    const children = result.columns!.children!;
     expect(children[0]?.width).toBe(1700);
     expect(children[0]?.space).toBe(141);
     expect(children[1]?.width).toBe(2267);
@@ -216,11 +216,11 @@ describe("sectionPropertiesDesc round-trip", () => {
 
   it("round-trips page numbers", () => {
     const result = roundTrip({
-      pageNumberType: { start: 10, formatType: "decimal" },
+      pageNumberType: { start: 10, format: "decimal" },
     });
     expect(result.pageNumberType).toBeDefined();
     expect(result.pageNumberType!.start).toBe(10);
-    expect(result.pageNumberType!.formatType).toBe("decimal");
+    expect(result.pageNumberType!.format).toBe("decimal");
   });
 
   it("round-trips paperSrc", () => {

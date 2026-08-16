@@ -41,7 +41,7 @@ const buffer = await generateDocument({
       },
       properties: {
         pageNumberType: {
-          formatType: NumberFormat.DECIMAL,
+          format: NumberFormat.DECIMAL,
           start: 1,
         },
       },
@@ -62,7 +62,7 @@ const buffer = await generateDocument({
       },
       properties: {
         pageNumberType: {
-          formatType: NumberFormat.DECIMAL,
+          format: NumberFormat.DECIMAL,
           start: 1,
         },
       },

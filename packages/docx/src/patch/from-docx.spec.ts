@@ -831,9 +831,12 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "uint8array",
           sections: {
-            replace: {
-              0: { children: [{ paragraph: { children: ["REPLACED_SECTION"] } }] },
-            },
+            replace: [
+              {
+                index: 0,
+                section: { children: [{ paragraph: { children: ["REPLACED_SECTION"] } }] },
+              },
+            ],
           },
         });
 
@@ -852,12 +855,15 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "uint8array",
           sections: {
-            replace: {
-              0: {
-                children: [{ paragraph: { children: ["NEW_CONTENT"] } }],
-                properties: { pageSize: { width: 9000, height: 12000 } },
+            replace: [
+              {
+                index: 0,
+                section: {
+                  children: [{ paragraph: { children: ["NEW_CONTENT"] } }],
+                  properties: { pageSize: { width: 9000, height: 12000 } },
+                },
               },
-            },
+            ],
           },
         });
 
@@ -871,9 +877,12 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "uint8array",
           sections: {
-            replace: {
-              1: { children: [{ paragraph: { children: ["FINAL_SECTION_CONTENT"] } }] },
-            },
+            replace: [
+              {
+                index: 1,
+                section: { children: [{ paragraph: { children: ["FINAL_SECTION_CONTENT"] } }] },
+              },
+            ],
           },
         });
 
@@ -921,7 +930,7 @@ describe("from-docx", () => {
           patchDocument({
             data: Buffer.from(""),
             outputType: "uint8array",
-            sections: { replace: { 5: { children: [] } } },
+            sections: { replace: [{ index: 5, section: { children: [] } }] },
           }),
         ).rejects.toThrow(/index 5/);
       });
@@ -957,9 +966,12 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "uint8array",
           comments: {
-            paragraphs: {
-              0: [{ author: "Alice", children: [{ children: ["First note"] }] }],
-            },
+            paragraphs: [
+              {
+                index: 0,
+                comments: [{ author: "Alice", children: [{ children: ["First note"] }] }],
+              },
+            ],
           },
         });
 
@@ -1008,9 +1020,9 @@ describe("from-docx", () => {
           data: Buffer.from(""),
           outputType: "uint8array",
           comments: {
-            paragraphs: {
-              0: [{ author: "Alice", children: [{ children: ["New note"] }] }],
-            },
+            paragraphs: [
+              { index: 0, comments: [{ author: "Alice", children: [{ children: ["New note"] }] }] },
+            ],
           },
         });
 
@@ -1033,9 +1045,9 @@ describe("from-docx", () => {
             data: Buffer.from(""),
             outputType: "uint8array",
             comments: {
-              paragraphs: {
-                999: [{ author: "X", children: [{ children: ["y"] }] }],
-              },
+              paragraphs: [
+                { index: 999, comments: [{ author: "X", children: [{ children: ["y"] }] }] },
+              ],
             },
           }),
         ).rejects.toThrow(/index 999/);

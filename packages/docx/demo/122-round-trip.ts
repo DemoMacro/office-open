@@ -764,7 +764,7 @@ async function main() {
     // Section 11: multiple columns + line numbers
     {
       properties: {
-        column: { count: 2, space: 708 },
+        columns: { count: 2, space: 708 },
         lineNumberType: { countBy: 1 },
       },
       children: [

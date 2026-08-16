@@ -349,8 +349,8 @@ export interface PatchDocumentOptions<T extends OutputType = OutputType> extends
    * they need new parts, which patching cannot create; generate instead.
    */
   sections?: {
-    /** Replace sections keyed by 0-based index (0 = from the document start). */
-    replace?: Readonly<Record<number, SectionOptions>>;
+    /** Replace a section by 0-based index (0 = from the document start). */
+    replace?: Readonly<{ index: number; section: SectionOptions }[]>;
     /** Append sections after the last existing one, before the final body sectPr. */
     append?: Readonly<SectionOptions[]>;
   };
@@ -361,7 +361,8 @@ export interface PatchDocumentOptions<T extends OutputType = OutputType> extends
    * continued from any existing word/comments.xml; entries are merged in.
    */
   comments?: {
-    paragraphs?: Readonly<Record<number, PatchComment[]>>;
+    /** Comments anchored to a 0-based body paragraph (wraps the whole paragraph). */
+    paragraphs?: Readonly<{ index: number; comments: PatchComment[] }[]>;
     placeholders?: Readonly<Record<string, PatchComment[]>>;
   };
 }
@@ -538,8 +539,8 @@ export const patchDocument = async <T extends OutputType = OutputType>({
         const body = bodyElementOf(json);
         if (body) {
           if (sections.replace) {
-            for (const [index, opts] of Object.entries(sections.replace)) {
-              replaceBodySection(body, Number(index), opts);
+            for (const { index, section } of sections.replace) {
+              replaceBodySection(body, index, section);
             }
           }
           if (sections.append) {
@@ -706,8 +707,7 @@ function buildAssignedComments(
     }
   }
   if (comments.paragraphs) {
-    for (const [indexStr, list] of Object.entries(comments.paragraphs)) {
-      const index = Number(indexStr);
+    for (const { index, comments: list } of comments.paragraphs) {
       for (const options of list) {
         assigned.push({ id: nextId++, anchor: { kind: "paragraph", index }, options });
       }

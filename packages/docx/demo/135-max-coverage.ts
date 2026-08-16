@@ -404,7 +404,7 @@ const doc: DocumentOptions = {
         pageSize: { orientation: "landscape", width: 15840, height: 12240 },
         pageNumberType: { start: 1 },
         pageBorders: { top: { style: "double", size: 4, color: "2E74B5" } },
-        column: { count: 2, space: 360 },
+        columns: { count: 2, space: 360 },
       },
       children: [
         { paragraph: { children: ["Landscape two-column section with a page border."] } },
