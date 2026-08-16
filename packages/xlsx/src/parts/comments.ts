@@ -21,6 +21,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
 import { letterToColumn } from "../util/index";
+import { buildRstXml, parseRPr } from "./shared-strings";
 import type {
   AnchorMarkerOptions,
   CommentOptions,
@@ -28,7 +29,6 @@ import type {
   ObjectAnchorOptions,
   RichTextOptions,
   RichTextRunOptions,
-  RichTextRunPropertiesOptions,
 } from "./worksheet";
 
 // ── Comments descriptor (xl/comments{n}.xml) ──
@@ -329,30 +329,6 @@ function cellRefToVmlCoords(ref: string): { col: number; row: number } {
   return { col: letterToColumn(ref.slice(0, i)) - 1, row: parseInt(ref.slice(i), 10) - 1 };
 }
 
-/** Build rich text (CT_Rst) XML from runs. */
-function buildRstXml(rst: RichTextOptions): string {
-  const runs = rst.runs ?? [];
-  const parts: string[] = [];
-  for (const run of runs) {
-    const props = run.properties;
-    if (!props) {
-      parts.push(`<r><t>${escapeXml(run.text)}</t></r>`);
-      continue;
-    }
-    const rPr: string[] = [];
-    if (props.bold) rPr.push("<b/>");
-    if (props.italic) rPr.push("<i/>");
-    if (props.underline) rPr.push(`<u val="${props.underline}"/>`);
-    if (props.strike) rPr.push("<strike/>");
-    if (props.size) rPr.push(`<sz val="${props.size}"/>`);
-    if (props.color) rPr.push(`<color rgb="${props.color}"/>`);
-    if (props.font) rPr.push(`<rFont val="${props.font}"/>`);
-    const rPrXml = rPr.length ? `<rPr>${rPr.join("")}</rPr>` : "";
-    parts.push(`<r>${rPrXml}<t>${escapeXml(run.text)}</t></r>`);
-  }
-  return parts.join("");
-}
-
 /** Parse rich text element into a plain string or rich runs. */
 function parseRst(textEl: XmlElement): string | RichTextOptions {
   const runs: RichTextRunOptions[] = [];
@@ -366,26 +342,7 @@ function parseRst(textEl: XmlElement): string | RichTextOptions {
       const t = findChild(child, "t");
       const run: RichTextRunOptions = { text: t ? (textOf(t) ?? "") : "" };
       const rPr = findChild(child, "rPr");
-      if (rPr) {
-        const props: RichTextRunPropertiesOptions = {};
-        if (findChild(rPr, "b")) props.bold = true;
-        if (findChild(rPr, "i")) props.italic = true;
-        const uEl = findChild(rPr, "u");
-        if (uEl)
-          props.underline =
-            (attr(uEl, "val") as RichTextRunPropertiesOptions["underline"]) ?? "single";
-        if (findChild(rPr, "strike")) props.strike = true;
-        const szEl = findChild(rPr, "sz");
-        if (szEl) {
-          const sz = Number(attr(szEl, "val"));
-          if (!Number.isNaN(sz)) props.size = sz;
-        }
-        const colorEl = findChild(rPr, "color");
-        if (colorEl && attr(colorEl, "rgb")) props.color = attr(colorEl, "rgb");
-        const rFontEl = findChild(rPr, "rFont");
-        if (rFontEl && attr(rFontEl, "val")) props.font = attr(rFontEl, "val");
-        run.properties = props;
-      }
+      if (rPr) run.properties = parseRPr(rPr);
       runs.push(run);
     }
   }

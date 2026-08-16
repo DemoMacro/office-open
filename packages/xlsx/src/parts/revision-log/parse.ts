@@ -5,7 +5,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
-import { attr, escapeXml, findChild, textOf } from "@office-open/xml";
+import { attr, escapeXml, findChild, stringifyElement, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type {
@@ -59,26 +59,10 @@ function parseNestedChildren(el: XmlElement): RevisionNestedChild[] {
   return children;
 }
 
-function elementToXml(el: XmlElement): string {
-  const attrStr = Object.entries(el.attributes ?? {})
-    .map(([k, v]) => ` ${k}="${escapeXml(String(v))}"`)
-    .join("");
-  const inner = el.elements
-    ? el.elements
-        .map((c) => {
-          if (c.type === "text") return escapeXml(textOf({ elements: [c] } as XmlElement) ?? "");
-          if (c.type === "element") return elementToXml(c as XmlElement);
-          return "";
-        })
-        .join("")
-    : "";
-  return `<${el.name}${attrStr}>${inner}</${el.name}>`;
-}
-
 /** Returns the first element child of a node as raw XML string. */
 function firstChildXml(el: XmlElement | null, name: string): string | undefined {
   const child = findChild(el ?? undefined, name);
-  return child ? elementToXml(child) : undefined;
+  return child ? stringifyElement(child) : undefined;
 }
 
 function parseBool(el: XmlElement, name: string): boolean | undefined {

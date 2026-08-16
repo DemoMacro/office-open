@@ -47,13 +47,9 @@ export function buildRPrXml(
     parts.push(`<color rgb="${escapeXml(rgb)}"/>`);
   }
   if (pr.size !== undefined) parts.push(`<sz val="${pr.size}"/>`);
-  if (pr.underline) {
-    if (pr.underline === "none") {
-      parts.push("<u/>");
-    } else {
-      parts.push(`<u val="${pr.underline}"/>`);
-    }
-  }
+  // val="none" is explicit: a bare <u/> means underline single, so omitting
+  // the attribute would flip none → single on parse.
+  if (pr.underline) parts.push(`<u val="${pr.underline}"/>`);
   if (pr.vertAlign) parts.push(`<vertAlign val="${pr.vertAlign}"/>`);
   if (pr.scheme) parts.push(`<scheme val="${pr.scheme}"/>`);
   return parts.length > 0 ? `<rPr>${parts.join("")}</rPr>` : "";
@@ -226,7 +222,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
 };
 
 /** Parse CT_RPrElt (run properties inside shared strings r element). */
-function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
+export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
   const result: RichTextRunPropertiesOptions = {};
   for (const child of el.elements ?? []) {
     switch (child.name) {

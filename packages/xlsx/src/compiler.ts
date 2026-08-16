@@ -30,10 +30,10 @@ import { buildThemeXml } from "@office-open/core/theme";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { CalcCell } from "@parts/calc-chain";
 import { calcChainDesc } from "@parts/calc-chain";
-import { chartsheetDesc } from "@parts/chartsheet";
+import { chartsheetDesc, type ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
-import { dialogsheetDesc } from "@parts/dialogsheet";
+import { dialogsheetDesc, type DialogsheetOptions } from "@parts/dialogsheet";
 import type { DrawingPictureOptions, ChartAnchorOptions } from "@parts/drawing";
 import { drawingDesc } from "@parts/drawing";
 import { A_NS, R_NS, XDR_NS, graphicFrameXml, wrapAnchor } from "@parts/drawing/stringify";
@@ -170,572 +170,25 @@ export function compileWorkbook(
     });
   }
 
-  // Worksheets — formatted BEFORE SharedStrings so strings are registered
-  let globalMediaIdx = 0;
-  let globalChartIdx = 0;
-  let globalPivotIdx = 0;
-  let globalPivotCacheIdx = 0;
-  let globalTableIdx = 0;
-  let globalQueryTableIdx = 0;
-  let globalSingleXmlCellsIdx = 0;
-  const pivotCacheDataMap = new Map<string, { cacheId: number; cacheIdx: number }>();
-  const calcCells: CalcCell[] = [];
-  const allTableParts: TablePartReference[] = [];
-
   const wsContext: WorksheetContext = { sharedStrings: ctx.sharedStrings, styles: ctx.styles };
-
+  const state: WorksheetCompileState = {
+    globalMediaIdx: 0,
+    globalChartIdx: 0,
+    globalPivotIdx: 0,
+    globalPivotCacheIdx: 0,
+    globalTableIdx: 0,
+    globalQueryTableIdx: 0,
+    globalSingleXmlCellsIdx: 0,
+    pivotCacheDataMap: new Map<string, { cacheId: number; cacheIdx: number }>(),
+    calcCells: [],
+    allTableParts: [],
+  };
   for (const [i, wsOpts] of worksheetConfigs.entries()) {
-    const imgOpts = wsOpts.images ?? [];
-    const chartOpts = wsOpts.charts ?? [];
-    const shapeOpts = wsOpts.shapes ?? [];
-    const connectorOpts = wsOpts.connectors ?? [];
-    const groupOpts = wsOpts.groups ?? [];
-    const hlOpts = wsOpts.hyperlinks ?? [];
-    const sheetName = wsOpts.name ?? `Sheet${i + 1}`;
-
-    // Worksheet uses buildWorksheetXml fast path (zero-allocation string concat)
-    let sheetXml = buildWorksheetXml(wsOpts, wsContext);
-
-    // Collect formula cells for calcChain
-    const sheetIdx = i + 1;
-    const wsRows = wsOpts.rows ?? [];
-    for (let ri = 0; ri < wsRows.length; ri++) {
-      const rowOpts = wsRows[ri]!;
-      const rowNumber = rowOpts.rowNumber ?? ri + 1;
-      const cells = rowOpts.cells;
-      if (!cells) continue;
-      for (let ci = 0; ci < cells.length; ci++) {
-        const cell = cells[ci]!;
-        if (!cell.formula) continue;
-        const ref = cell.reference ?? columnToLetter(ci + 1) + rowNumber;
-        calcCells.push({
-          reference: ref,
-          sheetIndex: sheetIdx,
-          array: typeof cell.formula === "object" && cell.formula.type === "array",
-        });
-      }
-    }
-
-    const hasMedia =
-      imgOpts.length > 0 ||
-      chartOpts.length > 0 ||
-      shapeOpts.length > 0 ||
-      connectorOpts.length > 0 ||
-      groupOpts.length > 0;
-    const hasExternalHyperlinks = hlOpts.some((h) => h.target.type === "external");
-    const commentOpts = wsOpts.comments ?? [];
-    const hasComments = commentOpts.length > 0;
-    const pivotOpts = wsOpts.pivotTables ?? [];
-    const hasPivots = pivotOpts.length > 0;
-    const tableOpts = wsOpts.tables ?? [];
-    const hasTables = tableOpts.length > 0;
-    const queryTableOpts = wsOpts.queryTables ?? [];
-    const hasQueryTables = queryTableOpts.length > 0;
-    const singleXmlCellOpts = wsOpts.singleXmlCells ?? [];
-    const bgImg = wsOpts.backgroundImage;
-
-    // Worksheet-level relationships
-    let wsRels: Relationships | undefined;
-    let nextRid = 0;
-
-    if (
-      hasMedia ||
-      hasExternalHyperlinks ||
-      hasComments ||
-      hasPivots ||
-      hasTables ||
-      hasQueryTables ||
-      singleXmlCellOpts.length > 0 ||
-      bgImg
-    ) {
-      wsRels = new Relationships();
-    }
-
-    if (hasExternalHyperlinks) {
-      for (const hl of hlOpts) {
-        if (hl.target.type !== "external") continue;
-        const rid = ++nextRid;
-        wsRels!.addRelationship(
-          rid,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-          hl.target.url,
-          "External",
-        );
-      }
-    }
-
-    if (hasMedia) {
-      const drawingImages: DrawingPictureOptions[] = [];
-      const drawingCharts: ChartAnchorOptions[] = [];
-      const drawingRels = new Relationships();
-      let rid = 1;
-
-      // Process images
-      for (const img of imgOpts) {
-        const ext = img.type === "jpg" ? "jpeg" : "png";
-        const rawBytes = toUint8Array(img.data, { encoding: "base64" });
-        const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
-          fileName,
-          type: ext,
-          data: rawBytes,
-          width: 0,
-          height: 0,
-        }));
-
-        drawingRels.addRelationship(
-          rid,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-          `../media/${entry.fileName}`,
-        );
-
-        drawingImages.push({
-          col: img.col,
-          row: img.row,
-          rId: `rId${rid}`,
-          ...pickNonVisualDrawingProperties(img),
-        });
-        rid++;
-        globalMediaIdx++;
-      }
-
-      // Process charts
-      for (const chart of chartOpts) {
-        const chartKey = `chart_${globalChartIdx}`;
-        ctx.charts.addChart(chartKey, {
-          key: chartKey,
-          chartSpaceXml: chartSpaceDesc.stringify(chart, ctx) ?? "",
-        });
-
-        drawingRels.addRelationship(
-          rid,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
-          `../charts/chart${globalChartIdx + 1}.xml`,
-        );
-
-        drawingCharts.push({
-          col: chart.col,
-          row: chart.row,
-          rId: `rId${rid}`,
-        });
-        rid++;
-        globalChartIdx++;
-      }
-
-      // Generate drawing XML (via descriptor). Snapshot the hyperlink registry
-      // first so only runs stringified for this sheet's drawing resolve here.
-      const hyperlinkBase = ctx.hyperlinks.length;
-      const drawingXml = drawingDesc.stringify(
-        {
-          images: drawingImages,
-          charts: drawingCharts,
-          shapes: shapeOpts,
-          connectors: connectorOpts,
-          groups: groupOpts,
-        },
-        ctx,
-      );
-      // Resolve drawing shape text-hyperlink placeholders ({hlink:key} → real
-      // rId) and register each as an External hyperlink relationship.
-      let resolvedDrawingXml = drawingXml!;
-      for (const h of ctx.hyperlinks.slice(hyperlinkBase)) {
-        drawingRels.addRelationship(
-          rid,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-          h.url,
-          "External",
-        );
-        resolvedDrawingXml = resolvedDrawingXml
-          .split(`r:id="{hlink:${h.key}}"`)
-          .join(`r:id="rId${rid}"`);
-        rid++;
-      }
-      const drawingIdx = i + 1;
-      mapping[`Drawing${i}`] = {
-        data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${resolvedDrawingXml}`,
-        path: `xl/drawings/drawing${drawingIdx}.xml`,
-      };
-
-      // Drawing relationships
-      mapping[`DrawingRels${i}`] = {
-        data: XML_DECL + drawingRels.serialize(),
-        path: `xl/drawings/_rels/drawing${drawingIdx}.xml.rels`,
-      };
-
-      // Insert drawing reference before the closing </worksheet> tag.
-      const drawingRid = ++nextRid;
-      const closingTag = "</worksheet>";
-      sheetXml =
-        sheetXml.slice(0, -closingTag.length) + `<drawing r:id="rId${drawingRid}"/>` + closingTag;
-
-      // Add drawing relationship to worksheet rels
-      wsRels!.addRelationship(
-        drawingRid,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
-        `../drawings/drawing${drawingIdx}.xml`,
-      );
-    }
-
-    // Comments
-    if (hasComments) {
-      const commentsIdx = i + 1;
-
-      // Comments XML (via descriptor)
-      const commentsXml = commentsDesc.stringify({ comments: commentOpts }, ctx);
-      mapping[`Comments${i}`] = {
-        data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${commentsXml}`,
-        path: `xl/comments${commentsIdx}.xml`,
-      };
-
-      // VML drawing (via descriptor)
-      const vmlXml = vmlNotesDesc.stringify({ comments: commentOpts }, ctx);
-      mapping[`VmlDrawing${i}`] = {
-        data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${vmlXml}`,
-        path: `xl/drawings/vmlDrawing${commentsIdx}.vml`,
-      };
-
-      // Worksheet rels: comments → comments XML, legacyDrawing → VML file
-      const commentsRid = ++nextRid;
-      wsRels!.addRelationship(
-        commentsRid,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
-        `../comments${commentsIdx}.xml`,
-      );
-
-      const vmlRid = ++nextRid;
-      wsRels!.addRelationship(
-        vmlRid,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing",
-        `../drawings/vmlDrawing${commentsIdx}.vml`,
-      );
-
-      // Insert legacyDrawing reference before closing </worksheet>
-      const closingTag = "</worksheet>";
-      sheetXml =
-        sheetXml.slice(0, -closingTag.length) + `<legacyDrawing r:id="rId${vmlRid}"/>` + closingTag;
-    }
-
-    // Background picture
-    if (bgImg) {
-      const ext = bgImg.type === "jpg" ? "jpeg" : bgImg.type;
-      const rawBytes = toUint8Array(bgImg.data, { encoding: "base64" });
-      const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
-        fileName,
-        type: ext,
-        data: rawBytes,
-        width: 0,
-        height: 0,
-      }));
-      globalMediaIdx++;
-      const bgRid = ++nextRid;
-      wsRels!.addRelationship(
-        bgRid,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-        `../media/${entry.fileName}`,
-      );
-      sheetXml = sheetXml.replace("<!--BACKGROUND_PICTURE-->", `<picture r:id="rId${bgRid}"/>`);
-    }
-
-    // Pivot tables
-    if (hasPivots) {
-      for (const pt of pivotOpts) {
-        globalPivotIdx++;
-        const pivotIdx = globalPivotIdx;
-
-        // Extract source data from source sheet
-        const sourceSheet = pt.sourceSheet ?? sheetName;
-        const sourceWsIdx = findWorksheetIndex(worksheetConfigs, sourceSheet);
-        if (sourceWsIdx === -1) continue;
-        const sourceWs = worksheetConfigs[sourceWsIdx];
-        if (!sourceWs) continue;
-
-        const sourceRows = sourceWs.rows ?? [];
-        const sourceData = extractPivotSourceData(sourceRows, pt.source);
-
-        // Deduplicate pivot caches by source reference
-        const cacheKey = `${sourceSheet}:${pt.source}`;
-        let cacheId: number;
-        let cacheIdx: number;
-        const existing = pivotCacheDataMap.get(cacheKey);
-        if (existing) {
-          cacheId = existing.cacheId;
-          cacheIdx = existing.cacheIdx;
-        } else {
-          globalPivotCacheIdx++;
-          cacheIdx = globalPivotCacheIdx;
-          cacheId = cacheIdx;
-          pivotCacheDataMap.set(cacheKey, { cacheId, cacheIdx });
-
-          // Generate pivotCacheDefinition
-          const cacheDefRels = new Relationships();
-          cacheDefRels.addRelationship(
-            1,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheRecords",
-            "pivotCacheRecords1.xml",
-          );
-
-          const cacheDefXml =
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-            pivotCacheDefDesc.stringify(
-              {
-                sourceRef: pt.source.split(":")[0] ? pt.source : "A1",
-                sourceSheet,
-                sourceData,
-                recordsRid: "rId1",
-              },
-              ctx,
-            );
-
-          mapping[`PivotCacheDef${cacheIdx}`] = {
-            data: cacheDefXml,
-            path: `xl/pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
-          };
-          mapping[`PivotCacheDefRels${cacheIdx}`] = {
-            data: XML_DECL + cacheDefRels.serialize(),
-            path: `xl/pivotCache/_rels/pivotCacheDefinition${cacheIdx}.xml.rels`,
-          };
-
-          // Generate pivotCacheRecords
-          const cacheRecordsXml =
-            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-            pivotCacheRecordsDesc.stringify({ sourceData }, ctx);
-          mapping[`PivotCacheRecords${cacheIdx}`] = {
-            data: cacheRecordsXml,
-            path: `xl/pivotCache/pivotCacheRecords${cacheIdx}.xml`,
-          };
-
-          // Register in workbook
-          const wbPivotRid = ctx.workbookRels.relationshipCount + 1;
-          ctx.workbookRels.addRelationship(
-            wbPivotRid,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition",
-            `pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
-          );
-          ctx.pivotCacheRefs.push({ cacheId, rId: `rId${wbPivotRid}` });
-        }
-
-        // Generate pivotTable
-        const pivotTableXml =
-          XML_DECL + pivotTableDesc.stringify({ options: pt, sourceData, cacheId }, ctx);
-        mapping[`PivotTable${pivotIdx}`] = {
-          data: pivotTableXml,
-          path: `xl/pivotTables/pivotTable${pivotIdx}.xml`,
-        };
-
-        // pivotTable rels → cacheDefinition
-        const ptRels = new Relationships();
-        ptRels.addRelationship(
-          1,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition",
-          `../pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
-        );
-        mapping[`PivotTableRels${pivotIdx}`] = {
-          data: XML_DECL + ptRels.serialize(),
-          path: `xl/pivotTables/_rels/pivotTable${pivotIdx}.xml.rels`,
-        };
-
-        // Worksheet rels → pivotTable
-        const ptRid = ++nextRid;
-        wsRels!.addRelationship(
-          ptRid,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable",
-          `../pivotTables/pivotTable${pivotIdx}.xml`,
-        );
-      }
-    }
-
-    // Tables (list objects)
-    const wsTableParts: TablePartReference[] = [];
-    if (hasTables) {
-      for (const tbl of tableOpts) {
-        globalTableIdx++;
-        const tableIdx = globalTableIdx;
-
-        // Generate table XML
-        const tableXmlStr =
-          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-          tableDesc.stringify({ ...tbl, id: tbl.id ?? tableIdx }, ctx);
-        mapping[`Table${tableIdx}`] = {
-          data: tableXmlStr,
-          path: `xl/tables/table${tableIdx}.xml`,
-        };
-
-        // Worksheet rels → table
-        const tblRid = ++nextRid;
-        wsRels!.addRelationship(
-          tblRid,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
-          `../tables/table${tableIdx}.xml`,
-        );
-
-        wsTableParts.push({ rId: `rId${tblRid}` });
-        allTableParts.push({ rId: `rId${tblRid}` });
-      }
-    }
-
-    // Query tables
-    if (hasQueryTables) {
-      for (const qt of queryTableOpts) {
-        globalQueryTableIdx++;
-        mapping[`QueryTable${globalQueryTableIdx}`] = {
-          data: XML_DECL + queryTableDesc.stringify(qt, ctx),
-          path: `xl/queryTables/queryTable${globalQueryTableIdx}.xml`,
-        };
-        const qtRid = ++nextRid;
-        wsRels!.addRelationship(
-          qtRid,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/queryTable",
-          `../queryTables/queryTable${globalQueryTableIdx}.xml`,
-        );
-      }
-    }
-
-    // Single-cell XML tables
-    if (singleXmlCellOpts.length > 0) {
-      globalSingleXmlCellsIdx++;
-      mapping[`TableSingleCells${globalSingleXmlCellsIdx}`] = {
-        data: XML_DECL + singleXmlCellsDesc.stringify({ cells: singleXmlCellOpts }, ctx),
-        path: `xl/tables/tableSingleCells${globalSingleXmlCellsIdx}.xml`,
-      };
-      const sxcRid = ++nextRid;
-      wsRels!.addRelationship(
-        sxcRid,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells",
-        `../tables/tableSingleCells${globalSingleXmlCellsIdx}.xml`,
-      );
-    }
-
-    // Pre-render pivot table data into sheetData
-    if (hasPivots) {
-      const rendered = renderPivotSheetData(
-        pivotOpts,
-        worksheetConfigs,
-        ctx.sharedStrings,
-        sheetName,
-      );
-      if (rendered.sheetData.length > 0) {
-        // Replace empty <sheetData/> or <sheetData></sheetData> with rendered data
-        sheetXml = sheetXml.replace(/<sheetData\/>|<sheetData><\/sheetData>/, rendered.sheetData);
-        // Inject <dimension> before <sheetViews> (XSD sequence order: dimension before sheetViews)
-        if (!sheetXml.includes("<dimension")) {
-          sheetXml = sheetXml.replace(
-            "<sheetViews",
-            `<dimension ref="${rendered.dimensionRef}"/><sheetViews`,
-          );
-        }
-      }
-    }
-
-    // Insert tableParts before closing </worksheet> tag
-    if (wsTableParts.length > 0) {
-      const tablePartsXml = buildTablePartsXml(wsTableParts);
-      const closingTag = "</worksheet>";
-      sheetXml = sheetXml.slice(0, -closingTag.length) + tablePartsXml + closingTag;
-    }
-
-    // Write worksheet rels if needed
-    if (wsRels) {
-      mapping[`WorksheetRels${i}`] = {
-        data: XML_DECL + wsRels.serialize(),
-        path: `xl/worksheets/_rels/sheet${i + 1}.xml.rels`,
-      };
-    }
-
-    mapping[`Worksheet${i}`] = {
-      data: sheetXml,
-      path: `xl/worksheets/sheet${i + 1}.xml`,
-    };
+    compileWorksheetPart(wsOpts, i, worksheetConfigs, ctx, mapping, wsContext, state);
   }
 
-  // Chartsheets — chart-only sheets
-  for (const [i, csOpts] of chartsheetConfigs.entries()) {
-    // Register chart in the charts collection
-    const chartDef = csOpts.chart;
-    const csChartGlobalIdx = ctx.charts.array.length;
-    const csChartKey = `cs_chart_${csChartGlobalIdx}`;
-    ctx.charts.addChart(csChartKey, {
-      key: csChartKey,
-      chartSpaceXml:
-        chartSpaceDesc.stringify(
-          {
-            type: chartDef.type as
-              | "column"
-              | "bar"
-              | "line"
-              | "pie"
-              | "doughnut"
-              | "area"
-              | "scatter"
-              | "bubble",
-            title: chartDef.title,
-            categories: chartDef.categories,
-            series: chartDef.series,
-          },
-          ctx,
-        ) ?? "",
-    });
-
-    // Chartsheet relationships: drawing (required)
-    const csRels = new Relationships();
-    const csDrawingIdx = i + 1;
-    csRels.addRelationship(
-      1,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
-      `../drawings/drawing${csDrawingIdx}.xml`,
-    );
-
-    // Drawing rels: chart reference
-    const csDrawingRels = new Relationships();
-    csDrawingRels.addRelationship(
-      1,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
-      `../charts/chart${csChartGlobalIdx + 1}.xml`,
-    );
-
-    // Minimal drawing XML with chart anchor — reuses the parts/drawing anchor
-    // and graphicFrame builders (no hand-rolled xdr emitter). A chartsheet
-    // chart fills the sheet: absolute anchor at origin with the full-page frame.
-    const frame = graphicFrameXml(1, undefined, `Chart ${i + 1}`, "rId1", 9308969, 6096000);
-    const anchor = wrapAnchor(
-      {
-        anchorType: "absolute",
-        col: 1,
-        row: 1,
-        absoluteX: 0,
-        absoluteY: 0,
-        extentCx: 9308969,
-        extentCy: 6096000,
-      },
-      `${frame}<clientData/>`,
-    );
-    const csDrawingXml = `<wsDr xmlns="${XDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">${anchor}</wsDr>`;
-
-    mapping[`ChartsheetDrawing${i}`] = {
-      data: csDrawingXml,
-      path: `xl/drawings/drawing${csDrawingIdx}.xml`,
-    };
-    mapping[`ChartsheetDrawingRels${i}`] = {
-      data: XML_DECL + csDrawingRels.serialize(),
-      path: `xl/drawings/_rels/drawing${csDrawingIdx}.xml.rels`,
-    };
-
-    mapping[`ChartsheetRels${i}`] = {
-      data: XML_DECL + csRels.serialize(),
-      path: `xl/chartsheets/_rels/sheet${i + 1}.xml.rels`,
-    };
-    mapping[`Chartsheet${i}`] = {
-      data: XML_DECL + chartsheetDesc.stringify({ ...csOpts, drawingRId: "rId1" }, ctx),
-      path: `xl/chartsheets/sheet${i + 1}.xml`,
-    };
-  }
-
-  // Dialogsheets — legacy Excel 5.0 dialog sheets
-  for (const [i, dsOpts] of dialogsheetConfigs.entries()) {
-    mapping[`Dialogsheet${i}`] = {
-      data: XML_DECL + dialogsheetDesc.stringify(dsOpts, ctx),
-      path: `xl/dialogSheets/sheet${i + 1}.xml`,
-    };
-  }
-
+  compileChartsheets(chartsheetConfigs, ctx, mapping);
+  compileDialogsheets(dialogsheetConfigs, ctx, mapping);
   // Workbook XML (via descriptor)
   let wbXml =
     workbookDesc.stringify(
@@ -885,9 +338,9 @@ export function compileWorkbook(
   }
 
   // Calculation chain — auto-generated from formula cells
-  if (calcCells.length > 0) {
+  if (state.calcCells.length > 0) {
     mapping["CalcChain"] = {
-      data: calcChainDesc.stringify({ cells: calcCells }, ctx) ?? "",
+      data: calcChainDesc.stringify({ cells: state.calcCells }, ctx) ?? "",
       path: "xl/calcChain.xml",
     };
     const calcChainRid = ctx.workbookRels.relationshipCount + 1;
@@ -898,53 +351,8 @@ export function compileWorkbook(
     );
   }
 
-  // Shared-workbook revisions (xl/revisionHeaders.xml + xl/revisions/revisionN.xml + xl/users.xml).
-  // CT_Workbook has no revision element — parts are discovered via workbook.xml.rels + [Content_Types].
   if (options.revisionLog) {
-    const rl = options.revisionLog;
-    const REV_HEADERS_REL =
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionHeaders";
-    const REV_LOG_REL =
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionLog";
-    const USERS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/users";
-
-    // xl/revisionHeaders.xml — target of an implicit relationship from the workbook.
-    mapping["RevisionHeaders"] = {
-      data: XML_DECL + (revisionHeadersDesc.stringify(rl.headers, ctx) ?? ""),
-      path: "xl/revisionHeaders.xml",
-    };
-    ctx.workbookRels.addRelationship(
-      ctx.workbookRels.relationshipCount + 1,
-      REV_HEADERS_REL,
-      "revisionHeaders.xml",
-    );
-
-    // One revision log per header entry, plus revisionHeaders.xml.rels pointing to each.
-    const revHeadersRels = new Relationships();
-    for (const [i, log] of rl.logs.entries()) {
-      mapping[`RevisionLog${i}`] = {
-        data: XML_DECL + (revisionLogDesc.stringify(log, ctx) ?? ""),
-        path: `xl/revisions/revision${i + 1}.xml`,
-      };
-      revHeadersRels.addRelationship(i + 1, REV_LOG_REL, `revisions/revision${i + 1}.xml`);
-    }
-    mapping["RevisionHeadersRels"] = {
-      data: XML_DECL + revHeadersRels.serialize(),
-      path: "xl/_rels/revisionHeaders.xml.rels",
-    };
-
-    // xl/users.xml (optional)
-    if (rl.users) {
-      const usersXml = usersDesc.stringify(rl.users, ctx);
-      if (usersXml) {
-        mapping["Users"] = { data: XML_DECL + usersXml, path: "xl/users.xml" };
-        ctx.workbookRels.addRelationship(
-          ctx.workbookRels.relationshipCount + 1,
-          USERS_REL,
-          "users.xml",
-        );
-      }
-    }
+    compileRevisionLogs(options.revisionLog, ctx, mapping);
   }
 
   // Workbook relationships — serialized after calcChain/revision register their
@@ -972,6 +380,655 @@ export function compileWorkbook(
     XML_DECL + (contentTypesDesc.stringify(contentTypesInput, ctx) ?? ""),
   );
   return files;
+}
+
+/** Cross-worksheet compile state threaded through compileWorksheetPart. */
+interface WorksheetCompileState {
+  globalMediaIdx: number;
+  globalChartIdx: number;
+  globalPivotIdx: number;
+  globalPivotCacheIdx: number;
+  globalTableIdx: number;
+  globalQueryTableIdx: number;
+  globalSingleXmlCellsIdx: number;
+  pivotCacheDataMap: Map<string, { cacheId: number; cacheIdx: number }>;
+  calcCells: CalcCell[];
+  allTableParts: TablePartReference[];
+}
+
+/**
+ * Compile one worksheet: sheet XML, calcChain cells, drawing/media,
+ * comments + VML, background, pivots, tables, query tables and
+ * single-cell XML tables, with their worksheet-level relationships.
+ * Rel registration order is significant (rIds are assigned sequentially).
+ */
+function compileWorksheetPart(
+  wsOpts: WorksheetOptions,
+  i: number,
+  worksheetConfigs: WorksheetOptions[],
+  ctx: XlsxWriteContext,
+  mapping: Record<string, { data: string; path: string }>,
+  wsContext: WorksheetContext,
+  state: WorksheetCompileState,
+): void {
+  const imgOpts = wsOpts.images ?? [];
+  const chartOpts = wsOpts.charts ?? [];
+  const shapeOpts = wsOpts.shapes ?? [];
+  const connectorOpts = wsOpts.connectors ?? [];
+  const groupOpts = wsOpts.groups ?? [];
+  const hlOpts = wsOpts.hyperlinks ?? [];
+  const sheetName = wsOpts.name ?? `Sheet${i + 1}`;
+
+  // Worksheet uses buildWorksheetXml fast path (zero-allocation string concat)
+  let sheetXml = buildWorksheetXml(wsOpts, wsContext);
+
+  // Collect formula cells for calcChain
+  const sheetIdx = i + 1;
+  const wsRows = wsOpts.rows ?? [];
+  for (let ri = 0; ri < wsRows.length; ri++) {
+    const rowOpts = wsRows[ri]!;
+    const rowNumber = rowOpts.rowNumber ?? ri + 1;
+    const cells = rowOpts.cells;
+    if (!cells) continue;
+    for (let ci = 0; ci < cells.length; ci++) {
+      const cell = cells[ci]!;
+      if (!cell.formula) continue;
+      const ref = cell.reference ?? columnToLetter(ci + 1) + rowNumber;
+      state.calcCells.push({
+        reference: ref,
+        sheetIndex: sheetIdx,
+        array: typeof cell.formula === "object" && cell.formula.type === "array",
+      });
+    }
+  }
+
+  const hasMedia =
+    imgOpts.length > 0 ||
+    chartOpts.length > 0 ||
+    shapeOpts.length > 0 ||
+    connectorOpts.length > 0 ||
+    groupOpts.length > 0;
+  const hasExternalHyperlinks = hlOpts.some((h) => h.target.type === "external");
+  const commentOpts = wsOpts.comments ?? [];
+  const hasComments = commentOpts.length > 0;
+  const pivotOpts = wsOpts.pivotTables ?? [];
+  const hasPivots = pivotOpts.length > 0;
+  const tableOpts = wsOpts.tables ?? [];
+  const hasTables = tableOpts.length > 0;
+  const queryTableOpts = wsOpts.queryTables ?? [];
+  const hasQueryTables = queryTableOpts.length > 0;
+  const singleXmlCellOpts = wsOpts.singleXmlCells ?? [];
+  const bgImg = wsOpts.backgroundImage;
+
+  // Worksheet-level relationships
+  let wsRels: Relationships | undefined;
+  let nextRid = 0;
+
+  if (
+    hasMedia ||
+    hasExternalHyperlinks ||
+    hasComments ||
+    hasPivots ||
+    hasTables ||
+    hasQueryTables ||
+    singleXmlCellOpts.length > 0 ||
+    bgImg
+  ) {
+    wsRels = new Relationships();
+  }
+
+  if (hasExternalHyperlinks) {
+    for (const hl of hlOpts) {
+      if (hl.target.type !== "external") continue;
+      const rid = ++nextRid;
+      wsRels!.addRelationship(
+        rid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        hl.target.url,
+        "External",
+      );
+    }
+  }
+
+  if (hasMedia) {
+    const drawingImages: DrawingPictureOptions[] = [];
+    const drawingCharts: ChartAnchorOptions[] = [];
+    const drawingRels = new Relationships();
+    let rid = 1;
+
+    // Process images
+    for (const img of imgOpts) {
+      const ext = img.type === "jpg" ? "jpeg" : "png";
+      const rawBytes = toUint8Array(img.data, { encoding: "base64" });
+      const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
+        fileName,
+        type: ext,
+        data: rawBytes,
+        width: 0,
+        height: 0,
+      }));
+
+      drawingRels.addRelationship(
+        rid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        `../media/${entry.fileName}`,
+      );
+
+      drawingImages.push({
+        col: img.col,
+        row: img.row,
+        rId: `rId${rid}`,
+        ...pickNonVisualDrawingProperties(img),
+      });
+      rid++;
+      state.globalMediaIdx++;
+    }
+
+    // Process charts
+    for (const chart of chartOpts) {
+      const chartKey = `chart_${state.globalChartIdx}`;
+      ctx.charts.addChart(chartKey, {
+        key: chartKey,
+        chartSpaceXml: chartSpaceDesc.stringify(chart, ctx) ?? "",
+      });
+
+      drawingRels.addRelationship(
+        rid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+        `../charts/chart${state.globalChartIdx + 1}.xml`,
+      );
+
+      drawingCharts.push({
+        col: chart.col,
+        row: chart.row,
+        rId: `rId${rid}`,
+      });
+      rid++;
+      state.globalChartIdx++;
+    }
+
+    // Generate drawing XML (via descriptor). Snapshot the hyperlink registry
+    // first so only runs stringified for this sheet's drawing resolve here.
+    const hyperlinkBase = ctx.hyperlinks.length;
+    const drawingXml = drawingDesc.stringify(
+      {
+        images: drawingImages,
+        charts: drawingCharts,
+        shapes: shapeOpts,
+        connectors: connectorOpts,
+        groups: groupOpts,
+      },
+      ctx,
+    );
+    // Resolve drawing shape text-hyperlink placeholders ({hlink:key} → real
+    // rId) and register each as an External hyperlink relationship.
+    let resolvedDrawingXml = drawingXml!;
+    for (const h of ctx.hyperlinks.slice(hyperlinkBase)) {
+      drawingRels.addRelationship(
+        rid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        h.url,
+        "External",
+      );
+      resolvedDrawingXml = resolvedDrawingXml
+        .split(`r:id="{hlink:${h.key}}"`)
+        .join(`r:id="rId${rid}"`);
+      rid++;
+    }
+    const drawingIdx = i + 1;
+    mapping[`Drawing${i}`] = {
+      data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${resolvedDrawingXml}`,
+      path: `xl/drawings/drawing${drawingIdx}.xml`,
+    };
+
+    // Drawing relationships
+    mapping[`DrawingRels${i}`] = {
+      data: XML_DECL + drawingRels.serialize(),
+      path: `xl/drawings/_rels/drawing${drawingIdx}.xml.rels`,
+    };
+
+    // Insert drawing reference before the closing </worksheet> tag.
+    const drawingRid = ++nextRid;
+    const closingTag = "</worksheet>";
+    sheetXml =
+      sheetXml.slice(0, -closingTag.length) + `<drawing r:id="rId${drawingRid}"/>` + closingTag;
+
+    // Add drawing relationship to worksheet rels
+    wsRels!.addRelationship(
+      drawingRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
+      `../drawings/drawing${drawingIdx}.xml`,
+    );
+  }
+
+  // Comments
+  if (hasComments) {
+    const commentsIdx = i + 1;
+
+    // Comments XML (via descriptor)
+    const commentsXml = commentsDesc.stringify({ comments: commentOpts }, ctx);
+    mapping[`Comments${i}`] = {
+      data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${commentsXml}`,
+      path: `xl/comments${commentsIdx}.xml`,
+    };
+
+    // VML drawing (via descriptor)
+    const vmlXml = vmlNotesDesc.stringify({ comments: commentOpts }, ctx);
+    mapping[`VmlDrawing${i}`] = {
+      data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${vmlXml}`,
+      path: `xl/drawings/vmlDrawing${commentsIdx}.vml`,
+    };
+
+    // Worksheet rels: comments → comments XML, legacyDrawing → VML file
+    const commentsRid = ++nextRid;
+    wsRels!.addRelationship(
+      commentsRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+      `../comments${commentsIdx}.xml`,
+    );
+
+    const vmlRid = ++nextRid;
+    wsRels!.addRelationship(
+      vmlRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing",
+      `../drawings/vmlDrawing${commentsIdx}.vml`,
+    );
+
+    // Insert legacyDrawing reference before closing </worksheet>
+    const closingTag = "</worksheet>";
+    sheetXml =
+      sheetXml.slice(0, -closingTag.length) + `<legacyDrawing r:id="rId${vmlRid}"/>` + closingTag;
+  }
+
+  // Background picture
+  if (bgImg) {
+    const ext = bgImg.type === "jpg" ? "jpeg" : bgImg.type;
+    const rawBytes = toUint8Array(bgImg.data, { encoding: "base64" });
+    const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
+      fileName,
+      type: ext,
+      data: rawBytes,
+      width: 0,
+      height: 0,
+    }));
+    state.globalMediaIdx++;
+    const bgRid = ++nextRid;
+    wsRels!.addRelationship(
+      bgRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+      `../media/${entry.fileName}`,
+    );
+    sheetXml = sheetXml.replace("<!--BACKGROUND_PICTURE-->", `<picture r:id="rId${bgRid}"/>`);
+  }
+
+  // Pivot tables
+  if (hasPivots) {
+    for (const pt of pivotOpts) {
+      state.globalPivotIdx++;
+      const pivotIdx = state.globalPivotIdx;
+
+      // Extract source data from source sheet
+      const sourceSheet = pt.sourceSheet ?? sheetName;
+      const sourceWsIdx = findWorksheetIndex(worksheetConfigs, sourceSheet);
+      if (sourceWsIdx === -1) continue;
+      const sourceWs = worksheetConfigs[sourceWsIdx];
+      if (!sourceWs) continue;
+
+      const sourceRows = sourceWs.rows ?? [];
+      const sourceData = extractPivotSourceData(sourceRows, pt.source);
+
+      // Deduplicate pivot caches by source reference
+      const cacheKey = `${sourceSheet}:${pt.source}`;
+      let cacheId: number;
+      let cacheIdx: number;
+      const existing = state.pivotCacheDataMap.get(cacheKey);
+      if (existing) {
+        cacheId = existing.cacheId;
+        cacheIdx = existing.cacheIdx;
+      } else {
+        state.globalPivotCacheIdx++;
+        cacheIdx = state.globalPivotCacheIdx;
+        cacheId = cacheIdx;
+        state.pivotCacheDataMap.set(cacheKey, { cacheId, cacheIdx });
+
+        // Generate pivotCacheDefinition
+        const cacheDefRels = new Relationships();
+        cacheDefRels.addRelationship(
+          1,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheRecords",
+          "pivotCacheRecords1.xml",
+        );
+
+        const cacheDefXml =
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          pivotCacheDefDesc.stringify(
+            {
+              sourceRef: pt.source.split(":")[0] ? pt.source : "A1",
+              sourceSheet,
+              sourceData,
+              recordsRid: "rId1",
+            },
+            ctx,
+          );
+
+        mapping[`PivotCacheDef${cacheIdx}`] = {
+          data: cacheDefXml,
+          path: `xl/pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
+        };
+        mapping[`PivotCacheDefRels${cacheIdx}`] = {
+          data: XML_DECL + cacheDefRels.serialize(),
+          path: `xl/pivotCache/_rels/pivotCacheDefinition${cacheIdx}.xml.rels`,
+        };
+
+        // Generate pivotCacheRecords
+        const cacheRecordsXml =
+          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          pivotCacheRecordsDesc.stringify({ sourceData }, ctx);
+        mapping[`PivotCacheRecords${cacheIdx}`] = {
+          data: cacheRecordsXml,
+          path: `xl/pivotCache/pivotCacheRecords${cacheIdx}.xml`,
+        };
+
+        // Register in workbook
+        const wbPivotRid = ctx.workbookRels.relationshipCount + 1;
+        ctx.workbookRels.addRelationship(
+          wbPivotRid,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition",
+          `pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
+        );
+        ctx.pivotCacheRefs.push({ cacheId, rId: `rId${wbPivotRid}` });
+      }
+
+      // Generate pivotTable
+      const pivotTableXml =
+        XML_DECL + pivotTableDesc.stringify({ options: pt, sourceData, cacheId }, ctx);
+      mapping[`PivotTable${pivotIdx}`] = {
+        data: pivotTableXml,
+        path: `xl/pivotTables/pivotTable${pivotIdx}.xml`,
+      };
+
+      // pivotTable rels → cacheDefinition
+      const ptRels = new Relationships();
+      ptRels.addRelationship(
+        1,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition",
+        `../pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
+      );
+      mapping[`PivotTableRels${pivotIdx}`] = {
+        data: XML_DECL + ptRels.serialize(),
+        path: `xl/pivotTables/_rels/pivotTable${pivotIdx}.xml.rels`,
+      };
+
+      // Worksheet rels → pivotTable
+      const ptRid = ++nextRid;
+      wsRels!.addRelationship(
+        ptRid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable",
+        `../pivotTables/pivotTable${pivotIdx}.xml`,
+      );
+    }
+  }
+
+  // Tables (list objects)
+  const wsTableParts: TablePartReference[] = [];
+  if (hasTables) {
+    for (const tbl of tableOpts) {
+      state.globalTableIdx++;
+      const tableIdx = state.globalTableIdx;
+
+      // Generate table XML
+      const tableXmlStr =
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        tableDesc.stringify({ ...tbl, id: tbl.id ?? tableIdx }, ctx);
+      mapping[`Table${tableIdx}`] = {
+        data: tableXmlStr,
+        path: `xl/tables/table${tableIdx}.xml`,
+      };
+
+      // Worksheet rels → table
+      const tblRid = ++nextRid;
+      wsRels!.addRelationship(
+        tblRid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
+        `../tables/table${tableIdx}.xml`,
+      );
+
+      wsTableParts.push({ rId: `rId${tblRid}` });
+      state.allTableParts.push({ rId: `rId${tblRid}` });
+    }
+  }
+
+  // Query tables
+  if (hasQueryTables) {
+    for (const qt of queryTableOpts) {
+      state.globalQueryTableIdx++;
+      mapping[`QueryTable${state.globalQueryTableIdx}`] = {
+        data: XML_DECL + queryTableDesc.stringify(qt, ctx),
+        path: `xl/queryTables/queryTable${state.globalQueryTableIdx}.xml`,
+      };
+      const qtRid = ++nextRid;
+      wsRels!.addRelationship(
+        qtRid,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/queryTable",
+        `../queryTables/queryTable${state.globalQueryTableIdx}.xml`,
+      );
+    }
+  }
+
+  // Single-cell XML tables
+  if (singleXmlCellOpts.length > 0) {
+    state.globalSingleXmlCellsIdx++;
+    mapping[`TableSingleCells${state.globalSingleXmlCellsIdx}`] = {
+      data: XML_DECL + singleXmlCellsDesc.stringify({ cells: singleXmlCellOpts }, ctx),
+      path: `xl/tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
+    };
+    const sxcRid = ++nextRid;
+    wsRels!.addRelationship(
+      sxcRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells",
+      `../tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
+    );
+  }
+
+  // Pre-render pivot table data into sheetData
+  if (hasPivots) {
+    const rendered = renderPivotSheetData(
+      pivotOpts,
+      worksheetConfigs,
+      ctx.sharedStrings,
+      sheetName,
+    );
+    if (rendered.sheetData.length > 0) {
+      // Replace empty <sheetData/> or <sheetData></sheetData> with rendered data
+      sheetXml = sheetXml.replace(/<sheetData\/>|<sheetData><\/sheetData>/, rendered.sheetData);
+      // Inject <dimension> before <sheetViews> (XSD sequence order: dimension before sheetViews)
+      if (!sheetXml.includes("<dimension")) {
+        sheetXml = sheetXml.replace(
+          "<sheetViews",
+          `<dimension ref="${rendered.dimensionRef}"/><sheetViews`,
+        );
+      }
+    }
+  }
+
+  // Insert tableParts before closing </worksheet> tag
+  if (wsTableParts.length > 0) {
+    const tablePartsXml = buildTablePartsXml(wsTableParts);
+    const closingTag = "</worksheet>";
+    sheetXml = sheetXml.slice(0, -closingTag.length) + tablePartsXml + closingTag;
+  }
+
+  // Write worksheet rels if needed
+  if (wsRels) {
+    mapping[`WorksheetRels${i}`] = {
+      data: XML_DECL + wsRels.serialize(),
+      path: `xl/worksheets/_rels/sheet${i + 1}.xml.rels`,
+    };
+  }
+
+  mapping[`Worksheet${i}`] = {
+    data: sheetXml,
+    path: `xl/worksheets/sheet${i + 1}.xml`,
+  };
+}
+
+/** Compile all chartsheets: chart part, chartsheet/drawing XML and rels. */
+function compileChartsheets(
+  chartsheetConfigs: ChartsheetOptions[],
+  ctx: XlsxWriteContext,
+  mapping: Record<string, { data: string; path: string }>,
+): void {
+  // Chartsheets — chart-only sheets
+  for (const [i, csOpts] of chartsheetConfigs.entries()) {
+    // Register chart in the charts collection
+    const chartDef = csOpts.chart;
+    const csChartGlobalIdx = ctx.charts.array.length;
+    const csChartKey = `cs_chart_${csChartGlobalIdx}`;
+    ctx.charts.addChart(csChartKey, {
+      key: csChartKey,
+      chartSpaceXml:
+        chartSpaceDesc.stringify(
+          {
+            type: chartDef.type as
+              | "column"
+              | "bar"
+              | "line"
+              | "pie"
+              | "doughnut"
+              | "area"
+              | "scatter"
+              | "bubble",
+            title: chartDef.title,
+            categories: chartDef.categories,
+            series: chartDef.series,
+          },
+          ctx,
+        ) ?? "",
+    });
+
+    // Chartsheet relationships: drawing (required)
+    const csRels = new Relationships();
+    const csDrawingIdx = i + 1;
+    csRels.addRelationship(
+      1,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
+      `../drawings/drawing${csDrawingIdx}.xml`,
+    );
+
+    // Drawing rels: chart reference
+    const csDrawingRels = new Relationships();
+    csDrawingRels.addRelationship(
+      1,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+      `../charts/chart${csChartGlobalIdx + 1}.xml`,
+    );
+
+    // Minimal drawing XML with chart anchor — reuses the parts/drawing anchor
+    // and graphicFrame builders (no hand-rolled xdr emitter). A chartsheet
+    // chart fills the sheet: absolute anchor at origin with the full-page frame.
+    const frame = graphicFrameXml(1, undefined, `Chart ${i + 1}`, "rId1", 9308969, 6096000);
+    const anchor = wrapAnchor(
+      {
+        anchorType: "absolute",
+        col: 1,
+        row: 1,
+        absoluteX: 0,
+        absoluteY: 0,
+        extentCx: 9308969,
+        extentCy: 6096000,
+      },
+      `${frame}<clientData/>`,
+    );
+    const csDrawingXml = `<wsDr xmlns="${XDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">${anchor}</wsDr>`;
+
+    mapping[`ChartsheetDrawing${i}`] = {
+      data: csDrawingXml,
+      path: `xl/drawings/drawing${csDrawingIdx}.xml`,
+    };
+    mapping[`ChartsheetDrawingRels${i}`] = {
+      data: XML_DECL + csDrawingRels.serialize(),
+      path: `xl/drawings/_rels/drawing${csDrawingIdx}.xml.rels`,
+    };
+
+    mapping[`ChartsheetRels${i}`] = {
+      data: XML_DECL + csRels.serialize(),
+      path: `xl/chartsheets/_rels/sheet${i + 1}.xml.rels`,
+    };
+    mapping[`Chartsheet${i}`] = {
+      data: XML_DECL + chartsheetDesc.stringify({ ...csOpts, drawingRId: "rId1" }, ctx),
+      path: `xl/chartsheets/sheet${i + 1}.xml`,
+    };
+  }
+}
+
+/** Compile all dialog sheets (legacy Excel 5.0 dialog sheets). */
+function compileDialogsheets(
+  dialogsheetConfigs: DialogsheetOptions[],
+  ctx: XlsxWriteContext,
+  mapping: Record<string, { data: string; path: string }>,
+): void {
+  // Dialogsheets — legacy Excel 5.0 dialog sheets
+  for (const [i, dsOpts] of dialogsheetConfigs.entries()) {
+    mapping[`Dialogsheet${i}`] = {
+      data: XML_DECL + dialogsheetDesc.stringify(dsOpts, ctx),
+      path: `xl/dialogSheets/sheet${i + 1}.xml`,
+    };
+  }
+}
+
+/**
+ * Compile shared-workbook revisions (xl/revisionHeaders.xml +
+ * xl/revisions/revisionN.xml + xl/users.xml). CT_Workbook has no revision
+ * element — parts are discovered via workbook.xml.rels + [Content_Types].
+ */
+function compileRevisionLogs(
+  rl: NonNullable<WorkbookOptions["revisionLog"]>,
+  ctx: XlsxWriteContext,
+  mapping: Record<string, { data: string; path: string }>,
+): void {
+  const REV_HEADERS_REL =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionHeaders";
+  const REV_LOG_REL =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionLog";
+  const USERS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/users";
+
+  // xl/revisionHeaders.xml — target of an implicit relationship from the workbook.
+  mapping["RevisionHeaders"] = {
+    data: XML_DECL + (revisionHeadersDesc.stringify(rl.headers, ctx) ?? ""),
+    path: "xl/revisionHeaders.xml",
+  };
+  ctx.workbookRels.addRelationship(
+    ctx.workbookRels.relationshipCount + 1,
+    REV_HEADERS_REL,
+    "revisionHeaders.xml",
+  );
+
+  // One revision log per header entry, plus revisionHeaders.xml.rels pointing to each.
+  const revHeadersRels = new Relationships();
+  for (const [i, log] of rl.logs.entries()) {
+    mapping[`RevisionLog${i}`] = {
+      data: XML_DECL + (revisionLogDesc.stringify(log, ctx) ?? ""),
+      path: `xl/revisions/revision${i + 1}.xml`,
+    };
+    revHeadersRels.addRelationship(i + 1, REV_LOG_REL, `revisions/revision${i + 1}.xml`);
+  }
+  mapping["RevisionHeadersRels"] = {
+    data: XML_DECL + revHeadersRels.serialize(),
+    path: "xl/_rels/revisionHeaders.xml.rels",
+  };
+
+  // xl/users.xml (optional)
+  if (rl.users) {
+    const usersXml = usersDesc.stringify(rl.users, ctx);
+    if (usersXml) {
+      mapping["Users"] = { data: XML_DECL + usersXml, path: "xl/users.xml" };
+      ctx.workbookRels.addRelationship(
+        ctx.workbookRels.relationshipCount + 1,
+        USERS_REL,
+        "users.xml",
+      );
+    }
+  }
 }
 
 // ── Pure helper functions ──
