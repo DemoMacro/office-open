@@ -11,7 +11,12 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 
-import type { ConnectorOptions, GroupOptions, ShapeOptions } from "../drawing";
+import type {
+  ConnectorOptions,
+  DrawingAnchorOptions,
+  GroupOptions,
+  ShapeOptions,
+} from "../drawing";
 import type { PivotTableOptions } from "../pivot";
 import type { PivotAreaOptions } from "../pivot/pivot-utils";
 import type { QueryTableOptions } from "../query-table";
@@ -213,8 +218,8 @@ export interface ScenarioOptions {
 }
 
 export interface MergeCellOptions {
-  from: { row: number; col: number };
-  to: { row: number; col: number };
+  /** Merged range reference, e.g. "A1:D1" (CT_MergeCell `ref` attribute) */
+  ref: string;
 }
 
 export interface SheetProtectionOptions {
@@ -278,21 +283,16 @@ export interface FreezePaneOptions {
  * Picture anchored to a worksheet cell.
  *
  * Extends the cross-format {@link BasePictureOptions} (binary data + non-visual
- * drawing properties) with a 1-based cell anchor. The base cNvPr fields
- * (name/description/title/hidden) flow through to the drawing's cNvPr.
+ * drawing properties) with the full spreadsheet-drawing anchor
+ * {@link DrawingAnchorOptions} (1-based from/to cell corners, anchor type,
+ * extent). The base cNvPr fields (name/description/title/hidden) flow through
+ * to the drawing's cNvPr.
  */
-export interface PictureOptions extends Omit<BasePictureOptions, "type"> {
+export interface PictureOptions extends Omit<BasePictureOptions, "type">, DrawingAnchorOptions {
   type: "png" | "jpg";
-  col: number;
-  row: number;
 }
 
-export interface WorksheetChartOptions extends ChartSpaceOptions {
-  /** 1-based column position for the chart */
-  col: number;
-  /** 1-based row position for the chart */
-  row: number;
-}
+export interface WorksheetChartOptions extends ChartSpaceOptions, DrawingAnchorOptions {}
 
 export interface SheetViewOptions {
   showGridLines?: boolean;
@@ -325,15 +325,13 @@ export interface SheetViewOptions {
   zoomScalePageLayoutView?: number;
 }
 
-export type HyperlinkTarget =
-  | { type: "external"; url: string }
-  | { type: "internal"; location: string };
-
 export interface HyperlinkOptions {
   /** Cell reference, e.g. "A1" */
   cell: string;
-  /** Hyperlink target */
-  target: HyperlinkTarget;
+  /** External target URL (CT_Hyperlink @r:id, mutually exclusive with location) */
+  url?: string;
+  /** Internal target, e.g. "Data!A1" (CT_Hyperlink @location, mutually exclusive with url) */
+  location?: string;
   /** Tooltip text */
   tooltip?: string;
   /** Display text */
@@ -469,16 +467,28 @@ export interface CommentOptions {
   /** Comment properties (CT_CommentPr) — parsed but never re-emitted (see CommentPropertiesOptions) */
   commentPr?: CommentPropertiesOptions;
   /**
-   * Note shape anchor (x:Anchor in the VML part) — 8 numbers: fromColumn,
-   * fromColumnOffsetPx, fromRow, fromRowOffsetPx, toColumn, toColumnOffsetPx,
-   * toRow, toRowOffsetPx. Absent → the default 2×2-cell offset anchored at
-   * the comment's cell.
+   * Note shape anchor (x:Anchor in the VML part): from/to cell corners,
+   * 0-based. Absent → the default 2×2-cell offset anchored at the comment's
+   * cell.
    */
-  anchor?: number[];
+  anchor?: NoteAnchorOptions;
   /** Whether the note is pinned visible. Default false (hidden until hover). */
   visible?: boolean;
   /** Note shape size in points. Absent → 108 × 59.25 pt. */
   size?: { width: number; height: number };
+}
+
+/**
+ * Note shape anchor (VML x:Anchor): two cell corners with offsets.
+ *
+ * Offsets are EMU in the public API (converted to/from the pixel values the
+ * VML part stores at 96 DPI — exact both ways since px × 9525 = EMU).
+ */
+export interface NoteAnchorOptions {
+  /** Anchor start corner */
+  from: AnchorMarkerOptions;
+  /** Anchor end corner */
+  to: AnchorMarkerOptions;
 }
 
 export type DataValidationType =

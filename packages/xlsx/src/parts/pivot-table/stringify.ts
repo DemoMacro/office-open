@@ -36,8 +36,8 @@ export function stringifyPivotTable(
   const rowFieldIndices = rowFieldNames.map((n) => fields.indexOf(n));
   const colFieldIndices = colFieldNames.map((n) => fields.indexOf(n));
   const dataFieldIndices = dataFields.map((df) => fields.indexOf(df.field));
-  const pageFieldNames = o.pages ?? [];
-  const pageFieldIndices = pageFieldNames.map((n) => fields.indexOf(n));
+  const pageFields = o.pages ?? [];
+  const pageFieldIndices = pageFields.map((p) => fields.indexOf(p.field));
 
   const pivotFieldsXml = buildPivotFields(
     o,
@@ -371,10 +371,11 @@ function buildPivotFields(
 function buildPageFields(o: PivotTableOptions, pageIndices: number[]): string {
   if (pageIndices.length === 0) return "";
   const parts: string[] = [`<pageFields count="${pageIndices.length}">`];
+  const pageFields = o.pages ?? [];
   for (let i = 0; i < pageIndices.length; i++) {
-    const cap = o.pageCaptions?.[i];
+    const cap = pageFields[i]?.caption;
     const capAttr = cap ? ` cap="${escapeXml(cap)}"` : "";
-    const item = o.pageFieldItems?.[i];
+    const item = pageFields[i]?.item;
     const itemAttr = item !== undefined ? ` item="${item}"` : "";
     parts.push(`<pageField fld="${pageIndices[i]}" hier="${i}"${capAttr}${itemAttr}/>`);
   }

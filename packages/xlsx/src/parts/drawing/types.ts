@@ -17,39 +17,8 @@ import type {
 
 // ── Types (used by compiler) ──
 
-export interface ImageOptions {
-  /** 1-based column */
-  col: number;
-  /** Column offset in EMU (default 0) */
-  colOffset?: number | UniversalMeasure;
-  /** 1-based row */
-  row: number;
-  /** Row offset in EMU (default 0) */
-  rowOffset?: number | UniversalMeasure;
-  /** Relationship ID for the image */
-  rId: string;
-  /** Lock anchor with sheet (default true) */
-  locksWithSheet?: boolean;
-  /** Print with sheet (default true) */
-  printsWithSheet?: boolean;
-}
-
-export interface ChartAnchorOptions {
-  /** 1-based column */
-  col: number;
-  /** Column offset in EMU (default 0) */
-  colOffset?: number | UniversalMeasure;
-  /** 1-based row */
-  row: number;
-  /** Row offset in EMU (default 0) */
-  rowOffset?: number | UniversalMeasure;
-  /** Relationship ID for the chart */
-  rId: string;
-  /** Lock anchor with sheet (default true) */
-  locksWithSheet?: boolean;
-  /** Print with sheet (default true) */
-  printsWithSheet?: boolean;
-}
+// ImageOptions/ChartAnchorOptions were removed: the compiler builds the same
+// Drawing*Options types the descriptor consumes, carrying the full anchor set.
 
 // ── Descriptor Types ──
 
@@ -105,27 +74,44 @@ export interface DrawingAnchorOptions {
   printsWithSheet?: boolean;
 }
 
+/** Pick the anchor fields defined on `source` (undefined ones stay absent). */
+export function pickAnchorOptions<T extends DrawingAnchorOptions>(source: T): DrawingAnchorOptions {
+  const picked: DrawingAnchorOptions = { col: source.col, row: source.row };
+  const keys = [
+    "colOffset",
+    "rowOffset",
+    "toCol",
+    "toRow",
+    "toColOffset",
+    "toRowOffset",
+    "anchorType",
+    "editAs",
+    "absoluteX",
+    "absoluteY",
+    "extentCx",
+    "extentCy",
+    "locksWithSheet",
+    "printsWithSheet",
+  ] as const;
+  // Correlated union-key writes need this cast — TS cannot narrow the write
+  // type from a `keys` element alone.
+  const optional = picked as unknown as Record<(typeof keys)[number], unknown>;
+  for (const key of keys) {
+    if (source[key] !== undefined) optional[key] = source[key];
+  }
+  return picked;
+}
+
 export interface DrawingPictureOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the image */
   rId: string;
 }
 
-export interface DrawingChartOptions extends NonVisualDrawingPropertiesOptions {
-  /** 1-based column */
-  col: number;
-  /** Column offset in EMU (default 0) */
-  colOffset?: number | UniversalMeasure;
-  /** 1-based row */
-  row: number;
-  /** Row offset in EMU (default 0) */
-  rowOffset?: number | UniversalMeasure;
+export interface DrawingChartOptions
+  extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the chart */
   rId: string;
-  /** Lock anchor with sheet (default true) */
-  locksWithSheet?: boolean;
-  /** Print with sheet (default true) */
-  printsWithSheet?: boolean;
 }
 
 /** Anchored shape (xdr:sp): geometry + optional text body. */

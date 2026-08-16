@@ -449,9 +449,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   if (mergeCells.length > 0) {
     p.push(`<mergeCells count="${mergeCells.length}">`);
     for (const mc of mergeCells) {
-      const fromRef = defaultCellRef(mc.from.row, mc.from.col);
-      const toRef = defaultCellRef(mc.to.row, mc.to.col);
-      p.push(selfCloseElement("mergeCell", attrs({ ref: `${fromRef}:${toRef}` })));
+      p.push(selfCloseElement("mergeCell", attrs({ ref: mc.ref })));
     }
     p.push("</mergeCells>");
   }
@@ -586,11 +584,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     let hlIdx = 0;
     for (const hl of hyperlinks) {
       const hlAttrs: Record<string, string | number | boolean | undefined> = { ref: hl.cell };
-      if (hl.target.type === "external") {
+      if (hl.url !== undefined) {
         hlIdx++;
         hlAttrs["r:id"] = `rId${hlIdx}`;
-      } else {
-        hlAttrs.location = hl.target.location;
+      } else if (hl.location !== undefined) {
+        hlAttrs.location = hl.location;
       }
       if (hl.tooltip) hlAttrs.tooltip = hl.tooltip;
       if (hl.display) hlAttrs.display = hl.display;

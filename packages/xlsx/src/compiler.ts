@@ -34,7 +34,8 @@ import { chartsheetDesc, type ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
 import { dialogsheetDesc, type DialogsheetOptions } from "@parts/dialogsheet";
-import type { DrawingPictureOptions, ChartAnchorOptions } from "@parts/drawing";
+import type { DrawingChartOptions, DrawingPictureOptions } from "@parts/drawing";
+import { pickAnchorOptions } from "@parts/drawing";
 import { drawingDesc } from "@parts/drawing";
 import { A_NS, R_NS, XDR_NS, graphicFrameXml, wrapAnchor } from "@parts/drawing/stringify";
 import { externalLinkDesc } from "@parts/external-link";
@@ -448,7 +449,7 @@ function compileWorksheetPart(
     shapeOpts.length > 0 ||
     connectorOpts.length > 0 ||
     groupOpts.length > 0;
-  const hasExternalHyperlinks = hlOpts.some((h) => h.target.type === "external");
+  const hasExternalHyperlinks = hlOpts.some((h) => h.url !== undefined);
   const commentOpts = wsOpts.comments ?? [];
   const hasComments = commentOpts.length > 0;
   const pivotOpts = wsOpts.pivotTables ?? [];
@@ -479,12 +480,12 @@ function compileWorksheetPart(
 
   if (hasExternalHyperlinks) {
     for (const hl of hlOpts) {
-      if (hl.target.type !== "external") continue;
+      if (hl.url === undefined) continue;
       const rid = ++nextRid;
       wsRels!.addRelationship(
         rid,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-        hl.target.url,
+        hl.url,
         "External",
       );
     }
@@ -492,7 +493,7 @@ function compileWorksheetPart(
 
   if (hasMedia) {
     const drawingImages: DrawingPictureOptions[] = [];
-    const drawingCharts: ChartAnchorOptions[] = [];
+    const drawingCharts: DrawingChartOptions[] = [];
     const drawingRels = new Relationships();
     let rid = 1;
 
@@ -515,8 +516,7 @@ function compileWorksheetPart(
       );
 
       drawingImages.push({
-        col: img.col,
-        row: img.row,
+        ...pickAnchorOptions(img),
         rId: `rId${rid}`,
         ...pickNonVisualDrawingProperties(img),
       });
@@ -539,8 +539,7 @@ function compileWorksheetPart(
       );
 
       drawingCharts.push({
-        col: chart.col,
-        row: chart.row,
+        ...pickAnchorOptions(chart),
         rId: `rId${rid}`,
       });
       rid++;

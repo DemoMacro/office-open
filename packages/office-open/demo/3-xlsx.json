@@ -100,10 +100,7 @@
       ],
       "freezePanes": { "row": 1 },
       "autoFilter": "A1:E5",
-      "mergeCells": [
-        { "from": { "row": 5, "col": 1 }, "to": { "row": 5, "col": 3 } },
-        { "from": { "row": 5, "col": 4 }, "to": { "row": 5, "col": 5 } }
-      ]
+      "mergeCells": [{ "ref": "A5:C5" }, { "ref": "D5:E5" }]
     },
     {
       "name": "Summary",

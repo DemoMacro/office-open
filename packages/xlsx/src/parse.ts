@@ -26,7 +26,7 @@ import { commentsDesc, mergeNoteAnchors, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
 import { dialogsheetDesc } from "@parts/dialogsheet";
 import type { DialogsheetOptions } from "@parts/dialogsheet";
-import { drawingDesc } from "@parts/drawing";
+import { drawingDesc, pickAnchorOptions } from "@parts/drawing";
 import { externalLinkDesc } from "@parts/external-link";
 import type { ExternalLinkOptions } from "@parts/external-link";
 import type { SharedWorkbookOptions, WorkbookOptions } from "@parts/file";
@@ -373,8 +373,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           images.push({
             data: raw,
             type: ext === "png" ? "png" : "jpg",
-            col: image.col,
-            row: image.row,
+            ...pickAnchorOptions(image),
             name: image.name,
             description: image.description,
             title: image.title,
@@ -390,7 +389,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
           if (!chartEl) continue;
           const chartSpace = chartSpaceDesc.parse(chartEl, readContext);
-          charts.push({ ...chartSpace, col: anchor.col, row: anchor.row });
+          charts.push({ ...chartSpace, ...pickAnchorOptions(anchor) });
         }
         if (charts.length > 0) wsOpts.charts = charts;
       }
@@ -495,9 +494,9 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     const hyperlinks = wsOpts.hyperlinks;
     if (hyperlinks) {
       for (const hl of hyperlinks) {
-        if (hl.target.type === "external") {
-          const resolved = readContext.resolveWorksheetRel(wsPath, hl.target.url);
-          if (resolved) hl.target.url = resolved;
+        if (hl.url !== undefined) {
+          const resolved = readContext.resolveWorksheetRel(wsPath, hl.url);
+          if (resolved) hl.url = resolved;
         }
       }
     }

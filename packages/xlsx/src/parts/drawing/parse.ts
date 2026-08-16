@@ -190,6 +190,7 @@ function readPicExtent(pic: XmlElement): { cx?: number; cy?: number } {
 export function parseChartAnchor(
   anchor: XmlElement,
   graphicFrame: XmlElement,
+  name: string,
 ): DrawingChartOptions | undefined {
   const graphicData = findChild(
     findChild(graphicFrame, "a:graphic") ?? graphicFrame,
@@ -199,24 +200,9 @@ export function parseChartAnchor(
   const rId = chartEl?.attributes?.["r:id"] as string | undefined;
   if (!rId) return undefined;
 
-  const result: DrawingChartOptions = { col: 1, row: 1, rId };
-  const from = findXdr(anchor, "from");
-  if (from) {
-    const m = readMarker(from);
-    result.col = m.col;
-    result.row = m.row;
-    if (m.colOffset !== undefined) result.colOffset = m.colOffset;
-    if (m.rowOffset !== undefined) result.rowOffset = m.rowOffset;
-  }
-  const clientData = findXdr(anchor, "clientData");
-  if (clientData?.attributes) {
-    if (clientData.attributes["fLocksWithSheet"] !== undefined) {
-      result.locksWithSheet = parseOnOff(clientData.attributes["fLocksWithSheet"]) ?? true;
-    }
-    if (clientData.attributes["fPrintsWithSheet"] !== undefined) {
-      result.printsWithSheet = parseOnOff(clientData.attributes["fPrintsWithSheet"]) ?? true;
-    }
-  }
+  const result = { col: 1, row: 1, rId } as DrawingChartOptions;
+  Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr"));
+  readAnchorFields(anchor, name, result);
   return result;
 }
 

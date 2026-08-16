@@ -53,6 +53,7 @@ export { chartsheetDesc, type ChartsheetDescriptorOptions } from "./chartsheet";
 export { commentsDesc, vmlNotesDesc, type CommentsDocOptions } from "./comments";
 export {
   drawingDesc,
+  pickAnchorOptions,
   type DrawingOptions,
   type DrawingPictureOptions,
   type DrawingChartOptions,

@@ -35,7 +35,7 @@ const buffer = await generateWorkbook({
         { min: 2, max: 4, width: 12 },
         { min: 5, max: 5, width: 12 },
       ],
-      mergeCells: [{ from: { row: 1, col: 1 }, to: { row: 1, col: 4 } }],
+      mergeCells: [{ ref: "A1:D1" }],
     },
   ],
 });

@@ -124,7 +124,7 @@ describe("Worksheet", () => {
     it("generates external hyperlink with r:id", () => {
       const xml = buildWorksheetXml(
         {
-          hyperlinks: [{ cell: "A1", target: { type: "external", url: "https://example.com" } }],
+          hyperlinks: [{ cell: "A1", url: "https://example.com" }],
           rows: [{ cells: [{ value: "A" }] }],
         },
         {},
@@ -138,7 +138,7 @@ describe("Worksheet", () => {
     it("generates internal hyperlink with location (no r:id)", () => {
       const xml = buildWorksheetXml(
         {
-          hyperlinks: [{ cell: "B2", target: { type: "internal", location: "'Sheet2'!A1" } }],
+          hyperlinks: [{ cell: "B2", location: "'Sheet2'!A1" }],
           rows: [{ cells: [{ value: "A" }] }],
         },
         {},
@@ -154,7 +154,7 @@ describe("Worksheet", () => {
           hyperlinks: [
             {
               cell: "A1",
-              target: { type: "external", url: "https://example.com" },
+              url: "https://example.com",
               tooltip: "Visit Example",
               display: "Example Site",
             },
@@ -171,9 +171,9 @@ describe("Worksheet", () => {
       const xml = buildWorksheetXml(
         {
           hyperlinks: [
-            { cell: "A1", target: { type: "external", url: "https://a.com" } },
-            { cell: "B1", target: { type: "internal", location: "Sheet2!A1" } },
-            { cell: "C1", target: { type: "external", url: "https://b.com" } },
+            { cell: "A1", url: "https://a.com" },
+            { cell: "B1", location: "Sheet2!A1" },
+            { cell: "C1", url: "https://b.com" },
           ],
           rows: [{ cells: [{ value: "A" }] }],
         },

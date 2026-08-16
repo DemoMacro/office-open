@@ -109,7 +109,7 @@ const sheets: WorksheetOptions[] = [
       { cells: [{ value: "Charlie" }, { value: 42 }, { value: false }] },
     ],
     columns: [{ min: 1, max: 1, width: 15 }],
-    mergeCells: [{ from: { row: 1, col: 1 }, to: { row: 1, col: 2 } }],
+    mergeCells: [{ ref: "A1:B1" }],
     freezePanes: { row: 1 },
     autoFilter: "A1:C4",
   },

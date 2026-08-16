@@ -217,7 +217,10 @@ describe("vmlNotesDesc parse round-trips note placement", () => {
       {
         row: 2,
         column: 1,
-        anchor: [1, 0, 2, 0, 3, 0, 4, 0],
+        anchor: {
+          from: { col: 1, colOff: 0, row: 2, rowOff: 0 },
+          to: { col: 3, colOff: 0, row: 4, rowOff: 0 },
+        },
         visible: false,
         width: 108,
         height: 59.25,
@@ -226,19 +229,24 @@ describe("vmlNotesDesc parse round-trips note placement", () => {
   });
 
   it("round-trips custom anchor, visible state, and size", () => {
+    const anchor = {
+      from: { col: 0, colOff: 142875, row: 0, rowOff: 114300 },
+      to: { col: 2, colOff: 304800, row: 4, rowOff: 38100 },
+    };
     const anchors = roundTripVml({
       comments: [
         {
           cell: "A1",
           author: "A",
           text: "x",
-          anchor: [0, 15, 0, 12, 2, 32, 4, 4],
+          anchor,
           visible: true,
           size: { width: 200, height: 100 },
         },
       ],
     });
-    expect(anchors[0]?.anchor).toEqual([0, 15, 0, 12, 2, 32, 4, 4]);
+    // Offsets survive exactly: VML pixels × 9525 = EMU, lossless both ways.
+    expect(anchors[0]?.anchor).toEqual(anchor);
     expect(anchors[0]?.visible).toBe(true);
     expect(anchors[0]?.width).toBe(200);
     expect(anchors[0]?.height).toBe(100);
@@ -260,7 +268,10 @@ describe("vmlNotesDesc parse round-trips note placement", () => {
       {
         row: 1,
         column: 2,
-        anchor: [2, 15, 1, 12, 4, 32, 0, 4],
+        anchor: {
+          from: { col: 2, colOff: 142875, row: 1, rowOff: 114300 },
+          to: { col: 4, colOff: 304800, row: 0, rowOff: 38100 },
+        },
         visible: true,
         width: 108,
         height: 59.25,
@@ -275,18 +286,22 @@ describe("mergeNoteAnchors", () => {
       { cell: "A1", author: "A", text: "x" },
       { cell: "B2", author: "B", text: "y" },
     ];
+    const anchor = {
+      from: { col: 1, colOff: 0, row: 1, rowOff: 0 },
+      to: { col: 3, colOff: 0, row: 3, rowOff: 0 },
+    };
     mergeNoteAnchors(comments, [
       {
         row: 1,
         column: 1,
-        anchor: [1, 0, 1, 0, 3, 0, 3, 0],
+        anchor,
         visible: true,
         width: 200,
         height: 90,
       },
     ]);
     expect(comments[0]).toEqual({ cell: "A1", author: "A", text: "x" });
-    expect(comments[1]?.anchor).toEqual([1, 0, 1, 0, 3, 0, 3, 0]);
+    expect(comments[1]?.anchor).toEqual(anchor);
     expect(comments[1]?.visible).toBe(true);
     expect(comments[1]?.size).toEqual({ width: 200, height: 90 });
   });

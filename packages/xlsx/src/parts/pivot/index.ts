@@ -9,6 +9,7 @@ export type {
   PivotCacheDefinitionOptions,
   CacheFieldExtraAttrs,
   PivotTableOptions,
+  PivotPageFieldOptions,
   PivotDataField,
   PivotSourceData,
   ConsolidateFunction,

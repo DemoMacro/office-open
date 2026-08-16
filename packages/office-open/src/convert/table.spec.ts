@@ -91,7 +91,7 @@ describe("toXlsxTable (docx → xlsx visual restoration)", () => {
     };
     const xlsx = toXlsxTable(docx);
     expect(xlsx.rows[0]!.cells![0]!.value).toBe("merged");
-    expect(xlsx.mergeCells).toEqual([{ from: { row: 0, col: 0 }, to: { row: 0, col: 1 } }]);
+    expect(xlsx.mergeCells).toEqual([{ ref: "A1:B1" }]);
     expect(xlsx.columns).toHaveLength(2);
     expect(xlsx.columns![0]!.width!).toBeCloseTo(8.78, 1); // 635000 EMU / 72325
   });

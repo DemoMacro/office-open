@@ -122,7 +122,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
 
       const graphicFrame = findXdr(anchor, "graphicFrame");
       if (graphicFrame) {
-        const chart = parseChartAnchor(anchor, graphicFrame);
+        const chart = parseChartAnchor(anchor, graphicFrame, name);
         if (chart) charts.push(chart);
         continue;
       }

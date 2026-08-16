@@ -143,12 +143,16 @@ export function graphicFrameXml(
 }
 
 export function stringifyChart(chart: DrawingChartOptions, id: number): string {
-  // Charts default to twoCellAnchor (existing behavior).
-  const from = markerXml(chart.col, chart.colOffset ?? 0, chart.row, chart.rowOffset ?? 0);
-  const to = markerXml(chart.col + 9, 0, chart.row + 16, 0);
+  // Charts keep their historical default footprint (10 columns × 17 rows)
+  // when no to corner is set; graphicFrame xfrm stays 0×0 for twoCellAnchor
+  // because the position comes from the cell markers.
+  const anchor = { toCol: chart.col + 9, toRow: chart.row + 16, ...chart };
   const clientData = clientDataXml(chart);
-  const frame = graphicFrameXml(id, chart, `Chart ${id}`, chart.rId, 0, 0);
-  return `<twoCellAnchor editAs="oneCell"><from>${from}</from><to>${to}</to>${frame}${clientData}</twoCellAnchor>`;
+  const isTwoCell = (anchor.anchorType ?? ANCHOR_TYPES.twoCell) === ANCHOR_TYPES.twoCell;
+  const cx = isTwoCell ? 0 : convertToEmu(anchor.extentCx ?? DEFAULT_EXTENT_CX);
+  const cy = isTwoCell ? 0 : convertToEmu(anchor.extentCy ?? DEFAULT_EXTENT_CY);
+  const frame = graphicFrameXml(id, chart, `Chart ${id}`, chart.rId, cx, cy);
+  return wrapAnchor(anchor, `${frame}${clientData}`);
 }
 
 /** Build the inner xdr:sp content (nvSpPr + spPr + optional txBody). */

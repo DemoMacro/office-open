@@ -66,16 +66,16 @@ const buffer = await generateWorkbook({
           ],
         },
       ],
-      mergeCells: [{ from: { row: 8, col: 1 }, to: { row: 8, col: 4 } }],
+      mergeCells: [{ ref: "A8:D8" }],
       freezePanes: { row: 1, col: 1 },
       autoFilter: { ref: "A1:D5" },
       hyperlinks: [
         {
           cell: "F2",
-          target: { type: "external", url: "https://example.com" },
+          url: "https://example.com",
           tooltip: "Open example",
         },
-        { cell: "F3", target: { type: "internal", location: "Drawing!A1" } },
+        { cell: "F3", location: "Drawing!A1" },
       ],
       dataValidations: [
         { type: "list", formula1: '"Yes,No"', sqref: "G2:G10" },
@@ -100,7 +100,7 @@ const buffer = await generateWorkbook({
           author: "Max",
           text: "Header cell with a note.",
           visible: false,
-          anchor: [0, 0, 0, 0, 2, 0, 3, 0],
+          anchor: { from: { col: 0, row: 0 }, to: { col: 2, row: 3 } },
         },
       ],
       pageMargins: { left: "0.7in", right: "0.7in", top: "0.9in", bottom: "0.9in" },
@@ -156,6 +156,11 @@ const buffer = await generateWorkbook({
           series: [{ name: "2026", values: [1200, 800, 1500, 950] }],
           col: 10,
           row: 2,
+          // Explicit to corner — charts also accept the full anchor set
+          // (anchorType/editAs/extent) like pictures and shapes.
+          toCol: 15,
+          toRow: 18,
+          editAs: "twoCell",
         },
       ],
     },

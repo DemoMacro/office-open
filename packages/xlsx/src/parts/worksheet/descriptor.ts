@@ -16,7 +16,7 @@ import type { XlsxReadContext } from "../../context";
 import { parseAutoFilter } from "../auto-filter";
 import { parsePivotArea } from "../pivot-table/parse";
 import { parseColorHex } from "../styles/parse";
-import { parseCellRef, parseCfvo, parsePageBreaks } from "./parse";
+import { parseCfvo, parsePageBreaks } from "./parse";
 import { parseSheetDataRows } from "./sheet-data";
 import type {
   CellSmartTagsOptions,
@@ -38,7 +38,6 @@ import type {
   FreezePaneOptions,
   HeaderFooterOptions,
   HyperlinkOptions,
-  HyperlinkTarget,
   IconSetOptions,
   IconSetType,
   IgnoredErrorOptions,
@@ -387,12 +386,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       for (const mEl of mcEl.elements ?? []) {
         if (mEl.name !== "mergeCell") continue;
         const ref = attr(mEl, "ref") ?? "";
-        const parts = ref.split(":");
-        if (parts.length === 2) {
-          const from = parseCellRef(parts[0] ?? "");
-          const to = parseCellRef(parts[1] ?? "");
-          if (from && to) merges.push({ from, to });
-        }
+        if (ref) merges.push({ ref });
       }
       if (merges.length > 0) result.mergeCells = merges;
     }
@@ -525,11 +519,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       for (const hEl of hlEl.elements ?? []) {
         if (hEl.name !== "hyperlink") continue;
         const rId = hEl.attributes?.["r:id"] as string | undefined;
+        const hl: HyperlinkOptions = { cell: attr(hEl, "ref") ?? "" };
+        // r:id starts as the raw relationship id; the parse pipeline resolves
+        // it to the real target URL afterwards.
+        if (rId) hl.url = rId;
         const location = attr(hEl, "location");
-        const target: HyperlinkTarget = rId
-          ? { type: "external", url: rId }
-          : { type: "internal", location: location ?? "" };
-        const hl: HyperlinkOptions = { cell: attr(hEl, "ref") ?? "", target };
+        if (location) hl.location = location;
         if (attr(hEl, "tooltip")) hl.tooltip = attr(hEl, "tooltip");
         if (attr(hEl, "display")) hl.display = attr(hEl, "display");
         hyperlinks.push(hl);

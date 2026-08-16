@@ -22,7 +22,10 @@ const buffer = await generateWorkbook({
           cell: "D5",
           author: "Alice",
           text: "Pinned note with a custom anchor",
-          anchor: [3, 30, 4, 24, 6, 60, 9, 12],
+          anchor: {
+            from: { col: 3, colOff: 285750, row: 4, rowOff: 228600 },
+            to: { col: 6, colOff: 571500, row: 9, rowOff: 114300 },
+          },
           visible: true,
           size: { width: 160, height: 90 },
         },

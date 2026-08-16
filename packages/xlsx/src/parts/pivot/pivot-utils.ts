@@ -207,6 +207,16 @@ export interface PivotFilterOptions {
   stringValue2?: string;
 }
 
+/** Page/report filter field (CT_PageField). */
+export interface PivotPageFieldOptions {
+  /** Field name to use as a page filter (CT_PageField @fld) */
+  field: string;
+  /** Caption override (CT_PageField @cap) */
+  caption?: string;
+  /** Selected item index (CT_PageField @item) */
+  item?: number;
+}
+
 /** Options for a single pivot table on a worksheet. */
 export interface PivotTableOptions {
   /** Pivot table name (default: "PivotTable{N}") */
@@ -227,10 +237,8 @@ export interface PivotTableOptions {
   style?: string;
   /** Pivot filters (CT_PivotFilters) */
   filters?: PivotFilterOptions[];
-  /** Field names to use as page/report filters */
-  pages?: string[];
-  /** Page field captions (maps by index to pages array) */
-  pageCaptions?: string[];
+  /** Page/report filter fields (CT_PivotTableDefinition → pageFields) */
+  pages?: PivotPageFieldOptions[];
   /** Data fields on rows instead of columns (CT_PivotTableDefinition @dataOnRows) */
   dataOnRows?: boolean;
   /** Grand total caption text */
@@ -333,8 +341,6 @@ export interface PivotTableOptions {
   chartFormat?: boolean;
   /** Preserve formatting on refresh (CT_PivotTableDefinition @preserveFormatting, default true) */
   preserveFormatting?: boolean;
-  /** Selected item index per page field (CT_PageField @item, by position) */
-  pageFieldItems?: number[];
   /** Auto sort scope (CT_AutoSortScope) */
   autoSortScope?: PivotAreaOptions;
   /** Member properties per field (CT_MemberProperties → mps/mp) */

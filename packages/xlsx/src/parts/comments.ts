@@ -8,7 +8,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
-import { convertToPt } from "@office-open/core";
+import { convertToEmu, convertToPt } from "@office-open/core";
 import { parseVmlShape } from "@office-open/core";
 import { stringifyVmlShape } from "@office-open/core";
 import { stringifyVmlShapetype } from "@office-open/core";
@@ -26,6 +26,7 @@ import type {
   AnchorMarkerOptions,
   CommentOptions,
   CommentPropertiesOptions,
+  NoteAnchorOptions,
   ObjectAnchorOptions,
   RichTextOptions,
   RichTextRunOptions,
@@ -115,8 +116,8 @@ export interface VmlNoteAnchor {
   row: number;
   /** 0-based column (x:Column). */
   column: number;
-  /** x:Anchor 8-tuple when present. */
-  anchor?: number[];
+  /** Cell-corner anchor (x:Anchor) when present. */
+  anchor?: NoteAnchorOptions;
   /** Whether the note shape is visible (style visibility ≠ hidden). */
   visible: boolean;
   /** Shape width in points when present in the style. */
@@ -146,7 +147,18 @@ export const vmlNotesDesc: CustomDescriptor<CommentsDocOptions, WriteContext, Vm
 
     for (const [i, c] of opts.comments.entries()) {
       const { col, row } = cellRefToVmlCoords(c.cell);
-      const anchor = c.anchor ?? [col, 0, row, 0, col + 2, 0, row + 2, 0];
+      const anchor = c.anchor
+        ? [
+            c.anchor.from.col,
+            Math.round(convertToEmu(c.anchor.from.colOff ?? 0) / 9525),
+            c.anchor.from.row,
+            Math.round(convertToEmu(c.anchor.from.rowOff ?? 0) / 9525),
+            c.anchor.to.col,
+            Math.round(convertToEmu(c.anchor.to.colOff ?? 0) / 9525),
+            c.anchor.to.row,
+            Math.round(convertToEmu(c.anchor.to.rowOff ?? 0) / 9525),
+          ]
+        : [col, 0, row, 0, col + 2, 0, row + 2, 0];
       const style = {
         position: "absolute",
         marginLeft: "59.25pt",
@@ -206,7 +218,13 @@ export const vmlNotesDesc: CustomDescriptor<CommentsDocOptions, WriteContext, Vm
         .split(/[,\s]+/)
         .filter(Boolean)
         .map(Number);
-      if (nums.length === 8 && nums.every((n) => !Number.isNaN(n))) note.anchor = nums;
+      if (nums.length === 8 && nums.every((n) => !Number.isNaN(n))) {
+        // VML stores pixel offsets; the public API carries EMU (px × 9525).
+        note.anchor = {
+          from: { col: nums[0]!, colOff: nums[1]! * 9525, row: nums[2]!, rowOff: nums[3]! * 9525 },
+          to: { col: nums[4]!, colOff: nums[5]! * 9525, row: nums[6]!, rowOff: nums[7]! * 9525 },
+        };
+      }
       const width = lengthToPt(shape.style?.width);
       if (width !== undefined) note.width = width;
       const height = lengthToPt(shape.style?.height);

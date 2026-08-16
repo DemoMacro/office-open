@@ -2452,11 +2452,8 @@
       "additionalProperties": false,
       "properties": {
         "anchor": {
-          "description": "Note shape anchor (x:Anchor in the VML part) — 8 numbers: fromColumn, fromColumnOffsetPx, fromRow, fromRowOffsetPx, toColumn, toColumnOffsetPx, toRow, toRowOffsetPx. Absent → the default 2×2-cell offset anchored at the comment's cell.",
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
+          "$ref": "#/definitions/NoteAnchorOptions",
+          "description": "Note shape anchor (x:Anchor in the VML part): from/to cell corners, 0-based. Absent → the default 2×2-cell offset anchored at the comment's cell."
         },
         "author": {
           "description": "Author name",
@@ -6072,49 +6069,21 @@
           "description": "Display text",
           "type": "string"
         },
-        "target": {
-          "$ref": "#/definitions/HyperlinkTarget",
-          "description": "Hyperlink target"
+        "location": {
+          "description": "Internal target, e.g. \"Data!A1\" (CT_Hyperlink",
+          "type": "string"
         },
         "tooltip": {
           "description": "Tooltip text",
           "type": "string"
+        },
+        "url": {
+          "description": "External target URL (CT_Hyperlink",
+          "type": "string"
         }
       },
-      "required": ["cell", "target"],
+      "required": ["cell"],
       "type": "object"
-    },
-    "HyperlinkTarget": {
-      "anyOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "external",
-              "type": "string"
-            },
-            "url": {
-              "type": "string"
-            }
-          },
-          "required": ["type", "url"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "location": {
-              "type": "string"
-            },
-            "type": {
-              "const": "internal",
-              "type": "string"
-            }
-          },
-          "required": ["type", "location"],
-          "type": "object"
-        }
-      ]
     },
     "IconFilterOptions": {
       "additionalProperties": false,
@@ -6757,34 +6726,12 @@
     "MergeCellOptions": {
       "additionalProperties": false,
       "properties": {
-        "from": {
-          "additionalProperties": false,
-          "properties": {
-            "col": {
-              "type": "number"
-            },
-            "row": {
-              "type": "number"
-            }
-          },
-          "required": ["row", "col"],
-          "type": "object"
-        },
-        "to": {
-          "additionalProperties": false,
-          "properties": {
-            "col": {
-              "type": "number"
-            },
-            "row": {
-              "type": "number"
-            }
-          },
-          "required": ["row", "col"],
-          "type": "object"
+        "ref": {
+          "description": "Merged range reference, e.g. \"A1:D1\" (CT_MergeCell `ref` attribute)",
+          "type": "string"
         }
       },
-      "required": ["from", "to"],
+      "required": ["ref"],
       "type": "object"
     },
     "MetadataBlockOptions": {
@@ -7027,6 +6974,22 @@
           "type": "number"
         }
       },
+      "type": "object"
+    },
+    "NoteAnchorOptions": {
+      "additionalProperties": false,
+      "description": "Note shape anchor (VML x:Anchor): two cell corners with offsets.\n\nOffsets are EMU in the public API (converted to/from the pixel values the VML part stores at 96 DPI — exact both ways since px × 9525 = EMU).",
+      "properties": {
+        "from": {
+          "$ref": "#/definitions/AnchorMarkerOptions",
+          "description": "Anchor start corner"
+        },
+        "to": {
+          "$ref": "#/definitions/AnchorMarkerOptions",
+          "description": "Anchor end corner"
+        }
+      },
+      "required": ["from", "to"],
       "type": "object"
     },
     "ObjectAnchorOptions": {
@@ -8018,10 +7981,48 @@
     },
     "PictureOptions": {
       "additionalProperties": false,
-      "description": "Picture anchored to a worksheet cell.\n\nExtends the cross-format  {@link  BasePictureOptions }  (binary data + non-visual drawing properties) with a 1-based cell anchor. The base cNvPr fields (name/description/title/hidden) flow through to the drawing's cNvPr.",
+      "description": "Picture anchored to a worksheet cell.\n\nExtends the cross-format  {@link  BasePictureOptions }  (binary data + non-visual drawing properties) with the full spreadsheet-drawing anchor  {@link  DrawingAnchorOptions }  (1-based from/to cell corners, anchor type, extent). The base cNvPr fields (name/description/title/hidden) flow through to the drawing's cNvPr.",
       "properties": {
+        "absoluteX": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Absolute X in EMU (absoluteAnchor)."
+        },
+        "absoluteY": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Absolute Y in EMU (absoluteAnchor)."
+        },
+        "anchorType": {
+          "$ref": "#/definitions/AnchorType",
+          "description": "Anchor type (default \"twoCell\")."
+        },
         "col": {
+          "description": "1-based column (from marker)",
           "type": "number"
+        },
+        "colOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Column offset in EMU (default 0)"
         },
         "data": {
           "$ref": "#/definitions/DataType",
@@ -8031,17 +8032,93 @@
           "description": "XSD",
           "type": "string"
         },
+        "editAs": {
+          "$ref": "#/definitions/EditAsType",
+          "description": "editAs for twoCellAnchor (default \"oneCell\")."
+        },
+        "extentCx": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Anchor extent width in EMU (oneCell/absoluteAnchor ext, default 400000)."
+        },
+        "extentCy": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
+        },
+        "locksWithSheet": {
+          "description": "Lock anchor with sheet (default true)",
+          "type": "boolean"
+        },
         "name": {
           "description": "XSD",
           "type": "string"
         },
+        "printsWithSheet": {
+          "description": "Print with sheet (default true)",
+          "type": "boolean"
+        },
         "row": {
+          "description": "1-based row (from marker)",
           "type": "number"
+        },
+        "rowOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Row offset in EMU (default 0)"
         },
         "title": {
           "description": "XSD",
           "title": ".",
           "type": "string"
+        },
+        "toCol": {
+          "description": "To cell column (1-based) for twoCellAnchor. Defaults to col + 1.",
+          "type": "number"
+        },
+        "toColOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "To cell column offset in EMU."
+        },
+        "toRow": {
+          "description": "To cell row (1-based) for twoCellAnchor. Defaults to row + 1.",
+          "type": "number"
+        },
+        "toRowOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "To cell row offset in EMU."
         },
         "type": {
           "enum": ["png", "jpg"],
@@ -8824,6 +8901,26 @@
       },
       "type": "object"
     },
+    "PivotPageFieldOptions": {
+      "additionalProperties": false,
+      "description": "Page/report filter field (CT_PageField).",
+      "properties": {
+        "caption": {
+          "description": "Caption override (CT_PageField",
+          "type": "string"
+        },
+        "field": {
+          "description": "Field name to use as a page filter (CT_PageField",
+          "type": "string"
+        },
+        "item": {
+          "description": "Selected item index (CT_PageField",
+          "type": "number"
+        }
+      },
+      "required": ["field"],
+      "type": "object"
+    },
     "PivotSelectionOptions": {
       "additionalProperties": false,
       "description": "Pivot selection in sheet view (CT_PivotSelection)",
@@ -9097,20 +9194,6 @@
           "description": "Pivot table name (default: \"PivotTable{N}\")",
           "type": "string"
         },
-        "pageCaptions": {
-          "description": "Page field captions (maps by index to pages array)",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "pageFieldItems": {
-          "description": "Selected item index per page field (CT_PageField",
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
-        },
         "pageOverThenDown": {
           "description": "Page layout over then down",
           "type": "boolean"
@@ -9124,9 +9207,9 @@
           "type": "number"
         },
         "pages": {
-          "description": "Field names to use as page/report filters",
+          "description": "Page/report filter fields (CT_PivotTableDefinition → pageFields)",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/PivotPageFieldOptions"
           },
           "type": "array"
         },
@@ -14396,6 +14479,32 @@
     "WorksheetChartOptions": {
       "additionalProperties": false,
       "properties": {
+        "absoluteX": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Absolute X in EMU (absoluteAnchor)."
+        },
+        "absoluteY": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Absolute Y in EMU (absoluteAnchor)."
+        },
+        "anchorType": {
+          "$ref": "#/definitions/AnchorType",
+          "description": "Anchor type (default \"twoCell\")."
+        },
         "axes": {
           "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
           "items": {
@@ -14432,8 +14541,19 @@
           "type": "array"
         },
         "col": {
-          "description": "1-based column position for the chart",
+          "description": "1-based column (from marker)",
           "type": "number"
+        },
+        "colOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Column offset in EMU (default 0)"
         },
         "colorMappingOverride": {
           "additionalProperties": false,
@@ -14497,6 +14617,32 @@
           "description": "Drop lines (c:dropLines, line/area/stock).",
           "type": "boolean"
         },
+        "editAs": {
+          "$ref": "#/definitions/EditAsType",
+          "description": "editAs for twoCellAnchor (default \"oneCell\")."
+        },
+        "extentCx": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Anchor extent width in EMU (oneCell/absoluteAnchor ext, default 400000)."
+        },
+        "extentCy": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
+        },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
           "description": "External linked workbook (c:externalData, after c:txPr)."
@@ -14535,6 +14681,10 @@
         "legendPosition": {
           "$ref": "#/definitions/LegendPosition",
           "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
+        },
+        "locksWithSheet": {
+          "description": "Lock anchor with sheet (default true)",
+          "type": "boolean"
         },
         "multiLevelCategories": {
           "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
@@ -14577,13 +14727,28 @@
           "$ref": "#/definitions/PrintSettingsOptions",
           "description": "Print settings (c:printSettings, after c:externalData)."
         },
+        "printsWithSheet": {
+          "description": "Print with sheet (default true)",
+          "type": "boolean"
+        },
         "protection": {
           "$ref": "#/definitions/ProtectionOptions",
           "description": "Chart protection (c:protection, before c:chart)."
         },
         "row": {
-          "description": "1-based row position for the chart",
+          "description": "1-based row (from marker)",
           "type": "number"
+        },
+        "rowOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Row offset in EMU (default 0)"
         },
         "secondPieSize": {
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
@@ -14644,6 +14809,36 @@
         },
         "title": {
           "type": "string"
+        },
+        "toCol": {
+          "description": "To cell column (1-based) for twoCellAnchor. Defaults to col + 1.",
+          "type": "number"
+        },
+        "toColOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "To cell column offset in EMU."
+        },
+        "toRow": {
+          "description": "To cell row (1-based) for twoCellAnchor. Defaults to row + 1.",
+          "type": "number"
+        },
+        "toRowOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "To cell row offset in EMU."
         },
         "type": {
           "$ref": "#/definitions/ChartType"

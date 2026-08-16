@@ -14,17 +14,17 @@ const buffer = await generateWorkbook({
       hyperlinks: [
         {
           cell: "A2",
-          target: { type: "external", url: "https://www.google.com" },
+          url: "https://www.google.com",
           tooltip: "Open Google",
         },
         {
           cell: "B2",
-          target: { type: "internal", location: "Data!A1" },
+          location: "Data!A1",
           tooltip: "Jump to Data sheet",
         },
         {
           cell: "A3",
-          target: { type: "external", url: "https://github.com" },
+          url: "https://github.com",
           display: "GitHub Repo",
         },
       ],

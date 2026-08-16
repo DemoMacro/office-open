@@ -56,6 +56,7 @@ import type {
   MergeCellOptions,
   RowOptions as XlsxRowOptions,
 } from "@office-open/xlsx";
+import { columnToLetter, letterToColumn } from "@office-open/xlsx";
 
 import { DEFAULT_COL_EMU } from "./position";
 import { fromDrawingParagraph, toDrawingParagraph } from "./text";
@@ -68,6 +69,22 @@ export interface XlsxVisualTable {
   rows: XlsxRowOptions[];
   mergeCells?: MergeCellOptions[];
   columns?: ColumnOptions[];
+}
+
+/** Parse a merge ref ("A1:D1") into 0-based row/col corners. */
+function parseMergeRef(
+  ref: string,
+): { row: number; col: number; rowEnd: number; colEnd: number } | undefined {
+  const [from = "", to = from] = ref.split(":");
+  const fa = from.match(/^([A-Z]+)(\d+)$/);
+  const fb = to.match(/^([A-Z]+)(\d+)$/);
+  if (!fa || !fb) return undefined;
+  return {
+    row: Number(fa[2]) - 1,
+    col: letterToColumn(fa[1]) - 1,
+    rowEnd: Number(fb[2]) - 1,
+    colEnd: letterToColumn(fb[1]) - 1,
+  };
 }
 
 // ── unit helpers ──
@@ -290,15 +307,17 @@ function pptxToDocx(src: PptxTableOptions): DocxTableOptions {
 }
 
 function xlsxToDocx(src: XlsxVisualTable): DocxTableOptions {
-  const merges = src.mergeCells ?? [];
+  const merges = (src.mergeCells ?? [])
+    .map((m) => parseMergeRef(m.ref))
+    .filter((m): m is NonNullable<typeof m> => m !== undefined);
   const rows: DocxTableRowOptions[] = src.rows.map((row, ri) => ({
     ...(row.height !== undefined
       ? { height: { value: convertPointsToTwip(convertToPt(row.height)) } }
       : {}),
     cells: (row.cells ?? []).map((cell, ci): DocxTableCellOptions => {
-      const merge = merges.find((m) => m.from.row === ri && m.from.col === ci);
-      const columnSpan = merge ? merge.to.col - merge.from.col + 1 : undefined;
-      const rowSpan = merge ? merge.to.row - merge.from.row + 1 : undefined;
+      const merge = merges.find((m) => m.row === ri && m.col === ci);
+      const columnSpan = merge ? merge.colEnd - merge.col + 1 : undefined;
+      const rowSpan = merge ? merge.rowEnd - merge.row + 1 : undefined;
       const text = cellValueToText(cell.value);
       return {
         children: text !== undefined ? [{ paragraph: { children: [{ text }] } }] : [],
@@ -353,13 +372,15 @@ function docxToPptx(src: DocxTableOptions): PptxTableOptions {
 }
 
 function xlsxToPptx(src: XlsxVisualTable): PptxTableOptions {
-  const merges = src.mergeCells ?? [];
+  const merges = (src.mergeCells ?? [])
+    .map((m) => parseMergeRef(m.ref))
+    .filter((m): m is NonNullable<typeof m> => m !== undefined);
   const rows: PptxTableRowOptions[] = src.rows.map((row, ri) => ({
     ...(row.height !== undefined ? { height: convertPointsToEmu(convertToPt(row.height)) } : {}),
     cells: (row.cells ?? []).map((cell, ci): PptxTableCellOptions => {
-      const merge = merges.find((m) => m.from.row === ri && m.from.col === ci);
-      const columnSpan = merge ? merge.to.col - merge.from.col + 1 : undefined;
-      const rowSpan = merge ? merge.to.row - merge.from.row + 1 : undefined;
+      const merge = merges.find((m) => m.row === ri && m.col === ci);
+      const columnSpan = merge ? merge.colEnd - merge.col + 1 : undefined;
+      const rowSpan = merge ? merge.rowEnd - merge.row + 1 : undefined;
       const text = cellValueToText(cell.value);
       return {
         ...(text !== undefined ? { text } : {}),
@@ -434,8 +455,7 @@ function docxToXlsx(src: DocxTableOptions): XlsxVisualTable {
       const rspan = cell.rowSpan ?? 1;
       if (span > 1 || rspan > 1) {
         mergeCells.push({
-          from: { row: ri, col: ci },
-          to: { row: ri + rspan - 1, col: ci + span - 1 },
+          ref: `${columnToLetter(ci + 1)}${ri + 1}:${columnToLetter(ci + span)}${ri + rspan}`,
         });
       }
       const value = docxCellText(cell);
@@ -465,8 +485,7 @@ function pptxToXlsx(src: PptxTableOptions): XlsxVisualTable {
       const rspan = cell.rowSpan ?? 1;
       if (span > 1 || rspan > 1) {
         mergeCells.push({
-          from: { row: ri, col: ci },
-          to: { row: ri + rspan - 1, col: ci + span - 1 },
+          ref: `${columnToLetter(ci + 1)}${ri + 1}:${columnToLetter(ci + span)}${ri + rspan}`,
         });
       }
       const value = pptxCellText(cell);
