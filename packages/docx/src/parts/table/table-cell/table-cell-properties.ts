@@ -61,7 +61,6 @@ export interface TableCellPropertiesOptionsBase {
  */
 export type TableCellPropertiesOptions = {
   revision?: TableCellPropertiesChangeOptions;
-  includeIfEmpty?: boolean;
 } & TableCellPropertiesOptionsBase;
 
 export type TableCellPropertiesChangeOptions = TableCellPropertiesOptionsBase & ChangedProperties;

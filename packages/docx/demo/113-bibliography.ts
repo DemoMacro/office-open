@@ -8,7 +8,7 @@ const buffer = await generateDocument({
     styleName: "APA",
     sources: [
       {
-        type: "Book",
+        sourceType: "Book",
         title: "The Design of Everyday Things",
         author: "Norman, Donald",
         year: "2013",
@@ -17,7 +17,7 @@ const buffer = await generateDocument({
         edition: "Revised",
       },
       {
-        type: "JournalArticle",
+        sourceType: "JournalArticle",
         title: "A Survey of Techniques for Building Secure Software",
         author: "Smith, J.; Doe, A.",
         year: "2026",
@@ -28,7 +28,7 @@ const buffer = await generateDocument({
         pages: "100-120",
       },
       {
-        type: "InternetSite",
+        sourceType: "InternetSite",
         title: "TypeScript Documentation",
         author: "Microsoft",
         year: "2026",

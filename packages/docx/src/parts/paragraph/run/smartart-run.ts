@@ -30,10 +30,8 @@ export interface SmartArtNode {
  * @publicApi
  */
 export interface SmartArtOptions {
-  /** Tree-shaped data for the diagram */
-  data: {
-    nodes: SmartArtNode[];
-  };
+  /** Tree-shaped data for the diagram content. */
+  nodes: SmartArtNode[];
   /** Display dimensions */
   transformation: MediaTransformation;
   /** Floating positioning */

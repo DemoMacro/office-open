@@ -404,7 +404,7 @@ export function parseRun(
 ): {
   properties: RunPropertiesOptions | undefined;
   children: ParsedRunChild[];
-  rsid?: string;
+  additionRsid?: string;
   runPropertiesRsid?: string;
   deletionRsid?: string;
 } {
@@ -563,7 +563,7 @@ export function parseRun(
     }
   }
 
-  return { properties, children, rsid, runPropertiesRsid, deletionRsid };
+  return { properties, children, additionRsid: rsid, runPropertiesRsid, deletionRsid };
 }
 
 /**
@@ -610,7 +610,7 @@ export function parsedRunToOptions(
   }
 
   const opts: Record<string, unknown> = { ...parsed.properties };
-  if (parsed.rsid) opts.rsid = parsed.rsid;
+  if (parsed.additionRsid) opts.additionRsid = parsed.additionRsid;
   if (parsed.runPropertiesRsid) opts.runPropertiesRsid = parsed.runPropertiesRsid;
   if (parsed.deletionRsid) opts.deletionRsid = parsed.deletionRsid;
 

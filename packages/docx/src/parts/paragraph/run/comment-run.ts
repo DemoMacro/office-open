@@ -21,8 +21,8 @@ export interface CommentOptions {
   initials?: string;
   /** Name of the comment author */
   author?: string;
-  /** Date and time the comment was created */
-  date?: Date | string;
+  /** Creation date (CT_Comment `@w:date`, ISO 8601 string) */
+  date?: string;
 }
 
 /**
@@ -41,8 +41,8 @@ export interface CommentChildOptions {
   author?: string;
   /** Author initials (CT_Comment `@w:initials`). */
   initials?: string;
-  /** Creation date (CT_Comment `@w:date`); defaults to the current time. */
-  date?: Date | string;
+  /** Creation date (CT_Comment `@w:date`, ISO 8601 string); defaults to the current time. */
+  date?: string;
   /** Comment reply content stored in word/comments.xml (maps to CommentOptions.children). */
   children: (string | ParagraphOptions)[];
   /** Anchored document content the comment range wraps (inline runs/text). */

@@ -113,7 +113,7 @@ function pageNumberXml(opts: NonNullable<PageNumberTypeProperties>): string {
   if (opts.start !== undefined) attrs.push(`w:start="${opts.start}"`);
   if (opts.format !== undefined) attrs.push(`w:fmt="${opts.format}"`);
   if (opts.separator !== undefined) attrs.push(`w:chapSep="${opts.separator}"`);
-  if (opts.chapStyle !== undefined) attrs.push(`w:chapStyle="${opts.chapStyle}"`);
+  if (opts.chapterStyle !== undefined) attrs.push(`w:chapStyle="${opts.chapterStyle}"`);
   // No attributes → omit pgNumType (never fabricate an empty element).
   return attrs.length ? `<w:pgNumType ${attrs.join(" ")}/>` : "";
 }
@@ -378,7 +378,7 @@ export function stringifySectionProperties(opts: SectionPropertiesDescriptorOpti
   const attrs: string[] = [];
   if (opts.runPropertiesRsid !== undefined) attrs.push(`w:rsidRPr="${opts.runPropertiesRsid}"`);
   if (opts.deletionRsid !== undefined) attrs.push(`w:rsidDel="${opts.deletionRsid}"`);
-  if (opts.rsid !== undefined) attrs.push(`w:rsidR="${opts.rsid}"`);
+  if (opts.additionRsid !== undefined) attrs.push(`w:rsidR="${opts.additionRsid}"`);
   if (opts.sectionRsid !== undefined) attrs.push(`w:rsidSect="${opts.sectionRsid}"`);
 
   const attrStr = attrs.length ? " " + attrs.join(" ") : "";
@@ -393,7 +393,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
 
   // rsid attributes on w:sectPr element
   for (const [attrName, optKey] of [
-    ["w:rsidR", "rsid"],
+    ["w:rsidR", "additionRsid"],
     ["w:rsidRPr", "runPropertiesRsid"],
     ["w:rsidDel", "deletionRsid"],
     ["w:rsidSect", "sectionRsid"],
@@ -460,7 +460,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
       pageNumberType.separator = chapSep as PageNumberTypeProperties["separator"];
     }
     const chapStyle = attrNum(pgNumType, "w:chapStyle");
-    if (chapStyle !== undefined) pageNumberType.chapStyle = chapStyle;
+    if (chapStyle !== undefined) pageNumberType.chapterStyle = chapStyle;
     if (Object.keys(pageNumberType).length > 0) opts.pageNumberType = pageNumberType;
   }
 

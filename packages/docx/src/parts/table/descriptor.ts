@@ -204,7 +204,7 @@ function stringifyTableRow(
   // rsid attributes
   let attr = "";
   if (row.runPropertiesRsid) attr += ` w:rsidRPr="${row.runPropertiesRsid}"`;
-  if (row.rsid) attr += ` w:rsidR="${row.rsid}"`;
+  if (row.additionRsid) attr += ` w:rsidR="${row.additionRsid}"`;
   if (row.deletionRsid) attr += ` w:rsidDel="${row.deletionRsid}"`;
   if (row.tableRowRsid) attr += ` w:rsidTr="${row.tableRowRsid}"`;
 
@@ -429,7 +429,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
     // Table properties
     // tblPr is required in CT_Tbl (minOccurs defaults to 1) — always emit it,
     // even when empty; do not inject optional defaults (width/borders are XSD-optional).
-    const tblPrOpts: TablePropertiesOptions = {
+    const tblPrOpts: TablePropertiesOptions & { includeIfEmpty?: boolean } = {
       alignment: opts.alignment,
       borders: opts.borders,
       caption: opts.caption,
@@ -1031,7 +1031,7 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
   // rsid attributes on w:tr element
   for (const [attrName, optKey] of [
     ["w:rsidRPr", "runPropertiesRsid"],
-    ["w:rsidR", "rsid"],
+    ["w:rsidR", "additionRsid"],
     ["w:rsidDel", "deletionRsid"],
     ["w:rsidTr", "tableRowRsid"],
   ] as const) {

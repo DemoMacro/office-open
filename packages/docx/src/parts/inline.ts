@@ -176,7 +176,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   }
 
   let attr = "";
-  if (opts.rsid) attr += ` w:rsidR="${opts.rsid}"`;
+  if (opts.additionRsid) attr += ` w:rsidR="${opts.additionRsid}"`;
   if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
   if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
 
@@ -610,7 +610,7 @@ export function stringifyChildDispatch(
       typeof opts.style === "object" ? definitionId(opts.style) : (opts.style ?? "simple1");
     const colorId =
       typeof opts.color === "object" ? definitionId(opts.color) : (opts.color ?? "accent1_2");
-    const dataModelXml = createDataModel(opts.data.nodes, layoutId, styleId, colorId);
+    const dataModelXml = createDataModel(opts.nodes, layoutId, styleId, colorId);
 
     ctx.file.smartArts.addSmartArt(smartArtKey, {
       dataModelXml,
@@ -1072,7 +1072,7 @@ function hashSmartArtData(options: SmartArtOptions): number {
   // Layout/style/color participate: two diagrams with the same nodes but
   // different definitions are distinct parts.
   const data = JSON.stringify({
-    data: options.data,
+    nodes: options.nodes,
     layout: options.layout,
     style: options.style,
     color: options.color,

@@ -402,7 +402,7 @@ export class DefaultStylesFactory {
     // importedStyles carries only docDefaults + latentStyles verbatim. Every
     // builtin w:style is emitted as a structured Options object so HTML renderers
     // can consume style attributes directly.
-    const importedStyles: { _raw: string }[] = [];
+    const importedStyles: string[] = [];
     const paragraphStyles: (ParagraphStyleOptions & { id: string })[] = [];
     const characterStyles: (CharacterStyleOptions & { id: string })[] = [];
     const tableStyles: TableStyleOptions[] = [];
@@ -414,13 +414,12 @@ export class DefaultStylesFactory {
       "mc:Ignorable": "w14 w15",
     };
 
-    importedStyles.push({ _raw: stringifyDocDefaults(options.document ?? {}) });
+    importedStyles.push(stringifyDocDefaults(options.document ?? {}));
 
     // Latent styles - complete list from Word's default template
     // Only include styles that are NOT explicitly defined below
-    importedStyles.push({
-      _raw:
-        `<w:latentStyles w:defLockedState="0" w:defUIPriority="99" w:defSemiHidden="0" w:defUnhideWhenUsed="0" w:defQFormat="0" w:count="376">` +
+    importedStyles.push(
+      `<w:latentStyles w:defLockedState="0" w:defUIPriority="99" w:defSemiHidden="0" w:defUnhideWhenUsed="0" w:defQFormat="0" w:count="376">` +
         `<w:lsdException w:name="Normal" w:uiPriority="0" w:qFormat="1"/>` +
         `<w:lsdException w:name="heading 1" w:uiPriority="9" w:qFormat="1"/>` +
         `<w:lsdException w:name="heading 2" w:semiHidden="1" w:uiPriority="9" w:unhideWhenUsed="1" w:qFormat="1"/>` +
@@ -442,7 +441,7 @@ export class DefaultStylesFactory {
         `<w:lsdException w:name="No Spacing" w:uiPriority="1" w:qFormat="1"/>` +
         `<w:lsdException w:name="Revision" w:semiHidden="1"/>` +
         `</w:latentStyles>`,
-    });
+    );
 
     // Built-in styles required by Word
     // Normal paragraph style (default for paragraphs)

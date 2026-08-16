@@ -161,8 +161,12 @@ export type ParagraphStylePropertiesOptions = {
         level: number;
         /** Instance number for multiple lists with same reference */
         instance?: number;
-        /** Whether this is a custom numbering definition */
-        custom?: boolean;
+        /**
+         * Whether the ListParagraph style is auto-applied (default true).
+         * Set false when the paragraph style is authored explicitly (e.g.
+         * round-tripped documents whose styles.xml may not define it).
+         */
+        autoStyle?: boolean;
         /** Numbering change tracking (CT_TrackChangeNumbering) */
         numberingChange?: {
           /** Original numbering value */
@@ -207,5 +211,4 @@ export type ParagraphPropertiesChangeOptions = ChangedProperties & ParagraphProp
  */
 export type ParagraphPropertiesOptions = {
   revision?: ParagraphPropertiesChangeOptions;
-  includeIfEmpty?: boolean;
 } & ParagraphPropertiesOptionsBase;

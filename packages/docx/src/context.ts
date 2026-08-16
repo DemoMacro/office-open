@@ -245,7 +245,9 @@ export class DocxWriteContext implements WriteContext {
   constructor(options: DocumentOptions) {
     this._options = options;
 
-    this.numbering = new Numbering(options.numbering ? options.numbering : { config: [] });
+    this.numbering = new Numbering(
+      options.numbering ? options.numbering : { abstractNumberings: [] },
+    );
 
     this.comments = {
       relationships: new Relationships(),
@@ -287,7 +289,7 @@ export class DocxWriteContext implements WriteContext {
       // external XML — the factory's are not mixed in.
       const externalIds = new Set<string>();
       for (const s of externalStyles.importedStyles ?? []) {
-        const id = extractStyleId(s._raw);
+        const id = extractStyleId(s);
         if (id) externalIds.add(id);
       }
       const notInExternal = <T extends { id: string }>(arr: T[] | undefined) =>
@@ -313,10 +315,10 @@ export class DocxWriteContext implements WriteContext {
         const docDefaults =
           s.default?.document !== undefined
             ? stringifyDocDefaults(s.default.document, false)
-            : (s.docDefaultsXml ?? f.importedStyles?.[0]?._raw ?? "");
-        const latentStyles = s.latentStylesXml ?? f.importedStyles?.[1]?._raw ?? "";
+            : (s.docDefaultsXml ?? f.importedStyles?.[0] ?? "");
+        const latentStyles = s.latentStylesXml ?? f.importedStyles?.[1] ?? "";
         this.styles = new Styles({
-          importedStyles: [{ _raw: docDefaults }, { _raw: latentStyles }],
+          importedStyles: [docDefaults, latentStyles],
           initialAttributes: s.initialAttributes ?? f.initialAttributes,
           paragraphStyles: s.paragraphStyles,
           characterStyles: s.characterStyles,

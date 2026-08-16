@@ -39,7 +39,7 @@ const buffer = await generateDocument({
           ],
         },
       ],
-      date: new Date(),
+      date: new Date().toISOString(),
       id: 0,
     },
     {
@@ -60,7 +60,7 @@ const buffer = await generateDocument({
           ],
         },
       ],
-      date: new Date(),
+      date: new Date().toISOString(),
       id: 1,
     },
     {
@@ -74,7 +74,7 @@ const buffer = await generateDocument({
           ],
         },
       ],
-      date: new Date(),
+      date: new Date().toISOString(),
       id: 2,
     },
     {
@@ -88,7 +88,7 @@ const buffer = await generateDocument({
           ],
         },
       ],
-      date: new Date(),
+      date: new Date().toISOString(),
       id: 3,
     },
   ],
@@ -150,7 +150,7 @@ const buffer = await generateDocument({
                 comment: {
                   author: "Sugar Author",
                   initials: "SA",
-                  date: new Date(),
+                  date: new Date().toISOString(),
                   children: ["Added via the { comment } sugar — no manual id."],
                   wrap: [{ text: "sugar-wrapped text", bold: true }],
                 },

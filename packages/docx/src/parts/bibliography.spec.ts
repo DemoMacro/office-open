@@ -23,10 +23,10 @@ function roundTrip(opts: BibliographyOptions) {
 describe("bibliographyDesc round-trip", () => {
   it("round-trips single source with basic fields", () => {
     const result = roundTrip({
-      sources: [{ type: "Book", title: "TypeScript in Action", author: "John Doe" }],
+      sources: [{ sourceType: "Book", title: "TypeScript in Action", author: "John Doe" }],
     });
     expect(result.sources).toHaveLength(1);
-    expect(result.sources[0]?.type).toBe("Book");
+    expect(result.sources[0]?.sourceType).toBe("Book");
     expect(result.sources[0]?.title).toBe("TypeScript in Action");
     expect(result.sources[0]?.author).toBe("John Doe");
   });
@@ -43,7 +43,7 @@ describe("bibliographyDesc round-trip", () => {
     const result = roundTrip({
       sources: [
         {
-          type: "JournalArticle",
+          sourceType: "JournalArticle",
           title: "Deep Learning",
           author: "Jane Smith",
           year: "2024",
@@ -64,7 +64,7 @@ describe("bibliographyDesc round-trip", () => {
     });
     const src = result.sources[0];
     if (!src) throw new Error("source not parsed");
-    expect(src.type).toBe("JournalArticle");
+    expect(src.sourceType).toBe("JournalArticle");
     expect(src.title).toBe("Deep Learning");
     expect(src.author).toBe("Jane Smith");
     expect(src.year).toBe("2024");

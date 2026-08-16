@@ -87,5 +87,4 @@ export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedPrope
  */
 export type TablePropertiesOptions = {
   revision?: TablePropertiesChangeOptions;
-  includeIfEmpty?: boolean;
 } & TablePropertiesOptionsBase;

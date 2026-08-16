@@ -181,7 +181,7 @@ export type ParagraphOptions = {
   /** Array of child elements. */
   children?: (ParagraphChild | string)[];
   /** Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string). */
-  rsid?: string;
+  additionRsid?: string;
   /** Default revision save ID for runs in this paragraph (w:rsidRDefault). */
   defaultRunRsid?: string;
   /** Revision save ID for the paragraph properties (w:rsidP). */

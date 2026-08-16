@@ -6,7 +6,7 @@ import { AlignmentType, LevelFormat, generateDocument } from "@office-open/docx"
 
 const buffer = await generateDocument({
   numbering: {
-    config: [
+    abstractNumberings: [
       {
         reference: "decimal-with-restart",
         levels: [

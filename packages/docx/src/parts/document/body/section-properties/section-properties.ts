@@ -39,7 +39,7 @@ export interface HeaderFooterGroup<T> {
 export interface SectionPropertiesOptionsBase {
   runPropertiesRsid?: string;
   deletionRsid?: string;
-  rsid?: string;
+  additionRsid?: string;
   sectionRsid?: string;
   /** Page size (w:pgSz). Defaults to A4 portrait. */
   pageSize?: PageSizeProperties;

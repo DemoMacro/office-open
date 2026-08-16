@@ -1337,7 +1337,7 @@ function parseSmartArtDataXml(el: Element): Record<string, unknown> | undefined 
   // Build tree from connections
   const cxnLst = findChild(el, "dgm:cxnLst");
   if (!cxnLst) {
-    opts.data = { nodes: [] };
+    opts.nodes = [];
     return opts;
   }
 
@@ -1359,7 +1359,7 @@ function parseSmartArtDataXml(el: Element): Record<string, unknown> | undefined 
 
   // Root children are connected from doc node (modelId="0")
   const topIds = childrenMap.get("0") ?? [];
-  opts.data = { nodes: topIds.map((id) => buildSmartArtNode(id, nodeMap, childrenMap)) };
+  opts.nodes = topIds.map((id) => buildSmartArtNode(id, nodeMap, childrenMap));
 
   return opts;
 }

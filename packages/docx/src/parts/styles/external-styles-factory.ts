@@ -42,9 +42,7 @@ export class ExternalStylesFactory {
     const stylesElements = stylesXmlElement.elements || [];
 
     return {
-      importedStyles: stylesElements.map((childElm) => ({
-        _raw: stringify({ elements: [childElm] }),
-      })),
+      importedStyles: stylesElements.map((childElm) => stringify({ elements: [childElm] })),
       initialAttributes: (stylesXmlElement.attributes as Record<string, string>) ?? {},
     };
   }

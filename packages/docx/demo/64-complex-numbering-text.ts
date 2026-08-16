@@ -6,7 +6,7 @@ import { LevelFormat, generateDocument } from "@office-open/docx";
 
 const buffer = await generateDocument({
   numbering: {
-    config: [
+    abstractNumberings: [
       {
         levels: [
           {

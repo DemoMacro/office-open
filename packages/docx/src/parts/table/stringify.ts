@@ -231,7 +231,9 @@ function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptio
 
 // ── Table properties (w:tblPr) ──
 
-function stringifyTablePropertiesInner(options: TablePropertiesOptions): string {
+function stringifyTablePropertiesInner(
+  options: TablePropertiesOptions & { includeIfEmpty?: boolean },
+): string {
   const parts: string[] = [];
 
   if (options.style) {
@@ -310,7 +312,9 @@ function stringifyTablePropertiesInner(options: TablePropertiesOptions): string 
   return parts.join("");
 }
 
-export function stringifyTableProperties(options: TablePropertiesOptions): string | undefined {
+export function stringifyTableProperties(
+  options: TablePropertiesOptions & { includeIfEmpty?: boolean },
+): string | undefined {
   const inner = stringifyTablePropertiesInner(options);
   if (options.includeIfEmpty || inner) {
     return `<w:tblPr>${inner}</w:tblPr>`;
@@ -328,7 +332,9 @@ function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChang
 
 // ── Row properties (w:trPr) ──
 
-function stringifyTableRowPropertiesInner(options: TableRowPropertiesOptions): string {
+function stringifyTableRowPropertiesInner(
+  options: TableRowPropertiesOptions & { includeIfEmpty?: boolean },
+): string {
   const parts: string[] = [];
 
   if (options.cnfStyle !== undefined) {
@@ -399,7 +405,7 @@ function stringifyTableRowPropertiesInner(options: TableRowPropertiesOptions): s
 }
 
 export function stringifyTableRowProperties(
-  options: TableRowPropertiesOptions,
+  options: TableRowPropertiesOptions & { includeIfEmpty?: boolean },
 ): string | undefined {
   const inner = stringifyTableRowPropertiesInner(options);
   if (options.includeIfEmpty || inner) {
@@ -420,7 +426,9 @@ function stringifyTableCellPropertiesChangeInner(
 
 // ── Cell properties (w:tcPr) ──
 
-function stringifyTableCellPropertiesInner(options: TableCellPropertiesOptions): string {
+function stringifyTableCellPropertiesInner(
+  options: TableCellPropertiesOptions & { includeIfEmpty?: boolean },
+): string {
   // CT_TcPrBase sequence: cnfStyle, tcW, gridSpan, hMerge, vMerge, tcBorders, shd,
   // noWrap, tcMar, textDirection, tcFitText, vAlign, hideMark, headers;
   // then EG_CellMarkupElements (cellIns/cellDel/cellMerge), then tcPrChange.
@@ -511,7 +519,7 @@ function stringifyTableCellPropertiesInner(options: TableCellPropertiesOptions):
 }
 
 export function stringifyTableCellProperties(
-  options: TableCellPropertiesOptions,
+  options: TableCellPropertiesOptions & { includeIfEmpty?: boolean },
 ): string | undefined {
   const inner = stringifyTableCellPropertiesInner(options);
   if (options.includeIfEmpty || inner) {

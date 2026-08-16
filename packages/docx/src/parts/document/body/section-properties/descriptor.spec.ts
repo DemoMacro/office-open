@@ -234,11 +234,11 @@ describe("sectionPropertiesDesc round-trip", () => {
 
   it("round-trips rsid attributes", () => {
     const result = roundTrip({
-      rsid: "00112233",
+      additionRsid: "00112233",
       runPropertiesRsid: "AABBCCDD",
       sectionRsid: "11223344",
     });
-    expect(result.rsid).toBe("00112233");
+    expect(result.additionRsid).toBe("00112233");
     expect(result.runPropertiesRsid).toBe("AABBCCDD");
     expect(result.sectionRsid).toBe("11223344");
   });

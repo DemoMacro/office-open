@@ -55,8 +55,7 @@ const COMMENTS_NS = documentNamespaceAttributes([
 // ── Comment stringification ──
 
 function stringifyComment(opts: CommentOptions, ctx: BodyContext): string {
-  const dateStr =
-    typeof opts.date === "string" ? opts.date : (opts.date ?? new Date()).toISOString();
+  const dateStr = opts.date ?? new Date().toISOString();
   // w:author is XSD-required (CT_TrackChange); default to empty string when absent.
   const attrs: string[] = [
     `w:id="${opts.id}"`,

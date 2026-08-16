@@ -26,13 +26,13 @@ import { boxFromDocx, boxFromPptx, boxToPptx } from "./position";
 
 // SmartArtNode (docx) and TreeNode (core) are structurally identical trees.
 // Map recursively since docx children are mutable and core's are readonly.
-const toTreeNodes = (nodes: DocxSmartArt["data"]["nodes"]): TreeNode[] =>
+const toTreeNodes = (nodes: DocxSmartArt["nodes"]): TreeNode[] =>
   nodes.map((n) => ({
     text: n.text,
     ...(n.children ? { children: toTreeNodes(n.children) } : {}),
   }));
 
-const toDocxNodes = (nodes: TreeNode[]): DocxSmartArt["data"]["nodes"] =>
+const toDocxNodes = (nodes: TreeNode[]): DocxSmartArt["nodes"] =>
   nodes.map((n) => ({
     text: n.text,
     ...(n.children ? { children: toDocxNodes([...n.children]) } : {}),
@@ -64,7 +64,7 @@ const altTextFromCnvPr = (
 export function toDocxSmartArt(source: PptxSmartArt): DocxSmartArt {
   const box = boxFromPptx(source.x, source.y, source.width, source.height);
   return {
-    data: { nodes: toDocxNodes(source.nodes) },
+    nodes: toDocxNodes(source.nodes),
     transformation: {
       width: box.width,
       height: box.height,
@@ -86,7 +86,7 @@ export function toPptxSmartArt(source: DocxSmartArt): PptxSmartArt {
   const box = boxFromDocx(source.transformation);
   const pos = boxToPptx(box);
   return {
-    nodes: toTreeNodes(source.data.nodes),
+    nodes: toTreeNodes(source.nodes),
     x: pos.x,
     y: pos.y,
     width: pos.width,

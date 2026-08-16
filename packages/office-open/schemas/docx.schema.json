@@ -1453,7 +1453,7 @@
       "additionalProperties": false,
       "description": "Caption definition (CT_Caption)",
       "properties": {
-        "chapNum": {
+        "chapterNumber": {
           "description": "Include chapter number",
           "type": "boolean"
         },
@@ -2947,16 +2947,8 @@
           "type": "array"
         },
         "date": {
-          "anyOf": [
-            {
-              "format": "date-time",
-              "type": "string"
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "description": "Creation date (CT_Comment `@w:date`); defaults to the current time."
+          "description": "Creation date (CT_Comment `@w:date`, ISO 8601 string); defaults to the current time.",
+          "type": "string"
         },
         "initials": {
           "description": "Author initials (CT_Comment `@w:initials`).",
@@ -3003,16 +2995,8 @@
           "type": "array"
         },
         "date": {
-          "anyOf": [
-            {
-              "format": "date-time",
-              "type": "string"
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "description": "Date and time the comment was created"
+          "description": "Creation date (CT_Comment `@w:date`, ISO 8601 string)",
+          "type": "string"
         },
         "id": {
           "description": "Unique identifier for the comment",
@@ -9349,8 +9333,8 @@
       "additionalProperties": false,
       "description": "Options for configuring numbering definitions.",
       "properties": {
-        "config": {
-          "description": "Array of numbering configurations, each with levels and a reference name.",
+        "abstractNumberings": {
+          "description": "Abstract numbering definitions (w:abstractNum), each addressed by its reference name.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -9399,7 +9383,7 @@
           "type": "array"
         }
       },
-      "required": ["config"],
+      "required": ["abstractNumberings"],
       "type": "object"
     },
     "NumberingStyleOptions": {
@@ -10046,7 +10030,7 @@
       "additionalProperties": false,
       "description": "Options for configuring page numbering.",
       "properties": {
-        "chapStyle": {
+        "chapterStyle": {
           "description": "Heading style ID for chapter numbering",
           "type": "number"
         },
@@ -11154,6 +11138,10 @@
       "additionalProperties": false,
       "description": "Options for creating a Paragraph element.",
       "properties": {
+        "additionRsid": {
+          "description": "Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string).",
+          "type": "string"
+        },
         "adjustRightInd": {
           "description": "Whether to automatically adjust right indent for document grid",
           "type": "boolean"
@@ -11247,9 +11235,6 @@
           "enum": ["Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Title"],
           "type": "string"
         },
-        "includeIfEmpty": {
-          "type": "boolean"
-        },
         "indent": {
           "$ref": "#/definitions/IndentProperties",
           "description": "Indentation settings for the paragraph"
@@ -11279,8 +11264,8 @@
             {
               "additionalProperties": false,
               "properties": {
-                "custom": {
-                  "description": "Whether this is a custom numbering definition",
+                "autoStyle": {
+                  "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                   "type": "boolean"
                 },
                 "instance": {
@@ -11356,10 +11341,6 @@
         "rightTabStop": {
           "description": "Position in twips for a right-aligned tab stop",
           "type": "number"
-        },
-        "rsid": {
-          "description": "Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string).",
-          "type": "string"
         },
         "run": {
           "$ref": "#/definitions/ParagraphRunOptions",
@@ -11561,8 +11542,8 @@
             {
               "additionalProperties": false,
               "properties": {
-                "custom": {
-                  "description": "Whether this is a custom numbering definition",
+                "autoStyle": {
+                  "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                   "type": "boolean"
                 },
                 "instance": {
@@ -12383,8 +12364,8 @@
             {
               "additionalProperties": false,
               "properties": {
-                "custom": {
-                  "description": "Whether this is a custom numbering definition",
+                "autoStyle": {
+                  "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                   "type": "boolean"
                 },
                 "instance": {
@@ -13816,6 +13797,10 @@
       "additionalProperties": false,
       "description": "Options for creating a Run element.\n\nThe run element specifies a region of text with a common set of properties. The children property can contain various inline content elements.",
       "properties": {
+        "additionRsid": {
+          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\").",
+          "type": "string"
+        },
         "allCaps": {
           "type": "boolean"
         },
@@ -14239,10 +14224,6 @@
         },
         "rightToLeft": {
           "type": "boolean"
-        },
-        "rsid": {
-          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\").",
-          "type": "string"
         },
         "runPropertiesRsid": {
           "description": "Revision save ID for run properties (w:rsidRPr, hex string).",
@@ -15661,6 +15642,10 @@
             "textbox": {
               "additionalProperties": false,
               "properties": {
+                "additionRsid": {
+                  "description": "Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string).",
+                  "type": "string"
+                },
                 "adjustRightInd": {
                   "description": "Whether to automatically adjust right indent for document grid",
                   "type": "boolean"
@@ -15942,9 +15927,6 @@
                   ],
                   "description": "Heading level (Heading1, Heading2, etc.) - applies predefined heading style"
                 },
-                "includeIfEmpty": {
-                  "type": "boolean"
-                },
                 "indent": {
                   "$ref": "#/definitions/IndentProperties",
                   "description": "Indentation settings for the paragraph"
@@ -15974,8 +15956,8 @@
                     {
                       "additionalProperties": false,
                       "properties": {
-                        "custom": {
-                          "description": "Whether this is a custom numbering definition",
+                        "autoStyle": {
+                          "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                           "type": "boolean"
                         },
                         "instance": {
@@ -16051,10 +16033,6 @@
                 "rightTabStop": {
                   "description": "Position in twips for a right-aligned tab stop",
                   "type": "number"
-                },
-                "rsid": {
-                  "description": "Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string).",
-                  "type": "string"
                 },
                 "run": {
                   "$ref": "#/definitions/ParagraphRunOptions",
@@ -16306,6 +16284,9 @@
     "SectionPropertiesChangeOptions": {
       "additionalProperties": false,
       "properties": {
+        "additionRsid": {
+          "type": "string"
+        },
         "author": {
           "description": "Name of the author who made the change",
           "type": "string"
@@ -16382,9 +16363,6 @@
           },
           "type": "object"
         },
-        "rsid": {
-          "type": "string"
-        },
         "rtlGutter": {
           "type": "boolean"
         },
@@ -16416,6 +16394,9 @@
     "SectionPropertiesOptions": {
       "additionalProperties": false,
       "properties": {
+        "additionRsid": {
+          "type": "string"
+        },
         "bidi": {
           "type": "boolean"
         },
@@ -16482,9 +16463,6 @@
         },
         "revision": {
           "$ref": "#/definitions/SectionPropertiesChangeOptions"
-        },
-        "rsid": {
-          "type": "string"
         },
         "rtlGutter": {
           "type": "boolean"
@@ -17629,20 +17607,6 @@
           ],
           "description": "Built-in color transform ID (\"accent1_2\") or a custom color definition."
         },
-        "data": {
-          "additionalProperties": false,
-          "description": "Tree-shaped data for the diagram",
-          "properties": {
-            "nodes": {
-              "items": {
-                "$ref": "#/definitions/SmartArtNode"
-              },
-              "type": "array"
-            }
-          },
-          "required": ["nodes"],
-          "type": "object"
-        },
         "floating": {
           "$ref": "#/definitions/Floating",
           "description": "Floating positioning"
@@ -17657,6 +17621,13 @@
             }
           ],
           "description": "Built-in layout ID (\"default\", \"process1\") or a custom layout definition."
+        },
+        "nodes": {
+          "description": "Tree-shaped data for the diagram content.",
+          "items": {
+            "$ref": "#/definitions/SmartArtNode"
+          },
+          "type": "array"
         },
         "style": {
           "anyOf": [
@@ -17674,7 +17645,7 @@
           "description": "Display dimensions"
         }
       },
-      "required": ["data", "transformation"],
+      "required": ["nodes", "transformation"],
       "type": "object"
     },
     "SolidFillOptions": {
@@ -17725,24 +17696,69 @@
     },
     "SourceTypeOptions": {
       "additionalProperties": false,
-      "description": "Options for a single bibliography source entry.\n\nMaps to CT_SourceType in the bibliography XSD schema. All fields are optional — include only the relevant ones for each source type.",
+      "description": "Options for a single bibliography source entry.\n\nMaps to CT_SourceType in the bibliography XSD schema (choice of 48 elements, all optional). All fields are optional — include only the relevant ones for each source type. `author` is plain text (semicolon-separated); the XSD's structured CT_AuthorType roles collapse into it.",
       "properties": {
+        "abbreviatedCaseNumber": {
+          "type": "string"
+        },
+        "albumTitle": {
+          "type": "string"
+        },
         "author": {
           "type": "string"
         },
         "bookTitle": {
           "type": "string"
         },
+        "broadcastTitle": {
+          "type": "string"
+        },
+        "broadcaster": {
+          "type": "string"
+        },
+        "caseNumber": {
+          "type": "string"
+        },
+        "chapterNumber": {
+          "type": "string"
+        },
         "city": {
+          "type": "string"
+        },
+        "comments": {
+          "type": "string"
+        },
+        "conferenceName": {
+          "type": "string"
+        },
+        "countryRegion": {
+          "type": "string"
+        },
+        "court": {
           "type": "string"
         },
         "day": {
           "type": "string"
         },
+        "dayAccessed": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "distributor": {
+          "type": "string"
+        },
         "edition": {
           "type": "string"
         },
+        "guid": {
+          "type": "string"
+        },
         "institution": {
+          "type": "string"
+        },
+        "internetSiteTitle": {
           "type": "string"
         },
         "issue": {
@@ -17751,28 +17767,93 @@
         "journal": {
           "type": "string"
         },
+        "lcid": {
+          "type": "string"
+        },
+        "medium": {
+          "type": "string"
+        },
         "month": {
+          "type": "string"
+        },
+        "monthAccessed": {
+          "type": "string"
+        },
+        "numberVolumes": {
           "type": "string"
         },
         "pages": {
           "type": "string"
         },
+        "patentNumber": {
+          "type": "string"
+        },
+        "periodicalTitle": {
+          "type": "string"
+        },
+        "productionCompany": {
+          "type": "string"
+        },
+        "publicationTitle": {
+          "type": "string"
+        },
         "publisher": {
+          "type": "string"
+        },
+        "recordingNumber": {
+          "type": "string"
+        },
+        "refOrder": {
+          "type": "string"
+        },
+        "reporter": {
+          "type": "string"
+        },
+        "shortTitle": {
+          "type": "string"
+        },
+        "sourceType": {
+          "description": "Source type element (ST_SourceType: Book, JournalArticle, …).",
+          "type": "string"
+        },
+        "standardNumber": {
+          "type": "string"
+        },
+        "stateProvince": {
+          "type": "string"
+        },
+        "station": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "theater": {
+          "type": "string"
+        },
+        "thesisType": {
           "type": "string"
         },
         "title": {
           "type": "string"
         },
         "type": {
+          "description": "Subcategory string (XSD Type element).",
           "type": "string"
         },
         "url": {
+          "type": "string"
+        },
+        "version": {
           "type": "string"
         },
         "volume": {
           "type": "string"
         },
         "year": {
+          "type": "string"
+        },
+        "yearAccessed": {
           "type": "string"
         }
       },
@@ -18070,16 +18151,9 @@
           "type": "string"
         },
         "importedStyles": {
-          "description": "Array of raw XML style elements",
+          "description": "Verbatim styles.xml child elements (docDefaults/latentStyles/styles), one XML string each",
           "items": {
-            "additionalProperties": false,
-            "properties": {
-              "_raw": {
-                "type": "string"
-              }
-            },
-            "required": ["_raw"],
-            "type": "object"
+            "type": "string"
           },
           "type": "array"
         },
@@ -18219,6 +18293,10 @@
       "additionalProperties": false,
       "description": "Options for creating a SymbolRun.",
       "properties": {
+        "additionRsid": {
+          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\").",
+          "type": "string"
+        },
         "allCaps": {
           "type": "boolean"
         },
@@ -18647,10 +18725,6 @@
         "rightToLeft": {
           "type": "boolean"
         },
-        "rsid": {
-          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\").",
-          "type": "string"
-        },
         "runPropertiesRsid": {
           "description": "Revision save ID for run properties (w:rsidRPr, hex string).",
           "type": "string"
@@ -18980,9 +19054,6 @@
           "enum": ["continue", "restart"],
           "type": "string"
         },
-        "includeIfEmpty": {
-          "type": "boolean"
-        },
         "insertion": {
           "$ref": "#/definitions/ChangedProperties"
         },
@@ -19163,9 +19234,6 @@
           "description": "Horizontal merge setting (hMerge)",
           "enum": ["continue", "restart"],
           "type": "string"
-        },
-        "includeIfEmpty": {
-          "type": "boolean"
         },
         "insertion": {
           "$ref": "#/definitions/ChangedProperties"
@@ -19527,9 +19595,6 @@
           "description": "Unique identifier for this change (must be unique within the document)",
           "type": "number"
         },
-        "includeIfEmpty": {
-          "type": "boolean"
-        },
         "indent": {
           "$ref": "#/definitions/TableWidthProperties"
         },
@@ -19607,9 +19672,6 @@
         },
         "float": {
           "$ref": "#/definitions/TableFloatOptions"
-        },
-        "includeIfEmpty": {
-          "type": "boolean"
         },
         "indent": {
           "$ref": "#/definitions/TableWidthProperties"
@@ -19725,6 +19787,10 @@
     "TableRowOptions": {
       "additionalProperties": false,
       "properties": {
+        "additionRsid": {
+          "description": "Revision save ID for the row (w:rsidR, hex string).",
+          "type": "string"
+        },
         "cantSplit": {
           "description": "Whether the row can be split across pages (cantSplit)",
           "type": "boolean"
@@ -19816,9 +19882,6 @@
           "description": "Whether the row is hidden (hidden)",
           "type": "boolean"
         },
-        "includeIfEmpty": {
-          "type": "boolean"
-        },
         "insertion": {
           "$ref": "#/definitions/ChangedProperties"
         },
@@ -19845,10 +19908,6 @@
             "left",
             "right"
           ],
-          "type": "string"
-        },
-        "rsid": {
-          "description": "Revision save ID for the row (w:rsidR, hex string).",
           "type": "string"
         },
         "runPropertiesRsid": {
@@ -20033,9 +20092,6 @@
         },
         "hidden": {
           "description": "Whether the row is hidden (hidden)",
-          "type": "boolean"
-        },
-        "includeIfEmpty": {
           "type": "boolean"
         },
         "insertion": {
@@ -21841,6 +21897,19 @@
         },
         "targetScreenSize": {
           "description": "Target screen size",
+          "enum": [
+            "544x376",
+            "640x480",
+            "720x512",
+            "800x600",
+            "1024x768",
+            "1152x882",
+            "1152x900",
+            "1280x1024",
+            "1600x1200",
+            "1800x1440",
+            "1920x1200"
+          ],
           "type": "string"
         }
       },

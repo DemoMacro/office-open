@@ -57,7 +57,7 @@ const buffer = await generateDocument({
     captions: {
       captions: [
         { name: "Table", pos: "above", numFmt: "upperRoman" },
-        { name: "Figure", pos: "below", sep: "hyphen", heading: 1, chapNum: true },
+        { name: "Figure", pos: "below", sep: "hyphen", heading: 1, chapterNumber: true },
       ],
     },
     mathProperties: {

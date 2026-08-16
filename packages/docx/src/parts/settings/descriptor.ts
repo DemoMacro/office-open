@@ -353,7 +353,7 @@ function parseCaptions(el: Element): CaptionsOptions | undefined {
       const pos = attr(child, "w:pos");
       if (pos) c.pos = pos as CaptionOptions["pos"];
       const chapNum = attr(child, "w:chapNum");
-      if (chapNum !== undefined) c.chapNum = parseOnOff(chapNum) ?? false;
+      if (chapNum !== undefined) c.chapterNumber = parseOnOff(chapNum) ?? false;
       const heading = attr(child, "w:heading");
       if (heading !== undefined) c.heading = parseInt(heading, 10);
       const noLabel = attr(child, "w:noLabel");
@@ -685,7 +685,7 @@ function stringifyCaptions(opts: CaptionsOptions): string {
   for (const cap of opts.captions) {
     const attrs: Record<string, string | number> = { "w:name": cap.name };
     if (cap.pos !== undefined) attrs["w:pos"] = cap.pos;
-    if (cap.chapNum !== undefined) attrs["w:chapNum"] = cap.chapNum ? "1" : "0";
+    if (cap.chapterNumber !== undefined) attrs["w:chapNum"] = cap.chapterNumber ? "1" : "0";
     if (cap.heading !== undefined) attrs["w:heading"] = cap.heading;
     if (cap.noLabel !== undefined) attrs["w:noLabel"] = cap.noLabel ? "1" : "0";
     if (cap.numFmt !== undefined) attrs["w:numFmt"] = cap.numFmt;

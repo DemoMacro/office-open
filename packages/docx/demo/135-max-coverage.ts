@@ -28,7 +28,7 @@ const doc: DocumentOptions = {
     characterStyles: [{ id: "Emphasis", name: "Emphasis", run: { italic: true, color: "C00000" } }],
   },
   numbering: {
-    config: [
+    abstractNumberings: [
       {
         reference: "max-numbering",
         levels: [
@@ -45,7 +45,7 @@ const doc: DocumentOptions = {
       id: 0,
       author: "Max",
       initials: "M",
-      date: new Date(),
+      date: new Date().toISOString(),
       children: [{ children: [{ text: "Document-level comment body." }] }],
     },
   ],
@@ -349,7 +349,7 @@ const doc: DocumentOptions = {
               {
                 smartArt: {
                   layout: "simple1",
-                  data: { nodes: [{ text: "One" }, { text: "Two" }] },
+                  nodes: [{ text: "One" }, { text: "Two" }],
                   transformation: { width: 300, height: 150 },
                 },
               },

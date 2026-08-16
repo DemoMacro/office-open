@@ -20,7 +20,7 @@
     ]
   },
   "numbering": {
-    "config": [
+    "abstractNumberings": [
       {
         "reference": "custom-list",
         "levels": [

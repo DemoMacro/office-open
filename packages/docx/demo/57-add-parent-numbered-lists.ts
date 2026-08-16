@@ -5,7 +5,7 @@ import { AlignmentType, HeadingLevel, LevelFormat, generateDocument } from "@off
 
 const buffer = await generateDocument({
   numbering: {
-    config: [
+    abstractNumberings: [
       {
         levels: [
           {

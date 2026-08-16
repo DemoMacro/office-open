@@ -51,8 +51,8 @@ export interface StylesOptions {
   default?: DefaultStylesOptions;
   /** Initial namespace attributes for the styles root element */
   initialAttributes?: Record<string, string>;
-  /** Array of raw XML style elements */
-  importedStyles?: { _raw: string }[];
+  /** Verbatim styles.xml child elements (docDefaults/latentStyles/styles), one XML string each */
+  importedStyles?: string[];
   /** Array of custom paragraph style definitions */
   paragraphStyles?: (ParagraphStyleOptions & { id: string })[];
   /** Array of custom character style definitions */
@@ -123,12 +123,12 @@ export class Styles {
 
     if (options.importedStyles) {
       for (const style of options.importedStyles) {
-        if (!style._raw) continue;
+        if (!style) continue;
         if (customStyleIds.size > 0) {
-          const id = extractStyleId(style._raw);
+          const id = extractStyleId(style);
           if (id && customStyleIds.has(id)) continue;
         }
-        this.parts.push(style._raw);
+        this.parts.push(style);
       }
     }
 

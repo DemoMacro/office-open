@@ -44,16 +44,14 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      {
-                        text: "Item A",
-                        children: [{ text: "Sub A1" }, { text: "Sub A2" }],
-                      },
-                      { text: "Item B", children: [{ text: "Sub B1" }] },
-                      { text: "Item C" },
-                    ],
-                  },
+                  nodes: [
+                    {
+                      text: "Item A",
+                      children: [{ text: "Sub A1" }, { text: "Sub A2" }],
+                    },
+                    { text: "Item B", children: [{ text: "Sub B1" }] },
+                    { text: "Item C" },
+                  ],
                   transformation: { width: "11.9cm", height: "6.6cm" },
                   layout: "default",
                   style: "simple1",
@@ -68,9 +66,7 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [{ text: "Step 1" }, { text: "Step 2" }, { text: "Step 3" }],
-                  },
+                  nodes: [{ text: "Step 1" }, { text: "Step 2" }, { text: "Step 3" }],
                   transformation: { width: "11.9cm", height: "6.6cm" },
                   layout: "list1",
                   style: "simple2",
@@ -88,15 +84,13 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Plan" },
-                      { text: "Design" },
-                      { text: "Build" },
-                      { text: "Test" },
-                      { text: "Deploy" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Plan" },
+                    { text: "Design" },
+                    { text: "Build" },
+                    { text: "Test" },
+                    { text: "Deploy" },
+                  ],
                   transformation: { width: "14.6cm", height: "6.6cm" },
                   layout: "process1",
                   style: "moderate1",
@@ -111,14 +105,12 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Phase 1" },
-                      { text: "Phase 2" },
-                      { text: "Phase 3" },
-                      { text: "Phase 4" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Phase 1" },
+                    { text: "Phase 2" },
+                    { text: "Phase 3" },
+                    { text: "Phase 4" },
+                  ],
                   transformation: { width: "14.6cm", height: "6.6cm" },
                   layout: "chevron1",
                   style: "professional1",
@@ -133,14 +125,12 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Start" },
-                      { text: "Process" },
-                      { text: "Review" },
-                      { text: "Complete" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Start" },
+                    { text: "Process" },
+                    { text: "Review" },
+                    { text: "Complete" },
+                  ],
                   transformation: { width: "14.6cm", height: "6.6cm" },
                   layout: "arrow1",
                   style: "polished1",
@@ -158,14 +148,12 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Research" },
-                      { text: "Design" },
-                      { text: "Develop" },
-                      { text: "Test" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Research" },
+                    { text: "Design" },
+                    { text: "Develop" },
+                    { text: "Test" },
+                  ],
                   transformation: { width: "9.3cm", height: "7.9cm" },
                   layout: "cycle1",
                   style: "cartoon1",
@@ -180,15 +168,13 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Plan" },
-                      { text: "Do" },
-                      { text: "Check" },
-                      { text: "Act" },
-                      { text: "Improve" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Plan" },
+                    { text: "Do" },
+                    { text: "Check" },
+                    { text: "Act" },
+                    { text: "Improve" },
+                  ],
                   transformation: { width: "9.3cm", height: "7.9cm" },
                   layout: "cycle2",
                   style: "powdery1",
@@ -206,23 +192,21 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      {
-                        text: "CEO",
-                        children: [
-                          {
-                            text: "VP Engineering",
-                            children: [{ text: "Frontend" }, { text: "Backend" }],
-                          },
-                          {
-                            text: "VP Marketing",
-                            children: [{ text: "Brand" }, { text: "Growth" }],
-                          },
-                        ],
-                      },
-                    ],
-                  },
+                  nodes: [
+                    {
+                      text: "CEO",
+                      children: [
+                        {
+                          text: "VP Engineering",
+                          children: [{ text: "Frontend" }, { text: "Backend" }],
+                        },
+                        {
+                          text: "VP Marketing",
+                          children: [{ text: "Brand" }, { text: "Growth" }],
+                        },
+                      ],
+                    },
+                  ],
                   transformation: { width: "13.2cm", height: "9.3cm" },
                   layout: "hierarchy1",
                   style: "moderate2",
@@ -237,21 +221,19 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      {
-                        text: "Root",
-                        children: [
-                          {
-                            text: "Branch A",
-                            children: [{ text: "Leaf A1" }, { text: "Leaf A2" }],
-                          },
-                          { text: "Branch B", children: [{ text: "Leaf B1" }] },
-                          { text: "Branch C" },
-                        ],
-                      },
-                    ],
-                  },
+                  nodes: [
+                    {
+                      text: "Root",
+                      children: [
+                        {
+                          text: "Branch A",
+                          children: [{ text: "Leaf A1" }, { text: "Leaf A2" }],
+                        },
+                        { text: "Branch B", children: [{ text: "Leaf B1" }] },
+                        { text: "Branch C" },
+                      ],
+                    },
+                  ],
                   transformation: { width: "13.2cm", height: "9.3cm" },
                   layout: "hierarchy2",
                   style: "polished2",
@@ -269,9 +251,7 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [{ text: "Set A" }, { text: "Set B" }, { text: "Set C" }],
-                  },
+                  nodes: [{ text: "Set A" }, { text: "Set B" }, { text: "Set C" }],
                   transformation: { width: "9.3cm", height: "7.9cm" },
                   layout: "venn1",
                   style: "burnt1",
@@ -286,15 +266,13 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Leads" },
-                      { text: "Prospects" },
-                      { text: "Qualified" },
-                      { text: "Negotiation" },
-                      { text: "Closed" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Leads" },
+                    { text: "Prospects" },
+                    { text: "Qualified" },
+                    { text: "Negotiation" },
+                    { text: "Closed" },
+                  ],
                   transformation: { width: "9.3cm", height: "7.9cm" },
                   layout: "funnel1",
                   style: "professional2",
@@ -312,14 +290,12 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Vision" },
-                      { text: "Strategy" },
-                      { text: "Tactics" },
-                      { text: "Operations" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Vision" },
+                    { text: "Strategy" },
+                    { text: "Tactics" },
+                    { text: "Operations" },
+                  ],
                   transformation: { width: "9.3cm", height: "7.9cm" },
                   layout: "pyramid1",
                   style: "moderate3",
@@ -334,9 +310,7 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [{ text: "All" }, { text: "Most" }, { text: "Some" }, { text: "Few" }],
-                  },
+                  nodes: [{ text: "All" }, { text: "Most" }, { text: "Some" }, { text: "Few" }],
                   transformation: { width: "9.3cm", height: "7.9cm" },
                   layout: "pyramid2",
                   style: "cartoon2",
@@ -354,14 +328,12 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Q1: Plan" },
-                      { text: "Q2: Execute" },
-                      { text: "Q3: Review" },
-                      { text: "Q4: Deliver" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Q1: Plan" },
+                    { text: "Q2: Execute" },
+                    { text: "Q3: Review" },
+                    { text: "Q4: Deliver" },
+                  ],
                   transformation: { width: "9.3cm", height: "7.9cm" },
                   layout: "matrix1",
                   style: "professional3",
@@ -376,14 +348,12 @@ const buffer = await generateDocument({
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Core" },
-                      { text: "Team" },
-                      { text: "Tools" },
-                      { text: "Process" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Core" },
+                    { text: "Team" },
+                    { text: "Tools" },
+                    { text: "Process" },
+                  ],
                   transformation: { width: "9.3cm", height: "7.9cm" },
                   layout: "radial1",
                   style: "burnt2",

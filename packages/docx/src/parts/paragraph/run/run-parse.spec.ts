@@ -128,7 +128,7 @@ describe("parseRun rsid attributes", () => {
     const rEl = doc.elements?.[0];
     if (!rEl) throw new Error("parsed document has no root element");
     const parsed = parseRun(rEl, {} as never);
-    expect(parsed.rsid).toBe("00992297");
+    expect(parsed.additionRsid).toBe("00992297");
     expect(parsed.runPropertiesRsid).toBe("00112233");
     expect(parsed.deletionRsid).toBe("AABBCCDD");
   });

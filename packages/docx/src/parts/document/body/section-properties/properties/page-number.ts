@@ -57,7 +57,7 @@ export interface PageNumberTypeProperties {
   /** Separator between chapter and page number (default: hyphen) */
   separator?: (typeof PageNumberSeparator)[keyof typeof PageNumberSeparator];
   /** Heading style ID for chapter numbering */
-  chapStyle?: number;
+  chapterStyle?: number;
 }
 
 /**
@@ -91,10 +91,10 @@ export const createPageNumberType = ({
   start,
   format,
   separator,
-  chapStyle,
+  chapterStyle,
 }: PageNumberTypeProperties): string =>
   element("w:pgNumType", {
-    "w:chapStyle": mapOptional(chapStyle, decimalNumber),
+    "w:chapStyle": mapOptional(chapterStyle, decimalNumber),
     "w:fmt": format,
     "w:chapSep": separator,
     "w:start": mapOptional(start, decimalNumber),

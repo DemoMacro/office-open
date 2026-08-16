@@ -110,7 +110,7 @@ interface RunOptionsBase {
 export type RunOptions = RunOptionsBase &
   RunPropertiesOptions & {
     /** Revision save ID for the run (w:rsidR, hex string e.g. "00123456"). */
-    rsid?: string;
+    additionRsid?: string;
     /** Revision save ID for run properties (w:rsidRPr, hex string). */
     runPropertiesRsid?: string;
     /** Revision save ID when run was deleted (w:rsidDel, hex string). */

@@ -70,7 +70,7 @@ const buffer = await generateDocument({
     },
   ],
   numbering: {
-    config: [
+    abstractNumberings: [
       {
         levels: [
           {

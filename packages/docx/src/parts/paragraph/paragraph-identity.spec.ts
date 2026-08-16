@@ -24,7 +24,7 @@ describe("paragraph identity attributes parse", () => {
     const opts = parseParagraph(el, readCtx);
     expect(opts.paraId).toBe("0A1B2C3D");
     expect(opts.textId).toBe("0E0F0A0B");
-    expect(opts.rsid).toBe("00992297");
+    expect(opts.additionRsid).toBe("00992297");
     expect(opts.defaultRunRsid).toBe("00112233");
     expect(opts.propertiesRsid).toBe("11223344");
     expect(opts.runPropertiesRsid).toBe("AABBCCDD");
@@ -38,7 +38,7 @@ describe("paragraph identity attributes parse", () => {
     if (!el) throw new Error("parsed document has no root element");
     const opts = parseParagraph(el, readCtx);
     expect(opts.paraId).toBe("1A2B3C4D");
-    expect(opts.rsid).toBe("00FF");
+    expect(opts.additionRsid).toBe("00FF");
     // Single text run is promoted to opts.text by the simple-text optimization.
     expect(opts.text).toBe("hi");
   });

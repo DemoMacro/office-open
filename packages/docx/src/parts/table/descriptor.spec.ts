@@ -347,7 +347,7 @@ describe("tableDesc round-trip", () => {
       rows: [
         {
           runPropertiesRsid: "00112233",
-          rsid: "00AABBCC",
+          additionRsid: "00AABBCC",
           deletionRsid: "00DDEEFF",
           tableRowRsid: "00445566",
           cells: [{ children: [] }],
@@ -356,7 +356,7 @@ describe("tableDesc round-trip", () => {
     });
     const row = result.rows[0] as TableRowOptions;
     expect(row.runPropertiesRsid).toBe("00112233");
-    expect(row.rsid).toBe("00AABBCC");
+    expect(row.additionRsid).toBe("00AABBCC");
     expect(row.deletionRsid).toBe("00DDEEFF");
     expect(row.tableRowRsid).toBe("00445566");
   });

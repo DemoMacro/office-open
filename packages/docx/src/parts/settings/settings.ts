@@ -590,7 +590,7 @@ export interface CaptionOptions {
   /** Caption position */
   pos?: "above" | "below";
   /** Include chapter number */
-  chapNum?: boolean;
+  chapterNumber?: boolean;
   /** Heading level for chapter number */
   heading?: number;
   /** Exclude label */

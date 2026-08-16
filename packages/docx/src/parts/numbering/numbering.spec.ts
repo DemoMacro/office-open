@@ -11,7 +11,7 @@ describe("Numbering", () => {
   describe("#constructor", () => {
     it("creates a default numbering with one abstract and one concrete instance", () => {
       const numbering = new Numbering({
-        config: [],
+        abstractNumberings: [],
       });
 
       const xml = numbering.serialize();
@@ -27,7 +27,7 @@ describe("Numbering", () => {
     describe("#createConcreteNumberingInstance", () => {
       it("should create a concrete numbering instance", () => {
         const numbering = new Numbering({
-          config: [
+          abstractNumberings: [
             {
               levels: [
                 {
@@ -47,7 +47,7 @@ describe("Numbering", () => {
 
       it("should not create a concrete numbering instance if reference is invalid", () => {
         const numbering = new Numbering({
-          config: [
+          abstractNumberings: [
             {
               levels: [
                 {
@@ -67,7 +67,7 @@ describe("Numbering", () => {
 
       it("should not create a concrete numbering instance if one already exists", () => {
         const numbering = new Numbering({
-          config: [
+          abstractNumberings: [
             {
               levels: [
                 {
@@ -90,7 +90,7 @@ describe("Numbering", () => {
     describe("#referenceConfigMap", () => {
       it("should store level configs into referenceConfigMap", () => {
         const numbering = new Numbering({
-          config: [
+          abstractNumberings: [
             {
               levels: [
                 {
@@ -120,7 +120,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
 
   it("reads back every level field the serializer writes", () => {
     const numbering = new Numbering({
-      config: [
+      abstractNumberings: [
         {
           reference: "decimal-list",
           levels: [
@@ -156,7 +156,9 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     // levels), so after round-trip the parsed config holds it alongside the
     // decimal config. The parsed reference is derived from numId (list_N), not
     // the original config name, so locate the decimal entry by its level format.
-    const decimalConfig = opts!.config.find((c) => c.levels[0]?.format === LevelFormat.DECIMAL);
+    const decimalConfig = opts!.abstractNumberings.find(
+      (c) => c.levels[0]?.format === LevelFormat.DECIMAL,
+    );
     expect(decimalConfig).toBeDefined();
     const lvl = decimalConfig!.levels[0];
     if (!lvl) throw new Error("decimal level not parsed");
@@ -180,7 +182,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
 
   it("round-trips numPicBullets (pict) and numIdMacAtCleanup", () => {
     const numbering = new Numbering({
-      config: [],
+      abstractNumberings: [],
       numPicBullets: [{ numPicBulletId: 3, pict: "<w:pict><v:shape/></w:pict>" }],
       numIdMacAtCleanup: 9,
     });
@@ -199,7 +201,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
 
   it("round-trips numPicBullet with drawing choice", () => {
     const numbering = new Numbering({
-      config: [],
+      abstractNumberings: [],
       numPicBullets: [{ numPicBulletId: 5, drawing: "<w:drawing><wp:inline/></w:drawing>" }],
     });
     const xml = numbering.serialize();
@@ -214,7 +216,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
 
   it("round-trips abstractNum name, styleLink, numStyleLink", () => {
     const numbering = new Numbering({
-      config: [
+      abstractNumberings: [
         {
           reference: "linked-list",
           levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1." }],
@@ -228,7 +230,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     if (!el) throw new Error("parsed document has no root element");
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
 
-    const linked = opts?.config.find((c) => c.properties?.name === "My List");
+    const linked = opts?.abstractNumberings.find((c) => c.properties?.name === "My List");
     expect(linked).toBeDefined();
     expect(linked?.properties?.styleLink).toBe("ListStyle");
     expect(linked?.properties?.numStyleLink).toBe("NumStyle");
@@ -254,8 +256,8 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     if (!el) throw new Error("parsed document has no root element");
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
 
-    const config = opts?.config[0];
-    expect(config).toBeDefined();
-    expect(config!.levels[0]?.start).toBe(3);
+    const first = opts?.abstractNumberings[0];
+    expect(first).toBeDefined();
+    expect(first!.levels[0]?.start).toBe(3);
   });
 });

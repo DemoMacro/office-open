@@ -27,8 +27,8 @@ import type { LevelsOptions } from "./level";
  * Options for configuring numbering definitions.
  */
 export interface NumberingOptions {
-  /** Array of numbering configurations, each with levels and a reference name. */
-  config: {
+  /** Abstract numbering definitions (w:abstractNum), each addressed by its reference name. */
+  abstractNumberings: {
     levels: LevelsOptions[];
     reference: string;
     properties?: AbstractNumberingPropertiesOptions;
@@ -167,7 +167,7 @@ export class Numbering {
     // Only inject the default bullet numbering when the caller supplied no
     // numbering definitions. Round-tripped documents carry their own, so
     // injecting a default would inflate the part (extra abstractNum + 9 levels).
-    if (options.config.length === 0) {
+    if (options.abstractNumberings.length === 0) {
       const defaultAbstractId = this.abstractNumUniqueNumericId();
       this.abstractNumberingData.set("default-bullet-numbering", {
         id: defaultAbstractId,
@@ -182,7 +182,7 @@ export class Numbering {
       });
     }
 
-    for (const con of options.config) {
+    for (const con of options.abstractNumberings) {
       this.abstractNumberingData.set(con.reference, {
         id: this.abstractNumUniqueNumericId(),
         levels: con.levels,
@@ -457,7 +457,7 @@ export function parseNumberingDefinitions(
     }
   }
 
-  const configs: NumberingOptions["config"] = [];
+  const configs: NumberingOptions["abstractNumberings"] = [];
 
   for (const { numId, abstractId, numEl } of numEntries) {
     const abstractEl = abstractNums.get(abstractId);
@@ -500,7 +500,7 @@ export function parseNumberingDefinitions(
   if (configs.length === 0 && numPicBullets.length === 0 && numIdMacAtCleanup === undefined) {
     return undefined;
   }
-  const result: NumberingOptions = { config: configs };
+  const result: NumberingOptions = { abstractNumberings: configs };
   if (numPicBullets.length > 0) result.numPicBullets = numPicBullets;
   if (numIdMacAtCleanup !== undefined) result.numIdMacAtCleanup = numIdMacAtCleanup;
   return result;

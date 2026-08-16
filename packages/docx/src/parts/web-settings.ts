@@ -95,13 +95,14 @@ export interface WebSettingsOptions {
   /** Pixels per inch for web output */
   pixelsPerInch?: number;
   /** Target screen size */
-  targetScreenSize?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize] | string;
+  targetScreenSize?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize];
   /** Save smart tags as XML */
   saveSmartTagsAsXml?: boolean;
 }
 
 // ── Descriptor ──
 
+import { convertToTwip } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
@@ -123,7 +124,7 @@ export interface WebSettingsInput {
   doNotOrganizeInFolder?: boolean;
   doNotUseLongFileNames?: boolean;
   pixelsPerInch?: number;
-  targetScreenSize?: string;
+  targetScreenSize?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize];
   saveSmartTagsAsXml?: boolean;
 }
 
@@ -138,7 +139,9 @@ function wsStringVal(tag: string, val: string): string {
 }
 
 function wsNumVal(tag: string, val: number | UniversalMeasure): string {
-  return `<${tag} w:val="${val}"/>`;
+  // w:mar* are CT_TwipsMeasure — normalize UniversalMeasure to twip integers
+  // instead of passing the measure string through to the XML.
+  return `<${tag} w:val="${convertToTwip(val)}"/>`;
 }
 
 // ── Parse helpers (for descriptor parse path) ──
@@ -522,11 +525,13 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
       if (val !== undefined) opts.pixelsPerInch = val;
     }
 
-    // Target screen size
+    // Target screen size (ST_TargetScreenSize — closed enumeration)
     const targetScreenSize = findChild(el, "w:targetScreenSz");
     if (targetScreenSize) {
       const val = attr(targetScreenSize, "w:val");
-      if (val) opts.targetScreenSize = val;
+      if (val && (Object.values(TargetScreenSize) as string[]).includes(val)) {
+        opts.targetScreenSize = val as WebSettingsInput["targetScreenSize"];
+      }
     }
 
     return opts as WebSettingsInput;

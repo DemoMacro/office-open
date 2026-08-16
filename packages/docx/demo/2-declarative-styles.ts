@@ -13,7 +13,7 @@ const buffer = await generateDocument({
   creator: "Clippy",
   description: "A brief example of using docx",
   numbering: {
-    config: [
+    abstractNumberings: [
       {
         levels: [
           {

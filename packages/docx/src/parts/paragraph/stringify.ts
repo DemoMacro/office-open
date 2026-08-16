@@ -288,8 +288,10 @@ export const EMPTY_PPR_RESULT: StringifyPPrResult = { xml: undefined, numberingR
  *
  * Replaces `buildParagraphProperties() + xml()` with a single-pass string builder.
  */
+// includeIfEmpty is a stringify-internal knob (force an empty pPr/trPr/tblPr for
+// nested revision wrappers), not document data — kept out of the public options.
 export function stringifyParagraphProperties(
-  options?: ParagraphPropertiesOptions,
+  options?: ParagraphPropertiesOptions & { includeIfEmpty?: boolean },
 ): StringifyPPrResult {
   if (!options) return EMPTY_PPR_RESULT;
 
@@ -304,7 +306,7 @@ export function stringifyParagraphProperties(
   const pStyle =
     options.style ??
     options.heading ??
-    (options.bullet || (options.numbering && !options.numbering.custom)
+    (options.bullet || (options.numbering && options.numbering.autoStyle !== false)
       ? "ListParagraph"
       : undefined);
   if (pStyle) {

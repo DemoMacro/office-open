@@ -332,13 +332,11 @@ async function main() {
             children: [
               {
                 smartArt: {
-                  data: {
-                    nodes: [
-                      { text: "Plan", children: [{ text: "Define scope" }] },
-                      { text: "Build" },
-                      { text: "Deploy" },
-                    ],
-                  },
+                  nodes: [
+                    { text: "Plan", children: [{ text: "Define scope" }] },
+                    { text: "Build" },
+                    { text: "Deploy" },
+                  ],
                   transformation: { width: "11.9cm", height: "6.6cm" },
                   layout: "process1",
                   style: "simple1",
@@ -930,7 +928,7 @@ async function main() {
       ],
     },
     numbering: {
-      config: [
+      abstractNumberings: [
         {
           reference: "custom-list",
           levels: [

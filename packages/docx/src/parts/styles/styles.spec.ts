@@ -266,9 +266,7 @@ describe("Styles dedup (user definitions override builtins)", () => {
   it("paragraphStyles override importedStyles with the same styleId", () => {
     const styles = new Styles({
       importedStyles: [
-        {
-          _raw: '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style>',
-        },
+        '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/></w:style>',
       ],
       paragraphStyles: [{ id: "Heading1", name: "My Heading 1", run: { color: "FF0000" } }],
     });
@@ -336,7 +334,7 @@ describe("styles round-trip (generate → parse → generate)", () => {
     ).toContain("00AA00");
 
     const styles = new Styles({
-      importedStyles: [{ _raw: parsed!.docDefaultsXml! }, { _raw: parsed!.latentStylesXml! }],
+      importedStyles: [parsed!.docDefaultsXml!, parsed!.latentStylesXml!],
       paragraphStyles: parsed!.paragraphStyles,
     });
     const reRoot = parseXml(styles.serialize()).elements?.[0];

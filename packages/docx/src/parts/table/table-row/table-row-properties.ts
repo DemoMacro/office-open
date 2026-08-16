@@ -138,7 +138,6 @@ export type TableRowPropertiesOptions = TableRowPropertiesOptionsBase & {
   insertion?: ChangedProperties;
   deletion?: ChangedProperties;
   revision?: TableRowPropertiesChangeOptions;
-  includeIfEmpty?: boolean;
 };
 
 export type TableRowPropertiesChangeOptions = TableRowPropertiesOptionsBase & ChangedProperties;

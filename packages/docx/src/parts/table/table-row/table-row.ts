@@ -40,7 +40,7 @@ export interface TableRowOptions
   /** Revision save ID for row properties (w:rsidRPr, hex string). */
   runPropertiesRsid?: string;
   /** Revision save ID for the row (w:rsidR, hex string). */
-  rsid?: string;
+  additionRsid?: string;
   /** Revision save ID when row was deleted (w:rsidDel, hex string). */
   deletionRsid?: string;
   /** Revision save ID for table row (w:rsidTr, hex string). */

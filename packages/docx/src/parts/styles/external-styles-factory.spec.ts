@@ -61,13 +61,13 @@ describe("External styles factory", () => {
       const importedStyles = importedStyle.importedStyles!;
 
       // docDefaults
-      expect(importedStyles[0]?._raw).to.include("w:docDefaults");
-      expect(importedStyles[0]?._raw).to.include("w:rFonts");
-      expect(importedStyles[0]?._raw).to.include("w:spacing");
+      expect(importedStyles[0]).to.include("w:docDefaults");
+      expect(importedStyles[0]).to.include("w:rFonts");
+      expect(importedStyles[0]).to.include("w:spacing");
 
       // latentStyles
-      expect(importedStyles[1]?._raw).to.include("w:latentStyles");
-      expect(importedStyles[1]?._raw).to.include("w:defLockedState");
+      expect(importedStyles[1]).to.include("w:latentStyles");
+      expect(importedStyles[1]).to.include("w:defLockedState");
     });
 
     it("should return empty styles when style element isn't found", () => {
@@ -99,16 +99,16 @@ describe("External styles factory", () => {
       expect(importedStyles.length).to.equal(4);
 
       // Normal style
-      expect(importedStyles[2]?._raw).to.include('w:styleId="Normal"');
-      expect(importedStyles[2]?._raw).to.include('<w:name w:val="Normal"/>');
-      expect(importedStyles[2]?._raw).to.include("<w:qFormat/>");
+      expect(importedStyles[2]).to.include('w:styleId="Normal"');
+      expect(importedStyles[2]).to.include('<w:name w:val="Normal"/>');
+      expect(importedStyles[2]).to.include("<w:qFormat/>");
 
       // Heading1 style
-      expect(importedStyles[3]?._raw).to.include('w:styleId="Heading1"');
-      expect(importedStyles[3]?._raw).to.include('<w:name w:val="heading 1"/>');
-      expect(importedStyles[3]?._raw).to.include('<w:basedOn w:val="Normal"/>');
-      expect(importedStyles[3]?._raw).to.include("<w:keepNext/>");
-      expect(importedStyles[3]?._raw).to.include("<w:keepLines/>");
+      expect(importedStyles[3]).to.include('w:styleId="Heading1"');
+      expect(importedStyles[3]).to.include('<w:name w:val="heading 1"/>');
+      expect(importedStyles[3]).to.include('<w:basedOn w:val="Normal"/>');
+      expect(importedStyles[3]).to.include("<w:keepNext/>");
+      expect(importedStyles[3]).to.include("<w:keepLines/>");
     });
   });
 });

@@ -155,7 +155,7 @@ export function stringifyParagraph(
   let attr = "";
   if (resolved.paraId) attr += ` w14:paraId="${resolved.paraId}"`;
   if (resolved.textId) attr += ` w14:textId="${resolved.textId}"`;
-  if (resolved.rsid) attr += ` w:rsidR="${resolved.rsid}"`;
+  if (resolved.additionRsid) attr += ` w:rsidR="${resolved.additionRsid}"`;
   if (resolved.defaultRunRsid) attr += ` w:rsidRDefault="${resolved.defaultRunRsid}"`;
   if (resolved.propertiesRsid) attr += ` w:rsidP="${resolved.propertiesRsid}"`;
   if (resolved.runPropertiesRsid) attr += ` w:rsidRPr="${resolved.runPropertiesRsid}"`;
@@ -601,17 +601,17 @@ export function parseParagraphProperties(
       // like an unknown id, falling to the bullet, same as the old inline scan).
       const abstractNumId = ctx.numIdCache.get(numId);
       if (abstractNumId) {
-        // custom: true suppresses the ListParagraph pStyle auto-injection in
-        // stringifyParagraphProperties. Round-tripped list paragraphs carry
+        // autoStyle: false suppresses the ListParagraph pStyle auto-injection
+        // in stringifyParagraphProperties. Round-tripped list paragraphs carry
         // no pStyle in the source (the list formatting lives in numbering);
         // injecting ListParagraph would reference a style that round-tripped
         // styles.xml may not define → dangling reference Word rejects.
         const numberingOpts: {
           reference: string;
           level: number;
-          custom: boolean;
+          autoStyle: boolean;
           numberingChange?: { original: string; id: string; author: string; date?: string };
-        } = { reference: `list_${numId}`, level, custom: true };
+        } = { reference: `list_${numId}`, level, autoStyle: false };
         // w:numberingChange (CT_TrackChangeNumbering) — child of w:numPr
         const numberingChangeEl = findChild(numPr, "w:numberingChange");
         if (numberingChangeEl) {
@@ -1595,7 +1595,7 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
   const textId = attr(el, "w14:textId");
   if (textId) opts.textId = textId;
   const rsid = attr(el, "w:rsidR");
-  if (rsid) opts.rsid = rsid;
+  if (rsid) opts.additionRsid = rsid;
   const defaultRunRsid = attr(el, "w:rsidRDefault");
   if (defaultRunRsid) opts.defaultRunRsid = defaultRunRsid;
   const propertiesRsid = attr(el, "w:rsidP");

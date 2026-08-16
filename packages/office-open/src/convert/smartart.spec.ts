@@ -17,7 +17,7 @@ describe("toDocxSmartArt (pptx → docx)", () => {
       color: "colorful1",
     };
     const docx = toDocxSmartArt(pptx);
-    expect(docx.data.nodes).toEqual([{ text: "Root", children: [{ text: "Child" }] }]);
+    expect(docx.nodes).toEqual([{ text: "Root", children: [{ text: "Child" }] }]);
     expect(docx.transformation.width).toBe(300);
     expect(docx.transformation.height).toBe(400);
     expect(docx.transformation.offset).toEqual({ left: 100, top: 200 });
@@ -35,7 +35,7 @@ describe("toDocxSmartArt (pptx → docx)", () => {
 describe("toPptxSmartArt (docx → pptx)", () => {
   it("maps transformation to absolute x/y and rebuilds nodes", () => {
     const docx: DocxSmartArt = {
-      data: { nodes: [{ text: "A", children: [{ text: "B" }] }] },
+      nodes: [{ text: "A", children: [{ text: "B" }] }],
       transformation: { width: 50, height: 60, offset: { left: 10, top: 20 } },
       layout: "hierarchy1",
     };
@@ -89,7 +89,7 @@ describe("cross-format cNvPr (alt text) preservation", () => {
     hidden,
   };
   const docxSrc: DocxSmartArt = {
-    data: { nodes: [] },
+    nodes: [],
     transformation: { width: 10, height: 10 },
     altText: { name, description, title, hidden },
   };
