@@ -376,9 +376,11 @@ export class DocxWriteContext implements WriteContext {
 
     // Note ids: round-tripped entries carry theirs; fresh entries auto-assign
     // after the highest id seen (matching Word's sequential footnote ids).
-    if (options.footnotes) {
+    // Separators apply independently: a source file may keep the notes part
+    // with only its separator entries after every user note was deleted.
+    if (options.footnotes || options.footnoteSeparators) {
       let nextNoteId = 1;
-      for (const note of options.footnotes) {
+      for (const note of options.footnotes ?? []) {
         const id = note.id ?? nextNoteId;
         nextNoteId = Math.max(nextNoteId, id + 1);
         this.footNotes.notes.set(id, note.children);
@@ -387,9 +389,9 @@ export class DocxWriteContext implements WriteContext {
       this.footNotes.continuationSeparator = options.footnoteSeparators?.continuationSeparator;
     }
 
-    if (options.endnotes) {
+    if (options.endnotes || options.endnoteSeparators) {
       let nextNoteId = 1;
-      for (const note of options.endnotes) {
+      for (const note of options.endnotes ?? []) {
         const id = note.id ?? nextNoteId;
         nextNoteId = Math.max(nextNoteId, id + 1);
         this.endnotes.notes.set(id, note.children);

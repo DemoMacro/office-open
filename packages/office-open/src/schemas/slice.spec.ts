@@ -93,10 +93,19 @@ describe("sliceSchema", () => {
     );
   });
 
-  it("supports the percent-encoded generic definition name", () => {
-    const slice = sliceDocumentSchema("docx", ["HeaderFooterGroup<HeaderFooterReference>"]);
+  it("resolves percent-encoded $ref targets", () => {
+    // Generic definition names percent-encode their angle brackets in $ref
+    // values. The last generic was removed with the header/footer reference
+    // wrappers, so exercise the decode path with a synthetic schema.
+    const mini = {
+      definitions: {
+        Outer: { type: "object", properties: { inner: { $ref: "#/definitions/Pair%3CInner%3E" } } },
+        "Pair<Inner>": { type: "array", items: { $ref: "#/definitions/Outer" } },
+      },
+    };
+    const slice = sliceSchema(mini, ["Outer"]);
     const definitions = slice.definitions as Record<string, unknown>;
-    expect(definitions).toHaveProperty("HeaderFooterGroup<HeaderFooterReference>");
+    expect(definitions).toHaveProperty("Pair<Inner>");
   });
 
   it("compiles under ajv across all three formats", () => {

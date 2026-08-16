@@ -48,11 +48,6 @@ const DOCX_ENTRIES: readonly SchemaEntry[] = [
   },
   { name: "SettingsOptions", domain: "document", summary: "w:settings document behavior flags" },
   {
-    name: "FeaturesOptions",
-    domain: "document",
-    summary: "Track changes, comments visibility, update fields",
-  },
-  {
     name: "CompatibilityOptions",
     domain: "document",
     summary: "Legacy Word compatibility settings",
@@ -77,11 +72,6 @@ const DOCX_ENTRIES: readonly SchemaEntry[] = [
     name: "SectionPropertiesOptions",
     domain: "structure",
     summary: "Page size, margins, columns, grid",
-  },
-  {
-    name: "HeaderFooterGroup<HeaderFooterReference>",
-    domain: "structure",
-    summary: "Even/first/default header+footer set (quote the name in shells)",
   },
   {
     name: "ParagraphOptions",
@@ -156,7 +146,6 @@ const DOCX_ENTRIES: readonly SchemaEntry[] = [
     domain: "styles",
     summary: "Bullet/numbering definitions and references",
   },
-  { name: "CommentsOptions", domain: "annotations", summary: "Comments collection" },
   {
     name: "CommentOptions",
     domain: "annotations",
@@ -168,6 +157,8 @@ const DOCX_ENTRIES: readonly SchemaEntry[] = [
     summary: "Footnotes section options",
   },
   { name: "EndnotePropertiesOptions", domain: "annotations", summary: "Endnotes section options" },
+  { name: "FootnoteOptions", domain: "annotations", summary: "Footnote with explicit id" },
+  { name: "EndnoteOptions", domain: "annotations", summary: "Endnote with explicit id" },
 ];
 
 const PPTX_ENTRIES: readonly SchemaEntry[] = [

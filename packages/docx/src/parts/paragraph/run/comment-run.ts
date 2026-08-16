@@ -26,9 +26,6 @@ export interface CommentOptions {
 }
 
 /**
- * Options for creating a comments container.
- */
-/**
  * A comment authored as a single inline paragraph child. The library allocates
  * the comment id, emits the range markers + reference, and registers the comment
  * entry in word/comments.xml — the caller never touches an id or pairs markers.
