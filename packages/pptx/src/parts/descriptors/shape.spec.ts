@@ -4,7 +4,7 @@ import { parse as parseXml } from "@office-open/xml";
 import type { ShapeOptions } from "@shared/shape/shape";
 import { describe, expect, it, beforeEach } from "vite-plus/test";
 
-import { shapeDesc, resetShapeIdCounter } from "./shape";
+import { shapeDesc, pictureDesc, resetShapeIdCounter } from "./shape";
 
 // ── Mock PPTX write context ──
 
@@ -16,8 +16,11 @@ class MockWriteContext {
   addMedia() {
     return "";
   }
-  addHyperlink() {}
+  addHyperlink(_key: string, target: { url?: string; slide?: number; tooltip?: string }) {
+    this.lastHyperlink = target;
+  }
   addImage() {}
+  lastHyperlink?: { url?: string; slide?: number; tooltip?: string };
 }
 
 const readCtx = {
@@ -150,6 +153,42 @@ describe("shapeDesc round-trip", () => {
       flipHorizontal: true,
     });
     expect(result.flipHorizontal).toBe(true);
+  });
+
+  it("round-trips shape with flipVertical", () => {
+    const result = roundTrip({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      flipVertical: true,
+    });
+    expect(result.flipVertical).toBe(true);
+  });
+
+  it("round-trips shape click hyperlink on cNvPr", () => {
+    const writeCtx = new MockWriteContext();
+    const xml = shapeDesc.stringify(
+      {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        hyperlink: { url: "https://example.com", tooltip: "Go" },
+      },
+      writeCtx as unknown as WriteContext,
+    )!;
+    // Registered on the write context for the compiler to emit the relationship
+    expect(writeCtx.lastHyperlink?.url).toBe("https://example.com");
+    expect(xml).toContain("<a:hlinkClick ");
+
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = shapeDesc.parse(el, readCtx);
+    // The mock read context resolves no relationships, so the target comes back
+    // as the placeholder referenceId; tooltip round-trips directly.
+    expect(result.hyperlink?.referenceId).toBeDefined();
+    expect(result.hyperlink?.tooltip).toBe("Go");
   });
 
   it("round-trips shape with blackWhiteMode on spPr", () => {
@@ -384,5 +423,41 @@ describe("shapeDesc round-trip", () => {
     expect(reflection.skewY).toBe(30);
     expect(reflection.alignment).toBe("bottomLeft");
     expect(reflection.rotWithShape).toBe(false);
+  });
+});
+
+describe("pictureDesc round-trip", () => {
+  // pictureDesc.stringify registers the image via addImage and reads the
+  // canonical fileName back — mirror the entry instead of returning "".
+  const picWriteCtx = {
+    addRelationship: () => "rId1",
+    addMedia: () => "",
+    addImage: (_key: string, entry: { fileName: string }) => entry,
+  } as unknown as WriteContext;
+
+  function roundTripPicture(opts: Parameters<typeof pictureDesc.stringify>[0]) {
+    const xml = pictureDesc.stringify(opts, picWriteCtx)!;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    return pictureDesc.parse(el, readCtx);
+  }
+
+  it("round-trips picture flip and rotation from a:xfrm", () => {
+    const result = roundTripPicture({
+      id: 7,
+      name: "Flipped",
+      data: "dummy",
+      type: "png",
+      x: 10,
+      y: 20,
+      width: 100,
+      height: 50,
+      flipHorizontal: true,
+      flipVertical: true,
+      rotation: 90,
+    });
+    expect(result.flipHorizontal).toBe(true);
+    expect(result.flipVertical).toBe(true);
+    expect(result.rotation).toBe(90);
   });
 });

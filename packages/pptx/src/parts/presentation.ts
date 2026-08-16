@@ -88,7 +88,8 @@ export interface PresentationPartOptions {
   masterCount: number;
   notesMasterRId?: number;
   handoutMasterRId?: number;
-  serverZoom?: string;
+  /** Server zoom in percent (p:presentation/@serverZoom, ST_Percentage). */
+  serverZoom?: number;
   firstSlideNum?: number;
   showSpecialPlsOnTitleSld?: boolean;
   rtl?: boolean;

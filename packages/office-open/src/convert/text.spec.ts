@@ -109,7 +109,7 @@ describe("fromDrawingParagraph (a:p → w:p)", () => {
 
     const pts = fromDrawingParagraph({ properties: { lineSpacingPoints: 24 } }).spacing!;
     expect(pts.line).toBe(480); // 24 pt × 20
-    expect(pts.lineRule).toBe("exactly");
+    expect(pts.lineRule).toBe("exact");
   });
 
   it("converts indents (EMU → twips)", () => {
@@ -206,7 +206,7 @@ describe("toDrawingParagraph (w:p → a:p)", () => {
   it("converts auto/exact line spacing back to percent/points", () => {
     const auto = toDrawingParagraph({ spacing: { line: 360, lineRule: "auto" } });
     expect(auto.properties?.lineSpacingPercent).toBe(150);
-    const exact = toDrawingParagraph({ spacing: { line: 480, lineRule: "exactly" } });
+    const exact = toDrawingParagraph({ spacing: { line: 480, lineRule: "exact" } });
     expect(exact.properties?.lineSpacingPoints).toBe(24);
   });
 

@@ -5,6 +5,7 @@ export {
   type PresentationOptions,
   type ShowOptions,
   type SlideOptions,
+  type SlideAnimation,
   type SlideCommentOptions,
   type MasterDefinition,
   type LayoutDefinition,
@@ -129,6 +130,7 @@ export {
   type AnimationValueType,
   type AnimationOptions,
 } from "./animation/types";
+export { type AnimationEntry } from "./animation/timing";
 
 // Constants
 export { Relationships } from "@office-open/core";

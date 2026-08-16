@@ -20,6 +20,9 @@ import {
   parseNonVisualDrawingProperties,
   createSolidFill,
   stringifyColorChoice,
+  registerHyperlink,
+  buildHyperlinkElement,
+  readHyperlink,
 } from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
@@ -55,7 +58,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
     const parts: string[] = [];
 
     // ── p:nvSpPr ──
-    parts.push(stringifyNvSpPr(id, name, opts));
+    parts.push(stringifyNvSpPr(id, name, opts, ctx));
 
     // ── p:spPr ──
     const spPrXml = stringifySpPr(opts, ctx);
@@ -93,7 +96,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
     // p:nvSpPr
     const nvSpPr = findChild(el, "p:nvSpPr");
     if (nvSpPr) {
-      const parsed = readNvSpPr(nvSpPr);
+      const parsed = readNvSpPr(nvSpPr, ctx);
       if (parsed.id !== undefined) result.id = parsed.id;
       if (parsed.name !== undefined) result.name = parsed.name;
       if (parsed.placeholder !== undefined) result.placeholder = parsed.placeholder;
@@ -105,6 +108,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
       if (parsed.isPhoto !== undefined) result.isPhoto = parsed.isPhoto;
       if (parsed.userDrawn !== undefined) result.userDrawn = parsed.userDrawn;
       if (parsed.locking !== undefined) result.locking = parsed.locking;
+      if (parsed.hyperlink !== undefined) result.hyperlink = parsed.hyperlink;
     }
 
     // p:spPr
@@ -158,7 +162,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     const parts: string[] = [];
 
     // ── p:nvPicPr ──
-    parts.push(stringifyNvPicPr(id, name, opts));
+    parts.push(stringifyNvPicPr(id, name, opts, ctx));
 
     // ── p:blipFill ──
     parts.push(stringifyPptxBlipFill(mediaEntry.fileName));
@@ -181,9 +185,11 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       if (cNvPr?.attributes && cNvPr.attributes["id"] !== undefined) {
         result.id = Number(cNvPr.attributes["id"]);
       }
+      const hlinkClick = cNvPr ? findChild(cNvPr, "a:hlinkClick") : undefined;
+      if (hlinkClick) result.hyperlink = readHyperlink(hlinkClick, ctx);
     }
 
-    // p:spPr (position/size only)
+    // p:spPr (position/size/flip/rotation)
     const spPr = findChild(el, "p:spPr");
     if (spPr) {
       const xfrm = findChild(spPr, "a:xfrm");
@@ -197,6 +203,14 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
         if (ext?.attributes) {
           result.width = Number(ext.attributes["cx"] ?? 0);
           result.height = Number(ext.attributes["cy"] ?? 0);
+        }
+        if (xfrm.attributes) {
+          const flipH = parseOnOff(xfrm.attributes["flipH"]);
+          if (flipH !== undefined && flipH) result.flipHorizontal = true;
+          const flipV = parseOnOff(xfrm.attributes["flipV"]);
+          if (flipV !== undefined && flipV) result.flipVertical = true;
+          const rot = xfrm.attributes["rot"];
+          if (rot !== undefined && rot !== "") result.rotation = Number(rot) / 60000;
         }
       }
 
@@ -234,7 +248,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
 
 // ── Shape helper: p:nvSpPr ──
 
-function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions): string {
+function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions, ctx: WriteContext): string {
   // nvPr — p:ph @type is optional (XSD default "obj"), so a placeholder keyed
   // only by idx must still emit <p:ph/> without a type attribute.
   let nvPrContent = "<p:nvPr/>";
@@ -263,7 +277,14 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions): string {
     }
   }
 
-  const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name);
+  // Click hyperlink (a:hlinkClick) lives inside p:cNvPr.
+  let hlinkXml: string | undefined;
+  if (opts.hyperlink) {
+    const key = registerHyperlink(opts.hyperlink, ctx);
+    hlinkXml = buildHyperlinkElement("a:hlinkClick", opts.hyperlink, key);
+  }
+
+  const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml);
   return `<p:nvSpPr>${cNvPrXml}${cNvSpPrContent}${nvPrContent}</p:nvSpPr>`;
 }
 
@@ -328,6 +349,7 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
       width: opts.width,
       height: opts.height,
       flipHorizontal: opts.flipHorizontal,
+      flipVertical: opts.flipVertical,
       rotation: opts.rotation,
       customGeometry: opts.customGeometry,
       geometry,
@@ -378,8 +400,19 @@ export function stringifyShapeStyle(style: ShapeStyleOptions, ctx: WriteContext)
 
 // ── Picture helpers ──
 
-function stringifyNvPicPr(id: number, name: string, opts?: PictureOptions): string {
-  const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name);
+function stringifyNvPicPr(
+  id: number,
+  name: string,
+  opts: PictureOptions | undefined,
+  ctx: WriteContext,
+): string {
+  // Click hyperlink (a:hlinkClick) lives inside p:cNvPr.
+  let hlinkXml: string | undefined;
+  if (opts?.hyperlink) {
+    const key = registerHyperlink(opts.hyperlink, ctx);
+    hlinkXml = buildHyperlinkElement("a:hlinkClick", opts.hyperlink, key);
+  }
+  const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml);
   return `<p:nvPicPr>${cNvPrXml}<p:cNvPicPr/><p:nvPr/></p:nvPicPr>`;
 }
 
@@ -395,6 +428,9 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
       y: opts.y,
       width: opts.width,
       height: opts.height,
+      flipHorizontal: opts.flipHorizontal,
+      flipVertical: opts.flipVertical,
+      rotation: opts.rotation,
       // Pictures always use a rect preset geometry.
       geometry: "rect",
       effects: opts.effects,
@@ -432,10 +468,17 @@ export function readCnvPr(
   return {};
 }
 
-export function readNvSpPr(nvSpPr: XmlElement): ShapeOptions {
+export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
   const result: ShapeOptions = {};
 
   Object.assign(result, readCnvPr(nvSpPr));
+
+  // Click hyperlink inside p:cNvPr (a:hlinkClick)
+  const cNvPr = findChild(nvSpPr, "p:cNvPr") ?? findChild(nvSpPr, "a:cNvPr");
+  const hlinkClick = cNvPr ? findChild(cNvPr, "a:hlinkClick") : undefined;
+  if (hlinkClick) {
+    result.hyperlink = readHyperlink(hlinkClick, ctx);
+  }
 
   const nvPr = findChild(nvSpPr, "p:nvPr");
   if (nvPr) {

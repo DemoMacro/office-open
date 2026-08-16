@@ -11,7 +11,7 @@ const options: PresentationOptions = {
 
   // Presentation root attributes
   firstSlideNum: 5,
-  serverZoom: "334000",
+  serverZoom: 334,
   rtl: false,
   autoCompressPictures: true,
   bookmarkIdSeed: 1234,

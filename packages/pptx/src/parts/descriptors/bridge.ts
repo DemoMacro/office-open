@@ -17,7 +17,7 @@ import { chartDesc } from "./chart";
 import { groupShapeDesc } from "./group";
 import { connectorShapeDesc, lineShapeDesc } from "./line";
 import { lockedCanvasDesc } from "./locked-canvas";
-import { audioDesc, videoDesc } from "./media";
+import { MEDIA_EXT_URI, audioDesc, videoDesc } from "./media";
 import { oleDesc } from "./ole";
 import { shapeDesc, pictureDesc } from "./shape";
 import { smartArtDesc } from "./smartart";
@@ -82,10 +82,6 @@ export function stringifyChild(child: LegacySlideChild, ctx: PptxWriteContext): 
 
 // ── Parse path ──
 
-/** Media extension URIs used to detect video/audio in p:pic elements. */
-const VIDEO_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
-const AUDIO_EXT_URI = "{CF1602FD-DB20-4165-A070-5F299619DA56}";
-
 /**
  * Parse an XML child element into a SlideChild object using descriptors.
  *
@@ -144,14 +140,17 @@ function detectMediaType(el: XmlElement): "video" | "audio" | undefined {
     if (findChild(nvPr, name)) return "video";
   }
 
+  // Fallback: the p14:media extension. Audio and video frames share the same
+  // extension uri, so the frame kind is undecidable here — files without an
+  // EG_Media element are near-nonexistent (Office always emits one), and those
+  // rare ext-only frames are treated as video.
   const extLst = findChild(nvPr, "p:extLst");
   if (!extLst) return undefined;
 
   for (const ext of extLst.elements ?? []) {
     if (ext.name !== "p:ext") continue;
     const uri = attr(ext, "uri");
-    if (uri === VIDEO_EXT_URI) return "video";
-    if (uri === AUDIO_EXT_URI) return "audio";
+    if (uri === MEDIA_EXT_URI) return "video";
   }
 
   return undefined;

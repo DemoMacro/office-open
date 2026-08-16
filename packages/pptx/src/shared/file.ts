@@ -154,7 +154,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   web?: WebPropertiesOptions;
   print?: PrintPropertiesOptions;
   htmlPublish?: HtmlPublishPropertiesOptions;
-  serverZoom?: string;
+  /** Server zoom in percent (p:presentation/@serverZoom, ST_Percentage). */
+  serverZoom?: number;
   firstSlideNum?: number;
   showSpecialPlsOnTitleSld?: boolean;
   rtl?: boolean;

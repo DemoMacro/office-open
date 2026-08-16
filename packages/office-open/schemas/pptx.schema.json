@@ -7584,6 +7584,14 @@
           "$ref": "#/definitions/EffectListOptions",
           "description": "Shape-level effects on p:spPr (e.g. shadow/reflection)."
         },
+        "flipHorizontal": {
+          "description": "Flip horizontally (a:xfrm `@flipH`).",
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "description": "Flip vertically (a:xfrm `@flipV`).",
+          "type": "boolean"
+        },
         "height": {
           "anyOf": [
             {
@@ -7598,6 +7606,10 @@
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
         },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the picture itself (a:hlinkClick inside p:cNvPr) — jump to a URL or another slide when the picture is clicked."
+        },
         "id": {
           "description": "Picture id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
@@ -7605,6 +7617,10 @@
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
+        },
+        "rotation": {
+          "description": "Rotation angle in degrees (e.g., 45 = 45°).",
+          "type": "number"
         },
         "title": {
           "description": "XSD `@title`.",
@@ -8061,7 +8077,8 @@
           "type": "boolean"
         },
         "serverZoom": {
-          "type": "string"
+          "description": "Server zoom in percent (p:presentation/@serverZoom, ST_Percentage).",
+          "type": "number"
         },
         "show": {
           "$ref": "#/definitions/ShowOptions"
@@ -9152,6 +9169,10 @@
         "flipHorizontal": {
           "type": "boolean"
         },
+        "flipVertical": {
+          "description": "Flip vertically (a:xfrm `@flipV`).",
+          "type": "boolean"
+        },
         "geometry": {
           "anyOf": [
             {
@@ -9178,6 +9199,10 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the shape itself (a:hlinkClick inside p:cNvPr) — jump to a URL or another slide when the shape is clicked."
         },
         "id": {
           "type": "number"

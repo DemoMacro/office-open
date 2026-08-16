@@ -40,7 +40,20 @@ export type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
 
 let nextHyperlinkId = 1;
 
-function buildHyperlinkElement(
+/**
+ * Register a hyperlink target on the write context and return its placeholder
+ * key ("{hlink:key}" on the wire). Action-only hyperlinks (no url/slide) carry
+ * no relationship — returns undefined. Shared by text runs and shape cNvPr
+ * hyperlinks (both serialize CT_Hyperlink elements).
+ */
+export function registerHyperlink(hl: TextHyperlinkOptions, ctx: WriteContext): string | undefined {
+  if (hl.url === undefined && hl.slide === undefined) return undefined;
+  const key = hl.referenceId ?? `hlink_${nextHyperlinkId++}`;
+  ctx.addHyperlink(key, { url: hl.url, slide: hl.slide, tooltip: hl.tooltip });
+  return key;
+}
+
+export function buildHyperlinkElement(
   tag: string,
   hl: TextHyperlinkOptions,
   key: string | undefined,
@@ -65,7 +78,7 @@ function buildHyperlinkElement(
   return attrs.length ? `<${tag} ${attrs.join(" ")}/>` : `<${tag}/>`;
 }
 
-function readHyperlink(el: XmlElement, ctx: ReadContext): TextHyperlinkOptions {
+export function readHyperlink(el: XmlElement, ctx: ReadContext): TextHyperlinkOptions {
   const hl: Mutable<TextHyperlinkOptions> = {};
   const rId = el.attributes?.["r:id"];
   const action =
@@ -139,19 +152,11 @@ export function stringifyRunProperties(
   // (url/slide) need a relationship; action-only hyperlinks carry no r:id.
   let hyperlinkKey: string | undefined;
   if (opts.hyperlink) {
-    const hl = opts.hyperlink;
-    if (hl.url !== undefined || hl.slide !== undefined) {
-      hyperlinkKey = hl.referenceId ?? `hlink_${nextHyperlinkId++}`;
-      ctx.addHyperlink(hyperlinkKey, { url: hl.url, slide: hl.slide, tooltip: hl.tooltip });
-    }
+    hyperlinkKey = registerHyperlink(opts.hyperlink, ctx);
   }
   let mouseoverKey: string | undefined;
   if (opts.mouseoverHyperlink) {
-    const mhl = opts.mouseoverHyperlink;
-    if (mhl.url !== undefined || mhl.slide !== undefined) {
-      mouseoverKey = mhl.referenceId ?? `hlink_${nextHyperlinkId++}`;
-      ctx.addHyperlink(mouseoverKey, { url: mhl.url, slide: mhl.slide, tooltip: mhl.tooltip });
-    }
+    mouseoverKey = registerHyperlink(opts.mouseoverHyperlink, ctx);
   }
 
   const attrParts: string[] = [];

@@ -4,7 +4,13 @@
  * @module
  */
 
-import { derivePasswordHash, parseOnOff, uniqueUuid } from "@office-open/core";
+import {
+  derivePasswordHash,
+  emitPercent,
+  parseOnOff,
+  parsePercentAttr,
+  uniqueUuid,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -69,7 +75,8 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
   const cy = opts.slideHeight ?? 6858000;
 
   const rootAttrs: string[] = [];
-  if (opts.serverZoom) rootAttrs.push(` serverZoom="${opts.serverZoom}"`);
+  if (opts.serverZoom !== undefined)
+    rootAttrs.push(` serverZoom="${emitPercent(opts.serverZoom)}"`);
   if (opts.firstSlideNum !== undefined) rootAttrs.push(` firstSlideNum="${opts.firstSlideNum}"`);
   if (opts.showSpecialPlsOnTitleSld === false) rootAttrs.push(' showSpecialPlsOnTitleSld="0"');
   if (opts.rtl) rootAttrs.push(' rtl="1"');
@@ -285,7 +292,8 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
 
   if (el.attributes) {
     const a = el.attributes;
-    if (a["serverZoom"]) result.serverZoom = String(a["serverZoom"]);
+    const serverZoom = parsePercentAttr(a["serverZoom"]);
+    if (serverZoom !== undefined) result.serverZoom = serverZoom;
     if (a["firstSlideNum"] !== undefined) result.firstSlideNum = Number(a["firstSlideNum"]);
     if (a["showSpecialPlsOnTitleSld"] !== undefined)
       result.showSpecialPlsOnTitleSld = parseOnOff(a["showSpecialPlsOnTitleSld"]) ?? true;

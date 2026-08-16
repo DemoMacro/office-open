@@ -13,6 +13,7 @@ import type {
   Shape3DOptions,
   FillOptions,
   BlackWhiteMode,
+  TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -50,6 +51,8 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   /** Raw a:extLst inner XML — verbatim round-trip for unmodeled extensions. */
   ext?: string;
   flipHorizontal?: boolean;
+  /** Flip vertically (a:xfrm `@flipV`). */
+  flipVertical?: boolean;
   /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
   textBody?: TextBodyOptions;
@@ -87,6 +90,11 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
    * black-and-white view/print.
    */
   blackWhiteMode?: BlackWhiteMode;
+  /**
+   * Click hyperlink on the shape itself (a:hlinkClick inside p:cNvPr) —
+   * jump to a URL or another slide when the shape is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
 }
 
 /**

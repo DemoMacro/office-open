@@ -7,11 +7,6 @@ export interface MediaDataTransformation {
     x: number;
     y: number;
   };
-  flip?: {
-    vertical?: boolean;
-    horizontal?: boolean;
-  };
-  rotation?: number;
 }
 
 interface CoreMediaData {

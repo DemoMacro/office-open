@@ -33,8 +33,9 @@ let _nextAudioId = 200;
 
 // ── Extension URIs ──
 
-const VIDEO_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
-const AUDIO_EXT_URI = "{CF1602FD-DB20-4165-A070-5F2996DA56}";
+// The p14:media extension uri is shared by audio and video frames (the
+// documented media extension; PptxGenJS/python-pptx emit the same uri for both).
+export const MEDIA_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
 
 // ── Shared media element builders (EG_Media) ──
 
@@ -95,7 +96,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
         `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
         (mediaFileName
-          ? `<p:extLst><p:ext uri="${VIDEO_EXT_URI}">` +
+          ? `<p:extLst><p:ext uri="${MEDIA_EXT_URI}">` +
             `<p14:media r:embed="{media:${mediaFileName}}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"/>` +
             `</p:ext></p:extLst>`
           : "") +
@@ -215,7 +216,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
         `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
         (mediaFileName
-          ? `<p:extLst><p:ext uri="${AUDIO_EXT_URI}">` +
+          ? `<p:extLst><p:ext uri="${MEDIA_EXT_URI}">` +
             `<p14:media r:embed="{media:${mediaFileName}}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"/>` +
             `</p:ext></p:extLst>`
           : "") +

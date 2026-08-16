@@ -1,4 +1,5 @@
 import type { BasePictureOptions, EffectListOptions, UniversalMeasure } from "@office-open/core";
+import type { TextHyperlinkOptions } from "@office-open/core/drawing";
 
 /**
  * Picture (p:pic) options for PPTX slides.
@@ -16,7 +17,18 @@ export interface PictureOptions extends BasePictureOptions {
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
+  /** Flip horizontally (a:xfrm `@flipH`). */
+  flipHorizontal?: boolean;
+  /** Flip vertically (a:xfrm `@flipV`). */
+  flipVertical?: boolean;
+  /** Rotation angle in degrees (e.g., 45 = 45°). */
+  rotation?: number;
   type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
   effects?: EffectListOptions;
+  /**
+   * Click hyperlink on the picture itself (a:hlinkClick inside p:cNvPr) —
+   * jump to a URL or another slide when the picture is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
 }

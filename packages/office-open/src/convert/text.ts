@@ -34,7 +34,7 @@
  *   before/after   a:p spcPts (1/100 pt) ↔ w:p spacing (twips), ÷5 / ×5.
  *   line spacing   a:p lineSpacingPercent (percent, 100 = single) ↔ w:p line +
  *                  lineRule "auto" (240 = single); a:p lineSpacingPoints (pt)
- *                  ↔ line + lineRule "exactly" (×20).
+ *                  ↔ line + lineRule "exact" (×20).
  *   indents/tabs   a:p marL/marR/pos (EMU) ↔ w:p (twips), ÷635 / ×635.
  *
  * @module
@@ -386,7 +386,7 @@ function spacingToDocx(
     sp.lineRule = "auto";
   } else if (props.lineSpacingPoints !== undefined) {
     sp.line = round(props.lineSpacingPoints / POINTS_PER_TWIP);
-    sp.lineRule = "exactly";
+    sp.lineRule = "exact";
   }
   return Object.keys(sp).length ? sp : undefined;
 }
