@@ -1,18 +1,25 @@
 {
   "name": "@office-open/docx",
-  "version": "0.10.15",
-  "description": "Generate, parse, and patch .docx documents with a declarative TypeScript API",
+  "version": "0.11.0",
+  "description": "AI-native Word (.docx) generation, parsing, and patching from plain JSON — fully typed TypeScript, 100% OOXML coverage, no Microsoft Office required",
   "keywords": [
-    "clippy",
-    "create",
-    "creator",
-    "doc",
+    "ai",
+    "ai-agent",
     "document",
     "docx",
     "generate",
+    "json",
+    "llm",
+    "microsoft-word",
     "office",
-    "officegen",
-    "word"
+    "office-open",
+    "ooxml",
+    "openxml",
+    "parse",
+    "patch",
+    "typescript",
+    "word",
+    "wordprocessingml"
   ],
   "homepage": "https://www.office-open.com",
   "bugs": {

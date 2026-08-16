@@ -2,8 +2,9 @@
   "name": "@office-open/monorepo",
   "version": "0.0.0",
   "private": true,
-  "description": "TypeScript toolkit for Office documents — generate, parse, and patch .docx, .pptx, .xlsx",
+  "description": "AI-native Office documents for TypeScript and JavaScript — generate, parse, and patch .docx, .xlsx, .pptx from plain JSON",
   "keywords": [
+    "ai",
     "docx",
     "office",
     "office-open",

@@ -1,13 +1,25 @@
 {
   "name": "@office-open/pptx",
-  "version": "0.10.15",
-  "description": "Generate, parse, and patch .pptx presentations with a declarative TypeScript API",
+  "version": "0.11.0",
+  "description": "AI-native PowerPoint (.pptx) generation, parsing, and patching from plain JSON — fully typed TypeScript, 100% OOXML coverage, no Microsoft Office required",
   "keywords": [
+    "ai",
+    "ai-agent",
+    "generate",
+    "json",
+    "llm",
+    "office",
     "office-open",
     "ooxml",
+    "openxml",
+    "parse",
+    "patch",
     "powerpoint",
     "pptx",
-    "presentation"
+    "presentation",
+    "presentationml",
+    "slides",
+    "typescript"
   ],
   "homepage": "https://www.office-open.com",
   "bugs": {

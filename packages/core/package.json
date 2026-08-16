@@ -1,12 +1,16 @@
 {
   "name": "@office-open/core",
-  "version": "0.10.15",
-  "description": "Shared OOXML infrastructure — XML components, validators, converters, charts, and SmartArt",
+  "version": "0.11.0",
+  "description": "Shared OOXML infrastructure for office-open — part descriptors, charts, drawings, tables, VML, and unit converters",
   "keywords": [
-    "core",
+    "chart",
+    "drawing",
     "office-open",
     "ooxml",
+    "openxml",
     "shared",
+    "types",
+    "vml",
     "xml"
   ],
   "homepage": "https://www.office-open.com",
