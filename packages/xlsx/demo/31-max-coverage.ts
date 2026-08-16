@@ -53,16 +53,16 @@ const buffer = await generateWorkbook({
         {
           cells: [
             { value: "Total" },
-            { formula: { formula: 'CONCATENATE(A2,"-",A5)' } },
-            { formula: { formula: "SUM(C2:C5)" } },
-            { formula: { formula: "SUM(D2:D5)" } },
+            { formula: 'CONCATENATE(A2,"-",A5)' },
+            { formula: "SUM(C2:C5)" },
+            { formula: "SUM(D2:D5)" },
           ],
         },
         {
           cells: [
             { value: "Lookup" },
-            { formula: { formula: 'VLOOKUP("South",A2:C5,3,FALSE)' } },
-            { formula: { formula: 'IF(C6>4000,"high","low")' } },
+            { formula: 'VLOOKUP("South",A2:C5,3,FALSE)' },
+            { formula: 'IF(C6>4000,"high","low")' },
           ],
         },
       ],

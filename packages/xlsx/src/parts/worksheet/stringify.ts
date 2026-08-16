@@ -922,7 +922,8 @@ function buildSelectionXml(sel: SelectionOptions): string {
   return `<selection${attrs(selAttrs)}/>`;
 }
 
-function buildFormulaString(fOpts: FormulaOptions): string {
+function buildFormulaString(cellFormula: string | FormulaOptions): string {
+  const fOpts = typeof cellFormula === "string" ? { formula: cellFormula } : cellFormula;
   const fAttrs: Record<string, string | number | boolean | undefined> = {};
   if (fOpts.type && fOpts.type !== FormulaType.NORMAL) fAttrs.t = fOpts.type;
   if (fOpts.reference) fAttrs.ref = fOpts.reference;

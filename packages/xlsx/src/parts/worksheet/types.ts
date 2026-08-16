@@ -122,8 +122,11 @@ export interface CellOptions {
   styleIndex?: number;
   /** Style options (resolved to index at compile time) */
   style?: StyleOptions;
-  /** Formula options. When set, value becomes the cached result. */
-  formula?: FormulaOptions;
+  /**
+   * Formula options. When set, value becomes the cached result. A bare string
+   * is shorthand for `{ formula: "..." }`.
+   */
+  formula?: string | FormulaOptions;
   /** Cell metadata block id, 1-based index into metadata.cellMetadata (CT_Cell @cm) */
   cellMetadataId?: number;
   /** Value metadata block id, 1-based index into metadata.valueMetadata (CT_Cell @vm) */

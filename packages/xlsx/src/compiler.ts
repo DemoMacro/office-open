@@ -208,7 +208,7 @@ export function compileWorkbook(
         calcCells.push({
           reference: ref,
           sheetIndex: sheetIdx,
-          array: cell.formula.type === "array",
+          array: typeof cell.formula === "object" && cell.formula.type === "array",
         });
       }
     }

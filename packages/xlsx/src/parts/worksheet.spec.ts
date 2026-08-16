@@ -7,6 +7,21 @@ import { worksheetDesc } from "./worksheet";
 import type { AutoFilterOptions, WorksheetOptions } from "./worksheet";
 
 describe("Worksheet", () => {
+  describe("cell formula", () => {
+    it("accepts a bare string as shorthand for { formula }", () => {
+      const shorthand = buildWorksheetXml(
+        { rows: [{ cells: [{ formula: "SUM(A1:A2)", reference: "B1" }] }] },
+        {},
+      );
+      const expanded = buildWorksheetXml(
+        { rows: [{ cells: [{ formula: { formula: "SUM(A1:A2)" }, reference: "B1" }] }] },
+        {},
+      );
+      expect(shorthand).toContain("<f>SUM(A1:A2)</f>");
+      expect(shorthand).toBe(expanded);
+    });
+  });
+
   describe("sheetProtection", () => {
     it("omits sheetProtection when not configured", () => {
       const xml = buildWorksheetXml({ rows: [{ cells: [{ value: "A" }] }] }, {});
