@@ -16,7 +16,13 @@ const buffer = await generateWorkbook({
       ],
       autoFilter: {
         ref: "A1:C6",
-        customFilters: [{ colId: 1, operator: "greaterThan", val: "200", hiddenButton: true }],
+        columns: [
+          {
+            colId: 1,
+            hiddenButton: true,
+            customFilters: { entries: [{ operator: "greaterThan", val: "200" }] },
+          },
+        ],
         sort: [{ ref: "B1", descending: true }],
       },
     },
@@ -32,7 +38,7 @@ const buffer = await generateWorkbook({
       ],
       autoFilter: {
         ref: "A1:B6",
-        top10: [{ colId: 1, val: 3, filterVal: 65 }],
+        columns: [{ colId: 1, top10: { val: 3, filterVal: 65 } }],
       },
     },
   ],

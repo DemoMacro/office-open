@@ -699,34 +699,33 @@ export interface ConditionalFormatOptions {
 }
 
 export interface Top10FilterOptions {
-  colId: number;
   top?: boolean;
   percent?: boolean;
   val: number;
   /** Filter value (CT_Top10 `@filterVal`) */
   filterVal?: number;
-  /** Hide auto-filter button (CT_FilterColumn `@hiddenButton`) */
-  hiddenButton?: boolean;
-  /** Show filter button (CT_FilterColumn `@showButton`) */
-  showButton?: boolean;
 }
 
-export interface CustomFilterOptions {
-  colId: number;
-  operator?:
-    | "equal"
-    | "notEqual"
-    | "greaterThan"
-    | "greaterThanOrEqual"
-    | "lessThan"
-    | "lessThanOrEqual";
-  val?: string;
+/** Custom filter comparison operator (ST_FilterOperator). */
+export type CustomFilterOperator =
+  | "equal"
+  | "notEqual"
+  | "greaterThan"
+  | "greaterThanOrEqual"
+  | "lessThan"
+  | "lessThanOrEqual";
+
+/** A single custom filter entry (CT_CustomFilter). */
+export interface CustomFilterEntry {
+  operator?: CustomFilterOperator;
+  val: string;
+}
+
+/** Custom filters container (CT_CustomFilters): @and + customFilter entries. */
+export interface CustomFiltersOptions {
+  /** AND the entries instead of OR (CT_CustomFilters `@and`) */
   and?: boolean;
-  val2?: string;
-  /** Hide auto-filter button (CT_FilterColumn `@hiddenButton`) */
-  hiddenButton?: boolean;
-  /** Show filter button (CT_FilterColumn `@showButton`) */
-  showButton?: boolean;
+  entries: CustomFilterEntry[];
 }
 
 export interface SortCondition {
@@ -744,28 +743,41 @@ export interface SortCondition {
 export interface AutoFilterOptions {
   /** Range, e.g. "A1:D10" */
   ref: string;
-  top10?: Top10FilterOptions[];
-  customFilters?: CustomFilterOptions[];
+  /** Filter columns, one per filtered column (CT_FilterColumn) */
+  columns?: FilterColumnOptions[];
   sort?: SortCondition[];
   /** Sort state options */
   sortState?: SortStateOptions;
-  /** Color filters (CT_ColorFilter) */
-  colorFilters?: ColorFilterOptions[];
-  /** Icon filters (CT_IconFilter) */
-  iconFilters?: IconFilterOptions[];
-  /** Dynamic filters (CT_DynamicFilter) */
-  dynamicFilters?: DynamicFilterOptions[];
-  /** Date group items in filters (CT_DateGroupItem) */
-  dateGroupItems?: DateGroupFilterOptions[];
-  /** Simple filters with values (CT_Filters) */
-  filters?: FilterItemsOptions[];
+}
+
+/**
+ * Filter column (CT_FilterColumn): column id plus exactly one filter variant
+ * (the XSD content model is a choice among the six filter kinds below).
+ */
+export interface FilterColumnOptions {
+  /** Column ID (CT_FilterColumn `@colId`) */
+  colId: number;
+  /** Hide auto-filter button (CT_FilterColumn `@hiddenButton`) */
+  hiddenButton?: boolean;
+  /** Show filter button (CT_FilterColumn `@showButton`) */
+  showButton?: boolean;
+  /** Top-N filter (CT_Top10) */
+  top10?: Top10FilterOptions;
+  /** Custom comparison filters (CT_CustomFilters) */
+  customFilters?: CustomFiltersOptions;
+  /** Value / date filters (CT_Filters) */
+  filters?: FilterItemsOptions;
+  /** Color filter (CT_ColorFilter) */
+  colorFilter?: ColorFilterOptions;
+  /** Icon filter (CT_IconFilter) */
+  iconFilter?: IconFilterOptions;
+  /** Dynamic filter (CT_DynamicFilter) */
+  dynamicFilter?: DynamicFilterOptions;
 }
 
 /** Color filter (CT_ColorFilter) */
 export interface ColorFilterOptions {
-  /** Column ID */
-  colId: number;
-  /** Cell color RGB (dxfId used if not set) */
+  /** Differential format id (used when no direct color is set) */
   dxfId?: number;
   /** Filter by cell color (CT_ColorFilter `@cellColor`) */
   cellColor?: boolean;
@@ -773,8 +785,6 @@ export interface ColorFilterOptions {
 
 /** Icon filter (CT_IconFilter) */
 export interface IconFilterOptions {
-  /** Column ID */
-  colId: number;
   /** Icon set name (CT_IconFilter `@iconSet`, ST_IconSetType — required) */
   iconSet: IconSetType;
   /** Icon ID within set (CT_IconFilter `@iconId`) */
@@ -783,8 +793,6 @@ export interface IconFilterOptions {
 
 /** Filter items (CT_Filters) */
 export interface FilterItemsOptions {
-  /** Column ID */
-  colId: number;
   /** Blank filter (CT_Filters `@blank`) */
   blank?: boolean;
   /** Calendar type (CT_Filters `@calendarType`, ST_CalendarType) */
@@ -803,14 +811,14 @@ export interface FilterItemsOptions {
     | "gregorianXlitEnglish"
     | "gregorianXlitFrench"
     | "none";
-  /** Filter values */
+  /** Filter values (CT_Filters `filter` children) */
   values?: string[];
+  /** Date group filters (CT_Filters `dateGroupItem` children) */
+  dateGroupItems?: DateGroupFilterOptions[];
 }
 
 /** Dynamic filter (CT_DynamicFilter) */
 export interface DynamicFilterOptions {
-  /** Column ID */
-  colId: number;
   /** Dynamic filter type (CT_DynamicFilter `@type`) */
   type:
     | "null"
@@ -860,8 +868,6 @@ export interface DynamicFilterOptions {
 
 /** Date group filter item (CT_DateGroupItem) */
 export interface DateGroupFilterOptions {
-  /** Column ID */
-  colId: number;
   /** Date grouping level (CT_DateGroupItem `@dateTimeGrouping`) */
   dateTimeGrouping: "year" | "month" | "day" | "hour" | "minute" | "second";
   /** Year (CT_DateGroupItem `@year`) */

@@ -289,44 +289,10 @@
     "AutoFilterOptions": {
       "additionalProperties": false,
       "properties": {
-        "colorFilters": {
-          "description": "Color filters (CT_ColorFilter)",
+        "columns": {
+          "description": "Filter columns, one per filtered column (CT_FilterColumn)",
           "items": {
-            "$ref": "#/definitions/ColorFilterOptions"
-          },
-          "type": "array"
-        },
-        "customFilters": {
-          "items": {
-            "$ref": "#/definitions/CustomFilterOptions"
-          },
-          "type": "array"
-        },
-        "dateGroupItems": {
-          "description": "Date group items in filters (CT_DateGroupItem)",
-          "items": {
-            "$ref": "#/definitions/DateGroupFilterOptions"
-          },
-          "type": "array"
-        },
-        "dynamicFilters": {
-          "description": "Dynamic filters (CT_DynamicFilter)",
-          "items": {
-            "$ref": "#/definitions/DynamicFilterOptions"
-          },
-          "type": "array"
-        },
-        "filters": {
-          "description": "Simple filters with values (CT_Filters)",
-          "items": {
-            "$ref": "#/definitions/FilterItemsOptions"
-          },
-          "type": "array"
-        },
-        "iconFilters": {
-          "description": "Icon filters (CT_IconFilter)",
-          "items": {
-            "$ref": "#/definitions/IconFilterOptions"
+            "$ref": "#/definitions/FilterColumnOptions"
           },
           "type": "array"
         },
@@ -343,12 +309,6 @@
         "sortState": {
           "$ref": "#/definitions/SortStateOptions",
           "description": "Sort state options"
-        },
-        "top10": {
-          "items": {
-            "$ref": "#/definitions/Top10FilterOptions"
-          },
-          "type": "array"
         }
       },
       "required": ["ref"],
@@ -2165,16 +2125,11 @@
           "description": "Filter by cell color (CT_ColorFilter `@cellColor`)",
           "type": "boolean"
         },
-        "colId": {
-          "description": "Column ID",
-          "type": "number"
-        },
         "dxfId": {
-          "description": "Cell color RGB (dxfId used if not set)",
+          "description": "Differential format id (used when no direct color is set)",
           "type": "number"
         }
       },
-      "required": ["colId"],
       "type": "object"
     },
     "ColorReplaceEffectOptions": {
@@ -3118,42 +3073,48 @@
       "required": ["color"],
       "type": "object"
     },
-    "CustomFilterOptions": {
+    "CustomFilterEntry": {
       "additionalProperties": false,
+      "description": "A single custom filter entry (CT_CustomFilter).",
       "properties": {
-        "and": {
-          "type": "boolean"
-        },
-        "colId": {
-          "type": "number"
-        },
-        "hiddenButton": {
-          "description": "Hide auto-filter button (CT_FilterColumn `@hiddenButton`)",
-          "type": "boolean"
-        },
         "operator": {
-          "enum": [
-            "equal",
-            "notEqual",
-            "greaterThan",
-            "greaterThanOrEqual",
-            "lessThan",
-            "lessThanOrEqual"
-          ],
-          "type": "string"
-        },
-        "showButton": {
-          "description": "Show filter button (CT_FilterColumn `@showButton`)",
-          "type": "boolean"
+          "$ref": "#/definitions/CustomFilterOperator"
         },
         "val": {
           "type": "string"
-        },
-        "val2": {
-          "type": "string"
         }
       },
-      "required": ["colId"],
+      "required": ["val"],
+      "type": "object"
+    },
+    "CustomFilterOperator": {
+      "description": "Custom filter comparison operator (ST_FilterOperator).",
+      "enum": [
+        "equal",
+        "notEqual",
+        "greaterThan",
+        "greaterThanOrEqual",
+        "lessThan",
+        "lessThanOrEqual"
+      ],
+      "type": "string"
+    },
+    "CustomFiltersOptions": {
+      "additionalProperties": false,
+      "description": "Custom filters container (CT_CustomFilters):",
+      "properties": {
+        "and": {
+          "description": "AND the entries instead of OR (CT_CustomFilters `@and`)",
+          "type": "boolean"
+        },
+        "entries": {
+          "items": {
+            "$ref": "#/definitions/CustomFilterEntry"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["entries"],
       "type": "object"
     },
     "CustomGeometryOptions": {
@@ -3820,10 +3781,6 @@
       "additionalProperties": false,
       "description": "Date group filter item (CT_DateGroupItem)",
       "properties": {
-        "colId": {
-          "description": "Column ID",
-          "type": "number"
-        },
         "dateTimeGrouping": {
           "description": "Date grouping level (CT_DateGroupItem `@dateTimeGrouping`)",
           "enum": ["year", "month", "day", "hour", "minute", "second"],
@@ -3854,7 +3811,7 @@
           "type": "number"
         }
       },
-      "required": ["colId", "dateTimeGrouping"],
+      "required": ["dateTimeGrouping"],
       "type": "object"
     },
     "DdeItemOptions": {
@@ -4351,10 +4308,6 @@
       "additionalProperties": false,
       "description": "Dynamic filter (CT_DynamicFilter)",
       "properties": {
-        "colId": {
-          "description": "Column ID",
-          "type": "number"
-        },
         "maxVal": {
           "description": "Maximum value (CT_DynamicFilter `@maxVal`)",
           "type": "number"
@@ -4413,7 +4366,7 @@
           "type": "string"
         }
       },
-      "required": ["colId", "type"],
+      "required": ["type"],
       "type": "object"
     },
     "EditAsType": {
@@ -5213,6 +5166,50 @@
       "required": ["blend"],
       "type": "object"
     },
+    "FilterColumnOptions": {
+      "additionalProperties": false,
+      "description": "Filter column (CT_FilterColumn): column id plus exactly one filter variant (the XSD content model is a choice among the six filter kinds below).",
+      "properties": {
+        "colId": {
+          "description": "Column ID (CT_FilterColumn `@colId`)",
+          "type": "number"
+        },
+        "colorFilter": {
+          "$ref": "#/definitions/ColorFilterOptions",
+          "description": "Color filter (CT_ColorFilter)"
+        },
+        "customFilters": {
+          "$ref": "#/definitions/CustomFiltersOptions",
+          "description": "Custom comparison filters (CT_CustomFilters)"
+        },
+        "dynamicFilter": {
+          "$ref": "#/definitions/DynamicFilterOptions",
+          "description": "Dynamic filter (CT_DynamicFilter)"
+        },
+        "filters": {
+          "$ref": "#/definitions/FilterItemsOptions",
+          "description": "Value / date filters (CT_Filters)"
+        },
+        "hiddenButton": {
+          "description": "Hide auto-filter button (CT_FilterColumn `@hiddenButton`)",
+          "type": "boolean"
+        },
+        "iconFilter": {
+          "$ref": "#/definitions/IconFilterOptions",
+          "description": "Icon filter (CT_IconFilter)"
+        },
+        "showButton": {
+          "description": "Show filter button (CT_FilterColumn `@showButton`)",
+          "type": "boolean"
+        },
+        "top10": {
+          "$ref": "#/definitions/Top10FilterOptions",
+          "description": "Top-N filter (CT_Top10)"
+        }
+      },
+      "required": ["colId"],
+      "type": "object"
+    },
     "FilterItemsOptions": {
       "additionalProperties": false,
       "description": "Filter items (CT_Filters)",
@@ -5241,19 +5238,21 @@
           ],
           "type": "string"
         },
-        "colId": {
-          "description": "Column ID",
-          "type": "number"
+        "dateGroupItems": {
+          "description": "Date group filters (CT_Filters `dateGroupItem` children)",
+          "items": {
+            "$ref": "#/definitions/DateGroupFilterOptions"
+          },
+          "type": "array"
         },
         "values": {
-          "description": "Filter values",
+          "description": "Filter values (CT_Filters `filter` children)",
           "items": {
             "type": "string"
           },
           "type": "array"
         }
       },
-      "required": ["colId"],
       "type": "object"
     },
     "FlatTextOptions": {
@@ -6155,10 +6154,6 @@
       "additionalProperties": false,
       "description": "Icon filter (CT_IconFilter)",
       "properties": {
-        "colId": {
-          "description": "Column ID",
-          "type": "number"
-        },
         "iconId": {
           "description": "Icon ID within set (CT_IconFilter `@iconId`)",
           "type": "number"
@@ -6168,7 +6163,7 @@
           "description": "Icon set name (CT_IconFilter `@iconSet`, ST_IconSetType — required)"
         }
       },
-      "required": ["colId", "iconSet"],
+      "required": ["iconSet"],
       "type": "object"
     },
     "IconSetOptions": {
@@ -13645,22 +13640,11 @@
     "Top10FilterOptions": {
       "additionalProperties": false,
       "properties": {
-        "colId": {
-          "type": "number"
-        },
         "filterVal": {
           "description": "Filter value (CT_Top10 `@filterVal`)",
           "type": "number"
         },
-        "hiddenButton": {
-          "description": "Hide auto-filter button (CT_FilterColumn `@hiddenButton`)",
-          "type": "boolean"
-        },
         "percent": {
-          "type": "boolean"
-        },
-        "showButton": {
-          "description": "Show filter button (CT_FilterColumn `@showButton`)",
           "type": "boolean"
         },
         "top": {
@@ -13670,7 +13654,7 @@
           "type": "number"
         }
       },
-      "required": ["colId", "val"],
+      "required": ["val"],
       "type": "object"
     },
     "TotalsRowFunction": {

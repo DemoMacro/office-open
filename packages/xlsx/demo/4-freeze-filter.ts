@@ -10,7 +10,7 @@ const buffer = await generateWorkbook({
       autoFilter: {
         ref: "A1:D5",
         // Simple value filters with calendar type
-        filters: [{ colId: 2, values: ["NYC", "London"], calendarType: "gregorian" }],
+        columns: [{ colId: 2, filters: { values: ["NYC", "London"], calendarType: "gregorian" } }],
       },
       rows: [
         {
