@@ -29,7 +29,7 @@ export interface NotesData {
   notes: Map<number, (ParagraphOptions | string)[]>;
   /**
    * Separator note — id + content round-tripped from the source so it stays
-   * consistent with settings.footnotePr/endnotePr, which references this id.
+   * consistent with settings.footnoteProperties/endnoteProperties, which reference this id.
    */
   separator?: NoteSeparator;
   /** Continuation separator note — id + content round-tripped from the source. */

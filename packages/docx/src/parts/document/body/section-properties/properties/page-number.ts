@@ -1,4 +1,4 @@
-import { decimalNumber } from "@office-open/core";
+import { decimalNumber, mapOptional } from "@office-open/core";
 import { element } from "@office-open/xml";
 /**
  * Page number module for WordprocessingML section properties.
@@ -94,8 +94,8 @@ export const createPageNumberType = ({
   chapStyle,
 }: PageNumberTypeProperties): string =>
   element("w:pgNumType", {
-    "w:chapStyle": chapStyle === undefined ? undefined : decimalNumber(chapStyle),
+    "w:chapStyle": mapOptional(chapStyle, decimalNumber),
     "w:fmt": format,
     "w:chapSep": separator,
-    "w:start": start === undefined ? undefined : decimalNumber(start),
+    "w:start": mapOptional(start, decimalNumber),
   });

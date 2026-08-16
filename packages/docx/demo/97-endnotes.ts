@@ -58,7 +58,7 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        endnotePr: {
+        endnoteProperties: {
           numRestart: "eachSect",
           pos: "docEnd",
         },
@@ -90,7 +90,7 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        endnotePr: {
+        endnoteProperties: {
           numRestart: "continuous",
           pos: "sectEnd",
         },

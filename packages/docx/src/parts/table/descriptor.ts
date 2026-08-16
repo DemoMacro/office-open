@@ -345,7 +345,7 @@ function parseCnfStyle(cnfEl: Element): CnfStyleOptions | undefined {
 /**
  * Parse a w:tblPrEx (CT_TblPrEx) element into TablePropertyExOptions.
  * CT_TblPrExBase shares its child elements with CT_TblPrBase, so this reuses
- * parseTablePropertiesEl and maps the table-level margins field to cellMargin.
+ * parseTablePropertiesEl; both expose the margins field directly.
  */
 function parseTablePropertyExceptions(el: Element): TablePropertyExOptions {
   const base = parseTablePropertiesEl(el);
@@ -358,7 +358,7 @@ function parseTablePropertyExceptions(el: Element): TablePropertyExOptions {
   if (base.alignment !== undefined) {
     opts.alignment = base.alignment as TablePropertyExOptions["alignment"];
   }
-  if (base.cellMargin !== undefined) opts.cellMargin = base.cellMargin;
+  if (base.margins !== undefined) opts.margins = base.margins;
   if (base.tableLook !== undefined) opts.tableLook = base.tableLook as TableLookOptions;
   if (base.cellSpacing !== undefined) {
     opts.cellSpacing = base.cellSpacing as TableCellSpacingProperties;
@@ -389,7 +389,7 @@ function parseTablePropertyExChange(el: Element): TablePropertyExChangeOptions |
     if (inner.borders !== undefined) change.borders = inner.borders;
     if (inner.shading !== undefined) change.shading = inner.shading;
     if (inner.alignment !== undefined) change.alignment = inner.alignment;
-    if (inner.cellMargin !== undefined) change.cellMargin = inner.cellMargin;
+    if (inner.margins !== undefined) change.margins = inner.margins;
     if (inner.tableLook !== undefined) change.tableLook = inner.tableLook;
     if (inner.cellSpacing !== undefined) change.cellSpacing = inner.cellSpacing;
   }
@@ -397,9 +397,8 @@ function parseTablePropertyExChange(el: Element): TablePropertyExChangeOptions |
   return change as TablePropertyExChangeOptions;
 }
 
-/** Map base 6-flags to docx TableLookOptions for w:tblLook emit.
- *  firstRow/lastRow pass through; firstCol→firstColumn, lastCol→lastColumn;
- *  bandRow→!noHBand, bandCol→!noVBand (banding is inverted in w:tblLook). */
+/** Map base 6-flags to TableLookOptions for w:tblLook emit — same field
+ *  names and polarity, so this is a plain pass-through of the set flags. */
 function tableLookFromFlags(opts: TableOptions): TableLookOptions | undefined {
   const has =
     opts.firstRow !== undefined ||
@@ -412,10 +411,10 @@ function tableLookFromFlags(opts: TableOptions): TableLookOptions | undefined {
   const look: TableLookOptions = {};
   if (opts.firstRow !== undefined) look.firstRow = opts.firstRow;
   if (opts.lastRow !== undefined) look.lastRow = opts.lastRow;
-  if (opts.firstCol !== undefined) look.firstColumn = opts.firstCol;
-  if (opts.lastCol !== undefined) look.lastColumn = opts.lastCol;
-  if (opts.bandRow !== undefined) look.noHBand = !opts.bandRow;
-  if (opts.bandCol !== undefined) look.noVBand = !opts.bandCol;
+  if (opts.firstCol !== undefined) look.firstCol = opts.firstCol;
+  if (opts.lastCol !== undefined) look.lastCol = opts.lastCol;
+  if (opts.bandRow !== undefined) look.bandRow = opts.bandRow;
+  if (opts.bandCol !== undefined) look.bandCol = opts.bandCol;
   return look;
 }
 
@@ -434,7 +433,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
       alignment: opts.alignment,
       borders: opts.borders,
       caption: opts.caption,
-      cellMargin: opts.margins,
+      margins: opts.margins,
       cellSpacing: opts.cellSpacing,
       description: opts.description,
       float: opts.float,
@@ -553,7 +552,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   const tblCellMar = findChild(el, "w:tblCellMar");
   if (tblCellMar) {
     const margins = parseCellMargins(tblCellMar);
-    if (margins) opts.cellMargin = margins;
+    if (margins) opts.margins = margins;
   }
 
   const shd = findChild(el, "w:shd");
@@ -667,7 +666,8 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
     if (Object.keys(rev).length > 0) opts.revision = rev as TablePropertiesChangeOptions;
   }
 
-  // tblLook — conditional formatting flags (CT_TblLook)
+  // tblLook — conditional formatting flags (CT_TblLook). XML polarity
+  // inverts banding (w:noHBand = !bandRow).
   const tblLook = findChild(el, "w:tblLook");
   if (tblLook) {
     const look: TableLookOptions = {};
@@ -676,13 +676,13 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
     const lastRow = attrBool(tblLook, "w:lastRow");
     if (lastRow !== undefined) look.lastRow = lastRow;
     const firstColumn = attrBool(tblLook, "w:firstColumn");
-    if (firstColumn !== undefined) look.firstColumn = firstColumn;
+    if (firstColumn !== undefined) look.firstCol = firstColumn;
     const lastColumn = attrBool(tblLook, "w:lastColumn");
-    if (lastColumn !== undefined) look.lastColumn = lastColumn;
+    if (lastColumn !== undefined) look.lastCol = lastColumn;
     const noHBand = attrBool(tblLook, "w:noHBand");
-    if (noHBand !== undefined) look.noHBand = noHBand;
+    if (noHBand !== undefined) look.bandRow = !noHBand;
     const noVBand = attrBool(tblLook, "w:noVBand");
-    if (noVBand !== undefined) look.noVBand = noVBand;
+    if (noVBand !== undefined) look.bandCol = !noVBand;
     if (Object.keys(look).length > 0) opts.tableLook = look;
   }
 
@@ -1095,18 +1095,17 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
   const tblPr = findChild(el, "w:tblPr");
   if (tblPr) {
     const tblPrParsed = parseTablePropertiesEl(tblPr);
-    // tableLook maps to base 6-flags and cellMargin to `margins`; pull both
-    // aside so the flat assign only carries TableOptions field names.
-    const { tableLook, cellMargin, ...rest } = tblPrParsed;
+    // tableLook carries the same 6-flag field names as TableOptions, so only
+    // the emit-side (stringify) translates; here it assigns straight through.
+    const { tableLook, ...rest } = tblPrParsed;
     Object.assign(opts, rest);
-    if (cellMargin !== undefined) opts.margins = cellMargin;
     if (tableLook) {
       if (tableLook.firstRow !== undefined) opts.firstRow = tableLook.firstRow;
       if (tableLook.lastRow !== undefined) opts.lastRow = tableLook.lastRow;
-      if (tableLook.firstColumn !== undefined) opts.firstCol = tableLook.firstColumn;
-      if (tableLook.lastColumn !== undefined) opts.lastCol = tableLook.lastColumn;
-      if (tableLook.noHBand !== undefined) opts.bandRow = !tableLook.noHBand;
-      if (tableLook.noVBand !== undefined) opts.bandCol = !tableLook.noVBand;
+      if (tableLook.firstCol !== undefined) opts.firstCol = tableLook.firstCol;
+      if (tableLook.lastCol !== undefined) opts.lastCol = tableLook.lastCol;
+      if (tableLook.bandRow !== undefined) opts.bandRow = tableLook.bandRow;
+      if (tableLook.bandCol !== undefined) opts.bandCol = tableLook.bandCol;
     }
   }
 

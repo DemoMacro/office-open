@@ -993,11 +993,11 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // defaultTabStop — optional (CT_Settings minOccurs=0); emit only when set
     if (opts.defaultTabStop !== undefined) p.push(numVal("w:defaultTabStop", opts.defaultTabStop)!);
 
-    // hyphenation
-    p.push(onOff("w:autoHyphenation", opts.hyphenation?.autoHyphenation));
-    p.push(numVal("w:consecutiveHyphenLimit", opts.hyphenation?.consecutiveHyphenLimit));
-    p.push(numVal("w:hyphenationZone", opts.hyphenation?.hyphenationZone));
-    p.push(onOff("w:doNotHyphenateCaps", opts.hyphenation?.doNotHyphenateCaps));
+    // hyphenation — sibling CT_Settings elements, flattened onto the root
+    p.push(onOff("w:autoHyphenation", opts.autoHyphenation));
+    p.push(numVal("w:consecutiveHyphenLimit", opts.consecutiveHyphenLimit));
+    p.push(numVal("w:hyphenationZone", opts.hyphenationZone));
+    p.push(onOff("w:doNotHyphenateCaps", opts.doNotHyphenateCaps));
 
     p.push(onOff("w:showEnvelope", opts.showEnvelope));
     p.push(numVal("w:summaryLength", opts.summaryLength));
@@ -1068,8 +1068,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       p.push(
         `<w:hdrShapeDefaults>${stringifyShapeDefaultsInner(opts.hdrShapeDefaults)}</w:hdrShapeDefaults>`,
       );
-    if (opts.footnotePr !== undefined) p.push(stringifyFootnotePr(opts.footnotePr));
-    if (opts.endnotePr !== undefined) p.push(stringifyEndnotePr(opts.endnotePr));
+    if (opts.footnoteProperties !== undefined) p.push(stringifyFootnotePr(opts.footnoteProperties));
+    if (opts.endnoteProperties !== undefined) p.push(stringifyEndnotePr(opts.endnoteProperties));
 
     // Compatibility — tri-state:
     //   undefined → fresh MS Office defaults (4 compatSettings)
@@ -1096,7 +1096,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     }
 
     if (opts.rsids !== undefined) p.push(stringifyRsids(opts.rsids));
-    if (opts.mathPr !== undefined) p.push(stringifyMathPr(opts.mathPr));
+    if (opts.mathProperties !== undefined) p.push(stringifyMathPr(opts.mathProperties));
 
     if (opts.attachedSchema !== undefined) {
       for (const schema of opts.attachedSchema) p.push(strVal("w:attachedSchema", schema)!);
@@ -1360,24 +1360,15 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     const defaultTabStop = readNum(findChild(el, "w:defaultTabStop"), "w:val");
     if (defaultTabStop !== undefined) opts.defaultTabStop = defaultTabStop;
 
-    // hyphenation (autoHyphenation/consecutiveHyphenLimit/hyphenationZone/doNotHyphenateCaps)
-    if (
-      findChild(el, "w:autoHyphenation") ||
-      findChild(el, "w:doNotHyphenateCaps") ||
-      findChild(el, "w:consecutiveHyphenLimit") ||
-      findChild(el, "w:hyphenationZone")
-    ) {
-      const hyphenation: Record<string, unknown> = {};
-      const autoHyph = readOnOff(findChild(el, "w:autoHyphenation"));
-      if (autoHyph !== undefined) hyphenation.autoHyphenation = autoHyph;
-      const noHyphCaps = readOnOff(findChild(el, "w:doNotHyphenateCaps"));
-      if (noHyphCaps !== undefined) hyphenation.doNotHyphenateCaps = noHyphCaps;
-      const consLimit = readNum(findChild(el, "w:consecutiveHyphenLimit"), "w:val");
-      if (consLimit !== undefined) hyphenation.consecutiveHyphenLimit = consLimit;
-      const zone = readNum(findChild(el, "w:hyphenationZone"), "w:val");
-      if (zone !== undefined) hyphenation.hyphenationZone = zone;
-      if (Object.keys(hyphenation).length > 0) opts.hyphenation = hyphenation;
-    }
+    // hyphenation — sibling CT_Settings elements, flattened onto the root
+    const autoHyph = readOnOff(findChild(el, "w:autoHyphenation"));
+    if (autoHyph !== undefined) opts.autoHyphenation = autoHyph;
+    const noHyphCaps = readOnOff(findChild(el, "w:doNotHyphenateCaps"));
+    if (noHyphCaps !== undefined) opts.doNotHyphenateCaps = noHyphCaps;
+    const consLimit = readNum(findChild(el, "w:consecutiveHyphenLimit"), "w:val");
+    if (consLimit !== undefined) opts.consecutiveHyphenLimit = consLimit;
+    const zone = readNum(findChild(el, "w:hyphenationZone"), "w:val");
+    if (zone !== undefined) opts.hyphenationZone = zone;
 
     // summaryLength → w:summaryLength/@w:val
     const summaryLength = readNum(findChild(el, "w:summaryLength"), "w:val");
@@ -1447,12 +1438,12 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     const fnPrEl = findChild(el, "w:footnotePr");
     if (fnPrEl) {
       const fn = parseFtnEdnPr(fnPrEl);
-      if (fn) opts.footnotePr = fn;
+      if (fn) opts.footnoteProperties = fn;
     }
     const enPrEl = findChild(el, "w:endnotePr");
     if (enPrEl) {
       const en = parseFtnEdnPr(enPrEl);
-      if (en) opts.endnotePr = en;
+      if (en) opts.endnoteProperties = en;
     }
 
     // compatibility — tri-state: object when <w:compat> holds content, false
@@ -1494,7 +1485,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     const mathPrEl = findChild(el, "m:mathPr");
     if (mathPrEl) {
       const mp = parseMathPr(mathPrEl);
-      if (mp) opts.mathPr = mp;
+      if (mp) opts.mathProperties = mp;
     }
 
     // attachedSchema → w:attachedSchema/@w:val (multiple)

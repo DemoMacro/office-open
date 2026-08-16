@@ -62,7 +62,7 @@ export interface DocumentOptions extends CorePropertiesOptions {
   footnotes?: FootnoteOptions[];
   /**
    * Separator footnotes — id + content round-tripped verbatim from the source
-   * so the generated id stays consistent with settings.footnotePr, which
+   * so the generated id stays consistent with settings.footnoteProperties,
    * references it. Omit for freshly generated documents (defaults apply).
    */
   footnoteSeparators?: {

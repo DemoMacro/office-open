@@ -51,6 +51,7 @@ import type {
 } from "@parts/paragraph/properties";
 import { parseFormFieldData } from "@parts/paragraph/run/form-field";
 import type { FormFieldOptions } from "@parts/paragraph/run/form-field";
+import type { PositionalTabOptions } from "@parts/paragraph/run/positional-tab";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
@@ -1466,7 +1467,13 @@ function parseRunLevelChildren(
         const leader = attr(child, "w:leader");
         const relativeTo = attr(child, "w:relativeTo");
         if (alignment !== undefined && leader !== undefined && relativeTo !== undefined) {
-          childList.push({ positionalTab: { alignment, leader, relativeTo } });
+          childList.push({
+            positionalTab: {
+              alignment: alignment as PositionalTabOptions["alignment"],
+              leader: leader as PositionalTabOptions["leader"],
+              relativeTo: relativeTo as PositionalTabOptions["relativeTo"],
+            },
+          });
         }
         break;
       }
@@ -1477,7 +1484,9 @@ function parseRunLevelChildren(
           const ed = attr(child, "w:ed");
           if (ed !== undefined) ps.editor = ed;
           const editGroup = attr(child, "w:edGrp");
-          if (editGroup !== undefined) ps.editGroup = editGroup;
+          if (editGroup !== undefined) {
+            ps.editGroup = editGroup as PermStartInlineOptions["editGroup"];
+          }
           const colFirst = attrNum(child, "w:colFirst");
           if (colFirst !== undefined) ps.colFirst = colFirst;
           const colLast = attrNum(child, "w:colLast");

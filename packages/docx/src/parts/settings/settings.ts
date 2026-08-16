@@ -67,8 +67,14 @@ export interface SettingsOptions {
   compatibility?: CompatibilityOptions | false;
   /** Default distance between tab stops in twips */
   defaultTabStop?: number;
-  /** Hyphenation settings */
-  hyphenation?: HyphenationOptions;
+  /** Automatically hyphenate words as they are typed (w:autoHyphenation) */
+  autoHyphenation?: boolean;
+  /** Maximum number of consecutive lines ending with a hyphenated word (w:consecutiveHyphenLimit) */
+  consecutiveHyphenLimit?: number;
+  /** Distance from the margin within which hyphenation is avoided, in twips (w:hyphenationZone) */
+  hyphenationZone?: number;
+  /** Hyphenate words in all capital letters (w:doNotHyphenateCaps) */
+  doNotHyphenateCaps?: boolean;
   /** Controls whether punctuation is compressed at line ends */
   characterSpacingControl?:
     | "compressPunctuation"
@@ -218,10 +224,10 @@ export interface SettingsOptions {
   drawingGridHorizontalOrigin?: number;
   /** Vertical origin for the drawing grid (twips) */
   drawingGridVerticalOrigin?: number;
-  /** Document-level footnote properties (CT_FtnDocProps) */
-  footnotePr?: DocumentFootnotePropertiesOptions;
-  /** Document-level endnote properties (CT_EdnDocProps) */
-  endnotePr?: DocumentEndnotePropertiesOptions;
+  /** Document-level footnote properties (CT_FtnDocProps, w:footnotePr) */
+  footnoteProperties?: DocumentFootnotePropertiesOptions;
+  /** Document-level endnote properties (CT_EdnDocProps, w:endnotePr) */
+  endnoteProperties?: DocumentEndnotePropertiesOptions;
   /** Document revision save IDs (CT_DocRsids) */
   rsids?: RsidsOptions;
   /** Reading mode ink lock-down settings */
@@ -229,7 +235,7 @@ export interface SettingsOptions {
   /** Caption configuration (CT_Captions) */
   captions?: CaptionsOptions;
   /** Math properties (m:mathPr) */
-  mathPr?: MathPropertiesOptions;
+  mathProperties?: MathPropertiesOptions;
   /** Active writing style checking language/grammar settings */
   activeWritingStyle?: {
     lang?: string;
@@ -523,22 +529,6 @@ export interface MailMergeOptions {
   active?: boolean;
   /** Recipients data reference (w:recipients r:id) */
   recipients?: string;
-}
-
-/**
- * Options for automatic hyphenation settings.
- *
- * @see {@link Settings}
- */
-export interface HyphenationOptions {
-  /** Specifies whether the application automatically hyphenates words as they are typed in the document. */
-  autoHyphenation?: boolean;
-  /** Specifies the minimum number of characters at the beginning of a word before a hyphen can be inserted. */
-  hyphenationZone?: number;
-  /** Specifies the maximum number of consecutive lines that can end with a hyphenated word. */
-  consecutiveHyphenLimit?: number;
-  /** Specifies whether to hyphenate words in all capital letters. */
-  doNotHyphenateCaps?: boolean;
 }
 
 /**

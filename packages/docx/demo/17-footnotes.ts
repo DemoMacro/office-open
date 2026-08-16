@@ -117,7 +117,7 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        footnotePr: {
+        footnoteProperties: {
           numRestart: "eachSect",
           pos: "beneathText",
         },
@@ -146,7 +146,7 @@ const buffer = await generateDocument({
         },
       ],
       properties: {
-        footnotePr: {
+        footnoteProperties: {
           numRestart: "continuous",
           pos: "sectEnd",
         },

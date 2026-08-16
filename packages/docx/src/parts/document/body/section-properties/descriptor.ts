@@ -262,8 +262,12 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesDescriptorOption
   } = typeof opts.grid === "object" ? opts.grid : {};
 
   // Footnote/endnote properties
-  if (opts.footnotePr) parts.push(footnotePrXml("w:footnotePr", opts.footnotePr));
-  if (opts.endnotePr) parts.push(footnotePrXml("w:endnotePr", opts.endnotePr));
+  if (opts.footnoteProperties) {
+    parts.push(footnotePrXml("w:footnotePr", opts.footnoteProperties));
+  }
+  if (opts.endnoteProperties) {
+    parts.push(footnotePrXml("w:endnotePr", opts.endnoteProperties));
+  }
 
   // Section type
   if (opts.type) parts.push(sectionTypeXml(opts.type));
@@ -584,13 +588,13 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Footnote properties
   const footnotePr = findChild(el, "w:footnotePr");
   if (footnotePr) {
-    opts.footnotePr = parseNotePropertiesEl(footnotePr);
+    opts.footnoteProperties = parseNotePropertiesEl(footnotePr);
   }
 
   // Endnote properties
   const endnotePr = findChild(el, "w:endnotePr");
   if (endnotePr) {
-    opts.endnotePr = parseNotePropertiesEl(endnotePr) as EndnotePropertiesOptions;
+    opts.endnoteProperties = parseNotePropertiesEl(endnotePr) as EndnotePropertiesOptions;
   }
 
   // Paper source

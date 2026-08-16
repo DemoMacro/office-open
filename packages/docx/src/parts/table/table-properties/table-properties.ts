@@ -64,7 +64,7 @@ export interface TablePropertiesOptionsBase {
   shading?: ShadingProperties;
   style?: string;
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  cellMargin?: TableCellMarginOptions;
+  margins?: TableCellMarginOptions;
   visuallyRightToLeft?: boolean;
   tableLook?: TableLookOptions;
   cellSpacing?: TableCellSpacingProperties;

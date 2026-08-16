@@ -9,6 +9,7 @@
  */
 
 import {
+  convertToPt,
   convertToTwip,
   decimalNumber,
   eighthPointMeasureValue,
@@ -533,8 +534,11 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   // whenever the field is set rather than truthy-checking it.
   if (opts.kern !== undefined) s += `<w:kern w:val="${hpsMeasureValue(opts.kern * 2)}"/>`;
 
-  // Position
-  if (opts.position) s += `<w:position w:val="${opts.position}"/>`;
+  // Position (points → half-points)
+  if (opts.position !== undefined) {
+    const points = typeof opts.position === "number" ? opts.position : convertToPt(opts.position);
+    s += `<w:position w:val="${Math.round(points * 2)}"/>`;
+  }
 
   // Size (points → half-points). sz and szCs are independent (Latin vs complex
   // script); emit each only when set so round-trip is field-faithful.

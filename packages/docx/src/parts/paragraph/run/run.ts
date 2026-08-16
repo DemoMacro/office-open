@@ -1,5 +1,6 @@
 import type { ObjectElementOptions } from "@parts/object";
 
+import type { ParagraphChild } from "../paragraph";
 /**
  * Run module for WordprocessingML documents.
  *
@@ -68,7 +69,8 @@ interface RunOptionsBase {
    * Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing
    * and content children). The empty run elements are single-key markers
    * (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via
-   * {@link EMPTY_RUN_ELEMENTS}.
+   * {@link EMPTY_RUN_ELEMENTS}; paragraph-level child shapes (pictures, charts,
+   * hyperlinks, …) dispatch through the same JSON pipeline.
    */
   children?: (
     | (typeof PageNumber)[keyof typeof PageNumber]
@@ -91,7 +93,7 @@ interface RunOptionsBase {
     | { carriageReturn: true }
     | { lastRenderedPageBreak: true }
     | { object: ObjectElementOptions }
-    | Record<string, unknown>
+    | ParagraphChild
   )[];
   break?: number | BreakOptions;
   text?: string;

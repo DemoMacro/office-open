@@ -646,7 +646,7 @@ export class DefaultStylesFactory {
       unhideWhenUsed: true,
       table: {
         indent: { size: 0, type: WidthType.DXA },
-        cellMargin: {
+        margins: {
           top: { size: 0, type: WidthType.DXA },
           left: { size: 108, type: WidthType.DXA },
           bottom: { size: 0, type: WidthType.DXA },

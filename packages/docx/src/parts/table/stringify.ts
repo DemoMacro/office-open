@@ -8,7 +8,7 @@
  * @module
  */
 
-import { convertToTwip, xsdVerticalMergeRev } from "@office-open/core";
+import { convertToTwip, mapOptional, xsdVerticalMergeRev } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import { attrsRaw } from "@office-open/xml";
 import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
@@ -151,13 +151,16 @@ function floatPropertiesStr(opts: TableFloatOptions): string {
 // ── Table look string ──
 
 function tableLookStr(opts: TableLookOptions): string {
+  // XML polarity inverts banding: w:noHBand="1" disables row banding.
+  // ST_OnOff emits as 1/0 to match every other on/off attribute in the package.
+  const onOffAttr = (v: boolean | undefined) => mapOptional(v, (b) => (b ? 1 : 0));
   const a = attrsRaw({
-    "w:firstRow": opts.firstRow,
-    "w:lastRow": opts.lastRow,
-    "w:firstColumn": opts.firstColumn,
-    "w:lastColumn": opts.lastColumn,
-    "w:noHBand": opts.noHBand,
-    "w:noVBand": opts.noVBand,
+    "w:firstRow": onOffAttr(opts.firstRow),
+    "w:lastRow": onOffAttr(opts.lastRow),
+    "w:firstColumn": onOffAttr(opts.firstCol),
+    "w:lastColumn": onOffAttr(opts.lastCol),
+    "w:noHBand": onOffAttr(mapOptional(opts.bandRow, (b) => !b)),
+    "w:noVBand": onOffAttr(mapOptional(opts.bandCol, (b) => !b)),
   });
   return `<w:tblLook${a}/>`;
 }
@@ -283,8 +286,8 @@ function stringifyTablePropertiesInner(options: TablePropertiesOptions): string 
     parts.push(`<w:tblLayout w:type="${options.layout}"/>`);
   }
 
-  if (options.cellMargin) {
-    const cm = cellMarginStr("w:tblCellMar", options.cellMargin);
+  if (options.margins) {
+    const cm = cellMarginStr("w:tblCellMar", options.margins);
     if (cm) parts.push(cm);
   }
 
@@ -551,8 +554,8 @@ function stringifyTablePropertyExceptionsInner(options: TablePropertyExOptions):
     parts.push(`<w:tblLayout w:type="${options.layout}"/>`);
   }
 
-  if (options.cellMargin) {
-    const cm = cellMarginStr("w:tblCellMar", options.cellMargin);
+  if (options.margins) {
+    const cm = cellMarginStr("w:tblCellMar", options.margins);
     if (cm) parts.push(cm);
   }
 

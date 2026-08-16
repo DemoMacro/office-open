@@ -71,8 +71,8 @@ export interface SectionPropertiesOptionsBase {
     first?: number;
     other?: number;
   };
-  footnotePr?: FootnotePropertiesOptions;
-  endnotePr?: EndnotePropertiesOptions;
+  footnoteProperties?: FootnotePropertiesOptions;
+  endnoteProperties?: EndnotePropertiesOptions;
 }
 
 export type SectionPropertiesChangeOptions = ChangedProperties & SectionPropertiesOptionsBase;

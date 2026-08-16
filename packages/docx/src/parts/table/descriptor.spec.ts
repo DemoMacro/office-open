@@ -727,6 +727,15 @@ describe("tableDesc round-trip", () => {
     expect(result.bandRow).toBe(true);
   });
 
+  it("emits w:tblLook with inverted banding polarity (noHBand = !bandRow)", () => {
+    const xml = tableDesc.stringify(
+      { bandRow: true, bandCol: false, rows: [{ cells: [{ children: [] }] }] },
+      writeCtx,
+    )!;
+    expect(xml).toContain('w:noHBand="0"');
+    expect(xml).toContain('w:noVBand="1"');
+  });
+
   it("round-trips columnWidthsRevision (w:tblGridChange)", () => {
     const result = roundTrip({
       columnWidths: [1000, 2000],

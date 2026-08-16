@@ -32,7 +32,7 @@ export interface TablePropertyExOptions {
   borders?: TableBordersOptions;
   shading?: ShadingProperties;
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
-  cellMargin?: TableCellMarginOptions;
+  margins?: TableCellMarginOptions;
   tableLook?: TableLookOptions;
   cellSpacing?: TableCellSpacingProperties;
   /** Table property exceptions change tracking (CT_TblPrExChange) */

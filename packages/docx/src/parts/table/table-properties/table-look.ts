@@ -26,7 +26,10 @@
  * Options for configuring table look conditional formatting.
  *
  * These options control which conditional formatting styles are applied
- * to the table.
+ * to the table. Field names and polarity match the base table 6-flags
+ * (firstRow/lastRow/firstCol/lastCol/bandRow/bandCol) so the same concept
+ * reads the same everywhere; the serializer maps them onto the XML
+ * attributes, inverting banding (w:noHBand = !bandRow).
  */
 export interface TableLookOptions {
   /** Apply first row conditional formatting. */
@@ -34,11 +37,11 @@ export interface TableLookOptions {
   /** Apply last row conditional formatting. */
   lastRow?: boolean;
   /** Apply first column conditional formatting. */
-  firstColumn?: boolean;
+  firstCol?: boolean;
   /** Apply last column conditional formatting. */
-  lastColumn?: boolean;
-  /** Disable horizontal row banding. */
-  noHBand?: boolean;
-  /** Disable vertical column banding. */
-  noVBand?: boolean;
+  lastCol?: boolean;
+  /** Apply horizontal row banding. */
+  bandRow?: boolean;
+  /** Apply vertical column banding. */
+  bandCol?: boolean;
 }

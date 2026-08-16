@@ -402,7 +402,7 @@ export function parseDocument(data: DataType): DocumentOptions {
       }
       if (footnotes.length > 0) opts.footnotes = footnotes;
       // Preserve round-tripped separators so the generated ids stay consistent
-      // with settings.footnotePr (which references them).
+      // with settings.footnoteProperties (which references them).
       if (fnResult.separator || fnResult.continuationSeparator) {
         opts.footnoteSeparators = {
           separator: fnResult.separator,

@@ -117,7 +117,8 @@ export interface RunStylePropertiesOptions {
   color?: string | ColorOptions;
   /** Kerning threshold in points. */
   kern?: number;
-  position?: string;
+  /** Raised/lowered text position in points (w:position, half-points in XML). */
+  position?: number | UniversalMeasure;
   /** Font size in points. Internally stored as half-points in XML (×2). */
   size?: number;
   /** Complex-script font size in points (w:szCs). Independent from {@link size}. */

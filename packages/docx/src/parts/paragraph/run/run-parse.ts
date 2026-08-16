@@ -1,3 +1,4 @@
+import type { UniversalMeasure } from "@office-open/core";
 /**
  * Run properties parser for DOCX documents.
  *
@@ -207,8 +208,12 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
 
   const position = findChild(el, "w:position");
   if (position) {
-    const val = attr(position, "w:val");
-    if (val !== undefined) opts.position = val;
+    // w:position is ST_SignedHpsMeasure; numeric tokens are half-points →
+    // points (÷2), UniversalMeasure strings pass through verbatim.
+    const val = attrMeasure(position, "w:val");
+    if (val !== undefined) {
+      opts.position = typeof val === "number" ? val / 2 : (val as UniversalMeasure);
+    }
   }
 
   const fitText = findChild(el, "w:fitText");

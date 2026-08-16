@@ -4720,7 +4720,7 @@
         },
         "footnoteSeparators": {
           "additionalProperties": false,
-          "description": "Separator footnotes — id + content round-tripped verbatim from the source so the generated id stays consistent with settings.footnotePr, which references it. Omit for freshly generated documents (defaults apply).",
+          "description": "Separator footnotes — id + content round-tripped verbatim from the source so the generated id stays consistent with settings.footnoteProperties, references it. Omit for freshly generated documents (defaults apply).",
           "properties": {
             "continuationSeparator": {
               "$ref": "#/definitions/FootnoteSeparator"
@@ -4955,6 +4955,18 @@
         }
       },
       "type": "object"
+    },
+    "EditGroup": {
+      "enum": [
+        "none",
+        "everyone",
+        "administrators",
+        "contributors",
+        "editors",
+        "owners",
+        "current"
+      ],
+      "type": "string"
     },
     "EffectContainer": {
       "description": "Effect container type (ST_EffectContainerType).\n\nControls how child effects are combined:\n- `sib`: sibling effects are applied in parallel\n- `tree`: effects are applied sequentially in tree order\n\nNote: the `sib` token maps to the `\"sibling\"` value accepted here.\n\n## XSD Schema ```xml <xsd:simpleType name=\"ST_EffectContainerType\">   <xsd:restriction base=\"xsd:token\">     <xsd:enumeration value=\"sib\"/>     <xsd:enumeration value=\"tree\"/>   </xsd:restriction> </xsd:simpleType> ```",
@@ -6825,29 +6837,6 @@
         "hover": {
           "description": "URL for hover hyperlink",
           "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "HyphenationOptions": {
-      "additionalProperties": false,
-      "description": "Options for automatic hyphenation settings.",
-      "properties": {
-        "autoHyphenation": {
-          "description": "Specifies whether the application automatically hyphenates words as they are typed in the document.",
-          "type": "boolean"
-        },
-        "consecutiveHyphenLimit": {
-          "description": "Specifies the maximum number of consecutive lines that can end with a hyphenated word.",
-          "type": "number"
-        },
-        "doNotHyphenateCaps": {
-          "description": "Specifies whether to hyphenate words in all capital letters.",
-          "type": "boolean"
-        },
-        "hyphenationZone": {
-          "description": "Specifies the minimum number of characters at the beginning of a word before a hyphen can be inserted.",
-          "type": "number"
         }
       },
       "type": "object"
@@ -10577,20 +10566,7 @@
           "additionalProperties": false,
           "properties": {
             "positionalTab": {
-              "additionalProperties": false,
-              "properties": {
-                "alignment": {
-                  "type": "string"
-                },
-                "leader": {
-                  "type": "string"
-                },
-                "relativeTo": {
-                  "type": "string"
-                }
-              },
-              "required": ["alignment", "leader", "relativeTo"],
-              "type": "object"
+              "$ref": "#/definitions/PositionalTabOptions"
             }
           },
           "required": ["positionalTab"],
@@ -10601,26 +10577,7 @@
           "additionalProperties": false,
           "properties": {
             "permStart": {
-              "additionalProperties": false,
-              "properties": {
-                "colFirst": {
-                  "type": "number"
-                },
-                "colLast": {
-                  "type": "number"
-                },
-                "editGroup": {
-                  "type": "string"
-                },
-                "editor": {
-                  "type": "string"
-                },
-                "id": {
-                  "type": ["number", "string"]
-                }
-              },
-              "required": ["id"],
-              "type": "object"
+              "$ref": "#/definitions/PermStartOptions"
             }
           },
           "required": ["permStart"],
@@ -11781,7 +11738,7 @@
           ]
         },
         "children": {
-          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } .",
+          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } ; paragraph-level child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
           "items": {
             "anyOf": [
               {
@@ -12019,8 +11976,7 @@
                 "type": "object"
               },
               {
-                "additionalProperties": {},
-                "type": "object"
+                "$ref": "#/definitions/ParagraphChild"
               }
             ]
           },
@@ -12159,7 +12115,15 @@
           "type": "boolean"
         },
         "position": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -12830,6 +12794,34 @@
       "pattern": "^-?(\\d+(\\.\\d+)?|\\.\\d+)%$",
       "type": "string"
     },
+    "PermStartOptions": {
+      "additionalProperties": false,
+      "description": "Options for creating a permission start marker.",
+      "properties": {
+        "colFirst": {
+          "description": "First column this range covers (for table cells)",
+          "type": "number"
+        },
+        "colLast": {
+          "description": "Last column this range covers (for table cells)",
+          "type": "number"
+        },
+        "editGroup": {
+          "$ref": "#/definitions/EditGroup",
+          "description": "Editing group that can edit this range"
+        },
+        "editor": {
+          "description": "Individual user who can edit this range (CT_PermStart `@ed`)",
+          "type": "string"
+        },
+        "id": {
+          "description": "Unique identifier for this permission range (typically a number)",
+          "type": ["string", "number"]
+        }
+      },
+      "required": ["id"],
+      "type": "object"
+    },
     "PictureFormat": {
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
@@ -13175,6 +13167,25 @@
         }
       },
       "required": ["type", "position"],
+      "type": "object"
+    },
+    "PositionalTabOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "enum": ["left", "center", "right"],
+          "type": "string"
+        },
+        "leader": {
+          "enum": ["none", "dot", "hyphen", "underscore", "middleDot"],
+          "type": "string"
+        },
+        "relativeTo": {
+          "enum": ["margin", "indent"],
+          "type": "string"
+        }
+      },
+      "required": ["alignment", "relativeTo", "leader"],
       "type": "object"
     },
     "PositiveUniversalMeasure": {
@@ -13838,7 +13849,7 @@
           ]
         },
         "children": {
-          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } .",
+          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } ; paragraph-level child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
           "items": {
             "anyOf": [
               {
@@ -14076,8 +14087,7 @@
                 "type": "object"
               },
               {
-                "additionalProperties": {},
-                "type": "object"
+                "$ref": "#/definitions/ParagraphChild"
               }
             ]
           },
@@ -14214,7 +14224,15 @@
           "type": "boolean"
         },
         "position": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -14482,7 +14500,15 @@
           "type": "boolean"
         },
         "position": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -14728,7 +14754,15 @@
           "type": "boolean"
         },
         "position": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -14973,7 +15007,15 @@
           "type": "boolean"
         },
         "position": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -16281,10 +16323,10 @@
         "deletionRsid": {
           "type": "string"
         },
-        "endnotePr": {
+        "endnoteProperties": {
           "$ref": "#/definitions/EndnotePropertiesOptions"
         },
-        "footnotePr": {
+        "footnoteProperties": {
           "$ref": "#/definitions/FootnotePropertiesOptions"
         },
         "formProtection": {
@@ -16383,10 +16425,10 @@
         "deletionRsid": {
           "type": "string"
         },
-        "endnotePr": {
+        "endnoteProperties": {
           "$ref": "#/definitions/EndnotePropertiesOptions"
         },
-        "footnotePr": {
+        "footnoteProperties": {
           "$ref": "#/definitions/FootnotePropertiesOptions"
         },
         "formProtection": {
@@ -16537,6 +16579,10 @@
           "description": "Allow auto-format overrides",
           "type": "boolean"
         },
+        "autoHyphenation": {
+          "description": "Automatically hyphenate words as they are typed (w:autoHyphenation)",
+          "type": "boolean"
+        },
         "bookFoldPrinting": {
           "description": "Enable book fold printing",
           "type": "boolean"
@@ -16625,6 +16671,10 @@
           ],
           "description": "Compatibility settings for older Word versions.\n\nTri-state: omit (undefined) to emit the MS Office default compatSettings for fresh documents; pass an object for explicit control; set `false` to omit `<w:compat>` entirely."
         },
+        "consecutiveHyphenLimit": {
+          "description": "Maximum number of consecutive lines ending with a hyphenated word (w:consecutiveHyphenLimit)",
+          "type": "number"
+        },
         "decimalSymbol": {
           "description": "Decimal symbol for numeric fields",
           "type": "string"
@@ -16663,6 +16713,10 @@
         },
         "doNotEmbedSmartTags": {
           "description": "Do not embed smart tags",
+          "type": "boolean"
+        },
+        "doNotHyphenateCaps": {
+          "description": "Hyphenate words in all capital letters (w:doNotHyphenateCaps)",
           "type": "boolean"
         },
         "doNotIncludeSubdocsInStats": {
@@ -16739,17 +16793,17 @@
           "description": "Whether to embed TrueType fonts in the document",
           "type": "boolean"
         },
-        "endnotePr": {
+        "endnoteProperties": {
           "$ref": "#/definitions/DocumentEndnotePropertiesOptions",
-          "description": "Document-level endnote properties (CT_EdnDocProps)"
+          "description": "Document-level endnote properties (CT_EdnDocProps, w:endnotePr)"
         },
         "evenAndOddHeaders": {
           "description": "Enable different headers/footers for even and odd pages",
           "type": "boolean"
         },
-        "footnotePr": {
+        "footnoteProperties": {
           "$ref": "#/definitions/DocumentFootnotePropertiesOptions",
-          "description": "Document-level footnote properties (CT_FtnDocProps)"
+          "description": "Document-level footnote properties (CT_FtnDocProps, w:footnotePr)"
         },
         "forceUpgrade": {
           "description": "Force schema upgrade",
@@ -16775,9 +16829,9 @@
           "description": "Hide spelling errors in the document",
           "type": "boolean"
         },
-        "hyphenation": {
-          "$ref": "#/definitions/HyphenationOptions",
-          "description": "Hyphenation settings"
+        "hyphenationZone": {
+          "description": "Distance from the margin within which hyphenation is avoided, in twips (w:hyphenationZone)",
+          "type": "number"
         },
         "ignoreMixedContent": {
           "description": "Ignore mixed content in custom XML",
@@ -16795,7 +16849,7 @@
           "$ref": "#/definitions/MailMergeOptions",
           "description": "Mail merge configuration"
         },
-        "mathPr": {
+        "mathProperties": {
           "$ref": "#/definitions/MathPropertiesOptions",
           "description": "Math properties (m:mathPr)"
         },
@@ -18202,7 +18256,7 @@
           ]
         },
         "children": {
-          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } .",
+          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } ; paragraph-level child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
           "items": {
             "anyOf": [
               {
@@ -18440,8 +18494,7 @@
                 "type": "object"
               },
               {
-                "additionalProperties": {},
-                "type": "object"
+                "$ref": "#/definitions/ParagraphChild"
               }
             ]
           },
@@ -18578,7 +18631,15 @@
           "type": "boolean"
         },
         "position": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -19248,9 +19309,17 @@
     },
     "TableLookOptions": {
       "additionalProperties": false,
-      "description": "Options for configuring table look conditional formatting.\n\nThese options control which conditional formatting styles are applied to the table.",
+      "description": "Options for configuring table look conditional formatting.\n\nThese options control which conditional formatting styles are applied to the table. Field names and polarity match the base table 6-flags (firstRow/lastRow/firstCol/lastCol/bandRow/bandCol) so the same concept reads the same everywhere; the serializer maps them onto the XML attributes, inverting banding (w:noHBand = !bandRow).",
       "properties": {
-        "firstColumn": {
+        "bandCol": {
+          "description": "Apply vertical column banding.",
+          "type": "boolean"
+        },
+        "bandRow": {
+          "description": "Apply horizontal row banding.",
+          "type": "boolean"
+        },
+        "firstCol": {
           "description": "Apply first column conditional formatting.",
           "type": "boolean"
         },
@@ -19258,20 +19327,12 @@
           "description": "Apply first row conditional formatting.",
           "type": "boolean"
         },
-        "lastColumn": {
+        "lastCol": {
           "description": "Apply last column conditional formatting.",
           "type": "boolean"
         },
         "lastRow": {
           "description": "Apply last row conditional formatting.",
-          "type": "boolean"
-        },
-        "noHBand": {
-          "description": "Disable horizontal row banding.",
-          "type": "boolean"
-        },
-        "noVBand": {
-          "description": "Disable vertical column banding.",
           "type": "boolean"
         }
       },
@@ -19448,9 +19509,6 @@
           "description": "Table caption for accessibility (tblCaption)",
           "type": "string"
         },
-        "cellMargin": {
-          "$ref": "#/definitions/TableCellMarginOptions"
-        },
         "cellSpacing": {
           "$ref": "#/definitions/TableCellSpacingProperties"
         },
@@ -19478,6 +19536,9 @@
         "layout": {
           "enum": ["autofit", "fixed"],
           "type": "string"
+        },
+        "margins": {
+          "$ref": "#/definitions/TableCellMarginOptions"
         },
         "revision": {
           "$ref": "#/definitions/TablePropertiesChangeOptions"
@@ -19537,9 +19598,6 @@
           "description": "Table caption for accessibility (tblCaption)",
           "type": "string"
         },
-        "cellMargin": {
-          "$ref": "#/definitions/TableCellMarginOptions"
-        },
         "cellSpacing": {
           "$ref": "#/definitions/TableCellSpacingProperties"
         },
@@ -19559,6 +19617,9 @@
         "layout": {
           "enum": ["autofit", "fixed"],
           "type": "string"
+        },
+        "margins": {
+          "$ref": "#/definitions/TableCellMarginOptions"
         },
         "revision": {
           "$ref": "#/definitions/TablePropertiesChangeOptions"
@@ -19632,9 +19693,6 @@
         "borders": {
           "$ref": "#/definitions/TableBordersOptions"
         },
-        "cellMargin": {
-          "$ref": "#/definitions/TableCellMarginOptions"
-        },
         "cellSpacing": {
           "$ref": "#/definitions/TableCellSpacingProperties"
         },
@@ -19644,6 +19702,9 @@
         "layout": {
           "enum": ["autofit", "fixed"],
           "type": "string"
+        },
+        "margins": {
+          "$ref": "#/definitions/TableCellMarginOptions"
         },
         "shading": {
           "$ref": "#/definitions/ShadingProperties"

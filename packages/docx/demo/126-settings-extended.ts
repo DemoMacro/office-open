@@ -1,5 +1,5 @@
-// Extended document settings: mirrorMargins, footnotePr, endnotePr, rsids,
-// decimalSymbol, listSeparator, defaultTableStyle, mathPr, readModeInkLockDown,
+// Extended document settings: mirrorMargins, footnoteProperties, endnoteProperties, rsids,
+// decimalSymbol, listSeparator, defaultTableStyle, math properties, readModeInkLockDown,
 // bookFoldPrinting, captions, and many onOff settings.
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -32,13 +32,13 @@ const buffer = await generateDocument({
     displayVerticalDrawingGridEvery: 2,
 
     // Batch C: Complex substructures
-    footnotePr: {
+    footnoteProperties: {
       pos: "pageBottom",
       numFmt: "lowerRoman",
       numStart: 1,
       numRestart: "eachPage",
     },
-    endnotePr: {
+    endnoteProperties: {
       pos: "sectEnd",
       numFmt: "lowerLetter",
       numStart: 1,
@@ -60,7 +60,7 @@ const buffer = await generateDocument({
         { name: "Figure", pos: "below", sep: "hyphen", heading: 1, chapNum: true },
       ],
     },
-    mathPr: {
+    mathProperties: {
       mathFont: "Cambria Math",
       binaryOperatorBreak: "before",
       smallFractions: true,
@@ -100,7 +100,7 @@ const buffer = await generateDocument({
         {
           paragraph: {
             children: [
-              "This document demonstrates extended settings including footnotePr, endnotePr, rsids, mathPr, captions, and more.",
+              "This document demonstrates extended settings including footnoteProperties, endnoteProperties, rsids, mathPr, captions, and more.",
             ],
           },
         },
