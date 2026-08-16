@@ -14,6 +14,40 @@ async function roundTrip(opts: WorkbookOptions): Promise<WorkbookOptions> {
 }
 
 describe("parseWorkbook round-trip", () => {
+  it("round-trips pivot table page filters", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "Data",
+          rows: [
+            { cells: [{ value: "City" }, { value: "Year" }, { value: "Revenue" }] },
+            { cells: [{ value: "Beijing" }, { value: 2023 }, { value: 320 }] },
+            { cells: [{ value: "Shanghai" }, { value: 2024 }, { value: 580 }] },
+          ],
+        },
+        {
+          name: "Pivot",
+          rows: [],
+          pivotTables: [
+            {
+              source: "A1:C3",
+              sourceSheet: "Data",
+              rows: ["City"],
+              pages: [{ field: "Year", item: 1 }],
+              data: [{ field: "Revenue", summarize: "sum", name: "Revenue total" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const parsed = await roundTrip(opts);
+    const pt = parsed.worksheets![1]!.pivotTables![0]!;
+
+    expect(pt.rows).toEqual(["City"]);
+    expect(pt.pages).toEqual([{ field: "Year", item: 1 }]);
+  });
+
   it("resolves cell.style so a fresh Styles table keeps the right formatting", async () => {
     // Two cells with distinct styles. After parse→regenerate the Styles table
     // is rebuilt from scratch (indices may differ), so cell.styleIndex alone

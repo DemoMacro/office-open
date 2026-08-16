@@ -482,6 +482,15 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           .map((i) => fieldNames[i])
           .filter((name): name is string => name !== "");
         if (columns.length > 0) pt.columns = columns;
+        const pages = (pivotData.pageFields ?? [])
+          .filter((p) => p.fld !== undefined)
+          .map((p) => ({
+            field: fieldNames[p.fld!] ?? "",
+            ...(p.cap ? { caption: p.cap } : {}),
+            ...(p.item !== undefined ? { item: p.item } : {}),
+          }))
+          .filter((p) => p.field !== "");
+        if (pages.length > 0) pt.pages = pages;
         if (pivotData.pivotTableStyle) pt.style = pivotData.pivotTableStyle;
         if (pivotData.dataOnRows) pt.dataOnRows = true;
         if (pivotData.grandTotalCaption) pt.grandTotalCaption = pivotData.grandTotalCaption;
