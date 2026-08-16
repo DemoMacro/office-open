@@ -149,6 +149,30 @@
       "required": ["alpha"],
       "type": "object"
     },
+    "AnchorMarkerOptions": {
+      "additionalProperties": false,
+      "description": "Cell corner marker (CT_Marker): 0-based column/row plus EMU offsets.",
+      "properties": {
+        "col": {
+          "description": "0-based column index",
+          "type": "number"
+        },
+        "colOff": {
+          "description": "Offset within the column, in EMU (default: 0)",
+          "type": "number"
+        },
+        "row": {
+          "description": "0-based row index",
+          "type": "number"
+        },
+        "rowOff": {
+          "description": "Offset within the row, in EMU (default: 0)",
+          "type": "number"
+        }
+      },
+      "required": ["col", "row"],
+      "type": "object"
+    },
     "AnchorType": {
       "enum": ["twoCell", "oneCell", "absolute"],
       "type": "string"
@@ -2418,6 +2442,13 @@
     "CommentOptions": {
       "additionalProperties": false,
       "properties": {
+        "anchor": {
+          "description": "Note shape anchor (x:Anchor in the VML part) — 8 numbers: fromColumn, fromColumnOffsetPx, fromRow, fromRowOffsetPx, toColumn, toColumnOffsetPx, toRow, toRowOffsetPx. Absent → the default 2×2-cell offset anchored at the comment's cell.",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
         "author": {
           "description": "Author name",
           "type": "string"
@@ -2430,6 +2461,20 @@
           "$ref": "#/definitions/CommentPropertiesOptions",
           "description": "Comment properties (CT_CommentPr)"
         },
+        "size": {
+          "additionalProperties": false,
+          "description": "Note shape size in points. Absent → 108 × 59.25 pt.",
+          "properties": {
+            "height": {
+              "type": "number"
+            },
+            "width": {
+              "type": "number"
+            }
+          },
+          "required": ["width", "height"],
+          "type": "object"
+        },
         "text": {
           "anyOf": [
             {
@@ -2440,6 +2485,10 @@
             }
           ],
           "description": "Comment text (plain string or rich text)"
+        },
+        "visible": {
+          "description": "Whether the note is pinned visible. Default false (hidden until hover).",
+          "type": "boolean"
         }
       },
       "required": ["cell", "author", "text"],
@@ -2447,7 +2496,7 @@
     },
     "CommentPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Comment property (CT_CommentPr).",
+      "description": "Comment property (CT_CommentPr).\n\nRound-trip support only: serializing a commentPr alongside the sheet's legacy VML note drawing produces a file Excel refuses to open — commentPr and the VML note shape are rival property systems for the same note, and Excel reads note properties from the shape's x:ClientData. Parsed from third-party files that carry it, never emitted by demos.",
       "properties": {
         "altText": {
           "description": "Alt text",
@@ -2729,7 +2778,7 @@
           "description": "Text import properties (CT_TextPr)"
         },
         "type": {
-          "description": "Connection type: 1=ODBC, 2=DAO, 3=OLE DB, 4=web, 5=text, 6=ADO, 7=DSP",
+          "description": "Source type code (ECMA 18.13.1; Excel-verified: 6 = text file source — Office writes it for textPr connections. Excel rejects a type-2 dbPr connection whose provider string it cannot resolve.)",
           "type": "number"
         },
         "webPr": {
@@ -6975,6 +7024,10 @@
       "additionalProperties": false,
       "description": "Object anchor (CT_ObjectAnchor).",
       "properties": {
+        "from": {
+          "$ref": "#/definitions/AnchorMarkerOptions",
+          "description": "Anchor start corner (xdr:from, CT_Marker)"
+        },
         "moveWithCells": {
           "description": "Move with cells (default: false)",
           "type": "boolean"
@@ -6982,6 +7035,10 @@
         "sizeWithCells": {
           "description": "Size with cells (default: false)",
           "type": "boolean"
+        },
+        "to": {
+          "$ref": "#/definitions/AnchorMarkerOptions",
+          "description": "Anchor end corner (xdr:to, CT_Marker)"
         }
       },
       "type": "object"

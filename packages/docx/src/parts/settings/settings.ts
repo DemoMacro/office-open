@@ -8,8 +8,21 @@
  *
  * @module
  */
+import type { VmlShapeDefaultsOptions, VmlShapeLayoutOptions } from "@office-open/core";
+
 import type { CompatibilityOptions } from "./compatibility";
 export type { CompatibilityOptions, CompatSettingOptions } from "./compatibility";
+
+/**
+ * Shape defaults content (CT_ShapeDefaults) — the o: element sequence hosted
+ * by `<w:hdrShapeDefaults>` and `<w:shapeDefaults>`.
+ */
+export interface ShapeDefaultsOptions {
+  /** o:shapedefaults — VML shape defaults (fill/stroke/textbox/colormru/…). */
+  shapedefaults?: VmlShapeDefaultsOptions;
+  /** o:shapelayout — shape id map / regroup table / rules. */
+  shapelayout?: VmlShapeLayoutOptions;
+}
 
 /**
  * Options for configuring document settings.
@@ -269,8 +282,8 @@ export interface SettingsOptions {
   showXMLTags?: boolean;
   /** Always merge empty namespace */
   alwaysMergeEmptyNamespace?: boolean;
-  /** Header shape defaults — verbatim inner XML (o:shapedefaults/o:shapelayout) */
-  hdrShapeDefaults?: string;
+  /** Header shape defaults (w:hdrShapeDefaults) */
+  hdrShapeDefaults?: ShapeDefaultsOptions;
   /** Attached schema references */
   attachedSchema?: string[];
   /** Force schema upgrade */
@@ -282,8 +295,8 @@ export interface SettingsOptions {
     name?: string;
     url?: string;
   }[];
-  /** Shape defaults — verbatim inner XML (o:shapedefaults/o:shapelayout) */
-  shapeDefaults?: string;
+  /** Shape defaults (w:shapeDefaults) */
+  shapeDefaults?: ShapeDefaultsOptions;
 }
 
 /**

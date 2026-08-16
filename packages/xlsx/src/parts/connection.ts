@@ -135,7 +135,11 @@ export interface ConnectionOptions {
   id: number;
   /** Connection name */
   name?: string;
-  /** Connection type: 1=ODBC, 2=DAO, 3=OLE DB, 4=web, 5=text, 6=ADO, 7=DSP */
+  /**
+   * Source type code (ECMA 18.13.1; Excel-verified: 6 = text file source —
+   * Office writes it for textPr connections. Excel rejects a type-2 dbPr
+   * connection whose provider string it cannot resolve.)
+   */
   type?: number;
   /** Version of the application that last refreshed the connection (required by XSD) */
   refreshedVersion: number;

@@ -2,7 +2,7 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { commentsDesc, vmlNotesDesc } from "./comments";
+import { commentsDesc, mergeNoteAnchors, vmlNotesDesc } from "./comments";
 import type { CommentsDocOptions } from "./comments";
 
 // ── Minimal context stubs ──
@@ -152,7 +152,12 @@ describe("commentsDesc round-trip", () => {
             locked: false,
             print: false,
             textHAlign: "center",
-            anchor: { moveWithCells: true, sizeWithCells: false },
+            anchor: {
+              moveWithCells: true,
+              sizeWithCells: false,
+              from: { col: 1, row: 1, colOff: 0 },
+              to: { col: 3, row: 4 },
+            },
           },
         },
       ],
@@ -164,6 +169,9 @@ describe("commentsDesc round-trip", () => {
     expect(pr.textHAlign).toBe("center");
     expect(pr.anchor?.moveWithCells).toBe(true);
     expect(pr.anchor?.sizeWithCells).toBe(false);
+    // parseMarker normalizes omitted offsets to 0
+    expect(pr.anchor?.from).toEqual({ col: 1, row: 1, colOff: 0, rowOff: 0 });
+    expect(pr.anchor?.to).toEqual({ col: 3, row: 4, colOff: 0, rowOff: 0 });
   });
 });
 
@@ -183,5 +191,94 @@ describe("vmlNotesDesc stringify multi-column cell refs", () => {
     expect(xml).toContain("<x:Row>0</x:Row>");
     expect(xml).toContain("<x:Column>27</x:Column>");
     expect(xml).toContain("<x:Row>9</x:Row>");
+  });
+});
+
+describe("vmlNotesDesc parse round-trips note placement", () => {
+  function roundTripVml(opts: CommentsDocOptions) {
+    const xml = vmlNotesDesc.stringify(opts, writeCtx)!;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    return vmlNotesDesc.parse(el, readCtx);
+  }
+
+  it("round-trips default anchor, hidden state, and default size", () => {
+    const anchors = roundTripVml({ comments: [{ cell: "B3", author: "A", text: "x" }] });
+    expect(anchors).toEqual([
+      {
+        row: 2,
+        column: 1,
+        anchor: [1, 0, 2, 0, 3, 0, 4, 0],
+        visible: false,
+        width: 108,
+        height: 59.25,
+      },
+    ]);
+  });
+
+  it("round-trips custom anchor, visible state, and size", () => {
+    const anchors = roundTripVml({
+      comments: [
+        {
+          cell: "A1",
+          author: "A",
+          text: "x",
+          anchor: [0, 15, 0, 12, 2, 32, 4, 4],
+          visible: true,
+          size: { width: 200, height: 100 },
+        },
+      ],
+    });
+    expect(anchors[0]?.anchor).toEqual([0, 15, 0, 12, 2, 32, 4, 4]);
+    expect(anchors[0]?.visible).toBe(true);
+    expect(anchors[0]?.width).toBe(200);
+    expect(anchors[0]?.height).toBe(100);
+  });
+
+  it("parses a source-style vmlDrawing with newline-separated anchor", () => {
+    const src =
+      '<xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">' +
+      '<v:shape id="_x0000_s1025" type="#_x0000_t202" style="position:absolute;width:108pt;height:59.25pt;visibility:visible">' +
+      '<x:ClientData ObjectType="Note"><x:MoveWithCells/><x:SizeWithCells/>' +
+      "<x:Anchor>2, 15, 1, 12, 4, 32, 0, 4</x:Anchor>" +
+      "<x:Row>1</x:Row><x:Column>2</x:Column>" +
+      "</x:ClientData>" +
+      "</v:shape></xml>";
+    const el = parseXml(src).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const anchors = vmlNotesDesc.parse(el, readCtx);
+    expect(anchors).toEqual([
+      {
+        row: 1,
+        column: 2,
+        anchor: [2, 15, 1, 12, 4, 32, 0, 4],
+        visible: true,
+        width: 108,
+        height: 59.25,
+      },
+    ]);
+  });
+});
+
+describe("mergeNoteAnchors", () => {
+  it("merges placement into the matching comment by cell", () => {
+    const comments: CommentsDocOptions["comments"] = [
+      { cell: "A1", author: "A", text: "x" },
+      { cell: "B2", author: "B", text: "y" },
+    ];
+    mergeNoteAnchors(comments, [
+      {
+        row: 1,
+        column: 1,
+        anchor: [1, 0, 1, 0, 3, 0, 3, 0],
+        visible: true,
+        width: 200,
+        height: 90,
+      },
+    ]);
+    expect(comments[0]).toEqual({ cell: "A1", author: "A", text: "x" });
+    expect(comments[1]?.anchor).toEqual([1, 0, 1, 0, 3, 0, 3, 0]);
+    expect(comments[1]?.visible).toBe(true);
+    expect(comments[1]?.size).toEqual({ width: 200, height: 90 });
   });
 });

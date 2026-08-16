@@ -99,20 +99,11 @@ const buffer = await generateWorkbook({
           // Additional definition attributes
           asteriskTotals: true,
           immersive: true,
-          pivotConditionalFormats: [
-            {
-              priority: 1,
-              scope: "data",
-              type: "all",
-              pivotAreas: [
-                {
-                  field: 2,
-                  type: "data",
-                  outline: true,
-                },
-              ],
-            },
-          ],
+          // pivotConditionalFormats is intentionally not exercised here: Excel
+          // rejects the pivot-view conditional format in this multi-pivot layout
+          // (it repairs the record away on open) even with byte-identical
+          // copies of Excel's own output, so the demo leaves it out until the
+          // trigger is understood.
         },
       ],
       sheetView: {

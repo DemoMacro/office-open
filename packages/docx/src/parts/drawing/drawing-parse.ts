@@ -88,9 +88,10 @@ export type DrawingChild =
  * based on the graphicData URI.
  */
 export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild | undefined {
-  // A content part is a direct choice child of wp:inline/wp:anchor — no
-  // a:graphic wrapper, so it must be checked before the graphicData dispatch.
-  const contentPartEl = findFirst(el, "wp:contentPart") ?? findFirst(el, "wpg:contentPart");
+  // A content part nests inside a wpg group (wpg:contentPart, no a:graphic
+  // wrapper), so it must be checked before the graphicData dispatch; the
+  // wp: spelling is accepted leniently for third-party files.
+  const contentPartEl = findFirst(el, "wpg:contentPart") ?? findFirst(el, "wp:contentPart");
   if (contentPartEl) {
     // Group children keep the full ContentPartMediaData (type-discriminated);
     // the paragraph-level payload is the public ContentPartOptions.

@@ -643,11 +643,12 @@ function stringifyChildXfrm(prefix: "wp" | "wpg", t: MediaDataTransformation): s
 }
 
 /**
- * Stringify a contentPart child (CT_WordprocessingContentPart): nvContentPartPr
- * (cNvPr + cNvContentPartPr) + a:xfrm + @bwMode/@r:id. `prefix` selects the
- * host namespace (wp: at the drawing root, wpg: inside a group).
+ * Stringify a wpg:contentPart child (CT_WordprocessingContentPart) inside a
+ * group: nvContentPartPr (cNvPr + cNvContentPartPr) + a:xfrm + @bwMode/@r:id.
+ * A content part never appears at the wp:inline/wp:anchor root (CT_Inline and
+ * CT_Anchor take a:graphic only) — the run-level form is w:contentPart.
  */
-function stringifyContentPart(prefix: "wp" | "wpg", md: ContentPartMediaData): string {
+function stringifyContentPart(prefix: "wpg", md: ContentPartMediaData): string {
   const nvp = md.nonVisualProperties;
   const attrParts = [`r:id="${escapeXml(md.referenceId)}"`];
   if (md.blackWhiteMode) attrParts.push(`bwMode="${escapeXml(md.blackWhiteMode)}"`);
@@ -915,11 +916,9 @@ function stringifyInline(
   // Prefer the verbatim source effectExtent (round-trip); fall back to
   // computing it from the shape's effects on the generation path.
   const effectExtent = mediaData.transformation.effectExtent ?? calculateEffectExtent(effects);
-  // A content part is a direct choice child of wp:inline (no a:graphic wrapper).
-  const choiceXml =
-    mediaData.type === "contentPart"
-      ? stringifyContentPart("wp", mediaData as ContentPartMediaData)
-      : `<a:graphic ${GRAPHIC_NS}>${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
+  // CT_Inline's choice is a:graphic — a content part only nests inside a wpg
+  // group or canvas, never directly under wp:inline.
+  const choiceXml = `<a:graphic ${GRAPHIC_NS}>${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
 
   return (
     `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">` +
@@ -984,11 +983,9 @@ function stringifyAnchor(
     wrapXml = "<wp:wrapNone/>";
   }
 
-  // A content part is a direct choice child of wp:anchor (no a:graphic wrapper).
-  const choiceXml =
-    mediaData.type === "contentPart"
-      ? stringifyContentPart("wp", mediaData as ContentPartMediaData)
-      : `<a:graphic ${GRAPHIC_NS}>${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
+  // CT_Anchor's choice is a:graphic — a content part only nests inside a wpg
+  // group or canvas, never directly under wp:anchor.
+  const choiceXml = `<a:graphic ${GRAPHIC_NS}>${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
 
   // Prefer the verbatim source effectExtent (round-trip); default to zero.
   const ee = mediaData.transformation.effectExtent;

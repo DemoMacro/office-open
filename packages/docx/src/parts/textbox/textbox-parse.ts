@@ -1,3 +1,4 @@
+import { parseVmlShapeStyle, parseVmlStyle } from "@office-open/core";
 /**
  * Textbox parser for DOCX documents.
  *
@@ -7,7 +8,6 @@
  */
 import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { parseVmlShapeStyle, parseVmlStyle } from "@shared/vml/vml-style";
 
 import type { DocxReadContext } from "../../context";
 

@@ -141,7 +141,7 @@ const XSD_CONFIGS: XsdConfig[] = [
     label: "vml",
     description: "VML Main",
     prefix: "v:",
-    searchDirs: ["packages/docx/src", "packages/xlsx/src"],
+    searchDirs: ["packages/core/src", "packages/docx/src", "packages/xlsx/src"],
     searchMode: "prefix",
   },
   {
@@ -149,7 +149,7 @@ const XSD_CONFIGS: XsdConfig[] = [
     label: "vml-office",
     description: "VML Office Drawing",
     prefix: "o:",
-    searchDirs: ["packages/docx/src"],
+    searchDirs: ["packages/core/src", "packages/docx/src", "packages/xlsx/src"],
     searchMode: "prefix",
   },
   {
@@ -157,7 +157,7 @@ const XSD_CONFIGS: XsdConfig[] = [
     label: "vml-word",
     description: "VML WordprocessingDrawing",
     prefix: "w10:",
-    searchDirs: ["packages/docx/src"],
+    searchDirs: ["packages/core/src", "packages/docx/src"],
     searchMode: "prefix",
   },
   {
@@ -165,7 +165,15 @@ const XSD_CONFIGS: XsdConfig[] = [
     label: "vml-excel",
     description: "VML SpreadsheetDrawing",
     prefix: "x:",
-    searchDirs: ["packages/xlsx/src"],
+    searchDirs: ["packages/core/src", "packages/xlsx/src"],
+    searchMode: "prefix",
+  },
+  {
+    xsdFile: "vml-presentationDrawing.xsd",
+    label: "vml-ppt",
+    description: "VML PresentationDrawing",
+    prefix: "pvml:",
+    searchDirs: ["packages/core/src", "packages/pptx/src"],
     searchMode: "prefix",
   },
   {
@@ -438,25 +446,25 @@ function extractUsedElements(config: XsdConfig): Set<string> {
       // Pattern 1: XML tags in template literals — `<prefix:name` or `<name`
       // Catches stringify: `<w:p>`, `<a:solidFill`, `</c:chart>`
       // Also matches `<name${...}` (bare element followed by interpolation)
-      const tagRe = /<\/?([a-z]+:)?([a-zA-Z][a-zA-Z0-9]*)[\s>\/"$]/g;
+      const tagRe = /<\/?([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]*)[\s>\/"$]/g;
       while ((m = tagRe.exec(src)) !== null) {
         found.add(m[2]);
       }
 
       // Pattern 2: findChild(el, "prefix:name") — parse path
-      const findChildRe = /findChild\([^,]+,\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      const findChildRe = /findChild\([^,]+,\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
       while ((m = findChildRe.exec(src)) !== null) {
         found.add(m[2]);
       }
 
       // Pattern 3: el.name === "prefix:name" or child.name === "prefix:name" — parse path
-      const nameCmpRe = /\.name\s*[!=]==?\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      const nameCmpRe = /\.name\s*[!=]==?\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
       while ((m = nameCmpRe.exec(src)) !== null) {
         found.add(m[2]);
       }
 
       // Pattern 4: case "prefix:name": — switch in parse path
-      const caseRe = /case\s+"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      const caseRe = /case\s+"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
       while ((m = caseRe.exec(src)) !== null) {
         found.add(m[2]);
       }
@@ -464,19 +472,19 @@ function extractUsedElements(config: XsdConfig): Set<string> {
       // Pattern 5: element("prefix:name", ...) — descriptor builder / xml helper
       // Also catches selfCloseElement("name", ...), openElement("name", ...), closeElement("name")
       const elementCallRe =
-        /(?:^|[.\s(])(?:selfClose|open|close)?Element\(\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/gm;
+        /(?:^|[.\s(])(?:selfClose|open|close)?Element\(\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/gm;
       while ((m = elementCallRe.exec(src)) !== null) {
         found.add(m[2]);
       }
 
       // Pattern 6: .child(k, "prefix:name", ...) / .children(k, "prefix:name", ...)
-      const childCallRe = /\.child(?:ren)?\([^,]+,\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      const childCallRe = /\.child(?:ren)?\([^,]+,\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
       while ((m = childCallRe.exec(src)) !== null) {
         found.add(m[2]);
       }
 
       // Pattern 7: valEl("prefix:name", ...) helper
-      const valElRe = /valEl\(\s*"([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      const valElRe = /valEl\(\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
       while ((m = valElRe.exec(src)) !== null) {
         found.add(m[2]);
       }
@@ -484,7 +492,7 @@ function extractUsedElements(config: XsdConfig): Set<string> {
       // Pattern 8: element traversal helpers — children(el,"name"), hasChild,
       // findDeep, childText. Parse-side counterparts to findChild.
       const elementHelpersRe =
-        /\b(?:children|hasChild|findDeep|childText)\(\s*[^,)]+,\s*["']([a-z]+:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+        /\b(?:children|hasChild|findDeep|childText)\(\s*[^,)]+,\s*["']([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
       while ((m = elementHelpersRe.exec(src)) !== null) {
         found.add(m[2]);
       }
@@ -513,18 +521,18 @@ function extractUsedElements(config: XsdConfig): Set<string> {
     const files = collectTsFiles(absDir);
     for (const file of files) {
       const src = readFileStripped(file);
-      if (/<[a-z]+:\$\{[a-zA-Z]/.test(src) || /<\$\{[a-zA-Z]/.test(src)) {
+      if (/<[a-z][a-z0-9]*:\$\{[a-zA-Z]/.test(src) || /<\$\{[a-zA-Z]/.test(src)) {
         dynamicFiles.add(file);
       }
     }
   }
 
   // For each dynamic file, extract string literal values that could be element names.
-  // Element local names in these XSDs are all lowercase-initial (sp, graphicFrame,
-  // pieChart), so requiring a lowercase first char filters capitalized noise (error
-  // messages like "Expected"/"Cannot") while keeping real element tokens.
+  // The lowercase-first preference filters noise (error messages like "Expected"/
+  // "Cannot"); PascalCase locals (x:ClientData's MoveWithCells, …) are admitted too —
+  // over-extraction is harmless because found is intersected with the XSD list.
   if (dynamicFiles.size > 0) {
-    const strLitRe = /"([a-z][a-zA-Z0-9]+)"/g;
+    const strLitRe = /"([a-zA-Z][a-zA-Z0-9]+)"/g;
     for (const file of dynamicFiles) {
       const src = readFileStripped(file);
       let m: RegExpExecArray | null;
@@ -569,7 +577,7 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
 
       // Pattern 3: bracket access with prefix — attrs["w:val"], result["w:spacing"], etc.
       // This catches stringify (attrs["w:name"]) and parse (result["w:name"]) patterns
-      const bracketPrefixRe = /\[\s*["'][a-z]+:([a-zA-Z][a-zA-Z0-9]*)["']\s*\]/g;
+      const bracketPrefixRe = /\[\s*["'][a-z][a-z0-9]*:([a-zA-Z][a-zA-Z0-9]*)["']\s*\]/g;
       while ((m = bracketPrefixRe.exec(src)) !== null) {
         found.add(m[1]);
       }
@@ -587,7 +595,7 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
       }
 
       // Pattern 5: attr(el, "prefix:name") — prefixed version
-      const prefixedHelperRe = /\battr\([^,]+,\s*["'][a-z]+:([a-zA-Z][a-zA-Z0-9]*)["']/g;
+      const prefixedHelperRe = /\battr\([^,]+,\s*["'][a-z][a-z0-9]*:([a-zA-Z][a-zA-Z0-9]*)["']/g;
       while ((m = prefixedHelperRe.exec(src)) !== null) {
         found.add(m[1]);
       }
@@ -602,7 +610,7 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
       // attrMeasure(el,"name",...), colorAttr(el,"name"). Parse-side workhorses
       // (the plain `attr(` helper is covered by Pattern 4 above).
       const typedAttrRe =
-        /\b(?:attr[A-Z]\w*|colorAttr)\(\s*[^,)]+,\s*["']([a-z]+:)?([a-zA-Z]\w*)["']/g;
+        /\b(?:attr[A-Z]\w*|colorAttr)\(\s*[^,)]+,\s*["']([a-z][a-z0-9]*:)?([a-zA-Z]\w*)["']/g;
       while ((m = typedAttrRe.exec(src)) !== null) {
         found.add(m[2]);
       }
@@ -636,7 +644,8 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
 
       // Pattern 9: attribute mapping pairs — `["w:name", "jsName"]`. docx parse
       // loops over [xmlName, optionName] pairs to read frame/section/run attrs.
-      const attrPairRe = /\[\s*["']([a-z]+:)?([a-zA-Z][a-zA-Z0-9]*)["']\s*,\s*["'][a-zA-Z]/g;
+      const attrPairRe =
+        /\[\s*["']([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]*)["']\s*,\s*["'][a-zA-Z]/g;
       while ((m = attrPairRe.exec(src)) !== null) {
         found.add(m[2]);
       }
@@ -668,11 +677,13 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
         }
       }
 
-      // Pattern 11: object-literal mapping properties — { attr: "tx1", key: "text1" }.
+      // Pattern 11: object-literal mapping properties — { attr: "tx1", key: "text1" }
+      // and { attr: "o:title" } (prefixed names count under their local name,
+      // same as Patterns 5/7/9).
       const mappingPropRe =
-        /\b(?:attr|xml|xmlName|attribute|localName)\s*:\s*["']([a-zA-Z][a-zA-Z0-9]*)["']/g;
+        /\b(?:attr|xml|xmlName|attribute|localName)\s*:\s*["']([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]*)["']/g;
       while ((m = mappingPropRe.exec(src)) !== null) {
-        found.add(m[1]);
+        found.add(m[2]);
       }
     }
   }
@@ -691,7 +702,7 @@ function findCrossNamespace(
   if (bareNames.length === 0) return new Set();
   const found = new Set<string>();
   const nameSet = new Set(bareNames);
-  const re = /[a-z]+:([a-zA-Z][a-zA-Z0-9]+)/g;
+  const re = /[a-z][a-z0-9]*:([a-zA-Z][a-zA-Z0-9]+)/g;
 
   for (const dir of searchDirs) {
     const absDir = path.resolve(ROOT_DIR, dir);

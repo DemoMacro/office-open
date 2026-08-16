@@ -2,22 +2,27 @@
  * Object element for WordprocessingML documents — w:object.
  *
  * Embeds an OLE object (e.g. an Excel sheet) in a run via a VML preview shape and
- * exactly one of objectEmbed / objectLink / control / movie. The OLE binary is
+ * exactly one of OLEObject / control / movie. The OLE payload is emitted as
+ * `<o:OLEObject>` (the vml-officeDrawing element Word actually writes via
+ * CT_Object's lax any slot) — the XSD-declared `w:objectEmbed`/`w:objectLink`
+ * spellings parse back but are rejected by Word's reader. The OLE binary is
  * registered as word/embeddings/oleObjectN.bin (EmbeddingCollection); the optional
  * preview icon as word/media/imageN.<type> (Media). Relationship ids are emitted
  * as `{fileName}` placeholders and rewritten by the compiler's media bridge.
  *
- * Reference: OOXML transitional, wml.xsd, CT_Object / CT_ObjectEmbed / CT_ObjectLink
+ * Reference: OOXML transitional, wml.xsd CT_Object; vml-officeDrawing.xsd CT_OLEObject
  *
  * @module
  */
 import { toUint8Array, parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
+import { parseVmlStyle } from "@office-open/core";
+import { stringifyVmlShape } from "@office-open/core";
+import { parseVmlImageData, type VmlImageDataOptions } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild, type Element } from "@office-open/xml";
+import { attr, attrNum, escapeXml, findChild, textOf, type Element } from "@office-open/xml";
 import type { EmbeddingData } from "@shared/embeddings/embeddings";
 import type { MediaData } from "@shared/media/data";
-import { parseVmlStyle } from "@shared/vml/vml-style";
 
 import type { BodyContext } from "../../context";
 import { createPictureData } from "../paragraph/run/picture-run";
@@ -31,9 +36,11 @@ export interface ObjectEmbedOptions {
   progId?: string;
   /** Draw aspect — how the object displays. */
   drawAspect?: "content" | "icon";
-  /** Shape id (w:objectEmbed/@shapeId). */
+  /** Shape id (o:OLEObject/@ShapeID). Defaults to the preview shape's id. */
   shapeId?: string;
-  /** Field codes (w:objectEmbed/@fieldCodes). */
+  /** OLE object id (o:OLEObject/@ObjectID). Defaults to a generated id. */
+  objectId?: string;
+  /** Field codes (o:OLEObject/o:FieldCodes child). */
   fieldCodes?: string;
 }
 
@@ -75,9 +82,9 @@ export interface ObjectElementOptions {
   height?: number | UniversalMeasure;
   /** Preview icon image (v:imagedata). */
   iconImage?: ObjectIconImageOptions;
-  /** Embedded OLE object (w:objectEmbed). */
+  /** Embedded OLE object (o:OLEObject Type="Embed"). */
   embed?: ObjectEmbedOptions;
-  /** Linked OLE object (w:objectLink). */
+  /** Linked OLE object (o:OLEObject Type="Link"). */
   link?: ObjectLinkOptions;
   /** ActiveX control reference (w:control). */
   control?: ObjectControlOptions;
@@ -88,6 +95,7 @@ export interface ObjectElementOptions {
 // ── Descriptor ──
 
 let objectShapeCounter = 1025;
+let objectOleCounter = 1;
 
 export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
   kind: "custom",
@@ -99,10 +107,12 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     const shapeId = opts.shapeId ?? `_x0000_i${objectShapeCounter++}`;
     const widthVal = opts.width ?? 100;
     const heightVal = opts.height ?? 100;
-    const styleWidth = typeof widthVal === "number" ? `${widthVal}px` : widthVal;
-    const styleHeight = typeof heightVal === "number" ? `${heightVal}px` : heightVal;
+    const styleWidth =
+      typeof widthVal === "number" ? (`${widthVal}px` as UniversalMeasure) : widthVal;
+    const styleHeight =
+      typeof heightVal === "number" ? (`${heightVal}px` as UniversalMeasure) : heightVal;
 
-    const shapeChildren: string[] = [];
+    let imagedataOptions: VmlImageDataOptions | undefined;
     if (opts.iconImage) {
       const rawData = toUint8Array(opts.iconImage.data) as Uint8Array;
       const iconType = opts.iconImage.type;
@@ -115,23 +125,49 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
             ...createPictureData(rawData, { width: widthVal, height: heightVal }, fileName),
           }) as MediaData,
       );
-      const titleAttr = opts.iconImage.title ? ` o:title="${opts.iconImage.title}"` : "";
-      shapeChildren.push(`<v:imagedata r:id="{${iconFileName}}"${titleAttr}/>`);
+      imagedataOptions = {
+        relationshipId: `{${iconFileName}}`,
+        officeTitle: opts.iconImage.title,
+      };
     }
     inner.push(
-      `<v:shape id="${shapeId}" type="#_x0000_t75" style="width:${styleWidth};height:${styleHeight}">${shapeChildren.join("")}</v:shape>`,
+      stringifyVmlShape({
+        id: shapeId,
+        type: "#_x0000_t75",
+        // o:ole marks the shape as an OLE container (Word always writes it here).
+        ole: "",
+        style: { width: styleWidth, height: styleHeight },
+        imagedata: imagedataOptions,
+      }),
     );
 
-    // Choice: objectEmbed | objectLink | control | movie
-    if (opts.embed) {
-      const fileName = registerEmbedding(opts.embed, ctx);
-      inner.push(`<w:objectEmbed r:id="{${fileName}}"${embedAttrs(opts.embed)}/>`);
-    } else if (opts.link) {
-      const fileName = registerEmbedding(opts.link, ctx);
-      const locked = opts.link.lockedField ? ` w:lockedField="true"` : "";
-      inner.push(
-        `<w:objectLink r:id="{${fileName}}"${embedAttrs(opts.link)} w:updateMode="${opts.link.updateMode}"${locked}/>`,
-      );
+    // Choice: o:OLEObject (embed/link) | w:control | w:movie
+    if (opts.embed || opts.link) {
+      const link = opts.link;
+      const payload = opts.embed ?? link!;
+      const fileName = registerEmbedding(payload, ctx);
+      const attrs: string[] = [` Type="${link ? "Link" : "Embed"}"`];
+      if (payload.progId) attrs.push(` ProgID="${payload.progId}"`);
+      // Word ties the OLE object to its preview shape via ShapeID.
+      attrs.push(` ShapeID="${payload.shapeId ?? shapeId}"`);
+      if (payload.drawAspect) {
+        attrs.push(` DrawAspect="${payload.drawAspect === "icon" ? "Icon" : "Content"}"`);
+      }
+      attrs.push(` ObjectID="${payload.objectId ?? `_${objectOleCounter++}`}"`);
+      attrs.push(` r:id="{${fileName}}"`);
+      let children = "";
+      if (link) {
+        attrs.push(` UpdateMode="${link.updateMode === "onCall" ? "OnCall" : "Always"}"`);
+        const innerEls: string[] = [];
+        if (link.lockedField !== undefined) {
+          innerEls.push(`<o:LockedField>${link.lockedField ? "t" : "f"}</o:LockedField>`);
+        }
+        if (link.fieldCodes)
+          innerEls.push(`<o:FieldCodes>${escapeXml(link.fieldCodes)}</o:FieldCodes>`);
+        children = innerEls.join("");
+      }
+      const open = `<o:OLEObject${attrs.join("")}`;
+      inner.push(children ? `${open}>${children}</o:OLEObject>` : `${open}/>`);
     } else if (opts.control) {
       const c = opts.control;
       const cAttrs: string[] = [` r:id="${c.rId}"`];
@@ -169,9 +205,35 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
         if (parsed["width"]) result.width = parsed["width"] as UniversalMeasure;
         if (parsed["height"]) result.height = parsed["height"] as UniversalMeasure;
       }
+      const imagedataEl = findChild(shape, "v:imagedata");
+      if (imagedataEl) {
+        const imagedata = parseVmlImageData(imagedataEl);
+        result.iconImage = {
+          data: new Uint8Array(),
+          type: extensionOf(imagedata.src ?? imagedata.relationshipId ?? ""),
+          ...(imagedata.officeTitle !== undefined ? { title: imagedata.officeTitle } : {}),
+        };
+      }
     }
 
-    // Choice elements
+    // Choice elements — o:OLEObject is what Word writes; the w:objectEmbed/
+    // w:objectLink spellings are accepted for XSD-conforming third-party files.
+    const oleEl = findChild(el, "o:OLEObject");
+    if (oleEl) {
+      const common = parseOleObject(oleEl);
+      if (attr(oleEl, "Type") === "Link") {
+        const updateMode = attr(oleEl, "UpdateMode");
+        const lockedFieldEl = findChild(oleEl, "o:LockedField");
+        result.link = {
+          ...common,
+          updateMode: updateMode === "OnCall" ? "onCall" : "always",
+          ...(lockedFieldEl ? { lockedField: parseOnOff(textOf(lockedFieldEl)) ?? false } : {}),
+        };
+      } else {
+        result.embed = common;
+      }
+    }
+
     const embedEl = findChild(el, "w:objectEmbed");
     if (embedEl) result.embed = parseEmbed(embedEl);
 
@@ -207,6 +269,13 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
 
 // ── Helpers ──
 
+/** Extract the file extension from an image reference ("" when absent). */
+function extensionOf(ref: string): string {
+  const dot = ref.lastIndexOf(".");
+  if (dot === -1) return "";
+  return ref.slice(dot + 1);
+}
+
 /** Register an OLE embedding and return its allocated file name. */
 function registerEmbedding(opts: ObjectEmbedOptions, ctx: BodyContext): string {
   const fileName = ctx.file.embeddings.nextEmbeddingName();
@@ -219,14 +288,23 @@ function registerEmbedding(opts: ObjectEmbedOptions, ctx: BodyContext): string {
   return fileName;
 }
 
-/** Build the common objectEmbed/objectLink attribute string (excludes r:id). */
-function embedAttrs(opts: ObjectEmbedOptions): string {
-  const attrs: string[] = [];
-  if (opts.drawAspect) attrs.push(` w:drawAspect="${opts.drawAspect}"`);
-  if (opts.progId) attrs.push(` w:progId="${opts.progId}"`);
-  if (opts.shapeId) attrs.push(` w:shapeId="${opts.shapeId}"`);
-  if (opts.fieldCodes) attrs.push(` w:fieldCodes="${opts.fieldCodes}"`);
-  return attrs.join("");
+/** Parse common o:OLEObject attributes (excludes r:id — external on parse). */
+function parseOleObject(el: Element): ObjectEmbedOptions {
+  const opts: Partial<ObjectEmbedOptions> = {};
+  const drawAspect = attr(el, "DrawAspect");
+  if (drawAspect === "Icon") opts.drawAspect = "icon";
+  else if (drawAspect === "Content") opts.drawAspect = "content";
+  const progId = attr(el, "ProgID");
+  if (progId) opts.progId = progId;
+  const shapeId = attr(el, "ShapeID");
+  if (shapeId) opts.shapeId = shapeId;
+  const objectId = attr(el, "ObjectID");
+  if (objectId) opts.objectId = objectId;
+  const fieldCodesEl = findChild(el, "o:FieldCodes");
+  if (fieldCodesEl) opts.fieldCodes = textOf(fieldCodesEl);
+  // data is not recoverable from the relationship on parse; callers re-supply it.
+  opts.data = new Uint8Array();
+  return opts as ObjectEmbedOptions;
 }
 
 /** Parse common objectEmbed/objectLink attributes (excludes r:id — external on parse). */

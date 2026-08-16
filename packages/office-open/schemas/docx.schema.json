@@ -364,18 +364,6 @@
       "enum": ["none", "lvl", "ctr"],
       "type": "string"
     },
-    "AnnotationReference": {
-      "additionalProperties": false,
-      "description": "Represents a reference to an annotation (comment).\n\nUsed internally within comment ranges to mark comment references.",
-      "properties": {
-        "annotationRef": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["annotationRef"],
-      "type": "object"
-    },
     "AppPropertiesOptions": {
       "additionalProperties": false,
       "description": "Options for docProps/app.xml extended properties (CT_Properties).\n\nProperty order follows the CT_Properties xsd:all sequence so the emitted XML matches the reference schema ordering.",
@@ -1517,18 +1505,6 @@
         }
       },
       "required": ["captions"],
-      "type": "object"
-    },
-    "CarriageReturn": {
-      "additionalProperties": false,
-      "description": "Represents a carriage return character.\n\nInserts a carriage return, which may be rendered differently than a standard line break.",
-      "properties": {
-        "carriageReturn": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["carriageReturn"],
       "type": "object"
     },
     "CellMergeAttributes": {
@@ -3573,7 +3549,7 @@
     },
     "ContentPartOptions": {
       "additionalProperties": false,
-      "description": "Content part options (wp:contentPart / wpg:contentPart) — references an opaque part via r:id. The relationship is not re-registered on generate; the source r:id is passed through verbatim.",
+      "description": "Content part options — references an opaque part via r:id. The relationship is not re-registered on generate; the source r:id is passed through verbatim. At run level this serializes as the CT_Rel form (w:contentPart, referenceId only); the placement and non-visual fields apply only to the wpg:contentPart form nested inside a group child.",
       "properties": {
         "blackWhiteMode": {
           "$ref": "#/definitions/BlackWhiteMode",
@@ -3664,18 +3640,6 @@
         }
       },
       "required": ["defaults", "overrides"],
-      "type": "object"
-    },
-    "ContinuationSeparator": {
-      "additionalProperties": false,
-      "description": "Represents a continuation separator for footnotes or endnotes.\n\nUsed when footnotes/endnotes continue across multiple pages.",
-      "properties": {
-        "continuationSeparator": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["continuationSeparator"],
       "type": "object"
     },
     "CustomGeometryOptions": {
@@ -4027,30 +3991,6 @@
         }
       ],
       "description": "Binary content as a string or an array of byte values."
-    },
-    "DayLong": {
-      "additionalProperties": false,
-      "description": "Represents the current day in long format (e.g., \"01\", \"15\").\n\nInserts a dynamic field showing the day portion of the current date with leading zeros.",
-      "properties": {
-        "dayLong": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["dayLong"],
-      "type": "object"
-    },
-    "DayShort": {
-      "additionalProperties": false,
-      "description": "Represents the current day in short format (e.g., \"1\", \"15\").\n\nInserts a dynamic field showing the day portion of the current date.",
-      "properties": {
-        "dayShort": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["dayShort"],
-      "type": "object"
     },
     "DefaultShapeStyleOptions": {
       "additionalProperties": false,
@@ -5501,18 +5441,6 @@
       },
       "type": "object"
     },
-    "EndnoteReference": {
-      "additionalProperties": false,
-      "description": "Represents a reference to an endnote.\n\nUsed within endnote content to refer back to the endnote marker.",
-      "properties": {
-        "endnoteRef": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["endnoteRef"],
-      "type": "object"
-    },
     "EndnoteSeparator": {
       "additionalProperties": false,
       "description": "System endnote (separator / continuationSeparator). Round-tripped verbatim.",
@@ -6108,18 +6036,6 @@
           "type": "string"
         }
       },
-      "type": "object"
-    },
-    "FootnoteReferenceElement": {
-      "additionalProperties": false,
-      "description": "Represents a reference to a footnote.\n\nUsed within footnote content to refer back to the footnote marker.",
-      "properties": {
-        "footnoteRef": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["footnoteRef"],
       "type": "object"
     },
     "FootnoteSeparator": {
@@ -7290,18 +7206,6 @@
           "type": "string"
         }
       },
-      "type": "object"
-    },
-    "LastRenderedPageBreak": {
-      "additionalProperties": false,
-      "description": "Represents the last rendered page break location.\n\nUsed internally by Word to track where page breaks occurred in the last rendering. This is typically generated by Word and not created manually.",
-      "properties": {
-        "lastRenderedPageBreak": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["lastRenderedPageBreak"],
       "type": "object"
     },
     "LayoutDefinitionOptions": {
@@ -9478,30 +9382,6 @@
       "required": ["modelId"],
       "type": "object"
     },
-    "MonthLong": {
-      "additionalProperties": false,
-      "description": "Represents the current month in long format (e.g., \"January\", \"December\").\n\nInserts a dynamic field showing the full month name of the current date.",
-      "properties": {
-        "monthLong": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["monthLong"],
-      "type": "object"
-    },
-    "MonthShort": {
-      "additionalProperties": false,
-      "description": "Represents the current month in short format (e.g., \"1\", \"12\").\n\nInserts a dynamic field showing the month portion of the current date.",
-      "properties": {
-        "monthShort": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["monthShort"],
-      "type": "object"
-    },
     "MoveRangeOptions": {
       "additionalProperties": false,
       "description": "A move revision authored as a single inline paragraph child. The library allocates the range id and the move-run id, then emits the paired range markers with the moved run between them — the caller never touches an id.\n\nUsed by both the `{ moveFrom }` (source) and `{ moveTo }` (destination) sugars. `wrap` is the moved content carried by the move run. `author` and `date` apply to both the range start (CT_MoveBookmark) and the move run (CT_TrackChange). `name` is required by XSD (CT_Bookmark); the source (`moveFrom`) and destination (`moveTo`) of one logical move MUST share a name so Word pairs them as a single move.\n\nReference: wml.xsd CT_MoveBookmark, CT_TrackChange, EG_RangeMarkupElements.",
@@ -9582,18 +9462,6 @@
         }
       },
       "required": ["id"],
-      "type": "object"
-    },
-    "NoBreakHyphen": {
-      "additionalProperties": false,
-      "description": "Represents a non-breaking hyphen character.\n\nInserts a hyphen that prevents line breaking at that position.",
-      "properties": {
-        "noBreakHyphen": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["noBreakHyphen"],
       "type": "object"
     },
     "NonVisualContentPartPropertiesOptions": {
@@ -9880,7 +9748,7 @@
         },
         "embed": {
           "$ref": "#/definitions/ObjectEmbedOptions",
-          "description": "Embedded OLE object (w:objectEmbed)."
+          "description": "Embedded OLE object (o:OLEObject Type=\"Embed\")."
         },
         "height": {
           "anyOf": [
@@ -9899,7 +9767,7 @@
         },
         "link": {
           "$ref": "#/definitions/ObjectLinkOptions",
-          "description": "Linked OLE object (w:objectLink)."
+          "description": "Linked OLE object (o:OLEObject Type=\"Link\")."
         },
         "movie": {
           "description": "Movie relationship id — CT_Rel (w:movie/@r:id). External.",
@@ -9971,7 +9839,11 @@
           "type": "string"
         },
         "fieldCodes": {
-          "description": "Field codes (w:objectEmbed/@fieldCodes).",
+          "description": "Field codes (o:OLEObject/o:FieldCodes child).",
+          "type": "string"
+        },
+        "objectId": {
+          "description": "OLE object id (o:OLEObject/@ObjectID). Defaults to a generated id.",
           "type": "string"
         },
         "progId": {
@@ -9979,7 +9851,7 @@
           "type": "string"
         },
         "shapeId": {
-          "description": "Shape id (w:objectEmbed/@shapeId).",
+          "description": "Shape id (o:OLEObject/@ShapeID). Defaults to the preview shape's id.",
           "type": "string"
         }
       },
@@ -10088,19 +9960,23 @@
           "type": "string"
         },
         "fieldCodes": {
-          "description": "Field codes (w:objectEmbed/@fieldCodes).",
+          "description": "Field codes (o:OLEObject/o:FieldCodes child).",
           "type": "string"
         },
         "lockedField": {
           "description": "Whether the field is locked.",
           "type": "boolean"
         },
+        "objectId": {
+          "description": "OLE object id (o:OLEObject/@ObjectID). Defaults to a generated id.",
+          "type": "string"
+        },
         "progId": {
           "description": "OLE program id (e.g. \"Excel.Sheet.12\").",
           "type": "string"
         },
         "shapeId": {
-          "description": "Shape id (w:objectEmbed/@shapeId).",
+          "description": "Shape id (o:OLEObject/@ShapeID). Defaults to the preview shape's id.",
           "type": "string"
         },
         "updateMode": {
@@ -10481,18 +10357,6 @@
           "description": "Top margin in twips or universal measure"
         }
       },
-      "type": "object"
-    },
-    "PageNumberElement": {
-      "additionalProperties": false,
-      "description": "Represents a page number field element.\n\nInserts the current page number at this position.",
-      "properties": {
-        "pgNum": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["pgNum"],
       "type": "object"
     },
     "PageNumberTypeProperties": {
@@ -12223,6 +12087,7 @@
           ]
         },
         "children": {
+          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } .",
           "items": {
             "anyOf": [
               {
@@ -12245,55 +12110,208 @@
                 "type": "string"
               },
               {
-                "$ref": "#/definitions/AnnotationReference"
+                "additionalProperties": false,
+                "properties": {
+                  "tab": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["tab"],
+                "title": "tab",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/CarriageReturn"
+                "additionalProperties": false,
+                "properties": {
+                  "noBreakHyphen": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["noBreakHyphen"],
+                "title": "noBreakHyphen",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/ContinuationSeparator"
+                "additionalProperties": false,
+                "properties": {
+                  "softHyphen": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["softHyphen"],
+                "title": "softHyphen",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/DayLong"
+                "additionalProperties": false,
+                "properties": {
+                  "dayShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["dayShort"],
+                "title": "dayShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/DayShort"
+                "additionalProperties": false,
+                "properties": {
+                  "monthShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["monthShort"],
+                "title": "monthShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/EndnoteReference"
+                "additionalProperties": false,
+                "properties": {
+                  "yearShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["yearShort"],
+                "title": "yearShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/FootnoteReferenceElement"
+                "additionalProperties": false,
+                "properties": {
+                  "dayLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["dayLong"],
+                "title": "dayLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/LastRenderedPageBreak"
+                "additionalProperties": false,
+                "properties": {
+                  "monthLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["monthLong"],
+                "title": "monthLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/MonthLong"
+                "additionalProperties": false,
+                "properties": {
+                  "yearLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["yearLong"],
+                "title": "yearLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/MonthShort"
+                "additionalProperties": false,
+                "properties": {
+                  "annotationRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["annotationRef"],
+                "title": "annotationRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/NoBreakHyphen"
+                "additionalProperties": false,
+                "properties": {
+                  "footnoteRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["footnoteRef"],
+                "title": "footnoteRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/PageNumberElement"
+                "additionalProperties": false,
+                "properties": {
+                  "endnoteRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["endnoteRef"],
+                "title": "endnoteRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/Separator"
+                "additionalProperties": false,
+                "properties": {
+                  "separator": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["separator"],
+                "title": "separator",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/SoftHyphen"
+                "additionalProperties": false,
+                "properties": {
+                  "continuationSeparator": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["continuationSeparator"],
+                "title": "continuationSeparator",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/Tab"
+                "additionalProperties": false,
+                "properties": {
+                  "pgNum": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["pgNum"],
+                "title": "pgNum",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/YearLong"
+                "additionalProperties": false,
+                "properties": {
+                  "carriageReturn": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["carriageReturn"],
+                "title": "carriageReturn",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/YearShort"
+                "additionalProperties": false,
+                "properties": {
+                  "lastRenderedPageBreak": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["lastRenderedPageBreak"],
+                "title": "lastRenderedPageBreak",
+                "type": "object"
               },
               {
                 "additionalProperties": false,
@@ -14126,6 +14144,7 @@
           ]
         },
         "children": {
+          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } .",
           "items": {
             "anyOf": [
               {
@@ -14148,55 +14167,208 @@
                 "type": "string"
               },
               {
-                "$ref": "#/definitions/AnnotationReference"
+                "additionalProperties": false,
+                "properties": {
+                  "tab": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["tab"],
+                "title": "tab",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/CarriageReturn"
+                "additionalProperties": false,
+                "properties": {
+                  "noBreakHyphen": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["noBreakHyphen"],
+                "title": "noBreakHyphen",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/ContinuationSeparator"
+                "additionalProperties": false,
+                "properties": {
+                  "softHyphen": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["softHyphen"],
+                "title": "softHyphen",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/DayLong"
+                "additionalProperties": false,
+                "properties": {
+                  "dayShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["dayShort"],
+                "title": "dayShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/DayShort"
+                "additionalProperties": false,
+                "properties": {
+                  "monthShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["monthShort"],
+                "title": "monthShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/EndnoteReference"
+                "additionalProperties": false,
+                "properties": {
+                  "yearShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["yearShort"],
+                "title": "yearShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/FootnoteReferenceElement"
+                "additionalProperties": false,
+                "properties": {
+                  "dayLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["dayLong"],
+                "title": "dayLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/LastRenderedPageBreak"
+                "additionalProperties": false,
+                "properties": {
+                  "monthLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["monthLong"],
+                "title": "monthLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/MonthLong"
+                "additionalProperties": false,
+                "properties": {
+                  "yearLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["yearLong"],
+                "title": "yearLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/MonthShort"
+                "additionalProperties": false,
+                "properties": {
+                  "annotationRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["annotationRef"],
+                "title": "annotationRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/NoBreakHyphen"
+                "additionalProperties": false,
+                "properties": {
+                  "footnoteRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["footnoteRef"],
+                "title": "footnoteRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/PageNumberElement"
+                "additionalProperties": false,
+                "properties": {
+                  "endnoteRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["endnoteRef"],
+                "title": "endnoteRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/Separator"
+                "additionalProperties": false,
+                "properties": {
+                  "separator": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["separator"],
+                "title": "separator",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/SoftHyphen"
+                "additionalProperties": false,
+                "properties": {
+                  "continuationSeparator": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["continuationSeparator"],
+                "title": "continuationSeparator",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/Tab"
+                "additionalProperties": false,
+                "properties": {
+                  "pgNum": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["pgNum"],
+                "title": "pgNum",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/YearLong"
+                "additionalProperties": false,
+                "properties": {
+                  "carriageReturn": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["carriageReturn"],
+                "title": "carriageReturn",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/YearShort"
+                "additionalProperties": false,
+                "properties": {
+                  "lastRenderedPageBreak": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["lastRenderedPageBreak"],
+                "title": "lastRenderedPageBreak",
+                "type": "object"
               },
               {
                 "additionalProperties": false,
@@ -16629,18 +16801,6 @@
       "enum": ["both", "bottom", "center", "top"],
       "type": "string"
     },
-    "Separator": {
-      "additionalProperties": false,
-      "description": "Represents a separator line for footnotes or endnotes.\n\nUsed to create the separator line between document content and footnotes/endnotes.",
-      "properties": {
-        "separator": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["separator"],
-      "type": "object"
-    },
     "SettingsOptions": {
       "additionalProperties": false,
       "description": "Options for configuring document settings.",
@@ -16930,8 +17090,8 @@
           "type": "boolean"
         },
         "hdrShapeDefaults": {
-          "description": "Header shape defaults — verbatim inner XML (o:shapedefaults/o:shapelayout)",
-          "type": "string"
+          "$ref": "#/definitions/ShapeDefaultsOptions",
+          "description": "Header shape defaults (w:hdrShapeDefaults)"
         },
         "hideGrammaticalErrors": {
           "description": "Hide grammatical errors in the document",
@@ -17098,8 +17258,8 @@
           "type": "boolean"
         },
         "shapeDefaults": {
-          "description": "Shape defaults — verbatim inner XML (o:shapedefaults/o:shapelayout)",
-          "type": "string"
+          "$ref": "#/definitions/ShapeDefaultsOptions",
+          "description": "Shape defaults (w:shapeDefaults)"
         },
         "showEnvelope": {
           "description": "Show envelope content in the document",
@@ -17500,6 +17660,21 @@
       "required": ["children"],
       "type": "object"
     },
+    "ShapeDefaultsOptions": {
+      "additionalProperties": false,
+      "description": "Shape defaults content (CT_ShapeDefaults) — the o: element sequence hosted by `<w:hdrShapeDefaults>` and `<w:shapeDefaults>`.",
+      "properties": {
+        "shapedefaults": {
+          "$ref": "#/definitions/VmlShapeDefaultsOptions",
+          "description": "o:shapedefaults — VML shape defaults (fill/stroke/textbox/colormru/…)."
+        },
+        "shapelayout": {
+          "$ref": "#/definitions/VmlShapeLayoutOptions",
+          "description": "o:shapelayout — shape id map / regroup table / rules."
+        }
+      },
+      "type": "object"
+    },
     "ShapeOptions": {
       "additionalProperties": false,
       "description": "Shape options for docx (wps:wsp). The shape body comes from  {@link  ShapeCoreOptions } ; the rest is the docx run-level shape model (transformation, floating, altText, run wrapping).",
@@ -17759,18 +17934,6 @@
         }
       },
       "required": ["data", "transformation"],
-      "type": "object"
-    },
-    "SoftHyphen": {
-      "additionalProperties": false,
-      "description": "Represents a soft hyphen (optional hyphen) character.\n\nInserts a hyphen that only appears when a word is broken across lines.",
-      "properties": {
-        "softHyphen": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["softHyphen"],
       "type": "object"
     },
     "SolidFillOptions": {
@@ -18348,6 +18511,7 @@
           ]
         },
         "children": {
+          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } .",
           "items": {
             "anyOf": [
               {
@@ -18370,55 +18534,208 @@
                 "type": "string"
               },
               {
-                "$ref": "#/definitions/AnnotationReference"
+                "additionalProperties": false,
+                "properties": {
+                  "tab": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["tab"],
+                "title": "tab",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/CarriageReturn"
+                "additionalProperties": false,
+                "properties": {
+                  "noBreakHyphen": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["noBreakHyphen"],
+                "title": "noBreakHyphen",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/ContinuationSeparator"
+                "additionalProperties": false,
+                "properties": {
+                  "softHyphen": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["softHyphen"],
+                "title": "softHyphen",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/DayLong"
+                "additionalProperties": false,
+                "properties": {
+                  "dayShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["dayShort"],
+                "title": "dayShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/DayShort"
+                "additionalProperties": false,
+                "properties": {
+                  "monthShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["monthShort"],
+                "title": "monthShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/EndnoteReference"
+                "additionalProperties": false,
+                "properties": {
+                  "yearShort": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["yearShort"],
+                "title": "yearShort",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/FootnoteReferenceElement"
+                "additionalProperties": false,
+                "properties": {
+                  "dayLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["dayLong"],
+                "title": "dayLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/LastRenderedPageBreak"
+                "additionalProperties": false,
+                "properties": {
+                  "monthLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["monthLong"],
+                "title": "monthLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/MonthLong"
+                "additionalProperties": false,
+                "properties": {
+                  "yearLong": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["yearLong"],
+                "title": "yearLong",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/MonthShort"
+                "additionalProperties": false,
+                "properties": {
+                  "annotationRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["annotationRef"],
+                "title": "annotationRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/NoBreakHyphen"
+                "additionalProperties": false,
+                "properties": {
+                  "footnoteRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["footnoteRef"],
+                "title": "footnoteRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/PageNumberElement"
+                "additionalProperties": false,
+                "properties": {
+                  "endnoteRef": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["endnoteRef"],
+                "title": "endnoteRef",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/Separator"
+                "additionalProperties": false,
+                "properties": {
+                  "separator": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["separator"],
+                "title": "separator",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/SoftHyphen"
+                "additionalProperties": false,
+                "properties": {
+                  "continuationSeparator": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["continuationSeparator"],
+                "title": "continuationSeparator",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/Tab"
+                "additionalProperties": false,
+                "properties": {
+                  "pgNum": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["pgNum"],
+                "title": "pgNum",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/YearLong"
+                "additionalProperties": false,
+                "properties": {
+                  "carriageReturn": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["carriageReturn"],
+                "title": "carriageReturn",
+                "type": "object"
               },
               {
-                "$ref": "#/definitions/YearShort"
+                "additionalProperties": false,
+                "properties": {
+                  "lastRenderedPageBreak": {
+                    "const": true,
+                    "type": "boolean"
+                  }
+                },
+                "required": ["lastRenderedPageBreak"],
+                "title": "lastRenderedPageBreak",
+                "type": "object"
               },
               {
                 "additionalProperties": false,
@@ -18728,18 +19045,6 @@
         }
       },
       "required": ["value"],
-      "type": "object"
-    },
-    "Tab": {
-      "additionalProperties": false,
-      "description": "Represents a tab character.\n\nInserts a tab stop, advancing to the next tab position in the paragraph.",
-      "properties": {
-        "tab": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["tab"],
       "type": "object"
     },
     "TabStopDefinition": {
@@ -20575,10 +20880,691 @@
       },
       "type": "object"
     },
+    "VmlCalloutAngle": {
+      "description": "ST_Angle — the callout leader-angle presets, kept in XML spelling.",
+      "enum": ["any", "30", "45", "60", "90", "auto"],
+      "type": "string"
+    },
+    "VmlCalloutOptions": {
+      "additionalProperties": false,
+      "description": "o:callout options (CT_Callout).",
+      "properties": {
+        "accentbar": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "angle": {
+          "$ref": "#/definitions/VmlCalloutAngle"
+        },
+        "distance": {
+          "type": "string"
+        },
+        "drop": {
+          "type": "string"
+        },
+        "dropauto": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "gap": {
+          "type": "string"
+        },
+        "length": {
+          "type": "string"
+        },
+        "lengthspecified": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "minusx": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "minusy": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "on": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "textborder": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlColor": {
+      "description": "s:ST_ColorType kept verbatim — VML colors carry forms like \"red\" or \"infoBackground [80]\".",
+      "type": "string"
+    },
+    "VmlColorMenuOptions": {
+      "additionalProperties": false,
+      "description": "o:colormenu options (CT_ColorMenu) — the palette slots.",
+      "properties": {
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "extrusioncolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "shadowcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        }
+      },
+      "type": "object"
+    },
+    "VmlColorMode": {
+      "description": "ST_ColorMode.",
+      "enum": ["auto", "custom"],
+      "type": "string"
+    },
+    "VmlColorMruOptions": {
+      "additionalProperties": false,
+      "description": "o:colormru options (CT_ColorMru) — the recently-used color list.",
+      "properties": {
+        "colors": {
+          "type": "string"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        }
+      },
+      "type": "object"
+    },
+    "VmlExtensionMode": {
+      "description": "ST_Ext — the v:ext extension-slot attribute carried by every o: element.",
+      "enum": ["view", "edit", "backwardCompatible"],
+      "type": "string"
+    },
+    "VmlExtrusionOptions": {
+      "additionalProperties": false,
+      "description": "o:extrusion options (CT_Extrusion).",
+      "properties": {
+        "autorotationcenter": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "backdepth": {
+          "type": "string"
+        },
+        "brightness": {
+          "type": "string"
+        },
+        "color": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "colormode": {
+          "$ref": "#/definitions/VmlColorMode"
+        },
+        "diffusity": {
+          "type": "string"
+        },
+        "edge": {
+          "type": "string"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "facet": {
+          "type": "string"
+        },
+        "foredepth": {
+          "type": "string"
+        },
+        "lightface": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lightharsh": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lightharsh2": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lightlevel": {
+          "type": "string"
+        },
+        "lightlevel2": {
+          "type": "string"
+        },
+        "lightposition": {
+          "type": "string"
+        },
+        "lightposition2": {
+          "type": "string"
+        },
+        "lockrotationcenter": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "metal": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "on": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "orientation": {
+          "type": "string"
+        },
+        "orientationangle": {
+          "type": "number"
+        },
+        "plane": {
+          "$ref": "#/definitions/VmlExtrusionPlane"
+        },
+        "render": {
+          "$ref": "#/definitions/VmlExtrusionRender"
+        },
+        "rotationangle": {
+          "type": "string"
+        },
+        "rotationcenter": {
+          "type": "string"
+        },
+        "shininess": {
+          "type": "number"
+        },
+        "skewamt": {
+          "type": "string"
+        },
+        "skewangle": {
+          "type": "number"
+        },
+        "specularity": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/VmlExtrusionType"
+        },
+        "viewpoint": {
+          "type": "string"
+        },
+        "viewpointorigin": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlExtrusionPlane": {
+      "description": "ST_ExtrusionPlane.",
+      "enum": ["XY", "ZX", "YZ"],
+      "type": "string"
+    },
+    "VmlExtrusionRender": {
+      "description": "ST_ExtrusionRender.",
+      "enum": ["solid", "wireFrame", "boundingCube"],
+      "type": "string"
+    },
+    "VmlExtrusionType": {
+      "description": "ST_ExtrusionType.",
+      "enum": ["perspective", "parallel"],
+      "type": "string"
+    },
+    "VmlFillMethod": {
+      "description": "ST_FillMethod.",
+      "enum": ["none", "linear", "sigma", "any", "linear sigma"],
+      "type": "string"
+    },
+    "VmlFillOptions": {
+      "additionalProperties": false,
+      "description": "v:fill options (CT_Fill).",
+      "properties": {
+        "alignshape": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "angle": {
+          "description": "Gradient angle in degrees.",
+          "type": "number"
+        },
+        "aspect": {
+          "$ref": "#/definitions/VmlImageAspect"
+        },
+        "color": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "color2": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "colors": {
+          "type": "string"
+        },
+        "detectmouseclick": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:detectmouseclick — the fill toggles on mouse click."
+        },
+        "focus": {
+          "type": "string"
+        },
+        "focusposition": {
+          "type": "string"
+        },
+        "focussize": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "method": {
+          "$ref": "#/definitions/VmlFillMethod"
+        },
+        "officeAltHref": {
+          "description": "o:althref — alternate (high-contrast) image reference.",
+          "type": "string"
+        },
+        "officeFill": {
+          "$ref": "#/definitions/VmlOfficeFillOptions",
+          "description": "o:fill child — the office fill-type extension."
+        },
+        "officeHref": {
+          "description": "o:href — hyperlink target for image fills.",
+          "type": "string"
+        },
+        "officeRelationshipId": {
+          "description": "o:relid — relationship id, in the o: extension slot.",
+          "type": "string"
+        },
+        "officeTitle": {
+          "description": "o:title — image title.",
+          "type": "string"
+        },
+        "on": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "opacity2": {
+          "description": "o:opacity2 — the second-stop opacity.",
+          "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "position": {
+          "type": "string"
+        },
+        "recolor": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "relationshipId": {
+          "description": "Relationship reference; callers bridge media via the placeholder form.",
+          "type": "string"
+        },
+        "rotate": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "size": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/VmlFillType"
+        }
+      },
+      "type": "object"
+    },
+    "VmlFillType": {
+      "description": "ST_FillType.",
+      "enum": ["solid", "gradient", "gradientRadial", "tile", "pattern", "frame"],
+      "type": "string"
+    },
+    "VmlIdMapOptions": {
+      "additionalProperties": false,
+      "description": "o:idmap options (CT_IdMap).",
+      "properties": {
+        "data": {
+          "description": "Space-separated shape-id prefixes, e.g. \"1 2 3\".",
+          "type": "string"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        }
+      },
+      "type": "object"
+    },
+    "VmlImageAspect": {
+      "description": "ST_ImageAspect.",
+      "enum": ["ignore", "atMost", "atLeast"],
+      "type": "string"
+    },
+    "VmlInsetMode": {
+      "description": "ST_InsetMode (o:).",
+      "enum": ["auto", "custom"],
+      "type": "string"
+    },
+    "VmlLockOptions": {
+      "additionalProperties": false,
+      "description": "o:lock options (CT_Lock) — a true flag locks the capability.",
+      "properties": {
+        "adjusthandles": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "aspectratio": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "cropping": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "grouping": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "position": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "rotation": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "selection": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "shapetype": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "text": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "ungrouping": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "verticies": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        }
+      },
+      "type": "object"
+    },
+    "VmlOfficeFillOptions": {
+      "additionalProperties": false,
+      "description": "o:fill options (CT_Fill) — the o: extension child of v:fill.",
+      "properties": {
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "type": {
+          "$ref": "#/definitions/VmlOfficeFillType"
+        }
+      },
+      "type": "object"
+    },
+    "VmlOfficeFillType": {
+      "description": "ST_FillType (o: namespace form — includes the gradientCenter/background variants).",
+      "enum": [
+        "gradientCenter",
+        "solid",
+        "pattern",
+        "tile",
+        "frame",
+        "gradientUnscaled",
+        "gradientRadial",
+        "gradient",
+        "background"
+      ],
+      "type": "string"
+    },
+    "VmlRegroupEntryOptions": {
+      "additionalProperties": false,
+      "description": "CT_Entry — one regroup-table row.",
+      "properties": {
+        "new": {
+          "type": "number"
+        },
+        "old": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "VmlRegroupTableOptions": {
+      "additionalProperties": false,
+      "description": "o:regrouptable options (CT_RegroupTable).",
+      "properties": {
+        "entries": {
+          "items": {
+            "$ref": "#/definitions/VmlRegroupEntryOptions"
+          },
+          "type": "array"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        }
+      },
+      "type": "object"
+    },
+    "VmlRuleHow": {
+      "description": "ST_How.",
+      "enum": ["top", "middle", "bottom", "left", "center", "right"],
+      "type": "string"
+    },
+    "VmlRuleOptions": {
+      "additionalProperties": false,
+      "description": "CT_R — one layout rule.",
+      "properties": {
+        "how": {
+          "$ref": "#/definitions/VmlRuleHow"
+        },
+        "id": {
+          "type": "string"
+        },
+        "idref": {
+          "type": "string"
+        },
+        "proxies": {
+          "items": {
+            "$ref": "#/definitions/VmlRuleProxyOptions"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/definitions/VmlRuleType"
+        }
+      },
+      "required": ["id"],
+      "type": "object"
+    },
+    "VmlRuleProxyOptions": {
+      "additionalProperties": false,
+      "description": "CT_Proxy — one rule proxy.",
+      "properties": {
+        "connectloc": {
+          "type": "number"
+        },
+        "end": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "",
+              "type": "string"
+            }
+          ]
+        },
+        "idref": {
+          "type": "string"
+        },
+        "start": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "VmlRuleType": {
+      "description": "ST_RType.",
+      "enum": ["arc", "callout", "connector", "align"],
+      "type": "string"
+    },
+    "VmlRulesOptions": {
+      "additionalProperties": false,
+      "description": "o:rules options (CT_Rules).",
+      "properties": {
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "rules": {
+          "items": {
+            "$ref": "#/definitions/VmlRuleOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "VmlShadowOptions": {
+      "additionalProperties": false,
+      "description": "v:shadow options (CT_Shadow).",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "color2": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "id": {
+          "type": "string"
+        },
+        "matrix": {
+          "type": "string"
+        },
+        "obscured": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "offset": {
+          "type": "string"
+        },
+        "offset2": {
+          "type": "string"
+        },
+        "on": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "origin": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/VmlShadowType"
+        }
+      },
+      "type": "object"
+    },
+    "VmlShadowType": {
+      "description": "ST_ShadowType.",
+      "enum": ["single", "double", "emboss", "perspective"],
+      "type": "string"
+    },
+    "VmlShapeDefaultsOptions": {
+      "additionalProperties": false,
+      "description": "o:shapedefaults options (CT_ShapeDefaults).",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "form=\"qualified\" — serialized as `o:allowincell`."
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "colormenu": {
+          "$ref": "#/definitions/VmlColorMenuOptions"
+        },
+        "colormru": {
+          "$ref": "#/definitions/VmlColorMruOptions"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "fillElement": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spidmax": {
+          "description": "Highest shape id handed out so far.",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeElement": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "style": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        }
+      },
+      "type": "object"
+    },
+    "VmlShapeLayoutOptions": {
+      "additionalProperties": false,
+      "description": "o:shapelayout options (CT_ShapeLayout).",
+      "properties": {
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "idmap": {
+          "$ref": "#/definitions/VmlIdMapOptions"
+        },
+        "regrouptable": {
+          "$ref": "#/definitions/VmlRegroupTableOptions"
+        },
+        "rules": {
+          "$ref": "#/definitions/VmlRulesOptions"
+        }
+      },
+      "type": "object"
+    },
     "VmlShapeStyle": {
       "additionalProperties": false,
       "description": "VML shape styling properties for WordprocessingML documents.\n\nThese properties map to CSS-style attributes on VML shape elements and control the shape's appearance, layout, and interaction with surrounding text.",
       "properties": {
+        "directionAlt": {
+          "const": "auto",
+          "description": "Textbox text-flow override — \"auto\" lets paragraph direction decide.",
+          "type": "string"
+        },
+        "fitShapeToText": {
+          "description": "Specifies that a shape's height adjusts to fit its text. Default is false.",
+          "type": "boolean"
+        },
         "flip": {
           "description": "Specifies that the orientation of a shape is flipped. Default is no value.",
           "enum": ["x", "y", "xy", "yx"],
@@ -20688,8 +21674,308 @@
           "description": "Specifies the display order of overlapping shapes. Default is 0."
         }
       },
-      "required": ["width"],
       "type": "object"
+    },
+    "VmlSkewOptions": {
+      "additionalProperties": false,
+      "description": "o:skew options (CT_Skew).",
+      "properties": {
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "id": {
+          "type": "string"
+        },
+        "matrix": {
+          "type": "string"
+        },
+        "offset": {
+          "type": "string"
+        },
+        "on": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "origin": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlStrokeArrowLength": {
+      "description": "ST_StrokeArrowLength.",
+      "enum": ["short", "medium", "long"],
+      "type": "string"
+    },
+    "VmlStrokeArrowType": {
+      "description": "ST_StrokeArrowType.",
+      "enum": ["none", "block", "classic", "oval", "diamond", "open"],
+      "type": "string"
+    },
+    "VmlStrokeArrowWidth": {
+      "description": "ST_StrokeArrowWidth.",
+      "enum": ["narrow", "medium", "wide"],
+      "type": "string"
+    },
+    "VmlStrokeChildOptions": {
+      "additionalProperties": false,
+      "description": "o:left/top/right/bottom/column options (CT_StrokeChild) — the per-edge sub-strokes of v:stroke, sharing most of the stroke vocabulary.",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "color2": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "dashstyle": {
+          "type": "string"
+        },
+        "endarrow": {
+          "$ref": "#/definitions/VmlStrokeArrowType"
+        },
+        "endarrowlength": {
+          "$ref": "#/definitions/VmlStrokeArrowLength"
+        },
+        "endarrowwidth": {
+          "$ref": "#/definitions/VmlStrokeArrowWidth"
+        },
+        "endcap": {
+          "$ref": "#/definitions/VmlStrokeEndCap"
+        },
+        "ext": {
+          "type": "string"
+        },
+        "filltype": {
+          "$ref": "#/definitions/VmlFillType"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash."
+        },
+        "imagealignshape": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "imageaspect": {
+          "$ref": "#/definitions/VmlImageAspect"
+        },
+        "imagesize": {
+          "type": "string"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "joinstyle": {
+          "$ref": "#/definitions/VmlStrokeJoinStyle"
+        },
+        "linestyle": {
+          "$ref": "#/definitions/VmlStrokeLineStyle"
+        },
+        "miterlimit": {
+          "type": "number"
+        },
+        "officeAltHref": {
+          "description": "o:althref.",
+          "type": "string"
+        },
+        "officeHref": {
+          "description": "o:href.",
+          "type": "string"
+        },
+        "officeTitle": {
+          "description": "o:title.",
+          "type": "string"
+        },
+        "on": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        },
+        "startarrow": {
+          "$ref": "#/definitions/VmlStrokeArrowType"
+        },
+        "startarrowlength": {
+          "$ref": "#/definitions/VmlStrokeArrowLength"
+        },
+        "startarrowwidth": {
+          "$ref": "#/definitions/VmlStrokeArrowWidth"
+        },
+        "weight": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlStrokeEndCap": {
+      "description": "ST_StrokeEndCap.",
+      "enum": ["flat", "square", "round"],
+      "type": "string"
+    },
+    "VmlStrokeJoinStyle": {
+      "description": "ST_StrokeJoinStyle.",
+      "enum": ["round", "bevel", "miter"],
+      "type": "string"
+    },
+    "VmlStrokeLineStyle": {
+      "description": "ST_StrokeLineStyle.",
+      "enum": ["single", "thinThin", "thinThick", "thickThin", "thickBetweenThin"],
+      "type": "string"
+    },
+    "VmlStrokeOptions": {
+      "additionalProperties": false,
+      "description": "v:stroke options (CT_Stroke / AG_StrokeAttributes).",
+      "properties": {
+        "bottomStroke": {
+          "$ref": "#/definitions/VmlStrokeChildOptions"
+        },
+        "color": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "color2": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "columnStroke": {
+          "$ref": "#/definitions/VmlStrokeChildOptions"
+        },
+        "dashstyle": {
+          "description": "Preset (\"dash\", \"dotdotdash\", …) or custom dash pattern (\"4 2 4 2\").",
+          "type": "string"
+        },
+        "endarrow": {
+          "$ref": "#/definitions/VmlStrokeArrowType"
+        },
+        "endarrowlength": {
+          "$ref": "#/definitions/VmlStrokeArrowLength"
+        },
+        "endarrowwidth": {
+          "$ref": "#/definitions/VmlStrokeArrowWidth"
+        },
+        "endcap": {
+          "$ref": "#/definitions/VmlStrokeEndCap"
+        },
+        "filltype": {
+          "$ref": "#/definitions/VmlFillType"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagealignshape": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "imageaspect": {
+          "$ref": "#/definitions/VmlImageAspect"
+        },
+        "imagesize": {
+          "type": "string"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "joinstyle": {
+          "$ref": "#/definitions/VmlStrokeJoinStyle"
+        },
+        "leftStroke": {
+          "$ref": "#/definitions/VmlStrokeChildOptions"
+        },
+        "linestyle": {
+          "$ref": "#/definitions/VmlStrokeLineStyle"
+        },
+        "miterlimit": {
+          "type": "number"
+        },
+        "officeAltHref": {
+          "description": "o:althref — alternate (high-contrast) image reference.",
+          "type": "string"
+        },
+        "officeHref": {
+          "description": "o:href — hyperlink target for image fills.",
+          "type": "string"
+        },
+        "officeRelationshipId": {
+          "description": "o:relid — relationship id for the image, in the o: extension slot.",
+          "type": "string"
+        },
+        "officeTitle": {
+          "description": "o:title — image title.",
+          "type": "string"
+        },
+        "on": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "relationshipId": {
+          "description": "Relationship reference; callers bridge media via the placeholder form.",
+          "type": "string"
+        },
+        "rightStroke": {
+          "$ref": "#/definitions/VmlStrokeChildOptions"
+        },
+        "src": {
+          "type": "string"
+        },
+        "startarrow": {
+          "$ref": "#/definitions/VmlStrokeArrowType"
+        },
+        "startarrowlength": {
+          "$ref": "#/definitions/VmlStrokeArrowLength"
+        },
+        "startarrowwidth": {
+          "$ref": "#/definitions/VmlStrokeArrowWidth"
+        },
+        "topStroke": {
+          "$ref": "#/definitions/VmlStrokeChildOptions"
+        },
+        "weight": {
+          "description": "Line weight, e.g. \"2pt\".",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlTextboxOptions": {
+      "additionalProperties": false,
+      "description": "v:textbox options (CT_Textbox).",
+      "properties": {
+        "content": {
+          "description": "Verbatim inner XML for a local (unqualified) child — Excel's `<div>` form.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "inset": {
+          "description": "Inner inset, e.g. \"auto\" or \"10pt,10pt,10pt,10pt\".",
+          "type": "string"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode",
+          "description": "o:insetmode — inset handling mode."
+        },
+        "singleclick": {
+          "description": "o:singleclick — the whole shape is the click target.",
+          "type": "boolean"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "txbxContent": {
+          "description": "Inner XML of the w:txbxContent child (docx paragraphs), caller-produced.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlTrueFalse": {
+      "description": "s:ST_TrueFalse — VML boolean attributes serialize as \"t\"/\"f\".",
+      "type": "boolean"
     },
     "WebFrameOptions": {
       "additionalProperties": false,
@@ -21142,30 +22428,6 @@
         }
       },
       "required": ["position", "type"],
-      "type": "object"
-    },
-    "YearLong": {
-      "additionalProperties": false,
-      "description": "Represents the current year in long format (e.g., \"2024\").\n\nInserts a dynamic field showing the year portion of the current date in four digits.",
-      "properties": {
-        "yearLong": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["yearLong"],
-      "type": "object"
-    },
-    "YearShort": {
-      "additionalProperties": false,
-      "description": "Represents the current year in short format (e.g., \"24\").\n\nInserts a dynamic field showing the year portion of the current date in two digits.",
-      "properties": {
-        "yearShort": {
-          "const": true,
-          "type": "boolean"
-        }
-      },
-      "required": ["yearShort"],
       "type": "object"
     }
   },

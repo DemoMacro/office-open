@@ -259,22 +259,28 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain('r:id="{chart:chart_1}"');
   });
 
-  it("round-trips a content part (wp:contentPart) with cpLocks", () => {
+  it("round-trips a content part (wpg:contentPart) with cpLocks", () => {
     const xml = stringify({
       mediaData: {
-        type: "contentPart" as const,
-        referenceId: "rId9",
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
-        nonVisualProperties: {
-          id: 3,
-          name: "Video",
-          contentPart: { isComment: false, locks: { noChangeAspect: true } },
-        },
-        blackWhiteMode: "auto" as const,
+        type: "wpg" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 1828800, y: 914400 } },
+        children: [
+          {
+            type: "contentPart" as const,
+            referenceId: "rId9",
+            transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+            nonVisualProperties: {
+              id: 3,
+              name: "Video",
+              contentPart: { isComment: false, locks: { noChangeAspect: true } },
+            },
+            blackWhiteMode: "auto" as const,
+          },
+        ],
       },
     });
-    expect(xml).toContain('<wp:contentPart r:id="rId9" bwMode="auto">');
-    expect(xml).toContain('<wp:cNvContentPartPr isComment="0">');
+    expect(xml).toContain('<wpg:contentPart r:id="rId9" bwMode="auto">');
+    expect(xml).toContain('<wpg:cNvContentPartPr isComment="0">');
     expect(xml).toContain('<a:cpLocks noChangeAspect="true"/>');
 
     const doc = parseXml(xml);

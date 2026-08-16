@@ -172,9 +172,11 @@ export interface ChartMediaData {
 }
 
 /**
- * Content part options (wp:contentPart / wpg:contentPart) — references an
- * opaque part via r:id. The relationship is not re-registered on generate;
- * the source r:id is passed through verbatim.
+ * Content part options — references an opaque part via r:id. The relationship
+ * is not re-registered on generate; the source r:id is passed through verbatim.
+ * At run level this serializes as the CT_Rel form (w:contentPart, referenceId
+ * only); the placement and non-visual fields apply only to the wpg:contentPart
+ * form nested inside a group child.
  */
 export interface ContentPartOptions {
   /** Relationship id from the source document (r:id, round-trip passthrough). */

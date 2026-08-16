@@ -1,11 +1,11 @@
 /**
- * VML style mini-language for WordprocessingML documents.
+ * VML style mini-language.
  *
  * VML elements (v:shape, v:rect, …) carry layout in a CSS-like `style`
  * attribute (`"position:absolute;width:100pt;height:50pt"`). This module owns
  * the shared vocabulary: the VmlShapeStyle type, the property-name mapping,
- * and the stringify/parse pair used by the textbox, object, and section
- * paths. VML is a docx-only namespace, so this stays in the docx package.
+ * and the stringify/parse pair used by the shape element serializers in this
+ * domain.
  *
  * References:
  * - https://c-rex.net/samples/ooxml/e1/Part3/OOXML_P3_Primer_OfficeArt_topic_ID0ELU5O.html
@@ -13,7 +13,7 @@
  *
  * @module
  */
-import type { Percentage, RelativeMeasure, UniversalMeasure } from "@office-open/core";
+import type { Percentage, RelativeMeasure, UniversalMeasure } from "../util/values";
 
 /**
  * Represents a length unit value for VML shape styling.
@@ -54,6 +54,8 @@ export const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
   wrapDistanceTop: "mso-wrap-distance-top",
   wrapEdited: "mso-wrap-edited",
   wrapStyle: "mso-wrap-style",
+  fitShapeToText: "mso-fit-shape-to-text",
+  directionAlt: "mso-direction-alt",
   zIndex: "z-index",
 };
 
@@ -64,7 +66,11 @@ export const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
  */
 export function stringifyVmlStyle(style: VmlShapeStyle): string {
   return Object.entries(style)
-    .map(([key, value]) => `${styleToKeyMap[key as keyof VmlShapeStyle]}:${value}`)
+    .map(([key, value]) => {
+      // VML's CSS-style vocabulary spells booleans t/f (mso-fit-shape-to-text:t).
+      const text = typeof value === "boolean" ? (value ? "t" : "f") : String(value);
+      return `${styleToKeyMap[key as keyof VmlShapeStyle]}:${text}`;
+    })
     .join(";");
 }
 
@@ -99,8 +105,8 @@ export function parseVmlShapeStyle(record: Record<string, string>): VmlShapeStyl
   for (const [key, value] of Object.entries(record)) {
     const field = keyToStyleMap[key];
     if (!field) continue;
-    if (field === "wrapEdited") {
-      style[field] = value === "true";
+    if (field === "wrapEdited" || field === "fitShapeToText") {
+      style[field] = value === "t" || value === "true";
     } else if (NUMERIC.test(value)) {
       style[field] = Number(value);
     } else {
@@ -149,6 +155,10 @@ export interface VmlShapeStyle {
   wrapDistanceTop?: number;
   /** Specifies whether the wrap coordinates were customized by the user. Default is false. */
   wrapEdited?: boolean;
+  /** Specifies that a shape's height adjusts to fit its text. Default is false. */
+  fitShapeToText?: boolean;
+  /** Textbox text-flow override — "auto" lets paragraph direction decide. */
+  directionAlt?: "auto";
   /** Specifies the wrapping mode for text in shapes. Default is square. */
   wrapStyle?: "square" | "none";
   /** Specifies the type of positioning used to place an element. Default is static. */
@@ -160,7 +170,7 @@ export interface VmlShapeStyle {
   /** Specifies whether a shape is displayed. Default is inherit. */
   visibility?: "hidden" | "inherit";
   /** Specifies the width of the containing block. Default is 0. */
-  width: LengthUnit;
+  width?: LengthUnit;
   /** Specifies the display order of overlapping shapes. Default is 0. */
   zIndex?: "auto" | number;
 }

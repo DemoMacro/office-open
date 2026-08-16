@@ -11,6 +11,7 @@ export * from "./picture";
 export * from "./connector";
 export * from "./group";
 export * from "./drawing";
+export * from "./vector";
 export * from "./patch";
 export * from "./theme";
 export * from "./descriptor";

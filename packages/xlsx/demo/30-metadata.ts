@@ -1,4 +1,7 @@
-// Rich metadata part (xl/metadata.xml) with cell/value metadata references.
+// Rich metadata part (xl/metadata.xml) — types, strings, future metadata, and
+// cell/value metadata blocks. The cell-level cellMetadataId/valueMetadataId
+// references are intentionally not exercised: Excel 365 treats the
+// XLDAPROPERTY cell-reference combination as corrupt and strips it on open.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -11,7 +14,7 @@ const buffer = await generateWorkbook({
       rows: [
         {
           cells: [
-            { reference: "A1", value: "Widget", cellMetadataId: 1, valueMetadataId: 1 },
+            { reference: "A1", value: "Widget" },
             { reference: "B1", value: 9.99 },
           ],
         },

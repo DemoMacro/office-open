@@ -10,25 +10,6 @@ import type { ObjectElementOptions } from "@parts/object";
  *
  * @module
  */
-import type {
-  AnnotationReference,
-  CarriageReturn,
-  ContinuationSeparator,
-  DayLong,
-  DayShort,
-  EndnoteReference,
-  FootnoteReferenceElement,
-  LastRenderedPageBreak,
-  MonthLong,
-  MonthShort,
-  NoBreakHyphen,
-  PageNumberElement,
-  Separator,
-  SoftHyphen,
-  Tab,
-  YearLong,
-  YearShort,
-} from "./empty-children";
 import type { ParagraphRunPropertiesOptions, RunPropertiesOptions } from "./properties";
 
 /** w:br/@w:clear values (ST_BrClear) — clears floating content on the given side(s). */
@@ -83,26 +64,32 @@ export const EMPTY_RUN_ELEMENTS: Record<string, string> = {
 };
 
 interface RunOptionsBase {
+  /**
+   * Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing
+   * and content children). The empty run elements are single-key markers
+   * (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via
+   * {@link EMPTY_RUN_ELEMENTS}.
+   */
   children?: (
     | (typeof PageNumber)[keyof typeof PageNumber]
     | string
-    | AnnotationReference
-    | CarriageReturn
-    | ContinuationSeparator
-    | DayLong
-    | DayShort
-    | EndnoteReference
-    | FootnoteReferenceElement
-    | LastRenderedPageBreak
-    | MonthLong
-    | MonthShort
-    | NoBreakHyphen
-    | PageNumberElement
-    | Separator
-    | SoftHyphen
-    | Tab
-    | YearLong
-    | YearShort
+    | { tab: true }
+    | { noBreakHyphen: true }
+    | { softHyphen: true }
+    | { dayShort: true }
+    | { monthShort: true }
+    | { yearShort: true }
+    | { dayLong: true }
+    | { monthLong: true }
+    | { yearLong: true }
+    | { annotationRef: true }
+    | { footnoteRef: true }
+    | { endnoteRef: true }
+    | { separator: true }
+    | { continuationSeparator: true }
+    | { pgNum: true }
+    | { carriageReturn: true }
+    | { lastRenderedPageBreak: true }
     | { object: ObjectElementOptions }
     | Record<string, unknown>
   )[];

@@ -8,6 +8,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
+import { documentNamespaceAttributes } from "@parts/document/document-attributes";
 import type { SectionChild } from "@shared/section";
 
 /** Gallery type for building blocks (ST_DocPartGallery) */
@@ -113,21 +114,22 @@ import { attr, escapeXml, findChild } from "@office-open/xml";
 import { parseParagraph } from "../body";
 import type { BodyContext, DocxReadContext } from "../context";
 
-const GLOSSARY_NS =
-  'xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" ' +
-  'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
-  'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
-  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
-  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
-  'xmlns:v="urn:schemas-microsoft-com:vml" ' +
-  'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
-  'xmlns:w10="urn:schemas-microsoft-com:office:word" ' +
-  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
-  'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ' +
-  'xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" ' +
-  'xmlns:wpi="http://schemas.microsoft.com/office/word/2010/wordprocessingInk" ' +
-  'xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml" ' +
-  'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"';
+const GLOSSARY_NS = documentNamespaceAttributes([
+  "wpc",
+  "mc",
+  "o",
+  "r",
+  "m",
+  "v",
+  "wp",
+  "w10",
+  "w",
+  "w14",
+  "wpg",
+  "wpi",
+  "wne",
+  "wps",
+]);
 
 function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
   const prParts: string[] = [];

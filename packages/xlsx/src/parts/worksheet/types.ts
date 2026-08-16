@@ -394,15 +394,39 @@ export interface TabColorOptions {
   indexed?: number;
 }
 
+/** Cell corner marker (CT_Marker): 0-based column/row plus EMU offsets. */
+export interface AnchorMarkerOptions {
+  /** 0-based column index */
+  col: number;
+  /** Offset within the column, in EMU (default: 0) */
+  colOff?: number;
+  /** 0-based row index */
+  row: number;
+  /** Offset within the row, in EMU (default: 0) */
+  rowOff?: number;
+}
+
 /** Object anchor (CT_ObjectAnchor). */
 export interface ObjectAnchorOptions {
   /** Move with cells (default: false) */
   moveWithCells?: boolean;
   /** Size with cells (default: false) */
   sizeWithCells?: boolean;
+  /** Anchor start corner (xdr:from, CT_Marker) */
+  from?: AnchorMarkerOptions;
+  /** Anchor end corner (xdr:to, CT_Marker) */
+  to?: AnchorMarkerOptions;
 }
 
-/** Comment property (CT_CommentPr). */
+/**
+ * Comment property (CT_CommentPr).
+ *
+ * Round-trip support only: serializing a commentPr alongside the sheet's
+ * legacy VML note drawing produces a file Excel refuses to open — commentPr
+ * and the VML note shape are rival property systems for the same note, and
+ * Excel reads note properties from the shape's x:ClientData. Parsed from
+ * third-party files that carry it, never emitted by demos.
+ */
 export interface CommentPropertiesOptions {
   /** Locked */
   locked?: boolean;
@@ -441,6 +465,17 @@ export interface CommentOptions {
   text: string | RichTextOptions;
   /** Comment properties (CT_CommentPr) */
   commentPr?: CommentPropertiesOptions;
+  /**
+   * Note shape anchor (x:Anchor in the VML part) — 8 numbers: fromColumn,
+   * fromColumnOffsetPx, fromRow, fromRowOffsetPx, toColumn, toColumnOffsetPx,
+   * toRow, toRowOffsetPx. Absent → the default 2×2-cell offset anchored at
+   * the comment's cell.
+   */
+  anchor?: number[];
+  /** Whether the note is pinned visible. Default false (hidden until hover). */
+  visible?: boolean;
+  /** Note shape size in points. Absent → 108 × 59.25 pt. */
+  size?: { width: number; height: number };
 }
 
 export type DataValidationType =

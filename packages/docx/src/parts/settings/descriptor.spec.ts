@@ -215,4 +215,23 @@ describe("settingsDesc round-trip", () => {
     const xml = settingsDesc.stringify({ defaultTabStop: 720 }, writeCtx)!;
     expect(xml).toContain('<w:defaultTabStop w:val="720"/>');
   });
+
+  it("round-trips shapeDefaults with structured o: content", () => {
+    const result = roundTrip({
+      hdrShapeDefaults: { shapedefaults: { ext: "edit", spidmax: 2050 } },
+      shapeDefaults: {
+        shapedefaults: {
+          ext: "edit",
+          spidmax: 3074,
+          colormru: { ext: "edit", colors: "212121" },
+        },
+        shapelayout: { ext: "edit", idmap: { ext: "edit", data: "1" } },
+      },
+    });
+    expect(result.hdrShapeDefaults).toEqual({ shapedefaults: { ext: "edit", spidmax: 2050 } });
+    expect(result.shapeDefaults).toEqual({
+      shapedefaults: { ext: "edit", spidmax: 3074, colormru: { ext: "edit", colors: "212121" } },
+      shapelayout: { ext: "edit", idmap: { ext: "edit", data: "1" } },
+    });
+  });
 });

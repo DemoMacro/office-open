@@ -1,4 +1,4 @@
-// Volatile dependencies, web publish objects, and workbook connections with query tables.
+// Workbook connections with query tables and volatile (RTD) dependencies.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -29,12 +29,15 @@ const buffer = await generateWorkbook({
       ],
     },
   ],
+  // volType/main/@first is a relationship id that must point at the workbook's
+  // connections relationship — rId5 is what the compiler allocates for
+  // xl/connections.xml in this workbook (sheets rId1-4 precede it).
   volTypes: [
     {
       type: "realTimeData",
       mains: [
         {
-          first: "rId1",
+          first: "rId5",
           topics: [
             {
               value: "StockPrice",
@@ -50,23 +53,15 @@ const buffer = await generateWorkbook({
     {
       id: 1,
       name: "Price source",
-      type: 2,
-      refreshedVersion: 6,
-      keepAlive: true,
-      interval: 5,
-      dbPr: {
-        connection: "Provider=SQLOLEDB;Data Source=localhost",
-        command: "SELECT Product, Price FROM Prices",
-        commandType: 2,
+      // type 6 = text file source; Excel rejects a dbPr (OLE DB) connection
+      // without a live provider, so the demo queries a CSV-style text source.
+      type: 6,
+      refreshedVersion: 8,
+      textPr: {
+        prompt: false,
+        sourceFile: "prices.csv",
+        textFields: [{}],
       },
-    },
-  ],
-  webPublishObjects: [
-    {
-      rId: "rId1",
-      destinationFile: "report.htm",
-      title: "Price List",
-      autoRepublish: true,
     },
   ],
 });

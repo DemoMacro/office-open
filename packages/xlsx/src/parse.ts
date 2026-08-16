@@ -22,7 +22,7 @@ import { attr, findChild } from "@office-open/xml";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
-import { commentsDesc } from "@parts/comments";
+import { commentsDesc, mergeNoteAnchors, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
 import { dialogsheetDesc } from "@parts/dialogsheet";
 import type { DialogsheetOptions } from "@parts/dialogsheet";
@@ -341,6 +341,16 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
         wsOpts.comments = commentData.comments;
         break; // one comments file per worksheet
       }
+    }
+
+    // Note anchors (vmlDrawing) — merge per-note placement into the comments
+    // so custom position/size/visibility survive the round-trip.
+    const vmlRels = readContext.getWorksheetRelsByType(wsPath, "/vmlDrawing");
+    for (const vr of vmlRels) {
+      const vmlEl = xlsx.doc.get(vr.target);
+      if (!vmlEl) continue;
+      mergeNoteAnchors(wsOpts.comments, vmlNotesDesc.parse(vmlEl, readContext));
+      break; // one vmlDrawing per worksheet
     }
 
     // Drawings (images + charts)

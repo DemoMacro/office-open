@@ -9,8 +9,14 @@
  */
 
 import { derivePasswordHash, parseOnOff } from "@office-open/core";
+import {
+  parseVmlShapeDefaults,
+  parseVmlShapeLayout,
+  stringifyVmlShapeDefaults,
+  stringifyVmlShapeLayout,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, escapeXml, findChild, stringify } from "@office-open/xml";
+import { attr, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import { documentNamespaceAttributes } from "../document/document-attributes";
@@ -32,6 +38,7 @@ import type {
   RevisionViewOptions,
   DocumentFootnotePropertiesOptions,
   DocumentEndnotePropertiesOptions,
+  ShapeDefaultsOptions,
 } from "./settings";
 
 /** Derive the namespace-prefixed val attribute from the element tag. */
@@ -1058,7 +1065,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w:updateFields", opts.updateFields));
 
     if (opts.hdrShapeDefaults !== undefined)
-      p.push(`<w:hdrShapeDefaults>${opts.hdrShapeDefaults}</w:hdrShapeDefaults>`);
+      p.push(
+        `<w:hdrShapeDefaults>${stringifyShapeDefaultsInner(opts.hdrShapeDefaults)}</w:hdrShapeDefaults>`,
+      );
     if (opts.footnotePr !== undefined) p.push(stringifyFootnotePr(opts.footnotePr));
     if (opts.endnotePr !== undefined) p.push(stringifyEndnotePr(opts.endnotePr));
 
@@ -1123,7 +1132,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
 
     // XSD order: smartTagType → shapeDefaults → doNotEmbedSmartTags → decimalSymbol
     if (opts.shapeDefaults !== undefined)
-      p.push(`<w:shapeDefaults>${opts.shapeDefaults}</w:shapeDefaults>`);
+      p.push(
+        `<w:shapeDefaults>${stringifyShapeDefaultsInner(opts.shapeDefaults)}</w:shapeDefaults>`,
+      );
     p.push(onOff("w:doNotEmbedSmartTags", opts.doNotEmbedSmartTags));
     p.push(strVal("w:decimalSymbol", opts.decimalSymbol));
     p.push(strVal("w:listSeparator", opts.listSeparator));
@@ -1426,11 +1437,11 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (Object.keys(stx).length > 0) opts.saveThroughXslt = stx;
     }
 
-    // hdrShapeDefaults / shapeDefaults → verbatim inner XML (o:shapedefaults/o:shapelayout)
+    // hdrShapeDefaults / shapeDefaults → structured CT_ShapeDefaults content
     const hdrSdEl = findChild(el, "w:hdrShapeDefaults");
-    if (hdrSdEl) opts.hdrShapeDefaults = stringify(hdrSdEl);
+    if (hdrSdEl) opts.hdrShapeDefaults = parseShapeDefaultsInner(hdrSdEl);
     const sdEl = findChild(el, "w:shapeDefaults");
-    if (sdEl) opts.shapeDefaults = stringify(sdEl);
+    if (sdEl) opts.shapeDefaults = parseShapeDefaultsInner(sdEl);
 
     // footnotePr / endnotePr (CT_FtnDocProps / CT_EdnDocProps)
     const fnPrEl = findChild(el, "w:footnotePr");
@@ -1587,3 +1598,21 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     return opts as unknown as SettingsOptions;
   },
 };
+
+/** Serialize the o: element sequence hosted by w:hdrShapeDefaults/w:shapeDefaults. */
+function stringifyShapeDefaultsInner(opts: ShapeDefaultsOptions): string {
+  let s = "";
+  if (opts.shapedefaults !== undefined) s += stringifyVmlShapeDefaults(opts.shapedefaults);
+  if (opts.shapelayout !== undefined) s += stringifyVmlShapeLayout(opts.shapelayout);
+  return s;
+}
+
+/** Parse the o: element sequence hosted by w:hdrShapeDefaults/w:shapeDefaults. */
+function parseShapeDefaultsInner(el: Element): ShapeDefaultsOptions {
+  const out: Partial<ShapeDefaultsOptions> = {};
+  const sd = findChild(el, "o:shapedefaults");
+  if (sd) out.shapedefaults = parseVmlShapeDefaults(sd);
+  const sl = findChild(el, "o:shapelayout");
+  if (sl) out.shapelayout = parseVmlShapeLayout(sl);
+  return out as ShapeDefaultsOptions;
+}

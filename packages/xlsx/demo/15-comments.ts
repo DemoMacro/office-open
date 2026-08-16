@@ -16,6 +16,16 @@ const buffer = await generateWorkbook({
         { cell: "B2", author: "Alice", text: "Discounted from 12.99" },
         { cell: "C3", author: "Bob", text: "Reorder soon — running low" },
         { cell: "C4", author: "Alice", text: "Out of stock! Contact supplier." },
+        {
+          // Custom placement — anchored at D5, widened to 160×90 pt, pinned
+          // visible instead of Excel's hover-reveal default.
+          cell: "D5",
+          author: "Alice",
+          text: "Pinned note with a custom anchor",
+          anchor: [3, 30, 4, 24, 6, 60, 9, 12],
+          visible: true,
+          size: { width: 160, height: 90 },
+        },
       ],
     },
   ],

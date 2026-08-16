@@ -47,6 +47,10 @@
       "types": "./dist/drawing/index.d.mts",
       "import": "./dist/drawing/index.mjs"
     },
+    "./vector": {
+      "types": "./dist/vector/index.d.mts",
+      "import": "./dist/vector/index.mjs"
+    },
     "./descriptor": {
       "types": "./dist/descriptor/index.d.mts",
       "import": "./dist/descriptor/index.mjs"

@@ -9,9 +9,12 @@
 
 import type { UniversalMeasure } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
-import { uniqueId } from "@office-open/core";
 import { hexColorValue, uCharHexNumber } from "@office-open/core";
 import { ThemeColor } from "@office-open/core";
+import { stringifyVmlShape } from "@office-open/core";
+import { stringifyVmlBackground } from "@office-open/core";
+import { nextVmlShapeId } from "@office-open/core";
+import type { VmlShapeStyle } from "@office-open/core";
 import {
   attr,
   attrBool,
@@ -65,8 +68,6 @@ import { BorderStyle } from "@shared/border";
 import type { MediaData } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
 import { parseShading } from "@shared/shading";
-import type { VmlShapeStyle } from "@shared/vml/vml-style";
-import { stringifyVmlStyle } from "@shared/vml/vml-style";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
@@ -380,7 +381,17 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
         }) as MediaData,
     );
 
-    const vmlBg = `<v:background id="_x0000_s1025"><v:fill r:id="{${fileName}}" o:title="${fileName}" recolor="t" type="frame"/></v:background>`;
+    const vmlBg = stringifyVmlBackground({
+      // stringifyDocumentXml emits the background before body children, so the
+      // allocator hands out 1025 here — matching Word's fixed v:background id.
+      id: nextVmlShapeId(),
+      fill: {
+        type: "frame",
+        recolor: true,
+        relationshipId: `{${fileName}}`,
+        officeTitle: fileName,
+      },
+    });
     return `<w:background ${attrStr}>${vmlBg}</w:background>`;
   }
 
@@ -401,13 +412,6 @@ function stringifyTextbox(
   const props = stringifyParagraphProperties(paraOpts);
   const pPrXml = props.xml ?? "";
 
-  // VML shape style string
-  const styleStr = style ? stringifyVmlStyle(style) : undefined;
-
-  // Shape attributes
-  const shapeAttrs: string[] = [`id="_x0000_s${uniqueId()}"`, `type="#_x0000_t202"`];
-  if (styleStr) shapeAttrs.push(`style="${styleStr}"`);
-
   // Textbox content — serialize children via stringifyBodyChild
   const contentParts: string[] = [];
   if (children) {
@@ -417,8 +421,16 @@ function stringifyTextbox(
   }
   const txbxContent = contentParts.join("");
 
-  const vmlTextbox = `<v:textbox style="mso-fit-shape-to-text:t;" insetmode="auto"><w:txbxContent>${txbxContent}</w:txbxContent></v:textbox>`;
-  const vshape = `<v:shape ${shapeAttrs.join(" ")}>${vmlTextbox}</v:shape>`;
+  const vshape = stringifyVmlShape({
+    id: nextVmlShapeId(),
+    type: "#_x0000_t202",
+    style,
+    textbox: {
+      style: { fitShapeToText: true },
+      insetmode: "auto",
+      txbxContent,
+    },
+  });
 
   return `<w:p>${pPrXml}<w:pict>${vshape}</w:pict></w:p>`;
 }

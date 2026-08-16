@@ -9,6 +9,7 @@ export default defineConfig({
       "src/smartart/index.ts",
       "src/chart/index.ts",
       "src/drawing/index.ts",
+      "src/vector/index.ts",
       "src/descriptor/index.ts",
       "src/patch/index.ts",
       "src/util/index.ts",

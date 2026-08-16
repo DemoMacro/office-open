@@ -1,3 +1,4 @@
+import type { VmlShapeStyle } from "@office-open/core";
 import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
 import type { CustomXmlBlockOptions } from "@parts/custom-xml";
 /**
@@ -15,8 +16,6 @@ import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 import type { TableOptions } from "@parts/table/table";
-
-import type { VmlShapeStyle } from "./vml/vml-style";
 
 /**
  * Discriminated union for section body, header, and footer children.

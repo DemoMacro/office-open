@@ -9,6 +9,14 @@ const buffer = await generateDocument({
   background: {
     color: "C45911",
   },
+  settings: {
+    // VML shape defaults (o:shapedefaults/o:shapelayout) — the legacy shape-id
+    // allocation state Word stores for drawing-heavy documents.
+    shapeDefaults: {
+      shapedefaults: { ext: "edit", spidmax: 3074 },
+      shapelayout: { ext: "edit", idmap: { ext: "edit", data: "1" } },
+    },
+  },
   displayBackgroundShape: true,
   view: "print",
   zoom: {

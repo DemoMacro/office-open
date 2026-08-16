@@ -1,3 +1,4 @@
+import type { VmlShapeStyle } from "@office-open/core";
 /**
  * Textbox module for WordprocessingML documents.
  *
@@ -10,7 +11,6 @@
  */
 import type { ParagraphOptions } from "@parts/paragraph";
 import type { SectionChild } from "@shared/section";
-import type { VmlShapeStyle } from "@shared/vml/vml-style";
 
 /**
  * Options for creating a Textbox.

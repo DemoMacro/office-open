@@ -38,7 +38,6 @@ import {
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type {
   ChartMediaData,
-  ContentPartMediaData,
   GroupChildMediaData,
   MediaData,
   SmartArtMediaData,
@@ -628,18 +627,11 @@ export function stringifyChildDispatch(
     return wrapDrawingRun(drawingXml, opts);
   }
 
-  // Content part (wp:contentPart) — opaque part reference, r:id passthrough
+  // Content part (w:contentPart) — run-level EG_RunInnerContent element (CT_Rel).
+  // Word references ink and other opaque parts this way; the richer placement
+  // fields of ContentPartOptions only apply inside a wpg group child.
   if ("contentPart" in child) {
-    const opts = child.contentPart;
-    const mediaData: ContentPartMediaData = {
-      type: "contentPart",
-      referenceId: opts.referenceId,
-      transformation: opts.transformation ?? { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
-      ...(opts.nonVisualProperties ? { nonVisualProperties: opts.nonVisualProperties } : {}),
-      ...(opts.blackWhiteMode ? { blackWhiteMode: opts.blackWhiteMode } : {}),
-    };
-    const drawingXml = drawingDesc.stringify({ mediaData }, ctx);
-    return `<w:r>${drawingXml}</w:r>`;
+    return `<w:r><w:contentPart r:id="${child.contentPart.referenceId}"/></w:r>`;
   }
 
   // WPG Group (WordProcessing Group) — group of shapes/pictures
