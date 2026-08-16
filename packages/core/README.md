@@ -10,6 +10,7 @@
 
 - **Descriptor Runtime** — `CustomDescriptor<T>` for bidirectional XML stringify/parse
 - **DrawingML** — Fills, outlines, effects, geometry, text body, scene 3D, and more
+- **Vector (VML)** — Full structured VML vocabulary (vml, office, word, excel, presentation namespaces) for shapes, strokes, and legacy anchors
 - **Chart Components** — Shared chart types (bar, line, pie, area, scatter) and chart collection
 - **SmartArt Components** — Data model, tree-to-model converter, layout/style/color definitions
 - **OPC (Open Packaging)** — Content types, relationships, and ZIP packaging
@@ -17,7 +18,7 @@
 - **Unit Converters** — TWIP and EMU conversions (mm/in/pt/px)
 - **ID Generators** — Sequential numeric IDs, random IDs, SHA-1 hash, UUID v4
 - **Template Patching** — Placeholder replacement, XML traverser, and token replacer
-- **OOXML Compliance** — All types verified against ISO/IEC 29500-4 XSD schemas
+- **OOXML Compliance** — 100% element and attribute coverage across all 18 Transitional XSD schemas, verified by automated coverage tooling
 
 ## Installation
 

@@ -46,7 +46,7 @@ bun add office-open
 Generate Office Open XML documents.
 
 #description
-Create `.docx`, `.pptx`, and `.xlsx` files with JSON or TypeScript. Designed for AI agents and traditional workflows alike.
+Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeScript — a natural fit for AI agents and hand-written code alike.
 
 #links
 :::u-button
@@ -75,22 +75,22 @@ variant: outline
 features:
   - icon: i-lucide-braces
     title: JSON & TypeScript
-    description: Create documents with pure JSON objects or the TypeScript functional API. The JSON-first design pairs naturally with AI agents, LLM workflows, and tool-calling backed by frozen JSON Schemas.
+    description: Define documents as plain data — zero classes, zero boilerplate — with frozen JSON Schemas for tool-calling.
   - icon: i-lucide-layers
     title: Rich Content
-    description: Paragraphs, tables, images, charts, SmartArt, math equations, headers, footers, and more.
+    description: Paragraphs, tables, charts, images, SmartArt, math equations, headers, footers, and more.
   - icon: i-simple-icons-typescript
     title: Type-safe
-    description: Comprehensive TypeScript definitions for autocomplete and type safety across every API.
+    description: Comprehensive TypeScript definitions power autocomplete and catch errors as you type.
   - icon: i-lucide-monitor
     title: Cross-platform
-    description: Runs in Node.js, browsers, Deno, and Bun. Export to Buffer, Blob, Base64, stream, or string.
+    description: Runs in Node.js, browsers, Deno, and Bun; export to Buffer, Blob, Base64, stream, or string.
   - icon: i-lucide-shield-check
-    title: OOXML Compliant
-    description: Full coverage of the OOXML Transitional vocabulary — WordprocessingML, PresentationML, SpreadsheetML, and DrawingML. Output validates against the XSD and opens in Microsoft Office, WPS Office, LibreOffice, and Google Workspace.
+    title: OOXML Complete
+    description: Every OOXML Transitional element and attribute, both generating and parsing — output opens in every major office suite.
   - icon: i-lucide-package
     title: Modular Packages
-    description: Install only what you need — docx, pptx, xlsx, xml, or core. The unified office-open package adds a CLI and AI SDK tools.
+    description: Install just the format you need, or the unified package with CLI and AI SDK tools on top.
 ---
 ::
 
@@ -168,13 +168,13 @@ features:
 Build documents with [JSON]{.text-(--ui-primary)} or [TypeScript]{.text-(--ui-primary)}
 
 #description
-Define documents as plain JSON objects — zero class instantiation — or use the TypeScript functional API for a full IDE experience. Both produce valid OOXML markup.
+Define documents as plain JSON objects, or reach for the TypeScript API for a full IDE experience. Both produce the same valid OOXML markup.
 
 #links
 :::u-button
 ---
 color: neutral
-label: Explore @office-open/docx
+label: Explore Word docs
 to: /en/docx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
@@ -184,7 +184,7 @@ variant: subtle
 :::u-button
 ---
 color: neutral
-label: Explore @office-open/pptx
+label: Explore PowerPoint
 to: /en/pptx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
@@ -194,7 +194,7 @@ variant: subtle
 :::u-button
 ---
 color: neutral
-label: Explore @office-open/xlsx
+label: Explore Excel
 to: /en/xlsx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
@@ -277,7 +277,7 @@ const result = await patchWorkbook({
 Read and [modify]{.text-(--ui-primary)} existing files
 
 #description
-Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects for inspection, or patch templates by replacing `{{placeholder}}` tokens with new content.
+Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects, or patch templates by replacing `{{placeholder}}` tokens with new content.
 
 #links
 :::u-button

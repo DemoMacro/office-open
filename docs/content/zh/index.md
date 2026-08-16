@@ -46,7 +46,7 @@ bun add office-open
 生成 Office Open XML 文档。
 
 #description
-使用 JSON 或 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件。为 AI 代理和传统开发工作流而设计。
+用纯 JSON 或全类型 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件——AI 代理与手写代码同样顺手。
 
 #links
 :::u-button
@@ -75,22 +75,22 @@ variant: outline
 features:
   - icon: i-lucide-braces
     title: JSON 与 TypeScript
-    description: 使用纯 JSON 对象或 TypeScript 函数式 API 创建文档。JSON 优先的设计天然适配 AI 代理、LLM 工作流，以及由冻结 JSON Schema 支撑的工具调用。
+    description: 把文档定义为纯数据——零类、零样板——冻结 JSON Schema 直接支撑工具调用。
   - icon: i-lucide-layers
     title: 丰富内容
-    description: 段落、表格、图片、图表、SmartArt、数学公式、页眉、页脚等。
+    description: 段落、表格、图表、图片、SmartArt、数学公式、页眉、页脚等。
   - icon: i-simple-icons-typescript
     title: 类型安全
-    description: 全面的 TypeScript 类型定义，为每个 API 提供自动补全和类型安全。
+    description: 全面的 TypeScript 类型定义，边写边补全、边写边报错。
   - icon: i-lucide-monitor
     title: 跨平台
-    description: 支持 Node.js、浏览器、Deno 和 Bun。可导出为 Buffer、Blob、Base64、流或字符串。
+    description: 支持 Node.js、浏览器、Deno 和 Bun，可导出 Buffer、Blob、Base64、流或字符串。
   - icon: i-lucide-shield-check
-    title: 符合 OOXML 规范
-    description: 完整覆盖 OOXML Transitional 词汇表 — WordprocessingML、PresentationML、SpreadsheetML 与 DrawingML。输出通过 XSD 校验，可在 Microsoft Office、WPS Office、LibreOffice 和 Google Workspace 中打开。
+    title: OOXML 完整实现
+    description: 完整覆盖 OOXML Transitional 全部元素与属性，生成解析双向——主流办公套件全部直接打开。
   - icon: i-lucide-package
     title: 模块化包
-    description: 按需安装 — docx、pptx、xlsx、xml 或 core。统一的 office-open 包还提供 CLI 和 AI SDK 工具。
+    description: 按格式按需安装，统一包另附 CLI 与 AI SDK 工具。
 ---
 ::
 
@@ -168,13 +168,13 @@ features:
 使用 [JSON]{.text-(--ui-primary)} 或 TypeScript 构建文档
 
 #description
-将文档定义为纯 JSON 对象——零类实例化——或使用 TypeScript 函数式 API 获得完整的 IDE 体验。两者均生成有效的 OOXML 标记。
+把文档定义为纯 JSON 对象，或使用 TypeScript API 获得完整的 IDE 体验——两者生成同样有效的 OOXML 标记。
 
 #links
 :::u-button
 ---
 color: neutral
-label: 了解 @office-open/docx
+label: 了解 Word 文档
 to: /zh/docx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
@@ -184,7 +184,7 @@ variant: subtle
 :::u-button
 ---
 color: neutral
-label: 了解 @office-open/pptx
+label: 了解 PowerPoint
 to: /zh/pptx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
@@ -194,7 +194,7 @@ variant: subtle
 :::u-button
 ---
 color: neutral
-label: 了解 @office-open/xlsx
+label: 了解 Excel
 to: /zh/xlsx/quickstart
 trailingIcon: i-lucide-arrow-right
 variant: subtle
@@ -277,7 +277,7 @@ const result = await patchWorkbook({
 读取和[修改]{.text-(--ui-primary)}现有文件
 
 #description
-将 `.docx`、`.pptx` 和 `.xlsx` 文件解析为结构化对象进行检查，或通过替换 `{{占位符}}` 标记来修补模板。
+将 `.docx`、`.pptx` 和 `.xlsx` 文件解析为结构化对象，或替换 `{{占位符}}` 标记修补模板。
 
 #links
 :::u-button

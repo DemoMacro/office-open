@@ -10,7 +10,7 @@
 
 - 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API, no Office dependency
 - 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500), compatible with Microsoft Office, WPS Office, LibreOffice, and Google Workspace
-- 🧭 **Full Vocabulary Coverage** — Every element and attribute defined by WordprocessingML, PresentationML, SpreadsheetML, and DrawingML (including shared math) is implemented for both generation and parsing, tracked by automated XSD coverage tooling
+- 🧭 **Full Vocabulary Coverage** — Every element and attribute defined by the OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, and the deprecated VML vector vocabulary) is implemented for both generation and parsing, tracked by automated XSD coverage tooling
 - 🔒 **Fully Typed** — Comprehensive TypeScript definitions for autocomplete and type safety across every API
 - 🎯 **Pure JSON API** — Define documents as plain JSON objects, zero class instantiation, designed for AI agents
 - 🤖 **AI-Native** — Draft-07 JSON Schemas frozen from the TypeScript API, on-demand schema slicing for LLM context budgets (CLI + SDK tool), Vercel AI SDK tool definitions, and an installable Agent Skill
