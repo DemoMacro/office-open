@@ -9,7 +9,6 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { findChild } from "@office-open/xml";
 
 import {
   parseChartAnchor,
@@ -18,6 +17,7 @@ import {
   parseGroupAnchor,
   parseImageAnchor,
   parseShapeAnchor,
+  findXdr,
 } from "./parse";
 import {
   buildGroup,
@@ -106,43 +106,46 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
     const contentParts: DrawingContentPartOptions[] = [];
 
     for (const anchor of el.elements ?? []) {
-      const name = anchor.name;
+      // Office writes spreadsheetDrawing anchors in the default namespace or
+      // with the xdr: prefix — normalize before dispatching.
+      const rawName = anchor.name ?? "";
+      const name = rawName.startsWith("xdr:") ? rawName.slice(4) : rawName;
       if (name !== "twoCellAnchor" && name !== "oneCellAnchor" && name !== "absoluteAnchor") {
         continue;
       }
 
-      const pic = findChild(anchor, "pic");
+      const pic = findXdr(anchor, "pic");
       if (pic) {
         images.push(parseImageAnchor(anchor, pic, name));
         continue;
       }
 
-      const graphicFrame = findChild(anchor, "graphicFrame");
+      const graphicFrame = findXdr(anchor, "graphicFrame");
       if (graphicFrame) {
         const chart = parseChartAnchor(anchor, graphicFrame);
         if (chart) charts.push(chart);
         continue;
       }
 
-      const sp = findChild(anchor, "sp");
+      const sp = findXdr(anchor, "sp");
       if (sp) {
         shapes.push(parseShapeAnchor(anchor, sp, name, ctx));
         continue;
       }
 
-      const cxnSp = findChild(anchor, "cxnSp");
+      const cxnSp = findXdr(anchor, "cxnSp");
       if (cxnSp) {
         connectors.push(parseConnectorAnchor(anchor, cxnSp, name, ctx));
         continue;
       }
 
-      const grpSp = findChild(anchor, "grpSp");
+      const grpSp = findXdr(anchor, "grpSp");
       if (grpSp) {
         groups.push(parseGroupAnchor(anchor, grpSp, name, ctx));
         continue;
       }
 
-      const contentPart = findChild(anchor, "contentPart");
+      const contentPart = findXdr(anchor, "contentPart");
       if (contentPart) {
         const cp = parseContentPartAnchor(anchor, contentPart, name);
         if (cp) contentParts.push(cp);

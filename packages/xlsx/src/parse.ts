@@ -408,6 +408,10 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       for (const tr of tableRels) {
         const tableEl = xlsx.doc.get(tr.target);
         if (!tableEl) continue;
+        // The /table relationship also targets XML Map parts (singleXmlCells)
+        // whose root is not a table — skip anything else instead of feeding
+        // an unmodeled part through the table descriptor.
+        if (tableEl.name !== "table") continue;
         const tableData = tableDesc.parse(tableEl, readContext);
         tables.push(tableData);
       }
@@ -528,9 +532,10 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
             type: cs.type,
             ...(cs.title !== undefined ? { title: cs.title } : {}),
             ...(cs.categories ? { categories: [...cs.categories] } : {}),
-            series: (cs.series as ChartSeriesData[]).map((s) => ({
+            // A chartsheet chart may carry no c:ser at all (empty chart shell).
+            series: ((cs.series as ChartSeriesData[]) ?? []).map((s) => ({
               name: s.name,
-              values: [...s.values],
+              values: [...(s.values ?? [])],
             })),
           };
           break outer;

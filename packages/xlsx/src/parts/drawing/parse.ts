@@ -39,8 +39,18 @@ import type { EditAsType } from "./types";
 
 // ── Parse helpers ──
 
+/**
+ * SpreadsheetDrawing child lookup tolerant of both namespace forms Office
+ * writes: elements in the default namespace (our own output) and elements
+ * carrying the xdr: prefix (most external files). The DrawingML (a:) and
+ * chart (c:) children inside are always prefixed and go through findChild.
+ */
+export function findXdr(el: XmlElement, local: string): XmlElement | undefined {
+  return findChild(el, local) ?? findChild(el, `xdr:${local}`);
+}
+
 function readNumChild(el: XmlElement, tag: string): number {
-  const child = findChild(el, tag);
+  const child = findXdr(el, tag);
   if (!child?.elements?.length) return 0;
   const n = Number(child.elements[0]?.text ?? "");
   return Number.isNaN(n) ? 0 : n;
@@ -67,7 +77,7 @@ function readAnchorFields(anchor: XmlElement, name: string, result: DrawingAncho
   result.col = 1;
   result.row = 1;
 
-  const clientData = findChild(anchor, "clientData");
+  const clientData = findXdr(anchor, "clientData");
   if (clientData?.attributes) {
     if (clientData.attributes["fLocksWithSheet"] !== undefined) {
       result.locksWithSheet = parseOnOff(clientData.attributes["fLocksWithSheet"]) ?? true;
@@ -87,18 +97,18 @@ function readAnchorFields(anchor: XmlElement, name: string, result: DrawingAncho
 
   if (name === "absoluteAnchor") {
     result.anchorType = ANCHOR_TYPES.absolute;
-    const pos = findChild(anchor, "pos");
+    const pos = findXdr(anchor, "pos");
     if (pos?.attributes) {
       const x = Number(pos.attributes["x"]);
       const y = Number(pos.attributes["y"]);
       if (!Number.isNaN(x)) result.absoluteX = x;
       if (!Number.isNaN(y)) result.absoluteY = y;
     }
-    readExt(findChild(anchor, "ext"));
+    readExt(findXdr(anchor, "ext"));
     return;
   }
 
-  const from = findChild(anchor, "from");
+  const from = findXdr(anchor, "from");
   if (from) {
     const m = readMarker(from);
     result.col = m.col;
@@ -109,13 +119,13 @@ function readAnchorFields(anchor: XmlElement, name: string, result: DrawingAncho
 
   if (name === "oneCellAnchor") {
     result.anchorType = ANCHOR_TYPES.oneCell;
-    readExt(findChild(anchor, "ext"));
+    readExt(findXdr(anchor, "ext"));
     return;
   }
 
   // twoCellAnchor
   result.anchorType = ANCHOR_TYPES.twoCell;
-  const to = findChild(anchor, "to");
+  const to = findXdr(anchor, "to");
   if (to) {
     const m = readMarker(to);
     result.toCol = m.col;
@@ -132,8 +142,8 @@ function readCNvPr(
   parent: XmlElement,
   nonVisualTag: string,
 ): Partial<NonVisualDrawingPropertiesOptions> {
-  const nonVisual = findChild(parent, nonVisualTag);
-  const cNvPr = nonVisual ? findChild(nonVisual, "cNvPr") : undefined;
+  const nonVisual = findXdr(parent, nonVisualTag);
+  const cNvPr = nonVisual ? findXdr(nonVisual, "cNvPr") : undefined;
   return parseNonVisualDrawingProperties(cNvPr);
 }
 
@@ -158,14 +168,14 @@ export function parseImageAnchor(
 }
 
 function readPicRId(pic: XmlElement): string | undefined {
-  const blipFill = findChild(pic, "blipFill") ?? pic;
+  const blipFill = findXdr(pic, "blipFill") ?? pic;
   const blip = findChild(blipFill, "a:blip");
   return blip?.attributes?.["r:embed"] as string | undefined;
 }
 
 /** Picture extent from pic/spPr/a:xfrm/a:ext (actual image size in EMU). */
 function readPicExtent(pic: XmlElement): { cx?: number; cy?: number } {
-  const spPr = findChild(pic, "spPr");
+  const spPr = findXdr(pic, "spPr");
   const xfrm = spPr ? findChild(spPr, "a:xfrm") : undefined;
   const ext = xfrm ? findChild(xfrm, "a:ext") : undefined;
   if (!ext?.attributes) return {};
@@ -190,7 +200,7 @@ export function parseChartAnchor(
   if (!rId) return undefined;
 
   const result: DrawingChartOptions = { col: 1, row: 1, rId };
-  const from = findChild(anchor, "from");
+  const from = findXdr(anchor, "from");
   if (from) {
     const m = readMarker(from);
     result.col = m.col;
@@ -198,7 +208,7 @@ export function parseChartAnchor(
     if (m.colOffset !== undefined) result.colOffset = m.colOffset;
     if (m.rowOffset !== undefined) result.rowOffset = m.rowOffset;
   }
-  const clientData = findChild(anchor, "clientData");
+  const clientData = findXdr(anchor, "clientData");
   if (clientData?.attributes) {
     if (clientData.attributes["fLocksWithSheet"] !== undefined) {
       result.locksWithSheet = parseOnOff(clientData.attributes["fLocksWithSheet"]) ?? true;
@@ -221,10 +231,10 @@ export function parseShapeAnchor(
 
   Object.assign(result, readCNvPr(sp, "nvSpPr"));
 
-  const spPr = findChild(sp, "spPr");
+  const spPr = findXdr(sp, "spPr");
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
 
-  const txBody = findChild(sp, "txBody");
+  const txBody = findXdr(sp, "txBody");
   if (txBody) result.textBody = textBodyDesc.parse(txBody, ctx);
 
   if (sp.attributes?.["macro"] !== undefined) result.macro = String(sp.attributes["macro"]);
@@ -243,9 +253,9 @@ function readConnectorNonVisual(
   cxnSp: XmlElement,
   ctx: ReadContext,
 ): void {
-  const nvCxnSpPr = findChild(cxnSp, "nvCxnSpPr");
+  const nvCxnSpPr = findXdr(cxnSp, "nvCxnSpPr");
   if (!nvCxnSpPr) return;
-  const cNvCxnSpPr = findChild(nvCxnSpPr, "cNvCxnSpPr");
+  const cNvCxnSpPr = findXdr(nvCxnSpPr, "cNvCxnSpPr");
   if (!cNvCxnSpPr) return;
   const cxnSpLocks = findChild(cNvCxnSpPr, "a:cxnSpLocks");
   if (cxnSpLocks) {
@@ -275,7 +285,7 @@ export function parseConnectorAnchor(
 
   Object.assign(result, readCNvPr(cxnSp, "nvCxnSpPr"));
 
-  const spPr = findChild(cxnSp, "spPr");
+  const spPr = findXdr(cxnSp, "spPr");
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
 
   if (cxnSp.attributes?.["macro"] !== undefined) result.macro = String(cxnSp.attributes["macro"]);
@@ -295,7 +305,7 @@ export function parseGroupAnchor(
 
   Object.assign(result, readCNvPr(grpSp, "nvGrpSpPr"));
 
-  const grpSpPrEl = findChild(grpSp, "grpSpPr");
+  const grpSpPrEl = findXdr(grpSp, "grpSpPr");
   if (grpSpPrEl) {
     result.grpSpPr = groupShapePropertiesDesc.parse(grpSpPrEl, ctx);
   }
@@ -304,12 +314,12 @@ export function parseGroupAnchor(
   const childConnectors: GroupConnectorChildOptions[] = [];
   for (const child of grpSp.elements ?? []) {
     if (child.name === "sp") {
-      const spPr = findChild(child, "spPr");
+      const spPr = findXdr(child, "spPr");
       const childShape = {
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupShapeChildOptions;
       Object.assign(childShape, readCNvPr(child, "nvSpPr"));
-      const txBody = findChild(child, "txBody");
+      const txBody = findXdr(child, "txBody");
       if (txBody) childShape.textBody = textBodyDesc.parse(txBody, ctx);
       if (child.attributes?.["macro"] !== undefined)
         childShape.macro = String(child.attributes["macro"]);
@@ -317,7 +327,7 @@ export function parseGroupAnchor(
         childShape.textlink = String(child.attributes["textlink"]);
       shapes.push(childShape);
     } else if (child.name === "cxnSp") {
-      const spPr = findChild(child, "spPr");
+      const spPr = findXdr(child, "spPr");
       const childConn = {
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupConnectorChildOptions;

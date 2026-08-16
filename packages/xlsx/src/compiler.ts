@@ -776,6 +776,10 @@ function compileWorksheetPart(
       state.globalTableIdx++;
       const tableIdx = state.globalTableIdx;
 
+      // A table without columns cannot form valid tableColumns XML — skip
+      // instead of emitting a broken part (defensive; parse filters these).
+      if (!tbl.columns?.length) continue;
+
       // Generate table XML
       const tableXmlStr =
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -880,8 +884,11 @@ function compileChartsheets(
 ): void {
   // Chartsheets — chart-only sheets
   for (const [i, csOpts] of chartsheetConfigs.entries()) {
-    // Register chart in the charts collection
+    // Register chart in the charts collection. Skip a chartsheet whose chart
+    // could not be resolved (missing drawing/chart part in a broken source) —
+    // safer than crashing the whole workbook compile.
     const chartDef = csOpts.chart;
+    if (!chartDef) continue;
     const csChartGlobalIdx = ctx.charts.array.length;
     const csChartKey = `cs_chart_${csChartGlobalIdx}`;
     ctx.charts.addChart(csChartKey, {
