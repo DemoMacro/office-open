@@ -26,6 +26,7 @@ export * from "./textbox";
 export * from "./bibliography";
 export * from "./glossary-document";
 export * from "./object";
+export * from "./pict";
 export * from "./comments";
 export * from "./comments-extended";
 export * from "./people";

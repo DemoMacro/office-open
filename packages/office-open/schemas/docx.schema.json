@@ -11162,6 +11162,17 @@
         {
           "additionalProperties": false,
           "properties": {
+            "pict": {
+              "$ref": "#/definitions/PictOptions"
+            }
+          },
+          "required": ["pict"],
+          "title": "pict",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "contentPart": {
               "$ref": "#/definitions/ContentPartOptions"
             }
@@ -13446,6 +13457,45 @@
         },
         "middle": {
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "PictMediaOptions": {
+      "additionalProperties": false,
+      "description": "Binary backing one v:imagedata r:id reference in the shape tree.",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataType"
+        },
+        "fileName": {
+          "description": "Placeholder key matching the `{fileName}` token in the imagedata r:id.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Image type / extension (e.g. \"png\", \"wmf\").",
+          "type": "string"
+        }
+      },
+      "required": ["fileName", "data", "type"],
+      "type": "object"
+    },
+    "PictOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "description": "Ordered shape elements — shapetype preambles, shapes, groups, …",
+          "items": {
+            "$ref": "#/definitions/VmlShapeChild"
+          },
+          "type": "array"
+        },
+        "media": {
+          "description": "Binaries referenced by v:imagedata r:id (round-trip; authoring supplies media entries and matching `{fileName}` relationshipId placeholders).",
+          "items": {
+            "$ref": "#/definitions/PictMediaOptions"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -21680,6 +21730,265 @@
       "description": "w10:anchorlock options (CT_AnchorLock) — empty marker element.",
       "type": "object"
     },
+    "VmlArcOptions": {
+      "additionalProperties": false,
+      "description": "v:arc options (CT_Arc).",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "endAngle": {
+          "description": "End angle in degrees.",
+          "type": "number"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "startAngle": {
+          "description": "Start angle in degrees.",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "VmlBlackWhiteMode": {
       "description": "ST_BWMode (o:) — black-and-white rendering fallback.",
       "enum": [
@@ -22117,10 +22426,354 @@
       "enum": ["none", "straight", "elbow", "curved"],
       "type": "string"
     },
+    "VmlCurveOptions": {
+      "additionalProperties": false,
+      "description": "v:curve options (CT_Curve).",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "control1": {
+          "type": "string"
+        },
+        "control2": {
+          "type": "string"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "from": {
+          "type": "string"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "VmlDiagramLayout": {
       "description": "ST_DiagramLayout (o:) — layout code kept in its XML string spelling.",
       "enum": ["0", "1", "2", "3"],
       "type": "string"
+    },
+    "VmlDiagramOptions": {
+      "additionalProperties": false,
+      "description": "o:diagram options (CT_Diagram) — legacy org-chart/diagram shape group.",
+      "properties": {
+        "autoformat": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "autolayout": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "constrainbounds": {
+          "type": "string"
+        },
+        "dgmbasetextscale": {
+          "type": "number"
+        },
+        "dgmfontsize": {
+          "type": "number"
+        },
+        "dgmscalex": {
+          "type": "number"
+        },
+        "dgmscaley": {
+          "type": "number"
+        },
+        "dgmstyle": {
+          "type": "number"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "relations": {
+          "items": {
+            "$ref": "#/definitions/VmlDiagramRelationOptions"
+          },
+          "type": "array"
+        },
+        "reverse": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        }
+      },
+      "type": "object"
+    },
+    "VmlDiagramRelationOptions": {
+      "additionalProperties": false,
+      "description": "CT_Relation — one relationtable row.",
+      "properties": {
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "idcntr": {
+          "type": "string"
+        },
+        "iddest": {
+          "type": "string"
+        },
+        "idsrc": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlEditAs": {
+      "description": "ST_EditAs.",
+      "enum": ["canvas", "orgchart", "radial", "cycle", "stacked", "venn", "bullseye"],
+      "type": "string"
+    },
+    "VmlEquationXmlOptions": {
+      "additionalProperties": false,
+      "description": "o:equationxml options (CT_EquationXml) — the alternative math content, carried as verbatim inner XML (the XSD allows any single element).",
+      "properties": {
+        "content": {
+          "description": "Inner XML of the alternate equation element, serialized verbatim.",
+          "type": "string"
+        },
+        "contentType": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "VmlExtensionMode": {
       "description": "ST_Ext — the v:ext extension-slot attribute carried by every o: element.",
@@ -22372,6 +23025,277 @@
       },
       "type": "object"
     },
+    "VmlGroupOptions": {
+      "additionalProperties": false,
+      "description": "v:group options (CT_Group) — full attr vocabulary + fill subset + nested shapes.",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "children": {
+          "items": {
+            "$ref": "#/definitions/VmlShapeChild"
+          },
+          "type": "array"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "diagram": {
+          "$ref": "#/definitions/VmlDiagramOptions",
+          "description": "o:diagram child — legacy org-chart/diagram payload."
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "editas": {
+          "$ref": "#/definitions/VmlEditAs"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "tablelimits": {
+          "type": "string"
+        },
+        "tableproperties": {
+          "description": "o:tableproperties / o:tablelimits — legacy diagram table metadata.",
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "VmlHandleOptions": {
       "additionalProperties": false,
       "description": "v:h options (CT_H). `switch` matches the XML attribute name.",
@@ -22537,10 +23461,571 @@
       },
       "type": "object"
     },
+    "VmlImageOptions": {
+      "additionalProperties": false,
+      "description": "v:image options (CT_Image) — AG_ImageAttributes rides along.",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "bilevel": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "blacklevel": {
+          "type": "string"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "cropbottom": {
+          "type": "string"
+        },
+        "cropleft": {
+          "type": "string"
+        },
+        "cropright": {
+          "type": "string"
+        },
+        "croptop": {
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "gain": {
+          "type": "string"
+        },
+        "gamma": {
+          "type": "string"
+        },
+        "grayscale": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "src": {
+          "type": "string"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlInkOptions": {
+      "additionalProperties": false,
+      "description": "o:ink options (CT_Ink) — Tablet PC ink annotation data.",
+      "properties": {
+        "annotation": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "i": {
+          "description": "Ink data — an ISF-encoded string.",
+          "type": "string"
+        }
+      },
+      "required": ["i"],
+      "type": "object"
+    },
     "VmlInsetMode": {
       "description": "ST_InsetMode (o:).",
       "enum": ["auto", "custom"],
       "type": "string"
+    },
+    "VmlIsCommentOptions": {
+      "additionalProperties": false,
+      "description": "pvml:iscomment options (CT_Empty) — empty marker element.",
+      "type": "object"
+    },
+    "VmlLineOptions": {
+      "additionalProperties": false,
+      "description": "v:line options (CT_Line).",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "from": {
+          "type": "string"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "VmlLockOptions": {
       "additionalProperties": false,
@@ -22613,6 +24098,257 @@
       ],
       "type": "string"
     },
+    "VmlOvalOptions": {
+      "additionalProperties": false,
+      "description": "v:oval options (CT_Oval).",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "VmlPathOptions": {
       "additionalProperties": false,
       "description": "v:path options (CT_Path).",
@@ -22670,6 +24406,515 @@
       },
       "type": "object"
     },
+    "VmlPolylineOptions": {
+      "additionalProperties": false,
+      "description": "v:polyline options (CT_PolyLine).",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "ink": {
+          "$ref": "#/definitions/VmlInkOptions",
+          "description": "o:ink child — ink annotation riding on the polyline."
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "points": {
+          "type": "string"
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlRectOptions": {
+      "additionalProperties": false,
+      "description": "v:rect options (CT_Rect).",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "VmlRegroupEntryOptions": {
       "additionalProperties": false,
       "description": "CT_Entry — one regroup-table row.",
@@ -22695,6 +24940,260 @@
         },
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
+        }
+      },
+      "type": "object"
+    },
+    "VmlRoundRectOptions": {
+      "additionalProperties": false,
+      "description": "v:roundrect options (CT_RoundRect).",
+      "properties": {
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "arcsize": {
+          "type": "string"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
         }
       },
       "type": "object"
@@ -22831,6 +25330,132 @@
       "enum": ["single", "double", "emboss", "perspective"],
       "type": "string"
     },
+    "VmlShapeChild": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "shape": {
+              "$ref": "#/definitions/VmlShapeOptions"
+            }
+          },
+          "required": ["shape"],
+          "title": "shape",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "shapetype": {
+              "$ref": "#/definitions/VmlShapetypeOptions"
+            }
+          },
+          "required": ["shapetype"],
+          "title": "shapetype",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "group": {
+              "$ref": "#/definitions/VmlGroupOptions"
+            }
+          },
+          "required": ["group"],
+          "title": "group",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "arc": {
+              "$ref": "#/definitions/VmlArcOptions"
+            }
+          },
+          "required": ["arc"],
+          "title": "arc",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "curve": {
+              "$ref": "#/definitions/VmlCurveOptions"
+            }
+          },
+          "required": ["curve"],
+          "title": "curve",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "image": {
+              "$ref": "#/definitions/VmlImageOptions"
+            }
+          },
+          "required": ["image"],
+          "title": "image",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "line": {
+              "$ref": "#/definitions/VmlLineOptions"
+            }
+          },
+          "required": ["line"],
+          "title": "line",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "oval": {
+              "$ref": "#/definitions/VmlOvalOptions"
+            }
+          },
+          "required": ["oval"],
+          "title": "oval",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "polyline": {
+              "$ref": "#/definitions/VmlPolylineOptions"
+            }
+          },
+          "required": ["polyline"],
+          "title": "polyline",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "rect": {
+              "$ref": "#/definitions/VmlRectOptions"
+            }
+          },
+          "required": ["rect"],
+          "title": "rect",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "roundrect": {
+              "$ref": "#/definitions/VmlRoundRectOptions"
+            }
+          },
+          "required": ["roundrect"],
+          "title": "roundrect",
+          "type": "object"
+        }
+      ],
+      "description": "One shape element — single-key wrapper, like the format packages' child unions. Hosts v:group children and w:pict content (both are xsd:any over the shape vocabulary)."
+    },
     "VmlShapeDefaultsOptions": {
       "additionalProperties": false,
       "description": "o:shapedefaults options (CT_ShapeDefaults).",
@@ -22909,6 +25534,285 @@
         },
         "rules": {
           "$ref": "#/definitions/VmlRulesOptions"
+        }
+      },
+      "type": "object"
+    },
+    "VmlShapeOptions": {
+      "additionalProperties": false,
+      "description": "v:shape options (CT_Shape).",
+      "properties": {
+        "adj": {
+          "description": "AG_Adj — adjustment values, e.g. \"1,500\".",
+          "type": "string"
+        },
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "equationxml": {
+          "description": "`@equationxml` — alternative-equation string attribute.",
+          "type": "string"
+        },
+        "equationxmlElement": {
+          "$ref": "#/definitions/VmlEquationXmlOptions",
+          "description": "o:equationxml child — alternate math content as verbatim XML."
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "gfxdata": {
+          "description": "o:gfxdata — base64 shape geometry payload (UI cache).",
+          "type": "string"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "ink": {
+          "$ref": "#/definitions/VmlInkOptions",
+          "description": "o:ink child — Tablet PC ink annotation."
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "iscomment": {
+          "$ref": "#/definitions/VmlIsCommentOptions",
+          "description": "pvml:iscomment child — PowerPoint ink-comment marker."
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "description": "Shapetype reference, e.g. \"#_x0000_t202\".",
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
         }
       },
       "type": "object"

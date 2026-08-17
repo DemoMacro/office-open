@@ -25,6 +25,8 @@ import type {
   RunPropertiesOptions,
   RunOptions,
 } from "@parts/paragraph/run";
+import { parsePict } from "@parts/pict";
+import type { PictOptions } from "@parts/pict";
 import { parseShading } from "@shared/shading";
 
 import type { DocxReadContext } from "../../../context";
@@ -467,11 +469,16 @@ export function parseRun(
         if (id !== undefined) children.push({ commentReference: id });
         break;
       }
-      // Drawing/pict are handled at the paragraph level (parseSectionChild in body.ts)
+      // Drawing is handled at the paragraph level (parseSectionChild in body.ts)
       // where the drawing is extracted and replaced as a paragraph child.
       case "w:drawing":
-      case "w:pict":
         break;
+      // VML picture — ordered shape children with imagedata media bridged
+      // from the part's rels (r:id → bytes → `{fileName}` placeholder).
+      case "w:pict": {
+        children.push({ pict: parsePict(child, _ctx) } as unknown as ParsedRunChild);
+        break;
+      }
       case "w:object": {
         children.push({ object: objectDesc.parse(child, _ctx) } as unknown as ParsedRunChild);
         break;
@@ -641,15 +648,26 @@ export function parsedRunToOptions(
     return nonRefChildren[symbolIdx] as unknown as RunOptions;
   }
 
-  // If the run contains an OLE object (w:object), return it directly with any
-  // run properties — an OLE object occupies its own run.
+  // If the run contains only an OLE object (w:object), return it directly with
+  // any run properties — an OLE object occupies its own run. Mixed with other
+  // content it stays in children[] (handled below, order-preserving).
   const objectIdx = nonRefChildren.findIndex(
     (c) => typeof c === "object" && c !== null && "object" in c,
   );
-  if (objectIdx >= 0) {
+  if (objectIdx >= 0 && nonRefChildren.length === 1) {
     const objectChild = nonRefChildren[objectIdx] as { object: ObjectElementOptions };
     return { ...parsed.properties, ...objectChild } as unknown as RunOptions;
   }
+
+  // A VML picture (w:pict) likewise occupies its own run when alone.
+  const pictIdx = nonRefChildren.findIndex(
+    (c) => typeof c === "object" && c !== null && "pict" in c,
+  );
+  if (pictIdx >= 0 && nonRefChildren.length === 1) {
+    const pictChild = nonRefChildren[pictIdx] as unknown as { pict: PictOptions };
+    return { ...parsed.properties, ...pictChild } as unknown as RunOptions;
+  }
+  const hasBlockChild = objectIdx >= 0 || pictIdx >= 0;
 
   // Collect text and breaks
   const textParts: string[] = [];
@@ -683,6 +701,7 @@ export function parsedRunToOptions(
   const hasStructuredBreaks = structuredBreaks.length > 0;
   const useChildrenForm =
     mixedRefs ||
+    (hasBlockChild && nonRefChildren.length > 1) ||
     extraChildren.length > 0 ||
     (hasStructuredBreaks &&
       (breakCount > 0 || structuredBreaks.length > 1 || hasPageBreak || hasColumnBreak));
@@ -700,7 +719,9 @@ export function parsedRunToOptions(
         children.push({ columnBreak: true });
       } else if (typeof child === "object" && child !== null && "break" in child) {
         children.push({ break: (child as { break: BreakOptions }).break });
-      } else if (typeof child === "object" && child !== null && isRefChild(child)) {
+      } else if (typeof child === "object" && child !== null) {
+        // Ref children, w:object/w:pict block children, symbol runs — keep the
+        // parsed wrapper as-is so stringify re-emits it bare inside this run.
         children.push(child);
       } else {
         const mapped = SYMBOL_TO_CHILD.get(child as symbol);

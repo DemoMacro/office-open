@@ -212,8 +212,10 @@ export interface VmlShapetypeOptions extends VmlBaseShapeFields {
   complex?: VmlComplexOptions;
 }
 
-/** One nested shape inside a v:group — single-key wrapper, like the format packages' child unions. */
-export type VmlGroupChild =
+/** One shape element — single-key wrapper, like the format packages' child
+ *  unions. Hosts v:group children and w:pict content (both are xsd:any over
+ *  the shape vocabulary). */
+export type VmlShapeChild =
   | { shape: VmlShapeOptions }
   | { shapetype: VmlShapetypeOptions }
   | { group: VmlGroupOptions }
@@ -236,7 +238,7 @@ export interface VmlGroupOptions extends VmlBaseShapeFields {
   tablelimits?: string;
   /** o:diagram child — legacy org-chart/diagram payload. */
   diagram?: VmlDiagramOptions;
-  children?: VmlGroupChild[];
+  children?: VmlShapeChild[];
 }
 
 /** v:background options (CT_Background). */
@@ -587,8 +589,8 @@ export function parseVmlShapetype(el: XmlElement): VmlShapetypeOptions {
 
 // ── v:group ──
 
-/** Serialize one VmlGroupChild. */
-function stringifyGroupChild(child: VmlGroupChild): string {
+/** Serialize one VmlShapeChild. */
+export function stringifyVmlShapeChild(child: VmlShapeChild): string {
   if ("shape" in child) return stringifyVmlShape(child.shape);
   if ("shapetype" in child) return stringifyVmlShapetype(child.shapetype);
   if ("group" in child) return stringifyVmlGroup(child.group);
@@ -613,10 +615,41 @@ const GROUP_ATTRS: readonly VmlAttrSpec[] = [
   ...PATH_ATTR,
 ];
 
+/** Parse one shape element into its VmlShapeChild wrapper, or undefined when
+ *  the element is not part of the shape vocabulary. */
+export function parseVmlShapeChild(el: XmlElement): VmlShapeChild | undefined {
+  switch (el.name) {
+    case "v:shape":
+      return { shape: parseVmlShape(el) };
+    case "v:shapetype":
+      return { shapetype: parseVmlShapetype(el) };
+    case "v:group":
+      return { group: parseVmlGroup(el) };
+    case "v:arc":
+      return { arc: parseVmlArc(el) };
+    case "v:curve":
+      return { curve: parseVmlCurve(el) };
+    case "v:image":
+      return { image: parseVmlImage(el) };
+    case "v:line":
+      return { line: parseVmlLine(el) };
+    case "v:oval":
+      return { oval: parseVmlOval(el) };
+    case "v:polyline":
+      return { polyline: parseVmlPolyline(el) };
+    case "v:rect":
+      return { rect: parseVmlRect(el) };
+    case "v:roundrect":
+      return { roundrect: parseVmlRoundRect(el) };
+    default:
+      return undefined;
+  }
+}
+
 /** Serialize v:group. */
 export function stringifyVmlGroup(opts: VmlGroupOptions): string {
   let children =
-    (opts.children ?? []).map(stringifyGroupChild).join("") + stringifyShapeElements(opts);
+    (opts.children ?? []).map(stringifyVmlShapeChild).join("") + stringifyShapeElements(opts);
   if (opts.diagram !== undefined) children += stringifyVmlDiagram(opts.diagram);
   const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, GROUP_ATTRS);
   const style = opts.style;
@@ -635,46 +668,14 @@ export function parseVmlGroup(el: XmlElement): VmlGroupOptions {
   }
   parseShapeElements(el, out);
 
-  const children: VmlGroupChild[] = [];
+  const children: VmlShapeChild[] = [];
   for (const child of el.elements ?? []) {
     if (child.type !== "element") continue;
-    switch (child.name) {
-      case "v:shape":
-        children.push({ shape: parseVmlShape(child) });
-        break;
-      case "v:shapetype":
-        children.push({ shapetype: parseVmlShapetype(child) });
-        break;
-      case "v:group":
-        children.push({ group: parseVmlGroup(child) });
-        break;
-      case "v:arc":
-        children.push({ arc: parseVmlArc(child) });
-        break;
-      case "v:curve":
-        children.push({ curve: parseVmlCurve(child) });
-        break;
-      case "v:image":
-        children.push({ image: parseVmlImage(child) });
-        break;
-      case "v:line":
-        children.push({ line: parseVmlLine(child) });
-        break;
-      case "v:oval":
-        children.push({ oval: parseVmlOval(child) });
-        break;
-      case "v:polyline":
-        children.push({ polyline: parseVmlPolyline(child) });
-        break;
-      case "v:rect":
-        children.push({ rect: parseVmlRect(child) });
-        break;
-      case "v:roundrect":
-        children.push({ roundrect: parseVmlRoundRect(child) });
-        break;
-      case "o:diagram":
-        out.diagram = parseVmlDiagram(child);
-        break;
+    const shapeChild = parseVmlShapeChild(child);
+    if (shapeChild !== undefined) {
+      children.push(shapeChild);
+    } else if (child.name === "o:diagram") {
+      out.diagram = parseVmlDiagram(child);
     }
   }
   if (children.length > 0) out.children = children;

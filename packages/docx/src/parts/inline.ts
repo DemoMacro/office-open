@@ -42,6 +42,7 @@ import {
   type RunOptions,
 } from "@parts/paragraph/run/run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
+import { stringifyPict, type PictOptions } from "@parts/pict";
 import type {
   ChartMediaData,
   GroupChildMediaData,
@@ -225,6 +226,11 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           // narrows to unknown — cast back to the object variant payload.
           body +=
             objectDesc.stringify((child as { object: ObjectElementOptions }).object, ctx) ?? "";
+          continue;
+        }
+        // VML picture — w:pict emits bare inside this <w:r>
+        if ("pict" in child) {
+          body += stringifyPict((child as { pict: PictOptions }).pict, ctx);
           continue;
         }
         // JSON child dispatch (images, charts, hyperlinks, etc.)
@@ -617,6 +623,13 @@ export function stringifyChildDispatch(
   if ("object" in child) {
     const rPr = stringifyRunProperties(child as RunOptions) ?? "";
     return `<w:r>${rPr}${objectDesc.stringify(child.object, ctx)}</w:r>`;
+  }
+
+  // VML picture run — same flattening: a bare { pict } child carries its run
+  // properties merged in, and w:pict is emitted inside its own <w:r>.
+  if ("pict" in child) {
+    const rPr = stringifyRunProperties(child as RunOptions) ?? "";
+    return `<w:r>${rPr}${stringifyPict(child.pict, ctx)}</w:r>`;
   }
 
   // Form field (checkbox / dropdown list / text input) — fldChar sequence.

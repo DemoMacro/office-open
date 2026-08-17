@@ -9,6 +9,7 @@
 import type { CustomXmlRunOptions } from "@parts/custom-xml";
 import type { ObjectElementOptions } from "@parts/object";
 import type { PermStartOptions } from "@parts/perm-start";
+import type { PictOptions } from "@parts/pict";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ContentPartOptions } from "@shared/media/data";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
@@ -159,6 +160,8 @@ export type ParagraphChild =
   | { wpgGroup: GroupOptions }
   // OLE object (w:object) — occupies its own paragraph-child slot
   | { object: ObjectElementOptions }
+  // VML picture (w:pict) — run-level pre-DrawingML drawing, own paragraph child
+  | { pict: PictOptions }
   | { contentPart: ContentPartOptions }
   // Proof error markers
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
