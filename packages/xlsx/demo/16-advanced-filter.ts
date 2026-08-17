@@ -23,7 +23,7 @@ const buffer = await generateWorkbook({
             customFilters: { entries: [{ operator: "greaterThan", val: "200" }] },
           },
         ],
-        sort: [{ ref: "B1", descending: true }],
+        sortState: { ref: "A1:C6", conditions: [{ ref: "B1", descending: true }] },
       },
     },
     {

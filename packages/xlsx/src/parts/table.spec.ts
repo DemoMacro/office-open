@@ -255,7 +255,7 @@ describe("tableDesc round-trip", () => {
       autoFilter: {
         ref: "A1:B4",
         columns: [{ colId: 0, customFilters: { entries: [{ operator: "equal", val: "yes" }] } }],
-        sort: [{ ref: "A1", descending: true }],
+        sortState: { ref: "A1:B4", conditions: [{ ref: "A1", descending: true }] },
       },
       columns: [{ name: "X" }],
     };
@@ -266,6 +266,9 @@ describe("tableDesc round-trip", () => {
     expect(af.columns).toEqual([
       { colId: 0, customFilters: { entries: [{ operator: "equal", val: "yes" }] } },
     ]);
-    expect(af.sort).toEqual([{ ref: "A1", descending: true }]);
+    expect(af.sortState).toEqual({
+      ref: "A1:B4",
+      conditions: [{ ref: "A1", descending: true }],
+    });
   });
 });

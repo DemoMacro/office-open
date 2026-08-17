@@ -14,7 +14,7 @@ import {
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
 import { SharedStrings } from "@parts/shared-strings";
-import { Styles } from "@parts/styles";
+import { Styles, builtinNumFmtCode } from "@parts/styles";
 import type { DxfOptions, StyleOptions, StylesParseResult } from "@parts/styles";
 import type { PivotCacheReference } from "@parts/workbook";
 import { Media, type MediaData } from "@shared/media";
@@ -195,8 +195,10 @@ export class XlsxReadContext implements ReadContext {
     if (borderId !== undefined && borders && borderId < borders.length)
       result.border = borders[borderId];
     const numFmtId = xf.numFmtId;
-    if (numFmtId !== undefined && customNumFmtById) {
-      const code = customNumFmtById.get(numFmtId);
+    if (numFmtId !== undefined) {
+      // Custom <numFmts> entries win; built-in ids (0-49) resolve through the
+      // builtin table so date/percent cells keep their format on round-trip.
+      const code = customNumFmtById?.get(numFmtId) ?? builtinNumFmtCode(numFmtId);
       if (code !== undefined) result.numFmt = code;
     }
     if (xf.alignment) result.alignment = xf.alignment;

@@ -177,6 +177,7 @@ export function parseSheetDataRows(
 
     const row: RowOptions = {};
     let rowClose = tagEnd;
+    let rowStyleIdx: number | undefined;
     scanAttrs(raw, rowOpen + 4, attrEnd, (name, value) => {
       switch (name) {
         case "r": {
@@ -207,8 +208,27 @@ export function parseSheetDataRows(
         case "ph":
           if (isOn(value)) row.phonetic = true;
           break;
+        case "outlineLevel": {
+          const n = Number(value);
+          if (!isNaN(n)) row.outlineLevel = n;
+          break;
+        }
+        case "collapsed":
+          if (isOn(value)) row.collapsed = true;
+          break;
+        case "s": {
+          const n = Number(value);
+          if (!isNaN(n)) rowStyleIdx = n;
+          break;
+        }
       }
     });
+    if (rowStyleIdx !== undefined) {
+      // Same resolution as cells: concrete StyleOptions when the styles table
+      // resolves, raw index otherwise.
+      const resolved = ctx ? ctx.resolveStyle(rowStyleIdx) : undefined;
+      row.style = resolved ?? rowStyleIdx;
+    }
 
     const cells: CellOptions[] = [];
     if (!selfClosing) {

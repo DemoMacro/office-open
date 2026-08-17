@@ -10,7 +10,7 @@ import { convertToInch, convertToPt, derivePasswordHash } from "@office-open/cor
 import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
-import { stringifyAutoFilter } from "../auto-filter";
+import { stringifyAutoFilter, stringifySortStateXml } from "../auto-filter";
 import { buildPivotAreaXml } from "../pivot-table/stringify";
 import { buildRstXml } from "../shared-strings";
 import type { SharedStrings } from "../shared-strings";
@@ -315,6 +315,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   // Auto filter (CT_AutoFilter is shared with table — logic in auto-filter.ts)
   if (opts.autoFilter) {
     p.push(stringifyAutoFilter(opts.autoFilter));
+  }
+
+  // Sheet-level sort state (after autoFilter per XSD sequence)
+  if (opts.sortState) {
+    p.push(stringifySortStateXml(opts.sortState));
   }
 
   // Data consolidation
@@ -927,10 +932,23 @@ export function appendSheetDataRows(
     }
     if (rowOpts.hidden) rowAttr += ' hidden="1"';
     if (rowOpts.spans) rowAttr += ` spans="${rowOpts.spans}"`;
-    if (rowOpts.customFormat) rowAttr += ' customFormat="1"';
+    let hasStyle = false;
+    if (typeof rowOpts.style === "number") {
+      // Round-trip fallback: emit the carried cellXfs index verbatim.
+      rowAttr += ` s="${rowOpts.style}"`;
+      hasStyle = true;
+    } else if (rowOpts.style !== undefined && styles) {
+      rowAttr += ` s="${styles.register(rowOpts.style)}"`;
+      hasStyle = true;
+    }
+    // A row style only takes effect when customFormat flags it (Excel always
+    // pairs @s with customFormat="1").
+    if (rowOpts.customFormat || hasStyle) rowAttr += ' customFormat="1"';
     if (rowOpts.thickTop) rowAttr += ' thickTop="1"';
     if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
     if (rowOpts.phonetic) rowAttr += ' ph="1"';
+    if (rowOpts.outlineLevel !== undefined) rowAttr += ` outlineLevel="${rowOpts.outlineLevel}"`;
+    if (rowOpts.collapsed) rowAttr += ' collapsed="1"';
 
     const cells = rowOpts.cells;
     if (cells) {
@@ -1079,6 +1097,7 @@ export function stringifyPageSetupXml(ps: PageSetupOptions): string {
   if (ps.horizontalDpi !== undefined) psAttrs.horizontalDpi = ps.horizontalDpi;
   if (ps.verticalDpi !== undefined) psAttrs.verticalDpi = ps.verticalDpi;
   if (ps.copies !== undefined) psAttrs.copies = ps.copies;
+  if (ps.printerSettingsRId) psAttrs["r:id"] = ps.printerSettingsRId;
   return selfCloseElement("pageSetup", attrs(psAttrs));
 }
 

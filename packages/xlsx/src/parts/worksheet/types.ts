@@ -57,6 +57,15 @@ export interface RowOptions {
   thickBot?: boolean;
   /** Phonetic text (CT_Row `@ph`) */
   phonetic?: boolean;
+  /** Row outline level for grouping (CT_Row `@outlineLevel`, 0-7) */
+  outlineLevel?: number;
+  /** Collapsed outline state (CT_Row `@collapsed`) */
+  collapsed?: boolean;
+  /**
+   * Row style: either style options (resolved to an index at compile time) or,
+   * as a round-trip fallback, the raw styles.xml cellXfs index (CT_Row `@s`).
+   */
+  style?: StyleOptions | number;
 }
 
 /** Rich text run properties (CT_RPrElt). */
@@ -348,9 +357,9 @@ export interface SheetViewOptions {
 export interface HyperlinkOptions {
   /** Cell reference, e.g. "A1" */
   cell: string;
-  /** External target URL (CT_Hyperlink `@r:id`, mutually exclusive with location) */
+  /** External target URL (CT_Hyperlink `@r:id`) */
   url?: string;
-  /** Internal target, e.g. "Data!A1" (CT_Hyperlink `@location`, mutually exclusive with url) */
+  /** Internal target, e.g. "Data!A1" (CT_Hyperlink `@location`; independent of url) */
   location?: string;
   /** Tooltip text */
   tooltip?: string;
@@ -408,6 +417,12 @@ export interface PageSetupOptions {
   autoPageBreaks?: boolean;
   /** Fit to page (CT_PageSetUpPr `@fitToPage`) */
   fitToPage?: boolean;
+  /**
+   * Relationship id to the printer settings binary part (CT_PageSetup
+   * `@r:id`). Round-trip only: the referenced .bin part is not re-emitted,
+   * so the id is not resolvable in a freshly generated workbook.
+   */
+  printerSettingsRId?: string;
 }
 
 export interface TabColorOptions {
@@ -752,8 +767,26 @@ export interface SortCondition {
   sortBy?: "value" | "cellColor" | "fontColor" | "icon";
   /** Custom sort list (CT_SortCondition `@customList`) */
   customList?: string;
-  /** Icon set index (CT_SortCondition `@iconId`) */
+  /** Differential format id for cell/font-color sorts (CT_SortCondition `@dxfId`) */
+  dxfId?: number;
+  /** Icon set for icon sorts (CT_SortCondition `@iconSet`, default "3Arrows") */
+  iconSet?: IconSetType;
+  /** Icon index within the set (CT_SortCondition `@iconId`) */
   iconId?: number;
+}
+
+/** Sort state (CT_SortState) — sort conditions nested in their XSD container. */
+export interface SortStateOptions {
+  /** Sort range, e.g. "A1:D10" (CT_SortState `@ref`, required) */
+  ref: string;
+  /** Column sort mode (CT_SortState `@columnSort`) */
+  columnSort?: boolean;
+  /** Case sensitive sorting (CT_SortState `@caseSensitive`) */
+  caseSensitive?: boolean;
+  /** Sort method (CT_SortState `@sortMethod`) */
+  sortMethod?: "pinYin" | "stroke" | "none";
+  /** Sort conditions, one per sort level (CT_SortState `sortCondition` children) */
+  conditions: SortCondition[];
 }
 
 export interface AutoFilterOptions {
@@ -761,8 +794,7 @@ export interface AutoFilterOptions {
   ref: string;
   /** Filter columns, one per filtered column (CT_FilterColumn) */
   columns?: FilterColumnOptions[];
-  sort?: SortCondition[];
-  /** Sort state options */
+  /** Sort state (CT_SortState child; `ref` typically spans the filter range) */
   sortState?: SortStateOptions;
 }
 
@@ -898,16 +930,6 @@ export interface DateGroupFilterOptions {
   minute?: number;
   /** Second (0-59, CT_DateGroupItem `@second`) */
   second?: number;
-}
-
-/** Sort state configuration (CT_SortState) */
-export interface SortStateOptions {
-  /** Column sort mode (CT_SortState `@columnSort`) */
-  columnSort?: boolean;
-  /** Case sensitive sorting (CT_SortState `@caseSensitive`) */
-  caseSensitive?: boolean;
-  /** Sort method (CT_SortState `@sortMethod`) */
-  sortMethod?: "pinYin" | "stroke" | "none";
 }
 
 /** Print options (CT_PrintOptions) */
@@ -1239,6 +1261,8 @@ export interface WorksheetOptions {
   scenarios?: ScenarioOptions;
   /** Auto-filter configuration */
   autoFilter?: string | AutoFilterOptions;
+  /** Sheet-level sort state (CT_Worksheet `sortState` — sorting without a filter) */
+  sortState?: SortStateOptions;
   images?: PictureOptions[];
   charts?: WorksheetChartOptions[];
   /** Anchored shapes (xdr:sp): geometry + optional text body. */

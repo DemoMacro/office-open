@@ -98,6 +98,54 @@ function stringifyFilterColumn(fc: FilterColumnOptions): string {
 }
 
 /**
+ * Stringify a CT_SortState element. Shared by the autoFilter child and the
+ * worksheet-level `sortState` sibling — one content model, one serializer.
+ */
+export function stringifySortStateXml(ss: SortStateOptions): string {
+  const ssAttrs: Record<string, string | number | boolean | undefined> = { ref: ss.ref };
+  if (ss.columnSort) ssAttrs.columnSort = 1;
+  if (ss.caseSensitive) ssAttrs.caseSensitive = 1;
+  if (ss.sortMethod && ss.sortMethod !== "none") ssAttrs.sortMethod = ss.sortMethod;
+  const sortParts = ss.conditions.map((sc) => {
+    const scAttrs: Record<string, string | number | boolean | undefined> = { ref: sc.ref };
+    if (sc.descending) scAttrs.descending = 1;
+    if (sc.sortBy && sc.sortBy !== "value") scAttrs.sortBy = sc.sortBy;
+    if (sc.customList) scAttrs.customList = sc.customList;
+    if (sc.dxfId !== undefined) scAttrs.dxfId = sc.dxfId;
+    if (sc.iconSet && sc.iconSet !== "3Arrows") scAttrs.iconSet = sc.iconSet;
+    if (sc.iconId !== undefined) scAttrs.iconId = sc.iconId;
+    return selfCloseElement("sortCondition", attrs(scAttrs));
+  });
+  return `<sortState${attrs(ssAttrs)}>${sortParts.join("")}</sortState>`;
+}
+
+/** Parse a CT_SortState element. */
+export function parseSortStateEl(el: XmlElement): SortStateOptions {
+  const ss: SortStateOptions = { ref: attr(el, "ref") ?? "", conditions: [] };
+  if (parseOnOff(attr(el, "columnSort"))) ss.columnSort = true;
+  if (parseOnOff(attr(el, "caseSensitive"))) ss.caseSensitive = true;
+  const sm = attr(el, "sortMethod");
+  if (sm) ss.sortMethod = sm as SortStateOptions["sortMethod"];
+  for (const sc of el.elements ?? []) {
+    if (sc.name !== "sortCondition") continue;
+    const cond: SortCondition = { ref: attr(sc, "ref") ?? "" };
+    if (parseOnOff(attr(sc, "descending"))) cond.descending = true;
+    const sb = attr(sc, "sortBy");
+    if (sb) cond.sortBy = sb as SortCondition["sortBy"];
+    const cl = attr(sc, "customList");
+    if (cl) cond.customList = cl;
+    const dxfId = attrNum(sc, "dxfId");
+    if (dxfId !== undefined) cond.dxfId = dxfId;
+    const is = attr(sc, "iconSet");
+    if (is) cond.iconSet = is as SortCondition["iconSet"];
+    const ii = attrNum(sc, "iconId");
+    if (ii !== undefined) cond.iconId = ii;
+    ss.conditions.push(cond);
+  }
+  return ss;
+}
+
+/**
  * Stringify an autoFilter value (shorthand ref string or structured options)
  * into its `<autoFilter>` element. Returns "" for undefined so callers can push
  * unconditionally.
@@ -111,24 +159,11 @@ export function stringifyAutoFilter(af: string | AutoFilterOptions | undefined):
   for (const fc of af.columns ?? []) {
     inner.push(stringifyFilterColumn(fc));
   }
-  if (af.sort && af.sort.length > 0) {
-    const sortParts: string[] = [];
-    for (const sc of af.sort) {
-      const scAttrs: Record<string, string | number | boolean | undefined> = { ref: sc.ref };
-      if (sc.descending) scAttrs.descending = 1;
-      if (sc.sortBy) scAttrs.sortBy = sc.sortBy;
-      if (sc.customList) scAttrs.customList = sc.customList;
-      if (sc.iconId !== undefined) scAttrs.iconId = sc.iconId;
-      sortParts.push(selfCloseElement("sortCondition", attrs(scAttrs)));
-    }
-    const ssAttrs: Record<string, string | number | boolean | undefined> = { ref: af.ref };
-    if (af.sortState?.columnSort) ssAttrs.columnSort = 1;
-    if (af.sortState?.caseSensitive) ssAttrs.caseSensitive = 1;
-    if (af.sortState?.sortMethod) ssAttrs.sortMethod = af.sortState.sortMethod;
-    inner.push(`<sortState${attrs(ssAttrs)}>${sortParts.join("")}</sortState>`);
+  if (af.sortState) {
+    inner.push(stringifySortStateXml(af.sortState));
   }
   if (inner.length > 0) {
-    return `<autoFilter ref="${af.ref}">${inner.join("")}</autoFilter>`;
+    return `<autoFilter ref="${escapeXml(af.ref)}">${inner.join("")}</autoFilter>`;
   }
   return selfCloseElement("autoFilter", attrs({ ref: af.ref }));
 }
@@ -238,29 +273,10 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
       }
       (af.columns ??= []).push(fc);
     } else if (child.name === "sortState") {
-      const ss: SortStateOptions = {};
-      if (parseOnOff(attr(child, "columnSort"))) ss.columnSort = true;
-      if (parseOnOff(attr(child, "caseSensitive"))) ss.caseSensitive = true;
-      const sm = attr(child, "sortMethod");
-      if (sm) ss.sortMethod = sm as SortStateOptions["sortMethod"];
-      af.sortState = ss;
-      for (const sc of child.elements ?? []) {
-        if (sc.name !== "sortCondition") continue;
-        af.sort ??= [];
-        const cond: SortCondition = { ref: attr(sc, "ref") ?? "" };
-        if (parseOnOff(attr(sc, "descending"))) cond.descending = true;
-        const sb = attr(sc, "sortBy");
-        if (sb) cond.sortBy = sb as SortCondition["sortBy"];
-        const cl = attr(sc, "customList");
-        if (cl) cond.customList = cl;
-        const ii = attrNum(sc, "iconId");
-        if (ii !== undefined) cond.iconId = ii;
-        af.sort.push(cond);
-      }
+      af.sortState = parseSortStateEl(child);
     }
   }
-  const hasFilters =
-    af.columns !== undefined || af.sortState !== undefined || af.sort !== undefined;
+  const hasFilters = af.columns !== undefined || af.sortState !== undefined;
   return hasFilters ? af : af.ref;
 }
 

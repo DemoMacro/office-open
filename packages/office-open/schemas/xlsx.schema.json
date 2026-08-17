@@ -300,15 +300,9 @@
           "description": "Range, e.g. \"A1:D10\"",
           "type": "string"
         },
-        "sort": {
-          "items": {
-            "$ref": "#/definitions/SortCondition"
-          },
-          "type": "array"
-        },
         "sortState": {
           "$ref": "#/definitions/SortStateOptions",
-          "description": "Sort state options"
+          "description": "Sort state (CT_SortState child; `ref` typically spans the filter range)"
         }
       },
       "required": ["ref"],
@@ -6003,7 +5997,7 @@
           "type": "string"
         },
         "location": {
-          "description": "Internal target, e.g. \"Data!A1\" (CT_Hyperlink `@location`, mutually exclusive with url)",
+          "description": "Internal target, e.g. \"Data!A1\" (CT_Hyperlink `@location`; independent of url)",
           "type": "string"
         },
         "tooltip": {
@@ -6011,7 +6005,7 @@
           "type": "string"
         },
         "url": {
-          "description": "External target URL (CT_Hyperlink `@r:id`, mutually exclusive with location)",
+          "description": "External target URL (CT_Hyperlink `@r:id`)",
           "type": "string"
         }
       },
@@ -7423,6 +7417,10 @@
             }
           ],
           "description": "Paper width (CT_PageSetup `@paperWidth`, ST_PositiveUniversalMeasure)"
+        },
+        "printerSettingsRId": {
+          "description": "Relationship id to the printer settings binary part (CT_PageSetup `@r:id`). Round-trip only: the referenced .bin part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
+          "type": "string"
         },
         "scale": {
           "type": "number"
@@ -11126,6 +11124,10 @@
           },
           "type": "array"
         },
+        "collapsed": {
+          "description": "Collapsed outline state (CT_Row `@collapsed`)",
+          "type": "boolean"
+        },
         "customFormat": {
           "description": "Custom format applied (CT_Row `@customFormat`)",
           "type": "boolean"
@@ -11143,6 +11145,10 @@
         "hidden": {
           "type": "boolean"
         },
+        "outlineLevel": {
+          "description": "Row outline level for grouping (CT_Row `@outlineLevel`, 0-7)",
+          "type": "number"
+        },
         "phonetic": {
           "description": "Phonetic text (CT_Row `@ph`)",
           "type": "boolean"
@@ -11153,6 +11159,17 @@
         "spans": {
           "description": "Spans for the row, e.g. \"1:15\" (CT_Row `@spans`)",
           "type": "string"
+        },
+        "style": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/StyleOptions"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "Row style: either style options (resolved to an index at compile time) or, as a round-trip fallback, the raw styles.xml cellXfs index (CT_Row `@s`)."
         },
         "thickBot": {
           "description": "Thick bottom border (CT_Row `@thickBot`)",
@@ -12388,9 +12405,17 @@
         "descending": {
           "type": "boolean"
         },
-        "iconId": {
-          "description": "Icon set index (CT_SortCondition `@iconId`)",
+        "dxfId": {
+          "description": "Differential format id for cell/font-color sorts (CT_SortCondition `@dxfId`)",
           "type": "number"
+        },
+        "iconId": {
+          "description": "Icon index within the set (CT_SortCondition `@iconId`)",
+          "type": "number"
+        },
+        "iconSet": {
+          "$ref": "#/definitions/IconSetType",
+          "description": "Icon set for icon sorts (CT_SortCondition `@iconSet`, default \"3Arrows\")"
         },
         "ref": {
           "description": "Cell reference for the sort column, e.g. \"B1\"",
@@ -12407,7 +12432,7 @@
     },
     "SortStateOptions": {
       "additionalProperties": false,
-      "description": "Sort state configuration (CT_SortState)",
+      "description": "Sort state (CT_SortState) — sort conditions nested in their XSD container.",
       "properties": {
         "caseSensitive": {
           "description": "Case sensitive sorting (CT_SortState `@caseSensitive`)",
@@ -12417,12 +12442,24 @@
           "description": "Column sort mode (CT_SortState `@columnSort`)",
           "type": "boolean"
         },
+        "conditions": {
+          "description": "Sort conditions, one per sort level (CT_SortState `sortCondition` children)",
+          "items": {
+            "$ref": "#/definitions/SortCondition"
+          },
+          "type": "array"
+        },
+        "ref": {
+          "description": "Sort range, e.g. \"A1:D10\" (CT_SortState `@ref`, required)",
+          "type": "string"
+        },
         "sortMethod": {
           "description": "Sort method (CT_SortState `@sortMethod`)",
           "enum": ["pinYin", "stroke", "none"],
           "type": "string"
         }
       },
+      "required": ["ref", "conditions"],
       "type": "object"
     },
     "SourceRectangleOptions": {
@@ -15088,6 +15125,10 @@
             "$ref": "#/definitions/CellSmartTagsOptions"
           },
           "type": "array"
+        },
+        "sortState": {
+          "$ref": "#/definitions/SortStateOptions",
+          "description": "Sheet-level sort state (CT_Worksheet `sortState` — sorting without a filter)"
         },
         "tabColor": {
           "$ref": "#/definitions/TabColorOptions"

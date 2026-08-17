@@ -4,5 +4,5 @@
  * @module
  */
 export * from "./types";
-export { Styles } from "./styles";
+export { Styles, builtinNumFmtCode } from "./styles";
 export { stylesDesc } from "./descriptor";

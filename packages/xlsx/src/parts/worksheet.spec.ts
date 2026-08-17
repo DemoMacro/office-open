@@ -442,7 +442,10 @@ describe("Worksheet", () => {
     it("generates sortState", () => {
       const xml = buildWorksheetXml(
         {
-          autoFilter: { ref: "A1:D10", sort: [{ ref: "B1", descending: true }] },
+          autoFilter: {
+            ref: "A1:D10",
+            sortState: { ref: "A1:D10", conditions: [{ ref: "B1", descending: true }] },
+          },
           rows: [{ cells: [{ value: "A" }] }],
         },
         {},
@@ -450,6 +453,17 @@ describe("Worksheet", () => {
       expect(xml).toContain('<sortState ref="A1:D10">');
       expect(xml).toContain('ref="B1"');
       expect(xml).toContain('descending="1"');
+    });
+
+    it("generates sheet-level sortState without autoFilter", () => {
+      const xml = buildWorksheetXml(
+        {
+          sortState: { ref: "A1:D10", conditions: [{ ref: "B1", descending: true }] },
+          rows: [{ cells: [{ value: "A" }] }],
+        },
+        {},
+      );
+      expect(xml).toContain('<sortState ref="A1:D10">');
     });
   });
 
@@ -600,14 +614,38 @@ describe("Worksheet", () => {
       const result = roundTrip({
         autoFilter: {
           ref: "A1:D10",
-          sortState: { caseSensitive: true, sortMethod: "pinYin" },
-          sort: [{ ref: "B1", descending: true }],
+          sortState: {
+            ref: "A1:D10",
+            caseSensitive: true,
+            sortMethod: "pinYin",
+            conditions: [{ ref: "B1", descending: true }],
+          },
         },
         rows: [{ cells: [{ value: "A" }] }],
       });
       const af = result.autoFilter as AutoFilterOptions;
-      expect(af.sortState).toEqual({ caseSensitive: true, sortMethod: "pinYin" });
-      expect(af.sort).toEqual([{ ref: "B1", descending: true }]);
+      expect(af.sortState).toEqual({
+        ref: "A1:D10",
+        caseSensitive: true,
+        sortMethod: "pinYin",
+        conditions: [{ ref: "B1", descending: true }],
+      });
+    });
+
+    it("round-trips sheet-level sortState separately from autoFilter", () => {
+      const result = roundTrip({
+        autoFilter: "A1:D10",
+        sortState: {
+          ref: "A1:D10",
+          conditions: [{ ref: "C1", sortBy: "cellColor", dxfId: 2 }],
+        },
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      expect(result.autoFilter).toBe("A1:D10");
+      expect(result.sortState).toEqual({
+        ref: "A1:D10",
+        conditions: [{ ref: "C1", sortBy: "cellColor", dxfId: 2 }],
+      });
     });
   });
 

@@ -14,7 +14,7 @@ import { attr, attrMeasure, attrNum, findChild, stringify, textOf } from "@offic
 import type { Element } from "@office-open/xml";
 
 import type { XlsxReadContext } from "../../context";
-import { parseAutoFilter } from "../auto-filter";
+import { parseAutoFilter, parseSortStateEl } from "../auto-filter";
 import { parsePivotArea } from "../pivot-table/parse";
 import { parseColorHex } from "../styles/parse";
 import { parseCfvo, parsePageBreaks } from "./parse";
@@ -357,6 +357,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const afEl = findChild(el, "autoFilter");
     if (afEl) {
       result.autoFilter = parseAutoFilter(afEl);
+    }
+
+    // Sheet-level sort state (after autoFilter per XSD sequence)
+    const ssEl = findChild(el, "sortState");
+    if (ssEl) {
+      result.sortState = parseSortStateEl(ssEl);
     }
 
     // Merge cells
@@ -956,6 +962,8 @@ export function parsePageSetupEl(
   if (vdpi !== undefined) ps.verticalDpi = vdpi;
   const copies = attrNum(el, "copies");
   if (copies !== undefined) ps.copies = copies;
+  const psRid = attr(el, "r:id");
+  if (psRid) ps.printerSettingsRId = psRid;
   if (pageSetUpPrCache) Object.assign(ps, pageSetUpPrCache);
   return ps;
 }

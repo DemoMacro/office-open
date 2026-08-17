@@ -106,6 +106,50 @@ describe("parseWorkbook round-trip", () => {
     expect(parsed.dxfs).toHaveLength(2);
   });
 
+  it("resolves built-in numFmt ids so date cells keep their format", async () => {
+    // numFmt "mm-dd-yy" registers as built-in id 14 (no custom <numFmts>
+    // entry), so parse must resolve it through the builtin table or the
+    // round-tripped cell loses its date format.
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "S",
+          rows: [{ cells: [{ reference: "A1", value: 45658, style: { numFmt: "mm-dd-yy" } }] }],
+        },
+      ],
+    };
+
+    const parsed = await roundTrip(opts);
+    const cell = parsed.worksheets![0]!.rows![0]!.cells![0]!;
+    expect((cell.style as StyleOptions).numFmt).toBe("mm-dd-yy");
+  });
+
+  it("round-trips row outline level, collapsed flag, and row style", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "S",
+          rows: [
+            { rowNumber: 1, cells: [{ value: "group" }] },
+            {
+              rowNumber: 2,
+              cells: [{ value: "detail" }],
+              outlineLevel: 1,
+              collapsed: true,
+              style: { font: { bold: true } },
+            },
+          ],
+        },
+      ],
+    };
+
+    const parsed = await roundTrip(opts);
+    const row = parsed.worksheets![0]!.rows![1]!;
+    expect(row.outlineLevel).toBe(1);
+    expect(row.collapsed).toBe(true);
+    expect((row.style as StyleOptions).font?.bold).toBe(true);
+  });
+
   it("reads the external link target from the sibling rels file", async () => {
     const opts: WorkbookOptions = {
       externalLinks: [

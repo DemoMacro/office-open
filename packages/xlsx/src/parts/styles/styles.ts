@@ -73,6 +73,19 @@ const BUILTIN_NUMFMTS: Record<string, number> = {
   "@": 49,
 };
 
+/** Reverse lookup: built-in number format id → format code. */
+const BUILTIN_NUMFMT_BY_ID = new Map<number, string>(
+  Object.entries(BUILTIN_NUMFMTS).map(([code, id]) => [id, code]),
+);
+
+/**
+ * Format code for a built-in number format id (0-49/164+ reserved range),
+ * or undefined for custom ids — those live in the parsed `<numFmts>` table.
+ */
+export function builtinNumFmtCode(id: number): string | undefined {
+  return BUILTIN_NUMFMT_BY_ID.get(id);
+}
+
 /**
  * Internal cellStyleXfs storage — font/fill/border/numFmt indices after
  * re-registration against the accumulator, plus the verbatim CT_Xf flags.
