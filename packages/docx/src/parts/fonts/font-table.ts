@@ -49,6 +49,11 @@ export interface EmbeddedFontOptions {
   characterSetName?: string;
   /** Font family classification (e.g. "auto", "roman", "swiss") */
   family?: string;
+  /**
+   * Font is not a TrueType font (w:notTrueType). Word writes the bare element
+   * for true; `false` emits w:val="0" explicitly.
+   */
+  notTrueType?: boolean;
   /** Font pitch (e.g. "fixed", "variable") */
   pitch?: string;
   /** PANOSE-1 classification (10-digit hex string) */

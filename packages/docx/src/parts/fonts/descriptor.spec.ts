@@ -51,6 +51,25 @@ describe("fontTableDesc round-trip", () => {
     expect(result.fonts[0]?.characterSet).toBe("02");
   });
 
+  it("round-trips notTrueType — bare element true, w:val=0 false", () => {
+    const xml = fontTableDesc.stringify(
+      {
+        fonts: [
+          { name: "Arial", fontKey: "", notTrueType: true },
+          { name: "Courier New", fontKey: "", notTrueType: false },
+        ],
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain("<w:notTrueType/>");
+    expect(xml).toContain('<w:notTrueType w:val="0"/>');
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = fontTableDesc.parse(el, readCtx);
+    expect(parsed.fonts[0]?.notTrueType).toBe(true);
+    expect(parsed.fonts[1]?.notTrueType).toBe(false);
+  });
+
   it("round-trips font with characterSetName (w:characterSet)", () => {
     const result = roundTrip({
       fonts: [

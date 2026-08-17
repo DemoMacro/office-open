@@ -61,6 +61,9 @@ function fontXml(font: EmbeddedFontOptionsWithKey): string {
   }
   const family = font.family ?? (font.embedRid ? "auto" : undefined);
   if (family) parts.push(`<w:family w:val="${escapeXml(family)}"/>`);
+  if (font.notTrueType !== undefined) {
+    parts.push(font.notTrueType ? "<w:notTrueType/>" : '<w:notTrueType w:val="0"/>');
+  }
   const pitch = font.pitch ?? (font.embedRid ? "variable" : undefined);
   if (pitch) parts.push(`<w:pitch w:val="${escapeXml(pitch)}"/>`);
   const sig = font.sig ?? (font.embedRid ? DEFAULT_SIG : undefined);
@@ -129,6 +132,10 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
         const val = attr(familyEl, "w:val");
         if (val) font.family = val;
       }
+
+      // Bare element means true (CT_OnOff default); w:val="0" is the explicit false.
+      const notTrueTypeEl = findChild(child, "w:notTrueType");
+      if (notTrueTypeEl) font.notTrueType = attrBool(notTrueTypeEl, "w:val") ?? true;
 
       const pitchEl = findChild(child, "w:pitch");
       if (pitchEl) {

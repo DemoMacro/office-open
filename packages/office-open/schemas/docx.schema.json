@@ -5488,6 +5488,10 @@
           "description": "Font family name",
           "type": "string"
         },
+        "notTrueType": {
+          "description": "Font is not a TrueType font (w:notTrueType). Word writes the bare element for true; `false` emits w:val=\"0\" explicitly.",
+          "type": "boolean"
+        },
         "odttfPath": {
           "description": "Internal: original .odttf part path (round-trip); preserves source file name.",
           "type": "string"
