@@ -72,13 +72,26 @@ export function buildRstXml(rst: RichTextOptions): string {
       parts.push(`<rPh sb="${ph.startByte}" eb="${ph.endByte}"><t>${escapeXml(ph.text)}</t></rPh>`);
     }
   }
+  if (rst.phoneticProperties) {
+    const pp = rst.phoneticProperties;
+    const attrs: string[] = [`fontId="${pp.fontId}"`];
+    if (pp.type) attrs.push(`type="${pp.type}"`);
+    if (pp.alignment) attrs.push(`alignment="${pp.alignment}"`);
+    parts.push(`<phoneticPr ${attrs.join(" ")}/>`);
+  }
   return parts.join("");
 }
 
 export class SharedStrings {
   private entries: SstEntry[] = [];
-  /** Dedup map for plain strings only. Rich text is not deduped. */
+  /** Dedup map for plain strings only. */
   private indexMap = new Map<string, number>();
+  /**
+   * Identity dedup map for rich text — round-tripped cells hold the same
+   * entry object the loaded table already contains, so registering them must
+   * resolve back to the original index instead of appending a duplicate si.
+   */
+  private richIndexMap = new Map<RichTextOptions, number>();
 
   /**
    * Register a plain string and return its index.
@@ -95,29 +108,35 @@ export class SharedStrings {
   }
 
   /**
-   * Register a rich text entry and return its index.
-   * Rich text is not deduped (each call creates a new entry).
+   * Register a rich text entry and return its index. The same object
+   * (identity) resolves to its existing index; distinct objects are appended.
    */
   public registerRich(rst: RichTextOptions): number {
+    const existing = this.richIndexMap.get(rst);
+    if (existing !== undefined) return existing;
+
     const idx = this.entries.length;
     this.entries.push(rst);
+    this.richIndexMap.set(rst, idx);
     return idx;
   }
 
   /**
    * Bulk-load parsed template entries, preserving their original indices so
    * existing cell references stay valid. Plain strings populate the dedup map
-   * (first occurrence wins); rich-text entries are appended unchanged.
+   * (first occurrence wins); rich-text entries populate the identity map.
    *
-   * Used by patch to extend an existing workbook's shared strings, so appended
-   * worksheets continue registering strings at the correct offset.
+   * Used by patch and by generate() for a parsed workbook, so cells keep
+   * pointing at the source table instead of re-registering flattened text.
    */
   public loadEntries(entries: SharedStringsDocOptions["entries"]): void {
     for (const entry of entries) {
       const idx = this.entries.length;
       this.entries.push(entry);
-      if (typeof entry === "string" && !this.indexMap.has(entry)) {
-        this.indexMap.set(entry, idx);
+      if (typeof entry === "string") {
+        if (!this.indexMap.has(entry)) this.indexMap.set(entry, idx);
+      } else if (!this.richIndexMap.has(entry)) {
+        this.richIndexMap.set(entry, idx);
       }
     }
   }
@@ -180,9 +199,14 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
     for (const si of el.elements ?? []) {
       if (si.name !== "si") continue;
 
-      // Simple: <si><t>text</t></si>
+      // Simple: <si><t>text</t></si> — phonetic children may still trail
+      // (CT_Rst allows t + rPh* + phoneticPr without any r runs), in which
+      // case the entry stays a RichTextOptions to carry them.
       const t = findChild(si, "t");
-      if (t) {
+      const hasPhonetic = (si.elements ?? []).some(
+        (e) => e.name === "rPh" || e.name === "phoneticPr",
+      );
+      if (t && !hasPhonetic) {
         entries.push(textOf(t) ?? "");
         continue;
       }
@@ -200,19 +224,41 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
         }
       }
 
-      // Phonetics: <rPh sb="..." eb="..."><t>...</t></rPh>
+      // Phonetics: <rPh sb="..." eb="..."><t>...</t></rPh> + trailing phoneticPr
       const phonetics: { startByte: number; endByte: number; text: string }[] = [];
+      let phoneticProperties: RichTextOptions["phoneticProperties"];
       for (const rPh of si.elements ?? []) {
-        if (rPh.name !== "rPh") continue;
-        const sb = attrNum(rPh, "sb") ?? 0;
-        const eb = attrNum(rPh, "eb") ?? 0;
-        const rPhT = findChild(rPh, "t");
-        phonetics.push({ startByte: sb, endByte: eb, text: rPhT ? (textOf(rPhT) ?? "") : "" });
+        if (rPh.name === "rPh") {
+          const sb = attrNum(rPh, "sb") ?? 0;
+          const eb = attrNum(rPh, "eb") ?? 0;
+          const rPhT = findChild(rPh, "t");
+          phonetics.push({ startByte: sb, endByte: eb, text: rPhT ? (textOf(rPhT) ?? "") : "" });
+        } else if (rPh.name === "phoneticPr") {
+          const fontId = attrNum(rPh, "fontId");
+          if (fontId !== undefined) {
+            const pp: NonNullable<RichTextOptions["phoneticProperties"]> = { fontId };
+            const type = attr(rPh, "type");
+            if (type) pp.type = type as NonNullable<RichTextOptions["phoneticProperties"]>["type"];
+            const align = attr(rPh, "alignment");
+            if (align)
+              pp.alignment = align as NonNullable<
+                RichTextOptions["phoneticProperties"]
+              >["alignment"];
+            phoneticProperties = pp;
+          }
+        }
       }
 
       if (runs.length > 0) {
         const entry: RichTextOptions = { runs };
         if (phonetics.length > 0) entry.phonetics = phonetics;
+        if (phoneticProperties) entry.phoneticProperties = phoneticProperties;
+        entries.push(entry);
+      } else if (t) {
+        // Plain text with trailing phonetics — text + rPh*/phoneticPr.
+        const entry: RichTextOptions = { text: textOf(t) ?? "" };
+        if (phonetics.length > 0) entry.phonetics = phonetics;
+        if (phoneticProperties) entry.phoneticProperties = phoneticProperties;
         entries.push(entry);
       }
     }

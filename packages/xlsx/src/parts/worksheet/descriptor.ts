@@ -50,6 +50,7 @@ import type {
   PageSetupOptions,
   PhoneticPropertiesOptions,
   PivotSelectionOptions,
+  RichTextOptions,
   PrintOptions,
   ProtectedRangeOptions,
   ScenarioCellOptions,
@@ -106,8 +107,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const result: Partial<WorksheetOptions> = {};
     let pageSetUpPrCache: Partial<PageSetupOptions> | undefined;
 
-    // Resolve shared strings from context (XlsxReadContext)
-    const strings: string[] =
+    // Resolve shared strings from context (XlsxReadContext). Rich-text
+    // entries arrive as RichTextOptions objects and flow into cell.value.
+    const strings: (string | RichTextOptions)[] =
       ctx && "sharedStrings" in ctx ? (ctx as XlsxReadContext).sharedStrings : [];
 
     // Sheet properties

@@ -17,6 +17,7 @@ import { SharedStrings } from "@parts/shared-strings";
 import { Styles, builtinNumFmtCode } from "@parts/styles";
 import type { DxfOptions, StyleOptions, StylesParseResult } from "@parts/styles";
 import type { PivotCacheReference } from "@parts/workbook";
+import type { RichTextOptions } from "@parts/worksheet";
 import { Media, type MediaData } from "@shared/media";
 
 import type { XlsxDocument } from "./parse";
@@ -95,14 +96,18 @@ export class XlsxWriteContext implements WriteContext {
  * interface used by the descriptor parse pipeline.
  */
 export class XlsxReadContext implements ReadContext {
-  /** Parsed shared strings for resolving cell values. */
-  public readonly sharedStrings: string[];
+  /**
+   * Parsed shared-string entries for resolving cell values. Rich-text entries
+   * flow through as RichTextOptions objects so cells keep their structure
+   * (cell.value accepts both shapes).
+   */
+  public readonly sharedStrings: (string | RichTextOptions)[];
   /** Parsed styles (fonts, fills, borders, cellXfs). Set by parseWorkbook(). */
   public parsedStyles?: StylesParseResult;
 
   constructor(
     private xlsx: XlsxDocument,
-    sharedStrings?: string[],
+    sharedStrings?: (string | RichTextOptions)[],
   ) {
     this.sharedStrings = sharedStrings ?? [];
   }

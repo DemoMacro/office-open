@@ -14,7 +14,7 @@
 import { unescapeXml } from "@office-open/xml";
 
 import type { XlsxReadContext } from "../../context";
-import type { CellOptions, FormulaOptions, RowOptions } from "./types";
+import type { CellOptions, FormulaOptions, RichTextOptions, RowOptions } from "./types";
 
 // ── Tag scanning primitives ──
 
@@ -160,7 +160,7 @@ function inlineStringText(src: string, from: number, to: number): string | undef
  */
 export function parseSheetDataRows(
   raw: string,
-  strings: string[],
+  strings: (string | RichTextOptions)[],
   ctx: XlsxReadContext | undefined,
 ): RowOptions[] {
   const rows: RowOptions[] = [];
@@ -366,6 +366,8 @@ export function parseSheetDataRows(
             cell.value = strings[parseInt(vText, 10)] ?? "";
           } else if (type === "b" && vText !== undefined) {
             cell.value = vText === "1";
+          } else if (type === "e" && vText !== undefined) {
+            cell.error = vText;
           } else if (type === "inlineStr" && hasInline) {
             cell.value = inlineText ?? "";
           } else if (vText !== undefined) {

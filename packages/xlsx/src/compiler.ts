@@ -94,6 +94,11 @@ export function compileWorkbook(
   const ctx = new XlsxWriteContext();
   const mapping: Record<string, { data: string; path: string }> = {};
 
+  // Seed the shared string table from parsed entries so round-tripped cells
+  // keep their si indices and rich-text structure (identity dedup in
+  // registerRich resolves the same entry object back to its source index).
+  if (options.sharedStrings) ctx.sharedStrings.loadEntries(options.sharedStrings);
+
   const worksheetConfigs = options.worksheets ?? [];
   const chartsheetConfigs = options.chartsheets ?? [];
   const dialogsheetConfigs = options.dialogsheets ?? [];

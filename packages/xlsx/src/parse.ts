@@ -48,11 +48,11 @@ import {
   type RevisionLogOptions,
 } from "@parts/revision-log";
 import { sharedStringsDesc } from "@parts/shared-strings";
-import type { SharedStringsDocOptions } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import type { TableOptions } from "@parts/table";
 import { workbookDesc } from "@parts/workbook";
+import type { RichTextOptions } from "@parts/worksheet";
 import { worksheetDesc } from "@parts/worksheet";
 import type { WorksheetChartOptions, PictureOptions, WorksheetOptions } from "@parts/worksheet";
 import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
@@ -183,20 +183,6 @@ export function parseXlsx(data: DataType): XlsxDocument {
 
 // ── Shared strings helper ──
 
-/** Extract plain string array from sharedStringsDesc.parse() result. */
-function extractStringsFromEntries(parsed: SharedStringsDocOptions): string[] {
-  const strings: string[] = [];
-  for (const entry of parsed.entries) {
-    if (typeof entry === "string") {
-      strings.push(entry);
-    } else if (entry.runs && entry.runs.length > 0) {
-      // Rich text: concatenate run texts
-      strings.push(entry.runs.map((r) => r.text).join(""));
-    }
-  }
-  return strings;
-}
-
 /**
  * Parse a .xlsx file and convert it into WorkbookOptions.
  *
@@ -243,15 +229,17 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     }
   }
 
-  // Shared strings — use descriptor.parse() for richer data, then extract strings for lookup
-  let strings: string[] = [];
+  // Shared strings — rich-text entries flow through as objects so both the
+  // cell lookup and the rebuilt table keep their structure; generate() seeds
+  // the write context from opts.sharedStrings to preserve si indices.
+  let sstEntries: (string | RichTextOptions)[] = [];
   if (xlsx.sharedStrings) {
-    const parsed = sharedStringsDesc.parse(xlsx.sharedStrings, {} as never);
-    strings = extractStringsFromEntries(parsed);
+    sstEntries = sharedStringsDesc.parse(xlsx.sharedStrings, {} as never).entries;
   }
+  if (sstEntries.length > 0) opts.sharedStrings = sstEntries;
 
   // Create read context for descriptor pipeline
-  const readContext = new XlsxReadContext(xlsx, strings);
+  const readContext = new XlsxReadContext(xlsx, sstEntries);
 
   // Pivot cache definitions, keyed by part path — worksheet parsing resolves
   // each pivot table's cacheId against this map when rebuilding the

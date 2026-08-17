@@ -1453,6 +1453,10 @@
           "description": "Cell metadata block id, 1-based index into metadata.cellMetadata (CT_Cell `@cm`)",
           "type": "number"
         },
+        "error": {
+          "description": "Error value (CT_Cell `t=\"e\"`) — an Excel error literal like `#N/A` or `#DIV/0!`. Emitted as `t=\"e\"` instead of registering into the shared string table, matching the source cell type.",
+          "type": "string"
+        },
         "formula": {
           "anyOf": [
             {
@@ -8149,7 +8153,7 @@
       "properties": {
         "alignment": {
           "description": "Alignment (default: \"left\")",
-          "enum": ["left", "center", "distributed"],
+          "enum": ["noControl", "left", "center", "distributed"],
           "type": "string"
         },
         "fontId": {
@@ -11270,6 +11274,10 @@
       "additionalProperties": false,
       "description": "Rich text content (CT_Rst). Either plain text or rich runs.",
       "properties": {
+        "phoneticProperties": {
+          "$ref": "#/definitions/PhoneticPropertiesOptions",
+          "description": "Phonetic font/alignment settings (CT_PhoneticPr, si-level trailing element)"
+        },
         "phonetics": {
           "description": "Phonetic runs for CJK (CT_PhoneticRun)",
           "items": {
@@ -14468,6 +14476,20 @@
         "revisionLog": {
           "$ref": "#/definitions/SharedWorkbookOptions",
           "description": "Shared-workbook revision log (xl/revisionHeaders.xml + xl/revisions/revisionN.xml + xl/users.xml)."
+        },
+        "sharedStrings": {
+          "description": "Shared string table (xl/sharedStrings.xml), in table order. Parse fills it so generate() can seed the write context from the source entries — cells referencing rich-text si values keep their structure and index instead of collapsing to flattened text. Fresh documents omit it and register strings from cell values as they stringify.",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/RichTextOptions"
+              }
+            ]
+          },
+          "type": "array"
         },
         "styleExtensions": {
           "description": "Style sheet extensions (CT_ExtensionList on styleSheet)",

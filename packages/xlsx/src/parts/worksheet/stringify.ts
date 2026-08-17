@@ -1002,6 +1002,14 @@ function buildCellString(
 
   const value = cell.value;
 
+  // Error value (t="e") — emitted verbatim, never routed into the SST.
+  if (cell.error !== undefined) {
+    const errorV = cell.formula
+      ? `${buildFormulaString(cell.formula)}<v>${escapeXml(cell.error)}</v>`
+      : `<v>${escapeXml(cell.error)}</v>`;
+    return `<c${rAttr}${sAttr}${mdAttr} t="e">${errorV}</c>`;
+  }
+
   // Formula path — formula takes precedence; value is the cached result.
   if (cell.formula) {
     const fStr = buildFormulaString(cell.formula);

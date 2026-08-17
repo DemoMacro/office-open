@@ -40,7 +40,7 @@ import type { ExternalLinkOptions } from "./external-link";
 import type { MetadataOptions } from "./metadata";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
-import type { WorksheetOptions } from "./worksheet";
+import type { RichTextOptions, WorksheetOptions } from "./worksheet";
 import type { MapInfoOptions } from "./xml-mapping";
 
 export interface WorkbookOptions extends CorePropertiesOptions {
@@ -104,6 +104,14 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   pivotCaches?: PivotCacheDefParseResult[];
   /** Pivot cache records — parse-only (CT-layer) */
   pivotCacheRecords?: PivotCacheRecordsParseResult[];
+  /**
+   * Shared string table (xl/sharedStrings.xml), in table order. Parse fills
+   * it so generate() can seed the write context from the source entries —
+   * cells referencing rich-text si values keep their structure and index
+   * instead of collapsing to flattened text. Fresh documents omit it and
+   * register strings from cell values as they stringify.
+   */
+  sharedStrings?: (string | RichTextOptions)[];
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */

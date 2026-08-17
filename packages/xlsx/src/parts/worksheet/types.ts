@@ -128,6 +128,8 @@ export interface RichTextOptions {
   runs?: RichTextRunOptions[];
   /** Phonetic runs for CJK (CT_PhoneticRun) */
   phonetics?: PhoneticRunOptions[];
+  /** Phonetic font/alignment settings (CT_PhoneticPr, si-level trailing element) */
+  phoneticProperties?: PhoneticPropertiesOptions;
 }
 
 export interface CellOptions {
@@ -148,6 +150,12 @@ export interface CellOptions {
   cellMetadataId?: number;
   /** Value metadata block id, 1-based index into metadata.valueMetadata (CT_Cell `@vm`) */
   valueMetadataId?: number;
+  /**
+   * Error value (CT_Cell `t="e"`) — an Excel error literal like `#N/A` or
+   * `#DIV/0!`. Emitted as `t="e"` instead of registering into the shared
+   * string table, matching the source cell type.
+   */
+  error?: string;
 }
 
 /** Cell formula type (maps to ST_CellFormulaType). */
@@ -1027,7 +1035,7 @@ export interface PhoneticPropertiesOptions {
   /** Phonetic type (default: "fullwidthKatakana") */
   type?: "fullwidthKatakana" | "halfwidthKatakana" | "Hiragana" | "noConversion";
   /** Alignment (default: "left") */
-  alignment?: "left" | "center" | "distributed";
+  alignment?: "noControl" | "left" | "center" | "distributed";
 }
 
 /** Background image for a worksheet */
