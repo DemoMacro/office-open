@@ -52,6 +52,10 @@ import type {
 import { parseFormFieldData } from "@parts/paragraph/run/form-field";
 import type { FormFieldOptions } from "@parts/paragraph/run/form-field";
 import type { PositionalTabOptions } from "@parts/paragraph/run/positional-tab";
+import type {
+  ParagraphRunPropertiesOptions,
+  RunPropertiesOptions,
+} from "@parts/paragraph/run/properties";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
@@ -67,7 +71,7 @@ import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc }
 import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch, stringifyRunInline } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
-import type { ParagraphChild, SdtRunOptions } from "./parts/paragraph/paragraph";
+import type { ParagraphChild, SdtRunOptions, TrackChangeChild } from "./parts/paragraph/paragraph";
 import { EMPTY_PPR_RESULT, stringifyParagraphProperties } from "./parts/paragraph/stringify";
 import { replaceRelsWithPlaceholders } from "./util/replace-media-placeholders";
 import { stringifyElement } from "./util/stringify-element";
@@ -720,10 +724,28 @@ export function parseParagraphProperties(
     if (cnf) opts.cnfStyle = cnf;
   }
 
-  // Run properties (paragraph-level defaults)
+  // Run properties (paragraph-level defaults) — the paragraph-mark
+  // track-change markers (w:ins/w:del inside w:rPr) ride along on them.
   const rPr = findChild(el, "w:rPr");
   if (rPr) {
-    opts.run = parseRunProperties(rPr);
+    const run = parseRunProperties(rPr) as ParagraphRunPropertiesOptions;
+    const ins = findChild(rPr, "w:ins");
+    if (ins) {
+      run.insertion = {
+        id: attrNum(ins, "w:id") ?? 0,
+        author: attr(ins, "w:author") ?? "",
+        date: attr(ins, "w:date") ?? "",
+      };
+    }
+    const del = findChild(rPr, "w:del");
+    if (del) {
+      run.deletion = {
+        id: attrNum(del, "w:id") ?? 0,
+        author: attr(del, "w:author") ?? "",
+        date: attr(del, "w:date") ?? "",
+      };
+    }
+    opts.run = run;
   }
 
   // Frame properties — rebuilt into the public FrameOptions union so parse
@@ -860,18 +882,66 @@ function parseCnfStyle(
  * (the runs between the `separate` and `end` fldChars). Only `<w:t>` is read —
  * `<w:tab>`/`<w:br>` in results are ignored as rare for user-entered text.
  */
-/** Parse the w:r children of a track-change wrapper (w:ins/w:moveFrom/w:moveTo). */
-function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): RunOptions[] {
-  const runs: RunOptions[] = [];
+/**
+ * Parse the children of a track-change wrapper (w:ins/w:del/w:moveFrom/w:moveTo):
+ * runs (reference runs keep their shape as run-children), plus the comment range
+ * markers Word anchors directly inside the wrapper. Deleted page-number fields
+ * emit w:delInstrText — reverse inline.ts's field map back to placeholders.
+ */
+function parseTrackChangeRuns(
+  el: Element,
+  ctx: DocxReadContext,
+  isDelete = false,
+): TrackChangeChild[] {
+  const out: TrackChangeChild[] = [];
   for (const sub of el.elements ?? []) {
-    if (sub.name !== "w:r") continue;
-    const parsed = parseRun(sub, ctx);
-    const runOpts = parsedRunToOptions(parsed);
-    if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
-      runs.push(runOpts as RunOptions);
+    if (sub.name === "w:r") {
+      if (isDelete) {
+        const delInstrEl = findChild(sub, "w:delInstrText");
+        if (delInstrEl) {
+          const placeholder = DELETED_PAGE_FIELD[(textOf(delInstrEl) ?? "").trim()];
+          if (placeholder) {
+            out.push(placeholder);
+            continue;
+          }
+        }
+      }
+      const parsed = parseRun(sub, ctx);
+      const runOpts = parsedRunToOptions(parsed);
+      if (runOpts === null) continue;
+      if (typeof runOpts === "object" && "commentReference" in runOpts) {
+        const { commentReference, properties } = runOpts as {
+          commentReference: number;
+          properties?: RunPropertiesOptions;
+        };
+        out.push({ ...properties, children: [{ commentReference }] });
+        continue;
+      }
+      out.push(runOpts);
+    } else if (sub.name === "w:commentRangeStart") {
+      const m = parseMarkupRangeOptions(sub);
+      if (m) out.push({ commentRangeStart: m });
+    } else if (sub.name === "w:commentRangeEnd") {
+      const m = parseMarkupRangeOptions(sub);
+      if (m) out.push({ commentRangeEnd: m });
+    } else if (sub.name === "w:ins" || sub.name === "w:del") {
+      // Nested wrappers (w:ins > w:del) — recurse with the same shape.
+      const nested = parseTrackChangeRuns(sub, ctx, sub.name === "w:del");
+      if (nested.length > 0) {
+        const meta = {
+          id: attrNum(sub, "w:id") ?? 0,
+          author: attr(sub, "w:author") ?? "",
+          date: attr(sub, "w:date") ?? "",
+        };
+        out.push(
+          sub.name === "w:ins"
+            ? { insertion: { ...meta, children: nested } }
+            : { deletion: { ...meta, children: nested } },
+        );
+      }
     }
   }
-  return runs;
+  return out;
 }
 
 function collectRunText(el: Element): string {
@@ -1183,6 +1253,8 @@ function parseRunLevelChildren(
                 drawingChild.wpsShape.runProperties = runProperties;
               } else if ("wpgGroup" in drawingChild) {
                 drawingChild.wpgGroup.runProperties = runProperties;
+              } else if ("chart" in drawingChild) {
+                drawingChild.chart.runProperties = runProperties;
               }
             }
             childList.push(drawingChild);
@@ -1309,25 +1381,7 @@ function parseRunLevelChildren(
         break;
       }
       case "w:del": {
-        // Deleted page-number fields emit w:delInstrText (not w:instrText);
-        // reverse inline.ts's field map so they round-trip as placeholder children.
-        const children: (RunOptions | string)[] = [];
-        for (const sub of child.elements ?? []) {
-          if (sub.name !== "w:r") continue;
-          const delInstrEl = findChild(sub, "w:delInstrText");
-          if (delInstrEl) {
-            const placeholder = DELETED_PAGE_FIELD[(textOf(delInstrEl) ?? "").trim()];
-            if (placeholder) {
-              children.push(placeholder);
-              continue;
-            }
-          }
-          const parsed = parseRun(sub, ctx);
-          const runOpts = parsedRunToOptions(parsed);
-          if (runOpts !== null && typeof runOpts === "object" && !("commentReference" in runOpts)) {
-            children.push(runOpts as RunOptions);
-          }
-        }
+        const children = parseTrackChangeRuns(child, ctx, true);
         if (children.length > 0) {
           childList.push({
             deletion: {

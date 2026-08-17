@@ -620,10 +620,13 @@ export function parsedRunToOptions(
   const refChildren = contentChildren.filter(isRefChild);
   const nonRefChildren = contentChildren.filter((c) => !isRefChild(c));
 
-  // If the run is a pure reference run (no text), return it directly.
-  // Drop auto-generated rStyle (e.g., "FootnoteReference") since it's implicit.
+  // If the run is a pure reference run (no text), return it directly, keeping
+  // the run properties so the reference round-trips byte-faithfully.
   if (refChildren.length > 0 && nonRefChildren.length === 0) {
-    return refChildren[0] as RunOptions | { commentReference: number };
+    const ref = refChildren[0] as { commentReference?: number };
+    return Object.keys(opts).length > 0
+      ? ({ ...ref, properties: opts } as RunOptions | { commentReference: number })
+      : (ref as RunOptions | { commentReference: number });
   }
 
   // If the run only contains a symbolRun, return it directly

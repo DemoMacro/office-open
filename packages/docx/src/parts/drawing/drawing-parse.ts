@@ -217,9 +217,10 @@ function parseAnchorOrInline(el: Element): AnchorInfo | null {
     }
   }
 
-  // Graphic frame locks (wp:cNvGraphicFramePr) — preserved verbatim.
+  // Graphic frame locks (wp:cNvGraphicFramePr) — preserved verbatim; null when
+  // the source wrapper carries none (so stringify omits the element).
   const cNvGraphicFramePr = findChild(parent, "wp:cNvGraphicFramePr");
-  if (cNvGraphicFramePr) info.graphicFrameLocks = readGraphicFrameLocks(cNvGraphicFramePr);
+  info.graphicFrameLocks = cNvGraphicFramePr ? readGraphicFrameLocks(cNvGraphicFramePr) : null;
 
   // Floating (anchor only)
   if (anchor && !inline) {
@@ -1090,6 +1091,12 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
 
   const opts = parseChartXml(chartXml);
   if (!opts) return undefined;
+
+  // Anchor wrapper fields: extent, alt text, frame locks.
+  const info = parseAnchorOrInline(el);
+  if (info?.graphicFrameLocks !== undefined) {
+    (opts as Record<string, unknown>).graphicFrameLocks = info.graphicFrameLocks;
+  }
 
   const ext = getDrawingExtent(el);
   if (ext.width !== undefined || ext.height !== undefined) {

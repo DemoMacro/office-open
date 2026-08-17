@@ -25,7 +25,11 @@ import type {
   MoveRangeOptions,
   MoveRangeStartOptions,
 } from "@parts/paragraph/links/bookmark";
-import type { ParagraphChild, ParagraphOptions } from "@parts/paragraph/paragraph";
+import type {
+  ParagraphChild,
+  ParagraphOptions,
+  TrackChangeChild,
+} from "@parts/paragraph/paragraph";
 import type { CommentChildOptions } from "@parts/paragraph/run/comment-run";
 import { createPictureData } from "@parts/paragraph/run/picture-run";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
@@ -60,9 +64,16 @@ import { stringifyParagraphProperties, stringifyRunProperties } from "./paragrap
 function stringifyDeletedRun(c: RunOptions | string): string {
   const opts = typeof c === "string" ? { text: c } : c;
   const parts: string[] = [];
+  // Reference runs keep exactly the run properties the source carried —
+  // Word does not always style comment references, so nothing is injected.
   const rPr = stringifyRunProperties(opts);
   if (rPr) parts.push(rPr);
   if (opts.break) parts.push(breakXml(opts.break));
+  let attr = "";
+  if (opts.additionRsid) attr += ` w:rsidR="${opts.additionRsid}"`;
+  if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
+  if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
+  const openTag = attr ? `<w:r${attr}>` : "<w:r>";
   const fieldMap: Record<string, string> = {
     CURRENT: "PAGE",
     TOTAL_PAGES: "NUMPAGES",
@@ -83,18 +94,24 @@ function stringifyDeletedRun(c: RunOptions | string): string {
         } else {
           parts.push(`<w:delText xml:space="preserve">${escapeXml(cc)}</w:delText>`);
         }
+      } else if (typeof cc === "object" && cc !== null && "commentReference" in cc) {
+        parts.push(`<w:commentReference w:id="${Number(cc.commentReference)}"/>`);
+      } else if (typeof cc === "object" && cc !== null && "break" in cc) {
+        parts.push(breakXml((cc as { break: number | BreakOptions }).break));
       }
     }
   } else if (opts.text) {
     parts.push(`<w:delText xml:space="preserve">${escapeXml(String(opts.text))}</w:delText>`);
   }
-  return `<w:r>${parts.join("")}</w:r>`;
+  return `${openTag}${parts.join("")}</w:r>`;
 }
 
 export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   let body = "";
 
-  // Pre-scan children for commentReference — needs CommentReference style in rPr
+  // Pre-scan children for commentReference — a styled reference carries the
+  // CommentReference style in its own properties; only an unstyled fresh one
+  // gets the conventional default.
   let commentRefStyle = false;
   if (opts.children) {
     for (const child of opts.children) {
@@ -105,8 +122,8 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
     }
   }
 
-  // Run properties — inject CommentReference style if needed
-  const runOpts = commentRefStyle ? { ...opts, style: "CommentReference" as const } : opts;
+  const runOpts =
+    commentRefStyle && !opts.style ? { ...opts, style: "CommentReference" as const } : opts;
   const rPr = stringifyRunProperties(runOpts);
   if (rPr) body += rPr;
 
@@ -296,6 +313,67 @@ function stringifyInlineWrap(wrap: (string | RunOptions)[] | undefined, ctx: Bod
 }
 
 /**
+ * Serialize a break run inside a track-change wrapper. A parsed break run
+ * keeps its run properties and rsid attributes — the same flat-props shape
+ * the paragraph-level break variants carry.
+ */
+function stringifyTrackChangeBreak(opts: RunOptions, type: "page" | "column"): string {
+  const rPr = stringifyRunProperties(opts) ?? "";
+  let attr = "";
+  if (opts.additionRsid) attr += ` w:rsidR="${opts.additionRsid}"`;
+  if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
+  if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
+  return `<w:r${attr}>${rPr}<w:br w:type="${type}"/></w:r>`;
+}
+
+/**
+ * Serialize the children of a track-change wrapper: runs (delText inside
+ * w:del, plain text inside w:ins), comment range markers, and nested
+ * same-family wrappers — each child's text form follows its nearest wrapper.
+ */
+function stringifyTrackChangeChildren(
+  children: readonly TrackChangeChild[],
+  ctx: BodyContext,
+  isDelete: boolean,
+): string {
+  const parts: string[] = [];
+  for (const c of children) {
+    if (typeof c !== "string" && "commentRangeStart" in c) {
+      parts.push(`<w:commentRangeStart ${buildMarkupRangeAttrs(c.commentRangeStart)}/>`);
+    } else if (typeof c !== "string" && "commentRangeEnd" in c) {
+      parts.push(`<w:commentRangeEnd ${buildMarkupRangeAttrs(c.commentRangeEnd)}/>`);
+    } else if (typeof c !== "string" && "insertion" in c) {
+      const { id, author, date, children: nested } = c.insertion;
+      parts.push(
+        `<w:ins w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">` +
+          stringifyTrackChangeChildren(nested, ctx, false) +
+          "</w:ins>",
+      );
+    } else if (typeof c !== "string" && "deletion" in c) {
+      const { id, author, date, children: nested } = c.deletion;
+      parts.push(
+        `<w:del w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">` +
+          stringifyTrackChangeChildren(nested, ctx, true) +
+          "</w:del>",
+      );
+    } else if (typeof c !== "string" && "pageBreak" in c) {
+      parts.push(stringifyTrackChangeBreak(c as RunOptions, "page"));
+    } else if (typeof c !== "string" && "columnBreak" in c) {
+      parts.push(stringifyTrackChangeBreak(c as RunOptions, "column"));
+    } else {
+      parts.push(
+        isDelete
+          ? stringifyDeletedRun(c)
+          : typeof c === "string"
+            ? stringifyRunInline({ text: c }, ctx)
+            : stringifyRunInline(c, ctx),
+      );
+    }
+  }
+  return parts.join("");
+}
+
+/**
  * Expand a `{ comment }` sugar child: allocate the comment id, register the
  * comment entry (side effect, consumed when word/comments.xml is stringified),
  * and emit the range markers + anchored content + reference with one shared id.
@@ -419,8 +497,12 @@ export function stringifyChildDispatch(
     return `<w:commentRangeStart ${buildMarkupRangeAttrs(child.commentRangeStart)}/>`;
   if ("commentRangeEnd" in child)
     return `<w:commentRangeEnd ${buildMarkupRangeAttrs(child.commentRangeEnd)}/>`;
-  if ("commentReference" in child)
-    return `<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:commentReference w:id="${child.commentReference}"/></w:r>`;
+  if ("commentReference" in child) {
+    // Run properties parsed with the reference survive verbatim — Word does
+    // not always style comment references, so nothing is injected.
+    const rPr = child.properties ? (stringifyRunProperties(child.properties) ?? "") : "";
+    return `<w:r>${rPr}<w:commentReference w:id="${child.commentReference}"/></w:r>`;
+  }
 
   // Bookmark markers — pure XML
   if ("bookmarkStart" in child) {
@@ -585,10 +667,11 @@ export function stringifyChildDispatch(
         mediaData,
         docProperties: opts.altText,
         floating: opts.floating,
+        graphicFrameLocks: opts.graphicFrameLocks,
       },
       ctx,
     );
-    return `<w:r>${drawingXml}</w:r>`;
+    return wrapDrawingRun(drawingXml, opts);
   }
 
   // SmartArt — side effect: smartArt registration
@@ -775,14 +858,14 @@ export function stringifyChildDispatch(
   // Inserted text run(s) — w:ins wraps one or more runs (CT_RunTrackChange)
   if ("insertion" in child) {
     const { id, author, date, children } = child.insertion;
-    const body = stringifyInlineWrap(children, ctx);
+    const body = stringifyTrackChangeChildren(children, ctx, false);
     return `<w:ins w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:ins>`;
   }
 
   // Deleted text run(s) — w:del wraps one or more runs (delText content)
   if ("deletion" in child) {
     const { id, author, date, children } = child.deletion;
-    const body = children.map((c) => stringifyDeletedRun(c)).join("");
+    const body = stringifyTrackChangeChildren(children, ctx, true);
     return `<w:del w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:del>`;
   }
 
@@ -873,12 +956,12 @@ export function stringifyChildDispatch(
   // ── Move revision text runs ──
   if ("movedFrom" in child) {
     const { id, author, date, children } = child.movedFrom;
-    const body = stringifyInlineWrap(children, ctx);
+    const body = stringifyTrackChangeChildren(children, ctx, false);
     return `<w:moveFrom w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveFrom>`;
   }
   if ("movedTo" in child) {
     const { id, author, date, children } = child.movedTo;
-    const body = stringifyInlineWrap(children, ctx);
+    const body = stringifyTrackChangeChildren(children, ctx, false);
     return `<w:moveTo w:id="${id}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveTo>`;
   }
 

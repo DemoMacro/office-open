@@ -428,12 +428,13 @@ export function stringifyParagraphProperties(
   if (options.divId !== undefined) s += `<w:divId w:val="${options.divId}"/>`;
   if (options.cnfStyle) s += cnfStyleStr(options.cnfStyle);
 
-  // Embedded run properties (w:rPr inside w:pPr)
+  // Embedded run properties (w:rPr inside w:pPr) — emitted even when the rPr
+  // holds only a paragraph-mark track-change marker (w:ins/w:del).
   if (options.run) {
     const inner = stringifyRunPropertiesInner(options.run);
-    if (inner !== undefined) {
+    const runOpts = options.run as ParagraphRunPropertiesOptions;
+    if (inner !== undefined || runOpts.insertion || runOpts.deletion) {
       const extra: string[] = [];
-      const runOpts = options.run as ParagraphRunPropertiesOptions;
       if (runOpts.insertion) {
         const { id, author, date } = runOpts.insertion;
         extra.push(`<w:ins w:id="${id}" w:author="${escapeXml(author)}" w:date="${date}"/>`);
@@ -442,7 +443,7 @@ export function stringifyParagraphProperties(
         const { id, author, date } = runOpts.deletion;
         extra.push(`<w:del w:id="${id}" w:author="${escapeXml(author)}" w:date="${date}"/>`);
       }
-      const body = inner + extra.join("");
+      const body = (inner ?? "") + extra.join("");
       s += `<w:rPr>${body}</w:rPr>`;
     }
   }

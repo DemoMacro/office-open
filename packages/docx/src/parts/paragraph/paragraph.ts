@@ -51,6 +51,21 @@ export interface FootnoteEndnoteReferenceOptions {
   customMarkFollows?: boolean;
 }
 
+/**
+ * Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/
+ * w:moveTo, CT_RunTrackChange) — runs, the comment range markers Word anchors
+ * directly inside the wrapper, and nested same-type wrappers.
+ */
+export type TrackChangeChild =
+  | RunOptions
+  | string
+  | { commentRangeStart: MarkupRangeOptions }
+  | { commentRangeEnd: MarkupRangeOptions }
+  | { pageBreak: true }
+  | { columnBreak: true }
+  | { insertion: ChangedProperties & { children: TrackChangeChild[] } }
+  | { deletion: ChangedProperties & { children: TrackChangeChild[] } };
+
 /** Discriminated union of all paragraph child types (inline elements, runs, etc.). */
 export type ParagraphChild =
   | { chart: ChartOptions }
@@ -80,10 +95,10 @@ export type ParagraphChild =
   | { columnBreak: true }
   | { commentRangeStart: MarkupRangeOptions }
   | { commentRangeEnd: MarkupRangeOptions }
-  | { commentReference: number }
+  | { commentReference: number; properties?: RunPropertiesOptions }
   | { comment: CommentChildOptions }
-  | { insertion: ChangedProperties & { children: (RunOptions | string)[] } }
-  | { deletion: ChangedProperties & { children: (RunOptions | string)[] } }
+  | { insertion: ChangedProperties & { children: TrackChangeChild[] } }
+  | { deletion: ChangedProperties & { children: TrackChangeChild[] } }
   | {
       hyperlink: {
         url?: string;
@@ -125,8 +140,8 @@ export type ParagraphChild =
   | { moveToRangeStart: MoveRangeStartOptions }
   | { moveToRangeEnd: MarkupRangeOptions }
   // Move revision text runs
-  | { movedFrom: ChangedProperties & { children: (RunOptions | string)[] } }
-  | { movedTo: ChangedProperties & { children: (RunOptions | string)[] } }
+  | { movedFrom: ChangedProperties & { children: TrackChangeChild[] } }
+  | { movedTo: ChangedProperties & { children: TrackChangeChild[] } }
   // Move revision sugar — library allocates range + run ids and pairs markers
   | { moveFrom: MoveRangeOptions }
   | { moveTo: MoveRangeOptions }

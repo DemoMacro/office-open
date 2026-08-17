@@ -867,9 +867,11 @@ function wrapTopAndBottomStr(margins?: Margins): string {
 
 // ── Inline wrapper ──
 
-/** Render wp:cNvGraphicFramePr. Undefined → authoring default (noChangeAspect=1);
- *  `{}` → empty element; otherwise the given lock flags. */
+/** Render wp:cNvGraphicFramePr. Null → source had none, omit the element;
+ *  undefined → authoring default (noChangeAspect=1); `{}` → empty element;
+ *  otherwise the given lock flags. */
 function stringifyCnvGraphicFramePr(locks?: GraphicFrameLocksOptions | null): string {
+  if (locks === null) return "";
   const resolved = locks ?? { noChangeAspect: true };
   const attrParts: string[] = [];
   if (resolved.noGrp) attrParts.push('noGrp="1"');

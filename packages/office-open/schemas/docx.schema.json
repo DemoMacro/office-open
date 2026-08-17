@@ -1924,6 +1924,17 @@
           "description": "Bar/column gap width as percent of width (c:gapWidth).",
           "type": "number"
         },
+        "graphicFrameLocks": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLocksOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Graphic frame locks (wp:cNvGraphicFramePr). `{}` → empty element; omit → authoring default."
+        },
         "highLowLines": {
           "description": "High-low lines (c:hiLowLines, line/stock 2D).",
           "type": "boolean"
@@ -1987,6 +1998,10 @@
         "protection": {
           "$ref": "#/definitions/ProtectionOptions",
           "description": "Chart protection (c:protection, before c:chart)."
+        },
+        "runProperties": {
+          "$ref": "#/definitions/RunPropertiesOptions",
+          "description": "Run properties of the wrapping w:r (w:rPr before w:drawing)."
         },
         "secondPieSize": {
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
@@ -10797,6 +10812,9 @@
           "properties": {
             "commentReference": {
               "type": "number"
+            },
+            "properties": {
+              "$ref": "#/definitions/RunPropertiesOptions"
             }
           },
           "required": ["commentReference"],
@@ -10826,14 +10844,7 @@
                 },
                 "children": {
                   "items": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/RunOptions"
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ]
+                    "$ref": "#/definitions/TrackChangeChild"
                   },
                   "type": "array"
                 },
@@ -10866,14 +10877,7 @@
                 },
                 "children": {
                   "items": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/RunOptions"
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ]
+                    "$ref": "#/definitions/TrackChangeChild"
                   },
                   "type": "array"
                 },
@@ -11124,14 +11128,7 @@
                 },
                 "children": {
                   "items": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/RunOptions"
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ]
+                    "$ref": "#/definitions/TrackChangeChild"
                   },
                   "type": "array"
                 },
@@ -11164,14 +11161,7 @@
                 },
                 "children": {
                   "items": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/RunOptions"
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ]
+                    "$ref": "#/definitions/TrackChangeChild"
                   },
                   "type": "array"
                 },
@@ -20977,6 +20967,129 @@
         }
       },
       "type": "object"
+    },
+    "TrackChangeChild": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/RunOptions"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "commentRangeStart": {
+              "$ref": "#/definitions/MarkupRangeOptions"
+            }
+          },
+          "required": ["commentRangeStart"],
+          "title": "commentRangeStart",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "commentRangeEnd": {
+              "$ref": "#/definitions/MarkupRangeOptions"
+            }
+          },
+          "required": ["commentRangeEnd"],
+          "title": "commentRangeEnd",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "pageBreak": {
+              "const": true,
+              "type": "boolean"
+            }
+          },
+          "required": ["pageBreak"],
+          "title": "pageBreak",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "columnBreak": {
+              "const": true,
+              "type": "boolean"
+            }
+          },
+          "required": ["columnBreak"],
+          "title": "columnBreak",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "insertion": {
+              "additionalProperties": false,
+              "properties": {
+                "author": {
+                  "description": "Name of the author who made the change",
+                  "type": "string"
+                },
+                "children": {
+                  "items": {
+                    "$ref": "#/definitions/TrackChangeChild"
+                  },
+                  "type": "array"
+                },
+                "date": {
+                  "description": "Date and time when the change was made (ISO 8601 format)",
+                  "type": "string"
+                },
+                "id": {
+                  "description": "Unique identifier for this change (must be unique within the document)",
+                  "type": "number"
+                }
+              },
+              "required": ["author", "children", "date", "id"],
+              "type": "object"
+            }
+          },
+          "required": ["insertion"],
+          "title": "insertion",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "deletion": {
+              "additionalProperties": false,
+              "properties": {
+                "author": {
+                  "description": "Name of the author who made the change",
+                  "type": "string"
+                },
+                "children": {
+                  "items": {
+                    "$ref": "#/definitions/TrackChangeChild"
+                  },
+                  "type": "array"
+                },
+                "date": {
+                  "description": "Date and time when the change was made (ISO 8601 format)",
+                  "type": "string"
+                },
+                "id": {
+                  "description": "Unique identifier for this change (must be unique within the document)",
+                  "type": "number"
+                }
+              },
+              "required": ["author", "children", "date", "id"],
+              "type": "object"
+            }
+          },
+          "required": ["deletion"],
+          "title": "deletion",
+          "type": "object"
+        }
+      ],
+      "description": "Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/ w:moveTo, CT_RunTrackChange) — runs, the comment range markers Word anchors directly inside the wrapper, and nested same-type wrappers."
     },
     "TransformEffectOptions": {
       "additionalProperties": false,

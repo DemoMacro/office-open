@@ -8,7 +8,9 @@ import type { ChartSpaceOptions } from "@office-open/core/chart";
  * @module
  */
 import type { Floating } from "@parts/drawing";
+import type { GraphicFrameLocksOptions } from "@parts/drawing/descriptor";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { MediaTransformation } from "@shared/media";
 
 /**
@@ -26,4 +28,8 @@ export interface ChartOptions extends ChartSpaceOptions {
   floating?: Floating;
   /** Alternative text for accessibility */
   altText?: DocPropertiesOptions;
+  /** Graphic frame locks (wp:cNvGraphicFramePr). `{}` → empty element; omit → authoring default. */
+  graphicFrameLocks?: GraphicFrameLocksOptions | null;
+  /** Run properties of the wrapping w:r (w:rPr before w:drawing). */
+  runProperties?: RunPropertiesOptions;
 }
