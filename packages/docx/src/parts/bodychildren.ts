@@ -9,27 +9,16 @@
 
 import { toUint8Array, uniqueId } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import {
-  attr,
-  attrBool,
-  attrNum,
-  children as xmlChildren,
-  escapeXml,
-  findChild,
-  textOf,
-} from "@office-open/xml";
+import { attr, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
 import type { CustomXmlPropertiesOptions } from "@parts/custom-xml/custom-xml";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import { onOff, stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
+import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
-import type {
-  SdtCheckboxOptions,
-  SdtDateOptions,
-  SdtPropertiesOptions,
-} from "@parts/table-of-contents";
+import type { SdtCheckboxOptions, SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../context";
@@ -277,7 +266,11 @@ export function checkboxSymbolRunInner(cb: SdtCheckboxOptions): string {
 export function stringifySdtPr(opts: SdtPropertiesOptions): string {
   const parts: string[] = [];
 
-  // rPr is not supported in pure JSON path — skip
+  // rPr — the SDT start mark's run properties (CT_SdtPr's leading element)
+  if (opts.runProperties) {
+    const rPrInner = stringifyRunPropertiesInner(opts.runProperties);
+    if (rPrInner) parts.push(`<w:rPr>${rPrInner}</w:rPr>`);
+  }
 
   if (opts.alias !== undefined) parts.push(`<w:alias w:val="${escapeXml(opts.alias)}"/>`);
   if (opts.tag !== undefined) parts.push(`<w:tag w:val="${escapeXml(opts.tag)}"/>`);
@@ -344,167 +337,14 @@ export function stringifySdtShell(
   contentXml: string,
 ): string {
   const endPrInner = endProperties ? stringifyRunPropertiesInner(endProperties) : undefined;
-  const endPr = endPrInner ? `<w:sdtEndPr>${endPrInner}</w:sdtEndPr>` : "<w:sdtEndPr/>";
+  // sdtEndPr is optional (CT_Sdt's minOccurs=0) — omit when the source had
+  // none rather than injecting an empty element on every round-trip.
+  const endPr = endPrInner ? `<w:sdtEndPr>${endPrInner}</w:sdtEndPr>` : "";
   const content = contentXml ? `<w:sdtContent>${contentXml}</w:sdtContent>` : "<w:sdtContent/>";
   return `<w:sdt>${stringifySdtPr(properties)}${endPr}${content}</w:sdt>`;
 }
 
 // ── SDT parse helpers ──
-
-/** Parse w:sdtPr element into SdtPropertiesOptions. */
-function parseSdtPr(el: Element): SdtPropertiesOptions {
-  const opts: SdtPropertiesOptions = {};
-
-  const alias = findChild(el, "w:alias");
-  if (alias) opts.alias = attr(alias, "w:val");
-
-  const tag = findChild(el, "w:tag");
-  if (tag) {
-    const val = attr(tag, "w:val");
-    if (val) opts.tag = val;
-  }
-
-  const id = findChild(el, "w:id");
-  if (id) {
-    const val = attrNum(id, "w:val");
-    if (val !== undefined) opts.id = val;
-  }
-
-  const lock = findChild(el, "w:lock");
-  if (lock) {
-    const val = attr(lock, "w:val");
-    if (val) opts.lock = val as SdtPropertiesOptions["lock"];
-  }
-
-  const placeholder = findChild(el, "w:placeholder");
-  if (placeholder) {
-    const docPart = findChild(placeholder, "w:docPart");
-    opts.placeholder = docPart ? { docPart: attr(docPart, "w:val") ?? "" } : {};
-  }
-
-  const temporary = findChild(el, "w:temporary");
-  if (temporary) opts.temporary = attrBool(temporary, "w:val") ?? true;
-
-  const showingPlcHdr = findChild(el, "w:showingPlcHdr");
-  if (showingPlcHdr) opts.showingPlaceholder = attrBool(showingPlcHdr, "w:val") ?? true;
-
-  const label = findChild(el, "w:label");
-  if (label) {
-    const val = attrNum(label, "w:val");
-    if (val !== undefined) opts.label = val;
-  }
-
-  const tabIndex = findChild(el, "w:tabIndex");
-  if (tabIndex) {
-    const val = attrNum(tabIndex, "w:val");
-    if (val !== undefined) opts.tabIndex = val;
-  }
-
-  // Data binding
-  const dataBinding = findChild(el, "w:dataBinding");
-  if (dataBinding) {
-    opts.dataBinding = {
-      xpath: attr(dataBinding, "w:xpath") ?? "",
-      storeItemID: attr(dataBinding, "w:storeItemID") ?? "",
-      prefixMappings: attr(dataBinding, "w:prefixMappings"),
-    };
-  }
-
-  // Type discriminators (xsd:choice)
-  if (findChild(el, "w:equation")) {
-    opts.equation = true;
-  } else if (findChild(el, "w:comboBox")) {
-    const comboBox = findChild(el, "w:comboBox")!;
-    const items: { displayText?: string; value?: string }[] = [];
-    for (const li of xmlChildren(comboBox, "w:listItem")) {
-      items.push({ displayText: attr(li, "w:displayText"), value: attr(li, "w:value") });
-    }
-    opts.comboBox = {
-      items: items.length > 0 ? items : undefined,
-      lastValue: attr(comboBox, "w:lastValue"),
-    };
-  } else if (findChild(el, "w:date")) {
-    const date = findChild(el, "w:date")!;
-    const dateOpts: SdtDateOptions = {};
-    const dateFormat = findChild(date, "w:dateFormat");
-    if (dateFormat) dateOpts.dateFormat = textOf(dateFormat);
-    const lid = findChild(date, "w:lid");
-    if (lid) dateOpts.languageId = textOf(lid);
-    const storeMapped = findChild(date, "w:storeMappedDataAs");
-    if (storeMapped)
-      dateOpts.storeMappedDataAs = attr(
-        storeMapped,
-        "w:val",
-      ) as SdtDateOptions["storeMappedDataAs"];
-    const calendar = findChild(date, "w:calendar");
-    if (calendar) dateOpts.calendar = attr(calendar, "w:val");
-    const fullDate = attr(date, "w:fullDate");
-    if (fullDate) dateOpts.fullDate = fullDate;
-    opts.date = dateOpts;
-  } else if (findChild(el, "w:docPartObj")) {
-    const dp = findChild(el, "w:docPartObj")!;
-    const dpObj: NonNullable<SdtPropertiesOptions["docPartObj"]> = {};
-    const gallery = findChild(dp, "w:docPartGallery");
-    if (gallery) dpObj.gallery = attr(gallery, "w:val");
-    const category = findChild(dp, "w:docPartCategory");
-    if (category) dpObj.category = attr(category, "w:val");
-    if (findChild(dp, "w:docPartUnique")) dpObj.unique = true;
-    opts.docPartObj = dpObj;
-  } else if (findChild(el, "w:docPartList")) {
-    const dp = findChild(el, "w:docPartList")!;
-    const dpObj: NonNullable<SdtPropertiesOptions["docPartList"]> = {};
-    const gallery = findChild(dp, "w:docPartGallery");
-    if (gallery) dpObj.gallery = attr(gallery, "w:val");
-    const category = findChild(dp, "w:docPartCategory");
-    if (category) dpObj.category = attr(category, "w:val");
-    if (findChild(dp, "w:docPartUnique")) dpObj.unique = true;
-    opts.docPartList = dpObj;
-  } else if (findChild(el, "w:dropDownList")) {
-    const ddl = findChild(el, "w:dropDownList")!;
-    const items: { displayText?: string; value?: string }[] = [];
-    for (const li of xmlChildren(ddl, "w:listItem")) {
-      items.push({ displayText: attr(li, "w:displayText"), value: attr(li, "w:value") });
-    }
-    opts.dropDownList = {
-      items: items.length > 0 ? items : undefined,
-      lastValue: attr(ddl, "w:lastValue"),
-    };
-  } else if (findChild(el, "w:picture")) {
-    opts.picture = true;
-  } else if (findChild(el, "w:richText")) {
-    opts.richText = true;
-  } else if (findChild(el, "w:text")) {
-    const text = findChild(el, "w:text")!;
-    opts.text = { multiLine: attrBool(text, "w:multiLine") };
-  } else if (findChild(el, "w:citation")) {
-    opts.citation = true;
-  } else if (findChild(el, "w:group")) {
-    opts.group = true;
-  } else if (findChild(el, "w:bibliography")) {
-    opts.bibliography = true;
-  } else if (findChild(el, "w14:checkbox")) {
-    const cb = findChild(el, "w14:checkbox")!;
-    const cbObj: SdtCheckboxOptions = {};
-    const checked = findChild(cb, "w14:checked");
-    if (checked) cbObj.checked = attrBool(checked, "w14:val") ?? true;
-    const checkedState = findChild(cb, "w14:checkedState");
-    if (checkedState)
-      cbObj.checkedState = {
-        val: attr(checkedState, "w14:val") ?? "",
-        font: attr(checkedState, "w14:font"),
-      };
-    const uncheckedState = findChild(cb, "w14:uncheckedState");
-    if (uncheckedState)
-      cbObj.uncheckedState = {
-        val: attr(uncheckedState, "w14:val") ?? "",
-        font: attr(uncheckedState, "w14:font"),
-      };
-    opts.checkbox = cbObj;
-  }
-
-  return opts;
-}
-
 /** Parse w:customXmlPr element into CustomXmlPropertiesOptions. */
 export function parseCustomXmlProperties(el: Element): CustomXmlPropertiesOptions {
   const opts: CustomXmlPropertiesOptions = {};
@@ -565,11 +405,11 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
     // sdtPr
     parts.push(stringifySdtPr(opts.properties));
 
-    // sdtEndPr — typically empty, included for round-trip fidelity with Word
+    // sdtEndPr — optional; emitted only when the source carried one
     const endPrInner = opts.endProperties
       ? stringifyRunPropertiesInner(opts.endProperties)
       : undefined;
-    parts.push(endPrInner ? `<w:sdtEndPr>${endPrInner}</w:sdtEndPr>` : "<w:sdtEndPr/>");
+    if (endPrInner) parts.push(`<w:sdtEndPr>${endPrInner}</w:sdtEndPr>`);
 
     // sdtContent — checkbox renders its current state symbol; otherwise serialize children
     if (opts.properties.checkbox) {
@@ -594,7 +434,7 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
 
     // Parse sdtPr
     const sdtPr = findChild(el, "w:sdtPr");
-    const properties = sdtPr ? parseSdtPr(sdtPr) : {};
+    const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
 
     // Parse sdtEndPr (CT_RPr content at the end mark — run properties, no w:rPr wrapper)
     let endProperties: RunPropertiesOptions | undefined;

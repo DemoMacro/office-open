@@ -11,6 +11,8 @@
  * @module
  */
 
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
+
 // ─── Lock ───────────────────────────────────────────────────────────────────
 
 /**
@@ -136,6 +138,8 @@ export interface SdtDataBindingOptions {
  * Options for CT_SdtPr — structured document tag properties.
  */
 export interface SdtPropertiesOptions {
+  /** Run properties for the SDT's start mark (sdtPr's leading w:rPr) */
+  runProperties?: RunPropertiesOptions;
   /** Display name */
   alias?: string;
   /** Application-specific tag */

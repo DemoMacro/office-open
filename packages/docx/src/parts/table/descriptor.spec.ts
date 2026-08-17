@@ -919,3 +919,57 @@ describe("tableDesc round-trip", () => {
     expect(cell.width).toEqual({ size: 1000, type: "auto" });
   });
 });
+
+describe("table cell block-level children (EG_BlockLevelElts)", () => {
+  it("parses a block sdt inside a cell (cover-page dataBinding form)", () => {
+    // Real shape from the SDK corpus: w:tc > w:sdt > w:sdtContent > w:p. The
+    // cell parser must hand every non-tcPr child to the section-child parser
+    // and keep the result in order — the stub marks what it received.
+    const seen: string[] = [];
+    setTableParseChild((el) => {
+      const name = el.name ?? "unknown";
+      seen.push(name);
+      if (name === "w:sdt") return { sdt: { properties: { alias: "stub" } } };
+      return { paragraph: {} };
+    });
+    const xml =
+      `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:tr><w:tc><w:p/><w:sdt><w:sdtPr><w:alias w:val="Company"/></w:sdtPr>` +
+      `<w:sdtContent><w:p><w:r><w:t>Microsoft</w:t></w:r></w:p></w:sdtContent></w:sdt></w:tc></w:tr></w:tbl>`;
+    const opts = tableDesc.parse(parseXml(xml).elements![0]!, readCtx) as TableOptions;
+    expect(seen).toEqual(["w:p", "w:sdt"]);
+    const cell = (opts.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    expect(cell.children).toHaveLength(2);
+    expect(cell.children[1]).toEqual({ sdt: { properties: { alias: "stub" } } });
+    // restore the suite-wide stub
+    setTableParseChild(() => ({ paragraph: {} }));
+  });
+
+  it("emits non-paragraph cell children via the context's child dispatcher", () => {
+    const writeCtxWithMarker = {
+      ...writeCtx,
+      stringifyChild: (child: unknown) =>
+        "sdt" in (child as Record<string, unknown>) ? "<w:sdt-mark/>" : "<w:p/>",
+    } as unknown as BodyContext;
+    const xml = tableDesc.stringify(
+      {
+        rows: [
+          {
+            cells: [
+              {
+                children: [
+                  { paragraph: "lead" },
+                  { sdt: { properties: { alias: "Company" }, children: [] } },
+                ],
+              },
+            ],
+          },
+        ],
+      } as TableOptions,
+      writeCtxWithMarker,
+    )!;
+    expect(xml).toContain("<w:sdt-mark/>");
+    // A cell ending in a block container does not get an injected <w:p/>
+    expect(xml).not.toMatch(/<w:sdt-mark\/><w:p\/>/);
+  });
+});

@@ -88,3 +88,31 @@ describe("inline SDT (CT_SdtRun) parse", () => {
     expect((inner!.sdt as Record<string, unknown>).properties).toMatchObject({ alias: "Inner" });
   });
 });
+
+describe("SDT properties fidelity (CT_SdtPr)", () => {
+  it("round-trips the sdtPr run properties (leading w:rPr)", () => {
+    const opts = parseParagraphXml(
+      '<w:sdt><w:sdtPr><w:rPr><w:color w:val="76923C"/></w:rPr>' +
+        '<w:alias w:val="Company"/><w:dataBinding w:xpath="/ns0:Properties[1]/ns0:Company[1]" ' +
+        'w:storeItemID="{6668398D-A668-4E3E-A5EB-62B293D839F1}"/><w:text/></w:sdtPr>' +
+        "<w:sdtContent><w:r><w:t>Microsoft</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    const child = findInlineSdt(opts);
+    expect((child!.sdt as Record<string, unknown>).properties).toMatchObject({
+      alias: "Company",
+      runProperties: { color: "76923C" },
+    });
+  });
+
+  it("round-trips w:docPartUnique inside docPartObj", () => {
+    const opts = parseParagraphXml(
+      "<w:sdt><w:sdtPr><w:docPartObj>" +
+        '<w:docPartGallery w:val="Table of Contents"/><w:docPartUnique/></w:docPartObj>' +
+        "</w:sdtPr><w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    const child = findInlineSdt(opts);
+    expect((child!.sdt as Record<string, unknown>).properties).toMatchObject({
+      docPartObj: { gallery: "Table of Contents", unique: true },
+    });
+  });
+});

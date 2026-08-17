@@ -112,7 +112,10 @@ function getCellSpans(cell: TableCellOptions): {
 
 /**
  * Stringify a cell child (SectionChild) inline.
- * Handles strings and plain objects (paragraph/table).
+ * Handles strings and plain objects (paragraph/table); every other variant
+ * (block sdt, customXml, altChunk, toc, textbox, rawXml) goes through the
+ * body-child dispatcher the context carries — the same channel sdtBlockDesc
+ * uses for its own children, avoiding a table ↔ body circular import.
  */
 function stringifyCellChild(child: SectionChild, ctx: BodyContext): string {
   if (typeof child === "string") {
@@ -129,7 +132,7 @@ function stringifyCellChild(child: SectionChild, ctx: BodyContext): string {
   }
 
   // Fallback for other types — should not happen inside table cells
-  return "";
+  return ctx.stringifyChild(child);
 }
 
 // ── Cell stringification ──
@@ -147,10 +150,19 @@ function stringifyTableCell(cell: TableCellOptions, ctx: BodyContext): string {
     }
   }
 
-  // Cells must end with a paragraph unless the last child is already one
+  // Cells must end with a paragraph unless the last child is already one.
+  // Block containers (sdt/customXml/toc/textbox) hold the closing paragraph
+  // themselves, so a cell ending in one round-trips without an injected <w:p/>.
   const last = children?.[children.length - 1];
   const endsWithParagraph =
-    last && typeof last !== "string" && ("paragraph" in last || "table" in last);
+    last !== undefined &&
+    typeof last !== "string" &&
+    ("paragraph" in last ||
+      "table" in last ||
+      "sdt" in last ||
+      "customXml" in last ||
+      "toc" in last ||
+      "textbox" in last);
   if (!endsWithParagraph) {
     body += "<w:p/>";
   }
@@ -1008,16 +1020,11 @@ function parseTableCellEl(el: Element, ctx: DocxReadContext): TableCellOptions {
 
   const childElements: SectionChild[] = [];
   for (const child of el.elements ?? []) {
-    switch (child.name) {
-      case "w:tcPr":
-        break;
-      case "w:p":
-      case "w:tbl":
-        if (_parseChild) childElements.push(_parseChild(child, ctx));
-        break;
-      default:
-        break;
-    }
+    // Cell content is EG_BlockLevelElts — the same group the body holds, so
+    // every non-property child (w:p, w:tbl, block sdt, customXml, altChunk,
+    // subDoc, run-level markers) goes through the shared section-child parser.
+    if (child.name === "w:tcPr") continue;
+    if (_parseChild) childElements.push(_parseChild(child, ctx));
   }
 
   opts.children = childElements;

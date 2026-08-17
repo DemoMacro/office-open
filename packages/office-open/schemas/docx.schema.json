@@ -16229,6 +16229,10 @@
           "description": "Rich text SDT",
           "type": "boolean"
         },
+        "runProperties": {
+          "$ref": "#/definitions/RunPropertiesOptions",
+          "description": "Run properties for the SDT's start mark (sdtPr's leading w:rPr)"
+        },
         "showingPlaceholder": {
           "description": "Whether the placeholder text is currently shown",
           "type": "boolean"

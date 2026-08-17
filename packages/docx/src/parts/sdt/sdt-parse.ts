@@ -7,6 +7,7 @@
  */
 import { attr, attrBool, attrNum, children, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
   SdtPropertiesOptions,
   SdtListItem,
@@ -22,7 +23,11 @@ import type { DocxReadContext } from "../../context";
  * Parse w:sdtPr element into SdtPropertiesOptions.
  */
 export function parseSdtProperties(el: Element): SdtPropertiesOptions {
-  const opts: Record<string, unknown> = {};
+  const opts: Partial<SdtPropertiesOptions> = {};
+
+  // rPr — the SDT start mark's run properties (CT_SdtPr's leading element)
+  const rPr = findChild(el, "w:rPr");
+  if (rPr) opts.runProperties = parseRunProperties(rPr);
 
   const alias = findChild(el, "w:alias");
   if (alias) opts.alias = attr(alias, "w:val");
@@ -139,18 +144,22 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     opts.bibliography = true;
   } else if (findChild(el, "w:docPartObj")) {
     const dp = findChild(el, "w:docPartObj")!;
-    opts.docPartObj = {};
+    const dpObj: NonNullable<SdtPropertiesOptions["docPartObj"]> = {};
     const gallery = findChild(dp, "w:docPartGallery");
-    if (gallery) (opts.docPartObj as Record<string, unknown>).gallery = attr(gallery, "w:val");
+    if (gallery) dpObj.gallery = attr(gallery, "w:val");
     const category = findChild(dp, "w:docPartCategory");
-    if (category) (opts.docPartObj as Record<string, unknown>).category = attr(category, "w:val");
+    if (category) dpObj.category = attr(category, "w:val");
+    if (findChild(dp, "w:docPartUnique")) dpObj.unique = true;
+    opts.docPartObj = dpObj;
   } else if (findChild(el, "w:docPartList")) {
     const dp = findChild(el, "w:docPartList")!;
-    opts.docPartList = {};
+    const dpObj: NonNullable<SdtPropertiesOptions["docPartList"]> = {};
     const gallery = findChild(dp, "w:docPartGallery");
-    if (gallery) (opts.docPartList as Record<string, unknown>).gallery = attr(gallery, "w:val");
+    if (gallery) dpObj.gallery = attr(gallery, "w:val");
     const category = findChild(dp, "w:docPartCategory");
-    if (category) (opts.docPartList as Record<string, unknown>).category = attr(category, "w:val");
+    if (category) dpObj.category = attr(category, "w:val");
+    if (findChild(dp, "w:docPartUnique")) dpObj.unique = true;
+    opts.docPartList = dpObj;
   } else if (findChild(el, "w14:checkbox")) {
     const cb = findChild(el, "w14:checkbox")!;
     const cbObj: Record<string, unknown> = {};
