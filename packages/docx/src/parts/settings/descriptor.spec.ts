@@ -235,3 +235,41 @@ describe("settingsDesc round-trip", () => {
     });
   });
 });
+
+describe("settings compat/style-pane fidelity", () => {
+  it("emits only the given compat fields — no injected compatibilityMode", () => {
+    const xml = settingsDesc.stringify({ compatibility: { useFELayout: true } }, writeCtx)!;
+    expect(xml).toContain('<w:useFELayout w:val="1"/>');
+    expect(xml).not.toContain("compatibilityMode");
+  });
+
+  it("round-trips the legacy stylePaneFormatFilter hex bitmask", () => {
+    const result = roundTrip({
+      stylePaneFormatFilter: { allStyles: true, val: "0001" },
+    });
+    expect(result.stylePaneFormatFilter).toEqual({ allStyles: true, val: "0001" });
+  });
+
+  it("round-trips uiCompat97To2003", () => {
+    const result = roundTrip({ uiCompat97To2003: true });
+    expect(result.uiCompat97To2003).toBe(true);
+    const xml = settingsDesc.stringify({ uiCompat97To2003: true }, writeCtx)!;
+    // Sits after m:mathPr (CT_Settings sequence position, Word 2010 form)
+    expect(xml).toContain('<w:uiCompat97To2003 w:val="1"/>');
+  });
+
+  it("round-trips w14:enableOpenTypeKerning inside w:compat", () => {
+    const result = roundTrip({
+      compatibility: { useFELayout: true, enableOpenTypeKerning: true },
+    });
+    expect(result.compatibility).toMatchObject({
+      useFELayout: true,
+      enableOpenTypeKerning: true,
+    });
+    const xml = settingsDesc.stringify(
+      { compatibility: { enableOpenTypeKerning: true } },
+      writeCtx,
+    )!;
+    expect(xml).toContain("<w14:enableOpenTypeKerning/>");
+  });
+});

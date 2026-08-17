@@ -288,6 +288,8 @@ function parseCompatibility(el: Element): CompatibilityOptions | undefined {
       } else {
         extras.push({ name, val, uri: attr(child, "w:uri") });
       }
+    } else if (child.name === "w14:enableOpenTypeKerning") {
+      o.enableOpenTypeKerning = parseOnOff(attr(child, "w14:val")) ?? true;
     }
   }
   if (extras.length > 0) o.compatSettings = extras;
@@ -843,6 +845,8 @@ function stringifyCompatibility(opts: CompatibilityOptions): string {
   if (opts.ignoreVerticalAlignmentInTextboxes) p.push(onOff("w:doNotVertAlignInTxbx", true));
   if (opts.useAnsiKerningPairs) p.push(onOff("w:useAnsiKerningPairs", true));
   if (opts.cachedColumnBalance) p.push(onOff("w:cachedColBalance", true));
+  // Word 2010 extension flag — after the CT_Compat on/off elements
+  if (opts.enableOpenTypeKerning) p.push("<w14:enableOpenTypeKerning/>");
   // compatSetting elements last (XSD order)
   if (opts.version) p.push(compatSetting("compatibilityMode", opts.version));
   if (opts.overrideTableStyleFontSizeAndJustification)
@@ -984,6 +988,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       for (const [prop, xmlKey] of flags) {
         if (f[prop] !== undefined) attrs[xmlKey] = f[prop] ? "1" : "0";
       }
+      // Legacy hex bitmask (Word 2007 form) — string keeps leading zeros
+      if (f.val !== undefined) attrs["w:val"] = f.val;
       p.push(attrEl("w:stylePaneFormatFilter", attrs));
     }
 
@@ -1085,16 +1091,12 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
 
     // Compatibility — tri-state:
     //   undefined → fresh MS Office defaults (4 compatSettings)
-    //   object    → user-specified fields (version defaults to 15)
+    //   object    → exactly the fields given (no version injected — a source
+    //               compat with only on/off flags round-trips as-is)
     //   false     → omit <w:compat> entirely
     if (opts.compatibility !== false) {
       const compatOpts =
-        opts.compatibility === undefined
-          ? FRESH_COMPATIBILITY
-          : {
-              ...opts.compatibility,
-              version: opts.compatibility.version ?? 15,
-            };
+        opts.compatibility === undefined ? FRESH_COMPATIBILITY : opts.compatibility;
       const compatXml = stringifyCompatibility(compatOpts);
       if (compatXml) p.push(compatXml);
     }
@@ -1109,6 +1111,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
 
     if (opts.rsids !== undefined) p.push(stringifyRsids(opts.rsids));
     if (opts.mathProperties !== undefined) p.push(stringifyMathPr(opts.mathProperties));
+    // Word 2010+ UI compat flag — sits between m:mathPr and w:themeFontLang
+    if (opts.uiCompat97To2003 !== undefined)
+      p.push(onOff("w:uiCompat97To2003", opts.uiCompat97To2003));
 
     if (opts.attachedSchema !== undefined) {
       for (const schema of opts.attachedSchema) p.push(strVal("w:attachedSchema", schema)!);
@@ -1290,7 +1295,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // stylePaneFormatFilter → w:stylePaneFormatFilter (complex attributes)
     const spffEl = findChild(el, "w:stylePaneFormatFilter");
     if (spffEl) {
-      const filter: Record<string, boolean> = {};
+      const filter: Record<string, boolean | string> = {};
       const spffFlags: [string, string][] = [
         ["allStyles", "w:allStyles"],
         ["customStyles", "w:customStyles"],
@@ -1312,6 +1317,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
         const v = attr(spffEl, xmlKey);
         if (v !== undefined) filter[prop] = parseOnOff(v) ?? true;
       }
+      // Legacy hex bitmask (Word 2007 form, ST_ShortHexNumber)
+      const spffVal = attr(spffEl, "w:val");
+      if (spffVal !== undefined) filter.val = spffVal;
       if (Object.keys(filter).length > 0) opts.stylePaneFormatFilter = filter;
     }
 
@@ -1499,6 +1507,10 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const mp = parseMathPr(mathPrEl);
       if (mp) opts.mathProperties = mp;
     }
+
+    // uiCompat97To2003 — Word 2010+ flag between mathPr and themeFontLang
+    const uiCompat = findChild(el, "w:uiCompat97To2003");
+    if (uiCompat) opts.uiCompat97To2003 = parseOnOff(attr(uiCompat, "w:val")) ?? true;
 
     // attachedSchema → w:attachedSchema/@w:val (multiple)
     const attachedSchemas: string[] = [];

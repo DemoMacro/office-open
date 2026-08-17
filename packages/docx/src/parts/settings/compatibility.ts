@@ -167,6 +167,9 @@ export interface CompatibilityOptions {
    * doNotFlipMirrorIndents) are de-duplicated on stringify.
    */
   compatSettings?: CompatSettingOptions[];
+  /** Use OpenType kerning (w14:enableOpenTypeKerning — Word 2010 flag inside
+   *  w:compat; boolean = the element's presence). */
+  enableOpenTypeKerning?: boolean;
 }
 
 /**

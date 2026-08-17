@@ -3331,6 +3331,10 @@
           "description": "Enable OpenType Features",
           "type": "boolean"
         },
+        "enableOpenTypeKerning": {
+          "description": "Use OpenType kerning (w14:enableOpenTypeKerning — Word 2010 flag inside w:compat; boolean = the element's presence).",
+          "type": "boolean"
+        },
         "footnoteLayoutLikeWW8": {
           "description": "Emulate Word 6.x/95/97 Footnote Placement",
           "type": "boolean"
@@ -17858,6 +17862,10 @@
             "top3HeadingStyles": {
               "type": "boolean"
             },
+            "val": {
+              "description": "Legacy Word 2007 hex bitmask (ST_ShortHexNumber) — string keeps leading zeros; Word 2010+ writes the boolean attributes instead.",
+              "type": "string"
+            },
             "visibleStyles": {
               "type": "boolean"
             }
@@ -17904,6 +17912,10 @@
         },
         "trackRevisions": {
           "description": "Enable track changes (revision marking)",
+          "type": "boolean"
+        },
+        "uiCompat97To2003": {
+          "description": "Emulate Word 97-2003 UI behavior (w:uiCompat97To2003, Word 2010+)",
           "type": "boolean"
         },
         "updateFields": {

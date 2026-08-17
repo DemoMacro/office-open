@@ -236,6 +236,8 @@ export interface SettingsOptions {
   captions?: CaptionsOptions;
   /** Math properties (m:mathPr) */
   mathProperties?: MathPropertiesOptions;
+  /** Emulate Word 97-2003 UI behavior (w:uiCompat97To2003, Word 2010+) */
+  uiCompat97To2003?: boolean;
   /** Active writing style checking language/grammar settings */
   activeWritingStyle?: {
     lang?: string;
@@ -268,6 +270,9 @@ export interface SettingsOptions {
     visibleStyles?: boolean;
     alternateStyleNames?: boolean;
     latentStyles?: boolean;
+    /** Legacy Word 2007 hex bitmask (ST_ShortHexNumber) — string keeps
+     *  leading zeros; Word 2010+ writes the boolean attributes instead. */
+    val?: string;
   };
   /** Style pane sort method (ST_StyleSort) */
   stylePaneSortMethod?:
