@@ -63,7 +63,7 @@ const options: PresentationOptions = {
       snapToGrid: true,
       snapToObjects: true,
       showGuides: true,
-      varScale: true,
+      view: { variableScale: true, scale: { numerator: 90, denominator: 100 } },
     },
     // Guides
     guides: [
@@ -72,11 +72,13 @@ const options: PresentationOptions = {
     ],
     // Outline view — rId values reference slides via auto-generated viewProps.xml.rels
     outlineView: {
+      view: { scale: { numerator: 100, denominator: 100 }, origin: { x: 0, y: 0 } },
       slides: [{ rId: "rId1" }, { rId: "rId2", collapse: true }],
     },
     // Sorter view
     sorterView: {
       showFormatting: true,
+      view: { scale: { numerator: 60, denominator: 100 } },
     },
     // Notes view
     notesView: true,

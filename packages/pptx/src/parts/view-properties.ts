@@ -1,18 +1,44 @@
 type SplitterBarState = "restored" | "maximized" | "minimized";
 
+/**
+ * CT_CommonViewProperties (`p:cViewPr`) — zoom scale and origin, the child
+ * shared by the slide/outline/notes-text/sorter view property elements.
+ */
+export interface CommonViewPropertiesOptions {
+  /** Zoom scale as a fraction (CT_Scale2D `a:sx` n/d; `a:sy` mirrors sx). */
+  scale?: { numerator: number; denominator: number };
+  /** View origin coordinates (CT_Point2D). */
+  origin?: { x: number; y: number };
+  /** Variable scaling allowed (`@varScale`, default false). */
+  variableScale?: boolean;
+}
+
+/** CT_NormalViewPortion — one restored pane of the normal view. */
+export interface NormalViewPortionOptions {
+  /** Restored pane size in thousandths of a percent (`@sz`, required). */
+  size: number;
+  /** Auto-adjust the pane when the window resizes (`@autoAdjust`, default true). */
+  autoAdjust?: boolean;
+}
+
 export interface NormalViewOptions {
   showOutlineIcons?: boolean;
   snapVertSplitter?: boolean;
   vertBarState?: SplitterBarState;
   horzBarState?: SplitterBarState;
   preferSingleView?: boolean;
+  /** Restored left outline pane (`p:restoredLeft`). */
+  restoredLeft?: NormalViewPortionOptions;
+  /** Restored top notes pane (`p:restoredTop`). */
+  restoredTop?: NormalViewPortionOptions;
 }
 
 export interface SlideViewOptions {
   snapToGrid?: boolean;
   snapToObjects?: boolean;
   showGuides?: boolean;
-  varScale?: boolean;
+  /** Zoom/origin of the slide view (`p:cViewPr`). */
+  view?: CommonViewPropertiesOptions;
 }
 
 const LAST_VIEW_XSD: Record<string, string> = {
@@ -34,24 +60,53 @@ export interface ViewPropertiesOptions {
     | "slideSorterView";
   showComments?: boolean;
   gridSpacing?: { cx: number; cy: number };
-  zoomScaleNumerator?: number;
-  zoomScaleDenominator?: number;
   normalView?: NormalViewOptions;
   slideView?: SlideViewOptions;
   guides?: {
     orient?: "vert" | "horz";
     pos?: number;
   }[];
+  /** Outline view (`p:outlineViewPr`) — view is its required `p:cViewPr`. */
   outlineView?: {
+    view: CommonViewPropertiesOptions;
     slides?: {
       rId: string;
       collapse?: boolean;
     }[];
   };
+  /** Notes text view (`p:notesTextViewPr`) — the `p:cViewPr` payload. */
+  notesTextView?: CommonViewPropertiesOptions;
   sorterView?: {
     showFormatting?: boolean;
+    view: CommonViewPropertiesOptions;
   };
   notesView?: boolean;
+}
+
+function portionXml(
+  name: string,
+  opts: NormalViewPortionOptions | undefined,
+  fallbackSize: number,
+): string {
+  const size = opts?.size ?? fallbackSize;
+  const attrs = [`sz="${size}"`];
+  if (opts?.autoAdjust !== undefined) attrs.push(`autoAdjust="${opts.autoAdjust ? 1 : 0}"`);
+  return `<p:${name} ${attrs.join(" ")}/>`;
+}
+
+function commonViewPrXml(opts: CommonViewPropertiesOptions | undefined): string {
+  // scale and origin are required children; defaults match a fresh Office file.
+  const n = opts?.scale?.numerator ?? 90;
+  const d = opts?.scale?.denominator ?? 100;
+  const x = opts?.origin?.x ?? 1200;
+  const y = opts?.origin?.y ?? 72;
+  const varScale = opts?.variableScale ? ' varScale="1"' : "";
+  return (
+    `<p:cViewPr${varScale}>` +
+    `<p:scale><a:sx n="${n}" d="${d}"/><a:sy n="${n}" d="${d}"/></p:scale>` +
+    `<p:origin x="${x}" y="${y}"/>` +
+    "</p:cViewPr>"
+  );
 }
 
 function buildNormalViewPrXml(opts?: NormalViewOptions): string {
@@ -63,26 +118,14 @@ function buildNormalViewPrXml(opts?: NormalViewOptions): string {
   if (opts?.preferSingleView) attrs.push(' preferSingleView="1"');
   return (
     `<p:normalViewPr${attrs.join("")}>` +
-    '<p:restoredLeft sz="14996" autoAdjust="0"/>' +
-    '<p:restoredTop sz="94660"/>' +
+    portionXml("restoredLeft", opts?.restoredLeft, 15619) +
+    portionXml("restoredTop", opts?.restoredTop, 94681) +
     "</p:normalViewPr>"
-  );
-}
-
-function buildCViewPrXml(zoomN: number, zoomD: number, varScale = false): string {
-  const cViewPrAttr = varScale ? ' varScale="1"' : "";
-  return (
-    `<p:cViewPr${cViewPrAttr}>` +
-    `<p:scale><a:sx n="${zoomN}" d="${zoomD}"/><a:sy n="${zoomN}" d="${zoomD}"/></p:scale>` +
-    '<p:origin x="1200" y="72"/>' +
-    "</p:cViewPr>"
   );
 }
 
 function buildCSldViewPrXml(
   opts?: SlideViewOptions,
-  zoomN = 90,
-  zoomD = 100,
   guides?: ViewPropertiesOptions["guides"],
 ): string {
   const attrs: string[] = [];
@@ -104,7 +147,7 @@ function buildCSldViewPrXml(
 
   return (
     `<p:cSldViewPr${attrs.join("")}>` +
-    buildCViewPrXml(zoomN, zoomD, opts?.varScale !== false) +
+    commonViewPrXml(opts?.view) +
     guideLstXml +
     "</p:cSldViewPr>"
   );
@@ -116,8 +159,6 @@ export function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
     'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
 
-  const zoomN = opts?.zoomScaleNumerator ?? 90;
-  const zoomD = opts?.zoomScaleDenominator ?? 100;
   const gridCx = opts?.gridSpacing?.cx ?? 72008;
   const gridCy = opts?.gridSpacing?.cy ?? 72008;
 
@@ -130,13 +171,13 @@ export function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
   parts.push(`<p:viewPr ${ns}${rootAttrs}>`);
   parts.push(buildNormalViewPrXml(opts?.normalView));
   parts.push("<p:slideViewPr>");
-  parts.push(buildCSldViewPrXml(opts?.slideView, zoomN, zoomD, opts?.guides));
+  parts.push(buildCSldViewPrXml(opts?.slideView, opts?.guides));
   parts.push("</p:slideViewPr>");
 
-  // outlineViewPr (D) — sequence: cViewPr, sldLst
+  // outlineViewPr — sequence: cViewPr (required), sldLst
   if (opts?.outlineView) {
     let outlineXml = "<p:outlineViewPr>";
-    outlineXml += buildCViewPrXml(zoomN, zoomD);
+    outlineXml += commonViewPrXml(opts.outlineView.view);
     if (opts.outlineView.slides && opts.outlineView.slides.length > 0) {
       outlineXml += "<p:sldLst>";
       for (const sl of opts.outlineView.slides) {
@@ -150,26 +191,24 @@ export function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
     parts.push(outlineXml);
   }
 
-  parts.push("<p:notesTextViewPr>");
-  parts.push("<p:cViewPr>");
-  parts.push('<p:scale><a:sx n="1" d="1"/><a:sy n="1" d="1"/></p:scale>');
-  parts.push('<p:origin x="0" y="0"/>');
-  parts.push("</p:cViewPr>");
-  parts.push("</p:notesTextViewPr>");
+  // notesTextViewPr — cViewPr only
+  if (opts?.notesTextView) {
+    parts.push(`<p:notesTextViewPr>${commonViewPrXml(opts.notesTextView)}</p:notesTextViewPr>`);
+  }
 
-  // sorterViewPr (D) — sequence: cViewPr (not cSldViewPr!)
+  // sorterViewPr — sequence: cViewPr (not cSldViewPr!)
   if (opts?.sorterView) {
     const sorterAttrs: string[] = [];
     if (opts.sorterView.showFormatting) sorterAttrs.push(' showFormatting="1"');
-    parts.push(`<p:sorterViewPr${sorterAttrs.join("")}>`);
-    parts.push(buildCViewPrXml(zoomN, zoomD));
+    parts.push(`<p:sorterViewPr${sorterAttrs.join(" ")}>`);
+    parts.push(commonViewPrXml(opts.sorterView.view));
     parts.push("</p:sorterViewPr>");
   }
 
-  // notesViewPr (D) — sequence: cSldViewPr
+  // notesViewPr — sequence: cSldViewPr
   if (opts?.notesView) {
     parts.push("<p:notesViewPr>");
-    parts.push(buildCSldViewPrXml(undefined, zoomN, zoomD));
+    parts.push(buildCSldViewPrXml());
     parts.push("</p:notesViewPr>");
   }
 

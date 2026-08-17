@@ -3389,6 +3389,45 @@
       },
       "type": "object"
     },
+    "CommonViewPropertiesOptions": {
+      "additionalProperties": false,
+      "description": "CT_CommonViewProperties (`p:cViewPr`) — zoom scale and origin, the child shared by the slide/outline/notes-text/sorter view property elements.",
+      "properties": {
+        "origin": {
+          "additionalProperties": false,
+          "description": "View origin coordinates (CT_Point2D).",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": ["x", "y"],
+          "type": "object"
+        },
+        "scale": {
+          "additionalProperties": false,
+          "description": "Zoom scale as a fraction (CT_Scale2D `a:sx` n/d; `a:sy` mirrors sx).",
+          "properties": {
+            "denominator": {
+              "type": "number"
+            },
+            "numerator": {
+              "type": "number"
+            }
+          },
+          "required": ["numerator", "denominator"],
+          "type": "object"
+        },
+        "variableScale": {
+          "description": "Variable scaling allowed (`@varScale`, default false).",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "CompoundLine": {
       "description": "Compound line types for outlines.\n\nDefines the structure of compound lines (single, double, etc.).",
       "enum": ["single", "double", "thickThin", "thinThick", "triple"],
@@ -6689,6 +6728,14 @@
         "preferSingleView": {
           "type": "boolean"
         },
+        "restoredLeft": {
+          "$ref": "#/definitions/NormalViewPortionOptions",
+          "description": "Restored left outline pane (`p:restoredLeft`)."
+        },
+        "restoredTop": {
+          "$ref": "#/definitions/NormalViewPortionOptions",
+          "description": "Restored top notes pane (`p:restoredTop`)."
+        },
         "showOutlineIcons": {
           "type": "boolean"
         },
@@ -6700,6 +6747,22 @@
           "type": "string"
         }
       },
+      "type": "object"
+    },
+    "NormalViewPortionOptions": {
+      "additionalProperties": false,
+      "description": "CT_NormalViewPortion — one restored pane of the normal view.",
+      "properties": {
+        "autoAdjust": {
+          "description": "Auto-adjust the pane when the window resizes (`@autoAdjust`, default true).",
+          "type": "boolean"
+        },
+        "size": {
+          "description": "Restored pane size in thousandths of a percent (`@sz`, required).",
+          "type": "number"
+        }
+      },
+      "required": ["size"],
       "type": "object"
     },
     "NotesMasterOptions": {
@@ -9955,8 +10018,9 @@
         "snapToObjects": {
           "type": "boolean"
         },
-        "varScale": {
-          "type": "boolean"
+        "view": {
+          "$ref": "#/definitions/CommonViewPropertiesOptions",
+          "description": "Zoom/origin of the slide view (`p:cViewPr`)."
         }
       },
       "type": "object"
@@ -11808,11 +11872,16 @@
         "normalView": {
           "$ref": "#/definitions/NormalViewOptions"
         },
+        "notesTextView": {
+          "$ref": "#/definitions/CommonViewPropertiesOptions",
+          "description": "Notes text view (`p:notesTextViewPr`) — the `p:cViewPr` payload."
+        },
         "notesView": {
           "type": "boolean"
         },
         "outlineView": {
           "additionalProperties": false,
+          "description": "Outline view (`p:outlineViewPr`) — view is its required `p:cViewPr`.",
           "properties": {
             "slides": {
               "items": {
@@ -11829,8 +11898,12 @@
                 "type": "object"
               },
               "type": "array"
+            },
+            "view": {
+              "$ref": "#/definitions/CommonViewPropertiesOptions"
             }
           },
+          "required": ["view"],
           "type": "object"
         },
         "showComments": {
@@ -11844,15 +11917,13 @@
           "properties": {
             "showFormatting": {
               "type": "boolean"
+            },
+            "view": {
+              "$ref": "#/definitions/CommonViewPropertiesOptions"
             }
           },
+          "required": ["view"],
           "type": "object"
-        },
-        "zoomScaleDenominator": {
-          "type": "number"
-        },
-        "zoomScaleNumerator": {
-          "type": "number"
         }
       },
       "type": "object"

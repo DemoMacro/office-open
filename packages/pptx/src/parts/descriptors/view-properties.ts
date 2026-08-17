@@ -10,7 +10,9 @@ import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import {
   buildViewPropsXml,
+  type CommonViewPropertiesOptions,
   type NormalViewOptions,
+  type NormalViewPortionOptions,
   type SlideViewOptions,
   type ViewPropertiesOptions,
 } from "@parts/view-properties";
@@ -30,6 +32,34 @@ export const viewPropsDesc: CustomDescriptor<ViewPropertiesOptions> = {
 };
 
 // ── Parse ──
+
+/** Parse p:cViewPr (CT_CommonViewProperties): scale + origin + varScale. */
+function parseCommonViewProperties(el: XmlElement): CommonViewPropertiesOptions {
+  const view: CommonViewPropertiesOptions = {};
+  if (parseOnOff(attr(el, "varScale"))) view.variableScale = true;
+  const scale = findChild(el, "p:scale");
+  if (scale) {
+    const sx = findChild(scale, "a:sx");
+    const n = sx ? attrNum(sx, "n") : undefined;
+    const d = sx ? attrNum(sx, "d") : undefined;
+    if (n !== undefined && d !== undefined) view.scale = { numerator: n, denominator: d };
+  }
+  const origin = findChild(el, "p:origin");
+  if (origin) {
+    const x = attrNum(origin, "x");
+    const y = attrNum(origin, "y");
+    if (x !== undefined || y !== undefined) view.origin = { x: x ?? 0, y: y ?? 0 };
+  }
+  return view;
+}
+
+/** Parse p:restoredLeft / p:restoredTop (CT_NormalViewPortion). */
+function parseNormalViewPortion(el: XmlElement): NormalViewPortionOptions {
+  const portion: NormalViewPortionOptions = { size: attrNum(el, "sz") ?? 0 };
+  const autoAdjust = attrNum(el, "autoAdjust");
+  if (autoAdjust !== undefined) portion.autoAdjust = autoAdjust === 1;
+  return portion;
+}
 
 function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
   const result: Partial<ViewPropertiesOptions> = {};
@@ -63,6 +93,10 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
     const horzBarState = attr(normalViewPr, "horzBarState");
     if (horzBarState) nv.horzBarState = horzBarState as NormalViewOptions["horzBarState"];
     if (parseOnOff(normalViewPr.attributes?.["preferSingleView"])) nv.preferSingleView = true;
+    const restoredLeft = findChild(normalViewPr, "p:restoredLeft");
+    if (restoredLeft) nv.restoredLeft = parseNormalViewPortion(restoredLeft);
+    const restoredTop = findChild(normalViewPr, "p:restoredTop");
+    if (restoredTop) nv.restoredTop = parseNormalViewPortion(restoredTop);
     if (Object.keys(nv).length > 0) result.normalView = nv as NormalViewOptions;
   }
 
@@ -77,18 +111,7 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
       if (parseOnOff(cSldViewPr.attributes?.["showGuides"])) sv.showGuides = true;
 
       const cViewPr = findChild(cSldViewPr, "p:cViewPr");
-      if (cViewPr) {
-        const varScale = attr(cViewPr, "varScale");
-        if (varScale !== undefined) sv.varScale = parseOnOff(varScale) ?? true;
-        const scale = findChild(cViewPr, "p:scale");
-        const sx = scale ? findChild(scale, "a:sx") : undefined;
-        if (sx) {
-          const n = attrNum(sx, "n");
-          const d = attrNum(sx, "d");
-          if (n !== undefined) result.zoomScaleNumerator = n;
-          if (d !== undefined) result.zoomScaleDenominator = d;
-        }
-      }
+      if (cViewPr) sv.view = parseCommonViewProperties(cViewPr);
 
       if (Object.keys(sv).length > 0) result.slideView = sv as SlideViewOptions;
 
@@ -109,26 +132,46 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
     }
   }
 
-  // p:outlineViewPr > p:sldLst
+  // p:outlineViewPr — cViewPr (required) + sldLst
   const outlineViewPr = findChild(el, "p:outlineViewPr");
   if (outlineViewPr) {
-    const sldLst = findChild(outlineViewPr, "p:sldLst");
-    if (sldLst) {
+    const cViewPr = findChild(outlineViewPr, "p:cViewPr");
+    if (cViewPr) {
+      const view = parseCommonViewProperties(cViewPr);
+      const sldLst = findChild(outlineViewPr, "p:sldLst");
       const slides: NonNullable<NonNullable<ViewPropertiesOptions["outlineView"]>["slides"]> = [];
-      for (const sld of sldLst.elements ?? []) {
-        if (sld.name !== "p:sld") continue;
-        const entry: { rId: string; collapse?: boolean } = { rId: attr(sld, "r:id") ?? "" };
-        if (parseOnOff(attr(sld, "collapse"))) entry.collapse = true;
-        slides.push(entry);
+      if (sldLst) {
+        for (const sld of sldLst.elements ?? []) {
+          if (sld.name !== "p:sld") continue;
+          const entry: { rId: string; collapse?: boolean } = { rId: attr(sld, "r:id") ?? "" };
+          if (parseOnOff(attr(sld, "collapse"))) entry.collapse = true;
+          slides.push(entry);
+        }
       }
-      if (slides.length > 0) result.outlineView = { slides };
+      result.outlineView = slides.length > 0 ? { view, slides } : { view };
     }
   }
 
-  // p:sorterViewPr @showFormatting
+  // p:notesTextViewPr — cViewPr only
+  const notesTextViewPr = findChild(el, "p:notesTextViewPr");
+  if (notesTextViewPr) {
+    const cViewPr = findChild(notesTextViewPr, "p:cViewPr");
+    if (cViewPr) result.notesTextView = parseCommonViewProperties(cViewPr);
+  }
+
+  // p:sorterViewPr — cViewPr + @showFormatting
   const sorterViewPr = findChild(el, "p:sorterViewPr");
-  if (sorterViewPr && parseOnOff(sorterViewPr.attributes?.["showFormatting"])) {
-    result.sorterView = { showFormatting: true };
+  if (sorterViewPr) {
+    const cViewPr = findChild(sorterViewPr, "p:cViewPr");
+    if (cViewPr) {
+      const sorter: NonNullable<ViewPropertiesOptions["sorterView"]> = {
+        view: parseCommonViewProperties(cViewPr),
+      };
+      if (String(sorterViewPr.attributes?.["showFormatting"]) === "0") {
+        sorter.showFormatting = false;
+      }
+      result.sorterView = sorter;
+    }
   }
 
   // p:notesViewPr (presence flag — content is the default cSldViewPr)
