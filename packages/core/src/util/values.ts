@@ -326,8 +326,10 @@ export const parseOnOff = (raw: string | number | boolean | undefined): boolean 
   if (raw === undefined) return undefined;
   if (typeof raw === "boolean") return raw;
   const s = String(raw).toLowerCase();
-  if (s === "1" || s === "true" || s === "on") return true;
-  if (s === "0" || s === "false" || s === "off") return false;
+  // Full ST_OnOff union across editions — the original 2006 enumeration
+  // included the single-letter t/f Word 2007 wrote.
+  if (s === "1" || s === "true" || s === "on" || s === "t") return true;
+  if (s === "0" || s === "false" || s === "off" || s === "f") return false;
   return undefined;
 };
 

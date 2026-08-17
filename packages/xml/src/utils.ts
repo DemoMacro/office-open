@@ -141,8 +141,11 @@ export function attrBool(element: Element | undefined, name: string): boolean | 
   if (v === undefined) return undefined;
   if (typeof v === "boolean") return v;
   const lower = String(v).toLowerCase();
-  if (lower === "true" || lower === "1" || lower === "on") return true;
-  if (lower === "false" || lower === "0" || lower === "off") return false;
+  // ST_OnOff across editions: transitional uses xsd:boolean (true/false/1/0),
+  // the original 2006 enumeration added on/off plus the single-letter t/f
+  // Word 2007 wrote — accept the full union so old files parse losslessly.
+  if (lower === "true" || lower === "1" || lower === "on" || lower === "t") return true;
+  if (lower === "false" || lower === "0" || lower === "off" || lower === "f") return false;
   return undefined;
 }
 
