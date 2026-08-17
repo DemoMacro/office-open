@@ -31,11 +31,13 @@ const options: PresentationOptions = {
       date: true,
       slideNumber: true,
     },
-    notesStyle: [
-      { fontSize: 14, marginLeft: 0, alignment: "l" },
-      { fontSize: 12, marginLeft: 457200 },
-      { fontSize: 12, marginLeft: 914400 },
-    ],
+    notesStyle: {
+      levels: [
+        { alignment: "l", marginIndent: 0, defaultRun: { size: 14 } },
+        { marginIndent: 457200, defaultRun: { size: 12 } },
+        { marginIndent: 914400, defaultRun: { size: 12 } },
+      ],
+    },
   },
   slides: [
     {

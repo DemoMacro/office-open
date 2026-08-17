@@ -43,6 +43,14 @@ export function parseHeaderFooter(el: Element | undefined): HeaderFooterOptions 
   return Object.keys(headerFooter).length > 0 ? headerFooter : undefined;
 }
 
+/**
+ * Build the handout master XML (fresh generation only).
+ *
+ * The handout master stays a fixed template: its spTree holds only print-layout
+ * placeholders that PowerPoint regenerates on demand, real files carry no
+ * authorable content worth round-tripping, and nothing in the parse pipeline
+ * consumes it — structuring it would add surface with no consumer.
+ */
 export function buildHandoutMasterXml(options?: HandoutMasterOptions): string {
   const colorMapping = stringifyColorMapping(options?.colorMapping, "p:clrMap");
   const hf = buildHfAttrs(options?.headerFooter);

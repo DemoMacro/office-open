@@ -59,7 +59,7 @@ export type SlideMasterDescriptorOptions = SlideMasterOptions & {
  * children start after the placeholder ids so ids stay unique per part).
  * Verbatim/rawXml children have no id slot and pass through unchanged.
  */
-function withChildId(child: SlideChild, id: number): SlideChild {
+export function withChildId(child: SlideChild, id: number): SlideChild {
   const [key, value] = Object.entries(child)[0] as [string, { id?: number } | string];
   if (typeof value !== "object") return child;
   return { [key]: { ...value, id: value.id ?? id } } as SlideChild;

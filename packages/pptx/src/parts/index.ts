@@ -26,7 +26,7 @@ export {
   type TextListStyleRunOptions,
 } from "./descriptors/text-list-style";
 export { buildLayoutXml, buildCustomLayoutXml, type SlideLayoutType } from "./slide-layout";
-export { buildNotesMasterXml } from "./notes-master";
+export { DEFAULT_NOTES_STYLE, type NotesMasterOptions } from "./notes-master";
 export { buildHandoutMasterXml } from "./handout-master";
 export { buildNotesSlideXml } from "./notes-slide";
 export { type NotesSlideOptions } from "./descriptors/notes-slide";

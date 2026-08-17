@@ -76,6 +76,20 @@ describe("backgroundDesc round-trip", () => {
     expect(xml).not.toContain("p:bwMode");
   });
 
+  it("round-trips a style matrix reference (p:bgRef)", () => {
+    const opts: BackgroundOptions = {
+      reference: { index: 1001, color: { value: "bg1" } },
+    };
+    const result = roundTrip(opts);
+
+    expect(result.reference).toEqual({ index: 1001, color: { value: "bg1" } });
+  });
+
+  it("emits p:bgRef without a color child when color is omitted", () => {
+    const xml = backgroundDesc.stringify({ reference: { index: 1002 } }, {} as never)!;
+    expect(xml).toBe('<p:bg><p:bgRef idx="1002"></p:bgRef></p:bg>');
+  });
+
   it("round-trips gradientFill", () => {
     const opts: BackgroundOptions = {
       fill: {

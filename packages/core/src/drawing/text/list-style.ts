@@ -160,6 +160,14 @@ export function stringifyTextListStyle(opts: TextListStyleOptions): string {
   return `${stringifyGroup("p:titleStyle", opts.title)}${stringifyGroup("p:bodyStyle", opts.body)}${stringifyGroup("p:otherStyle", opts.other)}`;
 }
 
+/** Emit a bare CT_TextListStyle (defPPr + lvl1-9pPr) under the given tag, e.g. p:notesStyle. */
+export function stringifyTextListStyleLevels(
+  tag: string,
+  group: TextListStyleGroupOptions | undefined,
+): string {
+  return stringifyGroup(tag, group);
+}
+
 // ── Parse ──
 
 function parseRun(el: Element | undefined): TextListStyleRunOptions | undefined {
@@ -253,6 +261,14 @@ export function parseTextListStyle(el: Element): TextListStyleOptions {
     body: parseGroup(findChild(el, "p:bodyStyle")),
     other: parseGroup(findChild(el, "p:otherStyle")),
   };
+}
+
+/**
+ * Parse a bare CT_TextListStyle element (defPPr + lvl1-9pPr, no group wrapper)
+ * — the shape of p:notesStyle on the notes master.
+ */
+export function parseTextListStyleLevels(el: Element): TextListStyleGroupOptions | undefined {
+  return parseGroup(el);
 }
 
 // ── Descriptor ──

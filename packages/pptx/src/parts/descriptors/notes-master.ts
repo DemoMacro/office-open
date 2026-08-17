@@ -4,74 +4,94 @@
  * @module
  */
 
-import { convertToPt, parseColorMapping } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
+import { parseColorMapping, stringifyColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrMeasure, findChild } from "@office-open/xml";
-import { parseHeaderFooter } from "@parts/handout-master";
-import { buildNotesMasterXml } from "@parts/notes-master";
-import type { NotesMasterOptions, NotesLevelProperties } from "@parts/notes-master";
+import { parseTextListStyleLevels, stringifyTextListStyleLevels } from "@office-open/core/drawing";
+import { findChild } from "@office-open/xml";
+import type { Element as XmlElement } from "@office-open/xml";
+import { buildHfAttrs, parseHeaderFooter } from "@parts/handout-master";
+import { DEFAULT_NOTES_STYLE } from "@parts/notes-master";
+import type { NotesMasterOptions } from "@parts/notes-master";
+import { NS } from "@parts/slide-layout";
+import { buildBackgroundXml } from "@parts/slide-master";
+import type { SlideChild } from "@parts/slide/slide-child";
+import { SP_TREE_HEADER } from "@shared/constants";
 
-// ── Types ──
-
-const LEVEL_TAGS = [
-  "a:lvl1pPr",
-  "a:lvl2pPr",
-  "a:lvl3pPr",
-  "a:lvl4pPr",
-  "a:lvl5pPr",
-  "a:lvl6pPr",
-  "a:lvl7pPr",
-  "a:lvl8pPr",
-  "a:lvl9pPr",
-];
+import type { PptxWriteContext } from "../../context";
+import { backgroundDesc } from "./background";
+import { parseChild, stringifyChild } from "./bridge";
+import { withChildId } from "./slide-master";
 
 // ── Descriptor ──
 
-export const notesMasterDesc: CustomDescriptor<NotesMasterOptions> = {
+export const notesMasterDesc: CustomDescriptor<NotesMasterOptions, PptxWriteContext> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
-    return buildNotesMasterXml(opts);
+  stringify(opts, ctx) {
+    const parts: string[] = [];
+
+    parts.push(`<p:notesMaster ${NS}>`);
+
+    // p:cSld — bg + spTree.
+    parts.push("<p:cSld>");
+    parts.push(buildBackgroundXml(opts.background));
+    parts.push("<p:spTree>");
+    parts.push(SP_TREE_HEADER);
+    // Children carry explicit cNvPr ids so they never collide with the group
+    // header (id 1) or ids kept from a parsed source.
+    let childId = 100;
+    for (const child of opts.children ?? []) {
+      const xml = stringifyChild(withChildId(child, childId++), ctx);
+      if (xml) parts.push(xml);
+    }
+    parts.push("</p:spTree>");
+    parts.push("</p:cSld>");
+
+    parts.push(stringifyColorMapping(opts.colorMapping, "p:clrMap"));
+    parts.push(`<p:hf ${buildHfAttrs(opts.headerFooter)}/>`);
+    parts.push(
+      stringifyTextListStyleLevels("p:notesStyle", opts.notesStyle ?? DEFAULT_NOTES_STYLE),
+    );
+
+    parts.push("</p:notesMaster>");
+    return parts.join("");
   },
 
-  parse(el, _ctx) {
-    const options: Partial<NotesMasterOptions> = {};
+  parse(el, ctx) {
+    const result: Partial<NotesMasterOptions> = {};
 
-    const colorMapping = parseColorMapping(findChild(el, "p:clrMap"));
-    if (colorMapping) options.colorMapping = colorMapping;
-
-    const headerFooter = parseHeaderFooter(findChild(el, "p:hf"));
-    if (headerFooter) options.headerFooter = headerFooter;
-
-    // notesStyle
-    const notesStyle = findChild(el, "p:notesStyle");
-    if (notesStyle) {
-      const levels: NotesLevelProperties[] = [];
-      for (const tag of LEVEL_TAGS) {
-        const lvlEl = findChild(notesStyle, tag);
-        if (lvlEl) {
-          const lvl: Partial<NotesLevelProperties> = {};
-          const defRPr = findChild(lvlEl, "a:defRPr");
-          if (defRPr) {
-            // ST_TextPoint: unqualified int is 1/100 pt; a UniversalMeasure
-            // string converts to points.
-            const sz = attrMeasure(defRPr, "sz");
-            if (sz !== undefined) {
-              lvl.fontSize =
-                typeof sz === "number" ? sz / 100 : convertToPt(sz as UniversalMeasure);
-            }
-          }
-          const marL = attrMeasure(lvlEl, "marL");
-          if (marL !== undefined) lvl.marginLeft = marL as number | UniversalMeasure;
-          const algn = attr(lvlEl, "algn");
-          if (algn !== undefined) lvl.alignment = algn;
-          levels.push(lvl as NotesLevelProperties);
-        }
+    const cSld = findChild(el, "p:cSld");
+    if (cSld) {
+      const bg = findChild(cSld, "p:bg");
+      if (bg) {
+        const bgOpts = backgroundDesc.parse(bg, ctx);
+        if (bgOpts && Object.keys(bgOpts).length > 0) result.background = bgOpts;
       }
-      if (levels.length > 0) options.notesStyle = levels;
+
+      const spTree = findChild(cSld, "p:spTree");
+      if (spTree) {
+        const children: SlideChild[] = [];
+        for (const child of spTree.elements ?? []) {
+          if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
+          const parsed = parseChild(child, ctx);
+          if (parsed !== undefined) children.push(parsed);
+        }
+        if (children.length > 0) result.children = children;
+      }
     }
 
-    return options as NotesMasterOptions;
+    const colorMapping = parseColorMapping(findChild(el, "p:clrMap"));
+    if (colorMapping) result.colorMapping = colorMapping;
+
+    const headerFooter = parseHeaderFooter(findChild(el, "p:hf"));
+    if (headerFooter) result.headerFooter = headerFooter;
+
+    const notesStyleEl: XmlElement | undefined = findChild(el, "p:notesStyle");
+    if (notesStyleEl) {
+      const notesStyle = parseTextListStyleLevels(notesStyleEl);
+      if (notesStyle) result.notesStyle = notesStyle;
+    }
+
+    return result as NotesMasterOptions;
   },
 };

@@ -4,6 +4,7 @@ import type { WriteContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
 import type { ShapePropertiesOptions } from "@office-open/core/drawing";
 import type { BackgroundOptions } from "@parts/background";
+import { DEFAULT_BACKGROUND_REFERENCE } from "@parts/background";
 import { backgroundDesc } from "@parts/descriptors/background";
 import { stringifyShapeStyle } from "@parts/descriptors/shape";
 import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
@@ -264,7 +265,10 @@ export function buildPlaceholderShapes(
 
 /** Emit p:bg. Undefined background emits the MS Office default bgRef idx="1001". */
 export function buildBackgroundXml(bg?: BackgroundOptions): string {
-  return bg
-    ? (backgroundDesc.stringify(bg, undefined as never) ?? "")
-    : '<p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>';
+  return (
+    backgroundDesc.stringify(
+      bg ?? { reference: DEFAULT_BACKGROUND_REFERENCE },
+      undefined as never,
+    ) ?? ""
+  );
 }

@@ -1690,6 +1690,10 @@
         "fill": {
           "$ref": "#/definitions/FillOptions"
         },
+        "reference": {
+          "$ref": "#/definitions/StyleMatrixReferenceOptions",
+          "description": "Style matrix reference (p:bgRef) — the common \"inherit theme background style\" form; mutually exclusive with fill."
+        },
         "shadeToTitle": {
           "type": "boolean"
         }
@@ -6694,39 +6698,24 @@
       },
       "type": "object"
     },
-    "NotesLevelProperties": {
-      "additionalProperties": false,
-      "description": "Notes style level override",
-      "properties": {
-        "alignment": {
-          "description": "Alignment (\"l\" | \"ctr\" | \"r\" | \"just\")",
-          "type": "string"
-        },
-        "fontSize": {
-          "description": "Font size in points (e.g., 12 = 12pt), ST_TextPoint",
-          "type": "number"
-        },
-        "marginLeft": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Left margin (ST_Coordinate32)"
-        }
-      },
-      "type": "object"
-    },
     "NotesMasterOptions": {
       "additionalProperties": false,
-      "description": "Options for notes master parameterization",
+      "description": "Options for the notes master (p:notesMaster).",
       "properties": {
+        "background": {
+          "$ref": "#/definitions/BackgroundOptions",
+          "description": "Background (p:bg); defaults to the MS Office bgRef idx=\"1001\"."
+        },
+        "children": {
+          "description": "Custom spTree shapes (p:spTree children after the group header).",
+          "items": {
+            "$ref": "#/definitions/SlideChild"
+          },
+          "type": "array"
+        },
         "colorMapping": {
           "additionalProperties": false,
-          "description": "Color mapping overrides",
+          "description": "Color mapping overrides (p:clrMap).",
           "properties": {
             "accent1": {
               "$ref": "#/definitions/ColorSchemeIndex"
@@ -6769,14 +6758,11 @@
         },
         "headerFooter": {
           "$ref": "#/definitions/HeaderFooterOptions",
-          "description": "Header/footer settings"
+          "description": "Header/footer settings (p:hf)."
         },
         "notesStyle": {
-          "description": "Notes style overrides (levels 1-9)",
-          "items": {
-            "$ref": "#/definitions/NotesLevelProperties"
-          },
-          "type": "array"
+          "$ref": "#/definitions/TextListStyleGroupOptions",
+          "description": "Notes text style (p:notesStyle, CT_TextListStyle); defaults to the Office 9-level notes style."
         }
       },
       "type": "object"
