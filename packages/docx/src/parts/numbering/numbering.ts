@@ -16,8 +16,10 @@ import { documentNamespaceAttributes } from "@parts/document/document-attributes
 import { AlignmentType } from "@parts/paragraph";
 import type { ParagraphPropertiesOptions } from "@parts/paragraph/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
+import { parsePict, stringifyPict } from "@parts/pict";
+import type { PictOptions } from "@parts/pict";
 
-import type { DocxReadContext } from "../../context";
+import type { DocxReadContext, DocxWriteContext } from "../../context";
 import { stringifyElement } from "../../util/stringify-element";
 import { stringifyParagraphProperties, stringifyRunProperties } from "../paragraph/stringify";
 import { LevelFormat } from "./level";
@@ -38,8 +40,8 @@ export interface NumberingOptions {
   /** Picture bullet definitions for numbering (w:numPicBullet) */
   numPicBullets?: {
     numPicBulletId: number;
-    /** Verbatim w:pict element XML (CT_Picture) */
-    pict?: string;
+    /** VML picture content (CT_Picture) — imagedata media round-trips through it */
+    pict?: PictOptions;
     /** Verbatim w:drawing element XML (CT_Drawing) — alternative to pict */
     drawing?: string;
   }[];
@@ -158,7 +160,11 @@ export class Numbering {
   private abstractNumUniqueNumericId = uniqueNumericIdCreator();
   private concreteNumUniqueNumericId = uniqueNumericIdCreator(1);
   private _numIdMacAtCleanup?: number;
-  private _numPicBullets?: { numPicBulletId: number; pict?: string; drawing?: string }[];
+  private _numPicBullets?: {
+    numPicBulletId: number;
+    pict?: PictOptions;
+    drawing?: string;
+  }[];
 
   public constructor(options: NumberingOptions) {
     this._numIdMacAtCleanup = options.numIdMacAtCleanup;
@@ -193,17 +199,20 @@ export class Numbering {
   }
 
   /** Serialize to word/numbering.xml content (with XML declaration). */
-  public serialize(): string {
+  public serialize(ctx: DocxWriteContext): string {
     const parts: string[] = [];
     parts.push(`<w:numbering ${NUMBERING_ATTRS}>`);
 
     // numPicBullet elements come first (XSD order)
     if (this._numPicBullets) {
       for (const bullet of this._numPicBullets) {
-        const inner = bullet.pict ?? bullet.drawing;
-        if (inner) {
+        if (bullet.pict) {
           parts.push(
-            `<w:numPicBullet w:numPicBulletId="${bullet.numPicBulletId}">${inner}</w:numPicBullet>`,
+            `<w:numPicBullet w:numPicBulletId="${bullet.numPicBulletId}">${stringifyPict(bullet.pict, { file: ctx })}</w:numPicBullet>`,
+          );
+        } else if (bullet.drawing) {
+          parts.push(
+            `<w:numPicBullet w:numPicBulletId="${bullet.numPicBulletId}">${bullet.drawing}</w:numPicBullet>`,
           );
         } else {
           parts.push(`<w:numPicBullet w:numPicBulletId="${bullet.numPicBulletId}"/>`);
@@ -421,11 +430,11 @@ export function parseNumberingDefinitions(
   for (const child of el.elements ?? []) {
     if (child.name !== "w:numPicBullet") continue;
     const id = attrNum(child, "w:numPicBulletId");
-    const bullet: { numPicBulletId: number; pict?: string; drawing?: string } = {
+    const bullet: { numPicBulletId: number; pict?: PictOptions; drawing?: string } = {
       numPicBulletId: id ?? 0,
     };
     const pictEl = findChild(child, "w:pict");
-    if (pictEl) bullet.pict = stringifyElement(pictEl);
+    if (pictEl) bullet.pict = parsePict(pictEl, ctx);
     const drawingEl = findChild(child, "w:drawing");
     if (drawingEl) bullet.drawing = stringifyElement(drawingEl);
     numPicBullets.push(bullet);

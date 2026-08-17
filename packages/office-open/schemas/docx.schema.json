@@ -10001,8 +10001,8 @@
                 "type": "number"
               },
               "pict": {
-                "description": "Verbatim w:pict element XML (CT_Picture)",
-                "type": "string"
+                "$ref": "#/definitions/PictOptions",
+                "description": "VML picture content (CT_Picture) — imagedata media round-trips through it"
               }
             },
             "required": ["numPicBulletId"],

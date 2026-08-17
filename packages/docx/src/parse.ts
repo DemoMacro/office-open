@@ -466,7 +466,11 @@ export function parseDocument(data: DataType): DocumentOptions {
 
   // Numbering definitions
   if (docx.numbering) {
-    const numOpts = parseNumberingDefinitions(docx.numbering, parseParagraphProperties, ctx);
+    // withPart so picture bullets resolve their imagedata r:id against
+    // numbering.xml's own rels, not the document's.
+    const numOpts = ctx.withPart("word/numbering.xml", () =>
+      parseNumberingDefinitions(docx.numbering!, parseParagraphProperties, ctx),
+    );
     if (numOpts) opts.numbering = numOpts;
   }
 

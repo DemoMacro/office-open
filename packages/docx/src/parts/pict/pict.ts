@@ -45,8 +45,11 @@ export interface PictOptions {
  * Serialize w:pict: register imagedata media (dedup may rename — the shape
  * tree's `{fileName}` placeholders are remapped to the registered names), then
  * emit the ordered children.
+ *
+ * The context is narrowed to the media registry — callers outside the body
+ * descriptor chain (e.g. numbering picture bullets) pass `{ file: writeCtx }`.
  */
-export function stringifyPict(opts: PictOptions, ctx: BodyContext): string {
+export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">): string {
   const renames = new Map<string, string>();
   for (const m of opts.media ?? []) {
     // Skip empty/extensionless entries — they would register a 0-byte part

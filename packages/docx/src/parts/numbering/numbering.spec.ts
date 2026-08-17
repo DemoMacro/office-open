@@ -3,9 +3,19 @@ import { AlignmentType } from "@parts/paragraph";
 import { describe, expect, it } from "vite-plus/test";
 
 import { parseParagraphProperties } from "../../body";
-import type { DocxReadContext } from "../../context";
+import type { DocxReadContext, DocxWriteContext } from "../../context";
 import { LevelFormat, LevelSuffix } from "./level";
 import { Numbering, parseNumberingDefinitions } from "./numbering";
+
+const writeCtx = {
+  file: {
+    media: {
+      addMedia: (_d: unknown, _t: string, _b: unknown, fileName?: string) => ({
+        fileName: fileName ?? "image1.png",
+      }),
+    },
+  },
+} as unknown as DocxWriteContext;
 
 describe("Numbering", () => {
   describe("#constructor", () => {
@@ -14,7 +24,7 @@ describe("Numbering", () => {
         abstractNumberings: [],
       });
 
-      const xml = numbering.serialize();
+      const xml = numbering.serialize(writeCtx);
 
       expect(xml).to.contain("<w:numbering");
       expect(xml).to.contain("<w:abstractNum");
@@ -146,7 +156,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     // concrete w:num instance (what parse iterates) needs an explicit instance.
     numbering.createConcreteNumberingInstance("decimal-list", 0);
 
-    const xml = numbering.serialize();
+    const xml = numbering.serialize(writeCtx);
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
@@ -183,18 +193,21 @@ describe("parseNumberingDefinitions (round-trip)", () => {
   it("round-trips numPicBullets (pict) and numIdMacAtCleanup", () => {
     const numbering = new Numbering({
       abstractNumberings: [],
-      numPicBullets: [{ numPicBulletId: 3, pict: "<w:pict><v:shape/></w:pict>" }],
+      numPicBullets: [
+        { numPicBulletId: 3, pict: { children: [{ shape: { id: "_x0000_i1025" } }] } },
+      ],
       numIdMacAtCleanup: 9,
     });
-    const xml = numbering.serialize();
+    const xml = numbering.serialize(writeCtx);
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
 
     expect(opts?.numPicBullets).toHaveLength(1);
     expect(opts?.numPicBullets?.[0]?.numPicBulletId).toBe(3);
-    expect(opts?.numPicBullets?.[0]?.pict).toContain("<w:pict");
-    expect(opts?.numPicBullets?.[0]?.pict).toContain("v:shape");
+    expect(opts?.numPicBullets?.[0]?.pict?.children?.[0]).toMatchObject({
+      shape: { id: "_x0000_i1025" },
+    });
     expect(opts?.numPicBullets?.[0]?.drawing).toBeUndefined();
     expect(opts?.numIdMacAtCleanup).toBe(9);
   });
@@ -204,7 +217,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
       abstractNumberings: [],
       numPicBullets: [{ numPicBulletId: 5, drawing: "<w:drawing><wp:inline/></w:drawing>" }],
     });
-    const xml = numbering.serialize();
+    const xml = numbering.serialize(writeCtx);
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
@@ -225,7 +238,7 @@ describe("parseNumberingDefinitions (round-trip)", () => {
       ],
     });
     numbering.createConcreteNumberingInstance("linked-list", 0);
-    const xml = numbering.serialize();
+    const xml = numbering.serialize(writeCtx);
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);

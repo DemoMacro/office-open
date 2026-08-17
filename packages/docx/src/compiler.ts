@@ -619,7 +619,7 @@ function xmlifyContext(
     ...(ctx.hasNumbering
       ? {
           Numbering: {
-            data: ctx.numbering.serialize(),
+            data: ctx.numbering.serialize(ctx),
             path: "word/numbering.xml",
           },
         }
