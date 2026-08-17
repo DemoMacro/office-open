@@ -117,11 +117,14 @@ function parseRootRels(doc: ParsedArchive): {
 
     const path = target.startsWith("/") ? target.slice(1) : target;
 
-    if (type.includes("/core-properties")) {
+    // Transitional packages use the oclc URI form with camelCase segments
+    // (…/extendedProperties); normalize case and hyphens so both resolve.
+    const relType = type.toLowerCase().replaceAll("-", "");
+    if (relType.includes("/coreproperties")) {
       coreProps = path;
-    } else if (type.includes("/extended-properties")) {
+    } else if (relType.includes("/extendedproperties")) {
       appProps = path;
-    } else if (type.includes("/custom-properties")) {
+    } else if (relType.includes("/customproperties")) {
       customProps = path;
     }
   }

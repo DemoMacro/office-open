@@ -38,6 +38,8 @@ export interface AppPropertiesOptions {
   words?: number;
   /** Character count */
   characters?: number;
+  /** Intended print/display format, e.g. "Custom" or "A4 Paper" */
+  presentationFormat?: string;
   /** Line count */
   lines?: number;
   /** Paragraph count */
@@ -108,6 +110,8 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
     if (opts.pages !== undefined) p.push(`<Pages>${opts.pages}</Pages>`);
     if (opts.words !== undefined) p.push(`<Words>${opts.words}</Words>`);
     if (opts.characters !== undefined) p.push(`<Characters>${opts.characters}</Characters>`);
+    if (opts.presentationFormat !== undefined)
+      p.push(`<PresentationFormat>${escapeXml(opts.presentationFormat)}</PresentationFormat>`);
     if (opts.lines !== undefined) p.push(`<Lines>${opts.lines}</Lines>`);
     if (opts.paragraphs !== undefined) p.push(`<Paragraphs>${opts.paragraphs}</Paragraphs>`);
     if (opts.slides !== undefined) p.push(`<Slides>${opts.slides}</Slides>`);
@@ -179,6 +183,9 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
           break;
         case "Characters":
           if (typeof text === "string") result.characters = Number(text);
+          break;
+        case "PresentationFormat":
+          if (typeof text === "string") result.presentationFormat = text;
           break;
         case "Lines":
           if (typeof text === "string") result.lines = Number(text);

@@ -158,9 +158,12 @@ export function parseXlsx(data: DataType): XlsxDocument {
       if (child.name !== "Relationship") continue;
       const type = attr(child, "Type") ?? "";
       const target = attr(child, "Target") ?? "";
-      if (type.includes("/core-properties")) coreProps = target;
-      else if (type.includes("/extended-properties")) appProps = target;
-      else if (type.includes("/custom-properties")) customProps = target;
+      // Transitional packages use the oclc URI form with camelCase segments
+      // (…/extendedProperties); normalize case and hyphens so both resolve.
+      const relType = type.toLowerCase().replaceAll("-", "");
+      if (relType.includes("/coreproperties")) coreProps = target;
+      else if (relType.includes("/extendedproperties")) appProps = target;
+      else if (relType.includes("/customproperties")) customProps = target;
     }
   }
 
