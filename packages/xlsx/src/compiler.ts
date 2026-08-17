@@ -55,7 +55,11 @@ import { tableDesc } from "@parts/table";
 import { createThemeXml } from "@parts/theme";
 import type { TablePartReference, SheetDefinition } from "@parts/workbook";
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
-import { buildWorksheetXml, type WorksheetContext } from "@parts/worksheet";
+import {
+  buildWorksheetXml,
+  stripWorksheetPlaceholders,
+  type WorksheetContext,
+} from "@parts/worksheet";
 import type { RowOptions, WorksheetOptions } from "@parts/worksheet";
 import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
 import { columnToLetter, letterToColumn } from "@util/index";
@@ -207,6 +211,7 @@ export function compileWorkbook(
         definedNames: options.definedNames,
         workbookPr: options.workbookPr,
         calcPr: options.calcPr,
+        oleSize: options.oleSize,
         bookView: options.bookView,
       },
       ctx,
@@ -591,11 +596,9 @@ function compileWorksheetPart(
       path: `xl/drawings/_rels/drawing${drawingIdx}.xml.rels`,
     };
 
-    // Insert drawing reference before the closing </worksheet> tag.
+    // Insert drawing reference at its CT_Worksheet sequence position.
     const drawingRid = ++nextRid;
-    const closingTag = "</worksheet>";
-    sheetXml =
-      sheetXml.slice(0, -closingTag.length) + `<drawing r:id="rId${drawingRid}"/>` + closingTag;
+    sheetXml = sheetXml.replace("<!--DRAWING-->", `<drawing r:id="rId${drawingRid}"/>`);
 
     // Add drawing relationship to worksheet rels
     wsRels!.addRelationship(
@@ -638,10 +641,8 @@ function compileWorksheetPart(
       `../drawings/vmlDrawing${commentsIdx}.vml`,
     );
 
-    // Insert legacyDrawing reference before closing </worksheet>
-    const closingTag = "</worksheet>";
-    sheetXml =
-      sheetXml.slice(0, -closingTag.length) + `<legacyDrawing r:id="rId${vmlRid}"/>` + closingTag;
+    // Insert legacyDrawing reference at its CT_Worksheet sequence position.
+    sheetXml = sheetXml.replace("<!--LEGACY_DRAWING-->", `<legacyDrawing r:id="rId${vmlRid}"/>`);
   }
 
   // Background picture
@@ -859,12 +860,13 @@ function compileWorksheetPart(
     }
   }
 
-  // Insert tableParts before closing </worksheet> tag
+  // Insert tableParts at their CT_Worksheet sequence position
   if (wsTableParts.length > 0) {
-    const tablePartsXml = buildTablePartsXml(wsTableParts);
-    const closingTag = "</worksheet>";
-    sheetXml = sheetXml.slice(0, -closingTag.length) + tablePartsXml + closingTag;
+    sheetXml = sheetXml.replace("<!--TABLE_PARTS-->", buildTablePartsXml(wsTableParts));
   }
+  // Strip placeholders the compiler did not replace (drawing, legacyDrawing,
+  // tableParts) — their existence depends on relationships owned here.
+  sheetXml = stripWorksheetPlaceholders(sheetXml);
 
   // Write worksheet rels if needed
   if (wsRels) {

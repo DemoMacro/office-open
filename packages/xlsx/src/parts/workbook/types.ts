@@ -396,6 +396,8 @@ export interface WorkbookDescriptorOptions {
   fileSharing?: FileSharingOptions;
   workbookPr?: WorkbookPropertiesOptions;
   calcPr?: CalculationPropertiesOptions;
+  /** OLE embedded range (CT_OleSize, after calcPr per XSD sequence) */
+  oleSize?: string;
   bookView?: WorkbookViewOptions;
   volTypes?: VolTypeOptions[];
   webPublishObjects?: WebPublishObjectOptions[];

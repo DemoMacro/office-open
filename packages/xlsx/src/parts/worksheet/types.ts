@@ -1282,8 +1282,6 @@ export interface WorksheetOptions {
   cellWatches?: CellWatchOptions[];
   /** Data consolidation (CT_DataConsolidate) */
   dataConsolidate?: DataConsolidateOptions;
-  /** OLE embedded range (CT_OleSize) */
-  oleSize?: string;
   /** Drawing in header/footer (CT_DrawingHF) */
   drawingHF?: DrawingHfOptions;
   /**

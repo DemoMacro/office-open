@@ -239,110 +239,6 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push(`<sheetCalcPr${scAttrs.length ? " " + scAttrs.join(" ") : ""}/>`);
   }
 
-  // Row breaks (after sheetCalcPr per XSD sequence)
-  if (rowBreaks.length > 0) {
-    let manualCount = 0;
-    const brkParts = rowBreaks.map((b) => {
-      const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
-      if (b.min !== undefined) bAttrs.min = b.min;
-      if (b.max !== undefined) bAttrs.max = b.max;
-      if (b.manual) {
-        bAttrs.man = 1;
-        manualCount++;
-      }
-      if (b.pivot) bAttrs.pt = 1;
-      return `<brk${attrs(bAttrs)}/>`;
-    });
-    p.push(
-      `<rowBreaks count="${rowBreaks.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</rowBreaks>`,
-    );
-  }
-
-  // Column breaks
-  if (colBreaks.length > 0) {
-    let manualCount = 0;
-    const brkParts = colBreaks.map((b) => {
-      const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
-      if (b.min !== undefined) bAttrs.min = b.min;
-      if (b.max !== undefined) bAttrs.max = b.max;
-      if (b.manual) {
-        bAttrs.man = 1;
-        manualCount++;
-      }
-      if (b.pivot) bAttrs.pt = 1;
-      return `<brk${attrs(bAttrs)}/>`;
-    });
-    p.push(
-      `<colBreaks count="${colBreaks.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</colBreaks>`,
-    );
-  }
-
-  // Custom properties (CT_CustomProperties, after colBreaks per XSD sequence)
-  if (customProperties.length > 0) {
-    const cpParts: string[] = ["<customProperties>"];
-    for (const cp of customProperties) {
-      cpParts.push(`<customPr name="${escapeXml(cp.name)}" r:id="${escapeXml(cp.rId)}"/>`);
-    }
-    cpParts.push("</customProperties>");
-    p.push(cpParts.join(""));
-  }
-
-  // OLE size
-  if (opts.oleSize) {
-    p.push(`<oleSize ref="${escapeXml(opts.oleSize)}"/>`);
-  }
-
-  // Custom sheet views (after oleSize per XSD sequence)
-  if (customSheetViews.length > 0) {
-    p.push("<customSheetViews>");
-    for (const csv of customSheetViews) {
-      const csvAttrs: Record<string, string | number | boolean | undefined> = { guid: csv.guid };
-      if (csv.scale !== undefined) csvAttrs.scale = csv.scale;
-      if (csv.showPageBreaks) csvAttrs.showPageBreaks = 1;
-      if (csv.showFormulas) csvAttrs.showFormulas = 1;
-      if (csv.showGridLines === false) csvAttrs.showGridLines = 0;
-      if (csv.showRowColHeaders === false) csvAttrs.showRowCol = 0;
-      if (csv.outlineSymbols === false) csvAttrs.outlineSymbols = 0;
-      if (csv.zeroValues === false) csvAttrs.zeroValues = 0;
-      if (csv.fitToPage) csvAttrs.fitToPage = 1;
-      if (csv.printArea) csvAttrs.printArea = 1;
-      if (csv.filter) csvAttrs.filter = 1;
-      if (csv.showAutoFilter) csvAttrs.showAutoFilter = 1;
-      if (csv.hiddenRows) csvAttrs.hiddenRows = 1;
-      if (csv.hiddenColumns) csvAttrs.hiddenColumns = 1;
-      if (csv.state && csv.state !== "visible") csvAttrs.state = csv.state;
-      if (csv.filterUnique) csvAttrs.filterUnique = 1;
-      if (csv.view && csv.view !== "normal") csvAttrs.view = csv.view;
-      p.push(`<customSheetView${attrs(csvAttrs)}/>`);
-    }
-    p.push("</customSheetViews>");
-  }
-
-  // Cell watches
-  if (cellWatches.length > 0) {
-    p.push("<cellWatches>");
-    for (const cw of cellWatches) {
-      p.push(`<cellWatch r="${escapeXml(cw.reference)}"/>`);
-    }
-    p.push("</cellWatches>");
-  }
-
-  // Data consolidation
-  if (opts.dataConsolidate) {
-    const dc = opts.dataConsolidate;
-    const dcAttrs: Record<string, string | number | boolean | undefined> = {};
-    if (dc.function && dc.function !== "sum") dcAttrs.function = dc.function;
-    if (dc.topLabels) dcAttrs.topLabels = 1;
-    if (dc.leftLabels) dcAttrs.leftLabels = 1;
-    if (dc.startLabels) dcAttrs.startLabels = 1;
-    if (dc.link) dcAttrs.link = 1;
-    const refsInner = dc.refs?.map((r) => `<dataRef ref="${escapeXml(r)}"/>`).join("") ?? "";
-    const refsXml = refsInner ? `<dataRefs>${refsInner}</dataRefs>` : "";
-    if (refsXml || Object.keys(dcAttrs).length > 0) {
-      p.push(`<dataConsolidate${attrs(dcAttrs)}>${refsXml}</dataConsolidate>`);
-    }
-  }
-
   // Sheet protection (after sheetData, before protectedRanges per XSD sequence)
   if (opts.protection) {
     p.push(stringifySheetProtectionXml(opts.protection));
@@ -419,6 +315,48 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   // Auto filter (CT_AutoFilter is shared with table — logic in auto-filter.ts)
   if (opts.autoFilter) {
     p.push(stringifyAutoFilter(opts.autoFilter));
+  }
+
+  // Data consolidation
+  if (opts.dataConsolidate) {
+    const dc = opts.dataConsolidate;
+    const dcAttrs: Record<string, string | number | boolean | undefined> = {};
+    if (dc.function && dc.function !== "sum") dcAttrs.function = dc.function;
+    if (dc.topLabels) dcAttrs.topLabels = 1;
+    if (dc.leftLabels) dcAttrs.leftLabels = 1;
+    if (dc.startLabels) dcAttrs.startLabels = 1;
+    if (dc.link) dcAttrs.link = 1;
+    const refsInner = dc.refs?.map((r) => `<dataRef ref="${escapeXml(r)}"/>`).join("") ?? "";
+    const refsXml = refsInner ? `<dataRefs>${refsInner}</dataRefs>` : "";
+    if (refsXml || Object.keys(dcAttrs).length > 0) {
+      p.push(`<dataConsolidate${attrs(dcAttrs)}>${refsXml}</dataConsolidate>`);
+    }
+  }
+
+  // Custom sheet views (after dataConsolidate per XSD sequence)
+  if (customSheetViews.length > 0) {
+    p.push("<customSheetViews>");
+    for (const csv of customSheetViews) {
+      const csvAttrs: Record<string, string | number | boolean | undefined> = { guid: csv.guid };
+      if (csv.scale !== undefined) csvAttrs.scale = csv.scale;
+      if (csv.showPageBreaks) csvAttrs.showPageBreaks = 1;
+      if (csv.showFormulas) csvAttrs.showFormulas = 1;
+      if (csv.showGridLines === false) csvAttrs.showGridLines = 0;
+      if (csv.showRowColHeaders === false) csvAttrs.showRowCol = 0;
+      if (csv.outlineSymbols === false) csvAttrs.outlineSymbols = 0;
+      if (csv.zeroValues === false) csvAttrs.zeroValues = 0;
+      if (csv.fitToPage) csvAttrs.fitToPage = 1;
+      if (csv.printArea) csvAttrs.printArea = 1;
+      if (csv.filter) csvAttrs.filter = 1;
+      if (csv.showAutoFilter) csvAttrs.showAutoFilter = 1;
+      if (csv.hiddenRows) csvAttrs.hiddenRows = 1;
+      if (csv.hiddenColumns) csvAttrs.hiddenColumns = 1;
+      if (csv.state && csv.state !== "visible") csvAttrs.state = csv.state;
+      if (csv.filterUnique) csvAttrs.filterUnique = 1;
+      if (csv.view && csv.view !== "normal") csvAttrs.view = csv.view;
+      p.push(`<customSheetView${attrs(csvAttrs)}/>`);
+    }
+    p.push("</customSheetViews>");
   }
 
   // Merge cells
@@ -618,37 +556,64 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (hfXml) p.push(hfXml);
   }
 
-  // Drawing in header/footer (after headerFooter per XSD sequence)
-  if (opts.drawingHF) {
-    const dhf = opts.drawingHF;
-    const dhfAttrs: Record<string, string | number | boolean | undefined> = { "r:id": dhf.rId };
-    if (dhf.lho !== undefined) dhfAttrs.lho = dhf.lho;
-    if (dhf.lhe !== undefined) dhfAttrs.lhe = dhf.lhe;
-    if (dhf.lhf !== undefined) dhfAttrs.lhf = dhf.lhf;
-    if (dhf.cho !== undefined) dhfAttrs.cho = dhf.cho;
-    if (dhf.che !== undefined) dhfAttrs.che = dhf.che;
-    if (dhf.chf !== undefined) dhfAttrs.chf = dhf.chf;
-    if (dhf.rho !== undefined) dhfAttrs.rho = dhf.rho;
-    if (dhf.rhe !== undefined) dhfAttrs.rhe = dhf.rhe;
-    if (dhf.rhf !== undefined) dhfAttrs.rhf = dhf.rhf;
-    if (dhf.lfo !== undefined) dhfAttrs.lfo = dhf.lfo;
-    if (dhf.lfe !== undefined) dhfAttrs.lfe = dhf.lfe;
-    if (dhf.lff !== undefined) dhfAttrs.lff = dhf.lff;
-    if (dhf.cfo !== undefined) dhfAttrs.cfo = dhf.cfo;
-    if (dhf.cfe !== undefined) dhfAttrs.cfe = dhf.cfe;
-    if (dhf.cff !== undefined) dhfAttrs.cff = dhf.cff;
-    if (dhf.rfo !== undefined) dhfAttrs.rfo = dhf.rfo;
-    if (dhf.rfe !== undefined) dhfAttrs.rfe = dhf.rfe;
-    if (dhf.rff !== undefined) dhfAttrs.rff = dhf.rff;
-    p.push(selfCloseElement("drawingHF", attrs(dhfAttrs)));
+  // Row breaks (after headerFooter per XSD sequence)
+  if (rowBreaks.length > 0) {
+    let manualCount = 0;
+    const brkParts = rowBreaks.map((b) => {
+      const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
+      if (b.min !== undefined) bAttrs.min = b.min;
+      if (b.max !== undefined) bAttrs.max = b.max;
+      if (b.manual) {
+        bAttrs.man = 1;
+        manualCount++;
+      }
+      if (b.pivot) bAttrs.pt = 1;
+      return `<brk${attrs(bAttrs)}/>`;
+    });
+    p.push(
+      `<rowBreaks count="${rowBreaks.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</rowBreaks>`,
+    );
   }
 
-  // Legacy drawing in header/footer
-  if (opts.legacyDrawingHF) {
-    p.push(`<legacyDrawingHF r:id="${escapeXml(opts.legacyDrawingHF)}"/>`);
+  // Column breaks
+  if (colBreaks.length > 0) {
+    let manualCount = 0;
+    const brkParts = colBreaks.map((b) => {
+      const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
+      if (b.min !== undefined) bAttrs.min = b.min;
+      if (b.max !== undefined) bAttrs.max = b.max;
+      if (b.manual) {
+        bAttrs.man = 1;
+        manualCount++;
+      }
+      if (b.pivot) bAttrs.pt = 1;
+      return `<brk${attrs(bAttrs)}/>`;
+    });
+    p.push(
+      `<colBreaks count="${colBreaks.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</colBreaks>`,
+    );
   }
 
-  // Ignored errors (after headerFooter per XSD sequence)
+  // Custom properties (CT_CustomProperties, after colBreaks per XSD sequence)
+  if (customProperties.length > 0) {
+    const cpParts: string[] = ["<customProperties>"];
+    for (const cp of customProperties) {
+      cpParts.push(`<customPr name="${escapeXml(cp.name)}" r:id="${escapeXml(cp.rId)}"/>`);
+    }
+    cpParts.push("</customProperties>");
+    p.push(cpParts.join(""));
+  }
+
+  // Cell watches
+  if (cellWatches.length > 0) {
+    p.push("<cellWatches>");
+    for (const cw of cellWatches) {
+      p.push(`<cellWatch r="${escapeXml(cw.reference)}"/>`);
+    }
+    p.push("</cellWatches>");
+  }
+
+  // Ignored errors (after cellWatches per XSD sequence)
   if (ignoredErrors.length > 0) {
     const ieParts: string[] = ["<ignoredErrors>"];
     for (const ie of ignoredErrors) {
@@ -696,6 +661,42 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     }
     stParts.push("</smartTags>");
     p.push(stParts.join(""));
+  }
+
+  // Drawing / legacy drawing / table parts placeholders — the compiler owns
+  // these parts' relationships; it replaces the markers it needs and strips
+  // the rest, so the sheet-level order lives here in one place.
+  p.push("<!--DRAWING-->");
+  p.push("<!--LEGACY_DRAWING-->");
+
+  // Legacy drawing in header/footer
+  if (opts.legacyDrawingHF) {
+    p.push(`<legacyDrawingHF r:id="${escapeXml(opts.legacyDrawingHF)}"/>`);
+  }
+
+  // Drawing in header/footer (after legacyDrawingHF per XSD sequence)
+  if (opts.drawingHF) {
+    const dhf = opts.drawingHF;
+    const dhfAttrs: Record<string, string | number | boolean | undefined> = { "r:id": dhf.rId };
+    if (dhf.lho !== undefined) dhfAttrs.lho = dhf.lho;
+    if (dhf.lhe !== undefined) dhfAttrs.lhe = dhf.lhe;
+    if (dhf.lhf !== undefined) dhfAttrs.lhf = dhf.lhf;
+    if (dhf.cho !== undefined) dhfAttrs.cho = dhf.cho;
+    if (dhf.che !== undefined) dhfAttrs.che = dhf.che;
+    if (dhf.chf !== undefined) dhfAttrs.chf = dhf.chf;
+    if (dhf.rho !== undefined) dhfAttrs.rho = dhf.rho;
+    if (dhf.rhe !== undefined) dhfAttrs.rhe = dhf.rhe;
+    if (dhf.rhf !== undefined) dhfAttrs.rhf = dhf.rhf;
+    if (dhf.lfo !== undefined) dhfAttrs.lfo = dhf.lfo;
+    if (dhf.lfe !== undefined) dhfAttrs.lfe = dhf.lfe;
+    if (dhf.lff !== undefined) dhfAttrs.lff = dhf.lff;
+    if (dhf.cfo !== undefined) dhfAttrs.cfo = dhf.cfo;
+    if (dhf.cfe !== undefined) dhfAttrs.cfe = dhf.cfe;
+    if (dhf.cff !== undefined) dhfAttrs.cff = dhf.cff;
+    if (dhf.rfo !== undefined) dhfAttrs.rfo = dhf.rfo;
+    if (dhf.rfe !== undefined) dhfAttrs.rfe = dhf.rfe;
+    if (dhf.rff !== undefined) dhfAttrs.rff = dhf.rff;
+    p.push(selfCloseElement("drawingHF", attrs(dhfAttrs)));
   }
 
   // Background picture placeholder — compiler replaces with <picture r:id="rIdN"/>
@@ -787,6 +788,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     wpParts.push("</webPublishItems>");
     p.push(wpParts.join(""));
   }
+
+  p.push("<!--TABLE_PARTS-->");
 
   // Extension list (extLst, last per XSD sequence)
   if (opts.ext) {
@@ -943,6 +946,21 @@ export function appendSheetDataRows(
       out.push(`<row${rowAttr}/>`);
     }
   }
+}
+
+/**
+ * Strip the placeholder comments stringifyWorksheet emits for parts whose
+ * relationships the compiler owns (drawing, legacyDrawing, tableParts,
+ * background picture). The compiler replaces the ones it needs and strips the
+ * rest; callers that write worksheet XML without the compiler (patch
+ * append/replace) always strip.
+ */
+export function stripWorksheetPlaceholders(xml: string): string {
+  return xml
+    .replace("<!--DRAWING-->", "")
+    .replace("<!--LEGACY_DRAWING-->", "")
+    .replace("<!--TABLE_PARTS-->", "")
+    .replace("<!--BACKGROUND_PICTURE-->", "");
 }
 
 function buildCellString(

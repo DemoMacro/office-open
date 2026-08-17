@@ -247,6 +247,11 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     parts.push('<calcPr calcId="191029" fullCalcOnLoad="1"/>');
   }
 
+  // OLE size (after calcPr, before customWorkbookViews per XSD sequence)
+  if (opts.oleSize) {
+    parts.push(`<oleSize ref="${escapeXml(opts.oleSize)}"/>`);
+  }
+
   // Custom workbook views (after calcPr, before pivotCaches per XSD)
   if (opts.customViews && opts.customViews.length > 0) {
     parts.push("<customWorkbookViews>");

@@ -164,6 +164,13 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       result.calcPr = calc;
     }
 
+    // OLE size (after calcPr, before customWorkbookViews per XSD sequence)
+    const oleSizeEl = findChild(el, "oleSize");
+    if (oleSizeEl) {
+      const ref = attr(oleSizeEl, "ref");
+      if (ref) result.oleSize = ref;
+    }
+
     // Custom workbook views
     const customViewsEl = findChild(el, "customWorkbookViews");
     if (customViewsEl) {

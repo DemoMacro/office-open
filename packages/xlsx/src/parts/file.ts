@@ -93,6 +93,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   bookView?: WorkbookViewOptions;
   /** Calculation properties (CT_CalcPr) */
   calcPr?: CalculationPropertiesOptions;
+  /** OLE embedded range (CT_OleSize) — workbook-level, after calcPr */
+  oleSize?: string;
   /** Workbook properties (CT_WorkbookPr) — includes defaultThemeVersion, which Excel
    * requires when the package carries a theme (dropping it makes the file unopenable) */
   workbookPr?: WorkbookPropertiesOptions;

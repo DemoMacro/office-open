@@ -34,7 +34,7 @@ import { stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { SharedStrings, sharedStringsDesc } from "@parts/shared-strings";
-import { buildWorksheetXml } from "@parts/worksheet";
+import { buildWorksheetXml, stripWorksheetPlaceholders } from "@parts/worksheet";
 import type { CommentOptions, WorksheetOptions } from "@parts/worksheet";
 import { dateToSerialNumber } from "@util/index";
 
@@ -514,8 +514,12 @@ function appendWorksheetToMap(
   const sheetPath = `xl/worksheets/sheet${newN}.xml`;
   const sheetName = wsOpts.name ?? `Sheet${newN}`;
 
-  // Worksheet part (no XML declaration — matches generated worksheet parts)
-  xmlMap.set(sheetPath, toJson(buildWorksheetXml(wsOpts, { sharedStrings })));
+  // Worksheet part (no XML declaration — matches generated worksheet parts).
+  // Placeholder comments are stripped: patch never wires compiler-owned rels.
+  xmlMap.set(
+    sheetPath,
+    toJson(stripWorksheetPlaceholders(buildWorksheetXml(wsOpts, { sharedStrings }))),
+  );
 
   // workbook.xml <sheets> + workbook.xml.rels (the new rId ties them)
   const wbRoot = rootOf(xmlMap.get("xl/workbook.xml"));
@@ -575,7 +579,10 @@ function replaceWorksheetInMap(
   sharedStrings: SharedStrings,
 ): void {
   const sheetPath = resolveSheetPath(xmlMap, name);
-  xmlMap.set(sheetPath, toJson(buildWorksheetXml(wsOpts, { sharedStrings })));
+  xmlMap.set(
+    sheetPath,
+    toJson(stripWorksheetPlaceholders(buildWorksheetXml(wsOpts, { sharedStrings }))),
+  );
 }
 
 /**

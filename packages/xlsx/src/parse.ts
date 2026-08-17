@@ -311,6 +311,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (wbData.protection) opts.workbookProtection = wbData.protection;
     if (wbData.bookView) opts.bookView = wbData.bookView;
     if (wbData.calcPr) opts.calcPr = wbData.calcPr;
+    if (wbData.oleSize) opts.oleSize = wbData.oleSize;
     if (wbData.customViews) opts.customWorkbookViews = wbData.customViews;
     if (wbData.fileRecoveryPr) opts.fileRecoveryPr = wbData.fileRecoveryPr;
     if (wbData.functionGroups) opts.functionGroups = wbData.functionGroups;

@@ -1953,7 +1953,7 @@
           "description": "Page setup"
         },
         "published": {
-          "description": "Published to server (CT_ChartsheetPr `@published`)",
+          "description": "Published to server (CT_ChartsheetPr `@published`, XSD default true — only false is emitted)",
           "type": "boolean"
         },
         "sheetProtection": {
@@ -2031,7 +2031,7 @@
           "type": "boolean"
         },
         "usePrinterDefaults": {
-          "description": "Use printer defaults",
+          "description": "Use printer defaults (XSD default true — only false is emitted)",
           "type": "boolean"
         },
         "verticalDpi": {
@@ -4016,7 +4016,7 @@
           "description": "Page setup"
         },
         "published": {
-          "description": "Published to a server (CT_SheetPr `@published`)",
+          "description": "Published to a server (CT_SheetPr `@published`, XSD default true — only false is emitted)",
           "type": "boolean"
         },
         "sheetProtection": {
@@ -7431,7 +7431,7 @@
           "type": "boolean"
         },
         "usePrinterDefaults": {
-          "description": "Use printer defaults (CT_PageSetup `@usePrinterDefaults`)",
+          "description": "Use printer defaults (CT_PageSetup `@usePrinterDefaults`, XSD default true — only false is emitted)",
           "type": "boolean"
         },
         "verticalDpi": {
@@ -12133,7 +12133,7 @@
       "description": "Sheet properties extended options (CT_SheetPr attributes)",
       "properties": {
         "enableFormatConditionsCalculation": {
-          "description": "Enable format conditions calculation (CT_SheetPr `@enableFormatConditionsCalculation`)",
+          "description": "Enable format conditions calculation (CT_SheetPr `@enableFormatConditionsCalculation`, XSD default true — only false is emitted)",
           "type": "boolean"
         },
         "filterMode": {
@@ -12157,7 +12157,7 @@
           "type": "boolean"
         },
         "published": {
-          "description": "Published to server (CT_SheetPr `@published`)",
+          "description": "Published to server (CT_SheetPr `@published`, XSD default true — only false is emitted)",
           "type": "boolean"
         },
         "syncHorizontal": {
@@ -14136,6 +14136,10 @@
           "description": "Last modified timestamp (W3CDTF), round-tripped from dcterms:modified.",
           "type": "string"
         },
+        "oleSize": {
+          "description": "OLE embedded range (CT_OleSize) — workbook-level, after calcPr",
+          "type": "string"
+        },
         "pivotCacheRecords": {
           "description": "Pivot cache records — parse-only (CT-layer)",
           "items": {
@@ -14985,10 +14989,6 @@
             "$ref": "#/definitions/OleObjectOptions"
           },
           "type": "array"
-        },
-        "oleSize": {
-          "description": "OLE embedded range (CT_OleSize)",
-          "type": "string"
         },
         "pageMargins": {
           "$ref": "#/definitions/PageMarginsOptions",
