@@ -7,6 +7,7 @@
  * @module
  */
 
+import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
 import type { ColorMappingOptions } from "../theme/theme-options";
 
 // ── Series common (CT_Ser shared children) ──
@@ -14,6 +15,12 @@ import type { ColorMappingOptions } from "../theme/theme-options";
 /** Fields shared by every chart series type (name + optional decorations). */
 export interface ChartSeriesCommon {
   name: string;
+  /** Series name reference formula (c:tx > c:strRef > c:f) — round-trip. */
+  nameFormula?: string;
+  /** Values reference formula (c:val > c:numRef > c:f) — round-trip. */
+  valueFormula?: string;
+  /** Values number format (c:numCache > c:formatCode) — round-trip. */
+  formatCode?: string;
   trendlines?: readonly TrendlineOptions[];
   errorBars?: ErrorBarOptions;
   dataLabels?: DataLabelsOptions;
@@ -29,6 +36,8 @@ export interface ChartSeriesCommon {
   explosion?: number;
   /** Picture-fill options (c:pictureOptions, bar/area). */
   pictureOptions?: PictureOptionsOptions;
+  /** Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip. */
+  shapeProperties?: ShapePropertiesOptions;
   /** 3D bar column shape (c:shape, bar3D). */
   shape?: BarShape;
   /** 3D bubble (c:bubble3D on the bubble series). */
@@ -152,14 +161,52 @@ export type ChartType =
 // ── ChartSpace options ──
 
 export interface ChartSpaceOptions {
+  /**
+   * Chart title (c:title). An empty string round-trips a title placeholder
+   * that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).
+   */
   title?: string;
+  /** 1904 date system (c:date1904) — emitted only when the source had it. */
+  date1904?: boolean;
+  /** Chart UI language (c:lang, e.g. "en-US") — emitted only when set. */
+  language?: string;
+  /** Rounded chart-area corners (c:roundedCorners) — emitted only when set. */
+  roundedCorners?: boolean;
+  /** Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set. */
+  autoTitleDeleted?: boolean;
+  /** Chart-area shape properties (c:spPr after c:chart) — round-trip. */
+  shapeProperties?: ShapePropertiesOptions;
   type: ChartType;
   categories?: readonly string[];
+  /**
+   * Categories are numeric (c:cat carries c:numRef/c:numCache instead of
+   * c:strRef/c:strCache). Numeric categories render on a value-formatted
+   * axis; parse sets this when the source used numRef.
+   */
+  numericCategories?: boolean;
+  /** Category reference formula (c:cat > c:*Ref > c:f) — round-trip. */
+  categoryFormula?: string;
+  /** Category number format (c:numCache > c:formatCode, numeric categories). */
+  categoryFormatCode?: string;
   /** Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef). */
   multiLevelCategories?: readonly (readonly string[])[];
   /** Literal category labels, emitted as c:strLit (c:cat > c:strLit). */
   categoryLabels?: readonly string[];
   series: readonly ChartSeriesData[] | readonly BubbleSeriesData[];
+  /**
+   * Vary data-point colors (chart-group-level c:varyColors). Emitted only
+   * when set — the corpus is mixed and fresh output stays bare.
+   */
+  varyColors?: boolean;
+  /**
+   * Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only).
+   * Emitted only when set.
+   */
+  markers?: boolean;
+  /** 3D bar column shape (chart-group-level c:shape on c:bar3DChart). */
+  shape?: BarShape;
+  /** Chart-group-level data labels (c:dLbls after the ser elements). */
+  dataLabels?: DataLabelsOptions;
   showLegend?: boolean;
   style?: number;
   threeD?: boolean;
@@ -170,6 +217,12 @@ export interface ChartSpaceOptions {
    * parsed back, enabling full round-trip of gridlines/units/tick marks/etc.
    */
   axes?: readonly AxisOptions[];
+  /**
+   * Axis references (c:axId sequence on the chart group) — round-trip.
+   * Normally derived from `axes`; kept when the source sequence differs
+   * (legacy Word writes a dangling `axId val="0"` for a missing third axis).
+   */
+  axisIds?: readonly number[];
   /** Manual plot-area layout (c:plotArea > c:layout > c:manualLayout). */
   plotAreaLayout?: ManualLayoutOptions;
   /** 3D floor (c:floor). */
@@ -353,6 +406,8 @@ export interface AxisOptions {
   // CT_ValAx
   crossBetween?: AxisCrossBetween;
   displayUnits?: DisplayUnitsOptions;
+  /** Axis shape properties (c:spPr between tickLblPos and crossAx) — round-trip. */
+  shapeProperties?: ShapePropertiesOptions;
 }
 
 // ── Series marker / data point / picture options (CT_Marker/CT_DPt/CT_PictureOptions) ──

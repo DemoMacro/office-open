@@ -759,20 +759,19 @@ export function stringifyChildDispatch(
       type: "chart",
     };
 
-    // Register chart — pass all ChartSpaceOptions fields through
-    const chartXml = chartSpaceDesc.stringify(
-      {
-        categories: opts.categories,
-        series: opts.series,
-        showLegend: opts.showLegend,
-        style: opts.style,
-        title: opts.title,
-        type: opts.type,
-        threeD: opts.threeD,
-        view3D: opts.view3D,
-      },
-      ctx.file,
-    );
+    // Register chart — strip the DOCX anchor-wrapper fields and pass every
+    // ChartSpaceOptions field through so round-tripped charts keep their
+    // axes, spPr, dLbls, externalData, …
+    const {
+      transformation: _t,
+      floating: _f,
+      altText: _a,
+      graphicFrameLocks: _g,
+      runProperties: _r,
+      lastRenderedPageBreak: _l,
+      ...chartSpace
+    } = opts;
+    const chartXml = chartSpaceDesc.stringify(chartSpace, ctx.file);
     ctx.file.charts.addChart(chartKey, {
       key: chartKey,
       chartSpaceXml: chartXml ?? "",

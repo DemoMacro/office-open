@@ -1102,4 +1102,150 @@ describe("chartSpaceDesc", () => {
     expect(result.legendPosition).toBe("t");
     expect(result.legendEntries).toEqual([{ index: 1, delete: true }]);
   });
+
+  it("omits optional header elements when unset and round-trips them when set", () => {
+    const bare: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+    };
+    const bareXml = stringify(chartSpaceDesc, bare, {} as WriteContext);
+    expect(bareXml).not.toContain("c:date1904");
+    expect(bareXml).not.toContain("c:lang");
+    expect(bareXml).not.toContain("c:roundedCorners");
+    expect(bareXml).not.toContain("c:autoTitleDeleted");
+    expect(bareXml).not.toContain("<c:spPr>");
+
+    const opts: ChartSpaceOptions = {
+      ...bare,
+      date1904: false,
+      language: "de-DE",
+      roundedCorners: false,
+      autoTitleDeleted: true,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:date1904 val="0"/>');
+    expect(xml).toContain('<c:lang val="de-DE"/>');
+    expect(xml).toContain('<c:roundedCorners val="0"/>');
+    expect(xml).toContain("<c:autoTitleDeleted/>");
+
+    const result = roundTrip(opts);
+    expect(result.date1904).toBe(false);
+    expect(result.language).toBe("de-DE");
+    expect(result.roundedCorners).toBe(false);
+    expect(result.autoTitleDeleted).toBe(true);
+  });
+
+  it("round-trips an empty title as the bare placeholder", () => {
+    const opts: ChartSpaceOptions = {
+      type: "pie",
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+      title: "",
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:title/>");
+
+    const result = roundTrip(opts);
+    expect(result.title).toBe("");
+  });
+
+  it("round-trips reference formulas and format codes on series and categories", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      numericCategories: true,
+      categories: ["1", "2", "3"],
+      categoryFormula: "Sheet1!$A$2:$A$4",
+      categoryFormatCode: "0.00",
+      series: [
+        {
+          name: "Revenue",
+          nameFormula: "Sheet1!$B$1",
+          valueFormula: "Sheet1!$B$2:$B$4",
+          formatCode: "#,##0",
+          values: [10, 20, 30],
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:f>Sheet1!$A$2:$A$4</c:f>");
+    expect(xml).toContain("<c:formatCode>0.00</c:formatCode>");
+    expect(xml).toContain("<c:f>Sheet1!$B$1</c:f>");
+    expect(xml).toContain("<c:formatCode>#,##0</c:formatCode>");
+
+    const result = roundTrip(opts);
+    expect(result.numericCategories).toBe(true);
+    expect(result.categoryFormula).toBe("Sheet1!$A$2:$A$4");
+    expect(result.categoryFormatCode).toBe("0.00");
+    expect(result.series[0] as ChartSeriesData).toMatchObject({
+      nameFormula: "Sheet1!$B$1",
+      valueFormula: "Sheet1!$B$2:$B$4",
+      formatCode: "#,##0",
+    });
+  });
+
+  it("round-trips chart-group decorations (varyColors, markers, shape, group dLbls)", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      threeD: true,
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+      varyColors: true,
+      shape: "box",
+      axisIds: [111, 222, 0],
+      dataLabels: { showVal: true },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:varyColors/>");
+    expect(xml).toContain('<c:shape val="box"/>');
+    expect(xml).toContain('<c:axId val="0"/>');
+    expect(xml).toContain("<c:showVal/>");
+
+    const result = roundTrip(opts);
+    expect(result.varyColors).toBe(true);
+    expect(result.shape).toBe("box");
+    expect(result.axisIds).toEqual([111, 222, 0]);
+    expect(result.dataLabels?.showVal).toBe(true);
+  });
+
+  it("round-trips line chart marker flag", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      markers: true,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:marker/>");
+
+    const result = roundTrip(opts);
+    expect(result.markers).toBe(true);
+  });
+
+  it("round-trips shape properties on chart space, series, and axis", () => {
+    const noFillLine = { type: "noFill" } as const;
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A"],
+      series: [{ name: "S", values: [1], shapeProperties: { outline: noFillLine } }],
+      shapeProperties: { outline: noFillLine },
+      axes: [
+        {
+          kind: "category",
+          id: 10,
+          crossAxisId: 20,
+          shapeProperties: { outline: noFillLine },
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:spPr><a:ln><a:noFill/></a:ln></c:spPr>");
+
+    const result = roundTrip(opts);
+    expect(result.shapeProperties?.outline).toEqual({ type: "noFill" });
+    expect((result.series[0] as ChartSeriesData).shapeProperties?.outline).toEqual({
+      type: "noFill",
+    });
+    expect(result.axes?.[0]?.shapeProperties?.outline).toEqual({ type: "noFill" });
+  });
 });

@@ -410,6 +410,10 @@
         "scaling": {
           "$ref": "#/definitions/AxisScalingOptions"
         },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Axis shape properties (c:spPr between tickLblPos and crossAx) — round-trip."
+        },
         "tickLabelPosition": {
           "$ref": "#/definitions/AxisTickLabelPosition"
         },
@@ -995,6 +999,10 @@
           "description": "Pie slice explosion offset in percent (c:explosion).",
           "type": "number"
         },
+        "formatCode": {
+          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
+          "type": "string"
+        },
         "invertIfNegative": {
           "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
           "type": "boolean"
@@ -1006,6 +1014,10 @@
         "name": {
           "type": "string"
         },
+        "nameFormula": {
+          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
+          "type": "string"
+        },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
@@ -1013,6 +1025,10 @@
         "shape": {
           "$ref": "#/definitions/BarShape",
           "description": "3D bar column shape (c:shape, bar3D)."
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip."
         },
         "smooth": {
           "description": "Smooth the line (c:smooth, line/scatter).",
@@ -1023,6 +1039,10 @@
             "$ref": "#/definitions/TrendlineOptions"
           },
           "type": "array"
+        },
+        "valueFormula": {
+          "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
+          "type": "string"
         },
         "xValues": {
           "items": {
@@ -1836,6 +1856,10 @@
           "description": "Pie slice explosion offset in percent (c:explosion).",
           "type": "number"
         },
+        "formatCode": {
+          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
+          "type": "string"
+        },
         "invertIfNegative": {
           "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
           "type": "boolean"
@@ -1847,6 +1871,10 @@
         "name": {
           "type": "string"
         },
+        "nameFormula": {
+          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
+          "type": "string"
+        },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
@@ -1854,6 +1882,10 @@
         "shape": {
           "$ref": "#/definitions/BarShape",
           "description": "3D bar column shape (c:shape, bar3D)."
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip."
         },
         "smooth": {
           "description": "Smooth the line (c:smooth, line/scatter).",
@@ -1864,6 +1896,10 @@
             "$ref": "#/definitions/TrendlineOptions"
           },
           "type": "array"
+        },
+        "valueFormula": {
+          "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
+          "type": "string"
         },
         "values": {
           "items": {
@@ -1878,10 +1914,21 @@
     "ChartSpaceOptions": {
       "additionalProperties": false,
       "properties": {
+        "autoTitleDeleted": {
+          "description": "Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set.",
+          "type": "boolean"
+        },
         "axes": {
           "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
           "items": {
             "$ref": "#/definitions/AxisOptions"
+          },
+          "type": "array"
+        },
+        "axisIds": {
+          "description": "Axis references (c:axId sequence on the chart group) — round-trip. Normally derived from `axes`; kept when the source sequence differs (legacy Word writes a dangling `axId val=\"0\"` for a missing third axis).",
+          "items": {
+            "type": "number"
           },
           "type": "array"
         },
@@ -1905,6 +1952,14 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "categoryFormatCode": {
+          "description": "Category number format (c:numCache > c:formatCode, numeric categories).",
+          "type": "string"
+        },
+        "categoryFormula": {
+          "description": "Category reference formula (c:cat > c:*Ref > c:f) — round-trip.",
+          "type": "string"
         },
         "categoryLabels": {
           "description": "Literal category labels, emitted as c:strLit (c:cat > c:strLit).",
@@ -1963,9 +2018,17 @@
           },
           "type": "array"
         },
+        "dataLabels": {
+          "$ref": "#/definitions/DataLabelsOptions",
+          "description": "Chart-group-level data labels (c:dLbls after the ser elements)."
+        },
         "dataTable": {
           "$ref": "#/definitions/DataTableOptions",
           "description": "Plot-area data table (c:dTable)."
+        },
+        "date1904": {
+          "description": "1904 date system (c:date1904) — emitted only when the source had it.",
+          "type": "boolean"
         },
         "displayBlanksAs": {
           "$ref": "#/definitions/DisplayBlanksAs",
@@ -2003,6 +2066,10 @@
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
+        "language": {
+          "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
+          "type": "string"
+        },
         "legendEntries": {
           "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
           "items": {
@@ -2014,6 +2081,10 @@
           "$ref": "#/definitions/LegendPosition",
           "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
         },
+        "markers": {
+          "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",
+          "type": "boolean"
+        },
         "multiLevelCategories": {
           "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
           "items": {
@@ -2023,6 +2094,10 @@
             "type": "array"
           },
           "type": "array"
+        },
+        "numericCategories": {
+          "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
+          "type": "boolean"
         },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
@@ -2059,6 +2134,10 @@
           "$ref": "#/definitions/ProtectionOptions",
           "description": "Chart protection (c:protection, before c:chart)."
         },
+        "roundedCorners": {
+          "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
+          "type": "boolean"
+        },
         "secondPieSize": {
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
           "type": ["number", "string"]
@@ -2082,6 +2161,14 @@
         "seriesLines": {
           "description": "Series lines (c:serLines, stock / 2D bar / 3D area).",
           "type": "boolean"
+        },
+        "shape": {
+          "$ref": "#/definitions/BarShape",
+          "description": "3D bar column shape (chart-group-level c:shape on c:bar3DChart)."
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Chart-area shape properties (c:spPr after c:chart) — round-trip."
         },
         "showDataLabelsOverMax": {
           "description": "Show data labels over the chart maximum (c:showDLblsOverMax).",
@@ -2117,6 +2204,7 @@
           "type": "boolean"
         },
         "title": {
+          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).",
           "type": "string"
         },
         "type": {
@@ -2133,6 +2221,10 @@
         "userShapes": {
           "description": "User-drawn shapes relationship id (c:userShapes r:id, after printSettings).",
           "type": "string"
+        },
+        "varyColors": {
+          "description": "Vary data-point colors (chart-group-level c:varyColors). Emitted only when set — the corpus is mixed and fresh output stays bare.",
+          "type": "boolean"
         },
         "view3D": {
           "$ref": "#/definitions/View3DOptions"
@@ -14789,10 +14881,21 @@
           "$ref": "#/definitions/AnchorType",
           "description": "Anchor type (default \"twoCell\")."
         },
+        "autoTitleDeleted": {
+          "description": "Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set.",
+          "type": "boolean"
+        },
         "axes": {
           "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
           "items": {
             "$ref": "#/definitions/AxisOptions"
+          },
+          "type": "array"
+        },
+        "axisIds": {
+          "description": "Axis references (c:axId sequence on the chart group) — round-trip. Normally derived from `axes`; kept when the source sequence differs (legacy Word writes a dangling `axId val=\"0\"` for a missing third axis).",
+          "items": {
+            "type": "number"
           },
           "type": "array"
         },
@@ -14816,6 +14919,14 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "categoryFormatCode": {
+          "description": "Category number format (c:numCache > c:formatCode, numeric categories).",
+          "type": "string"
+        },
+        "categoryFormula": {
+          "description": "Category reference formula (c:cat > c:*Ref > c:f) — round-trip.",
+          "type": "string"
         },
         "categoryLabels": {
           "description": "Literal category labels, emitted as c:strLit (c:cat > c:strLit).",
@@ -14889,9 +15000,17 @@
           },
           "type": "array"
         },
+        "dataLabels": {
+          "$ref": "#/definitions/DataLabelsOptions",
+          "description": "Chart-group-level data labels (c:dLbls after the ser elements)."
+        },
         "dataTable": {
           "$ref": "#/definitions/DataTableOptions",
           "description": "Plot-area data table (c:dTable)."
+        },
+        "date1904": {
+          "description": "1904 date system (c:date1904) — emitted only when the source had it.",
+          "type": "boolean"
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -14963,6 +15082,10 @@
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
+        "language": {
+          "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
+          "type": "string"
+        },
         "legendEntries": {
           "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
           "items": {
@@ -14978,6 +15101,10 @@
           "description": "Lock anchor with sheet (default true)",
           "type": "boolean"
         },
+        "markers": {
+          "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",
+          "type": "boolean"
+        },
         "multiLevelCategories": {
           "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
           "items": {
@@ -14991,6 +15118,10 @@
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
+        },
+        "numericCategories": {
+          "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
+          "type": "boolean"
         },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
@@ -15031,6 +15162,10 @@
           "$ref": "#/definitions/ProtectionOptions",
           "description": "Chart protection (c:protection, before c:chart)."
         },
+        "roundedCorners": {
+          "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
+          "type": "boolean"
+        },
         "row": {
           "description": "1-based row (from marker)",
           "type": "number"
@@ -15070,6 +15205,14 @@
           "description": "Series lines (c:serLines, stock / 2D bar / 3D area).",
           "type": "boolean"
         },
+        "shape": {
+          "$ref": "#/definitions/BarShape",
+          "description": "3D bar column shape (chart-group-level c:shape on c:bar3DChart)."
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Chart-area shape properties (c:spPr after c:chart) — round-trip."
+        },
         "showDataLabelsOverMax": {
           "description": "Show data labels over the chart maximum (c:showDLblsOverMax).",
           "type": "boolean"
@@ -15104,6 +15247,7 @@
           "type": "boolean"
         },
         "title": {
+          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).",
           "type": "string"
         },
         "toCol": {
@@ -15150,6 +15294,10 @@
         "userShapes": {
           "description": "User-drawn shapes relationship id (c:userShapes r:id, after printSettings).",
           "type": "string"
+        },
+        "varyColors": {
+          "description": "Vary data-point colors (chart-group-level c:varyColors). Emitted only when set — the corpus is mixed and fresh output stays bare.",
+          "type": "boolean"
         },
         "view3D": {
           "$ref": "#/definitions/View3DOptions"

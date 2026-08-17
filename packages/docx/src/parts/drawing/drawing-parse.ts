@@ -21,6 +21,7 @@ import {
   pictureLockingDesc,
   presetGeometryDesc,
 } from "@office-open/core";
+import { chartSpaceDesc } from "@office-open/core/chart";
 import { scene3DDesc, shape3DDesc } from "@office-open/core/drawing";
 import type {
   BlackWhiteMode,
@@ -891,8 +892,10 @@ function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaDa
 
   const chartXml = ctx.docx.doc.get(chartPath);
   if (!chartXml) return undefined;
-  const chartOpts = parseChartXml(chartXml);
-  if (!chartOpts) return undefined;
+  // Full c:chartSpace model via the core descriptor (same descriptor that
+  // stringifies on generate) — keeps axes, externalData, spPr, dLbls, …
+  const chartOpts = chartSpaceDesc.parse(chartXml, ctx);
+  if (!chartOpts.type) return undefined;
 
   const md: ChartMediaData = {
     type: "chart",
@@ -1093,156 +1096,25 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   const chartXml = ctx.docx.doc.get(chartPath);
   if (!chartXml) return undefined;
 
-  const opts = parseChartXml(chartXml);
-  if (!opts) return undefined;
+  // Full c:chartSpace model via the core descriptor — the same descriptor
+  // that stringifies on generate, so every field round-trips symmetrically.
+  const chartSpace = chartSpaceDesc.parse(chartXml, ctx);
+  if (!chartSpace.type) return undefined;
 
   // Anchor wrapper fields: extent, alt text, frame locks.
   const info = parseAnchorOrInline(el);
-  if (info?.graphicFrameLocks !== undefined) {
-    (opts as Record<string, unknown>).graphicFrameLocks = info.graphicFrameLocks;
-  }
-
   const ext = getDrawingExtent(el);
-  if (ext.width !== undefined || ext.height !== undefined) {
-    (opts as Record<string, unknown>).transformation = {
-      ...ext,
-    };
+  const opts: ChartOptions = {
+    ...chartSpace,
+    // wp:extent always carries both cx and cy in valid documents; fall back
+    // to zeros so the required transformation field stays well-formed.
+    transformation: { width: ext.width ?? 0, height: ext.height ?? 0 },
+  };
+  if (info?.graphicFrameLocks !== undefined) {
+    opts.graphicFrameLocks = info.graphicFrameLocks;
   }
 
-  return { chart: opts as unknown as ChartOptions };
-}
-
-/**
- * Parse c:chartSpace element into ChartSpaceOptions.
- */
-function parseChartXml(el: Element): Partial<ChartSpaceOptions> | undefined {
-  const chart = findChild(el, "c:chart");
-  if (!chart) return undefined;
-
-  const opts: Partial<ChartSpaceOptions> = {};
-
-  // Title: c:chart → c:title → c:tx → c:rich → a:p → a:r → a:t
-  const titleEl = findChild(chart, "c:title");
-  if (titleEl) {
-    const rich = findFirst(titleEl, "c:rich");
-    if (rich) {
-      const t = findFirst(rich, "a:t");
-      if (t) {
-        const title = textOf(t);
-        if (title) opts.title = title;
-      }
-    }
-  }
-
-  // Plot area → chart type
-  const plotArea = findChild(chart, "c:plotArea");
-  if (!plotArea) return undefined;
-
-  let chartType: ChartSpaceOptions["type"] | undefined;
-  let typeElement: Element | undefined;
-
-  for (const child of plotArea.elements ?? []) {
-    switch (child.name) {
-      case "c:barChart": {
-        const barDir = findChild(child, "c:barDir");
-        chartType = barDir && attr(barDir, "val") === "bar" ? "bar" : "column";
-        typeElement = child;
-        break;
-      }
-      case "c:lineChart":
-        chartType = "line";
-        typeElement = child;
-        break;
-      case "c:pieChart":
-        chartType = "pie";
-        typeElement = child;
-        break;
-      case "c:areaChart":
-        chartType = "area";
-        typeElement = child;
-        break;
-      case "c:scatterChart":
-        chartType = "scatter";
-        typeElement = child;
-        break;
-    }
-    if (chartType) break;
-  }
-
-  if (!chartType || !typeElement) return undefined;
-  opts.type = chartType;
-
-  // Parse series
-  const series: { name: string; values: number[] }[] = [];
-  let categories: string[] | undefined;
-
-  for (const serEl of typeElement.elements ?? []) {
-    if (serEl.name !== "c:ser") continue;
-
-    // Series name: c:tx → c:strCache → c:pt → c:v
-    const nameParts = extractStrCache(serEl, "c:tx");
-    // Categories: c:cat → c:strCache → c:pt → c:v
-    const cats = extractStrCache(serEl, "c:cat");
-    if (cats.length > 0 && !categories) categories = cats;
-    // Values: c:val → c:numCache → c:pt → c:v
-    const vals = extractNumCache(serEl);
-
-    series.push({ name: nameParts[0] ?? "", values: vals });
-  }
-
-  opts.categories = categories ?? [];
-  opts.series = series;
-
-  // Legend
-  opts.showLegend = findChild(chart, "c:legend") !== undefined;
-
-  // Style
-  const styleEl = findChild(el, "c:style");
-  if (styleEl) {
-    const val = attrNum(styleEl, "val");
-    if (val !== undefined) opts.style = val;
-  }
-
-  return opts;
-}
-
-/**
- * Extract string values from c:strCache within a container element.
- */
-function extractStrCache(parent: Element, containerName: string): string[] {
-  const container = findChild(parent, containerName);
-  if (!container) return [];
-  const cache = findFirst(container, "c:strCache");
-  if (!cache) return [];
-
-  const values: string[] = [];
-  for (const pt of cache.elements ?? []) {
-    if (pt.name !== "c:pt") continue;
-    const v = findChild(pt, "c:v");
-    if (v) values.push(textOf(v) ?? "");
-  }
-  return values;
-}
-
-/**
- * Extract numeric values from c:numCache within a c:val container.
- */
-function extractNumCache(parent: Element): number[] {
-  const valEl = findChild(parent, "c:val");
-  if (!valEl) return [];
-  const cache = findFirst(valEl, "c:numCache");
-  if (!cache) return [];
-
-  const values: number[] = [];
-  for (const pt of cache.elements ?? []) {
-    if (pt.name !== "c:pt") continue;
-    const v = findChild(pt, "c:v");
-    if (v) {
-      const num = Number(textOf(v));
-      if (!isNaN(num)) values.push(num);
-    }
-  }
-  return values;
+  return { chart: opts };
 }
 
 // ── SmartArt parsing ────────────────────────────────────────────────────────

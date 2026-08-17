@@ -6,9 +6,11 @@
 
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { attr, findChild, children, textOf } from "@office-open/xml";
+import { attr, findChild, findFirst, children, textOf } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
+import { shapePropertiesDesc } from "../drawing/shape-properties-desc";
+import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
 import { parseColorMapping, stringifyColorMapping } from "../theme/color-mapping";
 import { parseOnOff } from "../util/values";
 import type {
@@ -310,7 +312,7 @@ function stringifyDisplayUnits(opts: DisplayUnitsOptions): string {
  * EG_AxShared (axId…crosses/crossesAt), then the kind-specific tail from
  * CT_CatAx / CT_DateAx / CT_SerAx / CT_ValAx.
  */
-function stringifyAxis(opts: AxisOptions): string {
+function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
   const parts: string[] = [];
   parts.push(valEl("c:axId", opts.id));
   parts.push(stringifyScaling(opts.scaling));
@@ -318,13 +320,21 @@ function stringifyAxis(opts: AxisOptions): string {
   if (opts.position !== undefined) parts.push(valEl("c:axPos", opts.position));
   if (opts.majorGridlines) parts.push(emptyEl("c:majorGridlines"));
   if (opts.minorGridlines) parts.push(emptyEl("c:minorGridlines"));
-  if (opts.title !== undefined) parts.push(stringifyTitle(opts.title));
+  if (opts.title !== undefined) {
+    // "" is the text-less title placeholder (bare <c:title/>), like the chart title.
+    parts.push(opts.title === "" ? emptyEl("c:title") : stringifyTitle(opts.title));
+  }
   if (opts.numberFormat !== undefined)
     parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="1"/>`);
   if (opts.majorTickMark !== undefined) parts.push(valEl("c:majorTickMark", opts.majorTickMark));
   if (opts.minorTickMark !== undefined) parts.push(valEl("c:minorTickMark", opts.minorTickMark));
   if (opts.tickLabelPosition !== undefined)
     parts.push(valEl("c:tickLblPos", opts.tickLabelPosition));
+  // EG_AxShared: spPr sits between tickLblPos and crossAx.
+  if (opts.shapeProperties) {
+    const spPr = shapePropertiesDesc.stringify(opts.shapeProperties, ctx);
+    if (spPr) parts.push(`<c:spPr>${spPr}</c:spPr>`);
+  }
   parts.push(valEl("c:crossAx", opts.crossAxisId));
   // XSD choice: crosses XOR crossesAt
   if (opts.crossesAt !== undefined) parts.push(valEl("c:crossesAt", opts.crossesAt));
@@ -368,9 +378,14 @@ function stringifyAxis(opts: AxisOptions): string {
 
 // ── Series data XML builders ──
 
-function stringifyStrRef(values: readonly string[]): string {
+/** Worksheet reference formula (c:f); empty element when not round-tripped. */
+function refFormula(formula: string | undefined): string {
+  return `<c:f>${escapeXml(formula ?? "")}</c:f>`;
+}
+
+function stringifyStrRef(values: readonly string[], formula?: string): string {
   const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v)}</c:v></c:pt>`).join("");
-  return `<c:strRef><c:f/><c:strCache><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:strCache></c:strRef>`;
+  return `<c:strRef>${refFormula(formula)}<c:strCache><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:strCache></c:strRef>`;
 }
 
 function stringifyStrLit(values: readonly string[]): string {
@@ -389,16 +404,29 @@ function stringifyMultiLvlStrRef(levels: readonly (readonly string[])[]): string
   return `<c:multiLvlStrRef><c:f/><c:multiLvlStrCache><c:ptCount ${attrVal("val", ptCount)}/>${lvls}</c:multiLvlStrCache></c:multiLvlStrRef>`;
 }
 
+// Numeric categories keep their literal text so formats survive verbatim.
+function stringifyNumCatRef(
+  values: readonly string[],
+  formula?: string,
+  formatCode?: string,
+): string {
+  const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v)}</c:v></c:pt>`).join("");
+  return `<c:numRef>${refFormula(formula)}<c:numCache><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
+}
+
 // CT_AxDataSource choice (c:cat / c:xVal slot): exactly one of multi-level/literal/reference.
 function stringifyCategorySource(opts: ChartSpaceOptions): string {
   if (opts.multiLevelCategories) return stringifyMultiLvlStrRef(opts.multiLevelCategories);
   if (opts.categoryLabels) return stringifyStrLit(opts.categoryLabels);
-  return stringifyStrRef(opts.categories ?? []);
+  if (opts.numericCategories) {
+    return stringifyNumCatRef(opts.categories ?? [], opts.categoryFormula, opts.categoryFormatCode);
+  }
+  return stringifyStrRef(opts.categories ?? [], opts.categoryFormula);
 }
 
-function stringifyNumRef(values: readonly number[]): string {
+function stringifyNumRef(values: readonly number[], formula?: string, formatCode?: string): string {
   const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join("");
-  return `<c:numRef><c:f/><c:numCache><c:formatCode>General</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
+  return `<c:numRef>${refFormula(formula)}<c:numCache><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
 }
 
 // ── Chart type header XML ──
@@ -530,12 +558,6 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
       break;
     case "ofPie":
       headerParts.push(valEl("c:ofPieType", opts.ofPieType ?? "pie"));
-      headerParts.push(valEl("c:varyColors", 1));
-      break;
-    case "pie":
-    case "doughnut":
-    case "bubble":
-      headerParts.push(valEl("c:varyColors", 1));
       break;
     case "surface":
       // EG_SurfaceChartShared head: wireframe precedes ser.
@@ -543,6 +565,10 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
         headerParts.push(`<c:wireframe${boolVal(opts.wireframe)}/>`);
       break;
   }
+
+  // c:varyColors sits right before ser in every chart-group content model;
+  // emitted only when the source carried it (corpus is mixed).
+  if (opts.varyColors !== undefined) headerParts.push(`<c:varyColors${boolVal(opts.varyColors)}/>`);
 
   return `<${tag}>${headerParts.join("")}`;
 }
@@ -561,6 +587,7 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
       if (opts.threeD) {
         // CT_Bar3DChart: gapWidth → gapDepth → shape
         if (opts.gapDepth !== undefined) parts.push(valEl("c:gapDepth", opts.gapDepth));
+        if (opts.shape !== undefined) parts.push(valEl("c:shape", opts.shape));
       } else {
         // CT_BarChart: gapWidth → overlap → serLines
         if (opts.overlap !== undefined) parts.push(valEl("c:overlap", opts.overlap));
@@ -574,6 +601,7 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
         // CT_LineChart: dropLines → hiLowLines → upDownBars → marker → smooth
         if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
         if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
+        if (opts.markers !== undefined) parts.push(`<c:marker${boolVal(opts.markers)}/>`);
       } else if (opts.gapDepth !== undefined) {
         // CT_Line3DChart: dropLines → gapDepth
         parts.push(valEl("c:gapDepth", opts.gapDepth));
@@ -630,10 +658,12 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
   }
 
   // Axes (pie/doughnut have none). The axId sequence must reference the axes
-  // actually emitted below — derive it from the effective axis list, never
-  // hardcode, or custom axis ids detach the chart group from its axes.
+  // actually emitted below — use the round-tripped sequence when present
+  // (legacy files may carry dangling axId val="0"), else derive it from the
+  // effective axis list, never hardcode.
   if (!NO_AXES_TYPES.has(opts.type)) {
-    for (const axis of axesFor(opts)) parts.push(valEl("c:axId", axis.id));
+    const ids = opts.axisIds ?? axesFor(opts).map((axis) => axis.id);
+    for (const id of ids) parts.push(valEl("c:axId", id));
   }
 
   return `${parts.join("")}</${tag}>`;
@@ -677,17 +707,22 @@ function stringifySeries(
   index: number,
   series: ChartSeriesData | BubbleSeriesData,
   opts: ChartSpaceOptions,
+  ctx: WriteContext,
 ): string {
   const chartType = opts.type;
-  const categories = opts.categories ?? [];
   const parts: string[] = [];
   const s = series as ChartSeriesData;
 
   // EG_SerShared: idx, order, tx, spPr
   parts.push(valEl("c:idx", index));
   parts.push(valEl("c:order", index));
-  parts.push(`<c:tx>${stringifyStrRef([series.name])}</c:tx>`);
-  parts.push(emptyEl("c:spPr"));
+  parts.push(`<c:tx>${stringifyStrRef([series.name], series.nameFormula)}</c:tx>`);
+  // Series spPr is optional in CT_Ser — emit only when the source carried one
+  // (round-trip); fresh series keep the bare form like legacy Word files.
+  if (s.shapeProperties) {
+    const spPr = shapePropertiesDesc.stringify(s.shapeProperties, ctx);
+    if (spPr) parts.push(`<c:spPr>${spPr}</c:spPr>`);
+  }
 
   // type-specific head before dPt (per CT_xxxSer content model)
   if (chartType === "line" || chartType === "scatter" || chartType === "radar") {
@@ -722,11 +757,13 @@ function stringifySeries(
     parts.push(`<c:yVal>${stringifyNumRef(bs.yValues)}</c:yVal>`);
     parts.push(`<c:bubbleSize>${stringifyNumRef(bs.bubbleSize)}</c:bubbleSize>`);
   } else if (chartType === "scatter") {
-    parts.push(`<c:xVal>${stringifyStrRef(categories)}</c:xVal>`);
-    parts.push(`<c:yVal>${stringifyNumRef(s.values)}</c:yVal>`);
+    // Scatter x values share the category source model — numeric x axes carry
+    // c:numRef/c:numCache like numeric categories.
+    parts.push(`<c:xVal>${stringifyCategorySource(opts)}</c:xVal>`);
+    parts.push(`<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:yVal>`);
   } else {
     parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
-    parts.push(`<c:val>${stringifyNumRef(s.values)}</c:val>`);
+    parts.push(`<c:val>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`);
   }
 
   // type-specific tail after data references
@@ -746,14 +783,12 @@ function stringifySeries(
 // ── Title XML ──
 
 // Same c:rich run shape for chart and axis titles so parse reuses readTitleText.
+// No c:overlay — corpus titles omit it (overlay=false is the XSD default).
 function stringifyTitle(title: string): string {
-  return `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title>`;
+  return `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title)}</a:t></a:r></a:p></c:rich></c:tx></c:title>`;
 }
 
 // ── Legend XML ──
-
-const LEGEND_TXPR =
-  '<c:txPr><a:bodyPr rot="0" spcFirstLastPara="1" vertOverflow="ellipsis" vert="horz" wrap="square" anchor="ctr" anchorCtr="1"/><a:lstStyle/><a:p><a:pPr><a:defRPr/></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr>';
 
 function stringifyLegendEntry(entry: LegendEntryOptions): string {
   // CT_LegendEntry: idx → choice(delete | EG_LegendEntryData[txPr]). Non-delete
@@ -766,7 +801,9 @@ function stringifyLegendEntry(entry: LegendEntryOptions): string {
 function stringifyLegend(opts: ChartSpaceOptions): string {
   const pos = opts.legendPosition ?? "b";
   const entries = (opts.legendEntries ?? []).map(stringifyLegendEntry).join("");
-  return `<c:legend><c:legendPos val="${pos}"/>${entries}<c:layout/><c:overlay val="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr>${LEGEND_TXPR}</c:legend>`;
+  // Bare legend form (legendPos only) — the corpus mainstream. Empty layout /
+  // overlay / spPr / txPr decorations the legacy form never wrote are omitted.
+  return `<c:legend><c:legendPos val="${pos}"/>${entries}</c:legend>`;
 }
 
 function stringifyPivotSource(opts: PivotSourceOptions): string {
@@ -790,14 +827,6 @@ function stringifyBandFormats(formats: readonly BandFormatOptions[]): string {
 }
 
 // ── Shared boilerplate ──
-
-function noFillSpPr(): string {
-  return `<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln><a:effectLst/></c:spPr>`;
-}
-
-function chartTxPr(): string {
-  return `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr/></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr>`;
-}
 
 // ── Axes XML ──
 
@@ -871,8 +900,10 @@ function axesFor(opts: ChartSpaceOptions): readonly AxisOptions[] {
   return opts.axes ?? defaultAxesFor(opts.type, opts.threeD);
 }
 
-function stringifyAxes(opts: ChartSpaceOptions): string {
-  return axesFor(opts).map(stringifyAxis).join("");
+function stringifyAxes(opts: ChartSpaceOptions, ctx: WriteContext): string {
+  return axesFor(opts)
+    .map((axis) => stringifyAxis(axis, ctx))
+    .join("");
 }
 
 // ── Read helpers ──
@@ -891,6 +922,44 @@ function readStrCache(el: XmlElement): string[] {
     }
   }
   return result;
+}
+
+/** Numeric category labels read as literal text (c:cat > c:numRef > c:numCache). */
+function readNumCacheText(el: XmlElement): string[] {
+  const numRef = findChild(el, "c:numRef");
+  if (!numRef) return [];
+  const numCache = findChild(numRef, "c:numCache");
+  if (!numCache?.elements) return [];
+  const result: string[] = [];
+  for (const pt of numCache.elements) {
+    if (pt.name === "c:pt") {
+      const v = findChild(pt, "c:v");
+      const text = v ? (textOf(v) ?? "") : "";
+      result.push(text);
+    }
+  }
+  return result;
+}
+
+/** Reference metadata on a data-source slot: the c:f formula and, for numRef,
+ *  the cached c:formatCode — both round-trip only. */
+function readRefMeta(el: XmlElement): { formula?: string; formatCode?: string } {
+  const strRef = findChild(el, "c:strRef");
+  const numRef = strRef ? undefined : findChild(el, "c:numRef");
+  const ref = strRef ?? numRef;
+  const meta: { formula?: string; formatCode?: string } = {};
+  if (ref) {
+    const f = findChild(ref, "c:f");
+    const text = f ? textOf(f) : "";
+    if (text) meta.formula = text;
+  }
+  if (numRef) {
+    const cache = findChild(numRef, "c:numCache");
+    const fc = cache ? findChild(cache, "c:formatCode") : undefined;
+    const text = fc ? textOf(fc) : "";
+    if (text) meta.formatCode = text;
+  }
+  return meta;
 }
 
 function readStrLit(el: XmlElement): string[] | undefined {
@@ -1150,8 +1219,13 @@ function readDataPoints(serEl: XmlElement): DataPointOptions[] | undefined {
 }
 
 /** Read shared ser enhancement fields (CT_Ser children beyond EG_SerShared). */
-function readSeriesCommon(serEl: XmlElement): Partial<ChartSeriesCommon> {
+function readSeriesCommon(serEl: XmlElement, ctx: ReadContext): Partial<ChartSeriesCommon> {
   const common: Partial<ChartSeriesCommon> = {};
+  const spPrEl = findChild(serEl, "c:spPr");
+  if (spPrEl) {
+    const spPr = shapePropertiesDesc.parse(spPrEl, ctx);
+    if (Object.keys(spPr).length > 0) common.shapeProperties = spPr as ShapePropertiesOptions;
+  }
   const trendlines = readTrendlines(serEl);
   if (trendlines) common.trendlines = trendlines;
   const errorBars = readErrBars(serEl);
@@ -1246,12 +1320,17 @@ function readChartTypeScalars(
   result: MutableChartSpaceResult,
 ): void {
   if (!chartTypeEl) return;
+  // Group-level varyColors precedes ser in every chart-group content model.
+  const varyColors = readBoolAttr(chartTypeEl, "c:varyColors");
+  if (varyColors !== undefined) result.varyColors = varyColors;
   if (type === "column" || type === "bar") {
     const gapWidth = readValNum(chartTypeEl, "c:gapWidth");
     if (gapWidth !== undefined) result.gapWidth = gapWidth;
     if (threeD) {
       const gapDepth = readValNum(chartTypeEl, "c:gapDepth");
       if (gapDepth !== undefined) result.gapDepth = gapDepth;
+      const shape = readValStr(chartTypeEl, "c:shape");
+      if (shape) result.shape = shape as BarShape;
     } else {
       const overlap = readValNum(chartTypeEl, "c:overlap");
       if (overlap !== undefined) result.overlap = overlap;
@@ -1319,6 +1398,8 @@ function readChartTypeDecorations(
       const upDownBars = findChild(chartTypeEl, "c:upDownBars");
       if (upDownBars) readUpDownBars(upDownBars);
       if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
+      const markers = readBoolAttr(chartTypeEl, "c:marker");
+      if (markers !== undefined) result.markers = markers;
     }
   } else if (type === "area") {
     if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
@@ -1582,7 +1663,7 @@ const AXIS_KIND_BY_TAG: Record<string, AxisKind> = {
   "c:serAx": "series",
 };
 
-function readAxis(el: XmlElement, kind: AxisKind): AxisOptions {
+function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions {
   const result: AxisOptions = {
     kind,
     id: readValNum(el, "c:axId") ?? 0,
@@ -1613,8 +1694,8 @@ function readAxis(el: XmlElement, kind: AxisKind): AxisOptions {
   if (findChild(el, "c:minorGridlines")) result.minorGridlines = true;
   const titleEl = findChild(el, "c:title");
   if (titleEl) {
-    const titleText = readTitleText(titleEl);
-    if (titleText !== undefined) result.title = titleText;
+    // "" keeps a text-less title placeholder (bare <c:title/>) round-tripping.
+    result.title = readTitleText(titleEl) ?? "";
   }
   const numFmtEl = findChild(el, "c:numFmt");
   if (numFmtEl) {
@@ -1627,6 +1708,12 @@ function readAxis(el: XmlElement, kind: AxisKind): AxisOptions {
   if (minorTickMark) result.minorTickMark = minorTickMark as AxisTickMark;
   const tickLblPos = readValStr(el, "c:tickLblPos");
   if (tickLblPos) result.tickLabelPosition = tickLblPos as AxisTickLabelPosition;
+  // EG_AxShared: spPr sits between tickLblPos and crossAx.
+  const spPrEl = findChild(el, "c:spPr");
+  if (spPrEl) {
+    const spPr = shapePropertiesDesc.parse(spPrEl, ctx);
+    if (Object.keys(spPr).length > 0) result.shapeProperties = spPr as ShapePropertiesOptions;
+  }
   const crossesAt = readValNum(el, "c:crossesAt");
   if (crossesAt !== undefined) result.crossesAt = crossesAt;
   else {
@@ -1694,13 +1781,13 @@ function readAxis(el: XmlElement, kind: AxisKind): AxisOptions {
 }
 
 /** Read all axis elements (c:catAx/c:valAx/c:dateAx/c:serAx) under plotArea. */
-function readAxes(plotArea: XmlElement | undefined): AxisOptions[] | undefined {
+function readAxes(plotArea: XmlElement | undefined, ctx: ReadContext): AxisOptions[] | undefined {
   if (!plotArea?.elements) return undefined;
   const axes: AxisOptions[] = [];
   for (const child of plotArea.elements) {
     if (!child.name) continue;
     const kind = AXIS_KIND_BY_TAG[child.name];
-    if (kind) axes.push(readAxis(child, kind));
+    if (kind) axes.push(readAxis(child, kind, ctx));
   }
   return axes.length > 0 ? axes : undefined;
 }
@@ -1710,7 +1797,7 @@ function readAxes(plotArea: XmlElement | undefined): AxisOptions[] | undefined {
 export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
   kind: "custom",
 
-  stringify(opts: ChartSpaceOptions, _ctx: WriteContext): string {
+  stringify(opts: ChartSpaceOptions, ctx: WriteContext): string {
     const parts: string[] = [];
 
     // Opening tag with namespaces
@@ -1718,10 +1805,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       `<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">`,
     );
 
-    // Fixed header elements
-    parts.push(valEl("c:date1904", 0));
-    parts.push(valEl("c:lang", "en-US"));
-    parts.push(valEl("c:roundedCorners", 0));
+    // Optional header elements — emitted only when set (round-trip from a
+    // source that carried them). Fresh output omits them, matching the
+    // legacy-Word corpus form.
+    if (opts.date1904 !== undefined) parts.push(`<c:date1904${boolVal(opts.date1904)}/>`);
+    if (opts.language !== undefined) parts.push(valEl("c:lang", opts.language));
+    if (opts.roundedCorners !== undefined)
+      parts.push(`<c:roundedCorners${boolVal(opts.roundedCorners)}/>`);
 
     // Style
     if (opts.style !== undefined) {
@@ -1738,12 +1828,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // c:chart container
     parts.push("<c:chart>");
 
-    // Title
-    if (opts.title) {
-      parts.push(stringifyTitle(opts.title));
+    // Title — a non-empty string emits the c:rich form; "" emits the bare
+    // auto-title placeholder legacy Word writes.
+    if (opts.title !== undefined) {
+      parts.push(opts.title === "" ? emptyEl("c:title") : stringifyTitle(opts.title));
     }
-
-    parts.push(valEl("c:autoTitleDeleted", 0));
+    if (opts.autoTitleDeleted !== undefined)
+      parts.push(`<c:autoTitleDeleted${boolVal(opts.autoTitleDeleted)}/>`);
     // CT_Chart: autoTitleDeleted → pivotFmts → view3D
     if (opts.pivotFormats?.length) parts.push(stringifyPivotFormats(opts.pivotFormats));
 
@@ -1764,13 +1855,16 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     parts.push(chartTypeHeader(opts));
 
     for (const [i, series] of opts.series.entries()) {
-      parts.push(stringifySeries(i, series, opts));
+      parts.push(stringifySeries(i, series, opts, ctx));
     }
+
+    // Chart-group-level data labels follow the ser elements (EG_*ChartShared).
+    if (opts.dataLabels) parts.push(stringifyDataLabels(opts.dataLabels));
 
     parts.push(chartTypeFooter(opts));
 
     // Axes
-    parts.push(stringifyAxes(opts));
+    parts.push(stringifyAxes(opts, ctx));
 
     // Data table (CT_PlotArea: axes → dTable → spPr)
     if (opts.dataTable) parts.push(stringifyDataTable(opts.dataTable));
@@ -1791,9 +1885,11 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
     parts.push("</c:chart>");
 
-    // SpPr and txPr
-    parts.push(noFillSpPr());
-    parts.push(chartTxPr());
+    // Chart-area spPr — optional, emitted only when the source carried one.
+    if (opts.shapeProperties) {
+      const spPr = shapePropertiesDesc.stringify(opts.shapeProperties, ctx);
+      if (spPr) parts.push(`<c:spPr>${spPr}</c:spPr>`);
+    }
 
     // CT_ChartSpace: txPr → externalData → printSettings → (userShapes)
     if (opts.externalData) parts.push(stringifyExternalData(opts.externalData));
@@ -1807,11 +1903,22 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     return parts.join("");
   },
 
-  parse(el: XmlElement, _ctx: ReadContext) {
+  parse(el: XmlElement, ctx: ReadContext) {
     const result: MutableChartSpaceResult = {};
 
-    // Style
-    const styleEl = findChild(el, "c:style");
+    // Optional header elements — recorded only when present so stringify
+    // re-emits exactly what the source carried.
+    const date1904 = readBoolAttr(el, "c:date1904");
+    if (date1904 !== undefined) result.date1904 = date1904;
+    const langVal = readValStr(el, "c:lang");
+    if (langVal) result.language = langVal;
+    const roundedCorners = readBoolAttr(el, "c:roundedCorners");
+    if (roundedCorners !== undefined) result.roundedCorners = roundedCorners;
+
+    // Style — bare c:style, or the Word 2010+ mc:AlternateContent form whose
+    // mc:Fallback holds the equivalent c:style. findFirst's deep search
+    // covers both; the bare form is what stringify emits (the mainstream).
+    const styleEl = findFirst(el, "c:style");
     if (styleEl?.attributes?.["val"] !== undefined) {
       result.style = Number(styleEl.attributes["val"]);
     }
@@ -1828,12 +1935,14 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     const chart = findChild(el, "c:chart");
     if (!chart) return result as ChartSpaceOptions;
 
-    // Title
+    // Title — "" records a text-less title placeholder (bare <c:title/>) so
+    // presence round-trips; autoTitleDeleted follows the same rule.
     const titleEl = findChild(chart, "c:title");
     if (titleEl) {
-      const title = readTitleText(titleEl);
-      if (title !== undefined) result.title = title;
+      result.title = readTitleText(titleEl) ?? "";
     }
+    const autoTitleDeleted = readBoolAttr(chart, "c:autoTitleDeleted");
+    if (autoTitleDeleted !== undefined) result.autoTitleDeleted = autoTitleDeleted;
 
     // 3D view (before plotArea per CT_Chart sequence)
     const pivotFormats = readPivotFormats(chart);
@@ -1880,11 +1989,20 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
         }
       }
 
-      if (detectedType) {
+      if (detectedType && chartTypeEl) {
         result.type = detectedType;
         if (threeD) result.threeD = true;
         readChartTypeScalars(chartTypeEl, detectedType, threeD, result);
         readChartTypeDecorations(chartTypeEl, detectedType, threeD, result);
+        // Chart-group-level data labels (after the ser elements).
+        const groupLabels = readDataLabels(chartTypeEl);
+        if (groupLabels) result.dataLabels = groupLabels;
+        // The axId reference sequence is data in its own right (legacy files
+        // carry dangling val="0" entries) — record it verbatim.
+        const axIdEls = children(chartTypeEl, "c:axId");
+        if (axIdEls.length > 0) {
+          result.axisIds = axIdEls.map((e) => Number(attr(e, "val"))).filter((n) => !isNaN(n));
+        }
       }
 
       // Extract series data (c:ser are children of the chart-type element, not plotArea)
@@ -1902,7 +2020,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
               xValues: xVal ? readNumCache(xVal) : [],
               yValues: yVal ? readNumCache(yVal) : [],
               bubbleSize: bubbleSize ? readNumCache(bubbleSize) : [],
-              ...readSeriesCommon(serEl),
+              ...readSeriesCommon(serEl, ctx),
             });
           }
           result.series = bubbleSeries as BubbleSeriesData[];
@@ -1912,8 +2030,11 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
           for (const serEl of seriesEls) {
             const name = readSeriesName(serEl);
+            const txEl = findChild(serEl, "c:tx");
+            const nameFormula = txEl ? readRefMeta(txEl).formula : undefined;
 
-            // Read categories from first series (c:cat may be strRef/strLit/multiLvlStrRef)
+            // Read categories from first series (c:cat may be strRef/strLit/
+            // multiLvlStrRef/numRef — numeric categories keep their literal text)
             if (!categories && !result.multiLevelCategories && !result.categoryLabels) {
               const catEl = findChild(serEl, "c:cat") ?? findChild(serEl, "c:xVal");
               if (catEl) {
@@ -1926,8 +2047,17 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
                     result.categoryLabels = lit;
                     categories = lit;
                   } else {
-                    categories = readStrCache(catEl);
+                    const numTexts = readNumCacheText(catEl);
+                    if (numTexts.length > 0) {
+                      result.numericCategories = true;
+                      categories = numTexts;
+                    } else {
+                      categories = readStrCache(catEl);
+                    }
                   }
+                  const catMeta = readRefMeta(catEl);
+                  if (catMeta.formula) result.categoryFormula = catMeta.formula;
+                  if (catMeta.formatCode) result.categoryFormatCode = catMeta.formatCode;
                 }
               }
             }
@@ -1935,8 +2065,16 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
             // Read values
             const valEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
             const values = valEl ? readNumCache(valEl) : [];
+            const valMeta = valEl ? readRefMeta(valEl) : {};
 
-            chartSeries.push({ name, values, ...readSeriesCommon(serEl) });
+            chartSeries.push({
+              name,
+              ...(nameFormula ? { nameFormula } : {}),
+              ...(valMeta.formula ? { valueFormula: valMeta.formula } : {}),
+              ...(valMeta.formatCode ? { formatCode: valMeta.formatCode } : {}),
+              values,
+              ...readSeriesCommon(serEl, ctx),
+            });
           }
 
           result.series = chartSeries as ChartSeriesData[];
@@ -1946,7 +2084,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     }
 
     // Axes
-    const axes = readAxes(plotArea);
+    const axes = readAxes(plotArea, ctx);
     if (axes) result.axes = axes;
 
     // Legend — default is true, only set if explicitly absent
@@ -1967,7 +2105,12 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     const showDLblsOverMax = readBoolAttr(chart, "c:showDLblsOverMax");
     if (showDLblsOverMax !== undefined) result.showDataLabelsOverMax = showDLblsOverMax;
 
-    // CT_ChartSpace tail: externalData (after c:txPr)
+    // CT_ChartSpace tail: spPr (chart-area shape properties) then externalData
+    const spPrEl = findChild(el, "c:spPr");
+    if (spPrEl) {
+      const spPr = shapePropertiesDesc.parse(spPrEl, ctx);
+      if (Object.keys(spPr).length > 0) result.shapeProperties = spPr as ShapePropertiesOptions;
+    }
     const externalData = readExternalData(el);
     if (externalData) result.externalData = externalData;
     const printSettings = readPrintSettings(el);
