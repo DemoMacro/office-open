@@ -294,6 +294,61 @@ const buffer = await generateDocument({
 
         {
           paragraph: {
+            children: [{ bold: true, text: "Reference Fidelity", size: 14 }],
+            spacing: { after: 200 },
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                chart: {
+                  // Explicit axes + the axId reference sequence, series
+                  // shapeProperties, and group-level varyColors/markers/
+                  // dataLabels — the fields a round-tripped source carries.
+                  type: "line",
+                  categories: ["Jan", "Feb", "Mar", "Apr"],
+                  series: [
+                    {
+                      name: "Revenue",
+                      values: [8, 12, 9, 15],
+                      valueFormula: "Sheet1!$B$2:$B$5",
+                      formatCode: "#,##0",
+                      shapeProperties: { outline: { width: 28575 } },
+                    },
+                  ],
+                  varyColors: false,
+                  markers: true,
+                  dataLabels: { showVal: true },
+                  axes: [
+                    {
+                      kind: "category",
+                      id: 111,
+                      crossAxisId: 222,
+                      scaling: { orientation: "minMax" },
+                      position: "b",
+                    },
+                    {
+                      kind: "value",
+                      id: 222,
+                      crossAxisId: 111,
+                      scaling: { orientation: "minMax" },
+                      position: "l",
+                      numberFormat: "General",
+                    },
+                  ],
+                  axisIds: [111, 222],
+                  title: "Round-trip Fields",
+                  transformation: { width: "13.2cm", height: "7.9cm" },
+                },
+              },
+            ],
+          },
+        },
+        { paragraph: { children: [""] } },
+
+        {
+          paragraph: {
             children: [
               {
                 text: "Note: Open this document in Microsoft Word to see the charts rendered.",

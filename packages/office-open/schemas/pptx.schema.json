@@ -2686,7 +2686,7 @@
           "description": "Chart frame id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
-        "language": {
+        "lang": {
           "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
           "type": "string"
         },

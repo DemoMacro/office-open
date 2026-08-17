@@ -1119,7 +1119,7 @@ describe("chartSpaceDesc", () => {
     const opts: ChartSpaceOptions = {
       ...bare,
       date1904: false,
-      language: "de-DE",
+      lang: "de-DE",
       roundedCorners: false,
       autoTitleDeleted: true,
     };
@@ -1131,7 +1131,7 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     expect(result.date1904).toBe(false);
-    expect(result.language).toBe("de-DE");
+    expect(result.lang).toBe("de-DE");
     expect(result.roundedCorners).toBe(false);
     expect(result.autoTitleDeleted).toBe(true);
   });
@@ -1192,14 +1192,31 @@ describe("chartSpaceDesc", () => {
       series: [{ name: "S", values: [1] }],
       varyColors: true,
       shape: "box",
+      // Round-trip combination: real axes plus a dangling third axId val="0"
+      // legacy files write for the missing series axis.
+      axes: [
+        { kind: "category", id: 111, crossAxisId: 222 },
+        { kind: "value", id: 222, crossAxisId: 111 },
+      ],
       axisIds: [111, 222, 0],
       dataLabels: { showVal: true },
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
     expect(xml).toContain("<c:varyColors/>");
     expect(xml).toContain('<c:shape val="box"/>');
+    expect(xml).toContain('<c:axId val="111"/>');
     expect(xml).toContain('<c:axId val="0"/>');
     expect(xml).toContain("<c:showVal/>");
+
+    // axisIds without axes never applies — the default axes carry their own
+    // ids, so the reference sequence stays consistent with emitted axes.
+    const noAxes = stringify(
+      chartSpaceDesc,
+      { ...opts, axes: undefined, axisIds: [999] },
+      {} as WriteContext,
+    );
+    expect(noAxes).toContain('<c:axId val="10"/>');
+    expect(noAxes).not.toContain('<c:axId val="999"/>');
 
     const result = roundTrip(opts);
     expect(result.varyColors).toBe(true);

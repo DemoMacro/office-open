@@ -169,7 +169,7 @@ export interface ChartSpaceOptions {
   /** 1904 date system (c:date1904) — emitted only when the source had it. */
   date1904?: boolean;
   /** Chart UI language (c:lang, e.g. "en-US") — emitted only when set. */
-  language?: string;
+  lang?: string;
   /** Rounded chart-area corners (c:roundedCorners) — emitted only when set. */
   roundedCorners?: boolean;
   /** Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set. */

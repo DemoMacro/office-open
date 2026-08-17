@@ -2066,7 +2066,7 @@
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
-        "language": {
+        "lang": {
           "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
           "type": "string"
         },
@@ -15082,7 +15082,7 @@
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
-        "language": {
+        "lang": {
           "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
           "type": "string"
         },

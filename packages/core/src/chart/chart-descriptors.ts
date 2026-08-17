@@ -331,10 +331,7 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
   if (opts.tickLabelPosition !== undefined)
     parts.push(valEl("c:tickLblPos", opts.tickLabelPosition));
   // EG_AxShared: spPr sits between tickLblPos and crossAx.
-  if (opts.shapeProperties) {
-    const spPr = shapePropertiesDesc.stringify(opts.shapeProperties, ctx);
-    if (spPr) parts.push(`<c:spPr>${spPr}</c:spPr>`);
-  }
+  parts.push(chartSpPr(opts.shapeProperties, ctx));
   parts.push(valEl("c:crossAx", opts.crossAxisId));
   // XSD choice: crosses XOR crossesAt
   if (opts.crossesAt !== undefined) parts.push(valEl("c:crossesAt", opts.crossesAt));
@@ -660,9 +657,10 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
   // Axes (pie/doughnut have none). The axId sequence must reference the axes
   // actually emitted below — use the round-tripped sequence when present
   // (legacy files may carry dangling axId val="0"), else derive it from the
-  // effective axis list, never hardcode.
+  // effective axis list, never hardcode. axisIds only applies alongside an
+  // explicit axes list; without axes the default axes carry their own ids.
   if (!NO_AXES_TYPES.has(opts.type)) {
-    const ids = opts.axisIds ?? axesFor(opts).map((axis) => axis.id);
+    const ids = opts.axes && opts.axisIds ? opts.axisIds : axesFor(opts).map((axis) => axis.id);
     for (const id of ids) parts.push(valEl("c:axId", id));
   }
 
@@ -719,10 +717,7 @@ function stringifySeries(
   parts.push(`<c:tx>${stringifyStrRef([series.name], series.nameFormula)}</c:tx>`);
   // Series spPr is optional in CT_Ser — emit only when the source carried one
   // (round-trip); fresh series keep the bare form like legacy Word files.
-  if (s.shapeProperties) {
-    const spPr = shapePropertiesDesc.stringify(s.shapeProperties, ctx);
-    if (spPr) parts.push(`<c:spPr>${spPr}</c:spPr>`);
-  }
+  parts.push(chartSpPr(s.shapeProperties, ctx));
 
   // type-specific head before dPt (per CT_xxxSer content model)
   if (chartType === "line" || chartType === "scatter" || chartType === "radar") {
@@ -827,6 +822,17 @@ function stringifyBandFormats(formats: readonly BandFormatOptions[]): string {
 }
 
 // ── Shared boilerplate ──
+
+/**
+ * Wrap c:spPr inner content. An empty shape-properties object is a real
+ * `<c:spPr/>` placeholder (presence itself is the content), so undefined
+ * inner still emits the bare element.
+ */
+function chartSpPr(opts: ShapePropertiesOptions | undefined, ctx: WriteContext): string {
+  if (!opts) return "";
+  const inner = shapePropertiesDesc.stringify(opts, ctx);
+  return `<c:spPr>${inner ?? ""}</c:spPr>`;
+}
 
 // ── Axes XML ──
 
@@ -1222,10 +1228,10 @@ function readDataPoints(serEl: XmlElement): DataPointOptions[] | undefined {
 function readSeriesCommon(serEl: XmlElement, ctx: ReadContext): Partial<ChartSeriesCommon> {
   const common: Partial<ChartSeriesCommon> = {};
   const spPrEl = findChild(serEl, "c:spPr");
-  if (spPrEl) {
-    const spPr = shapePropertiesDesc.parse(spPrEl, ctx);
-    if (Object.keys(spPr).length > 0) common.shapeProperties = spPr as ShapePropertiesOptions;
-  }
+  // Presence round-trips: a bare <c:spPr/> placeholder stays an empty object
+  // (an XSD-valid form legacy Word writes), not dropped.
+  if (spPrEl)
+    common.shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx) as ShapePropertiesOptions;
   const trendlines = readTrendlines(serEl);
   if (trendlines) common.trendlines = trendlines;
   const errorBars = readErrBars(serEl);
@@ -1320,9 +1326,13 @@ function readChartTypeScalars(
   result: MutableChartSpaceResult,
 ): void {
   if (!chartTypeEl) return;
-  // Group-level varyColors precedes ser in every chart-group content model.
-  const varyColors = readBoolAttr(chartTypeEl, "c:varyColors");
-  if (varyColors !== undefined) result.varyColors = varyColors;
+  // Group-level varyColors precedes ser in every chart-group content model —
+  // except CT_Surface*/CT_Stock, which have no varyColors slot; reading it
+  // there would round-trip schema-invalid input into schema-invalid output.
+  if (type !== "surface" && type !== "stock") {
+    const varyColors = readBoolAttr(chartTypeEl, "c:varyColors");
+    if (varyColors !== undefined) result.varyColors = varyColors;
+  }
   if (type === "column" || type === "bar") {
     const gapWidth = readValNum(chartTypeEl, "c:gapWidth");
     if (gapWidth !== undefined) result.gapWidth = gapWidth;
@@ -1711,8 +1721,7 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
   // EG_AxShared: spPr sits between tickLblPos and crossAx.
   const spPrEl = findChild(el, "c:spPr");
   if (spPrEl) {
-    const spPr = shapePropertiesDesc.parse(spPrEl, ctx);
-    if (Object.keys(spPr).length > 0) result.shapeProperties = spPr as ShapePropertiesOptions;
+    result.shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx) as ShapePropertiesOptions;
   }
   const crossesAt = readValNum(el, "c:crossesAt");
   if (crossesAt !== undefined) result.crossesAt = crossesAt;
@@ -1809,7 +1818,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // source that carried them). Fresh output omits them, matching the
     // legacy-Word corpus form.
     if (opts.date1904 !== undefined) parts.push(`<c:date1904${boolVal(opts.date1904)}/>`);
-    if (opts.language !== undefined) parts.push(valEl("c:lang", opts.language));
+    if (opts.lang !== undefined) parts.push(valEl("c:lang", opts.lang));
     if (opts.roundedCorners !== undefined)
       parts.push(`<c:roundedCorners${boolVal(opts.roundedCorners)}/>`);
 
@@ -1886,10 +1895,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     parts.push("</c:chart>");
 
     // Chart-area spPr — optional, emitted only when the source carried one.
-    if (opts.shapeProperties) {
-      const spPr = shapePropertiesDesc.stringify(opts.shapeProperties, ctx);
-      if (spPr) parts.push(`<c:spPr>${spPr}</c:spPr>`);
-    }
+    parts.push(chartSpPr(opts.shapeProperties, ctx));
 
     // CT_ChartSpace: txPr → externalData → printSettings → (userShapes)
     if (opts.externalData) parts.push(stringifyExternalData(opts.externalData));
@@ -1911,7 +1917,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     const date1904 = readBoolAttr(el, "c:date1904");
     if (date1904 !== undefined) result.date1904 = date1904;
     const langVal = readValStr(el, "c:lang");
-    if (langVal) result.language = langVal;
+    if (langVal) result.lang = langVal;
     const roundedCorners = readBoolAttr(el, "c:roundedCorners");
     if (roundedCorners !== undefined) result.roundedCorners = roundedCorners;
 
@@ -2046,14 +2052,14 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
                   if (lit) {
                     result.categoryLabels = lit;
                     categories = lit;
+                  } else if (findChild(catEl, "c:numRef")) {
+                    // A numRef source is numeric even when the cache is empty
+                    // (ptCount=0) — the axis kind is the reference form, not
+                    // the cached points.
+                    result.numericCategories = true;
+                    categories = readNumCacheText(catEl);
                   } else {
-                    const numTexts = readNumCacheText(catEl);
-                    if (numTexts.length > 0) {
-                      result.numericCategories = true;
-                      categories = numTexts;
-                    } else {
-                      categories = readStrCache(catEl);
-                    }
+                    categories = readStrCache(catEl);
                   }
                   const catMeta = readRefMeta(catEl);
                   if (catMeta.formula) result.categoryFormula = catMeta.formula;
@@ -2108,8 +2114,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // CT_ChartSpace tail: spPr (chart-area shape properties) then externalData
     const spPrEl = findChild(el, "c:spPr");
     if (spPrEl) {
-      const spPr = shapePropertiesDesc.parse(spPrEl, ctx);
-      if (Object.keys(spPr).length > 0) result.shapeProperties = spPr as ShapePropertiesOptions;
+      result.shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx) as ShapePropertiesOptions;
     }
     const externalData = readExternalData(el);
     if (externalData) result.externalData = externalData;
