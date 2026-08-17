@@ -1038,6 +1038,19 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.chart.runProperties = runProperties;
     }
   }
+  // A run-level empty element (Word's pagination hint) sharing the drawing's
+  // run — carried on the drawing options and emitted before the drawing.
+  if (findChild(child, "w:lastRenderedPageBreak")) {
+    if ("picture" in drawingChild) {
+      drawingChild.picture.lastRenderedPageBreak = true;
+    } else if ("wpsShape" in drawingChild) {
+      drawingChild.wpsShape.lastRenderedPageBreak = true;
+    } else if ("wpgGroup" in drawingChild) {
+      drawingChild.wpgGroup.lastRenderedPageBreak = true;
+    } else if ("chart" in drawingChild) {
+      drawingChild.chart.lastRenderedPageBreak = true;
+    }
+  }
   return drawingChild;
 }
 
@@ -1115,8 +1128,10 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
 
 function collectRunText(el: Element): string {
   let text = "";
+  // w:delText inside a deletion wrapper carries the same character data as
+  // w:t — a deleted field's cached result is spelled that way.
   for (const c of el.elements ?? []) {
-    if (c.name === "w:t") text += textOf(c);
+    if (c.name === "w:t" || c.name === "w:delText") text += textOf(c);
   }
   return text;
 }

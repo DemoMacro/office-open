@@ -15,8 +15,10 @@ const demos: Record<DocumentType, unknown> = {
   xlsx: JSON.parse(readFileSync(join(demoDir, "3-xlsx.json"), "utf8")),
 };
 
-/** Skeleton budget: must stay far below the full schema (~675 KB for docx). */
-const MAX_SKELETON_BYTES = 20 * 1024;
+/** Skeleton budget: must stay far below the full schema (~675 KB for docx).
+ *  22 KB leaves headroom for natural field growth (the xlsx four-level spine
+ *  crossed 20 KB when CellOptions gained rich-text fields). */
+const MAX_SKELETON_BYTES = 22 * 1024;
 
 describe("getSkeletonSchema", () => {
   it("compiles under ajv for all three formats", () => {

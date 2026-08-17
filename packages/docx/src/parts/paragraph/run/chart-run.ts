@@ -32,4 +32,6 @@ export interface ChartOptions extends ChartSpaceOptions {
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** Run properties of the wrapping w:r (w:rPr before w:drawing). */
   runProperties?: RunPropertiesOptions;
+  /** A w:lastRenderedPageBreak shared the drawing's run (round-trip). */
+  lastRenderedPageBreak?: boolean;
 }

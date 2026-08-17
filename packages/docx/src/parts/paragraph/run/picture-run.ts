@@ -42,6 +42,8 @@ interface CorePictureOptions {
   nonVisualProperties?: NonVisualPropertiesOptions;
   /** Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing. */
   runProperties?: RunPropertiesOptions;
+  /** A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing. */
+  lastRenderedPageBreak?: boolean;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** Blip rendering hint `a14:useLocalDpi` (round-trip). */

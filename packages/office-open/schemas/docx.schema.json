@@ -1943,6 +1943,10 @@
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
+        "lastRenderedPageBreak": {
+          "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip).",
+          "type": "boolean"
+        },
         "legendEntries": {
           "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
           "items": {
@@ -6872,6 +6876,10 @@
         "groupShapeLocks": {
           "$ref": "#/definitions/GroupShapeLocksOptions",
           "description": "Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip."
+        },
+        "lastRenderedPageBreak": {
+          "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing.",
+          "type": "boolean"
         },
         "mcChoiceRequires": {
           "description": "mc:Choice Requires attribute (e.g. \"wpg\") used to regenerate the AlternateContent wrapper.",
@@ -13444,6 +13452,10 @@
               ],
               "description": "Graphic frame locks (wp:cNvGraphicFramePr) for round-trip."
             },
+            "lastRenderedPageBreak": {
+              "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing.",
+              "type": "boolean"
+            },
             "nonVisualProperties": {
               "$ref": "#/definitions/NonVisualPropertiesOptions",
               "description": "Picture non-visual properties (pic:cNvPr) — populated by parse"
@@ -13522,6 +13534,10 @@
                 }
               ],
               "description": "Graphic frame locks (wp:cNvGraphicFramePr) for round-trip."
+            },
+            "lastRenderedPageBreak": {
+              "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing.",
+              "type": "boolean"
             },
             "nonVisualProperties": {
               "$ref": "#/definitions/NonVisualPropertiesOptions",
@@ -18057,6 +18073,10 @@
             }
           ],
           "description": "Graphic frame locks (wp:cNvGraphicFramePr) for round-trip."
+        },
+        "lastRenderedPageBreak": {
+          "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing.",
+          "type": "boolean"
         },
         "linkedTextBox": {
           "additionalProperties": false,

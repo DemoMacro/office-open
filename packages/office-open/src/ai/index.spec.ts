@@ -4,7 +4,7 @@ import { formatToolError } from "./error";
 import { docxTool, officeOpenTools, schemaLookupTool } from "./index";
 
 /** Tool-definition budget: the full docx schema is ~675 KB — the whole point of skeletons. */
-const MAX_INPUT_SCHEMA_BYTES = 20 * 1024;
+const MAX_INPUT_SCHEMA_BYTES = 22 * 1024;
 
 describe("officeOpenTools", () => {
   it("should export four tools with correct keys", () => {

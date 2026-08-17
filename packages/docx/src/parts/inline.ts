@@ -61,9 +61,11 @@ import { stringifyParagraphProperties, stringifyRunProperties } from "./paragrap
 
 // ── Run ──
 
-/** Serialize a complex field's run chain. `instrTag` is w:delInstrText inside
- *  a w:del wrapper (deleted fields spell the instruction that way). */
-function stringifyComplexFieldRuns(cf: ComplexFieldOptions, instrTag = "w:instrText"): string {
+/** Serialize a complex field's run chain. Inside a w:del wrapper the
+ *  instruction is spelled w:delInstrText and the cached result w:delText. */
+function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): string {
+  const instrTag = isDelete ? "w:delInstrText" : "w:instrText";
+  const textTag = isDelete ? "w:delText" : "w:t";
   // Run-properties: Word writes identical rPr across a field's runs. Apply
   // the captured control-run rPr to begin/instrText/separate/end and the
   // result-run rPr to the result (defaults to the control rPr when the
@@ -75,7 +77,7 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, instrTag = "w:instrT
   const resultXml =
     cf.result !== undefined
       ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
-        `<w:r>${res}<w:t xml:space="preserve">${escapeXml(cf.result)}</w:t></w:r>`
+        `<w:r>${res}<${textTag} xml:space="preserve">${escapeXml(cf.result)}</${textTag}></w:r>`
       : "";
   return (
     `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"/></w:r>` +
@@ -172,13 +174,17 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         if ("footnoteReference" in child) {
           const ref = child.footnoteReference;
           const id = typeof ref === "number" ? ref : ref.id;
-          body += `<w:footnoteReference w:id="${id}"/>`;
+          const cmf =
+            typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+          body += `<w:footnoteReference w:id="${id}"${cmf}/>`;
           continue;
         }
         if ("endnoteReference" in child) {
           const ref = child.endnoteReference;
           const id = typeof ref === "number" ? ref : ref.id;
-          body += `<w:endnoteReference w:id="${id}"/>`;
+          const cmf =
+            typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+          body += `<w:endnoteReference w:id="${id}"${cmf}/>`;
           continue;
         }
         // Empty run elements — separator, noBreakHyphen, pgNum, etc.
@@ -243,17 +249,23 @@ let nextChartId = 1;
  */
 function wrapDrawingRun(
   drawingXml: string | undefined,
-  opts: { vmlFallback?: string; mcChoiceRequires?: string; runProperties?: RunPropertiesOptions },
+  opts: {
+    vmlFallback?: string;
+    mcChoiceRequires?: string;
+    runProperties?: RunPropertiesOptions;
+    lastRenderedPageBreak?: boolean;
+  },
 ): string {
   const xml = drawingXml ?? "";
   const rPr = stringifyRunProperties(opts.runProperties) ?? "";
+  const lrpb = opts.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
   if (opts.vmlFallback) {
     const requires = opts.mcChoiceRequires ?? "wps";
     // opts.vmlFallback is the serialized <mc:Fallback>…</mc:Fallback> element,
     // so splice it in directly (no extra wrapper).
-    return `<w:r>${rPr}<mc:AlternateContent><mc:Choice Requires="${requires}">${xml}</mc:Choice>${opts.vmlFallback}</mc:AlternateContent></w:r>`;
+    return `<w:r>${rPr}${lrpb}<mc:AlternateContent><mc:Choice Requires="${requires}">${xml}</mc:Choice>${opts.vmlFallback}</mc:AlternateContent></w:r>`;
   }
-  return `<w:r>${rPr}${xml}</w:r>`;
+  return `<w:r>${rPr}${lrpb}${xml}</w:r>`;
 }
 
 /**
@@ -387,10 +399,7 @@ function stringifyTrackChangeChildren(
     } else if (typeof c !== "string" && "proofErr" in c) {
       parts.push(`<w:proofErr w:type="${c.proofErr}"/>`);
     } else if (typeof c !== "string" && "complexField" in c) {
-      // Deleted fields spell the instruction w:delInstrText (matches Word).
-      parts.push(
-        stringifyComplexFieldRuns(c.complexField, isDelete ? "w:delInstrText" : "w:instrText"),
-      );
+      parts.push(stringifyComplexFieldRuns(c.complexField, isDelete));
     } else if (typeof c !== "string" && "formField" in c) {
       const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
       if (typeof xml === "string") parts.push(xml);
