@@ -22,7 +22,7 @@ export type MathScriptType =
 export type MathStyleType = "p" | "b" | "i" | "bi";
 
 export interface MathRunPropertiesOptions {
-  lit?: boolean;
+  literal?: boolean;
   normal?: boolean;
   script?: MathScriptType;
   style?: MathStyleType;
@@ -45,7 +45,7 @@ export interface MathDelimiterProperties {
   /** Delimiter shape — centered or match (m:shp, ST_Shp). */
   shape?: "centered" | "match";
   /** Control-character formatting (m:dPr/m:ctrlPr → w:rPr). */
-  ctrlPr?: RunPropertiesOptions;
+  controlProperties?: RunPropertiesOptions;
 }
 
 /** N-ary operator limit location (ST_LimLoc). */
@@ -57,7 +57,7 @@ export type MathSpacingRule = 0 | 1 | 2 | 3 | 4;
 /** Matrix baseline alignment (s:ST_YAlign). */
 export type MathBaselineAlignment = "inline" | "top" | "center" | "bottom" | "inside" | "outside";
 
-/** N-ary operator properties (CT_NaryPr beyond chr/subHide/supHide). */
+/** N-ary operator properties (CT_NaryPr beyond character/subHide/supHide). */
 export interface MathNaryProperties {
   /** Limit location relative to the operator (m:limLoc). */
   limitLocation?: MathNaryLimitLocation;
@@ -76,21 +76,21 @@ export interface MathMatrixColumnOptions {
 /** Matrix properties (CT_MPr). */
 export interface MathMatrixProperties {
   /** Row baseline alignment (m:baseJc). */
-  baseJc?: MathBaselineAlignment;
+  baseline?: MathBaselineAlignment;
   /** Hide placeholder glyphs in empty cells (m:plcHide). */
-  plcHide?: boolean;
+  hidePlaceholder?: boolean;
   /** Row spacing rule (m:rSpRule). */
-  rSpRule?: MathSpacingRule;
+  rowSpacingRule?: MathSpacingRule;
   /** Column spacing rule (m:cGpRule). */
-  cGpRule?: MathSpacingRule;
+  columnGapRule?: MathSpacingRule;
   /** Row spacing (m:rSp). */
-  rSp?: number;
+  rowSpacing?: number;
   /** Column spacing (m:cSp). */
-  cSp?: number;
+  columnSpacing?: number;
   /** Column gap (m:cGp). */
-  cGp?: number;
+  columnGap?: number;
   /** Matrix column justifications (m:mcs). */
-  mcs?: MathMatrixColumnOptions[];
+  columns?: MathMatrixColumnOptions[];
 }
 
 /** Border-box properties (CT_BorderBoxPr) — which edges/strikes to hide or draw. */
@@ -116,23 +116,23 @@ export interface MathBorderBoxProperties {
 /** Box properties (CT_BoxPr). */
 export interface MathBoxProperties {
   /** Emulate an operator for line breaking (m:opEmu). */
-  opEmu?: boolean;
+  operatorEmulation?: boolean;
   /** Never break inside (m:noBreak). */
   noBreak?: boolean;
   /** Aligned differential, no italics for the first run (m:diff). */
-  diff?: boolean;
+  differential?: boolean;
   /** Align this box with surrounding text (m:aln). */
-  aln?: boolean;
+  align?: boolean;
 }
 
 /** Group-character properties (CT_GroupChrPr). */
 export interface MathGroupCharacterProperties {
   /** Grouping character (m:chr). */
-  chr?: string;
+  character?: string;
   /** Character position relative to the base (m:pos). */
-  pos?: "top" | "bot";
+  position?: "top" | "bot";
   /** Base position relative to the character (m:vertJc). */
-  vertJc?: "top" | "bot";
+  vertical?: "top" | "bot";
 }
 
 /** Phantom properties (CT_PhantPr). */
@@ -140,33 +140,33 @@ export interface MathPhantomProperties {
   /** Show the phantom content (m:show). */
   show?: boolean;
   /** Zero width (m:zeroWid). */
-  zeroWid?: boolean;
+  zeroWidth?: boolean;
   /** Zero ascent (m:zeroAsc). */
-  zeroAsc?: boolean;
+  zeroAscent?: boolean;
   /** Zero descent (m:zeroDesc). */
-  zeroDesc?: boolean;
+  zeroDescent?: boolean;
   /** Transparent — show without spacing (m:transp). */
-  transp?: boolean;
+  transparent?: boolean;
 }
 
 /** Equation-array properties (CT_EqArrPr). */
 export interface MathEquationArrayProperties {
   /** Row baseline alignment (m:baseJc). */
-  baseJc?: MathBaselineAlignment;
+  baseline?: MathBaselineAlignment;
   /** Distribute rows to the maximum width (m:maxDist). */
-  maxDist?: boolean;
+  distributeRows?: boolean;
   /** Keep object distance between rows (m:objDist). */
-  objDist?: boolean;
+  objectDistance?: boolean;
   /** Row spacing rule (m:rSpRule). */
-  rSpRule?: MathSpacingRule;
+  rowSpacingRule?: MathSpacingRule;
   /** Row spacing (m:rSp). */
-  rSp?: number;
+  rowSpacing?: number;
 }
 
 /** Radical properties (CT_RadPr). */
 export interface MathRadicalProperties {
   /** Hide the degree argument — square-root display (m:degHide). */
-  degHide?: boolean;
+  hideDegree?: boolean;
 }
 
 // ── MathInput ──
@@ -195,7 +195,7 @@ export type MathInput =
         /** Argument size scaling for the denominator (m:den/m:argPr/m:argSz). */
         denominatorArgumentSize?: number;
         /** Control-character formatting (m:fPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -203,7 +203,7 @@ export type MathInput =
         children: MathInput[];
         superScript: MathInput[];
         /** Control-character formatting (m:sSupPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -211,7 +211,7 @@ export type MathInput =
         children: MathInput[];
         subScript: MathInput[];
         /** Control-character formatting (m:sSubPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -222,7 +222,7 @@ export type MathInput =
         /** Align sub/super scripts (m:sSubSupPr/m:alnScr). */
         alignScript?: boolean;
         /** Control-character formatting (m:sSubSupPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -231,7 +231,7 @@ export type MathInput =
         subScript: MathInput[];
         superScript: MathInput[];
         /** Control-character formatting (m:sPrePr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -241,7 +241,7 @@ export type MathInput =
         /** Radical properties (m:radPr). */
         properties?: MathRadicalProperties;
         /** Control-character formatting (m:radPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -251,7 +251,7 @@ export type MathInput =
         superScript?: MathInput[];
         properties?: MathNaryProperties;
         /** Control-character formatting (m:naryPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -261,7 +261,7 @@ export type MathInput =
         superScript?: MathInput[];
         properties?: MathNaryProperties;
         /** Control-character formatting (m:naryPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -269,7 +269,7 @@ export type MathInput =
         children: MathInput[];
         limit: MathInput[];
         /** Control-character formatting (m:limLowPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -277,7 +277,7 @@ export type MathInput =
         children: MathInput[];
         limit: MathInput[];
         /** Control-character formatting (m:limUppPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -285,7 +285,7 @@ export type MathInput =
         children: MathInput[];
         name: MathInput[];
         /** Control-character formatting (m:funcPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -295,7 +295,7 @@ export type MathInput =
         /** Matrix properties (m:mPr). */
         properties?: MathMatrixProperties;
         /** Control-character formatting (m:mPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -344,7 +344,7 @@ export type MathInput =
         /** Border-box properties (m:borderBoxPr). */
         properties?: MathBorderBoxProperties;
         /** Control-character formatting (m:borderBoxPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -353,7 +353,7 @@ export type MathInput =
         /** Box properties (m:boxPr). */
         properties?: MathBoxProperties;
         /** Control-character formatting (m:boxPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -362,7 +362,7 @@ export type MathInput =
         /** Group-character properties (m:groupChrPr). */
         properties?: MathGroupCharacterProperties;
         /** Control-character formatting (m:groupChrPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -371,7 +371,7 @@ export type MathInput =
         /** Phantom properties (m:phantPr). */
         properties?: MathPhantomProperties;
         /** Control-character formatting (m:phantPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -380,7 +380,7 @@ export type MathInput =
         /** Equation-array properties (m:eqArrPr). */
         properties?: MathEquationArrayProperties;
         /** Control-character formatting (m:eqArrPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -388,7 +388,7 @@ export type MathInput =
         children: MathInput[];
         accentCharacter?: string;
         /** Control-character formatting (m:accPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     }
   | {
@@ -396,6 +396,6 @@ export type MathInput =
         children: MathInput[];
         type: "top" | "bot";
         /** Control-character formatting (m:barPr/m:ctrlPr). */
-        ctrlPr?: RunPropertiesOptions;
+        controlProperties?: RunPropertiesOptions;
       };
     };

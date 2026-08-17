@@ -8183,11 +8183,11 @@
       "additionalProperties": false,
       "description": "Box properties (CT_BoxPr).",
       "properties": {
-        "aln": {
+        "align": {
           "description": "Align this box with surrounding text (m:aln).",
           "type": "boolean"
         },
-        "diff": {
+        "differential": {
           "description": "Aligned differential, no italics for the first run (m:diff).",
           "type": "boolean"
         },
@@ -8195,7 +8195,7 @@
           "description": "Never break inside (m:noBreak).",
           "type": "boolean"
         },
-        "opEmu": {
+        "operatorEmulation": {
           "description": "Emulate an operator for line breaking (m:opEmu).",
           "type": "boolean"
         }
@@ -8210,7 +8210,7 @@
           "description": "Beginning character (m:begChr).",
           "type": "string"
         },
-        "ctrlPr": {
+        "controlProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
           "description": "Control-character formatting (m:dPr/m:ctrlPr → w:rPr)."
         },
@@ -8238,23 +8238,23 @@
       "additionalProperties": false,
       "description": "Equation-array properties (CT_EqArrPr).",
       "properties": {
-        "baseJc": {
+        "baseline": {
           "$ref": "#/definitions/MathBaselineAlignment",
           "description": "Row baseline alignment (m:baseJc)."
         },
-        "maxDist": {
+        "distributeRows": {
           "description": "Distribute rows to the maximum width (m:maxDist).",
           "type": "boolean"
         },
-        "objDist": {
+        "objectDistance": {
           "description": "Keep object distance between rows (m:objDist).",
           "type": "boolean"
         },
-        "rSp": {
+        "rowSpacing": {
           "description": "Row spacing (m:rSp).",
           "type": "number"
         },
-        "rSpRule": {
+        "rowSpacingRule": {
           "$ref": "#/definitions/MathSpacingRule",
           "description": "Row spacing rule (m:rSpRule)."
         }
@@ -8265,16 +8265,16 @@
       "additionalProperties": false,
       "description": "Group-character properties (CT_GroupChrPr).",
       "properties": {
-        "chr": {
+        "character": {
           "description": "Grouping character (m:chr).",
           "type": "string"
         },
-        "pos": {
+        "position": {
           "description": "Character position relative to the base (m:pos).",
           "enum": ["top", "bot"],
           "type": "string"
         },
-        "vertJc": {
+        "vertical": {
           "description": "Base position relative to the character (m:vertJc).",
           "enum": ["top", "bot"],
           "type": "string"
@@ -8311,7 +8311,7 @@
             "fraction": {
               "additionalProperties": false,
               "properties": {
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:fPr/m:ctrlPr)."
                 },
@@ -8359,7 +8359,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:sSupPr/m:ctrlPr)."
                 },
@@ -8390,7 +8390,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:sSubPr/m:ctrlPr)."
                 },
@@ -8425,7 +8425,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:sSubSupPr/m:ctrlPr)."
                 },
@@ -8462,7 +8462,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:sPrePr/m:ctrlPr)."
                 },
@@ -8499,7 +8499,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:radPr/m:ctrlPr)."
                 },
@@ -8534,7 +8534,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:naryPr/m:ctrlPr)."
                 },
@@ -8574,7 +8574,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:naryPr/m:ctrlPr)."
                 },
@@ -8614,7 +8614,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:limLowPr/m:ctrlPr)."
                 },
@@ -8645,7 +8645,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:limUppPr/m:ctrlPr)."
                 },
@@ -8676,7 +8676,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:funcPr/m:ctrlPr)."
                 },
@@ -8701,7 +8701,7 @@
             "matrix": {
               "additionalProperties": false,
               "properties": {
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:mPr/m:ctrlPr)."
                 },
@@ -8922,7 +8922,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:borderBoxPr/m:ctrlPr)."
                 },
@@ -8951,7 +8951,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:boxPr/m:ctrlPr)."
                 },
@@ -8980,7 +8980,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:groupChrPr/m:ctrlPr)."
                 },
@@ -9009,7 +9009,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:phantPr/m:ctrlPr)."
                 },
@@ -9032,7 +9032,7 @@
             "eqArr": {
               "additionalProperties": false,
               "properties": {
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:eqArrPr/m:ctrlPr)."
                 },
@@ -9073,7 +9073,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:accPr/m:ctrlPr)."
                 }
@@ -9098,7 +9098,7 @@
                   },
                   "type": "array"
                 },
-                "ctrlPr": {
+                "controlProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
                   "description": "Control-character formatting (m:barPr/m:ctrlPr)."
                 },
@@ -9138,38 +9138,38 @@
       "additionalProperties": false,
       "description": "Matrix properties (CT_MPr).",
       "properties": {
-        "baseJc": {
+        "baseline": {
           "$ref": "#/definitions/MathBaselineAlignment",
           "description": "Row baseline alignment (m:baseJc)."
         },
-        "cGp": {
+        "columnGap": {
           "description": "Column gap (m:cGp).",
           "type": "number"
         },
-        "cGpRule": {
+        "columnGapRule": {
           "$ref": "#/definitions/MathSpacingRule",
           "description": "Column spacing rule (m:cGpRule)."
         },
-        "cSp": {
+        "columnSpacing": {
           "description": "Column spacing (m:cSp).",
           "type": "number"
         },
-        "mcs": {
+        "columns": {
           "description": "Matrix column justifications (m:mcs).",
           "items": {
             "$ref": "#/definitions/MathMatrixColumnOptions"
           },
           "type": "array"
         },
-        "plcHide": {
+        "hidePlaceholder": {
           "description": "Hide placeholder glyphs in empty cells (m:plcHide).",
           "type": "boolean"
         },
-        "rSp": {
+        "rowSpacing": {
           "description": "Row spacing (m:rSp).",
           "type": "number"
         },
-        "rSpRule": {
+        "rowSpacingRule": {
           "$ref": "#/definitions/MathSpacingRule",
           "description": "Row spacing rule (m:rSpRule)."
         }
@@ -9183,7 +9183,7 @@
     },
     "MathNaryProperties": {
       "additionalProperties": false,
-      "description": "N-ary operator properties (CT_NaryPr beyond chr/subHide/supHide).",
+      "description": "N-ary operator properties (CT_NaryPr beyond character/subHide/supHide).",
       "properties": {
         "grow": {
           "description": "Whether the operator grows to content height (m:grow).",
@@ -9204,19 +9204,19 @@
           "description": "Show the phantom content (m:show).",
           "type": "boolean"
         },
-        "transp": {
+        "transparent": {
           "description": "Transparent — show without spacing (m:transp).",
           "type": "boolean"
         },
-        "zeroAsc": {
+        "zeroAscent": {
           "description": "Zero ascent (m:zeroAsc).",
           "type": "boolean"
         },
-        "zeroDesc": {
+        "zeroDescent": {
           "description": "Zero descent (m:zeroDesc).",
           "type": "boolean"
         },
-        "zeroWid": {
+        "zeroWidth": {
           "description": "Zero width (m:zeroWid).",
           "type": "boolean"
         }
@@ -9303,7 +9303,7 @@
       "additionalProperties": false,
       "description": "Radical properties (CT_RadPr).",
       "properties": {
-        "degHide": {
+        "hideDegree": {
           "description": "Hide the degree argument — square-root display (m:degHide).",
           "type": "boolean"
         }
@@ -9319,7 +9319,7 @@
         "breakAlignment": {
           "type": "number"
         },
-        "lit": {
+        "literal": {
           "type": "boolean"
         },
         "normal": {

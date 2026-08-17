@@ -27,7 +27,7 @@ const buffer = await generateDocument({
               {
                 math: {
                   children: [
-                    { box: { children: ["x + y"], properties: { opEmu: true } } },
+                    { box: { children: ["x + y"], properties: { operatorEmulation: true } } },
                     " = ",
                     { box: { children: ["z"] } },
                   ],
@@ -107,9 +107,9 @@ const buffer = await generateDocument({
                       groupChr: {
                         children: [{ eqArr: { rows: [["a"], ["b"], ["c"]] } }],
                         properties: {
-                          chr: "{",
-                          pos: "bot",
-                          vertJc: "top",
+                          character: "{",
+                          position: "bot",
+                          vertical: "top",
                         },
                       },
                     },
@@ -122,7 +122,7 @@ const buffer = await generateDocument({
 
         { paragraph: { children: [""] } },
 
-        // 5. Matrix (with column properties: baseJc, plcHide, rSpRule)
+        // 5. Matrix (with column properties: baseline, hidePlaceholder, rowSpacingRule)
         {
           paragraph: {
             children: [{ bold: true, text: "5. Matrix", size: 14 }],
@@ -163,9 +163,9 @@ const buffer = await generateDocument({
                           ["c", "d"],
                         ],
                         properties: {
-                          baseJc: "center",
-                          plcHide: true,
-                          rSpRule: 2 as const,
+                          baseline: "center",
+                          hidePlaceholder: true,
+                          rowSpacingRule: 2 as const,
                         },
                       },
                     },
@@ -204,7 +204,7 @@ const buffer = await generateDocument({
                           {
                             phant: {
                               children: ["dy"],
-                              properties: { zeroAsc: true, zeroDesc: true },
+                              properties: { zeroAscent: true, zeroDescent: true },
                             },
                           },
                         ],

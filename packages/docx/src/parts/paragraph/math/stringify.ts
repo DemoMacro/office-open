@@ -34,7 +34,7 @@ import { stringifyRunProperties } from "../stringify";
 
 function mathRunPropsStr(opts: MathRunPropertiesOptions): string {
   const parts: string[] = [];
-  if (opts.lit) parts.push(`<m:lit m:val="${onOff(true)}"/>`);
+  if (opts.literal) parts.push(`<m:lit m:val="${onOff(true)}"/>`);
   if (opts.normal) parts.push(`<m:nor m:val="${onOff(true)}"/>`);
   if (opts.script) parts.push(`<m:scr m:val="${opts.script}"/>`);
   if (opts.style) parts.push(`<m:sty m:val="${opts.style}"/>`);
@@ -83,7 +83,7 @@ export function stringifyMathInput(value: MathInput): string {
   // Discriminated union: check unique keys (order matters — subSuperScript first)
   if ("subSuperScript" in value) {
     const opts = value.subSuperScript;
-    const ctrl = ctrlPrXml(opts.ctrlPr);
+    const ctrl = ctrlPrXml(opts.controlProperties);
     const pr =
       opts.alignScript || ctrl
         ? `<m:sSubSupPr>${opts.alignScript ? `<m:alnScr m:val="${onOff(true)}"/>` : ""}${ctrl}</m:sSubSupPr>`
@@ -93,21 +93,21 @@ export function stringifyMathInput(value: MathInput): string {
 
   if ("preSubSuperScript" in value) {
     const opts = value.preSubSuperScript;
-    const ctrl = ctrlPrXml(opts.ctrlPr);
+    const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sPrePr>${ctrl}</m:sPrePr>` : "<m:sPrePr/>";
     return `<m:sPre>${pr}<m:sub>${stringifyChildren(opts.subScript)}</m:sub><m:sup>${stringifyChildren(opts.superScript)}</m:sup><m:e>${stringifyChildren(opts.children)}</m:e></m:sPre>`;
   }
 
   if ("superScript" in value) {
     const opts = value.superScript;
-    const ctrl = ctrlPrXml(opts.ctrlPr);
+    const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sSupPr>${ctrl}</m:sSupPr>` : "<m:sSupPr/>";
     return `<m:sSup>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:sup>${stringifyChildren(opts.superScript)}</m:sup></m:sSup>`;
   }
 
   if ("subScript" in value) {
     const opts = value.subScript;
-    const ctrl = ctrlPrXml(opts.ctrlPr);
+    const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sSubPr>${ctrl}</m:sSubPr>` : "<m:sSubPr/>";
     return `<m:sSub>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:sub>${stringifyChildren(opts.subScript)}</m:sub></m:sSub>`;
   }
@@ -115,7 +115,8 @@ export function stringifyMathInput(value: MathInput): string {
   if ("fraction" in value) {
     const opts = value.fraction;
     const inner =
-      (opts.fractionType ? `<m:type m:val="${opts.fractionType}"/>` : "") + ctrlPrXml(opts.ctrlPr);
+      (opts.fractionType ? `<m:type m:val="${opts.fractionType}"/>` : "") +
+      ctrlPrXml(opts.controlProperties);
     const pr = inner ? `<m:fPr>${inner}</m:fPr>` : "";
     const numArgPr = argPrXml(opts.numeratorArgumentSize);
     const denArgPr = argPrXml(opts.denominatorArgumentSize);
@@ -125,9 +126,9 @@ export function stringifyMathInput(value: MathInput): string {
   if ("radical" in value) {
     const opts = value.radical;
     const hasDegree = opts.degree && opts.degree.length > 0;
-    const hideDegree = opts.properties?.degHide ?? !hasDegree;
+    const hideDegree = opts.properties?.hideDegree ?? !hasDegree;
     const inner =
-      (hideDegree ? `<m:degHide m:val="${onOff(true)}"/>` : "") + ctrlPrXml(opts.ctrlPr);
+      (hideDegree ? `<m:degHide m:val="${onOff(true)}"/>` : "") + ctrlPrXml(opts.controlProperties);
     const pr = inner ? `<m:radPr>${inner}</m:radPr>` : "";
     const deg = hasDegree ? `<m:deg>${stringifyChildren(opts.degree!)}</m:deg>` : "<m:deg/>";
     return `<m:rad>${pr}${deg}<m:e>${stringifyChildren(opts.children)}</m:e></m:rad>`;
@@ -143,19 +144,25 @@ export function stringifyMathInput(value: MathInput): string {
 
   if ("limitLower" in value) {
     const opts = value.limitLower;
-    const pr = opts.ctrlPr ? `<m:limLowPr>${ctrlPrXml(opts.ctrlPr)}</m:limLowPr>` : "";
+    const pr = opts.controlProperties
+      ? `<m:limLowPr>${ctrlPrXml(opts.controlProperties)}</m:limLowPr>`
+      : "";
     return `<m:limLow>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:lim>${stringifyChildren(opts.limit)}</m:lim></m:limLow>`;
   }
 
   if ("limitUpper" in value) {
     const opts = value.limitUpper;
-    const pr = opts.ctrlPr ? `<m:limUppPr>${ctrlPrXml(opts.ctrlPr)}</m:limUppPr>` : "";
+    const pr = opts.controlProperties
+      ? `<m:limUppPr>${ctrlPrXml(opts.controlProperties)}</m:limUppPr>`
+      : "";
     return `<m:limUpp>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:lim>${stringifyChildren(opts.limit)}</m:lim></m:limUpp>`;
   }
 
   if ("function" in value) {
     const opts = value.function;
-    const pr = opts.ctrlPr ? `<m:funcPr>${ctrlPrXml(opts.ctrlPr)}</m:funcPr>` : "";
+    const pr = opts.controlProperties
+      ? `<m:funcPr>${ctrlPrXml(opts.controlProperties)}</m:funcPr>`
+      : "";
     return `<m:func>${pr}<m:fName>${stringifyChildren(opts.name)}</m:fName><m:e>${stringifyChildren(opts.children)}</m:e></m:func>`;
   }
 
@@ -178,15 +185,16 @@ export function stringifyMathInput(value: MathInput): string {
       .join("");
     const p = opts.properties;
     const prParts: string[] = [];
-    if (p?.baseJc) prParts.push(`<m:baseJc m:val="${p.baseJc}"/>`);
-    if (p?.plcHide !== undefined) prParts.push(`<m:plcHide m:val="${onOff(p.plcHide)}"/>`);
-    if (p?.rSpRule) prParts.push(`<m:rSpRule m:val="${p.rSpRule}"/>`);
-    if (p?.cGpRule) prParts.push(`<m:cGpRule m:val="${p.cGpRule}"/>`);
-    if (p?.rSp !== undefined) prParts.push(`<m:rSp m:val="${p.rSp}"/>`);
-    if (p?.cSp !== undefined) prParts.push(`<m:cSp m:val="${p.cSp}"/>`);
-    if (p?.cGp !== undefined) prParts.push(`<m:cGp m:val="${p.cGp}"/>`);
-    if (p?.mcs?.length) {
-      const mcItems = p.mcs
+    if (p?.baseline) prParts.push(`<m:baseJc m:val="${p.baseline}"/>`);
+    if (p?.hidePlaceholder !== undefined)
+      prParts.push(`<m:plcHide m:val="${onOff(p.hidePlaceholder)}"/>`);
+    if (p?.rowSpacingRule) prParts.push(`<m:rSpRule m:val="${p.rowSpacingRule}"/>`);
+    if (p?.columnGapRule) prParts.push(`<m:cGpRule m:val="${p.columnGapRule}"/>`);
+    if (p?.rowSpacing !== undefined) prParts.push(`<m:rSp m:val="${p.rowSpacing}"/>`);
+    if (p?.columnSpacing !== undefined) prParts.push(`<m:cSp m:val="${p.columnSpacing}"/>`);
+    if (p?.columnGap !== undefined) prParts.push(`<m:cGp m:val="${p.columnGap}"/>`);
+    if (p?.columns?.length) {
+      const mcItems = p.columns
         .map(
           (mc) =>
             `<m:mc><m:mcPr><m:count m:val="${mc.count}"/><m:mcJc m:val="${mc.justification}"/></m:mcPr></m:mc>`,
@@ -194,7 +202,7 @@ export function stringifyMathInput(value: MathInput): string {
         .join("");
       prParts.push(`<m:mcs>${mcItems}</m:mcs>`);
     }
-    prParts.push(ctrlPrXml(opts.ctrlPr));
+    prParts.push(ctrlPrXml(opts.controlProperties));
     const pr = prParts.some(Boolean) ? `<m:mPr>${prParts.join("")}</m:mPr>` : "";
     return `<m:m>${pr}${rows}</m:m>`;
   }
@@ -229,7 +237,7 @@ export function stringifyMathInput(value: MathInput): string {
     if (p?.strikeVertical) parts.push(`<m:strikeV m:val="${onOff(true)}"/>`);
     if (p?.strikeDiagonalUp) parts.push(`<m:strikeBLTR m:val="${onOff(true)}"/>`);
     if (p?.strikeDiagonalDown) parts.push(`<m:strikeTLBR m:val="${onOff(true)}"/>`);
-    parts.push(ctrlPrXml(opts.ctrlPr));
+    parts.push(ctrlPrXml(opts.controlProperties));
     const pr = parts.some(Boolean) ? `<m:borderBoxPr>${parts.join("")}</m:borderBoxPr>` : "";
     return `<m:borderBox>${pr}<m:e>${stringifyChildren(opts.children)}</m:e></m:borderBox>`;
   }
@@ -238,11 +246,11 @@ export function stringifyMathInput(value: MathInput): string {
     const opts = value.box;
     const p = opts.properties;
     const parts: string[] = [];
-    if (p?.opEmu) parts.push(`<m:opEmu m:val="${onOff(true)}"/>`);
+    if (p?.operatorEmulation) parts.push(`<m:opEmu m:val="${onOff(true)}"/>`);
     if (p?.noBreak) parts.push(`<m:noBreak m:val="${onOff(true)}"/>`);
-    if (p?.diff) parts.push(`<m:diff m:val="${onOff(true)}"/>`);
-    if (p?.aln) parts.push(`<m:aln m:val="${onOff(true)}"/>`);
-    parts.push(ctrlPrXml(opts.ctrlPr));
+    if (p?.differential) parts.push(`<m:diff m:val="${onOff(true)}"/>`);
+    if (p?.align) parts.push(`<m:aln m:val="${onOff(true)}"/>`);
+    parts.push(ctrlPrXml(opts.controlProperties));
     const pr = parts.some(Boolean) ? `<m:boxPr>${parts.join("")}</m:boxPr>` : "";
     return `<m:box>${pr}<m:e>${stringifyChildren(opts.children)}</m:e></m:box>`;
   }
@@ -251,10 +259,10 @@ export function stringifyMathInput(value: MathInput): string {
     const opts = value.groupChr;
     const p = opts.properties;
     const parts: string[] = [];
-    if (p?.chr) parts.push(`<m:chr m:val="${escapeXml(p.chr)}"/>`);
-    if (p?.pos) parts.push(`<m:pos m:val="${p.pos}"/>`);
-    if (p?.vertJc) parts.push(`<m:vertJc m:val="${p.vertJc}"/>`);
-    parts.push(ctrlPrXml(opts.ctrlPr));
+    if (p?.character) parts.push(`<m:chr m:val="${escapeXml(p.character)}"/>`);
+    if (p?.position) parts.push(`<m:pos m:val="${p.position}"/>`);
+    if (p?.vertical) parts.push(`<m:vertJc m:val="${p.vertical}"/>`);
+    parts.push(ctrlPrXml(opts.controlProperties));
     const pr = parts.some(Boolean) ? `<m:groupChrPr>${parts.join("")}</m:groupChrPr>` : "";
     return `<m:groupChr>${pr}<m:e>${stringifyChildren(opts.children)}</m:e></m:groupChr>`;
   }
@@ -264,11 +272,11 @@ export function stringifyMathInput(value: MathInput): string {
     const p = opts.properties;
     const parts: string[] = [];
     if (p?.show !== undefined) parts.push(`<m:show m:val="${onOff(p.show)}"/>`);
-    if (p?.zeroWid) parts.push(`<m:zeroWid m:val="${onOff(true)}"/>`);
-    if (p?.zeroAsc) parts.push(`<m:zeroAsc m:val="${onOff(true)}"/>`);
-    if (p?.zeroDesc) parts.push(`<m:zeroDesc m:val="${onOff(true)}"/>`);
-    if (p?.transp) parts.push(`<m:transp m:val="${onOff(true)}"/>`);
-    parts.push(ctrlPrXml(opts.ctrlPr));
+    if (p?.zeroWidth) parts.push(`<m:zeroWid m:val="${onOff(true)}"/>`);
+    if (p?.zeroAscent) parts.push(`<m:zeroAsc m:val="${onOff(true)}"/>`);
+    if (p?.zeroDescent) parts.push(`<m:zeroDesc m:val="${onOff(true)}"/>`);
+    if (p?.transparent) parts.push(`<m:transp m:val="${onOff(true)}"/>`);
+    parts.push(ctrlPrXml(opts.controlProperties));
     const pr = parts.some(Boolean) ? `<m:phantPr>${parts.join("")}</m:phantPr>` : "";
     return `<m:phant>${pr}<m:e>${stringifyChildren(opts.children)}</m:e></m:phant>`;
   }
@@ -277,12 +285,12 @@ export function stringifyMathInput(value: MathInput): string {
     const opts = value.eqArr;
     const p = opts.properties;
     const parts: string[] = [];
-    if (p?.baseJc) parts.push(`<m:baseJc m:val="${p.baseJc}"/>`);
-    if (p?.maxDist) parts.push(`<m:maxDist m:val="${onOff(true)}"/>`);
-    if (p?.objDist) parts.push(`<m:objDist m:val="${onOff(true)}"/>`);
-    if (p?.rSpRule) parts.push(`<m:rSpRule m:val="${p.rSpRule}"/>`);
-    if (p?.rSp !== undefined) parts.push(`<m:rSp m:val="${p.rSp}"/>`);
-    parts.push(ctrlPrXml(opts.ctrlPr));
+    if (p?.baseline) parts.push(`<m:baseJc m:val="${p.baseline}"/>`);
+    if (p?.distributeRows) parts.push(`<m:maxDist m:val="${onOff(true)}"/>`);
+    if (p?.objectDistance) parts.push(`<m:objDist m:val="${onOff(true)}"/>`);
+    if (p?.rowSpacingRule) parts.push(`<m:rSpRule m:val="${p.rowSpacingRule}"/>`);
+    if (p?.rowSpacing !== undefined) parts.push(`<m:rSp m:val="${p.rowSpacing}"/>`);
+    parts.push(ctrlPrXml(opts.controlProperties));
     const pr = parts.some(Boolean) ? `<m:eqArrPr>${parts.join("")}</m:eqArrPr>` : "";
     const rows = opts.rows.map((row) => `<m:e>${stringifyChildren(row)}</m:e>`).join("");
     return `<m:eqArr>${pr}${rows}</m:eqArr>`;
@@ -292,14 +300,14 @@ export function stringifyMathInput(value: MathInput): string {
     const opts = value.accent;
     const inner =
       (opts.accentCharacter ? `<m:chr m:val="${escapeXml(opts.accentCharacter)}"/>` : "") +
-      ctrlPrXml(opts.ctrlPr);
+      ctrlPrXml(opts.controlProperties);
     const pr = inner ? `<m:accPr>${inner}</m:accPr>` : "";
     return `<m:acc>${pr}<m:e>${stringifyChildren(opts.children)}</m:e></m:acc>`;
   }
 
   if ("bar" in value) {
     const opts = value.bar;
-    const inner = `<m:pos m:val="${opts.type}"/>` + ctrlPrXml(opts.ctrlPr);
+    const inner = `<m:pos m:val="${opts.type}"/>` + ctrlPrXml(opts.controlProperties);
     return `<m:bar><m:barPr>${inner}</m:barPr><m:e>${stringifyChildren(opts.children)}</m:e></m:bar>`;
   }
 
@@ -321,20 +329,20 @@ function stringifyNAry(
     subScript?: MathInput[];
     superScript?: MathInput[];
     properties?: MathNaryProperties;
-    ctrlPr?: RunPropertiesOptions;
+    controlProperties?: RunPropertiesOptions;
   },
-  chr: string,
+  character: string,
 ): string {
   const hasSub = opts.subScript && opts.subScript.length > 0;
   const hasSup = opts.superScript && opts.superScript.length > 0;
-  const prParts: string[] = [`<m:chr m:val="${chr}"/>`];
+  const prParts: string[] = [`<m:chr m:val="${character}"/>`];
   if (opts.properties?.limitLocation)
     prParts.push(`<m:limLoc m:val="${opts.properties.limitLocation}"/>`);
   if (opts.properties?.grow !== undefined)
     prParts.push(`<m:grow m:val="${onOff(opts.properties.grow)}"/>`);
   if (!hasSub) prParts.push(`<m:subHide m:val="${onOff(true)}"/>`);
   if (!hasSup) prParts.push(`<m:supHide m:val="${onOff(true)}"/>`);
-  prParts.push(ctrlPrXml(opts.ctrlPr));
+  prParts.push(ctrlPrXml(opts.controlProperties));
   const pr = `<m:naryPr>${prParts.join("")}</m:naryPr>`;
   const sub = hasSub ? `<m:sub>${stringifyChildren(opts.subScript!)}</m:sub>` : "<m:sub/>";
   const sup = hasSup ? `<m:sup>${stringifyChildren(opts.superScript!)}</m:sup>` : "<m:sup/>";
@@ -368,7 +376,7 @@ function stringifyDelimiters(
   if (spec.properties?.grow !== undefined)
     prParts.push(`<m:grow m:val="${onOff(spec.properties.grow)}"/>`);
   if (spec.properties?.shape) prParts.push(`<m:shp m:val="${spec.properties.shape}"/>`);
-  prParts.push(ctrlPrXml(spec.properties?.ctrlPr));
+  prParts.push(ctrlPrXml(spec.properties?.controlProperties));
   return `<m:d><m:dPr>${prParts.join("")}</m:dPr>${eXml}</m:d>`;
 }
 
@@ -523,7 +531,7 @@ function parseMathRun(el: Element): MathInput {
 /** Read m:rPr (CT_RPr) into its structured options. */
 function readMathRunProperties(el: Element): MathRunPropertiesOptions {
   const result: MathRunPropertiesOptions = {};
-  if (findChild(el, "m:lit")) result.lit = true;
+  if (findChild(el, "m:lit")) result.literal = true;
   if (findChild(el, "m:nor")) result.normal = true;
   const scr = attr(findChild(el, "m:scr"), "m:val");
   if (scr) result.script = scr as MathRunPropertiesOptions["script"];
@@ -588,21 +596,21 @@ function parseMathRadical(el: Element): MathInput {
   const degree = parseMathArg(el, "m:deg");
   const mathChildren = parseMathArg(el, "m:e");
   const radPr = findChild(el, "m:radPr");
-  const degHide = readOnOff(findChild(radPr, "m:degHide"));
+  const hideDegree = readOnOff(findChild(radPr, "m:degHide"));
   return {
     radical: {
       children: mathChildren,
       ...(degree.length > 0 ? { degree } : {}),
-      ...(degHide !== undefined ? { properties: { degHide } } : {}),
+      ...(hideDegree !== undefined ? { properties: { hideDegree } } : {}),
       ...spreadCtrlPr(radPr),
     },
   };
 }
 
 /** Spread a ctrlPr read into its "ctrlPr" option field. */
-function spreadCtrlPr(prEl: Element | undefined): { ctrlPr?: RunPropertiesOptions } {
+function spreadCtrlPr(prEl: Element | undefined): { controlProperties?: RunPropertiesOptions } {
   const ctrlPr = readCtrlPr(prEl);
-  return ctrlPr !== undefined ? { ctrlPr } : {};
+  return ctrlPr !== undefined ? { controlProperties: ctrlPr } : {};
 }
 
 function parseMathSuperScript(el: Element): MathInput {
@@ -705,7 +713,7 @@ function parseMathDelimiter(el: Element): MathInput {
     }
   }
   const ctrlPr = readCtrlPr(dPr);
-  if (ctrlPr !== undefined) properties.ctrlPr = ctrlPr;
+  if (ctrlPr !== undefined) properties.controlProperties = ctrlPr;
   const hasProperties = Object.keys(properties).length > 0;
   const value =
     groups.length > 1
@@ -748,31 +756,33 @@ function parseMathMatrix(el: Element): MathInput {
 function readMatrixProperties(mPr: Element | undefined): MathMatrixProperties | undefined {
   if (!mPr) return undefined;
   const result: MathMatrixProperties = {};
-  const baseJc = attr(findChild(mPr, "m:baseJc"), "m:val");
-  if (baseJc !== undefined && Y_ALIGN.has(baseJc))
-    result.baseJc = baseJc as MathMatrixProperties["baseJc"];
-  const plcHide = readOnOff(findChild(mPr, "m:plcHide"));
-  if (plcHide !== undefined) result.plcHide = plcHide;
-  const rSpRule = readNum(findChild(mPr, "m:rSpRule"));
-  if (rSpRule !== undefined) result.rSpRule = rSpRule as MathMatrixProperties["rSpRule"];
-  const cGpRule = readNum(findChild(mPr, "m:cGpRule"));
-  if (cGpRule !== undefined) result.cGpRule = cGpRule as MathMatrixProperties["cGpRule"];
-  const rSp = readNum(findChild(mPr, "m:rSp"));
-  if (rSp !== undefined) result.rSp = rSp;
-  const cSp = readNum(findChild(mPr, "m:cSp"));
-  if (cSp !== undefined) result.cSp = cSp;
-  const cGp = readNum(findChild(mPr, "m:cGp"));
-  if (cGp !== undefined) result.cGp = cGp;
-  const mcs = findChild(mPr, "m:mcs");
-  if (mcs) {
+  const baseline = attr(findChild(mPr, "m:baseJc"), "m:val");
+  if (baseline !== undefined && Y_ALIGN.has(baseline))
+    result.baseline = baseline as MathMatrixProperties["baseline"];
+  const hidePlaceholder = readOnOff(findChild(mPr, "m:plcHide"));
+  if (hidePlaceholder !== undefined) result.hidePlaceholder = hidePlaceholder;
+  const rowSpacingRule = readNum(findChild(mPr, "m:rSpRule"));
+  if (rowSpacingRule !== undefined)
+    result.rowSpacingRule = rowSpacingRule as MathMatrixProperties["rowSpacingRule"];
+  const columnGapRule = readNum(findChild(mPr, "m:cGpRule"));
+  if (columnGapRule !== undefined)
+    result.columnGapRule = columnGapRule as MathMatrixProperties["columnGapRule"];
+  const rowSpacing = readNum(findChild(mPr, "m:rSp"));
+  if (rowSpacing !== undefined) result.rowSpacing = rowSpacing;
+  const columnSpacing = readNum(findChild(mPr, "m:cSp"));
+  if (columnSpacing !== undefined) result.columnSpacing = columnSpacing;
+  const columnGap = readNum(findChild(mPr, "m:cGp"));
+  if (columnGap !== undefined) result.columnGap = columnGap;
+  const columns = findChild(mPr, "m:mcs");
+  if (columns) {
     const cols: MathMatrixColumnOptions[] = [];
-    for (const mc of children(mcs, "m:mc")) {
+    for (const mc of children(columns, "m:mc")) {
       const mcPr = findChild(mc, "m:mcPr");
       const count = readNum(findChild(mcPr, "m:count"));
       const mcJc = attr(findChild(mcPr, "m:mcJc"), "m:val");
       if (count !== undefined && mcJc) cols.push({ count, justification: mcJc });
     }
-    if (cols.length > 0) result.mcs = cols;
+    if (cols.length > 0) result.columns = cols;
   }
   return Object.keys(result).length > 0 ? result : undefined;
 }
@@ -794,12 +804,12 @@ function parseMathAccent(el: Element): MathInput {
 function parseMathBar(el: Element): MathInput {
   const barPr = findChild(el, "m:barPr");
   const posEl = barPr ? findChild(barPr, "m:pos") : undefined;
-  const pos = posEl ? attr(posEl, "m:val") : "top";
+  const position = posEl ? attr(posEl, "m:val") : "top";
 
   return {
     bar: {
       children: parseMathArg(el, "m:e"),
-      type: (pos as "top" | "bot") ?? "top",
+      type: (position as "top" | "bot") ?? "top",
       ...spreadCtrlPr(barPr),
     },
   };
@@ -812,17 +822,18 @@ function parseMathEqArr(el: Element): MathInput {
   }
   const eqArrPr = findChild(el, "m:eqArrPr");
   const result: MathEquationArrayProperties = {};
-  const baseJc = attr(findChild(eqArrPr, "m:baseJc"), "m:val");
-  if (baseJc !== undefined && Y_ALIGN.has(baseJc))
-    result.baseJc = baseJc as MathEquationArrayProperties["baseJc"];
-  const maxDist = readOnOff(findChild(eqArrPr, "m:maxDist"));
-  if (maxDist !== undefined) result.maxDist = maxDist;
-  const objDist = readOnOff(findChild(eqArrPr, "m:objDist"));
-  if (objDist !== undefined) result.objDist = objDist;
-  const rSpRule = readNum(findChild(eqArrPr, "m:rSpRule"));
-  if (rSpRule !== undefined) result.rSpRule = rSpRule as MathEquationArrayProperties["rSpRule"];
-  const rSp = readNum(findChild(eqArrPr, "m:rSp"));
-  if (rSp !== undefined) result.rSp = rSp;
+  const baseline = attr(findChild(eqArrPr, "m:baseJc"), "m:val");
+  if (baseline !== undefined && Y_ALIGN.has(baseline))
+    result.baseline = baseline as MathEquationArrayProperties["baseline"];
+  const distributeRows = readOnOff(findChild(eqArrPr, "m:maxDist"));
+  if (distributeRows !== undefined) result.distributeRows = distributeRows;
+  const objectDistance = readOnOff(findChild(eqArrPr, "m:objDist"));
+  if (objectDistance !== undefined) result.objectDistance = objectDistance;
+  const rowSpacingRule = readNum(findChild(eqArrPr, "m:rSpRule"));
+  if (rowSpacingRule !== undefined)
+    result.rowSpacingRule = rowSpacingRule as MathEquationArrayProperties["rowSpacingRule"];
+  const rowSpacing = readNum(findChild(eqArrPr, "m:rSp"));
+  if (rowSpacing !== undefined) result.rowSpacing = rowSpacing;
   return {
     eqArr: {
       rows,
@@ -892,14 +903,14 @@ function parseMathBorderBox(el: Element): MathInput {
 function parseMathBox(el: Element): MathInput {
   const pr = findChild(el, "m:boxPr");
   const result: MathBoxProperties = {};
-  const opEmu = readOnOff(findChild(pr, "m:opEmu"));
-  if (opEmu !== undefined) result.opEmu = opEmu;
+  const operatorEmulation = readOnOff(findChild(pr, "m:opEmu"));
+  if (operatorEmulation !== undefined) result.operatorEmulation = operatorEmulation;
   const noBreak = readOnOff(findChild(pr, "m:noBreak"));
   if (noBreak !== undefined) result.noBreak = noBreak;
-  const diff = readOnOff(findChild(pr, "m:diff"));
-  if (diff !== undefined) result.diff = diff;
-  const aln = readOnOff(findChild(pr, "m:aln"));
-  if (aln !== undefined) result.aln = aln;
+  const differential = readOnOff(findChild(pr, "m:diff"));
+  if (differential !== undefined) result.differential = differential;
+  const align = readOnOff(findChild(pr, "m:aln"));
+  if (align !== undefined) result.align = align;
   return {
     box: {
       children: parseMathArg(el, "m:e"),
@@ -912,12 +923,12 @@ function parseMathBox(el: Element): MathInput {
 function parseMathGroupChr(el: Element): MathInput {
   const pr = findChild(el, "m:groupChrPr");
   const result: MathGroupCharacterProperties = {};
-  const chr = attr(findChild(pr, "m:chr"), "m:val");
-  if (chr) result.chr = chr;
-  const pos = attr(findChild(pr, "m:pos"), "m:val");
-  if (pos === "top" || pos === "bot") result.pos = pos;
-  const vertJc = attr(findChild(pr, "m:vertJc"), "m:val");
-  if (vertJc === "top" || vertJc === "bot") result.vertJc = vertJc;
+  const character = attr(findChild(pr, "m:chr"), "m:val");
+  if (character) result.character = character;
+  const position = attr(findChild(pr, "m:pos"), "m:val");
+  if (position === "top" || position === "bot") result.position = position;
+  const vertical = attr(findChild(pr, "m:vertJc"), "m:val");
+  if (vertical === "top" || vertical === "bot") result.vertical = vertical;
   return {
     groupChr: {
       children: parseMathArg(el, "m:e"),
@@ -932,14 +943,14 @@ function parseMathPhant(el: Element): MathInput {
   const result: MathPhantomProperties = {};
   const show = readOnOff(findChild(pr, "m:show"));
   if (show !== undefined) result.show = show;
-  const zeroWid = readOnOff(findChild(pr, "m:zeroWid"));
-  if (zeroWid !== undefined) result.zeroWid = zeroWid;
-  const zeroAsc = readOnOff(findChild(pr, "m:zeroAsc"));
-  if (zeroAsc !== undefined) result.zeroAsc = zeroAsc;
-  const zeroDesc = readOnOff(findChild(pr, "m:zeroDesc"));
-  if (zeroDesc !== undefined) result.zeroDesc = zeroDesc;
-  const transp = readOnOff(findChild(pr, "m:transp"));
-  if (transp !== undefined) result.transp = transp;
+  const zeroWidth = readOnOff(findChild(pr, "m:zeroWid"));
+  if (zeroWidth !== undefined) result.zeroWidth = zeroWidth;
+  const zeroAscent = readOnOff(findChild(pr, "m:zeroAsc"));
+  if (zeroAscent !== undefined) result.zeroAscent = zeroAscent;
+  const zeroDescent = readOnOff(findChild(pr, "m:zeroDesc"));
+  if (zeroDescent !== undefined) result.zeroDescent = zeroDescent;
+  const transparent = readOnOff(findChild(pr, "m:transp"));
+  if (transparent !== undefined) result.transparent = transparent;
   return {
     phant: {
       children: parseMathArg(el, "m:e"),
