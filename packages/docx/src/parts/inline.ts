@@ -186,6 +186,13 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           body += `<w:commentReference w:id="${Number(child.commentReference)}"/>`;
           continue;
         }
+        // Symbol run — emit bare; the dispatch branch wraps it in its own
+        // <w:r>, which would nest illegally inside this run.
+        if ("symbolRun" in child) {
+          const sym = child.symbolRun;
+          body += `${stringifyRunProperties(sym) ?? ""}<w:sym w:char="${sym.char}" w:font="${sym.symbolFont ?? "Wingdings"}"/>`;
+          continue;
+        }
         // Reference elements inside a run's children[] (mixed-content runs)
         // emit bare — the paragraph-level dispatch would wrap them in a
         // nested <w:r>, which is invalid inside a run.

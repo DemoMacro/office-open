@@ -146,6 +146,21 @@ describe("stringifyPict", () => {
     expect(out).toContain('r:id="{image3.wmf}"');
   });
 
+  it("does not mutate the caller's options when dedup renames", () => {
+    const bytes = new Uint8Array([7, 7]);
+    const { ctx } = writeCtx({ "image1.wmf": "image3.wmf" });
+    const opts: import("./pict").PictOptions = {
+      children: [{ shape: { id: "_x0000_i1033", imagedata: { relationshipId: "{image1.wmf}" } } }],
+      media: [{ fileName: "image1.wmf", data: bytes, type: "wmf" }],
+    };
+    stringifyPict(opts, ctx);
+    // The caller's placeholder survives untouched — the remap worked on a copy
+    // (options objects are shared data; mutating them leaks across documents).
+    const first = opts.children![0]!;
+    if (!("shape" in first)) throw new Error("first child is not a shape");
+    expect(first.shape.imagedata!.relationshipId).toBe("{image1.wmf}");
+  });
+
   it("skips empty media entries (OPC guard)", () => {
     const { ctx, registrations } = writeCtx();
     const out = stringifyPict(

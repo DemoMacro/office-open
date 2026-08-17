@@ -21,6 +21,7 @@ import {
   formatId,
   hasPlaceholders,
   optionalRelsPart,
+  Relationships,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
   IMAGE_MEDIA_CONTENT_TYPES,
@@ -159,6 +160,7 @@ interface XmlifyedFileMapping {
   Styles: XmlifyedFile;
   Properties: XmlifyedFile;
   Numbering?: XmlifyedFile;
+  NumberingRelationships?: XmlifyedFile;
   Relationships: XmlifyedFile;
   FileRelationships: XmlifyedFile;
   Headers: XmlifyedFile[];
@@ -617,12 +619,29 @@ function xmlifyContext(
       };
     }),
     ...(ctx.hasNumbering
-      ? {
-          Numbering: {
-            data: ctx.numbering.serialize(ctx),
-            path: "word/numbering.xml",
-          },
-        }
+      ? (() => {
+          // Picture-bullet media resolves through numbering.xml's own rels —
+          // same placeholder bridge as headers/footers, ids local to the part
+          // (numbering.xml carries no other relationships).
+          const numberingXml = ctx.numbering.serialize(ctx);
+          const numberingMedia = findAndReplaceImagePlaceholders(numberingXml, ctx.media.array, 1);
+          const numberingRels = new Relationships();
+          for (const [i, ref] of numberingMedia.referenced.entries()) {
+            numberingRels.addRelationship(
+              1 + i,
+              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+              `media/${ref.fileName}`,
+            );
+          }
+          return {
+            Numbering: { data: numberingMedia.xml, path: "word/numbering.xml" },
+            NumberingRelationships: optionalRelsPart(
+              numberingRels,
+              XML_DECL,
+              "word/_rels/numbering.xml.rels",
+            ),
+          };
+        })()
       : {}),
     Properties: {
       data: XML_DECL + (corePropertiesDesc.stringify(ctx._options, ctx) ?? ""),

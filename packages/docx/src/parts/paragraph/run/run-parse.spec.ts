@@ -186,3 +186,26 @@ describe("parseRun customMarkFollows (CT_FtnEdnRef)", () => {
     expect(opts.footnoteReference).toBe(5);
   });
 });
+
+describe("parsedRunToOptions mixed block children", () => {
+  it("keeps symbols and picts ordered in children[] (no flattening drop)", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS}><w:t>a</w:t><w:sym w:char="F04A" w:font="Webdings"/><w:t>b</w:t>` +
+        `<w:pict><v:rect id="_x0000_s1027"/></w:pict></w:r>`,
+    );
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(el, {} as never)) as {
+      children: Record<string, unknown>[];
+    };
+    // All four children survive in order — neither the text simplification
+    // nor the exclusive pict/symbol flattening may drop siblings.
+    expect(opts.children).toHaveLength(4);
+    expect(opts.children[1]).toMatchObject({
+      symbolRun: { char: "F04A", symbolFont: "Webdings" },
+    });
+    expect(opts.children[3]).toMatchObject({
+      pict: { children: [{ rect: { id: "_x0000_s1027" } }] },
+    });
+  });
+});

@@ -73,8 +73,14 @@ export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">)
     );
     if (fileName !== m.fileName) renames.set(m.fileName, fileName);
   }
-  const children = opts.children ?? [];
-  if (renames.size > 0) remapPlaceholders(children, renames);
+  let children = opts.children ?? [];
+  if (renames.size > 0) {
+    // Remap a copy — the caller's PictOptions must stay untouched (options
+    // objects are shared, serializable data; mutating them would leak renamed
+    // placeholders into the next document built from the same object).
+    children = structuredClone(children);
+    remapPlaceholders(children, renames);
+  }
   const inner = children.map(stringifyVmlShapeChild).join("");
   return inner !== "" ? `<w:pict>${inner}</w:pict>` : "<w:pict/>";
 }
@@ -127,13 +133,28 @@ function bridgeImagedata(
       // Unresolvable references (dangling rel, empty part) stay verbatim —
       // registering a nameless 0-byte media part would violate OPC.
       if (path && bytes && bytes.length > 0) {
-        const fileName = path.slice(path.lastIndexOf("/") + 1);
+        let fileName = path.slice(path.lastIndexOf("/") + 1);
+        // Placeholders key by file name — two rels pointing at different bytes
+        // under the same basename must not collapse onto one placeholder.
+        fileName = uniqueFileName(media, fileName);
         media.push({ fileName, data: bytes, type: extensionOf(path) });
         img!.relationshipId = `{${fileName}}`;
       }
     }
     if ("group" in child) bridgeImagedata(child.group.children ?? [], ctx, media);
   }
+}
+
+/** Disambiguate a media file name already taken within one pict. */
+function uniqueFileName(media: PictMediaOptions[], fileName: string): string {
+  const taken = new Set(media.map((m) => m.fileName));
+  if (!taken.has(fileName)) return fileName;
+  const dot = fileName.lastIndexOf(".");
+  const stem = dot === -1 ? fileName : fileName.slice(0, dot);
+  const ext = dot === -1 ? "" : fileName.slice(dot);
+  let i = 2;
+  while (taken.has(`${stem}-${i}${ext}`)) i++;
+  return `${stem}-${i}${ext}`;
 }
 
 /** The shape payload of a wrapper — every variant extends VmlBaseShapeFields. */
