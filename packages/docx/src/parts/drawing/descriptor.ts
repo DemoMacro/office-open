@@ -32,6 +32,7 @@ import {
   calculateEffectExtent,
   createColorElement,
   groupShapePropertiesDesc,
+  pictureLockingDesc,
   shapePropertiesDesc,
   stringifyNonVisualContentPartProperties,
   stringifyNonVisualDrawingProperties,
@@ -361,7 +362,14 @@ function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: NonVisualPropertiesOption
   );
   // preferRelativeResize defaults to true; only an explicit false is written.
   const cNvPicPrAttr = cNvPr?.preferRelativeResize === false ? ' preferRelativeResize="0"' : "";
-  return `<pic:nvPicPr>${cNvPrXml}<pic:cNvPicPr${cNvPicPrAttr}><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr>`;
+  // Picture locks are tri-state: null → source had none (bare pic:cNvPicPr),
+  // omitted → authoring default (Word locks the aspect of fresh pictures).
+  const locks = cNvPr?.pictureLocks;
+  const picLocksXml =
+    locks === null
+      ? ""
+      : (pictureLockingDesc.stringify(locks ?? { noChangeAspect: true }, NOOP_CTX) ?? "");
+  return `<pic:nvPicPr>${cNvPrXml}<pic:cNvPicPr${cNvPicPrAttr}>${picLocksXml}</pic:cNvPicPr></pic:nvPicPr>`;
 }
 
 // ── WPS shape (pure string, no class instances) ──

@@ -3722,6 +3722,17 @@
               "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
               "type": "string"
             },
+            "pictureLocks": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PictureLockingOptions"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Picture locks from pic:cNvPicPr/a:picLocks. `null` = source carried none (round-trips as a bare pic:cNvPicPr); omitted = authoring default (noChangeAspect=\"1\", matching Word's fresh-insert behavior); an object = explicit lock flags."
+            },
             "preferRelativeResize": {
               "description": "From the sibling pic:cNvPicPr. Omitted = Word's default (true); only `false` is emitted as preferRelativeResize=\"0\" because Word never writes the default value explicitly.",
               "type": "boolean"
@@ -6772,6 +6783,17 @@
                   "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
                   "type": "string"
                 },
+                "pictureLocks": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/PictureLockingOptions"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Picture locks from pic:cNvPicPr/a:picLocks. `null` = source carried none (round-trips as a bare pic:cNvPicPr); omitted = authoring default (noChangeAspect=\"1\", matching Word's fresh-insert behavior); an object = explicit lock flags."
+                },
                 "preferRelativeResize": {
                   "description": "From the sibling pic:cNvPicPr. Omitted = Word's default (true); only `false` is emitted as preferRelativeResize=\"0\" because Word never writes the default value explicitly.",
                   "type": "boolean"
@@ -9781,6 +9803,17 @@
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
+        },
+        "pictureLocks": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PictureLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Picture locks from pic:cNvPicPr/a:picLocks. `null` = source carried none (round-trips as a bare pic:cNvPicPr); omitted = authoring default (noChangeAspect=\"1\", matching Word's fresh-insert behavior); an object = explicit lock flags."
         },
         "preferRelativeResize": {
           "description": "From the sibling pic:cNvPicPr. Omitted = Word's default (true); only `false` is emitted as preferRelativeResize=\"0\" because Word never writes the default value explicitly.",
@@ -13326,6 +13359,56 @@
     "PictureFormat": {
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
+    },
+    "PictureLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noAdjustHandles": {
+          "description": "Prevent adjust handles",
+          "type": "boolean"
+        },
+        "noChangeArrowheads": {
+          "description": "Prevent changing arrowheads",
+          "type": "boolean"
+        },
+        "noChangeAspect": {
+          "description": "Prevent aspect ratio change",
+          "type": "boolean"
+        },
+        "noChangeShapeType": {
+          "description": "Prevent changing shape type",
+          "type": "boolean"
+        },
+        "noCrop": {
+          "description": "Prevent cropping",
+          "type": "boolean"
+        },
+        "noEditPoints": {
+          "description": "Prevent edit points",
+          "type": "boolean"
+        },
+        "noGrp": {
+          "description": "Prevent grouping",
+          "type": "boolean"
+        },
+        "noMove": {
+          "description": "Prevent moving",
+          "type": "boolean"
+        },
+        "noResize": {
+          "description": "Prevent resizing",
+          "type": "boolean"
+        },
+        "noRot": {
+          "description": "Prevent rotation",
+          "type": "boolean"
+        },
+        "noSelect": {
+          "description": "Prevent selection",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
     },
     "PictureOptions": {
       "anyOf": [

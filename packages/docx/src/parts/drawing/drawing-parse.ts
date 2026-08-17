@@ -18,6 +18,7 @@ import {
   parseAngle,
   parseColorChoice,
   parseNonVisualDrawingProperties,
+  pictureLockingDesc,
   presetGeometryDesc,
 } from "@office-open/core";
 import { scene3DDesc, shape3DDesc } from "@office-open/core/drawing";
@@ -320,7 +321,7 @@ export function parsePictureRun(
   }
 
   // Picture non-visual properties (pic:nvPicPr/pic:cNvPr)
-  const cNvPr = readPicCnvPr(el);
+  const cNvPr = readPicCnvPr(el, ctx);
   if (cNvPr) imageOpts.nonVisualProperties = cNvPr;
 
   // Picture shape properties (pic:spPr): outline + fill + effects round-trip
@@ -453,7 +454,7 @@ function readSourceRectangle(parent: Element): SourceRectangleOptions | undefine
  * Read pic:cNvPr (id/name/descr) from a drawing's pic:nvPicPr. Returns
  * undefined when there is no non-visual properties block.
  */
-function readPicCnvPr(el: Element): NonVisualPropertiesOptions | undefined {
+function readPicCnvPr(el: Element, ctx: DocxReadContext): NonVisualPropertiesOptions | undefined {
   const nvPicPr = findFirst(el, "pic:nvPicPr");
   if (!nvPicPr) return undefined;
   const cNvPr = findChild(nvPicPr, "pic:cNvPr");
@@ -462,12 +463,15 @@ function readPicCnvPr(el: Element): NonVisualPropertiesOptions | undefined {
     const id = attrNum(cNvPr, "id");
     if (id !== undefined) result.id = id;
   }
-  // pic:cNvPicPr sibling — only preferRelativeResize is tracked (Word omits
-  // the default true; an explicit false round-trips as "0").
+  // pic:cNvPicPr sibling — preferRelativeResize (Word omits the default true;
+  // an explicit false round-trips as "0") and the a:picLocks tri-state: null
+  // when the source carried none so stringify keeps the bare element.
   const cNvPicPr = findChild(nvPicPr, "pic:cNvPicPr");
   if (cNvPicPr) {
     const preferRelativeResize = attrBool(cNvPicPr, "preferRelativeResize");
     if (preferRelativeResize !== undefined) result.preferRelativeResize = preferRelativeResize;
+    const locksEl = findChild(cNvPicPr, "a:picLocks");
+    result.pictureLocks = locksEl ? pictureLockingDesc.parse(locksEl, ctx) : null;
   }
   return Object.keys(result).length > 0 ? result : undefined;
 }
@@ -724,7 +728,7 @@ function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData
     const srcRect = readSourceRectangle(blipFill);
     if (srcRect) result.sourceRectangle = srcRect;
   }
-  const cNvPr = readPicCnvPr(picEl);
+  const cNvPr = readPicCnvPr(picEl, ctx);
   if (cNvPr) result.nonVisualProperties = cNvPr;
   // Grouped picture spPr (fill/outline) rides on GroupCommonMediaData so it
   // round-trips through stringifyGroupChild → stringifyShapeProps.

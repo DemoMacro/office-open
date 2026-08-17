@@ -1,4 +1,4 @@
-import type { BaseMediaEntry } from "@office-open/core";
+import type { BaseMediaEntry, PictureLockingOptions } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core";
 import type {
   BlackWhiteMode,
@@ -70,6 +70,13 @@ export interface NonVisualPropertiesOptions extends NonVisualDrawingPropertiesOp
    * the default value explicitly.
    */
   preferRelativeResize?: boolean;
+  /**
+   * Picture locks from pic:cNvPicPr/a:picLocks. `null` = source carried none
+   * (round-trips as a bare pic:cNvPicPr); omitted = authoring default
+   * (noChangeAspect="1", matching Word's fresh-insert behavior); an object =
+   * explicit lock flags.
+   */
+  pictureLocks?: PictureLockingOptions | null;
 }
 
 /**
