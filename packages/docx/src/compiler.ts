@@ -52,6 +52,8 @@ import {
   fontTableDesc,
   webSettingsDesc,
   commentsDesc,
+  commentsExtendedDesc,
+  peopleDesc,
   bibliographyDesc,
   settingsDesc,
   footnotesDesc,
@@ -172,6 +174,8 @@ interface XmlifyedFileMapping {
   Settings: XmlifyedFile;
   Comments?: XmlifyedFile;
   CommentsRelationships?: XmlifyedFile;
+  People?: XmlifyedFile;
+  CommentsExtended?: XmlifyedFile;
   FontTable?: XmlifyedFile;
   FontTableRelationships?: XmlifyedFile;
   Bibliography?: XmlifyedFile;
@@ -370,6 +374,26 @@ function xmlifyContext(
               (customPropertiesDesc.stringify({ properties: ctx._options.customProperties }, ctx) ??
                 ""),
             path: "docProps/custom.xml",
+          },
+        }
+      : {}),
+    // Word 2013+ comment infrastructure — emitted only when populated, same
+    // conditional rule as comments.xml (an empty part with a relationship is
+    // an OPC violation Word rejects).
+    ...(ctx._options.people?.length
+      ? {
+          People: {
+            data: XML_DECL + (peopleDesc.stringify(ctx._options.people, ctx) ?? ""),
+            path: "word/people.xml",
+          },
+        }
+      : {}),
+    ...(ctx._options.commentsExtended?.length
+      ? {
+          CommentsExtended: {
+            data:
+              XML_DECL + (commentsExtendedDesc.stringify(ctx._options.commentsExtended, ctx) ?? ""),
+            path: "word/commentsExtended.xml",
           },
         }
       : {}),

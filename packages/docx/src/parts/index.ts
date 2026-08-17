@@ -27,6 +27,8 @@ export * from "./bibliography";
 export * from "./glossary-document";
 export * from "./object";
 export * from "./comments";
+export * from "./comments-extended";
+export * from "./people";
 export * from "./inline";
 export * from "./bodychildren";
 export * from "./core-properties";

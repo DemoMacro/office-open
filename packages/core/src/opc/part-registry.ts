@@ -150,6 +150,19 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "hasComments" },
     },
     {
+      // Word 2013+ comment infrastructure — emitted only when populated,
+      // same rule as comments.xml.
+      path: "word/people.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.people+xml",
+      presence: { kind: "conditional", flag: "hasPeople" },
+    },
+    {
+      path: "word/commentsExtended.xml",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtended+xml",
+      presence: { kind: "conditional", flag: "hasCommentsExtended" },
+    },
+    {
       path: "word/header${i}.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
       presence: { kind: "repeated", countFrom: "headerCount" },

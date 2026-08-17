@@ -537,6 +537,22 @@ export class DocxWriteContext implements WriteContext {
         "comments.xml",
       );
     }
+    // Word 2013+ comment infrastructure — same conditional rule as comments:
+    // emit the part and its relationship only when the document carries them.
+    if (this._options.people?.length) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.microsoft.com/office/2011/relationships/people",
+        "people.xml",
+      );
+    }
+    if (this._options.commentsExtended?.length) {
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        "http://schemas.microsoft.com/office/2011/relationships/commentsExtended",
+        "commentsExtended.xml",
+      );
+    }
     if (this._options.bibliography) {
       this.document.relationships.addRelationship(
         this._currentRelationshipId++,

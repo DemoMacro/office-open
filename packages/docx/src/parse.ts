@@ -9,6 +9,7 @@ import { appPropertiesDesc } from "@parts/app-properties";
 import { bibliographyDesc } from "@parts/bibliography";
 import { setBodyParseChild } from "@parts/bodychildren";
 import { commentsDesc } from "@parts/comments";
+import { commentsExtendedDesc } from "@parts/comments-extended";
 import { corePropertiesDesc } from "@parts/core-properties";
 import type { DocumentOptions } from "@parts/core-properties";
 import { customPropertiesDesc } from "@parts/custom-properties";
@@ -18,6 +19,7 @@ import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
 import { footnotesDesc } from "@parts/footnotes/descriptor";
 import { glossaryDesc } from "@parts/glossary-document";
 import { parseNumberingDefinitions } from "@parts/numbering/numbering";
+import { peopleDesc } from "@parts/people";
 import { settingsDesc } from "@parts/settings/descriptor";
 import {
   buildStyleCache,
@@ -51,6 +53,10 @@ export interface DocxPartRefs {
   endnotes?: string;
   /** word/comments.xml */
   comments?: string;
+  /** word/people.xml (Word 2013+ comment authors) */
+  people?: string;
+  /** word/commentsExtended.xml (Word 2013+ comment metadata) */
+  commentsExtended?: string;
   /** Hyperlink targets keyed by rId (external URLs) */
   hyperlinks: Map<string, string>;
   /** word/charts/chartN.xml keyed by rId */
@@ -177,8 +183,12 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       refs.footnotes = path;
     } else if (type.includes("/endnotes")) {
       refs.endnotes = path;
+    } else if (type.includes("/commentsExtended")) {
+      refs.commentsExtended = path;
     } else if (type.includes("/comments")) {
       refs.comments = path;
+    } else if (type.includes("/people")) {
+      refs.people = path;
     } else if (type.includes("/chart")) {
       refs.charts.set(id, path);
     } else if (type.includes("/diagramData")) {
@@ -381,6 +391,22 @@ export function parseDocument(data: DataType): DocumentOptions {
       if (commentsResult.length > 0) {
         opts.comments = commentsResult;
       }
+    }
+  }
+
+  // Word 2013+ comment infrastructure
+  if (docx.partRefs.people) {
+    const peopleEl = docx.doc.get(docx.partRefs.people);
+    if (peopleEl) {
+      const people = peopleDesc.parse(peopleEl, ctx);
+      if (people.length > 0) opts.people = people;
+    }
+  }
+  if (docx.partRefs.commentsExtended) {
+    const commentsExEl = docx.doc.get(docx.partRefs.commentsExtended);
+    if (commentsExEl) {
+      const extended = commentsExtendedDesc.parse(commentsExEl, ctx);
+      if (extended.length > 0) opts.commentsExtended = extended;
     }
   }
 

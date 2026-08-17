@@ -10,9 +10,11 @@
  */
 import type { ContentTypesInput, DataType } from "@office-open/core";
 import type { BibliographyOptions } from "@parts/bibliography";
+import type { CommentExtendedOptions } from "@parts/comments-extended";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
+import type { CommentPersonOptions } from "@parts/people";
 import type { SettingsOptions } from "@parts/settings/settings";
 import type { SectionOptions } from "@shared/section";
 
@@ -45,6 +47,8 @@ import type { WebSettingsOptions } from "./web-settings";
  * @property styles - Document styles configuration
  * @property numbering - Numbering configuration
  * @property comments - Document comments (word/comments.xml)
+ * @property people - Comment authors (word/people.xml)
+ * @property commentsExtended - Comment metadata (word/commentsExtended.xml)
  * @property bibliography - Document bibliography sources
  * @property footnotes - Document footnotes
  * @property background - Document background settings
@@ -57,6 +61,17 @@ export interface DocumentOptions extends CorePropertiesOptions {
   styles?: StylesOptions;
   numbering?: NumberingOptions;
   comments?: CommentOptions[];
+  /**
+   * Comment authors (word/people.xml). Word pairs each w15:person with
+   * comments by exact author-string equality; omit for documents whose
+   * comments carry no author registry.
+   */
+  people?: CommentPersonOptions[];
+  /**
+   * Comment metadata (word/commentsExtended.xml) — resolved state and reply
+   * threading, keyed by the w14:paraId of each comment's first paragraph.
+   */
+  commentsExtended?: CommentExtendedOptions[];
   bibliography?: BibliographyOptions;
   /** User footnotes (word/footnotes.xml). `id` auto-assigns 1, 2, … when omitted. */
   footnotes?: FootnoteOptions[];

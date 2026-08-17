@@ -3126,6 +3126,26 @@
       "required": ["children"],
       "type": "object"
     },
+    "CommentExtendedOptions": {
+      "additionalProperties": false,
+      "description": "Options for one extended-comment entry (w15:commentEx).",
+      "properties": {
+        "done": {
+          "description": "Resolved state; Word writes both 0 and 1 explicitly (w15:done).",
+          "type": "boolean"
+        },
+        "paraId": {
+          "description": "w14:paraId of the comment's first paragraph (w15:paraId, required).",
+          "type": "string"
+        },
+        "paraIdParent": {
+          "description": "w14:paraId of the first paragraph of the comment this one replies to (w15:paraIdParent).",
+          "type": "string"
+        }
+      },
+      "required": ["paraId"],
+      "type": "object"
+    },
     "CommentOptions": {
       "additionalProperties": false,
       "description": "Options for creating a single comment.",
@@ -3162,6 +3182,22 @@
         }
       },
       "required": ["id", "children"],
+      "type": "object"
+    },
+    "CommentPersonOptions": {
+      "additionalProperties": false,
+      "description": "Options for one person entry (w15:person) — a comment participant, distinct from the bibliography's literature-author PersonOptions.",
+      "properties": {
+        "author": {
+          "description": "Author display name exactly as it appears on w:comment/@w:author (w15:author, required).",
+          "type": "string"
+        },
+        "contact": {
+          "description": "Contact address, usually an email (w15:contact).",
+          "type": "string"
+        }
+      },
+      "required": ["author"],
       "type": "object"
     },
     "CompatSettingOptions": {
@@ -4865,6 +4901,13 @@
           },
           "type": "array"
         },
+        "commentsExtended": {
+          "description": "Comment metadata (word/commentsExtended.xml) — resolved state and reply threading, keyed by the w14:paraId of each comment's first paragraph.",
+          "items": {
+            "$ref": "#/definitions/CommentExtendedOptions"
+          },
+          "type": "array"
+        },
         "conformance": {
           "description": "Document conformance class (w:document/`@w:conformance`).",
           "enum": ["strict", "transitional"],
@@ -4955,6 +4998,13 @@
         },
         "numbering": {
           "$ref": "#/definitions/NumberingOptions"
+        },
+        "people": {
+          "description": "Comment authors (word/people.xml). Word pairs each w15:person with comments by exact author-string equality; omit for documents whose comments carry no author registry.",
+          "items": {
+            "$ref": "#/definitions/CommentPersonOptions"
+          },
+          "type": "array"
         },
         "rawParts": {
           "description": "Parts carried verbatim from the source that generate() does not rebuild (e.g. word/theme/*, customXml/*). Kept as raw bytes so their [Content_Types] declarations stay valid and the package opens in Word. Media/fonts/headers are rebuilt by the compiler and must NOT be listed here.",

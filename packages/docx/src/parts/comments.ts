@@ -18,39 +18,43 @@ import type { DocxReadContext } from "../context";
 import { documentNamespaceAttributes } from "./document/document-attributes";
 import { stringifyParagraphInline } from "./inline";
 
-const COMMENTS_NS = documentNamespaceAttributes([
-  "aink",
-  "am3d",
-  "cx",
-  "cx1",
-  "cx2",
-  "cx3",
-  "cx4",
-  "cx5",
-  "cx6",
-  "cx7",
-  "cx8",
-  "m",
-  "mc",
-  "o",
-  "r",
-  "v",
-  "w",
-  "w10",
-  "w14",
-  "w15",
-  "w16",
-  "w16cex",
-  "w16cid",
-  "w16sdtdh",
-  "w16se",
-  "wne",
-  "wp",
-  "wp14",
-  "wpg",
-  "wpi",
-  "wps",
-]);
+/** Root namespace header shared by the comment-infrastructure parts
+ *  (comments.xml, people.xml, commentsExtended.xml). Word writes the same
+ *  declaration set plus mc:Ignorable on all three roots. */
+export const COMMENTS_NS =
+  documentNamespaceAttributes([
+    "aink",
+    "am3d",
+    "cx",
+    "cx1",
+    "cx2",
+    "cx3",
+    "cx4",
+    "cx5",
+    "cx6",
+    "cx7",
+    "cx8",
+    "m",
+    "mc",
+    "o",
+    "r",
+    "v",
+    "w",
+    "w10",
+    "w14",
+    "w15",
+    "w16",
+    "w16cex",
+    "w16cid",
+    "w16sdtdh",
+    "w16se",
+    "wne",
+    "wp",
+    "wp14",
+    "wpg",
+    "wpi",
+    "wps",
+  ]) + ' mc:Ignorable="w14 w15 wp14"';
 
 // ── Comment stringification ──
 

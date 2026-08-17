@@ -10,6 +10,8 @@ const buffer = await generateDocument({
       author: "Ray Chen",
       children: [
         {
+          // w14:paraId of the first paragraph keys the commentsExtended entry
+          paraId: "1A2B3C01",
           children: [
             {
               text: "some initial text content",
@@ -46,6 +48,7 @@ const buffer = await generateDocument({
       author: "Bob Ross",
       children: [
         {
+          paraId: "1A2B3C02",
           children: [
             {
               text: "Some initial text content",
@@ -67,6 +70,7 @@ const buffer = await generateDocument({
       author: "John Doe",
       children: [
         {
+          paraId: "1A2B3C03",
           children: [
             {
               text: "Hello World",
@@ -81,6 +85,7 @@ const buffer = await generateDocument({
       author: "Beatriz",
       children: [
         {
+          paraId: "1A2B3C04",
           children: [
             {
               text: "Another reply",
@@ -91,6 +96,23 @@ const buffer = await generateDocument({
       date: new Date().toISOString(),
       id: 3,
     },
+  ],
+  // word/people.xml — the author registry Word 2013+ writes alongside comments;
+  // each entry pairs with comments by exact author-string equality.
+  people: [
+    { author: "Ray Chen", contact: "ray.chen@example.com" },
+    { author: "Bob Ross" },
+    { author: "John Doe", contact: "john.doe@example.com" },
+    { author: "Beatriz" },
+    { author: "Sugar Author" },
+  ],
+  // word/commentsExtended.xml — resolved state and reply threading, keyed by
+  // the w14:paraId of each comment's first paragraph.
+  commentsExtended: [
+    { paraId: "1A2B3C01", done: false },
+    { paraId: "1A2B3C02", done: true },
+    { paraId: "1A2B3C03" },
+    { paraId: "1A2B3C04", paraIdParent: "1A2B3C02", done: true },
   ],
   sections: [
     {
