@@ -213,6 +213,24 @@ describe("parseWorkbook round-trip", () => {
       val: "FIN",
     });
   });
+
+  it("round-trips the sheet background picture", async () => {
+    const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "BG",
+          rows: [{ cells: [{ value: "x" }] }],
+          backgroundImage: { data: bytes, type: "png" },
+        },
+      ],
+    };
+
+    const parsed = await roundTrip(opts);
+    const bg = parsed.worksheets![0]!.backgroundImage;
+    expect(bg?.type).toBe("png");
+    expect(new Uint8Array(bg!.data as Uint8Array)).toEqual(bytes);
+  });
 });
 
 describe("metadata round-trip", () => {

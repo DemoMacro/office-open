@@ -409,6 +409,18 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       break;
     }
 
+    // Background picture — the worksheet-level image relationship backs the
+    // <picture r:id/> element (drawing images live in the drawing part's own
+    // rels, so worksheet-level image rels are backgrounds only).
+    const bgRels = readContext.getWorksheetRelsByType(wsPath, "/image");
+    for (const bg of bgRels) {
+      const raw = xlsx.doc.getRaw(bg.target);
+      const ext = bg.target.split(".").pop();
+      if (!raw || (ext !== "png" && ext !== "jpeg" && ext !== "jpg")) continue;
+      wsOpts.backgroundImage = { data: raw, type: ext === "png" ? "png" : "jpg" };
+      break; // one background picture per worksheet
+    }
+
     // Tables
     const tableRels = readContext.getWorksheetRelsByType(wsPath, "/table");
     if (tableRels.length > 0) {
