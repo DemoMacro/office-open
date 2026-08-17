@@ -503,9 +503,12 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   if (opts.italicComplexScript !== undefined) s += onOff("w:iCs", opts.italicComplexScript);
 
   // Caps
+  // w:smallCaps and w:caps are independent EG_RPrBase siblings — both can
+  // appear on the same run, so each is emitted on its own.
   if (opts.smallCaps !== undefined) {
     s += onOff("w:smallCaps", opts.smallCaps);
-  } else if (opts.allCaps !== undefined) {
+  }
+  if (opts.allCaps !== undefined) {
     s += onOff("w:caps", opts.allCaps);
   }
 
@@ -519,13 +522,14 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   if (opts.webHidden !== undefined) s += onOff("w:webHidden", opts.webHidden);
   if (opts.noProof !== undefined) s += onOff("w:noProof", opts.noProof);
   if (opts.snapToGrid !== undefined) s += onOff("w:snapToGrid", opts.snapToGrid);
-  if (opts.vanish) s += onOff("w:vanish", opts.vanish);
+  // w:val="0" forms are meaningful (explicitly off) — emit on any set value.
+  if (opts.vanish !== undefined) s += onOff("w:vanish", opts.vanish);
 
   // Color
   if (opts.color) s += colorStr(opts.color);
 
-  // Character spacing
-  if (opts.characterSpacing) {
+  // Character spacing — 0 is meaningful (explicitly normal) — emit on any set value.
+  if (opts.characterSpacing !== undefined) {
     s += `<w:spacing w:val="${convertToTwip(opts.characterSpacing)}"/>`;
   }
 
@@ -534,7 +538,10 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
 
   // Kern — w:val="0" is meaningful (explicitly disables kerning), so emit
   // whenever the field is set rather than truthy-checking it.
-  if (opts.kern !== undefined) s += `<w:kern w:val="${hpsMeasureValue(opts.kern * 2)}"/>`;
+  if (opts.kern !== undefined) {
+    const kernPts = typeof opts.kern === "number" ? opts.kern : convertToPt(opts.kern);
+    s += `<w:kern w:val="${hpsMeasureValue(kernPts * 2)}"/>`;
+  }
 
   // Position (points → half-points)
   if (opts.position !== undefined) {
@@ -549,11 +556,8 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
     s += `<w:szCs w:val="${hpsMeasureValue(opts.sizeComplexScript * 2)}"/>`;
   }
 
-  // Highlight — independent Latin vs complex-script values.
+  // Highlight
   if (opts.highlight) s += `<w:highlight w:val="${opts.highlight}"/>`;
-  if (opts.highlightComplexScript !== undefined) {
-    s += `<w:highlightCs w:val="${opts.highlightComplexScript}"/>`;
-  }
 
   // Underline
   if (opts.underline) s += underlineStr(opts.underline.type, opts.underline.color);
@@ -580,8 +584,8 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   // Language
   if (opts.language) s += languageStr(opts.language);
 
-  // Spec vanish
-  if (opts.specVanish) s += "<w:specVanish/>";
+  // Spec vanish — val="0" is meaningful (explicitly off)
+  if (opts.specVanish !== undefined) s += onOff("w:specVanish", opts.specVanish);
 
   // Math
   if (opts.math) s += onOff("w:oMath", opts.math);

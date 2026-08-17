@@ -1277,6 +1277,19 @@ function parseRunLevelChildren(
         childList.push({ math: { children: mathChildren } });
         break;
       }
+      case "m:oMathPara": {
+        // Display math: m:oMathParaPr/m:jc + the inline equation it wraps.
+        const jcEl = findChild(findChild(child, "m:oMathParaPr") ?? child, "m:jc");
+        const jc = jcEl
+          ? (attr(jcEl, "m:val") as "left" | "right" | "center" | "centerGroup" | undefined)
+          : undefined;
+        const oMathEl = findChild(child, "m:oMath");
+        const mathChildren = oMathEl ? parseMathChildren(oMathEl) : [];
+        childList.push({
+          math: jc ? { children: mathChildren, justification: jc } : { children: mathChildren },
+        });
+        break;
+      }
       case "w:ins": {
         const children = parseTrackChangeRuns(child, ctx);
         if (children.length > 0) {

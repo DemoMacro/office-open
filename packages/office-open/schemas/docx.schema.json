@@ -442,6 +442,10 @@
           "description": "Paragraph count",
           "type": "number"
         },
+        "presentationFormat": {
+          "description": "Intended print/display format, e.g. \"Custom\" or \"A4 Paper\"",
+          "type": "string"
+        },
         "scaleCrop": {
           "description": "Whether the document is scaled/cropped",
           "type": "boolean"
@@ -10343,6 +10347,11 @@
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "justification": {
+                  "description": "Display-math paragraph justification (`m:oMathPara/m:oMathParaPr/m:jc`). Present → the equation is wrapped in a display `m:oMathPara`; absent → inline `m:oMath`.",
+                  "enum": ["left", "right", "center", "centerGroup"],
+                  "type": "string"
                 }
               },
               "type": "object"
@@ -12205,10 +12214,6 @@
           ],
           "type": "string"
         },
-        "highlightComplexScript": {
-          "description": "Complex-script highlight color (w:highlightCs). Independent from  {@link  highlight } .",
-          "type": "string"
-        },
         "imprint": {
           "type": "boolean"
         },
@@ -12222,8 +12227,15 @@
           "type": "boolean"
         },
         "kern": {
-          "description": "Kerning threshold in points.",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Kerning threshold in points (w:kern, half-points in XML)."
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -14337,10 +14349,6 @@
           ],
           "type": "string"
         },
-        "highlightComplexScript": {
-          "description": "Complex-script highlight color (w:highlightCs). Independent from  {@link  highlight } .",
-          "type": "string"
-        },
         "imprint": {
           "type": "boolean"
         },
@@ -14351,8 +14359,15 @@
           "type": "boolean"
         },
         "kern": {
-          "description": "Kerning threshold in points.",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Kerning threshold in points (w:kern, half-points in XML)."
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -14605,10 +14620,6 @@
           ],
           "type": "string"
         },
-        "highlightComplexScript": {
-          "description": "Complex-script highlight color (w:highlightCs). Independent from  {@link  highlight } .",
-          "type": "string"
-        },
         "id": {
           "description": "Unique identifier for this change (must be unique within the document)",
           "type": "number"
@@ -14623,8 +14634,15 @@
           "type": "boolean"
         },
         "kern": {
-          "description": "Kerning threshold in points.",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Kerning threshold in points (w:kern, half-points in XML)."
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -14863,10 +14881,6 @@
           ],
           "type": "string"
         },
-        "highlightComplexScript": {
-          "description": "Complex-script highlight color (w:highlightCs). Independent from  {@link  highlight } .",
-          "type": "string"
-        },
         "imprint": {
           "type": "boolean"
         },
@@ -14877,8 +14891,15 @@
           "type": "boolean"
         },
         "kern": {
-          "description": "Kerning threshold in points.",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Kerning threshold in points (w:kern, half-points in XML)."
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -15116,10 +15137,6 @@
           ],
           "type": "string"
         },
-        "highlightComplexScript": {
-          "description": "Complex-script highlight color (w:highlightCs). Independent from  {@link  highlight } .",
-          "type": "string"
-        },
         "imprint": {
           "type": "boolean"
         },
@@ -15130,8 +15147,15 @@
           "type": "boolean"
         },
         "kern": {
-          "description": "Kerning threshold in points.",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Kerning threshold in points (w:kern, half-points in XML)."
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -18837,10 +18861,6 @@
           ],
           "type": "string"
         },
-        "highlightComplexScript": {
-          "description": "Complex-script highlight color (w:highlightCs). Independent from  {@link  highlight } .",
-          "type": "string"
-        },
         "imprint": {
           "type": "boolean"
         },
@@ -18851,8 +18871,15 @@
           "type": "boolean"
         },
         "kern": {
-          "description": "Kerning threshold in points.",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Kerning threshold in points (w:kern, half-points in XML)."
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"

@@ -56,7 +56,17 @@ export type ParagraphChild =
   | { chart: ChartOptions }
   | { smartArt: SmartArtOptions }
   | { picture: PictureOptions }
-  | { math: { children?: MathInput[] } }
+  | {
+      math: {
+        children?: MathInput[];
+        /**
+         * Display-math paragraph justification (`m:oMathPara/m:oMathParaPr/m:jc`).
+         * Present → the equation is wrapped in a display `m:oMathPara`; absent →
+         * inline `m:oMath`.
+         */
+        justification?: "left" | "right" | "center" | "centerGroup";
+      };
+    }
   | { symbolRun: SymbolRunOptions }
   | { footnoteReference: number | FootnoteEndnoteReferenceOptions }
   | { endnoteReference: number | FootnoteEndnoteReferenceOptions }

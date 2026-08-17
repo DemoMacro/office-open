@@ -162,12 +162,6 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
     if (val) opts.highlight = val;
   }
 
-  const highlightCs = findChild(el, "w:highlightCs");
-  if (highlightCs) {
-    const val = attr(highlightCs, "w:val");
-    if (val) opts.highlightComplexScript = val;
-  }
-
   const vertAlign = findChild(el, "w:vertAlign");
   if (vertAlign) {
     const val = attr(vertAlign, "w:val");
@@ -201,9 +195,12 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
 
   const kern = findChild(el, "w:kern");
   if (kern) {
-    // w:kern is ST_HpsMeasure in half-points; convert to points (÷2).
-    const kernHalfPts = attrNum(kern, "w:val");
-    if (kernHalfPts !== undefined) opts.kern = kernHalfPts / 2;
+    // w:kern is ST_HpsMeasure: numeric tokens are half-points → points (÷2),
+    // UniversalMeasure strings pass through verbatim (same split as w:position).
+    const val = attrMeasure(kern, "w:val");
+    if (val !== undefined) {
+      opts.kern = typeof val === "number" ? val / 2 : (val as UniversalMeasure);
+    }
   }
 
   const position = findChild(el, "w:position");

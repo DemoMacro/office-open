@@ -50,7 +50,7 @@ import { createTransformation } from "@shared/media";
 import type { BodyContext } from "../context";
 import { checkboxSymbolRunInner, stringifyCustomXmlShell, stringifySdtShell } from "./bodychildren";
 import { drawingDesc } from "./drawing";
-import { stringifyMath } from "./paragraph/math/stringify";
+import { stringifyMath, stringifyMathParagraph } from "./paragraph/math/stringify";
 import { createBegin, createSeparate, createEnd } from "./paragraph/run/field";
 import { stringifyParagraphProperties, stringifyRunProperties } from "./paragraph/stringify";
 
@@ -761,10 +761,14 @@ export function stringifyChildDispatch(
     return `<w:ruby><w:rubyPr>${prParts.join("")}</w:rubyPr>${rt}${rubyBase}</w:ruby>`;
   }
 
-  // Math — pure string concatenation
+  // Math — pure string concatenation. A justification wraps the equation in
+  // a display m:oMathPara (m:oMathParaPr/m:jc); without it stays inline m:oMath.
   if ("math" in child && typeof child.math === "object" && child.math !== null) {
     const mathOpts = child.math;
     const children = mathOpts.children ?? [];
+    if (mathOpts.justification !== undefined) {
+      return stringifyMathParagraph(children, mathOpts.justification);
+    }
     return stringifyMath(children);
   }
 
