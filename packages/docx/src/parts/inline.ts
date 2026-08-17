@@ -384,6 +384,8 @@ function stringifyTrackChangeChildren(
       parts.push(stringifyTrackChangeBreak(c as RunOptions, "page"));
     } else if (typeof c !== "string" && "columnBreak" in c) {
       parts.push(stringifyTrackChangeBreak(c as RunOptions, "column"));
+    } else if (typeof c !== "string" && "proofErr" in c) {
+      parts.push(`<w:proofErr w:type="${c.proofErr}"/>`);
     } else if (typeof c !== "string" && "complexField" in c) {
       // Deleted fields spell the instruction w:delInstrText (matches Word).
       parts.push(
@@ -392,14 +394,23 @@ function stringifyTrackChangeChildren(
     } else if (typeof c !== "string" && "formField" in c) {
       const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
       if (typeof xml === "string") parts.push(xml);
+    } else if (typeof c !== "string") {
+      // Drawings inside the wrapper — dispatch builds their complete <w:r>.
+      // A `undefined` dispatch result means the child is a plain run shape
+      // (the only variants dispatch does not recognize).
+      const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
+      if (typeof xml === "string") {
+        parts.push(xml);
+      } else {
+        parts.push(
+          isDelete
+            ? stringifyDeletedRun(c as RunOptions)
+            : stringifyRunInline(c as RunOptions, ctx),
+        );
+      }
     } else {
-      parts.push(
-        isDelete
-          ? stringifyDeletedRun(c)
-          : typeof c === "string"
-            ? stringifyRunInline({ text: c }, ctx)
-            : stringifyRunInline(c, ctx),
-      );
+      // Plain string child — inside w:del it serializes as delText.
+      parts.push(isDelete ? stringifyDeletedRun(c) : stringifyRunInline({ text: c }, ctx));
     }
   }
   return parts.join("");

@@ -21152,6 +21152,62 @@
         {
           "additionalProperties": false,
           "properties": {
+            "proofErr": {
+              "enum": ["spellStart", "spellEnd", "gramStart", "gramEnd"],
+              "type": "string"
+            }
+          },
+          "required": ["proofErr"],
+          "title": "proofErr",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "picture": {
+              "$ref": "#/definitions/PictureOptions"
+            }
+          },
+          "required": ["picture"],
+          "title": "picture",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "chart": {
+              "$ref": "#/definitions/ChartOptions"
+            }
+          },
+          "required": ["chart"],
+          "title": "chart",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "wpsShape": {
+              "$ref": "#/definitions/ShapeOptions"
+            }
+          },
+          "required": ["wpsShape"],
+          "title": "wpsShape",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "wpgGroup": {
+              "$ref": "#/definitions/GroupOptions"
+            }
+          },
+          "required": ["wpgGroup"],
+          "title": "wpgGroup",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "insertion": {
               "additionalProperties": false,
               "properties": {

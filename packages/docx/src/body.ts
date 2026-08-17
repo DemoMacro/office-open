@@ -976,10 +976,77 @@ function feedFieldRun(
 }
 
 /**
+ * Parse a w:r that carries a drawing — direct w:drawing child OR wrapped in
+ * mc:AlternateContent > mc:Choice (DrawingML shapes wpg/wps use this wrapper;
+ * the Fallback holds the VML equivalent). Resolves either and, when an
+ * AlternateContent wrapper is present, carries the Fallback as raw XML so the
+ * full mc:AlternateContent round-trips verbatim. Returns undefined when the
+ * run has no drawing (caller falls back to the plain-run path).
+ */
+function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphChild | undefined {
+  let drawingEl = findChild(child, "w:drawing");
+  let altFallback: string | undefined;
+  let altFallbackMedia: BackgroundRawMediaOptions[] | undefined;
+  let altRequires: string | undefined;
+  if (!drawingEl) {
+    const alt = findChild(child, "mc:AlternateContent");
+    if (alt) {
+      const choice = findChild(alt, "mc:Choice");
+      if (choice) {
+        drawingEl = findChild(choice, "w:drawing");
+        altRequires = attr(choice, "Requires");
+      }
+      const fallback = findChild(alt, "mc:Fallback");
+      if (fallback) {
+        // Replace the VML fallback's r:id/r:embed/r:link refs with {fileName}
+        // placeholders and collect the media; otherwise the carried source
+        // rIds dangle (not defined in the generated rels).
+        const replaced = replaceRelsWithPlaceholders(stringifyElement(fallback), ctx, "vml");
+        altFallback = replaced.rawXml;
+        altFallbackMedia = replaced.rawMedia.length > 0 ? replaced.rawMedia : undefined;
+      }
+    }
+  }
+  if (!drawingEl) return undefined;
+  const drawingChild = parseDrawingRun(drawingEl, ctx);
+  if (!drawingChild) return undefined;
+  // Parse the wrapping run's rPr into structured fields so round-trip stays
+  // editable (drawings/shapes can be wrapped in <w:r><w:rPr>…</w:rPr>…).
+  const rPrEl = findChild(child, "w:rPr");
+  const runProperties = rPrEl ? parseRunProperties(rPrEl) : undefined;
+  // Attach the VML fallback + Choice Requires so stringify can rebuild the
+  // mc:AlternateContent wrapper (Choice structured + Fallback raw).
+  if (altFallback) {
+    if ("wpsShape" in drawingChild) {
+      drawingChild.wpsShape.vmlFallback = altFallback;
+      drawingChild.wpsShape.vmlFallbackMedia = altFallbackMedia;
+      if (altRequires) drawingChild.wpsShape.mcChoiceRequires = altRequires;
+    } else if ("wpgGroup" in drawingChild) {
+      drawingChild.wpgGroup.vmlFallback = altFallback;
+      drawingChild.wpgGroup.vmlFallbackMedia = altFallbackMedia;
+      if (altRequires) drawingChild.wpgGroup.mcChoiceRequires = altRequires;
+    }
+  }
+  if (runProperties) {
+    if ("picture" in drawingChild) {
+      drawingChild.picture.runProperties = runProperties;
+    } else if ("wpsShape" in drawingChild) {
+      drawingChild.wpsShape.runProperties = runProperties;
+    } else if ("wpgGroup" in drawingChild) {
+      drawingChild.wpgGroup.runProperties = runProperties;
+    } else if ("chart" in drawingChild) {
+      drawingChild.chart.runProperties = runProperties;
+    }
+  }
+  return drawingChild;
+}
+
+/**
  * Parse the children of a track-change wrapper (w:ins/w:del/w:moveFrom/w:moveTo):
  * runs (reference runs keep their shape as run-children), the comment range
- * markers Word anchors directly inside the wrapper, complete field chains, and
- * nested same-family wrappers.
+ * markers Word anchors directly inside the wrapper, complete field chains,
+ * drawings (wps shapes and text boxes inserted as revisions), and nested
+ * same-family wrappers.
  */
 function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChild[] {
   const out: TrackChangeChild[] = [];
@@ -989,6 +1056,11 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
       const fed = feedFieldRun(sub, fieldState);
       if (fed.consumed) {
         if (fed.child) out.push(fed.child as TrackChangeChild);
+        continue;
+      }
+      const drawingChild = parseDrawingRunChild(sub, ctx);
+      if (drawingChild) {
+        out.push(drawingChild as TrackChangeChild);
         continue;
       }
       const parsed = parseRun(sub, ctx);
@@ -1009,6 +1081,18 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
     } else if (sub.name === "w:commentRangeEnd") {
       const m = parseMarkupRangeOptions(sub);
       if (m) out.push({ commentRangeEnd: m });
+    } else if (sub.name === "w:proofErr") {
+      // Spell/grammar markers can sit inside the wrapper (CT_RunTrackChange
+      // accepts the full range-markup group).
+      const type = attr(sub, "w:type");
+      if (
+        type === "spellStart" ||
+        type === "spellEnd" ||
+        type === "gramStart" ||
+        type === "gramEnd"
+      ) {
+        out.push({ proofErr: type });
+      }
     } else if (sub.name === "w:ins" || sub.name === "w:del") {
       // Nested wrappers (w:ins > w:del) — recurse with the same shape.
       const nested = parseTrackChangeRuns(sub, ctx);
@@ -1209,68 +1293,10 @@ function parseRunLevelChildren(
           break;
         }
 
-        // Drawing may be a direct w:drawing child OR wrapped in
-        // mc:AlternateContent > mc:Choice (DrawingML shapes wpg/wps use this
-        // wrapper; the Fallback holds the VML equivalent). Resolve either and,
-        // when an AlternateContent wrapper is present, carry the Fallback as
-        // raw XML so the full mc:AlternateContent round-trips verbatim.
-        let drawingEl = findChild(child, "w:drawing");
-        let altFallback: string | undefined;
-        let altFallbackMedia: BackgroundRawMediaOptions[] | undefined;
-        let altRequires: string | undefined;
-        if (!drawingEl) {
-          const alt = findChild(child, "mc:AlternateContent");
-          if (alt) {
-            const choice = findChild(alt, "mc:Choice");
-            if (choice) {
-              drawingEl = findChild(choice, "w:drawing");
-              altRequires = attr(choice, "Requires");
-            }
-            const fallback = findChild(alt, "mc:Fallback");
-            if (fallback) {
-              // Replace the VML fallback's r:id/r:embed/r:link refs with {fileName}
-              // placeholders and collect the media; otherwise the carried source
-              // rIds dangle (not defined in the generated rels).
-              const replaced = replaceRelsWithPlaceholders(stringifyElement(fallback), ctx, "vml");
-              altFallback = replaced.rawXml;
-              altFallbackMedia = replaced.rawMedia.length > 0 ? replaced.rawMedia : undefined;
-            }
-          }
-        }
-        if (drawingEl) {
-          const drawingChild = parseDrawingRun(drawingEl, ctx);
-          if (drawingChild) {
-            // Parse the wrapping run's rPr into structured fields so round-trip
-            // stays editable (drawings/shapes can be wrapped in <w:r><w:rPr>…</w:rPr>…).
-            const rPrEl = findChild(child, "w:rPr");
-            const runProperties = rPrEl ? parseRunProperties(rPrEl) : undefined;
-            // Attach the VML fallback + Choice Requires so stringify can rebuild
-            // the mc:AlternateContent wrapper (Choice structured + Fallback raw).
-            if (altFallback) {
-              if ("wpsShape" in drawingChild) {
-                drawingChild.wpsShape.vmlFallback = altFallback;
-                drawingChild.wpsShape.vmlFallbackMedia = altFallbackMedia;
-                if (altRequires) drawingChild.wpsShape.mcChoiceRequires = altRequires;
-              } else if ("wpgGroup" in drawingChild) {
-                drawingChild.wpgGroup.vmlFallback = altFallback;
-                drawingChild.wpgGroup.vmlFallbackMedia = altFallbackMedia;
-                if (altRequires) drawingChild.wpgGroup.mcChoiceRequires = altRequires;
-              }
-            }
-            if (runProperties) {
-              if ("picture" in drawingChild) {
-                drawingChild.picture.runProperties = runProperties;
-              } else if ("wpsShape" in drawingChild) {
-                drawingChild.wpsShape.runProperties = runProperties;
-              } else if ("wpgGroup" in drawingChild) {
-                drawingChild.wpgGroup.runProperties = runProperties;
-              } else if ("chart" in drawingChild) {
-                drawingChild.chart.runProperties = runProperties;
-              }
-            }
-            childList.push(drawingChild);
-            break;
-          }
+        const drawingChild = parseDrawingRunChild(child, ctx);
+        if (drawingChild) {
+          childList.push(drawingChild);
+          break;
         }
         const parsed = parseRun(child, ctx);
         const runOpts = parsedRunToOptions(parsed);

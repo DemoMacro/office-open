@@ -84,6 +84,12 @@ export type TrackChangeChild =
   | { columnBreak: true }
   | { complexField: ComplexFieldOptions }
   | { formField: FormFieldOptions }
+  | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
+  // Drawings inserted as revisions (w:ins around the drawing's w:r)
+  | { picture: PictureOptions }
+  | { chart: ChartOptions }
+  | { wpsShape: ShapeOptions }
+  | { wpgGroup: GroupOptions }
   | { insertion: ChangedProperties & { children: TrackChangeChild[] } }
   | { deletion: ChangedProperties & { children: TrackChangeChild[] } };
 
