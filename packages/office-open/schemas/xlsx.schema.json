@@ -13371,6 +13371,10 @@
           "description": "a:fld `@id` — GUID identifier.",
           "type": "string"
         },
+        "paragraphProperties": {
+          "$ref": "#/definitions/ParagraphPropertiesOptions",
+          "description": "a:pPr — paragraph properties (CT_TextParagraphProperties)."
+        },
         "properties": {
           "$ref": "#/definitions/RunPropertiesOptions",
           "description": "a:rPr — run properties."

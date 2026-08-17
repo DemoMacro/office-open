@@ -230,6 +230,8 @@ export interface TextFieldOptions {
   text?: string;
   /** a:rPr — run properties. */
   properties?: RunPropertiesOptions;
+  /** a:pPr — paragraph properties (CT_TextParagraphProperties). */
+  paragraphProperties?: ParagraphPropertiesOptions;
 }
 
 // ── Soft line break (a:br) ──

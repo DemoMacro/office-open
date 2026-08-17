@@ -450,8 +450,14 @@ function stringifyTextField(opts: TextFieldOptions, ctx: WriteContext): string {
   // user-authored field still produces valid OOXML.
   const id = opts.id ?? "{00000000-0000-0000-0000-000000000000}";
   const rPr = opts.properties ? (runPropertiesDesc.stringify(opts.properties, ctx) ?? "") : "";
+  // CT_TextField sequence: rPr?, pPr?, t? — a bare <a:pPr/> placeholder (empty
+  // options object) still round-trips, so fall back to the empty element.
+  const pPrInner = opts.paragraphProperties
+    ? (stringifyParagraphProperties(opts.paragraphProperties, ctx) ?? "")
+    : "";
+  const pPr = pPrInner || (opts.paragraphProperties ? "<a:pPr/>" : "");
   const t = opts.text !== undefined ? `<a:t>${escapeXml(opts.text)}</a:t>` : "";
-  return `<a:fld id="${id}" type="${opts.type}">${rPr}${t}</a:fld>`;
+  return `<a:fld id="${id}" type="${opts.type}">${rPr}${pPr}${t}</a:fld>`;
 }
 
 function readTextField(el: XmlElement, ctx: ReadContext): TextFieldOptions {
@@ -460,6 +466,8 @@ function readTextField(el: XmlElement, ctx: ReadContext): TextFieldOptions {
   if (id !== undefined) result.id = String(id);
   const rPr = findChild(el, "a:rPr");
   if (rPr) result.properties = runPropertiesDesc.parse(rPr, ctx) as RunPropertiesOptions;
+  const pPr = findChild(el, "a:pPr");
+  if (pPr) result.paragraphProperties = readParagraphProperties(pPr, ctx);
   const t = findChild(el, "a:t");
   if (t) {
     result.text = (t.elements ?? [])
