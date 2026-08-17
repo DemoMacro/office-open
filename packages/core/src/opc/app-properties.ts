@@ -165,15 +165,19 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
     for (const child of el.elements ?? []) {
       if (typeof child.name !== "string") continue;
       const text = child.elements?.[0]?.text;
+      // String fields are presence-based: Word writes empty elements
+      // ("<Company>\n</Company>", which the XML parser reduces to no text)
+      // — capture "" so the element round-trips instead of being dropped.
+      const str = String(text ?? "");
       switch (child.name) {
         case "Template":
-          if (typeof text === "string") result.template = text;
+          result.template = str;
           break;
         case "Manager":
-          if (typeof text === "string") result.manager = text;
+          result.manager = str;
           break;
         case "Company":
-          if (typeof text === "string") result.company = text;
+          result.company = str;
           break;
         case "Pages":
           if (typeof text === "string") result.pages = Number(text);
@@ -185,7 +189,7 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
           if (typeof text === "string") result.characters = Number(text);
           break;
         case "PresentationFormat":
-          if (typeof text === "string") result.presentationFormat = text;
+          result.presentationFormat = str;
           break;
         case "Lines":
           if (typeof text === "string") result.lines = Number(text);
@@ -241,16 +245,16 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
           if (typeof text === "string") result.sharedDoc = parseOnOff(text) ?? false;
           break;
         case "HyperlinkBase":
-          if (typeof text === "string") result.hyperlinkBase = text;
+          result.hyperlinkBase = str;
           break;
         case "HyperlinksChanged":
           if (typeof text === "string") result.hyperlinksChanged = parseOnOff(text) ?? false;
           break;
         case "Application":
-          if (typeof text === "string") result.application = text;
+          result.application = str;
           break;
         case "AppVersion":
-          if (typeof text === "string") result.appVersion = text;
+          result.appVersion = str;
           break;
         case "DocSecurity":
           if (typeof text === "string") result.docSecurity = Number(text);

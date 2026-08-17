@@ -331,16 +331,9 @@ export function parseDocument(data: DataType): DocumentOptions {
     const corePropsEl = docx.doc.get(docx.coreProps);
     if (corePropsEl) {
       const cp = corePropertiesDesc.parse(corePropsEl, ctx);
-      if (cp.title) opts.title = cp.title;
-      if (cp.subject) opts.subject = cp.subject;
-      if (cp.creator) opts.creator = cp.creator;
-      if (cp.keywords) opts.keywords = cp.keywords;
-      if (cp.description) opts.description = cp.description;
-      if (cp.lastModifiedBy) opts.lastModifiedBy = cp.lastModifiedBy;
-      if (cp.revision) opts.revision = cp.revision;
-      if (cp.lastPrinted) opts.lastPrinted = cp.lastPrinted;
-      if (cp.created) opts.created = cp.created;
-      if (cp.modified) opts.modified = cp.modified;
+      // Empty strings are meaningful (element present, text empty) — assign
+      // the whole shape so they survive round-trip.
+      Object.assign(opts, cp);
     }
   }
 

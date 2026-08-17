@@ -94,6 +94,9 @@ export function parseVector(el: Element | undefined): VariantValue[] {
   if (!el || el.name !== "vt:vector") return [];
   const out: VariantValue[] = [];
   for (const child of el.elements ?? []) {
+    // Whitespace text between entries (indentation) is not a value — the OPC
+    // parser captures it, so filter to element children before dispatch.
+    if (child.type !== "element") continue;
     // baseType="variant" wraps each entry in a <vt:variant> carrier.
     const scalar =
       child.name === "vt:variant" ? child.elements?.find((e) => e.name?.startsWith("vt:")) : child;

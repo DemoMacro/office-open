@@ -48,8 +48,10 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
 
   for (const field of FIELD_MAP) {
     const child = el.elements?.find((e) => e.name === field.name);
-    const value = textOf(child) || undefined;
-    if (value) (props as Record<string, unknown>)[field.key] = value;
+    // Presence-based: Word writes whitespace-only text ("<dc:title>\n</dc:title>"),
+    // which the XML parser reduces to an empty element — capture "" so the
+    // field survives round-trip instead of being silently dropped.
+    if (child) (props as Record<string, unknown>)[field.key] = textOf(child);
   }
 
   const revEl = el.elements?.find((e) => e.name === "cp:revision");
@@ -75,13 +77,17 @@ export function buildCorePropertiesXmlString(opts: CorePropertiesOptions): strin
   const p: string[] = [
     '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcmitype="http://purl.org/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
   ];
-  if (opts.title) p.push(`<dc:title>${escapeXml(opts.title)}</dc:title>`);
-  if (opts.subject) p.push(`<dc:subject>${escapeXml(opts.subject)}</dc:subject>`);
-  if (opts.creator) p.push(`<dc:creator>${escapeXml(opts.creator)}</dc:creator>`);
-  if (opts.keywords) p.push(`<cp:keywords>${escapeXml(opts.keywords)}</cp:keywords>`);
-  if (opts.description) p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
-  if (opts.lastPrinted) p.push(`<cp:lastPrinted>${escapeXml(opts.lastPrinted)}</cp:lastPrinted>`);
-  if (opts.lastModifiedBy)
+  // Empty-string values are meaningful (element present, text empty) — only
+  // undefined omits the element.
+  if (opts.title !== undefined) p.push(`<dc:title>${escapeXml(opts.title)}</dc:title>`);
+  if (opts.subject !== undefined) p.push(`<dc:subject>${escapeXml(opts.subject)}</dc:subject>`);
+  if (opts.creator !== undefined) p.push(`<dc:creator>${escapeXml(opts.creator)}</dc:creator>`);
+  if (opts.keywords !== undefined) p.push(`<cp:keywords>${escapeXml(opts.keywords)}</cp:keywords>`);
+  if (opts.description !== undefined)
+    p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
+  if (opts.lastPrinted !== undefined)
+    p.push(`<cp:lastPrinted>${escapeXml(opts.lastPrinted)}</cp:lastPrinted>`);
+  if (opts.lastModifiedBy !== undefined)
     p.push(`<cp:lastModifiedBy>${escapeXml(opts.lastModifiedBy)}</cp:lastModifiedBy>`);
   if (opts.revision !== undefined) p.push(`<cp:revision>${opts.revision}</cp:revision>`);
 
