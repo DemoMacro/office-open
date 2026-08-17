@@ -111,23 +111,6 @@ import type { WebFrameOptions, FramesetSplitbarOptions } from "@parts/frameset";
 
 import { documentNamespaceAttributes } from "./document/document-attributes";
 
-/** Subset of WebSettingsOptions for descriptor stringify. */
-export interface WebSettingsInput {
-  frameset?: FramesetOptions;
-  divs?: DivOptions[];
-  encoding?: string;
-  optimizeForBrowser?: boolean | OptimizeForBrowserOptions;
-  relyOnVML?: boolean;
-  allowPNG?: boolean;
-  doNotRelyOnCSS?: boolean;
-  doNotSaveAsSingleFile?: boolean;
-  doNotOrganizeInFolder?: boolean;
-  doNotUseLongFileNames?: boolean;
-  pixelsPerInch?: number;
-  targetScreenSize?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize];
-  saveSmartTagsAsXml?: boolean;
-}
-
 const WS_NS = documentNamespaceAttributes(["mc", "r", "w", "w15"]);
 
 function wsOnOff(tag: string, val: boolean): string {
@@ -426,7 +409,7 @@ export function frameXml(f: WebFrameOptions): string {
   return parts.join("");
 }
 
-export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
+export const webSettingsDesc: CustomDescriptor<WebSettingsOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -471,7 +454,7 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
   },
 
   parse(el, _ctx) {
-    const opts: Partial<WebSettingsInput> = {};
+    const opts: Partial<WebSettingsOptions> = {};
 
     // Frameset
     const frameset = findChild(el, "w:frameset");
@@ -530,10 +513,10 @@ export const webSettingsDesc: CustomDescriptor<WebSettingsInput> = {
     if (targetScreenSize) {
       const val = attr(targetScreenSize, "w:val");
       if (val && (Object.values(TargetScreenSize) as string[]).includes(val)) {
-        opts.targetScreenSize = val as WebSettingsInput["targetScreenSize"];
+        opts.targetScreenSize = val as WebSettingsOptions["targetScreenSize"];
       }
     }
 
-    return opts as WebSettingsInput;
+    return opts as WebSettingsOptions;
   },
 };

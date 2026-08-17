@@ -2,18 +2,18 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import type { WebSettingsInput } from "./web-settings";
+import type { WebSettingsOptions } from "./web-settings";
 import { webSettingsDesc } from "./web-settings";
 
 const writeCtx = {} as unknown as WriteContext;
 const readCtx = {} as unknown as ReadContext;
 
-function roundTrip(opts: WebSettingsInput) {
+function roundTrip(opts: WebSettingsOptions) {
   const xml = webSettingsDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return webSettingsDesc.parse(el, readCtx) as unknown as WebSettingsInput;
+  return webSettingsDesc.parse(el, readCtx) as unknown as WebSettingsOptions;
 }
 
 describe("webSettingsDesc round-trip", () => {
