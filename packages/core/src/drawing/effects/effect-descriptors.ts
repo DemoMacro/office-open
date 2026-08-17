@@ -212,9 +212,11 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       parts.push(`<a:softEdge rad="${convertToEmu(opts.softEdge)}"/>`);
     }
 
-    // Filter empty strings
+    // Filter empty strings. An explicitly empty options object round-trips as
+    // the empty element Word writes (<a:effectLst/>); omitting `effects`
+    // entirely is what omits the element.
     const content = parts.filter(Boolean).join("");
-    if (!content) return undefined;
+    if (!content) return "<a:effectLst/>";
     return `<a:effectLst>${content}</a:effectLst>`;
   },
   parse(el, ctx) {

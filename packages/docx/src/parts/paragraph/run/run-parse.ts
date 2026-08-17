@@ -619,6 +619,10 @@ export function parsedRunToOptions(
 
   const refChildren = contentChildren.filter(isRefChild);
   const nonRefChildren = contentChildren.filter((c) => !isRefChild(c));
+  // A reference mixed with other content (e.g. lastRenderedPageBreak before a
+  // commentReference) keeps every child in children[] form — the reference
+  // would otherwise be silently dropped by the text/break simplification.
+  const mixedRefs = refChildren.length > 0 && nonRefChildren.length > 0;
 
   // If the run is a pure reference run (no text), return it directly, keeping
   // the run properties so the reference round-trips byte-faithfully.
@@ -678,13 +682,14 @@ export function parsedRunToOptions(
   // breaks via opts.break; mixed or multiple breaks fall back to children[] form.
   const hasStructuredBreaks = structuredBreaks.length > 0;
   const useChildrenForm =
+    mixedRefs ||
     extraChildren.length > 0 ||
     (hasStructuredBreaks &&
       (breakCount > 0 || structuredBreaks.length > 1 || hasPageBreak || hasColumnBreak));
 
   if (useChildrenForm) {
     const children: (string | Record<string, unknown>)[] = [];
-    for (const child of nonRefChildren) {
+    for (const child of mixedRefs ? contentChildren : nonRefChildren) {
       if (typeof child === "string") {
         children.push(child);
       } else if (child === PARSED_LINE_BREAK) {
@@ -695,6 +700,8 @@ export function parsedRunToOptions(
         children.push({ columnBreak: true });
       } else if (typeof child === "object" && child !== null && "break" in child) {
         children.push({ break: (child as { break: BreakOptions }).break });
+      } else if (typeof child === "object" && child !== null && isRefChild(child)) {
+        children.push(child);
       } else {
         const mapped = SYMBOL_TO_CHILD.get(child as symbol);
         if (mapped) children.push(mapped);

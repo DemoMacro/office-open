@@ -146,11 +146,11 @@ const createPresetTextShape = (options: PresetTextShapeOptions): string => {
       adjChildren.push(`<a:gd name="${adj.name}" fmla="${adj.formula}"/>`);
     }
   }
-  return element(
-    "a:prstTxWarp",
-    { prst: options.preset },
-    adjChildren.length > 0 ? [element("a:avLst", undefined, adjChildren)] : undefined,
-  );
+  // Word always writes the avLst child — empty when there are no overrides,
+  // matching a:prstGeom's unconditional empty list.
+  return element("a:prstTxWarp", { prst: options.preset }, [
+    element("a:avLst", undefined, adjChildren),
+  ]);
 };
 
 // ── Factory ──

@@ -166,6 +166,21 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           body += `<w:commentReference w:id="${Number(child.commentReference)}"/>`;
           continue;
         }
+        // Reference elements inside a run's children[] (mixed-content runs)
+        // emit bare — the paragraph-level dispatch would wrap them in a
+        // nested <w:r>, which is invalid inside a run.
+        if ("footnoteReference" in child) {
+          const ref = child.footnoteReference;
+          const id = typeof ref === "number" ? ref : ref.id;
+          body += `<w:footnoteReference w:id="${id}"/>`;
+          continue;
+        }
+        if ("endnoteReference" in child) {
+          const ref = child.endnoteReference;
+          const id = typeof ref === "number" ? ref : ref.id;
+          body += `<w:endnoteReference w:id="${id}"/>`;
+          continue;
+        }
         // Empty run elements — separator, noBreakHyphen, pgNum, etc.
         let firstKey: string | undefined;
         for (const key in child) {
