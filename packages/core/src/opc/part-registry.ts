@@ -214,6 +214,28 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "hasGlossary" },
     },
     {
+      // Glossary companion parts — generate rebuilds only glossary document.xml;
+      // the rest pass through rawParts so their Overrides stay derivable.
+      path: "word/glossary/styles.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml",
+      presence: { kind: "conditional", flag: "glossary companion parts" },
+    },
+    {
+      path: "word/glossary/settings.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
+      presence: { kind: "conditional", flag: "glossary companion parts" },
+    },
+    {
+      path: "word/glossary/fontTable.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
+      presence: { kind: "conditional", flag: "glossary companion parts" },
+    },
+    {
+      path: "word/glossary/webSettings.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml",
+      presence: { kind: "conditional", flag: "glossary companion parts" },
+    },
+    {
       path: "word/webSettings.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml",
       presence: { kind: "conditional", flag: "hasWebSettings" },

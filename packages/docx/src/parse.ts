@@ -508,7 +508,8 @@ export function parseDocument(data: DataType): DocumentOptions {
   }
 
   // Raw passthrough: parts generate() doesn't rebuild (word/theme/*, customXml/*,
-  // the legacy word/stylesWithEffects.xml). Carried verbatim so their
+  // the legacy word/stylesWithEffects.xml, glossary companion parts — generate
+  // rebuilds only glossary document.xml). Carried verbatim so their
   // [Content_Types] declarations stay valid and the package opens in Word.
   // (Media/fonts/headers/etc. are rebuilt by the compiler and must NOT be passed
   // through — they'd otherwise duplicate under renamed paths.)
@@ -516,8 +517,11 @@ export function parseDocument(data: DataType): DocumentOptions {
   const RAW_PART_PATHS = new Set(["word/stylesWithEffects.xml"]);
   for (const p of docx.doc.keys()) {
     if (p.endsWith("/")) continue;
+    const isGlossaryCompanion =
+      p.startsWith("word/glossary/") && p !== "word/glossary/document.xml";
     if (
       !RAW_PART_PATHS.has(p) &&
+      !isGlossaryCompanion &&
       !["word/theme/", "customXml/"].some((prefix) => p.startsWith(prefix))
     ) {
       continue;
