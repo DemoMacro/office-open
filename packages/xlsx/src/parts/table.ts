@@ -270,10 +270,15 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       const s = o.style;
       const styleAttrs: Record<string, string | number | boolean | undefined> = {};
       if (s.name !== undefined) styleAttrs.name = s.name;
-      if (s.showFirstColumn) styleAttrs.showFirstColumn = 1;
-      if (s.showLastColumn) styleAttrs.showLastColumn = 1;
-      if (s.showRowStripes !== false) styleAttrs.showRowStripes = 1;
-      if (s.showColumnStripes) styleAttrs.showColumnStripes = 1;
+      // Emit each flag only when explicitly set: the XSD defaults (false for
+      // first/last/column stripes, true for row stripes) already cover an
+      // omitted attr, and forcing "1" on undefined would flip a round-tripped
+      // showRowStripes="0" back on (parse drops the explicit false).
+      if (s.showFirstColumn !== undefined) styleAttrs.showFirstColumn = s.showFirstColumn ? 1 : 0;
+      if (s.showLastColumn !== undefined) styleAttrs.showLastColumn = s.showLastColumn ? 1 : 0;
+      if (s.showRowStripes !== undefined) styleAttrs.showRowStripes = s.showRowStripes ? 1 : 0;
+      if (s.showColumnStripes !== undefined)
+        styleAttrs.showColumnStripes = s.showColumnStripes ? 1 : 0;
       p.push(`<tableStyleInfo${attrs(styleAttrs)}/>`);
     }
 
@@ -358,15 +363,20 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       result.columns = columns;
     }
 
-    // Table style info
+    // Table style info — keep explicit "0" flags (false) so they survive
+    // round-trip instead of re-emitting as the XSD default.
     const siEl = findChild(el, "tableStyleInfo");
     if (siEl) {
       const style: Partial<TableStyleInfoOptions> = {};
       if (attr(siEl, "name")) style.name = attr(siEl, "name");
-      if (parseOnOff(attr(siEl, "showFirstColumn"))) style.showFirstColumn = true;
-      if (parseOnOff(attr(siEl, "showLastColumn"))) style.showLastColumn = true;
-      if (parseOnOff(attr(siEl, "showRowStripes"))) style.showRowStripes = true;
-      if (parseOnOff(attr(siEl, "showColumnStripes"))) style.showColumnStripes = true;
+      const firstColumn = parseOnOff(attr(siEl, "showFirstColumn"));
+      if (firstColumn !== undefined) style.showFirstColumn = firstColumn;
+      const lastColumn = parseOnOff(attr(siEl, "showLastColumn"));
+      if (lastColumn !== undefined) style.showLastColumn = lastColumn;
+      const rowStripes = parseOnOff(attr(siEl, "showRowStripes"));
+      if (rowStripes !== undefined) style.showRowStripes = rowStripes;
+      const columnStripes = parseOnOff(attr(siEl, "showColumnStripes"));
+      if (columnStripes !== undefined) style.showColumnStripes = columnStripes;
       result.style = style;
     }
 
