@@ -122,19 +122,23 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     if (opts.iconImage) {
       const rawData = toUint8Array(opts.iconImage.data) as Uint8Array;
       const iconType = opts.iconImage.type;
-      const { fileName: iconFileName } = ctx.file.media.addMedia(
-        rawData,
-        iconType,
-        (fileName) =>
-          ({
-            type: iconType,
-            ...createPictureData(rawData, { width: widthVal, height: heightVal }, fileName),
-          }) as MediaData,
-      );
-      imagedataOptions = {
-        relationshipId: `{${iconFileName}}`,
-        officeTitle: opts.iconImage.title,
-      };
+      // Skip empty/extensionless icons — they would register a 0-byte part
+      // with no covering [Content_Types] entry (an OPC violation).
+      if (rawData.length > 0 && iconType) {
+        const { fileName: iconFileName } = ctx.file.media.addMedia(
+          rawData,
+          iconType,
+          (fileName) =>
+            ({
+              type: iconType,
+              ...createPictureData(rawData, { width: widthVal, height: heightVal }, fileName),
+            }) as MediaData,
+        );
+        imagedataOptions = {
+          relationshipId: `{${iconFileName}}`,
+          officeTitle: opts.iconImage.title,
+        };
+      }
     }
     if (opts.shapetype) inner.push(stringifyVmlShapetype(opts.shapetype));
     inner.push(
@@ -221,11 +225,15 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       if (imagedataEl) {
         const imagedata = parseVmlImageData(imagedataEl);
         const media = resolveBinary(imagedata.relationshipId, ctx);
-        result.iconImage = {
-          data: media?.bytes ?? new Uint8Array(),
-          type: media ? extensionOf(media.path) : "",
-          ...(imagedata.officeTitle !== undefined ? { title: imagedata.officeTitle } : {}),
-        };
+        // Only capture the icon when the binary actually resolved — an icon
+        // without bytes would register a nameless 0-byte media part.
+        if (media) {
+          result.iconImage = {
+            data: media.bytes,
+            type: extensionOf(media.path),
+            ...(imagedata.officeTitle !== undefined ? { title: imagedata.officeTitle } : {}),
+          };
+        }
       }
     }
 
