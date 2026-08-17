@@ -4740,6 +4740,13 @@
       "additionalProperties": false,
       "description": "Endnote properties for document-level settings (CT_EdnDocProps).",
       "properties": {
+        "endnotes": {
+          "description": "Special endnotes acting as separator/continuation, as endnote ids in word/endnotes.xml (Word writes the separator as -1 and the continuation note as 0).",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
         "format": {
           "description": "Custom number format string",
           "type": "string"
@@ -4768,6 +4775,13 @@
       "additionalProperties": false,
       "description": "Footnote properties for document-level settings (CT_FtnDocProps).",
       "properties": {
+        "footnotes": {
+          "description": "Special footnotes acting as separator/continuation, as footnote ids in word/footnotes.xml (Word writes the separator as -1 and the continuation note as 0).",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
         "format": {
           "description": "Custom number format string",
           "type": "string"

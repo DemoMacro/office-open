@@ -545,6 +545,12 @@ export interface DocumentFootnotePropertiesOptions {
   numStart?: number;
   /** When to restart numbering */
   numRestart?: string;
+  /**
+   * Special footnotes acting as separator/continuation, as footnote ids in
+   * word/footnotes.xml (Word writes the separator as -1 and the continuation
+   * note as 0).
+   */
+  footnotes?: number[];
 }
 
 /**
@@ -561,6 +567,12 @@ export interface DocumentEndnotePropertiesOptions {
   numStart?: number;
   /** When to restart numbering */
   numRestart?: string;
+  /**
+   * Special endnotes acting as separator/continuation, as endnote ids in
+   * word/endnotes.xml (Word writes the separator as -1 and the continuation
+   * note as 0).
+   */
+  endnotes?: number[];
 }
 
 /** Document revision save IDs (CT_DocRsids) */

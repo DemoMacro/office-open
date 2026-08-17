@@ -233,7 +233,10 @@ const COMPAT_SETTING_SUGAR: Record<
 };
 
 /** Parse w:footnotePr / w:endnotePr (CT_FtnDocProps / CT_EdnDocProps). */
-function parseFtnEdnPr(el: Element): Record<string, unknown> | undefined {
+function parseFtnEdnPr(
+  el: Element,
+  refTag: "w:footnote" | "w:endnote",
+): Record<string, unknown> | undefined {
   const o: Record<string, unknown> = {};
   const pos = readStr(findChild(el, "w:pos"), "w:val");
   if (pos) o.pos = pos;
@@ -248,6 +251,13 @@ function parseFtnEdnPr(el: Element): Record<string, unknown> | undefined {
   if (numStart !== undefined) o.numStart = numStart;
   const numRestart = readStr(findChild(el, "w:numRestart"), "w:val");
   if (numRestart) o.numRestart = numRestart;
+  // Special-note references (separator -1 / continuation 0) — the element can
+  // carry these alone, so their presence alone keeps the properties object.
+  const refs = (el.elements ?? [])
+    .filter((c) => c.type === "element" && c.name === refTag)
+    .map((c) => readNum(c, "w:id"))
+    .filter((id): id is number => id !== undefined);
+  if (refs.length > 0) o[refTag === "w:footnote" ? "footnotes" : "endnotes"] = refs;
   return Object.keys(o).length > 0 ? o : undefined;
 }
 
@@ -645,6 +655,7 @@ function stringifyFootnotePr(opts: DocumentFootnotePropertiesOptions): string {
   }
   p.push(numVal("w:numStart", opts.numStart));
   p.push(strVal("w:numRestart", opts.numRestart));
+  for (const id of opts.footnotes ?? []) p.push(attrEl("w:footnote", { "w:id": id }));
   return `<w:footnotePr>${p.join("")}</w:footnotePr>`;
 }
 
@@ -659,6 +670,7 @@ function stringifyEndnotePr(opts: DocumentEndnotePropertiesOptions): string {
   }
   p.push(numVal("w:numStart", opts.numStart));
   p.push(strVal("w:numRestart", opts.numRestart));
+  for (const id of opts.endnotes ?? []) p.push(attrEl("w:endnote", { "w:id": id }));
   return `<w:endnotePr>${p.join("")}</w:endnotePr>`;
 }
 
@@ -1437,12 +1449,12 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // footnotePr / endnotePr (CT_FtnDocProps / CT_EdnDocProps)
     const fnPrEl = findChild(el, "w:footnotePr");
     if (fnPrEl) {
-      const fn = parseFtnEdnPr(fnPrEl);
+      const fn = parseFtnEdnPr(fnPrEl, "w:footnote");
       if (fn) opts.footnoteProperties = fn;
     }
     const enPrEl = findChild(el, "w:endnotePr");
     if (enPrEl) {
-      const en = parseFtnEdnPr(enPrEl);
+      const en = parseFtnEdnPr(enPrEl, "w:endnote");
       if (en) opts.endnoteProperties = en;
     }
 
