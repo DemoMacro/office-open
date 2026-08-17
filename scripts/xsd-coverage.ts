@@ -14,6 +14,7 @@
  *   pnpm tsx scripts/xsd-coverage.ts pml           # pptx only
  *   pnpm tsx scripts/xsd-coverage.ts sml           # xlsx only
  *   pnpm tsx scripts/xsd-coverage.ts dml-main      # DrawingML main
+ *   pnpm tsx scripts/xsd-coverage.ts w14           # Word 2010 extensions
  *   pnpm tsx scripts/xsd-coverage.ts --missing     # show missing items (default)
  *   pnpm tsx scripts/xsd-coverage.ts --summary     # only show summary stats
  *   pnpm tsx scripts/xsd-coverage.ts --json        # JSON output
@@ -24,12 +25,17 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "..");
-const XSD_DIR = path.resolve(__dirname, "../ooxml-schemas/transitional");
+const SCHEMA_ROOT = path.resolve(__dirname, "../ooxml-schemas");
 
 // ── XSD → Code mapping configuration ──
 
 interface XsdConfig {
-  /** XSD file name (in ooxml-schemas/transitional/) */
+  /**
+   * Schema directory under ooxml-schemas/ — "transitional" (default) for the
+   * ISO schemas, "microsoft" for the Word extension namespaces (w14/w15/…).
+   */
+  xsdDir?: string;
+  /** XSD file name (in the schema directory) */
   xsdFile: string;
   /** Short label for CLI filter and output */
   label: string;
@@ -181,6 +187,47 @@ const XSD_CONFIGS: XsdConfig[] = [
     label: "math",
     description: "Math (docx)",
     prefix: "m:",
+    searchDirs: ["packages/docx/src"],
+    searchMode: "prefix",
+  },
+  // ── Microsoft extension namespaces (ooxml-schemas/microsoft/) ──
+  // Word binds these namespaces to instance prefixes w14:/w15:/w16cex:/w16cid:.
+  // The remaining microsoft XSDs (wml-2018 ext, wml-symex, sdtdatahash,
+  // sdtformatlock, word16du, word12) declare no trackable elements or a single
+  // xsd:any-style ext slot and are not configured.
+  {
+    xsdDir: "microsoft",
+    xsdFile: "wml-2010.xsd",
+    label: "w14",
+    description: "Word 2010 extensions (w14: paraId, checkbox, text effects)",
+    prefix: "w14:",
+    searchDirs: ["packages/docx/src"],
+    searchMode: "prefix",
+  },
+  {
+    xsdDir: "microsoft",
+    xsdFile: "wml-2012.xsd",
+    label: "w15",
+    description: "Word 2013 extensions (w15: commentsEx, people, repeatingSection)",
+    prefix: "w15:",
+    searchDirs: ["packages/docx/src"],
+    searchMode: "prefix",
+  },
+  {
+    xsdDir: "microsoft",
+    xsdFile: "wml-cex-2018.xsd",
+    label: "w16cex",
+    description: "Word 2018 comment extensions (w16cex: commentsExtensible)",
+    prefix: "w16cex:",
+    searchDirs: ["packages/docx/src"],
+    searchMode: "prefix",
+  },
+  {
+    xsdDir: "microsoft",
+    xsdFile: "wml-cid-2016.xsd",
+    label: "w16cid",
+    description: "Word 2016 durable comment ids (w16cid: commentsIds)",
+    prefix: "w16cid:",
     searchDirs: ["packages/docx/src"],
     searchMode: "prefix",
   },
@@ -734,7 +781,7 @@ interface CoverageResult {
 }
 
 function analyzeXsd(config: XsdConfig): CoverageResult {
-  const xsdPath = path.resolve(XSD_DIR, config.xsdFile);
+  const xsdPath = path.resolve(SCHEMA_ROOT, config.xsdDir ?? "transitional", config.xsdFile);
   if (!fs.existsSync(xsdPath)) {
     console.error(`XSD not found: ${xsdPath}`);
     return {
