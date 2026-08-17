@@ -155,6 +155,7 @@ function tableLookStr(opts: TableLookOptions): string {
   // ST_OnOff emits as 1/0 to match every other on/off attribute in the package.
   const onOffAttr = (v: boolean | undefined) => mapOptional(v, (b) => (b ? 1 : 0));
   const a = attrsRaw({
+    "w:val": opts.val,
     "w:firstRow": onOffAttr(opts.firstRow),
     "w:lastRow": onOffAttr(opts.lastRow),
     "w:firstColumn": onOffAttr(opts.firstCol),

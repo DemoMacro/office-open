@@ -10152,6 +10152,10 @@
           "description": "VML shape id (v:shape/`@id`). Defaults to a generated id.",
           "type": "string"
         },
+        "shapetype": {
+          "$ref": "#/definitions/VmlShapetypeOptions",
+          "description": "v:shapetype preamble — Word writes the _x0000_t75 OLE shapetype (with its formula table) before the preview v:shape; round-tripped verbatim."
+        },
         "width": {
           "anyOf": [
             {
@@ -20090,6 +20094,10 @@
         "lastRow": {
           "description": "Apply last row conditional formatting.",
           "type": "boolean"
+        },
+        "val": {
+          "description": "Legacy hex bitmask (w:val, ST_ShortHexNumber) — Word 2007 wrote it alone (e.g. \"04A0\"), Word 2010+ writes the explicit booleans. Round-tripped verbatim as a string so leading zeros survive; authoring needs only the boolean fields.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -20223,6 +20231,10 @@
         },
         "styleRowBandSize": {
           "type": "number"
+        },
+        "tableLook": {
+          "$ref": "#/definitions/TableLookOptions",
+          "description": "Explicit w:tblLook content (CT_TblLook). The base 6-flags above are the authoring shorthand for the boolean attributes; this carries the full element including the legacy w:val hex bitmask only old Word files write."
         },
         "visuallyRightToLeft": {
           "type": "boolean"
@@ -21577,6 +21589,79 @@
       },
       "type": "object"
     },
+    "VmlAnchorLockOptions": {
+      "additionalProperties": false,
+      "description": "w10:anchorlock options (CT_AnchorLock) — empty marker element.",
+      "type": "object"
+    },
+    "VmlBlackWhiteMode": {
+      "description": "ST_BWMode (o:) — black-and-white rendering fallback.",
+      "enum": [
+        "color",
+        "auto",
+        "grayScale",
+        "lightGrayscale",
+        "inverseGray",
+        "grayOutline",
+        "highContrast",
+        "black",
+        "white",
+        "hide",
+        "undrawn",
+        "blackTextAndLines"
+      ],
+      "type": "string"
+    },
+    "VmlBorderOptions": {
+      "additionalProperties": false,
+      "description": "w10:bordertop/borderleft/borderright/borderbottom options (CT_Border).",
+      "properties": {
+        "shadow": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "type": {
+          "$ref": "#/definitions/VmlBorderType"
+        },
+        "width": {
+          "description": "Border width in 1/8 pt units.",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "VmlBorderType": {
+      "description": "ST_BorderType — the 27 legacy border presets.",
+      "enum": [
+        "none",
+        "single",
+        "thick",
+        "double",
+        "hairline",
+        "dot",
+        "dash",
+        "dotDash",
+        "dashDotDot",
+        "triple",
+        "thinThickSmall",
+        "thickThinSmall",
+        "thickBetweenThinSmall",
+        "thinThick",
+        "thickThin",
+        "thickBetweenThin",
+        "thinThickLarge",
+        "thickThinLarge",
+        "thickBetweenThinLarge",
+        "wave",
+        "doubleWave",
+        "dashedSmall",
+        "dashDotStroked",
+        "threeDEmboss",
+        "threeDEngrave",
+        "HTMLOutset",
+        "HTMLInset"
+      ],
+      "type": "string"
+    },
     "VmlCalloutAngle": {
       "description": "ST_Angle — the callout leader-angle presets, kept in XML spelling.",
       "enum": ["any", "30", "45", "60", "90", "auto"],
@@ -21631,6 +21716,257 @@
       },
       "type": "object"
     },
+    "VmlClientDataOptions": {
+      "additionalProperties": false,
+      "description": "x:ClientData options (CT_ClientData).",
+      "properties": {
+        "Accel": {
+          "type": "number"
+        },
+        "Accel2": {
+          "type": "number"
+        },
+        "Anchor": {
+          "description": "Cell anchor, e.g. \"\\n_Frmd4c1s387\\n1\\n15\\n90\\n1\\n12\\n65\\n85\".",
+          "type": "string"
+        },
+        "AutoFill": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "AutoLine": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "AutoPict": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "AutoScale": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "CF": {
+          "description": "CF — clipboard format name.",
+          "type": "string"
+        },
+        "Camera": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Cancel": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Checked": {
+          "type": "number"
+        },
+        "ColHidden": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Colored": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Column": {
+          "type": "number"
+        },
+        "DDE": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Default": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "DefaultSize": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Disabled": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Dismiss": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "DropLines": {
+          "type": "number"
+        },
+        "DropStyle": {
+          "type": "string"
+        },
+        "Dx": {
+          "type": "number"
+        },
+        "FirstButton": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "FmlaGroup": {
+          "type": "string"
+        },
+        "FmlaLink": {
+          "type": "string"
+        },
+        "FmlaMacro": {
+          "type": "string"
+        },
+        "FmlaPict": {
+          "type": "string"
+        },
+        "FmlaRange": {
+          "type": "string"
+        },
+        "FmlaTxbx": {
+          "type": "string"
+        },
+        "Help": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Horiz": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Inc": {
+          "type": "number"
+        },
+        "JustLastX": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "LCT": {
+          "type": "string"
+        },
+        "ListItem": {
+          "type": "string"
+        },
+        "LockText": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Locked": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "MapOCX": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Max": {
+          "type": "number"
+        },
+        "Min": {
+          "type": "number"
+        },
+        "MoveWithCells": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "MultiLine": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "MultiSel": {
+          "type": "string"
+        },
+        "NoThreeD": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "NoThreeD2": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Page": {
+          "type": "number"
+        },
+        "PrintObject": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "RecalcAlways": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Row": {
+          "type": "number"
+        },
+        "RowHidden": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "ScriptExtended": {
+          "type": "string"
+        },
+        "ScriptLanguage": {
+          "type": "number"
+        },
+        "ScriptLocation": {
+          "type": "number"
+        },
+        "ScriptText": {
+          "type": "string"
+        },
+        "SecretEdit": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Sel": {
+          "type": "number"
+        },
+        "SelType": {
+          "type": "string"
+        },
+        "SizeWithCells": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "TextHAlign": {
+          "type": "string"
+        },
+        "TextVAlign": {
+          "type": "string"
+        },
+        "UIObj": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "VScroll": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "VTEdit": {
+          "type": "number"
+        },
+        "Val": {
+          "type": "number"
+        },
+        "ValidIds": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "Visible": {
+          "$ref": "#/definitions/VmlTrueFalseBlank"
+        },
+        "WidthMin": {
+          "type": "number"
+        },
+        "objectType": {
+          "$ref": "#/definitions/VmlClientObjectType"
+        }
+      },
+      "required": ["objectType"],
+      "type": "object"
+    },
+    "VmlClientObjectType": {
+      "description": "ST_ObjectType — the legacy form-control kinds.",
+      "enum": [
+        "Button",
+        "Checkbox",
+        "Dialog",
+        "Drop",
+        "Edit",
+        "GBox",
+        "Label",
+        "LineA",
+        "List",
+        "Movie",
+        "Note",
+        "Pict",
+        "Radio",
+        "RectA",
+        "Scroll",
+        "Spin",
+        "Shape",
+        "Group",
+        "Rect"
+      ],
+      "type": "string"
+    },
+    "VmlClipPathOptions": {
+      "additionalProperties": false,
+      "description": "o:clippath options (CT_ClipPath). The path attribute is qualified: `v:v`.",
+      "properties": {
+        "v": {
+          "description": "Path command string, serialized as the `v:v` attribute.",
+          "type": "string"
+        }
+      },
+      "required": ["v"],
+      "type": "object"
+    },
     "VmlColor": {
       "description": "s:ST_ColorType kept verbatim — VML colors carry forms like \"red\" or \"infoBackground [80]\".",
       "type": "string"
@@ -21674,6 +22010,31 @@
         }
       },
       "type": "object"
+    },
+    "VmlComplexOptions": {
+      "additionalProperties": false,
+      "description": "o:complex options (CT_Complex) — the extension slot at the end of CT_Shapetype.",
+      "properties": {
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        }
+      },
+      "type": "object"
+    },
+    "VmlConnectType": {
+      "description": "ST_ConnectType (o:).",
+      "enum": ["none", "rect", "segments", "custom"],
+      "type": "string"
+    },
+    "VmlConnectorType": {
+      "description": "ST_ConnectorType (o:).",
+      "enum": ["none", "straight", "elbow", "curved"],
+      "type": "string"
+    },
+    "VmlDiagramLayout": {
+      "description": "ST_DiagramLayout (o:) — layout code kept in its XML string spelling.",
+      "enum": ["0", "1", "2", "3"],
+      "type": "string"
     },
     "VmlExtensionMode": {
       "description": "ST_Ext — the v:ext extension-slot attribute carried by every o: element.",
@@ -21911,6 +22272,77 @@
       "enum": ["solid", "gradient", "gradientRadial", "tile", "pattern", "frame"],
       "type": "string"
     },
+    "VmlFormulasOptions": {
+      "additionalProperties": false,
+      "description": "v:formulas options (CT_Formulas).",
+      "properties": {
+        "equations": {
+          "description": "Equation strings, each becoming a `<v:f eqn=\"…\"/>` child.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "VmlHandleOptions": {
+      "additionalProperties": false,
+      "description": "v:h options (CT_H). `switch` matches the XML attribute name.",
+      "properties": {
+        "invx": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "invy": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "map": {
+          "type": "string"
+        },
+        "polar": {
+          "type": "string"
+        },
+        "position": {
+          "type": "string"
+        },
+        "radiusrange": {
+          "type": "string"
+        },
+        "switch": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "xrange": {
+          "type": "string"
+        },
+        "yrange": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlHandlesOptions": {
+      "additionalProperties": false,
+      "description": "v:handles options (CT_Handles).",
+      "properties": {
+        "handles": {
+          "items": {
+            "$ref": "#/definitions/VmlHandleOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "VmlHorizontalAnchor": {
+      "description": "ST_HorizontalAnchor.",
+      "enum": ["margin", "page", "text", "char"],
+      "type": "string"
+    },
+    "VmlHorizontalRuleAlign": {
+      "description": "ST_HrAlign (o:) — horizontal-rule alignment.",
+      "enum": ["left", "right", "center"],
+      "type": "string"
+    },
     "VmlIdMapOptions": {
       "additionalProperties": false,
       "description": "o:idmap options (CT_IdMap).",
@@ -21929,6 +22361,95 @@
       "description": "ST_ImageAspect.",
       "enum": ["ignore", "atMost", "atLeast"],
       "type": "string"
+    },
+    "VmlImageDataOptions": {
+      "additionalProperties": false,
+      "description": "v:imagedata options (CT_ImageData).",
+      "properties": {
+        "bilevel": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "blacklevel": {
+          "type": "string"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "cropbottom": {
+          "type": "string"
+        },
+        "cropleft": {
+          "type": "string"
+        },
+        "cropright": {
+          "type": "string"
+        },
+        "croptop": {
+          "type": "string"
+        },
+        "detectmouseclick": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:detectmouseclick — click detection for OLE activation."
+        },
+        "embosscolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "gain": {
+          "type": "string"
+        },
+        "gamma": {
+          "type": "string"
+        },
+        "grayscale": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrefRelationshipId": {
+          "description": "r:href — hyperlink relationship.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "movie": {
+          "description": "o:movie — movie reference number.",
+          "type": "number"
+        },
+        "officeAltHref": {
+          "description": "o:althref — alternate (high-contrast) image reference.",
+          "type": "string"
+        },
+        "officeHref": {
+          "description": "o:href — hyperlink target.",
+          "type": "string"
+        },
+        "officeRelationshipId": {
+          "description": "o:relid — relationship id, in the o: extension slot.",
+          "type": "string"
+        },
+        "officeTitle": {
+          "description": "o:title — image title (the tooltip Office shows).",
+          "type": "string"
+        },
+        "oleid": {
+          "description": "o:oleid — OLE object number.",
+          "type": "number"
+        },
+        "pictRelationshipId": {
+          "description": "r:pict — print-output relationship.",
+          "type": "string"
+        },
+        "recolortarget": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "relationshipId": {
+          "description": "r:id — picture relationship; callers bridge media via the placeholder form.",
+          "type": "string"
+        },
+        "src": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "VmlInsetMode": {
       "description": "ST_InsetMode (o:).",
@@ -22005,6 +22526,63 @@
         "background"
       ],
       "type": "string"
+    },
+    "VmlPathOptions": {
+      "additionalProperties": false,
+      "description": "v:path options (CT_Path).",
+      "properties": {
+        "arrowok": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "connectangles": {
+          "description": "o:connectangles — connection-site angles.",
+          "type": "string"
+        },
+        "connectlocs": {
+          "description": "o:connectlocs — connection-site coordinates.",
+          "type": "string"
+        },
+        "connecttype": {
+          "$ref": "#/definitions/VmlConnectType",
+          "description": "o:connecttype — how shapes connect at this path."
+        },
+        "extrusionok": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:extrusionok — 3D extrusion allowed along this path."
+        },
+        "fillok": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "gradientshapeok": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "insetpenok": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "limo": {
+          "type": "string"
+        },
+        "shadowok": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeok": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "textboxrect": {
+          "type": "string"
+        },
+        "textpathok": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "v": {
+          "description": "Path command string (\"m0,0l100,0,100,100,0,100xe\").",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "VmlRegroupEntryOptions": {
       "additionalProperties": false,
@@ -22373,6 +22951,315 @@
       },
       "type": "object"
     },
+    "VmlShapetypeOptions": {
+      "additionalProperties": false,
+      "description": "v:shapetype options (CT_Shapetype).",
+      "properties": {
+        "adj": {
+          "type": "string"
+        },
+        "allowincell": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "allowoverlap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "anchorlock": {
+          "$ref": "#/definitions/VmlAnchorLockOptions"
+        },
+        "borderbottom": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderbottomcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderleft": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderleftcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "borderright": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "borderrightcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bordertop": {
+          "$ref": "#/definitions/VmlBorderOptions"
+        },
+        "bordertopcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "bullet": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:bullet — paragraph mark rendered as a list bullet."
+        },
+        "button": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:button — the shape behaves as a button."
+        },
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "callout": {
+          "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "chromakey": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "class": {
+          "type": "string"
+        },
+        "clientData": {
+          "$ref": "#/definitions/VmlClientDataOptions"
+        },
+        "clip": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "clippath": {
+          "$ref": "#/definitions/VmlClipPathOptions"
+        },
+        "cliptowrap": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "complex": {
+          "$ref": "#/definitions/VmlComplexOptions",
+          "description": "o:complex — the trailing extension slot."
+        },
+        "connectortype": {
+          "$ref": "#/definitions/VmlConnectorType"
+        },
+        "coordorigin": {
+          "description": "\"0,0\" — origin of the coordinate space.",
+          "type": "string"
+        },
+        "coordsize": {
+          "description": "\"21600,21600\" — coordinate space of the shape.",
+          "type": "string"
+        },
+        "dgmlayout": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmlayoutmru": {
+          "$ref": "#/definitions/VmlDiagramLayout"
+        },
+        "dgmnodekind": {
+          "type": "number"
+        },
+        "doubleclicknotify": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "extrusion": {
+          "$ref": "#/definitions/VmlExtrusionOptions"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "forcedash": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:forcedash — always render dashed (accessibility)."
+        },
+        "formulas": {
+          "$ref": "#/definitions/VmlFormulasOptions"
+        },
+        "handles": {
+          "$ref": "#/definitions/VmlHandlesOptions"
+        },
+        "hr": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:hr — horizontal rule."
+        },
+        "hralign": {
+          "$ref": "#/definitions/VmlHorizontalRuleAlign"
+        },
+        "href": {
+          "type": "string"
+        },
+        "hrnoshade": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "hrpct": {
+          "description": "Horizontal-rule width in percent.",
+          "type": "number"
+        },
+        "hrstd": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "imagedata": {
+          "$ref": "#/definitions/VmlImageDataOptions"
+        },
+        "insetmode": {
+          "$ref": "#/definitions/VmlInsetMode"
+        },
+        "insetpen": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "lock": {
+          "$ref": "#/definitions/VmlLockOptions"
+        },
+        "master": {
+          "description": "o:master — the shapetype this one derives from.",
+          "type": "string"
+        },
+        "ole": {
+          "$ref": "#/definitions/VmlTrueFalseBlank",
+          "description": "o:ole — OLE behavior flag; ST_TrueFalseBlank (\"\" | boolean)."
+        },
+        "oleicon": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "oned": {
+          "$ref": "#/definitions/VmlTrueFalse",
+          "description": "o:oned — the shape is a one-dimensional connector."
+        },
+        "opacity": {
+          "type": "string"
+        },
+        "path": {
+          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
+          "type": "string"
+        },
+        "pathElement": {
+          "$ref": "#/definitions/VmlPathOptions",
+          "description": "v:path child element — a separate XSD slot from the path attribute."
+        },
+        "preferrelative": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "print": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "regroupid": {
+          "type": "number"
+        },
+        "shadow": {
+          "$ref": "#/definitions/VmlShadowOptions"
+        },
+        "signatureline": {
+          "$ref": "#/definitions/VmlSignatureLineOptions"
+        },
+        "skew": {
+          "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "spid": {
+          "description": "o:spid — shape id from the drawing part's id map.",
+          "type": "string"
+        },
+        "spt": {
+          "description": "o:spt — shape-type number (202 = textbox, 75 = picture frame, …).",
+          "type": "number"
+        },
+        "stroke": {
+          "$ref": "#/definitions/VmlStrokeOptions"
+        },
+        "strokecolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "stroked": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "strokeweight": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "target": {
+          "type": "string"
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions"
+        },
+        "textdata": {
+          "$ref": "#/definitions/VmlTextDataOptions"
+        },
+        "textpath": {
+          "$ref": "#/definitions/VmlTextPathOptions"
+        },
+        "title": {
+          "type": "string"
+        },
+        "userdrawn": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "userhidden": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "wrap": {
+          "$ref": "#/definitions/VmlWrapOptions"
+        },
+        "wrapcoords": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlSignatureLineOptions": {
+      "additionalProperties": false,
+      "description": "o:signatureline options (CT_SignatureLine).",
+      "properties": {
+        "addlxml": {
+          "type": "string"
+        },
+        "allowcomments": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "ext": {
+          "$ref": "#/definitions/VmlExtensionMode"
+        },
+        "id": {
+          "description": "s:ST_Guid — a GUID string.",
+          "type": "string"
+        },
+        "issignatureline": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "provid": {
+          "type": "string"
+        },
+        "showsigndate": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "signinginstructions": {
+          "type": "string"
+        },
+        "signinginstructionsset": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "sigprovurl": {
+          "type": "string"
+        },
+        "suggestedsigner": {
+          "type": "string"
+        },
+        "suggestedsigner2": {
+          "type": "string"
+        },
+        "suggestedsigneremail": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "VmlSkewOptions": {
       "additionalProperties": false,
       "description": "o:skew options (CT_Skew).",
@@ -22637,6 +23524,95 @@
       },
       "type": "object"
     },
+    "VmlTextDataOptions": {
+      "additionalProperties": false,
+      "description": "pvml:textdata options (CT_Rel).",
+      "properties": {
+        "id": {
+          "description": "Relationship id — bridged by the caller.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlTextPathOptions": {
+      "additionalProperties": false,
+      "description": "v:textpath options (CT_TextPath).",
+      "properties": {
+        "fitpath": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "fitshape": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "on": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "string": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/definitions/VmlTextPathStyle"
+        },
+        "trim": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "xscale": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        }
+      },
+      "type": "object"
+    },
+    "VmlTextPathStyle": {
+      "additionalProperties": false,
+      "description": "v:textpath style vocabulary — font-centric CSS, distinct from the layout vocabulary of  {@link  VmlShapeStyle  } . Values stay strings: font sizes carry units (\"24pt\"), families carry quotes, weights may be named or numeric.",
+      "properties": {
+        "fontFamily": {
+          "type": "string"
+        },
+        "fontSize": {
+          "type": "string"
+        },
+        "fontStyle": {
+          "type": "string"
+        },
+        "fontVariant": {
+          "type": "string"
+        },
+        "fontWeight": {
+          "type": "string"
+        },
+        "letterSpacing": {
+          "type": "string"
+        },
+        "textDecoration": {
+          "type": "string"
+        },
+        "textTransform": {
+          "type": "string"
+        },
+        "vTextAlign": {
+          "description": "v-text-align — WordArt alignment (\"center\", \"letter-justify\", …).",
+          "type": "string"
+        },
+        "vTextKern": {
+          "description": "v-text-kern — kerning toggle (\"t\"/\"f\" literal in the CSS stream).",
+          "type": "string"
+        },
+        "vTextSpacing": {
+          "description": "v-text-spacing — character spacing.",
+          "type": "string"
+        },
+        "vTextSpacingMode": {
+          "description": "v-text-spacing-mode — spacing mode (\"tightening\", …).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "VmlTextboxOptions": {
       "additionalProperties": false,
       "description": "v:textbox options (CT_Textbox).",
@@ -22673,6 +23649,52 @@
     "VmlTrueFalse": {
       "description": "s:ST_TrueFalse — VML boolean attributes serialize as \"t\"/\"f\".",
       "type": "boolean"
+    },
+    "VmlTrueFalseBlank": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "const": "",
+          "type": "string"
+        }
+      ],
+      "description": "s:ST_TrueFalseBlank — a boolean that also admits the empty-string form."
+    },
+    "VmlVerticalAnchor": {
+      "description": "ST_VerticalAnchor.",
+      "enum": ["margin", "page", "text", "line"],
+      "type": "string"
+    },
+    "VmlWrapOptions": {
+      "additionalProperties": false,
+      "description": "w10:wrap options (CT_Wrap).",
+      "properties": {
+        "anchorx": {
+          "$ref": "#/definitions/VmlHorizontalAnchor"
+        },
+        "anchory": {
+          "$ref": "#/definitions/VmlVerticalAnchor"
+        },
+        "side": {
+          "$ref": "#/definitions/VmlWrapSide"
+        },
+        "type": {
+          "$ref": "#/definitions/VmlWrapType"
+        }
+      },
+      "type": "object"
+    },
+    "VmlWrapSide": {
+      "description": "ST_WrapSide.",
+      "enum": ["both", "left", "right", "largest"],
+      "type": "string"
+    },
+    "VmlWrapType": {
+      "description": "ST_WrapType.",
+      "enum": ["topAndBottom", "square", "none", "tight", "through"],
+      "type": "string"
     },
     "WebFrameOptions": {
       "additionalProperties": false,

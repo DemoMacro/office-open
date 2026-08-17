@@ -11,6 +11,7 @@
  * ## XSD Schema
  * ```xml
  * <xsd:complexType name="CT_TblLook">
+ *   <xsd:attribute name="val" type="s:ST_ShortHexNumber"/>
  *   <xsd:attribute name="firstRow" type="s:ST_OnOff"/>
  *   <xsd:attribute name="lastRow" type="s:ST_OnOff"/>
  *   <xsd:attribute name="firstColumn" type="s:ST_OnOff"/>
@@ -32,6 +33,13 @@
  * attributes, inverting banding (w:noHBand = !bandRow).
  */
 export interface TableLookOptions {
+  /**
+   * Legacy hex bitmask (w:val, ST_ShortHexNumber) — Word 2007 wrote it alone
+   * (e.g. "04A0"), Word 2010+ writes the explicit booleans. Round-tripped
+   * verbatim as a string so leading zeros survive; authoring needs only the
+   * boolean fields.
+   */
+  val?: string;
   /** Apply first row conditional formatting. */
   firstRow?: boolean;
   /** Apply last row conditional formatting. */

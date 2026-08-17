@@ -736,6 +736,28 @@ describe("tableDesc round-trip", () => {
     expect(xml).toContain('w:noVBand="1"');
   });
 
+  it("round-trips the legacy w:tblLook/@w:val hex bitmask alone (Word 2007)", () => {
+    const xml =
+      `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:tblPr><w:tblLook w:val="04A0"/></w:tblPr>` +
+      `<w:tblGrid><w:gridCol w:w="100"/></w:tblGrid>` +
+      `<w:tr><w:tc><w:tcPr/><w:p/></w:tc></w:tr></w:tbl>`;
+    const opts = tableDesc.parse(parseXml(xml).elements![0]!, readCtx) as TableOptions;
+    expect(opts.tableLook).toEqual({ val: "04A0" });
+    const out = tableDesc.stringify(opts, writeCtx)!;
+    expect(out).toContain('<w:tblLook w:val="04A0"/>');
+  });
+
+  it("round-trips w:val alongside explicit tblLook booleans", () => {
+    const result = roundTrip({
+      firstRow: true,
+      rows: [{ cells: [{ children: [] }] }],
+      tableLook: { val: "04A0" },
+    });
+    expect(result.firstRow).toBe(true);
+    expect(result.tableLook).toEqual({ val: "04A0" });
+  });
+
   it("round-trips columnWidthsRevision (w:tblGridChange)", () => {
     const result = roundTrip({
       columnWidths: [1000, 2000],

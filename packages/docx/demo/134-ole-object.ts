@@ -86,6 +86,40 @@ const doc: DocumentOptions = {
                       // Original OLE size in twips (w:dxaOrig / w:dyaOrig)
                       dxaOrig: 5400,
                       dyaOrig: 2700,
+                      // Word's OLE shapetype preamble (_x0000_t75), round-tripped
+                      // verbatim ahead of the preview shape
+                      shapetype: {
+                        id: "_x0000_t75",
+                        coordsize: "21600,21600",
+                        spt: 75,
+                        preferrelative: true,
+                        path: "m@4@5l@4@11@9@11@9@5xe",
+                        filled: false,
+                        stroked: false,
+                        stroke: { joinstyle: "miter" },
+                        formulas: {
+                          equations: [
+                            "if lineDrawn pixelLineWidth 0",
+                            "sum @0 1 0",
+                            "sum 0 0 @1",
+                            "prod @2 1 2",
+                            "prod @3 21600 pixelWidth",
+                            "prod @3 21600 pixelHeight",
+                            "sum @0 0 1",
+                            "prod @6 1 2",
+                            "prod @7 21600 pixelWidth",
+                            "sum @8 21600 0",
+                            "prod @7 21600 pixelHeight",
+                            "sum @10 21600 0",
+                          ],
+                        },
+                        pathElement: {
+                          extrusionok: false,
+                          gradientshapeok: true,
+                          connecttype: "rect",
+                        },
+                        lock: { ext: "edit", aspectratio: true },
+                      },
                       // Display size for the VML preview shape
                       width: "9.5cm",
                       height: "4.8cm",

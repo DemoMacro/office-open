@@ -418,6 +418,14 @@ function tableLookFromFlags(opts: TableOptions): TableLookOptions | undefined {
   return look;
 }
 
+/** Emit-side w:tblLook source: booleans may come from the base 6-flags
+ *  (authoring shorthand) or the explicit tableLook (round-trip, which also
+ *  carries the legacy w:val); merge both — undefined when neither is set. */
+function tableLookForEmit(opts: TableOptions): TableLookOptions | undefined {
+  const look: TableLookOptions = { ...opts.tableLook, ...tableLookFromFlags(opts) };
+  return Object.keys(look).length > 0 ? look : undefined;
+}
+
 // ── Descriptor ──
 
 export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
@@ -444,7 +452,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
       style: opts.style,
       styleColBandSize: opts.styleColBandSize,
       styleRowBandSize: opts.styleRowBandSize,
-      tableLook: tableLookFromFlags(opts),
+      tableLook: tableLookForEmit(opts),
       visuallyRightToLeft: opts.visuallyRightToLeft,
       width: opts.width,
       includeIfEmpty: true,
@@ -667,10 +675,13 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   }
 
   // tblLook — conditional formatting flags (CT_TblLook). XML polarity
-  // inverts banding (w:noHBand = !bandRow).
+  // inverts banding (w:noHBand = !bandRow); w:val is the legacy hex
+  // bitmask Word 2007 wrote alone.
   const tblLook = findChild(el, "w:tblLook");
   if (tblLook) {
     const look: TableLookOptions = {};
+    const val = attr(tblLook, "w:val");
+    if (val !== undefined) look.val = val;
     const firstRow = attrBool(tblLook, "w:firstRow");
     if (firstRow !== undefined) look.firstRow = firstRow;
     const lastRow = attrBool(tblLook, "w:lastRow");
@@ -1097,6 +1108,7 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
     const tblPrParsed = parseTablePropertiesEl(tblPr);
     // tableLook carries the same 6-flag field names as TableOptions, so only
     // the emit-side (stringify) translates; here it assigns straight through.
+    // The legacy w:val has no base-flag counterpart and stays on tableLook.
     const { tableLook, ...rest } = tblPrParsed;
     Object.assign(opts, rest);
     if (tableLook) {
@@ -1106,6 +1118,7 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
       if (tableLook.lastCol !== undefined) opts.lastCol = tableLook.lastCol;
       if (tableLook.bandRow !== undefined) opts.bandRow = tableLook.bandRow;
       if (tableLook.bandCol !== undefined) opts.bandCol = tableLook.bandCol;
+      if (tableLook.val !== undefined) opts.tableLook = { val: tableLook.val };
     }
   }
 

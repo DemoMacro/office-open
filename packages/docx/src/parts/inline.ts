@@ -575,6 +575,14 @@ export function stringifyChildDispatch(
     return `<w:r>${rPr}<w:sym w:char="${opts.char}" w:font="${opts.symbolFont ?? "Wingdings"}"/></w:r>`;
   }
 
+  // OLE object run — the parse path flattens a pure w:object run to a bare
+  // { object } paragraph child (with run properties merged in), so emit its
+  // own <w:r> here rather than falling through to the run-children path.
+  if ("object" in child) {
+    const rPr = stringifyRunProperties(child as RunOptions) ?? "";
+    return `<w:r>${rPr}${objectDesc.stringify(child.object, ctx)}</w:r>`;
+  }
+
   // Form field (checkbox / dropdown list / text input) — fldChar sequence.
   // Word needs the field code (instrText) between begin and separate to
   // recognize the field type and render its result.

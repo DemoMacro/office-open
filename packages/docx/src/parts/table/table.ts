@@ -20,6 +20,7 @@ import type {
 } from "./table-properties";
 import type { TableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
+import type { TableLookOptions } from "./table-properties/table-look";
 import type { SdtRowOptions, TableRowOptions } from "./table-row";
 import type { TableWidthProperties } from "./table-width";
 
@@ -56,6 +57,12 @@ export interface TableOptions extends BaseTableOptions<
   caption?: string;
   description?: string;
   revision?: TablePropertiesChangeOptions;
+  /**
+   * Explicit w:tblLook content (CT_TblLook). The base 6-flags above are the
+   * authoring shorthand for the boolean attributes; this carries the full
+   * element including the legacy w:val hex bitmask only old Word files write.
+   */
+  tableLook?: TableLookOptions;
   /** Table-level shading (w:shd). */
   shading?: ShadingProperties;
 }

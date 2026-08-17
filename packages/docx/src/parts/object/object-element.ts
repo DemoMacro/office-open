@@ -17,9 +17,10 @@
 import { toUint8Array, parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import { parseVmlStyle } from "@office-open/core";
-import { stringifyVmlShape } from "@office-open/core";
+import { stringifyVmlShape, stringifyVmlShapetype, parseVmlShapetype } from "@office-open/core";
+import type { VmlShapetypeOptions } from "@office-open/core";
 import { parseVmlImageData, type VmlImageDataOptions } from "@office-open/core";
-import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml, findChild, textOf, type Element } from "@office-open/xml";
 import type { EmbeddingData } from "@shared/embeddings/embeddings";
 import type { MediaData } from "@shared/media/data";
@@ -80,6 +81,11 @@ export interface ObjectElementOptions {
   width?: number | UniversalMeasure;
   /** Display height (px or universal measure). */
   height?: number | UniversalMeasure;
+  /**
+   * v:shapetype preamble — Word writes the _x0000_t75 OLE shapetype (with its
+   * formula table) before the preview v:shape; round-tripped verbatim.
+   */
+  shapetype?: VmlShapetypeOptions;
   /** Preview icon image (v:imagedata). */
   iconImage?: ObjectIconImageOptions;
   /** Embedded OLE object (o:OLEObject Type="Embed"). */
@@ -130,6 +136,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
         officeTitle: opts.iconImage.title,
       };
     }
+    if (opts.shapetype) inner.push(stringifyVmlShapetype(opts.shapetype));
     inner.push(
       stringifyVmlShape({
         id: shapeId,
@@ -186,7 +193,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     return `<w:object${objAttrs.join("")}>${inner.join("")}</w:object>`;
   },
 
-  parse(el, _ctx) {
+  parse(el, ctx) {
     const result: Partial<ObjectElementOptions> = {};
 
     const dxaOrig = attrNum(el, "w:dxaOrig");
@@ -194,7 +201,12 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     const dyaOrig = attrNum(el, "w:dyaOrig");
     if (dyaOrig !== undefined) result.dyaOrig = dyaOrig;
 
-    // VML shape — best-effort structural capture (binary media is not re-registered on parse)
+    // v:shapetype preamble (Word's _x0000_t75 OLE shapetype)
+    const shapetypeEl = findChild(el, "v:shapetype");
+    if (shapetypeEl) result.shapetype = parseVmlShapetype(shapetypeEl);
+
+    // VML shape — structural capture; binary media is fetched through the
+    // part's rels (r:id → media path → raw bytes) so round-trips keep the data.
     const shape = findChild(el, "v:shape");
     if (shape) {
       const id = attr(shape, "id");
@@ -208,9 +220,10 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       const imagedataEl = findChild(shape, "v:imagedata");
       if (imagedataEl) {
         const imagedata = parseVmlImageData(imagedataEl);
+        const media = resolveBinary(imagedata.relationshipId, ctx);
         result.iconImage = {
-          data: new Uint8Array(),
-          type: extensionOf(imagedata.src ?? imagedata.relationshipId ?? ""),
+          data: media?.bytes ?? new Uint8Array(),
+          type: media ? extensionOf(media.path) : "",
           ...(imagedata.officeTitle !== undefined ? { title: imagedata.officeTitle } : {}),
         };
       }
@@ -221,6 +234,8 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     const oleEl = findChild(el, "o:OLEObject");
     if (oleEl) {
       const common = parseOleObject(oleEl);
+      const payload = resolveBinary(attr(oleEl, "r:id"), ctx);
+      if (payload) common.data = payload.bytes;
       if (attr(oleEl, "Type") === "Link") {
         const updateMode = attr(oleEl, "UpdateMode");
         const lockedFieldEl = findChild(oleEl, "o:LockedField");
@@ -235,11 +250,18 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     }
 
     const embedEl = findChild(el, "w:objectEmbed");
-    if (embedEl) result.embed = parseEmbed(embedEl);
+    if (embedEl) {
+      const embed = parseEmbed(embedEl);
+      const payload = resolveBinary(attr(embedEl, "r:id"), ctx);
+      if (payload) embed.data = payload.bytes;
+      result.embed = embed;
+    }
 
     const linkEl = findChild(el, "w:objectLink");
     if (linkEl) {
       const base = parseEmbed(linkEl);
+      const payload = resolveBinary(attr(linkEl, "r:id"), ctx);
+      if (payload) base.data = payload.bytes;
       const updateMode = attr(linkEl, "w:updateMode");
       const lockedField = attr(linkEl, "w:lockedField");
       result.link = {
@@ -276,6 +298,19 @@ function extensionOf(ref: string): string {
   return ref.slice(dot + 1);
 }
 
+/** Resolve a relationship id to its binary part bytes (media, OLE embedding). */
+function resolveBinary(
+  rId: string | undefined,
+  ctx: ReadContext,
+): { path: string; bytes: Uint8Array } | undefined {
+  if (!rId) return undefined;
+  const path = ctx.resolveRelationship(rId);
+  if (!path) return undefined;
+  const bytes = ctx.getRaw(path);
+  if (!bytes) return undefined;
+  return { path, bytes };
+}
+
 /** Register an OLE embedding and return its allocated file name. */
 function registerEmbedding(opts: ObjectEmbedOptions, ctx: BodyContext): string {
   const fileName = ctx.file.embeddings.nextEmbeddingName();
@@ -302,7 +337,7 @@ function parseOleObject(el: Element): ObjectEmbedOptions {
   if (objectId) opts.objectId = objectId;
   const fieldCodesEl = findChild(el, "o:FieldCodes");
   if (fieldCodesEl) opts.fieldCodes = textOf(fieldCodesEl);
-  // data is not recoverable from the relationship on parse; callers re-supply it.
+  // Placeholder until the caller resolves r:id against the part's rels.
   opts.data = new Uint8Array();
   return opts as ObjectEmbedOptions;
 }
@@ -318,7 +353,7 @@ function parseEmbed(el: Element): ObjectEmbedOptions {
   if (shapeId) opts.shapeId = shapeId;
   const fieldCodes = attr(el, "w:fieldCodes");
   if (fieldCodes) opts.fieldCodes = fieldCodes;
-  // data is not recoverable from the relationship on parse; callers re-supply it.
+  // Placeholder until the caller resolves r:id against the part's rels.
   opts.data = new Uint8Array();
   return opts as ObjectEmbedOptions;
 }

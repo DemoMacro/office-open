@@ -72,10 +72,11 @@ export interface DocxPartRefs {
   /** word/media/* keyed by rId (from document.xml.rels) */
   media: Map<string, string>;
   /**
-   * Per-part image/media relationships. Each part (document, headers, footers,
-   * footnotes, …) has its own .rels with independent rId numbering, so drawings
-   * inside a part must resolve images against that part's rels. Maps
-   * partPath → (rId → mediaPath).
+   * Per-part binary-part relationships (image/media/OLE embedding). Each part
+   * (document, headers, footers, footnotes, …) has its own .rels with
+   * independent rId numbering, so drawings and w:object runs inside a part
+   * must resolve their binaries against that part's rels. Maps
+   * partPath → (rId → partPath).
    */
   partMedia: Map<string, Map<string, string>>;
   /** Alternative format chunks (word/afchunkN.*) keyed by rId */
@@ -214,10 +215,11 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     }
   }
 
-  // Per-part image relationships. Each part carries its own .rels with
-  // independent rId numbering (document rId1 ≠ header rId1), so collect them
-  // keyed by part path; drawings inside a part resolve images through its
-  // own rels. Covers document, headers, footers, footnotes, endnotes, comments.
+  // Per-part binary-part relationships (images, media, OLE embeddings). Each
+  // part carries its own .rels with independent rId numbering (document rId1 ≠
+  // header rId1), so collect them keyed by part path; drawings and w:object
+  // runs inside a part resolve their binaries through its own rels. Covers
+  // document, headers, footers, footnotes, endnotes, comments.
   for (const relsPath of doc.keys("word/_rels/")) {
     if (!relsPath.endsWith(".rels")) continue;
     const relsEl = doc.get(relsPath);
@@ -226,7 +228,9 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
       const type = attr(rel, "Type") ?? "";
-      if (!type.includes("/image") && !type.includes("/media")) continue;
+      const isBinaryPart =
+        type.includes("/image") || type.includes("/media") || type.includes("/oleObject");
+      if (!isBinaryPart) continue;
       const id = attr(rel, "Id") ?? "";
       const target = attr(rel, "Target") ?? "";
       if (!id || !target) continue;
