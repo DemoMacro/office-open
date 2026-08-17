@@ -12620,6 +12620,17 @@
           },
           "type": "object"
         },
+        "endnoteReference": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
+            }
+          ],
+          "description": "Endnote reference as a top-level field (see  {@link  footnoteReference } )."
+        },
         "fitText": {
           "type": "number"
         },
@@ -12646,6 +12657,17 @@
               "$ref": "#/definitions/FontProperties"
             }
           ]
+        },
+        "footnoteReference": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
+            }
+          ],
+          "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
         },
         "highlight": {
           "enum": [
@@ -14813,6 +14835,17 @@
           },
           "type": "object"
         },
+        "endnoteReference": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
+            }
+          ],
+          "description": "Endnote reference as a top-level field (see  {@link  footnoteReference } )."
+        },
         "fitText": {
           "type": "number"
         },
@@ -14839,6 +14872,17 @@
               "$ref": "#/definitions/FontProperties"
             }
           ]
+        },
+        "footnoteReference": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
+            }
+          ],
+          "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
         },
         "highlight": {
           "enum": [
@@ -19339,6 +19383,17 @@
           },
           "type": "object"
         },
+        "endnoteReference": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
+            }
+          ],
+          "description": "Endnote reference as a top-level field (see  {@link  footnoteReference } )."
+        },
         "fitText": {
           "type": "number"
         },
@@ -19365,6 +19420,17 @@
               "$ref": "#/definitions/FontProperties"
             }
           ]
+        },
+        "footnoteReference": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
+            }
+          ],
+          "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
         },
         "highlight": {
           "enum": [

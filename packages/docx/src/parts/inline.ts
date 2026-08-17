@@ -140,6 +140,23 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
 
   if (opts.break) body += breakXml(opts.break);
 
+  // Top-level references — a pure reference run flattened by the parse path
+  // (e.g. inside w:hyperlink) carries the reference alongside its rPr with no
+  // children; without this branch the run would emit empty and drop it.
+  const fnRef = opts.footnoteReference;
+  const enRef = opts.endnoteReference;
+  if (fnRef !== undefined) {
+    const id = typeof fnRef === "number" ? fnRef : fnRef.id;
+    const cmf =
+      typeof fnRef === "object" && fnRef.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+    body += `<w:footnoteReference w:id="${id}"${cmf}/>`;
+  } else if (enRef !== undefined) {
+    const id = typeof enRef === "number" ? enRef : enRef.id;
+    const cmf =
+      typeof enRef === "object" && enRef.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+    body += `<w:endnoteReference w:id="${id}"${cmf}/>`;
+  }
+
   if (opts.children) {
     for (const child of opts.children) {
       if (typeof child === "string") {
@@ -171,19 +188,23 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         // Reference elements inside a run's children[] (mixed-content runs)
         // emit bare — the paragraph-level dispatch would wrap them in a
         // nested <w:r>, which is invalid inside a run.
-        if ("footnoteReference" in child) {
-          const ref = child.footnoteReference;
-          const id = typeof ref === "number" ? ref : ref.id;
+        const bareFnRef = (child as RunOptions).footnoteReference;
+        if (bareFnRef !== undefined) {
+          const id = typeof bareFnRef === "number" ? bareFnRef : bareFnRef.id;
           const cmf =
-            typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+            typeof bareFnRef === "object" && bareFnRef.customMarkFollows
+              ? ' w:customMarkFollows="true"'
+              : "";
           body += `<w:footnoteReference w:id="${id}"${cmf}/>`;
           continue;
         }
-        if ("endnoteReference" in child) {
-          const ref = child.endnoteReference;
-          const id = typeof ref === "number" ? ref : ref.id;
+        const bareEnRef = (child as RunOptions).endnoteReference;
+        if (bareEnRef !== undefined) {
+          const id = typeof bareEnRef === "number" ? bareEnRef : bareEnRef.id;
           const cmf =
-            typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+            typeof bareEnRef === "object" && bareEnRef.customMarkFollows
+              ? ' w:customMarkFollows="true"'
+              : "";
           body += `<w:endnoteReference w:id="${id}"${cmf}/>`;
           continue;
         }
@@ -525,25 +546,32 @@ export function stringifyChildDispatch(
   }
 
   // Reference types — pure XML, no side effects
-  if ("footnoteReference" in child) {
-    const ref = child.footnoteReference;
-    const id = typeof ref === "number" ? ref : ref.id;
+  const fnRefChild = (child as RunOptions).footnoteReference;
+  if (fnRefChild !== undefined) {
+    const id = typeof fnRefChild === "number" ? fnRefChild : fnRefChild.id;
     const cmf =
-      typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+      typeof fnRefChild === "object" && fnRefChild.customMarkFollows
+        ? ' w:customMarkFollows="true"'
+        : "";
     // Round-tripped run properties win; a fresh reference gets the
-    // conventional FootnoteReference character style.
-    const rPr = child.properties
-      ? (stringifyRunProperties(child.properties) ?? "")
+    // conventional FootnoteReference character style. A RunOptions-flavored
+    // child carries them flattened, so read both shapes.
+    const props = "properties" in child ? child.properties : undefined;
+    const rPr = props
+      ? (stringifyRunProperties(props) ?? "")
       : '<w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr>';
     return `<w:r>${rPr}<w:footnoteReference w:id="${id}"${cmf}/></w:r>`;
   }
-  if ("endnoteReference" in child) {
-    const ref = child.endnoteReference;
-    const id = typeof ref === "number" ? ref : ref.id;
+  const enRefChild = (child as RunOptions).endnoteReference;
+  if (enRefChild !== undefined) {
+    const id = typeof enRefChild === "number" ? enRefChild : enRefChild.id;
     const cmf =
-      typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
-    const rPr = child.properties
-      ? (stringifyRunProperties(child.properties) ?? "")
+      typeof enRefChild === "object" && enRefChild.customMarkFollows
+        ? ' w:customMarkFollows="true"'
+        : "";
+    const props = "properties" in child ? child.properties : undefined;
+    const rPr = props
+      ? (stringifyRunProperties(props) ?? "")
       : '<w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr>';
     return `<w:r>${rPr}<w:endnoteReference w:id="${id}"${cmf}/></w:r>`;
   }
@@ -941,9 +969,12 @@ export function stringifyChildDispatch(
   if ("hyperlink" in child) {
     const hl = child.hyperlink;
 
-    // Serialize children using stringifyRunInline. A top-level `text` is a
-    // shorthand for a single text run; without it `{ text, hyperlink }` would
-    // emit an empty <w:hyperlink>.
+    // Serialize children using the same dispatch as paragraph children so
+    // reference runs, drawings and objects inside hyperlinks keep their
+    // full-run emission ({ footnoteReference, properties } carries the rPr in
+    // a nested field only the dispatch branch reads). Plain runs fall back to
+    // stringifyRunInline. A top-level `text` is a shorthand for a single text
+    // run; without it `{ text, hyperlink }` would emit an empty <w:hyperlink>.
     const childParts: string[] = [];
     if (child.text !== undefined) {
       childParts.push(stringifyRunInline({ text: child.text }, ctx));
@@ -953,7 +984,10 @@ export function stringifyChildDispatch(
         if (typeof rc === "string") {
           childParts.push(stringifyRunInline({ text: rc }, ctx));
         } else {
-          childParts.push(stringifyRunInline(rc, ctx));
+          const jr = stringifyChildDispatch(rc as ParagraphChild, ctx);
+          childParts.push(
+            jr !== undefined ? (Array.isArray(jr) ? jr.join("") : jr) : stringifyRunInline(rc, ctx),
+          );
         }
       }
     }

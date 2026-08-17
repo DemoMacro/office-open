@@ -1,6 +1,6 @@
 import type { ObjectElementOptions } from "@parts/object";
 
-import type { ParagraphChild } from "../paragraph";
+import type { FootnoteEndnoteReferenceOptions, ParagraphChild } from "../paragraph";
 /**
  * Run module for WordprocessingML documents.
  *
@@ -97,6 +97,14 @@ interface RunOptionsBase {
   )[];
   break?: number | BreakOptions;
   text?: string;
+  /**
+   * Footnote reference as a top-level field — the parse path flattens a pure
+   * reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }`
+   * with no children. w:footnoteReference is an EG_RunInnerContent member.
+   */
+  footnoteReference?: number | FootnoteEndnoteReferenceOptions;
+  /** Endnote reference as a top-level field (see {@link footnoteReference}). */
+  endnoteReference?: number | FootnoteEndnoteReferenceOptions;
 }
 
 /**
