@@ -84,6 +84,31 @@ export interface CustomerDataOptions {
 export interface PresentationPartOptions {
   slideWidth?: number;
   slideHeight?: number;
+  /**
+   * Slide size class (`p:sldSz/@type`, ST_SlideSizeType). Only non-default
+   * values are emitted; cx/cy decide the actual size, the class is advisory.
+   */
+  slideSizeType?:
+    | "screen4x3"
+    | "letter"
+    | "A4"
+    | "35mm"
+    | "overhead"
+    | "banner"
+    | "custom"
+    | "ledger"
+    | "A3"
+    | "B4ISO"
+    | "B5ISO"
+    | "B4JIS"
+    | "B5JIS"
+    | "hagakiCard"
+    | "screen16x9"
+    | "screen16x10";
+  /** Notes page width in EMU (`p:notesSz/@cx`, required in XML; default 6858000). */
+  notesWidth?: number;
+  /** Notes page height in EMU (`p:notesSz/@cy`, required in XML; default 9144000). */
+  notesHeight?: number;
   slideIds: number[];
   masterCount: number;
   notesMasterRId?: number;

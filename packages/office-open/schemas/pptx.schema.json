@@ -1351,6 +1351,10 @@
           "description": "Paragraph count",
           "type": "number"
         },
+        "presentationFormat": {
+          "description": "Intended print/display format, e.g. \"Custom\" or \"A4 Paper\"",
+          "type": "string"
+        },
         "scaleCrop": {
           "description": "Whether the document is scaled/cropped",
           "type": "boolean"

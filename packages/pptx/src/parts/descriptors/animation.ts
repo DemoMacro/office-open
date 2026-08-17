@@ -48,10 +48,12 @@ for (const [k, v] of Object.entries(DIRECTION_SUBTYPES)) SUBTYPE_TO_DIRECTION.se
 // ── Parse helpers ──
 
 /**
- * Parse p:timing element and return a map of shape ID → AnimationOptions.
+ * Parse p:timing element and return animation entries grouped by shape ID.
+ * A shape can carry several effects (e.g. entrance + emphasis), so each
+ * parsed effect becomes its own entry instead of overwriting the previous one.
  */
-function parseTiming(el: XmlElement): Map<number, AnimationOptions> {
-  const result = new Map<number, AnimationOptions>();
+function parseTiming(el: XmlElement): Map<number, AnimationOptions[]> {
+  const result = new Map<number, AnimationOptions[]>();
 
   const tnLst = findChild(el, "p:tnLst");
   if (!tnLst) return result;
@@ -87,7 +89,9 @@ function parseTiming(el: XmlElement): Map<number, AnimationOptions> {
 
       const shapeId = extractTargetShapeId(effectEl);
       if (shapeId !== undefined) {
-        result.set(shapeId, anim);
+        const list = result.get(shapeId);
+        if (list) list.push(anim);
+        else result.set(shapeId, [anim]);
       }
     }
   }
@@ -323,8 +327,10 @@ export const timingDesc: CustomDescriptor<AnimationEntry[]> = {
   parse(el, _ctx) {
     const animMap = parseTiming(el);
     const entries: AnimationEntry[] = [];
-    for (const [shapeId, options] of animMap) {
-      entries.push({ shapeId, ...options });
+    for (const [shapeId, optionsList] of animMap) {
+      for (const options of optionsList) {
+        entries.push({ shapeId, ...options });
+      }
     }
     return entries;
   },

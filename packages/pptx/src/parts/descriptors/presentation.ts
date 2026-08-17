@@ -120,8 +120,10 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
   }
   parts.push("</p:sldIdLst>");
 
-  parts.push(`<p:sldSz cx="${cx}" cy="${cy}"/>`);
-  parts.push('<p:notesSz cx="6858000" cy="9144000"/>');
+  const typeAttr =
+    opts.slideSizeType && opts.slideSizeType !== "custom" ? ` type="${opts.slideSizeType}"` : "";
+  parts.push(`<p:sldSz cx="${cx}" cy="${cy}"${typeAttr}/>`);
+  parts.push(`<p:notesSz cx="${opts.notesWidth ?? 6858000}" cy="${opts.notesHeight ?? 9144000}"/>`);
 
   // smartTags (CT_SmartTags — r:id to the smart-tags part)
   if (opts.smartTags) {
@@ -319,6 +321,19 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
   if (sldSz?.attributes) {
     if (sldSz.attributes["cx"] !== undefined) result.slideWidth = Number(sldSz.attributes["cx"]);
     if (sldSz.attributes["cy"] !== undefined) result.slideHeight = Number(sldSz.attributes["cy"]);
+    // XSD default "custom" — only a non-default class carries information back.
+    const type = sldSz.attributes["type"] as string | undefined;
+    if (type && type !== "custom")
+      result.slideSizeType = type as PresentationPartOptions["slideSizeType"];
+  }
+
+  // notesSz
+  const notesSz = findChild(el, "p:notesSz");
+  if (notesSz?.attributes) {
+    if (notesSz.attributes["cx"] !== undefined)
+      result.notesWidth = Number(notesSz.attributes["cx"]);
+    if (notesSz.attributes["cy"] !== undefined)
+      result.notesHeight = Number(notesSz.attributes["cy"]);
   }
 
   // smartTags — r:id to the smart-tags part
