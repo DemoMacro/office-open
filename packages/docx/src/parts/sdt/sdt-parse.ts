@@ -45,6 +45,12 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     if (val) opts.lock = val as SdtPropertiesOptions["lock"];
   }
 
+  const placeholder = findChild(el, "w:placeholder");
+  if (placeholder) {
+    const docPart = findChild(placeholder, "w:docPart");
+    opts.placeholder = docPart ? { docPart: attr(docPart, "w:val") ?? "" } : {};
+  }
+
   const temporary = findChild(el, "w:temporary");
   if (temporary) opts.temporary = attrBool(temporary, "w:val") ?? true;
 

@@ -16121,6 +16121,16 @@
           "description": "Picture SDT",
           "type": "boolean"
         },
+        "placeholder": {
+          "additionalProperties": false,
+          "description": "Placeholder part reference (CT_Placeholder) — the building block Word inserts as placeholder content for this control.",
+          "properties": {
+            "docPart": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
         "richText": {
           "description": "Rich text SDT",
           "type": "boolean"

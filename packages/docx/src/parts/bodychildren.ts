@@ -284,7 +284,13 @@ export function stringifySdtPr(opts: SdtPropertiesOptions): string {
   if (opts.id !== undefined) parts.push(`<w:id w:val="${opts.id}"/>`);
   if (opts.lock !== undefined) parts.push(`<w:lock w:val="${opts.lock}"/>`);
 
-  // placeholder not supported in pure JSON path — skip
+  if (opts.placeholder) {
+    parts.push(
+      opts.placeholder.docPart !== undefined
+        ? `<w:placeholder><w:docPart w:val="${escapeXml(opts.placeholder.docPart)}"/></w:placeholder>`
+        : "<w:placeholder/>",
+    );
+  }
 
   if (opts.temporary !== undefined) parts.push(onOff("w:temporary", opts.temporary));
   const effectiveShowingPlcHdr = opts.showingPlaceholder ?? false;
@@ -368,6 +374,12 @@ function parseSdtPr(el: Element): SdtPropertiesOptions {
   if (lock) {
     const val = attr(lock, "w:val");
     if (val) opts.lock = val as SdtPropertiesOptions["lock"];
+  }
+
+  const placeholder = findChild(el, "w:placeholder");
+  if (placeholder) {
+    const docPart = findChild(placeholder, "w:docPart");
+    opts.placeholder = docPart ? { docPart: attr(docPart, "w:val") ?? "" } : {};
   }
 
   const temporary = findChild(el, "w:temporary");

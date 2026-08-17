@@ -144,6 +144,11 @@ export interface SdtPropertiesOptions {
   id?: number;
   /** Lock behavior */
   lock?: (typeof SdtLock)[keyof typeof SdtLock];
+  /**
+   * Placeholder part reference (CT_Placeholder) — the building block Word
+   * inserts as placeholder content for this control.
+   */
+  placeholder?: { docPart?: string };
   /** Whether the control is temporary */
   temporary?: boolean;
   /** Whether the placeholder text is currently shown */

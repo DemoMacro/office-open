@@ -59,6 +59,21 @@ describe("sdtBlockDesc round-trip", () => {
     expect(result.properties.alias).toBe("MyAlias");
   });
 
+  it("round-trips the placeholder doc-part reference", () => {
+    const result = roundTripSdt({
+      properties: { placeholder: { docPart: "7F09787E16444C5F97ECA24D30CD281C" } },
+      children: [],
+    });
+    expect(result.properties.placeholder).toEqual({
+      docPart: "7F09787E16444C5F97ECA24D30CD281C",
+    });
+    const xml = sdtBlockDesc.stringify(
+      { properties: { placeholder: { docPart: "AB" } }, children: [] },
+      writeCtx,
+    )!;
+    expect(xml).toContain('<w:placeholder><w:docPart w:val="AB"/></w:placeholder>');
+  });
+
   it("round-trips SDT with tag", () => {
     const result = roundTripSdt({
       properties: { tag: "my-tag" },
