@@ -908,4 +908,56 @@ describe("Worksheet", () => {
       expect(result.drawingHF).toEqual({ rId: "rId5", lho: 3, che: 4, rff: 5 });
     });
   });
+
+  describe("default-true attributes and legacy password round-trip", () => {
+    const readCtx = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+      sharedStrings: [],
+    } as unknown as ReadContext;
+
+    function roundTrip(opts: WorksheetOptions) {
+      const xml = buildWorksheetXml(opts, {});
+      const doc = parseXml(xml, { nativeTypeAttributes: true });
+      const el = doc.elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
+    }
+
+    it("round-trips sheetPr published/enableFormatConditionsCalculation = false (XSD default true)", () => {
+      const result = roundTrip({
+        rows: [{ cells: [{ value: "A" }] }],
+        sheetPr: { published: false, enableFormatConditionsCalculation: false },
+      });
+      expect(result.sheetPr).toEqual({
+        published: false,
+        enableFormatConditionsCalculation: false,
+      });
+    });
+
+    it("round-trips pageSetup usePrinterDefaults = false (XSD default true)", () => {
+      const result = roundTrip({
+        rows: [{ cells: [{ value: "A" }] }],
+        pageSetup: { usePrinterDefaults: false },
+      });
+      expect(result.pageSetup?.usePrinterDefaults).toBe(false);
+    });
+
+    it("keeps a headerFooter element that carries only false-valued flags", () => {
+      const xml = buildWorksheetXml(
+        { rows: [{ cells: [{ value: "A" }] }], headerFooter: { scaleWithDoc: false } },
+        {},
+      );
+      expect(xml).toContain('<headerFooter scaleWithDoc="0"/>');
+    });
+
+    it("does not read back the protectedRange legacy @password hash", () => {
+      const result = roundTrip({
+        rows: [{ cells: [{ value: "A" }] }],
+        protectedRanges: [{ sqref: "A1:C10", name: "Range1", password: "secret" }],
+      });
+      expect(result.protectedRanges?.[0]?.password).toBeUndefined();
+    });
+  });
 });

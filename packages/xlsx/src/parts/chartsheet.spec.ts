@@ -54,11 +54,11 @@ describe("chartsheetDesc round-trip", () => {
     expect(result.zoomToFit).toBe(true);
   });
 
-  it("round-trips published flag", () => {
-    const opts: ChartsheetDescriptorOptions = { ...baseOpts, published: true };
+  it("round-trips published flag (XSD default true — only false survives)", () => {
+    const opts: ChartsheetDescriptorOptions = { ...baseOpts, published: false };
     const result = roundTrip(opts);
 
-    expect(result.published).toBe(true);
+    expect(result.published).toBe(false);
   });
 
   it("round-trips tabColor", () => {

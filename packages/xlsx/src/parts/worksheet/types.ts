@@ -388,7 +388,7 @@ export interface PageSetupOptions {
   paperHeight?: number | PositiveUniversalMeasure;
   /** Paper width (CT_PageSetup `@paperWidth`, ST_PositiveUniversalMeasure) */
   paperWidth?: number | PositiveUniversalMeasure;
-  /** Use printer defaults (CT_PageSetup `@usePrinterDefaults`) */
+  /** Use printer defaults (CT_PageSetup `@usePrinterDefaults`, XSD default true — only false is emitted) */
   usePrinterDefaults?: boolean;
   /** Black and white printing (CT_PageSetup `@blackAndWhite`) */
   blackAndWhite?: boolean;
@@ -956,11 +956,11 @@ export interface SheetPropertiesOptions {
   transitionEvaluation?: boolean;
   /** Transition entry mode (CT_SheetPr `@transitionEntry`) */
   transitionEntry?: boolean;
-  /** Published to server (CT_SheetPr `@published`) */
+  /** Published to server (CT_SheetPr `@published`, XSD default true — only false is emitted) */
   published?: boolean;
   /** Filter mode (CT_SheetPr `@filterMode`) */
   filterMode?: boolean;
-  /** Enable format conditions calculation (CT_SheetPr `@enableFormatConditionsCalculation`) */
+  /** Enable format conditions calculation (CT_SheetPr `@enableFormatConditionsCalculation`, XSD default true — only false is emitted) */
   enableFormatConditionsCalculation?: boolean;
   /** Outline apply styles (CT_OutlinePr `@applyStyles`) */
   outlineApplyStyles?: boolean;

@@ -77,9 +77,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       sp.syncRef ||
       sp.transitionEvaluation ||
       sp.transitionEntry ||
-      sp.published ||
+      sp.published !== undefined ||
       sp.filterMode ||
-      sp.enableFormatConditionsCalculation);
+      sp.enableFormatConditionsCalculation !== undefined);
   const hasPageSetUpPr =
     !!opts.pageSetup?.fitToWidth ||
     !!opts.pageSetup?.fitToHeight ||
@@ -93,9 +93,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (sp?.syncRef) prAttrs.syncRef = sp.syncRef;
     if (sp?.transitionEvaluation) prAttrs.transitionEvaluation = 1;
     if (sp?.transitionEntry) prAttrs.transitionEntry = 1;
-    if (sp?.published) prAttrs.published = 1;
+    // XSD defaults true — emit only the explicit-false form (0).
+    if (sp?.published === false) prAttrs.published = 0;
     if (sp?.filterMode) prAttrs.filterMode = 1;
-    if (sp?.enableFormatConditionsCalculation) prAttrs.enableFormatConditionsCalculation = 1;
+    if (sp?.enableFormatConditionsCalculation === false)
+      prAttrs.enableFormatConditionsCalculation = 0;
     if (opts.tabColor) {
       const tc = opts.tabColor;
       const tcAttrs: Record<string, string | number | boolean | undefined> = {};
@@ -1050,7 +1052,8 @@ export function stringifyPageSetupXml(ps: PageSetupOptions): string {
   if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
   if (ps.paperHeight !== undefined) psAttrs.paperHeight = ps.paperHeight;
   if (ps.paperWidth !== undefined) psAttrs.paperWidth = ps.paperWidth;
-  if (ps.usePrinterDefaults) psAttrs.usePrinterDefaults = 1;
+  // XSD default true — emit only the explicit-false form (0).
+  if (ps.usePrinterDefaults === false) psAttrs.usePrinterDefaults = 0;
   if (ps.blackAndWhite) psAttrs.blackAndWhite = 1;
   if (ps.draft) psAttrs.draft = 1;
   if (ps.cellComments && ps.cellComments !== "none") psAttrs.cellComments = ps.cellComments;
@@ -1078,7 +1081,9 @@ export function stringifyHeaderFooterXml(hf: HeaderFooterOptions): string | unde
   if (inner.length > 0) {
     return `<headerFooter${attrs(hfAttrs)}>${inner.join("")}</headerFooter>`;
   }
-  if (hfAttrs.differentOddEven || hfAttrs.differentFirst) {
+  // Any explicit attribute (including scaleWithDoc/alignWithMargins = false)
+  // keeps the element — dropping it would silently revert those to defaults.
+  if (Object.keys(hfAttrs).length > 0) {
     return selfCloseElement("headerFooter", attrs(hfAttrs));
   }
   return undefined;

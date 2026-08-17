@@ -113,7 +113,7 @@ function textContent(src: string, from: number, to: number): string {
   let text = src.slice(from, to);
   // CDATA would appear verbatim in the slice; textOf ignores cdata nodes.
   if (text.indexOf("<![CDATA[") !== -1) {
-    text = text.replace(/<![CDATA[.*?]]>/gs, "");
+    text = text.replace(/<!\[CDATA\[.*?\]\]>/gs, "");
   }
   return unescapeXml(text);
 }

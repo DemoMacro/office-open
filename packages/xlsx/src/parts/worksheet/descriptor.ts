@@ -119,10 +119,11 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (attr(sheetPrEl, "syncRef")) sp.syncRef = attr(sheetPrEl, "syncRef");
       if (parseOnOff(attr(sheetPrEl, "transitionEvaluation"))) sp.transitionEvaluation = true;
       if (parseOnOff(attr(sheetPrEl, "transitionEntry"))) sp.transitionEntry = true;
-      if (parseOnOff(attr(sheetPrEl, "published"))) sp.published = true;
+      // XSD defaults true — only the explicit "0" carries information back.
+      if (String(attr(sheetPrEl, "published")) === "0") sp.published = false;
       if (parseOnOff(attr(sheetPrEl, "filterMode"))) sp.filterMode = true;
-      if (parseOnOff(attr(sheetPrEl, "enableFormatConditionsCalculation")))
-        sp.enableFormatConditionsCalculation = true;
+      if (String(attr(sheetPrEl, "enableFormatConditionsCalculation")) === "0")
+        sp.enableFormatConditionsCalculation = false;
 
       const outlinePr = findChild(sheetPrEl, "outlinePr");
       if (outlinePr) {
@@ -337,7 +338,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           sqref: attr(rEl, "sqref") ?? "",
           name: attr(rEl, "name") ?? "",
         };
-        if (attr(rEl, "password")) r.password = attr(rEl, "password");
+        // @password (legacy hash) not read back — see parseSheetProtectionEl note.
         if (attr(rEl, "algorithmName")) r.algorithmName = attr(rEl, "algorithmName");
         if (attr(rEl, "hashValue")) r.hashValue = attr(rEl, "hashValue");
         if (attr(rEl, "saltValue")) r.saltValue = attr(rEl, "saltValue");
@@ -941,7 +942,8 @@ export function parsePageSetupEl(
   if (parseOnOff(attr(el, "useFirstPageNumber"))) ps.useFirstPageNumber = true;
   const fpn = attrNum(el, "firstPageNumber");
   if (fpn !== undefined) ps.firstPageNumber = fpn;
-  if (parseOnOff(attr(el, "usePrinterDefaults"))) ps.usePrinterDefaults = true;
+  // XSD default true — only the explicit "0" carries information back.
+  if (String(attr(el, "usePrinterDefaults")) === "0") ps.usePrinterDefaults = false;
   if (parseOnOff(attr(el, "blackAndWhite"))) ps.blackAndWhite = true;
   if (parseOnOff(attr(el, "draft"))) ps.draft = true;
   const cc = attr(el, "cellComments");

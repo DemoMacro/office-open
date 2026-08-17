@@ -37,7 +37,7 @@ export interface ChartsheetPageSetup {
   firstPageNumber?: number;
   /** Orientation (ST_Orientation) */
   orientation?: PageOrientation;
-  /** Use printer defaults */
+  /** Use printer defaults (XSD default true — only false is emitted) */
   usePrinterDefaults?: boolean;
   /** Black and white printing */
   blackAndWhite?: boolean;
@@ -87,7 +87,7 @@ export interface ChartsheetOptions {
   headerFooter?: HeaderFooterOptions;
   /** Sheet protection */
   sheetProtection?: ChartsheetProtectionOptions;
-  /** Published to server (CT_ChartsheetPr `@published`) */
+  /** Published to server (CT_ChartsheetPr `@published`, XSD default true — only false is emitted) */
   published?: boolean;
   /** VBA code name (CT_ChartsheetPr `@codeName`) */
   codeName?: string;
@@ -124,11 +124,12 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     ];
 
     // sheetPr (optional)
-    if (opts.tabColor || opts.published || opts.codeName) {
+    if (opts.tabColor || opts.published !== undefined || opts.codeName) {
       const prAttrs: string[] = [];
       if (opts.tabColor) prAttrs.push(`<tabColor${attrs({ rgb: opts.tabColor })}/>`);
       const spAttrs: string[] = [];
-      if (opts.published) spAttrs.push(' published="1"');
+      // XSD default true — emit only the explicit-false form (0).
+      if (opts.published === false) spAttrs.push(' published="0"');
       if (opts.codeName) spAttrs.push(` codeName="${escapeXml(opts.codeName)}"`);
       p.push(`<sheetPr${spAttrs.join("")}>${prAttrs.join("")}</sheetPr>`);
     }
@@ -183,7 +184,8 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (ps.paperWidth !== undefined) psAttrs.paperWidth = ps.paperWidth;
       if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
       if (ps.orientation && ps.orientation !== "default") psAttrs.orientation = ps.orientation;
-      if (ps.usePrinterDefaults) psAttrs.usePrinterDefaults = 1;
+      // XSD default true — emit only the explicit-false form (0).
+      if (ps.usePrinterDefaults === false) psAttrs.usePrinterDefaults = 0;
       if (ps.blackAndWhite) psAttrs.blackAndWhite = 1;
       if (ps.draft) psAttrs.draft = 1;
       if (ps.useFirstPageNumber) psAttrs.useFirstPageNumber = 1;
@@ -214,7 +216,8 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     // sheetPr
     const sheetPr = findChild(el, "sheetPr");
     if (sheetPr) {
-      if (parseOnOff(attr(sheetPr, "published"))) result.published = true;
+      // XSD default true — only the explicit "0" carries information back.
+      if (String(attr(sheetPr, "published")) === "0") result.published = false;
       if (attr(sheetPr, "codeName")) result.codeName = attr(sheetPr, "codeName");
       const tabColor = findChild(sheetPr, "tabColor");
       if (tabColor) {
@@ -281,7 +284,8 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (fpn !== undefined) ps.firstPageNumber = fpn;
       const orient = attr(pageSetupEl, "orientation");
       if (orient) ps.orientation = orient as PageOrientation;
-      if (parseOnOff(attr(pageSetupEl, "usePrinterDefaults"))) ps.usePrinterDefaults = true;
+      // XSD default true — only the explicit "0" carries information back.
+      if (String(attr(pageSetupEl, "usePrinterDefaults")) === "0") ps.usePrinterDefaults = false;
       if (parseOnOff(attr(pageSetupEl, "blackAndWhite"))) ps.blackAndWhite = true;
       if (parseOnOff(attr(pageSetupEl, "draft"))) ps.draft = true;
       if (parseOnOff(attr(pageSetupEl, "useFirstPageNumber"))) ps.useFirstPageNumber = true;

@@ -8,7 +8,6 @@
  * @module
  */
 
-import { parseOnOff } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, attr, attrNum, escapeXml, findChild, stringifyElement } from "@office-open/xml";
@@ -28,7 +27,7 @@ export interface DialogsheetOptions {
   name?: string;
   /** Tab color (hex ARGB) */
   tabColor?: string;
-  /** Published to a server (CT_SheetPr `@published`) */
+  /** Published to a server (CT_SheetPr `@published`, XSD default true — only false is emitted) */
   published?: boolean;
   /** VBA code name (CT_SheetPr `@codeName`) */
   codeName?: string;
@@ -54,11 +53,12 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
     ];
 
     // sheetPr (optional)
-    if (opts.tabColor || opts.published || opts.codeName) {
+    if (opts.tabColor || opts.published !== undefined || opts.codeName) {
       const prChildren: string[] = [];
       if (opts.tabColor) prChildren.push(`<tabColor${attrs({ rgb: opts.tabColor })}/>`);
       const prAttrs: string[] = [];
-      if (opts.published) prAttrs.push(' published="1"');
+      // XSD default true — emit only the explicit-false form (0).
+      if (opts.published === false) prAttrs.push(' published="0"');
       if (opts.codeName) prAttrs.push(` codeName="${escapeXml(opts.codeName)}"`);
       p.push(`<sheetPr${prAttrs.join("")}>${prChildren.join("")}</sheetPr>`);
     }
@@ -100,7 +100,8 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
     // sheetPr
     const sheetPrEl = findChild(el, "sheetPr");
     if (sheetPrEl) {
-      if (parseOnOff(attr(sheetPrEl, "published"))) result.published = true;
+      // XSD default true — only the explicit "0" carries information back.
+      if (String(attr(sheetPrEl, "published")) === "0") result.published = false;
       if (attr(sheetPrEl, "codeName")) result.codeName = attr(sheetPrEl, "codeName");
       const tcEl = findChild(sheetPrEl, "tabColor");
       if (tcEl && attr(tcEl, "rgb")) result.tabColor = attr(tcEl, "rgb");
