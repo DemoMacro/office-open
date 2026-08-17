@@ -221,7 +221,7 @@ export interface AnimationOptions {
   previousAction?: "none" | "skipTimed";
   /** Points types. */
   pointsTypes?: string;
-  /** Rotation angle. */
+  /** Rotation angle in degrees (p:animMotion `@rAng`, ST_Angle in the XML). */
   rotationAngle?: number;
   /** Zoom contents. */
   zoomContents?: boolean;

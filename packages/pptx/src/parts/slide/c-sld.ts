@@ -63,8 +63,9 @@ export function parseControls(el: Element | undefined): ControlOptions[] | undef
   for (const ctrl of el.elements ?? []) {
     if (ctrl.name !== "p:control") continue;
     const item: ControlOptions = {};
-    const shapeId = attrNum(ctrl, "spid");
-    if (shapeId !== undefined) item.shapeId = shapeId;
+    // @spid is ST_ShapeID (a token like "_x0000_s1026"), never numeric.
+    const shapeId = attr(ctrl, "spid");
+    if (shapeId) item.shapeId = shapeId;
     const name = attr(ctrl, "name");
     if (name) item.name = name;
     if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;

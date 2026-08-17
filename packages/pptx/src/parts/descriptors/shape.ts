@@ -99,6 +99,9 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
       const parsed = readNvSpPr(nvSpPr, ctx);
       if (parsed.id !== undefined) result.id = parsed.id;
       if (parsed.name !== undefined) result.name = parsed.name;
+      if (parsed.description !== undefined) result.description = parsed.description;
+      if (parsed.title !== undefined) result.title = parsed.title;
+      if (parsed.hidden !== undefined) result.hidden = parsed.hidden;
       if (parsed.placeholder !== undefined) result.placeholder = parsed.placeholder;
       if (parsed.placeholderIndex !== undefined) result.placeholderIndex = parsed.placeholderIndex;
       if (parsed.placeholderSize !== undefined) result.placeholderSize = parsed.placeholderSize;

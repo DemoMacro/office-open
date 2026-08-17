@@ -50,8 +50,8 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     oleAttrs.push(`name="${escapeXml(opts.name ?? "OLE Object")}"`);
     if (opts.shapeId) oleAttrs.push(`spid="${opts.shapeId}"`);
     if (opts.showAsIcon) oleAttrs.push(`showAsIcon="1"`);
-    if (opts.imgW !== undefined) oleAttrs.push(`imgW="${opts.imgW}"`);
-    if (opts.imgH !== undefined) oleAttrs.push(`imgH="${opts.imgH}"`);
+    if (opts.imageWidth !== undefined) oleAttrs.push(`imgW="${opts.imageWidth}"`);
+    if (opts.imageHeight !== undefined) oleAttrs.push(`imgH="${opts.imageHeight}"`);
     if (opts.progId) oleAttrs.push(`progId="${opts.progId}"`);
 
     // Embedded OLE: register the binary as ppt/embeddings/oleObjectN.bin and
@@ -63,12 +63,18 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
       const pptxCtx = ctx as PptxWriteContext;
       const ref = pptxCtx.addOle(toUint8Array(opts.embed.data) as Uint8Array, opts.progId);
       oleAttrs.push(`r:id="${ref}"`);
-      const fcs = opts.followColorScheme ? ` followColorScheme="${opts.followColorScheme}"` : "";
+      const fcs = opts.embed.followColorScheme
+        ? ` followColorScheme="${opts.embed.followColorScheme}"`
+        : "";
       oleChildren.push(`<p:embed${fcs}/>`);
     } else if (opts.link) {
       oleAttrs.push(`r:id="${opts.link.rId}"`);
       const linkAttrs = opts.link.autoUpdate ? ' updateAutomatic="1"' : "";
       oleChildren.push(`<p:link${linkAttrs}/>`);
+    } else {
+      // p:oleObj's content model is a required choice between p:embed and
+      // p:link — emitting neither produces schema-invalid XML.
+      throw new Error("OleOptions requires either embed or link");
     }
 
     // Icon/preview picture — MS Office refuses to open the presentation when
@@ -119,9 +125,9 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
       if (shapeId !== undefined) result.shapeId = shapeId;
       if (attrBool(oleObj, "showAsIcon")) result.showAsIcon = true;
       const imgW = attrNum(oleObj, "imgW");
-      if (imgW !== undefined) result.imgW = imgW;
+      if (imgW !== undefined) result.imageWidth = imgW;
       const imgH = attrNum(oleObj, "imgH");
-      if (imgH !== undefined) result.imgH = imgH;
+      if (imgH !== undefined) result.imageHeight = imgH;
 
       // embed/link — embedded OLE reads the binary back through the
       // relationship so generate re-registers it in a fresh package.
@@ -130,10 +136,17 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
         const rId = attr(oleObj, "r:id");
         const mediaPath = rId ? ctx.resolveRelationship(rId) : undefined;
         const raw = mediaPath ? ctx.getRaw(mediaPath) : undefined;
-        if (raw) result.embed = { data: raw };
-        const followCS = attr(embedEl, "followColorScheme");
-        if (followCS !== undefined)
-          result.followColorScheme = followCS as "none" | "full" | "textAndBackground";
+        const followCS = attr(embedEl, "followColorScheme") as
+          | "none"
+          | "full"
+          | "textAndBackground"
+          | undefined;
+        if (raw) {
+          result.embed = {
+            data: raw,
+            ...(followCS !== undefined ? { followColorScheme: followCS } : {}),
+          };
+        }
       } else {
         const linkEl = findChild(oleObj, "p:link");
         if (linkEl) {

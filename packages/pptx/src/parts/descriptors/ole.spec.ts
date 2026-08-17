@@ -56,8 +56,7 @@ describe("oleDesc round-trip", () => {
       width: 200,
       height: 150,
       progId: "Excel.Sheet.12",
-      embed: { data: OLE_BYTES },
-      followColorScheme: "full",
+      embed: { data: OLE_BYTES, followColorScheme: "full" },
       iconImage: { data: PNG_BYTES, type: "png" },
     };
     const { parsed, xml } = roundTrip(opts, readCtxWithEmbedding);
@@ -75,7 +74,7 @@ describe("oleDesc round-trip", () => {
     expect(parsed.progId).toBe("Excel.Sheet.12");
     expect(parsed.embed).toBeDefined();
     expect(parsed.embed!.data).toEqual(OLE_BYTES);
-    expect(parsed.followColorScheme).toBe("full");
+    expect(parsed.embed!.followColorScheme).toBe("full");
     expect(parsed.iconImage).toBeDefined();
     expect(parsed.iconImage!.data).toEqual(PNG_BYTES);
     expect(parsed.iconImage!.type).toBe("png");
@@ -119,16 +118,16 @@ describe("oleDesc round-trip", () => {
       id: 300,
       name: "Icon OLE",
       showAsIcon: true,
-      imgW: 64,
-      imgH: 64,
+      imageWidth: 64,
+      imageHeight: 64,
       embed: { data: OLE_BYTES },
     };
     const { parsed } = roundTrip(opts);
 
     expect(parsed.id).toBe(300);
     expect(parsed.showAsIcon).toBe(true);
-    expect(parsed.imgW).toBe(64);
-    expect(parsed.imgH).toBe(64);
+    expect(parsed.imageWidth).toBe(64);
+    expect(parsed.imageHeight).toBe(64);
   });
 
   it("round-trips OLE with shapeId", () => {
@@ -145,12 +144,13 @@ describe("oleDesc round-trip", () => {
   it("round-trips OLE with followColorScheme", () => {
     const opts: OleOptions = {
       id: 500,
-      followColorScheme: "full",
-      embed: { data: OLE_BYTES },
+      embed: { data: OLE_BYTES, followColorScheme: "full" },
     };
-    const { parsed } = roundTrip(opts);
+    // followColorScheme round-trips inside embed, so the embedding bytes must
+    // resolve for the embed object to be read back at all.
+    const { parsed } = roundTrip(opts, readCtxWithEmbedding);
 
-    expect(parsed.followColorScheme).toBe("full");
+    expect(parsed.embed!.followColorScheme).toBe("full");
   });
 
   it("round-trips position with defaults", () => {

@@ -452,7 +452,9 @@ function buildPathEffects(
   };
   if (options.pointsTypes) animMotionAttrs.ptsTypes = options.pointsTypes;
   if (options.pathEditMode) animMotionAttrs.pathEditMode = options.pathEditMode;
-  if (options.rotationAngle !== undefined) animMotionAttrs.rAng = String(options.rotationAngle);
+  // @rAng is ST_Angle (1/60000 degree); the API exposes degrees.
+  if (options.rotationAngle !== undefined)
+    animMotionAttrs.rAng = String(Math.round(options.rotationAngle * 60000));
 
   const animMotionChildren: string[] = [
     buildXml("p:cBhvr", undefined, [

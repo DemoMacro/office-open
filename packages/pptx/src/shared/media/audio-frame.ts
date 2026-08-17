@@ -8,7 +8,7 @@ export type AudioType = "mp3" | "wav" | "wma" | "aac";
 export interface AudioCdTimeOptions {
   /** 1-based track number (required) */
   track: number;
-  /** Offset within the track, in seconds (CT_AudioCDTime `@time`, default 0) */
+  /** Offset within the track, in milliseconds (CT_AudioCDTime `@time`, default 0) */
   time?: number;
 }
 

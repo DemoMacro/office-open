@@ -18,6 +18,8 @@ export interface GroupOptions extends BaseGroupOptions {
   /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
   flipHorizontal?: boolean;
+  /** Flip vertically (a:xfrm `@flipV`). */
+  flipVertical?: boolean;
   /** Child coordinate system offset (a:chOff). Defaults to {x,y} when omitted. */
   childOffset?: { x: number | UniversalMeasure; y: number | UniversalMeasure };
   /** Child coordinate system extent (a:chExt). Defaults to {width,height} when omitted. */
@@ -26,7 +28,7 @@ export interface GroupOptions extends BaseGroupOptions {
   fill?: FillOptions;
   /** Group-level effects (EG_EffectProperties on grpSpPr). */
   effects?: EffectListOptions;
-  /** `@bwMode` container attribute (ST_BlackWhiteMode) on p:grpSpPr. */
-  bwMode?: BlackWhiteMode;
+  /** `@bwMode` (ST_BlackWhiteMode) on `p:grpSpPr` — how the group renders in black-and-white mode. */
+  blackWhiteMode?: BlackWhiteMode;
   children: SlideChild[];
 }

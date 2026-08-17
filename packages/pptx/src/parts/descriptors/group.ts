@@ -46,6 +46,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
           width: w,
           height: h,
           ...(opts.flipHorizontal !== undefined ? { flipHorizontal: opts.flipHorizontal } : {}),
+          ...(opts.flipVertical !== undefined ? { flipVertical: opts.flipVertical } : {}),
           ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
           // chOff/chExt default to off/ext when the child coordinate system is unchanged.
           childOffsetX: opts.childOffset ? convertToEmu(opts.childOffset.x) : x,
@@ -58,7 +59,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
         descCtx,
       ) ?? "";
 
-    const grpSpPrAttrs = opts.bwMode ? ` bwMode="${opts.bwMode}"` : "";
+    const grpSpPrAttrs = opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : "";
 
     const parts: string[] = [];
 
@@ -96,6 +97,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
       if (props.height !== undefined) result.height = props.height;
       if (props.rotation !== undefined) result.rotation = props.rotation;
       if (props.flipHorizontal) result.flipHorizontal = true;
+      if (props.flipVertical) result.flipVertical = true;
       if (props.childOffsetX !== undefined && props.childOffsetY !== undefined) {
         result.childOffset = { x: props.childOffsetX, y: props.childOffsetY };
       }
@@ -105,7 +107,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
       if (props.fill !== undefined) result.fill = props.fill;
       if (props.effects !== undefined) result.effects = props.effects;
       const bwMode = grpSpPr.attributes?.["bwMode"];
-      if (bwMode !== undefined) result.bwMode = bwMode as BlackWhiteMode;
+      if (bwMode !== undefined) result.blackWhiteMode = bwMode as BlackWhiteMode;
     }
 
     // Children — recursive parse

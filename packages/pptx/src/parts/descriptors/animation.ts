@@ -221,6 +221,9 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
           opts.pathType = "customPath" as PathAnimationType;
           const path = attr(sub, "path");
           if (path) opts.path = path;
+          // @rAng is ST_Angle (1/60000 degree); the API exposes degrees.
+          const rAng = attrNum(sub, "rAng");
+          if (rAng !== undefined) opts.rotationAngle = rAng / 60000;
           break;
         }
         case "p:animScale": {

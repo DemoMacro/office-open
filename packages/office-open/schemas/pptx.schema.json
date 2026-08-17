@@ -612,7 +612,7 @@
           "type": "string"
         },
         "rotationAngle": {
-          "description": "Rotation angle.",
+          "description": "Rotation angle in degrees (p:animMotion `@rAng`, ST_Angle in the XML).",
           "type": "number"
         },
         "runtimeContext": {
@@ -1116,7 +1116,7 @@
           "type": "string"
         },
         "rotationAngle": {
-          "description": "Rotation angle.",
+          "description": "Rotation angle in degrees (p:animMotion `@rAng`, ST_Angle in the XML).",
           "type": "number"
         },
         "runtimeContext": {
@@ -1406,7 +1406,7 @@
       "description": "A point on an audio CD (CT_AudioCDTime).",
       "properties": {
         "time": {
-          "description": "Offset within the track, in seconds (CT_AudioCDTime `@time`, default 0)",
+          "description": "Offset within the track, in milliseconds (CT_AudioCDTime `@time`, default 0)",
           "type": "number"
         },
         "track": {
@@ -3647,7 +3647,8 @@
           "type": "string"
         },
         "shapeId": {
-          "type": "number"
+          "description": "Shape id (AG_Ole `@spid`, ST_ShapeID token, e.g. \"_x0000_s1026\").",
+          "type": "string"
         },
         "showAsIcon": {
           "type": "boolean"
@@ -5073,9 +5074,9 @@
       "additionalProperties": false,
       "description": "Group shape options for pptx slides (p:grpSp). The cNvPr fields (name/description/title/hidden) come from  {@link  BaseGroupOptions } ; the rest is the pptx flat positioning model plus the group's children. The single source of truth for both the public slide-child entry and the descriptor.",
       "properties": {
-        "bwMode": {
+        "blackWhiteMode": {
           "$ref": "#/definitions/BlackWhiteMode",
-          "description": "`@bwMode` container attribute (ST_BlackWhiteMode) on p:grpSpPr."
+          "description": "`@bwMode` (ST_BlackWhiteMode) on `p:grpSpPr` — how the group renders in black-and-white mode."
         },
         "childExtent": {
           "additionalProperties": false,
@@ -5152,6 +5153,10 @@
           "description": "Group-level fill (EG_FillProperties on grpSpPr)."
         },
         "flipHorizontal": {
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "description": "Flip vertically (a:xfrm `@flipV`).",
           "type": "boolean"
         },
         "height": {
@@ -6838,6 +6843,11 @@
         "data": {
           "$ref": "#/definitions/DataType",
           "description": "OLE container binary — registered as ppt/embeddings/oleObjectN.bin."
+        },
+        "followColorScheme": {
+          "description": "Follow color scheme (p:embed `@followColorScheme`)",
+          "enum": ["none", "full", "textAndBackground"],
+          "type": "string"
         }
       },
       "required": ["data"],
@@ -6883,12 +6893,7 @@
         },
         "embed": {
           "$ref": "#/definitions/OleEmbedOptions",
-          "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin)."
-        },
-        "followColorScheme": {
-          "description": "Follow color scheme (p:embed/`@followColorScheme`): \"none\", \"full\", or \"textAndBackground\"",
-          "enum": ["none", "full", "textAndBackground"],
-          "type": "string"
+          "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). Mutually exclusive with  {@link  link }  — p:oleObj's content model is a required choice between p:embed and p:link."
         },
         "height": {
           "anyOf": [
@@ -6912,17 +6917,17 @@
           "description": "OLE frame id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
-        "imgH": {
-          "description": "Image height (EMU) for icon/preview",
+        "imageHeight": {
+          "description": "Image height (EMU) for icon/preview (AG_Ole `@imgH`)",
           "type": "number"
         },
-        "imgW": {
-          "description": "Image width (EMU) for icon/preview",
+        "imageWidth": {
+          "description": "Image width (EMU) for icon/preview (AG_Ole `@imgW`)",
           "type": "number"
         },
         "link": {
           "$ref": "#/definitions/OleLinkOptions",
-          "description": "Link mode (provides rId for linked OLE data)"
+          "description": "Link mode (provides rId for linked OLE data); mutually exclusive with embed."
         },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
@@ -7542,6 +7547,7 @@
           "type": "boolean"
         },
         "frame": {
+          "description": "Frame shape (ST_PhotoAlbumFrameShape); omit for no frame.",
           "enum": [
             "frameStyle1",
             "frameStyle2",
@@ -7549,8 +7555,7 @@
             "frameStyle4",
             "frameStyle5",
             "frameStyle6",
-            "frameStyle7",
-            "none"
+            "frameStyle7"
           ],
           "type": "string"
         },

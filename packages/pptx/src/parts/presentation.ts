@@ -11,6 +11,7 @@ export interface PhotoAlbumOptions {
   blackWhite?: boolean;
   showCaptions?: boolean;
   layout?: "fitToSlide" | "1pic" | "2pic" | "4pic" | "1picTitle" | "2picTitle" | "4picTitle";
+  /** Frame shape (ST_PhotoAlbumFrameShape); omit for no frame. */
   frame?:
     | "frameStyle1"
     | "frameStyle2"
@@ -18,8 +19,7 @@ export interface PhotoAlbumOptions {
     | "frameStyle4"
     | "frameStyle5"
     | "frameStyle6"
-    | "frameStyle7"
-    | "none";
+    | "frameStyle7";
 }
 
 export interface ModifyVerifierOptions {

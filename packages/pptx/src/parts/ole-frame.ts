@@ -15,6 +15,8 @@ import type {
 export interface OleEmbedOptions {
   /** OLE container binary — registered as ppt/embeddings/oleObjectN.bin. */
   data: DataType;
+  /** Follow color scheme (p:embed `@followColorScheme`) */
+  followColorScheme?: "none" | "full" | "textAndBackground";
 }
 
 export interface OleLinkOptions {
@@ -51,13 +53,17 @@ export interface OleOptions extends NonVisualDrawingPropertiesOptions {
   shapeId?: string;
   /** Show as icon */
   showAsIcon?: boolean;
-  /** Image width (EMU) for icon/preview */
-  imgW?: number;
-  /** Image height (EMU) for icon/preview */
-  imgH?: number;
-  /** Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). */
+  /** Image width (EMU) for icon/preview (AG_Ole `@imgW`) */
+  imageWidth?: number;
+  /** Image height (EMU) for icon/preview (AG_Ole `@imgH`) */
+  imageHeight?: number;
+  /**
+   * Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin).
+   * Mutually exclusive with {@link link} — p:oleObj's content model is a
+   * required choice between p:embed and p:link.
+   */
   embed?: OleEmbedOptions;
-  /** Link mode (provides rId for linked OLE data) */
+  /** Link mode (provides rId for linked OLE data); mutually exclusive with embed. */
   link?: OleLinkOptions;
   /**
    * Icon/preview image (p:pic under p:oleObj). MS Office refuses to open a
@@ -65,6 +71,4 @@ export interface OleOptions extends NonVisualDrawingPropertiesOptions {
    * for embedded objects.
    */
   iconImage?: OleIconImageOptions;
-  /** Follow color scheme (p:embed/`@followColorScheme`): "none", "full", or "textAndBackground" */
-  followColorScheme?: "none" | "full" | "textAndBackground";
 }
