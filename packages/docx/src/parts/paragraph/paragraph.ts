@@ -116,8 +116,14 @@ export type ParagraphChild =
       };
     }
   | { symbolRun: SymbolRunOptions }
-  | { footnoteReference: number | FootnoteEndnoteReferenceOptions }
-  | { endnoteReference: number | FootnoteEndnoteReferenceOptions }
+  | {
+      footnoteReference: number | FootnoteEndnoteReferenceOptions;
+      properties?: RunPropertiesOptions;
+    }
+  | {
+      endnoteReference: number | FootnoteEndnoteReferenceOptions;
+      properties?: RunPropertiesOptions;
+    }
   | { pageBreak: true }
   | { columnBreak: true }
   | { commentRangeStart: MarkupRangeOptions }

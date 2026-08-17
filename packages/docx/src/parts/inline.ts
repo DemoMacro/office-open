@@ -530,14 +530,22 @@ export function stringifyChildDispatch(
     const id = typeof ref === "number" ? ref : ref.id;
     const cmf =
       typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
-    return `<w:r><w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr><w:footnoteReference w:id="${id}"${cmf}/></w:r>`;
+    // Round-tripped run properties win; a fresh reference gets the
+    // conventional FootnoteReference character style.
+    const rPr = child.properties
+      ? (stringifyRunProperties(child.properties) ?? "")
+      : '<w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr>';
+    return `<w:r>${rPr}<w:footnoteReference w:id="${id}"${cmf}/></w:r>`;
   }
   if ("endnoteReference" in child) {
     const ref = child.endnoteReference;
     const id = typeof ref === "number" ? ref : ref.id;
     const cmf =
       typeof ref === "object" && ref.customMarkFollows ? ' w:customMarkFollows="true"' : "";
-    return `<w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteReference w:id="${id}"${cmf}/></w:r>`;
+    const rPr = child.properties
+      ? (stringifyRunProperties(child.properties) ?? "")
+      : '<w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr>';
+    return `<w:r>${rPr}<w:endnoteReference w:id="${id}"${cmf}/></w:r>`;
   }
 
   // Comment sugar — library allocates the id, emits the range markers +

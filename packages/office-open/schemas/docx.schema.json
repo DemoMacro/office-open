@@ -10870,6 +10870,9 @@
                   "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
                 }
               ]
+            },
+            "properties": {
+              "$ref": "#/definitions/RunPropertiesOptions"
             }
           },
           "required": ["footnoteReference"],
@@ -10888,6 +10891,9 @@
                   "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
                 }
               ]
+            },
+            "properties": {
+              "$ref": "#/definitions/RunPropertiesOptions"
             }
           },
           "required": ["endnoteReference"],
