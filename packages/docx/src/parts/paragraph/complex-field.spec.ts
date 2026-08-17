@@ -62,9 +62,10 @@ describe("complex field parse", () => {
     expect(cf!.complexField).toMatchObject({ instruction: " HYPERLINK ", result: "click" });
   });
 
-  it("parses a deleted page-number field (w:delInstrText) as a deletion placeholder", () => {
-    // Deleted page-number fields use w:delInstrText; parse reverses inline.ts's
-    // field map so they round-trip as a PageNumber children placeholder.
+  it("parses a deleted field (w:delInstrText) inside a deletion wrapper", () => {
+    // Deleted fields spell the instruction w:delInstrText; the chain collapses
+    // to a complexField child of the deletion wrapper (re-emitted with
+    // w:delInstrText on stringify).
     const opts = parseParagraphXml(
       '<w:del w:id="1" w:author="Alice" w:date="2020-01-01T00:00:00Z">' +
         '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
@@ -77,6 +78,10 @@ describe("complex field parse", () => {
       (c) => c !== null && typeof c === "object" && "deletion" in (c as Record<string, unknown>),
     ) as Record<string, unknown> | undefined;
     expect(del).toBeDefined();
-    expect(del!.deletion).toMatchObject({ id: 1, author: "Alice", children: ["CURRENT"] });
+    expect(del!.deletion).toMatchObject({
+      id: 1,
+      author: "Alice",
+      children: [{ complexField: { instruction: "PAGE" } }],
+    });
   });
 });

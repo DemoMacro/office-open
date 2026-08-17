@@ -52,9 +52,28 @@ export interface FootnoteEndnoteReferenceOptions {
 }
 
 /**
+ * A complex field (PAGE/DATE/TOC/HYPERLINK... — any fldChar field without
+ * w:ffData). `instruction` is the raw field code (incl. surrounding spaces);
+ * `result` is the cached result-run text, if any. `rPrXml` is the verbatim
+ * run-properties of the control runs (begin/instrText/separate/end);
+ * `resultRPrXml` is that of the result run(s) — carried so field formatting
+ * survives round-trip (Word writes the same rPr across a field's runs).
+ */
+export interface ComplexFieldOptions {
+  instruction: string;
+  result?: string;
+  rPrXml?: string;
+  resultRPrXml?: string;
+  /** Verbatim run-properties of the end fldChar run (may differ from the
+   *  control rPr — Word styles the end run like the result). */
+  endRPrXml?: string;
+}
+
+/**
  * Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/
  * w:moveTo, CT_RunTrackChange) — runs, the comment range markers Word anchors
- * directly inside the wrapper, and nested same-type wrappers.
+ * directly inside the wrapper, complete field chains, and nested same-type
+ * wrappers.
  */
 export type TrackChangeChild =
   | RunOptions
@@ -63,6 +82,8 @@ export type TrackChangeChild =
   | { commentRangeEnd: MarkupRangeOptions }
   | { pageBreak: true }
   | { columnBreak: true }
+  | { complexField: ComplexFieldOptions }
+  | { formField: FormFieldOptions }
   | { insertion: ChangedProperties & { children: TrackChangeChild[] } }
   | { deletion: ChangedProperties & { children: TrackChangeChild[] } };
 
@@ -160,20 +181,8 @@ export type ParagraphChild =
   | { simpleField: SimpleFieldOptions }
   // Form field (checkbox, dropdown list, text input)
   | { formField: FormFieldOptions }
-  // Complex field (PAGE/DATE/TOC/HYPERLINK... — any fldChar field without
-  // w:ffData). `instruction` is the raw field code (incl. surrounding spaces);
-  // `result` is the cached result-run text, if any. `rPrXml` is the verbatim
-  // run-properties of the control runs (begin/instrText/separate/end);
-  // `resultRPrXml` is that of the result run(s) — carried so field formatting
-  // survives round-trip (Word writes the same rPr across a field's runs).
-  | {
-      complexField: {
-        instruction: string;
-        result?: string;
-        rPrXml?: string;
-        resultRPrXml?: string;
-      };
-    }
+  // Complex field (PAGE/DATE/TOC/HYPERLINK... — see ComplexFieldOptions)
+  | { complexField: ComplexFieldOptions }
   // Sequential identifier (SEQ field)
   | { seqIdentifier: string }
   // Page reference (PAGEREF field)

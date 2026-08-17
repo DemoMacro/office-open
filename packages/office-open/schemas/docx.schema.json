@@ -3470,6 +3470,30 @@
       },
       "type": "object"
     },
+    "ComplexFieldOptions": {
+      "additionalProperties": false,
+      "description": "A complex field (PAGE/DATE/TOC/HYPERLINK... — any fldChar field without w:ffData). `instruction` is the raw field code (incl. surrounding spaces); `result` is the cached result-run text, if any. `rPrXml` is the verbatim run-properties of the control runs (begin/instrText/separate/end); `resultRPrXml` is that of the result run(s) — carried so field formatting survives round-trip (Word writes the same rPr across a field's runs).",
+      "properties": {
+        "endRPrXml": {
+          "description": "Verbatim run-properties of the end fldChar run (may differ from the control rPr — Word styles the end run like the result).",
+          "type": "string"
+        },
+        "instruction": {
+          "type": "string"
+        },
+        "rPrXml": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string"
+        },
+        "resultRPrXml": {
+          "type": "string"
+        }
+      },
+      "required": ["instruction"],
+      "type": "object"
+    },
     "CompoundLine": {
       "description": "Compound line types for outlines.\n\nDefines the structure of compound lines (single, double, etc.).",
       "enum": ["single", "double", "thickThin", "thinThick", "triple"],
@@ -11395,23 +11419,7 @@
           "additionalProperties": false,
           "properties": {
             "complexField": {
-              "additionalProperties": false,
-              "properties": {
-                "instruction": {
-                  "type": "string"
-                },
-                "rPrXml": {
-                  "type": "string"
-                },
-                "result": {
-                  "type": "string"
-                },
-                "resultRPrXml": {
-                  "type": "string"
-                }
-              },
-              "required": ["instruction"],
-              "type": "object"
+              "$ref": "#/definitions/ComplexFieldOptions"
             }
           },
           "required": ["complexField"],
@@ -21039,6 +21047,28 @@
         {
           "additionalProperties": false,
           "properties": {
+            "complexField": {
+              "$ref": "#/definitions/ComplexFieldOptions"
+            }
+          },
+          "required": ["complexField"],
+          "title": "complexField",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "formField": {
+              "$ref": "#/definitions/FormFieldOptions"
+            }
+          },
+          "required": ["formField"],
+          "title": "formField",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "insertion": {
               "additionalProperties": false,
               "properties": {
@@ -21103,7 +21133,7 @@
           "type": "object"
         }
       ],
-      "description": "Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/ w:moveTo, CT_RunTrackChange) — runs, the comment range markers Word anchors directly inside the wrapper, and nested same-type wrappers."
+      "description": "Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/ w:moveTo, CT_RunTrackChange) — runs, the comment range markers Word anchors directly inside the wrapper, complete field chains, and nested same-type wrappers."
     },
     "TransformEffectOptions": {
       "additionalProperties": false,

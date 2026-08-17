@@ -71,7 +71,12 @@ import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc }
 import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch, stringifyRunInline } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
-import type { ParagraphChild, SdtRunOptions, TrackChangeChild } from "./parts/paragraph/paragraph";
+import type {
+  ComplexFieldOptions,
+  ParagraphChild,
+  SdtRunOptions,
+  TrackChangeChild,
+} from "./parts/paragraph/paragraph";
 import { EMPTY_PPR_RESULT, stringifyParagraphProperties } from "./parts/paragraph/stringify";
 import { replaceRelsWithPlaceholders } from "./util/replace-media-placeholders";
 import { stringifyElement } from "./util/stringify-element";
@@ -481,17 +486,6 @@ const ON_OFF_PARAGRAPH_PROPS = [
 // pBdr side element names (CT_PBdr children order).
 const PBDR_SIDES = ["top", "bottom", "left", "right", "between", "bar"] as const;
 
-/**
- * Reverse of inline.ts's deleted-page-number field map: maps a w:delInstrText
- * field code to the PageNumber placeholder a deletion run uses on the stringify
- * side, so deleted page-number fields round-trip instead of being dropped.
- */
-const DELETED_PAGE_FIELD: Record<string, string> = {
-  PAGE: "CURRENT",
-  NUMPAGES: "TOTAL_PAGES",
-  SECTIONPAGES: "TOTAL_PAGES_IN_SECTION",
-};
-
 // Inline element payloads extracted from the ParagraphChild union — used by
 // parse to build typed objects instead of Record<string, unknown>.
 type SmartTagInlineOptions = Extract<ParagraphChild, { smartTag: unknown }>["smartTag"];
@@ -882,29 +876,120 @@ function parseCnfStyle(
  * (the runs between the `separate` and `end` fldChars). Only `<w:t>` is read —
  * `<w:tab>`/`<w:br>` in results are ignored as rare for user-entered text.
  */
+/** Field-chain accumulator state, shared by the paragraph and track-change run loops. */
+interface FieldRunState {
+  kind: "form" | "complex" | null;
+  pendingFormField: FormFieldOptions | null;
+  pendingInstruction: string;
+  pendingResult: string;
+  controlRPr?: string;
+  resultRPr?: string;
+  collectingResult: boolean;
+}
+
+const initialFieldRunState = (): FieldRunState => ({
+  kind: null,
+  pendingFormField: null,
+  pendingInstruction: "",
+  pendingResult: "",
+  collectingResult: false,
+});
+
+/**
+ * Feed one w:r element into the field accumulator. A field (form field OR
+ * plain complex field) spans several runs (begin fldChar → instrText →
+ * separate → result → end):
+ * - Form fields carry w:ffData on the begin fldChar; their state lives there,
+ *   and only a textInput's result is captured (as `value`).
+ * - Plain complex fields (PAGE/DATE/TOC/HYPERLINK...) have no ffData; their
+ *   instrText + result are captured as a complexField child for round-trip.
+ * Control and in-field runs are consumed; the closing run returns the whole
+ * field collapsed to a single child. Runs outside any field pass through.
+ */
+function feedFieldRun(
+  run: Element,
+  state: FieldRunState,
+): { consumed: boolean; child?: ParagraphChild } {
+  const fldCharEl = findChild(run, "w:fldChar");
+  if (fldCharEl) {
+    const fctype = attr(fldCharEl, "w:fldCharType");
+    if (fctype === "begin") {
+      const ffDataEl = findChild(fldCharEl, "w:ffData");
+      if (ffDataEl) {
+        state.kind = "form";
+        state.pendingFormField = parseFormFieldData(ffDataEl);
+      } else {
+        state.kind = "complex";
+        state.pendingInstruction = "";
+        state.pendingResult = "";
+      }
+      // The begin run's rPr stands in for the field's control-run rPr.
+      state.controlRPr = runRPrXml(run);
+      state.resultRPr = undefined;
+      state.collectingResult = false;
+    } else if (fctype === "separate") {
+      state.collectingResult = true;
+    } else if (fctype === "end" && state.kind) {
+      let child: ParagraphChild | undefined;
+      if (state.kind === "form" && state.pendingFormField) {
+        child = { formField: state.pendingFormField };
+      } else if (state.kind === "complex") {
+        const cf: ComplexFieldOptions = { instruction: state.pendingInstruction };
+        if (state.pendingResult) cf.result = state.pendingResult;
+        if (state.controlRPr) cf.rPrXml = state.controlRPr;
+        if (state.resultRPr) cf.resultRPrXml = state.resultRPr;
+        // Word styles the end run like the result (not like the controls).
+        const endRPr = runRPrXml(run);
+        if (endRPr && endRPr !== state.controlRPr) cf.endRPrXml = endRPr;
+        child = { complexField: cf };
+      }
+      state.kind = null;
+      state.pendingFormField = null;
+      state.collectingResult = false;
+      return { consumed: true, child };
+    }
+    return { consumed: true };
+  }
+  if (state.kind) {
+    if (state.kind === "complex") {
+      if (state.collectingResult) {
+        // Capture the first result run's rPr for round-trip.
+        if (state.resultRPr === undefined) state.resultRPr = runRPrXml(run);
+        state.pendingResult += collectRunText(run);
+      } else {
+        // Deleted fields spell the instruction w:delInstrText instead.
+        const instrEl = findChild(run, "w:instrText") ?? findChild(run, "w:delInstrText");
+        if (instrEl) state.pendingInstruction += textOf(instrEl);
+      }
+    } else if (state.collectingResult && state.pendingFormField?.textInput) {
+      // Capture a textInput's current value; checkbox/dropdown results are
+      // discarded (their state is in w:ffData).
+      const text = collectRunText(run);
+      if (text) {
+        const ti = state.pendingFormField.textInput;
+        ti.value = (ti.value ?? "") + text;
+      }
+    }
+    return { consumed: true };
+  }
+  return { consumed: false };
+}
+
 /**
  * Parse the children of a track-change wrapper (w:ins/w:del/w:moveFrom/w:moveTo):
- * runs (reference runs keep their shape as run-children), plus the comment range
- * markers Word anchors directly inside the wrapper. Deleted page-number fields
- * emit w:delInstrText — reverse inline.ts's field map back to placeholders.
+ * runs (reference runs keep their shape as run-children), the comment range
+ * markers Word anchors directly inside the wrapper, complete field chains, and
+ * nested same-family wrappers.
  */
-function parseTrackChangeRuns(
-  el: Element,
-  ctx: DocxReadContext,
-  isDelete = false,
-): TrackChangeChild[] {
+function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChild[] {
   const out: TrackChangeChild[] = [];
+  const fieldState = initialFieldRunState();
   for (const sub of el.elements ?? []) {
     if (sub.name === "w:r") {
-      if (isDelete) {
-        const delInstrEl = findChild(sub, "w:delInstrText");
-        if (delInstrEl) {
-          const placeholder = DELETED_PAGE_FIELD[(textOf(delInstrEl) ?? "").trim()];
-          if (placeholder) {
-            out.push(placeholder);
-            continue;
-          }
-        }
+      const fed = feedFieldRun(sub, fieldState);
+      if (fed.consumed) {
+        if (fed.child) out.push(fed.child as TrackChangeChild);
+        continue;
       }
       const parsed = parseRun(sub, ctx);
       const runOpts = parsedRunToOptions(parsed);
@@ -926,7 +1011,7 @@ function parseTrackChangeRuns(
       if (m) out.push({ commentRangeEnd: m });
     } else if (sub.name === "w:ins" || sub.name === "w:del") {
       // Nested wrappers (w:ins > w:del) — recurse with the same shape.
-      const nested = parseTrackChangeRuns(sub, ctx, sub.name === "w:del");
+      const nested = parseTrackChangeRuns(sub, ctx);
       if (nested.length > 0) {
         const meta = {
           id: attrNum(sub, "w:id") ?? 0,
@@ -1108,26 +1193,9 @@ function parseRunLevelChildren(
 ): ParagraphChild[] {
   const childList: ParagraphChild[] = [];
 
-  // Field accumulator: a field (form field OR plain complex field) spans
-  // several w:r elements (begin fldChar → instrText → separate → result → end).
-  // - Form fields (checkBox/ddList/textInput) carry w:ffData on the begin
-  //   fldChar; their state lives there, and only a textInput's result is
-  //   captured (as `value`).
-  // - Plain complex fields (PAGE/DATE/TOC/HYPERLINK...) have no ffData; their
-  //   instrText + result are captured as a complexField child for round-trip.
-  // The whole field collapses to a single child.
-  let fieldKind: "form" | "complex" | null = null;
-  let pendingFormField: FormFieldOptions | null = null;
-  let pendingInstruction = "";
-  let pendingResult = "";
-  // Verbatim rPr of the field's control runs (begin/instrText/separate/end)
-  // and result run(s) — Word writes identical rPr across a field's runs, so
-  // capturing it preserves field formatting (font/size) through round-trip.
-  let pendingControlRPr: string | undefined;
-  let pendingResultRPr: string | undefined;
-  // True once the `separate` fldChar is seen: subsequent runs (up to `end`)
-  // are the field's result.
-  let collectingResult = false;
+  // Field accumulator — see feedFieldRun. The whole field collapses to a
+  // single child.
+  const fieldState = initialFieldRunState();
 
   for (const child of elements ?? []) {
     switch (child.name) {
@@ -1135,67 +1203,10 @@ function parseRunLevelChildren(
         break;
       case "w:r": {
         // Field: fldChar markers + the instrText/result runs between them.
-        const fldCharEl = findChild(child, "w:fldChar");
-        if (fldCharEl) {
-          const fctype = attr(fldCharEl, "w:fldCharType");
-          if (fctype === "begin") {
-            const ffDataEl = findChild(fldCharEl, "w:ffData");
-            if (ffDataEl) {
-              fieldKind = "form";
-              pendingFormField = parseFormFieldData(ffDataEl);
-            } else {
-              fieldKind = "complex";
-              pendingInstruction = "";
-              pendingResult = "";
-            }
-            // Capture the begin run's rPr as the field's control-run rPr.
-            pendingControlRPr = runRPrXml(child);
-            pendingResultRPr = undefined;
-            collectingResult = false;
-          } else if (fctype === "separate") {
-            collectingResult = true;
-          } else if (fctype === "end" && fieldKind) {
-            if (fieldKind === "form" && pendingFormField) {
-              childList.push({ formField: pendingFormField });
-            } else if (fieldKind === "complex") {
-              const cf: {
-                instruction: string;
-                result?: string;
-                rPrXml?: string;
-                resultRPrXml?: string;
-              } = { instruction: pendingInstruction };
-              if (pendingResult) cf.result = pendingResult;
-              if (pendingControlRPr) cf.rPrXml = pendingControlRPr;
-              if (pendingResultRPr) cf.resultRPrXml = pendingResultRPr;
-              childList.push({ complexField: cf });
-            }
-            fieldKind = null;
-            pendingFormField = null;
-            collectingResult = false;
-          }
+        const fed = feedFieldRun(child, fieldState);
+        if (fed.consumed) {
+          if (fed.child) childList.push(fed.child);
           break;
-        }
-        if (fieldKind) {
-          if (fieldKind === "complex") {
-            // Collect instrText (begin→separate) and result text (separate→end).
-            if (collectingResult) {
-              // Capture the first result run's rPr for round-trip.
-              if (pendingResultRPr === undefined) pendingResultRPr = runRPrXml(child);
-              pendingResult += collectRunText(child);
-            } else {
-              const instrEl = findChild(child, "w:instrText");
-              if (instrEl) pendingInstruction += textOf(instrEl);
-            }
-          } else if (collectingResult && pendingFormField?.textInput) {
-            // Capture a textInput's current value; checkbox/dropdown results
-            // are discarded (their state is in w:ffData).
-            const text = collectRunText(child);
-            if (text) {
-              const ti = pendingFormField.textInput;
-              ti.value = (ti.value ?? "") + text;
-            }
-          }
-          break; // instrText / result — handled by field state above
         }
 
         // Drawing may be a direct w:drawing child OR wrapped in
@@ -1381,7 +1392,7 @@ function parseRunLevelChildren(
         break;
       }
       case "w:del": {
-        const children = parseTrackChangeRuns(child, ctx, true);
+        const children = parseTrackChangeRuns(child, ctx);
         if (children.length > 0) {
           childList.push({
             deletion: {

@@ -26,6 +26,7 @@ import type {
   MoveRangeStartOptions,
 } from "@parts/paragraph/links/bookmark";
 import type {
+  ComplexFieldOptions,
   ParagraphChild,
   ParagraphOptions,
   TrackChangeChild,
@@ -60,6 +61,30 @@ import { stringifyParagraphProperties, stringifyRunProperties } from "./paragrap
 
 // ── Run ──
 
+/** Serialize a complex field's run chain. `instrTag` is w:delInstrText inside
+ *  a w:del wrapper (deleted fields spell the instruction that way). */
+function stringifyComplexFieldRuns(cf: ComplexFieldOptions, instrTag = "w:instrText"): string {
+  // Run-properties: Word writes identical rPr across a field's runs. Apply
+  // the captured control-run rPr to begin/instrText/separate/end and the
+  // result-run rPr to the result (defaults to the control rPr when the
+  // result had none, matching Word's uniform behavior).
+  const ctrl = cf.rPrXml ?? "";
+  const res = cf.resultRPrXml ?? ctrl;
+  // `separate` + the result run are emitted only when there is a cached
+  // result; a result-less field round-trips as begin/instrText/end.
+  const resultXml =
+    cf.result !== undefined
+      ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
+        `<w:r>${res}<w:t xml:space="preserve">${escapeXml(cf.result)}</w:t></w:r>`
+      : "";
+  return (
+    `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"/></w:r>` +
+    `<w:r>${ctrl}<${instrTag} xml:space="preserve">${escapeXml(cf.instruction)}</${instrTag}></w:r>` +
+    resultXml +
+    `<w:r>${cf.endRPrXml ?? ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
+  );
+}
+
 /** Serialize a deleted run: rPr + delText (or field delInstrText). */
 function stringifyDeletedRun(c: RunOptions | string): string {
   const opts = typeof c === "string" ? { text: c } : c;
@@ -74,26 +99,10 @@ function stringifyDeletedRun(c: RunOptions | string): string {
   if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
   if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
   const openTag = attr ? `<w:r${attr}>` : "<w:r>";
-  const fieldMap: Record<string, string> = {
-    CURRENT: "PAGE",
-    TOTAL_PAGES: "NUMPAGES",
-    TOTAL_PAGES_IN_SECTION: "SECTIONPAGES",
-  };
   if (opts.children) {
     for (const cc of opts.children) {
       if (typeof cc === "string") {
-        // Page number fields use delInstrText instead of instrText
-        const instrText = fieldMap[cc];
-        if (instrText) {
-          parts.push(
-            '<w:fldChar w:fldCharType="begin"/>' +
-              `<w:delInstrText xml:space="preserve">${instrText}</w:delInstrText>` +
-              '<w:fldChar w:fldCharType="separate"/>' +
-              '<w:fldChar w:fldCharType="end"/>',
-          );
-        } else {
-          parts.push(`<w:delText xml:space="preserve">${escapeXml(cc)}</w:delText>`);
-        }
+        parts.push(`<w:delText xml:space="preserve">${escapeXml(cc)}</w:delText>`);
       } else if (typeof cc === "object" && cc !== null && "commentReference" in cc) {
         parts.push(`<w:commentReference w:id="${Number(cc.commentReference)}"/>`);
       } else if (typeof cc === "object" && cc !== null && "break" in cc) {
@@ -360,6 +369,14 @@ function stringifyTrackChangeChildren(
       parts.push(stringifyTrackChangeBreak(c as RunOptions, "page"));
     } else if (typeof c !== "string" && "columnBreak" in c) {
       parts.push(stringifyTrackChangeBreak(c as RunOptions, "column"));
+    } else if (typeof c !== "string" && "complexField" in c) {
+      // Deleted fields spell the instruction w:delInstrText (matches Word).
+      parts.push(
+        stringifyComplexFieldRuns(c.complexField, isDelete ? "w:delInstrText" : "w:instrText"),
+      );
+    } else if (typeof c !== "string" && "formField" in c) {
+      const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
+      if (typeof xml === "string") parts.push(xml);
     } else {
       parts.push(
         isDelete
@@ -1005,28 +1022,7 @@ export function stringifyChildDispatch(
 
   // ── Complex field (PAGE/DATE/TOC/... — fldChar field without w:ffData) ──
   if ("complexField" in child) {
-    const cf = child.complexField;
-    // Run-properties: Word writes identical rPr across a field's runs. Apply
-    // the captured control-run rPr to begin/instrText/separate/end and the
-    // result-run rPr to the result (defaults to the control rPr when the
-    // result had none, matching Word's uniform behavior).
-    const ctrl = cf.rPrXml ?? "";
-    const res = cf.resultRPrXml ?? ctrl;
-    // `separate` + the result run are emitted only when there is a cached
-    // result; a result-less field round-trips as begin/instrText/end.
-    const resultXml =
-      cf.result !== undefined
-        ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
-          `<w:r>${res}<w:t xml:space="preserve">${escapeXml(cf.result)}</w:t></w:r>`
-        : "";
-    return (
-      `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"/></w:r>` +
-      `<w:r>${ctrl}<w:instrText xml:space="preserve">${escapeXml(
-        cf.instruction,
-      )}</w:instrText></w:r>` +
-      resultXml +
-      `<w:r>${ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
-    );
+    return stringifyComplexFieldRuns(child.complexField);
   }
 
   // ── Sequential identifier (SEQ field) ──
