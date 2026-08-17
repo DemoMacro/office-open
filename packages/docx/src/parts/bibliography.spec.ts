@@ -23,12 +23,18 @@ function roundTrip(opts: BibliographyOptions) {
 describe("bibliographyDesc round-trip", () => {
   it("round-trips single source with basic fields", () => {
     const result = roundTrip({
-      sources: [{ sourceType: "Book", title: "TypeScript in Action", author: "John Doe" }],
+      sources: [
+        {
+          sourceType: "Book",
+          title: "TypeScript in Action",
+          author: { authors: [{ last: "Doe", first: "John" }] },
+        },
+      ],
     });
     expect(result.sources).toHaveLength(1);
     expect(result.sources[0]?.sourceType).toBe("Book");
     expect(result.sources[0]?.title).toBe("TypeScript in Action");
-    expect(result.sources[0]?.author).toBe("John Doe");
+    expect(result.sources[0]?.author).toEqual({ authors: [{ last: "Doe", first: "John" }] });
   });
 
   it("round-trips styleName", () => {
@@ -39,13 +45,54 @@ describe("bibliographyDesc round-trip", () => {
     expect(result.styleName).toBe("APA");
   });
 
+  it("round-trips structured authors across roles", () => {
+    const author = {
+      authors: [{ corporate: "Microsoft" }, { last: "Smith", first: "J.", middle: "R." }],
+      editors: [{ last: "Lee", first: "Kai" }],
+      translators: [{ last: "Garcia" }],
+    };
+    const result = roundTrip({ sources: [{ title: "Film Study", author }] });
+    expect(result.sources[0]?.author).toEqual(author);
+  });
+
+  it("emits CT_AuthorType role structure, not flat text", () => {
+    const xml = bibliographyDesc.stringify(
+      {
+        sources: [
+          {
+            title: "Doc",
+            author: {
+              authors: [{ last: "Doe", first: "Jane" }],
+              editors: [{ last: "Lee", first: "Kai" }],
+            },
+          },
+        ],
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain(
+      "<b:Author><b:Author><b:NameList><b:Person><b:Last>Doe</b:Last><b:First>Jane</b:First>" +
+        "</b:Person></b:NameList></b:Author>",
+    );
+    expect(xml).toContain(
+      "<b:Editor><b:NameList><b:Person><b:Last>Lee</b:Last><b:First>Kai</b:First></b:Person></b:NameList></b:Editor>",
+    );
+  });
+
+  it("round-trips a corporate author entry", () => {
+    const result = roundTrip({
+      sources: [{ title: "Docs", author: { authors: [{ corporate: "Microsoft" }] } }],
+    });
+    expect(result.sources[0]?.author?.authors).toEqual([{ corporate: "Microsoft" }]);
+  });
+
   it("round-trips all source fields", () => {
     const result = roundTrip({
       sources: [
         {
           sourceType: "JournalArticle",
           title: "Deep Learning",
-          author: "Jane Smith",
+          author: { authors: [{ last: "Smith", first: "Jane" }] },
           year: "2024",
           month: "03",
           day: "15",
@@ -66,7 +113,7 @@ describe("bibliographyDesc round-trip", () => {
     if (!src) throw new Error("source not parsed");
     expect(src.sourceType).toBe("JournalArticle");
     expect(src.title).toBe("Deep Learning");
-    expect(src.author).toBe("Jane Smith");
+    expect(src.author).toEqual({ authors: [{ last: "Smith", first: "Jane" }] });
     expect(src.year).toBe("2024");
     expect(src.month).toBe("03");
     expect(src.day).toBe("15");

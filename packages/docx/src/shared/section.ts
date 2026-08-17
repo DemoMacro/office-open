@@ -52,6 +52,7 @@ export type SectionChild =
   | { customXml: CustomXmlBlockOptions }
   | { bookmarkStart: BookmarkStartOptions }
   | { bookmarkEnd: MarkupRangeOptions }
+  /** Verbatim body-level XML captured on parse for elements without a structured shape. */
   | { rawXml: string };
 
 /**

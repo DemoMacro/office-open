@@ -587,8 +587,8 @@ export interface ReadModeInkLockDownOptions {
 export interface CaptionOptions {
   /** Caption style name */
   name: string;
-  /** Caption position */
-  pos?: "above" | "below";
+  /** Caption position (ST_CaptionPos) */
+  pos?: "above" | "below" | "left" | "right";
   /** Include chapter number */
   chapterNumber?: boolean;
   /** Heading level for chapter number */

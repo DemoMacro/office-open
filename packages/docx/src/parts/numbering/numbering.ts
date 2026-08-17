@@ -272,8 +272,8 @@ export class Numbering {
 /** w:abstractNum attributes + child elements + w15 restart (CT_AbstractNum). */
 export interface AbstractNumberingPropertiesOptions {
   nsid?: string;
-  /** w:multiLevelType value (singleLevel/multilevel/hybridMultilevel). */
-  multiLevelType?: string;
+  /** w:multiLevelType value (ST_MultiLevelType). */
+  multiLevelType?: "singleLevel" | "multilevel" | "hybridMultilevel";
   /** w15:restartNumberingAfterBreak attribute on w:abstractNum. Omitted when undefined. */
   restartNumberingAfterBreak?: boolean;
   tmpl?: string;
@@ -283,9 +283,9 @@ export interface AbstractNumberingPropertiesOptions {
 }
 
 // String-valued w:abstractNum child elements: XML tag → options key.
+// multiLevelType is handled separately (enum-typed, not plain string).
 const ABSTRACT_EXTRA_PROPS = [
   ["w:nsid", "nsid"],
-  ["w:multiLevelType", "multiLevelType"],
   ["w:tmpl", "tmpl"],
   ["w:name", "name"],
   ["w:styleLink", "styleLink"],
@@ -476,6 +476,11 @@ export function parseNumberingDefinitions(
         const childEl = findChild(abstractEl, tag);
         const v = childEl ? attr(childEl, "w:val") : undefined;
         if (v) properties[key] = v;
+      }
+      const mltEl = findChild(abstractEl, "w:multiLevelType");
+      const mltVal = mltEl ? attr(mltEl, "w:val") : undefined;
+      if (mltVal) {
+        properties.multiLevelType = mltVal as AbstractNumberingPropertiesOptions["multiLevelType"];
       }
       const restartVal = attrBool(abstractEl, "w15:restartNumberingAfterBreak");
       if (restartVal !== undefined) properties.restartNumberingAfterBreak = restartVal;

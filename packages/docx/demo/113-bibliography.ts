@@ -10,7 +10,7 @@ const buffer = await generateDocument({
       {
         sourceType: "Book",
         title: "The Design of Everyday Things",
-        author: "Norman, Donald",
+        author: { authors: [{ last: "Norman", first: "Donald" }] },
         year: "2013",
         publisher: "Basic Books",
         city: "New York",
@@ -19,7 +19,13 @@ const buffer = await generateDocument({
       {
         sourceType: "JournalArticle",
         title: "A Survey of Techniques for Building Secure Software",
-        author: "Smith, J.; Doe, A.",
+        author: {
+          authors: [
+            { last: "Smith", first: "J." },
+            { last: "Doe", first: "A." },
+          ],
+          editors: [{ last: "Lee", first: "Kai" }],
+        },
         year: "2026",
         month: "April",
         journal: "Journal of Software Engineering",
@@ -30,7 +36,7 @@ const buffer = await generateDocument({
       {
         sourceType: "InternetSite",
         title: "TypeScript Documentation",
-        author: "Microsoft",
+        author: { authors: [{ corporate: "Microsoft" }] },
         year: "2026",
         url: "https://www.typescriptlang.org/docs/",
       },

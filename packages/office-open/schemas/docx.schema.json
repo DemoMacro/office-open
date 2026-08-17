@@ -8,7 +8,8 @@
       "description": "w:abstractNum attributes + child elements + w15 restart (CT_AbstractNum).",
       "properties": {
         "multiLevelType": {
-          "description": "w:multiLevelType value (singleLevel/multilevel/hybridMultilevel).",
+          "description": "w:multiLevelType value (ST_MultiLevelType).",
+          "enum": ["singleLevel", "multilevel", "hybridMultilevel"],
           "type": "string"
         },
         "name": {
@@ -471,6 +472,136 @@
         "words": {
           "description": "Word count",
           "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "AuthorEntry": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/PersonOptions"
+        },
+        {
+          "$ref": "#/definitions/CorporateOptions"
+        }
+      ],
+      "description": "One entry of a role list: a person or (author/performer roles) a corporation."
+    },
+    "AuthorOptions": {
+      "additionalProperties": false,
+      "description": "Author container (CT_AuthorType) — one array per named role; each entry serializes to one `b:<Role>` element. All roles are optional; include only the ones relevant to the source type.",
+      "properties": {
+        "artists": {
+          "description": "b:Artist role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "authors": {
+          "description": "b:Author role",
+          "items": {
+            "$ref": "#/definitions/AuthorEntry"
+          },
+          "type": "array"
+        },
+        "bookAuthors": {
+          "description": "b:BookAuthor role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "compilers": {
+          "description": "b:Compiler role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "composers": {
+          "description": "b:Composer role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "conductors": {
+          "description": "b:Conductor role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "counsel": {
+          "description": "b:Counsel role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "directors": {
+          "description": "b:Director role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "editors": {
+          "description": "b:Editor role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "interviewees": {
+          "description": "b:Interviewee role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "interviewers": {
+          "description": "b:Interviewer role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "inventors": {
+          "description": "b:Inventor role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "performers": {
+          "description": "b:Performer role",
+          "items": {
+            "$ref": "#/definitions/AuthorEntry"
+          },
+          "type": "array"
+        },
+        "producers": {
+          "description": "b:ProducerName role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "translators": {
+          "description": "b:Translator role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        },
+        "writers": {
+          "description": "b:Writer role",
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -1474,8 +1605,8 @@
           "type": "string"
         },
         "pos": {
-          "description": "Caption position",
-          "enum": ["above", "below"],
+          "description": "Caption position (ST_CaptionPos)",
+          "enum": ["above", "below", "left", "right"],
           "type": "string"
         },
         "sep": {
@@ -3614,6 +3745,17 @@
         }
       },
       "required": ["defaults", "overrides"],
+      "type": "object"
+    },
+    "CorporateOptions": {
+      "additionalProperties": false,
+      "description": "A corporate (organization) author entry (b:Corporate) — only valid in the author and performer roles, whose XSD type is CT_NameOrCorporateType.",
+      "properties": {
+        "corporate": {
+          "type": "string"
+        }
+      },
+      "required": ["corporate"],
       "type": "object"
     },
     "CustomGeometryOptions": {
@@ -12803,6 +12945,22 @@
       "required": ["id"],
       "type": "object"
     },
+    "PersonOptions": {
+      "additionalProperties": false,
+      "description": "A person in a bibliography name list (CT_PersonType).",
+      "properties": {
+        "first": {
+          "type": "string"
+        },
+        "last": {
+          "type": "string"
+        },
+        "middle": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "PictureFormat": {
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
@@ -17696,7 +17854,7 @@
     },
     "SourceTypeOptions": {
       "additionalProperties": false,
-      "description": "Options for a single bibliography source entry.\n\nMaps to CT_SourceType in the bibliography XSD schema (choice of 48 elements, all optional). All fields are optional — include only the relevant ones for each source type. `author` is plain text (semicolon-separated); the XSD's structured CT_AuthorType roles collapse into it.",
+      "description": "Options for a single bibliography source entry.\n\nMaps to CT_SourceType in the bibliography XSD schema (choice of 48 elements, all optional). All fields are optional — include only the relevant ones for each source type. `author` maps the structured CT_AuthorType role container.",
       "properties": {
         "abbreviatedCaseNumber": {
           "type": "string"
@@ -17705,7 +17863,7 @@
           "type": "string"
         },
         "author": {
-          "type": "string"
+          "$ref": "#/definitions/AuthorOptions"
         },
         "bookTitle": {
           "type": "string"
@@ -21794,7 +21952,7 @@
           "type": "boolean"
         },
         "longDescRId": {
-          "description": "Long description relationship ID",
+          "description": "Long description relationship ID (round-trip only).",
           "type": "string"
         },
         "marginHeight": {
@@ -21823,7 +21981,7 @@
           "type": "string"
         },
         "sourceRId": {
-          "description": "Source file link rId",
+          "description": "Source file link rId (round-trip only; the id refers to a relationship in the source package).",
           "type": "string"
         },
         "title": {

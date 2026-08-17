@@ -18,7 +18,7 @@ export interface WebFrameOptions {
   name?: string;
   /** Frame title */
   title?: string;
-  /** Source file link rId */
+  /** Source file link rId (round-trip only; the id refers to a relationship in the source package). */
   sourceRId?: string;
   /** Margin width in pixels */
   marginWidth?: number;
@@ -30,7 +30,7 @@ export interface WebFrameOptions {
   noResizeAllowed?: boolean;
   /** Linked to file */
   linkedToFile?: boolean;
-  /** Long description relationship ID */
+  /** Long description relationship ID (round-trip only). */
   longDescRId?: string;
 }
 
