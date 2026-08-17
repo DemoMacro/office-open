@@ -761,12 +761,12 @@ export function stringifyChildDispatch(
     return `<w:ruby><w:rubyPr>${prParts.join("")}</w:rubyPr>${rt}${rubyBase}</w:ruby>`;
   }
 
-  // Math — pure string concatenation. A justification wraps the equation in
-  // a display m:oMathPara (m:oMathParaPr/m:jc); without it stays inline m:oMath.
+  // Math — pure string concatenation. A justification or the display flag
+  // wraps the equation in a display m:oMathPara; without it stays inline m:oMath.
   if ("math" in child && typeof child.math === "object" && child.math !== null) {
     const mathOpts = child.math;
     const children = mathOpts.children ?? [];
-    if (mathOpts.justification !== undefined) {
+    if (mathOpts.display || mathOpts.justification !== undefined) {
       return stringifyMathParagraph(children, mathOpts.justification);
     }
     return stringifyMath(children);

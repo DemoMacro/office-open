@@ -60,6 +60,12 @@ export type ParagraphChild =
       math: {
         children?: MathInput[];
         /**
+         * Wrap the equation in a display `m:oMathPara` container instead of an
+         * inline `m:oMath` (preserved from a parsed source even without a
+         * justification).
+         */
+        display?: boolean;
+        /**
          * Display-math paragraph justification (`m:oMathPara/m:oMathParaPr/m:jc`).
          * Present → the equation is wrapped in a display `m:oMathPara`; absent →
          * inline `m:oMath`.

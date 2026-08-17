@@ -1286,7 +1286,11 @@ function parseRunLevelChildren(
         const oMathEl = findChild(child, "m:oMath");
         const mathChildren = oMathEl ? parseMathChildren(oMathEl) : [];
         childList.push({
-          math: jc ? { children: mathChildren, justification: jc } : { children: mathChildren },
+          math: {
+            children: mathChildren,
+            display: true,
+            ...(jc ? { justification: jc } : {}),
+          },
         });
         break;
       }

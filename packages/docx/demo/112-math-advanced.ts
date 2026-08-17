@@ -165,7 +165,7 @@ const buffer = await generateDocument({
                         properties: {
                           baseJc: "center",
                           plcHide: true,
-                          rSpRule: 2,
+                          rSpRule: 2 as const,
                         },
                       },
                     },

@@ -8135,6 +8135,73 @@
       "required": ["id"],
       "type": "object"
     },
+    "MathBaselineAlignment": {
+      "description": "Matrix baseline alignment (s:ST_YAlign).",
+      "enum": ["inline", "top", "center", "bottom", "inside", "outside"],
+      "type": "string"
+    },
+    "MathBorderBoxProperties": {
+      "additionalProperties": false,
+      "description": "Border-box properties (CT_BorderBoxPr) — which edges/strikes to hide or draw.",
+      "properties": {
+        "hideBottom": {
+          "description": "Omit the bottom border (m:hideBot).",
+          "type": "boolean"
+        },
+        "hideLeft": {
+          "description": "Omit the left border (m:hideLeft).",
+          "type": "boolean"
+        },
+        "hideRight": {
+          "description": "Omit the right border (m:hideRight).",
+          "type": "boolean"
+        },
+        "hideTop": {
+          "description": "Omit the top border (m:hideTop).",
+          "type": "boolean"
+        },
+        "strikeDiagonalDown": {
+          "description": "Draw the top-left→bottom-right diagonal (m:strikeTLBR).",
+          "type": "boolean"
+        },
+        "strikeDiagonalUp": {
+          "description": "Draw the bottom-left→top-right diagonal (m:strikeBLTR).",
+          "type": "boolean"
+        },
+        "strikeHorizontal": {
+          "description": "Draw the horizontal strike (m:strikeH).",
+          "type": "boolean"
+        },
+        "strikeVertical": {
+          "description": "Draw the vertical strike (m:strikeV).",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "MathBoxProperties": {
+      "additionalProperties": false,
+      "description": "Box properties (CT_BoxPr).",
+      "properties": {
+        "aln": {
+          "description": "Align this box with surrounding text (m:aln).",
+          "type": "boolean"
+        },
+        "diff": {
+          "description": "Aligned differential, no italics for the first run (m:diff).",
+          "type": "boolean"
+        },
+        "noBreak": {
+          "description": "Never break inside (m:noBreak).",
+          "type": "boolean"
+        },
+        "opEmu": {
+          "description": "Emulate an operator for line breaking (m:opEmu).",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "MathDelimiterProperties": {
       "additionalProperties": false,
       "description": "Delimiter properties (CT_DPr) — bracket characters, growth, shape.",
@@ -8142,6 +8209,10 @@
         "beginCharacter": {
           "description": "Beginning character (m:begChr).",
           "type": "string"
+        },
+        "ctrlPr": {
+          "$ref": "#/definitions/RunPropertiesOptions",
+          "description": "Control-character formatting (m:dPr/m:ctrlPr → w:rPr)."
         },
         "endCharacter": {
           "description": "Ending character (m:endChr).",
@@ -8163,6 +8234,54 @@
       },
       "type": "object"
     },
+    "MathEquationArrayProperties": {
+      "additionalProperties": false,
+      "description": "Equation-array properties (CT_EqArrPr).",
+      "properties": {
+        "baseJc": {
+          "$ref": "#/definitions/MathBaselineAlignment",
+          "description": "Row baseline alignment (m:baseJc)."
+        },
+        "maxDist": {
+          "description": "Distribute rows to the maximum width (m:maxDist).",
+          "type": "boolean"
+        },
+        "objDist": {
+          "description": "Keep object distance between rows (m:objDist).",
+          "type": "boolean"
+        },
+        "rSp": {
+          "description": "Row spacing (m:rSp).",
+          "type": "number"
+        },
+        "rSpRule": {
+          "$ref": "#/definitions/MathSpacingRule",
+          "description": "Row spacing rule (m:rSpRule)."
+        }
+      },
+      "type": "object"
+    },
+    "MathGroupCharacterProperties": {
+      "additionalProperties": false,
+      "description": "Group-character properties (CT_GroupChrPr).",
+      "properties": {
+        "chr": {
+          "description": "Grouping character (m:chr).",
+          "type": "string"
+        },
+        "pos": {
+          "description": "Character position relative to the base (m:pos).",
+          "enum": ["top", "bot"],
+          "type": "string"
+        },
+        "vertJc": {
+          "description": "Base position relative to the character (m:vertJc).",
+          "enum": ["top", "bot"],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "MathInput": {
       "anyOf": [
         {
@@ -8173,6 +8292,10 @@
           "properties": {
             "properties": {
               "$ref": "#/definitions/MathRunPropertiesOptions"
+            },
+            "runProperties": {
+              "$ref": "#/definitions/RunPropertiesOptions",
+              "description": "Run text formatting (w:rPr inside m:r)."
             },
             "text": {
               "type": "string"
@@ -8188,6 +8311,10 @@
             "fraction": {
               "additionalProperties": false,
               "properties": {
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:fPr/m:ctrlPr)."
+                },
                 "denominator": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
@@ -8232,6 +8359,10 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:sSupPr/m:ctrlPr)."
+                },
                 "superScript": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
@@ -8258,6 +8389,10 @@
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:sSubPr/m:ctrlPr)."
                 },
                 "subScript": {
                   "items": {
@@ -8289,6 +8424,10 @@
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:sSubSupPr/m:ctrlPr)."
                 },
                 "subScript": {
                   "items": {
@@ -8323,6 +8462,10 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:sPrePr/m:ctrlPr)."
+                },
                 "subScript": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
@@ -8356,11 +8499,19 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:radPr/m:ctrlPr)."
+                },
                 "degree": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "properties": {
+                  "$ref": "#/definitions/MathRadicalProperties",
+                  "description": "Radical properties (m:radPr)."
                 }
               },
               "required": ["children"],
@@ -8382,6 +8533,10 @@
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:naryPr/m:ctrlPr)."
                 },
                 "properties": {
                   "$ref": "#/definitions/MathNaryProperties"
@@ -8419,6 +8574,10 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:naryPr/m:ctrlPr)."
+                },
                 "properties": {
                   "$ref": "#/definitions/MathNaryProperties"
                 },
@@ -8455,15 +8614,15 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:limLowPr/m:ctrlPr)."
+                },
                 "limit": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
-                },
-                "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
                 }
               },
               "required": ["children", "limit"],
@@ -8486,15 +8645,15 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:limUppPr/m:ctrlPr)."
+                },
                 "limit": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
-                },
-                "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
                 }
               },
               "required": ["children", "limit"],
@@ -8517,15 +8676,15 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:funcPr/m:ctrlPr)."
+                },
                 "name": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
-                },
-                "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
                 }
               },
               "required": ["children", "name"],
@@ -8542,14 +8701,29 @@
             "matrix": {
               "additionalProperties": false,
               "properties": {
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:mPr/m:ctrlPr)."
+                },
                 "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
+                  "$ref": "#/definitions/MathMatrixProperties",
+                  "description": "Matrix properties (m:mPr)."
                 },
                 "rows": {
+                  "description": "Matrix rows; each cell is one m:e (a bare MathInput when the cell holds a single element).",
                   "items": {
                     "items": {
-                      "$ref": "#/definitions/MathInput"
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/MathInput"
+                        },
+                        {
+                          "items": {
+                            "$ref": "#/definitions/MathInput"
+                          },
+                          "type": "array"
+                        }
+                      ]
                     },
                     "type": "array"
                   },
@@ -8584,12 +8758,20 @@
                       },
                       "type": "array"
                     },
+                    "elements": {
+                      "description": "Multiple delimited elements (m:e+), separator-split groups.",
+                      "items": {
+                        "items": {
+                          "$ref": "#/definitions/MathInput"
+                        },
+                        "type": "array"
+                      },
+                      "type": "array"
+                    },
                     "properties": {
                       "$ref": "#/definitions/MathDelimiterProperties"
                     }
                   },
-                  "required": ["children"],
-                  "title": "children",
                   "type": "object"
                 }
               ]
@@ -8619,12 +8801,20 @@
                       },
                       "type": "array"
                     },
+                    "elements": {
+                      "description": "Multiple delimited elements (m:e+), separator-split groups.",
+                      "items": {
+                        "items": {
+                          "$ref": "#/definitions/MathInput"
+                        },
+                        "type": "array"
+                      },
+                      "type": "array"
+                    },
                     "properties": {
                       "$ref": "#/definitions/MathDelimiterProperties"
                     }
                   },
-                  "required": ["children"],
-                  "title": "children",
                   "type": "object"
                 }
               ]
@@ -8654,12 +8844,20 @@
                       },
                       "type": "array"
                     },
+                    "elements": {
+                      "description": "Multiple delimited elements (m:e+), separator-split groups.",
+                      "items": {
+                        "items": {
+                          "$ref": "#/definitions/MathInput"
+                        },
+                        "type": "array"
+                      },
+                      "type": "array"
+                    },
                     "properties": {
                       "$ref": "#/definitions/MathDelimiterProperties"
                     }
                   },
-                  "required": ["children"],
-                  "title": "children",
                   "type": "object"
                 }
               ]
@@ -8689,12 +8887,20 @@
                       },
                       "type": "array"
                     },
+                    "elements": {
+                      "description": "Multiple delimited elements (m:e+), separator-split groups.",
+                      "items": {
+                        "items": {
+                          "$ref": "#/definitions/MathInput"
+                        },
+                        "type": "array"
+                      },
+                      "type": "array"
+                    },
                     "properties": {
                       "$ref": "#/definitions/MathDelimiterProperties"
                     }
                   },
-                  "required": ["children"],
-                  "title": "children",
                   "type": "object"
                 }
               ]
@@ -8716,9 +8922,13 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:borderBoxPr/m:ctrlPr)."
+                },
                 "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
+                  "$ref": "#/definitions/MathBorderBoxProperties",
+                  "description": "Border-box properties (m:borderBoxPr)."
                 }
               },
               "required": ["children"],
@@ -8741,9 +8951,13 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:boxPr/m:ctrlPr)."
+                },
                 "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
+                  "$ref": "#/definitions/MathBoxProperties",
+                  "description": "Box properties (m:boxPr)."
                 }
               },
               "required": ["children"],
@@ -8766,9 +8980,13 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:groupChrPr/m:ctrlPr)."
+                },
                 "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
+                  "$ref": "#/definitions/MathGroupCharacterProperties",
+                  "description": "Group-character properties (m:groupChrPr)."
                 }
               },
               "required": ["children"],
@@ -8791,9 +9009,13 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:phantPr/m:ctrlPr)."
+                },
                 "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
+                  "$ref": "#/definitions/MathPhantomProperties",
+                  "description": "Phantom properties (m:phantPr)."
                 }
               },
               "required": ["children"],
@@ -8810,9 +9032,13 @@
             "eqArr": {
               "additionalProperties": false,
               "properties": {
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:eqArrPr/m:ctrlPr)."
+                },
                 "properties": {
-                  "additionalProperties": {},
-                  "type": "object"
+                  "$ref": "#/definitions/MathEquationArrayProperties",
+                  "description": "Equation-array properties (m:eqArrPr)."
                 },
                 "rows": {
                   "items": {
@@ -8846,6 +9072,10 @@
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:accPr/m:ctrlPr)."
                 }
               },
               "required": ["children"],
@@ -8868,6 +9098,10 @@
                   },
                   "type": "array"
                 },
+                "ctrlPr": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Control-character formatting (m:barPr/m:ctrlPr)."
+                },
                 "type": {
                   "enum": ["top", "bot"],
                   "type": "string"
@@ -8883,6 +9117,64 @@
         }
       ],
       "description": "Recursive input type for math content.\n\nEach discriminated union member uses a unique key to identify the component type. Used by `parts/paragraph/math/stringify.ts` for direct XML string generation."
+    },
+    "MathMatrixColumnOptions": {
+      "additionalProperties": false,
+      "description": "Matrix column justification (one m:mc entry inside m:mcs).",
+      "properties": {
+        "count": {
+          "description": "Number of columns the justification applies to (m:mcPr/m:count).",
+          "type": "number"
+        },
+        "justification": {
+          "description": "Column justification (m:mcPr/m:mcJc).",
+          "type": "string"
+        }
+      },
+      "required": ["count", "justification"],
+      "type": "object"
+    },
+    "MathMatrixProperties": {
+      "additionalProperties": false,
+      "description": "Matrix properties (CT_MPr).",
+      "properties": {
+        "baseJc": {
+          "$ref": "#/definitions/MathBaselineAlignment",
+          "description": "Row baseline alignment (m:baseJc)."
+        },
+        "cGp": {
+          "description": "Column gap (m:cGp).",
+          "type": "number"
+        },
+        "cGpRule": {
+          "$ref": "#/definitions/MathSpacingRule",
+          "description": "Column spacing rule (m:cGpRule)."
+        },
+        "cSp": {
+          "description": "Column spacing (m:cSp).",
+          "type": "number"
+        },
+        "mcs": {
+          "description": "Matrix column justifications (m:mcs).",
+          "items": {
+            "$ref": "#/definitions/MathMatrixColumnOptions"
+          },
+          "type": "array"
+        },
+        "plcHide": {
+          "description": "Hide placeholder glyphs in empty cells (m:plcHide).",
+          "type": "boolean"
+        },
+        "rSp": {
+          "description": "Row spacing (m:rSp).",
+          "type": "number"
+        },
+        "rSpRule": {
+          "$ref": "#/definitions/MathSpacingRule",
+          "description": "Row spacing rule (m:rSpRule)."
+        }
+      },
+      "type": "object"
     },
     "MathNaryLimitLocation": {
       "description": "N-ary operator limit location (ST_LimLoc).",
@@ -8900,6 +9192,33 @@
         "limitLocation": {
           "$ref": "#/definitions/MathNaryLimitLocation",
           "description": "Limit location relative to the operator (m:limLoc)."
+        }
+      },
+      "type": "object"
+    },
+    "MathPhantomProperties": {
+      "additionalProperties": false,
+      "description": "Phantom properties (CT_PhantPr).",
+      "properties": {
+        "show": {
+          "description": "Show the phantom content (m:show).",
+          "type": "boolean"
+        },
+        "transp": {
+          "description": "Transparent — show without spacing (m:transp).",
+          "type": "boolean"
+        },
+        "zeroAsc": {
+          "description": "Zero ascent (m:zeroAsc).",
+          "type": "boolean"
+        },
+        "zeroDesc": {
+          "description": "Zero descent (m:zeroDesc).",
+          "type": "boolean"
+        },
+        "zeroWid": {
+          "description": "Zero width (m:zeroWid).",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -8980,6 +9299,17 @@
       },
       "type": "object"
     },
+    "MathRadicalProperties": {
+      "additionalProperties": false,
+      "description": "Radical properties (CT_RadPr).",
+      "properties": {
+        "degHide": {
+          "description": "Hide the degree argument — square-root display (m:degHide).",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "MathRunPropertiesOptions": {
       "additionalProperties": false,
       "properties": {
@@ -9005,9 +9335,13 @@
       "type": "object"
     },
     "MathScriptType": {
-      "description": "Math types for Office MathML (OMML).\n\nProvides the canonical input type for math content and run properties. No XmlComponent dependencies — pure type definitions.",
       "enum": ["roman", "script", "fraktur", "double-struck", "sans-serif", "monospace"],
       "type": "string"
+    },
+    "MathSpacingRule": {
+      "description": "Matrix/eqArr row-spacing rule (ST_SpacingRule, integer 0-4).",
+      "enum": [0, 1, 2, 3, 4],
+      "type": "number"
     },
     "MathStyleType": {
       "enum": ["p", "b", "i", "bi"],
@@ -10347,6 +10681,10 @@
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "display": {
+                  "description": "Wrap the equation in a display `m:oMathPara` container instead of an inline `m:oMath` (preserved from a parsed source even without a justification).",
+                  "type": "boolean"
                 },
                 "justification": {
                   "description": "Display-math paragraph justification (`m:oMathPara/m:oMathParaPr/m:jc`). Present → the equation is wrapped in a display `m:oMathPara`; absent → inline `m:oMath`.",
