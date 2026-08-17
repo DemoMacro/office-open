@@ -163,7 +163,7 @@ interface XmlifyedFileMapping {
   Footers: XmlifyedFile[];
   HeaderRelationships: XmlifyedFile[];
   FooterRelationships: XmlifyedFile[];
-  CustomProperties: XmlifyedFile;
+  CustomProperties?: XmlifyedFile;
   AppProperties: XmlifyedFile;
   FootNotes?: XmlifyedFile;
   FootNotesRelationships?: XmlifyedFile;
@@ -360,13 +360,19 @@ function xmlifyContext(
           })(),
         }
       : {}),
-    CustomProperties: {
-      data:
-        XML_DECL +
-        (customPropertiesDesc.stringify({ properties: ctx._options.customProperties ?? [] }, ctx) ??
-          ""),
-      path: "docProps/custom.xml",
-    },
+    // docProps/custom.xml — emitted only when custom properties exist (parsed
+    // presence or fresh authoring); Word omits the part otherwise.
+    ...(ctx._options.customProperties !== undefined
+      ? {
+          CustomProperties: {
+            data:
+              XML_DECL +
+              (customPropertiesDesc.stringify({ properties: ctx._options.customProperties }, ctx) ??
+                ""),
+            path: "docProps/custom.xml",
+          },
+        }
+      : {}),
     Document: {
       data: (() => {
         let xmlData = documentEmbeddings.xml;

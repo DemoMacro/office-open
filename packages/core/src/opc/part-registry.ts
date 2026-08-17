@@ -90,6 +90,19 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
+      // Legacy Word 2010 styles-with-effects part (deprecated by ISO 29500);
+      // round-tripped verbatim via rawParts. itemN.xml custom-XML parts need
+      // no Override (the xml Default covers them), their itemProps do.
+      path: "word/stylesWithEffects.xml",
+      contentType: "application/vnd.ms-word.stylesWithEffects+xml",
+      presence: { kind: "conditional", flag: "source carried the legacy part" },
+    },
+    {
+      path: "customXml/itemProps${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.customXmlProperties+xml",
+      presence: { kind: "repeated", countFrom: "customXml items" },
+    },
+    {
       path: "word/numbering.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml",
       presence: { kind: "conditional", flag: "freshCompile" },
@@ -125,13 +138,11 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
-      // The compiler writes docProps/custom.xml unconditionally (even with an
-      // empty customProperties list), so its Override is unconditional too —
-      // gated on freshCompile to match the always-write behaviour. Gate it on
-      // hasCustomProperties and the part would ship with no content-type.
+      // Emitted only when custom properties exist (parsed presence or fresh
+      // authoring); Word omits both the part and its Override otherwise.
       path: "docProps/custom.xml",
       contentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
-      presence: { kind: "conditional", flag: "freshCompile" },
+      presence: { kind: "conditional", flag: "hasCustomProperties" },
     },
     {
       path: "word/comments.xml",

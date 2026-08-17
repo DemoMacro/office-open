@@ -261,7 +261,10 @@ export class DocxWriteContext implements WriteContext {
       rangeNext: scan.maxRangeId + 1,
       moveRunNext: scan.maxMoveRunId + 1,
     };
-    this.fileRelationships = buildRootRelationships("word/document.xml", true);
+    this.fileRelationships = buildRootRelationships(
+      "word/document.xml",
+      options.customProperties !== undefined,
+    );
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };
     this.document = { relationships: new Relationships() };

@@ -361,14 +361,13 @@ export function parseDocument(data: DataType): DocumentOptions {
     opts.webSettings = webSettingsDesc.parse(docx.webSettings, ctx);
   }
 
-  // Custom properties
+  // Custom properties — presence-based: an empty docProps/custom.xml
+  // round-trips as an empty part instead of being dropped.
   if (docx.customProps) {
     const customPropsEl = docx.doc.get(docx.customProps);
     if (customPropsEl) {
       const cpResult = customPropertiesDesc.parse(customPropsEl, ctx);
-      if (cpResult.properties && cpResult.properties.length > 0) {
-        opts.customProperties = cpResult.properties;
-      }
+      opts.customProperties = cpResult.properties ?? [];
     }
   }
 
@@ -478,17 +477,23 @@ export function parseDocument(data: DataType): DocumentOptions {
     if (ctResult) opts.contentTypes = ctResult;
   }
 
-  // Raw passthrough: parts generate() doesn't rebuild (word/theme/*, customXml/*).
-  // Carried verbatim so their [Content_Types] declarations stay valid and the
-  // package opens in Word. (Media/fonts/headers/etc. are rebuilt by the compiler
-  // and must NOT be passed through — they'd otherwise duplicate under renamed paths.)
+  // Raw passthrough: parts generate() doesn't rebuild (word/theme/*, customXml/*,
+  // the legacy word/stylesWithEffects.xml). Carried verbatim so their
+  // [Content_Types] declarations stay valid and the package opens in Word.
+  // (Media/fonts/headers/etc. are rebuilt by the compiler and must NOT be passed
+  // through — they'd otherwise duplicate under renamed paths.)
   const rawParts: { path: string; data: Uint8Array }[] = [];
-  for (const prefix of ["word/theme/", "customXml/"]) {
-    for (const p of docx.doc.keys(prefix)) {
-      if (p.endsWith("/")) continue;
-      const data = docx.doc.getRaw(p);
-      if (data) rawParts.push({ path: p, data });
+  const RAW_PART_PATHS = new Set(["word/stylesWithEffects.xml"]);
+  for (const p of docx.doc.keys()) {
+    if (p.endsWith("/")) continue;
+    if (
+      !RAW_PART_PATHS.has(p) &&
+      !["word/theme/", "customXml/"].some((prefix) => p.startsWith(prefix))
+    ) {
+      continue;
     }
+    const data = docx.doc.getRaw(p);
+    if (data) rawParts.push({ path: p, data });
   }
   if (rawParts.length > 0) opts.rawParts = rawParts;
 
