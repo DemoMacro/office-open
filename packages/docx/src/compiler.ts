@@ -562,18 +562,18 @@ function xmlifyContext(
         return optionalRelsPart(
           entry.relationships,
           XML_DECL,
-          `word/_rels/footer${index + 1}.xml.rels`,
+          `word/_rels/${entry.partName ?? `footer${index + 1}.xml`}.rels`,
         );
       })
       .filter((r): r is XmlifyedFile => r !== undefined),
-    Footers: ctx.footers.map((_entry, index) => {
+    Footers: ctx.footers.map((entry, index) => {
       const footerMedia = footerMediaResults.get(index)!;
       const tempXmlData = footerFormattedViews.get(index)!;
       const xmlData = footerMedia.referenced.length > 0 ? footerMedia.xml : tempXmlData;
 
       return {
         data: replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering),
-        path: `word/footer${index + 1}.xml`,
+        path: `word/${entry.partName ?? `footer${index + 1}.xml`}`,
       };
     }),
     HeaderRelationships: ctx.headers
@@ -604,18 +604,18 @@ function xmlifyContext(
         return optionalRelsPart(
           entry.relationships,
           XML_DECL,
-          `word/_rels/header${index + 1}.xml.rels`,
+          `word/_rels/${entry.partName ?? `header${index + 1}.xml`}.rels`,
         );
       })
       .filter((r): r is XmlifyedFile => r !== undefined),
-    Headers: ctx.headers.map((_entry, index) => {
+    Headers: ctx.headers.map((entry, index) => {
       const headerMedia = headerMediaResults.get(index)!;
       const tempXmlData = headerFormattedViews.get(index)!;
       const xmlData = headerMedia.referenced.length > 0 ? headerMedia.xml : tempXmlData;
 
       return {
         data: replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering),
-        path: `word/header${index + 1}.xml`,
+        path: `word/${entry.partName ?? `header${index + 1}.xml`}`,
       };
     }),
     ...(ctx.hasNumbering

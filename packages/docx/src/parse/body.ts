@@ -36,6 +36,8 @@ import { stringifyElement } from "../util/stringify-element";
 type ParsedSectionProperties = SectionPropertiesOptions & {
   parsedHeaders?: Record<string, SectionChild[]>;
   parsedFooters?: Record<string, SectionChild[]>;
+  parsedHeaderPartNames?: NonNullable<NonNullable<SectionOptions["headers"]>["partNames"]>;
+  parsedFooterPartNames?: NonNullable<NonNullable<SectionOptions["footers"]>["partNames"]>;
 };
 
 /**
@@ -48,31 +50,34 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectio
   // Headers/footers - parse from references and store in a separate field
   const headerRefs: Record<string, SectionChild[]> = {};
   const footerRefs: Record<string, SectionChild[]> = {};
+  const headerPartNames: NonNullable<ParsedSectionProperties["parsedHeaderPartNames"]> = {};
+  const footerPartNames: NonNullable<ParsedSectionProperties["parsedFooterPartNames"]> = {};
 
   for (const child of el.elements ?? []) {
-    if (child.name === "w:headerReference") {
+    if (child.name === "w:headerReference" || child.name === "w:footerReference") {
       const rId = attr(child, "r:id");
       const type = attr(child, "w:type");
-      if (rId && type) {
-        const headerChildren = parseHeaderFooterRef(rId, ctx);
-        if (headerChildren) headerRefs[type] = headerChildren;
-      }
-    }
-    if (child.name === "w:footerReference") {
-      const rId = attr(child, "r:id");
-      const type = attr(child, "w:type");
-      if (rId && type) {
-        const footerChildren = parseHeaderFooterRef(rId, ctx);
-        if (footerChildren) footerRefs[type] = footerChildren;
+      if (!rId || !type) continue;
+      const slot = type as "default" | "first" | "even";
+      const parsed = parseHeaderFooterRef(rId, ctx);
+      if (!parsed) continue;
+      if (child.name === "w:headerReference") {
+        headerRefs[slot] = parsed.children;
+        headerPartNames[slot] = parsed.partName;
+      } else {
+        footerRefs[slot] = parsed.children;
+        footerPartNames[slot] = parsed.partName;
       }
     }
   }
 
   if (Object.keys(headerRefs).length > 0) {
     opts.parsedHeaders = headerRefs;
+    opts.parsedHeaderPartNames = headerPartNames;
   }
   if (Object.keys(footerRefs).length > 0) {
     opts.parsedFooters = footerRefs;
+    opts.parsedFooterPartNames = footerPartNames;
   }
 
   return opts;
@@ -80,8 +85,13 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectio
 
 /**
  * Parse a header/footer reference by following the relationship to its XML part.
+ * Returns the parsed children plus the source part file name (headerN.xml) so
+ * generate can pin the part numbering to the source on round-trip.
  */
-function parseHeaderFooterRef(rId: string, ctx: DocxReadContext): SectionChild[] | undefined {
+function parseHeaderFooterRef(
+  rId: string,
+  ctx: DocxReadContext,
+): { children: SectionChild[]; partName: string } | undefined {
   const path = ctx.docx.partRefs.headers.get(rId) ?? ctx.docx.partRefs.footers.get(rId);
   if (!path) return undefined;
 
@@ -100,7 +110,9 @@ function parseHeaderFooterRef(rId: string, ctx: DocxReadContext): SectionChild[]
     }
   });
 
-  return children.length > 0 ? children : undefined;
+  if (children.length === 0) return undefined;
+  const partName = path.split("/").pop() ?? path;
+  return { children, partName };
 }
 
 // ── Section child dispatch ───────────────────────────────────────────────────
@@ -246,18 +258,35 @@ export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[]
     const parsedProps = parseSectionProperties(boundary.sectPr, ctx);
 
     // Extract headers/footers that were stored as parsedHeaders/parsedFooters
-    const { parsedHeaders, parsedFooters } = parsedProps;
+    const { parsedHeaders, parsedFooters, parsedHeaderPartNames, parsedFooterPartNames } =
+      parsedProps;
 
     // Build clean properties without internal fields
     const cleanProps = { ...parsedProps };
     delete cleanProps.parsedHeaders;
     delete cleanProps.parsedFooters;
+    delete cleanProps.parsedHeaderPartNames;
+    delete cleanProps.parsedFooterPartNames;
 
     const section = {
       children: parseBodyChildren(sectionElements, ctx),
       properties: cleanProps,
-      ...(parsedHeaders ? { headers: parsedHeaders } : {}),
-      ...(parsedFooters ? { footers: parsedFooters } : {}),
+      ...(parsedHeaders
+        ? {
+            headers: {
+              ...parsedHeaders,
+              ...(parsedHeaderPartNames ? { partNames: parsedHeaderPartNames } : {}),
+            },
+          }
+        : {}),
+      ...(parsedFooters
+        ? {
+            footers: {
+              ...parsedFooters,
+              ...(parsedFooterPartNames ? { partNames: parsedFooterPartNames } : {}),
+            },
+          }
+        : {}),
     } as SectionOptions;
 
     sections.push(section);

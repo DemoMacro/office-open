@@ -65,11 +65,19 @@ export interface SectionOptions {
     default?: SectionChild[];
     first?: SectionChild[];
     even?: SectionChild[];
+    /**
+     * Source part name per slot (headerN.xml, round-trip only) — pins the
+     * generated part numbering to the source so header parts land in the
+     * same files. Fresh documents omit it and get sequential numbering.
+     */
+    partNames?: { default?: string; first?: string; even?: string };
   };
   footers?: {
     default?: SectionChild[];
     first?: SectionChild[];
     even?: SectionChild[];
+    /** Source part name per slot (footerN.xml, round-trip only). */
+    partNames?: { default?: string; first?: string; even?: string };
   };
   properties?: SectionPropertiesOptions;
   children: SectionChild[];

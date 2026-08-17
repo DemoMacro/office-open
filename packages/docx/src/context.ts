@@ -440,57 +440,87 @@ export class DocxWriteContext implements WriteContext {
     const sectPrOptions: SectionPropertiesDescriptorOptions = {
       ...properties,
       footerReferences: {
-        default: footers.default ? this.createFooter(footers.default) : undefined,
-        even: footers.even ? this.createFooter(footers.even) : undefined,
-        first: footers.first ? this.createFooter(footers.first) : undefined,
+        default: footers.default
+          ? this.createFooter(footers.default, footers.partNames?.default)
+          : undefined,
+        even: footers.even ? this.createFooter(footers.even, footers.partNames?.even) : undefined,
+        first: footers.first
+          ? this.createFooter(footers.first, footers.partNames?.first)
+          : undefined,
       },
       headerReferences: {
-        default: headers.default ? this.createHeader(headers.default) : undefined,
-        even: headers.even ? this.createHeader(headers.even) : undefined,
-        first: headers.first ? this.createHeader(headers.first) : undefined,
+        default: headers.default
+          ? this.createHeader(headers.default, headers.partNames?.default)
+          : undefined,
+        even: headers.even ? this.createHeader(headers.even, headers.partNames?.even) : undefined,
+        first: headers.first
+          ? this.createHeader(headers.first, headers.partNames?.first)
+          : undefined,
       },
     };
     this._sectionProperties.push(sectPrOptions);
   }
 
-  private createHeader(header: SectionChild[]): HeaderFooterEntry {
+  private createHeader(header: SectionChild[], partName?: string): HeaderFooterEntry {
     const referenceId = this._currentRelationshipId++;
     const entry: HeaderFooterEntry = {
       children: header,
       relationships: new Relationships(),
       referenceId,
     };
-    this.addHeaderToDocument(entry);
+    this.addHeaderToDocument(entry, partName);
     return entry;
   }
 
-  private createFooter(footer: SectionChild[]): HeaderFooterEntry {
+  private createFooter(footer: SectionChild[], partName?: string): HeaderFooterEntry {
     const referenceId = this._currentRelationshipId++;
     const entry: HeaderFooterEntry = {
       children: footer,
       relationships: new Relationships(),
       referenceId,
     };
-    this.addFooterToDocument(entry);
+    this.addFooterToDocument(entry, partName);
     return entry;
   }
 
-  private addHeaderToDocument(header: HeaderFooterEntry): void {
+  private addHeaderToDocument(header: HeaderFooterEntry, partName?: string): void {
     this._headers.push(header);
+    header.partName = this.nextPartName(this._headers, partName, "header");
     this.document.relationships.addRelationship(
       header.referenceId,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
-      `header${this._headers.length}.xml`,
+      header.partName,
     );
   }
 
-  private addFooterToDocument(footer: HeaderFooterEntry): void {
+  private addFooterToDocument(footer: HeaderFooterEntry, partName?: string): void {
     this._footers.push(footer);
+    footer.partName = this.nextPartName(this._footers, partName, "footer");
     this.document.relationships.addRelationship(
       footer.referenceId,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer",
-      `footer${this._footers.length}.xml`,
+      footer.partName,
     );
+  }
+
+  /** Resolve the part file name: the round-tripped source name when given,
+   *  else the next free <kind>N.xml slot (pinned names never collide). */
+  private nextPartName(
+    entries: HeaderFooterEntry[],
+    partName: string | undefined,
+    kind: "header" | "footer",
+  ): string {
+    if (partName) return partName;
+    const used = new Set(
+      entries.map((e) => e.partName).filter((n): n is string => n !== undefined),
+    );
+    let n = entries.length;
+    let name = `${kind}${n}.xml`;
+    while (used.has(name)) {
+      n++;
+      name = `${kind}${n}.xml`;
+    }
+    return name;
   }
 
   private addDefaultRelationships(): void {

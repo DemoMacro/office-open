@@ -17056,6 +17056,22 @@
                 "$ref": "#/definitions/SectionChild"
               },
               "type": "array"
+            },
+            "partNames": {
+              "additionalProperties": false,
+              "description": "Source part name per slot (footerN.xml, round-trip only).",
+              "properties": {
+                "default": {
+                  "type": "string"
+                },
+                "even": {
+                  "type": "string"
+                },
+                "first": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"
@@ -17080,6 +17096,22 @@
                 "$ref": "#/definitions/SectionChild"
               },
               "type": "array"
+            },
+            "partNames": {
+              "additionalProperties": false,
+              "description": "Source part name per slot (headerN.xml, round-trip only) — pins the generated part numbering to the source so header parts land in the same files. Fresh documents omit it and get sequential numbering.",
+              "properties": {
+                "default": {
+                  "type": "string"
+                },
+                "even": {
+                  "type": "string"
+                },
+                "first": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"

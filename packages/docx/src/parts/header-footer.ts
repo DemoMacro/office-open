@@ -39,6 +39,11 @@ export interface HeaderFooterReference {
 export interface HeaderFooterEntry extends HeaderFooterReference {
   children: SectionChild[];
   relationships: Relationships;
+  /**
+   * Target part name (headerN.xml / footerN.xml). Round-trips pin the source
+   * part name so content lands in the same file; fresh entries auto-number.
+   */
+  partName?: string;
 }
 
 /**
