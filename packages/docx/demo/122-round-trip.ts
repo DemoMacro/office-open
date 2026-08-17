@@ -535,9 +535,9 @@ async function main() {
             children: [
               { text: "Double Strike", doubleStrike: true },
               " | ",
-              { text: "SubScript", subScript: true },
+              { text: "SubScript", verticalAlign: "subscript" },
               " | ",
-              { text: "SuperScript", superScript: true },
+              { text: "SuperScript", verticalAlign: "superscript" },
               " | ",
               { text: "SmallCaps", smallCaps: true },
               " | ",

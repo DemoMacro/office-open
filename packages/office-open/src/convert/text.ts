@@ -207,8 +207,7 @@ function drawingRunPropertiesToDocx(run: DrawingRunProperties): Partial<RunOptio
   if (run.strike === "singleStrike") out.strike = true;
   else if (run.strike === "doubleStrike") out.doubleStrike = true;
   if (run.baseline !== undefined && run.baseline !== 0) {
-    if (run.baseline > 0) out.superScript = true;
-    else out.subScript = true;
+    out.verticalAlign = run.baseline > 0 ? "superscript" : "subscript";
   }
   if (run.spacing !== undefined) out.characterSpacing = round(run.spacing * TWIPS_PER_HUNDREDTH);
   if (run.capitalization === "all") out.allCaps = true;
@@ -307,8 +306,8 @@ function docxRunPropertiesToDrawing(run: RunOptions): DrawingRunProperties {
   }
   if (run.doubleStrike) out.strike = "doubleStrike";
   else if (run.strike) out.strike = "singleStrike";
-  if (run.superScript) out.baseline = 30000;
-  else if (run.subScript) out.baseline = -25000;
+  if (run.verticalAlign === "superscript") out.baseline = 30000;
+  else if (run.verticalAlign === "subscript") out.baseline = -25000;
   if (run.characterSpacing !== undefined) {
     out.spacing = round(convertToTwip(run.characterSpacing) * HUNDREDTHS_PER_TWIP);
   }

@@ -53,6 +53,35 @@ describe("paragraph-properties field consistency", () => {
     });
   });
 
+  it("keeps numPr partial forms distinct (ilvl+numId / numId-only / ilvl-only)", () => {
+    const numberingCtx = {
+      numberingCache: new Map([["0", parseXml(`<w:abstractNum xmlns:w="${W}"/>`) as Element]]),
+      numIdCache: new Map([["1", "0"]]),
+    } as unknown as DocxReadContext;
+
+    const parseWith = (inner: string): Record<string, unknown> => {
+      const xml = `<w:pPr xmlns:w="${W}">${inner}</w:pPr>`;
+      const root = (parseXml(xml) as Element).elements?.find((e) => e.type === "element");
+      if (!root) throw new Error("parseWith: produced no root element");
+      return parseParagraphProperties(root, numberingCtx);
+    };
+
+    // Full form → numbering with pinned level.
+    const full = parseWith(`<w:numPr><w:ilvl w:val="2"/><w:numId w:val="1"/></w:numPr>`);
+    expect(full.numbering).toMatchObject({ reference: "list_1", level: 2 });
+
+    // numId-only (no w:ilvl) → level stays undefined so stringify omits w:ilvl.
+    const numIdOnly = parseWith(`<w:numPr><w:numId w:val="1"/></w:numPr>`);
+    expect(numIdOnly.numbering).toMatchObject({ reference: "list_1" });
+    expect((numIdOnly.numbering as { level?: number }).level).toBeUndefined();
+
+    // ilvl-only (no w:numId) → inherits numbering from the style chain; no
+    // bullet fallback (which would fabricate numId=1 + ListParagraph).
+    const ilvlOnly = parseWith(`<w:numPr><w:ilvl w:val="1"/></w:numPr>`);
+    expect(ilvlOnly.numbering).toBeUndefined();
+    expect(ilvlOnly.bullet).toBeUndefined();
+  });
+
   it("declared F3 parse-loss matches the live parse gap (regression guard)", () => {
     // If parseParagraphProperties gains a findChild for any of these, the
     // field set above must be updated too — this keeps FIELD_SPECS honest.

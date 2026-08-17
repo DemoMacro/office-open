@@ -238,8 +238,9 @@ export function stringifyConditionalTableStyle(opts: ConditionalTableStyleOption
   const rPr = stringifyRunProperties(opts.run);
   if (rPr) children.push(rPr);
   if (opts.table) {
-    const tblPr = stringifyTableProperties(opts.table);
-    if (tblPr) children.push(tblPr);
+    // includeIfEmpty: a table-style tblPr survives as an empty element even
+    // with no fields (Word writes <w:tblPr/> placeholders in tblStylePr).
+    children.push(stringifyTableProperties({ ...opts.table, includeIfEmpty: true }) ?? "");
   }
   if (opts.row) {
     const trPr = stringifyTableRowProperties(opts.row);
@@ -261,8 +262,9 @@ export function stringifyTableStyle(opts: TableStyleOptions): string {
   const rPr = stringifyRunProperties(opts.run);
   if (rPr) children.push(rPr);
   if (opts.table) {
-    const tblPr = stringifyTableProperties(opts.table);
-    if (tblPr) children.push(tblPr);
+    // includeIfEmpty mirrors the conditional-format writer — an empty table
+    // object means "keep the (empty) tblPr element".
+    children.push(stringifyTableProperties({ ...opts.table, includeIfEmpty: true }) ?? "");
   }
   if (opts.row) {
     const trPr = stringifyTableRowProperties(opts.row);
@@ -928,7 +930,7 @@ export class DefaultStylesFactory {
       basedOn: "DefaultParagraphFont",
       semiHidden: true,
       unhideWhenUsed: true,
-      run: { superScript: true },
+      run: { verticalAlign: "superscript" },
       ...options.footnoteReference,
     });
 
@@ -964,7 +966,7 @@ export class DefaultStylesFactory {
       basedOn: "DefaultParagraphFont",
       semiHidden: true,
       unhideWhenUsed: true,
-      run: { superScript: true },
+      run: { verticalAlign: "superscript" },
       ...options.endnoteReference,
     });
 

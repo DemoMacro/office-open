@@ -115,6 +115,27 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(opts?.importedStyles ?? []).toEqual([]);
   });
 
+  it("round-trips an empty tblPr placeholder inside tblStylePr", () => {
+    // Word's table-style generator emits <w:tblPr/> placeholders in
+    // conditional formats — presence itself is the content.
+    const xml =
+      `<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:style w:type="table" w:styleId="T1"><w:name w:val="T1"/>` +
+      `<w:tblStylePr w:type="firstRow"><w:tblPr/></w:tblStylePr>` +
+      `</w:style></w:styles>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseStyleDefinitions(el, parseParagraphProperties, ctx);
+
+    const cf = opts?.tableStyles?.[0]?.conditionalFormats?.[0];
+    expect(cf).toBeDefined();
+    expect(cf!.table).toEqual({});
+
+    const roundXml = new Styles({ tableStyles: opts!.tableStyles! }).serialize();
+    expect(roundXml).toContain("<w:tblStylePr");
+    expect(roundXml).toContain("<w:tblPr");
+  });
+
   it("round-trips default/customStyle/hidden/rsid on a custom paragraph style", () => {
     const styles = new Styles({
       paragraphStyles: [

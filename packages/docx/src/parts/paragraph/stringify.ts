@@ -184,11 +184,16 @@ function framePrStr(opts: FrameOptions): string {
 
 function numPrStr(
   numberId: number | string,
-  indentLevel: number,
+  indentLevel: number | undefined,
   numberingChange?: { original: string; id: string; author: string; date?: string },
 ): string {
   const idVal = typeof numberId === "string" ? `{${numberId}}` : numberId;
-  const parts = [`<w:ilvl w:val="${Math.min(indentLevel, 9)}"/>`, `<w:numId w:val="${idVal}"/>`];
+  // w:ilvl is optional in CT_NumPr — omit it when the source numPr carried
+  // only w:numId (level inherited rather than pinned).
+  const parts =
+    indentLevel === undefined
+      ? [`<w:numId w:val="${idVal}"/>`]
+      : [`<w:ilvl w:val="${Math.min(indentLevel, 9)}"/>`, `<w:numId w:val="${idVal}"/>`];
   if (numberingChange) {
     const a = attrsRaw({
       "w:original": numberingChange.original,
@@ -573,8 +578,7 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   if (opts.shading) s += shadingStr(opts.shading);
 
   // Vertical alignment
-  if (opts.subScript) s += '<w:vertAlign w:val="subscript"/>';
-  if (opts.superScript) s += '<w:vertAlign w:val="superscript"/>';
+  if (opts.verticalAlign) s += `<w:vertAlign w:val="${opts.verticalAlign}"/>`;
 
   // RTL
   if (opts.rightToLeft !== undefined) s += onOff("w:rtl", opts.rightToLeft);

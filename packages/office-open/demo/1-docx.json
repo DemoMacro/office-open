@@ -84,9 +84,9 @@
               " text | ",
               { "text": "Double Strike", "doubleStrike": true },
               " text | ",
-              { "text": "SubScript", "subScript": true },
+              { "text": "SubScript", "verticalAlign": "subscript" },
               " text | ",
-              { "text": "SuperScript", "superScript": true },
+              { "text": "SuperScript", "verticalAlign": "superscript" },
               " text | ",
               { "text": "Highlight", "highlight": "yellow" }
             ]

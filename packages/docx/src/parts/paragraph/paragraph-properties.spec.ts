@@ -34,6 +34,14 @@ describe("stringifyParagraphProperties single-writer channels", () => {
     expect(xml).toContain('<w:numId w:val="0"/>');
   });
 
+  it("omits w:ilvl when the numbering carries no level (numId-only numPr)", () => {
+    const { xml } = stringifyParagraphProperties({
+      numbering: { reference: "ref", autoStyle: false },
+    });
+    expect(xml).toContain('<w:numId w:val="{ref-0}"/>');
+    expect(xml).not.toContain("<w:ilvl");
+  });
+
   it("merges thematicBreak into an explicit border as the bottom edge", () => {
     const { xml } = stringifyParagraphProperties({
       thematicBreak: true,

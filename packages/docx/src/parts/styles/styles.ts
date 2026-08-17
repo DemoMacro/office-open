@@ -453,11 +453,12 @@ function parseStyleElement(
     if (Object.keys(runOpts).length > 0) opts.run = runOpts;
   }
 
-  // Table-style-only properties (CT_Style type="table").
+  // Table-style-only properties (CT_Style type="table"). An empty <w:tblPr/>
+  // is a real Word artifact (style generator placeholder) — keep it as an
+  // empty object so presence round-trips.
   const tblPr = findChild(el, "w:tblPr");
   if (tblPr) {
-    const tableOpts = parseTablePropertiesEl(tblPr);
-    if (Object.keys(tableOpts).length > 0) opts.table = tableOpts;
+    opts.table = parseTablePropertiesEl(tblPr);
   }
   const trPr = findChild(el, "w:trPr");
   if (trPr) {
@@ -490,8 +491,7 @@ function parseStyleElement(
     }
     const cfTblPr = findChild(child, "w:tblPr");
     if (cfTblPr) {
-      const tableOpts = parseTablePropertiesEl(cfTblPr);
-      if (Object.keys(tableOpts).length > 0) cf.table = tableOpts;
+      cf.table = parseTablePropertiesEl(cfTblPr);
     }
     const cfTrPr = findChild(child, "w:trPr");
     if (cfTrPr) {

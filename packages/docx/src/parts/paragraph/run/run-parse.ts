@@ -167,8 +167,9 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   const vertAlign = findChild(el, "w:vertAlign");
   if (vertAlign) {
     const val = attr(vertAlign, "w:val");
-    if (val === "subscript") opts.subScript = true;
-    else if (val === "superscript") opts.superScript = true;
+    if (val === "baseline" || val === "subscript" || val === "superscript") {
+      opts.verticalAlign = val;
+    }
   }
 
   const effect = findChild(el, "w:effect");

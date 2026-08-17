@@ -586,7 +586,8 @@ export function parseParagraphProperties(
   const numPr = findChild(el, "w:numPr");
   if (numPr) {
     const ilvl = findChild(numPr, "w:ilvl");
-    const level = ilvl ? (attrNum(ilvl, "w:val") ?? 0) : 0;
+    // No w:ilvl → level stays undefined (numId-only numPr inherits the level).
+    const level = ilvl ? attrNum(ilvl, "w:val") : undefined;
     const numIdEl = findChild(numPr, "w:numId");
     const numId = numIdEl ? attr(numIdEl, "w:val") : undefined;
     if (numId === "0") {
@@ -594,7 +595,12 @@ export function parseParagraphProperties(
       // from the paragraph style — emit numId=0 verbatim instead of falling
       // back to a bullet (which would inject ListParagraph + numId=1).
       opts.numbering = false;
-    } else if (numId !== undefined && ctx.numberingCache.size > 0) {
+    } else if (numId === undefined) {
+      // ilvl-only numPr: overrides just the level, inheriting the numbering
+      // from the style chain — there is nothing in the numbering part to
+      // resolve, and the bullet fallback would fabricate numId=1 +
+      // ListParagraph the source never had. Drop it.
+    } else if (ctx.numberingCache.size > 0) {
       // Cache lookup ("" = a w:num lacking the abstractNumId child → treated
       // like an unknown id, falling to the bullet, same as the old inline scan).
       const abstractNumId = ctx.numIdCache.get(numId);
@@ -606,7 +612,7 @@ export function parseParagraphProperties(
         // styles.xml may not define → dangling reference Word rejects.
         const numberingOpts: {
           reference: string;
-          level: number;
+          level?: number;
           autoStyle: boolean;
           numberingChange?: { original: string; id: string; author: string; date?: string };
         } = { reference: `list_${numId}`, level, autoStyle: false };
@@ -624,10 +630,10 @@ export function parseParagraphProperties(
         }
         opts.numbering = numberingOpts;
       } else {
-        opts.bullet = { level };
+        opts.bullet = { level: level ?? 0 };
       }
     } else {
-      opts.bullet = { level };
+      opts.bullet = { level: level ?? 0 };
     }
   }
 

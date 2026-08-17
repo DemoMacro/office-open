@@ -117,6 +117,14 @@ describe("parseRunProperties round-trip", () => {
     expect(rPr).toContain("<w:sz ");
     expect(rPr).toContain("<w:szCs");
   });
+
+  it("round-trips all three verticalAlign values", () => {
+    for (const val of ["baseline", "subscript", "superscript"] as const) {
+      const rPr = stringifyRunProperties({ verticalAlign: val })!;
+      expect(rPr).toContain(`<w:vertAlign w:val="${val}"/>`);
+      expect(roundTrip({ verticalAlign: val }).verticalAlign).toBe(val);
+    }
+  });
 });
 
 describe("parseRun rsid attributes", () => {

@@ -60,7 +60,7 @@ const buffer = await generateDocument({
                     { text: "A ", style: "Hyperlink" },
                     { text: "single ", bold: true, style: "Hyperlink" },
                     { text: "link", doubleStrike: true, style: "Hyperlink" },
-                    { text: "1", superScript: true, style: "Hyperlink" },
+                    { text: "1", verticalAlign: "superscript", style: "Hyperlink" },
                     { text: "!", style: "Hyperlink" },
                   ],
                 },

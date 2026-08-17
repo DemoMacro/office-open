@@ -157,8 +157,12 @@ export type ParagraphStylePropertiesOptions = {
     | {
         /** Reference ID of the numbering definition to use */
         reference: string;
-        /** Level in the numbering hierarchy (0-8) */
-        level: number;
+        /**
+         * Level in the numbering hierarchy (0-8). Omitted when the source
+         * w:numPr carried only w:numId (no w:ilvl) — the element then inherits
+         * the level instead of pinning one.
+         */
+        level?: number;
         /** Instance number for multiple lists with same reference */
         instance?: number;
         /**

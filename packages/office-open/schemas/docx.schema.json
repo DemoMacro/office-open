@@ -11898,7 +11898,7 @@
                   "type": "number"
                 },
                 "level": {
-                  "description": "Level in the numbering hierarchy (0-8)",
+                  "description": "Level in the numbering hierarchy (0-8). Omitted when the source w:numPr carried only w:numId (no w:ilvl) — the element then inherits the level instead of pinning one.",
                   "type": "number"
                 },
                 "numberingChange": {
@@ -11930,7 +11930,8 @@
                   "type": "string"
                 }
               },
-              "required": ["reference", "level"],
+              "required": ["reference"],
+              "title": "reference",
               "type": "object"
             },
             {
@@ -12176,7 +12177,7 @@
                   "type": "number"
                 },
                 "level": {
-                  "description": "Level in the numbering hierarchy (0-8)",
+                  "description": "Level in the numbering hierarchy (0-8). Omitted when the source w:numPr carried only w:numId (no w:ilvl) — the element then inherits the level instead of pinning one.",
                   "type": "number"
                 },
                 "numberingChange": {
@@ -12208,7 +12209,8 @@
                   "type": "string"
                 }
               },
-              "required": ["reference", "level"],
+              "required": ["reference"],
+              "title": "reference",
               "type": "object"
             },
             {
@@ -12795,12 +12797,6 @@
           "description": "Reference to a character style by name",
           "type": "string"
         },
-        "subScript": {
-          "type": "boolean"
-        },
-        "superScript": {
-          "type": "boolean"
-        },
         "text": {
           "type": "string"
         },
@@ -12838,6 +12834,11 @@
         },
         "vanish": {
           "type": "boolean"
+        },
+        "verticalAlign": {
+          "description": "Vertical alignment of the run (w:vertAlign, ST_VerticalAlignRun). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "enum": ["baseline", "subscript", "superscript"],
+          "type": "string"
         },
         "w14RawXml": {
           "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
@@ -13023,7 +13024,7 @@
                   "type": "number"
                 },
                 "level": {
-                  "description": "Level in the numbering hierarchy (0-8)",
+                  "description": "Level in the numbering hierarchy (0-8). Omitted when the source w:numPr carried only w:numId (no w:ilvl) — the element then inherits the level instead of pinning one.",
                   "type": "number"
                 },
                 "numberingChange": {
@@ -13055,7 +13056,8 @@
                   "type": "string"
                 }
               },
-              "required": ["reference", "level"],
+              "required": ["reference"],
+              "title": "reference",
               "type": "object"
             },
             {
@@ -15050,12 +15052,6 @@
           "description": "Reference to a character style by name",
           "type": "string"
         },
-        "subScript": {
-          "type": "boolean"
-        },
-        "superScript": {
-          "type": "boolean"
-        },
         "text": {
           "type": "string"
         },
@@ -15093,6 +15089,11 @@
         },
         "vanish": {
           "type": "boolean"
+        },
+        "verticalAlign": {
+          "description": "Vertical alignment of the run (w:vertAlign, ST_VerticalAlignRun). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "enum": ["baseline", "subscript", "superscript"],
+          "type": "string"
         },
         "w14RawXml": {
           "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
@@ -15321,12 +15322,6 @@
           "description": "Reference to a character style by name",
           "type": "string"
         },
-        "subScript": {
-          "type": "boolean"
-        },
-        "superScript": {
-          "type": "boolean"
-        },
         "underline": {
           "additionalProperties": false,
           "properties": {
@@ -15361,6 +15356,11 @@
         },
         "vanish": {
           "type": "boolean"
+        },
+        "verticalAlign": {
+          "description": "Vertical alignment of the run (w:vertAlign, ST_VerticalAlignRun). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "enum": ["baseline", "subscript", "superscript"],
+          "type": "string"
         },
         "w14RawXml": {
           "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
@@ -15578,12 +15578,6 @@
           "description": "Reference to a character style by name",
           "type": "string"
         },
-        "subScript": {
-          "type": "boolean"
-        },
-        "superScript": {
-          "type": "boolean"
-        },
         "underline": {
           "additionalProperties": false,
           "properties": {
@@ -15618,6 +15612,11 @@
         },
         "vanish": {
           "type": "boolean"
+        },
+        "verticalAlign": {
+          "description": "Vertical alignment of the run (w:vertAlign, ST_VerticalAlignRun). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "enum": ["baseline", "subscript", "superscript"],
+          "type": "string"
         },
         "w14RawXml": {
           "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
@@ -15830,12 +15829,6 @@
         "strike": {
           "type": "boolean"
         },
-        "subScript": {
-          "type": "boolean"
-        },
-        "superScript": {
-          "type": "boolean"
-        },
         "underline": {
           "additionalProperties": false,
           "properties": {
@@ -15870,6 +15863,11 @@
         },
         "vanish": {
           "type": "boolean"
+        },
+        "verticalAlign": {
+          "description": "Vertical alignment of the run (w:vertAlign, ST_VerticalAlignRun). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "enum": ["baseline", "subscript", "superscript"],
+          "type": "string"
         },
         "w14RawXml": {
           "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
@@ -16776,7 +16774,7 @@
                           "type": "number"
                         },
                         "level": {
-                          "description": "Level in the numbering hierarchy (0-8)",
+                          "description": "Level in the numbering hierarchy (0-8). Omitted when the source w:numPr carried only w:numId (no w:ilvl) — the element then inherits the level instead of pinning one.",
                           "type": "number"
                         },
                         "numberingChange": {
@@ -16808,7 +16806,8 @@
                           "type": "string"
                         }
                       },
-                      "required": ["reference", "level"],
+                      "required": ["reference"],
+                      "title": "reference",
                       "type": "object"
                     },
                     {
@@ -19610,12 +19609,6 @@
           "description": "Reference to a character style by name",
           "type": "string"
         },
-        "subScript": {
-          "type": "boolean"
-        },
-        "superScript": {
-          "type": "boolean"
-        },
         "symbolFont": {
           "description": "The font to use for the symbol (e.g., \"Wingdings\", \"Symbol\")",
           "type": "string"
@@ -19657,6 +19650,11 @@
         },
         "vanish": {
           "type": "boolean"
+        },
+        "verticalAlign": {
+          "description": "Vertical alignment of the run (w:vertAlign, ST_VerticalAlignRun). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "enum": ["baseline", "subscript", "superscript"],
+          "type": "string"
         },
         "w14RawXml": {
           "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",

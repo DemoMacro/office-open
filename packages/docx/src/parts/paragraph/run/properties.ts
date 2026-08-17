@@ -128,8 +128,12 @@ export interface RunStylePropertiesOptions {
   allCaps?: boolean;
   strike?: boolean;
   doubleStrike?: boolean;
-  subScript?: boolean;
-  superScript?: boolean;
+  /**
+   * Vertical alignment of the run (w:vertAlign, ST_VerticalAlignRun).
+   * "baseline" explicitly clears an inherited subscript/superscript — it is
+   * only meaningful in style chains, but round-trips verbatim.
+   */
+  verticalAlign?: "baseline" | "subscript" | "superscript";
   font?: string | RunFontReference | FontProperties;
   highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
   characterSpacing?: number | UniversalMeasure;

@@ -74,11 +74,11 @@ describe("fromDrawingParagraph (a:p → w:p)", () => {
       ],
     };
     const [up, down] = fromDrawingParagraph(drawing).children as [
-      { superScript?: boolean; subScript?: boolean },
-      { superScript?: boolean; subScript?: boolean },
+      { verticalAlign?: string },
+      { verticalAlign?: string },
     ];
-    expect(up.superScript).toBe(true);
-    expect(down.subScript).toBe(true);
+    expect(up.verticalAlign).toBe("superscript");
+    expect(down.verticalAlign).toBe("subscript");
   });
 
   it("converts run spacing (1/100 pt → twips) and capitalization", () => {
@@ -197,9 +197,13 @@ describe("toDrawingParagraph (w:p → a:p)", () => {
   });
 
   it("recovers super/subscript as signed baseline", () => {
-    const up = toDrawingParagraph({ children: [{ text: "a", superScript: true }] });
+    const up = toDrawingParagraph({
+      children: [{ text: "a", verticalAlign: "superscript" as const }],
+    });
     expect((up.children![0] as { baseline?: number }).baseline).toBe(30000);
-    const down = toDrawingParagraph({ children: [{ text: "a", subScript: true }] });
+    const down = toDrawingParagraph({
+      children: [{ text: "a", verticalAlign: "subscript" as const }],
+    });
     expect((down.children![0] as { baseline?: number }).baseline).toBe(-25000);
   });
 

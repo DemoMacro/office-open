@@ -101,7 +101,7 @@ const doc: DocumentOptions = {
               { text: " shaded", shading: { fill: "D9E2F3" } },
               { text: " strike", strike: true },
               { text: " underline", underline: { type: "single" } },
-              { text: " superscript", superScript: true },
+              { text: " superscript", verticalAlign: "superscript" },
               { style: "Emphasis", text: " charStyle" },
               { children: [{ tab: true }] },
               "after tab",
