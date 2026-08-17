@@ -9970,6 +9970,10 @@
           "items": {
             "additionalProperties": false,
             "properties": {
+              "instanceCount": {
+                "description": "Numbering instances (w:num) to emit for this definition up front, independent of body references. Fresh authoring omits it (instances are created on demand as paragraphs reference the definition); round-trip sets 1 so instances the body never references (styles-only or dead definitions) keep their w:num element.",
+                "type": "number"
+              },
               "levels": {
                 "items": {
                   "$ref": "#/definitions/LevelsOptions"

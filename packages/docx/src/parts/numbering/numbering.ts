@@ -34,6 +34,14 @@ export interface NumberingOptions {
     levels: LevelsOptions[];
     reference: string;
     properties?: AbstractNumberingPropertiesOptions;
+    /**
+     * Numbering instances (w:num) to emit for this definition up front,
+     * independent of body references. Fresh authoring omits it (instances
+     * are created on demand as paragraphs reference the definition);
+     * round-trip sets 1 so instances the body never references (styles-only
+     * or dead definitions) keep their w:num element.
+     */
+    instanceCount?: number;
   }[];
   /** Numbering cleanup ID (w:numIdMacAtCleanup) */
   numIdMacAtCleanup?: number;
@@ -171,9 +179,14 @@ export class Numbering {
     this._numPicBullets = options.numPicBullets;
 
     // Only inject the default bullet numbering when the caller supplied no
-    // numbering definitions. Round-tripped documents carry their own, so
-    // injecting a default would inflate the part (extra abstractNum + 9 levels).
-    if (options.abstractNumberings.length === 0) {
+    // numbering content at all. Round-tripped documents carry their own (even
+    // a part holding only numPicBullets or numIdMacAtCleanup), so injecting a
+    // default would inflate the part (extra abstractNum + 9 levels).
+    if (
+      options.abstractNumberings.length === 0 &&
+      !options.numPicBullets &&
+      options.numIdMacAtCleanup === undefined
+    ) {
       const defaultAbstractId = this.abstractNumUniqueNumericId();
       this.abstractNumberingData.set("default-bullet-numbering", {
         id: defaultAbstractId,
@@ -195,6 +208,12 @@ export class Numbering {
         properties: con.properties,
       });
       this.referenceConfigMap.set(con.reference, con.levels);
+      // Round-tripped instances exist in the source regardless of body use —
+      // pre-register them so their w:num is emitted even when no paragraph
+      // references the definition (styles-only or dead definitions).
+      for (let i = 0; i < (con.instanceCount ?? 0); i++) {
+        this.registerConcreteInstance(con.reference, i);
+      }
     }
   }
 
@@ -238,12 +257,6 @@ export class Numbering {
    * Creates a concrete numbering instance from an abstract numbering definition.
    */
   public createConcreteNumberingInstance(reference: string, instance: number): void {
-    const abstractNumbering = this.abstractNumberingData.get(reference);
-    if (!abstractNumbering) return;
-
-    const fullReference = `${reference}-${instance}`;
-    if (this.concreteNumberingData.has(fullReference)) return;
-
     const referenceConfigLevels = this.referenceConfigMap.get(reference);
     const firstLevelStartNumber = referenceConfigLevels?.[0]?.start;
 
@@ -255,6 +268,20 @@ export class Numbering {
       firstLevelStartNumber !== 1
         ? [{ num: 0, start: firstLevelStartNumber }]
         : undefined;
+    this.registerConcreteInstance(reference, instance, overrideLevels);
+  }
+
+  /** Register a concrete instance unless the (reference, instance) pair exists. */
+  private registerConcreteInstance(
+    reference: string,
+    instance: number,
+    overrideLevels?: { num: number; start?: number }[],
+  ): void {
+    const abstractNumbering = this.abstractNumberingData.get(reference);
+    if (!abstractNumbering) return;
+
+    const fullReference = `${reference}-${instance}`;
+    if (this.concreteNumberingData.has(fullReference)) return;
 
     this.concreteNumberingData.set(fullReference, {
       abstractNumId: abstractNumbering.id,
@@ -507,7 +534,7 @@ export function parseNumberingDefinitions(
         const level = levels.find((l) => l.level === ilvl);
         if (level) level.start = val;
       }
-      configs.push({ reference: `list_${numId}`, levels, properties });
+      configs.push({ reference: `list_${numId}`, levels, properties, instanceCount: 1 });
     }
   }
 
@@ -568,7 +595,9 @@ function parseLevelEl(
   const lvlText = findChild(el, "w:lvlText");
   if (lvlText) {
     const val = attr(lvlText, "w:val");
-    if (val) opts.text = val;
+    // Empty string is valid (a level whose text is empty) — keep it so the
+    // element round-trips instead of being dropped by a falsy check.
+    if (val !== undefined) opts.text = val;
     const isNull = attrBool(lvlText, "w:null");
     if (isNull) opts.textNull = isNull;
   }

@@ -274,3 +274,59 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect(first!.levels[0]?.start).toBe(3);
   });
 });
+
+describe("numbering instance fidelity", () => {
+  it("emits w:num for instances the body never references (instanceCount)", async ({ expect }) => {
+    const { Numbering } = await import("./numbering");
+    const ctx = { media: { array: [] } } as never;
+    const n = new Numbering({
+      abstractNumberings: [
+        {
+          reference: "list_9",
+          levels: [{ level: 0, format: "bullet", text: "", alignment: "left" }],
+          instanceCount: 1,
+        },
+      ],
+    });
+    const xml = n.serialize(ctx);
+    expect((xml.match(/<w:num /g) ?? []).length).toBe(1);
+    expect(xml).toContain("<w:abstractNumId");
+  });
+
+  it("does not inject the default bullet numbering when only numPicBullets round-trip", async ({
+    expect,
+  }) => {
+    const { Numbering } = await import("./numbering");
+    const ctx = { media: { array: [] } } as never;
+    const n = new Numbering({
+      abstractNumberings: [],
+      numPicBullets: [{ numPicBulletId: 1 }],
+    });
+    const xml = n.serialize(ctx);
+    expect(xml).not.toContain("w:abstractNum ");
+    expect((xml.match(/<w:num /g) ?? []).length).toBe(0);
+  });
+
+  it("round-trips an empty lvlText value", async ({ expect }) => {
+    const { Numbering } = await import("./numbering");
+    const n = new Numbering({
+      abstractNumberings: [
+        {
+          reference: "list_1",
+          levels: [{ level: 0, format: "decimal", text: "", alignment: "left" }],
+        },
+      ],
+    });
+    n.createConcreteNumberingInstance("list_1", 0);
+    const xml = n.serialize(writeCtx as never);
+    expect(xml).toContain('<w:lvlText w:val=""/>');
+    // And parse keeps the empty string (not dropped as falsy)
+    const doc = parseXml(xml.replace(/^<\?xml[^>]*\?>/, ""));
+    const opts = parseNumberingDefinitions(
+      doc.elements![0]!,
+      parseParagraphProperties,
+      {} as unknown as DocxReadContext,
+    );
+    expect(opts!.abstractNumberings[0]!.levels[0]!.text).toBe("");
+  });
+});
