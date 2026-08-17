@@ -1867,6 +1867,276 @@
       "required": ["name", "values"],
       "type": "object"
     },
+    "ChartSpaceOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "axes": {
+          "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
+          "items": {
+            "$ref": "#/definitions/AxisOptions"
+          },
+          "type": "array"
+        },
+        "backWall": {
+          "$ref": "#/definitions/SurfaceOptions",
+          "description": "3D back wall (c:backWall)."
+        },
+        "bandFormats": {
+          "description": "Surface chart color bands (c:bandFmts, after ser in surface charts).",
+          "items": {
+            "$ref": "#/definitions/BandFormatOptions"
+          },
+          "type": "array"
+        },
+        "bubbleScale": {
+          "description": "Bubble scale as percent of default size (c:bubbleScale).",
+          "type": "number"
+        },
+        "categories": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "categoryLabels": {
+          "description": "Literal category labels, emitted as c:strLit (c:cat > c:strLit).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "colorMappingOverride": {
+          "additionalProperties": false,
+          "description": "Theme color mapping override (c:clrMapOvr, before c:chart).",
+          "properties": {
+            "accent1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent3": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent4": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent5": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent6": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "followedHyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "hyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            }
+          },
+          "type": "object"
+        },
+        "customSplitPoints": {
+          "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "dataTable": {
+          "$ref": "#/definitions/DataTableOptions",
+          "description": "Plot-area data table (c:dTable)."
+        },
+        "displayBlanksAs": {
+          "$ref": "#/definitions/DisplayBlanksAs",
+          "description": "How blank cells are plotted (c:dispBlanksAs)."
+        },
+        "dropLines": {
+          "description": "Drop lines (c:dropLines, line/area/stock).",
+          "type": "boolean"
+        },
+        "externalData": {
+          "$ref": "#/definitions/ExternalDataOptions",
+          "description": "External linked workbook (c:externalData, after c:txPr)."
+        },
+        "firstSliceAngle": {
+          "description": "Pie/doughnut first slice angle in degrees (c:firstSliceAng).",
+          "type": "number"
+        },
+        "floor": {
+          "$ref": "#/definitions/SurfaceOptions",
+          "description": "3D floor (c:floor)."
+        },
+        "gapDepth": {
+          "description": "3D bar/column gap depth as percent (c:gapDepth).",
+          "type": "number"
+        },
+        "gapWidth": {
+          "description": "Bar/column gap width as percent of width (c:gapWidth).",
+          "type": "number"
+        },
+        "highLowLines": {
+          "description": "High-low lines (c:hiLowLines, line/stock 2D).",
+          "type": "boolean"
+        },
+        "holeSize": {
+          "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
+          "type": "number"
+        },
+        "legendEntries": {
+          "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
+          "items": {
+            "$ref": "#/definitions/LegendEntryOptions"
+          },
+          "type": "array"
+        },
+        "legendPosition": {
+          "$ref": "#/definitions/LegendPosition",
+          "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
+        },
+        "multiLevelCategories": {
+          "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
+          "items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "array"
+        },
+        "ofPieType": {
+          "$ref": "#/definitions/OfPieType",
+          "description": "ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default \"pie\")."
+        },
+        "overlap": {
+          "description": "Bar/column overlap as percent (c:overlap, 2D only).",
+          "type": "number"
+        },
+        "pivotFormats": {
+          "description": "Pivot chart per-series formats (c:pivotFmts, after autoTitleDeleted).",
+          "items": {
+            "$ref": "#/definitions/ChartPivotFormatOptions"
+          },
+          "type": "array"
+        },
+        "pivotSource": {
+          "$ref": "#/definitions/PivotSourceOptions",
+          "description": "Pivot chart source (c:pivotSource, after clrMapOvr, before protection)."
+        },
+        "plotAreaLayout": {
+          "$ref": "#/definitions/ManualLayoutOptions",
+          "description": "Manual plot-area layout (c:plotArea > c:layout > c:manualLayout)."
+        },
+        "plotVisOnly": {
+          "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
+          "type": "boolean"
+        },
+        "printSettings": {
+          "$ref": "#/definitions/PrintSettingsOptions",
+          "description": "Print settings (c:printSettings, after c:externalData)."
+        },
+        "protection": {
+          "$ref": "#/definitions/ProtectionOptions",
+          "description": "Chart protection (c:protection, before c:chart)."
+        },
+        "secondPieSize": {
+          "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
+          "type": ["number", "string"]
+        },
+        "series": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/ChartSeriesData"
+              },
+              "type": "array"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/BubbleSeriesData"
+              },
+              "type": "array"
+            }
+          ]
+        },
+        "seriesLines": {
+          "description": "Series lines (c:serLines, stock / 2D bar / 3D area).",
+          "type": "boolean"
+        },
+        "showDataLabelsOverMax": {
+          "description": "Show data labels over the chart maximum (c:showDLblsOverMax).",
+          "type": "boolean"
+        },
+        "showLegend": {
+          "type": "boolean"
+        },
+        "showNegativeBubbles": {
+          "description": "Show negative-value bubbles (c:showNegBubbles).",
+          "type": "boolean"
+        },
+        "sideWall": {
+          "$ref": "#/definitions/SurfaceOptions",
+          "description": "3D side wall (c:sideWall)."
+        },
+        "sizeRepresents": {
+          "$ref": "#/definitions/SizeRepresents",
+          "description": "What the bubble size represents (c:sizeRepresents)."
+        },
+        "splitPosition": {
+          "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
+          "type": "number"
+        },
+        "splitType": {
+          "$ref": "#/definitions/SplitType",
+          "description": "ofPie split behavior (c:splitType, default \"auto\")."
+        },
+        "style": {
+          "type": "number"
+        },
+        "threeD": {
+          "type": "boolean"
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ChartType"
+        },
+        "upDownBars": {
+          "description": "Up/down bars container (c:upDownBars, line/stock 2D).",
+          "type": "boolean"
+        },
+        "upDownBarsGapWidth": {
+          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
+          "type": "number"
+        },
+        "userShapes": {
+          "description": "User-drawn shapes relationship id (c:userShapes r:id, after printSettings).",
+          "type": "string"
+        },
+        "view3D": {
+          "$ref": "#/definitions/View3DOptions"
+        },
+        "wireframe": {
+          "description": "Surface chart wireframe rendering (c:wireframe).",
+          "type": "boolean"
+        }
+      },
+      "required": ["type", "series"],
+      "type": "object"
+    },
     "ChartType": {
       "enum": [
         "column",
@@ -1888,43 +2158,8 @@
       "additionalProperties": false,
       "properties": {
         "chart": {
-          "additionalProperties": false,
-          "description": "Chart definition (type, title, series, etc.)",
-          "properties": {
-            "categories": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "series": {
-              "items": {
-                "additionalProperties": false,
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "values": {
-                    "items": {
-                      "type": "number"
-                    },
-                    "type": "array"
-                  }
-                },
-                "required": ["name", "values"],
-                "type": "object"
-              },
-              "type": "array"
-            },
-            "title": {
-              "type": "string"
-            },
-            "type": {
-              "type": "string"
-            }
-          },
-          "required": ["type", "series"],
-          "type": "object"
+          "$ref": "#/definitions/ChartSpaceOptions",
+          "description": "Chart definition — the shared chart-space model, same shape as a worksheet chart."
         },
         "codeName": {
           "description": "VBA code name (CT_ChartsheetPr `@codeName`)",
@@ -1963,7 +2198,6 @@
           "type": "boolean"
         }
       },
-      "required": ["chart"],
       "type": "object"
     },
     "ChartsheetPageSetup": {
@@ -3993,8 +4227,20 @@
           "description": "VBA code name (CT_SheetPr `@codeName`)",
           "type": "string"
         },
+        "drawingRId": {
+          "description": "Relationship id of the dialog form drawing (CT_Dialogsheet `drawing`). Round-trip only: the referenced drawing part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
+          "type": "string"
+        },
         "extLst": {
           "description": "Raw extension list preserved verbatim (extLst)",
+          "type": "string"
+        },
+        "headerFooter": {
+          "$ref": "#/definitions/HeaderFooterOptions",
+          "description": "Header/footer (CT_HeaderFooter)"
+        },
+        "legacyDrawingRId": {
+          "description": "Relationship id of the legacy VML drawing (CT_Dialogsheet `legacyDrawing`). Round-trip only: the referenced VML part is not re-emitted.",
           "type": "string"
         },
         "name": {
@@ -4008,6 +4254,10 @@
         "pageSetup": {
           "$ref": "#/definitions/PageSetupOptions",
           "description": "Page setup"
+        },
+        "printOptions": {
+          "$ref": "#/definitions/PrintOptions",
+          "description": "Print options (CT_PrintOptions)"
         },
         "published": {
           "description": "Published to a server (CT_SheetPr `@published`, XSD default true — only false is emitted)",
@@ -5361,6 +5611,11 @@
     "FreezePaneOptions": {
       "additionalProperties": false,
       "properties": {
+        "activePane": {
+          "description": "Active pane (CT_Pane `@activePane`); defaults to the pane past the split",
+          "enum": ["bottomRight", "topRight", "bottomLeft", "topLeft"],
+          "type": "string"
+        },
         "col": {
           "description": "Column split position (1-based, freezes columns to the left)",
           "type": "number"
@@ -5368,6 +5623,14 @@
         "row": {
           "description": "Row split position (1-based, freezes rows above)",
           "type": "number"
+        },
+        "split": {
+          "description": "Split panes without freezing (CT_Pane `@state=\"split\"`); default is frozen",
+          "type": "boolean"
+        },
+        "topLeftCell": {
+          "description": "Top-left cell of the scrollable pane (CT_Pane `@topLeftCell`); defaults to the cell just past the split. Round-trip keeps a scrolled position.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -7402,7 +7665,7 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "Paper height (CT_PageSetup `@paperHeight`, ST_PositiveUniversalMeasure)"
+          "description": "Paper height (CT_PageSetup `@paperHeight`; a bare number means millimeters)"
         },
         "paperSize": {
           "type": "number"
@@ -7416,7 +7679,7 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "Paper width (CT_PageSetup `@paperWidth`, ST_PositiveUniversalMeasure)"
+          "description": "Paper width (CT_PageSetup `@paperWidth`; a bare number means millimeters)"
         },
         "printerSettingsRId": {
           "description": "Relationship id to the printer settings binary part (CT_PageSetup `@r:id`). Round-trip only: the referenced .bin part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
@@ -12317,6 +12580,10 @@
         "tabSelected": {
           "type": "boolean"
         },
+        "topLeftCell": {
+          "description": "Top-left visible cell (CT_SheetView `@topLeftCell`); round-trip only meaningful when scrolled",
+          "type": "string"
+        },
         "view": {
           "description": "View type (CT_SheetView `@view`)",
           "enum": ["normal", "pageBreakPreview", "pageLayout"],
@@ -15087,8 +15354,11 @@
           "description": "What-if scenarios"
         },
         "selection": {
-          "$ref": "#/definitions/SelectionOptions",
-          "description": "Selection in sheet view (CT_Selection)"
+          "description": "Selections in sheet view (CT_Selection — one per pane, max 4)",
+          "items": {
+            "$ref": "#/definitions/SelectionOptions"
+          },
+          "type": "array"
         },
         "shapes": {
           "description": "Anchored shapes (xdr:sp): geometry + optional text body.",

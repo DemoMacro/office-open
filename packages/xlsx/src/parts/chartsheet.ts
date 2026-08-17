@@ -12,6 +12,7 @@ import { parseOnOff } from "@office-open/core";
 import { derivePasswordHash } from "@office-open/core";
 import type { PositiveUniversalMeasure } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
+import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, attr, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import { hashPassword } from "@util/index";
@@ -93,16 +94,8 @@ export interface ChartsheetOptions {
   codeName?: string;
   /** Zoom to fit (CT_ChartsheetView `@zoomToFit`) */
   zoomToFit?: boolean;
-  /** Chart definition (type, title, series, etc.) */
-  chart: {
-    type: string;
-    title?: string;
-    categories?: string[];
-    series: {
-      name: string;
-      values: number[];
-    }[];
-  };
+  /** Chart definition — the shared chart-space model, same shape as a worksheet chart. */
+  chart?: ChartSpaceOptions;
 }
 
 // ── Descriptor Types ──
@@ -180,8 +173,13 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       const ps = opts.pageSetup;
       const psAttrs: Record<string, string | number | boolean | undefined> = {};
       if (ps.paperSize !== undefined) psAttrs.paperSize = ps.paperSize;
-      if (ps.paperHeight !== undefined) psAttrs.paperHeight = ps.paperHeight;
-      if (ps.paperWidth !== undefined) psAttrs.paperWidth = ps.paperWidth;
+      // ST_PositiveUniversalMeasure requires a unit suffix; a bare number means mm.
+      if (ps.paperHeight !== undefined)
+        psAttrs.paperHeight =
+          typeof ps.paperHeight === "number" ? `${ps.paperHeight}mm` : ps.paperHeight;
+      if (ps.paperWidth !== undefined)
+        psAttrs.paperWidth =
+          typeof ps.paperWidth === "number" ? `${ps.paperWidth}mm` : ps.paperWidth;
       if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
       if (ps.orientation && ps.orientation !== "default") psAttrs.orientation = ps.orientation;
       // XSD default true — emit only the explicit-false form (0).

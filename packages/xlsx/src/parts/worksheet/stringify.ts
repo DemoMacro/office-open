@@ -23,6 +23,7 @@ import type {
   HeaderFooterOptions,
   PageSetupOptions,
   PivotSelectionOptions,
+  PrintOptions,
   RowOptions,
   SelectionOptions,
   SheetProtectionOptions,
@@ -152,22 +153,25 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     const xSplit = fp.col ? fp.col : 0;
     const topRow = fp.row ? fp.row + 1 : 1;
     const leftCol = fp.col ? fp.col + 1 : 1;
-    const topLeftCell = defaultCellRef(topRow, leftCol);
+    const topLeftCell = fp.topLeftCell ?? defaultCellRef(topRow, leftCol);
     const activePane =
-      ySplit > 0 && xSplit > 0 ? "bottomRight" : ySplit > 0 ? "bottomLeft" : "topRight";
+      fp.activePane ??
+      (ySplit > 0 && xSplit > 0 ? "bottomRight" : ySplit > 0 ? "bottomLeft" : "topRight");
+    const state = fp.split ? "split" : "frozen";
     const svAttrs = buildSheetViewAttrs(opts.sheetView);
+    const selections = (opts.selection ?? []).map(buildSelectionXml).join("");
     p.push(
       `<sheetViews><sheetView${svAttrs}>`,
-      `<pane ySplit="${ySplit}" xSplit="${xSplit}" topLeftCell="${topLeftCell}" activePane="${activePane}" state="frozen"/>`,
-      opts.selection ? buildSelectionXml(opts.selection) : "",
+      `<pane ySplit="${ySplit}" xSplit="${xSplit}" topLeftCell="${topLeftCell}" activePane="${activePane}" state="${state}"/>`,
+      selections,
       opts.pivotSelection ? buildPivotSelectionXml(opts.pivotSelection) : "",
       "</sheetView></sheetViews>",
     );
   } else {
     const svAttrs = buildSheetViewAttrs(opts.sheetView);
+    const selections = (opts.selection ?? []).map(buildSelectionXml).join("");
     const innerXml =
-      (opts.selection ? buildSelectionXml(opts.selection) : "") +
-      (opts.pivotSelection ? buildPivotSelectionXml(opts.pivotSelection) : "");
+      selections + (opts.pivotSelection ? buildPivotSelectionXml(opts.pivotSelection) : "");
     if (innerXml) {
       p.push(`<sheetViews><sheetView${svAttrs}>${innerXml}</sheetView></sheetViews>`);
     } else {
@@ -524,14 +528,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 
   // Print options
   if (opts.printOptions) {
-    const po = opts.printOptions;
-    const poAttrs: Record<string, string | number | boolean | undefined> = {};
-    if (po.horizontalCentered) poAttrs.horizontalCentered = 1;
-    if (po.verticalCentered) poAttrs.verticalCentered = 1;
-    if (po.headings) poAttrs.headings = 1;
-    if (po.gridLines) poAttrs.gridLines = 1;
-    if (po.gridLinesSet === false) poAttrs.gridLinesSet = 0;
-    p.push(selfCloseElement("printOptions", attrs(poAttrs)));
+    p.push(stringifyPrintOptionsXml(opts.printOptions));
   }
 
   if (opts.pageMargins) {
@@ -833,6 +830,7 @@ function buildSheetViewAttrs(sv?: SheetViewOptions): string {
   if (sv?.defaultGridColor === false) svMap.defaultGridColor = 0;
   if (sv?.showWhiteSpace === false) svMap.showWhiteSpace = 0;
   if (sv?.view) svMap.view = sv.view;
+  if (sv?.topLeftCell) svMap.topLeftCell = sv.topLeftCell;
   if (sv?.colorId !== undefined) svMap.colorId = sv.colorId;
   if (sv?.zoomScaleNormal !== undefined) svMap.zoomScaleNormal = sv.zoomScaleNormal;
   if (sv?.zoomScaleSheetLayoutView !== undefined)
@@ -1086,8 +1084,12 @@ export function stringifyPageSetupXml(ps: PageSetupOptions): string {
   if (ps.pageOrder && ps.pageOrder !== "downThenOver") psAttrs.pageOrder = ps.pageOrder;
   if (ps.useFirstPageNumber) psAttrs.useFirstPageNumber = 1;
   if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
-  if (ps.paperHeight !== undefined) psAttrs.paperHeight = ps.paperHeight;
-  if (ps.paperWidth !== undefined) psAttrs.paperWidth = ps.paperWidth;
+  // ST_PositiveUniversalMeasure requires a unit suffix; a bare number means mm.
+  if (ps.paperHeight !== undefined)
+    psAttrs.paperHeight =
+      typeof ps.paperHeight === "number" ? `${ps.paperHeight}mm` : ps.paperHeight;
+  if (ps.paperWidth !== undefined)
+    psAttrs.paperWidth = typeof ps.paperWidth === "number" ? `${ps.paperWidth}mm` : ps.paperWidth;
   // XSD default true — emit only the explicit-false form (0).
   if (ps.usePrinterDefaults === false) psAttrs.usePrinterDefaults = 0;
   if (ps.blackAndWhite) psAttrs.blackAndWhite = 1;
@@ -1099,6 +1101,17 @@ export function stringifyPageSetupXml(ps: PageSetupOptions): string {
   if (ps.copies !== undefined) psAttrs.copies = ps.copies;
   if (ps.printerSettingsRId) psAttrs["r:id"] = ps.printerSettingsRId;
   return selfCloseElement("pageSetup", attrs(psAttrs));
+}
+
+/** Stringify a CT_PrintOptions element (worksheet + dialogsheet). */
+export function stringifyPrintOptionsXml(po: PrintOptions): string {
+  const poAttrs: Record<string, string | number | boolean | undefined> = {};
+  if (po.horizontalCentered) poAttrs.horizontalCentered = 1;
+  if (po.verticalCentered) poAttrs.verticalCentered = 1;
+  if (po.headings) poAttrs.headings = 1;
+  if (po.gridLines) poAttrs.gridLines = 1;
+  if (po.gridLinesSet === false) poAttrs.gridLinesSet = 0;
+  return selfCloseElement("printOptions", attrs(poAttrs));
 }
 
 /** Stringify a CT_HeaderFooter element; undefined when it carries no content. */

@@ -177,7 +177,7 @@ describe("parseWorkbook round-trip", () => {
         {
           name: "S",
           rows: [{ cells: [{ reference: "A1", value: 1 }] }],
-          selection: { activeCell: "B2", sqref: "B2" },
+          selection: [{ activeCell: "B2", sqref: "B2" }],
           pivotSelection: {
             axis: "axisRow",
             activeRow: 1,
@@ -202,7 +202,7 @@ describe("parseWorkbook round-trip", () => {
 
     const parsed = await roundTrip(opts);
     const sheet = parsed.worksheets![0]!;
-    expect(sheet.selection).toMatchObject({ activeCell: "B2", sqref: "B2" });
+    expect(sheet.selection?.[0]).toMatchObject({ activeCell: "B2", sqref: "B2" });
     expect(sheet.pivotSelection).toMatchObject({ axis: "axisRow", activeRow: 1, count: 1 });
     expect(sheet.pivotSelection!.pivotArea).toMatchObject({ type: "normal" });
     expect(sheet.smartTags).toHaveLength(1);

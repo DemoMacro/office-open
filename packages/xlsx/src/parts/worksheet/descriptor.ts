@@ -179,6 +179,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (String(attr(svEl, "showWhiteSpace")) === "0") sv.showWhiteSpace = false;
         const viewVal = attr(svEl, "view");
         if (viewVal) sv.view = viewVal as SheetViewOptions["view"];
+        const topLeftCell = attr(svEl, "topLeftCell");
+        if (topLeftCell) sv.topLeftCell = topLeftCell;
         const colorId = attrNum(svEl, "colorId");
         if (colorId !== undefined) sv.colorId = colorId;
         const zsn = attrNum(svEl, "zoomScaleNormal");
@@ -189,20 +191,26 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (zspl !== undefined) sv.zoomScalePageLayoutView = zspl;
         result.sheetView = sv;
 
-        // Freeze pane
+        // Freeze/split pane — CT_Pane (any state; frozen is the authoring default)
         const paneEl = findChild(svEl, "pane");
-        if (paneEl && attr(paneEl, "state") === "frozen") {
+        if (paneEl) {
           const fp: FreezePaneOptions = {};
           const ys = attrNum(paneEl, "ySplit");
           if (ys && ys > 0) fp.row = ys;
           const xs = attrNum(paneEl, "xSplit");
           if (xs && xs > 0) fp.col = xs;
+          if (attr(paneEl, "state") === "split") fp.split = true;
+          const paneTopLeft = attr(paneEl, "topLeftCell");
+          if (paneTopLeft) fp.topLeftCell = paneTopLeft;
+          const activePane = attr(paneEl, "activePane");
+          if (activePane) fp.activePane = activePane as FreezePaneOptions["activePane"];
           if (Object.keys(fp).length > 0) result.freezePanes = fp;
         }
 
-        // Selection (CT_Selection)
-        const selEl = findChild(svEl, "selection");
-        if (selEl) {
+        // Selections (CT_Selection — one per pane)
+        const selections: SelectionOptions[] = [];
+        for (const selEl of svEl.elements ?? []) {
+          if (selEl.name !== "selection") continue;
           const sel: SelectionOptions = {};
           const pane = attr(selEl, "pane");
           if (pane) sel.pane = pane as SelectionOptions["pane"];
@@ -212,8 +220,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (acId !== undefined) sel.activeCellId = acId;
           const sqref = attr(selEl, "sqref");
           if (sqref) sel.sqref = sqref;
-          result.selection = sel;
+          selections.push(sel);
         }
+        if (selections.length > 0) result.selection = selections;
 
         // Pivot selection (CT_PivotSelection)
         const psEl = findChild(svEl, "pivotSelection");

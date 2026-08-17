@@ -899,24 +899,7 @@ function compileChartsheets(
     const csChartKey = `cs_chart_${csChartGlobalIdx}`;
     ctx.charts.addChart(csChartKey, {
       key: csChartKey,
-      chartSpaceXml:
-        chartSpaceDesc.stringify(
-          {
-            type: chartDef.type as
-              | "column"
-              | "bar"
-              | "line"
-              | "pie"
-              | "doughnut"
-              | "area"
-              | "scatter"
-              | "bubble",
-            title: chartDef.title,
-            categories: chartDef.categories,
-            series: chartDef.series,
-          },
-          ctx,
-        ) ?? "",
+      chartSpaceXml: chartSpaceDesc.stringify(chartDef, ctx) ?? "",
     });
 
     // Chartsheet relationships: drawing (required)

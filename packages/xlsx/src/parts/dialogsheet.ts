@@ -8,15 +8,26 @@
  * @module
  */
 
-import { convertToInch } from "@office-open/core";
+import { convertToInch, parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, attr, attrNum, escapeXml, findChild, stringifyElement } from "@office-open/xml";
 
-import { parsePageSetupEl, parseSheetProtectionEl } from "./worksheet/descriptor";
-import { stringifyPageSetupXml, stringifySheetProtectionXml } from "./worksheet/stringify";
+import {
+  parseHeaderFooterEl,
+  parsePageSetupEl,
+  parseSheetProtectionEl,
+} from "./worksheet/descriptor";
+import {
+  stringifyHeaderFooterXml,
+  stringifyPageSetupXml,
+  stringifyPrintOptionsXml,
+  stringifySheetProtectionXml,
+} from "./worksheet/stringify";
 import type {
+  HeaderFooterOptions,
   PageMarginsOptions,
   PageSetupOptions,
+  PrintOptions,
   SheetProtectionOptions,
 } from "./worksheet/types";
 
@@ -37,6 +48,21 @@ export interface DialogsheetOptions {
   pageSetup?: PageSetupOptions;
   /** Sheet protection */
   sheetProtection?: SheetProtectionOptions;
+  /** Print options (CT_PrintOptions) */
+  printOptions?: PrintOptions;
+  /** Header/footer (CT_HeaderFooter) */
+  headerFooter?: HeaderFooterOptions;
+  /**
+   * Relationship id of the dialog form drawing (CT_Dialogsheet `drawing`).
+   * Round-trip only: the referenced drawing part is not re-emitted, so the id
+   * is not resolvable in a freshly generated workbook.
+   */
+  drawingRId?: string;
+  /**
+   * Relationship id of the legacy VML drawing (CT_Dialogsheet `legacyDrawing`).
+   * Round-trip only: the referenced VML part is not re-emitted.
+   */
+  legacyDrawingRId?: string;
   /** Raw extension list preserved verbatim (extLst) */
   extLst?: string;
 }
@@ -68,6 +94,11 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
       p.push(stringifySheetProtectionXml(opts.sheetProtection));
     }
 
+    // printOptions (optional) — CT_PrintOptions, shared with worksheet
+    if (opts.printOptions) {
+      p.push(stringifyPrintOptionsXml(opts.printOptions));
+    }
+
     // pageMargins (optional)
     if (opts.pageMargins) {
       const pm = opts.pageMargins;
@@ -86,6 +117,20 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
     // pageSetup (optional) — CT_PageSetup, shared with worksheet
     if (opts.pageSetup) {
       p.push(stringifyPageSetupXml(opts.pageSetup));
+    }
+
+    // headerFooter (optional) — CT_HeaderFooter, shared with worksheet
+    if (opts.headerFooter) {
+      const hfXml = stringifyHeaderFooterXml(opts.headerFooter);
+      if (hfXml) p.push(hfXml);
+    }
+
+    // drawing / legacyDrawing (optional) — r:id passthrough, round-trip only
+    if (opts.drawingRId) {
+      p.push(`<drawing r:id="${escapeXml(opts.drawingRId)}"/>`);
+    }
+    if (opts.legacyDrawingRId) {
+      p.push(`<legacyDrawing r:id="${escapeXml(opts.legacyDrawingRId)}"/>`);
     }
 
     if (opts.extLst) p.push(opts.extLst);
@@ -136,6 +181,36 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
     const psEl = findChild(el, "pageSetup");
     if (psEl) {
       result.pageSetup = parsePageSetupEl(psEl);
+    }
+
+    // printOptions — CT_PrintOptions, shared with worksheet
+    const poEl = findChild(el, "printOptions");
+    if (poEl) {
+      const po: PrintOptions = {};
+      if (parseOnOff(attr(poEl, "horizontalCentered"))) po.horizontalCentered = true;
+      if (parseOnOff(attr(poEl, "verticalCentered"))) po.verticalCentered = true;
+      if (parseOnOff(attr(poEl, "headings"))) po.headings = true;
+      if (parseOnOff(attr(poEl, "gridLines"))) po.gridLines = true;
+      if (String(attr(poEl, "gridLinesSet")) === "0") po.gridLinesSet = false;
+      result.printOptions = po;
+    }
+
+    // headerFooter — CT_HeaderFooter, shared with worksheet
+    const hfEl = findChild(el, "headerFooter");
+    if (hfEl) {
+      result.headerFooter = parseHeaderFooterEl(hfEl);
+    }
+
+    // drawing / legacyDrawing — r:id passthrough
+    const drEl = findChild(el, "drawing");
+    if (drEl) {
+      const rId = drEl.attributes?.["r:id"] as string | undefined;
+      if (rId) result.drawingRId = rId;
+    }
+    const ldEl = findChild(el, "legacyDrawing");
+    if (ldEl) {
+      const rId = ldEl.attributes?.["r:id"] as string | undefined;
+      if (rId) result.legacyDrawingRId = rId;
     }
 
     // extLst — preserved verbatim

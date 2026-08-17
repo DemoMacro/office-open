@@ -297,6 +297,15 @@ export interface FreezePaneOptions {
   row?: number;
   /** Column split position (1-based, freezes columns to the left) */
   col?: number;
+  /** Split panes without freezing (CT_Pane `@state="split"`); default is frozen */
+  split?: boolean;
+  /**
+   * Top-left cell of the scrollable pane (CT_Pane `@topLeftCell`); defaults to
+   * the cell just past the split. Round-trip keeps a scrolled position.
+   */
+  topLeftCell?: string;
+  /** Active pane (CT_Pane `@activePane`); defaults to the pane past the split */
+  activePane?: "bottomRight" | "topRight" | "bottomLeft" | "topLeft";
 }
 
 /**
@@ -344,6 +353,8 @@ export interface SheetViewOptions {
   showWhiteSpace?: boolean;
   /** View type (CT_SheetView `@view`) */
   view?: "normal" | "pageBreakPreview" | "pageLayout";
+  /** Top-left visible cell (CT_SheetView `@topLeftCell`); round-trip only meaningful when scrolled */
+  topLeftCell?: string;
   /** Tab color ID (CT_SheetView `@colorId`) */
   colorId?: number;
   /** Zoom scale for normal view (CT_SheetView `@zoomScaleNormal`) */
@@ -393,9 +404,9 @@ export interface PageSetupOptions {
   pageOrder?: "downThenOver" | "overThenDown";
   useFirstPageNumber?: boolean;
   firstPageNumber?: number;
-  /** Paper height (CT_PageSetup `@paperHeight`, ST_PositiveUniversalMeasure) */
+  /** Paper height (CT_PageSetup `@paperHeight`; a bare number means millimeters) */
   paperHeight?: number | PositiveUniversalMeasure;
-  /** Paper width (CT_PageSetup `@paperWidth`, ST_PositiveUniversalMeasure) */
+  /** Paper width (CT_PageSetup `@paperWidth`; a bare number means millimeters) */
   paperWidth?: number | PositiveUniversalMeasure;
   /** Use printer defaults (CT_PageSetup `@usePrinterDefaults`, XSD default true — only false is emitted) */
   usePrinterDefaults?: boolean;
@@ -1313,8 +1324,8 @@ export interface WorksheetOptions {
    * only: the referenced VML part is not re-emitted by the compiler.
    */
   legacyDrawingHF?: string;
-  /** Selection in sheet view (CT_Selection) */
-  selection?: SelectionOptions;
+  /** Selections in sheet view (CT_Selection — one per pane, max 4) */
+  selection?: SelectionOptions[];
   /** Pivot selection in sheet view (CT_PivotSelection) */
   pivotSelection?: PivotSelectionOptions;
   /** Cell smart tags (CT_SmartTags) */

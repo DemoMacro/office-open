@@ -23,7 +23,7 @@ const buffer = await generateWorkbook({
       tabColor: { rgb: "FF4472C4" },
       dimension: "A1:F12",
       sheetView: { showGridLines: false, zoomScale: 90 },
-      selection: { activeCell: "B2", sqref: "B2" },
+      selection: [{ activeCell: "B2", sqref: "B2" }],
       sheetFormatPr: { defaultRowHeight: 16, outlineLevelRow: 1 },
       columns: [{ min: 1, max: 6, width: 12 }],
       rows: [
