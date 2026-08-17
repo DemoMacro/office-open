@@ -97,8 +97,10 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (parseOnOff(attr(protEl, "lockStructure"))) prot.lockStructure = true;
       if (parseOnOff(attr(protEl, "lockWindows"))) prot.lockWindows = true;
       if (parseOnOff(attr(protEl, "lockRevision"))) prot.lockRevision = true;
-      if (attr(protEl, "workbookPassword"))
-        prot.workbookPassword = attr(protEl, "workbookPassword");
+      // @workbookPassword/@revisionsPassword (legacy hashes) not read back —
+      // the password fields are plaintext authoring input and stringify hashes
+      // them, so carrying the hash would double-hash on round-trip. The modern
+      // algorithmName/hashValue/saltValue/spinCount quadruplets round-trip as-is.
       if (attr(protEl, "workbookAlgorithmName"))
         prot.workbookAlgorithmName = attr(protEl, "workbookAlgorithmName");
       if (attr(protEl, "workbookHashValue"))
@@ -107,6 +109,18 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         prot.workbookSaltValue = attr(protEl, "workbookSaltValue");
       if (attr(protEl, "workbookSpinCount"))
         prot.workbookSpinCount = attrNum(protEl, "workbookSpinCount");
+      if (attr(protEl, "revisionsAlgorithmName"))
+        prot.revisionsAlgorithmName = attr(protEl, "revisionsAlgorithmName");
+      if (attr(protEl, "revisionsHashValue"))
+        prot.revisionsHashValue = attr(protEl, "revisionsHashValue");
+      if (attr(protEl, "revisionsSaltValue"))
+        prot.revisionsSaltValue = attr(protEl, "revisionsSaltValue");
+      if (attr(protEl, "revisionsSpinCount"))
+        prot.revisionsSpinCount = attrNum(protEl, "revisionsSpinCount");
+      if (attr(protEl, "workbookPasswordCharacterSet"))
+        prot.workbookPasswordCharacterSet = attr(protEl, "workbookPasswordCharacterSet");
+      if (attr(protEl, "revisionsPasswordCharacterSet"))
+        prot.revisionsPasswordCharacterSet = attr(protEl, "revisionsPasswordCharacterSet");
       result.protection = prot;
     }
 
