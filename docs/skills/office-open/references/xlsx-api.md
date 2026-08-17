@@ -44,7 +44,6 @@ Workbook
 {
   "value": "Hello",
   "reference": "B3",
-  "styleIndex": 2,
   "style": {
     "font": { "bold": true, "italic": true, "size": 14, "color": "FF0000", "font": "Arial" },
     "fill": { "color": "4472C4" },
@@ -60,12 +59,11 @@ Workbook
 }
 ```
 
-| Property     | Type                                          | Description                                            |
-| ------------ | --------------------------------------------- | ------------------------------------------------------ |
-| `value`      | `string \| number \| boolean \| Date \| null` | Cell value                                             |
-| `reference`  | `string`                                      | Cell reference (e.g. `"B3"`). Auto-assigned if omitted |
-| `styleIndex` | `number`                                      | Direct style index (for pre-resolved styles)           |
-| `style`      | `StyleOptions`                                | Style options (resolved to index at compile time)      |
+| Property    | Type                                          | Description                                                      |
+| ----------- | --------------------------------------------- | ---------------------------------------------------------------- |
+| `value`     | `string \| number \| boolean \| Date \| null` | Cell value                                                       |
+| `reference` | `string`                                      | Cell reference (e.g. `"B3"`). Auto-assigned if omitted           |
+| `style`     | `StyleOptions` \| `number`                    | Style options, or the raw cellXfs index as a round-trip fallback |
 
 ## Style Options
 

@@ -420,7 +420,7 @@ Used in TextRun children as a string — displays the page number where the refe
     ]
   },
   "numbering": {
-    "config": [
+    "abstractNumberings": [
       {
         "reference": "my-list",
         "levels": [
@@ -476,7 +476,7 @@ Used in TextRun children as a string — displays the page number where the refe
       {
         "id": 0,
         "author": "User",
-        "date": "<Date object>",
+        "date": "2026-08-17T10:30:00Z",
         "children": [{ "text": "This is a comment" }]
       }
     ]
