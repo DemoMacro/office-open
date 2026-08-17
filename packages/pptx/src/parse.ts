@@ -27,6 +27,7 @@ import { viewPropsDesc } from "./parts/descriptors/view-properties";
 
 export { parseArchive };
 
+import type { CustomerDataOptions, StringTagOptions } from "./parts/presentation";
 import type { SlideLayoutType } from "./parts/slide-layout";
 import type {
   LayoutDefinition,
@@ -403,6 +404,33 @@ export function parsePresentation(data: DataType): PresentationOptions {
         opts.size = { width: cx, height: cy };
       }
     }
+
+    // p:custDataLst — customer data parts, tags reference, and inline tag list.
+    const custDataLst = findChild(pptx.presentation, "p:custDataLst");
+    if (custDataLst) {
+      const customerData: CustomerDataOptions = {};
+      const data: { rId: string }[] = [];
+      const tagList: StringTagOptions[] = [];
+      for (const child of custDataLst.elements ?? []) {
+        if (child.name === "p:custData") {
+          const rId = attr(child, "r:id");
+          if (rId) data.push({ rId });
+        } else if (child.name === "p:tags") {
+          const rId = attr(child, "r:id");
+          if (rId) customerData.tags = { rId };
+        } else if (child.name === "p:tagLst") {
+          for (const tag of child.elements ?? []) {
+            if (tag.name !== "p:tag") continue;
+            const name = attr(tag, "name");
+            const val = attr(tag, "val");
+            if (name && val) tagList.push({ name, val });
+          }
+        }
+      }
+      if (data.length > 0) customerData.data = data;
+      if (tagList.length > 0) customerData.tagList = tagList;
+      if (Object.keys(customerData).length > 0) opts.customerData = customerData;
+    }
   }
 
   // 2. Parse core properties
@@ -441,12 +469,16 @@ export function parsePresentation(data: DataType): PresentationOptions {
     }
   }
 
-  // 3. Parse show options from presProps
+  // 3. Parse presentation properties (show/web/print/htmlPublish/colorMru)
   if (pptx.presProps) {
     const presPropsEl = pptx.doc.get(pptx.presProps);
     if (presPropsEl) {
       const presPropsOpts = presentationPropertiesDesc.parse(presPropsEl, {} as ReadContext);
       if (presPropsOpts.show) opts.show = presPropsOpts.show;
+      if (presPropsOpts.web) opts.web = presPropsOpts.web;
+      if (presPropsOpts.print) opts.print = presPropsOpts.print;
+      if (presPropsOpts.htmlPublish) opts.htmlPublish = presPropsOpts.htmlPublish;
+      if (presPropsOpts.colorMru) opts.colorMru = presPropsOpts.colorMru;
     }
   }
 
@@ -455,9 +487,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const viewPropsEl = pptx.doc.get(pptx.viewProps);
     if (viewPropsEl) {
       const viewOpts = viewPropsDesc.parse(viewPropsEl, {} as ReadContext);
-      if (viewOpts.lastView || viewOpts.showComments !== undefined || viewOpts.gridSpacing) {
-        opts.view = viewOpts;
-      }
+      if (Object.keys(viewOpts).length > 0) opts.view = viewOpts;
     }
   }
 
