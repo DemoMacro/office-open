@@ -9,6 +9,7 @@
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
+import type { ReadContext } from "../descriptor";
 import { parseColorMapping, stringifyColorMapping } from "./color-mapping";
 import { parseColorScheme, stringifyColorScheme } from "./color-scheme";
 import type { ExtraColorSchemeOptions } from "./theme-options";
@@ -35,12 +36,13 @@ export function stringifyExtraColorSchemes(
 /** Parse a:extraClrSchemeLst. */
 export function parseExtraColorSchemes(
   el: XmlElement | undefined,
+  ctx: ReadContext,
 ): ExtraColorSchemeOptions[] | undefined {
   if (!el) return undefined;
   const result: ExtraColorSchemeOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.name !== "a:extraClrScheme") continue;
-    const colorScheme = parseColorScheme(findChild(child, "a:clrScheme"));
+    const colorScheme = parseColorScheme(findChild(child, "a:clrScheme"), ctx);
     if (!colorScheme) continue;
     const colorMapping = parseColorMapping(findChild(child, "a:clrMap"));
     result.push(colorMapping ? { colorScheme, colorMapping } : { colorScheme });
