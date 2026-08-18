@@ -95,3 +95,11 @@ export {
   type DeriveContentTypesOptions,
   IMAGE_MEDIA_CONTENT_TYPES,
 } from "./content-types-input";
+
+// Package-wide passthrough (SDK ExtendedPart analogue)
+export {
+  collectPassthroughParts,
+  type PassthroughPart,
+  type PassthroughRelationship,
+  type PassthroughResult,
+} from "./passthrough";
