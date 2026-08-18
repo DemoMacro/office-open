@@ -7,6 +7,7 @@
  */
 import { attr, attrBool, attrNum, children, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
   SdtPropertiesOptions,
@@ -193,10 +194,16 @@ export function parseSdtBlock(
   parseChildren: (elements: Element[], ctx: DocxReadContext) => unknown[],
 ): {
   properties: SdtPropertiesOptions;
+  endProperties?: RunPropertiesOptions;
   children?: unknown[];
 } {
   const sdtPr = findChild(el, "w:sdtPr");
   const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+
+  // sdtEndPr (CT_SdtEndPr wraps its run properties in a w:rPr child)
+  const sdtEndPr = findChild(el, "w:sdtEndPr");
+  const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
+  const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
 
   const sdtContent = findChild(el, "w:sdtContent");
   let childList: unknown[] | undefined;
@@ -205,5 +212,5 @@ export function parseSdtBlock(
     if (childList.length === 0) childList = undefined;
   }
 
-  return { properties, children: childList };
+  return { properties, endProperties, children: childList };
 }

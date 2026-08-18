@@ -186,6 +186,12 @@ export type MathInput =
       runProperties?: RunPropertiesOptions;
     }
   | {
+      /** Trailing m:ctrlPr inside an argument element (m:e/m:num/m:den...,
+       *  CT_OMathArg) — carried as a children-array member so its position
+       *  round-trips. */
+      argumentControlProperties: RunPropertiesOptions;
+    }
+  | {
       fraction: {
         numerator: MathInput[];
         denominator: MathInput[];

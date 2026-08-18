@@ -12,6 +12,7 @@ import type { CustomXmlBlockOptions } from "@parts/custom-xml";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties";
 import type { MarkupRangeOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
@@ -44,6 +45,8 @@ export type SectionChild =
   | {
       sdt: {
         properties: SdtPropertiesOptions;
+        /** Run properties for the SDT end mark (w:sdtEndPr). */
+        endProperties?: RunPropertiesOptions;
         children?: SectionChild[];
       };
     }

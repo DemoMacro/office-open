@@ -82,12 +82,15 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
       ? `<w:r>${ctrl}<${instrTag} xml:space="preserve">${escapeXml(cf.instruction)}</${instrTag}></w:r>`
       : "");
   // `separate` + the result run are emitted only when there is a cached
-  // result; a result-less field round-trips as begin/instrText/end.
+  // result; a result-less field round-trips as begin/instrText/end. Result
+  // runs go verbatim when the source split them beyond the plain template.
   const resultXml =
-    cf.result !== undefined
-      ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
-        `<w:r>${res}<${textTag} xml:space="preserve">${escapeXml(cf.result)}</${textTag}></w:r>`
-      : "";
+    cf.resultRunsXml !== undefined
+      ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` + cf.resultRunsXml
+      : cf.result !== undefined
+        ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
+          `<w:r>${res}<${textTag} xml:space="preserve">${escapeXml(cf.result)}</${textTag}></w:r>`
+        : "";
   return (
     `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"/></w:r>` +
     instrXml +
@@ -1126,6 +1129,9 @@ export function stringifyChildDispatch(
     const sfAttrs = [`w:instr="${escapeXml(sf.instruction)}"`];
     if (sf.fieldLock !== undefined) sfAttrs.push(`w:fldLock="${sf.fieldLock ? 1 : 0}"`);
     if (sf.dirty !== undefined) sfAttrs.push(`w:dirty="${sf.dirty ? 1 : 0}"`);
+    if (sf.cachedRunsXml !== undefined) {
+      return `<w:fldSimple ${sfAttrs.join(" ")}>${sf.cachedRunsXml}</w:fldSimple>`;
+    }
     if (sf.cachedValue !== undefined) {
       return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:t>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;
     }

@@ -72,6 +72,10 @@ export interface ComplexFieldOptions {
    *  source split them across runs with per-run properties or line breaks —
    *  shapes the plain instruction template cannot reproduce. */
   instrRunsXml?: string;
+  /** Verbatim XML of the result runs (separate → end) when the source split
+   *  the cached value across runs with per-run properties — e.g. Word's
+   *  locale-mixed date results where every segment carries its own rFonts. */
+  resultRunsXml?: string;
 }
 
 /**

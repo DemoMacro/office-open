@@ -3718,6 +3718,10 @@
         },
         "resultRPrXml": {
           "type": "string"
+        },
+        "resultRunsXml": {
+          "description": "Verbatim XML of the result runs (separate → end) when the source split the cached value across runs with per-run properties — e.g. Word's locale-mixed date results where every segment carries its own rFonts.",
+          "type": "string"
         }
       },
       "required": ["instruction"],
@@ -8629,6 +8633,18 @@
           },
           "required": ["text"],
           "title": "text",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "argumentControlProperties": {
+              "$ref": "#/definitions/RunPropertiesOptions",
+              "description": "Trailing m:ctrlPr inside an argument element (m:e/m:num/m:den..., CT_OMathArg) — carried as a children-array member so its position round-trips."
+            }
+          },
+          "required": ["argumentControlProperties"],
+          "title": "argumentControlProperties",
           "type": "object"
         },
         {
@@ -17130,6 +17146,10 @@
                   },
                   "type": "array"
                 },
+                "endProperties": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Run properties for the SDT end mark (w:sdtEndPr)."
+                },
                 "properties": {
                   "$ref": "#/definitions/SdtPropertiesOptions"
                 }
@@ -18718,6 +18738,10 @@
       "additionalProperties": false,
       "description": "Simple field types for WordprocessingML documents.",
       "properties": {
+        "cachedRunsXml": {
+          "description": "Verbatim XML of the cached-value runs when they carry run properties (Word marks field results with w:noProof/rFonts) or split across runs — shapes the plain single-text-run template cannot reproduce.",
+          "type": "string"
+        },
         "cachedValue": {
           "description": "Optional cached field value",
           "type": "string"

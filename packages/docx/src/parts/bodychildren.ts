@@ -405,11 +405,11 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
     // sdtPr
     parts.push(stringifySdtPr(opts.properties));
 
-    // sdtEndPr — optional; emitted only when the source carried one
+    // sdtEndPr — optional; CT_SdtEndPr wraps its run properties in w:rPr
     const endPrInner = opts.endProperties
       ? stringifyRunPropertiesInner(opts.endProperties)
       : undefined;
-    if (endPrInner) parts.push(`<w:sdtEndPr>${endPrInner}</w:sdtEndPr>`);
+    if (endPrInner) parts.push(`<w:sdtEndPr><w:rPr>${endPrInner}</w:rPr></w:sdtEndPr>`);
 
     // sdtContent — checkbox renders its current state symbol; otherwise serialize children
     if (opts.properties.checkbox) {
@@ -436,11 +436,12 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
     const sdtPr = findChild(el, "w:sdtPr");
     const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
 
-    // Parse sdtEndPr (CT_RPr content at the end mark — run properties, no w:rPr wrapper)
+    // Parse sdtEndPr (CT_SdtEndPr wraps its run properties in a w:rPr child)
     let endProperties: RunPropertiesOptions | undefined;
     const sdtEndPr = findChild(el, "w:sdtEndPr");
     if (sdtEndPr) {
-      endProperties = parseRunProperties(sdtEndPr);
+      const rPr = findChild(sdtEndPr, "w:rPr");
+      endProperties = rPr ? parseRunProperties(rPr) : {};
     }
 
     // Parse sdtContent children

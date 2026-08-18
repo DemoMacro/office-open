@@ -80,6 +80,12 @@ export function stringifyMathInput(value: MathInput): string {
   // Class instances — still need toXml (shouldn't happen in compile/ JSON path)
   if (typeof value !== "object" || value === null) return "";
 
+  // Trailing ctrlPr of an argument element (m:e/m:num/m:den...) — emitted in
+  // place so its position among the children round-trips.
+  if ("argumentControlProperties" in value) {
+    return ctrlPrXml(value.argumentControlProperties);
+  }
+
   // Discriminated union: check unique keys (order matters — subSuperScript first)
   if ("subSuperScript" in value) {
     const opts = value.subSuperScript;
@@ -498,8 +504,13 @@ function parseMathElement(el: Element): MathInput | undefined {
     case "m:eqArrPr":
     case "m:limLowPr":
     case "m:limUppPr":
-    case "m:ctrlPr":
       return undefined;
+    case "m:ctrlPr": {
+      // Content-stream ctrlPr: the trailing control formatting of an argument
+      // element (m:e/m:num/m:den...) — keep it as a children member in place.
+      const rPr = findChild(el, "w:rPr");
+      return { argumentControlProperties: rPr ? parseRunProperties(rPr) : {} };
+    }
     default:
       return undefined;
   }

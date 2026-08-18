@@ -133,6 +133,16 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
         }
       }
 
+      // Cross-paragraph complex field: a paragraph whose fldChar begin/end
+      // markers are unbalanced opens (or continues) a field spanning
+      // paragraph boundaries, and one carrying instrText with no fldChar at
+      // all is a mid-field continuation. The per-paragraph field accumulator
+      // cannot represent either shape — keep the whole paragraph verbatim
+      // instead of dropping its runs.
+      if (isCrossParagraphFieldStart(el) || isFieldContinuation(el)) {
+        return { rawXml: stringifyElement(el) };
+      }
+
       return { paragraph: parseParagraph(el, ctx) };
     }
     case "w:tbl":
@@ -148,6 +158,7 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       return {
         sdt: {
           properties: sdtResult.properties,
+          endProperties: sdtResult.endProperties,
           children: sdtResult.children as SectionChild[] | undefined,
         },
       };
@@ -341,6 +352,33 @@ function isTocFieldBegin(el: Element): boolean {
   };
   walk(el);
   return hasBegin && instr.trim().toUpperCase().startsWith("TOC");
+}
+
+/**
+ * True when a w:p's fldChar markers don't balance out (net opens or closes)
+ * — a complex field crossing the paragraph boundary that the per-paragraph
+ * accumulator would silently truncate.
+ */
+function isCrossParagraphFieldStart(el: Element): boolean {
+  return countFieldDelta(el) !== 0;
+}
+
+/**
+ * True when a w:p carries instrText but no fldChar at all — a mid-field
+ * continuation paragraph between a distant begin and end.
+ */
+function isFieldContinuation(el: Element): boolean {
+  let hasInstr = false;
+  let hasFldChar = false;
+  const walk = (node: Element): void => {
+    if (node.name === "w:instrText") hasInstr = true;
+    else if (node.name === "w:fldChar") hasFldChar = true;
+    for (const c of node.elements ?? []) {
+      if (c.type === "element") walk(c);
+    }
+  };
+  walk(el);
+  return hasInstr && !hasFldChar;
 }
 
 /**

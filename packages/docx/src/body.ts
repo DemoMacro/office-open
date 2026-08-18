@@ -894,6 +894,8 @@ interface FieldRunState {
   /** Instruction-stage run elements (begin → separate/end), buffered for the
    *  plain-shape check at the closing end marker. */
   instrRunEls: Element[];
+  /** Result-stage run elements (separate → end), buffered likewise. */
+  resultRunEls: Element[];
 }
 
 const initialFieldRunState = (): FieldRunState => ({
@@ -903,24 +905,27 @@ const initialFieldRunState = (): FieldRunState => ({
   pendingResult: "",
   collectingResult: false,
   instrRunEls: [],
+  resultRunEls: [],
 });
 
 /**
- * True when the instruction runs are exactly what the plain stringify template
- * reproduces: a single run with the control rPr whose only child is the
- * instruction text. Multi-run chains (leading/trailing space runs with their
- * own rStyle, w:br inside the format switch) need the verbatim channel.
+ * True when the field-stage runs are exactly what the plain stringify template
+ * reproduces: a single run with the expected rPr whose only child is the
+ * stage's text element. Multi-run chains (leading/trailing space runs with
+ * their own rStyle, w:br inside the format switch, per-run rFonts on result
+ * segments) need the verbatim channel.
  */
-function isPlainInstrRuns(runs: Element[], controlRPr: string | undefined): boolean {
+function isPlainFieldRuns(
+  runs: Element[],
+  expectedRPr: string | undefined,
+  tags: string[],
+): boolean {
   if (runs.length === 0) return true;
   if (runs.length > 1) return false;
   const run = runs[0]!;
-  if (runRPrXml(run) !== controlRPr) return false;
+  if (runRPrXml(run) !== expectedRPr) return false;
   const content = (run.elements ?? []).filter((c) => c.name !== "w:rPr");
-  return (
-    content.length === 1 &&
-    (content[0]!.name === "w:instrText" || content[0]!.name === "w:delInstrText")
-  );
+  return content.length === 1 && tags.includes(content[0]!.name!);
 }
 
 /**
@@ -956,8 +961,10 @@ function feedFieldRun(
       state.resultRPr = undefined;
       state.collectingResult = false;
       state.instrRunEls = [];
+      state.resultRunEls = [];
     } else if (fctype === "separate") {
       state.collectingResult = true;
+      state.resultRunEls = [];
     } else if (fctype === "end" && state.kind) {
       let child: ParagraphChild | undefined;
       if (state.kind === "form" && state.pendingFormField) {
@@ -970,8 +977,20 @@ function feedFieldRun(
         // Word styles the end run like the result (not like the controls).
         const endRPr = runRPrXml(run);
         if (endRPr && endRPr !== state.controlRPr) cf.endRPrXml = endRPr;
-        if (!isPlainInstrRuns(state.instrRunEls, state.controlRPr)) {
+        if (
+          !isPlainFieldRuns(state.instrRunEls, state.controlRPr, ["w:instrText", "w:delInstrText"])
+        ) {
           cf.instrRunsXml = state.instrRunEls.map((el) => stringifyElement(el)).join("");
+        }
+        // The plain result template pairs the result rPr (defaulting to the
+        // control rPr) with a single text run — anything else goes verbatim.
+        if (
+          !isPlainFieldRuns(state.resultRunEls, state.resultRPr ?? state.controlRPr, [
+            "w:t",
+            "w:delText",
+          ])
+        ) {
+          cf.resultRunsXml = state.resultRunEls.map((el) => stringifyElement(el)).join("");
         }
         child = { complexField: cf };
       }
@@ -979,6 +998,7 @@ function feedFieldRun(
       state.pendingFormField = null;
       state.collectingResult = false;
       state.instrRunEls = [];
+      state.resultRunEls = [];
       return { consumed: true, child };
     }
     return { consumed: true };
@@ -989,6 +1009,7 @@ function feedFieldRun(
         // Capture the first result run's rPr for round-trip.
         if (state.resultRPr === undefined) state.resultRPr = runRPrXml(run);
         state.pendingResult += collectRunText(run);
+        state.resultRunEls.push(run);
       } else {
         // Deleted fields spell the instruction w:delInstrText instead.
         const instrEl = findChild(run, "w:instrText") ?? findChild(run, "w:delInstrText");
@@ -1516,16 +1537,31 @@ function parseRunLevelChildren(
           const sf: {
             instruction: string;
             cachedValue?: string;
+            cachedRunsXml?: string;
             fieldLock?: boolean;
             dirty?: boolean;
           } = { instruction };
           // cachedValue: concatenate the result-run <w:t> text (one or more
-          // <w:r> children between the fldSimple tags).
+          // <w:r> children between the fldSimple tags). Some files carry the
+          // result as w:instrText runs instead (nested-field expansions) —
+          // those count as display text too.
           let cachedValue = "";
+          const cachedRunEls: Element[] = [];
           for (const sub of child.elements ?? []) {
-            if (sub.name === "w:r") cachedValue += collectRunText(sub);
+            if (sub.name === "w:r") {
+              cachedValue += collectRunText(sub);
+              for (const rc of sub.elements ?? []) {
+                if (rc.name === "w:instrText") cachedValue += textOf(rc) ?? "";
+              }
+              cachedRunEls.push(sub);
+            }
           }
           if (cachedValue) sf.cachedValue = cachedValue;
+          // The plain template emits one bare text run — cached runs carrying
+          // rPr (Word marks field results w:noProof) go through verbatim.
+          if (!isPlainFieldRuns(cachedRunEls, undefined, ["w:t", "w:instrText"])) {
+            sf.cachedRunsXml = cachedRunEls.map((el) => stringifyElement(el)).join("");
+          }
           const sfLock = attrBool(child, "w:fldLock");
           if (sfLock !== undefined) sf.fieldLock = sfLock;
           const sfDirty = attrBool(child, "w:dirty");

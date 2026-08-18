@@ -224,6 +224,8 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
 
   const lang = findChild(el, "w:lang");
   if (lang) {
+    // Keep the element even when it carries no attributes — Word writes a
+    // bare <w:lang/> to override inherited language settings.
     const langObj: LanguageOptions = {};
     const val = attr(lang, "w:val");
     if (val) langObj.value = val;
@@ -231,7 +233,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
     if (eastAsia) langObj.eastAsia = eastAsia;
     const bidi = attr(lang, "w:bidi");
     if (bidi) langObj.bidirectional = bidi;
-    if (Object.keys(langObj).length > 0) opts.language = langObj;
+    opts.language = langObj;
   }
 
   // Border (w:bdr)
@@ -641,12 +643,17 @@ export function parsedRunToOptions(
       : (ref as RunOptions | { commentReference: number });
   }
 
-  // If the run only contains a symbolRun, return it directly
+  // If the run only contains a symbolRun, return it directly. SymbolRunOptions
+  // extends RunOptions, so the run properties merge into the symbolRun itself —
+  // the stringify path serializes them from there. Without this a sym run
+  // carrying w:rPr falls through to the text collection loop and is dropped.
   const symbolIdx = nonRefChildren.findIndex(
     (c) => typeof c === "object" && c !== null && "symbolRun" in c,
   );
-  if (symbolIdx >= 0 && nonRefChildren.length === 1 && !parsed.properties) {
-    return nonRefChildren[symbolIdx] as unknown as RunOptions;
+  if (symbolIdx >= 0 && nonRefChildren.length === 1) {
+    const sym = (nonRefChildren[symbolIdx] as unknown as { symbolRun: Record<string, unknown> })
+      .symbolRun;
+    return { symbolRun: { ...parsed.properties, ...sym } } as unknown as RunOptions;
   }
 
   // If the run contains only an OLE object (w:object), return it directly with
@@ -669,6 +676,9 @@ export function parsedRunToOptions(
     return { ...parsed.properties, ...pictChild } as unknown as RunOptions;
   }
   const hasBlockChild = objectIdx >= 0 || pictIdx >= 0;
+  // A symbol run mixed with other content must stay in children[] form — the
+  // text collection loop below would otherwise drop the symbolRun wrapper.
+  const hasMixedSymbol = symbolIdx >= 0 && nonRefChildren.length > 1;
 
   // Collect text and breaks
   const textParts: string[] = [];
@@ -703,6 +713,7 @@ export function parsedRunToOptions(
   const useChildrenForm =
     mixedRefs ||
     (hasBlockChild && nonRefChildren.length > 1) ||
+    hasMixedSymbol ||
     extraChildren.length > 0 ||
     (hasStructuredBreaks &&
       (breakCount > 0 || structuredBreaks.length > 1 || hasPageBreak || hasColumnBreak));
