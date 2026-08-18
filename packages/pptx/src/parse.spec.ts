@@ -37,10 +37,12 @@ describe("parsePresentation", () => {
 
     expect(result.slides).to.exist;
     expect(result.slides!.length).to.equal(1);
-    expect(result.masters).to.be.undefined;
+    // Single masters survive round-trip too — the compiler only synthesizes
+    // a default master when none is given.
+    expect(result.masters).to.have.lengthOf(1);
   });
 
-  it("parses single master file with undefined masters", async () => {
+  it("parses single master file carrying the source master", async () => {
     const options: PresentationOptions = {
       slides: [
         { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
@@ -51,7 +53,7 @@ describe("parsePresentation", () => {
     const result = parsePresentation(buffer);
 
     expect(result.slides!.length).to.equal(2);
-    expect(result.masters).to.be.undefined;
+    expect(result.masters).to.have.lengthOf(1);
   });
 
   it("parses core properties and size", async () => {

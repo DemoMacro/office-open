@@ -342,8 +342,12 @@ export interface CustomGeometryOptions {
   connectionSites?: readonly ConnectionSite[];
   /** Text insertion rectangle (a:rect) */
   textRectangle?: GeomRect;
-  /** Path definitions (a:pathLst) — required */
-  pathList: readonly PathOptions[];
+  /**
+   * Path definitions (a:pathLst) — XSD-required (minOccurs=1): omitting it on
+   * stringify still emits an empty `<a:pathLst/>` so the geometry stays
+   * schema-valid. An empty array round-trips an explicit empty list.
+   */
+  pathList?: readonly PathOptions[];
 }
 
 /**
@@ -404,8 +408,8 @@ export const createCustomGeometry = (options: CustomGeometryOptions): string => 
     children.push(createGeomRect(options.textRectangle));
   }
 
-  // a:pathLst (required)
-  children.push(element("a:pathLst", undefined, options.pathList.map(createPath)));
+  // a:pathLst (required, minOccurs=1) — omitting it still emits the empty form
+  children.push(element("a:pathLst", undefined, (options.pathList ?? []).map(createPath)));
 
   return element("a:custGeom", undefined, children);
 };

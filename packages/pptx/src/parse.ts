@@ -514,7 +514,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   );
 
   // 5. Parse masters
-  const masterCount = pptx.slideMasters.length;
+
   const masterDefs: MasterDefinition[] = [];
   const masterReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
   for (const [mi, masterPath] of pptx.slideMasters.entries()) {
@@ -569,8 +569,9 @@ export function parsePresentation(data: DataType): PresentationOptions {
     masterDefs.push(masterDef as MasterDefinition);
   }
 
-  // Only set masters if there's more than one (single master is auto-created)
-  if (masterCount > 1) {
+  // Carry every parsed master — a single source master must survive round-trip
+  // too (the compiler only synthesizes a default master when none is given).
+  if (masterDefs.length > 0) {
     opts.masters = masterDefs;
   }
 

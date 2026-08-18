@@ -361,8 +361,10 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
       parts.push(stringifyGeomRect(opts.textRectangle));
     }
 
-    // a:pathLst (required)
-    const pathsXml = opts.pathList.map(stringifyPath).join("");
+    // a:pathLst (XSD-required, minOccurs=1). Parse leaves it undefined only
+    // for a malformed source custGeom without one — emit the empty form there
+    // so the output stays schema-valid.
+    const pathsXml = (opts.pathList ?? []).map(stringifyPath).join("");
     parts.push(`<a:pathLst>${pathsXml}</a:pathLst>`);
 
     return `<a:custGeom>${parts.join("")}</a:custGeom>`;
@@ -420,11 +422,12 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
       if (textRectangle) result.textRectangle = textRectangle;
     }
 
-    // a:pathLst (required)
+    // a:pathLst (required) — presence-based: an explicit empty <a:pathLst/>
+    // round-trips as [] so the empty form survives verbatim.
     const pathLst = findChild(el, "a:pathLst");
-    if (pathLst?.elements) {
+    if (pathLst) {
       const paths: PathOptions[] = [];
-      for (const child of pathLst.elements) {
+      for (const child of pathLst.elements ?? []) {
         if (child.name === "a:path") {
           const p = readPath(child);
           if (p.commands && p.commands.length > 0) {
@@ -432,7 +435,7 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
           }
         }
       }
-      if (paths.length > 0) result.pathList = paths;
+      result.pathList = paths;
     }
 
     return result as CustomGeometryOptions;
