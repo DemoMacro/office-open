@@ -89,6 +89,16 @@ export function stringifyStringVector(values: readonly string[]): string {
   return `<vt:vector size="${values.length}" baseType="lpstr">${items}</vt:vector>`;
 }
 
+/**
+ * Serialize a vt:vector of variant entries (the HLinks shape). Each value
+ * keeps the element spelling stringifyVariantValue maps it to, wrapped in a
+ * vt:variant carrier — round-trips whatever int/string mix the source carried.
+ */
+export function stringifyVariantVector(values: readonly VariantValue[]): string {
+  const items = values.map((v) => `<vt:variant>${stringifyVariantValue(v)}</vt:variant>`).join("");
+  return `<vt:vector size="${values.length}" baseType="variant">${items}</vt:vector>`;
+}
+
 /** Parse a vt:vector with any scalar baseType into its JS values. */
 export function parseVector(el: Element | undefined): VariantValue[] {
   if (!el || el.name !== "vt:vector") return [];

@@ -14,7 +14,8 @@ import { escapeXml } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import { parseOnOff } from "../util/values";
-import { parseVector, stringifyStringVector } from "./variant-types";
+import { parseVector, stringifyStringVector, stringifyVariantVector } from "./variant-types";
+import type { VariantValue } from "./variant-types";
 
 /** xsd:boolean lexical form — spec canonical form is "true"/"false" (Word's convention). */
 const xsdBoolean = (value: boolean): string => (value ? "true" : "false");
@@ -60,6 +61,13 @@ export interface AppPropertiesOptions {
   docSecurity?: number;
   /** Hyperlink base URL */
   hyperlinkBase?: string;
+  /**
+   * Hyperlink metadata vector (HLinks) — Word's internal per-link records
+   * (id/position/flags integers and anchor strings, six entries per link).
+   * Round-trip only: the record fields are undocumented, so the flat variant
+   * values are carried as-is rather than named.
+   */
+  hlinks?: VariantValue[];
   /** Application name */
   application?: string;
   /** Application version */
@@ -148,6 +156,8 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
       p.push(`<SharedDoc>${xsdBoolean(opts.sharedDoc)}</SharedDoc>`);
     if (opts.hyperlinkBase !== undefined)
       p.push(`<HyperlinkBase>${escapeXml(opts.hyperlinkBase)}</HyperlinkBase>`);
+    if (opts.hlinks !== undefined && opts.hlinks.length > 0)
+      p.push(`<HLinks>${stringifyVariantVector(opts.hlinks)}</HLinks>`);
     if (opts.hyperlinksChanged !== undefined)
       p.push(`<HyperlinksChanged>${xsdBoolean(opts.hyperlinksChanged)}</HyperlinksChanged>`);
     if (opts.application !== undefined)
@@ -247,6 +257,12 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
         case "HyperlinkBase":
           result.hyperlinkBase = str;
           break;
+        case "HLinks": {
+          const vector = child.elements?.find((e) => e.name === "vt:vector");
+          const values = parseVector(vector);
+          if (values.length > 0) result.hlinks = values;
+          break;
+        }
         case "HyperlinksChanged":
           if (typeof text === "string") result.hyperlinksChanged = parseOnOff(text) ?? false;
           break;

@@ -140,4 +140,18 @@ describe("appPropertiesDesc vector round-trip", () => {
     ]);
     expect(result.titlesOfParts).toEqual(["Office Theme", "Title Slide", "Content Slide"]);
   });
+
+  it("round-trips the HLinks variant vector with its int/string mix", () => {
+    // Word's per-link records: four integers then two strings (often empty),
+    // flat in the vector — the record fields are undocumented, so they stay
+    // unnamed.
+    const result = roundTrip({
+      hlinks: [1114168, 281, 0, 5, "", "_Toc514210855"],
+    });
+    expect(result.hlinks).toEqual([1114168, 281, 0, 5, "", "_Toc514210855"]);
+    const xml = appPropertiesDesc.stringify({ hlinks: [1114168, 281] }, writeCtx)!;
+    expect(xml).toContain('<HLinks><vt:vector size="2" baseType="variant">');
+    expect(xml).toContain("<vt:variant><vt:i4>1114168</vt:i4></vt:variant>");
+    expect(xml).toContain("<vt:variant><vt:i4>281</vt:i4></vt:variant>");
+  });
 });

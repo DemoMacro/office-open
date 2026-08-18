@@ -216,6 +216,13 @@
           "description": "Hidden slides count",
           "type": "number"
         },
+        "hlinks": {
+          "description": "Hyperlink metadata vector (HLinks) — Word's internal per-link records (id/position/flags integers and anchor strings, six entries per link). Round-trip only: the record fields are undocumented, so the flat variant values are carried as-is rather than named.",
+          "items": {
+            "$ref": "#/definitions/VariantValue"
+          },
+          "type": "array"
+        },
         "hyperlinkBase": {
           "description": "Hyperlink base URL",
           "type": "string"
