@@ -50,6 +50,18 @@ export interface TablePartStyleOptions {
   text?: TableTextStyleOptions;
   /** Cell style (fill, borders, 3D) */
   cell?: TableCellStyleOptions;
+  /** Table background (a:tblBg only) — themeable fill/effect references. */
+  background?: TableBackgroundStyleOptions;
+}
+
+/** Table background style (CT_TableBackgroundStyle: fill → effect). */
+export interface TableBackgroundStyleOptions {
+  /** Theme fill reference (a:fillRef idx). */
+  fillReference?: StyleMatrixReferenceOptions;
+  /** Explicit fill choice as raw XML (e.g. a:solidFill). */
+  fill?: string;
+  /** Theme effect reference (a:effectRef idx). */
+  effectReference?: StyleMatrixReferenceOptions;
 }
 
 export interface TableTextStyleOptions {
@@ -187,6 +199,13 @@ function buildCellStyle(opts: TableCellStyleOptions): string {
 
 function buildPartStyle(elementName: string, opts: TablePartStyleOptions): string {
   const children: string[] = [];
+  if (opts.background) {
+    if (opts.background.fillReference)
+      children.push(createStyleMatrixRef("fillRef", opts.background.fillReference));
+    else if (opts.background.fill) children.push(toStr(opts.background.fill));
+    if (opts.background.effectReference)
+      children.push(createStyleMatrixRef("effectRef", opts.background.effectReference));
+  }
   if (opts.text) children.push(buildTextStyle(opts.text));
   if (opts.cell) children.push(buildCellStyle(opts.cell));
   return element(elementName, undefined, children);
@@ -302,10 +321,25 @@ export function parseTableStyle(el: Element): TableStyleOptions | undefined {
     if (!child.name) continue;
     const region = ELEMENT_TO_REGION[child.name];
     if (!region) continue;
-    const part = parsePartStyle(child);
+    const part = region === "tblBg" ? parseTableBackgroundStyle(child) : parsePartStyle(child);
     if (part) regions[region] = part;
   }
   return { styleId, styleName, ...(Object.keys(regions).length > 0 ? { regions } : {}) };
+}
+
+/** Parse a:tblBg (CT_TableBackgroundStyle: fill → effect, no tc* wrappers). */
+function parseTableBackgroundStyle(el: Element): TablePartStyleOptions | undefined {
+  const background: TableBackgroundStyleOptions = {};
+  const fillRefEl = findChild(el, "a:fillRef");
+  if (fillRefEl) {
+    background.fillReference = parseStyleMatrixRef(fillRefEl);
+  } else {
+    const explicitFill = (el.elements ?? []).find((c) => c.name !== "a:effectRef");
+    if (explicitFill) background.fill = serializeChild(explicitFill);
+  }
+  const effectRefEl = findChild(el, "a:effectRef");
+  if (effectRefEl) background.effectReference = parseStyleMatrixRef(effectRefEl);
+  return Object.keys(background).length > 0 ? { background } : undefined;
 }
 
 function parsePartStyle(el: Element): TablePartStyleOptions | undefined {
@@ -376,7 +410,9 @@ function parseCellBorders(el: Element): TableCellBorderOptions | undefined {
     const line = parseThemeableLine(lineEl);
     if (line) borders[key] = line;
   }
-  return Object.keys(borders).length > 0 ? borders : undefined;
+  // An empty a:tcBdr is meaningful — it overrides the outer-region borders
+  // with none — so presence round-trips as an empty borders object.
+  return borders;
 }
 
 function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined {

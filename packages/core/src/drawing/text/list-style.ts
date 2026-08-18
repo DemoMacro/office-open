@@ -15,7 +15,7 @@
  */
 
 import type { Element } from "@office-open/xml";
-import { findChild } from "@office-open/xml";
+import { findChild, stringify } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { readParagraphProperties, stringifyParagraphPropertiesElement } from "./paragraph";
@@ -33,6 +33,8 @@ export interface TextListStyleOptions {
   /** Levels 1-9; index 0 = lvl1pPr. `null` omits the level (JSON form of
    *  an undefined array slot — the position still pins the level number). */
   levels?: (ParagraphPropertiesOptions | null)[];
+  /** Trailing a:extLst verbatim inner XML; `""` preserves a bare <a:extLst/>. */
+  ext?: string;
 }
 
 /** CT_SlideMasterTextStyles — the master's title/body/other style groups. */
@@ -59,6 +61,7 @@ function stringifyGroup(
     const lvl = levels[i];
     if (lvl) parts.push(stringifyParagraphPropertiesElement(`a:lvl${i + 1}pPr`, lvl, ctx));
   }
+  if (group.ext !== undefined) parts.push(`<a:extLst>${group.ext}</a:extLst>`);
   return `<${tag}>${parts.join("")}</${tag}>`;
 }
 
@@ -96,10 +99,10 @@ function parseGroup(el: Element | undefined, ctx: ReadContext): TextListStyleOpt
     const lvlEl = findChild(el, `a:lvl${i}pPr`);
     levels.push(lvlEl ? readParagraphProperties(lvlEl, ctx) : null);
   }
-  if (group.defaultParagraph || levels.some((l) => l !== null)) {
-    group.levels = levels;
-    return group;
-  }
+  if (group.defaultParagraph || levels.some((l) => l !== null)) group.levels = levels;
+  const extLst = findChild(el, "a:extLst");
+  if (extLst) group.ext = stringify(extLst);
+  if (group.levels || group.ext !== undefined) return group;
   return undefined;
 }
 
@@ -127,6 +130,7 @@ export const textListStyleDesc: CustomDescriptor<TextListStyleOptions> = {
       const lvl = levels[i];
       if (lvl) parts.push(stringifyParagraphPropertiesElement(`a:lvl${i + 1}pPr`, lvl, ctx));
     }
+    if (opts.ext !== undefined) parts.push(`<a:extLst>${opts.ext}</a:extLst>`);
     return parts.join("");
   },
   parse(el, ctx) {

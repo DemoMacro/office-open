@@ -16,6 +16,7 @@ import type { CustomDescriptor, ReadContext, WriteContext } from "../../descript
 import { emitPercent, parsePercent } from "../../util/converters";
 import { xsdTextAlign } from "../../util/mappings";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
+import { emitColorChoice, isPlainRgbColor, parseColorChoice } from "../color/color-descriptors";
 import { stringifyTextRun, textRunDesc } from "./run";
 import { runPropertiesDesc, stringifyRunProperties } from "./run-properties";
 import type { Mutable } from "./run-properties";
@@ -149,16 +150,15 @@ function stringifyParagraphProperties(
 function stringifyBullet(options: BulletOptions): string[] {
   const parts: string[] = [];
 
-  if (options.type === "none") {
-    parts.push("<a:buNone/>");
-    return parts;
-  }
-
   // Color: buClrTx | buClr
   if (options.colorFollowsText) {
     parts.push("<a:buClrTx/>");
   } else if (options.color) {
-    parts.push(`<a:buClr><a:srgbClr val="${stripColorHashPrefix(options.color)}"/></a:buClr>`);
+    const color =
+      typeof options.color === "string"
+        ? emitColorChoice({ value: stripColorHashPrefix(options.color) })
+        : emitColorChoice(options.color);
+    parts.push(`<a:buClr>${color}</a:buClr>`);
   }
 
   // Size: buSzTx | buSzPts | buSzPct
@@ -170,21 +170,21 @@ function stringifyBullet(options: BulletOptions): string[] {
     parts.push(`<a:buSzPct val="${options.size}%"/>`);
   }
 
-  // Font: buFontTx | buFont. Fresh char/autoNum bullets default to Arial.
+  // Font: buFontTx | buFont. No fresh default — Office files omit buFont when
+  // the bullet follows the paragraph font, and a synthesized one would not
+  // round-trip.
   if (options.fontFollowsText) {
     parts.push("<a:buFontTx/>");
   } else if (options.font !== undefined) {
     parts.push(
       `<a:buFont typeface="${options.font}" panose="020B0604020202020204" pitchFamily="34" charset="0"/>`,
     );
-  } else if (options.type === "char" || options.type === "autoNum") {
-    parts.push(
-      `<a:buFont typeface="Arial" panose="020B0604020202020204" pitchFamily="34" charset="0"/>`,
-    );
   }
 
-  // Bullet type: buChar | buAutoNum | buBlip
-  if (options.type === "char") {
+  // Bullet type: buNone | buChar | buAutoNum | buBlip
+  if (options.type === "none") {
+    parts.push("<a:buNone/>");
+  } else if (options.type === "char") {
     parts.push(`<a:buChar char="${escapeXml(options.char ?? "•")}"/>`);
   } else if (options.type === "autoNum") {
     const buAttrs: string[] = [`type="${options.format ?? "arabicPeriod"}"`];
@@ -275,13 +275,12 @@ export function readParagraphProperties(
   }
 
   // Bullets
-  if (findChild(el, "a:buNone")) {
-    result.bullet = { type: "none" };
-  } else {
+  const buNone = findChild(el, "a:buNone");
+  {
     const buChar = findChild(el, "a:buChar");
     const buAutoNum = findChild(el, "a:buAutoNum");
     const buBlip = findChild(el, "a:buBlip");
-    if (buChar || buAutoNum || buBlip) {
+    if (buChar || buAutoNum || buBlip || buNone) {
       // Shared color/size/font style — each dimension is a choice.
       const style: Mutable<BulletStyleOptions> = {};
       if (findChild(el, "a:buClrTx")) {
@@ -289,8 +288,10 @@ export function readParagraphProperties(
       } else {
         const buClr = findChild(el, "a:buClr");
         if (buClr) {
-          const srgb = findChild(buClr, "a:srgbClr");
-          if (srgb?.attributes?.["val"]) style.color = String(srgb.attributes["val"]);
+          const parsed = parseColorChoice(buClr, ctx);
+          if (parsed && Object.keys(parsed).length > 0) {
+            style.color = isPlainRgbColor(parsed) ? (parsed as { value: string }).value : parsed;
+          }
         }
       }
       if (findChild(el, "a:buSzTx")) {
@@ -312,7 +313,9 @@ export function readParagraphProperties(
         if (buFont?.attributes?.["typeface"]) style.font = String(buFont.attributes["typeface"]);
       }
 
-      if (buBlip) {
+      if (buNone) {
+        result.bullet = { type: "none", ...style };
+      } else if (buBlip) {
         const blip = findChild(buBlip, "a:blip");
         result.bullet = {
           type: "picture",

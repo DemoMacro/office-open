@@ -256,6 +256,20 @@ export function stringifyColorChoice(color: SolidFillOptions, _ctx: WriteContext
   return emitColorChoice(color);
 }
 
+/** True when the color is a bare srgbClr (no transforms, no secondary fields)
+ * — safe for a caller to collapse to its hex string shorthand. */
+export function isPlainRgbColor(color: SolidFillOptions): boolean {
+  if ("hue" in color || "r" in color) return false;
+  if (color.transforms !== undefined) return false;
+  const value = (color as { value?: unknown }).value;
+  return (
+    typeof value === "string" &&
+    !SYSTEM_COLOR_VALUES.has(value) &&
+    !PRESET_COLOR_VALUES.has(value) &&
+    !SCHEME_COLOR_VALUES.has(value)
+  );
+}
+
 /**
  * Parse a single EG_ColorChoice element (a:srgbClr, a:schemeClr, …) into
  * options; returns undefined for any other element.

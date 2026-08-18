@@ -135,8 +135,9 @@ export interface RunOptions extends RunPropertiesOptions {
 /** Shared bullet color/size/font styling (EG_TextBulletColorSizeFont). Each
  * dimension is a choice: an explicit value, a "follows text" toggle, or unset. */
 export type BulletStyleOptions = {
-  /** a:buClr > a:srgbClr — explicit bullet color (hex, no #). */
-  color?: string;
+  /** a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with
+   *  transforms, sysClr, …). */
+  color?: string | SolidFillOptions;
   /** a:buClrTx — bullet color follows the text run color. */
   colorFollowsText?: boolean;
   /** a:buSzPct `@val` — bullet size as a percentage of the text size. */
@@ -145,7 +146,7 @@ export type BulletStyleOptions = {
   sizeFollowsText?: boolean;
   /** a:buSzPts `@val` — bullet size in points. */
   sizePoints?: number;
-  /** a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum). */
+  /** a:buFont `@typeface` — explicit bullet font. */
   font?: string;
   /** a:buFontTx — bullet font follows the text run font. */
   fontFollowsText?: boolean;
@@ -168,7 +169,9 @@ export type BulletPictureOptions = BulletStyleOptions & {
   embed: string;
 };
 
-export type BulletNoneOption = { type: "none" };
+/** No bullet (a:buNone) — may still carry the shared color/size/font style
+ * (EG_Bullet allows buClrTx/buSzTx/buFontTx before buNone). */
+export type BulletNoneOption = BulletStyleOptions & { type: "none" };
 
 export type BulletOptions =
   | BulletCharOptions

@@ -137,6 +137,7 @@ export {
   type TablePartStyleOptions,
   type TableTextStyleOptions,
   type TableCellStyleOptions,
+  type TableBackgroundStyleOptions,
   type TableCellBorderOptions,
   type ThemeableLineStyleOptions,
   type StyleMatrixReferenceOptions,
