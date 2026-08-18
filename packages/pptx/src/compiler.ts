@@ -735,13 +735,19 @@ export function compilePresentation(
   const smartArts = new SmartArtCollection();
 
   const presPropsFullOpts =
-    options.web || options.print || options.htmlPublish || options.colorMru || options.show
+    options.web ||
+    options.print ||
+    options.htmlPublish ||
+    options.colorMru ||
+    options.show ||
+    options.ext
       ? {
           web: options.web,
           print: options.print,
           htmlPublish: options.htmlPublish,
           colorMru: options.colorMru,
           show: options.show,
+          ext: options.ext,
         }
       : undefined;
 

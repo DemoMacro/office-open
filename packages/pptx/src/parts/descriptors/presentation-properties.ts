@@ -6,7 +6,7 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import {
   buildPresentationPropertiesXml,
@@ -140,6 +140,13 @@ function parsePresentationProperties(el: XmlElement): PresentationPropertiesOpti
       if (val) colors.push(val);
     }
     if (colors.length > 0) result.colorMru = colors;
+  }
+
+  // p:extLst — verbatim inner XML for unmodeled extensions (p14 discardImageDpi etc.).
+  const extLst = findChild(el, "p:extLst");
+  if (extLst) {
+    const inner = stringifyXml(extLst);
+    if (inner) result.ext = inner;
   }
 
   return result as PresentationPropertiesOptions;

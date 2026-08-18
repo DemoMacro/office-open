@@ -176,6 +176,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   /** Smart tags (p:smartTags) — r:id to the smart-tags part. */
   smartTags?: { rId: string };
   colorMru?: string[];
+  /** Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions). */
+  ext?: string;
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */

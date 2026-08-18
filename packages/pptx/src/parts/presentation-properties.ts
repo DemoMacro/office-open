@@ -42,6 +42,8 @@ export interface PresentationPropertiesOptions {
   print?: PrintPropertiesOptions;
   htmlPublish?: HtmlPublishPropertiesOptions;
   colorMru?: string[];
+  /** Verbatim inner XML of p:extLst (last child per CT_PresentationProperties). */
+  ext?: string;
 }
 
 const COLOR_MODE_XSD: Record<string, string> = {
@@ -136,6 +138,7 @@ export function buildPresentationPropertiesXml(opts?: PresentationPropertiesOpti
       `<p:clrMru>${opts.colorMru.map((c) => `<a:srgbClr val="${c}"/>`).join("")}</p:clrMru>`,
     );
   }
+  if (opts.ext) children.push(`<p:extLst>${opts.ext}</p:extLst>`);
 
   if (children.length === 0) {
     return `<p:presentationPr ${ns}/>`;

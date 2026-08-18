@@ -42,7 +42,9 @@ describe("slideMasterDesc fresh emit", () => {
     expect(xml).toContain("<p:spTree>");
     expect(xml).toContain("<p:clrMap ");
     expect(xml).toContain("<p:sldLayoutIdLst>");
-    expect(xml).toContain("<p:hf ");
+    // MS Office masters carry no p:hf by default — only when the source had one.
+    expect(xml).not.toContain("<p:hf");
+    expect(freshXml({ headerFooter: { slideNumber: false } })).toContain("<p:hf ");
     expect(xml).toContain("<p:txStyles>");
   });
 
@@ -184,9 +186,8 @@ describe("slide-master colorMapping/headerFooter round-trip", () => {
     expect(clrMap?.background1).toBe("light1");
     expect(clrMap?.text1).toBe("dark1");
 
-    const hf = parseHeaderFooter(findChild(el, "p:hf"));
-    expect(hf?.date).toBe(false);
-    expect(hf?.slideNumber).toBe(false);
+    // No headerFooter → no p:hf at all (MS Office masters carry none).
+    expect(findChild(el, "p:hf")).toBeUndefined();
   });
 });
 

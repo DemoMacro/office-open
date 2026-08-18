@@ -172,8 +172,8 @@ export function resolvePlaceholder(
  * parse paths; the caller supplies its own `p:ph/@type` → key map.
  *
  * Facets beyond position are carried only when the source defined them: non-rect
- * geometry, fill/outline/effects/3D, custom text body (a run/break beyond the
- * default endParaRPr/field body), and shape style. This keeps default placeholders
+ * geometry, fill/outline/effects/3D, custom text body (a run/break/field beyond
+ * the default endParaRPr body), and shape style. This keeps default placeholders
  * position-only so the fresh emit path stays byte-equivalent with MS Office.
  */
 export function extractPlaceholderDefinition(
@@ -219,8 +219,9 @@ export function extractPlaceholderDefinition(
     }
   }
 
-  // textBody: carry only when it holds custom text (a run/break beyond the
-  // default endParaRPr/field body), so default placeholders stay byte-equivalent.
+  // textBody: carry only when it holds custom content (a run/break/field
+  // beyond the default endParaRPr body), so default placeholders stay
+  // byte-equivalent.
   const txBody = findChild(spEl, "p:txBody");
   if (txBody && hasTextContent(txBody)) {
     def.textBody = textBodyDesc.parse(txBody, ctx);
@@ -242,12 +243,12 @@ export function extractPlaceholderDefinition(
   return { key, def: def as PlaceholderDefinition };
 }
 
-/** True when a txBody holds an a:r/a:br run (custom content, not the empty default). */
+/** True when a txBody holds an a:r/a:br/a:fld (custom content, not the empty default). */
 function hasTextContent(txBody: XmlElement): boolean {
   for (const p of txBody.elements ?? []) {
     if (p.name !== "a:p") continue;
     for (const child of p.elements ?? []) {
-      if (child.name === "a:r" || child.name === "a:br") return true;
+      if (child.name === "a:r" || child.name === "a:br" || child.name === "a:fld") return true;
     }
   }
   return false;

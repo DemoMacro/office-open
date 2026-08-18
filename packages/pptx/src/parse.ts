@@ -476,6 +476,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (presPropsOpts.print) opts.print = presPropsOpts.print;
       if (presPropsOpts.htmlPublish) opts.htmlPublish = presPropsOpts.htmlPublish;
       if (presPropsOpts.colorMru) opts.colorMru = presPropsOpts.colorMru;
+      if (presPropsOpts.ext) opts.ext = presPropsOpts.ext;
     }
   }
 

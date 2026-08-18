@@ -336,8 +336,9 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
 
   // Placeholder shapes inherit geometry/fill from layout/master; only emit
   // them when explicitly set. Non-placeholder shapes default to rect geometry
-  // and noFill.
-  const isPlaceholder = !!opts.placeholder;
+  // and noFill. A p:ph with no @type (idx-only) is still a placeholder —
+  // placeholderIndex alone carries its identity.
+  const isPlaceholder = !!opts.placeholder || opts.placeholderIndex !== undefined;
   const geometry = opts.customGeometry
     ? undefined
     : isPlaceholder

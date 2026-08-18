@@ -138,8 +138,11 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
       parts.push(timingDesc.stringify(opts.animations, ctx) ?? "");
     }
 
-    // p:hf (defaults to all-hidden when omitted).
-    parts.push(`<p:hf ${buildHfAttrs(opts.headerFooter)}/>`);
+    // p:hf (optional — MS Office masters carry none by default; emit only what
+    // the source defined).
+    if (opts.headerFooter !== undefined) {
+      parts.push(`<p:hf ${buildHfAttrs(opts.headerFooter)}/>`);
+    }
 
     // p:txStyles (defaults to the MS Office standard title/body/other block).
     parts.push(
