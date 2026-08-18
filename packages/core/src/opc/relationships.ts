@@ -130,6 +130,19 @@ export class Relationships {
     return this.entries.length;
   }
 
+  /**
+   * True when a relationship of the same kind and target is already
+   * registered. The kind compares only the relationship type's last path
+   * segment, so the transitional and strict URI forms of the same
+   * relationship compare equal — passthrough re-emission uses this to skip
+   * relationships the compiler already wired (a duplicate entry corrupts the
+   * package for Office applications).
+   */
+  public hasRelationship(type: string, target: string): boolean {
+    const kind = type.split("/").pop();
+    return this.entries.some((e) => e.type.split("/").pop() === kind && e.target === target);
+  }
+
   /** Directly builds XML string — zero intermediate tree allocation. */
   public serialize(): string {
     const p: string[] = [

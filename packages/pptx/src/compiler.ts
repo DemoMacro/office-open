@@ -928,6 +928,7 @@ export function compilePresentation(
   // Re-emit them as written — targets are passthrough paths that never move.
   for (const rel of options.passthroughRelationships ?? []) {
     if (rel.source !== "ppt/presentation.xml") continue;
+    if (presRels.hasRelationship(rel.relationshipType, rel.target)) continue;
     presRels.add(rel.relationshipType as RelationshipType, rel.target);
   }
   mapping["PresentationRelationships"] = {

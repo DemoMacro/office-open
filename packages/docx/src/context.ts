@@ -608,6 +608,7 @@ export class DocxWriteContext implements WriteContext {
     );
     for (const rel of passthroughDocRels) {
       if (rel === themeRel) continue;
+      if (this.document.relationships.hasRelationship(rel.relationshipType, rel.target)) continue;
       // Passthrough relationship types come from arbitrary source packages
       // (any third-party extension); the union only documents the known ones.
       this.document.relationships.addRelationship(
