@@ -125,10 +125,12 @@ export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
     const lstStyle = findChild(el, "a:lstStyle");
     if (lstStyle) {
       const parsed = textListStyleDesc.parse(lstStyle, ctx);
-      // An empty <a:lstStyle/> parses to all-undefined groups; skip it so
-      // stringify re-emits the self-closing form (matches MS Office byte layout
-      // for bare text bodies).
-      if (parsed.title || parsed.body || parsed.other) result.listStyle = parsed;
+      // An empty <a:lstStyle/> parses to an empty list; skip it so stringify
+      // re-emits the self-closing form (matches MS Office byte layout for
+      // bare text bodies).
+      if (parsed.defaultParagraph || (parsed.levels?.length ?? 0) > 0) {
+        result.listStyle = parsed;
+      }
     }
 
     const paragraphs: ParagraphDescriptorOptions[] = [];

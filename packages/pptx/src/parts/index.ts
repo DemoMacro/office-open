@@ -18,12 +18,9 @@ export {
   type MasterPlaceholderPosition,
 } from "./slide-master";
 export {
-  DEFAULT_TEXT_LIST_STYLE,
+  DEFAULT_TEXT_STYLES,
   type TextListStyleOptions,
-  type TextListStyleGroupOptions,
-  type TextListStyleLevelOptions,
-  type TextListStyleBulletOptions,
-  type TextListStyleRunOptions,
+  type TextStylesOptions,
 } from "./descriptors/text-list-style";
 export { buildLayoutXml, buildCustomLayoutXml, type SlideLayoutType } from "./slide-layout";
 export { DEFAULT_NOTES_STYLE, type NotesMasterOptions } from "./notes-master";

@@ -1,306 +1,164 @@
 /**
- * Text list style (CT_TextListStyle) descriptor.
+ * Text list style descriptors.
  *
- * CT_TextListStyle is the deeply-nested structure behind p:defaultTextStyle
- * (presentation) and p:txStyles titleStyle/bodyStyle/otherStyle (slide master):
- * up to 9 outline levels (lvl1pPr..lvl9pPr), each a CT_TextParagraphProperties
- * carrying alignment, indent, spacing, bullet, and a default-run (defRPr) block.
+ * CT_TextListStyle is the level list behind a:lstStyle (txBody), p:notesStyle
+ * and p:defaultTextStyle: an optional defPPr plus up to 9 outline levels
+ * (lvl1pPr..lvl9pPr), each a CT_TextParagraphProperties reusing the shared
+ * paragraph model. CT_SlideMasterTextStyles groups three of those lists as
+ * p:titleStyle/p:bodyStyle/p:otherStyle on the slide master.
  *
- * Stringify models MS Office's byte layout exactly so the structured default
- * reproduces the prior verbatim block bit-for-bit. Parse is the inverse.
+ * Stringify models MS Office's byte layout exactly (XSD declaration order)
+ * so the structured defaults reproduce Office-authored bytes bit-for-bit.
+ * Parse is the inverse via the shared paragraph reader.
  *
  * @module
  */
 
 import type { Element } from "@office-open/xml";
-import { escapeXml, findChild } from "@office-open/xml";
+import { findChild } from "@office-open/xml";
 
-import type { CustomDescriptor } from "../../descriptor";
-import { emitPercent, parsePercent } from "../../util/converters";
-import { parseOnOff } from "../../util/values";
+import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
+import { readParagraphProperties, stringifyParagraphPropertiesElement } from "./paragraph";
+import type { ParagraphPropertiesOptions } from "./types";
 
 // ── Types ──
 
-export interface TextListStyleRunOptions {
-  /** Font size in points (e.g., 44 = 44pt). */
-  size?: number;
-  /** Character kerning in points (e.g., 12 = 12pt). */
-  kern?: number;
-  /** Solid fill as a theme color token (e.g. "tx1"). */
-  schemeColor?: string;
-  /** Latin script typeface (e.g. "+mj-lt"). */
-  latin?: string;
-  /** East-Asian script typeface (e.g. "+mj-ea"). */
-  eastAsia?: string;
-  /** Complex-script typeface (e.g. "+mj-cs"). */
-  complexScript?: string;
-}
-
-export interface TextListStyleBulletOptions {
-  type: "none" | "char";
-  /** Bullet glyph (type="char"); defaults to "•". */
-  char?: string;
-  /** Bullet font typeface (type="char"); defaults to "Arial". */
-  font?: string;
-}
-
-export interface TextListStyleLevelOptions {
-  alignment?: string;
-  marginIndent?: number;
-  indent?: number;
-  defaultTabSize?: number;
-  rtl?: boolean;
-  /** East-Asian line breaking (default true in MS Office). */
-  eastAsianLineBreak?: boolean;
-  /** Latin line breaking (default false). */
-  latinLineBreak?: boolean;
-  hangingPunctuation?: boolean;
-  /** Line spacing as a percentage (e.g., 90 = 90%). */
-  lineSpacingPercent?: number;
-  /** Space before as a percentage (e.g., 0 = 0%). */
-  spaceBeforePercent?: number;
-  /** Space before in points (e.g., 5 = 5pt). */
-  spaceBeforePoints?: number;
-  bullet?: TextListStyleBulletOptions;
-  defaultRun?: TextListStyleRunOptions;
-}
-
-/** A title/body/other group: an optional empty defPPr plus up to 9 levels. */
-export interface TextListStyleGroupOptions {
-  /** Emit an empty <a:defPPr><a:defRPr/></a:defPPr> (otherStyle carries one). */
-  emptyDefaultParagraph?: boolean;
+/**
+ * A bare CT_TextListStyle — a:defPPr plus up to 9 outline levels. The shape
+ * of a:lstStyle inside a txBody, p:notesStyle, and p:defaultTextStyle.
+ */
+export interface TextListStyleOptions {
+  /** a:defPPr — defaults applied before any level. */
+  defaultParagraph?: ParagraphPropertiesOptions;
   /** Levels 1-9; index 0 = lvl1pPr. `null` omits the level (JSON form of
    *  an undefined array slot — the position still pins the level number). */
-  levels?: (TextListStyleLevelOptions | null)[];
+  levels?: (ParagraphPropertiesOptions | null)[];
 }
 
-export interface TextListStyleOptions {
-  title?: TextListStyleGroupOptions;
-  body?: TextListStyleGroupOptions;
-  other?: TextListStyleGroupOptions;
+/** CT_SlideMasterTextStyles — the master's title/body/other style groups. */
+export interface TextStylesOptions {
+  title?: TextListStyleOptions;
+  body?: TextListStyleOptions;
+  other?: TextListStyleOptions;
 }
 
 // ── Stringify ──
 
-function stringifyRun(run: TextListStyleRunOptions | undefined): string {
-  if (!run) return "";
-  const attrs: string[] = [];
-  if (run.size !== undefined) attrs.push(`sz="${Math.round(run.size * 100)}"`);
-  if (run.kern !== undefined) attrs.push(`kern="${Math.round(run.kern * 100)}"`);
-  const fillXml = run.schemeColor
-    ? `<a:solidFill><a:schemeClr val="${run.schemeColor}"/></a:solidFill>`
-    : "";
-  const latinXml = run.latin ? `<a:latin typeface="${run.latin}"/>` : "";
-  const eaXml = run.eastAsia ? `<a:ea typeface="${run.eastAsia}"/>` : "";
-  const csXml = run.complexScript ? `<a:cs typeface="${run.complexScript}"/>` : "";
-  const inner = `${fillXml}${latinXml}${eaXml}${csXml}`;
-  const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-  return `<a:defRPr${attrStr}>${inner}</a:defRPr>`;
-}
-
-function stringifyBullet(b: TextListStyleBulletOptions): string {
-  if (b.type === "none") return "<a:buNone/>";
-  const typeface = b.font ?? "Arial";
-  const char = escapeXml(b.char ?? "•");
-  return `<a:buFont typeface="${typeface}" panose="020B0604020202020204" pitchFamily="34" charset="0"/><a:buChar char="${char}"/>`;
-}
-
-/** Emit one <a:lvlNpPr>. Byte layout matches MS Office's txStyles output. */
-function stringifyLevel(level: number, opts: TextListStyleLevelOptions): string {
-  const attrs: string[] = [];
-  // Attribute order: marL, indent, algn, defTabSz, rtl, eaLnBrk, latinLnBrk, hangingPunct
-  if (opts.marginIndent !== undefined) attrs.push(`marL="${opts.marginIndent}"`);
-  if (opts.indent !== undefined) attrs.push(`indent="${opts.indent}"`);
-  if (opts.alignment) attrs.push(`algn="${opts.alignment}"`);
-  if (opts.defaultTabSize !== undefined) attrs.push(`defTabSz="${opts.defaultTabSize}"`);
-  if (opts.rtl !== undefined) attrs.push(`rtl="${opts.rtl ? 1 : 0}"`);
-  if (opts.eastAsianLineBreak !== undefined)
-    attrs.push(`eaLnBrk="${opts.eastAsianLineBreak ? 1 : 0}"`);
-  if (opts.latinLineBreak !== undefined) attrs.push(`latinLnBrk="${opts.latinLineBreak ? 1 : 0}"`);
-  if (opts.hangingPunctuation !== undefined)
-    attrs.push(`hangingPunct="${opts.hangingPunctuation ? 1 : 0}"`);
-
-  const children: string[] = [];
-  // Child order: lnSpc, spcBef, bullet, defRPr
-  if (opts.lineSpacingPercent !== undefined)
-    children.push(`<a:lnSpc><a:spcPct val="${emitPercent(opts.lineSpacingPercent)}"/></a:lnSpc>`);
-  if (opts.spaceBeforePercent !== undefined)
-    children.push(`<a:spcBef><a:spcPct val="${emitPercent(opts.spaceBeforePercent)}"/></a:spcBef>`);
-  else if (opts.spaceBeforePoints !== undefined)
-    children.push(
-      `<a:spcBef><a:spcPts val="${Math.round(opts.spaceBeforePoints * 100)}"/></a:spcBef>`,
-    );
-  if (opts.bullet) children.push(stringifyBullet(opts.bullet));
-  const runXml = stringifyRun(opts.defaultRun);
-  if (runXml) children.push(runXml);
-
-  const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-  if (children.length === 0) return `<a:lvl${level}pPr${attrStr}/>`;
-  return `<a:lvl${level}pPr${attrStr}>${children.join("")}</a:lvl${level}pPr>`;
-}
-
-function stringifyGroup(tag: string, group: TextListStyleGroupOptions | undefined): string {
+function stringifyGroup(
+  tag: string,
+  group: TextListStyleOptions | undefined,
+  ctx: WriteContext,
+): string {
   if (!group) return "";
   const parts: string[] = [];
-  if (group.emptyDefaultParagraph) parts.push("<a:defPPr><a:defRPr/></a:defPPr>");
+  if (group.defaultParagraph) {
+    parts.push(stringifyParagraphPropertiesElement("a:defPPr", group.defaultParagraph, ctx));
+  }
   const levels = group.levels ?? [];
   for (let i = 0; i < Math.min(levels.length, 9); i++) {
     const lvl = levels[i];
-    if (lvl) parts.push(stringifyLevel(i + 1, lvl));
+    if (lvl) parts.push(stringifyParagraphPropertiesElement(`a:lvl${i + 1}pPr`, lvl, ctx));
   }
   return `<${tag}>${parts.join("")}</${tag}>`;
 }
 
 /**
- * Stringify the three text-style groups (CT_SlideMasterTextStyles). Group tags
- * use the p: prefix (PML); level tags inside are a: (DrawingML). Caller wraps
- * with `<p:txStyles>…</p:txStyles>`.
+ * Stringify the three master text-style groups (CT_SlideMasterTextStyles).
+ * Group tags use the p: prefix (PML); level tags inside are a: (DrawingML).
+ * Caller wraps with `<p:txStyles>…</p:txStyles>`.
  */
-export function stringifyTextListStyle(opts: TextListStyleOptions): string {
-  return `${stringifyGroup("p:titleStyle", opts.title)}${stringifyGroup("p:bodyStyle", opts.body)}${stringifyGroup("p:otherStyle", opts.other)}`;
+export function stringifyTextStyles(opts: TextStylesOptions, ctx: WriteContext): string {
+  return (
+    `${stringifyGroup("p:titleStyle", opts.title, ctx)}` +
+    `${stringifyGroup("p:bodyStyle", opts.body, ctx)}` +
+    `${stringifyGroup("p:otherStyle", opts.other, ctx)}`
+  );
 }
 
-/** Emit a bare CT_TextListStyle (defPPr + lvl1-9pPr) under the given tag, e.g. p:notesStyle. */
-export function stringifyTextListStyleLevels(
+/** Emit a bare CT_TextListStyle under a caller-chosen tag, e.g. p:notesStyle. */
+export function stringifyTextListStyleTag(
   tag: string,
-  group: TextListStyleGroupOptions | undefined,
+  group: TextListStyleOptions | undefined,
+  ctx: WriteContext,
 ): string {
-  return stringifyGroup(tag, group);
+  return stringifyGroup(tag, group, ctx);
 }
 
 // ── Parse ──
 
-function parseRun(el: Element | undefined): TextListStyleRunOptions | undefined {
+function parseGroup(el: Element | undefined, ctx: ReadContext): TextListStyleOptions | undefined {
   if (!el) return undefined;
-  const run: TextListStyleRunOptions = {};
-  if (el.attributes) {
-    if (el.attributes["sz"] !== undefined) run.size = Number(el.attributes["sz"]) / 100;
-    if (el.attributes["kern"] !== undefined) run.kern = Number(el.attributes["kern"]) / 100;
-  }
-  const solidFill = findChild(el, "a:solidFill");
-  if (solidFill) {
-    const schemeClr = findChild(solidFill, "a:schemeClr");
-    if (schemeClr?.attributes?.["val"]) run.schemeColor = String(schemeClr.attributes["val"]);
-  }
-  const latin = findChild(el, "a:latin");
-  if (latin?.attributes?.["typeface"]) run.latin = String(latin.attributes["typeface"]);
-  const ea = findChild(el, "a:ea");
-  if (ea?.attributes?.["typeface"]) run.eastAsia = String(ea.attributes["typeface"]);
-  const cs = findChild(el, "a:cs");
-  if (cs?.attributes?.["typeface"]) run.complexScript = String(cs.attributes["typeface"]);
-  return Object.keys(run).length > 0 ? run : undefined;
-}
-
-function parseLevel(el: Element): TextListStyleLevelOptions {
-  const lvl: TextListStyleLevelOptions = {};
-  // nativeTypeAttributes (opc parser) coerces boolean attribute values between
-  // string/number/boolean forms; parseOnOff accepts all of them.
-  const isOn = (raw: string | number | boolean | undefined): boolean => parseOnOff(raw) ?? false;
-  if (el.attributes) {
-    const a = el.attributes;
-    if (a["algn"] !== undefined) lvl.alignment = String(a["algn"]);
-    if (a["marL"] !== undefined) lvl.marginIndent = Number(a["marL"]);
-    if (a["indent"] !== undefined) lvl.indent = Number(a["indent"]);
-    if (a["defTabSz"] !== undefined) lvl.defaultTabSize = Number(a["defTabSz"]);
-    if (a["rtl"] !== undefined) lvl.rtl = isOn(a["rtl"]);
-    if (a["eaLnBrk"] !== undefined) lvl.eastAsianLineBreak = isOn(a["eaLnBrk"]);
-    if (a["latinLnBrk"] !== undefined) lvl.latinLineBreak = isOn(a["latinLnBrk"]);
-    if (a["hangingPunct"] !== undefined) lvl.hangingPunctuation = isOn(a["hangingPunct"]);
-  }
-  const lnSpc = findChild(el, "a:lnSpc");
-  if (lnSpc) {
-    const spcPct = findChild(lnSpc, "a:spcPct");
-    if (spcPct?.attributes?.["val"] !== undefined)
-      lvl.lineSpacingPercent = parsePercent(Number(spcPct.attributes["val"]));
-  }
-  const spcBef = findChild(el, "a:spcBef");
-  if (spcBef) {
-    const spcPct = findChild(spcBef, "a:spcPct");
-    if (spcPct?.attributes?.["val"] !== undefined)
-      lvl.spaceBeforePercent = parsePercent(Number(spcPct.attributes["val"]));
-    const spcPts = findChild(spcBef, "a:spcPts");
-    if (spcPts?.attributes?.["val"] !== undefined)
-      lvl.spaceBeforePoints = Number(spcPts.attributes["val"]) / 100;
-  }
-  if (findChild(el, "a:buNone")) {
-    lvl.bullet = { type: "none" };
-  } else {
-    const buChar = findChild(el, "a:buChar");
-    if (buChar) {
-      const buFont = findChild(el, "a:buFont");
-      lvl.bullet = {
-        type: "char",
-        char: buChar.attributes?.["char"] ? String(buChar.attributes["char"]) : undefined,
-        font: buFont?.attributes?.["typeface"] ? String(buFont.attributes["typeface"]) : undefined,
-      };
-    }
-  }
-  const defRPr = findChild(el, "a:defRPr");
-  const run = parseRun(defRPr);
-  if (run) lvl.defaultRun = run;
-  return lvl;
-}
-
-function parseGroup(el: Element | undefined): TextListStyleGroupOptions | undefined {
-  if (!el) return undefined;
-  const group: TextListStyleGroupOptions = { levels: [] };
+  const group: TextListStyleOptions = {};
   const defPPr = findChild(el, "a:defPPr");
-  if (defPPr) group.emptyDefaultParagraph = true;
+  if (defPPr) group.defaultParagraph = readParagraphProperties(defPPr, ctx);
+  const levels: (ParagraphPropertiesOptions | null)[] = [];
   for (let i = 1; i <= 9; i++) {
     const lvlEl = findChild(el, `a:lvl${i}pPr`);
-    group.levels!.push(lvlEl ? parseLevel(lvlEl) : null);
+    levels.push(lvlEl ? readParagraphProperties(lvlEl, ctx) : null);
   }
-  const hasContent = group.emptyDefaultParagraph || group.levels!.some((l) => l !== null);
-  return hasContent ? group : undefined;
+  if (group.defaultParagraph || levels.some((l) => l !== null)) {
+    group.levels = levels;
+    return group;
+  }
+  return undefined;
 }
 
 /** Parse CT_SlideMasterTextStyles (the three p:titleStyle/p:bodyStyle/p:otherStyle groups). */
-export function parseTextListStyle(el: Element): TextListStyleOptions {
+export function parseTextStyles(el: Element, ctx: ReadContext): TextStylesOptions {
   return {
-    title: parseGroup(findChild(el, "p:titleStyle")),
-    body: parseGroup(findChild(el, "p:bodyStyle")),
-    other: parseGroup(findChild(el, "p:otherStyle")),
+    title: parseGroup(findChild(el, "p:titleStyle"), ctx),
+    body: parseGroup(findChild(el, "p:bodyStyle"), ctx),
+    other: parseGroup(findChild(el, "p:otherStyle"), ctx),
   };
 }
 
-/**
- * Parse a bare CT_TextListStyle element (defPPr + lvl1-9pPr, no group wrapper)
- * — the shape of p:notesStyle on the notes master.
- */
-export function parseTextListStyleLevels(el: Element): TextListStyleGroupOptions | undefined {
-  return parseGroup(el);
-}
+// ── Descriptors ──
 
-// ── Descriptor ──
-
+/** A bare CT_TextListStyle (a:lstStyle in a txBody). */
 export const textListStyleDesc: CustomDescriptor<TextListStyleOptions> = {
   kind: "custom",
-  stringify(opts) {
-    return stringifyTextListStyle(opts);
+  stringify(opts, ctx) {
+    const parts: string[] = [];
+    if (opts.defaultParagraph) {
+      parts.push(stringifyParagraphPropertiesElement("a:defPPr", opts.defaultParagraph, ctx));
+    }
+    const levels = opts.levels ?? [];
+    for (let i = 0; i < Math.min(levels.length, 9); i++) {
+      const lvl = levels[i];
+      if (lvl) parts.push(stringifyParagraphPropertiesElement(`a:lvl${i + 1}pPr`, lvl, ctx));
+    }
+    return parts.join("");
   },
-  parse(el) {
-    return parseTextListStyle(el);
+  parse(el, ctx) {
+    return parseGroup(el, ctx) ?? {};
+  },
+};
+
+/** CT_SlideMasterTextStyles descriptor (p:titleStyle/p:bodyStyle/p:otherStyle). */
+export const textStylesDesc: CustomDescriptor<TextStylesOptions> = {
+  kind: "custom",
+  stringify(opts, ctx) {
+    return stringifyTextStyles(opts, ctx);
+  },
+  parse(el, ctx) {
+    return parseTextStyles(el, ctx);
   },
 };
 
 // ── MS Office standard master text styles (structured form) ──
 
 const MJ_RUN = {
-  schemeColor: "tx1",
-  latin: "+mj-lt",
-  eastAsia: "+mj-ea",
-  complexScript: "+mj-cs",
+  fill: { type: "solid", color: { value: "tx1" } },
+  font: { latin: "+mj-lt", eastAsia: "+mj-ea", complexScript: "+mj-cs" },
 } as const;
 const MN_RUN = {
-  schemeColor: "tx1",
-  latin: "+mn-lt",
-  eastAsia: "+mn-ea",
-  complexScript: "+mn-cs",
+  fill: { type: "solid", color: { value: "tx1" } },
+  font: { latin: "+mn-lt", eastAsia: "+mn-ea", complexScript: "+mn-cs" },
 } as const;
 const BASE_ATTRS = {
-  alignment: "l",
-  defaultTabSize: 914400,
-  rtl: false,
+  alignment: "left",
+  defTabSize: 914400,
+  rightToLeft: false,
   eastAsianLineBreak: true,
   latinLineBreak: false,
   hangingPunctuation: true,
@@ -311,7 +169,7 @@ const BODY_SZ = [28, 24, 20, 18, 18, 18, 18, 18, 18];
 const OTHER_MARL = [0, 457200, 914400, 1371600, 1828800, 2286000, 2743200, 3200400, 3657600];
 
 /** MS Office's default p:txStyles — title/body/other, 9 outline levels. */
-export const DEFAULT_TEXT_LIST_STYLE: TextListStyleOptions = {
+export const DEFAULT_TEXT_STYLES: TextStylesOptions = {
   title: {
     levels: [
       {
@@ -319,7 +177,7 @@ export const DEFAULT_TEXT_LIST_STYLE: TextListStyleOptions = {
         lineSpacingPercent: 90,
         spaceBeforePercent: 0,
         bullet: { type: "none" },
-        defaultRun: { size: 44, kern: 12, ...MJ_RUN },
+        defaultRunProperties: { size: 44, kern: 12, ...MJ_RUN },
       },
     ],
   },
@@ -329,19 +187,19 @@ export const DEFAULT_TEXT_LIST_STYLE: TextListStyleOptions = {
       marginIndent: marL,
       indent: -228600,
       lineSpacingPercent: 90,
-      spaceBeforePoints: i === 0 ? undefined : 5,
       spaceBeforePercent: i === 0 ? 0 : undefined,
+      spaceBefore: i === 0 ? undefined : 5,
       bullet: { type: "char", char: "•", font: "Arial" },
-      defaultRun: { size: BODY_SZ[i]!, kern: 12, ...MN_RUN },
+      defaultRunProperties: { size: BODY_SZ[i]!, kern: 12, ...MN_RUN },
     })),
   },
   other: {
-    emptyDefaultParagraph: true,
+    defaultParagraph: { defaultRunProperties: {} },
     levels: OTHER_MARL.map((marL, i) => ({
       ...BASE_ATTRS,
       marginIndent: marL,
       indent: i === 8 ? -228600 : undefined,
-      defaultRun: { size: 18, kern: 12, ...MN_RUN },
+      defaultRunProperties: { size: 18, kern: 12, ...MN_RUN },
     })),
   },
 };

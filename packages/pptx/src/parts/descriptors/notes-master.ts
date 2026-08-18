@@ -6,7 +6,7 @@
 
 import { parseColorMapping, stringifyColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { parseTextListStyleLevels, stringifyTextListStyleLevels } from "@office-open/core/drawing";
+import { stringifyTextListStyleTag, textListStyleDesc } from "@office-open/core/drawing";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { buildHfAttrs, parseHeaderFooter } from "@parts/handout-master";
@@ -50,7 +50,7 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterOptions, PptxWriteCont
     parts.push(stringifyColorMapping(opts.colorMapping, "p:clrMap"));
     parts.push(`<p:hf ${buildHfAttrs(opts.headerFooter)}/>`);
     parts.push(
-      stringifyTextListStyleLevels("p:notesStyle", opts.notesStyle ?? DEFAULT_NOTES_STYLE),
+      stringifyTextListStyleTag("p:notesStyle", opts.notesStyle ?? DEFAULT_NOTES_STYLE, ctx),
     );
 
     parts.push("</p:notesMaster>");
@@ -88,8 +88,11 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterOptions, PptxWriteCont
 
     const notesStyleEl: XmlElement | undefined = findChild(el, "p:notesStyle");
     if (notesStyleEl) {
-      const notesStyle = parseTextListStyleLevels(notesStyleEl);
-      if (notesStyle) result.notesStyle = notesStyle;
+      const notesStyle = textListStyleDesc.parse(notesStyleEl, ctx);
+      // An empty p:notesStyle parses to an empty list; keep the Office default.
+      if (notesStyle.defaultParagraph || (notesStyle.levels?.length ?? 0) > 0) {
+        result.notesStyle = notesStyle;
+      }
     }
 
     return result as NotesMasterOptions;

@@ -194,8 +194,12 @@ export interface ParagraphPropertiesOptions {
   indentLevel?: number;
   /** Space after a paragraph in points (a:spcAft/a:spcPts). */
   spaceAfter?: number;
+  /** Space after a paragraph as a percentage (a:spcAft/a:spcPct). */
+  spaceAfterPercent?: number;
   /** Space before a paragraph in points (a:spcBef/a:spcPts). */
   spaceBefore?: number;
+  /** Space before a paragraph as a percentage (a:spcBef/a:spcPct). */
+  spaceBeforePercent?: number;
   bullet?: BulletOptions;
   /** Line spacing as a percentage (100 = single). */
   lineSpacingPercent?: number;
@@ -217,6 +221,10 @@ export interface ParagraphPropertiesOptions {
   eastAsianLineBreak?: boolean;
   /** `@latinLnBrk` — Latin line break. */
   latinLineBreak?: boolean;
+  /** `@hangingPunct` — hanging punctuation. */
+  hangingPunctuation?: boolean;
+  /** Verbatim inner XML of a:extLst (last child per CT_TextParagraphProperties). */
+  ext?: string;
 }
 
 // ── Text field (a:fld) ──

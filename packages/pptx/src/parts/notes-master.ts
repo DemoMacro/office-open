@@ -1,5 +1,5 @@
 import type { ColorMappingOptions } from "@office-open/core";
-import type { TextListStyleGroupOptions } from "@office-open/core/drawing";
+import type { TextListStyleOptions } from "@office-open/core/drawing";
 import type { BackgroundOptions } from "@parts/background";
 import type { SlideChild } from "@parts/slide/slide-child";
 
@@ -18,27 +18,25 @@ export interface NotesMasterOptions {
   /** Header/footer settings (p:hf). */
   headerFooter?: HeaderFooterOptions;
   /** Notes text style (p:notesStyle, CT_TextListStyle); defaults to the Office 9-level notes style. */
-  notesStyle?: TextListStyleGroupOptions;
+  notesStyle?: TextListStyleOptions;
 }
 
 /** MS Office default notes style — 9 levels, 12pt minor font, incremental margins. */
-export const DEFAULT_NOTES_STYLE: TextListStyleGroupOptions = {
+export const DEFAULT_NOTES_STYLE: TextListStyleOptions = {
   levels: [0, 457200, 914400, 1371600, 1828800, 2286000, 2743200, 3200400, 3657600].map(
     (marginIndent) => ({
-      alignment: "l",
+      alignment: "left",
       marginIndent,
-      defaultTabSize: 914400,
-      rtl: false,
+      defTabSize: 914400,
+      rightToLeft: false,
       eastAsianLineBreak: true,
       latinLineBreak: false,
       hangingPunctuation: true,
-      defaultRun: {
+      defaultRunProperties: {
         size: 12,
         kern: 12,
-        schemeColor: "tx1",
-        latin: "+mn-lt",
-        eastAsia: "+mn-ea",
-        complexScript: "+mn-cs",
+        fill: { type: "solid", color: { value: "tx1" } },
+        font: { latin: "+mn-lt", eastAsia: "+mn-ea", complexScript: "+mn-cs" },
       },
     }),
   ),

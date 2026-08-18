@@ -6,8 +6,8 @@ import { PptxWriteContext } from "../../context";
 import { parseHeaderFooter } from "../handout-master";
 import type { SlideMasterDescriptorOptions } from "./slide-master";
 import { slideMasterDesc } from "./slide-master";
-import type { TextListStyleOptions } from "./text-list-style";
-import { parseTextListStyle } from "./text-list-style";
+import type { TextStylesOptions } from "./text-list-style";
+import { parseTextStyles } from "./text-list-style";
 
 const readCtx = {
   resolveRelationship: () => undefined,
@@ -202,8 +202,8 @@ describe("slide-master textStyles round-trip", () => {
   });
 
   it("structured custom textStyles is emitted, replacing the default", () => {
-    const custom: TextListStyleOptions = {
-      title: { levels: [{ defaultRun: { size: 90 } }] },
+    const custom: TextStylesOptions = {
+      title: { levels: [{ defaultRunProperties: { size: 90 } }] },
       body: { levels: [{}] },
       other: { levels: [{}] },
     };
@@ -216,14 +216,14 @@ describe("slide-master textStyles round-trip", () => {
     // 11.1pt is a non-integer-hundredth size (11.1 * 100 drifts to
     // 1110.0000000000002 in float); verifies Math.round keeps the round-trip
     // byte-equal instead of emitting an XSD-invalid fractional sz.
-    const source: TextListStyleOptions = {
-      title: { levels: [{ defaultRun: { size: 11.1 } }] },
+    const source: TextStylesOptions = {
+      title: { levels: [{ defaultRunProperties: { size: 11.1 } }] },
       body: { levels: [{}] },
       other: { levels: [{}] },
     };
     const el = parseXml(freshXml({ textStyles: source })).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
-    const extracted = parseTextListStyle(findChild(el, "p:txStyles")!);
+    const extracted = parseTextStyles(findChild(el, "p:txStyles")!, readCtx);
 
     const reEmitted = freshXml({ textStyles: extracted });
     expect(reEmitted).toContain('sz="1110"');

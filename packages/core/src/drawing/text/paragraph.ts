@@ -9,7 +9,7 @@
  * @module
  */
 
-import { findChild, escapeXml } from "@office-open/xml";
+import { findChild, escapeXml, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
@@ -47,27 +47,38 @@ export interface ParagraphDescriptorOptions {
   endParagraphProperties?: RunPropertiesOptions | false;
 }
 
-// ── Paragraph properties helper (a:pPr) ──
+// ── Paragraph properties helper (a:pPr / a:lvlNpPr / a:defPPr) ──
 
-function stringifyParagraphProperties(
+/**
+ * Serialize CT_TextParagraphProperties under a caller-chosen root tag. The
+ * same content model backs a:pPr in paragraphs and a:lvlNpPr/a:defPPr in
+ * list styles. Attribute order follows the XSD declaration order so MS
+ * Office-authored bytes re-emit unchanged.
+ */
+export function stringifyParagraphPropertiesElement(
+  tag: string,
   options: ParagraphPropertiesOptions,
   ctx: WriteContext,
 ): string {
   const children: string[] = [];
 
+  // XSD attribute order: marL, marR, lvl, indent, algn, defTabSz, rtl,
+  // eaLnBrk, fontAlgn, latinLnBrk, hangingPunct.
   const attrs: string[] = [];
-  if (options.alignment) attrs.push(`algn="${xsdTextAlign.to(options.alignment)}"`);
-  if (options.indentLevel !== undefined) attrs.push(`lvl="${options.indentLevel}"`);
   if (options.marginIndent !== undefined) attrs.push(`marL="${options.marginIndent}"`);
   if (options.marginRight !== undefined) attrs.push(`marR="${options.marginRight}"`);
+  if (options.indentLevel !== undefined) attrs.push(`lvl="${options.indentLevel}"`);
   if (options.indent !== undefined) attrs.push(`indent="${options.indent}"`);
+  if (options.alignment) attrs.push(`algn="${xsdTextAlign.to(options.alignment)}"`);
   if (options.defTabSize !== undefined) attrs.push(`defTabSz="${options.defTabSize}"`);
-  if (options.fontAlignment) attrs.push(`fontAlgn="${options.fontAlignment}"`);
   if (options.rightToLeft !== undefined) attrs.push(`rtl="${options.rightToLeft ? 1 : 0}"`);
   if (options.eastAsianLineBreak !== undefined)
     attrs.push(`eaLnBrk="${options.eastAsianLineBreak ? 1 : 0}"`);
+  if (options.fontAlignment) attrs.push(`fontAlgn="${options.fontAlignment}"`);
   if (options.latinLineBreak !== undefined)
     attrs.push(`latinLnBrk="${options.latinLineBreak ? 1 : 0}"`);
+  if (options.hangingPunctuation !== undefined)
+    attrs.push(`hangingPunct="${options.hangingPunctuation ? 1 : 0}"`);
 
   // Line spacing
   if (options.lineSpacingPercent !== undefined) {
@@ -81,13 +92,22 @@ function stringifyParagraphProperties(
     );
   }
 
-  // Spacing before/after (XSD CT_TextParagraphProperties order: spcBef, spcAft)
-  if (options.spaceBefore !== undefined) {
+  // Spacing before/after (XSD CT_TextParagraphProperties order: spcBef, spcAft).
+  // A percentage and a points value are mutually exclusive per XSD (spcPct | spcPts).
+  if (options.spaceBeforePercent !== undefined) {
+    children.push(
+      `<a:spcBef><a:spcPct val="${emitPercent(options.spaceBeforePercent)}"/></a:spcBef>`,
+    );
+  } else if (options.spaceBefore !== undefined) {
     children.push(
       `<a:spcBef><a:spcPts val="${Math.round(options.spaceBefore * 100)}"/></a:spcBef>`,
     );
   }
-  if (options.spaceAfter !== undefined) {
+  if (options.spaceAfterPercent !== undefined) {
+    children.push(
+      `<a:spcAft><a:spcPct val="${emitPercent(options.spaceAfterPercent)}"/></a:spcAft>`,
+    );
+  } else if (options.spaceAfter !== undefined) {
     children.push(`<a:spcAft><a:spcPts val="${Math.round(options.spaceAfter * 100)}"/></a:spcAft>`);
   }
 
@@ -101,17 +121,29 @@ function stringifyParagraphProperties(
     children.push(stringifyTabStops(options.tabStops));
   }
 
-  // Default run properties — last child of a:pPr (CT_TextParagraphProperties).
-  if (options.defaultRunProperties) {
+  // Default run properties — after tabLst (CT_TextParagraphProperties).
+  // Presence-based: an explicitly empty object still emits <a:defRPr/> (the
+  // otherStyle defPPr default carries one).
+  if (options.defaultRunProperties !== undefined) {
     const rPr = stringifyRunProperties("a:defRPr", options.defaultRunProperties, ctx);
-    if (rPr) children.push(rPr);
+    children.push(rPr || "<a:defRPr/>");
   }
+
+  // a:extLst — last child.
+  if (options.ext) children.push(`<a:extLst>${options.ext}</a:extLst>`);
 
   if (attrs.length === 0 && children.length === 0) return "";
 
   const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-  if (children.length === 0) return `<a:pPr${attrStr}/>`;
-  return `<a:pPr${attrStr}>${children.join("")}</a:pPr>`;
+  if (children.length === 0) return `<${tag}${attrStr}/>`;
+  return `<${tag}${attrStr}>${children.join("")}</${tag}>`;
+}
+
+function stringifyParagraphProperties(
+  options: ParagraphPropertiesOptions,
+  ctx: WriteContext,
+): string {
+  return stringifyParagraphPropertiesElement("a:pPr", options, ctx);
 }
 
 function stringifyBullet(options: BulletOptions): string[] {
@@ -175,7 +207,7 @@ function stringifyTabStops(stops: TabStopOptions[]): string {
   return `<a:tabLst>${tabs.join("")}</a:tabLst>`;
 }
 
-function readParagraphProperties(
+export function readParagraphProperties(
   el: XmlElement,
   ctx: ReadContext,
 ): Mutable<ParagraphPropertiesOptions> {
@@ -200,6 +232,8 @@ function readParagraphProperties(
       result.eastAsianLineBreak = parseOnOff(el.attributes["eaLnBrk"]) ?? false;
     if (el.attributes["latinLnBrk"] !== undefined)
       result.latinLineBreak = parseOnOff(el.attributes["latinLnBrk"]) ?? false;
+    if (el.attributes["hangingPunct"] !== undefined)
+      result.hangingPunctuation = parseOnOff(el.attributes["hangingPunct"]) ?? false;
   }
 
   // Line spacing
@@ -215,19 +249,29 @@ function readParagraphProperties(
     }
   }
 
-  // Spacing after/before
+  // Spacing after/before — each is a spcPct | spcPts choice
   const spcAft = findChild(el, "a:spcAft");
   if (spcAft) {
-    const pts = findChild(spcAft, "a:spcPts");
-    if (pts?.attributes?.["val"] !== undefined)
-      result.spaceAfter = Number(pts.attributes["val"]) / 100;
+    const pct = findChild(spcAft, "a:spcPct");
+    if (pct?.attributes?.["val"] !== undefined) {
+      result.spaceAfterPercent = parsePercent(Number(pct.attributes["val"]));
+    } else {
+      const pts = findChild(spcAft, "a:spcPts");
+      if (pts?.attributes?.["val"] !== undefined)
+        result.spaceAfter = Number(pts.attributes["val"]) / 100;
+    }
   }
 
   const spcBef = findChild(el, "a:spcBef");
   if (spcBef) {
-    const pts = findChild(spcBef, "a:spcPts");
-    if (pts?.attributes?.["val"] !== undefined)
-      result.spaceBefore = Number(pts.attributes["val"]) / 100;
+    const pct = findChild(spcBef, "a:spcPct");
+    if (pct?.attributes?.["val"] !== undefined) {
+      result.spaceBeforePercent = parsePercent(Number(pct.attributes["val"]));
+    } else {
+      const pts = findChild(spcBef, "a:spcPts");
+      if (pts?.attributes?.["val"] !== undefined)
+        result.spaceBefore = Number(pts.attributes["val"]) / 100;
+    }
   }
 
   // Bullets
@@ -305,10 +349,17 @@ function readParagraphProperties(
     if (tabs.length > 0) result.tabStops = tabs;
   }
 
-  // Default run properties — last child of a:pPr (CT_TextParagraphProperties).
+  // Default run properties — after tabLst (CT_TextParagraphProperties).
   const defRPr = findChild(el, "a:defRPr");
   if (defRPr) {
     result.defaultRunProperties = runPropertiesDesc.parse(defRPr, ctx) as RunPropertiesOptions;
+  }
+
+  // a:extLst — last child; verbatim inner XML for unmodeled extensions.
+  const extLst = findChild(el, "a:extLst");
+  if (extLst) {
+    const inner = stringifyXml(extLst);
+    if (inner) result.ext = inner;
   }
 
   return result as ParagraphPropertiesOptions;

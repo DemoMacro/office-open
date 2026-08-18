@@ -38,11 +38,7 @@ import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild, stringifyChild } from "./bridge";
 import { readTransition, stringifyTransition } from "./slide";
-import {
-  DEFAULT_TEXT_LIST_STYLE,
-  parseTextListStyle,
-  stringifyTextListStyle,
-} from "./text-list-style";
+import { DEFAULT_TEXT_STYLES, parseTextStyles, stringifyTextStyles } from "./text-list-style";
 
 // ── Types ──
 
@@ -146,7 +142,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
     // p:txStyles (defaults to the MS Office standard title/body/other block).
     parts.push(
-      `<p:txStyles>${stringifyTextListStyle(opts.textStyles ?? DEFAULT_TEXT_LIST_STYLE)}</p:txStyles>`,
+      `<p:txStyles>${stringifyTextStyles(opts.textStyles ?? DEFAULT_TEXT_STYLES, ctx)}</p:txStyles>`,
     );
 
     // p:extLst — verbatim round-trip (last child per CT_SlideMaster sequence).
@@ -233,7 +229,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
     // p:txStyles (CT_SlideMasterTextStyles — title/body/other).
     const txStyles = findChild(el, "p:txStyles");
-    if (txStyles) result.textStyles = parseTextListStyle(txStyles);
+    if (txStyles) result.textStyles = parseTextStyles(txStyles, ctx);
 
     // p:extLst — verbatim inner XML for unmodeled extensions.
     const extLst = findChild(el, "p:extLst");

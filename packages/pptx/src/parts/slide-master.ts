@@ -7,7 +7,7 @@ import type { BackgroundOptions } from "@parts/background";
 import { DEFAULT_BACKGROUND_REFERENCE } from "@parts/background";
 import { backgroundDesc } from "@parts/descriptors/background";
 import { stringifyShapeStyle } from "@parts/descriptors/shape";
-import type { TextListStyleOptions } from "@parts/descriptors/text-list-style";
+import type { TextStylesOptions } from "@parts/descriptors/text-list-style";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import type { AnimationEntry } from "@shared/animation/timing";
@@ -45,7 +45,7 @@ export interface SlideMasterOptions {
    * Defaults to the MS Office standard block when omitted. Round-tripped masters
    * carry their own so custom typography (fonts, indents, bullets) survives.
    */
-  textStyles?: TextListStyleOptions;
+  textStyles?: TextStylesOptions;
   /** `@preserve` — keep this master even when no slide references it. */
   preserve?: boolean;
   /** p:transition — slide-transition defaults inherited by slides. */

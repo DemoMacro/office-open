@@ -1,24 +1,20 @@
 /**
- * Text list style (CT_TextListStyle) — re-exported from core DrawingML.
+ * Text list styles — re-exported from core DrawingML.
  *
- * The list-style descriptor, MS Office default, and stringify/parse helpers
- * live in core. This module re-exports them for backward compatibility with
- * internal callers (parse.ts, parts/index.ts, slide-master.ts).
+ * The bare CT_TextListStyle descriptor (a:lstStyle levels), the master
+ * txStyles groups, and the MS Office default live in core. This module
+ * re-exports them for internal callers (parse.ts, parts/index.ts,
+ * slide-master.ts).
  *
  * @module
  */
 
 export {
   textListStyleDesc,
-  stringifyTextListStyle,
-  parseTextListStyle,
-  DEFAULT_TEXT_LIST_STYLE,
+  textStylesDesc,
+  stringifyTextStyles,
+  parseTextStyles,
+  DEFAULT_TEXT_STYLES,
 } from "@office-open/core/drawing";
 
-export type {
-  TextListStyleOptions,
-  TextListStyleGroupOptions,
-  TextListStyleLevelOptions,
-  TextListStyleBulletOptions,
-  TextListStyleRunOptions,
-} from "@office-open/core/drawing";
+export type { TextListStyleOptions, TextStylesOptions } from "@office-open/core/drawing";

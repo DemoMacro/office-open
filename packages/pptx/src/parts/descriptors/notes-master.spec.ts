@@ -54,12 +54,12 @@ describe("notesMasterDesc", () => {
       footer: true,
       slideNumber: false,
     });
-    expect(opts.notesStyle?.levels?.[0]?.defaultRun?.size).toBe(14);
-    expect(opts.notesStyle?.levels?.[1]?.defaultRun?.size).toBe(12);
+    expect(opts.notesStyle?.levels?.[0]?.defaultRunProperties?.size).toBe(14);
+    expect(opts.notesStyle?.levels?.[1]?.defaultRunProperties?.size).toBe(12);
     // Regeneration keeps the parsed values (idempotent round-trip).
     expect(xml).toContain('<p:bgRef idx="1002"><a:srgbClr val="4472C4"/></p:bgRef>');
     expect(xml).toContain('<p:hf dt="1" hdr="0" ftr="1" sldNum="0"/>');
-    expect(xml).toContain('<a:lvl1pPr marL="0"><a:defRPr sz="1400">');
+    expect(xml).toContain('<a:lvl1pPr marL="0"><a:defRPr sz="1400"/></a:lvl1pPr>');
   });
 
   it("emits custom spTree children with explicit ids", () => {

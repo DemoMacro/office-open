@@ -3,7 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import type { ReadContext, WriteContext } from "../../descriptor";
 import { bodyPropertiesDesc, createBodyProperties } from "./body-properties";
-import { textListStyleDesc, DEFAULT_TEXT_LIST_STYLE } from "./list-style";
+import { textListStyleDesc, textStylesDesc, DEFAULT_TEXT_STYLES } from "./list-style";
 import { paragraphDesc } from "./paragraph";
 import type { ParagraphDescriptorOptions } from "./paragraph";
 import { textRunDesc } from "./run";
@@ -467,17 +467,43 @@ describe("textBodyDesc round-trip", () => {
   });
 });
 
-// ── textListStyleDesc ──
+// ── textListStyleDesc / textStylesDesc ──
 
 describe("textListStyleDesc round-trip", () => {
-  it("round-trips DEFAULT_TEXT_LIST_STRUCTURE structure", () => {
-    const xml = textListStyleDesc.stringify(DEFAULT_TEXT_LIST_STYLE, writeCtx)!;
-    const el = parseXml(`<root>${xml}</root>`).elements?.[0];
+  it("round-trips a bare level list (a:lstStyle shape)", () => {
+    const xml = textListStyleDesc.stringify(
+      {
+        levels: [
+          {
+            marginIndent: 457200,
+            indent: 0,
+            alignment: "center",
+            bullet: { type: "none" },
+            defaultRunProperties: { size: 32, fill: { type: "solid", color: { value: "tx1" } } },
+          },
+        ],
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain('<a:lvl1pPr marL="457200" indent="0" algn="ctr">');
+    expect(xml).toContain("<a:buNone/>");
+    expect(xml).toContain('<a:defRPr sz="3200">');
+
+    const el = parseXml(`<a:lstStyle>${xml}</a:lstStyle>`).elements?.[0];
     if (!el) throw new Error("no root");
     const r = textListStyleDesc.parse(el, readCtx);
-    expect(r.title?.levels?.[0]?.defaultRun?.size).toBe(44);
-    expect(r.body?.levels?.[1]?.defaultRun?.size).toBe(24);
-    expect(r.other?.emptyDefaultParagraph).toBe(true);
+    expect(r.levels?.[0]?.marginIndent).toBe(457200);
+    expect(r.levels?.[0]?.defaultRunProperties?.size).toBe(32);
+  });
+
+  it("round-trips the master text styles groups", () => {
+    const xml = textStylesDesc.stringify(DEFAULT_TEXT_STYLES, writeCtx)!;
+    const el = parseXml(`<root>${xml}</root>`).elements?.[0];
+    if (!el) throw new Error("no root");
+    const r = textStylesDesc.parse(el, readCtx);
+    expect(r.title?.levels?.[0]?.defaultRunProperties?.size).toBe(44);
+    expect(r.body?.levels?.[1]?.defaultRunProperties?.size).toBe(24);
+    expect(r.other?.defaultParagraph?.defaultRunProperties).toEqual({});
   });
 });
 
