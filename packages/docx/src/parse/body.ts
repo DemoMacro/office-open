@@ -154,8 +154,19 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
     case "w:tbl":
       return { table: tableDesc.parse(el, ctx) as TableOptions };
     case "w:sdt": {
-      // Try TOC first
-      const tocResult = parseToc(el, ctx, parseSectionChildrenElements);
+      // Try TOC first. Entry paragraphs are parsed directly (not through the
+      // cross-paragraph TOC aggregator): the emitted field chain shares its
+      // head/end runs with the first/last entry paragraphs, so the aggregator
+      // would see a begin+instrText inside the first entry and fold the whole
+      // span into a nested TOC — re-parsing output would nest one sdt level
+      // deeper on every round-trip.
+      const parseTocEntries = (els: Element[], entryCtx: DocxReadContext): SectionChild[] =>
+        els.map((entryEl) =>
+          entryEl.name === "w:p"
+            ? { paragraph: parseParagraph(entryEl, entryCtx) }
+            : parseSectionChild(entryEl, entryCtx),
+        );
+      const tocResult = parseToc(el, ctx, parseTocEntries);
       if (tocResult) {
         return { toc: tocResult };
       }
