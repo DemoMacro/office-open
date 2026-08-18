@@ -30,8 +30,13 @@ export interface CommentOptions {
   initials?: string;
   /** Name of the comment author */
   author?: string;
-  /** Creation date (CT_Comment `@w:date`, ISO 8601 string) */
-  date?: string;
+  /**
+   * Creation date (CT_Comment `@w:date`, ISO 8601 string). Tri-stated:
+   * `null` = the source comment carried no date (attribute omitted),
+   * omitted = fresh authoring (defaults to the current time), a string = used
+   * verbatim.
+   */
+  date?: string | null;
 }
 
 /**

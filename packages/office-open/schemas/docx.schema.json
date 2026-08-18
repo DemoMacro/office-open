@@ -3357,8 +3357,8 @@
           "type": "array"
         },
         "date": {
-          "description": "Creation date (CT_Comment `@w:date`, ISO 8601 string)",
-          "type": "string"
+          "description": "Creation date (CT_Comment `@w:date`, ISO 8601 string). Tri-stated: `null` = the source comment carried no date (attribute omitted), omitted = fresh authoring (defaults to the current time), a string = used verbatim.",
+          "type": ["string", "null"]
         },
         "id": {
           "description": "Unique identifier for the comment",

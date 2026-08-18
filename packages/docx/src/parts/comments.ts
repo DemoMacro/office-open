@@ -62,13 +62,12 @@ export const COMMENTS_NS =
 // ── Comment stringification ──
 
 function stringifyComment(opts: CommentOptions, ctx: BodyContext): string {
-  const dateStr = opts.date ?? new Date().toISOString();
   // w:author is XSD-required (CT_TrackChange); default to empty string when absent.
-  const attrs: string[] = [
-    `w:id="${opts.id}"`,
-    `w:author="${escapeXml(opts.author ?? "")}"`,
-    `w:date="${escapeXml(dateStr)}"`,
-  ];
+  const attrs: string[] = [`w:id="${opts.id}"`, `w:author="${escapeXml(opts.author ?? "")}"`];
+  // date === null keeps the source's attribute-less form (source files exist
+  // without w:date and Word accepts them); undefined = fresh, defaults to now.
+  const dateStr = opts.date === null ? undefined : (opts.date ?? new Date().toISOString());
+  if (dateStr !== undefined) attrs.push(`w:date="${escapeXml(dateStr)}"`);
   if (opts.initials !== undefined) attrs.push(`w:initials="${escapeXml(opts.initials)}"`);
 
   const parts: string[] = [];
@@ -111,7 +110,10 @@ export const commentsDesc: CustomDescriptor<CommentOptions[], BodyContext> = {
       if (id === undefined) continue;
       const comment: Partial<CommentOptions> = { id };
       const date = attr(child, "w:date");
-      if (date) comment.date = date;
+      // Presence-based: absent attribute → null (omit on stringify); an empty
+      // attribute value stays "" and round-trips as written.
+      if (date !== undefined) comment.date = date;
+      else comment.date = null;
       const author = attr(child, "w:author");
       if (author !== undefined) comment.author = author;
       const initials = attr(child, "w:initials");
