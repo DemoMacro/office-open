@@ -16619,6 +16619,10 @@
                   "description": "\\c option -  Includes figures, tables, charts, and other items that are numbered by a SEQ field (§17.16.5.56). The sequence identifier designated by text in this switch's field-argument, which corresponds to the caption label, shall match the identifier in the corresponding SEQ field.",
                   "type": "string"
                 },
+                "endRPrXml": {
+                  "description": "Run properties of the field's closing `end` run when Word styles it differently from the control runs (round-trip only).",
+                  "type": "string"
+                },
                 "entries": {
                   "description": "Rendered TOC entries — the paragraph content between the field's `separate` and `end` markers. Round-tripped structurally (each entry is a TOC-style paragraph carrying a HYPERLINK field, tab leader, and PAGEREF page number) so both MS Office and WPS display the existing TOC without regenerating.\n\nOmit on fresh generation — the field is then emitted `dirty` so the consuming application builds the entries from headings on open.",
                   "items": {
@@ -16657,6 +16661,10 @@
                 "preserveTabInEntries": {
                   "description": "\\w Preserves tab entries within table entries.",
                   "type": "boolean"
+                },
+                "rPrXml": {
+                  "description": "Run properties carried by the field's begin/instruction/separate control runs, as serialized `<w:rPr>…</w:rPr>` XML (round-trip only; Word parks explicit style overrides — e.g. `b w:val=\"0\"` — on these invisible runs).",
+                  "type": "string"
                 },
                 "seqFieldIdentifierForPrefix": {
                   "description": "\\s option - For entries numbered with a SEQ field (§17.16.5.56), adds a prefix to the page number. The prefix depends on the type of entry. text in this switch's field-argument shall match the identifier in the SEQ field.",

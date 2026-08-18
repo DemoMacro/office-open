@@ -14,6 +14,7 @@ import type { SectionPropertiesOptions } from "@parts/document/body/section-prop
 import type { MarkupRangeOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
+import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 import {
   keepTocClosingParagraph,
   parseToc,
@@ -26,7 +27,7 @@ import { parseTextbox } from "@parts/textbox/textbox-parse";
 import type { SectionOptions } from "@shared/section";
 import type { SectionChild } from "@shared/section";
 
-import { parseParagraph } from "../body";
+import { parseParagraph, runRPrXml } from "../body";
 import { DocxReadContext } from "../context";
 import { setBodyParseChild } from "../parts";
 import { stringifyElement } from "../util/stringify-element";
@@ -486,7 +487,52 @@ function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
       el.name === "w:p" ? { paragraph: parseParagraph(el, ctx) } : parseSectionChild(el, ctx),
     );
   }
+  captureTocFieldRPr(els, tocOpts);
   return { toc: tocOpts };
+}
+
+/**
+ * Capture the outer TOC field's control-run rPr (begin run stands in for the
+ * begin/instr/separate controls) and the closing end run's rPr when it differs.
+ * The re-emitted field chain carries them so Word's explicit style overrides on
+ * these invisible runs round-trip.
+ */
+function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptions): void {
+  let depth = 0;
+  let controlRPr: string | undefined;
+  let closed = false;
+  const walk = (node: Element): void => {
+    if (closed || node.name !== "w:r" || !node.elements) {
+      for (const c of node.elements ?? []) {
+        if (c.type === "element") walk(c);
+      }
+      return;
+    }
+    const fldChar = node.elements.find((c) => c.name === "w:fldChar");
+    if (fldChar) {
+      const type = attr(fldChar, "w:fldCharType");
+      if (type === "begin") {
+        depth++;
+        if (depth === 1) controlRPr = runRPrXml(node);
+      } else if (type === "end") {
+        depth--;
+        if (depth === 0) {
+          const endRPr = runRPrXml(node);
+          if (controlRPr) tocOpts.rPrXml = controlRPr;
+          if (endRPr && endRPr !== controlRPr) tocOpts.endRPrXml = endRPr;
+          closed = true;
+          return;
+        }
+      }
+    }
+    for (const c of node.elements ?? []) {
+      if (c.type === "element") walk(c);
+    }
+  };
+  for (const el of els) {
+    walk(el);
+    if (closed) break;
+  }
 }
 
 /**

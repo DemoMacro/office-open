@@ -264,6 +264,36 @@ describe("parseBody TOC entry preservation", () => {
     expect(tocChild?.toc.entries).toHaveLength(2);
   });
 
+  it("carries the field control runs' rPr through the structured TOC", () => {
+    // Word parks explicit style overrides (b w:val="0" negating an inherited
+    // bold) on the invisible begin/instr/separate runs, and styles the end run
+    // differently. The re-emitted field chain must carry both.
+    const ctrl = '<w:rPr><w:noProof/><w:b w:val="0"/></w:rPr>';
+    const end = "<w:rPr><w:b/></w:rPr>";
+    const xml = `<w:body>
+      <w:p><w:r>${ctrl}<w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r>${ctrl}<w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>
+        <w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:r>${end}<w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
+      | { toc: { rPrXml?: string; endRPrXml?: string } }
+      | undefined;
+    expect(tocChild?.toc.rPrXml).toBe(ctrl);
+    expect(tocChild?.toc.endRPrXml).toBe(end);
+
+    // The emitted chain threads the rPr through begin/instr/separate and the
+    // distinct one through end; exactly one end marker for one begin.
+    const emitted = stringifyTableOfContents("Contents", tocChild!.toc);
+    expect(emitted.match(/<w:noProof\/>/g)).toHaveLength(3);
+    expect(emitted).toContain(`${end}<w:fldChar w:fldCharType="end"/>`);
+    expect(emitted.match(/w:fldCharType="end"/g)).toHaveLength(1);
+  });
+
   it("does not double-emit a page break kept inside the closing paragraph", () => {
     // When the closing paragraph joins the entries (it carries pPr), its page
     // break round-trips inside it — the standalone rescue must not fire too.

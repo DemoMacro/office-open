@@ -155,4 +155,17 @@ export interface TableOfContentsOptions {
    * consuming application builds the entries from headings on open.
    */
   entries?: SectionChild[];
+
+  /**
+   * Run properties carried by the field's begin/instruction/separate control
+   * runs, as serialized `<w:rPr>…</w:rPr>` XML (round-trip only; Word parks
+   * explicit style overrides — e.g. `b w:val="0"` — on these invisible runs).
+   */
+  rPrXml?: string;
+
+  /**
+   * Run properties of the field's closing `end` run when Word styles it
+   * differently from the control runs (round-trip only).
+   */
+  endRPrXml?: string;
 }

@@ -63,11 +63,19 @@ export function stringifyTableOfContents(
   // carried we inject head into the first entry paragraph and end into the
   // last; a freshly generated TOC (no entries) keeps standalone head/end
   // paragraphs since it is dirty and rebuilt on open.
+  // On round-trip the control runs carry the source's captured rPr (Word parks
+  // explicit style overrides on these invisible runs); a fresh TOC keeps the
+  // default heading-font begin run.
+  const ctrl = options.rPrXml;
   const headRuns =
-    `<w:r><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:cstheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cs="Times New Roman"/></w:rPr><w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
-    `<w:r><w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
-    `<w:r><w:fldChar w:fldCharType="separate"/></w:r>`;
-  const endRun = `<w:r><w:fldChar w:fldCharType="end"/></w:r>`;
+    ctrl !== undefined
+      ? `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
+        `<w:r>${ctrl}<w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
+        `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>`
+      : `<w:r><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:cstheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cs="Times New Roman"/></w:rPr><w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
+        `<w:r><w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
+        `<w:r><w:fldChar w:fldCharType="separate"/></w:r>`;
+  const endRun = `<w:r>${options.endRPrXml ?? ctrl ?? ""}<w:fldChar w:fldCharType="end"/></w:r>`;
   const endParagraph = `<w:p>${endRun}</w:p>`;
 
   const body = entriesXml

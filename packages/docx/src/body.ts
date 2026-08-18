@@ -1355,17 +1355,17 @@ function parseMarkupRangeOptions(el: Element): MarkupRangeOptions | undefined {
 /**
  * Parse a w:p element into ParagraphOptions.
  */
+/** Serialize a w:r's w:rPr child verbatim (or undefined when the run has none). */
+export function runRPrXml(run: Element): string | undefined {
+  const rPr = findChild(run, "w:rPr");
+  return rPr ? stringifyElement(rPr) : undefined;
+}
+
 /**
  * Parse run-level children shared by paragraphs and inline-SDT content.
  * Includes the field accumulator that collapses form/complex fields spanning
  * multiple w:r runs into a single child.
  */
-/** Serialize a w:r's w:rPr child verbatim (or undefined when the run has none). */
-function runRPrXml(run: Element): string | undefined {
-  const rPr = findChild(run, "w:rPr");
-  return rPr ? stringifyElement(rPr) : undefined;
-}
-
 function parseRunLevelChildren(
   elements: Element[] | undefined,
   ctx: DocxReadContext,
@@ -1417,8 +1417,17 @@ function parseRunLevelChildren(
         if (history !== undefined) hl.history = history;
 
         const linkRuns: (RunOptions | string | ParagraphChild)[] = [];
+        // Field accumulator scoped to the hyperlink: Word nests complex fields
+        // inside link content (e.g. the PAGEREF page number of a TOC entry),
+        // fully closed within the hyperlink element.
+        const fieldState = initialFieldRunState();
         for (const sub of child.elements ?? []) {
           if (sub.name === "w:r") {
+            const fed = feedFieldRun(sub, fieldState);
+            if (fed.consumed) {
+              if (fed.child) linkRuns.push(fed.child);
+              continue;
+            }
             // Drawing runs inside hyperlinks (image links) resolve through the
             // same paragraph-child extraction — parseRun skips w:drawing.
             const drawingChild = parseDrawingRunChild(sub, ctx);
