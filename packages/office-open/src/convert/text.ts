@@ -44,10 +44,10 @@ import { convertToTwip, stripColorHashPrefix } from "@office-open/core";
 import type {
   FillOptions,
   ParagraphDescriptorOptions,
-  ParagraphPropertiesOptions as DrawingParagraphProperties,
+  TextParagraphPropertiesOptions as DrawingParagraphProperties,
   RunFont,
-  RunOptions as DrawingRunOptions,
-  RunPropertiesOptions as DrawingRunProperties,
+  TextRunOptions as DrawingRunOptions,
+  TextCharacterPropertiesOptions as DrawingRunProperties,
   TextFont,
 } from "@office-open/core";
 import type { ParagraphOptions, RunOptions } from "@office-open/docx";
@@ -273,6 +273,7 @@ function docxToDrawingChildren(
             ? [child.text]
             : [];
       for (const sub of subs) {
+        if (typeof sub !== "string" && !isRunChild(sub)) continue;
         const run: DrawingRunOptions =
           typeof sub === "string" ? { text: sub } : docxRunToDrawing(sub);
         out.push({ ...run, hyperlink: link });

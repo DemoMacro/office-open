@@ -1276,6 +1276,20 @@
       },
       "type": "object"
     },
+    "AnimationsOptions": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/definitions/AnimationEntry"
+          },
+          "type": "array"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "description": "The slide timing tree: structured animation entries, or the verbatim inner XML of p:timing when the source tree exceeds what the structured model can rebuild (parse falls back to verbatim so exotic timing content survives round-trip instead of being silently reorganized)."
+    },
     "AppPropertiesOptions": {
       "additionalProperties": false,
       "description": "Options for docProps/app.xml extended properties (CT_Properties).\n\nProperty order follows the CT_Properties xsd:all sequence so the emitted XML matches the reference schema ordering.",
@@ -1404,6 +1418,10 @@
           "$ref": "#/definitions/AudioCdTimeOptions",
           "description": "Playback end point (a:end, required)"
         },
+        "ext": {
+          "description": "Verbatim children of the a:extLst inside a:audioCd (unknown extensions).",
+          "type": "string"
+        },
         "start": {
           "$ref": "#/definitions/AudioCdTimeOptions",
           "description": "Playback start point (a:st, required)"
@@ -1468,8 +1486,21 @@
         "id": {
           "type": "number"
         },
+        "mediaAction": {
+          "description": "Click-to-play hyperlink (a:hlinkClick `action=\"ppaction://media\"` on p:cNvPr) — Office emits it on media frames.",
+          "type": "boolean"
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
+          "type": "string"
+        },
+        "poster": {
+          "$ref": "#/definitions/DataType",
+          "description": "Poster image bytes (a:blip inside p:blipFill) — the frame's speaker art."
+        },
+        "posterType": {
+          "description": "Poster image format (png/jpg only).",
+          "enum": ["png", "jpg"],
           "type": "string"
         },
         "title": {
@@ -1578,8 +1609,15 @@
           "type": ["number", "string"]
         },
         "majorGridlines": {
-          "description": "c:majorGridlines presence (CT_ChartLines).",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ShapePropertiesOptions"
+            }
+          ],
+          "description": "c:majorGridlines (CT_ChartLines) — true emits the bare element, an object carries its spPr (line styling)."
         },
         "majorTickMark": {
           "$ref": "#/definitions/AxisTickMark"
@@ -1591,7 +1629,14 @@
           "type": "number"
         },
         "minorGridlines": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ShapePropertiesOptions"
+            }
+          ]
         },
         "minorTickMark": {
           "$ref": "#/definitions/AxisTickMark"
@@ -1619,6 +1664,10 @@
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Axis shape properties (c:spPr between tickLblPos and crossAx) — round-trip."
         },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Axis text (c:txPr, a CT_TextBody) — round-trip."
+        },
         "tickLabelPosition": {
           "$ref": "#/definitions/AxisTickLabelPosition"
         },
@@ -1629,8 +1678,15 @@
           "type": "number"
         },
         "title": {
-          "description": "Plain-text axis title (c:title > c:rich > a:p > a:r > a:t).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/ChartTitleOptions"
+            }
+          ],
+          "description": "Axis title (c:title) — plain text or the full CT_Title object form."
         }
       },
       "required": ["kind", "id", "crossAxisId"],
@@ -1679,6 +1735,10 @@
         "anchor": {
           "$ref": "#/definitions/Point3D",
           "description": "Anchor point"
+        },
+        "ext": {
+          "description": "Trailing a:extLst verbatim inner XML (unknown extensions).",
+          "type": "string"
         },
         "normal": {
           "$ref": "#/definitions/Vector3D",
@@ -2126,21 +2186,6 @@
       },
       "type": "object"
     },
-    "BreakOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "break": {
-          "const": true,
-          "description": "Marks a soft line break (a:br) within a paragraph's children.",
-          "type": "boolean"
-        },
-        "properties": {
-          "$ref": "#/definitions/RunPropertiesOptions"
-        }
-      },
-      "required": ["break"],
-      "type": "object"
-    },
     "BubbleSeriesData": {
       "additionalProperties": false,
       "properties": {
@@ -2184,6 +2229,7 @@
           "description": "Line/scatter/radar marker (c:marker)."
         },
         "name": {
+          "description": "Series name; absent when the source series carried no c:tx.",
           "type": "string"
         },
         "nameFormula": {
@@ -2229,7 +2275,7 @@
           "type": "array"
         }
       },
-      "required": ["bubbleSize", "name", "xValues", "yValues"],
+      "required": ["xValues", "yValues", "bubbleSize"],
       "type": "object"
     },
     "BuiltInDisplayUnit": {
@@ -2250,15 +2296,22 @@
       "additionalProperties": false,
       "properties": {
         "color": {
-          "description": "a:buClr > a:srgbClr — explicit bullet color (hex, no #).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
+          "description": "a:buFont `@typeface` — explicit bullet font.",
           "type": "string"
         },
         "fontFollowsText": {
@@ -2298,15 +2351,22 @@
           "type": "string"
         },
         "color": {
-          "description": "a:buClr > a:srgbClr — explicit bullet color (hex, no #).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
+          "description": "a:buFont `@typeface` — explicit bullet font.",
           "type": "string"
         },
         "fontFollowsText": {
@@ -2335,7 +2395,43 @@
     },
     "BulletNoneOption": {
       "additionalProperties": false,
+      "description": "No bullet (a:buNone) — may still carry the shared color/size/font style (EG_Bullet allows buClrTx/buSzTx/buFontTx before buNone).",
       "properties": {
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+        },
+        "colorFollowsText": {
+          "description": "a:buClrTx — bullet color follows the text run color.",
+          "type": "boolean"
+        },
+        "font": {
+          "description": "a:buFont `@typeface` — explicit bullet font.",
+          "type": "string"
+        },
+        "fontFollowsText": {
+          "description": "a:buFontTx — bullet font follows the text run font.",
+          "type": "boolean"
+        },
+        "size": {
+          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "type": "number"
+        },
+        "sizeFollowsText": {
+          "description": "a:buSzTx — bullet size follows the text run size.",
+          "type": "boolean"
+        },
+        "sizePoints": {
+          "description": "a:buSzPts `@val` — bullet size in points.",
+          "type": "number"
+        },
         "type": {
           "const": "none",
           "type": "string"
@@ -2365,8 +2461,15 @@
       "description": "Picture bullet (a:buBlip r:embed). `embed` is the image relationship id.",
       "properties": {
         "color": {
-          "description": "a:buClr > a:srgbClr — explicit bullet color (hex, no #).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -2376,7 +2479,7 @@
           "type": "string"
         },
         "font": {
-          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
+          "description": "a:buFont `@typeface` — explicit bullet font.",
           "type": "string"
         },
         "fontFollowsText": {
@@ -2463,6 +2566,10 @@
         "dashStyle": {
           "enum": ["solid", "dash", "dashDot", "lgDash", "sysDot", "sysDash"],
           "type": "string"
+        },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions",
+          "description": "Full line properties (CT_LineProperties) for round-trip fidelity — joins, line ends, compound/cap/alignment. Takes precedence over the sugar fields."
         },
         "width": {
           "anyOf": [
@@ -2667,6 +2774,9 @@
           "description": "Bar/column gap width as percent of width (c:gapWidth).",
           "type": "number"
         },
+        "hasCustomPrompt": {
+          "type": "boolean"
+        },
         "height": {
           "anyOf": [
             {
@@ -2693,6 +2803,10 @@
           "description": "Chart frame id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
+        "isPhoto": {
+          "description": "p:nvPr `@isPhoto`.",
+          "type": "boolean"
+        },
         "lang": {
           "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
           "type": "string"
@@ -2704,9 +2818,43 @@
           },
           "type": "array"
         },
+        "legendLayout": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            }
+          ],
+          "description": "Legend manual layout (c:legend's c:layout) — true emits the bare `<c:layout/>` form, an object the manual layout."
+        },
+        "legendOverlay": {
+          "description": "Legend overlaps the plot (c:overlay).",
+          "type": "boolean"
+        },
         "legendPosition": {
           "$ref": "#/definitions/LegendPosition",
           "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
+        },
+        "legendShapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Legend fill and outline (c:legend's c:spPr) — round-trip."
+        },
+        "legendTextProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Legend text (c:legend's c:txPr, a CT_TextBody) — round-trip."
+        },
+        "locking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
         },
         "markers": {
           "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",
@@ -2749,9 +2897,29 @@
           "$ref": "#/definitions/PivotSourceOptions",
           "description": "Pivot chart source (c:pivotSource, after clrMapOvr, before protection)."
         },
+        "placeholder": {
+          "$ref": "#/definitions/PlaceholderType",
+          "description": "CT_Placeholder `@type` — ST_PlaceholderType."
+        },
+        "placeholderIndex": {
+          "description": "CT_Placeholder `@idx`.",
+          "type": "number"
+        },
+        "placeholderOrientation": {
+          "$ref": "#/definitions/PlaceholderOrientation",
+          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+        },
+        "placeholderSize": {
+          "$ref": "#/definitions/PlaceholderSize",
+          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+        },
         "plotAreaLayout": {
           "$ref": "#/definitions/ManualLayoutOptions",
           "description": "Manual plot-area layout (c:plotArea > c:layout > c:manualLayout)."
+        },
+        "plotAreaShapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
         },
         "plotVisOnly": {
           "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
@@ -2831,12 +2999,27 @@
         "style": {
           "type": "number"
         },
+        "style2010": {
+          "$ref": "#/definitions/ChartStyle2010Options",
+          "description": "Word 2010+ chart style — c14:style carried via mc:AlternateContent with a c:style fallback for older readers. Takes precedence over `style`."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Chart-space default text (c:txPr, a CT_TextBody) — round-trip."
+        },
         "threeD": {
           "type": "boolean"
         },
         "title": {
-          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/ChartTitleOptions"
+            }
+          ],
+          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form)."
         },
         "type": {
           "$ref": "#/definitions/ChartType"
@@ -2848,6 +3031,10 @@
         "upDownBarsGapWidth": {
           "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
           "type": "number"
+        },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn`.",
+          "type": "boolean"
         },
         "userShapes": {
           "description": "User-drawn shapes relationship id (c:userShapes r:id, after printSettings).",
@@ -3016,6 +3203,7 @@
           "description": "Line/scatter/radar marker (c:marker)."
         },
         "name": {
+          "description": "Series name; absent when the source series carried no c:tx.",
           "type": "string"
         },
         "nameFormula": {
@@ -3055,7 +3243,62 @@
           "type": "array"
         }
       },
-      "required": ["name", "values"],
+      "required": ["values"],
+      "type": "object"
+    },
+    "ChartStyle2010Options": {
+      "additionalProperties": false,
+      "description": "Word 2010+ chart style form: c14:style in mc:Choice plus the equivalent c:style in mc:Fallback.",
+      "properties": {
+        "fallbackStyle": {
+          "description": "mc:Fallback c:style/@val.",
+          "type": "number"
+        },
+        "style": {
+          "description": "c14:style/@val (the 101+ style ids).",
+          "type": "number"
+        }
+      },
+      "required": ["style"],
+      "type": "object"
+    },
+    "ChartTitleOptions": {
+      "additionalProperties": false,
+      "description": "Chart title (CT_Title). A plain string emits the simple c:rich form; an empty string the bare `<c:title/>` placeholder; the object form round-trips layout/overlay/spPr/txPr decorations alongside the text.",
+      "properties": {
+        "layout": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            }
+          ],
+          "description": "Title layout (c:layout) — `true` emits the bare `<c:layout/>` Office writes; an object is the manual layout."
+        },
+        "overlay": {
+          "description": "Title overlaps the plot (c:overlay).",
+          "type": "boolean"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/TextBodyOptions"
+            }
+          ],
+          "description": "Title text — a plain string emits a single default run; a TextBodyOptions carries the full c:rich body (paragraph alignment, run properties)."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        }
+      },
       "type": "object"
     },
     "ChartType": {
@@ -3295,43 +3538,43 @@
     },
     "ColorSchemeOptions": {
       "additionalProperties": false,
-      "description": "Color scheme — 12 theme colors as hex without # (CT_ColorScheme).",
+      "description": "Color scheme — 12 theme colors (CT_ColorScheme).",
       "properties": {
         "accent1": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent2": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent3": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent4": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent5": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent6": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "dark1": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "dark2": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "followedHyperlink": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "hyperlink": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "light1": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "light2": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "name": {
           "description": "clrScheme/`@name` (defaults to the theme name).",
@@ -3569,12 +3812,27 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions",
+          "description": "Effect list (a:effectLst) inside spPr. An empty object emits the bare element."
+        },
         "endConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
+        },
+        "geometry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PresetGeometryOptions"
+            }
+          ],
+          "description": "Connector preset geometry (a:prstGeom"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -3594,9 +3852,21 @@
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions",
+          "description": "3D scene (a:scene3d) inside spPr."
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions",
+          "description": "3D shape properties (a:sp3d) inside spPr."
+        },
         "startConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:stCxn — start endpoint glued to a shape connection site."
+        },
+        "style": {
+          "$ref": "#/definitions/ShapeStyleOptions",
+          "description": "Shape style matrix reference (p:style)."
         },
         "title": {
           "description": "XSD `@title`.",
@@ -3851,7 +4121,7 @@
           "type": "array"
         },
         "pathList": {
-          "description": "Path definitions (a:pathLst) — required",
+          "description": "Path definitions (a:pathLst) — XSD-required (minOccurs=1): omitting it on stringify still emits an empty `<a:pathLst/>` so the geometry stays schema-valid. An empty array round-trips an explicit empty list.",
           "items": {
             "$ref": "#/definitions/PathOptions"
           },
@@ -3862,7 +4132,6 @@
           "description": "Text insertion rectangle (a:rect)"
         }
       },
-      "required": ["pathList"],
       "type": "object"
     },
     "CustomPropertyOptions": {
@@ -3999,6 +4268,10 @@
         "leaderLines": {
           "description": "Emit a c:leaderLines element for default-styled leader lines.",
           "type": "boolean"
+        },
+        "numberFormat": {
+          "description": "Label number format (c:numFmt formatCode, before the position).",
+          "type": "string"
         },
         "position": {
           "$ref": "#/definitions/DataLabelPosition"
@@ -5224,6 +5497,57 @@
       "required": ["position", "color"],
       "type": "object"
     },
+    "GraphicFrameLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noChangeAspect": {
+          "type": "boolean"
+        },
+        "noDrilldown": {
+          "type": "boolean"
+        },
+        "noGrp": {
+          "type": "boolean"
+        },
+        "noMove": {
+          "type": "boolean"
+        },
+        "noResize": {
+          "type": "boolean"
+        },
+        "noSelect": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "GroupLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noChangeAspect": {
+          "type": "boolean"
+        },
+        "noGrp": {
+          "type": "boolean"
+        },
+        "noMove": {
+          "type": "boolean"
+        },
+        "noResize": {
+          "type": "boolean"
+        },
+        "noRot": {
+          "type": "boolean"
+        },
+        "noSelect": {
+          "type": "boolean"
+        },
+        "noUngrp": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "GroupOptions": {
       "additionalProperties": false,
       "description": "Group shape options for pptx slides (p:grpSp). The cNvPr fields (name/description/title/hidden) come from  {@link  BaseGroupOptions } ; the rest is the pptx flat positioning model plus the group's children. The single source of truth for both the public slide-child entry and the descriptor.",
@@ -5331,6 +5655,17 @@
           "description": "Group id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
+        "locking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GroupLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Group shape locks (a:grpSpLocks inside cNvGrpSpPr) — the one shared field beyond cNvPr. null keeps an explicit empty element (Office often emits `<a:grpSpLocks/>`); see the module docstring for why grpSpPr content and children stay per-package."
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
@@ -5400,6 +5735,17 @@
       "additionalProperties": false,
       "description": "Options for handout master parameterization",
       "properties": {
+        "background": {
+          "$ref": "#/definitions/BackgroundOptions",
+          "description": "Background (p:bg); defaults to the Office bgRef idx=\"1001\"."
+        },
+        "children": {
+          "description": "Custom spTree shapes (p:spTree children after the group header).",
+          "items": {
+            "$ref": "#/definitions/SlideChild"
+          },
+          "type": "array"
+        },
         "colorMapping": {
           "additionalProperties": false,
           "description": "Color mapping overrides",
@@ -5443,9 +5789,17 @@
           },
           "type": "object"
         },
+        "ext": {
+          "description": "Trailing p:extLst inner XML (e.g. p14:creationId) — verbatim round-trip.",
+          "type": "string"
+        },
         "headerFooter": {
           "$ref": "#/definitions/HeaderFooterOptions",
           "description": "Header/footer settings"
+        },
+        "theme": {
+          "$ref": "#/definitions/ThemeOptions",
+          "description": "The handout master's own theme part; defaults to the Office theme."
         }
       },
       "type": "object"
@@ -5597,10 +5951,7 @@
       "additionalProperties": false,
       "properties": {
         "animations": {
-          "items": {
-            "$ref": "#/definitions/AnimationEntry"
-          },
-          "type": "array"
+          "$ref": "#/definitions/AnimationsOptions"
         },
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
@@ -6136,6 +6487,10 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions",
+          "description": "Effect list (a:effectLst) inside spPr. An empty object emits the bare element."
+        },
         "fill": {
           "$ref": "#/definitions/FillOptions"
         },
@@ -6146,12 +6501,32 @@
         "id": {
           "type": "number"
         },
+        "locking": {
+          "$ref": "#/definitions/ShapeLockingOptions",
+          "description": "Shape locks (a:spLocks inside p:cNvSpPr)."
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
+        },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions",
+          "description": "3D scene (a:scene3d) inside spPr."
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions",
+          "description": "3D shape properties (a:sp3d) inside spPr."
+        },
+        "style": {
+          "$ref": "#/definitions/ShapeStyleOptions",
+          "description": "Shape style matrix reference (p:style)."
+        },
+        "textBody": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Text body — source lines carry wrap/anchor hints and an empty paragraph."
         },
         "title": {
           "description": "XSD `@title`.",
@@ -6229,6 +6604,9 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "hasCustomPrompt": {
+          "type": "boolean"
+        },
         "height": {
           "anyOf": [
             {
@@ -6247,13 +6625,48 @@
           "description": "Locked canvas frame id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
+        "isPhoto": {
+          "description": "p:nvPr `@isPhoto`.",
+          "type": "boolean"
+        },
+        "locking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
+        "placeholder": {
+          "$ref": "#/definitions/PlaceholderType",
+          "description": "CT_Placeholder `@type` — ST_PlaceholderType."
+        },
+        "placeholderIndex": {
+          "description": "CT_Placeholder `@idx`.",
+          "type": "number"
+        },
+        "placeholderOrientation": {
+          "$ref": "#/definitions/PlaceholderOrientation",
+          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+        },
+        "placeholderSize": {
+          "$ref": "#/definitions/PlaceholderSize",
+          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+        },
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
+        },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn`.",
+          "type": "boolean"
         },
         "width": {
           "anyOf": [
@@ -6507,11 +6920,8 @@
       "additionalProperties": false,
       "properties": {
         "animations": {
-          "description": "p:timing — animation timeline.",
-          "items": {
-            "$ref": "#/definitions/AnimationEntry"
-          },
-          "type": "array"
+          "$ref": "#/definitions/AnimationsOptions",
+          "description": "p:timing — animation timeline."
         },
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
@@ -6611,7 +7021,7 @@
           "type": "boolean"
         },
         "textStyles": {
-          "$ref": "#/definitions/TextListStyleOptions",
+          "$ref": "#/definitions/TextStylesOptions",
           "description": "Master text styles (p:txStyles — title/body/other, CT_SlideMasterTextStyles). Defaults to the MS Office standard block when omitted. Round-tripped masters carry their own so custom typography (fonts, indents, bullets) survives."
         },
         "theme": {
@@ -6930,13 +7340,21 @@
           },
           "type": "object"
         },
+        "ext": {
+          "description": "Trailing p:extLst inner XML (e.g. p14:creationId) — verbatim round-trip.",
+          "type": "string"
+        },
         "headerFooter": {
           "$ref": "#/definitions/HeaderFooterOptions",
           "description": "Header/footer settings (p:hf)."
         },
         "notesStyle": {
-          "$ref": "#/definitions/TextListStyleGroupOptions",
+          "$ref": "#/definitions/TextListStyleOptions",
           "description": "Notes text style (p:notesStyle, CT_TextListStyle); defaults to the Office 9-level notes style."
+        },
+        "theme": {
+          "$ref": "#/definitions/ThemeOptions",
+          "description": "The notes master's own theme part (ppt/theme/themeN.xml); defaults to the Office theme."
         }
       },
       "type": "object"
@@ -6970,6 +7388,34 @@
         "text": {
           "description": "Notes text — shorthand that builds a fresh sldImg + body placeholder slide.",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NotesViewOptions": {
+      "additionalProperties": false,
+      "description": "The `p:notesViewPr` payload — a CT_CommonSlideViewProperties (view + guides).",
+      "properties": {
+        "guides": {
+          "description": "Notes-view guides (`p:guideLst`).",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "orient": {
+                "enum": ["vert", "horz"],
+                "type": "string"
+              },
+              "pos": {
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "view": {
+          "$ref": "#/definitions/CommonViewPropertiesOptions",
+          "description": "Zoom/origin of the notes view (`p:cViewPr`)."
         }
       },
       "type": "object"
@@ -7055,6 +7501,9 @@
           "$ref": "#/definitions/OleEmbedOptions",
           "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). Mutually exclusive with  {@link  link }  — p:oleObj's content model is a required choice between p:embed and p:link."
         },
+        "hasCustomPrompt": {
+          "type": "boolean"
+        },
         "height": {
           "anyOf": [
             {
@@ -7085,13 +7534,44 @@
           "description": "Image width (EMU) for icon/preview (AG_Ole `@imgW`)",
           "type": "number"
         },
+        "isPhoto": {
+          "description": "p:nvPr `@isPhoto`.",
+          "type": "boolean"
+        },
         "link": {
           "$ref": "#/definitions/OleLinkOptions",
           "description": "Link mode (provides rId for linked OLE data); mutually exclusive with embed."
         },
+        "locking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
+        },
+        "placeholder": {
+          "$ref": "#/definitions/PlaceholderType",
+          "description": "CT_Placeholder `@type` — ST_PlaceholderType."
+        },
+        "placeholderIndex": {
+          "description": "CT_Placeholder `@idx`.",
+          "type": "number"
+        },
+        "placeholderOrientation": {
+          "$ref": "#/definitions/PlaceholderOrientation",
+          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+        },
+        "placeholderSize": {
+          "$ref": "#/definitions/PlaceholderSize",
+          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
         },
         "progId": {
           "description": "OLE program ID (e.g., \"Excel.Sheet.12\")",
@@ -7108,6 +7588,10 @@
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
+        },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn`.",
+          "type": "boolean"
         },
         "width": {
           "anyOf": [
@@ -7318,13 +7802,13 @@
           "items": {
             "anyOf": [
               {
-                "$ref": "#/definitions/RunOptions"
+                "$ref": "#/definitions/TextRunOptions"
               },
               {
                 "$ref": "#/definitions/TextFieldOptions"
               },
               {
-                "$ref": "#/definitions/BreakOptions"
+                "$ref": "#/definitions/TextBreakOptions"
               },
               {
                 "type": "string"
@@ -7336,7 +7820,7 @@
         "endParagraphProperties": {
           "anyOf": [
             {
-              "$ref": "#/definitions/RunPropertiesOptions"
+              "$ref": "#/definitions/TextCharacterPropertiesOptions"
             },
             {
               "const": false,
@@ -7346,81 +7830,10 @@
           "description": "End-paragraph run properties (a:endParaRPr). Fresh paragraphs emit a default lang marker; a parsed source preserves its value; false omits it."
         },
         "properties": {
-          "$ref": "#/definitions/ParagraphPropertiesOptions"
+          "$ref": "#/definitions/TextParagraphPropertiesOptions"
         },
         "text": {
           "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "ParagraphPropertiesOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "alignment": {
-          "$ref": "#/definitions/TextAlignment"
-        },
-        "bullet": {
-          "$ref": "#/definitions/BulletOptions"
-        },
-        "defTabSize": {
-          "type": "number"
-        },
-        "defaultRunProperties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
-          "description": "a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties)."
-        },
-        "eastAsianLineBreak": {
-          "description": "`@eaLnBrk` — East Asian line break.",
-          "type": "boolean"
-        },
-        "fontAlignment": {
-          "enum": ["auto", "t", "ctr", "b", "base"],
-          "type": "string"
-        },
-        "indent": {
-          "description": "`@indent` — first-line indent (ST_TextIndent, EMU).",
-          "type": "number"
-        },
-        "indentLevel": {
-          "type": "number"
-        },
-        "latinLineBreak": {
-          "description": "`@latinLnBrk` — Latin line break.",
-          "type": "boolean"
-        },
-        "lineSpacingPercent": {
-          "description": "Line spacing as a percentage (100 = single).",
-          "type": "number"
-        },
-        "lineSpacingPoints": {
-          "description": "Line spacing in exact points (a:lnSpc/a:spcPts).",
-          "type": "number"
-        },
-        "marginIndent": {
-          "type": "number"
-        },
-        "marginRight": {
-          "type": "number"
-        },
-        "rightToLeft": {
-          "description": "`@rtl` — paragraph right-to-left.",
-          "type": "boolean"
-        },
-        "spaceAfter": {
-          "description": "Space after a paragraph in points (a:spcAft/a:spcPts).",
-          "type": "number"
-        },
-        "spaceBefore": {
-          "description": "Space before a paragraph in points (a:spcBef/a:spcPts).",
-          "type": "number"
-        },
-        "tabStops": {
-          "description": "a:tabLst — explicit tab stops (emitted after bullets, before defRPr).",
-          "items": {
-            "$ref": "#/definitions/TabStopOptions"
-          },
-          "type": "array"
         }
       },
       "type": "object"
@@ -7733,10 +8146,64 @@
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
     },
+    "PictureLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noAdjustHandles": {
+          "description": "Prevent adjust handles",
+          "type": "boolean"
+        },
+        "noChangeArrowheads": {
+          "description": "Prevent changing arrowheads",
+          "type": "boolean"
+        },
+        "noChangeAspect": {
+          "description": "Prevent aspect ratio change",
+          "type": "boolean"
+        },
+        "noChangeShapeType": {
+          "description": "Prevent changing shape type",
+          "type": "boolean"
+        },
+        "noCrop": {
+          "description": "Prevent cropping",
+          "type": "boolean"
+        },
+        "noEditPoints": {
+          "description": "Prevent edit points",
+          "type": "boolean"
+        },
+        "noGrp": {
+          "description": "Prevent grouping",
+          "type": "boolean"
+        },
+        "noMove": {
+          "description": "Prevent moving",
+          "type": "boolean"
+        },
+        "noResize": {
+          "description": "Prevent resizing",
+          "type": "boolean"
+        },
+        "noRot": {
+          "description": "Prevent rotation",
+          "type": "boolean"
+        },
+        "noSelect": {
+          "description": "Prevent selection",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "PictureOptions": {
       "additionalProperties": false,
       "description": "Picture (p:pic) options for PPTX slides.\n\nExtends the cross-format  {@link  BasePictureOptions }  (binary data + non-visual drawing properties) with absolute EMU positioning and optional shape-level effects. The base cNvPr fields (name/description/title/hidden) flow straight through to p:cNvPr. The single source of truth for both the public slide-child entry and the descriptor.",
       "properties": {
+        "blipEffects": {
+          "$ref": "#/definitions/BlipEffectsOptions",
+          "description": "Blip color effects (a:lum, a:duotone, … children of a:blip)."
+        },
         "data": {
           "$ref": "#/definitions/DataType",
           "description": "Image binary (base64 string, data URL, or Uint8Array)."
@@ -7749,12 +8216,24 @@
           "$ref": "#/definitions/EffectListOptions",
           "description": "Shape-level effects on p:spPr (e.g. shadow/reflection)."
         },
+        "fill": {
+          "$ref": "#/definitions/FillOptions",
+          "description": "Fill on p:spPr (a:noFill on cropped pictures is common)."
+        },
         "flipHorizontal": {
           "description": "Flip horizontally (a:xfrm `@flipH`).",
           "type": "boolean"
         },
         "flipVertical": {
           "description": "Flip vertically (a:xfrm `@flipV`).",
+          "type": "boolean"
+        },
+        "geometry": {
+          "description": "Preset geometry on p:spPr. Fresh pictures always carry a rect frame; null suppresses the element for sources that omit it.",
+          "enum": ["rect", null],
+          "type": ["string", "null"]
+        },
+        "hasCustomPrompt": {
           "type": "boolean"
         },
         "height": {
@@ -7779,13 +8258,57 @@
           "description": "Picture id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
+        "isPhoto": {
+          "description": "p:nvPr `@isPhoto`.",
+          "type": "boolean"
+        },
+        "locking": {
+          "$ref": "#/definitions/PictureLockingOptions",
+          "description": "Picture locks (a:picLocks inside p:cNvPicPr)."
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions",
+          "description": "Outline on p:spPr (a:ln — decorated pictures carry one)."
+        },
+        "placeholder": {
+          "$ref": "#/definitions/PlaceholderType",
+          "description": "CT_Placeholder `@type` — ST_PlaceholderType."
+        },
+        "placeholderIndex": {
+          "description": "CT_Placeholder `@idx`.",
+          "type": "number"
+        },
+        "placeholderOrientation": {
+          "$ref": "#/definitions/PlaceholderOrientation",
+          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+        },
+        "placeholderSize": {
+          "$ref": "#/definitions/PlaceholderSize",
+          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+        },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
           "type": "number"
+        },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions",
+          "description": "3D scene (a:scene3d) inside p:spPr."
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions",
+          "description": "3D shape properties (a:sp3d) inside p:spPr."
+        },
+        "sourceRectangle": {
+          "$ref": "#/definitions/SourceRectangleOptions",
+          "description": "Crop rectangle (a:srcRect) — integer percent insets."
+        },
+        "style": {
+          "$ref": "#/definitions/ShapeStyleOptions",
+          "description": "Shape style matrix reference (p:style)."
         },
         "title": {
           "description": "XSD `@title`.",
@@ -7795,6 +8318,10 @@
           "description": "Image format. Loose string here; each package narrows to its supported union.",
           "enum": ["png", "jpg", "gif", "bmp", "emf", "wmf"],
           "type": "string"
+        },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn`.",
+          "type": "boolean"
         },
         "width": {
           "anyOf": [
@@ -7948,6 +8475,38 @@
       },
       "required": ["height", "width", "x", "y"],
       "type": "object"
+    },
+    "PlaceholderOrientation": {
+      "description": "CT_Placeholder `@orient` — orientation hint.",
+      "enum": ["horz", "vert"],
+      "type": "string"
+    },
+    "PlaceholderSize": {
+      "description": "CT_Placeholder `@sz` — sizing hint.",
+      "enum": ["full", "half", "quarter"],
+      "type": "string"
+    },
+    "PlaceholderType": {
+      "description": "CT_Placeholder `@type` — ST_PlaceholderType.",
+      "enum": [
+        "title",
+        "body",
+        "ctrTitle",
+        "subTitle",
+        "dt",
+        "sldNum",
+        "ftr",
+        "hdr",
+        "obj",
+        "chart",
+        "tbl",
+        "clipArt",
+        "dgm",
+        "media",
+        "sldImg",
+        "pic"
+      ],
+      "type": "string"
     },
     "Point3D": {
       "additionalProperties": false,
@@ -8173,6 +8732,18 @@
         "customerData": {
           "$ref": "#/definitions/CustomerDataOptions"
         },
+        "defaultTextStyle": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Default text style (p:defaultTextStyle) as raw inner XML. Fresh emits PowerPoint's default 9-level style; a parsed source preserves its value; false omits the element."
+        },
         "description": {
           "type": "string"
         },
@@ -8184,6 +8755,10 @@
             "$ref": "#/definitions/EmbeddedFontOptions"
           },
           "type": "array"
+        },
+        "ext": {
+          "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions).",
+          "type": "string"
         },
         "firstSlideNum": {
           "type": "number"
@@ -8908,283 +9483,6 @@
       ],
       "description": "Run font scripts. A bare string sets latin + ea to the same typeface (the common case); the object form sets each script independently."
     },
-    "RunOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "alternateLanguage": {
-          "type": "string"
-        },
-        "baseline": {
-          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
-          "type": "number"
-        },
-        "bold": {
-          "type": "boolean"
-        },
-        "bookmarkMark": {
-          "type": "string"
-        },
-        "capitalization": {
-          "$ref": "#/definitions/TextCapitalization"
-        },
-        "dirty": {
-          "type": "boolean"
-        },
-        "err": {
-          "description": "`@err` — spelling error flag.",
-          "type": "boolean"
-        },
-        "fill": {
-          "$ref": "#/definitions/FillOptions"
-        },
-        "font": {
-          "$ref": "#/definitions/RunFont"
-        },
-        "highlight": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "a:highlight (CT_Color) — text highlight color."
-        },
-        "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions"
-        },
-        "italic": {
-          "type": "boolean"
-        },
-        "kern": {
-          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
-          "type": "number"
-        },
-        "kumimoji": {
-          "type": "boolean"
-        },
-        "lang": {
-          "type": "string"
-        },
-        "mouseoverHyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
-        },
-        "noProof": {
-          "type": "boolean"
-        },
-        "normalizeHeight": {
-          "type": "boolean"
-        },
-        "outline": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
-        },
-        "rightToLeft": {
-          "type": "boolean"
-        },
-        "shadow": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/EffectListOptions"
-            }
-          ],
-          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
-        },
-        "size": {
-          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
-          "type": "number"
-        },
-        "smartTagId": {
-          "type": "string"
-        },
-        "smtClean": {
-          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
-          "type": "boolean"
-        },
-        "spacing": {
-          "description": "Character spacing in points (a:spc).",
-          "type": "number"
-        },
-        "strike": {
-          "$ref": "#/definitions/StrikeStyle"
-        },
-        "text": {
-          "type": "string"
-        },
-        "underline": {
-          "$ref": "#/definitions/UnderlineStyle"
-        },
-        "underlineFill": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/FillOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
-        },
-        "underlineLine": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
-        }
-      },
-      "type": "object"
-    },
-    "RunPropertiesOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "alternateLanguage": {
-          "type": "string"
-        },
-        "baseline": {
-          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
-          "type": "number"
-        },
-        "bold": {
-          "type": "boolean"
-        },
-        "bookmarkMark": {
-          "type": "string"
-        },
-        "capitalization": {
-          "$ref": "#/definitions/TextCapitalization"
-        },
-        "dirty": {
-          "type": "boolean"
-        },
-        "err": {
-          "description": "`@err` — spelling error flag.",
-          "type": "boolean"
-        },
-        "fill": {
-          "$ref": "#/definitions/FillOptions"
-        },
-        "font": {
-          "$ref": "#/definitions/RunFont"
-        },
-        "highlight": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "a:highlight (CT_Color) — text highlight color."
-        },
-        "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions"
-        },
-        "italic": {
-          "type": "boolean"
-        },
-        "kern": {
-          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
-          "type": "number"
-        },
-        "kumimoji": {
-          "type": "boolean"
-        },
-        "lang": {
-          "type": "string"
-        },
-        "mouseoverHyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
-        },
-        "noProof": {
-          "type": "boolean"
-        },
-        "normalizeHeight": {
-          "type": "boolean"
-        },
-        "outline": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
-        },
-        "rightToLeft": {
-          "type": "boolean"
-        },
-        "shadow": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/EffectListOptions"
-            }
-          ],
-          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
-        },
-        "size": {
-          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
-          "type": "number"
-        },
-        "smartTagId": {
-          "type": "string"
-        },
-        "smtClean": {
-          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
-          "type": "boolean"
-        },
-        "spacing": {
-          "description": "Character spacing in points (a:spc).",
-          "type": "number"
-        },
-        "strike": {
-          "$ref": "#/definitions/StrikeStyle"
-        },
-        "underline": {
-          "$ref": "#/definitions/UnderlineStyle"
-        },
-        "underlineFill": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/FillOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
-        },
-        "underlineLine": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
-        }
-      },
-      "type": "object"
-    },
     "SampleDataOptions": {
       "additionalProperties": false,
       "description": "dgm:sampData / dgm:styleData / dgm:clrData (CT_SampleData).",
@@ -9277,6 +9575,17 @@
       },
       "required": ["value"],
       "type": "object"
+    },
+    "SchemeColorValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/SystemColorOptions"
+        }
+      ],
+      "description": "A theme color slot — hex string (emits a:srgbClr) or a structured system color (emits a:sysClr verbatim)."
     },
     "Shape3DOptions": {
       "additionalProperties": false,
@@ -9446,26 +9755,8 @@
           "$ref": "#/definitions/OutlineOptions"
         },
         "placeholder": {
-          "description": "CT_Placeholder `@type` — ST_PlaceholderType.",
-          "enum": [
-            "title",
-            "body",
-            "ctrTitle",
-            "subTitle",
-            "dt",
-            "sldNum",
-            "ftr",
-            "hdr",
-            "obj",
-            "chart",
-            "tbl",
-            "clipArt",
-            "dgm",
-            "media",
-            "sldImg",
-            "pic"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/PlaceholderType",
+          "description": "CT_Placeholder `@type` — ST_PlaceholderType."
         },
         "placeholderIndex": {
           "type": "number"
@@ -9673,13 +9964,12 @@
     },
     "ShapeStyleOptions": {
       "additionalProperties": false,
-      "description": "Shape options type for PPTX.\n\nThe single source of truth for both the public slide-child entry and the descriptor. Shape-level animation is intentionally absent — CT_Shape has no timing child in the XSD; animation lives at the slide level (slide.animations / timing).",
       "properties": {
         "effectReference": {
           "additionalProperties": false,
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/StyleReferenceColor"
             },
             "index": {
               "type": "number"
@@ -9692,7 +9982,7 @@
           "additionalProperties": false,
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/StyleReferenceColor"
             },
             "index": {
               "type": "number"
@@ -9703,12 +9993,29 @@
         },
         "fontReference": {
           "additionalProperties": false,
+          "description": "a:fontRef —",
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/StyleReferenceColor"
             },
             "index": {
-              "type": "number"
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "const": "major",
+                  "type": "string"
+                },
+                {
+                  "const": "minor",
+                  "type": "string"
+                },
+                {
+                  "const": "none",
+                  "type": "string"
+                }
+              ]
             }
           },
           "required": ["index"],
@@ -9718,7 +10025,7 @@
           "additionalProperties": false,
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/StyleReferenceColor"
             },
             "index": {
               "type": "number"
@@ -9733,6 +10040,10 @@
     "ShowOptions": {
       "additionalProperties": false,
       "properties": {
+        "ext": {
+          "description": "Verbatim children of the showPr p:extLst (p14 laser pointer extensions).",
+          "type": "string"
+        },
         "loop": {
           "type": "boolean"
         },
@@ -10034,10 +10345,18 @@
       "additionalProperties": false,
       "properties": {
         "animations": {
-          "items": {
-            "$ref": "#/definitions/SlideAnimation"
-          },
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/SlideAnimation"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Structured entries, or verbatim p:timing inner XML when the source tree exceeds the model."
         },
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
@@ -10211,6 +10530,9 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "hasCustomPrompt": {
+          "type": "boolean"
+        },
         "height": {
           "anyOf": [
             {
@@ -10229,6 +10551,10 @@
           "description": "Diagram id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
+        "isPhoto": {
+          "description": "p:nvPr `@isPhoto`.",
+          "type": "boolean"
+        },
         "layout": {
           "anyOf": [
             {
@@ -10240,6 +10566,17 @@
           ],
           "description": "Built-in layout ID (\"default\", \"process1\") or a custom layout definition."
         },
+        "locking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
@@ -10250,6 +10587,22 @@
             "$ref": "#/definitions/TreeNode"
           },
           "type": "array"
+        },
+        "placeholder": {
+          "$ref": "#/definitions/PlaceholderType",
+          "description": "CT_Placeholder `@type` — ST_PlaceholderType."
+        },
+        "placeholderIndex": {
+          "description": "CT_Placeholder `@idx`.",
+          "type": "number"
+        },
+        "placeholderOrientation": {
+          "$ref": "#/definitions/PlaceholderOrientation",
+          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+        },
+        "placeholderSize": {
+          "$ref": "#/definitions/PlaceholderSize",
+          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
         },
         "smartArtKey": {
           "description": "Pre-generated SmartArt key (e.g. \"smartart_1024\"). Auto-generated if omitted.",
@@ -10269,6 +10622,10 @@
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
+        },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn`.",
+          "type": "boolean"
         },
         "width": {
           "anyOf": [
@@ -10491,6 +10848,16 @@
       "required": ["index"],
       "type": "object"
     },
+    "StyleReferenceColor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/SolidFillOptions"
+        }
+      ]
+    },
     "SupplementalFontOptions": {
       "additionalProperties": false,
       "description": "Supplemental font for a script range (CT_SupplementalFont).",
@@ -10507,8 +10874,12 @@
     },
     "SurfaceOptions": {
       "additionalProperties": false,
-      "description": "3D wall/floor surface (CT_Surface thickness; spPr/pictureOptions not modeled here).",
+      "description": "3D wall/floor surface (CT_Surface: thickness → spPr → pictureOptions).",
       "properties": {
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Wall/floor fill and outline (c:spPr)."
+        },
         "thickness": {
           "description": "Surface thickness — plain number or percentage string (\"N%\").",
           "type": ["number", "string"]
@@ -10578,6 +10949,25 @@
         "position": {
           "description": "a:tab `@pos` — tab stop position in EMU.",
           "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "TableBackgroundStyleOptions": {
+      "additionalProperties": false,
+      "description": "Table background style (CT_TableBackgroundStyle: fill → effect).",
+      "properties": {
+        "effectReference": {
+          "$ref": "#/definitions/StyleMatrixReferenceOptions",
+          "description": "Theme effect reference (a:effectRef idx)."
+        },
+        "fill": {
+          "description": "Explicit fill choice as raw XML (e.g. a:solidFill).",
+          "type": "string"
+        },
+        "fillReference": {
+          "$ref": "#/definitions/StyleMatrixReferenceOptions",
+          "description": "Theme fill reference (a:fillRef idx)."
         }
       },
       "type": "object"
@@ -10804,6 +11194,9 @@
           "description": "Apply first-row conditional formatting (docx w:tblLook@firstRow, pptx a:tblPr@firstRow).",
           "type": "boolean"
         },
+        "hasCustomPrompt": {
+          "type": "boolean"
+        },
         "height": {
           "anyOf": [
             {
@@ -10822,15 +11215,46 @@
           "description": "Table id (p:cNvPr `@id`). Auto-generated if omitted.",
           "type": "number"
         },
+        "isPhoto": {
+          "description": "p:nvPr `@isPhoto`.",
+          "type": "boolean"
+        },
         "lastCol": {
           "type": "boolean"
         },
         "lastRow": {
           "type": "boolean"
         },
+        "locking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
+        },
+        "placeholder": {
+          "$ref": "#/definitions/PlaceholderType",
+          "description": "CT_Placeholder `@type` — ST_PlaceholderType."
+        },
+        "placeholderIndex": {
+          "description": "CT_Placeholder `@idx`.",
+          "type": "number"
+        },
+        "placeholderOrientation": {
+          "$ref": "#/definitions/PlaceholderOrientation",
+          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+        },
+        "placeholderSize": {
+          "$ref": "#/definitions/PlaceholderSize",
+          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
         },
         "rows": {
           "items": {
@@ -10848,6 +11272,10 @@
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
+        },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn`.",
+          "type": "boolean"
         },
         "width": {
           "anyOf": [
@@ -10886,6 +11314,10 @@
     "TablePartStyleOptions": {
       "additionalProperties": false,
       "properties": {
+        "background": {
+          "$ref": "#/definitions/TableBackgroundStyleOptions",
+          "description": "Table background (a:tblBg only) — themeable fill/effect references."
+        },
         "cell": {
           "$ref": "#/definitions/TableCellStyleOptions",
           "description": "Cell style (fill, borders, 3D)"
@@ -11142,9 +11574,161 @@
       "enum": ["none", "square"],
       "type": "string"
     },
+    "TextBreakOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "break": {
+          "const": true,
+          "description": "Marks a soft line break (a:br) within a paragraph's children.",
+          "type": "boolean"
+        },
+        "properties": {
+          "$ref": "#/definitions/TextCharacterPropertiesOptions"
+        }
+      },
+      "required": ["break"],
+      "type": "object"
+    },
     "TextCapitalization": {
       "enum": ["none", "all", "small"],
       "type": "string"
+    },
+    "TextCharacterPropertiesOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alternateLanguage": {
+          "type": "string"
+        },
+        "baseline": {
+          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
+          "type": "number"
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "bookmarkMark": {
+          "type": "string"
+        },
+        "capitalization": {
+          "$ref": "#/definitions/TextCapitalization"
+        },
+        "dirty": {
+          "type": "boolean"
+        },
+        "err": {
+          "description": "`@err` — spelling error flag.",
+          "type": "boolean"
+        },
+        "fill": {
+          "$ref": "#/definitions/FillOptions"
+        },
+        "font": {
+          "$ref": "#/definitions/RunFont"
+        },
+        "highlight": {
+          "$ref": "#/definitions/SolidFillOptions",
+          "description": "a:highlight (CT_Color) — text highlight color."
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "kern": {
+          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
+          "type": "number"
+        },
+        "kumimoji": {
+          "type": "boolean"
+        },
+        "lang": {
+          "type": "string"
+        },
+        "mouseoverHyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
+        },
+        "noProof": {
+          "type": "boolean"
+        },
+        "normalizeHeight": {
+          "type": "boolean"
+        },
+        "outline": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/OutlineOptions"
+            }
+          ],
+          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
+        },
+        "rightToLeft": {
+          "type": "boolean"
+        },
+        "shadow": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/EffectListOptions"
+            }
+          ],
+          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
+        },
+        "size": {
+          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
+          "type": "number"
+        },
+        "smartTagId": {
+          "type": "string"
+        },
+        "smtClean": {
+          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
+          "type": "boolean"
+        },
+        "spacing": {
+          "description": "Character spacing in points (a:spc).",
+          "type": "number"
+        },
+        "strike": {
+          "$ref": "#/definitions/StrikeStyle"
+        },
+        "underline": {
+          "$ref": "#/definitions/UnderlineStyle"
+        },
+        "underlineFill": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/FillOptions"
+            }
+          ],
+          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
+        },
+        "underlineLine": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/OutlineOptions"
+            }
+          ],
+          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
+        }
+      },
+      "type": "object"
     },
     "TextFieldOptions": {
       "additionalProperties": false,
@@ -11154,11 +11738,11 @@
           "type": "string"
         },
         "paragraphProperties": {
-          "$ref": "#/definitions/ParagraphPropertiesOptions",
+          "$ref": "#/definitions/TextParagraphPropertiesOptions",
           "description": "a:pPr — paragraph properties (CT_TextParagraphProperties)."
         },
         "properties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
+          "$ref": "#/definitions/TextCharacterPropertiesOptions",
           "description": "a:rPr — run properties."
         },
         "text": {
@@ -11260,39 +11844,24 @@
       },
       "type": "object"
     },
-    "TextListStyleBulletOptions": {
+    "TextListStyleOptions": {
       "additionalProperties": false,
+      "description": "A bare CT_TextListStyle — a:defPPr plus up to 9 outline levels. The shape of a:lstStyle inside a txBody, p:notesStyle, and p:defaultTextStyle.",
       "properties": {
-        "char": {
-          "description": "Bullet glyph (type=\"char\"); defaults to \"•\".",
-          "type": "string"
+        "defaultParagraph": {
+          "$ref": "#/definitions/TextParagraphPropertiesOptions",
+          "description": "a:defPPr — defaults applied before any level."
         },
-        "font": {
-          "description": "Bullet font typeface (type=\"char\"); defaults to \"Arial\".",
+        "ext": {
+          "description": "Trailing a:extLst verbatim inner XML; `\"\"` preserves a bare <a:extLst/>.",
           "type": "string"
-        },
-        "type": {
-          "enum": ["none", "char"],
-          "type": "string"
-        }
-      },
-      "required": ["type"],
-      "type": "object"
-    },
-    "TextListStyleGroupOptions": {
-      "additionalProperties": false,
-      "description": "A title/body/other group: an optional empty defPPr plus up to 9 levels.",
-      "properties": {
-        "emptyDefaultParagraph": {
-          "description": "Emit an empty <a:defPPr><a:defRPr/></a:defPPr> (otherStyle carries one).",
-          "type": "boolean"
         },
         "levels": {
           "description": "Levels 1-9; index 0 = lvl1pPr. `null` omits the level (JSON form of an undefined array slot — the position still pins the level number).",
           "items": {
             "anyOf": [
               {
-                "$ref": "#/definitions/TextListStyleLevelOptions"
+                "$ref": "#/definitions/TextParagraphPropertiesOptions"
               },
               {
                 "type": "null"
@@ -11304,97 +11873,89 @@
       },
       "type": "object"
     },
-    "TextListStyleLevelOptions": {
+    "TextParagraphPropertiesOptions": {
       "additionalProperties": false,
       "properties": {
         "alignment": {
-          "type": "string"
+          "$ref": "#/definitions/TextAlignment"
         },
         "bullet": {
-          "$ref": "#/definitions/TextListStyleBulletOptions"
+          "$ref": "#/definitions/BulletOptions"
         },
-        "defaultRun": {
-          "$ref": "#/definitions/TextListStyleRunOptions"
-        },
-        "defaultTabSize": {
+        "defTabSize": {
           "type": "number"
         },
+        "defaultRunProperties": {
+          "$ref": "#/definitions/TextCharacterPropertiesOptions",
+          "description": "a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties)."
+        },
         "eastAsianLineBreak": {
-          "description": "East-Asian line breaking (default true in MS Office).",
+          "description": "`@eaLnBrk` — East Asian line break.",
           "type": "boolean"
         },
+        "ext": {
+          "description": "Verbatim inner XML of a:extLst (last child per CT_TextParagraphProperties).",
+          "type": "string"
+        },
+        "fontAlignment": {
+          "enum": ["auto", "t", "ctr", "b", "base"],
+          "type": "string"
+        },
         "hangingPunctuation": {
+          "description": "`@hangingPunct` — hanging punctuation.",
           "type": "boolean"
         },
         "indent": {
+          "description": "`@indent` — first-line indent (ST_TextIndent, EMU).",
+          "type": "number"
+        },
+        "indentLevel": {
           "type": "number"
         },
         "latinLineBreak": {
-          "description": "Latin line breaking (default false).",
+          "description": "`@latinLnBrk` — Latin line break.",
           "type": "boolean"
         },
         "lineSpacingPercent": {
-          "description": "Line spacing as a percentage (e.g., 90 = 90%).",
+          "description": "Line spacing as a percentage (100 = single).",
+          "type": "number"
+        },
+        "lineSpacingPoints": {
+          "description": "Line spacing in exact points (a:lnSpc/a:spcPts).",
           "type": "number"
         },
         "marginIndent": {
           "type": "number"
         },
-        "rtl": {
+        "marginRight": {
+          "type": "number"
+        },
+        "rightToLeft": {
+          "description": "`@rtl` — paragraph right-to-left.",
           "type": "boolean"
         },
+        "spaceAfter": {
+          "description": "Space after a paragraph in points (a:spcAft/a:spcPts).",
+          "type": "number"
+        },
+        "spaceAfterPercent": {
+          "description": "Space after a paragraph as a percentage (a:spcAft/a:spcPct).",
+          "type": "number"
+        },
+        "spaceBefore": {
+          "description": "Space before a paragraph in points (a:spcBef/a:spcPts).",
+          "type": "number"
+        },
         "spaceBeforePercent": {
-          "description": "Space before as a percentage (e.g., 0 = 0%).",
+          "description": "Space before a paragraph as a percentage (a:spcBef/a:spcPct).",
           "type": "number"
         },
-        "spaceBeforePoints": {
-          "description": "Space before in points (e.g., 5 = 5pt).",
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "TextListStyleOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "body": {
-          "$ref": "#/definitions/TextListStyleGroupOptions"
-        },
-        "other": {
-          "$ref": "#/definitions/TextListStyleGroupOptions"
-        },
-        "title": {
-          "$ref": "#/definitions/TextListStyleGroupOptions"
-        }
-      },
-      "type": "object"
-    },
-    "TextListStyleRunOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "complexScript": {
-          "description": "Complex-script typeface (e.g. \"+mj-cs\").",
-          "type": "string"
-        },
-        "eastAsia": {
-          "description": "East-Asian script typeface (e.g. \"+mj-ea\").",
-          "type": "string"
-        },
-        "kern": {
-          "description": "Character kerning in points (e.g., 12 = 12pt).",
-          "type": "number"
-        },
-        "latin": {
-          "description": "Latin script typeface (e.g. \"+mj-lt\").",
-          "type": "string"
-        },
-        "schemeColor": {
-          "description": "Solid fill as a theme color token (e.g. \"tx1\").",
-          "type": "string"
-        },
-        "size": {
-          "description": "Font size in points (e.g., 44 = 44pt).",
-          "type": "number"
+        "tabStops": {
+          "description": "a:tabLst — explicit tab stops (emitted after bullets, before defRPr).",
+          "items": {
+            "$ref": "#/definitions/TabStopOptions"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -11410,6 +11971,162 @@
         "shape3d": {
           "$ref": "#/definitions/Shape3DOptions",
           "description": "3D shape properties for the label text (a:sp3d)."
+        }
+      },
+      "type": "object"
+    },
+    "TextRunOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alternateLanguage": {
+          "type": "string"
+        },
+        "baseline": {
+          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
+          "type": "number"
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "bookmarkMark": {
+          "type": "string"
+        },
+        "capitalization": {
+          "$ref": "#/definitions/TextCapitalization"
+        },
+        "dirty": {
+          "type": "boolean"
+        },
+        "err": {
+          "description": "`@err` — spelling error flag.",
+          "type": "boolean"
+        },
+        "fill": {
+          "$ref": "#/definitions/FillOptions"
+        },
+        "font": {
+          "$ref": "#/definitions/RunFont"
+        },
+        "highlight": {
+          "$ref": "#/definitions/SolidFillOptions",
+          "description": "a:highlight (CT_Color) — text highlight color."
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "kern": {
+          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
+          "type": "number"
+        },
+        "kumimoji": {
+          "type": "boolean"
+        },
+        "lang": {
+          "type": "string"
+        },
+        "mouseoverHyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
+        },
+        "noProof": {
+          "type": "boolean"
+        },
+        "normalizeHeight": {
+          "type": "boolean"
+        },
+        "outline": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/OutlineOptions"
+            }
+          ],
+          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
+        },
+        "rightToLeft": {
+          "type": "boolean"
+        },
+        "shadow": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/EffectListOptions"
+            }
+          ],
+          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
+        },
+        "size": {
+          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
+          "type": "number"
+        },
+        "smartTagId": {
+          "type": "string"
+        },
+        "smtClean": {
+          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
+          "type": "boolean"
+        },
+        "spacing": {
+          "description": "Character spacing in points (a:spc).",
+          "type": "number"
+        },
+        "strike": {
+          "$ref": "#/definitions/StrikeStyle"
+        },
+        "text": {
+          "type": "string"
+        },
+        "underline": {
+          "$ref": "#/definitions/UnderlineStyle"
+        },
+        "underlineFill": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/FillOptions"
+            }
+          ],
+          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
+        },
+        "underlineLine": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/OutlineOptions"
+            }
+          ],
+          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
+        }
+      },
+      "type": "object"
+    },
+    "TextStylesOptions": {
+      "additionalProperties": false,
+      "description": "CT_SlideMasterTextStyles — the master's title/body/other style groups.",
+      "properties": {
+        "body": {
+          "$ref": "#/definitions/TextListStyleOptions"
+        },
+        "other": {
+          "$ref": "#/definitions/TextListStyleOptions"
+        },
+        "title": {
+          "$ref": "#/definitions/TextListStyleOptions"
         }
       },
       "type": "object"
@@ -11917,6 +12634,10 @@
         "id": {
           "type": "number"
         },
+        "mediaAction": {
+          "description": "Click-to-play hyperlink (a:hlinkClick `action=\"ppaction://media\"` on p:cNvPr) — Office emits it on media frames.",
+          "type": "boolean"
+        },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
@@ -12048,7 +12769,15 @@
           "description": "Notes text view (`p:notesTextViewPr`) — the `p:cViewPr` payload."
         },
         "notesView": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/NotesViewOptions"
+            }
+          ],
+          "description": "Notes view (`p:notesViewPr`) — true emits the default empty view; an object carries its zoom/origin and its own guide list."
         },
         "outlineView": {
           "additionalProperties": false,

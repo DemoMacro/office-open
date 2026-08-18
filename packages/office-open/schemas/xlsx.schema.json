@@ -380,8 +380,15 @@
           "type": ["number", "string"]
         },
         "majorGridlines": {
-          "description": "c:majorGridlines presence (CT_ChartLines).",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ShapePropertiesOptions"
+            }
+          ],
+          "description": "c:majorGridlines (CT_ChartLines) — true emits the bare element, an object carries its spPr (line styling)."
         },
         "majorTickMark": {
           "$ref": "#/definitions/AxisTickMark"
@@ -393,7 +400,14 @@
           "type": "number"
         },
         "minorGridlines": {
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ShapePropertiesOptions"
+            }
+          ]
         },
         "minorTickMark": {
           "$ref": "#/definitions/AxisTickMark"
@@ -421,6 +435,10 @@
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Axis shape properties (c:spPr between tickLblPos and crossAx) — round-trip."
         },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Axis text (c:txPr, a CT_TextBody) — round-trip."
+        },
         "tickLabelPosition": {
           "$ref": "#/definitions/AxisTickLabelPosition"
         },
@@ -431,8 +449,15 @@
           "type": "number"
         },
         "title": {
-          "description": "Plain-text axis title (c:title > c:rich > a:p > a:r > a:t).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/ChartTitleOptions"
+            }
+          ],
+          "description": "Axis title (c:title) — plain text or the full CT_Title object form."
         }
       },
       "required": ["kind", "id", "crossAxisId"],
@@ -481,6 +506,10 @@
         "anchor": {
           "$ref": "#/definitions/Point3D",
           "description": "Anchor point"
+        },
+        "ext": {
+          "description": "Trailing a:extLst verbatim inner XML (unknown extensions).",
+          "type": "string"
         },
         "normal": {
           "$ref": "#/definitions/Vector3D",
@@ -961,21 +990,6 @@
       },
       "type": "object"
     },
-    "BreakOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "break": {
-          "const": true,
-          "description": "Marks a soft line break (a:br) within a paragraph's children.",
-          "type": "boolean"
-        },
-        "properties": {
-          "$ref": "#/definitions/RunPropertiesOptions"
-        }
-      },
-      "required": ["break"],
-      "type": "object"
-    },
     "BubbleSeriesData": {
       "additionalProperties": false,
       "properties": {
@@ -1019,6 +1033,7 @@
           "description": "Line/scatter/radar marker (c:marker)."
         },
         "name": {
+          "description": "Series name; absent when the source series carried no c:tx.",
           "type": "string"
         },
         "nameFormula": {
@@ -1064,7 +1079,7 @@
           "type": "array"
         }
       },
-      "required": ["bubbleSize", "name", "xValues", "yValues"],
+      "required": ["xValues", "yValues", "bubbleSize"],
       "type": "object"
     },
     "BuiltInDisplayUnit": {
@@ -1085,15 +1100,22 @@
       "additionalProperties": false,
       "properties": {
         "color": {
-          "description": "a:buClr > a:srgbClr — explicit bullet color (hex, no #).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
+          "description": "a:buFont `@typeface` — explicit bullet font.",
           "type": "string"
         },
         "fontFollowsText": {
@@ -1133,15 +1155,22 @@
           "type": "string"
         },
         "color": {
-          "description": "a:buClr > a:srgbClr — explicit bullet color (hex, no #).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
+          "description": "a:buFont `@typeface` — explicit bullet font.",
           "type": "string"
         },
         "fontFollowsText": {
@@ -1170,7 +1199,43 @@
     },
     "BulletNoneOption": {
       "additionalProperties": false,
+      "description": "No bullet (a:buNone) — may still carry the shared color/size/font style (EG_Bullet allows buClrTx/buSzTx/buFontTx before buNone).",
       "properties": {
+        "color": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+        },
+        "colorFollowsText": {
+          "description": "a:buClrTx — bullet color follows the text run color.",
+          "type": "boolean"
+        },
+        "font": {
+          "description": "a:buFont `@typeface` — explicit bullet font.",
+          "type": "string"
+        },
+        "fontFollowsText": {
+          "description": "a:buFontTx — bullet font follows the text run font.",
+          "type": "boolean"
+        },
+        "size": {
+          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "type": "number"
+        },
+        "sizeFollowsText": {
+          "description": "a:buSzTx — bullet size follows the text run size.",
+          "type": "boolean"
+        },
+        "sizePoints": {
+          "description": "a:buSzPts `@val` — bullet size in points.",
+          "type": "number"
+        },
         "type": {
           "const": "none",
           "type": "string"
@@ -1200,8 +1265,15 @@
       "description": "Picture bullet (a:buBlip r:embed). `embed` is the image relationship id.",
       "properties": {
         "color": {
-          "description": "a:buClr > a:srgbClr — explicit bullet color (hex, no #).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -1211,7 +1283,7 @@
           "type": "string"
         },
         "font": {
-          "description": "a:buFont `@typeface` — bullet font (defaults to Arial on fresh char/autoNum).",
+          "description": "a:buFont `@typeface` — explicit bullet font.",
           "type": "string"
         },
         "fontFollowsText": {
@@ -1876,6 +1948,7 @@
           "description": "Line/scatter/radar marker (c:marker)."
         },
         "name": {
+          "description": "Series name; absent when the source series carried no c:tx.",
           "type": "string"
         },
         "nameFormula": {
@@ -1915,7 +1988,7 @@
           "type": "array"
         }
       },
-      "required": ["name", "values"],
+      "required": ["values"],
       "type": "object"
     },
     "ChartSpaceOptions": {
@@ -2084,9 +2157,32 @@
           },
           "type": "array"
         },
+        "legendLayout": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            }
+          ],
+          "description": "Legend manual layout (c:legend's c:layout) — true emits the bare `<c:layout/>` form, an object the manual layout."
+        },
+        "legendOverlay": {
+          "description": "Legend overlaps the plot (c:overlay).",
+          "type": "boolean"
+        },
         "legendPosition": {
           "$ref": "#/definitions/LegendPosition",
           "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
+        },
+        "legendShapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Legend fill and outline (c:legend's c:spPr) — round-trip."
+        },
+        "legendTextProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Legend text (c:legend's c:txPr, a CT_TextBody) — round-trip."
         },
         "markers": {
           "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",
@@ -2128,6 +2224,10 @@
         "plotAreaLayout": {
           "$ref": "#/definitions/ManualLayoutOptions",
           "description": "Manual plot-area layout (c:plotArea > c:layout > c:manualLayout)."
+        },
+        "plotAreaShapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
         },
         "plotVisOnly": {
           "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
@@ -2207,12 +2307,27 @@
         "style": {
           "type": "number"
         },
+        "style2010": {
+          "$ref": "#/definitions/ChartStyle2010Options",
+          "description": "Word 2010+ chart style — c14:style carried via mc:AlternateContent with a c:style fallback for older readers. Takes precedence over `style`."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Chart-space default text (c:txPr, a CT_TextBody) — round-trip."
+        },
         "threeD": {
           "type": "boolean"
         },
         "title": {
-          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/ChartTitleOptions"
+            }
+          ],
+          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form)."
         },
         "type": {
           "$ref": "#/definitions/ChartType"
@@ -2242,6 +2357,61 @@
         }
       },
       "required": ["type", "series"],
+      "type": "object"
+    },
+    "ChartStyle2010Options": {
+      "additionalProperties": false,
+      "description": "Word 2010+ chart style form: c14:style in mc:Choice plus the equivalent c:style in mc:Fallback.",
+      "properties": {
+        "fallbackStyle": {
+          "description": "mc:Fallback c:style/@val.",
+          "type": "number"
+        },
+        "style": {
+          "description": "c14:style/@val (the 101+ style ids).",
+          "type": "number"
+        }
+      },
+      "required": ["style"],
+      "type": "object"
+    },
+    "ChartTitleOptions": {
+      "additionalProperties": false,
+      "description": "Chart title (CT_Title). A plain string emits the simple c:rich form; an empty string the bare `<c:title/>` placeholder; the object form round-trips layout/overlay/spPr/txPr decorations alongside the text.",
+      "properties": {
+        "layout": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            }
+          ],
+          "description": "Title layout (c:layout) — `true` emits the bare `<c:layout/>` Office writes; an object is the manual layout."
+        },
+        "overlay": {
+          "description": "Title overlaps the plot (c:overlay).",
+          "type": "boolean"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/TextBodyOptions"
+            }
+          ],
+          "description": "Title text — a plain string emits a single default run; a TextBodyOptions carries the full c:rich body (paragraph alignment, run properties)."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        }
+      },
       "type": "object"
     },
     "ChartType": {
@@ -2499,43 +2669,43 @@
     },
     "ColorSchemeOptions": {
       "additionalProperties": false,
-      "description": "Color scheme — 12 theme colors as hex without # (CT_ColorScheme).",
+      "description": "Color scheme — 12 theme colors (CT_ColorScheme).",
       "properties": {
         "accent1": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent2": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent3": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent4": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent5": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "accent6": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "dark1": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "dark2": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "followedHyperlink": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "hyperlink": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "light1": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "light2": {
-          "type": "string"
+          "$ref": "#/definitions/SchemeColorValue"
         },
         "name": {
           "description": "clrScheme/`@name` (defaults to the theme name).",
@@ -3463,7 +3633,7 @@
           "type": "array"
         },
         "pathList": {
-          "description": "Path definitions (a:pathLst) — required",
+          "description": "Path definitions (a:pathLst) — XSD-required (minOccurs=1): omitting it on stringify still emits an empty `<a:pathLst/>` so the geometry stays schema-valid. An empty array round-trips an explicit empty list.",
           "items": {
             "$ref": "#/definitions/PathOptions"
           },
@@ -3474,7 +3644,6 @@
           "description": "Text insertion rectangle (a:rect)"
         }
       },
-      "required": ["pathList"],
       "type": "object"
     },
     "CustomPropertyOptions": {
@@ -3883,6 +4052,10 @@
         "leaderLines": {
           "description": "Emit a c:leaderLines element for default-styled leader lines.",
           "type": "boolean"
+        },
+        "numberFormat": {
+          "description": "Label number format (c:numFmt formatCode, before the position).",
+          "type": "string"
         },
         "position": {
           "$ref": "#/definitions/DataLabelPosition"
@@ -5960,6 +6133,33 @@
       "required": ["spPr"],
       "type": "object"
     },
+    "GroupLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noChangeAspect": {
+          "type": "boolean"
+        },
+        "noGrp": {
+          "type": "boolean"
+        },
+        "noMove": {
+          "type": "boolean"
+        },
+        "noResize": {
+          "type": "boolean"
+        },
+        "noRot": {
+          "type": "boolean"
+        },
+        "noSelect": {
+          "type": "boolean"
+        },
+        "noUngrp": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "GroupOptions": {
       "additionalProperties": false,
       "description": "Anchored group (xdr:grpSp): group transform + nested shapes/connectors.",
@@ -6049,6 +6249,17 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "locking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GroupLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Group shape locks (a:grpSpLocks inside cNvGrpSpPr) — the one shared field beyond cNvPr. null keeps an explicit empty element (Office often emits `<a:grpSpLocks/>`); see the module docstring for why grpSpPr content and children stay per-package."
         },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
@@ -7829,13 +8040,13 @@
           "items": {
             "anyOf": [
               {
-                "$ref": "#/definitions/RunOptions"
+                "$ref": "#/definitions/TextRunOptions"
               },
               {
                 "$ref": "#/definitions/TextFieldOptions"
               },
               {
-                "$ref": "#/definitions/BreakOptions"
+                "$ref": "#/definitions/TextBreakOptions"
               },
               {
                 "type": "string"
@@ -7847,7 +8058,7 @@
         "endParagraphProperties": {
           "anyOf": [
             {
-              "$ref": "#/definitions/RunPropertiesOptions"
+              "$ref": "#/definitions/TextCharacterPropertiesOptions"
             },
             {
               "const": false,
@@ -7857,81 +8068,10 @@
           "description": "End-paragraph run properties (a:endParaRPr). Fresh paragraphs emit a default lang marker; a parsed source preserves its value; false omits it."
         },
         "properties": {
-          "$ref": "#/definitions/ParagraphPropertiesOptions"
+          "$ref": "#/definitions/TextParagraphPropertiesOptions"
         },
         "text": {
           "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "ParagraphPropertiesOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "alignment": {
-          "$ref": "#/definitions/TextAlignment"
-        },
-        "bullet": {
-          "$ref": "#/definitions/BulletOptions"
-        },
-        "defTabSize": {
-          "type": "number"
-        },
-        "defaultRunProperties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
-          "description": "a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties)."
-        },
-        "eastAsianLineBreak": {
-          "description": "`@eaLnBrk` — East Asian line break.",
-          "type": "boolean"
-        },
-        "fontAlignment": {
-          "enum": ["auto", "t", "ctr", "b", "base"],
-          "type": "string"
-        },
-        "indent": {
-          "description": "`@indent` — first-line indent (ST_TextIndent, EMU).",
-          "type": "number"
-        },
-        "indentLevel": {
-          "type": "number"
-        },
-        "latinLineBreak": {
-          "description": "`@latinLnBrk` — Latin line break.",
-          "type": "boolean"
-        },
-        "lineSpacingPercent": {
-          "description": "Line spacing as a percentage (100 = single).",
-          "type": "number"
-        },
-        "lineSpacingPoints": {
-          "description": "Line spacing in exact points (a:lnSpc/a:spcPts).",
-          "type": "number"
-        },
-        "marginIndent": {
-          "type": "number"
-        },
-        "marginRight": {
-          "type": "number"
-        },
-        "rightToLeft": {
-          "description": "`@rtl` — paragraph right-to-left.",
-          "type": "boolean"
-        },
-        "spaceAfter": {
-          "description": "Space after a paragraph in points (a:spcAft/a:spcPts).",
-          "type": "number"
-        },
-        "spaceBefore": {
-          "description": "Space before a paragraph in points (a:spcBef/a:spcPts).",
-          "type": "number"
-        },
-        "tabStops": {
-          "description": "a:tabLst — explicit tab stops (emitted after bullets, before defRPr).",
-          "items": {
-            "$ref": "#/definitions/TabStopOptions"
-          },
-          "type": "array"
         }
       },
       "type": "object"
@@ -11590,283 +11730,6 @@
       ],
       "description": "Run font scripts. A bare string sets latin + ea to the same typeface (the common case); the object form sets each script independently."
     },
-    "RunOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "alternateLanguage": {
-          "type": "string"
-        },
-        "baseline": {
-          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
-          "type": "number"
-        },
-        "bold": {
-          "type": "boolean"
-        },
-        "bookmarkMark": {
-          "type": "string"
-        },
-        "capitalization": {
-          "$ref": "#/definitions/TextCapitalization"
-        },
-        "dirty": {
-          "type": "boolean"
-        },
-        "err": {
-          "description": "`@err` — spelling error flag.",
-          "type": "boolean"
-        },
-        "fill": {
-          "$ref": "#/definitions/FillOptions"
-        },
-        "font": {
-          "$ref": "#/definitions/RunFont"
-        },
-        "highlight": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "a:highlight (CT_Color) — text highlight color."
-        },
-        "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions"
-        },
-        "italic": {
-          "type": "boolean"
-        },
-        "kern": {
-          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
-          "type": "number"
-        },
-        "kumimoji": {
-          "type": "boolean"
-        },
-        "lang": {
-          "type": "string"
-        },
-        "mouseoverHyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
-        },
-        "noProof": {
-          "type": "boolean"
-        },
-        "normalizeHeight": {
-          "type": "boolean"
-        },
-        "outline": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
-        },
-        "rightToLeft": {
-          "type": "boolean"
-        },
-        "shadow": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/EffectListOptions"
-            }
-          ],
-          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
-        },
-        "size": {
-          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
-          "type": "number"
-        },
-        "smartTagId": {
-          "type": "string"
-        },
-        "smtClean": {
-          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
-          "type": "boolean"
-        },
-        "spacing": {
-          "description": "Character spacing in points (a:spc).",
-          "type": "number"
-        },
-        "strike": {
-          "$ref": "#/definitions/StrikeStyle"
-        },
-        "text": {
-          "type": "string"
-        },
-        "underline": {
-          "$ref": "#/definitions/UnderlineStyle"
-        },
-        "underlineFill": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/FillOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
-        },
-        "underlineLine": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
-        }
-      },
-      "type": "object"
-    },
-    "RunPropertiesOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "alternateLanguage": {
-          "type": "string"
-        },
-        "baseline": {
-          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
-          "type": "number"
-        },
-        "bold": {
-          "type": "boolean"
-        },
-        "bookmarkMark": {
-          "type": "string"
-        },
-        "capitalization": {
-          "$ref": "#/definitions/TextCapitalization"
-        },
-        "dirty": {
-          "type": "boolean"
-        },
-        "err": {
-          "description": "`@err` — spelling error flag.",
-          "type": "boolean"
-        },
-        "fill": {
-          "$ref": "#/definitions/FillOptions"
-        },
-        "font": {
-          "$ref": "#/definitions/RunFont"
-        },
-        "highlight": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "a:highlight (CT_Color) — text highlight color."
-        },
-        "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions"
-        },
-        "italic": {
-          "type": "boolean"
-        },
-        "kern": {
-          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
-          "type": "number"
-        },
-        "kumimoji": {
-          "type": "boolean"
-        },
-        "lang": {
-          "type": "string"
-        },
-        "mouseoverHyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
-        },
-        "noProof": {
-          "type": "boolean"
-        },
-        "normalizeHeight": {
-          "type": "boolean"
-        },
-        "outline": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
-        },
-        "rightToLeft": {
-          "type": "boolean"
-        },
-        "shadow": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/EffectListOptions"
-            }
-          ],
-          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
-        },
-        "size": {
-          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
-          "type": "number"
-        },
-        "smartTagId": {
-          "type": "string"
-        },
-        "smtClean": {
-          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
-          "type": "boolean"
-        },
-        "spacing": {
-          "description": "Character spacing in points (a:spc).",
-          "type": "number"
-        },
-        "strike": {
-          "$ref": "#/definitions/StrikeStyle"
-        },
-        "underline": {
-          "$ref": "#/definitions/UnderlineStyle"
-        },
-        "underlineFill": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/FillOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
-        },
-        "underlineLine": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
-        }
-      },
-      "type": "object"
-    },
     "ScRgbColorOptions": {
       "additionalProperties": false,
       "description": "Options for scRGB color.",
@@ -12059,6 +11922,17 @@
       },
       "required": ["value"],
       "type": "object"
+    },
+    "SchemeColorValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/SystemColorOptions"
+        }
+      ],
+      "description": "A theme color slot — hex string (emits a:srgbClr) or a structured system color (emits a:sysClr verbatim)."
     },
     "SelectionOptions": {
       "additionalProperties": false,
@@ -12984,8 +12858,12 @@
     },
     "SurfaceOptions": {
       "additionalProperties": false,
-      "description": "3D wall/floor surface (CT_Surface thickness; spPr/pictureOptions not modeled here).",
+      "description": "3D wall/floor surface (CT_Surface: thickness → spPr → pictureOptions).",
       "properties": {
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Wall/floor fill and outline (c:spPr)."
+        },
         "thickness": {
           "description": "Surface thickness — plain number or percentage string (\"N%\").",
           "type": ["number", "string"]
@@ -13467,9 +13345,161 @@
       "enum": ["none", "square"],
       "type": "string"
     },
+    "TextBreakOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "break": {
+          "const": true,
+          "description": "Marks a soft line break (a:br) within a paragraph's children.",
+          "type": "boolean"
+        },
+        "properties": {
+          "$ref": "#/definitions/TextCharacterPropertiesOptions"
+        }
+      },
+      "required": ["break"],
+      "type": "object"
+    },
     "TextCapitalization": {
       "enum": ["none", "all", "small"],
       "type": "string"
+    },
+    "TextCharacterPropertiesOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alternateLanguage": {
+          "type": "string"
+        },
+        "baseline": {
+          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
+          "type": "number"
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "bookmarkMark": {
+          "type": "string"
+        },
+        "capitalization": {
+          "$ref": "#/definitions/TextCapitalization"
+        },
+        "dirty": {
+          "type": "boolean"
+        },
+        "err": {
+          "description": "`@err` — spelling error flag.",
+          "type": "boolean"
+        },
+        "fill": {
+          "$ref": "#/definitions/FillOptions"
+        },
+        "font": {
+          "$ref": "#/definitions/RunFont"
+        },
+        "highlight": {
+          "$ref": "#/definitions/SolidFillOptions",
+          "description": "a:highlight (CT_Color) — text highlight color."
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "kern": {
+          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
+          "type": "number"
+        },
+        "kumimoji": {
+          "type": "boolean"
+        },
+        "lang": {
+          "type": "string"
+        },
+        "mouseoverHyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
+        },
+        "noProof": {
+          "type": "boolean"
+        },
+        "normalizeHeight": {
+          "type": "boolean"
+        },
+        "outline": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/OutlineOptions"
+            }
+          ],
+          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
+        },
+        "rightToLeft": {
+          "type": "boolean"
+        },
+        "shadow": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/EffectListOptions"
+            }
+          ],
+          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
+        },
+        "size": {
+          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
+          "type": "number"
+        },
+        "smartTagId": {
+          "type": "string"
+        },
+        "smtClean": {
+          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
+          "type": "boolean"
+        },
+        "spacing": {
+          "description": "Character spacing in points (a:spc).",
+          "type": "number"
+        },
+        "strike": {
+          "$ref": "#/definitions/StrikeStyle"
+        },
+        "underline": {
+          "$ref": "#/definitions/UnderlineStyle"
+        },
+        "underlineFill": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/FillOptions"
+            }
+          ],
+          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
+        },
+        "underlineLine": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/OutlineOptions"
+            }
+          ],
+          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
+        }
+      },
+      "type": "object"
     },
     "TextFieldOptions": {
       "additionalProperties": false,
@@ -13479,11 +13509,11 @@
           "type": "string"
         },
         "paragraphProperties": {
-          "$ref": "#/definitions/ParagraphPropertiesOptions",
+          "$ref": "#/definitions/TextParagraphPropertiesOptions",
           "description": "a:pPr — paragraph properties (CT_TextParagraphProperties)."
         },
         "properties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
+          "$ref": "#/definitions/TextCharacterPropertiesOptions",
           "description": "a:rPr — run properties."
         },
         "text": {
@@ -13585,39 +13615,24 @@
       },
       "type": "object"
     },
-    "TextListStyleBulletOptions": {
+    "TextListStyleOptions": {
       "additionalProperties": false,
+      "description": "A bare CT_TextListStyle — a:defPPr plus up to 9 outline levels. The shape of a:lstStyle inside a txBody, p:notesStyle, and p:defaultTextStyle.",
       "properties": {
-        "char": {
-          "description": "Bullet glyph (type=\"char\"); defaults to \"•\".",
-          "type": "string"
+        "defaultParagraph": {
+          "$ref": "#/definitions/TextParagraphPropertiesOptions",
+          "description": "a:defPPr — defaults applied before any level."
         },
-        "font": {
-          "description": "Bullet font typeface (type=\"char\"); defaults to \"Arial\".",
+        "ext": {
+          "description": "Trailing a:extLst verbatim inner XML; `\"\"` preserves a bare <a:extLst/>.",
           "type": "string"
-        },
-        "type": {
-          "enum": ["none", "char"],
-          "type": "string"
-        }
-      },
-      "required": ["type"],
-      "type": "object"
-    },
-    "TextListStyleGroupOptions": {
-      "additionalProperties": false,
-      "description": "A title/body/other group: an optional empty defPPr plus up to 9 levels.",
-      "properties": {
-        "emptyDefaultParagraph": {
-          "description": "Emit an empty <a:defPPr><a:defRPr/></a:defPPr> (otherStyle carries one).",
-          "type": "boolean"
         },
         "levels": {
           "description": "Levels 1-9; index 0 = lvl1pPr. `null` omits the level (JSON form of an undefined array slot — the position still pins the level number).",
           "items": {
             "anyOf": [
               {
-                "$ref": "#/definitions/TextListStyleLevelOptions"
+                "$ref": "#/definitions/TextParagraphPropertiesOptions"
               },
               {
                 "type": "null"
@@ -13629,97 +13644,89 @@
       },
       "type": "object"
     },
-    "TextListStyleLevelOptions": {
+    "TextParagraphPropertiesOptions": {
       "additionalProperties": false,
       "properties": {
         "alignment": {
-          "type": "string"
+          "$ref": "#/definitions/TextAlignment"
         },
         "bullet": {
-          "$ref": "#/definitions/TextListStyleBulletOptions"
+          "$ref": "#/definitions/BulletOptions"
         },
-        "defaultRun": {
-          "$ref": "#/definitions/TextListStyleRunOptions"
-        },
-        "defaultTabSize": {
+        "defTabSize": {
           "type": "number"
         },
+        "defaultRunProperties": {
+          "$ref": "#/definitions/TextCharacterPropertiesOptions",
+          "description": "a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties)."
+        },
         "eastAsianLineBreak": {
-          "description": "East-Asian line breaking (default true in MS Office).",
+          "description": "`@eaLnBrk` — East Asian line break.",
           "type": "boolean"
         },
+        "ext": {
+          "description": "Verbatim inner XML of a:extLst (last child per CT_TextParagraphProperties).",
+          "type": "string"
+        },
+        "fontAlignment": {
+          "enum": ["auto", "t", "ctr", "b", "base"],
+          "type": "string"
+        },
         "hangingPunctuation": {
+          "description": "`@hangingPunct` — hanging punctuation.",
           "type": "boolean"
         },
         "indent": {
+          "description": "`@indent` — first-line indent (ST_TextIndent, EMU).",
+          "type": "number"
+        },
+        "indentLevel": {
           "type": "number"
         },
         "latinLineBreak": {
-          "description": "Latin line breaking (default false).",
+          "description": "`@latinLnBrk` — Latin line break.",
           "type": "boolean"
         },
         "lineSpacingPercent": {
-          "description": "Line spacing as a percentage (e.g., 90 = 90%).",
+          "description": "Line spacing as a percentage (100 = single).",
+          "type": "number"
+        },
+        "lineSpacingPoints": {
+          "description": "Line spacing in exact points (a:lnSpc/a:spcPts).",
           "type": "number"
         },
         "marginIndent": {
           "type": "number"
         },
-        "rtl": {
+        "marginRight": {
+          "type": "number"
+        },
+        "rightToLeft": {
+          "description": "`@rtl` — paragraph right-to-left.",
           "type": "boolean"
         },
+        "spaceAfter": {
+          "description": "Space after a paragraph in points (a:spcAft/a:spcPts).",
+          "type": "number"
+        },
+        "spaceAfterPercent": {
+          "description": "Space after a paragraph as a percentage (a:spcAft/a:spcPct).",
+          "type": "number"
+        },
+        "spaceBefore": {
+          "description": "Space before a paragraph in points (a:spcBef/a:spcPts).",
+          "type": "number"
+        },
         "spaceBeforePercent": {
-          "description": "Space before as a percentage (e.g., 0 = 0%).",
+          "description": "Space before a paragraph as a percentage (a:spcBef/a:spcPct).",
           "type": "number"
         },
-        "spaceBeforePoints": {
-          "description": "Space before in points (e.g., 5 = 5pt).",
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
-    "TextListStyleOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "body": {
-          "$ref": "#/definitions/TextListStyleGroupOptions"
-        },
-        "other": {
-          "$ref": "#/definitions/TextListStyleGroupOptions"
-        },
-        "title": {
-          "$ref": "#/definitions/TextListStyleGroupOptions"
-        }
-      },
-      "type": "object"
-    },
-    "TextListStyleRunOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "complexScript": {
-          "description": "Complex-script typeface (e.g. \"+mj-cs\").",
-          "type": "string"
-        },
-        "eastAsia": {
-          "description": "East-Asian script typeface (e.g. \"+mj-ea\").",
-          "type": "string"
-        },
-        "kern": {
-          "description": "Character kerning in points (e.g., 12 = 12pt).",
-          "type": "number"
-        },
-        "latin": {
-          "description": "Latin script typeface (e.g. \"+mj-lt\").",
-          "type": "string"
-        },
-        "schemeColor": {
-          "description": "Solid fill as a theme color token (e.g. \"tx1\").",
-          "type": "string"
-        },
-        "size": {
-          "description": "Font size in points (e.g., 44 = 44pt).",
-          "type": "number"
+        "tabStops": {
+          "description": "a:tabLst — explicit tab stops (emitted after bullets, before defRPr).",
+          "items": {
+            "$ref": "#/definitions/TabStopOptions"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -13800,6 +13807,146 @@
         "thousands": {
           "description": "Thousands separator (default \",\")",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "TextRunOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alternateLanguage": {
+          "type": "string"
+        },
+        "baseline": {
+          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
+          "type": "number"
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "bookmarkMark": {
+          "type": "string"
+        },
+        "capitalization": {
+          "$ref": "#/definitions/TextCapitalization"
+        },
+        "dirty": {
+          "type": "boolean"
+        },
+        "err": {
+          "description": "`@err` — spelling error flag.",
+          "type": "boolean"
+        },
+        "fill": {
+          "$ref": "#/definitions/FillOptions"
+        },
+        "font": {
+          "$ref": "#/definitions/RunFont"
+        },
+        "highlight": {
+          "$ref": "#/definitions/SolidFillOptions",
+          "description": "a:highlight (CT_Color) — text highlight color."
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "kern": {
+          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
+          "type": "number"
+        },
+        "kumimoji": {
+          "type": "boolean"
+        },
+        "lang": {
+          "type": "string"
+        },
+        "mouseoverHyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
+        },
+        "noProof": {
+          "type": "boolean"
+        },
+        "normalizeHeight": {
+          "type": "boolean"
+        },
+        "outline": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/OutlineOptions"
+            }
+          ],
+          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
+        },
+        "rightToLeft": {
+          "type": "boolean"
+        },
+        "shadow": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/EffectListOptions"
+            }
+          ],
+          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
+        },
+        "size": {
+          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
+          "type": "number"
+        },
+        "smartTagId": {
+          "type": "string"
+        },
+        "smtClean": {
+          "description": "`@smtClean` — smart tag clean flag (XSD default true).",
+          "type": "boolean"
+        },
+        "spacing": {
+          "description": "Character spacing in points (a:spc).",
+          "type": "number"
+        },
+        "strike": {
+          "$ref": "#/definitions/StrikeStyle"
+        },
+        "text": {
+          "type": "string"
+        },
+        "underline": {
+          "$ref": "#/definitions/UnderlineStyle"
+        },
+        "underlineFill": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/FillOptions"
+            }
+          ],
+          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
+        },
+        "underlineLine": {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/OutlineOptions"
+            }
+          ],
+          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
         }
       },
       "type": "object"
@@ -15168,9 +15315,32 @@
           },
           "type": "array"
         },
+        "legendLayout": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            }
+          ],
+          "description": "Legend manual layout (c:legend's c:layout) — true emits the bare `<c:layout/>` form, an object the manual layout."
+        },
+        "legendOverlay": {
+          "description": "Legend overlaps the plot (c:overlay).",
+          "type": "boolean"
+        },
         "legendPosition": {
           "$ref": "#/definitions/LegendPosition",
           "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
+        },
+        "legendShapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Legend fill and outline (c:legend's c:spPr) — round-trip."
+        },
+        "legendTextProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Legend text (c:legend's c:txPr, a CT_TextBody) — round-trip."
         },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
@@ -15220,6 +15390,10 @@
         "plotAreaLayout": {
           "$ref": "#/definitions/ManualLayoutOptions",
           "description": "Manual plot-area layout (c:plotArea > c:layout > c:manualLayout)."
+        },
+        "plotAreaShapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
         },
         "plotVisOnly": {
           "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
@@ -15318,12 +15492,27 @@
         "style": {
           "type": "number"
         },
+        "style2010": {
+          "$ref": "#/definitions/ChartStyle2010Options",
+          "description": "Word 2010+ chart style — c14:style carried via mc:AlternateContent with a c:style fallback for older readers. Takes precedence over `style`."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Chart-space default text (c:txPr, a CT_TextBody) — round-trip."
+        },
         "threeD": {
           "type": "boolean"
         },
         "title": {
-          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/ChartTitleOptions"
+            }
+          ],
+          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form)."
         },
         "toCol": {
           "description": "To cell column (1-based) for twoCellAnchor. Defaults to col + 1.",
