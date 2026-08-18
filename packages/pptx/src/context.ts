@@ -114,14 +114,8 @@ export class PptxWriteContext implements WriteContext {
    * to a real relationship id and adds the oleObject relationship per slide.
    */
   public addOle(data: Uint8Array, progId?: string): string {
-    const fileName = this._embeddings.nextEmbeddingName();
-    const entry: EmbeddingData = {
-      fileName,
-      data,
-      ...(progId !== undefined ? { progId } : {}),
-    };
-    this._embeddings.addEmbedding(fileName, entry);
-    return `{ole:${fileName}}`;
+    const entry = this._embeddings.addEmbedding(data, undefined, progId);
+    return `{ole:${entry.fileName}}`;
   }
 
   public addImage(key: string, entry: MediaEntry): MediaEntry {

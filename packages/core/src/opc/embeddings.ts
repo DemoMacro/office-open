@@ -29,16 +29,51 @@ export class EmbeddingCollection {
 
   /** Allocate the next sequential embedding file name (oleObject1.bin, …). */
   public nextEmbeddingName(): string {
-    return `oleObject${++this.counter}.bin`;
+    // Skip names already taken (e.g. round-tripped source basenames) — a
+    // counter-allocated name colliding with a pinned one would overwrite it.
+    let name = `oleObject${++this.counter}.bin`;
+    while (this.map.has(name)) name = `oleObject${++this.counter}.bin`;
+    return name;
   }
 
-  /** Register an embedding under a unique key. */
-  public addEmbedding(key: string, data: EmbeddingData): void {
-    this.map.set(key, data);
+  /**
+   * Register embedding bytes and return the stored entry. The requested name
+   * is used when free or already claimed by identical bytes (two objects
+   * sharing one embedded part); a name claimed by different bytes falls back
+   * to a fresh sequential name — overwriting would silently drop the other
+   * object's payload.
+   */
+  public addEmbedding(data: Uint8Array, requestedName?: string, progId?: string): EmbeddingData {
+    const requested = requestedName ?? this.nextEmbeddingName();
+    const existing = this.map.get(requested);
+    if (existing) {
+      if (this.byteEqual(existing.data, data)) return existing;
+      const fallbackName = this.nextEmbeddingName();
+      const entry: EmbeddingData = {
+        fileName: fallbackName,
+        data,
+        ...(progId !== undefined ? { progId } : {}),
+      };
+      this.map.set(fallbackName, entry);
+      return entry;
+    }
+    const entry: EmbeddingData = {
+      fileName: requested,
+      data,
+      ...(progId !== undefined ? { progId } : {}),
+    };
+    this.map.set(requested, entry);
+    return entry;
   }
 
   /** All registered embeddings in insertion order. */
   public get array(): EmbeddingData[] {
     return [...this.map.values()];
+  }
+
+  private byteEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
   }
 }

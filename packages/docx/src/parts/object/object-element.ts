@@ -22,7 +22,6 @@ import type { VmlShapetypeOptions } from "@office-open/core";
 import { parseVmlImageData, type VmlImageDataOptions } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml, findChild, textOf, type Element } from "@office-open/xml";
-import type { EmbeddingData } from "@shared/embeddings/embeddings";
 import type { MediaData } from "@shared/media/data";
 
 import type { BodyContext } from "../../context";
@@ -346,15 +345,14 @@ function resolveBinary(
 /** Register an OLE embedding and return its allocated file name. */
 function registerEmbedding(opts: ObjectEmbedOptions, ctx: BodyContext): string {
   // Round-tripped payloads keep their source name (extension + Default entry);
-  // fresh authoring gets the sequential oleObjectN.bin name.
-  const fileName = opts.fileName ?? ctx.file.embeddings.nextEmbeddingName();
-  const data: EmbeddingData = {
-    fileName,
-    data: toUint8Array(opts.data) as Uint8Array,
-    ...(opts.progId ? { progId: opts.progId } : {}),
-  };
-  ctx.file.embeddings.addEmbedding(fileName, data);
-  return fileName;
+  // fresh authoring gets the sequential oleObjectN.bin name. A source name
+  // claimed by different bytes is reallocated rather than overwritten.
+  const entry = ctx.file.embeddings.addEmbedding(
+    toUint8Array(opts.data) as Uint8Array,
+    opts.fileName,
+    opts.progId,
+  );
+  return entry.fileName;
 }
 
 /** Parse common o:OLEObject attributes (excludes r:id — external on parse). */

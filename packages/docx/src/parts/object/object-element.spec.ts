@@ -73,8 +73,9 @@ describe("objectDesc.stringify", () => {
     file: {
       media: { addMedia: () => ({ fileName: "image1.png" }) },
       embeddings: {
-        nextEmbeddingName: () => "oleObject1.bin",
-        addEmbedding: () => undefined,
+        addEmbedding: (_data: Uint8Array, requestedName?: string) => ({
+          fileName: requestedName ?? "oleObject1.bin",
+        }),
       },
     },
   } as unknown as BodyContext;
