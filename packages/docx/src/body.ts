@@ -1073,7 +1073,7 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
         // Replace the VML fallback's r:id/r:embed/r:link refs with {fileName}
         // placeholders and collect the media; otherwise the carried source
         // rIds dangle (not defined in the generated rels).
-        const replaced = replaceRelsWithPlaceholders(stringifyElement(fallback), ctx, "vml");
+        const replaced = replaceRelsWithPlaceholders(stringifyElement(fallback), ctx);
         altFallback = replaced.rawXml;
         altFallbackMedia = replaced.rawMedia.length > 0 ? replaced.rawMedia : undefined;
       }

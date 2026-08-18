@@ -5095,6 +5095,10 @@
         "bibliography": {
           "$ref": "#/definitions/BibliographyOptions"
         },
+        "category": {
+          "description": "Document category, round-tripped from cp:category.",
+          "type": "string"
+        },
         "comments": {
           "items": {
             "$ref": "#/definitions/CommentOptions"
@@ -5111,6 +5115,10 @@
         "conformance": {
           "description": "Document conformance class (w:document/`@w:conformance`).",
           "enum": ["strict", "transitional"],
+          "type": "string"
+        },
+        "contentStatus": {
+          "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
           "type": "string"
         },
         "contentTypes": {
@@ -5183,7 +5191,15 @@
           "$ref": "#/definitions/GlossaryDocumentOptions",
           "description": "Glossary document — building blocks (Quick Parts)"
         },
+        "identifier": {
+          "description": "Unique document identifier, round-tripped from dc:identifier.",
+          "type": "string"
+        },
         "keywords": {
+          "type": "string"
+        },
+        "language": {
+          "description": "Document language (RFC 3066), round-tripped from dc:language.",
           "type": "string"
         },
         "lastModifiedBy": {
@@ -5243,6 +5259,10 @@
           "type": "string"
         },
         "title": {
+          "type": "string"
+        },
+        "version": {
+          "description": "Document version number, round-tripped from cp:version.",
           "type": "string"
         },
         "webSettings": {
@@ -13836,6 +13856,10 @@
             "effects": {
               "$ref": "#/definitions/EffectListOptions"
             },
+            "fileName": {
+              "description": "Source media file basename (round-trip). `type` normalizes jpeg→jpg etc., which would otherwise rewrite imageN.jpeg to imageN.jpg and drop the source [Content_Types] Default extension. Omit for fresh authoring.",
+              "type": "string"
+            },
             "fill": {
               "$ref": "#/definitions/FillOptions"
             },
@@ -13911,6 +13935,10 @@
                 "data": {
                   "$ref": "#/definitions/DataType"
                 },
+                "fileName": {
+                  "description": "Source media file basename (round-trip). `type` normalizes jpeg→jpg etc., which would otherwise rewrite imageN.jpeg to imageN.jpg and drop the source [Content_Types] Default extension. Omit for fresh authoring.",
+                  "type": "string"
+                },
                 "type": {
                   "enum": ["jpg", "png", "gif", "bmp", "tif", "ico", "emf", "wmf"],
                   "type": "string"
@@ -13918,6 +13946,10 @@
               },
               "required": ["type", "data"],
               "type": "object"
+            },
+            "fileName": {
+              "description": "Source vector file basename (round-trip). See RegularPictureOptions.",
+              "type": "string"
             },
             "fill": {
               "$ref": "#/definitions/FillOptions"

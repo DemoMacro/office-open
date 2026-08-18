@@ -709,6 +709,7 @@ export function stringifyChildDispatch(
             type: fallbackType,
             ...createPictureData(fallbackData, opts.transformation, fileName),
           }) as MediaData,
+        opts.fallback.fileName,
       );
       mediaData = ctx.file.media.addMedia(
         rawData,
@@ -726,6 +727,7 @@ export function stringifyChildDispatch(
             useLocalDpi: opts.useLocalDpi,
             fallback,
           }) as MediaData,
+        opts.fileName,
       );
     } else {
       const type = opts.type;
@@ -744,6 +746,7 @@ export function stringifyChildDispatch(
             ),
             useLocalDpi: opts.useLocalDpi,
           }) as MediaData,
+        opts.fileName,
       );
     }
 

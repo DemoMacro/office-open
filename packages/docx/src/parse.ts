@@ -323,7 +323,6 @@ export function parseDocument(data: DataType): DocumentOptions {
       const { rawXml, rawMedia } = replaceRelsWithPlaceholders(
         stringifyElement(docx.background),
         ctx,
-        "background",
       );
       opts.background = rawMedia.length > 0 ? { rawXml, rawMedia } : { rawXml };
     } else {
@@ -543,6 +542,27 @@ export function parseDocument(data: DataType): DocumentOptions {
     }
     const data = docx.doc.getRaw(p);
     if (data) rawParts.push({ path: p, data });
+  }
+  // Theme texture media: a theme's fmtScheme blipFill references images
+  // through word/theme/_rels/*.rels; the theme XML passes through verbatim but
+  // those companion media parts must be carried too, or the rIds dangle and
+  // the [Content_Types] Default for their extension is lost.
+  for (const p of docx.doc.keys()) {
+    if (!p.startsWith("word/theme/_rels/") || !p.endsWith(".rels")) continue;
+    const themeName = p.slice("word/theme/_rels/".length, -".rels".length);
+    const relsEl = docx.doc.get(p);
+    if (!relsEl) continue;
+    for (const rel of relsEl.elements ?? []) {
+      if (rel.name !== "Relationship") continue;
+      const type = attr(rel, "Type") ?? "";
+      if (!type.includes("/image") && !type.includes("/media")) continue;
+      const target = attr(rel, "Target") ?? "";
+      if (!target) continue;
+      const mediaPath = resolveRelationshipTarget(`word/theme/${themeName}`, target);
+      if (rawParts.some((r) => r.path === mediaPath)) continue;
+      const data = docx.doc.getRaw(mediaPath);
+      if (data) rawParts.push({ path: mediaPath, data });
+    }
   }
   if (rawParts.length > 0) opts.rawParts = rawParts;
 

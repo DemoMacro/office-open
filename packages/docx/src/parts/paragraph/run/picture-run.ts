@@ -53,6 +53,12 @@ interface CorePictureOptions {
 interface RegularPictureOptions {
   type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   data: DataType;
+  /**
+   * Source media file basename (round-trip). `type` normalizes jpeg→jpg etc.,
+   * which would otherwise rewrite imageN.jpeg to imageN.jpg and drop the
+   * source [Content_Types] Default extension. Omit for fresh authoring.
+   */
+  fileName?: string;
 }
 
 interface SvgMediaOptions {
@@ -62,6 +68,8 @@ interface SvgMediaOptions {
    * Required in case the Word processor does not support SVG.
    */
   fallback: RegularPictureOptions;
+  /** Source vector file basename (round-trip). See RegularPictureOptions. */
+  fileName?: string;
 }
 
 /**

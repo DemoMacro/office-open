@@ -304,6 +304,9 @@ export function parsePictureRun(
   const imageOpts: Record<string, unknown> = {
     type,
     data: imageData,
+    // Pin the source file name: type normalization (jpeg→jpg) would otherwise
+    // rewrite the extension and drop the source [Content_Types] Default entry.
+    fileName: mediaPath.split("/").pop() ?? mediaPath,
     transformation: {
       ...(info.width !== undefined ? { width: info.width } : {}),
       ...(info.height !== undefined ? { height: info.height } : {}),
@@ -373,9 +376,12 @@ export function parsePictureRun(
   // both branches; otherwise the SVG is dropped on round-trip.
   const svg = readBlipSvg(blip, ctx);
   if (svg) {
-    imageOpts.fallback = { type, data: imageData };
+    imageOpts.fallback = { type, data: imageData, fileName: imageOpts.fileName };
     imageOpts.type = "svg";
     imageOpts.data = svg.data;
+    // The vector part keeps the svg source name; the raster fallback keeps the
+    // blip's original media name.
+    imageOpts.fileName = svg.fileName;
   }
 
   return { picture: imageOpts as unknown as PictureOptions };

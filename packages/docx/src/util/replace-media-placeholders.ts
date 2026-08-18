@@ -19,7 +19,6 @@ const REL_ATTR_RE = /\br:(id|embed|link)="([^"]+)"/g;
 export function replaceRelsWithPlaceholders(
   xml: string,
   ctx: DocxReadContext,
-  prefix: string,
 ): { rawXml: string; rawMedia: BackgroundRawMediaOptions[] } {
   const rawMedia: BackgroundRawMediaOptions[] = [];
   const rawXml = xml.replace(REL_ATTR_RE, (match, attrName: string, rId: string) => {
@@ -27,7 +26,9 @@ export function replaceRelsWithPlaceholders(
     const data = mediaPath ? ctx.getRaw(mediaPath) : undefined;
     if (!mediaPath || !data) return match;
     const type = imageTypeFromPath(mediaPath);
-    const fileName = `${prefix}-${rId}.${type}`;
+    // Keep the source file name: a synthetic `prefix-rId.ext` name rewrites
+    // the extension and drops the source [Content_Types] Default entry.
+    const fileName = mediaPath.split("/").pop() ?? mediaPath;
     if (!rawMedia.some((m) => m.fileName === fileName)) {
       rawMedia.push({ fileName, data, type });
     }
