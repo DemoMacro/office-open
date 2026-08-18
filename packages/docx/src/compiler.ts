@@ -66,6 +66,10 @@ import {
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
 
+/** Relationship type for OLE embedding parts (word|ppt/embeddings/*). */
+const OLE_OBJECT_RELATIONSHIP =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
+
 /** XML declaration prepended to every OOXML part. */
 const XML_DECL = OOXML_XML_DECLARATION;
 
@@ -83,11 +87,8 @@ const DOCX_MEDIA_CONTENT_TYPES: Record<string, string> = {
   xlsb: "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
 };
 
-/** Extended context for header/footer formatted view caching. */
-type DocxContext = BodyContext & {
-  headerFormattedViews?: Map<number, string>;
-  footerFormattedViews?: Map<number, string>;
-};
+/** Extended context for header/footer part stringification. */
+type DocxContext = BodyContext;
 
 // ── Public API ──
 
@@ -103,10 +104,7 @@ export function compileDocument(
   mediaLevel: number = 0,
 ): Zippable {
   const ctx = new DocxWriteContext(options);
-  const headerFormattedViews = new Map<number, string>();
-  const footerFormattedViews = new Map<number, string>();
-
-  const xmlifiedFileMapping = xmlifyContext(ctx, headerFormattedViews, footerFormattedViews);
+  const xmlifiedFileMapping = xmlifyContext(ctx);
   const files = compileMapping(xmlifiedFileMapping, overrides);
 
   // Media files
@@ -248,11 +246,7 @@ function buildContentTypesData(ctx: DocxWriteContext, files: Zippable): string {
   return XML_DECL + (contentTypesDesc.stringify(input, ctx) ?? "");
 }
 
-function xmlifyContext(
-  ctx: DocxWriteContext,
-  headerFormattedViews: Map<number, string>,
-  footerFormattedViews: Map<number, string>,
-): XmlifyedFileMapping {
+function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   const mkCtx = (viewWrapper: DocxContext["viewWrapper"] = ctx.document): DocxContext => {
     const bodyCtx: DocxContext = {
       fileData: ctx,
@@ -274,8 +268,19 @@ function xmlifyContext(
   // Per-part media-replacement results shared between the .rels pass and the
   // body-XML pass so both use identical rId offsets. Each header/footer part
   // has its own relationship numbering (independent of the document part).
+  // Embedding results chain after media (same {fileName} placeholder bridge,
+  // offsets continuing past the media relationships), mirroring the document
+  // part — headers/footers can carry w:object runs of their own.
   const footerMediaResults = new Map<number, { xml: string; referenced: { fileName: string }[] }>();
+  const footerEmbeddingResults = new Map<
+    number,
+    { xml: string; referenced: { fileName: string }[] }
+  >();
   const headerMediaResults = new Map<number, { xml: string; referenced: { fileName: string }[] }>();
+  const headerEmbeddingResults = new Map<
+    number,
+    { xml: string; referenced: { fileName: string }[] }
+  >();
   const docCtx = mkCtx(ctx.document);
   const documentXmlData = XML_DECL + stringifyDocumentXml(ctx, docCtx);
 
@@ -324,18 +329,44 @@ function xmlifyContext(
   const commentMedia = hasComments
     ? findAndReplaceImagePlaceholders(commentXmlData, ctx.media.array, commentRelationshipCount)
     : { xml: "", referenced: [] as { fileName: string }[] };
+  // OLE embeddings inside comments reuse the same placeholder bridge, offset
+  // chained past the media relationships (same order as the document part).
+  const commentEmbeddingOffset = commentRelationshipCount + commentMedia.referenced.length;
+  const commentEmbeddings = hasComments
+    ? findAndReplaceImagePlaceholders(
+        commentMedia.xml,
+        ctx.embeddings.array,
+        commentEmbeddingOffset,
+      )
+    : { xml: "", referenced: [] as { fileName: string }[] };
   const footnoteMedia = findAndReplaceImagePlaceholders(
     footnoteXmlData,
     ctx.media.array,
     footnoteRelationshipCount,
   );
-  // Register footnote media relationships eagerly so the relationshipCount used
-  // to gate footnotes.xml.rels reflects the final state (see FootNotesRelationships).
+  // OLE embeddings inside footnotes reuse the same placeholder bridge, offset
+  // chained past the media relationships (same order as the document part).
+  const footnoteEmbeddingOffset = footnoteRelationshipCount + footnoteMedia.referenced.length;
+  const footnoteEmbeddings = findAndReplaceImagePlaceholders(
+    footnoteMedia.xml,
+    ctx.embeddings.array,
+    footnoteEmbeddingOffset,
+  );
+  // Register footnote media/embedding relationships eagerly so the
+  // relationshipCount used to gate footnotes.xml.rels reflects the final state
+  // (see FootNotesRelationships).
   for (const [i, ref] of footnoteMedia.referenced.entries()) {
     ctx.footNotes.relationships.addRelationship(
       footnoteRelationshipCount + i,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
       `media/${ref.fileName}`,
+    );
+  }
+  for (const [i, ref] of footnoteEmbeddings.referenced.entries()) {
+    ctx.footNotes.relationships.addRelationship(
+      footnoteEmbeddingOffset + i,
+      OLE_OBJECT_RELATIONSHIP,
+      `embeddings/${ref.fileName}`,
     );
   }
 
@@ -347,11 +378,10 @@ function xmlifyContext(
     ...(hasComments
       ? {
           Comments: {
-            data: (() => {
-              const xmlData =
-                commentMedia.referenced.length > 0 ? commentMedia.xml : commentXmlData;
-              return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
-            })(),
+            data: replaceNumberingPlaceholders(
+              commentEmbeddings.xml,
+              ctx.numbering.concreteNumbering,
+            ),
             path: "word/comments.xml",
           },
           CommentsRelationships: (() => {
@@ -360,6 +390,13 @@ function xmlifyContext(
                 commentRelationshipCount + i,
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
                 `media/${ref.fileName}`,
+              );
+            }
+            for (const [i, ref] of commentEmbeddings.referenced.entries()) {
+              ctx.comments.relationships.addRelationship(
+                commentEmbeddingOffset + i,
+                OLE_OBJECT_RELATIONSHIP,
+                `embeddings/${ref.fileName}`,
               );
             }
             return optionalRelsPart(
@@ -478,20 +515,32 @@ function xmlifyContext(
                 ctx.media.array,
                 endnoteRelCount,
               );
-              if (endnoteMedia.referenced.length > 0) {
-                for (const [i, ref] of endnoteMedia.referenced.entries()) {
-                  ctx.endnotes.relationships.addRelationship(
-                    endnoteRelCount + i,
-                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-                    `media/${ref.fileName}`,
-                  );
-                }
-                return replaceNumberingPlaceholders(
-                  endnoteMedia.xml,
-                  ctx.numbering.concreteNumbering,
+              for (const [i, ref] of endnoteMedia.referenced.entries()) {
+                ctx.endnotes.relationships.addRelationship(
+                  endnoteRelCount + i,
+                  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+                  `media/${ref.fileName}`,
                 );
               }
-              return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
+              // OLE embeddings inside endnotes reuse the same placeholder
+              // bridge, offset chained past the media relationships.
+              const endnoteEmbeddingOffset = endnoteRelCount + endnoteMedia.referenced.length;
+              const endnoteEmbeddings = findAndReplaceImagePlaceholders(
+                endnoteMedia.xml,
+                ctx.embeddings.array,
+                endnoteEmbeddingOffset,
+              );
+              for (const [i, ref] of endnoteEmbeddings.referenced.entries()) {
+                ctx.endnotes.relationships.addRelationship(
+                  endnoteEmbeddingOffset + i,
+                  OLE_OBJECT_RELATIONSHIP,
+                  `embeddings/${ref.fileName}`,
+                );
+              }
+              return replaceNumberingPlaceholders(
+                endnoteEmbeddings.xml,
+                ctx.numbering.concreteNumbering,
+              );
             })(),
             path: "word/endnotes.xml",
           },
@@ -522,11 +571,10 @@ function xmlifyContext(
     ...(ctx.hasFootnotes
       ? {
           FootNotes: {
-            data: (() => {
-              const xmlData =
-                footnoteMedia.referenced.length > 0 ? footnoteMedia.xml : footnoteXmlData;
-              return replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering);
-            })(),
+            data: replaceNumberingPlaceholders(
+              footnoteEmbeddings.xml,
+              ctx.numbering.concreteNumbering,
+            ),
             path: "word/footnotes.xml",
           },
           FootNotesRelationships:
@@ -543,7 +591,6 @@ function xmlifyContext(
         const footerCtx = mkCtx({ relationships: entry.relationships });
         const xmlData =
           XML_DECL + stringifyHeaderFooter("w:ftr", FOOTER_NAMESPACES, entry.children, footerCtx);
-        footerFormattedViews.set(index, xmlData);
         // Footer images get per-part relationship IDs starting at
         // relationshipCount+1, mirroring the document part. The placeholder pass
         // uses referenced-local positions, so body r:embed and .rels stay aligned.
@@ -554,12 +601,28 @@ function xmlifyContext(
           footerRelCount,
         );
         footerMediaResults.set(index, footerMedia);
+        // OLE embeddings reuse the same {fileName} placeholder bridge, offset
+        // chained past the media relationships (same order as the document part).
+        const footerEmbeddingOffset = footerRelCount + footerMedia.referenced.length;
+        const footerEmbeddings = findAndReplaceImagePlaceholders(
+          footerMedia.xml,
+          ctx.embeddings.array,
+          footerEmbeddingOffset,
+        );
+        footerEmbeddingResults.set(index, footerEmbeddings);
 
         for (const [i, ref] of footerMedia.referenced.entries()) {
           entry.relationships.addRelationship(
             footerRelCount + i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${ref.fileName}`,
+          );
+        }
+        for (const [i, ref] of footerEmbeddings.referenced.entries()) {
+          entry.relationships.addRelationship(
+            footerEmbeddingOffset + i,
+            OLE_OBJECT_RELATIONSHIP,
+            `embeddings/${ref.fileName}`,
           );
         }
 
@@ -571,12 +634,10 @@ function xmlifyContext(
       })
       .filter((r): r is XmlifyedFile => r !== undefined),
     Footers: ctx.footers.map((entry, index) => {
-      const footerMedia = footerMediaResults.get(index)!;
-      const tempXmlData = footerFormattedViews.get(index)!;
-      const xmlData = footerMedia.referenced.length > 0 ? footerMedia.xml : tempXmlData;
+      const footerEmbeddings = footerEmbeddingResults.get(index)!;
 
       return {
-        data: replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering),
+        data: replaceNumberingPlaceholders(footerEmbeddings.xml, ctx.numbering.concreteNumbering),
         path: `word/${entry.partName ?? `footer${index + 1}.xml`}`,
       };
     }),
@@ -585,7 +646,6 @@ function xmlifyContext(
         const headerCtx = mkCtx({ relationships: entry.relationships });
         const xmlData =
           XML_DECL + stringifyHeaderFooter("w:hdr", HEADER_NAMESPACES, entry.children, headerCtx);
-        headerFormattedViews.set(index, xmlData);
         // Header images get per-part relationship IDs starting at
         // relationshipCount+1, mirroring the document part. The placeholder pass
         // uses referenced-local positions, so body r:embed and .rels stay aligned.
@@ -596,12 +656,28 @@ function xmlifyContext(
           headerRelCount,
         );
         headerMediaResults.set(index, headerMedia);
+        // OLE embeddings reuse the same {fileName} placeholder bridge, offset
+        // chained past the media relationships (same order as the document part).
+        const headerEmbeddingOffset = headerRelCount + headerMedia.referenced.length;
+        const headerEmbeddings = findAndReplaceImagePlaceholders(
+          headerMedia.xml,
+          ctx.embeddings.array,
+          headerEmbeddingOffset,
+        );
+        headerEmbeddingResults.set(index, headerEmbeddings);
 
         for (const [i, ref] of headerMedia.referenced.entries()) {
           entry.relationships.addRelationship(
             headerRelCount + i,
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
             `media/${ref.fileName}`,
+          );
+        }
+        for (const [i, ref] of headerEmbeddings.referenced.entries()) {
+          entry.relationships.addRelationship(
+            headerEmbeddingOffset + i,
+            OLE_OBJECT_RELATIONSHIP,
+            `embeddings/${ref.fileName}`,
           );
         }
 
@@ -613,12 +689,10 @@ function xmlifyContext(
       })
       .filter((r): r is XmlifyedFile => r !== undefined),
     Headers: ctx.headers.map((entry, index) => {
-      const headerMedia = headerMediaResults.get(index)!;
-      const tempXmlData = headerFormattedViews.get(index)!;
-      const xmlData = headerMedia.referenced.length > 0 ? headerMedia.xml : tempXmlData;
+      const headerEmbeddings = headerEmbeddingResults.get(index)!;
 
       return {
-        data: replaceNumberingPlaceholders(xmlData, ctx.numbering.concreteNumbering),
+        data: replaceNumberingPlaceholders(headerEmbeddings.xml, ctx.numbering.concreteNumbering),
         path: `word/${entry.partName ?? `header${index + 1}.xml`}`,
       };
     }),
@@ -663,7 +737,7 @@ function xmlifyContext(
         for (const [i, ref] of documentEmbeddings.referenced.entries()) {
           ctx.document.relationships.addRelationship(
             documentEmbeddingOffset + i,
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
+            OLE_OBJECT_RELATIONSHIP,
             `embeddings/${ref.fileName}`,
           );
         }
