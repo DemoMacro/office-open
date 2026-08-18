@@ -249,6 +249,66 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect(linked?.properties?.numStyleLink).toBe("NumStyle");
   });
 
+  it("keeps orphan abstractNums (no w:num reference) as instance-less definitions", () => {
+    // Word keeps abstractNums whose concrete num was deleted; styles may still
+    // reference them. Dropping them loses the definition wholesale on round-trip.
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:multiLevelType w:val="hybridMultilevel"/><w:name w:val="Used List"/>' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:abstractNum w:abstractNumId="7">' +
+      '<w:tmpl w:val="0409001D"/><w:name w:val="Orphan List"/>' +
+      '<w:lvl w:ilvl="0"><w:start w:val="5"/><w:numFmt w:val="lowerLetter"/><w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    expect(opts?.abstractNumberings.find((c) => c.reference === "list_1")).toBeDefined();
+    const orphan = opts?.abstractNumberings.find((c) => c.reference === "abstract_7");
+    expect(orphan).toBeDefined();
+    expect(orphan?.instanceCount ?? 0).toBe(0);
+    expect(orphan?.properties?.name).toBe("Orphan List");
+    expect(orphan?.properties?.tmpl).toBe("0409001D");
+    expect(orphan?.levels[0]?.start).toBe(5);
+
+    // Re-emitted: both definitions survive, only the referenced one gets a w:num.
+    const out = new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(writeCtx);
+    expect(out).toContain('w:name w:val="Orphan List"');
+    expect((out.match(/<w:num /g) ?? []).length).toBe(1);
+  });
+
+  it("replaces the level definition when a lvlOverride carries a nested w:lvl", () => {
+    // CT_NumLvl choice: startOverride | lvl. The nested-lvl form redefines the
+    // level wholesale (Word's "restart and redefine" shape) — parse must swap
+    // the level in, not just look at startOverride.
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1">' +
+      '<w:abstractNumId w:val="0"/>' +
+      '<w:lvlOverride w:ilvl="0"><w:lvl w:ilvl="0">' +
+      '<w:start w:val="3"/><w:numFmt w:val="lowerLetter"/><w:lvlText w:val="(%1)"/>' +
+      "</w:lvl></w:lvlOverride>" +
+      "</w:num>" +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    const first = opts?.abstractNumberings[0];
+    expect(first).toBeDefined();
+    expect(first!.levels[0]?.start).toBe(3);
+    expect(first!.levels[0]?.format).toBe("lowerLetter");
+    expect(first!.levels[0]?.text).toBe("(%1)");
+  });
+
   it("applies per-instance lvlOverride/startOverride over the abstract level start", () => {
     // abstract level 0 starts at 1; the concrete num re-pins it to 3 via
     // lvlOverride. parse must apply the override or the list's restart

@@ -495,47 +495,77 @@ export function parseNumberingDefinitions(
 
   const configs: NumberingOptions["abstractNumberings"] = [];
 
-  for (const { numId, abstractId, numEl } of numEntries) {
-    const abstractEl = abstractNums.get(abstractId);
-    if (!abstractEl) continue;
-
+  // Levels + style metadata of one w:abstractNum, shared by the referenced
+  // definitions below and the orphan sweep after them.
+  const parseAbstractDefinition = (
+    abstractEl: Element,
+  ): { levels: LevelsOptions[]; properties: AbstractNumberingPropertiesOptions } | undefined => {
     const levels: LevelsOptions[] = [];
     for (const child of abstractEl.elements ?? []) {
       if (child.name !== "w:lvl") continue;
       const levelOpts = parseLevelEl(child, parseParagraphProperties, ctx);
       if (levelOpts) levels.push(levelOpts);
     }
+    if (levels.length === 0) return undefined;
 
-    if (levels.length > 0) {
-      const properties: AbstractNumberingPropertiesOptions = {};
-      for (const [tag, key] of ABSTRACT_EXTRA_PROPS) {
-        const childEl = findChild(abstractEl, tag);
-        const v = childEl ? attr(childEl, "w:val") : undefined;
-        if (v) properties[key] = v;
-      }
-      const mltEl = findChild(abstractEl, "w:multiLevelType");
-      const mltVal = mltEl ? attr(mltEl, "w:val") : undefined;
-      if (mltVal) {
-        properties.multiLevelType = mltVal as AbstractNumberingPropertiesOptions["multiLevelType"];
-      }
-      const restartVal = attrBool(abstractEl, "w15:restartNumberingAfterBreak");
-      if (restartVal !== undefined) properties.restartNumberingAfterBreak = restartVal;
-      // Apply per-instance level start overrides. The abstract level defines
-      // the default start; a concrete num may re-pin it via lvlOverride, and
-      // dropping it silently reverts the list's restart numbering.
-      for (const overrideEl of numEl.elements ?? []) {
-        if (overrideEl.name !== "w:lvlOverride") continue;
-        const ilvl = attrNum(overrideEl, "w:ilvl");
-        if (ilvl === undefined) continue;
-        const startOverrideEl = findChild(overrideEl, "w:startOverride");
-        if (!startOverrideEl) continue;
+    const properties: AbstractNumberingPropertiesOptions = {};
+    for (const [tag, key] of ABSTRACT_EXTRA_PROPS) {
+      const childEl = findChild(abstractEl, tag);
+      const v = childEl ? attr(childEl, "w:val") : undefined;
+      if (v) properties[key] = v;
+    }
+    const mltEl = findChild(abstractEl, "w:multiLevelType");
+    const mltVal = mltEl ? attr(mltEl, "w:val") : undefined;
+    if (mltVal) {
+      properties.multiLevelType = mltVal as AbstractNumberingPropertiesOptions["multiLevelType"];
+    }
+    const restartVal = attrBool(abstractEl, "w15:restartNumberingAfterBreak");
+    if (restartVal !== undefined) properties.restartNumberingAfterBreak = restartVal;
+    return { levels, properties };
+  };
+
+  for (const { numId, abstractId, numEl } of numEntries) {
+    const abstractEl = abstractNums.get(abstractId);
+    if (!abstractEl) continue;
+
+    const parsed = parseAbstractDefinition(abstractEl);
+    if (!parsed) continue;
+    // Apply per-instance level overrides (CT_NumLvl choice: startOverride
+    // re-pins the level's start; a nested w:lvl replaces the abstract level
+    // wholesale). Dropping either silently reverts the list's numbering.
+    for (const overrideEl of numEl.elements ?? []) {
+      if (overrideEl.name !== "w:lvlOverride") continue;
+      const ilvl = attrNum(overrideEl, "w:ilvl");
+      if (ilvl === undefined) continue;
+      const startOverrideEl = findChild(overrideEl, "w:startOverride");
+      if (startOverrideEl) {
         const val = attrNum(startOverrideEl, "w:val");
         if (val === undefined) continue;
-        const level = levels.find((l) => l.level === ilvl);
+        const level = parsed.levels.find((l) => l.level === ilvl);
         if (level) level.start = val;
+        continue;
       }
-      configs.push({ reference: `list_${numId}`, levels, properties, instanceCount: 1 });
+      const lvlEl = findChild(overrideEl, "w:lvl");
+      if (lvlEl) {
+        const levelOpts = parseLevelEl(lvlEl, parseParagraphProperties, ctx);
+        if (!levelOpts) continue;
+        const idx = parsed.levels.findIndex((l) => l.level === ilvl);
+        if (idx >= 0) parsed.levels[idx] = levelOpts;
+        else parsed.levels.push(levelOpts);
+      }
     }
+    configs.push({ reference: `list_${numId}`, ...parsed, instanceCount: 1 });
+  }
+
+  // Orphan abstractNums (no w:num references them) still carry their levels
+  // and style metadata — Word keeps them after their concrete num is deleted,
+  // and styles may reference them by name. Keep them as instance-less
+  // definitions (instanceCount: 0 emits the w:abstractNum without a w:num).
+  const referencedAbstractIds = new Set(numEntries.map((e) => e.abstractId));
+  for (const [abstractId, abstractEl] of abstractNums) {
+    if (referencedAbstractIds.has(abstractId)) continue;
+    const parsed = parseAbstractDefinition(abstractEl);
+    if (parsed) configs.push({ reference: `abstract_${abstractId}`, ...parsed, instanceCount: 0 });
   }
 
   if (configs.length === 0 && numPicBullets.length === 0 && numIdMacAtCleanup === undefined) {
