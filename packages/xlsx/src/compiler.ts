@@ -583,8 +583,7 @@ function compileWorksheetPart(
 
       // cNvPr @title stays unbridged: WorksheetChartOptions.title is the chart
       // title (c:title), not the graphicFrame's weak @title.
-      const chartCnvPr = pickNonVisualDrawingProperties(chart);
-      delete chartCnvPr.title;
+      const chartCnvPr = pickNonVisualDrawingProperties({ ...chart, title: undefined });
       drawingCharts.push({
         ...pickAnchorOptions(chart),
         ...chartCnvPr,
