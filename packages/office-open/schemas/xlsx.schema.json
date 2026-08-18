@@ -4945,6 +4945,14 @@
         "autoUpdate": {
           "type": "boolean"
         },
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "Embedded workbook bytes (round-trip). Word links each chart to an embedded xlsx via the chart part's own rels; without the bytes the c:externalData rId dangles and \"Edit Data\" breaks. Omit for fresh authoring."
+        },
+        "fileName": {
+          "description": "Source embeddings file basename, e.g. \"Microsoft_Excel_Worksheet1.xlsx\".",
+          "type": "string"
+        },
         "relationshipId": {
           "type": "string"
         }

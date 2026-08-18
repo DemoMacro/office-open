@@ -5903,6 +5903,14 @@
         "autoUpdate": {
           "type": "boolean"
         },
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "Embedded workbook bytes (round-trip). Word links each chart to an embedded xlsx via the chart part's own rels; without the bytes the c:externalData rId dangles and \"Edit Data\" breaks. Omit for fresh authoring."
+        },
+        "fileName": {
+          "description": "Source embeddings file basename, e.g. \"Microsoft_Excel_Worksheet1.xlsx\".",
+          "type": "string"
+        },
         "relationshipId": {
           "type": "string"
         }
@@ -10453,6 +10461,10 @@
           "description": "Field codes (o:OLEObject/o:FieldCodes child).",
           "type": "string"
         },
+        "fileName": {
+          "description": "Source embeddings file basename (round-trip, e.g. \"Microsoft_Excel_Worksheet1.xlsx\"). Pinning it keeps the original extension and its [Content_Types] Default entry instead of renaming everything to oleObjectN.bin.",
+          "type": "string"
+        },
         "objectId": {
           "description": "OLE object id (o:OLEObject/`@ObjectID`). Defaults to a generated id.",
           "type": "string"
@@ -10482,6 +10494,10 @@
             }
           ],
           "description": "Preview image bytes (binary or base64 data URL)."
+        },
+        "fileName": {
+          "description": "Source media file basename (round-trip). Pinning it keeps the original extension/numbering; type normalization alone would rename image2.jpeg to imageN.jpg and drop the source [Content_Types] Default entry.",
+          "type": "string"
         },
         "title": {
           "description": "Title for v:imagedata/`@o:title`.",
@@ -10516,6 +10532,10 @@
         },
         "fieldCodes": {
           "description": "Field codes (o:OLEObject/o:FieldCodes child).",
+          "type": "string"
+        },
+        "fileName": {
+          "description": "Source embeddings file basename (round-trip, e.g. \"Microsoft_Excel_Worksheet1.xlsx\"). Pinning it keeps the original extension and its [Content_Types] Default entry instead of renaming everything to oleObjectN.bin.",
           "type": "string"
         },
         "lockedField": {

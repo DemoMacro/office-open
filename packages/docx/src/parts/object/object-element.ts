@@ -33,6 +33,13 @@ import { createPictureData } from "../paragraph/run/picture-run";
 export interface ObjectEmbedOptions {
   /** OLE container binary — registered as word/embeddings/oleObjectN.bin. */
   data: Uint8Array | string;
+  /**
+   * Source embeddings file basename (round-trip, e.g.
+   * "Microsoft_Excel_Worksheet1.xlsx"). Pinning it keeps the original
+   * extension and its [Content_Types] Default entry instead of renaming
+   * everything to oleObjectN.bin.
+   */
+  fileName?: string;
   /** OLE program id (e.g. "Excel.Sheet.12"). */
   progId?: string;
   /** Draw aspect — how the object displays. */
@@ -68,6 +75,12 @@ export interface ObjectIconImageOptions {
   type: string;
   /** Title for v:imagedata/`@o:title`. */
   title?: string;
+  /**
+   * Source media file basename (round-trip). Pinning it keeps the original
+   * extension/numbering; type normalization alone would rename image2.jpeg
+   * to imageN.jpg and drop the source [Content_Types] Default entry.
+   */
+  fileName?: string;
 }
 
 export interface ObjectElementOptions {
@@ -133,6 +146,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
               type: iconType,
               ...createPictureData(rawData, { width: widthVal, height: heightVal }, fileName),
             }) as MediaData,
+          opts.iconImage.fileName,
         );
         imagedataOptions = {
           relationshipId: `{${iconFileName}}`,
@@ -231,6 +245,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
           result.iconImage = {
             data: media.bytes,
             type: extensionOf(media.path),
+            fileName: media.path.split("/").pop() ?? media.path,
             ...(imagedata.officeTitle !== undefined ? { title: imagedata.officeTitle } : {}),
           };
         }
@@ -243,7 +258,10 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     if (oleEl) {
       const common = parseOleObject(oleEl);
       const payload = resolveBinary(attr(oleEl, "r:id"), ctx);
-      if (payload) common.data = payload.bytes;
+      if (payload) {
+        common.data = payload.bytes;
+        common.fileName = payload.path.split("/").pop() ?? payload.path;
+      }
       if (attr(oleEl, "Type") === "Link") {
         const updateMode = attr(oleEl, "UpdateMode");
         const lockedFieldEl = findChild(oleEl, "o:LockedField");
@@ -261,7 +279,10 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     if (embedEl) {
       const embed = parseEmbed(embedEl);
       const payload = resolveBinary(attr(embedEl, "r:id"), ctx);
-      if (payload) embed.data = payload.bytes;
+      if (payload) {
+        embed.data = payload.bytes;
+        embed.fileName = payload.path.split("/").pop() ?? payload.path;
+      }
       result.embed = embed;
     }
 
@@ -269,7 +290,10 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     if (linkEl) {
       const base = parseEmbed(linkEl);
       const payload = resolveBinary(attr(linkEl, "r:id"), ctx);
-      if (payload) base.data = payload.bytes;
+      if (payload) {
+        base.data = payload.bytes;
+        base.fileName = payload.path.split("/").pop() ?? payload.path;
+      }
       const updateMode = attr(linkEl, "w:updateMode");
       const lockedField = attr(linkEl, "w:lockedField");
       result.link = {
@@ -321,7 +345,9 @@ function resolveBinary(
 
 /** Register an OLE embedding and return its allocated file name. */
 function registerEmbedding(opts: ObjectEmbedOptions, ctx: BodyContext): string {
-  const fileName = ctx.file.embeddings.nextEmbeddingName();
+  // Round-tripped payloads keep their source name (extension + Default entry);
+  // fresh authoring gets the sequential oleObjectN.bin name.
+  const fileName = opts.fileName ?? ctx.file.embeddings.nextEmbeddingName();
   const data: EmbeddingData = {
     fileName,
     data: toUint8Array(opts.data) as Uint8Array,

@@ -6,7 +6,7 @@
  * @module
  */
 import type { ChartSpaceOptions } from "@office-open/core";
-import { parseOnOff } from "@office-open/core";
+import { parseOnOff, partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core";
 import {
   blipDesc,
   convertEmuToPixels,
@@ -885,6 +885,33 @@ function parseGroupChild(el: Element, ctx: DocxReadContext): GroupChildMediaData
 }
 
 /**
+ * Bridge c:externalData's r:id to the embedded workbook through the chart
+ * part's own rels: carry the bytes + source file name so the compiler can
+ * rebuild the embedding part and its relationship. Without them the re-emitted
+ * rId dangles (the chart rels are not regenerated) and "Edit Data" breaks.
+ */
+function bridgeChartExternalData(
+  chartPath: string,
+  chartOpts: ChartSpaceOptions,
+  ctx: DocxReadContext,
+): void {
+  const ext = chartOpts.externalData;
+  if (!ext || ext.data !== undefined) return;
+  const relsEl = ctx.docx.doc.get(partPathToRelsPath(chartPath));
+  if (!relsEl) return;
+  const rel = relsEl.elements?.find(
+    (e) => e.name === "Relationship" && attr(e, "Id") === ext.relationshipId,
+  );
+  const target = rel ? attr(rel, "Target") : undefined;
+  if (!target) return;
+  const embeddingPath = resolveRelationshipTarget(chartPath, target);
+  const data = ctx.docx.doc.getRaw(embeddingPath);
+  if (!data) return;
+  ext.data = data;
+  ext.fileName = embeddingPath.split("/").pop() ?? embeddingPath;
+}
+
+/**
  * Parse a wpg:graphicFrame group child (CT_GraphicFrame). Charts are the
  * payload Word produces in groups; the chart part is re-registered on
  * generate from the parsed chartOptions.
@@ -902,6 +929,7 @@ function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaDa
   // stringifies on generate) — keeps axes, externalData, spPr, dLbls, …
   const chartOpts = chartSpaceDesc.parse(chartXml, ctx);
   if (!chartOpts.type) return undefined;
+  bridgeChartExternalData(chartPath, chartOpts as ChartSpaceOptions, ctx);
 
   const md: ChartMediaData = {
     type: "chart",
@@ -1106,6 +1134,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   // that stringifies on generate, so every field round-trips symmetrically.
   const chartSpace = chartSpaceDesc.parse(chartXml, ctx);
   if (!chartSpace.type) return undefined;
+  bridgeChartExternalData(chartPath, chartSpace as ChartSpaceOptions, ctx);
 
   // Anchor wrapper fields: extent, alt text, frame locks.
   const info = parseAnchorOrInline(el);

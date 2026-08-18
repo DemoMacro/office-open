@@ -9,6 +9,7 @@
 
 import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
 import type { ColorMappingOptions } from "../theme/theme-options";
+import type { DataType } from "../util/data-type";
 
 // ── Series common (CT_Ser shared children) ──
 
@@ -513,6 +514,14 @@ export interface ProtectionOptions {
 export interface ExternalDataOptions {
   relationshipId: string;
   autoUpdate?: boolean;
+  /**
+   * Embedded workbook bytes (round-trip). Word links each chart to an embedded
+   * xlsx via the chart part's own rels; without the bytes the c:externalData
+   * rId dangles and "Edit Data" breaks. Omit for fresh authoring.
+   */
+  data?: DataType;
+  /** Source embeddings file basename, e.g. "Microsoft_Excel_Worksheet1.xlsx". */
+  fileName?: string;
 }
 
 // ── Print settings (CT_PrintSettings) ──

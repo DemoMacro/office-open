@@ -229,7 +229,11 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       if (rel.name !== "Relationship") continue;
       const type = attr(rel, "Type") ?? "";
       const isBinaryPart =
-        type.includes("/image") || type.includes("/media") || type.includes("/oleObject");
+        type.includes("/image") ||
+        type.includes("/media") ||
+        type.includes("/oleObject") ||
+        // /package = embedded OPC workbook (xlsx/xlsb behind OLE objects)
+        type.includes("/package");
       if (!isBinaryPart) continue;
       const id = attr(rel, "Id") ?? "";
       const target = attr(rel, "Target") ?? "";

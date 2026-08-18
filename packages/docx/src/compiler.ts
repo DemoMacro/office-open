@@ -39,7 +39,7 @@ import {
   stringifyLayoutDefinitionPart,
   stringifyStyleDefinitionPart,
 } from "@office-open/core/smartart";
-import { OOXML_XML_DECLARATION } from "@office-open/xml";
+import { OOXML_XML_DECLARATION, escapeXml } from "@office-open/xml";
 import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 import { HEADER_NAMESPACES, FOOTER_NAMESPACES, stringifyHeaderFooter } from "@parts/header-footer";
@@ -78,6 +78,9 @@ const DOCX_MEDIA_CONTENT_TYPES: Record<string, string> = {
   ...IMAGE_MEDIA_CONTENT_TYPES,
   odttf: "application/vnd.openxmlformats-officedocument.obfuscatedFont",
   bin: "application/vnd.openxmlformats-officedocument.oleObject",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  xlsb: "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
 };
 
 /** Extended context for header/footer formatted view caching. */
@@ -745,6 +748,41 @@ function xmlifyContext(
             data: XML_DECL + chartData.chartSpaceXml,
             path: `word/charts/chart${i + 1}.xml`,
           })),
+          // Embedded workbooks behind c:externalData: each chart's own rels
+          // part plus the word/embeddings binary. The relationship id is
+          // carried verbatim so the re-emitted r:id resolves without rewriting.
+          ...(ctx.charts.array.some((c) => c.embedding)
+            ? {
+                ChartRels: ctx.charts.array.flatMap((chartData, i) => {
+                  const e = chartData.embedding;
+                  if (!e) return [];
+                  const relsXml =
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+                    `<Relationship Id="${escapeXml(e.relationshipId)}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/package" Target="../embeddings/${escapeXml(e.fileName)}"/>` +
+                    "</Relationships>";
+                  return [
+                    {
+                      data: XML_DECL + relsXml,
+                      path: `word/charts/_rels/chart${i + 1}.xml.rels`,
+                    },
+                  ];
+                }),
+                ChartEmbeddings: (() => {
+                  const seen = new Set<string>();
+                  const parts: { data: Uint8Array; path: string }[] = [];
+                  for (const c of ctx.charts.array) {
+                    const e = c.embedding;
+                    if (!e || seen.has(e.fileName)) continue;
+                    seen.add(e.fileName);
+                    parts.push({
+                      data: toUint8Array(e.data),
+                      path: `word/embeddings/${e.fileName}`,
+                    });
+                  }
+                  return parts;
+                })(),
+              }
+            : {}),
         }
       : {}),
     ...(ctx.smartArts.array.length > 0

@@ -791,9 +791,19 @@ export function stringifyChildDispatch(
       ...chartSpace
     } = opts;
     const chartXml = chartSpaceDesc.stringify(chartSpace, ctx.file);
+    const externalData = chartSpace.externalData;
     ctx.file.charts.addChart(chartKey, {
       key: chartKey,
       chartSpaceXml: chartXml ?? "",
+      ...(externalData?.data !== undefined && externalData.fileName
+        ? {
+            embedding: {
+              relationshipId: externalData.relationshipId,
+              fileName: externalData.fileName,
+              data: externalData.data,
+            },
+          }
+        : {}),
     });
 
     const drawingXml = drawingDesc.stringify(
@@ -911,9 +921,19 @@ export function stringifyChildDispatch(
           // compiler like a top-level chart run.
           if (c.chartOptions && !c.chartKey) {
             c.chartKey = `chart_${nextChartId++}`;
+            const externalData = c.chartOptions.externalData;
             ctx.file.charts.addChart(c.chartKey, {
               key: c.chartKey,
               chartSpaceXml: chartSpaceDesc.stringify(c.chartOptions, ctx.file) ?? "",
+              ...(externalData?.data !== undefined && externalData.fileName
+                ? {
+                    embedding: {
+                      relationshipId: externalData.relationshipId,
+                      fileName: externalData.fileName,
+                      data: externalData.data,
+                    },
+                  }
+                : {}),
             });
           }
           continue;
