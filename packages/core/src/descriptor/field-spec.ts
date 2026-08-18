@@ -52,7 +52,8 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
   {
     id: "core-properties",
     optionsInterface: "CorePropertiesOptions",
-    // 10 interface fields — created/modified are now carried for round-trip fidelity.
+    // 15 interface fields — created/modified + the five CT_CoreProperties
+    // string fields (category/contentStatus/identifier/language/version).
     interfaceFields: [
       "title",
       "subject",
@@ -64,8 +65,13 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "lastPrinted",
       "created",
       "modified",
+      "category",
+      "contentStatus",
+      "identifier",
+      "language",
+      "version",
     ],
-    // stringify emits all 10 fields; created/modified default to now when absent.
+    // stringify emits all 15 fields; created/modified default to now when absent.
     writeFields: [
       "title",
       "subject",
@@ -77,8 +83,13 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "lastPrinted",
       "created",
       "modified",
+      "category",
+      "contentStatus",
+      "identifier",
+      "language",
+      "version",
     ],
-    // parse reads back all 10 interface fields.
+    // parse reads back all 15 interface fields.
     parseFields: [
       "title",
       "subject",
@@ -90,6 +101,11 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "lastPrinted",
       "created",
       "modified",
+      "category",
+      "contentStatus",
+      "identifier",
+      "language",
+      "version",
     ],
     sampleOptions: {
       title: "T",
@@ -102,8 +118,14 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       lastPrinted: "2024-01-02T03:04:05Z",
       created: "2018-05-11T07:02:00Z",
       modified: "2026-04-10T02:02:36Z",
+      category: "cat",
+      contentStatus: "draft",
+      identifier: "id-1",
+      language: "en-US",
+      version: "1.2",
     },
-    notes: "created/modified round-tripped verbatim from dcterms:created/modified.",
+    notes:
+      "created/modified round-tripped verbatim from dcterms:created/modified; the five string fields map CT_CoreProperties elements 1:1.",
   },
   {
     id: "paragraph-properties",
