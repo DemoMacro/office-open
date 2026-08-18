@@ -130,6 +130,10 @@ export const commentsDesc: CustomDescriptor<CommentOptions[], BodyContext> = {
             const bs: BookmarkStartOptions = { id, name };
             const disp = attr(sub, "w:displacedByCustomXml");
             if (disp === "before" || disp === "after") bs.displacedByCustomXml = disp;
+            const colFirst = attrNum(sub, "w:colFirst");
+            if (colFirst !== undefined) bs.colFirst = colFirst;
+            const colLast = attrNum(sub, "w:colLast");
+            if (colLast !== undefined) bs.colLast = colLast;
             children.push({ bookmarkStart: bs });
           }
         } else if (sub.name === "w:bookmarkEnd") {
