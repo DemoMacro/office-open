@@ -8121,6 +8121,10 @@
         "bookmarkIdSeed": {
           "type": "number"
         },
+        "category": {
+          "description": "Document category, round-tripped from cp:category.",
+          "type": "string"
+        },
         "colorMru": {
           "items": {
             "type": "string"
@@ -8132,6 +8136,10 @@
         },
         "conformance": {
           "enum": ["strict", "transitional"],
+          "type": "string"
+        },
+        "contentStatus": {
+          "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
           "type": "string"
         },
         "created": {
@@ -8178,6 +8186,10 @@
         "htmlPublish": {
           "$ref": "#/definitions/HtmlPublishPropertiesOptions"
         },
+        "identifier": {
+          "description": "Unique document identifier, round-tripped from dc:identifier.",
+          "type": "string"
+        },
         "includeHandoutMaster": {
           "type": "boolean"
         },
@@ -8192,6 +8204,10 @@
             "$ref": "#/definitions/KinsokuOptions"
           },
           "type": "array"
+        },
+        "language": {
+          "description": "Document language (RFC 3066), round-tripped from dc:language.",
+          "type": "string"
         },
         "lastModifiedBy": {
           "type": "string"
@@ -8273,6 +8289,10 @@
           "$ref": "#/definitions/TableStyleListOptions"
         },
         "title": {
+          "type": "string"
+        },
+        "version": {
+          "description": "Document version number, round-tripped from cp:version.",
           "type": "string"
         },
         "view": {

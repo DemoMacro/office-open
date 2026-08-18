@@ -22,6 +22,16 @@ export interface CorePropertiesOptions {
   created?: string;
   /** Last modified timestamp (W3CDTF), round-tripped from dcterms:modified. */
   modified?: string;
+  /** Document category, round-tripped from cp:category. */
+  category?: string;
+  /** Document status (e.g. "Draft"), round-tripped from cp:contentStatus. */
+  contentStatus?: string;
+  /** Unique document identifier, round-tripped from dc:identifier. */
+  identifier?: string;
+  /** Document language (RFC 3066), round-tripped from dc:language. */
+  language?: string;
+  /** Document version number, round-tripped from cp:version. */
+  version?: string;
 }
 
 const FIELD_MAP: Array<{ name: string; key: keyof CorePropertiesOptions }> = [
@@ -34,6 +44,11 @@ const FIELD_MAP: Array<{ name: string; key: keyof CorePropertiesOptions }> = [
   { name: "cp:lastPrinted", key: "lastPrinted" },
   { name: "dcterms:created", key: "created" },
   { name: "dcterms:modified", key: "modified" },
+  { name: "cp:category", key: "category" },
+  { name: "cp:contentStatus", key: "contentStatus" },
+  { name: "dc:identifier", key: "identifier" },
+  { name: "dc:language", key: "language" },
+  { name: "cp:version", key: "version" },
 ];
 
 /**
@@ -94,6 +109,14 @@ export function buildCorePropertiesXmlString(opts: CorePropertiesOptions): strin
   const now = new Date().toISOString();
   p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`);
   p.push(`<dcterms:modified xsi:type="dcterms:W3CDTF">${opts.modified ?? now}</dcterms:modified>`);
+  // Trailing slots mirror Word's emission order (category last in real files).
+  if (opts.category !== undefined) p.push(`<cp:category>${escapeXml(opts.category)}</cp:category>`);
+  if (opts.contentStatus !== undefined)
+    p.push(`<cp:contentStatus>${escapeXml(opts.contentStatus)}</cp:contentStatus>`);
+  if (opts.identifier !== undefined)
+    p.push(`<dc:identifier>${escapeXml(opts.identifier)}</dc:identifier>`);
+  if (opts.language !== undefined) p.push(`<dc:language>${escapeXml(opts.language)}</dc:language>`);
+  if (opts.version !== undefined) p.push(`<cp:version>${escapeXml(opts.version)}</cp:version>`);
   p.push("</cp:coreProperties>");
   return p.join("");
 }

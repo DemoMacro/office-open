@@ -14439,6 +14439,10 @@
           "$ref": "#/definitions/CalculationPropertiesOptions",
           "description": "Calculation properties (CT_CalcPr)"
         },
+        "category": {
+          "description": "Document category, round-tripped from cp:category.",
+          "type": "string"
+        },
         "cellStyleXfs": {
           "description": "Named cell-style templates (CT_CellStyleXfs) — definitions referenced by cellStyles",
           "items": {
@@ -14470,6 +14474,10 @@
             "$ref": "#/definitions/ConnectionOptions"
           },
           "type": "array"
+        },
+        "contentStatus": {
+          "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
+          "type": "string"
         },
         "created": {
           "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created.",
@@ -14538,7 +14546,15 @@
           },
           "type": "array"
         },
+        "identifier": {
+          "description": "Unique document identifier, round-tripped from dc:identifier.",
+          "type": "string"
+        },
         "keywords": {
+          "type": "string"
+        },
+        "language": {
+          "description": "Document language (RFC 3066), round-tripped from dc:language.",
           "type": "string"
         },
         "lastModifiedBy": {
@@ -14616,6 +14632,10 @@
           "description": "Theme (xl/theme/theme1.xml) — structured round-trip; fresh default when omitted"
         },
         "title": {
+          "type": "string"
+        },
+        "version": {
+          "description": "Document version number, round-tripped from cp:version.",
           "type": "string"
         },
         "volTypes": {
