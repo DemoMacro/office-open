@@ -135,10 +135,16 @@ export function compileDocument(
     files[filePath] = font.rawOdttf ? font.data : obfuscate(font.data, font.fontKey);
   }
 
-  // Raw passthrough parts (word/theme/*, customXml/*, …) — generate doesn't
-  // rebuild these, so copy their original bytes verbatim to keep [Content_Types]
-  // declarations valid and the package openable in Word.
+  // Raw passthrough parts (word/theme/*, customXml/*, unknown extensions, …).
+  // The compiler output above wins over a passthrough copy at the same path —
+  // media/embeddings/fonts absorbed into the model are re-emitted under their
+  // pinned source paths, so only what the model missed actually passes through.
+  const passthroughSkipped = new Set<string>();
   for (const part of ctx._options.rawParts ?? []) {
+    if (files[part.path] !== undefined) {
+      passthroughSkipped.add(part.path);
+      continue;
+    }
     files[part.path] = toUint8Array(part.data);
   }
 
@@ -147,7 +153,9 @@ export function compileDocument(
   // extensions from `ctx` now sees the complete set. Building it inside
   // xmlifyContext's object literal evaluated it before header/footer/font media
   // was registered, leaving jpg/gif/odttf without a covering Default.
-  files["[Content_Types].xml"] = encoder.encode(buildContentTypesData(ctx, files));
+  files["[Content_Types].xml"] = encoder.encode(
+    buildContentTypesData(ctx, files, passthroughSkipped),
+  );
 
   return files;
 }
@@ -226,7 +234,11 @@ function mergedCommentChildren(ctx: DocxWriteContext): CommentOptions[] {
  * regenerates every part path (altChunks get a fresh uniqueId), so deriving
  * from the written files is what keeps declarations and parts in sync.
  */
-function buildContentTypesData(ctx: DocxWriteContext, files: Zippable): string {
+function buildContentTypesData(
+  ctx: DocxWriteContext,
+  files: Zippable,
+  passthroughSkipped: ReadonlySet<string>,
+): string {
   const overrides = [
     ...ctx.altChunks.array.map((ac) => ({
       path: `word/${ac.path}`,
@@ -243,6 +255,19 @@ function buildContentTypesData(ctx: DocxWriteContext, files: Zippable): string {
     mediaContentTypes: DOCX_MEDIA_CONTENT_TYPES,
     overrides,
   });
+  // Passthrough parts whose extension has no covering Default would leave the
+  // package invalid (an undeclared part — Word refuses to open). Only those
+  // borrow their source content-type declaration as a per-part Override;
+  // extensions already covered (xml/rels/media) stay as derived above.
+  const coveredExt = new Set(input.defaults.map((d) => d.extension.toLowerCase()));
+  for (const part of ctx._options.rawParts ?? []) {
+    if (part.contentType === undefined || passthroughSkipped.has(part.path)) continue;
+    const dot = part.path.lastIndexOf(".");
+    const slash = part.path.lastIndexOf("/");
+    const ext = dot > slash ? part.path.slice(dot + 1).toLowerCase() : undefined;
+    if (ext && coveredExt.has(ext)) continue;
+    input.overrides.push({ partName: `/${part.path}`, contentType: part.contentType });
+  }
   return XML_DECL + (contentTypesDesc.stringify(input, ctx) ?? "");
 }
 

@@ -7,7 +7,7 @@
  * @module
  */
 
-import { Relationships, buildRootRelationships } from "@office-open/core";
+import { Relationships, buildRootRelationships, type RelationshipType } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { SmartArtCollection } from "@office-open/core/smartart";
@@ -594,29 +594,27 @@ export class DocxWriteContext implements WriteContext {
     // Theme — always present: fresh-compile generates a default theme, round-trip
     // passes the source theme through rawParts. Word needs the document→theme
     // relationship to resolve theme colors/fonts.
-    const themePart = this._options.rawParts?.find((p) => p.path.startsWith("word/theme/"));
+    // Other document relationships that point at passthrough parts (customXml
+    // items, …) are re-emitted verbatim from the captured source .rels —
+    // targets are passthrough paths that never move.
+    const passthroughDocRels = (this._options.passthroughRelationships ?? []).filter(
+      (r) => r.source === "word/document.xml",
+    );
+    const themeRel = passthroughDocRels.find((r) => r.relationshipType.endsWith("/theme"));
     this.document.relationships.addRelationship(
       this._currentRelationshipId++,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-      themePart ? themePart.path.replace(/^word\//, "") : "theme/theme1.xml",
+      themeRel ? themeRel.target : "theme/theme1.xml",
     );
-
-    // customXml storage — raw-passthrough parts. Declare the document→customXml
-    // relationship for each item (itemProps are linked via the item's own .rels,
-    // not directly by the document) so Word can bind cover-page metadata, etc.
-    for (const part of this._options.rawParts ?? []) {
-      if (
-        part.path.startsWith("customXml/") &&
-        part.path.endsWith(".xml") &&
-        !part.path.includes("/_rels/") &&
-        !part.path.includes("itemProps")
-      ) {
-        this.document.relationships.addRelationship(
-          this._currentRelationshipId++,
-          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml",
-          `../${part.path}`,
-        );
-      }
+    for (const rel of passthroughDocRels) {
+      if (rel === themeRel) continue;
+      // Passthrough relationship types come from arbitrary source packages
+      // (any third-party extension); the union only documents the known ones.
+      this.document.relationships.addRelationship(
+        this._currentRelationshipId++,
+        rel.relationshipType as RelationshipType,
+        rel.target,
+      );
     }
   }
 }

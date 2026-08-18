@@ -1,7 +1,11 @@
 import type { ParsedArchive } from "@office-open/core";
 import { parseArchive } from "@office-open/core";
 import type { DataType } from "@office-open/core";
-import { resolveRelationshipTarget, toUint8Array } from "@office-open/core";
+import {
+  collectPassthroughParts,
+  resolveRelationshipTarget,
+  toUint8Array,
+} from "@office-open/core";
 import { contentTypesDesc } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -526,49 +530,67 @@ export function parseDocument(data: DataType): DocumentOptions {
   }
 
   // Raw passthrough: parts generate() doesn't rebuild (word/theme/*, customXml/*,
-  // the legacy word/stylesWithEffects.xml, glossary companion parts — generate
-  // rebuilds only glossary document.xml). Carried verbatim so their
-  // [Content_Types] declarations stay valid and the package opens in Word.
-  // (Media/fonts/headers/etc. are rebuilt by the compiler and must NOT be passed
-  // through — they'd otherwise duplicate under renamed paths.)
-  const rawParts: { path: string; data: Uint8Array }[] = [];
-  const RAW_PART_PATHS = new Set(["word/stylesWithEffects.xml"]);
-  for (const p of docx.doc.keys()) {
-    if (p.endsWith("/")) continue;
-    const isGlossaryCompanion =
-      p.startsWith("word/glossary/") && p !== "word/glossary/document.xml";
-    if (
-      !RAW_PART_PATHS.has(p) &&
-      !isGlossaryCompanion &&
-      !["word/theme/", "customXml/"].some((prefix) => p.startsWith(prefix))
-    ) {
-      continue;
+  // Package-wide passthrough (SDK ExtendedPart analogue): every part the
+  // model did NOT absorb is carried verbatim instead of dropped. The list
+  // below names the parts whose XML content the compiler rebuilds from the
+  // model — their .rels must be rebuilt together (a passthrough .rels would
+  // carry source rIds that no longer match the renumbered content).
+  // Media/embeddings/fonts are deliberately NOT listed: the compiler writes
+  // them under pinned source paths and its output wins over the passthrough
+  // copy by assembly order, while anything the model missed survives here.
+  const rebuilt: string[] = ["word/document.xml", "word/_rels/document.xml.rels"];
+  if (docx.coreProps) rebuilt.push(docx.coreProps);
+  if (docx.appProps) rebuilt.push(docx.appProps);
+  if (docx.customProps) rebuilt.push(docx.customProps);
+  if (docx.settings) rebuilt.push("word/settings.xml");
+  if (docx.styles) rebuilt.push("word/styles.xml");
+  if (docx.numbering) rebuilt.push("word/numbering.xml");
+  if (docx.fontTable) rebuilt.push("word/fontTable.xml");
+  if (docx.webSettings) rebuilt.push("word/webSettings.xml");
+  for (const section of opts.sections ?? []) {
+    for (const slot of Object.values(section.headers?.partNames ?? {})) {
+      if (!slot) continue;
+      rebuilt.push(`word/${slot}`);
+      rebuilt.push(`word/_rels/${slot}.rels`);
     }
-    const data = docx.doc.getRaw(p);
-    if (data) rawParts.push({ path: p, data });
-  }
-  // Theme texture media: a theme's fmtScheme blipFill references images
-  // through word/theme/_rels/*.rels; the theme XML passes through verbatim but
-  // those companion media parts must be carried too, or the rIds dangle and
-  // the [Content_Types] Default for their extension is lost.
-  for (const p of docx.doc.keys()) {
-    if (!p.startsWith("word/theme/_rels/") || !p.endsWith(".rels")) continue;
-    const themeName = p.slice("word/theme/_rels/".length, -".rels".length);
-    const relsEl = docx.doc.get(p);
-    if (!relsEl) continue;
-    for (const rel of relsEl.elements ?? []) {
-      if (rel.name !== "Relationship") continue;
-      const type = attr(rel, "Type") ?? "";
-      if (!type.includes("/image") && !type.includes("/media")) continue;
-      const target = attr(rel, "Target") ?? "";
-      if (!target) continue;
-      const mediaPath = resolveRelationshipTarget(`word/theme/${themeName}`, target);
-      if (rawParts.some((r) => r.path === mediaPath)) continue;
-      const data = docx.doc.getRaw(mediaPath);
-      if (data) rawParts.push({ path: mediaPath, data });
+    for (const slot of Object.values(section.footers?.partNames ?? {})) {
+      if (!slot) continue;
+      rebuilt.push(`word/${slot}`);
+      rebuilt.push(`word/_rels/${slot}.rels`);
     }
   }
-  if (rawParts.length > 0) opts.rawParts = rawParts;
+  if (opts.comments) {
+    rebuilt.push(docx.partRefs.comments!, "word/_rels/comments.xml.rels");
+  }
+  if (opts.people) rebuilt.push(docx.partRefs.people!);
+  if (opts.commentsExtended) rebuilt.push(docx.partRefs.commentsExtended!);
+  if (opts.footnotes) {
+    rebuilt.push(docx.partRefs.footnotes!, "word/_rels/footnotes.xml.rels");
+  }
+  if (opts.endnotes) {
+    rebuilt.push(docx.partRefs.endnotes!, "word/_rels/endnotes.xml.rels");
+  }
+  if (opts.bibliography) rebuilt.push(docx.partRefs.bibliography!);
+  if (opts.glossary) rebuilt.push(docx.partRefs.glossary!);
+  for (const p of docx.partRefs.charts.values()) rebuilt.push(p);
+  // Diagram part XML is re-emitted (dataModel/stub) but their .rels are not —
+  // passthrough keeps them (and the media only they reference) alive.
+  for (const refs of [
+    docx.partRefs.diagramData,
+    docx.partRefs.diagramLayout,
+    docx.partRefs.diagramQuickStyle,
+    docx.partRefs.diagramColors,
+  ]) {
+    for (const p of refs.values()) rebuilt.push(p);
+  }
+  for (const p of docx.partRefs.afChunks.values()) rebuilt.push(p);
+  for (const p of docx.partRefs.subDocs.values()) rebuilt.push(p);
+  const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
+    docx.doc,
+    rebuilt,
+  );
+  if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
+  if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
 
   return opts as DocumentOptions;
 }
