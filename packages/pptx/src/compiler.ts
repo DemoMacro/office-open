@@ -527,6 +527,7 @@ function buildPresAttrOpts(
     | "kinsoku"
     | "customerData"
     | "smartTags"
+    | "defaultTextStyle"
   >
 > {
   if (
@@ -548,7 +549,8 @@ function buildPresAttrOpts(
     options.customShows === undefined &&
     options.kinsoku === undefined &&
     options.customerData === undefined &&
-    options.smartTags === undefined
+    options.smartTags === undefined &&
+    options.defaultTextStyle === undefined
   ) {
     return {};
   }
@@ -572,6 +574,7 @@ function buildPresAttrOpts(
     kinsoku: options.kinsoku,
     customerData: options.customerData,
     smartTags: options.smartTags,
+    defaultTextStyle: options.defaultTextStyle,
   };
 }
 
@@ -839,8 +842,10 @@ export function compilePresentation(
     }
   }
 
-  // Notes Master
-  if (notesOptions.length > 0) {
+  // Notes Master — emitted when notes slides exist or the source carried one.
+  const includeNotesMasterPart =
+    notesOptions.length > 0 || options.notesMasterOptions !== undefined;
+  if (includeNotesMasterPart) {
     const notesMasterRId = presRels.add(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
       "notesMasters/notesMaster1.xml",
@@ -851,7 +856,7 @@ export function compilePresentation(
       data: XML_DECL + (notesMasterDesc.stringify(options.notesMasterOptions ?? {}, descCtx) ?? ""),
       path: "ppt/notesMasters/notesMaster1.xml",
     };
-    const notesMasterThemeXml = createThemeXml();
+    const notesMasterThemeXml = createThemeXml(options.notesMasterOptions?.theme, descCtx);
     mapping["NotesMasterTheme"] = {
       data: XML_DECL + notesMasterThemeXml,
       path: `ppt/theme/theme${notesMasterThemeIndex}.xml`,
@@ -875,7 +880,7 @@ export function compilePresentation(
       "handoutMasters/handoutMaster1.xml",
     );
     presOptions.handoutMasterRId = handoutMasterRId;
-    const handoutMasterThemeIndex = themes.length + (notesOptions.length > 0 ? 2 : 1);
+    const handoutMasterThemeIndex = themes.length + (includeNotesMasterPart ? 2 : 1);
     mapping["HandoutMaster"] = {
       data:
         XML_DECL +

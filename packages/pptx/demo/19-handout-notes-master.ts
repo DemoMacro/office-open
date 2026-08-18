@@ -33,9 +33,9 @@ const options: PresentationOptions = {
     },
     notesStyle: {
       levels: [
-        { alignment: "l", marginIndent: 0, defaultRun: { size: 14 } },
-        { marginIndent: 457200, defaultRun: { size: 12 } },
-        { marginIndent: 914400, defaultRun: { size: 12 } },
+        { alignment: "left", indent: 0, defaultRunProperties: { size: 14 } },
+        { indent: 457200, defaultRunProperties: { size: 12 } },
+        { indent: 914400, defaultRunProperties: { size: 12 } },
       ],
     },
   },

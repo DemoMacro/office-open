@@ -80,7 +80,22 @@ export interface ViewPropertiesOptions {
     showFormatting?: boolean;
     view: CommonViewPropertiesOptions;
   };
-  notesView?: boolean;
+  /**
+   * Notes view (`p:notesViewPr`) — true emits the default empty view; an
+   * object carries its zoom/origin and its own guide list.
+   */
+  notesView?: boolean | NotesViewOptions;
+}
+
+/** The `p:notesViewPr` payload — a CT_CommonSlideViewProperties (view + guides). */
+export interface NotesViewOptions {
+  /** Zoom/origin of the notes view (`p:cViewPr`). */
+  view?: CommonViewPropertiesOptions;
+  /** Notes-view guides (`p:guideLst`). */
+  guides?: {
+    orient?: "vert" | "horz";
+    pos?: number;
+  }[];
 }
 
 function portionXml(
@@ -208,7 +223,14 @@ export function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
   // notesViewPr — sequence: cSldViewPr
   if (opts?.notesView) {
     parts.push("<p:notesViewPr>");
-    parts.push(buildCSldViewPrXml());
+    parts.push(
+      typeof opts.notesView === "boolean"
+        ? buildCSldViewPrXml()
+        : buildCSldViewPrXml(
+            opts.notesView.view ? { view: opts.notesView.view } : undefined,
+            opts.notesView.guides,
+          ),
+    );
     parts.push("</p:notesViewPr>");
   }
 

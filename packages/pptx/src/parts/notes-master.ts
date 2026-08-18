@@ -1,5 +1,6 @@
 import type { ColorMappingOptions } from "@office-open/core";
 import type { TextListStyleOptions } from "@office-open/core/drawing";
+import type { ThemeOptions } from "@office-open/core/theme";
 import type { BackgroundOptions } from "@parts/background";
 import type { SlideChild } from "@parts/slide/slide-child";
 
@@ -19,6 +20,8 @@ export interface NotesMasterOptions {
   headerFooter?: HeaderFooterOptions;
   /** Notes text style (p:notesStyle, CT_TextListStyle); defaults to the Office 9-level notes style. */
   notesStyle?: TextListStyleOptions;
+  /** The notes master's own theme part (ppt/theme/themeN.xml); defaults to the Office theme. */
+  theme?: ThemeOptions;
 }
 
 /** MS Office default notes style — 9 levels, 12pt minor font, incremental margins. */

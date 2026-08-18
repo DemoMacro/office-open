@@ -13,6 +13,7 @@ import {
   type CommonViewPropertiesOptions,
   type NormalViewOptions,
   type NormalViewPortionOptions,
+  type NotesViewOptions,
   type SlideViewOptions,
   type ViewPropertiesOptions,
 } from "@parts/view-properties";
@@ -59,6 +60,21 @@ function parseNormalViewPortion(el: XmlElement): NormalViewPortionOptions {
   const autoAdjust = attrNum(el, "autoAdjust");
   if (autoAdjust !== undefined) portion.autoAdjust = autoAdjust === 1;
   return portion;
+}
+
+/** Read a p:guideLst's entries (shared by slide-view and notes-view guides). */
+function parseGuideLst(guideLst: XmlElement): { orient?: "vert" | "horz"; pos?: number }[] {
+  const guides: { orient?: "vert" | "horz"; pos?: number }[] = [];
+  for (const guide of guideLst.elements ?? []) {
+    if (guide.name !== "p:guide") continue;
+    const entry: { orient?: "vert" | "horz"; pos?: number } = {};
+    const orient = attr(guide, "orient");
+    if (orient) entry.orient = orient as "vert" | "horz";
+    const pos = attrNum(guide, "pos");
+    if (pos !== undefined) entry.pos = pos;
+    guides.push(entry);
+  }
+  return guides;
 }
 
 function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
@@ -117,16 +133,7 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
 
       const guideLst = findChild(cSldViewPr, "p:guideLst");
       if (guideLst) {
-        const guides: ViewPropertiesOptions["guides"] = [];
-        for (const guide of guideLst.elements ?? []) {
-          if (guide.name !== "p:guide") continue;
-          const entry: { orient?: "vert" | "horz"; pos?: number } = {};
-          const orient = attr(guide, "orient");
-          if (orient) entry.orient = orient as "vert" | "horz";
-          const pos = attrNum(guide, "pos");
-          if (pos !== undefined) entry.pos = pos;
-          guides.push(entry);
-        }
+        const guides = parseGuideLst(guideLst);
         if (guides.length > 0) result.guides = guides;
       }
     }
@@ -159,6 +166,21 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
     if (cViewPr) result.notesTextView = parseCommonViewProperties(cViewPr);
   }
 
+  // p:notesViewPr — cSldViewPr (view + guides)
+  const notesViewPr = findChild(el, "p:notesViewPr");
+  if (notesViewPr) {
+    const cSld = findChild(notesViewPr, "p:cSldViewPr");
+    const nv: NotesViewOptions = {};
+    const cViewPr = cSld ? findChild(cSld, "p:cViewPr") : undefined;
+    if (cViewPr) nv.view = parseCommonViewProperties(cViewPr);
+    const guideLst = cSld ? findChild(cSld, "p:guideLst") : undefined;
+    if (guideLst) {
+      const guides = parseGuideLst(guideLst);
+      if (guides.length > 0) nv.guides = guides;
+    }
+    result.notesView = Object.keys(nv).length > 0 ? nv : true;
+  }
+
   // p:sorterViewPr — cViewPr + @showFormatting
   const sorterViewPr = findChild(el, "p:sorterViewPr");
   if (sorterViewPr) {
@@ -173,9 +195,6 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
       result.sorterView = sorter;
     }
   }
-
-  // p:notesViewPr (presence flag — content is the default cSldViewPr)
-  if (findChild(el, "p:notesViewPr")) result.notesView = true;
 
   const gridSpacing = findChild(el, "p:gridSpacing");
   if (gridSpacing?.attributes) {

@@ -48,7 +48,10 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterOptions, PptxWriteCont
     parts.push("</p:cSld>");
 
     parts.push(stringifyColorMapping(opts.colorMapping, "p:clrMap"));
-    parts.push(`<p:hf ${buildHfAttrs(opts.headerFooter)}/>`);
+    // p:hf — optional; Office notes masters carry none by default.
+    if (opts.headerFooter !== undefined) {
+      parts.push(`<p:hf ${buildHfAttrs(opts.headerFooter)}/>`);
+    }
     parts.push(
       stringifyTextListStyleTag("p:notesStyle", opts.notesStyle ?? DEFAULT_NOTES_STYLE, ctx),
     );
@@ -90,7 +93,11 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterOptions, PptxWriteCont
     if (notesStyleEl) {
       const notesStyle = textListStyleDesc.parse(notesStyleEl, ctx);
       // An empty p:notesStyle parses to an empty list; keep the Office default.
-      if (notesStyle.defaultParagraph || (notesStyle.levels?.length ?? 0) > 0) {
+      if (
+        notesStyle.defaultParagraph ||
+        notesStyle.ext !== undefined ||
+        (notesStyle.levels?.length ?? 0) > 0
+      ) {
         result.notesStyle = notesStyle;
       }
     }

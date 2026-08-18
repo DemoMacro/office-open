@@ -19,6 +19,7 @@ import { PptxReadContext, ParseContext } from "./context";
 import { commentAuthorsDesc, slideCommentsDesc } from "./parts/descriptors/comments";
 import { notesMasterDesc } from "./parts/descriptors/notes-master";
 import { notesSlideDesc } from "./parts/descriptors/notes-slide";
+import { presentationDesc } from "./parts/descriptors/presentation";
 import { presentationPropertiesDesc } from "./parts/descriptors/presentation-properties";
 import { slideDesc } from "./parts/descriptors/slide";
 import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
@@ -47,6 +48,8 @@ export interface PptxPartRefs {
   themes: string[];
   /** ppt/notesMasters/notesMasterN.xml */
   notesMasters: string[];
+  /** ppt/handoutMasters/handoutMasterN.xml presence (content re-emitted default). */
+  handoutMaster: boolean;
   /** ppt/commentAuthors.xml */
   commentAuthors?: string;
   /** ppt/comments/commentN.xml (from slide rels) */
@@ -187,6 +190,7 @@ export function parsePptx(data: DataType): PptxDocument {
   const slideMasters: string[] = [];
   const themes: string[] = [];
   const notesMasters: string[] = [];
+  let hasHandoutMaster = false;
   let presProps: string | undefined;
   let viewProps: string | undefined;
   let tableStyles: string | undefined;
@@ -213,6 +217,11 @@ export function parsePptx(data: DataType): PptxDocument {
         themes.push(path);
       } else if (type.includes("/notesMaster")) {
         notesMasters.push(path);
+      } else if (type.includes("/handoutMaster")) {
+        // Referenced from presentation.xml but never re-emitted with content —
+        // the compiler writes its default handout master (tag-identical to the
+        // Office originals in the corpus). Only the inclusion flag round-trips.
+        hasHandoutMaster = true;
       } else if (type.includes("/presProps")) {
         presProps = path;
       } else if (type.includes("/viewProps")) {
@@ -236,6 +245,7 @@ export function parsePptx(data: DataType): PptxDocument {
   const partRefs: PptxPartRefs = {
     themes,
     notesMasters,
+    handoutMaster: hasHandoutMaster,
     commentAuthors,
     comments: [],
     charts: [],
@@ -392,7 +402,9 @@ function parseSlideSections(
 export function parsePresentation(data: DataType): PresentationOptions {
   const pptx = parsePptx(data);
   const opts: Partial<PresentationOptions> = {};
+  if (pptx.partRefs.handoutMaster) opts.includeHandoutMaster = true;
   const sectionBySlidePath = parseSlideSections(pptx.presentation, pptx.doc);
+  const masterReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
 
   // 1. Parse slide size from p:sldSz
   if (pptx.presentation) {
@@ -435,6 +447,19 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (tagList.length > 0) customerData.tagList = tagList;
       if (Object.keys(customerData).length > 0) opts.customerData = customerData;
     }
+  }
+
+  // 1b. Presentation-level data fields — via the descriptor's own parse (the
+  // same contract stringify uses); id/count/rId wiring stays compiler-owned.
+  if (pptx.presentation) {
+    const presPart = presentationDesc.parse(pptx.presentation, masterReadCtx);
+    opts.photoAlbum = presPart.photoAlbum;
+    opts.defaultTextStyle = presPart.defaultTextStyle;
+    if (presPart.kinsoku) opts.kinsoku = presPart.kinsoku;
+    if (presPart.customShows) opts.customShows = presPart.customShows;
+    if (presPart.embeddedFonts) opts.embeddedFonts = presPart.embeddedFonts;
+    if (presPart.modifyVerifier) opts.modifyVerifier = presPart.modifyVerifier;
+    if (presPart.smartTags) opts.smartTags = presPart.smartTags;
   }
 
   // 2. Parse core properties
@@ -517,7 +542,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   // 5. Parse masters
 
   const masterDefs: MasterDefinition[] = [];
-  const masterReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
+
   for (const [mi, masterPath] of pptx.slideMasters.entries()) {
     const masterEl = pptx.doc.get(masterPath);
     if (!masterEl) continue;
@@ -577,10 +602,18 @@ export function parsePresentation(data: DataType): PresentationOptions {
   }
 
   // 5b. Parse notes masters
+  const notesMasterThemePaths = resolveRelTargets(
+    pptx.doc,
+    pptx.partRefs.notesMasters,
+    (t) => t.includes("/theme") && !t.includes("/themeOverride") && !t.includes("/themeManager"),
+  );
   for (const nmPath of pptx.partRefs.notesMasters) {
     const nmEl = pptx.doc.get(nmPath);
     if (nmEl) {
       const nmOpts = notesMasterDesc.parse(nmEl, masterReadCtx);
+      const nmThemePath = notesMasterThemePaths.get(nmPath);
+      const nmThemeEl = nmThemePath ? pptx.doc.get(nmThemePath) : undefined;
+      if (nmThemeEl) nmOpts.theme = themeDesc.parse(nmThemeEl, masterReadCtx);
       if (Object.keys(nmOpts).length > 0) {
         opts.includeNotesMaster = true;
         opts.notesMasterOptions = nmOpts;
