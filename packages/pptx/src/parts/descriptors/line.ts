@@ -15,8 +15,13 @@ import {
   findFillChild,
   outlineDesc,
   parseEndpointConnection,
+  presetGeometryDesc,
+  scene3DDesc,
+  shape3DDesc,
+  shapeLockingDesc,
   stringifyEndpointConnection,
   stringifyNonVisualDrawingProperties,
+  textBodyDesc,
 } from "@office-open/core/drawing";
 import { attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -34,14 +39,20 @@ let _nextConnectorId = 2;
 // ── Shared endpoint-model spPr helpers (line + connector) ──
 
 /** a:xfrm + a:prstGeom for an endpoint-model line (flip encodes direction). */
-function stringifyLineXfrmGeometry(x1: number, y1: number, x2: number, y2: number): string {
+function stringifyLineXfrmGeometry(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  geomXml = '<a:prstGeom prst="line"><a:avLst/></a:prstGeom>',
+): string {
   const attrs = [x1 > x2 ? ' flipH="1"' : "", y1 > y2 ? ' flipV="1"' : ""].join("");
   const offX = Math.min(x1, x2);
   const offY = Math.min(y1, y2);
   return (
     `<a:xfrm${attrs}><a:off x="${offX}" y="${offY}"/>` +
     `<a:ext cx="${Math.abs(x2 - x1)}" cy="${Math.abs(y2 - y1)}"/></a:xfrm>` +
-    `<a:prstGeom prst="line"><a:avLst/></a:prstGeom>`
+    geomXml
   );
 }
 
@@ -49,7 +60,10 @@ function stringifyLineXfrmGeometry(x1: number, y1: number, x2: number, y2: numbe
 function parseLineSpPr(
   spPr: Element,
   ctx: ReadContext,
-): Pick<LineShapeOptions, "x1" | "y1" | "x2" | "y2" | "fill" | "outline" | "effects"> {
+): Pick<
+  LineShapeOptions,
+  "x1" | "y1" | "x2" | "y2" | "fill" | "outline" | "effects" | "scene3d" | "shape3d"
+> {
   const result: ReturnType<typeof parseLineSpPr> = {};
 
   const xfrm = findChild(spPr, "a:xfrm");
@@ -80,6 +94,10 @@ function parseLineSpPr(
   if (ln) result.outline = parse(outlineDesc, ln, ctx);
   const effectLst = findChild(spPr, "a:effectLst");
   if (effectLst) result.effects = parse(effectListDesc, effectLst, ctx);
+  const scene3d = findChild(spPr, "a:scene3d");
+  if (scene3d) result.scene3d = scene3DDesc.parse(scene3d, ctx);
+  const sp3d = findChild(spPr, "a:sp3d");
+  if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
 
   return result;
 }
@@ -101,8 +119,10 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     const parts: string[] = [];
 
     // p:nvSpPr
+    const spLocks = opts.locking ? (shapeLockingDesc.stringify(opts.locking, ctx) ?? "") : "";
+    const cNvSpPr = spLocks ? `<p:cNvSpPr>${spLocks}</p:cNvSpPr>` : "<p:cNvSpPr/>";
     parts.push(
-      `<p:nvSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`,
+      `<p:nvSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvSpPr}<p:nvPr/></p:nvSpPr>`,
     );
 
     // p:spPr
@@ -123,6 +143,8 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
 
     // Effects (a:effectLst after a:ln per CT_ShapeProperties)
     if (opts.effects) spPrParts.push(stringify(effectListDesc, opts.effects, ctx) ?? "");
+    if (opts.scene3d) spPrParts.push(scene3DDesc.stringify(opts.scene3d, ctx) ?? "");
+    if (opts.shape3d) spPrParts.push(shape3DDesc.stringify(opts.shape3d, ctx) ?? "");
 
     parts.push(`<p:spPr>${spPrParts.join("")}</p:spPr>`);
 
@@ -132,8 +154,11 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
       if (styleXml) parts.push(styleXml);
     }
 
-    // p:txBody
-    parts.push('<p:txBody><a:bodyPr wrap="square"/><a:lstStyle/><a:p/></p:txBody>');
+    // p:txBody — source lines carry wrap/anchor hints; fresh ones keep the default.
+    const txBodyContent = opts.textBody
+      ? (textBodyDesc.stringify(opts.textBody, ctx) ?? "")
+      : '<a:bodyPr wrap="square"/><a:lstStyle/><a:p/>';
+    parts.push(`<p:txBody>${txBodyContent}</p:txBody>`);
 
     return `<p:sp>${parts.join("")}</p:sp>`;
   },
@@ -143,6 +168,13 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
 
     // p:nvSpPr → id, name
     Object.assign(result, readCnvPr(el, "p:nvSpPr"));
+    const nvSpPr = findChild(el, "p:nvSpPr");
+    const cNvSpPr = nvSpPr ? findChild(nvSpPr, "p:cNvSpPr") : undefined;
+    const spLocks = cNvSpPr ? findChild(cNvSpPr, "a:spLocks") : undefined;
+    if (spLocks) {
+      const locks = shapeLockingDesc.parse(spLocks, _ctx);
+      if (locks && Object.keys(locks).length > 0) result.locking = locks;
+    }
 
     // p:spPr → endpoints (off/ext + flip) + fill/outline/effects
     const spPr = findChild(el, "p:spPr");
@@ -151,6 +183,10 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     // p:style
     const lineStyle = findChild(el, "p:style");
     if (lineStyle) result.style = readShapeStyle(lineStyle, _ctx);
+
+    // p:txBody — keep the source's wrap/anchor hints and empty-paragraph rPr.
+    const txBody = findChild(el, "p:txBody");
+    if (txBody) result.textBody = textBodyDesc.parse(txBody, _ctx);
 
     return result as LineShapeOptions;
   },
@@ -169,6 +205,15 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     const y1 = convertToEmu(opts.y1 ?? 0);
     const x2 = convertToEmu(opts.x2 ?? "100px");
     const y2 = convertToEmu(opts.y2 ?? "100px");
+
+    // Preset geometry: bent/elbow connectors carry their own form + guides.
+    const geomXml =
+      opts.geometry !== undefined
+        ? (presetGeometryDesc.stringify(
+            typeof opts.geometry === "string" ? { preset: opts.geometry } : opts.geometry,
+            ctx,
+          ) ?? "")
+        : undefined;
 
     const parts: string[] = [];
 
@@ -193,7 +238,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
 
     // p:spPr
     const spPrParts: string[] = [];
-    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2));
+    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2, geomXml));
 
     // Fill
     if (opts.fill !== undefined) {
@@ -209,6 +254,8 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
 
     // Effects (a:effectLst after a:ln per CT_ShapeProperties)
     if (opts.effects) spPrParts.push(stringify(effectListDesc, opts.effects, ctx) ?? "");
+    if (opts.scene3d) spPrParts.push(scene3DDesc.stringify(opts.scene3d, ctx) ?? "");
+    if (opts.shape3d) spPrParts.push(shape3DDesc.stringify(opts.shape3d, ctx) ?? "");
 
     parts.push(`<p:spPr>${spPrParts.join("")}</p:spPr>`);
 
@@ -250,7 +297,17 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
 
     // p:spPr → endpoints (off/ext + flip) + fill/outline/effects
     const spPr = findChild(el, "p:spPr");
-    if (spPr) Object.assign(result, parseLineSpPr(spPr, _ctx));
+    if (spPr) {
+      Object.assign(result, parseLineSpPr(spPr, _ctx));
+      // Non-line presets or adjusted guides must survive the round-trip.
+      const prstGeom = findChild(spPr, "a:prstGeom");
+      if (prstGeom) {
+        const geom = presetGeometryDesc.parse(prstGeom, _ctx);
+        if (geom.preset !== undefined && (geom.preset !== "line" || geom.adjustmentValues)) {
+          result.geometry = geom;
+        }
+      }
+    }
 
     // p:style
     const cxnStyle = findChild(el, "p:style");

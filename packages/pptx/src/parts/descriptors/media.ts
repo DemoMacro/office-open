@@ -11,12 +11,13 @@
  */
 
 import { toUint8Array } from "@office-open/core";
-import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { DataType } from "@office-open/core";
+import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import {
   shapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
-import { attr, attrNum, escapeXml, findChild, findFirst } from "@office-open/xml";
+import { attr, attrNum, escapeXml, findChild, findFirst, stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AudioCdOptions, AudioFrameOptions, AudioType } from "@shared/media/audio-frame";
 import { imageTypeFromPath } from "@shared/media/image-type";
@@ -41,9 +42,10 @@ export const MEDIA_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
 
 /** a:audioCd — CD track playback, no media file. */
 function stringifyAudioCd(cd: AudioCdOptions): string {
+  const ext = cd.ext !== undefined ? `<a:extLst>${cd.ext}</a:extLst>` : "";
   return (
     `<a:audioCd><a:st${stringifyAudioCdTime(cd.start)}/>` +
-    `<a:end${stringifyAudioCdTime(cd.end)}/></a:audioCd>`
+    `<a:end${stringifyAudioCdTime(cd.end)}/>${ext}</a:audioCd>`
   );
 }
 
@@ -91,8 +93,9 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     const mediaEl = mediaFileName
       ? `<a:videoFile r:link="{video:${mediaFileName}}"${contentType}/>`
       : "";
+    const hlinkXml = opts.mediaAction ? '<a:hlinkClick r:id="" action="ppaction://media"/>' : "";
     parts.push(
-      `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
+      `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
         `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
         (mediaFileName
@@ -134,6 +137,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
 
     // id + name from p:nvPicPr → a:cNvPr or p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
+    readMediaAction(el, result);
 
     // Media data from a:videoFile (r:link) or p14:media (r:embed)
     const quickTimeEl = findFirst(el, "a:quickTimeFile");
@@ -159,23 +163,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     }
 
     // Poster from blipFill
-    const blipFill = findChild(el, "p:blipFill");
-    if (blipFill) {
-      const blip = findChild(blipFill, "a:blip");
-      if (blip) {
-        const rEmbedPoster = attr(blip, "r:embed");
-        if (rEmbedPoster) {
-          const posterPath = _ctx.resolveRelationship(rEmbedPoster);
-          if (posterPath) {
-            const posterData = _ctx.getRaw(posterPath);
-            if (posterData) result.poster = posterData;
-            // PosterType only allows png/jpg — other extensions fall back to png.
-            const posterType = imageTypeFromPath(posterPath);
-            result.posterType = posterType === "jpg" ? "jpg" : "png";
-          }
-        }
-      }
-    }
+    readPoster(el, result, _ctx);
 
     return result as VideoFrameOptions;
   },
@@ -202,7 +190,8 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
 
     const parts: string[] = [];
 
-    // p:nvPicPr — EG_Media choice, then the p14:media extension
+    // p:nvPicPr — EG_Media choice, then the p14:media extension. Embedded WAV
+    // carries no media extension (pre-2010 form); linked audio does.
     let mediaEl: string;
     if (opts.audioCd) {
       mediaEl = stringifyAudioCd(opts.audioCd);
@@ -211,11 +200,13 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     } else {
       mediaEl = "";
     }
+    const emitExt = mediaFileName !== undefined && (opts.type ?? "mp3") !== "wav";
+    const hlinkXml = opts.mediaAction ? '<a:hlinkClick r:id="" action="ppaction://media"/>' : "";
     parts.push(
-      `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
+      `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
         `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
-        (mediaFileName
+        (emitExt
           ? `<p:extLst><p:ext uri="${MEDIA_EXT_URI}">` +
             `<p14:media r:embed="{media:${mediaFileName}}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"/>` +
             `</p:ext></p:extLst>`
@@ -223,8 +214,18 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
         `</p:nvPr></p:nvPicPr>`,
     );
 
-    // p:blipFill (no poster for audio)
-    parts.push(`<p:blipFill><a:stretch><a:fillRect/></a:stretch></p:blipFill>`);
+    // p:blipFill (speaker art poster when present)
+    let posterAttr = "";
+    if (opts.poster) {
+      const posterFileName = registerMediaFile(
+        pptx,
+        opts.poster,
+        opts.posterType ?? "png",
+        `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`,
+      );
+      if (posterFileName) posterAttr = `<a:blip r:embed="{${posterFileName}}"/>`;
+    }
+    parts.push(`<p:blipFill>${posterAttr}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`);
 
     // p:spPr
     parts.push(stringifyMediaSpPr(opts, ctx));
@@ -244,6 +245,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
 
     // id + name from p:nvPicPr
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
+    readMediaAction(el, result);
 
     // CD audio (a:audioCd) — track/time, no media file
     const audioCdEl = findFirst(el, "a:audioCd");
@@ -255,8 +257,11 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
           start: readAudioCdTime(stEl),
           end: readAudioCdTime(endEl),
         };
+        const extLst = findChild(audioCdEl, "a:extLst");
+        if (extLst) cd.ext = stringify(extLst);
         result.audioCd = cd;
       }
+      readPoster(el, result, _ctx);
       return result as AudioFrameOptions;
     }
 
@@ -286,6 +291,8 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
       if (audioFileName) result.audioFileName = audioFileName;
     }
 
+    readPoster(el, result, _ctx);
+
     return result as AudioFrameOptions;
   },
 };
@@ -295,6 +302,36 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
 function readAudioCdTime(el: Element): AudioCdOptions["start"] {
   const time = attrNum(el, "time");
   return { track: attrNum(el, "track") ?? 0, ...(time !== undefined ? { time } : {}) };
+}
+
+/** Read the click-to-play hyperlink (a:hlinkClick action="ppaction://media"). */
+function readMediaAction(el: Element, result: { mediaAction?: boolean }): void {
+  const hlinkClick = findFirst(el, "a:hlinkClick");
+  if (hlinkClick && attr(hlinkClick, "action") === "ppaction://media") {
+    result.mediaAction = true;
+  }
+}
+
+/** Read the poster image from p:blipFill → a:blip r:embed. */
+function readPoster(
+  el: Element,
+  result: { poster?: DataType; posterType?: "png" | "jpg" },
+  ctx: ReadContext,
+): void {
+  const blipFill = findChild(el, "p:blipFill");
+  if (!blipFill) return;
+  const blip = findChild(blipFill, "a:blip");
+  if (!blip) return;
+  const rEmbedPoster = attr(blip, "r:embed");
+  if (!rEmbedPoster) return;
+  const posterPath = ctx.resolveRelationship(rEmbedPoster);
+  if (posterPath) {
+    const data = ctx.getRaw(posterPath);
+    if (data) result.poster = data;
+    // PosterType only allows png/jpg — other extensions fall back to png.
+    const posterType = imageTypeFromPath(posterPath);
+    result.posterType = posterType === "jpg" ? "jpg" : "png";
+  }
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
-import type { RunOptions, RunPropertiesOptions } from "@office-open/core/drawing";
+import type { TextRunOptions, TextCharacterPropertiesOptions } from "@office-open/core/drawing";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -30,7 +30,7 @@ const readCtx = {
 // ── runPropertiesDesc ──
 
 describe("runPropertiesDesc round-trip", () => {
-  function roundTrip(opts: RunPropertiesOptions) {
+  function roundTrip(opts: TextCharacterPropertiesOptions) {
     const xml = runPropertiesDesc.stringify(opts, writeCtx)!;
     const doc = parseXml(xml);
     const el = doc.elements?.[0];
@@ -156,7 +156,7 @@ describe("runPropertiesDesc round-trip", () => {
 // ── textRunDesc ──
 
 describe("textRunDesc round-trip", () => {
-  function roundTrip(opts: RunOptions) {
+  function roundTrip(opts: TextRunOptions) {
     const xml = textRunDesc.stringify(opts, writeCtx)!;
     const doc = parseXml(xml);
     const el = doc.elements?.[0];
@@ -207,7 +207,7 @@ describe("paragraphDesc round-trip", () => {
         { text: "World", italic: true },
       ],
     });
-    const children = result.children! as RunOptions[];
+    const children = result.children! as TextRunOptions[];
     expect(children).toHaveLength(2);
     const [child1, child2] = children;
     expect(child1?.text).toBe("Hello ");
@@ -303,7 +303,7 @@ describe("paragraphDesc round-trip", () => {
     });
     const props = result.properties!;
     expect(props.alignment).toBe("right");
-    const children = result.children! as RunOptions[];
+    const children = result.children! as TextRunOptions[];
     const [first] = children;
     expect(first?.text).toBe("Right-aligned run");
   });
@@ -314,7 +314,7 @@ describe("paragraphDesc round-trip", () => {
     const result = roundTrip({
       children: [{ text: "Bold", bold: true }],
     });
-    const children = result.children! as RunOptions[];
+    const children = result.children! as TextRunOptions[];
     expect(children).toHaveLength(1);
     const [first] = children;
     expect(first?.text).toBe("Bold");

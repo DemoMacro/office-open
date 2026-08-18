@@ -10,18 +10,22 @@
 import { convertEmuToPixels, convertToEmu, parseOnOff, toUint8Array } from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions, ShapeLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
-import { parse } from "@office-open/core/descriptor";
+import { parse, stringify } from "@office-open/core/descriptor";
 import {
   shapeLockingDesc,
   effectListDesc,
   shapePropertiesDesc,
+  scene3DDesc,
+  shape3DDesc,
   textBodyDesc,
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
   pictureLockingDesc,
+  blipDesc,
   createSourceRectangle,
   fillDesc,
   findFillChild,
+  outlineDesc,
   stringifyColorChoice,
   registerHyperlink,
   buildHyperlinkElement,
@@ -29,7 +33,7 @@ import {
 } from "@office-open/core/drawing";
 import type { SourceRectangleOptions } from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
+import { findChild, findFirst, attrNum, attr } from "@office-open/xml";
 import { imageTypeFromPath } from "@shared/media/image-type";
 import type { PictureOptions } from "@shared/picture";
 import {
@@ -40,6 +44,7 @@ import {
 } from "@shared/shape/shape";
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
+import { readNvPrPlaceholder, stringifyNvPr } from "./graphic-frame";
 
 // ── Auto-incrementing IDs ──
 
@@ -177,11 +182,19 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     parts.push(stringifyNvPicPr(id, name, opts, ctx));
 
     // ── p:blipFill ──
-    parts.push(stringifyPptxBlipFill(mediaEntry.fileName, opts.sourceRectangle));
+    parts.push(
+      stringifyPptxBlipFill(mediaEntry.fileName, opts.sourceRectangle, opts.blipEffects, ctx),
+    );
 
     // ── p:spPr ──
     const spPrXml = stringifyPicSpPr(opts, ctx);
     if (spPrXml) parts.push(spPrXml);
+
+    // ── p:style ──
+    if (opts.style) {
+      const styleXml = stringifyShapeStyle(opts.style, ctx);
+      if (styleXml) parts.push(styleXml);
+    }
 
     return `<p:pic>${parts.join("")}</p:pic>`;
   },
@@ -205,11 +218,16 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
         const locks = parse(pictureLockingDesc, picLocks, ctx);
         if (locks && Object.keys(locks).length > 0) result.locking = locks;
       }
+      readNvPrPlaceholder(nvPicPr, result);
     }
 
     // p:spPr (position/size/flip/rotation)
     const spPr = findChild(el, "p:spPr");
     if (spPr) {
+      // A source picture may carry no geometry at all — keep it suppressed.
+      if (!findChild(spPr, "a:prstGeom") && !findChild(spPr, "a:custGeom")) {
+        result.geometry = null;
+      }
       const xfrm = findChild(spPr, "a:xfrm");
       if (xfrm) {
         const off = findChild(xfrm, "a:off");
@@ -236,18 +254,32 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       const fillChild = findFillChild(spPr);
       if (fillChild) result.fill = parse(fillDesc, fillChild, ctx);
 
+      // Outline (decorated pictures carry one)
+      const picLn = findChild(spPr, "a:ln");
+      if (picLn) result.outline = parse(outlineDesc, picLn, ctx);
+
       // Effects (e.g. shadow/reflection on the picture)
       const effectLst = findChild(spPr, "a:effectLst");
       if (effectLst) {
         const effects = parse(effectListDesc, effectLst, ctx);
         if (effects) result.effects = effects;
       }
+
+      // 3D scene / shape properties
+      const scene3d = findChild(spPr, "a:scene3d");
+      if (scene3d) result.scene3d = scene3DDesc.parse(scene3d, ctx);
+      const sp3d = findChild(spPr, "a:sp3d");
+      if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
     }
+
+    // p:style
+    const picStyle = findChild(el, "p:style");
+    if (picStyle) result.style = readShapeStyle(picStyle, ctx);
 
     // Crop rectangle from p:blipFill → a:srcRect (‰ → percent)
     const blipFill = findChild(el, "p:blipFill");
     const srcRectEl = blipFill ? findChild(blipFill, "a:srcRect") : undefined;
-    if (srcRectEl?.attributes) {
+    if (srcRectEl) {
       const rect: SourceRectangleOptions = {};
       const l = attrNum(srcRectEl, "l");
       if (l !== undefined) rect.left = l / 1000;
@@ -263,6 +295,8 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     // Image data from p:blipFill → a:blip → r:embed
     const blip = findFirst(el, "a:blip");
     if (blip) {
+      const parsedBlip = parse(blipDesc, blip, ctx);
+      if (parsedBlip.blipEffects) result.blipEffects = parsedBlip.blipEffects;
       const rEmbed = attr(blip, "r:embed");
       if (rEmbed) {
         const imagePath = ctx.resolveRelationship(rEmbed);
@@ -458,13 +492,19 @@ function stringifyNvPicPr(
   const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml);
   const locks = opts?.locking ? (pictureLockingDesc.stringify(opts.locking, ctx) ?? "") : "";
   const cNvPicPr = locks ? `<p:cNvPicPr>${locks}</p:cNvPicPr>` : "<p:cNvPicPr/>";
-  return `<p:nvPicPr>${cNvPrXml}${cNvPicPr}<p:nvPr/></p:nvPicPr>`;
+  return `<p:nvPicPr>${cNvPrXml}${cNvPicPr}${stringifyNvPr(opts ?? {})}</p:nvPicPr>`;
 }
 
 /** PPTX uses p:blipFill (not pic:blipFill). */
-function stringifyPptxBlipFill(fileName: string, sourceRectangle?: SourceRectangleOptions): string {
+function stringifyPptxBlipFill(
+  fileName: string,
+  sourceRectangle?: SourceRectangleOptions,
+  blipEffects?: PictureOptions["blipEffects"],
+  ctx?: WriteContext,
+): string {
+  const blipXml = stringify(blipDesc, { referenceId: fileName, blipEffects }, ctx);
   const srcRect = sourceRectangle ? createSourceRectangle(sourceRectangle) : "";
-  return `<p:blipFill><a:blip r:embed="{${escapeXml(fileName)}}" cstate="none"/>${srcRect}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
+  return `<p:blipFill>${blipXml}${srcRect}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
 }
 
 function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
@@ -477,10 +517,13 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
       flipHorizontal: opts.flipHorizontal,
       flipVertical: opts.flipVertical,
       rotation: opts.rotation,
-      // Pictures always use a rect preset geometry.
-      geometry: "rect",
+      // Pictures always use a rect preset geometry unless the source omitted it.
+      geometry: opts.geometry === null ? undefined : "rect",
       fill: opts.fill,
+      outline: opts.outline,
       effects: opts.effects,
+      scene3d: opts.scene3d,
+      shape3d: opts.shape3d,
     },
     ctx,
   );

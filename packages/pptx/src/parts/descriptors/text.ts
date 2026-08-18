@@ -12,12 +12,12 @@ export { runPropertiesDesc, textRunDesc, paragraphDesc } from "@office-open/core
 
 export type {
   ParagraphDescriptorOptions,
-  BreakOptions,
+  TextBreakOptions,
   BulletAutoNumOptions,
   BulletCharOptions,
   BulletOptions,
-  ParagraphPropertiesOptions,
-  RunOptions,
+  TextParagraphPropertiesOptions,
+  TextRunOptions,
   TextHyperlinkOptions,
-  RunPropertiesOptions,
+  TextCharacterPropertiesOptions,
 } from "@office-open/core/drawing";

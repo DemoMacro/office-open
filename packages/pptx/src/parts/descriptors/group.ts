@@ -7,6 +7,7 @@
 import { convertToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
+  groupLockingDesc,
   groupShapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
@@ -64,8 +65,16 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
     const parts: string[] = [];
 
     // p:nvGrpSpPr
+    // null = explicit empty locks element; an object always emits the flags.
+    const grpLocks =
+      opts.locking === null
+        ? "<a:grpSpLocks/>"
+        : opts.locking
+          ? (groupLockingDesc.stringify(opts.locking, descCtx) ?? "")
+          : "";
+    const cNvGrpSpPr = grpLocks ? `<p:cNvGrpSpPr>${grpLocks}</p:cNvGrpSpPr>` : "<p:cNvGrpSpPr/>";
     parts.push(
-      `<p:nvGrpSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}<p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>`,
+      `<p:nvGrpSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvGrpSpPr}<p:nvPr/></p:nvGrpSpPr>`,
     );
 
     // p:grpSpPr
@@ -87,6 +96,13 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
 
     // id + name from p:nvGrpSpPr/p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGrpSpPr"));
+    const nvGrpSpPr = findChild(el, "p:nvGrpSpPr");
+    const grpLocks = nvGrpSpPr ? findChild(nvGrpSpPr, "p:cNvGrpSpPr") : undefined;
+    const lockEl = grpLocks ? findChild(grpLocks, "a:grpSpLocks") : undefined;
+    if (lockEl) {
+      const locks = groupLockingDesc.parse(lockEl, ctx);
+      result.locking = locks && Object.keys(locks).length > 0 ? locks : null;
+    }
 
     const grpSpPr = findChild(el, "p:grpSpPr");
     if (grpSpPr) {

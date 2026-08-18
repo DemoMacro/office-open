@@ -88,8 +88,10 @@ function buildHtmlPubPrXml(opts: HtmlPublishPropertiesOptions): string {
 function buildShowPrXml(showOptions: ShowOptions): string {
   const showPrAttrs: string[] = [];
   if (showOptions.loop) showPrAttrs.push(' loop="1"');
-  if (showOptions.showNarration === false) showPrAttrs.push(' showNarration="0"');
-  if (showOptions.showAnimation === false) showPrAttrs.push(' showAnimation="0"');
+  if (showOptions.showNarration !== undefined)
+    showPrAttrs.push(` showNarration="${showOptions.showNarration ? 1 : 0}"`);
+  if (showOptions.showAnimation !== undefined)
+    showPrAttrs.push(` showAnimation="${showOptions.showAnimation ? 1 : 0}"`);
   if (showOptions.useTimings) showPrAttrs.push(' useTimings="1"');
 
   const showType = showOptions.type ?? "present";
@@ -115,7 +117,8 @@ function buildShowPrXml(showOptions: ShowOptions): string {
     penClrXml = `<p:penClr><a:srgbClr val="${showOptions.penColor}"/></p:penClr>`;
   }
 
-  return `<p:showPr${showPrAttrs.join("")}>${showTypeXml}${slideListXml}${penClrXml}</p:showPr>`;
+  const extXml = showOptions.ext !== undefined ? `<p:extLst>${showOptions.ext}</p:extLst>` : "";
+  return `<p:showPr${showPrAttrs.join("")}>${showTypeXml}${slideListXml}${penClrXml}${extXml}</p:showPr>`;
 }
 
 export function buildPresentationPropertiesXml(opts?: PresentationPropertiesOptions): string {

@@ -126,8 +126,8 @@ describe("slideLayoutDesc stringify/parse", () => {
     expect(result.type).toBe("title");
     expect(result.name).toBe("Title Slide");
     expect(result.children).toHaveLength(2);
-    // Title placeholder position read from a:xfrm.
-    expect(result.placeholders?.title).toEqual({ x: 100, y: 200, width: 300, height: 400 });
+    // Title placeholder position read from a:xfrm (textBody carried verbatim).
+    expect(result.placeholders?.title).toMatchObject({ x: 100, y: 200, width: 300, height: 400 });
   });
 
   it("derives type from cSld name when @type is absent", () => {

@@ -219,11 +219,11 @@ export function extractPlaceholderDefinition(
     }
   }
 
-  // textBody: carry only when it holds custom content (a run/break/field
-  // beyond the default endParaRPr body), so default placeholders stay
-  // byte-equivalent.
+  // textBody: always carried — source bodies (styled lstStyle, field runs)
+  // must round-trip exactly; fresh placeholders fall back to the emitter
+  // defaults when the definition carries none.
   const txBody = findChild(spEl, "p:txBody");
-  if (txBody && hasTextContent(txBody)) {
+  if (txBody) {
     def.textBody = textBodyDesc.parse(txBody, ctx);
   }
 
@@ -241,15 +241,4 @@ export function extractPlaceholderDefinition(
     return undefined;
   }
   return { key, def: def as PlaceholderDefinition };
-}
-
-/** True when a txBody holds an a:r/a:br/a:fld (custom content, not the empty default). */
-function hasTextContent(txBody: XmlElement): boolean {
-  for (const p of txBody.elements ?? []) {
-    if (p.name !== "a:p") continue;
-    for (const child of p.elements ?? []) {
-      if (child.name === "a:r" || child.name === "a:br" || child.name === "a:fld") return true;
-    }
-  }
-  return false;
 }

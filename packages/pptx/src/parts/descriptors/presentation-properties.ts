@@ -78,6 +78,8 @@ function parsePresentationProperties(el: XmlElement): PresentationPropertiesOpti
       const val = srgb ? attr(srgb, "val") : undefined;
       if (val) showOpts.penColor = val;
     }
+    const showPrExt = findChild(showPr, "p:extLst");
+    if (showPrExt) showOpts.ext = stringifyXml(showPrExt);
     if (Object.keys(showOpts).length > 0) result.show = showOpts as ShowOptions;
   }
 

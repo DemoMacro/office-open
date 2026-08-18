@@ -192,11 +192,11 @@ describe("tableDesc round-trip", () => {
     const result = roundTrip(opts);
     const cell = result.rows![0]?.cells?.[0];
     if (!cell) throw new Error("missing cell");
-    expect(cell.borders?.diagonalTopLeftToBottomRight).toEqual({
+    expect(cell.borders?.diagonalTopLeftToBottomRight).toMatchObject({
       width: 12700,
       color: "C00000",
     });
-    expect(cell.borders?.diagonalBottomLeftToTopRight).toEqual({
+    expect(cell.borders?.diagonalBottomLeftToTopRight).toMatchObject({
       width: 9525,
       color: "000000",
     });

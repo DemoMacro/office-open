@@ -140,6 +140,8 @@ export interface ShowOptions {
   useTimings?: boolean;
   slideRange?: { start: number; end: number };
   penColor?: string;
+  /** Verbatim children of the showPr p:extLst (p14 laser pointer extensions). */
+  ext?: string;
 }
 
 export interface PresentationOptions extends CorePropertiesOptions {

@@ -16,6 +16,8 @@ import {
   fillDesc,
   findFillChild,
   parseTableStyle,
+  outlineDesc,
+  stringifyLineProperties,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
 import {
@@ -181,7 +183,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
             const val = attr(prstDash, "val");
             if (val) borderOpts.dashStyle = val as CellBorderOptions["dashStyle"];
           }
-          if (Object.keys(borderOpts).length > 0) borders[key] = borderOpts;
+          borderOpts.outline = parse(outlineDesc, borderEl, ctx);
+          borders[key] = borderOpts as CellBorderOptions;
         }
       }
       if (Object.keys(borders).length > 0) result.borders = borders;
@@ -338,6 +341,10 @@ function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
 }
 
 function buildBorderLine(name: string, options: CellBorderOptions, ctx: PptxWriteContext): string {
+  // Full line properties win when present (parsed sources keep every child).
+  if (options.outline) {
+    return stringifyLineProperties(name, options.outline, ctx) ?? `<${name}/>`;
+  }
   const attrs: string[] = [];
   if (options.width !== undefined) attrs.push(`w="${convertToEmu(options.width)}"`);
 
@@ -490,7 +497,9 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
           const val = attr(prstDash, "val");
           if (val) borderOpts.dashStyle = val as CellBorderOptions["dashStyle"];
         }
-        if (Object.keys(borderOpts).length > 0) borders[key] = borderOpts;
+        // Full line properties — keeps joins/line ends and bare <a:lnX><a:noFill/></a:lnX>.
+        borderOpts.outline = parse(outlineDesc, borderEl, ctx);
+        borders[key] = borderOpts as CellBorderOptions;
       }
     }
     if (Object.keys(borders).length > 0) result.borders = borders;

@@ -61,16 +61,16 @@ export type { ShapeOptions } from "./shape/shape";
 export type {
   TextBodyOptions,
   ParagraphDescriptorOptions,
-  RunOptions,
+  TextRunOptions,
 } from "@office-open/core/drawing";
 export {
   type UnderlineStyle,
   type StrikeStyle,
   type TextCapitalization,
-  type RunPropertiesOptions,
+  type TextCharacterPropertiesOptions,
   type TextHyperlinkOptions,
 } from "@office-open/core/drawing";
-export type { TextAlignment, ParagraphPropertiesOptions } from "@office-open/core/drawing";
+export type { TextAlignment, TextParagraphPropertiesOptions } from "@office-open/core/drawing";
 export type { GroupOptions } from "./shape/group-shape";
 export type { LineShapeOptions, ConnectorOptions } from "./shape/line-shape";
 

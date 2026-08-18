@@ -19,7 +19,7 @@ import {
 import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
-import type { RunOptions } from "@office-open/core/drawing";
+import type { TextRunOptions } from "@office-open/core/drawing";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import { findChild, stringify, parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -59,10 +59,10 @@ const COMMENT_AUTHORS_CONTENT_TYPE =
 
 /**
  * Inline run-level patch content. Reuses the generate vocabulary: a
- * {@link RunOptions} (or an array of them), or a plain string shorthand
+ * {@link TextRunOptions} (or an array of them), or a plain string shorthand
  * for `{ text: "…" }`.
  */
-export type Patch = RunOptions | RunOptions[] | string;
+export type Patch = TextRunOptions | TextRunOptions[] | string;
 
 export interface PatchPresentationOptions<
   T extends OutputType = OutputType,
@@ -99,7 +99,7 @@ let currentPatchCtx: PptxWriteContext;
 const pptxReplacer = createReplacer({
   ns: PPTX_NS,
   formatChild: (child: unknown): Element[] => {
-    const runOpts = (typeof child === "string" ? { text: child } : child) as RunOptions;
+    const runOpts = (typeof child === "string" ? { text: child } : child) as TextRunOptions;
     const xmlStr = textRunDesc.stringify(runOpts, currentPatchCtx) ?? "<a:r/>";
     const root = parse(xmlStr, { captureSpacesBetweenElements: true }).elements?.[0];
     return root ? [root] : [];
@@ -111,7 +111,7 @@ const pptxReplacer = createReplacer({
  * Normalize a user patch value into the replacer's `{ type, children }`
  * envelope. PPTX patches are always inline run-level (`type: "paragraph"`).
  */
-const toReplacerPatch = (patch: Patch): { type: "paragraph"; children: RunOptions[] } =>
+const toReplacerPatch = (patch: Patch): { type: "paragraph"; children: TextRunOptions[] } =>
   typeof patch === "string"
     ? { type: "paragraph", children: [{ text: patch }] }
     : { type: "paragraph", children: Array.isArray(patch) ? patch : [patch] };
@@ -435,7 +435,7 @@ const appendCommentsToMap = (
 /**
  * Patches an existing .pptx presentation by replacing placeholders with run content.
  *
- * Patch content reuses the generate {@link RunOptions} vocabulary (serialized
+ * Patch content reuses the generate {@link TextRunOptions} vocabulary (serialized
  * via the same descriptor), so color, fonts, fills, and hyperlinks are all
  * supported. Hyperlinks introduced by patch runs are registered into each
  * slide's relationship part.
@@ -476,7 +476,7 @@ export const patchPresentation = async <T extends OutputType = OutputType>({
   // delimiters; findReplace uses the literal key. Both share the same engine.
   const entries: Array<{
     find: string;
-    patch: { type: "paragraph"; children: RunOptions[] };
+    patch: { type: "paragraph"; children: TextRunOptions[] };
   }> = [];
   if (placeholders) {
     for (const [key, value] of Object.entries(placeholders)) {

@@ -18,6 +18,8 @@ export interface AudioCdOptions {
   start: AudioCdTimeOptions;
   /** Playback end point (a:end, required) */
   end: AudioCdTimeOptions;
+  /** Verbatim children of the a:extLst inside a:audioCd (unknown extensions). */
+  ext?: string;
 }
 
 export interface AudioFrameOptions extends Omit<MediaFrameBaseOptions, "data" | "type"> {
@@ -31,4 +33,8 @@ export interface AudioFrameOptions extends Omit<MediaFrameBaseOptions, "data" | 
   contentType?: string;
   /** Original audio file name (CT_EmbeddedWAVAudioFile `@name`, wav only) */
   audioFileName?: string;
+  /** Poster image bytes (a:blip inside p:blipFill) — the frame's speaker art. */
+  poster?: DataType;
+  /** Poster image format (png/jpg only). */
+  posterType?: "png" | "jpg";
 }

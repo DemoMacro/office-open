@@ -89,11 +89,10 @@ function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundOptions {
     // parse always yields one ({ type: "none" } for a:noFill).
     result.fill = coreParse(fillDesc, bgPr, ctx);
 
-    // Effects (a:effectLst)
+    // Effects (a:effectLst) — an empty element stays (bare <a:effectLst/>).
     const effectLst = findChild(bgPr, "a:effectLst");
     if (effectLst) {
-      const effects = coreParse(effectListDesc, effectLst, ctx);
-      if (effects && Object.keys(effects).length > 0) result.effects = effects;
+      result.effects = coreParse(effectListDesc, effectLst, ctx);
     }
   }
 

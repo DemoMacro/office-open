@@ -19,4 +19,9 @@ export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions
   height?: number | UniversalMeasure;
   data: DataType;
   type: MediaData["type"];
+  /**
+   * Click-to-play hyperlink (a:hlinkClick `action="ppaction://media"` on
+   * p:cNvPr) — Office emits it on media frames.
+   */
+  mediaAction?: boolean;
 }
