@@ -10,7 +10,7 @@ import { stringifyShapeStyle } from "@parts/descriptors/shape";
 import type { TextStylesOptions } from "@parts/descriptors/text-list-style";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
-import type { AnimationEntry } from "@shared/animation/timing";
+import type { AnimationsOptions } from "@shared/animation/timing";
 import type { PlaceholderDefinition } from "@shared/placeholder";
 import type { TransitionOptions } from "@shared/transition";
 
@@ -51,7 +51,7 @@ export interface SlideMasterOptions {
   /** p:transition — slide-transition defaults inherited by slides. */
   transition?: TransitionOptions;
   /** p:timing — animation timeline. */
-  animations?: AnimationEntry[];
+  animations?: AnimationsOptions;
   /** cSld/custDataLst — relationship references to customer data parts. */
   customerData?: { rId: string }[];
   /** cSld/controls — embedded controls (ActiveX/legacy). */

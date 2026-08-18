@@ -6,9 +6,9 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild, findFirst } from "@office-open/xml";
+import { attr, attrNum, findChild, findFirst, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import type { AnimationEntry } from "@shared/animation/timing";
+import type { AnimationEntry, AnimationsOptions } from "@shared/animation/timing";
 import { SlideTiming } from "@shared/animation/timing";
 import {
   DIRECTION_SUBTYPES,
@@ -248,24 +248,39 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
           break;
         }
         case "p:cmd": {
+          // mediaType belongs to mediacall-preset effects (set via presetClass);
+          // a bare command must stay a command or the rebuild path would emit
+          // playFrom(0.0) instead of the authored cmd string.
           const cmdType = attr(sub, "type");
-          if (cmdType === "call") opts.mediaType = "play";
           if (cmdType) opts.commandType = cmdType as AnimationOptions["commandType"];
           const cmdStr = attr(sub, "cmd");
           if (cmdStr) opts.command = cmdStr;
           break;
         }
-        case "p:iterate": {
-          // CT_TLIterateData — text-level iteration
-          const iterate: NonNullable<AnimationOptions["iterate"]> = {};
-          const iterType = attr(sub, "type");
-          if (iterType) iterate.type = iterType as NonNullable<AnimationOptions["iterate"]>["type"];
-          if (parseOnOff(attr(sub, "backwards"))) iterate.backwards = true;
-          opts.iterate = iterate;
-          break;
-        }
       }
     }
+  }
+
+  // p:iterate — direct child of cTn (CT_TLCommonTimeNodeData sequence places
+  // it before childTnLst, not inside it). tmPct carries percent, tmAbs ms.
+  const iterateEl = findChild(cTn, "p:iterate");
+  if (iterateEl) {
+    const iterate: NonNullable<AnimationOptions["iterate"]> = {};
+    const iterType = attr(iterateEl, "type");
+    if (iterType) iterate.type = iterType as NonNullable<AnimationOptions["iterate"]>["type"];
+    if (parseOnOff(attr(iterateEl, "backwards"))) iterate.backwards = true;
+    const tmPct = findChild(iterateEl, "p:tmPct");
+    if (tmPct) {
+      const v = attrNum(tmPct, "val");
+      if (v !== undefined) iterate.iteratePercentage = v / 1000;
+    } else {
+      const tmAbs = findChild(iterateEl, "p:tmAbs");
+      if (tmAbs) {
+        const v = attrNum(tmAbs, "val");
+        if (v !== undefined) iterate.interval = v;
+      }
+    }
+    opts.iterate = iterate;
   }
 
   return Object.keys(opts).length > 0 ? (opts as AnimationOptions) : undefined;
@@ -315,12 +330,14 @@ function parseDuration(val: string): number | undefined {
 
 // ── Descriptor ──
 
-export const timingDesc: CustomDescriptor<AnimationEntry[]> = {
+export const timingDesc: CustomDescriptor<AnimationsOptions> = {
   kind: "custom",
 
-  stringify(entries, _ctx) {
-    if (entries.length === 0) return "";
-    const timing = new SlideTiming(entries);
+  stringify(opts, _ctx) {
+    // Verbatim fallback — the source tree the structured model cannot rebuild.
+    if (typeof opts === "string") return `<p:timing>${opts}</p:timing>`;
+    if (opts.length === 0) return "";
+    const timing = new SlideTiming(opts);
     return timing.toXml();
   },
 
@@ -332,6 +349,32 @@ export const timingDesc: CustomDescriptor<AnimationEntry[]> = {
         entries.push({ shapeId, ...options });
       }
     }
-    return entries;
+    // Fidelity gate: rebuilding reorganizes the timing tree, so compare the
+    // rebuilt tag multiset against the source — any drift (including trees the
+    // model extracts no entries from, like tmRoot-only timing) falls back to
+    // the verbatim inner XML rather than silently losing or reshaping nodes.
+    const rebuilt = new SlideTiming(entries).toXml();
+    const source = `<p:timing>${stringifyXml(el)}</p:timing>`;
+    if (rebuilt && sameTagMultiset(rebuilt, source)) return entries;
+    return stringifyXml(el);
   },
 };
+
+/** Tag multiset of an XML string, keyed `<prefix:name` open tags. */
+function tagMultiset(xml: string, into: Map<string, number>): void {
+  for (const m of xml.matchAll(/<([\w-]+:[\w-]+)[ >/]/g)) {
+    into.set(m[1]!, (into.get(m[1]!) ?? 0) + 1);
+  }
+}
+
+function sameTagMultiset(rebuiltXml: string, sourceXml: string): boolean {
+  const a = new Map<string, number>();
+  const b = new Map<string, number>();
+  tagMultiset(rebuiltXml, a);
+  tagMultiset(sourceXml, b);
+  if (a.size !== b.size) return false;
+  for (const [tag, n] of a) {
+    if (b.get(tag) !== n) return false;
+  }
+  return true;
+}

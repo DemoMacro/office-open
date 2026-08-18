@@ -30,7 +30,7 @@ import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
 import type { ViewPropertiesOptions } from "@parts/view-properties";
-import type { AnimationEntry } from "@shared/animation/timing";
+import type { AnimationEntry, AnimationsOptions } from "@shared/animation/timing";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 import type { PlaceholderDefinition } from "@shared/placeholder";
 import type { ThemeOptions } from "@shared/theme";
@@ -70,7 +70,7 @@ export interface LayoutDefinition {
   // Child slide elements
   colorMappingOverride?: ColorMappingOverrideOptions;
   transition?: TransitionOptions;
-  animations?: AnimationEntry[];
+  animations?: AnimationsOptions;
   /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
   ext?: string;
   // Fresh API (placeholder-template generation)
@@ -101,6 +101,7 @@ export interface SlideCommentOptions {
 
 // Alias of AnimationEntry — the slide-level timing entry is structurally identical.
 export type SlideAnimation = AnimationEntry;
+export type { AnimationsOptions } from "@shared/animation/timing";
 
 export interface SlideOptions {
   children?: SlideChild[];
@@ -121,7 +122,8 @@ export interface SlideOptions {
   controls?: ControlOptions[];
   customerData?: { rId: string }[];
   slideSync?: SlideSyncOptions;
-  animations?: SlideAnimation[];
+  /** Structured entries, or verbatim p:timing inner XML when the source tree exceeds the model. */
+  animations?: SlideAnimation[] | string;
   /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
   ext?: string;
   /** Section name — slides sharing a name form one p14:section in presentation.xml. */
@@ -171,6 +173,12 @@ export interface PresentationOptions extends CorePropertiesOptions {
   modifyVerifier?: ModifyVerifierOptions;
   embeddedFonts?: EmbeddedFontOptions[];
   customShows?: CustomShowOptions[];
+  /**
+   * Default text style (p:defaultTextStyle) as raw inner XML. Fresh emits
+   * PowerPoint's default 9-level style; a parsed source preserves its value;
+   * false omits the element.
+   */
+  defaultTextStyle?: string | false;
   kinsoku?: KinsokuOptions[];
   customerData?: CustomerDataOptions;
   /** Smart tags (p:smartTags) — r:id to the smart-tags part. */

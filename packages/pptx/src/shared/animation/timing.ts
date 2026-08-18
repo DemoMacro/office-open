@@ -344,6 +344,8 @@ function buildEmphasisEffects(
 
     case "colorChange": {
       const color = options.color ?? "FF0000";
+      const animClrAttrs: Record<string, string | undefined> = {};
+      if (options.colorSpace !== undefined) animClrAttrs.clrSpc = options.colorSpace;
       const animClrChildren: string[] = [
         buildXml("p:cBhvr", undefined, [
           buildXml(
@@ -382,7 +384,7 @@ function buildEmphasisEffects(
       animClrChildren.push(
         buildXml("p:to", undefined, [`<a:srgbClr val="${options.colorTo ?? color}"/>`]),
       );
-      children.push(buildXml("p:animClr", undefined, animClrChildren));
+      children.push(buildXml("p:animClr", animClrAttrs, animClrChildren));
       break;
     }
 
@@ -853,6 +855,14 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
 export interface AnimationEntry extends AnimationOptions {
   shapeId: number;
 }
+
+/**
+ * The slide timing tree: structured animation entries, or the verbatim inner
+ * XML of p:timing when the source tree exceeds what the structured model can
+ * rebuild (parse falls back to verbatim so exotic timing content survives
+ * round-trip instead of being silently reorganized).
+ */
+export type AnimationsOptions = AnimationEntry[] | string;
 
 /**
  * p:timing — Slide timing for shape animations.

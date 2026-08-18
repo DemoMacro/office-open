@@ -216,11 +216,11 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     const transition = findChild(el, "p:transition");
     if (transition) result.transition = readTransition(transition, ctx);
 
-    // p:timing.
+    // p:timing (structured entries, or verbatim inner XML fallback).
     const timing = findChild(el, "p:timing");
     if (timing) {
-      const entries = timingDesc.parse(timing, ctx);
-      if (entries.length > 0) result.animations = entries;
+      const animations = timingDesc.parse(timing, ctx);
+      if (!(Array.isArray(animations) && animations.length === 0)) result.animations = animations;
     }
 
     // p:hf.

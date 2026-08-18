@@ -87,11 +87,12 @@ export const slideDesc: CustomDescriptor<SlideOptions> = {
     const transition = findChild(el, "p:transition");
     if (transition) result.transition = readTransition(transition, _ctx);
 
-    // p:timing → animations
+    // p:timing → animations (structured entries, or verbatim inner XML when
+    // the source tree exceeds the model)
     const timing = findChild(el, "p:timing");
     if (timing) {
-      const entries = timingDesc.parse(timing, _ctx);
-      if (entries.length > 0) result.animations = entries;
+      const animations = timingDesc.parse(timing, _ctx);
+      if (!(Array.isArray(animations) && animations.length === 0)) result.animations = animations;
     }
 
     // extLst — verbatim inner XML for unmodeled extensions

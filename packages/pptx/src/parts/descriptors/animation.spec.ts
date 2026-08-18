@@ -23,13 +23,14 @@ function parseTimingXml(xml: string) {
   return timingDesc.parse(el, readCtx);
 }
 
-function roundTrip(entries: AnimationEntry[]) {
+function roundTrip(entries: AnimationEntry[]): AnimationEntry[] {
   const xml = timingDesc.stringify(entries, writeCtx)!;
   if (!xml) return [];
-  const doc = parseXml(xml);
-  const el = doc.elements?.[0];
-  if (!el) throw new Error("parsed document has no root element");
-  return timingDesc.parse(el, readCtx);
+  const result = parseTimingXml(xml);
+  if (!Array.isArray(result)) {
+    throw new Error(`expected structured entries, got verbatim: ${result.slice(0, 120)}`);
+  }
+  return result;
 }
 
 describe("timingDesc round-trip", () => {
@@ -72,9 +73,20 @@ describe("timingDesc round-trip", () => {
     expect(entry?.duration).toBe(700);
   });
 
-  it("parses animate behavior attributes (calcmode/valueType/from/to/by)", () => {
-    const xml = `<p:timing><p:tnLst><p:par><p:cTn><p:childTnLst><p:seq><p:cTn nodeType="mainSeq"><p:childTnLst><p:par><p:cTn><p:childTnLst><p:par><p:cTn nodeType="clickEffect" presetClass="entr" presetID="10"><p:childTnLst><p:anim calcmode="lin" valueType="num" from="0" to="1" by="0.5"><p:cBhvr><p:cTn dur="500"/><p:tgtEl><p:spTgt spid="4"/></p:tgtEl><p:attrNameLst><p:attrName>ppt_w</p:attrName></p:attrNameLst></p:cBhvr></p:anim></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
-    const result = parseTimingXml(xml);
+  it("round-trips animate behavior attributes (calcmode/valueType/from/to/by)", () => {
+    const entries: AnimationEntry[] = [
+      {
+        shapeId: 4,
+        attributeName: "ppt_w",
+        calcMode: "lin",
+        valueType: "num",
+        from: "0",
+        to: "1",
+        animBy: "0.5",
+        duration: 500,
+      },
+    ];
+    const result = roundTrip(entries);
     const [entry] = result;
     expect(entry?.shapeId).toBe(4);
     expect(entry?.calcMode).toBe("lin");
@@ -85,21 +97,62 @@ describe("timingDesc round-trip", () => {
     expect(entry?.attributeName).toBe("ppt_w");
   });
 
-  it("parses animate-color color space and command behavior", () => {
-    const xml = `<p:timing><p:tnLst><p:par><p:cTn><p:childTnLst><p:seq><p:cTn nodeType="mainSeq"><p:childTnLst><p:par><p:cTn><p:childTnLst><p:par><p:cTn nodeType="withEffect" presetClass="emph" presetID="29"><p:childTnLst><p:animClr clrSpc="hsl"><p:cBhvr><p:cTn dur="300"/><p:tgtEl><p:spTgt spid="7"/></p:tgtEl></p:cBhvr></p:animClr><p:cmd type="call" cmd="play"><p:cBhvr><p:cTn dur="300"/><p:tgtEl><p:spTgt spid="7"/></p:tgtEl></p:cBhvr></p:cmd></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
-    const result = parseTimingXml(xml);
-    const [entry] = result;
-    expect(entry?.colorSpace).toBe("hsl");
-    expect(entry?.emphasisType).toBe("colorChange");
-    expect(entry?.commandType).toBe("call");
-    expect(entry?.command).toBe("play");
+  it("round-trips animate-color color space and command behavior", () => {
+    const entries: AnimationEntry[] = [
+      {
+        shapeId: 7,
+        class: "emph",
+        emphasisType: "colorChange",
+        colorSpace: "hsl",
+        colorTo: "FF0000",
+        duration: 300,
+        trigger: "withPrevious",
+      },
+      {
+        shapeId: 7,
+        commandType: "call",
+        command: "play",
+        duration: 300,
+        trigger: "withPrevious",
+      },
+    ];
+    const result = roundTrip(entries);
+    expect(result).toHaveLength(2);
+    const [colorEntry, cmdEntry] = result;
+    expect(colorEntry?.colorSpace).toBe("hsl");
+    expect(colorEntry?.emphasisType).toBe("colorChange");
+    expect(cmdEntry?.commandType).toBe("call");
+    expect(cmdEntry?.command).toBe("play");
   });
 
-  it("parses iterate container attributes", () => {
-    const xml = `<p:timing><p:tnLst><p:par><p:cTn><p:childTnLst><p:seq><p:cTn nodeType="mainSeq"><p:childTnLst><p:par><p:cTn><p:childTnLst><p:par><p:cTn nodeType="clickEffect" presetClass="entr" presetID="10"><p:childTnLst><p:anim calcmode="lin"><p:cBhvr><p:cTn dur="500"/><p:tgtEl><p:spTgt spid="9"/></p:tgtEl></p:cBhvr></p:anim><p:iterate type="lt" backwards="1"><p:tmAbs tm="200"/></p:iterate></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
-    const result = parseTimingXml(xml);
+  it("round-trips iterate container attributes", () => {
+    const entries: AnimationEntry[] = [
+      {
+        shapeId: 9,
+        attributeName: "ppt_w",
+        iterate: { type: "lt", backwards: true, interval: 200 },
+        duration: 500,
+      },
+    ];
+    const result = roundTrip(entries);
     const [entry] = result;
     expect(entry?.shapeId).toBe(9);
-    expect(entry?.iterate).toEqual({ type: "lt", backwards: true });
+    expect(entry?.iterate).toEqual({ type: "lt", backwards: true, interval: 200 });
+  });
+
+  it("falls back to verbatim inner XML when the model cannot rebuild the tree", () => {
+    const xml = `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst><p:audio><p:cMediaNode vol="80000"><p:cTn id="3" fill="hold" display="0"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst></p:cTn><p:tgtEl><p:spTgt spid="5"/></p:tgtEl></p:cMediaNode></p:audio></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
+    const result = parseTimingXml(xml);
+    expect(typeof result).toBe("string");
+    expect(result).toContain('<p:audio><p:cMediaNode vol="80000">');
+    // The verbatim form re-emits byte-identical timing.
+    expect(timingDesc.stringify(result, writeCtx)).toBe(xml);
+  });
+
+  it("falls back to verbatim inner XML for tmRoot-only timing", () => {
+    const xml = `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"/></p:par></p:tnLst></p:timing>`;
+    const result = parseTimingXml(xml);
+    expect(typeof result).toBe("string");
+    expect(timingDesc.stringify(result, writeCtx)).toBe(xml);
   });
 });
