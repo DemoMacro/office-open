@@ -298,7 +298,6 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     ? XML_DECL + commentsDesc.stringify(mergedCommentChildrenList, commentCtx)
     : "";
 
-  const footnoteRelationshipCount = ctx.footNotes.relationships.relationshipCount + 1;
   const footnoteCtx = mkCtx({
     relationships: ctx.footNotes.relationships,
   });
@@ -312,6 +311,10 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       },
       footnoteCtx,
     ) ?? "");
+  // Sampled after stringify: hyperlinks registered during note stringification
+  // take sequential ids here, and the media/embedding offsets below must skip
+  // them (same ordering as the document and comments parts).
+  const footnoteRelationshipCount = ctx.footNotes.relationships.relationshipCount + 1;
 
   const documentMedia = findAndReplaceImagePlaceholders(
     documentXmlData,

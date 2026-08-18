@@ -12,7 +12,6 @@
 
 import { toUint8Array } from "@office-open/core";
 import { TargetModeType } from "@office-open/core";
-import { uniqueId } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
 import { createDataModel, definitionId } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
@@ -1059,15 +1058,20 @@ export function stringifyChildDispatch(
     const body = childParts.join("");
 
     const pushHlAttrs = (attrs: string[]): void => {
-      if (hl.history !== false) attrs.push('w:history="1"');
+      // Presence-based: an unset history keeps the source's attribute-less
+      // form (injecting "1" here would oscillate across re-generations —
+      // absent parses back as undefined, which would then inject "1").
+      if (hl.history !== undefined) attrs.push(`w:history="${hl.history ? "1" : "0"}"`);
       if (hl.tooltip) attrs.push(`w:tooltip="${escapeXml(hl.tooltip)}"`);
       if (hl.targetFrame) attrs.push(`w:tgtFrame="${escapeXml(hl.targetFrame)}"`);
       if (hl.docLocation) attrs.push(`w:docLocation="${escapeXml(hl.docLocation)}"`);
     };
     if (hl.url) {
-      const linkId = uniqueId();
-      ctx.viewWrapper.relationships.addRelationship(
-        linkId,
+      // Auto-allocated sequential id — deterministic across runs, so a
+      // re-generated document keeps byte-stable relationships (random ids
+      // would drift on every compile). Later media/embedding offsets sample
+      // relationshipCount after this registration, so no id collision.
+      const linkId = ctx.viewWrapper.relationships.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
         hl.url,
         TargetModeType.EXTERNAL,

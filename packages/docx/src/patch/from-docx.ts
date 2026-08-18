@@ -85,8 +85,12 @@ function createPatchContext(
     file: file as unknown as BodyContext["file"],
     viewWrapper: {
       relationships: {
-        addRelationship: (linkId: string, _type: string, target: string, _mode?: string) => {
-          hyperlinkSink.push({ id: linkId, link: target });
+        // Sequential ids, mirroring Relationships.add. The bare number is
+        // stored — appendRelationship adds the rId prefix when flushing.
+        add: (_type: string, target: string) => {
+          const id = hyperlinkSink.length + 1;
+          hyperlinkSink.push({ id: String(id), link: target });
+          return id;
         },
         relationshipCount: 0,
       },
@@ -448,15 +452,12 @@ export const patchDocument = async <T extends OutputType = OutputType>({
         file,
         viewWrapper: {
           relationships: {
-            addRelationship: (
-              linkId: string,
-              _: string,
-              target: string,
-              __: (typeof TargetModeType)[keyof typeof TargetModeType],
-            ) => {
+            // Sequential ids, mirroring Relationships.add. The bare number is
+            // stored — appendRelationship adds the rId prefix when flushing.
+            add: (_: string, target: string) => {
               hyperlinkRelationshipAdditions.push({
                 hyperlink: {
-                  id: linkId,
+                  id: String(hyperlinkRelationshipAdditions.length + 1),
                   link: target,
                 },
                 key,
