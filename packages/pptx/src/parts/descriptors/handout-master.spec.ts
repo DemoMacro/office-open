@@ -19,7 +19,7 @@ const readCtx = {
 } as unknown as ReadContext;
 
 function roundTrip(opts: HandoutMasterDescriptorOptions) {
-  const xml = handoutMasterDesc.stringify(opts, writeCtx)!;
+  const xml = handoutMasterDesc.stringify(opts, writeCtx as never)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");

@@ -7,7 +7,7 @@
 import { parseColorMapping, stringifyColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringifyTextListStyleTag, textListStyleDesc } from "@office-open/core/drawing";
-import { findChild } from "@office-open/xml";
+import { findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { buildHfAttrs, parseHeaderFooter } from "@parts/handout-master";
 import { DEFAULT_NOTES_STYLE } from "@parts/notes-master";
@@ -45,6 +45,7 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterOptions, PptxWriteCont
       if (xml) parts.push(xml);
     }
     parts.push("</p:spTree>");
+    if (opts.ext !== undefined) parts.push(`<p:extLst>${opts.ext}</p:extLst>`);
     parts.push("</p:cSld>");
 
     parts.push(stringifyColorMapping(opts.colorMapping, "p:clrMap"));
@@ -88,6 +89,9 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterOptions, PptxWriteCont
 
     const headerFooter = parseHeaderFooter(findChild(el, "p:hf"));
     if (headerFooter) result.headerFooter = headerFooter;
+
+    const extLst = cSld && findChild(cSld, "p:extLst");
+    if (extLst) result.ext = stringify(extLst);
 
     const notesStyleEl: XmlElement | undefined = findChild(el, "p:notesStyle");
     if (notesStyleEl) {

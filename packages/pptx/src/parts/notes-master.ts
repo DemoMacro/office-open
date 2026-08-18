@@ -22,6 +22,8 @@ export interface NotesMasterOptions {
   notesStyle?: TextListStyleOptions;
   /** The notes master's own theme part (ppt/theme/themeN.xml); defaults to the Office theme. */
   theme?: ThemeOptions;
+  /** Trailing p:extLst inner XML (e.g. p14:creationId) — verbatim round-trip. */
+  ext?: string;
 }
 
 /** MS Office default notes style — 9 levels, 12pt minor font, incremental margins. */

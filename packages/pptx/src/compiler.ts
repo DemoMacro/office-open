@@ -887,7 +887,7 @@ export function compilePresentation(
         (handoutMasterDesc.stringify({ options: options.handoutMasterOptions }, descCtx) ?? ""),
       path: "ppt/handoutMasters/handoutMaster1.xml",
     };
-    const handoutMasterThemeXml = createThemeXml();
+    const handoutMasterThemeXml = createThemeXml(options.handoutMasterOptions?.theme, descCtx);
     mapping["HandoutMasterTheme"] = {
       data: XML_DECL + handoutMasterThemeXml,
       path: `ppt/theme/theme${handoutMasterThemeIndex}.xml`,

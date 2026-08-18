@@ -1,6 +1,9 @@
 import { parseOnOff, stringifyColorMapping } from "@office-open/core";
 import type { ColorMappingOptions } from "@office-open/core";
+import type { ThemeOptions } from "@office-open/core/theme";
 import { attr, type Element } from "@office-open/xml";
+import type { BackgroundOptions } from "@parts/background";
+import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 
 /** Header/footer options for handout/notes master */
@@ -17,10 +20,18 @@ export interface HeaderFooterOptions {
 
 /** Options for handout master parameterization */
 export interface HandoutMasterOptions {
+  /** Background (p:bg); defaults to the Office bgRef idx="1001". */
+  background?: BackgroundOptions;
+  /** Custom spTree shapes (p:spTree children after the group header). */
+  children?: SlideChild[];
   /** Color mapping overrides */
   colorMapping?: Partial<ColorMappingOptions>;
   /** Header/footer settings */
   headerFooter?: HeaderFooterOptions;
+  /** The handout master's own theme part; defaults to the Office theme. */
+  theme?: ThemeOptions;
+  /** Trailing p:extLst inner XML (e.g. p14:creationId) — verbatim round-trip. */
+  ext?: string;
 }
 
 export function buildHfAttrs(opts?: HeaderFooterOptions): string {

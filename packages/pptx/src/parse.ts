@@ -17,6 +17,7 @@ import { attr, attrNum, findChild } from "@office-open/xml";
 
 import { PptxReadContext, ParseContext } from "./context";
 import { commentAuthorsDesc, slideCommentsDesc } from "./parts/descriptors/comments";
+import { handoutMasterDesc } from "./parts/descriptors/handout-master";
 import { notesMasterDesc } from "./parts/descriptors/notes-master";
 import { notesSlideDesc } from "./parts/descriptors/notes-slide";
 import { presentationDesc } from "./parts/descriptors/presentation";
@@ -48,7 +49,9 @@ export interface PptxPartRefs {
   themes: string[];
   /** ppt/notesMasters/notesMasterN.xml */
   notesMasters: string[];
-  /** ppt/handoutMasters/handoutMasterN.xml presence (content re-emitted default). */
+  /** ppt/handoutMasters/handoutMasterN.xml */
+  handoutMasters: string[];
+  /** ppt/handoutMasters/handoutMasterN.xml presence. */
   handoutMaster: boolean;
   /** ppt/commentAuthors.xml */
   commentAuthors?: string;
@@ -190,7 +193,7 @@ export function parsePptx(data: DataType): PptxDocument {
   const slideMasters: string[] = [];
   const themes: string[] = [];
   const notesMasters: string[] = [];
-  let hasHandoutMaster = false;
+  const handoutMasters: string[] = [];
   let presProps: string | undefined;
   let viewProps: string | undefined;
   let tableStyles: string | undefined;
@@ -218,10 +221,7 @@ export function parsePptx(data: DataType): PptxDocument {
       } else if (type.includes("/notesMaster")) {
         notesMasters.push(path);
       } else if (type.includes("/handoutMaster")) {
-        // Referenced from presentation.xml but never re-emitted with content —
-        // the compiler writes its default handout master (tag-identical to the
-        // Office originals in the corpus). Only the inclusion flag round-trips.
-        hasHandoutMaster = true;
+        handoutMasters.push(path);
       } else if (type.includes("/presProps")) {
         presProps = path;
       } else if (type.includes("/viewProps")) {
@@ -238,6 +238,7 @@ export function parsePptx(data: DataType): PptxDocument {
   sortByNumber(slideMasters);
   sortByNumber(themes);
   sortByNumber(notesMasters);
+  sortByNumber(handoutMasters);
 
   const slideLayouts = sortByNumber(xmlKeys(doc.keys("ppt/slideLayouts/")));
   const notesSlides = sortByNumber(xmlKeys(doc.keys("ppt/notesSlides/")));
@@ -245,7 +246,8 @@ export function parsePptx(data: DataType): PptxDocument {
   const partRefs: PptxPartRefs = {
     themes,
     notesMasters,
-    handoutMaster: hasHandoutMaster,
+    handoutMasters,
+    handoutMaster: handoutMasters.length > 0,
     commentAuthors,
     comments: [],
     charts: [],
@@ -621,8 +623,23 @@ export function parsePresentation(data: DataType): PresentationOptions {
     }
   }
 
-  // 5c. Parse handout masters (no separate handling needed, just mark inclusion)
-  // Handout masters are referenced from presentation.xml rels but not stored in PptxDocument currently
+  // 5c. Parse handout masters — content plus their own theme part
+  const handoutMasterThemePaths = resolveRelTargets(
+    pptx.doc,
+    pptx.partRefs.handoutMasters,
+    (t) => t.includes("/theme") && !t.includes("/themeOverride") && !t.includes("/themeManager"),
+  );
+  for (const hmPath of pptx.partRefs.handoutMasters) {
+    const hmEl = pptx.doc.get(hmPath);
+    if (!hmEl) continue;
+    const hmParsed = handoutMasterDesc.parse(hmEl, masterReadCtx);
+    if (hmParsed.options) {
+      const hmThemePath = handoutMasterThemePaths.get(hmPath);
+      const hmThemeEl = hmThemePath ? pptx.doc.get(hmThemePath) : undefined;
+      if (hmThemeEl) hmParsed.options.theme = themeDesc.parse(hmThemeEl, masterReadCtx);
+      opts.handoutMasterOptions = hmParsed.options;
+    }
+  }
 
   // 6. Parse comment authors
   const commentAuthors = new Map<number, { name: string; initials: string }>();
