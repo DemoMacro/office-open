@@ -1,9 +1,11 @@
 import type {
   BaseTableOptions,
+  GraphicFrameLockingOptions,
   NonVisualDrawingPropertiesOptions,
   TableStyleOptions,
   UniversalMeasure,
 } from "@office-open/core";
+import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
 
 import type { CellBorderOptions } from "./table-cell-properties";
 import type { TableRowOptions } from "./table-row";
@@ -16,9 +18,16 @@ import type { TableRowOptions } from "./table-row";
  * both the public slide-child entry and the descriptor.
  */
 export interface TableOptions
-  extends BaseTableOptions<TableRowOptions>, NonVisualDrawingPropertiesOptions {
+  extends
+    BaseTableOptions<TableRowOptions>,
+    NonVisualDrawingPropertiesOptions,
+    NvPrPlaceholderOptions {
   /** Table id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
+  /** Frame locking (a:graphicFrameLocks). undefined = fresh default
+   * (noGrp="1"); null = empty cNvGraphicFramePr; object = explicit flags. */
+  locking?: GraphicFrameLockingOptions | null;
+
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;

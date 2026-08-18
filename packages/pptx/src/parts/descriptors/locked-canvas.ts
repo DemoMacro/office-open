@@ -16,6 +16,12 @@ import {
 import { findChild } from "@office-open/xml";
 
 import type { LockedCanvasFrameOptions, LockedCanvasShapeOptions } from "../locked-canvas-frame";
+import {
+  readGraphicFrameLocking,
+  readNvPrPlaceholder,
+  stringifyCnvGraphicFramePr,
+  stringifyNvPr,
+} from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
 
 // ── ID counters ──
@@ -42,8 +48,8 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
     // p:nvGraphicFramePr
     parts.push(
       `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
-        `<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>` +
-        `<p:nvPr/></p:nvGraphicFramePr>`,
+        `${stringifyCnvGraphicFramePr(opts.locking)}` +
+        `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
 
     // p:xfrm
@@ -71,6 +77,9 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
+    const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), _ctx);
+    readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
+    if (locking !== undefined) result.locking = locking;
 
     // x, y, width, height from p:xfrm
     const xfrm = findChild(el, "p:xfrm");

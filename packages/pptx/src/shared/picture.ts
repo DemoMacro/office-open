@@ -1,4 +1,10 @@
-import type { BasePictureOptions, EffectListOptions, UniversalMeasure } from "@office-open/core";
+import type {
+  BasePictureOptions,
+  EffectListOptions,
+  PictureLockingOptions,
+  UniversalMeasure,
+} from "@office-open/core";
+import type { FillOptions, SourceRectangleOptions } from "@office-open/core/drawing";
 import type { TextHyperlinkOptions } from "@office-open/core/drawing";
 
 /**
@@ -26,6 +32,12 @@ export interface PictureOptions extends BasePictureOptions {
   type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
   effects?: EffectListOptions;
+  /** Crop rectangle (a:srcRect) — integer percent insets. */
+  sourceRectangle?: SourceRectangleOptions;
+  /** Fill on p:spPr (a:noFill on cropped pictures is common). */
+  fill?: FillOptions;
+  /** Picture locks (a:picLocks inside p:cNvPicPr). */
+  locking?: PictureLockingOptions;
   /**
    * Click hyperlink on the picture itself (a:hlinkClick inside p:cNvPr) —
    * jump to a URL or another slide when the picture is clicked.

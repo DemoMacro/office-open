@@ -10,6 +10,7 @@ import { parse, stringify } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
 import {
   connectorLockingDesc,
+  effectListDesc,
   fillDesc,
   findFillChild,
   outlineDesc,
@@ -20,8 +21,10 @@ import {
 import { attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ConnectorOptions, LineShapeOptions } from "@shared/shape/line-shape";
+import { readShapeStyle } from "@shared/shape/shape";
 
 import { readCnvPr } from "./shape";
+import { stringifyShapeStyle } from "./shape";
 
 // ── ID counters ──
 
@@ -46,7 +49,7 @@ function stringifyLineXfrmGeometry(x1: number, y1: number, x2: number, y2: numbe
 function parseLineSpPr(
   spPr: Element,
   ctx: ReadContext,
-): Pick<LineShapeOptions, "x1" | "y1" | "x2" | "y2" | "fill" | "outline"> {
+): Pick<LineShapeOptions, "x1" | "y1" | "x2" | "y2" | "fill" | "outline" | "effects"> {
   const result: ReturnType<typeof parseLineSpPr> = {};
 
   const xfrm = findChild(spPr, "a:xfrm");
@@ -75,6 +78,8 @@ function parseLineSpPr(
   if (fillChild) result.fill = parse(fillDesc, fillChild, ctx);
   const ln = findChild(spPr, "a:ln");
   if (ln) result.outline = parse(outlineDesc, ln, ctx);
+  const effectLst = findChild(spPr, "a:effectLst");
+  if (effectLst) result.effects = parse(effectListDesc, effectLst, ctx);
 
   return result;
 }
@@ -116,7 +121,16 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
       if (outlineXml) spPrParts.push(outlineXml);
     }
 
+    // Effects (a:effectLst after a:ln per CT_ShapeProperties)
+    if (opts.effects) spPrParts.push(stringify(effectListDesc, opts.effects, ctx) ?? "");
+
     parts.push(`<p:spPr>${spPrParts.join("")}</p:spPr>`);
+
+    // p:style
+    if (opts.style) {
+      const styleXml = stringifyShapeStyle(opts.style, ctx);
+      if (styleXml) parts.push(styleXml);
+    }
 
     // p:txBody
     parts.push('<p:txBody><a:bodyPr wrap="square"/><a:lstStyle/><a:p/></p:txBody>');
@@ -130,9 +144,13 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     // p:nvSpPr → id, name
     Object.assign(result, readCnvPr(el, "p:nvSpPr"));
 
-    // p:spPr → endpoints (off/ext + flip) + fill/outline
+    // p:spPr → endpoints (off/ext + flip) + fill/outline/effects
     const spPr = findChild(el, "p:spPr");
     if (spPr) Object.assign(result, parseLineSpPr(spPr, _ctx));
+
+    // p:style
+    const lineStyle = findChild(el, "p:style");
+    if (lineStyle) result.style = readShapeStyle(lineStyle, _ctx);
 
     return result as LineShapeOptions;
   },
@@ -189,7 +207,16 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
       if (outlineXml) spPrParts.push(outlineXml);
     }
 
+    // Effects (a:effectLst after a:ln per CT_ShapeProperties)
+    if (opts.effects) spPrParts.push(stringify(effectListDesc, opts.effects, ctx) ?? "");
+
     parts.push(`<p:spPr>${spPrParts.join("")}</p:spPr>`);
+
+    // p:style
+    if (opts.style) {
+      const styleXml = stringifyShapeStyle(opts.style, ctx);
+      if (styleXml) parts.push(styleXml);
+    }
 
     return `<p:cxnSp>${parts.join("")}</p:cxnSp>`;
   },
@@ -221,9 +248,13 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
       }
     }
 
-    // p:spPr → endpoints (off/ext + flip) + fill/outline
+    // p:spPr → endpoints (off/ext + flip) + fill/outline/effects
     const spPr = findChild(el, "p:spPr");
     if (spPr) Object.assign(result, parseLineSpPr(spPr, _ctx));
+
+    // p:style
+    const cxnStyle = findChild(el, "p:style");
+    if (cxnStyle) result.style = readShapeStyle(cxnStyle, _ctx);
 
     return result as ConnectorOptions;
   },

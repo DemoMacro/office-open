@@ -6,9 +6,11 @@
 
 import type {
   DataType,
+  GraphicFrameLockingOptions,
   NonVisualDrawingPropertiesOptions,
   UniversalMeasure,
 } from "@office-open/core";
+import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
 
 // ── Options ──
 
@@ -39,7 +41,10 @@ export interface OleIconImageOptions {
  * {@link NonVisualDrawingPropertiesOptions}. The single source of truth for
  * both the public slide-child entry and the descriptor.
  */
-export interface OleOptions extends NonVisualDrawingPropertiesOptions {
+export interface OleOptions extends NonVisualDrawingPropertiesOptions, NvPrPlaceholderOptions {
+  /** Frame locking (a:graphicFrameLocks). undefined = fresh default
+   * (noGrp="1"); null = empty cNvGraphicFramePr; object = explicit flags. */
+  locking?: GraphicFrameLockingOptions | null;
   /** OLE frame id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   /** Position and size */

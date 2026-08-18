@@ -18,6 +18,12 @@ import { attr, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { ChartOptions } from "../chart-frame";
+import {
+  readGraphicFrameLocking,
+  readNvPrPlaceholder,
+  stringifyCnvGraphicFramePr,
+  stringifyNvPr,
+} from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
 
 // ── ID counter ──
@@ -53,8 +59,8 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     const { title: _chartTitle, ...cNvPrProps } = opts;
     parts.push(
       `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, cNvPrProps, name)}` +
-        `<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>` +
-        `<p:nvPr/></p:nvGraphicFramePr>`,
+        `${stringifyCnvGraphicFramePr(opts.locking)}` +
+        `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
 
     // p:xfrm
@@ -76,6 +82,9 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     // id + name from p:nvGraphicFramePr/p:cNvPr — drop the cNvPr @title so the
     // chart title (parsed from the chart part below) stays the single source.
     const { title: _cNvPrTitle, ...cNvPrProps } = readCnvPr(el, "p:nvGraphicFramePr");
+    const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), _ctx);
+    if (locking !== undefined) result.locking = locking;
+    readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
     Object.assign(result, cNvPrProps);
 
     // Position from p:xfrm

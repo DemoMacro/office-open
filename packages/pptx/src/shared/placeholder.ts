@@ -229,7 +229,7 @@ export function extractPlaceholderDefinition(
 
   // p:style — placeholders default to none; carry whenever present.
   const styleEl = findChild(spEl, "p:style");
-  if (styleEl) def.style = readShapeStyle(styleEl);
+  if (styleEl) def.style = readShapeStyle(styleEl, ctx);
 
   // A placeholder definition requires a concrete position.
   if (

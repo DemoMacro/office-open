@@ -3,8 +3,10 @@ import type {
   NonVisualDrawingPropertiesOptions,
   UniversalMeasure,
 } from "@office-open/core";
-import type { OutlineOptions } from "@office-open/core/drawing";
+import type { EffectListOptions, OutlineOptions } from "@office-open/core/drawing";
 import type { FillOptions } from "@shared/drawing/fill";
+
+import type { ShapeStyleOptions } from "./shape";
 
 export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
@@ -14,6 +16,10 @@ export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
   y2?: number | UniversalMeasure;
   fill?: FillOptions;
   outline?: OutlineOptions;
+  /** Effect list (a:effectLst) inside spPr. An empty object emits the bare element. */
+  effects?: EffectListOptions;
+  /** Shape style matrix reference (p:style). */
+  style?: ShapeStyleOptions;
 }
 
 /**
@@ -29,4 +35,8 @@ export interface ConnectorOptions extends BaseConnectorOptions {
   y2?: number | UniversalMeasure;
   fill?: FillOptions;
   outline?: OutlineOptions;
+  /** Effect list (a:effectLst) inside spPr. An empty object emits the bare element. */
+  effects?: EffectListOptions;
+  /** Shape style matrix reference (p:style). */
+  style?: ShapeStyleOptions;
 }

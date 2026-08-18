@@ -1,4 +1,5 @@
 import type { UniversalMeasure } from "@office-open/core";
+import type { GraphicFrameLockingOptions } from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawing";
 import type {
   ColorDefinitionOptions,
@@ -6,6 +7,7 @@ import type {
   StyleDefinitionOptions,
   TreeNode,
 } from "@office-open/core/smartart";
+import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
 
 export {
   getLayoutXml,
@@ -30,7 +32,10 @@ export type { TreeNode };
  *
  * @publicApi
  */
-export interface SmartArtOptions extends NonVisualDrawingPropertiesOptions {
+export interface SmartArtOptions extends NonVisualDrawingPropertiesOptions, NvPrPlaceholderOptions {
+  /** Frame locking (a:graphicFrameLocks). undefined = fresh default
+   * (noGrp="1"); null = empty cNvGraphicFramePr; object = explicit flags. */
+  locking?: GraphicFrameLockingOptions | null;
   /** Diagram id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   /** Pre-generated SmartArt key (e.g. "smartart_1024"). Auto-generated if omitted. */

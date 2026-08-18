@@ -13,6 +13,12 @@ import { attr, attrBool, attrNum, escapeXml, findChild, type Element } from "@of
 
 import type { PptxWriteContext } from "../../context";
 import type { OleOptions } from "../ole-frame";
+import {
+  readGraphicFrameLocking,
+  readNvPrPlaceholder,
+  stringifyCnvGraphicFramePr,
+  stringifyNvPr,
+} from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
 
 // ── ID counter ──
@@ -38,8 +44,8 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     // p:nvGraphicFramePr
     parts.push(
       `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
-        `<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>` +
-        `<p:nvPr/></p:nvGraphicFramePr>`,
+        `${stringifyCnvGraphicFramePr(opts.locking)}` +
+        `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
 
     // p:xfrm
@@ -109,6 +115,9 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
 
     // id, name from p:nvGraphicFramePr/p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
+    const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), ctx);
+    readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
+    if (locking !== undefined) result.locking = locking;
 
     // x, y, width, height from p:xfrm (in EMU)
     const xfrm = findChild(el, "p:xfrm");

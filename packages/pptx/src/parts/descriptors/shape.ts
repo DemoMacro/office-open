@@ -18,17 +18,26 @@ import {
   textBodyDesc,
   stringifyNonVisualDrawingProperties,
   parseNonVisualDrawingProperties,
-  createSolidFill,
+  pictureLockingDesc,
+  createSourceRectangle,
+  fillDesc,
+  findFillChild,
   stringifyColorChoice,
   registerHyperlink,
   buildHyperlinkElement,
   readHyperlink,
 } from "@office-open/core/drawing";
+import type { SourceRectangleOptions } from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, escapeXml, attrNum, attr } from "@office-open/xml";
 import { imageTypeFromPath } from "@shared/media/image-type";
 import type { PictureOptions } from "@shared/picture";
-import { readShapeStyle, type ShapeOptions, type ShapeStyleOptions } from "@shared/shape/shape";
+import {
+  readShapeStyle,
+  type ShapeOptions,
+  type ShapeStyleOptions,
+  type StyleReferenceColor,
+} from "@shared/shape/shape";
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
 
@@ -122,7 +131,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
 
     // p:style
     const style = findChild(el, "p:style");
-    if (style) result.style = readShapeStyle(style);
+    if (style) result.style = readShapeStyle(style, ctx);
 
     // p:txBody
     const txBody = findChild(el, "p:txBody");
@@ -168,7 +177,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     parts.push(stringifyNvPicPr(id, name, opts, ctx));
 
     // ── p:blipFill ──
-    parts.push(stringifyPptxBlipFill(mediaEntry.fileName));
+    parts.push(stringifyPptxBlipFill(mediaEntry.fileName, opts.sourceRectangle));
 
     // ── p:spPr ──
     const spPrXml = stringifyPicSpPr(opts, ctx);
@@ -190,6 +199,12 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       }
       const hlinkClick = cNvPr ? findChild(cNvPr, "a:hlinkClick") : undefined;
       if (hlinkClick) result.hyperlink = readHyperlink(hlinkClick, ctx);
+      const cNvPicPr = findChild(nvPicPr, "p:cNvPicPr");
+      const picLocks = cNvPicPr ? findChild(cNvPicPr, "a:picLocks") : undefined;
+      if (picLocks) {
+        const locks = parse(pictureLockingDesc, picLocks, ctx);
+        if (locks && Object.keys(locks).length > 0) result.locking = locks;
+      }
     }
 
     // p:spPr (position/size/flip/rotation)
@@ -217,12 +232,32 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
         }
       }
 
+      // Fill (a:noFill on cropped/locked pictures is common)
+      const fillChild = findFillChild(spPr);
+      if (fillChild) result.fill = parse(fillDesc, fillChild, ctx);
+
       // Effects (e.g. shadow/reflection on the picture)
       const effectLst = findChild(spPr, "a:effectLst");
       if (effectLst) {
         const effects = parse(effectListDesc, effectLst, ctx);
         if (effects) result.effects = effects;
       }
+    }
+
+    // Crop rectangle from p:blipFill → a:srcRect (‰ → percent)
+    const blipFill = findChild(el, "p:blipFill");
+    const srcRectEl = blipFill ? findChild(blipFill, "a:srcRect") : undefined;
+    if (srcRectEl?.attributes) {
+      const rect: SourceRectangleOptions = {};
+      const l = attrNum(srcRectEl, "l");
+      if (l !== undefined) rect.left = l / 1000;
+      const t = attrNum(srcRectEl, "t");
+      if (t !== undefined) rect.top = t / 1000;
+      const r = attrNum(srcRectEl, "r");
+      if (r !== undefined) rect.right = r / 1000;
+      const b = attrNum(srcRectEl, "b");
+      if (b !== undefined) rect.bottom = b / 1000;
+      result.sourceRectangle = rect;
     }
 
     // Image data from p:blipFill → a:blip → r:embed
@@ -344,7 +379,13 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
     : isPlaceholder
       ? opts.geometry
       : (opts.geometry ?? "rect");
-  const fill = isPlaceholder ? opts.fill : (opts.fill ?? ({ type: "none" } as const));
+  // A shape whose p:style carries a fillRef inherits its fill from the style
+  // matrix — an explicit noFill would override that, so leave the spPr fill
+  // unset unless the source (or the fresh caller) says otherwise.
+  const styleOwnsFill = opts.style?.fillReference !== undefined;
+  const fill = isPlaceholder
+    ? opts.fill
+    : (opts.fill ?? (styleOwnsFill ? undefined : ({ type: "none" } as const)));
 
   const spPrContent = shapePropertiesDesc.stringify(
     {
@@ -377,28 +418,26 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
 // ── Shape helper: p:style ──
 
 /**
- * Serialize p:style (CT_ShapeStyle). lnRef/fillRef/effectRef carry a bare
- * EG_ColorChoice; fontRef wraps it in a:solidFill. Shared by the shape
- * descriptor and the master placeholder emitter.
+ * Serialize p:style (CT_ShapeStyle). Every ref carries a bare EG_ColorChoice
+ * child (any of the six color kinds; fontRef included — @idx is
+ * ST_FontCollectionIndex, not numeric). Shared by the shape descriptor and
+ * the master placeholder emitter.
  */
 export function stringifyShapeStyle(style: ShapeStyleOptions, ctx: WriteContext): string {
   const ref = (
     name: string,
-    { index, color }: { index: number; color?: string },
-    wrapSolidFill: boolean,
+    { index, color }: { index: number | string; color?: StyleReferenceColor },
   ): string => {
     if (color === undefined) return `<${name} idx="${index}"/>`;
-    const colorChoice = wrapSolidFill
-      ? createSolidFill({ value: color })
-      : stringifyColorChoice({ value: color }, ctx);
-    return `<${name} idx="${index}">${colorChoice}</${name}>`;
+    const choice = typeof color === "string" ? { value: color } : color;
+    return `<${name} idx="${index}">${stringifyColorChoice(choice, ctx)}</${name}>`;
   };
 
   const parts: string[] = [];
-  if (style.lineReference) parts.push(ref("a:lnRef", style.lineReference, false));
-  if (style.fillReference) parts.push(ref("a:fillRef", style.fillReference, false));
-  if (style.effectReference) parts.push(ref("a:effectRef", style.effectReference, false));
-  if (style.fontReference) parts.push(ref("a:fontRef", style.fontReference, true));
+  if (style.lineReference) parts.push(ref("a:lnRef", style.lineReference));
+  if (style.fillReference) parts.push(ref("a:fillRef", style.fillReference));
+  if (style.effectReference) parts.push(ref("a:effectRef", style.effectReference));
+  if (style.fontReference) parts.push(ref("a:fontRef", style.fontReference));
   return parts.length > 0 ? `<p:style>${parts.join("")}</p:style>` : "";
 }
 
@@ -417,12 +456,15 @@ function stringifyNvPicPr(
     hlinkXml = buildHyperlinkElement("a:hlinkClick", opts.hyperlink, key);
   }
   const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml);
-  return `<p:nvPicPr>${cNvPrXml}<p:cNvPicPr/><p:nvPr/></p:nvPicPr>`;
+  const locks = opts?.locking ? (pictureLockingDesc.stringify(opts.locking, ctx) ?? "") : "";
+  const cNvPicPr = locks ? `<p:cNvPicPr>${locks}</p:cNvPicPr>` : "<p:cNvPicPr/>";
+  return `<p:nvPicPr>${cNvPrXml}${cNvPicPr}<p:nvPr/></p:nvPicPr>`;
 }
 
 /** PPTX uses p:blipFill (not pic:blipFill). */
-function stringifyPptxBlipFill(fileName: string): string {
-  return `<p:blipFill><a:blip r:embed="{${escapeXml(fileName)}}" cstate="none"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
+function stringifyPptxBlipFill(fileName: string, sourceRectangle?: SourceRectangleOptions): string {
+  const srcRect = sourceRectangle ? createSourceRectangle(sourceRectangle) : "";
+  return `<p:blipFill><a:blip r:embed="{${escapeXml(fileName)}}" cstate="none"/>${srcRect}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
 }
 
 function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
@@ -437,6 +479,7 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
       rotation: opts.rotation,
       // Pictures always use a rect preset geometry.
       geometry: "rect",
+      fill: opts.fill,
       effects: opts.effects,
     },
     ctx,

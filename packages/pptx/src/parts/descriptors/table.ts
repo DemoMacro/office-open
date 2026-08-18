@@ -39,6 +39,12 @@ import type { TableOptions } from "@shared/table/table-frame";
 import type { TableRowOptions } from "@shared/table/table-row";
 
 import type { PptxWriteContext } from "../../context";
+import {
+  readGraphicFrameLocking,
+  stringifyCnvGraphicFramePr,
+  readNvPrPlaceholder,
+  stringifyNvPr,
+} from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
 import { paragraphDesc, type ParagraphDescriptorOptions } from "./text";
 
@@ -75,8 +81,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // p:nvGraphicFramePr
     parts.push(
       `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
-        `<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>` +
-        `<p:nvPr/></p:nvGraphicFramePr>`,
+        `${stringifyCnvGraphicFramePr(opts.locking)}` +
+        `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
 
     // p:xfrm
@@ -123,6 +129,9 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
 
     // Name from p:nvGraphicFramePr → p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
+    const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), ctx);
+    readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
+    if (locking !== undefined) result.locking = locking;
 
     // Find a:tbl inside a:graphicData
     const graphicData = findChild(el, "a:graphic");

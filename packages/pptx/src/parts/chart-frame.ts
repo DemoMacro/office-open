@@ -1,5 +1,10 @@
-import type { NonVisualDrawingPropertiesOptions, UniversalMeasure } from "@office-open/core";
+import type {
+  GraphicFrameLockingOptions,
+  NonVisualDrawingPropertiesOptions,
+  UniversalMeasure,
+} from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
+import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
 
 /**
  * Chart frame options for pptx slides (p:graphicFrame referencing a c:chartSpace).
@@ -13,9 +18,16 @@ import type { ChartSpaceOptions } from "@office-open/core/chart";
  * cannot mean two XML attributes (alt text goes in `description`).
  */
 export interface ChartOptions
-  extends ChartSpaceOptions, Omit<NonVisualDrawingPropertiesOptions, "title"> {
+  extends
+    ChartSpaceOptions,
+    Omit<NonVisualDrawingPropertiesOptions, "title">,
+    NvPrPlaceholderOptions {
   /** Chart frame id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
+  /** Frame locking (a:graphicFrameLocks). undefined = fresh default
+   * (noGrp="1"); null = empty cNvGraphicFramePr; object = explicit flags. */
+  locking?: GraphicFrameLockingOptions | null;
+
   x?: number | UniversalMeasure;
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
