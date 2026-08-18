@@ -572,19 +572,9 @@ export function parseDocument(data: DataType): DocumentOptions {
   }
   if (opts.bibliography) rebuilt.push(docx.partRefs.bibliography!);
   if (opts.glossary) rebuilt.push(docx.partRefs.glossary!);
-  for (const p of docx.partRefs.charts.values()) rebuilt.push(p);
-  // Diagram part XML is re-emitted (dataModel/stub) but their .rels are not —
-  // passthrough keeps them (and the media only they reference) alive.
-  for (const refs of [
-    docx.partRefs.diagramData,
-    docx.partRefs.diagramLayout,
-    docx.partRefs.diagramQuickStyle,
-    docx.partRefs.diagramColors,
-  ]) {
-    for (const p of refs.values()) rebuilt.push(p);
-  }
-  for (const p of docx.partRefs.afChunks.values()) rebuilt.push(p);
-  for (const p of docx.partRefs.subDocs.values()) rebuilt.push(p);
+  // Charts/diagrams/afChunks/subDocs are model-driven (emitted only when the
+  // model carries them) — not listed: they pass through and the compiler's
+  // output at the same path wins by assembly order.
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     docx.doc,
     rebuilt,

@@ -1,6 +1,7 @@
 import type { ParsedArchive } from "@office-open/core";
 import {
   appPropertiesDesc,
+  collectPassthroughParts,
   customPropertiesDesc,
   parseArchive,
   parseCorePropsElement,
@@ -683,5 +684,34 @@ export function parsePresentation(data: DataType): PresentationOptions {
   }
 
   opts.slides = result;
+
+  // Package-wide passthrough (SDK ExtendedPart analogue): every part the model
+  // did NOT absorb is carried verbatim instead of dropped. Listed below are
+  // only parts the compiler ALWAYS re-emits — anything model-driven (layouts,
+  // themes beyond the first, charts, notes) may or may not be emitted, so it
+  // passes through and the compiler's own output at the same path wins by
+  // assembly order. Media is likewise not listed (pinned source paths).
+  const rebuilt: string[] = ["ppt/presentation.xml", "ppt/_rels/presentation.xml.rels"];
+  if (pptx.coreProps) rebuilt.push(pptx.coreProps);
+  if (pptx.appProps) rebuilt.push(pptx.appProps);
+  if (pptx.customProps) rebuilt.push(pptx.customProps);
+  for (const p of pptx.slides) {
+    rebuilt.push(p);
+    rebuilt.push(partPathToRelsPath(p));
+  }
+  for (const p of pptx.slideMasters) {
+    rebuilt.push(p);
+    rebuilt.push(partPathToRelsPath(p));
+  }
+  if (pptx.presProps) rebuilt.push(pptx.presProps);
+  if (pptx.viewProps) rebuilt.push(pptx.viewProps);
+  if (pptx.tableStyles) rebuilt.push(pptx.tableStyles);
+  const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
+    pptx.doc,
+    rebuilt,
+  );
+  if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
+  if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
+
   return opts as PresentationOptions;
 }

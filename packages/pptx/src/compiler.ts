@@ -40,6 +40,7 @@ import {
   deriveContentTypes,
   resolverFromRegistry,
   themeOverrideDesc,
+  toUint8Array,
   PPTX_PARTS,
 } from "@office-open/core";
 import type { XmlifyedFile, Zippable } from "@office-open/core";
@@ -922,6 +923,13 @@ export function compilePresentation(
     data: replacedPresentationXml,
     path: "ppt/presentation.xml",
   };
+  // Passthrough relationships (round-trip): the source presentation.xml.rels
+  // referenced parts the model carries verbatim (handoutMaster, customXml, …).
+  // Re-emit them as written — targets are passthrough paths that never move.
+  for (const rel of options.passthroughRelationships ?? []) {
+    if (rel.source !== "ppt/presentation.xml") continue;
+    presRels.add(rel.relationshipType as RelationshipType, rel.target);
+  }
   mapping["PresentationRelationships"] = {
     data: XML_DECL + presRels.serialize(),
     path: "ppt/_rels/presentation.xml.rels",
@@ -1252,6 +1260,19 @@ export function compilePresentation(
     addBinaryFile(files, `ppt/embeddings/${embedding.fileName}`, embedding.data, mediaLevel);
   }
 
+  // Raw passthrough parts (handout masters, customXml, unknown extensions, …).
+  // The compiler output above wins over a passthrough copy at the same path —
+  // media/charts/notes absorbed into the model are re-emitted under pinned
+  // source paths, so only what the model missed actually passes through.
+  const passthroughSkipped = new Set<string>();
+  for (const part of options.rawParts ?? []) {
+    if (files[part.path] !== undefined) {
+      passthroughSkipped.add(part.path);
+      continue;
+    }
+    files[part.path] = toUint8Array(part.data);
+  }
+
   // Derive [Content_Types].xml from the actual parts written — the file set is
   // the single source of truth, so declarations cannot drift from what is on
   // disk, and sparse/index-based names (slide-keyed comments) are handled
@@ -1260,6 +1281,19 @@ export function compilePresentation(
     resolve: PPTX_CONTENT_TYPE_RESOLVER,
     mediaContentTypes: PPTX_MEDIA_CONTENT_TYPES,
   });
+  // Passthrough parts whose extension has no covering Default would leave the
+  // package invalid (an undeclared part — Office refuses to open). Only those
+  // borrow their source content-type declaration as a per-part Override;
+  // extensions already covered (xml/rels/media) stay as derived above.
+  const coveredExt = new Set(contentTypesInput.defaults.map((d) => d.extension.toLowerCase()));
+  for (const part of options.rawParts ?? []) {
+    if (part.contentType === undefined || passthroughSkipped.has(part.path)) continue;
+    const dot = part.path.lastIndexOf(".");
+    const slash = part.path.lastIndexOf("/");
+    const ext = dot > slash ? part.path.slice(dot + 1).toLowerCase() : undefined;
+    if (ext && coveredExt.has(ext)) continue;
+    contentTypesInput.overrides.push({ partName: `/${part.path}`, contentType: part.contentType });
+  }
   files["[Content_Types].xml"] = encoder.encode(
     XML_DECL + (contentTypesDesc.stringify(contentTypesInput, descCtx) ?? ""),
   );

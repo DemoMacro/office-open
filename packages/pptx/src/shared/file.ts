@@ -1,4 +1,4 @@
-import type { TableStyleListOptions } from "@office-open/core";
+import type { DataType, TableStyleListOptions } from "@office-open/core";
 import type {
   AppPropertiesOptions,
   CorePropertiesOptions,
@@ -180,4 +180,19 @@ export interface PresentationOptions extends CorePropertiesOptions {
   appProperties?: AppPropertiesOptions;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */
   customProperties?: CustomPropertyOptions[];
+  /**
+   * Parts carried verbatim from the source that generate() does not rebuild
+   * (handout masters, customXml, any unknown extension part). Collected
+   * wholesale by the core passthrough pipeline — everything the model did not
+   * absorb survives with bytes and content-type declaration intact. Parts the
+   * compiler happens to rebuild under the same path win over the passthrough
+   * copy (assembly order), so media/charts/notes need no exclusion here.
+   */
+  rawParts?: { path: string; data: DataType; contentType?: string }[];
+  /**
+   * Relationships from rebuilt parts' source .rels that point at rawParts
+   * (e.g. presentation.xml → handoutMaster). Re-emitted verbatim — target
+   * unchanged (passthrough paths never move), fresh rId. Round-trip only.
+   */
+  passthroughRelationships?: { source: string; relationshipType: string; target: string }[];
 }
