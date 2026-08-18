@@ -10162,6 +10162,26 @@
       "required": ["id", "paragraphs"],
       "type": "object"
     },
+    "NumberingInsertionOptions": {
+      "additionalProperties": false,
+      "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange).",
+      "properties": {
+        "author": {
+          "description": "Author of the change",
+          "type": "string"
+        },
+        "date": {
+          "description": "Date of the change",
+          "type": "string"
+        },
+        "id": {
+          "description": "Revision ID",
+          "type": "string"
+        }
+      },
+      "required": ["id", "author"],
+      "type": "object"
+    },
     "NumberingOptions": {
       "additionalProperties": false,
       "description": "Options for configuring numbering definitions.",
@@ -11260,6 +11280,7 @@
                   "type": "string"
                 },
                 "children": {
+                  "description": "Link content: text runs plus drawings (image links) and other run-level children the paragraph dispatch serializes.",
                   "items": {
                     "anyOf": [
                       {
@@ -11267,6 +11288,9 @@
                       },
                       {
                         "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/ParagraphChild"
                       }
                     ]
                   },
@@ -11955,6 +11979,17 @@
           "type": "object"
         },
         {
+          "additionalProperties": false,
+          "properties": {
+            "rawXml": {
+              "type": "string"
+            }
+          },
+          "required": ["rawXml"],
+          "title": "rawXml",
+          "type": "object"
+        },
+        {
           "$ref": "#/definitions/RunOptions"
         }
       ],
@@ -12093,6 +12128,10 @@
                 "autoStyle": {
                   "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                   "type": "boolean"
+                },
+                "insertion": {
+                  "$ref": "#/definitions/NumberingInsertionOptions",
+                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
                 },
                 "instance": {
                   "description": "Instance number for multiple lists with same reference",
@@ -12372,6 +12411,10 @@
                 "autoStyle": {
                   "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                   "type": "boolean"
+                },
+                "insertion": {
+                  "$ref": "#/definitions/NumberingInsertionOptions",
+                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
                 },
                 "instance": {
                   "description": "Instance number for multiple lists with same reference",
@@ -13219,6 +13262,10 @@
                 "autoStyle": {
                   "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                   "type": "boolean"
+                },
+                "insertion": {
+                  "$ref": "#/definitions/NumberingInsertionOptions",
+                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
                 },
                 "instance": {
                   "description": "Instance number for multiple lists with same reference",
@@ -16970,6 +17017,10 @@
                           "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                           "type": "boolean"
                         },
+                        "insertion": {
+                          "$ref": "#/definitions/NumberingInsertionOptions",
+                          "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                        },
                         "instance": {
                           "description": "Instance number for multiple lists with same reference",
                           "type": "number"
@@ -18806,6 +18857,10 @@
           "$ref": "#/definitions/Floating",
           "description": "Floating positioning"
         },
+        "lastRenderedPageBreak": {
+          "description": "Word's pagination hint sharing the drawing run (round-trip fidelity).",
+          "type": "boolean"
+        },
         "layout": {
           "anyOf": [
             {
@@ -18823,6 +18878,10 @@
             "$ref": "#/definitions/SmartArtNode"
           },
           "type": "array"
+        },
+        "runProperties": {
+          "$ref": "#/definitions/RunPropertiesOptions",
+          "description": "Run properties of the wrapping drawing run (round-trip fidelity)."
         },
         "style": {
           "anyOf": [

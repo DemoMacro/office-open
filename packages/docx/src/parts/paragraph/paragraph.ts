@@ -152,7 +152,9 @@ export type ParagraphChild =
         docLocation?: string;
         /** Add the target to the navigation history (CT_Hyperlink `@history`) */
         history?: boolean;
-        children?: (RunOptions | string)[];
+        /** Link content: text runs plus drawings (image links) and other
+         *  run-level children the paragraph dispatch serializes. */
+        children?: (RunOptions | string | ParagraphChild)[];
       };
       /**
        * Display-text shorthand for the hyperlink (emitted as a single text run).
@@ -230,6 +232,9 @@ export type ParagraphChild =
     }
   // Inline structured document tag (CT_SdtRun)
   | { sdt: SdtRunOptions }
+  // Verbatim run-level XML captured on parse for shapes without a structured
+  // form (unrecognized drawings, future graphicData payloads)
+  | { rawXml: string }
   // Text run
   | RunOptions;
 

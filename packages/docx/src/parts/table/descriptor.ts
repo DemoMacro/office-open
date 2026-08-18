@@ -1068,8 +1068,10 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
     } else if (child.name === "w:sdt") {
       const sdtPr = findChild(child, "w:sdtPr");
       const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+      // CT_SdtEndPr wraps its run properties in a w:rPr child
       const sdtEndPr = findChild(child, "w:sdtEndPr");
-      const endProperties = sdtEndPr ? parseRunProperties(sdtEndPr) : undefined;
+      const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
+      const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
       const sdtContent = findChild(child, "w:sdtContent");
       const sdtCells: TableCellOptions[] = [];
       if (sdtContent) {
@@ -1145,8 +1147,10 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
     } else if (child.name === "w:sdt") {
       const sdtPr = findChild(child, "w:sdtPr");
       const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+      // CT_SdtEndPr wraps its run properties in a w:rPr child
       const sdtEndPr = findChild(child, "w:sdtEndPr");
-      const endProperties = sdtEndPr ? parseRunProperties(sdtEndPr) : undefined;
+      const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
+      const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
       const sdtContent = findChild(child, "w:sdtContent");
       const sdtRows: TableRowOptions[] = [];
       if (sdtContent) {

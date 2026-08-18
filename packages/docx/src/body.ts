@@ -46,6 +46,7 @@ import type {
 } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type {
+  NumberingInsertionOptions,
   ParagraphPropertiesOptions,
   ParagraphPropertiesChangeOptions,
 } from "@parts/paragraph/properties";
@@ -615,6 +616,7 @@ export function parseParagraphProperties(
           level?: number;
           autoStyle: boolean;
           numberingChange?: { original: string; id: string; author: string; date?: string };
+          insertion?: NumberingInsertionOptions;
         } = { reference: `list_${numId}`, level, autoStyle: false };
         // w:numberingChange (CT_TrackChangeNumbering) — child of w:numPr
         const numberingChangeEl = findChild(numPr, "w:numberingChange");
@@ -627,6 +629,17 @@ export function parseParagraphProperties(
           const ncDate = attr(numberingChangeEl, "w:date");
           if (ncDate) nc.date = ncDate;
           numberingOpts.numberingChange = nc;
+        }
+        // w:ins (CT_TrackChange) — numbering applied as a revision
+        const insEl = findChild(numPr, "w:ins");
+        if (insEl) {
+          const ins: Partial<NumberingInsertionOptions> = {
+            id: attr(insEl, "w:id") ?? "",
+            author: attr(insEl, "w:author") ?? "",
+          };
+          const insDate = attr(insEl, "w:date");
+          if (insDate) ins.date = insDate;
+          numberingOpts.insertion = ins as NumberingInsertionOptions;
         }
         opts.numbering = numberingOpts;
       } else {
@@ -971,7 +984,9 @@ function feedFieldRun(
         child = { formField: state.pendingFormField };
       } else if (state.kind === "complex") {
         const cf: ComplexFieldOptions = { instruction: state.pendingInstruction };
-        if (state.pendingResult) cf.result = state.pendingResult;
+        // Mark the result present when the field carried any result run — an
+        // empty-text result still round-trips its separate marker.
+        if (state.resultRunEls.length > 0) cf.result = state.pendingResult;
         if (state.controlRPr) cf.rPrXml = state.controlRPr;
         if (state.resultRPr) cf.resultRPrXml = state.resultRPr;
         // Word styles the end run like the result (not like the controls).
@@ -1066,7 +1081,11 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
   }
   if (!drawingEl) return undefined;
   const drawingChild = parseDrawingRun(drawingEl, ctx);
-  if (!drawingChild) return undefined;
+  if (!drawingChild) {
+    // Unrecognized drawing payload (lockedCanvas, future graphicData URIs) —
+    // keep the whole run verbatim instead of dropping the drawing.
+    return { rawXml: stringifyElement(child) };
+  }
   // Parse the wrapping run's rPr into structured fields so round-trip stays
   // editable (drawings/shapes can be wrapped in <w:r><w:rPr>…</w:rPr>…).
   const rPrEl = findChild(child, "w:rPr");
@@ -1093,6 +1112,8 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.wpgGroup.runProperties = runProperties;
     } else if ("chart" in drawingChild) {
       drawingChild.chart.runProperties = runProperties;
+    } else if ("smartArt" in drawingChild) {
+      drawingChild.smartArt.runProperties = runProperties;
     }
   }
   // A run-level empty element (Word's pagination hint) sharing the drawing's
@@ -1106,6 +1127,8 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.wpgGroup.lastRenderedPageBreak = true;
     } else if ("chart" in drawingChild) {
       drawingChild.chart.lastRenderedPageBreak = true;
+    } else if ("smartArt" in drawingChild) {
+      drawingChild.smartArt.lastRenderedPageBreak = true;
     }
   }
   return drawingChild;
@@ -1393,15 +1416,21 @@ function parseRunLevelChildren(
         const history = attrBool(child, "w:history");
         if (history !== undefined) hl.history = history;
 
-        const linkRuns: (RunOptions | string)[] = [];
+        const linkRuns: (RunOptions | string | ParagraphChild)[] = [];
         for (const sub of child.elements ?? []) {
           if (sub.name === "w:r") {
+            // Drawing runs inside hyperlinks (image links) resolve through the
+            // same paragraph-child extraction — parseRun skips w:drawing.
+            const drawingChild = parseDrawingRunChild(sub, ctx);
+            if (drawingChild) {
+              linkRuns.push(drawingChild);
+              continue;
+            }
             const parsed = parseRun(sub, ctx);
             const runOpts = parsedRunToOptions(parsed);
             // parsedRunToOptions returns null for auto-generated/empty runs
-            // (e.g. footnoteRef, pure drawing) and { commentReference } for
-            // pure comment-reference runs; hyperlink children are
-            // (RunOptions | string), so skip both.
+            // (e.g. footnoteRef) and { commentReference } for pure
+            // comment-reference runs; hyperlink children are runs, so skip both.
             if (runOpts !== null && !("commentReference" in runOpts)) {
               linkRuns.push(runOpts);
             }
@@ -1556,7 +1585,9 @@ function parseRunLevelChildren(
               cachedRunEls.push(sub);
             }
           }
-          if (cachedValue) sf.cachedValue = cachedValue;
+          // Mark the cached value present when any run sat inside the field —
+          // empty-text results still round-trip their run.
+          if (cachedRunEls.length > 0) sf.cachedValue = cachedValue;
           // The plain template emits one bare text run — cached runs carrying
           // rPr (Word marks field results w:noProof) go through verbatim.
           if (!isPlainFieldRuns(cachedRunEls, undefined, ["w:t", "w:instrText"])) {
@@ -1758,8 +1789,10 @@ function parseRunLevelChildren(
       case "w:sdt": {
         const sdtPr = findChild(child, "w:sdtPr");
         const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+        // CT_SdtEndPr wraps its run properties in a w:rPr child
         const sdtEndPr = findChild(child, "w:sdtEndPr");
-        const endProperties = sdtEndPr ? parseRunProperties(sdtEndPr) : undefined;
+        const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
+        const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
         const sdtContent = findChild(child, "w:sdtContent");
         const sdtChildren = parseRunLevelChildren(sdtContent?.elements, ctx);
         const sdt: SdtRunOptions = { properties };

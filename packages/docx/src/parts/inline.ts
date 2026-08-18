@@ -557,6 +557,11 @@ export function stringifyChildDispatch(
   child: ParagraphChild,
   ctx: BodyContext,
 ): string | string[] | undefined {
+  // Verbatim passthrough (unrecognized drawings and other shapes the parse
+  // path keeps byte-faithful) — comes first so no run-like branch claims it.
+  if ("rawXml" in child) {
+    return child.rawXml;
+  }
   // Simple break types — pure XML, no side effects. A break run may carry run
   // properties (round-tripped from <w:r><w:rPr>…</w:rPr><w:br…/></w:r>).
   if ("pageBreak" in child) {
@@ -837,7 +842,10 @@ export function stringifyChildDispatch(
       },
       ctx,
     );
-    return `<w:r>${drawingXml}</w:r>`;
+    return wrapDrawingRun(drawingXml, {
+      runProperties: opts.runProperties,
+      lastRenderedPageBreak: opts.lastRenderedPageBreak,
+    });
   }
 
   // WPS Shape (WordProcessing Shape) — side effect: blip fill media registration
@@ -1016,7 +1024,11 @@ export function stringifyChildDispatch(
         } else {
           const jr = stringifyChildDispatch(rc as ParagraphChild, ctx);
           childParts.push(
-            jr !== undefined ? (Array.isArray(jr) ? jr.join("") : jr) : stringifyRunInline(rc, ctx),
+            jr !== undefined
+              ? Array.isArray(jr)
+                ? jr.join("")
+                : jr
+              : stringifyRunInline(rc as RunOptions, ctx),
           );
         }
       }

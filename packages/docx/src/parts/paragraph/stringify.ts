@@ -24,7 +24,10 @@ import type { IndentProperties } from "@parts/paragraph/formatting/indent";
 import type { SpacingProperties } from "@parts/paragraph/formatting/spacing";
 import type { TabStopDefinition } from "@parts/paragraph/formatting/tab-stop";
 import type { FrameOptions } from "@parts/paragraph/frame/frame-properties";
-import type { ParagraphPropertiesOptions } from "@parts/paragraph/properties";
+import type {
+  NumberingInsertionOptions,
+  ParagraphPropertiesOptions,
+} from "@parts/paragraph/properties";
 import type { EastAsianLayoutOptions } from "@parts/paragraph/run/east-asian-layout";
 import type { ColorOptions } from "@parts/paragraph/run/formatting";
 import type { LanguageOptions } from "@parts/paragraph/run/language";
@@ -186,6 +189,7 @@ function numPrStr(
   numberId: number | string,
   indentLevel: number | undefined,
   numberingChange?: { original: string; id: string; author: string; date?: string },
+  insertion?: NumberingInsertionOptions,
 ): string {
   const idVal = typeof numberId === "string" ? `{${numberId}}` : numberId;
   // w:ilvl is optional in CT_NumPr — omit it when the source numPr carried
@@ -202,6 +206,14 @@ function numPrStr(
       "w:date": numberingChange.date,
     });
     parts.push(`<w:numberingChange${a}/>`);
+  }
+  if (insertion) {
+    const a = attrsRaw({
+      "w:id": insertion.id,
+      "w:author": insertion.author,
+      "w:date": insertion.date,
+    });
+    parts.push(`<w:ins${a}/>`);
   }
   return `<w:numPr>${parts.join("")}</w:numPr>`;
 }
@@ -341,7 +353,12 @@ export function stringifyParagraphProperties(
     });
 
     const numId = `${options.numbering.reference}-${options.numbering.instance ?? 0}`;
-    s += numPrStr(numId, options.numbering.level, options.numbering.numberingChange);
+    s += numPrStr(
+      numId,
+      options.numbering.level,
+      options.numbering.numberingChange,
+      options.numbering.insertion,
+    );
   } else if (options.numbering === false) {
     s += numPrStr(0, 0);
   } else if (options.bullet) {

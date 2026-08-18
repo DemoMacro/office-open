@@ -336,10 +336,15 @@ export function stringifySdtShell(
   endProperties: RunPropertiesOptions | undefined,
   contentXml: string,
 ): string {
-  const endPrInner = endProperties ? stringifyRunPropertiesInner(endProperties) : undefined;
   // sdtEndPr is optional (CT_Sdt's minOccurs=0) — omit when the source had
-  // none rather than injecting an empty element on every round-trip.
-  const endPr = endPrInner ? `<w:sdtEndPr>${endPrInner}</w:sdtEndPr>` : "";
+  // none; an empty object still emits the bare element the source carried.
+  const endPrInner = endProperties ? stringifyRunPropertiesInner(endProperties) : undefined;
+  const endPr =
+    endProperties === undefined
+      ? ""
+      : endPrInner
+        ? `<w:sdtEndPr><w:rPr>${endPrInner}</w:rPr></w:sdtEndPr>`
+        : "<w:sdtEndPr/>";
   const content = contentXml ? `<w:sdtContent>${contentXml}</w:sdtContent>` : "<w:sdtContent/>";
   return `<w:sdt>${stringifySdtPr(properties)}${endPr}${content}</w:sdt>`;
 }
@@ -405,11 +410,16 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
     // sdtPr
     parts.push(stringifySdtPr(opts.properties));
 
-    // sdtEndPr — optional; CT_SdtEndPr wraps its run properties in w:rPr
+    // sdtEndPr — optional; CT_SdtEndPr wraps its run properties in w:rPr.
+    // An empty object still emits the bare element the source carried.
     const endPrInner = opts.endProperties
       ? stringifyRunPropertiesInner(opts.endProperties)
       : undefined;
-    if (endPrInner) parts.push(`<w:sdtEndPr><w:rPr>${endPrInner}</w:rPr></w:sdtEndPr>`);
+    if (opts.endProperties !== undefined) {
+      parts.push(
+        endPrInner ? `<w:sdtEndPr><w:rPr>${endPrInner}</w:rPr></w:sdtEndPr>` : "<w:sdtEndPr/>",
+      );
+    }
 
     // sdtContent — checkbox renders its current state symbol; otherwise serialize children
     if (opts.properties.checkbox) {

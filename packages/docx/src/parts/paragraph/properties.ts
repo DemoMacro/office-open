@@ -18,6 +18,16 @@ import type { TabStopDefinition } from "./formatting/tab-stop";
 import type { FrameOptions } from "./frame/frame-properties";
 import type { ParagraphRunOptions } from "./run/run";
 
+/** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange). */
+export interface NumberingInsertionOptions {
+  /** Revision ID */
+  id: string;
+  /** Author of the change */
+  author: string;
+  /** Date of the change */
+  date?: string;
+}
+
 /**
  * Vertical text alignment types for paragraphs.
  *
@@ -182,6 +192,8 @@ export type ParagraphStylePropertiesOptions = {
           /** Date of the change */
           date?: string;
         };
+        /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange) */
+        insertion?: NumberingInsertionOptions;
       }
     | false;
 } & LevelParagraphStylePropertiesOptions;

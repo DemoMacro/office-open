@@ -139,7 +139,11 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       // all is a mid-field continuation. The per-paragraph field accumulator
       // cannot represent either shape — keep the whole paragraph verbatim
       // instead of dropping its runs.
-      if (isCrossParagraphFieldStart(el) || isFieldContinuation(el)) {
+      if (
+        isCrossParagraphFieldStart(el) ||
+        isFieldContinuation(el) ||
+        isFieldSeparatorContinuation(el)
+      ) {
         return { rawXml: stringifyElement(el) };
       }
 
@@ -379,6 +383,28 @@ function isFieldContinuation(el: Element): boolean {
   };
   walk(el);
   return hasInstr && !hasFldChar;
+}
+
+/**
+ * True when a w:p carries a separate fldChar but no begin — the separator of a
+ * field whose begin sits in an earlier paragraph. The per-paragraph
+ * accumulator would silently consume the separate run.
+ */
+function isFieldSeparatorContinuation(el: Element): boolean {
+  let hasBegin = false;
+  let hasSeparate = false;
+  const walk = (node: Element): void => {
+    if (node.name === "w:fldChar") {
+      const type = attr(node, "w:fldCharType");
+      if (type === "begin") hasBegin = true;
+      else if (type === "separate") hasSeparate = true;
+    }
+    for (const c of node.elements ?? []) {
+      if (c.type === "element") walk(c);
+    }
+  };
+  walk(el);
+  return hasSeparate && !hasBegin;
 }
 
 /**

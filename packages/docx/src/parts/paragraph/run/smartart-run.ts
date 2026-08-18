@@ -16,6 +16,8 @@ import type { Floating } from "@parts/drawing";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { MediaTransformation } from "@shared/media";
 
+import type { RunPropertiesOptions } from "./properties";
+
 /**
  * A tree node for SmartArt data.
  */
@@ -44,4 +46,8 @@ export interface SmartArtOptions {
   style?: string | StyleDefinitionOptions;
   /** Built-in color transform ID ("accent1_2") or a custom color definition. */
   color?: string | ColorDefinitionOptions;
+  /** Run properties of the wrapping drawing run (round-trip fidelity). */
+  runProperties?: RunPropertiesOptions;
+  /** Word's pagination hint sharing the drawing run (round-trip fidelity). */
+  lastRenderedPageBreak?: boolean;
 }
