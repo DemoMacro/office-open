@@ -9,7 +9,7 @@ import { findChild, escapeXml } from "@office-open/xml";
 import type { CustomDescriptor } from "../../descriptor";
 import { runPropertiesDesc } from "./run-properties";
 import type { Mutable } from "./run-properties";
-import type { RunOptions } from "./types";
+import type { TextRunOptions } from "./types";
 
 /**
  * Stringify a text-only run — `<a:r><a:t>…</a:t></a:r>` with no `a:rPr`.
@@ -21,7 +21,7 @@ export function stringifyTextRun(text: string): string {
   return `<a:r><a:t>${escapeXml(text)}</a:t></a:r>`;
 }
 
-export const textRunDesc: CustomDescriptor<RunOptions> = {
+export const textRunDesc: CustomDescriptor<TextRunOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -35,7 +35,7 @@ export const textRunDesc: CustomDescriptor<RunOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Mutable<RunOptions> = {};
+    const result: Mutable<TextRunOptions> = {};
 
     const rPr = findChild(el, "a:rPr");
     if (rPr) {
@@ -50,6 +50,6 @@ export const textRunDesc: CustomDescriptor<RunOptions> = {
         .join("");
     }
 
-    return result as RunOptions;
+    return result as TextRunOptions;
   },
 };

@@ -26,26 +26,26 @@ import type {
   BulletOptions,
   BulletPictureOptions,
   BulletStyleOptions,
-  ParagraphPropertiesOptions,
-  RunOptions,
-  RunPropertiesOptions,
+  TextParagraphPropertiesOptions,
+  TextRunOptions,
+  TextCharacterPropertiesOptions,
   TabStopOptions,
   TextAlignment,
   TextTabAlignment,
   TextFieldOptions,
-  BreakOptions,
+  TextBreakOptions,
 } from "./types";
 
 /** Descriptor-layer paragraph accumulator (a:p). */
 export interface ParagraphDescriptorOptions {
   text?: string;
-  properties?: ParagraphPropertiesOptions;
-  children?: (RunOptions | TextFieldOptions | BreakOptions | string)[];
+  properties?: TextParagraphPropertiesOptions;
+  children?: (TextRunOptions | TextFieldOptions | TextBreakOptions | string)[];
   /**
    * End-paragraph run properties (a:endParaRPr). Fresh paragraphs emit a
    * default lang marker; a parsed source preserves its value; false omits it.
    */
-  endParagraphProperties?: RunPropertiesOptions | false;
+  endParagraphProperties?: TextCharacterPropertiesOptions | false;
 }
 
 // ── Paragraph properties helper (a:pPr / a:lvlNpPr / a:defPPr) ──
@@ -58,7 +58,7 @@ export interface ParagraphDescriptorOptions {
  */
 export function stringifyParagraphPropertiesElement(
   tag: string,
-  options: ParagraphPropertiesOptions,
+  options: TextParagraphPropertiesOptions,
   ctx: WriteContext,
 ): string {
   const children: string[] = [];
@@ -118,7 +118,7 @@ export function stringifyParagraphPropertiesElement(
   }
 
   // Tab stops (after bullets, before defRPr)
-  if (options.tabStops && options.tabStops.length > 0) {
+  if (options.tabStops) {
     children.push(stringifyTabStops(options.tabStops));
   }
 
@@ -141,7 +141,7 @@ export function stringifyParagraphPropertiesElement(
 }
 
 function stringifyParagraphProperties(
-  options: ParagraphPropertiesOptions,
+  options: TextParagraphPropertiesOptions,
   ctx: WriteContext,
 ): string {
   return stringifyParagraphPropertiesElement("a:pPr", options, ctx);
@@ -204,14 +204,15 @@ function stringifyTabStops(stops: TabStopOptions[]): string {
     if (t.alignment) attrs.push(`algn="${t.alignment}"`);
     return `<a:tab${attrs.length ? " " + attrs.join(" ") : ""}/>`;
   });
+  if (tabs.length === 0) return "<a:tabLst/>";
   return `<a:tabLst>${tabs.join("")}</a:tabLst>`;
 }
 
 export function readParagraphProperties(
   el: XmlElement,
   ctx: ReadContext,
-): Mutable<ParagraphPropertiesOptions> {
-  const result: Mutable<ParagraphPropertiesOptions> = {};
+): Mutable<TextParagraphPropertiesOptions> {
+  const result: Mutable<TextParagraphPropertiesOptions> = {};
 
   if (el.attributes) {
     if (el.attributes["algn"] !== undefined)
@@ -225,7 +226,7 @@ export function readParagraphProperties(
     if (el.attributes["fontAlgn"] !== undefined)
       result.fontAlignment = String(
         el.attributes["fontAlgn"],
-      ) as ParagraphPropertiesOptions["fontAlignment"];
+      ) as TextParagraphPropertiesOptions["fontAlignment"];
     if (el.attributes["rtl"] !== undefined)
       result.rightToLeft = parseOnOff(el.attributes["rtl"]) ?? false;
     if (el.attributes["eaLnBrk"] !== undefined)
@@ -349,13 +350,17 @@ export function readParagraphProperties(
         tabs.push(tab);
       }
     }
-    if (tabs.length > 0) result.tabStops = tabs;
+    // Keep an explicit empty element — sources often carry a bare <a:tabLst/>.
+    result.tabStops = tabs;
   }
 
   // Default run properties — after tabLst (CT_TextParagraphProperties).
   const defRPr = findChild(el, "a:defRPr");
   if (defRPr) {
-    result.defaultRunProperties = runPropertiesDesc.parse(defRPr, ctx) as RunPropertiesOptions;
+    result.defaultRunProperties = runPropertiesDesc.parse(
+      defRPr,
+      ctx,
+    ) as TextCharacterPropertiesOptions;
   }
 
   // a:extLst — last child; verbatim inner XML for unmodeled extensions.
@@ -365,7 +370,7 @@ export function readParagraphProperties(
     if (inner) result.ext = inner;
   }
 
-  return result as ParagraphPropertiesOptions;
+  return result as TextParagraphPropertiesOptions;
 }
 
 // ── Paragraph (a:p) ──
@@ -422,14 +427,14 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
     // Paragraph properties
     const pPr = findChild(el, "a:pPr");
     if (pPr) {
-      result.properties = readParagraphProperties(pPr, ctx) as ParagraphPropertiesOptions;
+      result.properties = readParagraphProperties(pPr, ctx) as TextParagraphPropertiesOptions;
     }
 
     // Collect runs, fields, and breaks in document order.
-    const children: (RunOptions | TextFieldOptions | BreakOptions)[] = [];
+    const children: (TextRunOptions | TextFieldOptions | TextBreakOptions)[] = [];
     for (const child of el.elements ?? []) {
       if (child.name === "a:r") {
-        children.push(textRunDesc.parse(child, ctx) as RunOptions);
+        children.push(textRunDesc.parse(child, ctx) as TextRunOptions);
       } else if (child.name === "a:fld") {
         children.push(readTextField(child, ctx));
       } else if (child.name === "a:br") {
@@ -460,7 +465,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       result.endParagraphProperties = runPropertiesDesc.parse(
         endParaRPr,
         ctx,
-      ) as RunPropertiesOptions;
+      ) as TextCharacterPropertiesOptions;
     } else {
       result.endParagraphProperties = false;
     }
@@ -472,30 +477,32 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
 // ── Text field (a:fld) + break (a:br) helpers ──
 
 function isTextField(
-  child: RunOptions | TextFieldOptions | BreakOptions,
+  child: TextRunOptions | TextFieldOptions | TextBreakOptions,
 ): child is TextFieldOptions {
   return typeof (child as TextFieldOptions).type === "string";
 }
 
-function isBreak(child: RunOptions | TextFieldOptions | BreakOptions): child is BreakOptions {
-  return (child as BreakOptions).break === true;
+function isBreak(
+  child: TextRunOptions | TextFieldOptions | TextBreakOptions,
+): child is TextBreakOptions {
+  return (child as TextBreakOptions).break === true;
 }
 
-function stringifyBreak(opts: BreakOptions, ctx: WriteContext): string {
+function stringifyBreak(opts: TextBreakOptions, ctx: WriteContext): string {
   const rPr = opts.properties ? (runPropertiesDesc.stringify(opts.properties, ctx) ?? "") : "";
   return rPr ? `<a:br>${rPr}</a:br>` : "<a:br/>";
 }
 
-function readBreak(el: XmlElement, ctx: ReadContext): BreakOptions {
-  const result = { break: true } as Mutable<BreakOptions>;
+function readBreak(el: XmlElement, ctx: ReadContext): TextBreakOptions {
+  const result = { break: true } as Mutable<TextBreakOptions>;
   const rPr = findChild(el, "a:rPr");
-  if (rPr) result.properties = runPropertiesDesc.parse(rPr, ctx) as RunPropertiesOptions;
-  return result as BreakOptions;
+  if (rPr) result.properties = runPropertiesDesc.parse(rPr, ctx) as TextCharacterPropertiesOptions;
+  return result as TextBreakOptions;
 }
 
 // a:endParaRPr has the same CT_TextCharacterProperties shape as a:rPr; reuse
 // the run-properties serializer under the endParaRPr tag.
-function stringifyEndParaRPr(opts: RunPropertiesOptions, ctx: WriteContext): string {
+function stringifyEndParaRPr(opts: TextCharacterPropertiesOptions, ctx: WriteContext): string {
   return stringifyRunProperties("a:endParaRPr", opts, ctx) || "<a:endParaRPr/>";
 }
 
@@ -519,7 +526,7 @@ function readTextField(el: XmlElement, ctx: ReadContext): TextFieldOptions {
   const id = el.attributes?.["id"];
   if (id !== undefined) result.id = String(id);
   const rPr = findChild(el, "a:rPr");
-  if (rPr) result.properties = runPropertiesDesc.parse(rPr, ctx) as RunPropertiesOptions;
+  if (rPr) result.properties = runPropertiesDesc.parse(rPr, ctx) as TextCharacterPropertiesOptions;
   const pPr = findChild(el, "a:pPr");
   if (pPr) result.paragraphProperties = readParagraphProperties(pPr, ctx);
   const t = findChild(el, "a:t");

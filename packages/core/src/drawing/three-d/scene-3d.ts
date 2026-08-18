@@ -168,6 +168,8 @@ export interface BackdropOptions {
   normal: Vector3D;
   /** Up vector */
   up: Vector3D;
+  /** Trailing a:extLst verbatim inner XML (unknown extensions). */
+  ext?: string;
 }
 
 const createPoint3D = (name: string, point: Point3D): string =>
@@ -181,6 +183,7 @@ const createBackdrop = (options: BackdropOptions): string =>
     createPoint3D("a:anchor", options.anchor),
     createVector3D("a:norm", options.normal),
     createVector3D("a:up", options.up),
+    ...(options.ext !== undefined ? [`<a:extLst>${options.ext}</a:extLst>`] : []),
   ]);
 
 // ─── Scene 3D ───────────────────────────────────────────────────────────────

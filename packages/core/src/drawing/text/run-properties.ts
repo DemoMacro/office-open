@@ -31,7 +31,7 @@ import {
   DEFAULT_SHADOW_DIRECTION,
   DEFAULT_SHADOW_DISTANCE,
 } from "./types";
-import type { TextHyperlinkOptions, RunPropertiesOptions, TextFont } from "./types";
+import type { TextHyperlinkOptions, TextCharacterPropertiesOptions, TextFont } from "./types";
 
 /** Strip `readonly` from all properties. */
 export type Mutable<T> = { -readonly [K in keyof T]?: T[K] };
@@ -145,7 +145,7 @@ function parseFontElement(el: XmlElement | undefined): TextFont | undefined {
  */
 export function stringifyRunProperties(
   tag: string,
-  opts: RunPropertiesOptions,
+  opts: TextCharacterPropertiesOptions,
   ctx: WriteContext,
 ): string {
   // Side-effect: register hyperlinks (click + hover). Only relational targets
@@ -271,7 +271,7 @@ export function stringifyRunProperties(
   return `<${tag}${attrStr}>${parts.join("")}</${tag}>`;
 }
 
-export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
+export const runPropertiesDesc: CustomDescriptor<TextCharacterPropertiesOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -279,7 +279,7 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
   },
 
   parse(el, _ctx) {
-    const result: Mutable<RunPropertiesOptions> = {};
+    const result: Mutable<TextCharacterPropertiesOptions> = {};
 
     // nativeTypeAttributes (opc parser) coerces boolean attribute values between
     // string/number/boolean forms; parseOnOff accepts all of them.
@@ -292,19 +292,19 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
       if (el.attributes["u"] !== undefined)
         result.underline = xsdUnderlineStyle.from(
           String(el.attributes["u"]),
-        ) as RunPropertiesOptions["underline"];
+        ) as TextCharacterPropertiesOptions["underline"];
       if (el.attributes["lang"] !== undefined) result.lang = String(el.attributes["lang"]);
       if (el.attributes["strike"] !== undefined)
         result.strike = xsdStrikeStyle.from(
           String(el.attributes["strike"]),
-        ) as RunPropertiesOptions["strike"];
+        ) as TextCharacterPropertiesOptions["strike"];
       if (el.attributes["baseline"] !== undefined) {
         result.baseline = parsePercentAttr(el.attributes["baseline"])!;
       }
       if (el.attributes["cap"] !== undefined)
         result.capitalization = xsdTextCaps.from(
           String(el.attributes["cap"]),
-        ) as RunPropertiesOptions["capitalization"];
+        ) as TextCharacterPropertiesOptions["capitalization"];
       if (el.attributes["spc"] !== undefined) result.spacing = Number(el.attributes["spc"]) / 100;
       if (el.attributes["noProof"] !== undefined) result.noProof = isOn(el.attributes["noProof"]);
       if (el.attributes["dirty"] !== undefined) result.dirty = isOn(el.attributes["dirty"]);
@@ -395,6 +395,6 @@ export const runPropertiesDesc: CustomDescriptor<RunPropertiesOptions> = {
     const rtl = findChild(el, "a:rtl");
     if (rtl) result.rightToLeft = isOn(rtl.attributes?.["val"]);
 
-    return result as RunPropertiesOptions;
+    return result as TextCharacterPropertiesOptions;
   },
 };

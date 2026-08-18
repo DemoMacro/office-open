@@ -113,7 +113,9 @@ export function stringifyLineProperties(
   if (opts.headEnd) parts.push(stringifyLineEnd("a:headEnd", opts.headEnd));
   if (opts.tailEnd) parts.push(stringifyLineEnd("a:tailEnd", opts.tailEnd));
 
-  if (parts.length === 0 && !attrStr) return undefined;
+  // An empty object emits the bare element — sources often carry a bare
+  // <a:ln/> (or <a:uLn/>) that must survive a round-trip.
+  if (parts.length === 0 && !attrStr) return `<${tag}/>`;
   if (parts.length === 0) return `<${tag}${attrStr}/>`;
   return `<${tag}${attrStr}>${parts.join("")}</${tag}>`;
 }

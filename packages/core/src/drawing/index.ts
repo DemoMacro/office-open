@@ -43,6 +43,7 @@ export { createGroupFill } from "./fill/group-fill";
 
 // Outline
 export { createOutline } from "./outline/outline";
+export { stringifyLineProperties } from "./outline/outline-descriptors";
 export type { OutlineOptions, OutlineFillProperties } from "./outline/outline";
 export type { LineCap, CompoundLine, PenAlignment, PresetDash, LineJoin } from "./outline/outline";
 export { createCustomDash } from "./outline/custom-dash";

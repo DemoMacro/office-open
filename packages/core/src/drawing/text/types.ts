@@ -80,7 +80,7 @@ export type RunFont =
 
 // ── Run properties (CT_TextCharacterProperties) ──
 
-export interface RunPropertiesOptions {
+export interface TextCharacterPropertiesOptions {
   /** Font size in points. Serialized as OOXML a:sz (hundredths of a point). */
   size?: number;
   bold?: boolean;
@@ -126,7 +126,7 @@ export interface RunPropertiesOptions {
 
 // ── Run (a:r) ──
 
-export interface RunOptions extends RunPropertiesOptions {
+export interface TextRunOptions extends TextCharacterPropertiesOptions {
   text?: string;
 }
 
@@ -192,7 +192,7 @@ export interface TabStopOptions {
 
 // ── Paragraph properties (a:pPr) ──
 
-export interface ParagraphPropertiesOptions {
+export interface TextParagraphPropertiesOptions {
   alignment?: TextAlignment;
   indentLevel?: number;
   /** Space after a paragraph in points (a:spcAft/a:spcPts). */
@@ -216,7 +216,7 @@ export interface ParagraphPropertiesOptions {
   /** a:tabLst — explicit tab stops (emitted after bullets, before defRPr). */
   tabStops?: TabStopOptions[];
   /** a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties). */
-  defaultRunProperties?: RunPropertiesOptions;
+  defaultRunProperties?: TextCharacterPropertiesOptions;
   fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
   /** `@rtl` — paragraph right-to-left. */
   rightToLeft?: boolean;
@@ -240,17 +240,17 @@ export interface TextFieldOptions {
   /** a:t — display text (often a placeholder such as "‹#›" or "1/27/13"). */
   text?: string;
   /** a:rPr — run properties. */
-  properties?: RunPropertiesOptions;
+  properties?: TextCharacterPropertiesOptions;
   /** a:pPr — paragraph properties (CT_TextParagraphProperties). */
-  paragraphProperties?: ParagraphPropertiesOptions;
+  paragraphProperties?: TextParagraphPropertiesOptions;
 }
 
 // ── Soft line break (a:br) ──
 
-export interface BreakOptions {
+export interface TextBreakOptions {
   /** Marks a soft line break (a:br) within a paragraph's children. */
   break: true;
-  properties?: RunPropertiesOptions;
+  properties?: TextCharacterPropertiesOptions;
 }
 
 // ── Defaults ──

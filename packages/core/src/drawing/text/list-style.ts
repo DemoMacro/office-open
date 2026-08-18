@@ -19,7 +19,7 @@ import { findChild, stringify } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { readParagraphProperties, stringifyParagraphPropertiesElement } from "./paragraph";
-import type { ParagraphPropertiesOptions } from "./types";
+import type { TextParagraphPropertiesOptions } from "./types";
 
 // ── Types ──
 
@@ -29,10 +29,10 @@ import type { ParagraphPropertiesOptions } from "./types";
  */
 export interface TextListStyleOptions {
   /** a:defPPr — defaults applied before any level. */
-  defaultParagraph?: ParagraphPropertiesOptions;
+  defaultParagraph?: TextParagraphPropertiesOptions;
   /** Levels 1-9; index 0 = lvl1pPr. `null` omits the level (JSON form of
    *  an undefined array slot — the position still pins the level number). */
-  levels?: (ParagraphPropertiesOptions | null)[];
+  levels?: (TextParagraphPropertiesOptions | null)[];
   /** Trailing a:extLst verbatim inner XML; `""` preserves a bare <a:extLst/>. */
   ext?: string;
 }
@@ -62,7 +62,8 @@ function stringifyGroup(
     if (lvl) parts.push(stringifyParagraphPropertiesElement(`a:lvl${i + 1}pPr`, lvl, ctx));
   }
   if (group.ext !== undefined) parts.push(`<a:extLst>${group.ext}</a:extLst>`);
-  return `<${tag}>${parts.join("")}</${tag}>`;
+  // An empty group keeps the bare element — sources may carry <p:otherStyle/>.
+  return parts.length ? `<${tag}>${parts.join("")}</${tag}>` : `<${tag}/>`;
 }
 
 /**
@@ -94,7 +95,7 @@ function parseGroup(el: Element | undefined, ctx: ReadContext): TextListStyleOpt
   const group: TextListStyleOptions = {};
   const defPPr = findChild(el, "a:defPPr");
   if (defPPr) group.defaultParagraph = readParagraphProperties(defPPr, ctx);
-  const levels: (ParagraphPropertiesOptions | null)[] = [];
+  const levels: (TextParagraphPropertiesOptions | null)[] = [];
   for (let i = 1; i <= 9; i++) {
     const lvlEl = findChild(el, `a:lvl${i}pPr`);
     levels.push(lvlEl ? readParagraphProperties(lvlEl, ctx) : null);
@@ -102,8 +103,7 @@ function parseGroup(el: Element | undefined, ctx: ReadContext): TextListStyleOpt
   if (group.defaultParagraph || levels.some((l) => l !== null)) group.levels = levels;
   const extLst = findChild(el, "a:extLst");
   if (extLst) group.ext = stringify(extLst);
-  if (group.levels || group.ext !== undefined) return group;
-  return undefined;
+  return group;
 }
 
 /** Parse CT_SlideMasterTextStyles (the three p:titleStyle/p:bodyStyle/p:otherStyle groups). */

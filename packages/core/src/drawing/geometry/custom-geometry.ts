@@ -383,8 +383,8 @@ export const createCustomGeometry = (options: CustomGeometryOptions): string => 
     children.push(createGuideList("a:gdLst", options.guides));
   }
 
-  // a:ahLst
-  if (options.adjustHandles && options.adjustHandles.length > 0) {
+  // a:ahLst — an empty array keeps the bare element (sources often carry one).
+  if (options.adjustHandles) {
     children.push(
       element(
         "a:ahLst",

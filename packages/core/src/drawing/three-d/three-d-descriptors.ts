@@ -4,7 +4,7 @@
  * @module
  */
 
-import { escapeXml } from "@office-open/xml";
+import { escapeXml, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild } from "@office-open/xml";
 
@@ -297,7 +297,8 @@ function stringifyBackdrop(opts: BackdropOptions): string {
   const content =
     stringifyPoint3D("a:anchor", opts.anchor) +
     stringifyVector3D("a:norm", opts.normal) +
-    stringifyVector3D("a:up", opts.up);
+    stringifyVector3D("a:up", opts.up) +
+    (opts.ext !== undefined ? `<a:extLst>${opts.ext}</a:extLst>` : "");
   return `<a:backdrop>${content}</a:backdrop>`;
 }
 
@@ -326,5 +327,8 @@ function readBackdrop(el: XmlElement): BackdropOptions | undefined {
   const normVec = readVector3D(norm);
   const upVec = readVector3D(up);
   if (!anchorPt || !normVec || !upVec) return undefined;
-  return { anchor: anchorPt, normal: normVec, up: upVec };
+  const result: BackdropOptions = { anchor: anchorPt, normal: normVec, up: upVec };
+  const extLst = findChild(el, "a:extLst");
+  if (extLst) result.ext = stringifyXml(extLst);
+  return result;
 }

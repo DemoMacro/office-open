@@ -9,7 +9,7 @@ import type { ParagraphDescriptorOptions } from "./paragraph";
 import { textRunDesc } from "./run";
 import { runPropertiesDesc } from "./run-properties";
 import { textBodyDesc } from "./text-body";
-import type { RunOptions, RunPropertiesOptions } from "./types";
+import type { TextRunOptions, TextCharacterPropertiesOptions } from "./types";
 
 // ── Mock write context ──
 
@@ -33,7 +33,7 @@ const readCtx = {
 // ── runPropertiesDesc ──
 
 describe("runPropertiesDesc round-trip", () => {
-  function roundTrip(opts: RunPropertiesOptions) {
+  function roundTrip(opts: TextCharacterPropertiesOptions) {
     const xml = runPropertiesDesc.stringify(opts, writeCtx)!;
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("no root");
@@ -219,7 +219,7 @@ describe("runPropertiesDesc round-trip", () => {
 // ── textRunDesc ──
 
 describe("textRunDesc round-trip", () => {
-  function roundTrip(opts: RunOptions) {
+  function roundTrip(opts: TextRunOptions) {
     const xml = textRunDesc.stringify(opts, writeCtx)!;
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("no root");
@@ -259,7 +259,7 @@ describe("paragraphDesc round-trip", () => {
         { text: "World", italic: true },
       ],
     });
-    const children = r.children! as RunOptions[];
+    const children = r.children! as TextRunOptions[];
     expect(children).toHaveLength(2);
     expect(children[0]?.text).toBe("Hello ");
     expect(children[0]?.bold).toBe(true);
@@ -277,7 +277,7 @@ describe("paragraphDesc round-trip", () => {
     const r = roundTrip({
       children: ["lead ", { text: "run", bold: true }],
     });
-    const children = r.children! as RunOptions[];
+    const children = r.children! as TextRunOptions[];
     expect(children).toHaveLength(2);
     expect(children[0]?.text).toBe("lead ");
     expect(children[1]?.text).toBe("run");
@@ -385,7 +385,7 @@ describe("paragraphDesc round-trip", () => {
 
   it("preserves single-run formatting (no text-shorthand collapse)", () => {
     const r = roundTrip({ children: [{ text: "Bold", bold: true }] });
-    const children = r.children! as RunOptions[];
+    const children = r.children! as TextRunOptions[];
     expect(children).toHaveLength(1);
     expect(children[0]?.text).toBe("Bold");
     expect(children[0]?.bold).toBe(true);

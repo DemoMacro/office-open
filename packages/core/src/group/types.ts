@@ -1,5 +1,6 @@
 import { pickNonVisualDrawingProperties } from "../drawing";
 import type { NonVisualDrawingPropertiesOptions } from "../drawing";
+import type { GroupLockingOptions } from "../drawing/locking";
 
 /**
  * Base group options — the shared shape across pptx (p:grpSp), xlsx (xdr:grpSp),
@@ -17,18 +18,23 @@ import type { NonVisualDrawingPropertiesOptions } from "../drawing";
  */
 export interface BaseGroupOptions extends NonVisualDrawingPropertiesOptions {
   /**
-   * Reserved for group-specific shared fields (e.g. a:grpSpLocks) should a
-   * future phase promote them across all three packages. Empty for now — see
-   * the module docstring for why grpSpPr content and children stay per-package.
+   * Group shape locks (a:grpSpLocks inside cNvGrpSpPr) — the one shared field
+   * beyond cNvPr. null keeps an explicit empty element (Office often emits
+   * `<a:grpSpLocks/>`); see the module docstring for why grpSpPr content and
+   * children stay per-package.
    */
+  locking?: GroupLockingOptions | null;
 }
 
 /**
- * Pick the group base fields (cNvPr) actually set on `opts`, dropping undefined.
- * Used when bridging a package's group options onto the shared base during
- * cross-format conversion.
+ * Pick the group base fields (cNvPr + locks) actually set on `opts`, dropping
+ * undefined. Used when bridging a package's group options onto the shared base
+ * during cross-format conversion.
  */
 export function pickGroupBase(opts: BaseGroupOptions | undefined): Partial<BaseGroupOptions> {
   if (!opts) return {};
-  return { ...pickNonVisualDrawingProperties(opts) };
+  return {
+    ...pickNonVisualDrawingProperties(opts),
+    ...(opts.locking !== undefined ? { locking: opts.locking } : {}),
+  };
 }

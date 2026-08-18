@@ -344,10 +344,10 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
       parts.push(stringifyGuideList("a:gdLst", opts.guides));
     }
 
-    // a:ahLst
-    if (opts.adjustHandles && opts.adjustHandles.length > 0) {
+    // a:ahLst — an empty array keeps the bare element (sources often carry one).
+    if (opts.adjustHandles) {
       const inner = opts.adjustHandles.map(stringifyAdjustHandle).join("");
-      parts.push(`<a:ahLst>${inner}</a:ahLst>`);
+      parts.push(inner ? `<a:ahLst>${inner}</a:ahLst>` : "<a:ahLst/>");
     }
 
     // a:cxnLst
@@ -386,11 +386,11 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
       if (guides.length > 0) result.guides = guides;
     }
 
-    // a:ahLst
+    // a:ahLst — keep a bare element too (sources often carry <a:ahLst/>).
     const ahLst = findChild(el, "a:ahLst");
-    if (ahLst?.elements) {
+    if (ahLst) {
       const handles: AdjustHandle[] = [];
-      for (const child of ahLst.elements) {
+      for (const child of ahLst.elements ?? []) {
         if (child.name === "a:ahXY") {
           const h = readXYAdjustHandle(child);
           if (h) handles.push(h);
@@ -399,7 +399,8 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
           if (h) handles.push(h);
         }
       }
-      if (handles.length > 0) result.adjustHandles = handles;
+      // Keep an explicit empty element — sources often carry a bare <a:ahLst/>.
+      result.adjustHandles = handles;
     }
 
     // a:cxnLst
