@@ -36,7 +36,7 @@ export const themeDesc: CustomDescriptor<ThemeOptions, WriteContext, ThemeOption
 
     const themeElements = findChild(el, "a:themeElements");
     if (themeElements) {
-      const colorScheme = parseColorScheme(findChild(themeElements, "a:clrScheme"));
+      const colorScheme = parseColorScheme(findChild(themeElements, "a:clrScheme"), ctx);
       if (colorScheme) result.colorScheme = colorScheme;
       const fontScheme = parseFontScheme(findChild(themeElements, "a:fontScheme"));
       if (fontScheme) result.fontScheme = fontScheme;

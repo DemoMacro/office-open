@@ -18,6 +18,7 @@ import type {
   ShapePropertiesOptions,
   SolidFillOptions,
   StyleMatrixReferenceOptions,
+  SystemColorOptions,
   TextListStyleOptions,
 } from "../drawing";
 
@@ -56,20 +57,26 @@ export interface FontSchemeOptions {
   name?: string;
 }
 
-/** Color scheme — 12 theme colors as hex without # (CT_ColorScheme). */
+/**
+ * A theme color slot — hex string (emits a:srgbClr) or a structured system
+ * color (emits a:sysClr verbatim).
+ */
+export type SchemeColorValue = string | SystemColorOptions;
+
+/** Color scheme — 12 theme colors (CT_ColorScheme). */
 export interface ColorSchemeOptions {
-  dark1?: string;
-  light1?: string;
-  dark2?: string;
-  light2?: string;
-  accent1?: string;
-  accent2?: string;
-  accent3?: string;
-  accent4?: string;
-  accent5?: string;
-  accent6?: string;
-  hyperlink?: string;
-  followedHyperlink?: string;
+  dark1?: SchemeColorValue;
+  light1?: SchemeColorValue;
+  dark2?: SchemeColorValue;
+  light2?: SchemeColorValue;
+  accent1?: SchemeColorValue;
+  accent2?: SchemeColorValue;
+  accent3?: SchemeColorValue;
+  accent4?: SchemeColorValue;
+  accent5?: SchemeColorValue;
+  accent6?: SchemeColorValue;
+  hyperlink?: SchemeColorValue;
+  followedHyperlink?: SchemeColorValue;
   /** clrScheme/`@name` (defaults to the theme name). */
   name?: string;
 }

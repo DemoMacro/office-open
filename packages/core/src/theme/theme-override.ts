@@ -40,7 +40,7 @@ export const themeOverrideDesc: CustomDescriptor<
 
   parse(el, ctx) {
     const result: Partial<ThemeOverrideOptions> = {};
-    const colorScheme = parseColorScheme(findChild(el, "a:clrScheme"));
+    const colorScheme = parseColorScheme(findChild(el, "a:clrScheme"), ctx);
     if (colorScheme) result.colorScheme = colorScheme;
     const fontScheme = parseFontScheme(findChild(el, "a:fontScheme"));
     if (fontScheme) result.fontScheme = fontScheme;

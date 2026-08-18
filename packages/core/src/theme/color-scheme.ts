@@ -1,17 +1,23 @@
 /**
  * Color scheme (a:clrScheme / CT_ColorScheme) stringify + parse.
  *
- * dk1/lt1 use a:sysClr (windowText/window) by Office convention; only when the
- * caller explicitly supplies a value do they switch to a:srgbClr. parse reads
- * back the effective color value (srgbClr val or sysClr lastClr).
+ * Every slot accepts a hex string (emits a:srgbClr) or a structured
+ * SystemColorOptions (emits a:sysClr verbatim). dk1/lt1 default to the
+ * conventional windowText/window sysClr form; parse reads both forms back
+ * losslessly, so a source's sysClr spelling survives round-trip.
  *
  * @module
  */
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
+import type { ReadContext } from "../descriptor";
+import { systemColorDesc } from "../drawing";
+import type { SystemColorOptions } from "../drawing";
 import { DEFAULT_COLORS } from "./default-colors";
 import type { ColorSchemeOptions } from "./theme-options";
+
+export type { SchemeColorValue } from "./theme-options";
 
 /** Color keys excluding the clrScheme/`@name` attribute. */
 type ColorKey = Exclude<keyof ColorSchemeOptions, "name">;
@@ -32,47 +38,31 @@ const COLOR_TAGS: ReadonlyArray<{ tag: string; key: ColorKey }> = [
   { tag: "a:folHlink", key: "followedHyperlink" },
 ];
 
-/** Read the effective hex color from a color element (srgbClr val or sysClr lastClr). */
-function readColorValue(el: XmlElement | undefined): string | undefined {
-  if (!el) return undefined;
-  const srgb = findChild(el, "a:srgbClr");
-  if (srgb) return String(srgb.attributes?.["val"] ?? "");
-  const sysClr = findChild(el, "a:sysClr");
-  if (sysClr) return String(sysClr.attributes?.["lastClr"] ?? "");
-  return undefined;
-}
+/** The conventional dk1/lt1 sysClr forms emitted when a slot is unset. */
+const DEFAULT_SYS_CLR: Partial<Record<ColorKey, string>> = {
+  dark1: "windowText",
+  light1: "window",
+};
 
-/**
- * Whether the color element carries the conventional default sysClr form
- * (dk1 = windowText, lt1 = window). These parse to "not explicitly set" so
- * stringify re-emits the same sysClr spelling and Office-default themes
- * round-trip byte-identically instead of degrading sysClr to srgbClr.
- */
-function isDefaultSysClr(el: XmlElement | undefined, val: string): boolean {
-  const sysClr = findChild(el, "a:sysClr");
-  return sysClr !== undefined && String(sysClr.attributes?.["val"] ?? "") === val;
-}
-
-/** dk1/lt1 emit sysClr by default, srgbClr when explicitly supplied. */
 function stringifyColorTag(
   tag: string,
   key: ColorKey,
   opts: ColorSchemeOptions | undefined,
 ): string {
   const userValue = opts?.[key];
+  if (userValue !== undefined) {
+    const colorXml =
+      typeof userValue === "string"
+        ? `<a:srgbClr val="${userValue}"/>`
+        : (systemColorDesc.stringify(userValue, undefined as never) ?? "");
+    return `<${tag}>${colorXml}</${tag}>`;
+  }
   const defaultValue = DEFAULT_COLORS[key];
-  if (key === "dark1") {
-    return userValue !== undefined
-      ? `<${tag}><a:srgbClr val="${userValue}"/></${tag}>`
-      : `<${tag}><a:sysClr val="windowText" lastClr="${defaultValue}"/></${tag}>`;
+  const sysClr = DEFAULT_SYS_CLR[key];
+  if (sysClr) {
+    return `<${tag}><a:sysClr val="${sysClr}" lastClr="${defaultValue}"/></${tag}>`;
   }
-  if (key === "light1") {
-    return userValue !== undefined
-      ? `<${tag}><a:srgbClr val="${userValue}"/></${tag}>`
-      : `<${tag}><a:sysClr val="window" lastClr="${defaultValue}"/></${tag}>`;
-  }
-  const value = userValue ?? defaultValue;
-  return `<${tag}><a:srgbClr val="${value}"/></${tag}>`;
+  return `<${tag}><a:srgbClr val="${defaultValue}"/></${tag}>`;
 }
 
 /** Serialize a:clrScheme. Undefined options emit the full default scheme. */
@@ -86,23 +76,25 @@ export function stringifyColorScheme(
 }
 
 /** Parse a:clrScheme into the subset of colors explicitly present. */
-export function parseColorScheme(el: XmlElement | undefined): ColorSchemeOptions | undefined {
+export function parseColorScheme(
+  el: XmlElement | undefined,
+  ctx: ReadContext,
+): ColorSchemeOptions | undefined {
   if (!el) return undefined;
   const result: Partial<ColorSchemeOptions> = {};
   const name = el.attributes?.["name"];
   if (name) result.name = String(name);
   for (const { tag, key } of COLOR_TAGS) {
     const colorEl = findChild(el, tag);
-    // Conventional-default sysClr (windowText/window) parses to "unset" so
-    // stringify re-emits the sysClr form — see isDefaultSysClr.
-    if (
-      (key === "dark1" && isDefaultSysClr(colorEl, "windowText")) ||
-      (key === "light1" && isDefaultSysClr(colorEl, "window"))
-    ) {
+    if (!colorEl) continue;
+    const sysClr = findChild(colorEl, "a:sysClr");
+    if (sysClr) {
+      result[key] = systemColorDesc.parse(sysClr, ctx) as SystemColorOptions;
       continue;
     }
-    const value = readColorValue(colorEl);
-    if (value) result[key] = value;
+    const srgb = findChild(colorEl, "a:srgbClr");
+    const val = srgb?.attributes?.["val"];
+    if (val !== undefined) result[key] = String(val);
   }
   return result;
 }
