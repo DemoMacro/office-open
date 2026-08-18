@@ -530,28 +530,28 @@ export function parseNumberingDefinitions(
 
     const parsed = parseAbstractDefinition(abstractEl);
     if (!parsed) continue;
-    // Apply per-instance level overrides (CT_NumLvl choice: startOverride
-    // re-pins the level's start; a nested w:lvl replaces the abstract level
-    // wholesale). Dropping either silently reverts the list's numbering.
+    // Apply per-instance level overrides (CT_NumLvl sequence: both children
+    // may appear together — a nested w:lvl redefines the level wholesale, then
+    // startOverride re-pins its start). Dropping either silently reverts the
+    // list's numbering.
     for (const overrideEl of numEl.elements ?? []) {
       if (overrideEl.name !== "w:lvlOverride") continue;
       const ilvl = attrNum(overrideEl, "w:ilvl");
       if (ilvl === undefined) continue;
       const startOverrideEl = findChild(overrideEl, "w:startOverride");
-      if (startOverrideEl) {
-        const val = attrNum(startOverrideEl, "w:val");
-        if (val === undefined) continue;
-        const level = parsed.levels.find((l) => l.level === ilvl);
-        if (level) level.start = val;
-        continue;
-      }
+      const startOverride = startOverrideEl ? attrNum(startOverrideEl, "w:val") : undefined;
       const lvlEl = findChild(overrideEl, "w:lvl");
       if (lvlEl) {
         const levelOpts = parseLevelEl(lvlEl, parseParagraphProperties, ctx);
-        if (!levelOpts) continue;
-        const idx = parsed.levels.findIndex((l) => l.level === ilvl);
-        if (idx >= 0) parsed.levels[idx] = levelOpts;
-        else parsed.levels.push(levelOpts);
+        if (levelOpts) {
+          const idx = parsed.levels.findIndex((l) => l.level === ilvl);
+          if (idx >= 0) parsed.levels[idx] = levelOpts;
+          else parsed.levels.push(levelOpts);
+        }
+      }
+      if (startOverride !== undefined) {
+        const level = parsed.levels.find((l) => l.level === ilvl);
+        if (level) level.start = startOverride;
       }
     }
     configs.push({ reference: `list_${numId}`, ...parsed, instanceCount: 1 });
