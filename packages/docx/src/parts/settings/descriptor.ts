@@ -293,7 +293,10 @@ function parseCompatibility(el: Element): CompatibilityOptions | undefined {
     }
   }
   if (extras.length > 0) o.compatSettings = extras;
-  return Object.keys(o).length > 0 ? (o as CompatibilityOptions) : undefined;
+  // Presence-based: a bare `<w:compat/>` (no flags) round-trips as an empty
+  // object — returning undefined here would drop the element and let the
+  // fresh-document defaults get injected over it.
+  return o as CompatibilityOptions;
 }
 
 /** Parse m:mathPr (CT_MathPr). */
@@ -868,7 +871,9 @@ function stringifyCompatibility(opts: CompatibilityOptions): string {
       emitted.add(cs.name);
     }
   }
-  return p.length ? `<w:compat>${p.join("")}</w:compat>` : "";
+  // An explicitly empty options object round-trips a bare `<w:compat/>`
+  // (source documents carry it as a placeholder with no flags).
+  return p.length ? `<w:compat>${p.join("")}</w:compat>` : "<w:compat/>";
 }
 
 // ── Namespace attributes ──
