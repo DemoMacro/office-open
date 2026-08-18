@@ -3303,7 +3303,7 @@
           "type": "string"
         },
         "children": {
-          "description": "Content of the comment (paragraphs)",
+          "description": "Block-level comment content (paragraphs, tables) plus comment-level bookmark markers Word anchors directly inside w:comment.",
           "items": {
             "anyOf": [
               {
@@ -3311,6 +3311,39 @@
               },
               {
                 "$ref": "#/definitions/ParagraphOptions"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "table": {
+                    "$ref": "#/definitions/TableOptions"
+                  }
+                },
+                "required": ["table"],
+                "title": "table",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "bookmarkStart": {
+                    "$ref": "#/definitions/BookmarkStartOptions"
+                  }
+                },
+                "required": ["bookmarkStart"],
+                "title": "bookmarkStart",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "bookmarkEnd": {
+                    "$ref": "#/definitions/MarkupRangeOptions"
+                  }
+                },
+                "required": ["bookmarkEnd"],
+                "title": "bookmarkEnd",
+                "type": "object"
               }
             ]
           },
@@ -3668,6 +3701,10 @@
       "properties": {
         "endRPrXml": {
           "description": "Verbatim run-properties of the end fldChar run (may differ from the control rPr — Word styles the end run like the result).",
+          "type": "string"
+        },
+        "instrRunsXml": {
+          "description": "Verbatim XML of the instruction runs (begin → separate/end) when the source split them across runs with per-run properties or line breaks — shapes the plain instruction template cannot reproduce.",
           "type": "string"
         },
         "instruction": {

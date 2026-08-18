@@ -9,14 +9,17 @@
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml } from "@office-open/xml";
+import type { BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
+import { tableDesc } from "@parts/table/descriptor";
+import type { TableOptions } from "@parts/table/table";
 
 import { parseParagraph } from "../body";
 import type { BodyContext } from "../context";
 import type { DocxReadContext } from "../context";
 import { documentNamespaceAttributes } from "./document/document-attributes";
-import { stringifyParagraphInline } from "./inline";
+import { buildBookmarkStartAttrs, buildMarkupRangeAttrs, stringifyParagraphInline } from "./inline";
 
 /** Root namespace header shared by the comment-infrastructure parts
  *  (comments.xml, people.xml, commentsExtended.xml). Word writes the same
@@ -70,7 +73,15 @@ function stringifyComment(opts: CommentOptions, ctx: BodyContext): string {
 
   const parts: string[] = [];
   for (const child of opts.children) {
-    parts.push(stringifyParagraphInline(child, ctx));
+    if (child !== null && typeof child === "object" && "table" in child) {
+      parts.push(tableDesc.stringify(child.table, ctx) ?? "");
+    } else if (child !== null && typeof child === "object" && "bookmarkStart" in child) {
+      parts.push(`<w:bookmarkStart ${buildBookmarkStartAttrs(child.bookmarkStart)}/>`);
+    } else if (child !== null && typeof child === "object" && "bookmarkEnd" in child) {
+      parts.push(`<w:bookmarkEnd ${buildMarkupRangeAttrs(child.bookmarkEnd)}/>`);
+    } else {
+      parts.push(stringifyParagraphInline(child as string | ParagraphOptions, ctx));
+    }
   }
 
   return `<w:comment ${attrs.join(" ")}>${parts.join("")}</w:comment>`;
@@ -106,10 +117,24 @@ export const commentsDesc: CustomDescriptor<CommentOptions[], BodyContext> = {
       const initials = attr(child, "w:initials");
       if (initials !== undefined) comment.initials = initials;
 
-      const children: (string | ParagraphOptions)[] = [];
+      const children: CommentOptions["children"] = [];
       for (const sub of child.elements ?? []) {
         if (sub.name === "w:p") {
           children.push(parseParagraph(sub, ctx as DocxReadContext));
+        } else if (sub.name === "w:tbl") {
+          children.push({ table: tableDesc.parse(sub, ctx as never) as TableOptions });
+        } else if (sub.name === "w:bookmarkStart") {
+          const id = attrNum(sub, "w:id");
+          const name = attr(sub, "w:name");
+          if (id !== undefined && name !== undefined) {
+            const bs: BookmarkStartOptions = { id, name };
+            const disp = attr(sub, "w:displacedByCustomXml");
+            if (disp === "before" || disp === "after") bs.displacedByCustomXml = disp;
+            children.push({ bookmarkStart: bs });
+          }
+        } else if (sub.name === "w:bookmarkEnd") {
+          const id = attrNum(sub, "w:id");
+          if (id !== undefined) children.push({ bookmarkEnd: { id } });
         }
       }
       comment.children = children;

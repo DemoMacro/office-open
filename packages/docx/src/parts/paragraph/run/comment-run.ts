@@ -4,7 +4,9 @@
  * @module
  */
 
+import type { BookmarkStartOptions, MarkupRangeOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { TableOptions } from "@parts/table/table";
 
 import type { RunOptions } from "./run";
 
@@ -14,8 +16,15 @@ import type { RunOptions } from "./run";
 export interface CommentOptions {
   /** Unique identifier for the comment */
   id: number;
-  /** Content of the comment (paragraphs) */
-  children: (string | ParagraphOptions)[];
+  /** Block-level comment content (paragraphs, tables) plus comment-level
+   *  bookmark markers Word anchors directly inside w:comment. */
+  children: (
+    | string
+    | ParagraphOptions
+    | { table: TableOptions }
+    | { bookmarkStart: BookmarkStartOptions }
+    | { bookmarkEnd: MarkupRangeOptions }
+  )[];
 
   /** Initials of the comment author */
   initials?: string;

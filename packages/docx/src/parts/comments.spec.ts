@@ -59,4 +59,49 @@ describe("commentsDesc round-trip", () => {
     const result = roundTrip([]);
     expect(result).toHaveLength(0);
   });
+
+  it("round-trips a table inside a comment", () => {
+    const xml =
+      `<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:comment w:id="1" w:author="A" w:date="2024-01-01T00:00:00Z">` +
+      `<w:tbl><w:tr><w:tc><w:p><w:r><w:t>cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl>` +
+      `<w:p><w:r><w:t>after</w:t></w:r></w:p>` +
+      `</w:comment></w:comments>`;
+    const doc = parseXml(xml);
+    const result = commentsDesc.parse(doc.elements![0]!, readCtx);
+    const table = result[0]?.children.find(
+      (c) => c !== null && typeof c === "object" && "table" in c,
+    ) as { table: { rows: unknown[] } } | undefined;
+    expect(table).toBeDefined();
+    expect(table!.table.rows).toHaveLength(1);
+    // stringify re-emits the table between the paragraphs
+    const out = commentsDesc.stringify(result, writeCtx)!;
+    expect(out).toContain("<w:tbl>");
+    expect(out).toContain("after");
+  });
+
+  it("round-trips comment-level bookmark markers outside paragraphs", () => {
+    // Word anchors _GoBack's end marker directly under w:comment, outside any
+    // paragraph — kept as a comment child so presence round-trips.
+    const xml =
+      `<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:comment w:id="1" w:author="A" w:date="2024-01-01T00:00:00Z">` +
+      `<w:p><w:bookmarkStart w:id="2" w:name="_GoBack"/><w:r><w:t>x</w:t></w:r></w:p>` +
+      `<w:bookmarkEnd w:id="2"/>` +
+      `</w:comment></w:comments>`;
+    const doc = parseXml(xml);
+    const result = commentsDesc.parse(doc.elements![0]!, readCtx);
+    const children = result[0]?.children ?? [];
+    expect(
+      children.some(
+        (c) =>
+          typeof c === "object" &&
+          c !== null &&
+          "bookmarkEnd" in c &&
+          (c as { bookmarkEnd: { id: number } }).bookmarkEnd.id === 2,
+      ),
+    ).toBe(true);
+    const out = commentsDesc.stringify(result, writeCtx)!;
+    expect(out).toContain('<w:bookmarkEnd w:id="2"/>');
+  });
 });

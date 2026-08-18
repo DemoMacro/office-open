@@ -84,4 +84,38 @@ describe("complex field parse", () => {
       children: [{ complexField: { instruction: "PAGE" } }],
     });
   });
+
+  it("keeps non-plain instruction runs verbatim (per-run rPr + w:br)", () => {
+    // Word splits a PAGE format switch across runs, styling the spacer runs
+    // with CommentReference and embedding a line break — a shape the plain
+    // instruction template cannot reproduce, so the runs round-trip verbatim.
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r>' +
+        '<w:r><w:instrText>PAGE \\# "&#x27;Page: &#x27;#&#x27;</w:instrText></w:r>' +
+        "<w:r><w:br/><w:instrText>&#x27;&quot;</w:instrText></w:r>" +
+        '<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    const cf = findComplexField(opts);
+    const field = cf!.complexField as Record<string, unknown>;
+    // Semantic channel: the instruction text concatenates in order.
+    const instruction = field.instruction as string;
+    expect(instruction).toContain("PAGE \\#");
+    expect(instruction.startsWith(" ") && instruction.endsWith(" ")).toBe(true);
+    expect(instruction).toContain("'\"");
+    // Fidelity channel: the exact run chain is carried verbatim.
+    expect(field.instrRunsXml).toContain('<w:rStyle w:val="CommentReference"/>');
+    expect(field.instrRunsXml).toContain("<w:br/>");
+  });
+
+  it("does not set the verbatim channel for plain instruction runs", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    const cf = findComplexField(opts);
+    expect((cf!.complexField as Record<string, unknown>).instrRunsXml).toBeUndefined();
+  });
 });

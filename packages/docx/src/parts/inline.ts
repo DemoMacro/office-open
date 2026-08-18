@@ -73,6 +73,14 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
   // result had none, matching Word's uniform behavior).
   const ctrl = cf.rPrXml ?? "";
   const res = cf.resultRPrXml ?? ctrl;
+  // Instruction: verbatim when the source split it across non-plain runs;
+  // plain template otherwise; no instruction run at all for an empty
+  // instruction (a bare begin→end field round-trips without one).
+  const instrXml =
+    cf.instrRunsXml ??
+    (cf.instruction !== ""
+      ? `<w:r>${ctrl}<${instrTag} xml:space="preserve">${escapeXml(cf.instruction)}</${instrTag}></w:r>`
+      : "");
   // `separate` + the result run are emitted only when there is a cached
   // result; a result-less field round-trips as begin/instrText/end.
   const resultXml =
@@ -82,7 +90,7 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
       : "";
   return (
     `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"/></w:r>` +
-    `<w:r>${ctrl}<${instrTag} xml:space="preserve">${escapeXml(cf.instruction)}</${instrTag}></w:r>` +
+    instrXml +
     resultXml +
     `<w:r>${cf.endRPrXml ?? ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
   );
@@ -342,14 +350,14 @@ function registerVmlFallbackMedia(
  * Build the rPr XML for a break/tab run from its structured run properties.
  */
 /** Shared attribute string for CT_MarkupRange end markers (commentRange, move range end). */
-function buildMarkupRangeAttrs(m: MarkupRangeOptions): string {
+export function buildMarkupRangeAttrs(m: MarkupRangeOptions): string {
   const a: string[] = [`w:id="${m.id}"`];
   if (m.displacedByCustomXml) a.push(`w:displacedByCustomXml="${m.displacedByCustomXml}"`);
   return a.join(" ");
 }
 
 /** Shared attribute string for w:bookmarkStart (CT_Bookmark). */
-function buildBookmarkStartAttrs(bs: BookmarkStartOptions): string {
+export function buildBookmarkStartAttrs(bs: BookmarkStartOptions): string {
   const a: string[] = [`w:id="${bs.id}"`, `w:name="${escapeXml(bs.name)}"`];
   if (bs.displacedByCustomXml) a.push(`w:displacedByCustomXml="${bs.displacedByCustomXml}"`);
   if (bs.colFirst !== undefined) a.push(`w:colFirst="${bs.colFirst}"`);

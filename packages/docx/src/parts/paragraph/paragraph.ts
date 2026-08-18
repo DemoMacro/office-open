@@ -68,6 +68,10 @@ export interface ComplexFieldOptions {
   /** Verbatim run-properties of the end fldChar run (may differ from the
    *  control rPr — Word styles the end run like the result). */
   endRPrXml?: string;
+  /** Verbatim XML of the instruction runs (begin → separate/end) when the
+   *  source split them across runs with per-run properties or line breaks —
+   *  shapes the plain instruction template cannot reproduce. */
+  instrRunsXml?: string;
 }
 
 /**

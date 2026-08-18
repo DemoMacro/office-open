@@ -891,6 +891,9 @@ interface FieldRunState {
   controlRPr?: string;
   resultRPr?: string;
   collectingResult: boolean;
+  /** Instruction-stage run elements (begin → separate/end), buffered for the
+   *  plain-shape check at the closing end marker. */
+  instrRunEls: Element[];
 }
 
 const initialFieldRunState = (): FieldRunState => ({
@@ -899,7 +902,26 @@ const initialFieldRunState = (): FieldRunState => ({
   pendingInstruction: "",
   pendingResult: "",
   collectingResult: false,
+  instrRunEls: [],
 });
+
+/**
+ * True when the instruction runs are exactly what the plain stringify template
+ * reproduces: a single run with the control rPr whose only child is the
+ * instruction text. Multi-run chains (leading/trailing space runs with their
+ * own rStyle, w:br inside the format switch) need the verbatim channel.
+ */
+function isPlainInstrRuns(runs: Element[], controlRPr: string | undefined): boolean {
+  if (runs.length === 0) return true;
+  if (runs.length > 1) return false;
+  const run = runs[0]!;
+  if (runRPrXml(run) !== controlRPr) return false;
+  const content = (run.elements ?? []).filter((c) => c.name !== "w:rPr");
+  return (
+    content.length === 1 &&
+    (content[0]!.name === "w:instrText" || content[0]!.name === "w:delInstrText")
+  );
+}
 
 /**
  * Feed one w:r element into the field accumulator. A field (form field OR
@@ -933,6 +955,7 @@ function feedFieldRun(
       state.controlRPr = runRPrXml(run);
       state.resultRPr = undefined;
       state.collectingResult = false;
+      state.instrRunEls = [];
     } else if (fctype === "separate") {
       state.collectingResult = true;
     } else if (fctype === "end" && state.kind) {
@@ -947,11 +970,15 @@ function feedFieldRun(
         // Word styles the end run like the result (not like the controls).
         const endRPr = runRPrXml(run);
         if (endRPr && endRPr !== state.controlRPr) cf.endRPrXml = endRPr;
+        if (!isPlainInstrRuns(state.instrRunEls, state.controlRPr)) {
+          cf.instrRunsXml = state.instrRunEls.map((el) => stringifyElement(el)).join("");
+        }
         child = { complexField: cf };
       }
       state.kind = null;
       state.pendingFormField = null;
       state.collectingResult = false;
+      state.instrRunEls = [];
       return { consumed: true, child };
     }
     return { consumed: true };
@@ -966,6 +993,9 @@ function feedFieldRun(
         // Deleted fields spell the instruction w:delInstrText instead.
         const instrEl = findChild(run, "w:instrText") ?? findChild(run, "w:delInstrText");
         if (instrEl) state.pendingInstruction += textOf(instrEl);
+        // Buffer the run for the verbatim channel when its shape is not what
+        // the plain instruction template reproduces (per-run rPr, w:br...).
+        state.instrRunEls.push(run);
       }
     } else if (state.collectingResult && state.pendingFormField?.textInput) {
       // Capture a textInput's current value; checkbox/dropdown results are
