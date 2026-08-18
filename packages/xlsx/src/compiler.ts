@@ -15,6 +15,7 @@ import {
   buildRootRelationships,
   compileMapping,
   contentTypesDesc,
+  type RelationshipType,
   deriveContentTypes,
   pickNonVisualDrawingProperties,
   resolverFromRegistry,
@@ -368,6 +369,14 @@ export function compileWorkbook(
 
   // Workbook relationships — serialized after calcChain/revision register their
   // targets, so every workbook-level relationship lands in workbook.xml.rels.
+  // Passthrough relationships (round-trip) follow: the source workbook.xml.rels
+  // referenced parts the model carries verbatim (externalLinks, pivotCaches, …).
+  // Re-emitted as written — targets are passthrough paths that never move.
+  for (const rel of options.passthroughRelationships ?? []) {
+    if (rel.source !== "xl/workbook.xml") continue;
+    if (ctx.workbookRels.hasRelationship(rel.relationshipType, rel.target)) continue;
+    ctx.workbookRels.add(rel.relationshipType as RelationshipType, rel.target);
+  }
   mapping["WorkbookRelationships"] = {
     data: XML_DECL + ctx.workbookRels.serialize(),
     path: "xl/_rels/workbook.xml.rels",
@@ -380,6 +389,17 @@ export function compileWorkbook(
   }
 
   const files = compileMapping(mapping, overrides, mediaFiles, mediaLevel);
+  // Raw passthrough parts (drawings, VML, external links, unknown extensions, …).
+  // The compiler output above wins over a passthrough copy at the same path, so
+  // only what the model missed actually passes through.
+  const passthroughSkipped = new Set<string>();
+  for (const part of options.rawParts ?? []) {
+    if (files[part.path] !== undefined) {
+      passthroughSkipped.add(part.path);
+      continue;
+    }
+    files[part.path] = toUint8Array(part.data);
+  }
   // Derive [Content_Types].xml from the actual parts written — the file set is
   // the single source of truth, so content-type declarations cannot drift from
   // what is written. Sparse/index-based naming is handled naturally.
@@ -387,6 +407,19 @@ export function compileWorkbook(
     resolve: XLSX_CONTENT_TYPE_RESOLVER,
     mediaContentTypes: XLSX_MEDIA_CONTENT_TYPES,
   });
+  // Passthrough parts whose extension has no covering Default would leave the
+  // package invalid (an undeclared part — Excel refuses to open). Only those
+  // borrow their source content-type declaration as a per-part Override;
+  // extensions already covered (xml/rels/media) stay as derived above.
+  const coveredExt = new Set(contentTypesInput.defaults.map((d) => d.extension.toLowerCase()));
+  for (const part of options.rawParts ?? []) {
+    if (part.contentType === undefined || passthroughSkipped.has(part.path)) continue;
+    const dot = part.path.lastIndexOf(".");
+    const slash = part.path.lastIndexOf("/");
+    const ext = dot > slash ? part.path.slice(dot + 1).toLowerCase() : undefined;
+    if (ext && coveredExt.has(ext)) continue;
+    contentTypesInput.overrides.push({ partName: `/${part.path}`, contentType: part.contentType });
+  }
   files["[Content_Types].xml"] = encoder.encode(
     XML_DECL + (contentTypesDesc.stringify(contentTypesInput, ctx) ?? ""),
   );

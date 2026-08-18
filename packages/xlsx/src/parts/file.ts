@@ -8,6 +8,7 @@ import type {
   AppPropertiesOptions,
   CorePropertiesOptions,
   CustomPropertyOptions,
+  DataType,
 } from "@office-open/core";
 import type { ThemeOptions } from "@office-open/core/theme";
 import type {
@@ -118,6 +119,21 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   customProperties?: CustomPropertyOptions[];
   /** Shared-workbook revision log (xl/revisionHeaders.xml + xl/revisions/revisionN.xml + xl/users.xml). */
   revisionLog?: SharedWorkbookOptions;
+  /**
+   * Parts carried verbatim from the source that generate() does not rebuild
+   * (drawings, VML, external links, any unknown extension part). Collected
+   * wholesale by the core passthrough pipeline — everything the model did not
+   * absorb survives with bytes and content-type declaration intact. Parts the
+   * compiler happens to rebuild under the same path win over the passthrough
+   * copy (assembly order), so model-driven parts need no exclusion here.
+   */
+  rawParts?: { path: string; data: DataType; contentType?: string }[];
+  /**
+   * Relationships from rebuilt parts' source .rels that point at rawParts
+   * (e.g. workbook.xml → externalLink/pivotCache). Re-emitted verbatim —
+   * target unchanged (passthrough paths never move), fresh rId. Round-trip only.
+   */
+  passthroughRelationships?: { source: string; relationshipType: string; target: string }[];
 }
 
 /** Shared-workbook revision tracking data. */

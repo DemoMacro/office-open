@@ -8239,11 +8239,51 @@
         "notesMasterOptions": {
           "$ref": "#/definitions/NotesMasterOptions"
         },
+        "passthroughRelationships": {
+          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. presentation.xml → handoutMaster). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip only.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "relationshipType": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              }
+            },
+            "required": ["source", "relationshipType", "target"],
+            "type": "object"
+          },
+          "type": "array"
+        },
         "photoAlbum": {
           "$ref": "#/definitions/PhotoAlbumOptions"
         },
         "print": {
           "$ref": "#/definitions/PrintPropertiesOptions"
+        },
+        "rawParts": {
+          "description": "Parts carried verbatim from the source that generate() does not rebuild (handout masters, customXml, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so media/charts/notes need no exclusion here.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "contentType": {
+                "type": "string"
+              },
+              "data": {
+                "$ref": "#/definitions/DataType"
+              },
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": ["path", "data"],
+            "type": "object"
+          },
+          "type": "array"
         },
         "removePersonalInfoOnSave": {
           "type": "boolean"

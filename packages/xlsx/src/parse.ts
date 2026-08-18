@@ -11,6 +11,7 @@ import {
 } from "@office-open/core";
 import type { ParsedArchive } from "@office-open/core";
 import {
+  collectPassthroughParts,
   partPathToRelsPath,
   pickNonVisualDrawingProperties,
   toUint8Array,
@@ -697,6 +698,27 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       opts.revisionLog = revisionLog;
     }
   }
+
+  // Package-wide passthrough (SDK ExtendedPart analogue): every part the model
+  // did NOT absorb is carried verbatim instead of dropped. Only parts the
+  // compiler always re-emits are excluded — model-driven parts (themes,
+  // sharedStrings, drawings, VML, external links) pass through and yield to
+  // the compiler's own output at the same path by assembly order.
+  const rebuilt: string[] = [
+    "xl/workbook.xml",
+    "xl/_rels/workbook.xml.rels",
+    ...(xlsx.styles ? ["xl/styles.xml"] : []),
+    ...(xlsx.coreProps ? [xlsx.coreProps] : []),
+    ...(xlsx.appProps ? [xlsx.appProps] : []),
+    ...(xlsx.customProps ? [xlsx.customProps] : []),
+    ...xlsx.worksheets,
+  ];
+  const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
+    xlsx.doc,
+    rebuilt,
+  );
+  if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
+  if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
 
   return opts as WorkbookOptions;
 }
