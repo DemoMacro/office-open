@@ -221,6 +221,79 @@ describe("parseBody TOC entry preservation", () => {
       | undefined;
     expect(tocChild?.toc.entries).toHaveLength(1);
   });
+
+  it("keeps the field-closing paragraph's properties as a trailing entry", () => {
+    // Word parks the entry style's pPr (pStyle/divId) on the field-closing
+    // paragraph. Dropping it loses that formatting on round-trip.
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="10"/><w:divId w:val="1748839239"/></w:pPr>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
+      | { toc: { entries?: unknown[] } }
+      | undefined;
+    expect(tocChild?.toc.entries).toHaveLength(2);
+    const closing = JSON.stringify(tocChild?.toc.entries?.[1]);
+    expect(closing).toContain('"divId":1748839239');
+    expect(closing).toContain('"style":"10"');
+  });
+
+  it("keeps the field-closing paragraph when it holds rendered text", () => {
+    // Word often puts the last rendered entry in the closing paragraph.
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r>
+        <w:r><w:t>Heading Two</w:t></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
+      | { toc: { entries?: unknown[] } }
+      | undefined;
+    expect(tocChild?.toc.entries).toHaveLength(2);
+  });
+
+  it("does not double-emit a page break kept inside the closing paragraph", () => {
+    // When the closing paragraph joins the entries (it carries pPr), its page
+    // break round-trips inside it — the standalone rescue must not fire too.
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="TOC2"/></w:pPr>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r>
+        <w:r><w:br w:type="page"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const children = sections[0]?.children ?? [];
+    // The page break lives inside the TOC's closing entry — no rescue copy.
+    const pageBreaks = JSON.stringify(children).match(/"pageBreak"/g)?.length ?? 0;
+    expect(pageBreaks).toBe(1);
+    const standaloneBreaks = children.filter(
+      (c) =>
+        "paragraph" in c &&
+        Array.isArray((c as { paragraph?: { children?: unknown[] } }).paragraph?.children) &&
+        (c as { paragraph: { children: unknown[] } }).paragraph.children.length === 1 &&
+        String(
+          JSON.stringify((c as { paragraph: { children: unknown[] } }).paragraph.children[0]),
+        ).includes("pageBreak"),
+    );
+    expect(standaloneBreaks).toHaveLength(0);
+  });
 });
 
 describe("stringifyTableOfContents dirty strategy", () => {

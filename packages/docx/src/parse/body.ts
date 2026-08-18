@@ -15,6 +15,7 @@ import type { MarkupRangeOptions, BookmarkStartOptions } from "@parts/paragraph/
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import {
+  keepTocClosingParagraph,
   parseToc,
   parseTocFieldFromElements,
   selectTocEntryElements,
@@ -421,17 +422,24 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
     if (!tocBuffer) return;
     children.push(buildTocChild(tocBuffer, ctx));
     // buildTocChild preserves the rendered entries (paragraphs between the
-    // separate and end markers) but not the end-closing paragraph, which often
-    // carries a trailing page break (the section break before the first
-    // heading). Rescue that page break as a standalone child to avoid silently
-    // dropping it on round-trip.
-    const lastEl = tocBuffer[tocBuffer.length - 1];
-    let pageBreakCount = 0;
-    for (const br of findDeep(lastEl, "w:br")) {
-      if (attr(br, "w:type") === "page") pageBreakCount++;
-    }
-    for (let i = 0; i < pageBreakCount; i++) {
-      children.push({ paragraph: { children: [{ pageBreak: true }] } });
+    // separate and end markers). A bare end-closing paragraph is dropped, but
+    // often carries a trailing page break (the section break before the first
+    // heading) — rescue that break as a standalone child. When the closing
+    // paragraph joins the entries, its break round-trips inside it already.
+    const lastEl = tocBuffer[tocBuffer.length - 1]!;
+    // tocDepth <= 0 means the field actually closed: lastEl is the closing
+    // paragraph, and when it joins the entries its break round-trips inside it
+    // already — rescue only applies to a dropped bare closing paragraph. An
+    // unclosed field's tail keeps the legacy rescue (best effort).
+    const closingKept = tocDepth <= 0 && keepTocClosingParagraph(lastEl);
+    if (!closingKept) {
+      let pageBreakCount = 0;
+      for (const br of findDeep(lastEl, "w:br")) {
+        if (attr(br, "w:type") === "page") pageBreakCount++;
+      }
+      for (let i = 0; i < pageBreakCount; i++) {
+        children.push({ paragraph: { children: [{ pageBreak: true }] } });
+      }
     }
     tocBuffer = null;
     tocDepth = 0;
@@ -469,7 +477,14 @@ function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
   const tocOpts = parseTocFieldFromElements(els);
   const entryEls = selectTocEntryElements(els);
   if (entryEls.length > 0) {
-    tocOpts.entries = entryEls.map((el) => parseSectionChild(el, ctx));
+    // Entry paragraphs live INSIDE the field: the per-paragraph accumulator
+    // consumes their fldChar control runs and keeps the rest. They must not go
+    // through parseSectionChild's cross-paragraph pre-check — the closing
+    // paragraph's unbalanced `end` would flip it to verbatim rawXml and lose
+    // the structured pPr (pStyle/divId) this capture exists to preserve.
+    tocOpts.entries = entryEls.map((el) =>
+      el.name === "w:p" ? { paragraph: parseParagraph(el, ctx) } : parseSectionChild(el, ctx),
+    );
   }
   return { toc: tocOpts };
 }

@@ -167,12 +167,20 @@ export function parseTocFieldFromElements(els: Element[]): TableOfContentsOption
  * the `separate` marker — common when Word emits begin + separate + first entry
  * in one paragraph — while the `w:t` requirement excludes a pure control
  * paragraph (field head / separate-only / end).
+ *
+ * The paragraph that closes the field (depth drops to 0) is kept when it
+ * carries anything worth preserving — its own paragraph properties (Word parks
+ * the entry style's pPr there) or rendered text (Word often puts the last entry
+ * in the closing paragraph). The parse path consumes the bare fldChar run, so
+ * only that content remains. A bare control-only closing paragraph is dropped:
+ * it would round-trip as an empty paragraph the markup never semantically had.
  */
 export function selectTocEntryElements(els: Element[]): Element[] {
   const entries: Element[] = [];
   let depth = 0;
   let afterSeparate = false;
   for (const el of els) {
+    const depthBefore = depth;
     const walk = (node: Element): void => {
       if (node.name === "w:fldChar") {
         const type = attr(node, "w:fldCharType");
@@ -185,11 +193,23 @@ export function selectTocEntryElements(els: Element[]): Element[] {
       }
     };
     walk(el);
-    if (afterSeparate && depth >= 1 && findFirst(el, "w:t") !== undefined) {
+    if (afterSeparate && depth === 0 && depthBefore > 0) {
+      if (keepTocClosingParagraph(el)) entries.push(el);
+      afterSeparate = false;
+    } else if (afterSeparate && depth >= 1 && findFirst(el, "w:t") !== undefined) {
       entries.push(el);
     }
   }
   return entries;
+}
+
+/**
+ * Whether the field-closing paragraph joins the rendered entries: only when it
+ * carries anything worth preserving. Shared with the parse body's page-break
+ * rescue, which must not re-emit a break already kept inside that paragraph.
+ */
+export function keepTocClosingParagraph(el: Element): boolean {
+  return findFirst(el, "w:pPr") !== undefined || findFirst(el, "w:t") !== undefined;
 }
 
 /** Recursively feed every w:instrText to the TOC instruction parser. */
