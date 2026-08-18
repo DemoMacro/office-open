@@ -11,6 +11,8 @@ import { attr, findChild, findFirst, children, textOf } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
 import { shapePropertiesDesc } from "../drawing/shape-properties-desc";
 import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
+import { textBodyDesc } from "../drawing/text/text-body";
+import type { TextBodyOptions } from "../drawing/text/text-body";
 import { parseColorMapping, stringifyColorMapping } from "../theme/color-mapping";
 import { parseOnOff } from "../util/values";
 import type {
@@ -44,6 +46,7 @@ import type {
   PictureFormat,
   BarShape,
   ChartSeriesCommon,
+  ChartTitleOptions,
   ManualLayoutOptions,
   SurfaceOptions,
   LayoutTarget,
@@ -209,6 +212,8 @@ function stringifyDataLabels(opts: DataLabelsOptions): string {
   if (opts.labels) {
     for (const lbl of opts.labels) parts.push(stringifyDataLabel(lbl));
   }
+  if (opts.numberFormat !== undefined)
+    parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
   if (opts.position !== undefined) parts.push(valEl("c:dLblPos", opts.position));
   if (opts.showLegendKey !== undefined)
     parts.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
@@ -263,6 +268,7 @@ function stringifyLayout(manualLayout: ManualLayoutOptions | undefined): string 
 function stringifySurface(
   tag: "c:floor" | "c:sideWall" | "c:backWall",
   opts: SurfaceOptions | undefined,
+  ctx: WriteContext,
 ): string {
   if (!opts) return "";
   const parts: string[] = [];
@@ -277,6 +283,7 @@ function stringifySurface(
           : opts.thickness,
       ),
     );
+  if (opts.shapeProperties) parts.push(chartSpPr(opts.shapeProperties, ctx));
   return parts.length ? `<${tag}>${parts.join("")}</${tag}>` : `<${tag}/>`;
 }
 
@@ -318,11 +325,15 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
   parts.push(stringifyScaling(opts.scaling));
   if (opts.delete !== undefined) parts.push(`<c:delete${boolVal(opts.delete)}/>`);
   if (opts.position !== undefined) parts.push(valEl("c:axPos", opts.position));
-  if (opts.majorGridlines) parts.push(emptyEl("c:majorGridlines"));
-  if (opts.minorGridlines) parts.push(emptyEl("c:minorGridlines"));
+  parts.push(chartLines("c:majorGridlines", opts.majorGridlines, ctx));
+  parts.push(chartLines("c:minorGridlines", opts.minorGridlines, ctx));
   if (opts.title !== undefined) {
     // "" is the text-less title placeholder (bare <c:title/>), like the chart title.
-    parts.push(opts.title === "" ? emptyEl("c:title") : stringifyTitle(opts.title));
+    parts.push(
+      typeof opts.title === "string" && opts.title === ""
+        ? emptyEl("c:title")
+        : stringifyTitle(opts.title, ctx),
+    );
   }
   if (opts.numberFormat !== undefined)
     parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="1"/>`);
@@ -330,8 +341,11 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
   if (opts.minorTickMark !== undefined) parts.push(valEl("c:minorTickMark", opts.minorTickMark));
   if (opts.tickLabelPosition !== undefined)
     parts.push(valEl("c:tickLblPos", opts.tickLabelPosition));
-  // EG_AxShared: spPr sits between tickLblPos and crossAx.
+  // EG_AxShared: spPr sits between tickLblPos and crossAx; txPr follows spPr.
   parts.push(chartSpPr(opts.shapeProperties, ctx));
+  if (opts.textProperties) {
+    parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
+  }
   parts.push(valEl("c:crossAx", opts.crossAxisId));
   // XSD choice: crosses XOR crossesAt
   if (opts.crossesAt !== undefined) parts.push(valEl("c:crossesAt", opts.crossesAt));
@@ -380,8 +394,10 @@ function refFormula(formula: string | undefined): string {
   return `<c:f>${escapeXml(formula ?? "")}</c:f>`;
 }
 
-function stringifyStrRef(values: readonly string[], formula?: string): string {
-  const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v)}</c:v></c:pt>`).join("");
+function stringifyStrRef(values: readonly (string | undefined)[], formula?: string): string {
+  const pts = values
+    .map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v ?? "")}</c:v></c:pt>`)
+    .join("");
   return `<c:strRef>${refFormula(formula)}<c:strCache><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:strCache></c:strRef>`;
 }
 
@@ -409,6 +425,16 @@ function stringifyNumCatRef(
 ): string {
   const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v)}</c:v></c:pt>`).join("");
   return `<c:numRef>${refFormula(formula)}<c:numCache><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
+}
+
+/** Whether the chart carries category-source data (c:cat is optional in CT_Ser). */
+function hasCategoryData(opts: ChartSpaceOptions): boolean {
+  return (
+    opts.categories !== undefined ||
+    opts.categoryLabels !== undefined ||
+    opts.multiLevelCategories !== undefined ||
+    opts.numericCategories === true
+  );
 }
 
 // CT_AxDataSource choice (c:cat / c:xVal slot): exactly one of multi-level/literal/reference.
@@ -714,7 +740,8 @@ function stringifySeries(
   // EG_SerShared: idx, order, tx, spPr
   parts.push(valEl("c:idx", index));
   parts.push(valEl("c:order", index));
-  parts.push(`<c:tx>${stringifyStrRef([series.name], series.nameFormula)}</c:tx>`);
+  if (series.name !== undefined || series.nameFormula !== undefined)
+    parts.push(`<c:tx>${stringifyStrRef([series.name], series.nameFormula)}</c:tx>`);
   // Series spPr is optional in CT_Ser — emit only when the source carried one
   // (round-trip); fresh series keep the bare form like legacy Word files.
   parts.push(chartSpPr(s.shapeProperties, ctx));
@@ -756,8 +783,10 @@ function stringifySeries(
     // c:numRef/c:numCache like numeric categories.
     parts.push(`<c:xVal>${stringifyCategorySource(opts)}</c:xVal>`);
     parts.push(`<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:yVal>`);
-  } else {
+  } else if (hasCategoryData(opts)) {
     parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
+    parts.push(`<c:val>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`);
+  } else {
     parts.push(`<c:val>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`);
   }
 
@@ -778,8 +807,30 @@ function stringifySeries(
 // ── Title XML ──
 
 // Same c:rich run shape for chart and axis titles so parse reuses readTitleText.
-// No c:overlay — corpus titles omit it (overlay=false is the XSD default).
-function stringifyTitle(title: string): string {
+function stringifyTitle(title: string | ChartTitleOptions, ctx: WriteContext): string {
+  if (typeof title !== "string") {
+    const parts: string[] = [];
+    if (title.text !== undefined) {
+      parts.push(
+        typeof title.text === "string"
+          ? `<c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title.text)}</a:t></a:r></a:p></c:rich></c:tx>`
+          : `<c:tx><c:rich>${textBodyDesc.stringify(title.text, ctx) ?? ""}</c:rich></c:tx>`,
+      );
+    }
+    if (title.layout !== undefined) {
+      parts.push(
+        title.layout === true
+          ? "<c:layout/>"
+          : stringifyLayout(title.layout as ManualLayoutOptions),
+      );
+    }
+    if (title.overlay !== undefined) parts.push(`<c:overlay${boolVal(title.overlay)}/>`);
+    if (title.shapeProperties) parts.push(chartSpPr(title.shapeProperties, ctx));
+    if (title.textProperties) {
+      parts.push(`<c:txPr>${textBodyDesc.stringify(title.textProperties, ctx) ?? ""}</c:txPr>`);
+    }
+    return `<c:title>${parts.join("")}</c:title>`;
+  }
   return `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title)}</a:t></a:r></a:p></c:rich></c:tx></c:title>`;
 }
 
@@ -793,12 +844,22 @@ function stringifyLegendEntry(entry: LegendEntryOptions): string {
   return `<c:legendEntry><c:idx val="${entry.index}"/><c:delete val="1"/></c:legendEntry>`;
 }
 
-function stringifyLegend(opts: ChartSpaceOptions): string {
+function stringifyLegend(opts: ChartSpaceOptions, ctx: WriteContext): string {
   const pos = opts.legendPosition ?? "b";
   const entries = (opts.legendEntries ?? []).map(stringifyLegendEntry).join("");
-  // Bare legend form (legendPos only) — the corpus mainstream. Empty layout /
-  // overlay / spPr / txPr decorations the legacy form never wrote are omitted.
-  return `<c:legend><c:legendPos val="${pos}"/>${entries}</c:legend>`;
+  const layout =
+    opts.legendLayout === true
+      ? "<c:layout/>"
+      : opts.legendLayout
+        ? stringifyLayout(opts.legendLayout)
+        : "";
+  const overlay =
+    opts.legendOverlay !== undefined ? `<c:overlay${boolVal(opts.legendOverlay)}/>` : "";
+  const spPr = chartSpPr(opts.legendShapeProperties, ctx);
+  const txPr = opts.legendTextProperties
+    ? `<c:txPr>${textBodyDesc.stringify(opts.legendTextProperties, ctx) ?? ""}</c:txPr>`
+    : "";
+  return `<c:legend><c:legendPos val="${pos}"/>${entries}${layout}${overlay}${spPr}${txPr}</c:legend>`;
 }
 
 function stringifyPivotSource(opts: PivotSourceOptions): string {
@@ -832,6 +893,20 @@ function chartSpPr(opts: ShapePropertiesOptions | undefined, ctx: WriteContext):
   if (!opts) return "";
   const inner = shapePropertiesDesc.stringify(opts, ctx);
   return `<c:spPr>${inner ?? ""}</c:spPr>`;
+}
+
+/**
+ * CT_ChartLines element (gridlines): true → bare element, an object → the
+ * element wrapping its spPr.
+ */
+function chartLines(
+  tag: string,
+  opts: boolean | ShapePropertiesOptions | undefined,
+  ctx: WriteContext,
+): string {
+  if (opts === undefined || opts === false) return "";
+  if (opts === true) return `<${tag}/>`;
+  return `<${tag}><c:spPr>${shapePropertiesDesc.stringify(opts, ctx) ?? ""}</c:spPr></${tag}>`;
 }
 
 // ── Axes XML ──
@@ -1019,11 +1094,64 @@ function readNumCache(el: XmlElement): number[] {
   return result;
 }
 
-function readSeriesName(serEl: XmlElement): string {
+function readSeriesName(serEl: XmlElement): string | undefined {
   const tx = findChild(serEl, "c:tx");
-  if (!tx) return "";
+  if (!tx) return undefined;
   const values = readStrCache(tx);
   return values[0] ?? "";
+}
+
+/** Read a c:title. Plain text stays a string; layout/overlay/spPr/txPr
+ *  decorations promote it to the ChartTitleOptions object form. */
+/** Read the title's c:tx > c:rich body; undefined when absent or strRef-linked. */
+function readTitleBody(
+  titleEl: XmlElement,
+  ctx: ReadContext,
+): string | TextBodyOptions | undefined {
+  const rich = findChild(findChild(titleEl, "c:tx") ?? titleEl, "c:rich");
+  if (!rich) return undefined;
+  const body = textBodyDesc.parse(rich, ctx);
+  return collapseTitleBody(body);
+}
+
+/**
+ * Collapse a parsed title body to its plain text when it is exactly what the
+ * string form emits (empty bodyPr/listStyle, one bare run), keeping simple
+ * titles readable in the Options JSON.
+ */
+function collapseTitleBody(body: TextBodyOptions): string | TextBodyOptions {
+  if (body.listStyle !== undefined) return body;
+  if (body.bodyProperties !== undefined && Object.keys(body.bodyProperties).length > 0) return body;
+  const ps = body.paragraphs ?? [];
+  if (ps.length !== 1) return body;
+  const p = ps[0];
+  if (p === undefined) return body;
+  if (typeof p === "string") return p;
+  if (p.properties !== undefined || p.children !== undefined) return body;
+  if (p.endParagraphProperties !== undefined && p.endParagraphProperties !== false) return body;
+  return p.text ?? "";
+}
+
+function readTitle(titleEl: XmlElement, ctx: ReadContext): string | ChartTitleOptions {
+  const body = readTitleBody(titleEl, ctx);
+  const text = body === undefined ? readTitleText(titleEl) : undefined;
+  const layoutEl = findChild(titleEl, "c:layout");
+  const overlayEl = findChild(titleEl, "c:overlay");
+  const spPrEl = findChild(titleEl, "c:spPr");
+  const txPrEl = findChild(titleEl, "c:txPr");
+  if (!layoutEl && !overlayEl && !spPrEl && !txPrEl) return body ?? text ?? "";
+  const title: ChartTitleOptions = {};
+  if (body !== undefined) title.text = body;
+  else if (text !== undefined) title.text = text;
+  if (layoutEl) {
+    const manual = readManualLayout(layoutEl);
+    title.layout = manual ?? true;
+  }
+  if (overlayEl) title.overlay = parseOnOff(attr(overlayEl, "val")) ?? false;
+  if (spPrEl)
+    title.shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx) as ShapePropertiesOptions;
+  if (txPrEl) title.textProperties = textBodyDesc.parse(txPrEl, ctx);
+  return title;
 }
 
 function readTitleText(titleEl: XmlElement): string | undefined {
@@ -1142,6 +1270,8 @@ function readDataLabels(serEl: XmlElement): DataLabelsOptions | undefined {
   const dlEl = findChild(serEl, "c:dLbls");
   if (!dlEl) return undefined;
   const opts: DataLabelsOptions = {};
+  const numFmt = attr(findChild(dlEl, "c:numFmt"), "formatCode");
+  if (numFmt) opts.numberFormat = numFmt;
   const position = readValStr(dlEl, "c:dLblPos");
   if (position) opts.position = position as DataLabelsOptions["position"];
   const showLegendKey = readBoolAttr(dlEl, "c:showLegendKey");
@@ -1304,17 +1434,35 @@ function readManualLayout(layoutEl: XmlElement | undefined): ManualLayoutOptions
   return Object.keys(opts).length ? opts : undefined;
 }
 
+/** Read a CT_ChartLines element: true when bare, spPr object when decorated. */
+function readChartLines(
+  el: XmlElement,
+  tag: "c:majorGridlines" | "c:minorGridlines",
+  ctx: ReadContext,
+): boolean | ShapePropertiesOptions | undefined {
+  const lines = findChild(el, tag);
+  if (!lines) return undefined;
+  const spPr = findChild(lines, "c:spPr");
+  if (!spPr) return true;
+  return shapePropertiesDesc.parse(spPr, ctx) as ShapePropertiesOptions;
+}
+
 // ── 3D wall/floor surface read (CT_Surface) ──
 
 function readSurface(
   chartEl: XmlElement,
   tag: "c:floor" | "c:sideWall" | "c:backWall",
+  ctx: ReadContext,
 ): SurfaceOptions | undefined {
   const el = findChild(chartEl, tag);
   if (!el) return undefined;
+  const opts: SurfaceOptions = {};
   const thickness = readValStr(el, "c:thickness");
-  if (thickness === undefined) return undefined;
-  return { thickness: thickness.endsWith("%") ? thickness : Number(thickness) };
+  if (thickness !== undefined)
+    opts.thickness = thickness.endsWith("%") ? thickness : Number(thickness);
+  const spPr = findChild(el, "c:spPr");
+  if (spPr) opts.shapeProperties = shapePropertiesDesc.parse(spPr, ctx) as ShapePropertiesOptions;
+  return opts;
 }
 
 // ── Chart-type scalar read (CT_xxxChart fields between ser and axId) ──
@@ -1537,10 +1685,27 @@ function readLegendEntries(legend: XmlElement): LegendEntryOptions[] | undefined
 
 function readLegend(
   chart: XmlElement,
-): { position?: LegendPosition; entries?: LegendEntryOptions[] } | undefined {
+  ctx: ReadContext,
+):
+  | {
+      position?: LegendPosition;
+      entries?: LegendEntryOptions[];
+      layout?: boolean | ManualLayoutOptions;
+      overlay?: boolean;
+      shapeProperties?: ShapePropertiesOptions;
+      textProperties?: TextBodyOptions;
+    }
+  | undefined {
   const legend = findChild(chart, "c:legend");
   if (!legend) return undefined;
-  const result: { position?: LegendPosition; entries?: LegendEntryOptions[] } = {};
+  const result: {
+    position?: LegendPosition;
+    entries?: LegendEntryOptions[];
+    layout?: boolean | ManualLayoutOptions;
+    overlay?: boolean;
+    shapeProperties?: ShapePropertiesOptions;
+    textProperties?: TextBodyOptions;
+  } = {};
   const posEl = findChild(legend, "c:legendPos");
   if (posEl) {
     const v = attr(posEl, "val");
@@ -1548,6 +1713,15 @@ function readLegend(
   }
   const entries = readLegendEntries(legend);
   if (entries) result.entries = entries;
+  const layoutEl = findChild(legend, "c:layout");
+  if (layoutEl) result.layout = readManualLayout(layoutEl) ?? true;
+  const overlayEl = findChild(legend, "c:overlay");
+  if (overlayEl) result.overlay = parseOnOff(attr(overlayEl, "val")) ?? false;
+  const spPrEl = findChild(legend, "c:spPr");
+  if (spPrEl)
+    result.shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx) as ShapePropertiesOptions;
+  const txPr = findChild(legend, "c:txPr");
+  if (txPr) result.textProperties = textBodyDesc.parse(txPr, ctx);
   return Object.keys(result).length ? result : undefined;
 }
 
@@ -1700,12 +1874,12 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
   if (del !== undefined) result.delete = del;
   const pos = readValStr(el, "c:axPos");
   if (pos) result.position = pos as AxisPosition;
-  if (findChild(el, "c:majorGridlines")) result.majorGridlines = true;
-  if (findChild(el, "c:minorGridlines")) result.minorGridlines = true;
+  result.majorGridlines = readChartLines(el, "c:majorGridlines", ctx);
+  result.minorGridlines = readChartLines(el, "c:minorGridlines", ctx);
   const titleEl = findChild(el, "c:title");
   if (titleEl) {
     // "" keeps a text-less title placeholder (bare <c:title/>) round-tripping.
-    result.title = readTitleText(titleEl) ?? "";
+    result.title = readTitle(titleEl, ctx);
   }
   const numFmtEl = findChild(el, "c:numFmt");
   if (numFmtEl) {
@@ -1718,11 +1892,13 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
   if (minorTickMark) result.minorTickMark = minorTickMark as AxisTickMark;
   const tickLblPos = readValStr(el, "c:tickLblPos");
   if (tickLblPos) result.tickLabelPosition = tickLblPos as AxisTickLabelPosition;
-  // EG_AxShared: spPr sits between tickLblPos and crossAx.
+  // EG_AxShared: spPr sits between tickLblPos and crossAx; txPr follows spPr.
   const spPrEl = findChild(el, "c:spPr");
   if (spPrEl) {
     result.shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx) as ShapePropertiesOptions;
   }
+  const axisTxPr = findChild(el, "c:txPr");
+  if (axisTxPr) result.textProperties = textBodyDesc.parse(axisTxPr, ctx);
   const crossesAt = readValNum(el, "c:crossesAt");
   if (crossesAt !== undefined) result.crossesAt = crossesAt;
   else {
@@ -1822,8 +1998,20 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (opts.roundedCorners !== undefined)
       parts.push(`<c:roundedCorners${boolVal(opts.roundedCorners)}/>`);
 
-    // Style
-    if (opts.style !== undefined) {
+    // Style — plain c:style, or the Word 2010+ mc:AlternateContent form
+    // whose mc:Fallback carries the equivalent c:style.
+    if (opts.style2010) {
+      const fallback =
+        opts.style2010.fallbackStyle !== undefined
+          ? `<mc:Fallback>${valEl("c:style", opts.style2010.fallbackStyle)}</mc:Fallback>`
+          : "";
+      parts.push(
+        `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+          `<mc:Choice xmlns:c14="http://schemas.microsoft.com/office/drawing/2007/8/2/chart" Requires="c14">` +
+          `<c14:style val="${opts.style2010.style}"/></mc:Choice>` +
+          `${fallback}</mc:AlternateContent>`,
+      );
+    } else if (opts.style !== undefined) {
       parts.push(valEl("c:style", opts.style));
     }
 
@@ -1840,7 +2028,11 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // Title — a non-empty string emits the c:rich form; "" emits the bare
     // auto-title placeholder legacy Word writes.
     if (opts.title !== undefined) {
-      parts.push(opts.title === "" ? emptyEl("c:title") : stringifyTitle(opts.title));
+      parts.push(
+        typeof opts.title === "string" && opts.title === ""
+          ? emptyEl("c:title")
+          : stringifyTitle(opts.title, ctx),
+      );
     }
     if (opts.autoTitleDeleted !== undefined)
       parts.push(`<c:autoTitleDeleted${boolVal(opts.autoTitleDeleted)}/>`);
@@ -1853,9 +2045,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     }
 
     // 3D walls and floor (CT_Chart: view3D → floor → sideWall → backWall → plotArea)
-    parts.push(stringifySurface("c:floor", opts.floor));
-    parts.push(stringifySurface("c:sideWall", opts.sideWall));
-    parts.push(stringifySurface("c:backWall", opts.backWall));
+    parts.push(stringifySurface("c:floor", opts.floor, ctx));
+    parts.push(stringifySurface("c:sideWall", opts.sideWall, ctx));
+    parts.push(stringifySurface("c:backWall", opts.backWall, ctx));
 
     // c:plotArea
     parts.push(`<c:plotArea>${stringifyLayout(opts.plotAreaLayout)}`);
@@ -1877,12 +2069,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
     // Data table (CT_PlotArea: axes → dTable → spPr)
     if (opts.dataTable) parts.push(stringifyDataTable(opts.dataTable));
+    parts.push(chartSpPr(opts.plotAreaShapeProperties, ctx));
 
     parts.push("</c:plotArea>");
 
     // Legend
     if (opts.showLegend !== false) {
-      parts.push(stringifyLegend(opts));
+      parts.push(stringifyLegend(opts, ctx));
     }
 
     // CT_Chart tail: plotVisOnly → dispBlanksAs → showDLblsOverMax
@@ -1898,6 +2091,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     parts.push(chartSpPr(opts.shapeProperties, ctx));
 
     // CT_ChartSpace: txPr → externalData → printSettings → (userShapes)
+    if (opts.textProperties) {
+      parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
+    }
     if (opts.externalData) parts.push(stringifyExternalData(opts.externalData));
     if (opts.printSettings) parts.push(stringifyPrintSettings(opts.printSettings));
     // CT_ChartSpace: printSettings → userShapes → extLst
@@ -1922,11 +2118,23 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (roundedCorners !== undefined) result.roundedCorners = roundedCorners;
 
     // Style — bare c:style, or the Word 2010+ mc:AlternateContent form whose
-    // mc:Fallback holds the equivalent c:style. findFirst's deep search
-    // covers both; the bare form is what stringify emits (the mainstream).
-    const styleEl = findFirst(el, "c:style");
-    if (styleEl?.attributes?.["val"] !== undefined) {
-      result.style = Number(styleEl.attributes["val"]);
+    // mc:Choice holds c14:style and mc:Fallback the equivalent c:style.
+    const mcStyleEl = findChild(el, "mc:AlternateContent");
+    const c14StyleEl =
+      mcStyleEl && findChild(findChild(mcStyleEl, "mc:Choice") ?? mcStyleEl, "c14:style");
+    if (c14StyleEl?.attributes?.["val"] !== undefined) {
+      const fallbackEl = findFirst(mcStyleEl, "c:style");
+      result.style2010 = {
+        style: Number(c14StyleEl.attributes["val"]),
+        ...(fallbackEl?.attributes?.["val"] !== undefined
+          ? { fallbackStyle: Number(fallbackEl.attributes["val"]) }
+          : {}),
+      };
+    } else {
+      const styleEl = findChild(el, "c:style");
+      if (styleEl?.attributes?.["val"] !== undefined) {
+        result.style = Number(styleEl.attributes["val"]);
+      }
     }
 
     // CT_ChartSpace: clrMapOvr + protection (before c:chart)
@@ -1945,7 +2153,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // presence round-trips; autoTitleDeleted follows the same rule.
     const titleEl = findChild(chart, "c:title");
     if (titleEl) {
-      result.title = readTitleText(titleEl) ?? "";
+      result.title = readTitle(titleEl, ctx);
     }
     const autoTitleDeleted = readBoolAttr(chart, "c:autoTitleDeleted");
     if (autoTitleDeleted !== undefined) result.autoTitleDeleted = autoTitleDeleted;
@@ -1957,11 +2165,11 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (view3D) result.view3D = view3D;
 
     // 3D walls and floor
-    const floor = readSurface(chart, "c:floor");
+    const floor = readSurface(chart, "c:floor", ctx);
     if (floor) result.floor = floor;
-    const sideWall = readSurface(chart, "c:sideWall");
+    const sideWall = readSurface(chart, "c:sideWall", ctx);
     if (sideWall) result.sideWall = sideWall;
-    const backWall = readSurface(chart, "c:backWall");
+    const backWall = readSurface(chart, "c:backWall", ctx);
     if (backWall) result.backWall = backWall;
 
     // Plot area — detect chart type
@@ -2084,7 +2292,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
           }
 
           result.series = chartSeries as ChartSeriesData[];
-          if (categories?.length) result.categories = categories;
+          if (categories) result.categories = categories;
         }
       }
     }
@@ -2093,13 +2301,25 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     const axes = readAxes(plotArea, ctx);
     if (axes) result.axes = axes;
 
+    // CT_PlotArea tail: dTable → spPr
+    const plotSpPr = plotArea && findChild(plotArea, "c:spPr");
+    if (plotSpPr)
+      result.plotAreaShapeProperties = shapePropertiesDesc.parse(
+        plotSpPr,
+        ctx,
+      ) as ShapePropertiesOptions;
+
     // Legend — default is true, only set if explicitly absent
     const legend = findChild(chart, "c:legend");
     if (!legend) {
       result.showLegend = false;
     } else {
-      const legendData = readLegend(chart);
+      const legendData = readLegend(chart, ctx);
       if (legendData?.position) result.legendPosition = legendData.position;
+      if (legendData?.layout !== undefined) result.legendLayout = legendData.layout;
+      if (legendData?.overlay !== undefined) result.legendOverlay = legendData.overlay;
+      if (legendData?.shapeProperties) result.legendShapeProperties = legendData.shapeProperties;
+      if (legendData?.textProperties) result.legendTextProperties = legendData.textProperties;
       if (legendData?.entries) result.legendEntries = legendData.entries;
     }
 
@@ -2111,11 +2331,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     const showDLblsOverMax = readBoolAttr(chart, "c:showDLblsOverMax");
     if (showDLblsOverMax !== undefined) result.showDataLabelsOverMax = showDLblsOverMax;
 
-    // CT_ChartSpace tail: spPr (chart-area shape properties) then externalData
+    // CT_ChartSpace tail: spPr (chart-area shape properties), txPr, then externalData
     const spPrEl = findChild(el, "c:spPr");
     if (spPrEl) {
       result.shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx) as ShapePropertiesOptions;
     }
+    const spaceTxPr = findChild(el, "c:txPr");
+    if (spaceTxPr) result.textProperties = textBodyDesc.parse(spaceTxPr, ctx);
     const externalData = readExternalData(el);
     if (externalData) result.externalData = externalData;
     const printSettings = readPrintSettings(el);

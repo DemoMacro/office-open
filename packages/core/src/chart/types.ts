@@ -8,6 +8,7 @@
  */
 
 import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
+import type { TextBodyOptions } from "../drawing/text/text-body";
 import type { ColorMappingOptions } from "../theme/theme-options";
 import type { DataType } from "../util/data-type";
 
@@ -15,7 +16,8 @@ import type { DataType } from "../util/data-type";
 
 /** Fields shared by every chart series type (name + optional decorations). */
 export interface ChartSeriesCommon {
-  name: string;
+  /** Series name; absent when the source series carried no c:tx. */
+  name?: string;
   /** Series name reference formula (c:tx > c:strRef > c:f) — round-trip. */
   nameFormula?: string;
   /** Values reference formula (c:val > c:numRef > c:f) — round-trip. */
@@ -122,6 +124,8 @@ export interface DataLabelOptions {
 }
 
 export interface DataLabelsOptions {
+  /** Label number format (c:numFmt formatCode, before the position). */
+  numberFormat?: string;
   position?: DataLabelPosition;
   showVal?: boolean;
   showCatName?: boolean;
@@ -161,22 +165,61 @@ export type ChartType =
 
 // ── ChartSpace options ──
 
+/**
+ * Chart title (CT_Title). A plain string emits the simple c:rich form; an
+ * empty string the bare `<c:title/>` placeholder; the object form round-trips
+ * layout/overlay/spPr/txPr decorations alongside the text.
+ */
+export interface ChartTitleOptions {
+  /**
+   * Title text — a plain string emits a single default run; a TextBodyOptions
+   * carries the full c:rich body (paragraph alignment, run properties).
+   */
+  text?: string | TextBodyOptions;
+  /** Title layout (c:layout) — `true` emits the bare `<c:layout/>` Office
+   *  writes; an object is the manual layout. */
+  layout?: boolean | ManualLayoutOptions;
+  /** Title overlaps the plot (c:overlay). */
+  overlay?: boolean;
+  shapeProperties?: ShapePropertiesOptions;
+  textProperties?: TextBodyOptions;
+}
+
+/**
+ * Word 2010+ chart style form: c14:style in mc:Choice plus the equivalent
+ * c:style in mc:Fallback.
+ */
+export interface ChartStyle2010Options {
+  /** c14:style/@val (the 101+ style ids). */
+  style: number;
+  /** mc:Fallback c:style/@val. */
+  fallbackStyle?: number;
+}
+
 export interface ChartSpaceOptions {
   /**
    * Chart title (c:title). An empty string round-trips a title placeholder
    * that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).
    */
-  title?: string;
+  title?: string | ChartTitleOptions;
   /** 1904 date system (c:date1904) — emitted only when the source had it. */
   date1904?: boolean;
   /** Chart UI language (c:lang, e.g. "en-US") — emitted only when set. */
   lang?: string;
   /** Rounded chart-area corners (c:roundedCorners) — emitted only when set. */
   roundedCorners?: boolean;
+
+  /**
+   * Word 2010+ chart style — c14:style carried via mc:AlternateContent with a
+   * c:style fallback for older readers. Takes precedence over `style`.
+   */
+  style2010?: ChartStyle2010Options;
   /** Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set. */
   autoTitleDeleted?: boolean;
   /** Chart-area shape properties (c:spPr after c:chart) — round-trip. */
   shapeProperties?: ShapePropertiesOptions;
+  /** Chart-space default text (c:txPr, a CT_TextBody) — round-trip. */
+  textProperties?: TextBodyOptions;
   type: ChartType;
   categories?: readonly string[];
   /**
@@ -226,6 +269,8 @@ export interface ChartSpaceOptions {
   axisIds?: readonly number[];
   /** Manual plot-area layout (c:plotArea > c:layout > c:manualLayout). */
   plotAreaLayout?: ManualLayoutOptions;
+  /** Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip. */
+  plotAreaShapeProperties?: ShapePropertiesOptions;
   /** 3D floor (c:floor). */
   floor?: SurfaceOptions;
   /** 3D side wall (c:sideWall). */
@@ -294,6 +339,17 @@ export interface ChartSpaceOptions {
   bandFormats?: readonly BandFormatOptions[];
   /** Legend position (c:legendPos, defaults to "r" when legend is shown). */
   legendPosition?: LegendPosition;
+  /** Legend overlaps the plot (c:overlay). */
+  legendOverlay?: boolean;
+  /** Legend fill and outline (c:legend's c:spPr) — round-trip. */
+  legendShapeProperties?: ShapePropertiesOptions;
+  /**
+   * Legend manual layout (c:legend's c:layout) — true emits the bare
+   * `<c:layout/>` form, an object the manual layout.
+   */
+  legendLayout?: boolean | ManualLayoutOptions;
+  /** Legend text (c:legend's c:txPr, a CT_TextBody) — round-trip. */
+  legendTextProperties?: TextBodyOptions;
   /** Legend entry overrides (c:legendEntry, inside c:legend). */
   legendEntries?: readonly LegendEntryOptions[];
   /** User-drawn shapes relationship id (c:userShapes r:id, after printSettings). */
@@ -376,11 +432,14 @@ export interface AxisOptions {
   scaling?: AxisScalingOptions;
   delete?: boolean;
   position?: AxisPosition;
-  /** c:majorGridlines presence (CT_ChartLines). */
-  majorGridlines?: boolean;
-  minorGridlines?: boolean;
-  /** Plain-text axis title (c:title > c:rich > a:p > a:r > a:t). */
-  title?: string;
+  /**
+   * c:majorGridlines (CT_ChartLines) — true emits the bare element, an
+   * object carries its spPr (line styling).
+   */
+  majorGridlines?: boolean | ShapePropertiesOptions;
+  minorGridlines?: boolean | ShapePropertiesOptions;
+  /** Axis title (c:title) — plain text or the full CT_Title object form. */
+  title?: string | ChartTitleOptions;
   /** c:numFmt formatCode; sourceLinked defaults to 1. */
   numberFormat?: string;
   majorTickMark?: AxisTickMark;
@@ -409,6 +468,8 @@ export interface AxisOptions {
   displayUnits?: DisplayUnitsOptions;
   /** Axis shape properties (c:spPr between tickLblPos and crossAx) — round-trip. */
   shapeProperties?: ShapePropertiesOptions;
+  /** Axis text (c:txPr, a CT_TextBody) — round-trip. */
+  textProperties?: TextBodyOptions;
 }
 
 // ── Series marker / data point / picture options (CT_Marker/CT_DPt/CT_PictureOptions) ──
@@ -479,10 +540,12 @@ export interface ManualLayoutOptions {
   h?: number;
 }
 
-/** 3D wall/floor surface (CT_Surface thickness; spPr/pictureOptions not modeled here). */
+/** 3D wall/floor surface (CT_Surface: thickness → spPr → pictureOptions). */
 export interface SurfaceOptions {
   /** Surface thickness — plain number or percentage string ("N%"). */
   thickness?: number | string;
+  /** Wall/floor fill and outline (c:spPr). */
+  shapeProperties?: ShapePropertiesOptions;
 }
 
 // ── Chart-level scalars (CT_Chart tail + CT_xxxChart type-specific heads) ──
