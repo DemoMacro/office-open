@@ -168,12 +168,13 @@ export function parseTocFieldFromElements(els: Element[]): TableOfContentsOption
  * in one paragraph — while the `w:t` requirement excludes a pure control
  * paragraph (field head / separate-only / end).
  *
- * The paragraph that closes the field (depth drops to 0) is kept when it
- * carries anything worth preserving — its own paragraph properties (Word parks
- * the entry style's pPr there) or rendered text (Word often puts the last entry
- * in the closing paragraph). The parse path consumes the bare fldChar run, so
- * only that content remains. A bare control-only closing paragraph is dropped:
- * it would round-trip as an empty paragraph the markup never semantically had.
+ * The paragraph that closes the field (depth drops to 0) is kept only as a
+ * pure control paragraph — its own pPr, no rendered text (Word parks the entry
+ * style's properties there). The parse path consumes the bare fldChar run, so
+ * only those properties remain. A bare closing paragraph without pPr is
+ * dropped: it would round-trip as an empty paragraph the markup never
+ * semantically had; one carrying text is body content (see
+ * keepTocClosingParagraph) and is returned to the body by the TOC aggregator.
  */
 export function selectTocEntryElements(els: Element[]): Element[] {
   const entries: Element[] = [];
@@ -204,12 +205,14 @@ export function selectTocEntryElements(els: Element[]): Element[] {
 }
 
 /**
- * Whether the field-closing paragraph joins the rendered entries: only when it
- * carries anything worth preserving. Shared with the parse body's page-break
- * rescue, which must not re-emit a break already kept inside that paragraph.
+ * Whether the field-closing paragraph joins the rendered entries: only a pure
+ * control paragraph (its own pPr but no rendered text — Word parks the entry
+ * style's properties there). A closing paragraph WITH text is body content the
+ * field end drifted into (Word drops the end marker into a following heading
+ * when it updates the field) — it must stay in the body, not the TOC.
  */
 export function keepTocClosingParagraph(el: Element): boolean {
-  return findFirst(el, "w:pPr") !== undefined || findFirst(el, "w:t") !== undefined;
+  return findFirst(el, "w:pPr") !== undefined && findFirst(el, "w:t") === undefined;
 }
 
 /** Recursively feed every w:instrText to the TOC instruction parser. */

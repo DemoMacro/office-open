@@ -245,23 +245,32 @@ describe("parseBody TOC entry preservation", () => {
     expect(closing).toContain('"style":"10"');
   });
 
-  it("keeps the field-closing paragraph when it holds rendered text", () => {
-    // Word often puts the last rendered entry in the closing paragraph.
+  it("returns a text-carrying closing paragraph to the body, not the TOC", () => {
+    // Word drops the field end into a following heading when it updates the
+    // TOC. That heading is body content — it must not move inside the TOC.
     const xml = `<w:body>
       <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
         <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
         <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
       <w:p><w:r><w:t>Heading One</w:t></w:r></w:p>
-      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r>
+      <w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r>
         <w:r><w:t>Heading Two</w:t></w:r></w:p>
     </w:body>`;
     const body = parseXml(xml).elements?.[0];
     if (!body) throw new Error("parsed document has no root element");
     const sections = parseBody(body, readCtx);
-    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
-      | { toc: { entries?: unknown[] } }
-      | undefined;
-    expect(tocChild?.toc.entries).toHaveLength(2);
+    const children = sections[0]?.children ?? [];
+    const tocIdx = children.findIndex((c) => "toc" in c);
+    const tocChild = children[tocIdx] as { toc: { entries?: unknown[] } };
+    expect(tocChild.toc.entries).toHaveLength(1);
+    // The heading follows the TOC as a regular body paragraph, its orphan end
+    // marker consumed.
+    const after = children[tocIdx + 1];
+    const afterJson = JSON.stringify(after);
+    expect(afterJson).toContain("Heading2");
+    expect(afterJson).toContain("Heading Two");
+    expect(afterJson).not.toContain("fldChar");
   });
 
   it("carries the field control runs' rPr through the structured TOC", () => {

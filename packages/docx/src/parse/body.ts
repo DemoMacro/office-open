@@ -422,18 +422,27 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
   const flushToc = (): void => {
     if (!tocBuffer) return;
     children.push(buildTocChild(tocBuffer, ctx));
-    // buildTocChild preserves the rendered entries (paragraphs between the
-    // separate and end markers). A bare end-closing paragraph is dropped, but
-    // often carries a trailing page break (the section break before the first
-    // heading) — rescue that break as a standalone child. When the closing
-    // paragraph joins the entries, its break round-trips inside it already.
+    // The closing paragraph either joins the entries (pure control paragraph —
+    // buildTocChild kept it), returns to the body (it carries real content:
+    // Word drops the field end into a following heading when it updates the
+    // TOC, and that heading must not move inside the TOC), or is dropped (bare
+    // control paragraph) — only then does its trailing page break need rescue
+    // as a standalone child. An unclosed field's tail keeps the legacy rescue.
     const lastEl = tocBuffer[tocBuffer.length - 1]!;
-    // tocDepth <= 0 means the field actually closed: lastEl is the closing
-    // paragraph, and when it joins the entries its break round-trips inside it
-    // already — rescue only applies to a dropped bare closing paragraph. An
-    // unclosed field's tail keeps the legacy rescue (best effort).
-    const closingKept = tocDepth <= 0 && keepTocClosingParagraph(lastEl);
-    if (!closingKept) {
+    const closed = tocDepth <= 0;
+    const keptInEntries = closed && keepTocClosingParagraph(lastEl);
+    const returnsToBody =
+      closed && !keepTocClosingParagraph(lastEl) && findFirst(lastEl, "w:t") !== undefined;
+    if (returnsToBody) {
+      // Direct parseParagraph: the paragraph lives inside the field span, its
+      // orphan end fldChar run is consumed by the accumulator, and the
+      // cross-paragraph pre-check must not flip it to verbatim.
+      children.push(
+        lastEl.name === "w:p"
+          ? { paragraph: parseParagraph(lastEl, ctx) }
+          : parseSectionChild(lastEl, ctx),
+      );
+    } else if (!keptInEntries) {
       let pageBreakCount = 0;
       for (const br of findDeep(lastEl, "w:br")) {
         if (attr(br, "w:type") === "page") pageBreakCount++;
