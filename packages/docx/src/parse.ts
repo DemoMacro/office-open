@@ -365,6 +365,17 @@ export function parseDocument(data: DataType): DocumentOptions {
   // spreads it into _settingsOptions for the descriptor's stringify input.
   if (docx.settings) {
     opts.settings = settingsDesc.parse(docx.settings, ctx);
+    // Bridge w:attachedTemplate's r:id to its target URL through the settings
+    // part's own rels — the Options field carries the URL (the rId never
+    // survives regeneration; the compiler assigns a fresh one).
+    const rid = opts.settings.attachedTemplate;
+    if (rid) {
+      const relsEl = docx.doc.get("word/_rels/settings.xml.rels");
+      const rel = relsEl?.elements?.find((e) => e.name === "Relationship" && attr(e, "Id") === rid);
+      const target = rel ? attr(rel, "Target") : undefined;
+      if (target) opts.settings.attachedTemplate = target;
+      else delete opts.settings.attachedTemplate;
+    }
   }
 
   // Web settings — preserve the part on round-trip even when it has no

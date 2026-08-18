@@ -961,7 +961,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w:formsDesign", opts.formsDesign));
 
     if (opts.attachedTemplate !== undefined)
-      p.push(attrEl("w:attachedTemplate", { "r:id": opts.attachedTemplate }));
+      // rId1 is the settings part's own rels space — the compiler registers the
+      // external template relationship under that id.
+      p.push(attrEl("w:attachedTemplate", { "r:id": "rId1" }));
     p.push(onOff("w:linkStyles", opts.linkStyles));
 
     // stylePaneFormatFilter
@@ -1285,7 +1287,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (Object.keys(proof).length > 0) opts.proofState = proof;
     }
 
-    // attachedTemplate → w:attachedTemplate/@r:id
+    // attachedTemplate → w:attachedTemplate/@r:id — the raw rId is bridged to
+    // the target URL in parse.ts (the settings part's own rels live outside
+    // this element tree), so here it is kept only as a presence marker.
     const attachedTplEl = findChild(el, "w:attachedTemplate");
     if (attachedTplEl) {
       const rid = attr(attachedTplEl, "r:id");

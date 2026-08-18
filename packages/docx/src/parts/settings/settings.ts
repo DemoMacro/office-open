@@ -120,7 +120,7 @@ export interface SettingsOptions {
     hyperlink?: string;
     followedHyperlink?: string;
   };
-  /** Relationship ID to the attached template document */
+  /** URL of the attached template document (external relationship target) */
   attachedTemplate?: string;
   /** Theme font languages (CT_Language): latin, eastAsian, and complex-script BCP-47 tags */
   themeFontLang?: { val?: string; eastAsia?: string; bidi?: string };

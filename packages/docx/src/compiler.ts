@@ -22,6 +22,7 @@ import {
   hasPlaceholders,
   optionalRelsPart,
   Relationships,
+  TargetModeType,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
   IMAGE_MEDIA_CONTENT_TYPES,
@@ -706,6 +707,23 @@ function xmlifyContext(
       data: XML_DECL + (settingsDesc.stringify(ctx._settingsOptions, ctx) ?? ""),
       path: "word/settings.xml",
     },
+    ...(ctx._settingsOptions.attachedTemplate !== undefined
+      ? (() => {
+          const rels = new Relationships();
+          rels.addRelationship(
+            1,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate",
+            ctx._settingsOptions.attachedTemplate,
+            TargetModeType.EXTERNAL,
+          );
+          return {
+            SettingsRelationships: {
+              data: XML_DECL + rels.serialize(),
+              path: "word/_rels/settings.xml.rels",
+            },
+          };
+        })()
+      : {}),
     Styles: {
       data: (() => {
         const xmlStyles = ctx.styles.serialize();
