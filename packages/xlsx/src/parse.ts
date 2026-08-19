@@ -415,6 +415,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
             ...(image.blipEffects ? { blipEffects: image.blipEffects } : {}),
             ...(image.locking ? { locking: image.locking } : {}),
             ...(image.hyperlink ? { hyperlink: image.hyperlink } : {}),
+            ...(image.zOrder !== undefined ? { zOrder: image.zOrder } : {}),
+            ...(image.shapeId !== undefined ? { shapeId: image.shapeId } : {}),
           });
         }
         if (images.length > 0) wsOpts.images = images;
@@ -437,6 +439,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
             ...(anchor.hyperlink ? { hyperlink: anchor.hyperlink } : {}),
+            ...(anchor.zOrder !== undefined ? { zOrder: anchor.zOrder } : {}),
+            ...(anchor.shapeId !== undefined ? { shapeId: anchor.shapeId } : {}),
           });
         }
         if (charts.length > 0) wsOpts.charts = charts;

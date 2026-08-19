@@ -585,6 +585,8 @@ function compileWorksheetPart(
         ...(img.blipEffects ? { blipEffects: img.blipEffects } : {}),
         ...(img.locking ? { locking: img.locking } : {}),
         ...(img.hyperlink ? { hyperlink: img.hyperlink } : {}),
+        ...(img.zOrder !== undefined ? { zOrder: img.zOrder } : {}),
+        ...(img.shapeId !== undefined ? { shapeId: img.shapeId } : {}),
       });
       rid++;
       state.globalMediaIdx++;
@@ -614,6 +616,8 @@ function compileWorksheetPart(
         ...(chart.frameLocks ? { frameLocks: chart.frameLocks } : {}),
         ...(chart.macro !== undefined ? { macro: chart.macro } : {}),
         ...(chart.hyperlink ? { hyperlink: chart.hyperlink } : {}),
+        ...(chart.zOrder !== undefined ? { zOrder: chart.zOrder } : {}),
+        ...(chart.shapeId !== undefined ? { shapeId: chart.shapeId } : {}),
       });
       rid++;
       state.globalChartIdx++;

@@ -3511,6 +3511,10 @@
           ],
           "description": "Row offset in EMU (default 0)"
         },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
+          "type": "number"
+        },
         "spPr": {
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Shape properties (a:CT_ShapeProperties, typically prstGeom=\"line\")."
@@ -3556,6 +3560,10 @@
             }
           ],
           "description": "To cell row offset in EMU."
+        },
+        "zOrder": {
+          "description": "Document-order position of this anchor inside the drawing part — the z-order when objects overlap. Round-trip only: stringify emits anchors in this order; fresh authoring keeps the per-type bucket order.",
+          "type": "number"
         }
       },
       "required": ["col", "row", "spPr"],
@@ -6525,6 +6533,10 @@
           ],
           "description": "Row offset in EMU (default 0)"
         },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
+          "type": "number"
+        },
         "shapes": {
           "description": "Nested shapes.",
           "items": {
@@ -6565,6 +6577,10 @@
             }
           ],
           "description": "To cell row offset in EMU."
+        },
+        "zOrder": {
+          "description": "Document-order position of this anchor inside the drawing part — the z-order when objects overlap. Round-trip only: stringify emits anchors in this order; fresh authoring keeps the per-type bucket order.",
+          "type": "number"
         }
       },
       "required": ["col", "grpSpPr", "row"],
@@ -8886,6 +8902,10 @@
           ],
           "description": "Row offset in EMU (default 0)"
         },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only).",
+          "type": "number"
+        },
         "sourceRectangle": {
           "$ref": "#/definitions/SourceRectangleOptions",
           "description": "Blip crop (a:srcRect); an empty object round-trips the bare marker."
@@ -8931,6 +8951,10 @@
         "type": {
           "enum": ["png", "jpg", "wmf", "emf"],
           "type": "string"
+        },
+        "zOrder": {
+          "description": "Document-order position inside the drawing part (z-order when objects overlap). Round-trip only; fresh authoring uses insertion order.",
+          "type": "number"
         }
       },
       "required": ["col", "data", "row", "type"],
@@ -12558,6 +12582,10 @@
           ],
           "description": "Row offset in EMU (default 0)"
         },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
+          "type": "number"
+        },
         "spPr": {
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Shape properties (a:CT_ShapeProperties)."
@@ -12611,6 +12639,10 @@
             }
           ],
           "description": "To cell row offset in EMU."
+        },
+        "zOrder": {
+          "description": "Document-order position of this anchor inside the drawing part — the z-order when objects overlap. Round-trip only: stringify emits anchors in this order; fresh authoring keeps the per-type bucket order.",
+          "type": "number"
         }
       },
       "required": ["col", "row", "spPr"],
@@ -16018,6 +16050,10 @@
           "$ref": "#/definitions/BarShape",
           "description": "3D bar column shape (chart-group-level c:shape on c:bar3DChart)."
         },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only).",
+          "type": "number"
+        },
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Chart-area shape properties (c:spPr after c:chart) — round-trip."
@@ -16133,6 +16169,10 @@
         "wireframe": {
           "description": "Surface chart wireframe rendering (c:wireframe).",
           "type": "boolean"
+        },
+        "zOrder": {
+          "description": "Document-order position inside the drawing part (round-trip only).",
+          "type": "number"
         }
       },
       "required": ["col", "row", "series", "type"],

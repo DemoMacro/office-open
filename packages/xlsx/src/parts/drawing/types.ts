@@ -83,6 +83,14 @@ export interface DrawingAnchorOptions {
   locksWithSheet?: boolean;
   /** Print with sheet (default true) */
   printsWithSheet?: boolean;
+  /**
+   * Document-order position of this anchor inside the drawing part — the
+   * z-order when objects overlap. Round-trip only: stringify emits anchors
+   * in this order; fresh authoring keeps the per-type bucket order.
+   */
+  zOrder?: number;
+  /** Original cNvPr id (round-trip only; fresh output allocates ids). */
+  shapeId?: number;
 }
 
 /** Pick the anchor fields defined on `source` (undefined ones stay absent). */

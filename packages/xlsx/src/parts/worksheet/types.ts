@@ -356,6 +356,13 @@ export interface PictureOptions extends Omit<BasePictureOptions, "type">, Drawin
    * jump to a URL when the picture is clicked.
    */
   hyperlink?: TextHyperlinkOptions;
+  /**
+   * Document-order position inside the drawing part (z-order when objects
+   * overlap). Round-trip only; fresh authoring uses insertion order.
+   */
+  zOrder?: number;
+  /** Original cNvPr id (round-trip only). */
+  shapeId?: number;
 }
 
 /**
@@ -374,6 +381,10 @@ export interface WorksheetChartOptions
    * Click hyperlink on the chart frame itself (a:hlinkClick inside xdr:cNvPr).
    */
   hyperlink?: TextHyperlinkOptions;
+  /** Document-order position inside the drawing part (round-trip only). */
+  zOrder?: number;
+  /** Original cNvPr id (round-trip only). */
+  shapeId?: number;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
 }
