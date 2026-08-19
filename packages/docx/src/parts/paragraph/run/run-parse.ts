@@ -52,240 +52,232 @@ const ON_OFF_RUN_PROPS: readonly (readonly [string, keyof RunPropertiesOptions &
   ["w:specVanish", "specVanish"],
   ["w:oMath", "math"],
 ];
+const ON_OFF_RUN_PROPS_MAP: ReadonlyMap<string, string> = new Map(ON_OFF_RUN_PROPS);
 
 /**
  * Parse a w:rPr element into RunPropertiesOptions.
+ *
+ * Single pass over the children: rPr holds at most one of each property, so a
+ * switch dispatch beats the previous per-property findChild linear scans
+ * (26 properties × N children re-walked the array for every lookup).
  */
 export function parseRunProperties(el: Element): RunPropertiesOptions {
   const opts: Record<string, unknown> = {};
+  let w14Parts: string[] | undefined;
 
-  const rStyle = findChild(el, "w:rStyle");
-  if (rStyle) opts.style = attr(rStyle, "w:val");
+  const children = el.elements;
+  if (children !== undefined) {
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (child === undefined || child.type !== "element") continue;
+      switch (child.name) {
+        case "w:rStyle":
+          opts.style = attr(child, "w:val");
+          break;
+        case "w:rFonts": {
+          const ascii = attr(child, "w:ascii");
+          const eastAsia = attr(child, "w:eastAsia");
+          const hAnsi = attr(child, "w:hAnsi");
+          const complexScript = attr(child, "w:cs");
+          const asciiTheme = attr(child, "w:asciiTheme");
+          const eastAsiaTheme = attr(child, "w:eastAsiaTheme");
+          const hAnsiTheme = attr(child, "w:hAnsiTheme");
+          const cstheme = attr(child, "w:cstheme");
+          const hint = attr(child, "w:hint");
 
-  const font = findChild(el, "w:rFonts");
-  if (font) {
-    const ascii = attr(font, "w:ascii");
-    const eastAsia = attr(font, "w:eastAsia");
-    const hAnsi = attr(font, "w:hAnsi");
-    const complexScript = attr(font, "w:cs");
-    const asciiTheme = attr(font, "w:asciiTheme");
-    const eastAsiaTheme = attr(font, "w:eastAsiaTheme");
-    const hAnsiTheme = attr(font, "w:hAnsiTheme");
-    const cstheme = attr(font, "w:cstheme");
-    const hint = attr(font, "w:hint");
-
-    if (
-      ascii &&
-      !eastAsia &&
-      !hAnsi &&
-      !complexScript &&
-      !asciiTheme &&
-      !eastAsiaTheme &&
-      !hAnsiTheme &&
-      !cstheme
-    ) {
-      opts.font = hint ? { name: ascii, hint } : ascii;
-    } else {
-      const fontObj: Record<string, string | undefined> = {};
-      if (ascii) fontObj.ascii = ascii;
-      if (eastAsia) fontObj.eastAsia = eastAsia;
-      if (hAnsi) fontObj.hAnsi = hAnsi;
-      if (complexScript) fontObj.complexScript = complexScript;
-      if (asciiTheme) fontObj.asciiTheme = asciiTheme;
-      if (eastAsiaTheme) fontObj.eastAsiaTheme = eastAsiaTheme;
-      if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme;
-      if (cstheme) fontObj.complexScriptTheme = cstheme;
-      if (hint) fontObj.hint = hint;
-      opts.font = fontObj;
+          if (
+            ascii &&
+            !eastAsia &&
+            !hAnsi &&
+            !complexScript &&
+            !asciiTheme &&
+            !eastAsiaTheme &&
+            !hAnsiTheme &&
+            !cstheme
+          ) {
+            opts.font = hint ? { name: ascii, hint } : ascii;
+          } else {
+            const fontObj: Record<string, string | undefined> = {};
+            if (ascii) fontObj.ascii = ascii;
+            if (eastAsia) fontObj.eastAsia = eastAsia;
+            if (hAnsi) fontObj.hAnsi = hAnsi;
+            if (complexScript) fontObj.complexScript = complexScript;
+            if (asciiTheme) fontObj.asciiTheme = asciiTheme;
+            if (eastAsiaTheme) fontObj.eastAsiaTheme = eastAsiaTheme;
+            if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme;
+            if (cstheme) fontObj.complexScriptTheme = cstheme;
+            if (hint) fontObj.hint = hint;
+            opts.font = fontObj;
+          }
+          break;
+        }
+        case "w:b":
+          opts.bold = attrBool(child, "w:val") ?? true;
+          break;
+        case "w:bCs":
+          opts.boldComplexScript = attrBool(child, "w:val") ?? true;
+          break;
+        case "w:i":
+          opts.italic = attrBool(child, "w:val") ?? true;
+          break;
+        case "w:iCs":
+          opts.italicComplexScript = attrBool(child, "w:val") ?? true;
+          break;
+        case "w:u": {
+          const ul: Record<string, string | undefined> = {};
+          const uType = attr(child, "w:val");
+          if (uType) ul.type = uType;
+          const uColor = colorAttr(child, "w:color");
+          if (uColor) ul.color = uColor;
+          opts.underline = ul;
+          break;
+        }
+        case "w:color": {
+          const c = colorAttr(child, "w:val");
+          const themeColor = attr(child, "w:themeColor");
+          const themeTint = attr(child, "w:themeTint");
+          const themeShade = attr(child, "w:themeShade");
+          if (themeColor || themeTint || themeShade) {
+            const colorObj: Record<string, string | undefined> = {};
+            if (c) colorObj.val = c;
+            if (themeColor) colorObj.themeColor = themeColor;
+            if (themeTint) colorObj.themeTint = themeTint;
+            if (themeShade) colorObj.themeShade = themeShade;
+            opts.color = colorObj;
+          } else if (c) {
+            opts.color = c;
+          }
+          break;
+        }
+        case "w:sz": {
+          const halfPts = attrNum(child, "w:val");
+          if (halfPts !== undefined) opts.size = halfPts / 2;
+          break;
+        }
+        case "w:szCs": {
+          const halfPts = attrNum(child, "w:val");
+          if (halfPts !== undefined) opts.sizeComplexScript = halfPts / 2;
+          break;
+        }
+        case "w:highlight": {
+          const val = attr(child, "w:val");
+          if (val) opts.highlight = val;
+          break;
+        }
+        case "w:vertAlign": {
+          const val = attr(child, "w:val");
+          if (val === "baseline" || val === "subscript" || val === "superscript") {
+            opts.verticalAlign = val;
+          }
+          break;
+        }
+        case "w:effect": {
+          const val = attr(child, "w:val");
+          if (val) opts.effect = val;
+          break;
+        }
+        case "w:em": {
+          const val = attr(child, "w:val");
+          if (val) opts.emphasisMark = { type: val };
+          break;
+        }
+        case "w:spacing": {
+          const val = attrMeasure(child, "w:val");
+          if (val !== undefined) opts.characterSpacing = val;
+          break;
+        }
+        case "w:w": {
+          const val = attrNum(child, "w:val");
+          if (val !== undefined) opts.scale = val;
+          break;
+        }
+        case "w:kern": {
+          // w:kern is ST_HpsMeasure: numeric tokens are half-points → points
+          // (÷2), UniversalMeasure strings pass through verbatim (same split
+          // as w:position).
+          const val = attrMeasure(child, "w:val");
+          if (val !== undefined) {
+            opts.kern = typeof val === "number" ? val / 2 : (val as UniversalMeasure);
+          }
+          break;
+        }
+        case "w:position": {
+          // w:position is ST_SignedHpsMeasure; numeric tokens are half-points
+          // → points (÷2), UniversalMeasure strings pass through verbatim.
+          const val = attrMeasure(child, "w:val");
+          if (val !== undefined) {
+            opts.position = typeof val === "number" ? val / 2 : (val as UniversalMeasure);
+          }
+          break;
+        }
+        case "w:fitText": {
+          const val = attrNum(child, "w:val");
+          if (val !== undefined) opts.fitText = val;
+          break;
+        }
+        case "w:lang": {
+          // Keep the element even when it carries no attributes — Word writes
+          // a bare <w:lang/> to override inherited language settings.
+          const langObj: LanguageOptions = {};
+          const val = attr(child, "w:val");
+          if (val) langObj.value = val;
+          const eastAsia = attr(child, "w:eastAsia");
+          if (eastAsia) langObj.eastAsia = eastAsia;
+          const bidi = attr(child, "w:bidi");
+          if (bidi) langObj.bidirectional = bidi;
+          opts.language = langObj;
+          break;
+        }
+        case "w:bdr":
+          opts.border = parseBorder(child);
+          break;
+        case "w:shd":
+          opts.shading = parseShading(child);
+          break;
+        case "w:eastAsianLayout":
+          opts.eastAsianLayout = parseEastAsianLayout(child);
+          break;
+        case "w:contentPart": {
+          const rId = attr(child, "r:id");
+          if (rId) opts.contentPartRId = rId;
+          break;
+        }
+        case "w:rPrChange": {
+          const rev: Record<string, unknown> = {};
+          const author = attr(child, "w:author");
+          if (author) rev.author = author;
+          const date = attr(child, "w:date");
+          if (date) rev.date = date;
+          const id = attrNum(child, "w:id");
+          if (id !== undefined) rev.id = id;
+          const innerRPr = findChild(child, "w:rPr");
+          if (innerRPr) {
+            Object.assign(rev, parseRunProperties(innerRPr));
+          }
+          if (Object.keys(rev).length > 0) opts.revision = rev;
+          break;
+        }
+        default: {
+          // On/off properties (w:strike, w:caps, …) and w14:* text effects.
+          // w14 effects (glow/shadow/reflection/props3d) occupy the
+          // EG_RPrBase extension slot — low-frequency complex subtrees kept
+          // verbatim as raw XML for fidelity while the rPr backbone stays
+          // editable.
+          const name = child.name;
+          if (name === undefined) break;
+          const optKey = ON_OFF_RUN_PROPS_MAP.get(name);
+          if (optKey !== undefined) {
+            opts[optKey] = attrBool(child, "w:val") ?? true;
+          } else if (name.startsWith("w14:")) {
+            (w14Parts ??= []).push(stringifyElement(child));
+          }
+          break;
+        }
+      }
     }
   }
 
-  const bold = findChild(el, "w:b");
-  if (bold) opts.bold = attrBool(bold, "w:val") ?? true;
-
-  const boldCs = findChild(el, "w:bCs");
-  if (boldCs) opts.boldComplexScript = attrBool(boldCs, "w:val") ?? true;
-
-  const italic = findChild(el, "w:i");
-  if (italic) opts.italic = attrBool(italic, "w:val") ?? true;
-
-  const italicCs = findChild(el, "w:iCs");
-  if (italicCs) opts.italicComplexScript = attrBool(italicCs, "w:val") ?? true;
-
-  const underline = findChild(el, "w:u");
-  if (underline) {
-    const ul: Record<string, string | undefined> = {};
-    const uType = attr(underline, "w:val");
-    if (uType) ul.type = uType;
-    const uColor = colorAttr(underline, "w:color");
-    if (uColor) ul.color = uColor;
-    opts.underline = ul;
-  }
-
-  // On/off properties
-  for (const [name, optKey] of ON_OFF_RUN_PROPS) {
-    const child = findChild(el, name);
-    if (child) opts[optKey] = attrBool(child, "w:val") ?? true;
-  }
-
-  const color = findChild(el, "w:color");
-  if (color) {
-    const c = colorAttr(color, "w:val");
-    const themeColor = attr(color, "w:themeColor");
-    const themeTint = attr(color, "w:themeTint");
-    const themeShade = attr(color, "w:themeShade");
-    if (themeColor || themeTint || themeShade) {
-      const colorObj: Record<string, string | undefined> = {};
-      if (c) colorObj.val = c;
-      if (themeColor) colorObj.themeColor = themeColor;
-      if (themeTint) colorObj.themeTint = themeTint;
-      if (themeShade) colorObj.themeShade = themeShade;
-      opts.color = colorObj;
-    } else if (c) {
-      opts.color = c;
-    }
-  }
-
-  const sz = findChild(el, "w:sz");
-  if (sz) {
-    const halfPts = attrNum(sz, "w:val");
-    if (halfPts !== undefined) opts.size = halfPts / 2;
-  }
-
-  const szCs = findChild(el, "w:szCs");
-  if (szCs) {
-    const halfPts = attrNum(szCs, "w:val");
-    if (halfPts !== undefined) opts.sizeComplexScript = halfPts / 2;
-  }
-
-  const highlight = findChild(el, "w:highlight");
-  if (highlight) {
-    const val = attr(highlight, "w:val");
-    if (val) opts.highlight = val;
-  }
-
-  const vertAlign = findChild(el, "w:vertAlign");
-  if (vertAlign) {
-    const val = attr(vertAlign, "w:val");
-    if (val === "baseline" || val === "subscript" || val === "superscript") {
-      opts.verticalAlign = val;
-    }
-  }
-
-  const effect = findChild(el, "w:effect");
-  if (effect) {
-    const val = attr(effect, "w:val");
-    if (val) opts.effect = val;
-  }
-
-  const emphasisMark = findChild(el, "w:em");
-  if (emphasisMark) {
-    const val = attr(emphasisMark, "w:val");
-    if (val) opts.emphasisMark = { type: val };
-  }
-
-  const spacing = findChild(el, "w:spacing");
-  if (spacing) {
-    const val = attrMeasure(spacing, "w:val");
-    if (val !== undefined) opts.characterSpacing = val;
-  }
-
-  const scale = findChild(el, "w:w");
-  if (scale) {
-    const val = attrNum(scale, "w:val");
-    if (val !== undefined) opts.scale = val;
-  }
-
-  const kern = findChild(el, "w:kern");
-  if (kern) {
-    // w:kern is ST_HpsMeasure: numeric tokens are half-points → points (÷2),
-    // UniversalMeasure strings pass through verbatim (same split as w:position).
-    const val = attrMeasure(kern, "w:val");
-    if (val !== undefined) {
-      opts.kern = typeof val === "number" ? val / 2 : (val as UniversalMeasure);
-    }
-  }
-
-  const position = findChild(el, "w:position");
-  if (position) {
-    // w:position is ST_SignedHpsMeasure; numeric tokens are half-points →
-    // points (÷2), UniversalMeasure strings pass through verbatim.
-    const val = attrMeasure(position, "w:val");
-    if (val !== undefined) {
-      opts.position = typeof val === "number" ? val / 2 : (val as UniversalMeasure);
-    }
-  }
-
-  const fitText = findChild(el, "w:fitText");
-  if (fitText) {
-    const val = attrNum(fitText, "w:val");
-    if (val !== undefined) opts.fitText = val;
-  }
-
-  const lang = findChild(el, "w:lang");
-  if (lang) {
-    // Keep the element even when it carries no attributes — Word writes a
-    // bare <w:lang/> to override inherited language settings.
-    const langObj: LanguageOptions = {};
-    const val = attr(lang, "w:val");
-    if (val) langObj.value = val;
-    const eastAsia = attr(lang, "w:eastAsia");
-    if (eastAsia) langObj.eastAsia = eastAsia;
-    const bidi = attr(lang, "w:bidi");
-    if (bidi) langObj.bidirectional = bidi;
-    opts.language = langObj;
-  }
-
-  // Border (w:bdr)
-  const bdr = findChild(el, "w:bdr");
-  if (bdr) {
-    opts.border = parseBorder(bdr);
-  }
-
-  // Shading (w:shd)
-  const shd = findChild(el, "w:shd");
-  if (shd) {
-    opts.shading = parseShading(shd);
-  }
-
-  // East Asian layout (w:eastAsianLayout)
-  const eastAsianLayout = findChild(el, "w:eastAsianLayout");
-  if (eastAsianLayout) {
-    opts.eastAsianLayout = parseEastAsianLayout(eastAsianLayout);
-  }
-
-  // Content part (w:contentPart)
-  const contentPart = findChild(el, "w:contentPart");
-  if (contentPart) {
-    const rId = attr(contentPart, "r:id");
-    if (rId) opts.contentPartRId = rId;
-  }
-
-  // Revision (w:rPrChange)
-  const rPrChange = findChild(el, "w:rPrChange");
-  if (rPrChange) {
-    const rev: Record<string, unknown> = {};
-    const author = attr(rPrChange, "w:author");
-    if (author) rev.author = author;
-    const date = attr(rPrChange, "w:date");
-    if (date) rev.date = date;
-    const id = attrNum(rPrChange, "w:id");
-    if (id !== undefined) rev.id = id;
-    const innerRPr = findChild(rPrChange, "w:rPr");
-    if (innerRPr) {
-      Object.assign(rev, parseRunProperties(innerRPr));
-    }
-    if (Object.keys(rev).length > 0) opts.revision = rev;
-  }
-
-  // w14:* text effects (glow/shadow/reflection/props3d) occupy the EG_RPrBase
-  // extension slot at the end of rPr. Low-frequency complex subtrees — kept
-  // verbatim as raw XML for fidelity while the rPr backbone stays editable.
-  const w14Parts: string[] = [];
-  for (const child of el.elements ?? []) {
-    if (child.name?.startsWith("w14:")) w14Parts.push(stringifyElement(child));
-  }
-  if (w14Parts.length > 0) opts.w14RawXml = w14Parts.join("");
+  if (w14Parts !== undefined && w14Parts.length > 0) opts.w14RawXml = w14Parts.join("");
 
   return opts as RunPropertiesOptions;
 }
@@ -624,6 +616,21 @@ export function parsedRunToOptions(
   parsed: ReturnType<typeof parseRun>,
 ): RunOptions | { commentReference: number } | null {
   const contentChildren = parsed.children;
+
+  // Fast path: the overwhelmingly common run shape — one plain text node, no
+  // rsids — skips the reference/symbol/object scans and collection loop.
+  if (
+    contentChildren.length === 1 &&
+    typeof contentChildren[0] === "string" &&
+    parsed.additionRsid === undefined &&
+    parsed.runPropertiesRsid === undefined &&
+    parsed.deletionRsid === undefined
+  ) {
+    const text = contentChildren[0];
+    return parsed.properties === undefined
+      ? ({ text } as RunOptions)
+      : ({ ...parsed.properties, text } as RunOptions);
+  }
 
   const opts: Record<string, unknown> = { ...parsed.properties };
   if (parsed.additionRsid) opts.additionRsid = parsed.additionRsid;

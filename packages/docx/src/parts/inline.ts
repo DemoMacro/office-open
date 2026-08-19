@@ -564,6 +564,21 @@ export function stringifyChildDispatch(
   if ("rawXml" in child) {
     return child.rawXml;
   }
+  // Fast path: a plain run with text set is by far the most common child.
+  // The chain below otherwise runs ~40 discriminant checks before the caller
+  // falls back to stringifyRunInline — the exact function this returns.
+  // References and the { text, hyperlink } shorthand legally coexist with
+  // text and have their own branches, so they stay on the chain.
+  if (
+    "text" in child &&
+    child.text !== undefined &&
+    (child as RunOptions).footnoteReference === undefined &&
+    (child as RunOptions).endnoteReference === undefined &&
+    !("commentReference" in child) &&
+    !("hyperlink" in child)
+  ) {
+    return stringifyRunInline(child as RunOptions, ctx);
+  }
   // Simple break types — pure XML, no side effects. A break run may carry run
   // properties (round-tripped from <w:r><w:rPr>…</w:rPr><w:br…/></w:r>).
   if ("pageBreak" in child) {
