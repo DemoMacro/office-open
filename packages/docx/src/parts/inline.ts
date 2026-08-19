@@ -848,6 +848,7 @@ export function stringifyChildDispatch(
     // data rels target to follow, or the rels would point at the wrong bytes.
     let remappedDataRels = opts.raw?.dataRels;
     if (opts.raw?.media) {
+      const renames = new Map<string, string>();
       for (const m of opts.raw.media) {
         const data = toUint8Array(m.data);
         const type = imageTypeFromPath(m.fileName);
@@ -863,9 +864,10 @@ export function stringifyChildDispatch(
             }) as MediaData,
           m.fileName,
         );
-        if (entry.fileName !== m.fileName && remappedDataRels !== undefined) {
-          remappedDataRels = remapDataRelsTarget(remappedDataRels, m.fileName, entry.fileName);
-        }
+        if (entry.fileName !== m.fileName) renames.set(m.fileName, entry.fileName);
+      }
+      if (renames.size > 0 && remappedDataRels !== undefined) {
+        remappedDataRels = remapDataRelsTargets(remappedDataRels, renames);
       }
     }
 
@@ -1344,14 +1346,27 @@ function serializeDispatchChildren(
   return body;
 }
 
-/** Rewrite a ../media target inside verbatim data rels bytes after the media
- *  collection re-allocated a pinned name. Preserves the input form
- *  (string stays string, bytes stay bytes). */
-function remapDataRelsTarget(rels: DataType, oldName: string, newName: string): DataType {
+/** Rewrite ../media targets inside verbatim data rels after the media
+ *  collection re-allocated pinned names. All renames apply in one pass over
+ *  the original text, each match bounded by its closing quote, so a name
+ *  that prefixes another cannot collide and chained renames cannot re-hit
+ *  an already-rewritten target. Preserves the input form (string stays
+ *  string, bytes stay bytes). */
+function remapDataRelsTargets(rels: DataType, renames: Map<string, string>): DataType {
   const isText = typeof rels === "string";
   const text = isText ? rels : new TextDecoder().decode(toUint8Array(rels));
-  const remapped = text.split(`../media/${oldName}`).join(`../media/${newName}`);
-  return isText ? remapped : new TextEncoder().encode(remapped);
+  let out = "";
+  let last = 0;
+  for (const m of text.matchAll(/\.\.\/media\/([^"']*)["']/g)) {
+    const name = m[1] ?? "";
+    const to = renames.get(name);
+    if (to === undefined) continue;
+    const start = (m.index ?? 0) + "../media/".length;
+    out += text.slice(last, start) + to;
+    last = start + name.length;
+  }
+  out += text.slice(last);
+  return isText ? out : new TextEncoder().encode(out);
 }
 
 /** Content fingerprint of the raw source parts: every field participates so
