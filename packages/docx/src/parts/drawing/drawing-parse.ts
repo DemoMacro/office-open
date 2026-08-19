@@ -1254,38 +1254,29 @@ function readSmartArtRawParts(
   if (!dataBytes) return undefined;
   raw.data = dataBytes;
 
-  const relsBytes = ctx.docx.doc.getRaw(partPathToRelsPath(dataPath));
-  if (relsBytes) {
-    raw.dataRels = relsBytes;
-    const relsXml = new TextDecoder().decode(relsBytes);
+  const relsPath = partPathToRelsPath(dataPath);
+  const relsEl = ctx.docx.doc.get(relsPath);
+  if (relsEl) {
+    raw.dataRels = ctx.docx.doc.getRaw(relsPath);
     const media: { fileName: string; data: Uint8Array }[] = [];
-    for (const m of relsXml.matchAll(/<Relationship\b[^>]*>/g)) {
-      const tag = m[0];
-      if (!/Type="[^"]*\/image"/.test(tag) || /TargetMode="External"/.test(tag)) continue;
-      const target = /Target="([^"]+)"/.exec(tag)?.[1];
+    // Walk the rels as elements (not a regex scan) so attribute order,
+    // single quotes and spacing variants all resolve.
+    for (const rel of relsEl.elements ?? []) {
+      if (rel.name !== "Relationship") continue;
+      const type = attr(rel, "Type") ?? "";
+      if (!type.includes("/image")) continue;
+      if (attr(rel, "TargetMode") === "External") continue;
+      const target = attr(rel, "Target");
       if (!target) continue;
-      // Resolve ../media/x.png relative to the part's own directory.
-      const mediaPath = resolvePartTarget(dataPath, target);
-      const bytes = mediaPath ? ctx.docx.doc.getRaw(mediaPath) : undefined;
-      if (mediaPath && bytes) {
+      const mediaPath = resolveRelationshipTarget(dataPath, target);
+      const bytes = ctx.docx.doc.getRaw(mediaPath);
+      if (bytes) {
         media.push({ fileName: mediaPath.split("/").pop() ?? mediaPath, data: bytes });
       }
     }
     if (media.length > 0) raw.media = media;
   }
   return raw;
-}
-
-/** Resolve a relationship target against its source part path ("word/…" OPC path). */
-function resolvePartTarget(sourcePartPath: string, target: string): string | undefined {
-  if (target.startsWith("/")) return target.slice(1);
-  const dir = sourcePartPath.split("/").slice(0, -1);
-  for (const seg of target.split("/")) {
-    if (seg === "." || seg === "") continue;
-    if (seg === "..") dir.pop();
-    else dir.push(seg);
-  }
-  return dir.length > 0 ? dir.join("/") : undefined;
 }
 
 /**

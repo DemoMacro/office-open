@@ -11,9 +11,11 @@
  */
 
 import { encodeBase64, imageTypeFromPath, toUint8Array } from "@office-open/core";
+import type { DataType } from "@office-open/core";
 import { TargetModeType } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
 import { createDataModel, definitionId } from "@office-open/core/smartart";
+import type { SmartArtRawParts } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import { objectDesc, type ObjectElementOptions } from "@parts/object";
@@ -838,23 +840,16 @@ export function stringifyChildDispatch(
       typeof opts.color === "object" ? definitionId(opts.color) : (opts.color ?? "accent1_2");
     const dataModelXml = createDataModel(opts.nodes, layoutId, styleId, colorId);
 
-    ctx.file.smartArts.addSmartArt(smartArtKey, {
-      dataModelXml,
-      key: smartArtKey,
-      layout: opts.layout ?? "default",
-      style: opts.style ?? "simple1",
-      color: opts.color ?? "accent1_2",
-      ...(opts.raw ? { raw: opts.raw } : {}),
-    });
-
     // Data-part companion images (dgm:pt blipFill art): register through the
-    // media collection so name pinning and dedup match the picture path. The
-    // verbatim data rels reference these by their source file names.
+    // media collection so name pinning and dedup match the picture path. A
+    // pinned name taken by different bytes re-allocates — remap the verbatim
+    // data rels target to follow, or the rels would point at the wrong bytes.
+    let remappedDataRels = opts.raw?.dataRels;
     if (opts.raw?.media) {
       for (const m of opts.raw.media) {
         const data = toUint8Array(m.data);
         const type = imageTypeFromPath(m.fileName);
-        ctx.file.media.addMedia(
+        const entry = ctx.file.media.addMedia(
           data,
           type,
           (fileName) =>
@@ -866,8 +861,24 @@ export function stringifyChildDispatch(
             }) as MediaData,
           m.fileName,
         );
+        if (entry.fileName !== m.fileName && remappedDataRels !== undefined) {
+          remappedDataRels = remapDataRelsTarget(remappedDataRels, m.fileName, entry.fileName);
+        }
       }
     }
+
+    ctx.file.smartArts.addSmartArt(smartArtKey, {
+      dataModelXml,
+      key: smartArtKey,
+      layout: opts.layout ?? "default",
+      style: opts.style ?? "simple1",
+      color: opts.color ?? "accent1_2",
+      // Store a shallow copy with the remapped rels — never mutate the
+      // caller's Options object.
+      ...(opts.raw || remappedDataRels !== undefined
+        ? { raw: { ...opts.raw, dataRels: remappedDataRels } }
+        : {}),
+    });
 
     const drawingXml = drawingDesc.stringify(
       {
@@ -1331,6 +1342,33 @@ function serializeDispatchChildren(
   return body;
 }
 
+/** Rewrite a ../media target inside verbatim data rels bytes after the media
+ *  collection re-allocated a pinned name. Preserves the input form
+ *  (string stays string, bytes stay bytes). */
+function remapDataRelsTarget(rels: DataType, oldName: string, newName: string): DataType {
+  const isText = typeof rels === "string";
+  const text = isText ? rels : new TextDecoder().decode(toUint8Array(rels));
+  const remapped = text.split(`../media/${oldName}`).join(`../media/${newName}`);
+  return isText ? remapped : new TextEncoder().encode(remapped);
+}
+
+/** Content fingerprint of the raw source parts: every field participates so
+ *  two instances that differ in any raw part (or in their companion rels or
+ *  media names) never merge into one diagram part set. */
+function rawSmartArtFingerprint(raw: SmartArtRawParts | undefined): string | undefined {
+  if (!raw) return undefined;
+  const b64 = (v: DataType | undefined) =>
+    v === undefined ? undefined : encodeBase64(toUint8Array(v));
+  return JSON.stringify({
+    data: b64(raw.data),
+    layout: b64(raw.layout),
+    style: b64(raw.style),
+    color: b64(raw.color),
+    dataRels: b64(raw.dataRels),
+    media: raw.media?.map((m) => m.fileName),
+  });
+}
+
 /** Hash SmartArt data for unique key generation (duplicated from SmartArtRun). */
 function hashSmartArtData(options: SmartArtOptions): number {
   // Layout/style/color participate: two diagrams with the same nodes but
@@ -1342,8 +1380,7 @@ function hashSmartArtData(options: SmartArtOptions): number {
     layout: options.layout,
     style: options.style,
     color: options.color,
-    rawData:
-      options.raw?.data !== undefined ? encodeBase64(toUint8Array(options.raw.data)) : undefined,
+    raw: rawSmartArtFingerprint(options.raw),
   });
   let hash = 0;
   for (let i = 0; i < data.length; i++) {
