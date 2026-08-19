@@ -192,6 +192,7 @@ function buildMasterMap(
   slides: SlideOptions[],
   slideWidth: number,
   ctx: PptxWriteContext,
+  passthroughRelationships: PresentationOptions["passthroughRelationships"],
 ): MasterInfo[] {
   // Master placeholder positions scale to the slide width — record it on the
   // shared context so slideMasterDesc.stringify can read it.
@@ -293,7 +294,17 @@ function buildMasterMap(
           target: `../theme/themeOverride${globalLayoutIndex + 1}.xml`,
         });
       }
-      layoutRels.push(buildRels(layoutRelEntries));
+      const layoutRel = buildRels(layoutRelEntries);
+      // Layout-level passthrough relationships (round-trip) — re-emitted as
+      // written unless the model already registered the same kind (ownership
+      // test: targets may be renamed and ISO-strict types differ in URI only).
+      for (const rel of passthroughRelationships ?? []) {
+        if (rel.source !== `ppt/slideLayouts/slideLayout${globalLayoutIndex + 1}.xml`) continue;
+        if (layoutRel.hasRelationshipKind(rel.relationshipType.split("/").pop()!)) continue;
+        if (layoutRel.hasRelationship(rel.relationshipType, rel.target)) continue;
+        layoutRel.add(rel.relationshipType as RelationshipType, rel.target);
+      }
+      layoutRels.push(layoutRel);
       globalLayoutIndex++;
     }
 
@@ -310,6 +321,23 @@ function buildMasterMap(
       type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
       target: `../theme/theme${mi + 1}.xml`,
     });
+    // Master-level passthrough relationships (round-trip) — re-emitted as
+    // written unless the model already registered the same kind (ownership
+    // test: targets may be renamed and ISO-strict types differ in URI only).
+    for (const rel of passthroughRelationships ?? []) {
+      if (rel.source !== `ppt/slideMasters/slideMaster${mi + 1}.xml`) continue;
+      const kind = rel.relationshipType.split("/").pop();
+      const kindOwned = masterRelsEntries.some((e) => e.type.split("/").pop() === kind);
+      const exists = masterRelsEntries.some(
+        (e) => e.type.split("/").pop() === kind && e.target === rel.target,
+      );
+      if (kindOwned || exists) continue;
+      masterRelsEntries.push({
+        id: masterRelsEntries.length + 1,
+        type: rel.relationshipType as RelationshipType,
+        target: rel.target,
+      });
+    }
 
     masters.push({
       name,
@@ -672,7 +700,13 @@ export function compilePresentation(
 
   // ── Pure structural computations ──
 
-  const masters = buildMasterMap(masterDefs, slides, sz.width, descCtx);
+  const masters = buildMasterMap(
+    masterDefs,
+    slides,
+    sz.width,
+    descCtx,
+    options.passthroughRelationships,
+  );
   const allLayouts = masters.flatMap((m) => m.layouts);
   const allLayoutRels = masters.flatMap((m) => m.layoutRels);
   const themes = masters.map((m) => m.theme);
@@ -1128,6 +1162,18 @@ export function compilePresentation(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideSyncProperties",
         `../slideSyncPr/slideSyncPr${slideSyncIndex + 1}.xml`,
       );
+    }
+
+    // Slide-level passthrough relationships (round-trip), appended last so the
+    // kind ownership test sees every model registration above: a source rel
+    // whose kind the model already registered (comments, notesSlide, image
+    // under a renamed file, …) is skipped; the rest (tags, VML drawings, OLE
+    // embeddings the model did not absorb, …) re-emit as written.
+    for (const rel of options.passthroughRelationships ?? []) {
+      if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
+      if (currentSlideRels.hasRelationshipKind(rel.relationshipType.split("/").pop()!)) continue;
+      if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
+      currentSlideRels.add(rel.relationshipType as RelationshipType, rel.target);
     }
 
     mapping[`SlideRelationships${i}`] = {

@@ -143,6 +143,17 @@ export class Relationships {
     return this.entries.some((e) => e.type.split("/").pop() === kind && e.target === target);
   }
 
+  /**
+   * True when any entry carries the relationship kind (last type segment).
+   * Round-trip re-emission uses this as the ownership test: a rebuilt part
+   * that already registered a rel of this kind absorbed the concept, so the
+   * captured source rel (possibly a renamed target or the ISO-strict type
+   * dual) must not be re-emitted alongside it.
+   */
+  public hasRelationshipKind(kind: string): boolean {
+    return this.entries.some((e) => e.type.split("/").pop() === kind);
+  }
+
   /** True when an entry already occupies this exact relationship id. */
   public hasId(id: string): boolean {
     return this.entries.some((e) => e.id === id);
