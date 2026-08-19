@@ -8,12 +8,24 @@
 
 import type { BaseTableRowOptions } from "@office-open/core";
 import type { CustomXmlCellOptions } from "@parts/custom-xml";
+import type { BookmarkStartOptions, MarkupRangeOptions } from "@parts/paragraph/links/bookmark";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 
 import type { SdtCellOptions, TableCellOptions } from "../table-cell";
 import type { TablePropertyExOptions } from "../table-properties/table-property-exceptions";
 import type { TableRowPropertiesOptions } from "./table-row-properties";
+
+/**
+ * Run-level markers anchored directly under `w:tr`, between a row's cells —
+ * comment and bookmark ranges spanning cell boundaries land there because
+ * the tc content model cannot hold them at that position.
+ */
+export type TableRowMarkerChild =
+  | { commentRangeStart: MarkupRangeOptions }
+  | { commentRangeEnd: MarkupRangeOptions }
+  | { bookmarkStart: BookmarkStartOptions }
+  | { bookmarkEnd: MarkupRangeOptions };
 
 /**
  * Options for creating a TableRow element.
@@ -32,7 +44,10 @@ export interface SdtRowOptions {
 export interface TableRowOptions
   extends
     BaseTableRowOptions<
-      TableCellOptions | { sdt: SdtCellOptions } | { customXml: CustomXmlCellOptions }
+      | TableCellOptions
+      | { sdt: SdtCellOptions }
+      | { customXml: CustomXmlCellOptions }
+      | TableRowMarkerChild
     >,
     TableRowPropertiesOptions {
   /** Table property exceptions for this row (override table-level properties) */

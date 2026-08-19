@@ -19,7 +19,12 @@ import {
   stringifySdtShell,
 } from "@parts/bodychildren";
 import type { CustomXmlCellOptions, CustomXmlRowOptions } from "@parts/custom-xml";
-import { stringifyParagraphInline } from "@parts/inline";
+import {
+  buildBookmarkStartAttrs,
+  buildMarkupRangeAttrs,
+  stringifyParagraphInline,
+} from "@parts/inline";
+import type { BookmarkStartOptions, MarkupRangeOptions } from "@parts/paragraph/links/bookmark";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import type { TableGridChangeOptions } from "@parts/table/grid";
@@ -36,7 +41,11 @@ import type {
   TablePropertyExChangeOptions,
   TablePropertyExOptions,
 } from "@parts/table/table-properties/table-property-exceptions";
-import type { SdtRowOptions, TableRowOptions } from "@parts/table/table-row/table-row";
+import type {
+  SdtRowOptions,
+  TableRowMarkerChild,
+  TableRowOptions,
+} from "@parts/table/table-row/table-row";
 import type { CnfStyleOptions } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { widthFiftiethsToPct } from "@parts/table/table-width";
@@ -190,7 +199,8 @@ function stringifyTableRow(
 
   const prefixCount = parts.length;
 
-  // Cells (a cell may be wrapped by a cell-level SDT or customXml)
+  // Cells (a cell may be wrapped by a cell-level SDT or customXml; run-level
+  // markers anchored between cells emit at their captured position)
   for (const cell of row.cells) {
     if ("sdt" in cell) {
       const s = cell.sdt;
@@ -200,6 +210,14 @@ function stringifyTableRow(
       const cx = cell.customXml;
       const contentXml = (cx.children ?? []).map((c) => stringifyTableCell(c, ctx)).join("");
       parts.push(stringifyCustomXmlShell(cx, contentXml));
+    } else if ("commentRangeStart" in cell) {
+      parts.push(`<w:commentRangeStart ${buildMarkupRangeAttrs(cell.commentRangeStart)}/>`);
+    } else if ("commentRangeEnd" in cell) {
+      parts.push(`<w:commentRangeEnd ${buildMarkupRangeAttrs(cell.commentRangeEnd)}/>`);
+    } else if ("bookmarkStart" in cell) {
+      parts.push(`<w:bookmarkStart ${buildBookmarkStartAttrs(cell.bookmarkStart)}/>`);
+    } else if ("bookmarkEnd" in cell) {
+      parts.push(`<w:bookmarkEnd ${buildMarkupRangeAttrs(cell.bookmarkEnd)}/>`);
     } else {
       parts.push(stringifyTableCell(cell, ctx));
     }
@@ -233,11 +251,23 @@ function isPlainRow(
   return !("sdt" in r) && !("customXml" in r);
 }
 
-/** Type guard: a plain cell (not SDT/customXml-wrapped). */
+/** Type guard: a run-level marker anchored between cells (not a cell). */
+function isRowMarker(c: TableRowOptions["cells"][number]): c is TableRowMarkerChild {
+  return (
+    "commentRangeStart" in c || "commentRangeEnd" in c || "bookmarkStart" in c || "bookmarkEnd" in c
+  );
+}
+
+/** Type guard: a plain cell (not SDT/customXml-wrapped, not a row marker). */
 function isPlainCell(
-  c: TableCellOptions | { sdt: SdtCellOptions } | { customXml: CustomXmlCellOptions },
+  c:
+    | TableCellOptions
+    | { sdt: SdtCellOptions }
+    | { customXml: CustomXmlCellOptions }
+    | TableRowMarkerChild,
 ): c is TableCellOptions {
-  return !("sdt" in c) && !("customXml" in c);
+  if ("sdt" in c || "customXml" in c) return false;
+  return !isRowMarker(c);
 }
 
 function findInsertIndex(
@@ -471,10 +501,17 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
     };
     parts.push(stringifyTableProperties(tblPrOpts)!);
 
-    // Table grid
+    // Table grid (fallback width count ignores markers between cells)
     const columnWidths =
       opts.columnWidths ??
-      Array(Math.max(1, ...opts.rows.map((r) => (isPlainRow(r) ? r.cells.length : 0)))).fill(100);
+      Array(
+        Math.max(
+          1,
+          ...opts.rows.map((r) =>
+            isPlainRow(r) ? r.cells.filter((c) => !isRowMarker(c)).length : 0,
+          ),
+        ),
+      ).fill(100);
     parts.push(buildTableGridXml(columnWidths, opts.columnWidthsRevision));
 
     // Compute vertical merge CONTINUE cells
@@ -1063,10 +1100,46 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
     | TableCellOptions
     | { sdt: SdtCellOptions }
     | { customXml: CustomXmlCellOptions }
+    | TableRowMarkerChild
   )[] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tc") {
       childCells.push(parseTableCellEl(child, ctx));
+    } else if (child.name === "w:commentRangeStart" || child.name === "w:commentRangeEnd") {
+      // Markers anchored between cells (a comment/bookmark range spanning
+      // cell boundaries) keep their position inside the cells sequence.
+      const id = attrNum(child, "w:id");
+      if (id !== undefined) {
+        const marker: MarkupRangeOptions = { id };
+        const disp = attr(child, "w:displacedByCustomXml");
+        if (disp === "before" || disp === "after") marker.displacedByCustomXml = disp;
+        childCells.push(
+          child.name === "w:commentRangeStart"
+            ? { commentRangeStart: marker }
+            : { commentRangeEnd: marker },
+        );
+      }
+    } else if (child.name === "w:bookmarkStart") {
+      const id = attrNum(child, "w:id");
+      const name = attr(child, "w:name");
+      if (id !== undefined && name) {
+        const bookmarkStart: Partial<BookmarkStartOptions> = { id, name };
+        const disp = attr(child, "w:displacedByCustomXml");
+        if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
+        const colFirst = attrNum(child, "w:colFirst");
+        if (colFirst !== undefined) bookmarkStart.colFirst = colFirst;
+        const colLast = attrNum(child, "w:colLast");
+        if (colLast !== undefined) bookmarkStart.colLast = colLast;
+        childCells.push({ bookmarkStart: bookmarkStart as BookmarkStartOptions });
+      }
+    } else if (child.name === "w:bookmarkEnd") {
+      const id = attrNum(child, "w:id");
+      if (id !== undefined) {
+        const bookmarkEnd: Partial<MarkupRangeOptions> = { id };
+        const disp = attr(child, "w:displacedByCustomXml");
+        if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
+        childCells.push({ bookmarkEnd: bookmarkEnd as MarkupRangeOptions });
+      }
     } else if (child.name === "w:sdt") {
       const sdtPr = findChild(child, "w:sdtPr");
       const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
