@@ -570,10 +570,13 @@ export class Styles {
     if (this.styleExtensions && this.styleExtensions.length > 0) {
       const extParts: string[] = ["<extLst>"];
       for (const ext of this.styleExtensions) {
+        const ns = Object.entries(ext.namespaces ?? {})
+          .map(([name, value]) => ` ${name}="${value}"`)
+          .join("");
         if (ext.content) {
-          extParts.push(`<ext uri="${ext.uri}">${ext.content}</ext>`);
+          extParts.push(`<ext uri="${ext.uri}"${ns}>${ext.content}</ext>`);
         } else {
-          extParts.push(`<ext uri="${ext.uri}"/>`);
+          extParts.push(`<ext uri="${ext.uri}"${ns}/>`);
         }
       }
       extParts.push("</extLst>");

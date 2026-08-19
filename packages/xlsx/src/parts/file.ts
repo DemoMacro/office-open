@@ -41,11 +41,19 @@ import type { ExternalLinkOptions } from "./external-link";
 import type { MetadataOptions } from "./metadata";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
+import type { WorkbookExtensionOptions } from "./workbook";
 import type { RichTextOptions, WorksheetOptions } from "./worksheet";
 import type { MapInfoOptions } from "./xml-mapping";
 
 export interface WorkbookOptions extends CorePropertiesOptions {
   worksheets?: WorksheetOptions[];
+  /**
+   * Workbook folder path (x15ac:absPath/@url in an mc:AlternateContent after
+   * workbookPr) — round-trip only.
+   */
+  absPath?: string;
+  /** Trailing extension list (workbook > extLst > ext) — round-trip only. */
+  extensions?: WorkbookExtensionOptions[];
   /** Chart-only sheets (no cells, just a chart) */
   chartsheets?: ChartsheetOptions[];
   /** Legacy Excel 5.0 dialog sheets (xl/dialogSheets/sheetN.xml) */

@@ -6,7 +6,7 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild, stringifyElement } from "@office-open/xml";
 
 import { stringifyWorkbook } from "./stringify";
 import type {
@@ -29,6 +29,7 @@ import type {
   WebPublishingOptions,
   WorkbookConformance,
   WorkbookDescriptorOptions,
+  WorkbookExtensionOptions,
   WorkbookProtectionOptions,
   WorkbookPropertiesOptions,
   WorkbookViewOptions,
@@ -302,6 +303,37 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (String(attr(wbPrEl, "autoCompressPictures")) === "0") wbPr.autoCompressPictures = false;
       if (parseOnOff(attr(wbPrEl, "refreshAllConnections"))) wbPr.refreshAllConnections = true;
       result.workbookPr = wbPr;
+    }
+
+    // AbsPath rides in an mc:AlternateContent between workbookPr and bookViews
+    const acEl = findChild(el, "mc:AlternateContent");
+    if (acEl) {
+      const choice = findChild(acEl, "mc:Choice");
+      const absPathEl = choice ? findChild(choice, "x15ac:absPath") : undefined;
+      const url = absPathEl ? attr(absPathEl, "url") : undefined;
+      if (url !== undefined) result.absPath = url;
+    }
+
+    // Trailing extension list (workbook > extLst > ext) — raw round-trip
+    const extLstEl = findChild(el, "extLst");
+    if (extLstEl) {
+      const extensions: WorkbookExtensionOptions[] = [];
+      for (const ext of extLstEl.elements ?? []) {
+        if (ext.name !== "ext") continue;
+        const uri = attr(ext, "uri");
+        if (!uri) continue;
+        const namespaces: Record<string, string> = {};
+        for (const [name, value] of Object.entries(ext.attributes ?? {})) {
+          if (name.startsWith("xmlns:") && typeof value === "string") namespaces[name] = value;
+        }
+        const content = (ext.elements ?? []).map((e) => stringifyElement(e)).join("");
+        extensions.push({
+          uri,
+          ...(Object.keys(namespaces).length > 0 ? { namespaces } : {}),
+          ...(content ? { content } : {}),
+        });
+      }
+      if (extensions.length > 0) result.extensions = extensions;
     }
 
     // Function groups

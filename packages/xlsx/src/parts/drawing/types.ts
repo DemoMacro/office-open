@@ -159,12 +159,16 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
   macro?: string;
   /** textlink attribute (CT_Shape). */
   textlink?: string;
+  /** Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it. */
+  textBox?: boolean;
 }
 
 /** Anchored connector (xdr:cxnSp): line/arrow geometry via spPr. */
 export interface ConnectorOptions extends DrawingAnchorOptions, BaseConnectorOptions {
   /** Shape properties (a:CT_ShapeProperties, typically prstGeom="line"). */
   spPr: ShapePropertiesOptions;
+  /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
+  style?: DefaultShapeStyleOptions;
   /** macro attribute (CT_Connector). */
   macro?: string;
 }
@@ -173,13 +177,19 @@ export interface ConnectorOptions extends DrawingAnchorOptions, BaseConnectorOpt
 export interface GroupShapeChildOptions extends NonVisualDrawingPropertiesOptions {
   spPr: ShapePropertiesOptions;
   textBody?: TextBodyOptions;
+  /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
+  style?: DefaultShapeStyleOptions;
   macro?: string;
   textlink?: string;
+  /** Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it. */
+  textBox?: boolean;
 }
 
 /** Connector nested inside a group (no anchor). */
 export interface GroupConnectorChildOptions extends BaseConnectorOptions {
   spPr: ShapePropertiesOptions;
+  /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
+  style?: DefaultShapeStyleOptions;
   macro?: string;
 }
 

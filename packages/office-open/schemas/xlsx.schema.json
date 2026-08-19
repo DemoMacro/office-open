@@ -1062,6 +1062,10 @@
           "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
           "type": "string"
         },
+        "nameLiteral": {
+          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
+          "type": "boolean"
+        },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
@@ -1087,6 +1091,10 @@
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
+        },
+        "valueLiteral": {
+          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
+          "type": "boolean"
         },
         "xValues": {
           "items": {
@@ -1977,6 +1985,10 @@
           "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
           "type": "string"
         },
+        "nameLiteral": {
+          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
+          "type": "boolean"
+        },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
@@ -2002,6 +2014,10 @@
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
+        },
+        "valueLiteral": {
+          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
+          "type": "boolean"
         },
         "values": {
           "items": {
@@ -2321,6 +2337,10 @@
         "sizeRepresents": {
           "$ref": "#/definitions/SizeRepresents",
           "description": "What the bubble size represents (c:sizeRepresents)."
+        },
+        "smooth": {
+          "description": "Smooth lines for the whole line-chart group (c:smooth CT_Boolean on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
+          "type": "boolean"
         },
         "splitPosition": {
           "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
@@ -3443,6 +3463,10 @@
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:stCxn — start endpoint glued to a shape connection site."
         },
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions",
+          "description": "Theme style-matrix references (xdr:style, CT_ShapeStyle)."
+        },
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
@@ -4072,6 +4096,10 @@
         "separator": {
           "type": "string"
         },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Label fill/outline (c:dLbl > c:spPr) — round-trip."
+        },
         "showBubbleSize": {
           "type": "boolean"
         },
@@ -4089,6 +4117,10 @@
         },
         "showVal": {
           "type": "boolean"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Label text formatting (c:dLbl > c:txPr) — round-trip."
         }
       },
       "required": ["index"],
@@ -4101,6 +4133,10 @@
     "DataLabelsOptions": {
       "additionalProperties": false,
       "properties": {
+        "delete": {
+          "description": "Labels deleted at the group level (c:delete inside c:dLbls) — Office writes val=\"0\" explicitly to keep labels on; round-trips the attribute.",
+          "type": "boolean"
+        },
         "labels": {
           "description": "Per-point label overrides (c:dLbl, emitted before the shared settings).",
           "items": {
@@ -4122,6 +4158,10 @@
         "separator": {
           "type": "string"
         },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Shared label fill/outline (c:dLbls > c:spPr) — round-trip."
+        },
         "showBubbleSize": {
           "type": "boolean"
         },
@@ -4142,6 +4182,10 @@
         },
         "showVal": {
           "type": "boolean"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Shared label text formatting (c:dLbls > c:txPr) — round-trip."
         }
       },
       "type": "object"
@@ -4170,6 +4214,10 @@
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Per-point fill/outline (c:dPt > c:spPr) — round-trip."
         }
       },
       "required": ["index"],
@@ -6222,6 +6270,10 @@
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:stCxn — start endpoint glued to a shape connection site."
         },
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions",
+          "description": "Theme style-matrix references (xdr:style, CT_ShapeStyle)."
+        },
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
@@ -6452,8 +6504,16 @@
         "spPr": {
           "$ref": "#/definitions/ShapePropertiesOptions"
         },
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions",
+          "description": "Theme style-matrix references (xdr:style, CT_ShapeStyle)."
+        },
         "textBody": {
           "$ref": "#/definitions/TextBodyOptions"
+        },
+        "textBox": {
+          "description": "Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it.",
+          "type": "boolean"
         },
         "textlink": {
           "type": "string"
@@ -7095,6 +7155,10 @@
       "additionalProperties": false,
       "description": "Line/scatter/radar point marker (CT_Marker).",
       "properties": {
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Marker fill/outline (c:marker > c:spPr) — round-trip."
+        },
         "size": {
           "description": "Marker size, 2-72 (c:size val).",
           "type": "number"
@@ -12298,6 +12362,10 @@
           "$ref": "#/definitions/TextBodyOptions",
           "description": "Text body (a:CT_TextBody)."
         },
+        "textBox": {
+          "description": "Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it.",
+          "type": "boolean"
+        },
         "textlink": {
           "description": "textlink attribute (CT_Shape).",
           "type": "string"
@@ -12963,6 +13031,13 @@
         "content": {
           "description": "Extension content (raw XML fragment)",
           "type": "string"
+        },
+        "namespaces": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Namespace declarations carried on the ext element (xmlns:x14=\"…\") — the prefixed children are unbound without them.",
+          "type": "object"
         },
         "uri": {
           "description": "Extension URI (required)",
@@ -14755,9 +14830,36 @@
       "description": "One web-query table selection (CT_Tables choice: m/s/x).",
       "type": ["string", "number", "null"]
     },
+    "WorkbookExtensionOptions": {
+      "additionalProperties": false,
+      "description": "One workbook-level ext element (uri-keyed raw content, round-trip).",
+      "properties": {
+        "content": {
+          "description": "Inner XML of the ext element.",
+          "type": "string"
+        },
+        "namespaces": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Namespace declarations carried on the ext element.",
+          "type": "object"
+        },
+        "uri": {
+          "description": "Extension URI (ext/@uri, required).",
+          "type": "string"
+        }
+      },
+      "required": ["uri"],
+      "type": "object"
+    },
     "WorkbookOptions": {
       "additionalProperties": false,
       "properties": {
+        "absPath": {
+          "description": "Workbook folder path (x15ac:absPath/@url in an mc:AlternateContent after workbookPr) — round-trip only.",
+          "type": "string"
+        },
         "appProperties": {
           "$ref": "#/definitions/AppPropertiesOptions",
           "description": "Extended properties (docProps/app.xml)"
@@ -14817,6 +14919,10 @@
           "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
           "type": "string"
         },
+        "contentType": {
+          "description": "Content type (e.g. \"Document\"), round-tripped from cp:contentType.",
+          "type": "string"
+        },
         "created": {
           "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now.",
           "type": ["string", "null"]
@@ -14864,6 +14970,13 @@
           "description": "Pre-defined differential formats for conditional formatting",
           "items": {
             "$ref": "#/definitions/DxfOptions"
+          },
+          "type": "array"
+        },
+        "extensions": {
+          "description": "Trailing extension list (workbook > extLst > ext) — round-trip only.",
+          "items": {
+            "$ref": "#/definitions/WorkbookExtensionOptions"
           },
           "type": "array"
         },
@@ -15680,6 +15793,10 @@
         "sizeRepresents": {
           "$ref": "#/definitions/SizeRepresents",
           "description": "What the bubble size represents (c:sizeRepresents)."
+        },
+        "smooth": {
+          "description": "Smooth lines for the whole line-chart group (c:smooth CT_Boolean on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
+          "type": "boolean"
         },
         "splitPosition": {
           "description": "ofPie split position (c:splitPos, used with splitType pos/val).",

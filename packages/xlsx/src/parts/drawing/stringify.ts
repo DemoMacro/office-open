@@ -172,10 +172,11 @@ export function graphicFrameXml(
   // Locks are optional in CT_NonVisualGraphicFrameProperties — emit them only
   // when the source carried them (a bare <xdr:cNvGraphicFramePr/> round-trips).
   // @macro round-trips even when empty (Word writes macro="").
-  const locks =
-    extras.frameLocks && ctx
-      ? (graphicFrameLockingDesc.stringify(extras.frameLocks, ctx) ?? "")
-      : "";
+  // The locking descriptor consumes no context, so stringify works even when
+  // the caller (chart path) passes no ctx.
+  const locks = extras.frameLocks
+    ? (graphicFrameLockingDesc.stringify(extras.frameLocks, ctx as WriteContext) ?? "")
+    : "";
   const cNvGraphicFramePr = locks
     ? `<xdr:cNvGraphicFramePr>${locks}</xdr:cNvGraphicFramePr>`
     : "<xdr:cNvGraphicFramePr/>";
@@ -208,7 +209,7 @@ export function stringifyChart(chart: DrawingChartOptions, id: number): string {
 
 /** Build the inner xdr:sp content (nvSpPr + spPr + optional style/txBody). */
 function buildShapeContent(
-  cNvPr: NonVisualDrawingPropertiesOptions | undefined,
+  shape: NonVisualDrawingPropertiesOptions & { textBox?: boolean },
   id: number,
   fallbackName: string,
   spPr: ShapePropertiesOptions,
@@ -217,12 +218,13 @@ function buildShapeContent(
   attrs = "",
   style?: DefaultShapeStyleOptions,
 ): string {
+  const cNvPr = shape;
   const spPrXml = shapePropertiesDesc.stringify(spPr, ctx) ?? "";
   const styleXml = style ? stringifyShapeStyle(style, ctx, "xdr:style") : "";
   const txBodyXml = textBody
     ? `<xdr:txBody>${textBodyDesc.stringify(textBody, ctx)}</xdr:txBody>`
     : "";
-  return `<xdr:sp${attrs}><xdr:nvSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName)}<xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}${txBodyXml}</xdr:sp>`;
+  return `<xdr:sp${attrs}><xdr:nvSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName)}<xdr:cNvSpPr${shape.textBox === undefined ? "" : ` txBox="${shape.textBox ? 1 : 0}"`}/></xdr:nvSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}${txBodyXml}</xdr:sp>`;
 }
 
 /** Build the inner xdr:cxnSp content (nvCxnSpPr + spPr). */
@@ -237,9 +239,11 @@ function buildConnectorContent(
     locking?: ConnectorLockingOptions;
     startConnection?: EndpointConnectionOptions;
     endConnection?: EndpointConnectionOptions;
+    style?: DefaultShapeStyleOptions;
   },
 ): string {
   const spPrXml = shapePropertiesDesc.stringify(spPr, ctx) ?? "";
+  const styleXml = connector?.style ? stringifyShapeStyle(connector.style, ctx, "xdr:style") : "";
   const cNvCxnSpPrInner: string[] = [];
   if (connector?.locking) {
     const locks = connectorLockingDesc.stringify(connector.locking, ctx);
@@ -254,7 +258,7 @@ function buildConnectorContent(
   const cNvCxnSpPr = cNvCxnSpPrInner.length
     ? `<xdr:cNvCxnSpPr>${cNvCxnSpPrInner.join("")}</xdr:cNvCxnSpPr>`
     : "<xdr:cNvCxnSpPr/>";
-  return `<xdr:cxnSp${attrs}><xdr:nvCxnSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName)}${cNvCxnSpPr}</xdr:nvCxnSpPr><xdr:spPr>${spPrXml}</xdr:spPr></xdr:cxnSp>`;
+  return `<xdr:cxnSp${attrs}><xdr:nvCxnSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName)}${cNvCxnSpPr}</xdr:nvCxnSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}</xdr:cxnSp>`;
 }
 
 export function stringifyShape(shape: ShapeOptions, id: number, ctx: WriteContext): string {
@@ -307,6 +311,7 @@ export function buildGroup(
         childShape.textBody,
         ctx,
         macroTextlinkAttrs(childShape),
+        childShape.style,
       ),
     );
     childId++;

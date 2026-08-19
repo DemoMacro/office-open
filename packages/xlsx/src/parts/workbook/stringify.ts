@@ -93,6 +93,15 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     parts.push("<workbookPr/>");
   }
 
+  // AbsPath rides in an mc:AlternateContent between workbookPr and bookViews
+  if (opts.absPath !== undefined) {
+    parts.push(
+      '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
+        `<mc:Choice Requires="x15"><x15ac:absPath url="${escapeXml(opts.absPath)}" xmlns:x15ac="http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac"/></mc:Choice>` +
+        "</mc:AlternateContent>",
+    );
+  }
+
   // Workbook protection (after workbookPr, before bookViews per XSD sequence)
   if (opts.protection) {
     const prot = opts.protection;
@@ -401,6 +410,17 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     parts.push(vtParts.join(""));
   }
 
+  if (opts.extensions?.length) {
+    const exts = opts.extensions
+      .map((ext) => {
+        const ns = Object.entries(ext.namespaces ?? {})
+          .map(([name, value]) => ` ${name}="${escapeXml(value)}"`)
+          .join("");
+        return `<ext uri="${escapeXml(ext.uri)}"${ns}>${ext.content ?? ""}</ext>`;
+      })
+      .join("");
+    parts.push(`<extLst>${exts}</extLst>`);
+  }
   parts.push("</workbook>");
   return parts.join("");
 }

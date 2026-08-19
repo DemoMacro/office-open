@@ -235,6 +235,11 @@ export interface TableStyleElementOptions {
 export interface StyleExtensionOptions {
   /** Extension URI (required) */
   uri: string;
+  /**
+   * Namespace declarations carried on the ext element (xmlns:x14="…") — the
+   * prefixed children are unbound without them.
+   */
+  namespaces?: Record<string, string>;
   /** Extension content (raw XML fragment) */
   content?: string;
 }

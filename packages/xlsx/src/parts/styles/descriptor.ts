@@ -6,7 +6,7 @@
  */
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
-import { attr, attrNum, findChild, stringify } from "@office-open/xml";
+import { attr, attrNum, findChild, stringifyElement } from "@office-open/xml";
 
 import {
   parseAlignment,
@@ -276,9 +276,19 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (ext.name !== "ext") continue;
         const uri = attr(ext, "uri");
         if (uri) {
-          // Reconstruct the inner XML of the <ext> element verbatim
-          const content = (ext.elements ?? []).map((e) => stringify(e)).join("");
-          exts.push({ uri, content: content || undefined });
+          // Reconstruct the inner XML of the <ext> element verbatim — each
+          // child serializes itself (stringify() writes the children OF the
+          // element it is given, so passing the child returns "").
+          const content = (ext.elements ?? []).map((e) => stringifyElement(e)).join("");
+          const namespaces: Record<string, string> = {};
+          for (const [name, value] of Object.entries(ext.attributes ?? {})) {
+            if (name.startsWith("xmlns:") && typeof value === "string") namespaces[name] = value;
+          }
+          exts.push({
+            uri,
+            ...(Object.keys(namespaces).length > 0 ? { namespaces } : {}),
+            ...(content ? { content } : {}),
+          });
         }
       }
       result.styleExtensions = exts;

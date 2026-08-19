@@ -264,6 +264,10 @@ export function parseShapeAnchor(
   readAnchorFields(anchor, name, result);
 
   Object.assign(result, readCNvPr(sp, "nvSpPr"));
+  const nvSpPr = findXdr(sp, "nvSpPr");
+  const cNvSpPr = nvSpPr ? findXdr(nvSpPr, "cNvSpPr") : undefined;
+  if (cNvSpPr?.attributes?.["txBox"] !== undefined)
+    result.textBox = parseOnOff(String(cNvSpPr.attributes["txBox"])) ?? true;
 
   const spPr = findXdr(sp, "spPr");
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
@@ -331,6 +335,11 @@ export function parseConnectorAnchor(
   if (cxnSp.attributes?.["macro"] !== undefined) result.macro = String(cxnSp.attributes["macro"]);
 
   readConnectorNonVisual(result, cxnSp, ctx);
+  const topConnStyle = findXdr(cxnSp, "style");
+  if (topConnStyle) {
+    const style = parseShapeStyle(topConnStyle, ctx);
+    if (style) result.style = style;
+  }
   return result;
 }
 
@@ -362,6 +371,15 @@ export function parseGroupAnchor(
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupShapeChildOptions;
       Object.assign(childShape, readCNvPr(child, "nvSpPr"));
+      const childNvSpPr = findXdr(child, "nvSpPr");
+      const childCnVSpPr = childNvSpPr ? findXdr(childNvSpPr, "cNvSpPr") : undefined;
+      if (childCnVSpPr?.attributes?.["txBox"] !== undefined)
+        childShape.textBox = parseOnOff(String(childCnVSpPr.attributes["txBox"])) ?? true;
+      const childStyle = findXdr(child, "style");
+      if (childStyle) {
+        const style = parseShapeStyle(childStyle, ctx);
+        if (style) childShape.style = style;
+      }
       const txBody = findXdr(child, "txBody");
       if (txBody) childShape.textBody = textBodyDesc.parse(txBody, ctx);
       if (child.attributes?.["macro"] !== undefined)
@@ -378,6 +396,11 @@ export function parseGroupAnchor(
       if (child.attributes?.["macro"] !== undefined)
         childConn.macro = String(child.attributes["macro"]);
       readConnectorNonVisual(childConn, child, ctx);
+      const connStyle = findXdr(child, "style");
+      if (connStyle) {
+        const style = parseShapeStyle(connStyle, ctx);
+        if (style) childConn.style = style;
+      }
       childConnectors.push(childConn);
     }
   }

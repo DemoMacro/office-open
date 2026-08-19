@@ -305,6 +305,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (wbData.volTypes) opts.volTypes = wbData.volTypes;
     if (wbData.webPublishObjects) opts.webPublishObjects = wbData.webPublishObjects;
     if (wbData.definedNames) opts.definedNames = wbData.definedNames;
+    if (wbData.absPath !== undefined) opts.absPath = wbData.absPath;
+    if (wbData.extensions) opts.extensions = wbData.extensions;
   }
 
   // Parse worksheets using descriptor pipeline. Worksheet parts defer
@@ -543,8 +545,11 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
 
   opts.worksheets = worksheets;
 
-  // Chartsheets — parse chartsheet parts
-  const chartsheetPaths = xlsx.doc.keys("xl/chartsheets/").filter((k) => k.endsWith(".xml"));
+  // Chartsheets — parse chartsheet parts. Sort numerically: doc.keys() yields
+  // ZIP entry order, while sheetNames indexes rely on sheetN.xml numbering.
+  const chartsheetPaths = sortByNumber(
+    xlsx.doc.keys("xl/chartsheets/").filter((k) => k.endsWith(".xml")),
+  );
   if (chartsheetPaths.length > 0) {
     const chartsheets: ChartsheetOptions[] = [];
     for (const [i, csPath] of chartsheetPaths.entries()) {

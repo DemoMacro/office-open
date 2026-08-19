@@ -2241,6 +2241,10 @@
           "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
           "type": "string"
         },
+        "nameLiteral": {
+          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
+          "type": "boolean"
+        },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
@@ -2266,6 +2270,10 @@
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
+        },
+        "valueLiteral": {
+          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
+          "type": "boolean"
         },
         "xValues": {
           "items": {
@@ -2997,6 +3005,10 @@
           "$ref": "#/definitions/SizeRepresents",
           "description": "What the bubble size represents (c:sizeRepresents)."
         },
+        "smooth": {
+          "description": "Smooth lines for the whole line-chart group (c:smooth CT_Boolean on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
+          "type": "boolean"
+        },
         "splitPosition": {
           "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
           "type": "number"
@@ -3219,6 +3231,10 @@
           "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
           "type": "string"
         },
+        "nameLiteral": {
+          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
+          "type": "boolean"
+        },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
@@ -3244,6 +3260,10 @@
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
+        },
+        "valueLiteral": {
+          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
+          "type": "boolean"
         },
         "values": {
           "items": {
@@ -4263,6 +4283,10 @@
         "separator": {
           "type": "string"
         },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Label fill/outline (c:dLbl > c:spPr) — round-trip."
+        },
         "showBubbleSize": {
           "type": "boolean"
         },
@@ -4280,6 +4304,10 @@
         },
         "showVal": {
           "type": "boolean"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Label text formatting (c:dLbl > c:txPr) — round-trip."
         }
       },
       "required": ["index"],
@@ -4292,6 +4320,10 @@
     "DataLabelsOptions": {
       "additionalProperties": false,
       "properties": {
+        "delete": {
+          "description": "Labels deleted at the group level (c:delete inside c:dLbls) — Office writes val=\"0\" explicitly to keep labels on; round-trips the attribute.",
+          "type": "boolean"
+        },
         "labels": {
           "description": "Per-point label overrides (c:dLbl, emitted before the shared settings).",
           "items": {
@@ -4313,6 +4345,10 @@
         "separator": {
           "type": "string"
         },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Shared label fill/outline (c:dLbls > c:spPr) — round-trip."
+        },
         "showBubbleSize": {
           "type": "boolean"
         },
@@ -4333,6 +4369,10 @@
         },
         "showVal": {
           "type": "boolean"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Shared label text formatting (c:dLbls > c:txPr) — round-trip."
         }
       },
       "type": "object"
@@ -4380,6 +4420,10 @@
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Per-point fill/outline (c:dPt > c:spPr) — round-trip."
         }
       },
       "required": ["index"],
@@ -6942,6 +6986,10 @@
       "additionalProperties": false,
       "description": "Line/scatter/radar point marker (CT_Marker).",
       "properties": {
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Marker fill/outline (c:marker > c:spPr) — round-trip."
+        },
         "size": {
           "description": "Marker size, 2-72 (c:size val).",
           "type": "number"
@@ -8759,6 +8807,10 @@
         },
         "contentStatus": {
           "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
+          "type": "string"
+        },
+        "contentType": {
+          "description": "Content type (e.g. \"Document\"), round-tripped from cp:contentType.",
           "type": "string"
         },
         "created": {

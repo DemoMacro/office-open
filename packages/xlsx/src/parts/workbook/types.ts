@@ -4,6 +4,16 @@
  * @module
  */
 
+/** One workbook-level ext element (uri-keyed raw content, round-trip). */
+export interface WorkbookExtensionOptions {
+  /** Extension URI (ext/@uri, required). */
+  uri: string;
+  /** Namespace declarations carried on the ext element. */
+  namespaces?: Record<string, string>;
+  /** Inner XML of the ext element. */
+  content?: string;
+}
+
 export interface SheetDefinition {
   name: string;
   sheetId: number;
@@ -382,6 +392,13 @@ export interface SmartTagTypeOptions {
 export interface WorkbookDescriptorOptions {
   /** CT_FileVersion — Excel version stamp; fresh compiles emit Excel 2007 defaults. */
   fileVersion?: FileVersionOptions;
+  /**
+   * Workbook folder path (x15ac:absPath/@url in an mc:AlternateContent after
+   * workbookPr) — round-trip only.
+   */
+  absPath?: string;
+  /** Trailing extension list (workbook > extLst > ext) — round-trip only. */
+  extensions?: WorkbookExtensionOptions[];
   sheets: SheetDefinition[];
   pivotCaches?: PivotCacheReference[];
   protection?: WorkbookProtectionOptions;

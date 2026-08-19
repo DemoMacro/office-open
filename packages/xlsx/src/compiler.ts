@@ -219,6 +219,8 @@ export function compileWorkbook(
         calcPr: options.calcPr,
         oleSize: options.oleSize,
         bookView: options.bookView,
+        ...(options.absPath !== undefined ? { absPath: options.absPath } : {}),
+        ...(options.extensions ? { extensions: options.extensions } : {}),
       },
       ctx,
     ) ?? "";
