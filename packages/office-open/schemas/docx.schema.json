@@ -704,10 +704,10 @@
               "type": "boolean"
             },
             {
-              "$ref": "#/definitions/ShapePropertiesOptions"
+              "$ref": "#/definitions/ChartLinesOptions"
             }
           ],
-          "description": "c:majorGridlines (CT_ChartLines) — true emits the bare element, an object carries its spPr (line styling)."
+          "description": "c:majorGridlines (CT_ChartLines) — true emits the bare element, an object carries its spPr/txPr decorations."
         },
         "majorTickMark": {
           "$ref": "#/definitions/AxisTickMark"
@@ -724,7 +724,7 @@
               "type": "boolean"
             },
             {
-              "$ref": "#/definitions/ShapePropertiesOptions"
+              "$ref": "#/definitions/ChartLinesOptions"
             }
           ]
         },
@@ -2079,6 +2079,21 @@
       },
       "type": "object"
     },
+    "ChartLinesOptions": {
+      "additionalProperties": false,
+      "description": "Chart lines with formatting (CT_ChartLines: spPr + txPr).",
+      "properties": {
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Line fill/outline (spPr)."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Line text properties (txPr)."
+        }
+      },
+      "type": "object"
+    },
     "ChartOptions": {
       "additionalProperties": false,
       "description": "Options for creating a ChartRun.\n\nExtends `ChartSpaceOptions` from `@office-open/core` with DOCX-specific positioning and layout properties.",
@@ -2208,8 +2223,15 @@
           "description": "How blank cells are plotted (c:dispBlanksAs)."
         },
         "dropLines": {
-          "description": "Drop lines (c:dropLines, line/area/stock).",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "Drop lines (c:dropLines, line/area/stock)."
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
@@ -2247,8 +2269,15 @@
           "description": "Graphic frame locks (wp:cNvGraphicFramePr). `{}` → empty element; omit → authoring default."
         },
         "highLowLines": {
-          "description": "High-low lines (c:hiLowLines, line/stock 2D).",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "High-low lines (c:hiLowLines, line/stock 2D)."
         },
         "holeSize": {
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
@@ -2369,6 +2398,10 @@
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
           "type": ["number", "string"]
         },
+        "secondaryGroup": {
+          "$ref": "#/definitions/SecondaryChartGroupOptions",
+          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags."
+        },
         "series": {
           "anyOf": [
             {
@@ -2386,8 +2419,15 @@
           ]
         },
         "seriesLines": {
-          "description": "Series lines (c:serLines, stock / 2D bar / 3D area).",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "Series lines (c:serLines, stock / 2D bar / 3D area)."
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -2780,8 +2820,15 @@
           "description": "How blank cells are plotted (c:dispBlanksAs)."
         },
         "dropLines": {
-          "description": "Drop lines (c:dropLines, line/area/stock).",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "Drop lines (c:dropLines, line/area/stock)."
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
@@ -2804,8 +2851,15 @@
           "type": "number"
         },
         "highLowLines": {
-          "description": "High-low lines (c:hiLowLines, line/stock 2D).",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "High-low lines (c:hiLowLines, line/stock 2D)."
         },
         "holeSize": {
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
@@ -2918,6 +2972,10 @@
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
           "type": ["number", "string"]
         },
+        "secondaryGroup": {
+          "$ref": "#/definitions/SecondaryChartGroupOptions",
+          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags."
+        },
         "series": {
           "anyOf": [
             {
@@ -2935,8 +2993,15 @@
           ]
         },
         "seriesLines": {
-          "description": "Series lines (c:serLines, stock / 2D bar / 3D area).",
-          "type": "boolean"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "Series lines (c:serLines, stock / 2D bar / 3D area)."
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -17545,6 +17610,52 @@
           "type": "boolean"
         }
       },
+      "type": "object"
+    },
+    "SecondaryChartGroupOptions": {
+      "additionalProperties": false,
+      "description": "Second chart group in a combo chart (CT_PlotArea carries two *Chart groups).",
+      "properties": {
+        "axisIds": {
+          "description": "axId pair referencing entries of the shared axes list.",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "dataLabels": {
+          "$ref": "#/definitions/DataLabelsOptions",
+          "description": "Group-level data labels (c:dLbls after the ser elements)."
+        },
+        "gapWidth": {
+          "description": "Bar/column gap width as percent (c:gapWidth, bar group).",
+          "type": "number"
+        },
+        "markers": {
+          "description": "Show line-chart markers (group-level c:marker, line 2D).",
+          "type": "boolean"
+        },
+        "series": {
+          "description": "This group's series; categories come from the chart-level source.",
+          "items": {
+            "$ref": "#/definitions/ChartSeriesData"
+          },
+          "type": "array"
+        },
+        "smooth": {
+          "description": "Smooth lines (group-level c:smooth, line 2D).",
+          "type": "boolean"
+        },
+        "type": {
+          "$ref": "#/definitions/ChartType",
+          "description": "Chart type of this group (drives the c:*Chart element and its header)."
+        },
+        "varyColors": {
+          "description": "Vary data-point colors (group-level c:varyColors).",
+          "type": "boolean"
+        }
+      },
+      "required": ["type", "series", "axisIds"],
       "type": "object"
     },
     "SectionChild": {

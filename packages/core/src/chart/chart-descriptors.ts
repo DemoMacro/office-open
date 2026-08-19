@@ -19,6 +19,8 @@ import type {
   ChartSpaceOptions,
   BubbleSeriesData,
   ChartSeriesData,
+  ChartLinesOptions,
+  SecondaryChartGroupOptions,
   ChartType,
   DataLabelOptions,
   DataLabelsOptions,
@@ -346,8 +348,8 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
   parts.push(stringifyScaling(opts.scaling));
   if (opts.delete !== undefined) parts.push(`<c:delete${boolVal(opts.delete)}/>`);
   if (opts.position !== undefined) parts.push(valEl("c:axPos", opts.position));
-  parts.push(chartLines("c:majorGridlines", opts.majorGridlines, ctx));
-  parts.push(chartLines("c:minorGridlines", opts.minorGridlines, ctx));
+  parts.push(stringifyChartLines("c:majorGridlines", opts.majorGridlines, ctx));
+  parts.push(stringifyChartLines("c:minorGridlines", opts.minorGridlines, ctx));
   if (opts.title !== undefined) {
     // "" is the text-less title placeholder (bare <c:title/>), like the chart title.
     parts.push(
@@ -631,7 +633,7 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
   return `<${tag}>${headerParts.join("")}`;
 }
 
-function chartTypeFooter(opts: ChartSpaceOptions): string {
+function chartTypeFooter(opts: ChartSpaceOptions, ctx: WriteContext): string {
   const tag = opts.threeD ? CHART_TYPE_TAGS_3D[opts.type] : CHART_TYPE_TAGS[opts.type];
   const parts: string[] = [];
 
@@ -649,15 +651,15 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
       } else {
         // CT_BarChart: gapWidth → overlap → serLines
         if (opts.overlap !== undefined) parts.push(valEl("c:overlap", opts.overlap));
-        if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
+        parts.push(stringifyChartLines("c:serLines", opts.seriesLines, ctx));
       }
       break;
     case "line":
       // EG_LineChartShared tail: dropLines (after ser/dLbls)
-      if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
+      parts.push(stringifyChartLines("c:dropLines", opts.dropLines, ctx));
       if (!opts.threeD) {
         // CT_LineChart: dropLines → hiLowLines → upDownBars → marker → smooth
-        if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
+        parts.push(stringifyChartLines("c:hiLowLines", opts.highLowLines, ctx));
         if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
         if (opts.markers !== undefined) parts.push(`<c:marker${boolVal(opts.markers)}/>`);
         if (opts.smooth !== undefined) parts.push(`<c:smooth${boolVal(opts.smooth)}/>`);
@@ -668,14 +670,14 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
       break;
     case "area":
       // EG_AreaChartShared tail: dropLines
-      if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
+      parts.push(stringifyChartLines("c:dropLines", opts.dropLines, ctx));
       if (opts.threeD && opts.gapDepth !== undefined)
         parts.push(valEl("c:gapDepth", opts.gapDepth));
       break;
     case "stock":
       // CT_StockChart: dropLines → hiLowLines → upDownBars
-      if (opts.dropLines) parts.push(emptyEl("c:dropLines"));
-      if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
+      parts.push(stringifyChartLines("c:dropLines", opts.dropLines, ctx));
+      parts.push(stringifyChartLines("c:hiLowLines", opts.highLowLines, ctx));
       if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
       break;
     case "pie":
@@ -708,7 +710,7 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
       }
       if (opts.secondPieSize !== undefined)
         parts.push(valEl("c:secondPieSize", opts.secondPieSize));
-      if (opts.seriesLines) parts.push(emptyEl("c:serLines"));
+      parts.push(stringifyChartLines("c:serLines", opts.seriesLines, ctx));
       break;
     case "surface":
       // EG_SurfaceChartShared tail: bandFmts (after ser, before axId)
@@ -770,8 +772,11 @@ function stringifySeries(
   series: ChartSeriesData | BubbleSeriesData,
   opts: ChartSpaceOptions,
   ctx: WriteContext,
+  groupType?: ChartType,
 ): string {
-  const chartType = opts.type;
+  // A combo chart's second group keeps its own type for the per-series
+  // branches below (marker on line, invertIfNegative on bar, …).
+  const chartType = groupType ?? opts.type;
   const parts: string[] = [];
   const s = series as ChartSeriesData;
 
@@ -846,6 +851,61 @@ function stringifySeries(
   }
 
   return `<c:ser>${parts.join("")}</c:ser>`;
+}
+
+// CT_ChartLines: a bare element or an spPr/txPr pair (true keeps the bare form)
+function stringifyChartLines(
+  tag: string,
+  opts: boolean | ChartLinesOptions | undefined,
+  ctx: WriteContext,
+): string {
+  if (opts === undefined || opts === false) return "";
+  if (opts === true) return emptyEl(tag);
+  const parts = [chartSpPr(opts.shapeProperties, ctx)];
+  if (opts.textProperties)
+    parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
+  return `<${tag}>${parts.join("")}</${tag}>`;
+}
+
+/** Read any CT_ChartLines element: true when bare, decorations when carried. */
+function readChartLines(
+  parent: XmlElement,
+  tag: string,
+  ctx: ReadContext,
+): boolean | ChartLinesOptions | undefined {
+  const el = findChild(parent, tag);
+  if (!el) return undefined;
+  const spPrEl = findChild(el, "c:spPr");
+  const txPrEl = findChild(el, "c:txPr");
+  if (!spPrEl && !txPrEl) return true;
+  const lines: ChartLinesOptions = {};
+  if (spPrEl) {
+    const shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx);
+    if (shapeProperties) lines.shapeProperties = shapeProperties;
+  }
+  if (txPrEl) lines.textProperties = textBodyDesc.parse(txPrEl, ctx);
+  return lines;
+}
+
+// ── Secondary chart group (combo charts) ──
+
+function stringifySecondaryGroup(
+  g: SecondaryChartGroupOptions,
+  opts: ChartSpaceOptions,
+  ctx: WriteContext,
+): string {
+  const parts: string[] = [chartTypeHeader(g)];
+  for (const [i, series] of (g.series ?? []).entries()) {
+    parts.push(stringifySeries(i, series, opts, ctx, g.type));
+  }
+  if (g.dataLabels) parts.push(stringifyDataLabels(g.dataLabels, ctx));
+  // Group tails: line 2D ends marker → smooth; bar carries gapWidth.
+  if (g.type === "line" && g.markers !== undefined) parts.push(`<c:marker${boolVal(g.markers)}/>`);
+  if (g.type === "line" && g.smooth !== undefined) parts.push(`<c:smooth${boolVal(g.smooth)}/>`);
+  if ((g.type === "bar" || g.type === "column") && g.gapWidth !== undefined)
+    parts.push(valEl("c:gapWidth", g.gapWidth));
+  for (const id of g.axisIds ?? []) parts.push(valEl("c:axId", id));
+  return parts.join("");
 }
 
 // ── Title XML ──
@@ -944,20 +1004,6 @@ function chartSpPr(opts: ShapePropertiesOptions | undefined, ctx: WriteContext):
   if (!opts) return "";
   const inner = shapePropertiesDesc.stringify(opts, ctx);
   return `<c:spPr>${inner ?? ""}</c:spPr>`;
-}
-
-/**
- * CT_ChartLines element (gridlines): true → bare element, an object → the
- * element wrapping its spPr.
- */
-function chartLines(
-  tag: string,
-  opts: boolean | ShapePropertiesOptions | undefined,
-  ctx: WriteContext,
-): string {
-  if (opts === undefined || opts === false) return "";
-  if (opts === true) return `<${tag}/>`;
-  return `<${tag}><c:spPr>${shapePropertiesDesc.stringify(opts, ctx) ?? ""}</c:spPr></${tag}>`;
 }
 
 // ── Axes XML ──
@@ -1565,19 +1611,6 @@ function readManualLayout(layoutEl: XmlElement | undefined): ManualLayoutOptions
   return Object.keys(opts).length ? opts : undefined;
 }
 
-/** Read a CT_ChartLines element: true when bare, spPr object when decorated. */
-function readChartLines(
-  el: XmlElement,
-  tag: "c:majorGridlines" | "c:minorGridlines",
-  ctx: ReadContext,
-): boolean | ShapePropertiesOptions | undefined {
-  const lines = findChild(el, tag);
-  if (!lines) return undefined;
-  const spPr = findChild(lines, "c:spPr");
-  if (!spPr) return true;
-  return shapePropertiesDesc.parse(spPr, ctx) as ShapePropertiesOptions;
-}
-
 // ── 3D wall/floor surface read (CT_Surface) ──
 
 function readSurface(
@@ -1603,6 +1636,7 @@ function readChartTypeScalars(
   type: ChartType,
   threeD: boolean,
   result: MutableChartSpaceResult,
+  ctx: ReadContext,
 ): void {
   if (!chartTypeEl) return;
   // Group-level varyColors precedes ser in every chart-group content model —
@@ -1624,6 +1658,10 @@ function readChartTypeScalars(
       const overlap = readValNum(chartTypeEl, "c:overlap");
       if (overlap !== undefined) result.overlap = overlap;
     }
+  } else if (type === "area" && threeD) {
+    // CT_Area3DChart tail: dropLines → gapDepth
+    const gapDepth = readValNum(chartTypeEl, "c:gapDepth");
+    if (gapDepth !== undefined) result.gapDepth = gapDepth;
   } else if (type === "pie" || type === "doughnut") {
     const firstSliceAng = readValNum(chartTypeEl, "c:firstSliceAng");
     if (firstSliceAng !== undefined) result.firstSliceAngle = firstSliceAng;
@@ -1664,7 +1702,8 @@ function readChartTypeScalars(
     const secondPieSize = readValStr(chartTypeEl, "c:secondPieSize");
     if (secondPieSize !== undefined)
       result.secondPieSize = secondPieSize.endsWith("%") ? secondPieSize : Number(secondPieSize);
-    if (findChild(chartTypeEl, "c:serLines")) result.seriesLines = true;
+    const seriesLines = readChartLines(chartTypeEl, "c:serLines", ctx);
+    if (seriesLines !== undefined) result.seriesLines = seriesLines;
   }
 }
 
@@ -1675,6 +1714,7 @@ function readChartTypeDecorations(
   type: ChartType,
   threeD: boolean,
   result: MutableChartSpaceResult,
+  ctx: ReadContext,
 ): void {
   if (!chartTypeEl) return;
   const readUpDownBars = (el: XmlElement) => {
@@ -1684,28 +1724,37 @@ function readChartTypeDecorations(
   };
   if (type === "line") {
     if (threeD) {
-      if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
+      const dropLinesV = readChartLines(chartTypeEl, "c:dropLines", ctx);
+      if (dropLinesV !== undefined) result.dropLines = dropLinesV;
     } else {
-      if (findChild(chartTypeEl, "c:hiLowLines")) result.highLowLines = true;
+      const highLowLinesV = readChartLines(chartTypeEl, "c:hiLowLines", ctx);
+      if (highLowLinesV !== undefined) result.highLowLines = highLowLinesV;
       const upDownBars = findChild(chartTypeEl, "c:upDownBars");
       if (upDownBars) readUpDownBars(upDownBars);
-      if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
+      const dropLinesV = readChartLines(chartTypeEl, "c:dropLines", ctx);
+      if (dropLinesV !== undefined) result.dropLines = dropLinesV;
       const markers = readBoolAttr(chartTypeEl, "c:marker");
       if (markers !== undefined) result.markers = markers;
       const smooth = readBoolAttr(chartTypeEl, "c:smooth");
       if (smooth !== undefined) result.smooth = smooth;
     }
   } else if (type === "area") {
-    if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
-    if (threeD && findChild(chartTypeEl, "c:serLines")) result.seriesLines = true;
+    const dropLinesV = readChartLines(chartTypeEl, "c:dropLines", ctx);
+    if (dropLinesV !== undefined) result.dropLines = dropLinesV;
+    const threeDSeriesLines = readChartLines(chartTypeEl, "c:serLines", ctx);
+    if (threeD && threeDSeriesLines !== undefined) result.seriesLines = threeDSeriesLines;
   } else if (type === "stock") {
-    if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
-    if (findChild(chartTypeEl, "c:hiLowLines")) result.highLowLines = true;
+    const dropLinesV = readChartLines(chartTypeEl, "c:dropLines", ctx);
+    if (dropLinesV !== undefined) result.dropLines = dropLinesV;
+    const highLowLinesV = readChartLines(chartTypeEl, "c:hiLowLines", ctx);
+    if (highLowLinesV !== undefined) result.highLowLines = highLowLinesV;
     const upDownBars = findChild(chartTypeEl, "c:upDownBars");
     if (upDownBars) readUpDownBars(upDownBars);
-    if (findChild(chartTypeEl, "c:serLines")) result.seriesLines = true;
+    const seriesLines = readChartLines(chartTypeEl, "c:serLines", ctx);
+    if (seriesLines !== undefined) result.seriesLines = seriesLines;
   } else if ((type === "column" || type === "bar") && !threeD) {
-    if (findChild(chartTypeEl, "c:serLines")) result.seriesLines = true;
+    const seriesLines = readChartLines(chartTypeEl, "c:serLines", ctx);
+    if (seriesLines !== undefined) result.seriesLines = seriesLines;
   }
 }
 
@@ -2223,7 +2272,11 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // Chart-group-level data labels follow the ser elements (EG_*ChartShared).
     if (opts.dataLabels) parts.push(stringifyDataLabels(opts.dataLabels, ctx));
 
-    parts.push(chartTypeFooter(opts));
+    parts.push(chartTypeFooter(opts, ctx));
+
+    // Combo chart: a second group (e.g. lines over bars) shares the plot
+    // area, the category source, and the axes list.
+    if (opts.secondaryGroup) parts.push(stringifySecondaryGroup(opts.secondaryGroup, opts, ctx));
 
     // Axes
     parts.push(stringifyAxes(opts, ctx));
@@ -2345,11 +2398,17 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       let detectedType: ChartType | undefined;
       let threeD = false;
       let chartTypeEl: XmlElement | undefined;
+      // Combo charts carry a second chart group in the same plot area.
+      let secondaryEl: XmlElement | undefined;
 
       for (const child of plotArea.elements) {
         if (!child.name) continue;
         const mapping = TAG_TO_CHART_TYPE[child.name];
         if (mapping) {
+          if (chartTypeEl) {
+            secondaryEl = child;
+            break;
+          }
           detectedType = mapping.type;
           threeD = mapping.threeD ?? false;
           chartTypeEl = child;
@@ -2360,15 +2419,14 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
             if (barDirVal === "bar") detectedType = "bar";
             else if (barDirVal === "col") detectedType = "column";
           }
-          break;
         }
       }
 
       if (detectedType && chartTypeEl) {
         result.type = detectedType;
         if (threeD) result.threeD = true;
-        readChartTypeScalars(chartTypeEl, detectedType, threeD, result);
-        readChartTypeDecorations(chartTypeEl, detectedType, threeD, result);
+        readChartTypeScalars(chartTypeEl, detectedType, threeD, result, ctx);
+        readChartTypeDecorations(chartTypeEl, detectedType, threeD, result, ctx);
         // Chart-group-level data labels (after the ser elements).
         const groupLabels = readDataLabels(chartTypeEl, ctx);
         if (groupLabels) result.dataLabels = groupLabels;
@@ -2442,10 +2500,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
             }
 
             // Read values
-            const valEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
-            const valueLiteral = valEl ? findChild(valEl, "c:numLit") !== undefined : false;
-            const values = valEl ? readNumCache(valEl) : [];
-            const valMeta = valEl ? readRefMeta(valEl) : {};
+            const valueEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
+            const valueLiteral = valueEl ? findChild(valueEl, "c:numLit") !== undefined : false;
+            const values = valueEl ? readNumCache(valueEl) : [];
+            const valMeta = valueEl ? readRefMeta(valueEl) : {};
 
             chartSeries.push({
               name,
@@ -2461,6 +2519,58 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
           result.series = chartSeries as ChartSeriesData[];
           if (categories) result.categories = categories;
+        }
+      }
+
+      // Second chart group (combo charts) — own series and group flags,
+      // sharing the category source and the axes list with the main group.
+      if (secondaryEl) {
+        const mapping = TAG_TO_CHART_TYPE[secondaryEl.name ?? ""];
+        if (mapping) {
+          let secType: ChartType = mapping.type;
+          if (secondaryEl.name === "c:barChart" || secondaryEl.name === "c:bar3DChart") {
+            const barDir = findChild(secondaryEl, "c:barDir");
+            const barDirVal = barDir ? attr(barDir, "val") : undefined;
+            if (barDirVal === "bar") secType = "bar";
+            else if (barDirVal === "col") secType = "column";
+          }
+          const g: SecondaryChartGroupOptions = { type: secType, series: [], axisIds: [] };
+          const varyColors = readBoolAttr(secondaryEl, "c:varyColors");
+          if (varyColors !== undefined) g.varyColors = varyColors;
+          const groupLabels = readDataLabels(secondaryEl, ctx);
+          if (groupLabels) g.dataLabels = groupLabels;
+          const markers = readBoolAttr(secondaryEl, "c:marker");
+          if (markers !== undefined) g.markers = markers;
+          const smooth = readBoolAttr(secondaryEl, "c:smooth");
+          if (smooth !== undefined) g.smooth = smooth;
+          const gapWidth = readValNum(secondaryEl, "c:gapWidth");
+          if (gapWidth !== undefined) g.gapWidth = gapWidth;
+          const secAxIds = children(secondaryEl, "c:axId");
+          if (secAxIds.length > 0) {
+            g.axisIds = secAxIds.map((e) => Number(attr(e, "val"))).filter((n) => !isNaN(n));
+          }
+          const secSeries: ChartSeriesData[] = [];
+          for (const serEl of children(secondaryEl, "c:ser")) {
+            const { name, literal: nameLiteral } = readSeriesName(serEl);
+            const txEl = findChild(serEl, "c:tx");
+            const nameFormula = txEl ? readRefMeta(txEl).formula : undefined;
+            const valueEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
+            const valueLiteral = valueEl ? findChild(valueEl, "c:numLit") !== undefined : false;
+            const values = valueEl ? readNumCache(valueEl) : [];
+            const valMeta = valueEl ? readRefMeta(valueEl) : {};
+            secSeries.push({
+              name,
+              ...(nameLiteral ? { nameLiteral } : {}),
+              ...(nameFormula ? { nameFormula } : {}),
+              ...(valueLiteral ? { valueLiteral } : {}),
+              ...(valMeta.formula ? { valueFormula: valMeta.formula } : {}),
+              ...(valMeta.formatCode ? { formatCode: valMeta.formatCode } : {}),
+              values,
+              ...readSeriesCommon(serEl, ctx),
+            });
+          }
+          g.series = secSeries;
+          result.secondaryGroup = g;
         }
       }
     }

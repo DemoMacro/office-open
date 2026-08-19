@@ -228,6 +228,34 @@ export interface ChartStyle2010Options {
   fallbackStyle?: number;
 }
 
+/** Chart lines with formatting (CT_ChartLines: spPr + txPr). */
+export interface ChartLinesOptions {
+  /** Line fill/outline (spPr). */
+  shapeProperties?: ShapePropertiesOptions;
+  /** Line text properties (txPr). */
+  textProperties?: TextBodyOptions;
+}
+
+/** Second chart group in a combo chart (CT_PlotArea carries two *Chart groups). */
+export interface SecondaryChartGroupOptions {
+  /** Chart type of this group (drives the c:*Chart element and its header). */
+  type: ChartType;
+  /** This group's series; categories come from the chart-level source. */
+  series: readonly ChartSeriesData[];
+  /** Vary data-point colors (group-level c:varyColors). */
+  varyColors?: boolean;
+  /** Show line-chart markers (group-level c:marker, line 2D). */
+  markers?: boolean;
+  /** Smooth lines (group-level c:smooth, line 2D). */
+  smooth?: boolean;
+  /** Group-level data labels (c:dLbls after the ser elements). */
+  dataLabels?: DataLabelsOptions;
+  /** Bar/column gap width as percent (c:gapWidth, bar group). */
+  gapWidth?: number;
+  /** axId pair referencing entries of the shared axes list. */
+  axisIds: readonly number[];
+}
+
 export interface ChartSpaceOptions {
   /**
    * Chart title (c:title). An empty string round-trips a title placeholder
@@ -305,6 +333,12 @@ export interface ChartSpaceOptions {
    * (legacy Word writes a dangling `axId val="0"` for a missing third axis).
    */
   axisIds?: readonly number[];
+  /**
+   * Second chart group in a combo chart (e.g. lines over bars on two axes).
+   * Shares the plot area, categories, and the axes list; carries its own
+   * series and group-level flags.
+   */
+  secondaryGroup?: SecondaryChartGroupOptions;
   /** Manual plot-area layout (c:plotArea > c:layout > c:manualLayout). */
   plotAreaLayout?: ManualLayoutOptions;
   /** Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip. */
@@ -340,15 +374,15 @@ export interface ChartSpaceOptions {
   /** Surface chart wireframe rendering (c:wireframe). */
   wireframe?: boolean;
   /** High-low lines (c:hiLowLines, line/stock 2D). */
-  highLowLines?: boolean;
+  highLowLines?: boolean | ChartLinesOptions;
   /** Up/down bars container (c:upDownBars, line/stock 2D). */
   upDownBars?: boolean;
   /** Gap width inside the up/down bars container (c:upDownBars > c:gapWidth). */
   upDownBarsGapWidth?: number;
   /** Drop lines (c:dropLines, line/area/stock). */
-  dropLines?: boolean;
+  dropLines?: boolean | ChartLinesOptions;
   /** Series lines (c:serLines, stock / 2D bar / 3D area). */
-  seriesLines?: boolean;
+  seriesLines?: boolean | ChartLinesOptions;
   /** Plot-area data table (c:dTable). */
   dataTable?: DataTableOptions;
   /** ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default "pie"). */
@@ -474,10 +508,10 @@ export interface AxisOptions {
   position?: AxisPosition;
   /**
    * c:majorGridlines (CT_ChartLines) — true emits the bare element, an
-   * object carries its spPr (line styling).
+   * object carries its spPr/txPr decorations.
    */
-  majorGridlines?: boolean | ShapePropertiesOptions;
-  minorGridlines?: boolean | ShapePropertiesOptions;
+  majorGridlines?: boolean | ChartLinesOptions;
+  minorGridlines?: boolean | ChartLinesOptions;
   /** Axis title (c:title) — plain text or the full CT_Title object form. */
   title?: string | ChartTitleOptions;
   /** c:numFmt formatCode; sourceLinked defaults to 1. */
