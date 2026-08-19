@@ -223,7 +223,9 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
         if (xmlString.charCodeAt(pos) === 0x3e || xmlString.charCodeAt(pos) === 0x2f) break;
         pos++;
       }
-      const name = xmlString.slice(nameStart, pos);
+      // XML's Eq production allows whitespace around '='; trim it off the
+      // name so `Target = "…"` resolves like `Target="…"`.
+      const name = xmlString.slice(nameStart, pos).trim();
 
       if (xmlString.charCodeAt(pos) !== 0x3d) break;
       pos++;
