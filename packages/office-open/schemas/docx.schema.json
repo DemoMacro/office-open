@@ -19491,6 +19491,10 @@
           "enum": ["none", "print", "outline", "masterPages", "normal", "web"],
           "type": "string"
         },
+        "w14DefaultImageDpi": {
+          "description": "Default image DPI for pictures inserted in this document (w14:defaultImageDpi)",
+          "type": "number"
+        },
         "w14DocId": {
           "description": "Word 2010 document identifier (w14:docId/`@w14:val`, e.g. \"1A190769\")",
           "type": "string"

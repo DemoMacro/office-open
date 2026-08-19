@@ -1167,6 +1167,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // (decimalSymbol → listSeparator → w14:docId → w15:chartTrackingRefBased → w15:docId).
     // Preserved verbatim for round-trip fidelity; val attribute is namespace-scoped.
     if (opts.w14DocId !== undefined) p.push(strVal("w14:docId", opts.w14DocId));
+    if (opts.w14DefaultImageDpi !== undefined)
+      p.push(strVal("w14:defaultImageDpi", String(opts.w14DefaultImageDpi)));
     if (opts.w15ChartTrackingRefBased) p.push(`<w15:chartTrackingRefBased/>`);
     if (opts.w15DocId !== undefined) p.push(strVal("w15:docId", opts.w15DocId));
 
@@ -1507,7 +1509,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
         if (val) list.push(val);
       }
       if (list.length > 0) rsids.rsids = list;
-      if (Object.keys(rsids).length > 0) opts.rsids = rsids as RsidsOptions;
+      // An empty w:rsids element still round-trips as { rsids: {} } — element
+      // existence is part of the fidelity contract (pandoc emits it empty).
+      opts.rsids = rsids as RsidsOptions;
     }
 
     // mathPr → m:mathPr (CT_MathPr)
@@ -1615,6 +1619,11 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // Word 2010/2013 document identifiers — preserve for round-trip fidelity
     const w14DocId = readStr(findChild(el, "w14:docId"), "w14:val");
     if (w14DocId) opts.w14DocId = w14DocId;
+    const w14DefaultImageDpi = readStr(findChild(el, "w14:defaultImageDpi"), "w14:val");
+    if (w14DefaultImageDpi !== undefined) {
+      const dpi = Number(w14DefaultImageDpi);
+      if (!isNaN(dpi)) opts.w14DefaultImageDpi = dpi;
+    }
     if (findChild(el, "w15:chartTrackingRefBased")) opts.w15ChartTrackingRefBased = true;
     const w15DocId = readStr(findChild(el, "w15:docId"), "w15:val");
     if (w15DocId) opts.w15DocId = w15DocId;

@@ -202,6 +202,8 @@ export interface SettingsOptions {
   listSeparator?: string;
   /** Word 2010 document identifier (w14:docId/`@w14:val`, e.g. "1A190769") */
   w14DocId?: string;
+  /** Default image DPI for pictures inserted in this document (w14:defaultImageDpi) */
+  w14DefaultImageDpi?: number;
   /** Track chart references by document (w15:chartTrackingRefBased) */
   w15ChartTrackingRefBased?: boolean;
   /** Word 2013 document identifier (w15:docId/`@w15:val`, GUID format) */
