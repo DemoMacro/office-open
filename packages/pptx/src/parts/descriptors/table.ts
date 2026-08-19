@@ -62,6 +62,30 @@ type TableLevelBorders = NonNullable<TableOptions["borders"]>;
 
 let _nextTableId = 1024;
 
+// ── Office 2014 table stamps (a16:colId on a:gridCol, a16:rowId on a:tr) ──
+
+const A16_NS = "http://schemas.microsoft.com/office/drawing/2014/main";
+const COL_ID_EXT_URI = "{9D8B030D-6E8A-4147-A177-3AD203B41FA5}";
+const ROW_ID_EXT_URI = "{0D108BD9-81ED-4DB2-BD59-A6C34878D82A}";
+
+type OfficeIdTag = "a16:colId" | "a16:rowId";
+
+function officeIdExtLst(uri: string, tag: OfficeIdTag, val: string): string {
+  return `<a:extLst><a:ext uri="${uri}"><${tag} xmlns:a16="${A16_NS}" val="${escapeXml(val)}"/></a:ext></a:extLst>`;
+}
+
+function readOfficeIdExt(el: Element, uri: string, tag: OfficeIdTag): string | undefined {
+  const extLst = findChild(el, "a:extLst");
+  if (!extLst) return undefined;
+  for (const ext of extLst.elements ?? []) {
+    if (ext.name !== "a:ext" || attr(ext, "uri") !== uri) continue;
+    const idEl = findChild(ext, tag);
+    const val = idEl ? attr(idEl, "val") : undefined;
+    if (val) return val;
+  }
+  return undefined;
+}
+
 // ── Table (p:graphicFrame) descriptor ──
 
 export const tableDesc: CustomDescriptor<TableOptions> = {
@@ -104,7 +128,14 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       opts.columnWidths && opts.columnWidths.length > 0
         ? opts.columnWidths.map(convertToEmu)
         : Array.from({ length: colCount }, () => Math.round(w / colCount));
-    const gridCols = colWidths.map((cw) => `<a:gridCol w="${cw}"/>`).join("");
+    const gridCols = colWidths
+      .map((cw, ci) => {
+        const colId = opts.columnIds?.[ci];
+        return colId
+          ? `<a:gridCol w="${cw}">${officeIdExtLst(COL_ID_EXT_URI, "a16:colId", colId)}</a:gridCol>`
+          : `<a:gridCol w="${cw}"/>`;
+      })
+      .join("");
     tblParts.push(`<a:tblGrid>${gridCols}</a:tblGrid>`);
 
     // a:tr[] — with border distribution
@@ -190,15 +221,19 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       if (Object.keys(borders).length > 0) result.borders = borders;
     }
 
-    // a:tblGrid → columnWidths
+    // a:tblGrid → columnWidths (+ per-column a16:colId stamps)
     const tblGrid = findChild(tbl, "a:tblGrid");
     if (tblGrid) {
       const colWidths: number[] = [];
+      const columnIds: string[] = [];
       for (const gridCol of children(tblGrid, "a:gridCol")) {
         const w = attrNum(gridCol, "w");
         colWidths.push(w ?? 0);
+        const colId = readOfficeIdExt(gridCol, COL_ID_EXT_URI, "a16:colId");
+        columnIds.push(colId ?? "");
       }
       if (colWidths.length > 0) result.columnWidths = colWidths;
+      if (columnIds.some((id) => id !== "")) result.columnIds = columnIds;
     }
 
     // a:tr → rows
@@ -211,6 +246,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       }
       const row: TableRowOptions = { cells };
       if (h !== undefined) row.height = h;
+      const rowId = readOfficeIdExt(tr, ROW_ID_EXT_URI, "a16:rowId");
+      if (rowId) row.rowId = rowId;
       rows.push(row);
     }
     result.rows = rows;
@@ -244,7 +281,9 @@ function stringifyRow(row: TableRowOptions, ctx: PptxWriteContext): string {
   for (const cell of row.cells) {
     cellParts.push(stringifyCell(cell, ctx));
   }
-  return `<a:tr h="${h}">${cellParts.join("")}</a:tr>`;
+  // CT_TableRow tail — verbatim row stamp (a16:rowId's home).
+  const ext = row.rowId ? officeIdExtLst(ROW_ID_EXT_URI, "a16:rowId", row.rowId) : "";
+  return `<a:tr h="${h}">${cellParts.join("")}${ext}</a:tr>`;
 }
 
 function stringifyCell(cell: TableCellOptions, ctx: PptxWriteContext): string {

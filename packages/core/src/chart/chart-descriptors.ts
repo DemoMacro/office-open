@@ -4,7 +4,7 @@
  * @module
  */
 
-import { escapeXml } from "@office-open/xml";
+import { escapeXml, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { attr, findChild, findFirst, children, textOf } from "@office-open/xml";
 
@@ -206,7 +206,10 @@ function stringifyDataLabel(opts: DataLabelOptions, ctx: WriteContext): string {
   }
   const inner: string[] = [];
   // Group_DLbl: layout → tx → EG_DLblShared (numFmt…dLblPos…show*…separator).
-  if (opts.layout) inner.push(stringifyLayout(opts.layout));
+  if (opts.layout === true) inner.push("<c:layout/>");
+  else if (opts.layout) inner.push(stringifyLayout(opts.layout));
+  if (opts.text)
+    inner.push(`<c:tx><c:rich>${textBodyDesc.stringify(opts.text, ctx) ?? ""}</c:rich></c:tx>`);
   if (opts.numberFormat !== undefined)
     inner.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
   inner.push(chartSpPr(opts.shapeProperties, ctx));
@@ -861,6 +864,9 @@ function stringifySeries(
     parts.push(`<c:bubble3D${boolVal(s.bubble3D)}/>`);
   }
 
+  // CT_xxxSer tail — verbatim series extLst (c16:uniqueId's home).
+  if (s.ext) parts.push(`<c:extLst>${s.ext}</c:extLst>`);
+
   return `<c:ser>${parts.join("")}</c:ser>`;
 }
 
@@ -1068,7 +1074,15 @@ function stringifyLegendEntry(entry: LegendEntryOptions, ctx: WriteContext): str
 }
 
 function stringifyLegend(opts: ChartSpaceOptions, ctx: WriteContext): string {
-  const pos = opts.legendPosition ?? "b";
+  // A parsed legend that carried no c:legendPos must stay without one
+  // (showLegend===true marks the round-trip path); fresh charts keep the
+  // default bottom-position emission.
+  const pos =
+    opts.legendPosition !== undefined
+      ? `<c:legendPos val="${opts.legendPosition}"/>`
+      : opts.showLegend === true
+        ? ""
+        : `<c:legendPos val="b"/>`;
   const entries = (opts.legendEntries ?? []).map((e) => stringifyLegendEntry(e, ctx)).join("");
   const layout =
     opts.legendLayout === true
@@ -1082,7 +1096,7 @@ function stringifyLegend(opts: ChartSpaceOptions, ctx: WriteContext): string {
   const txPr = opts.legendTextProperties
     ? `<c:txPr>${textBodyDesc.stringify(opts.legendTextProperties, ctx) ?? ""}</c:txPr>`
     : "";
-  return `<c:legend><c:legendPos val="${pos}"/>${entries}${layout}${overlay}${spPr}${txPr}</c:legend>`;
+  return `<c:legend>${pos}${entries}${layout}${overlay}${spPr}${txPr}</c:legend>`;
 }
 
 function stringifyPivotSource(opts: PivotSourceOptions): string {
@@ -1553,8 +1567,13 @@ function readDataLabels(serEl: XmlElement, ctx: ReadContext): DataLabelsOptions 
     opts.labels = lblEls.map((el): DataLabelOptions => {
       const result: DataLabelOptions = { index: readValNum(el, "c:idx") ?? 0 };
       if (findChild(el, "c:delete")) result.delete = true;
-      const layout = readManualLayout(findChild(el, "c:layout"));
-      if (layout) result.layout = layout;
+      const layoutEl = findChild(el, "c:layout");
+      if (layoutEl) result.layout = readManualLayout(layoutEl) ?? true;
+      const richEl = findChild(findChild(el, "c:tx"), "c:rich");
+      if (richEl) {
+        const text = textBodyDesc.parse(richEl, ctx);
+        if (text) result.text = text;
+      }
       const numFmt = attr(findChild(el, "c:numFmt"), "formatCode");
       if (numFmt) result.numberFormat = numFmt;
       const lblSpPr = findChild(el, "c:spPr");
@@ -1676,6 +1695,11 @@ function readSeriesCommon(serEl: XmlElement, ctx: ReadContext): Partial<ChartSer
   if (shape) common.shape = shape as BarShape;
   const bubble3D = readBoolAttr(serEl, "c:bubble3D");
   if (bubble3D !== undefined) common.bubble3D = bubble3D;
+  const extLst = findChild(serEl, "c:extLst");
+  if (extLst) {
+    const inner = stringifyXml(extLst);
+    if (inner) common.ext = inner;
+  }
   return common;
 }
 
@@ -2671,11 +2695,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
         ctx,
       ) as ShapePropertiesOptions;
 
-    // Legend — default is true, only set if explicitly absent
+    // Legend — default is true; parse records true explicitly so stringify
+    // can tell a round-trip legend from a fresh default one.
     const legend = findChild(chart, "c:legend");
     if (!legend) {
       result.showLegend = false;
     } else {
+      result.showLegend = true;
       const legendData = readLegend(chart, ctx);
       if (legendData?.position) result.legendPosition = legendData.position;
       if (legendData?.layout !== undefined) result.legendLayout = legendData.layout;

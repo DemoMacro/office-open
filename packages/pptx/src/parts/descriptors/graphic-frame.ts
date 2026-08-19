@@ -8,7 +8,7 @@ import type { GraphicFrameLockingOptions } from "@office-open/core";
 import { parseOnOff } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { graphicFrameLockingDesc } from "@office-open/core/drawing";
-import { findChild } from "@office-open/xml";
+import { attr, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { PlaceholderOrientation, PlaceholderSize, PlaceholderType } from "@shared/shape/shape";
 
@@ -61,10 +61,21 @@ export interface NvPrPlaceholderOptions {
   isPhoto?: boolean;
   /** p:nvPr `@userDrawn`. */
   userDrawn?: boolean;
+  /**
+   * p14:modId `@val` from the nvPr extension list — Office's collaboration
+   * modification stamp, the sole known p:nvPr ext content.
+   */
+  modId?: string;
 }
+
+/** The p14:modId extension uri (CT_ApplicationNonVisualDrawingProps extLst). */
+const MODID_EXT_URI = "{D42A27DB-BD31-4B8C-83A1-F6EECF244321}";
 
 /** Serialize the p:nvPr content (placeholder reference, or photo/user-drawn attrs). */
 export function stringifyNvPr(opts: NvPrPlaceholderOptions): string {
+  const modIdExt = opts.modId
+    ? `<p:extLst><p:ext uri="${MODID_EXT_URI}"><p14:modId xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" val="${opts.modId}"/></p:ext></p:extLst>`
+    : "";
   // p:ph @type is optional (XSD default "obj"), so a placeholder keyed only
   // by idx must still emit <p:ph/> without a type attribute.
   if (opts.placeholder || opts.placeholderIndex !== undefined) {
@@ -75,15 +86,17 @@ export function stringifyNvPr(opts: NvPrPlaceholderOptions): string {
     if (opts.placeholderOrientation !== undefined)
       phAttrs.push(`orient="${opts.placeholderOrientation}"`);
     if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
-    return `<p:nvPr><p:ph ${phAttrs.join(" ")}/></p:nvPr>`;
+    return `<p:nvPr><p:ph ${phAttrs.join(" ")}/>${modIdExt}</p:nvPr>`;
   }
   if (opts.isPhoto || opts.userDrawn) {
     const nvPrAttrs: string[] = [];
     if (opts.isPhoto) nvPrAttrs.push('isPhoto="1"');
     if (opts.userDrawn) nvPrAttrs.push('userDrawn="1"');
-    return `<p:nvPr ${nvPrAttrs.join(" ")}/>`;
+    return modIdExt
+      ? `<p:nvPr ${nvPrAttrs.join(" ")}>${modIdExt}</p:nvPr>`
+      : `<p:nvPr ${nvPrAttrs.join(" ")}/>`;
   }
-  return "<p:nvPr/>";
+  return modIdExt ? `<p:nvPr>${modIdExt}</p:nvPr>` : "<p:nvPr/>";
 }
 
 /** Read the p:nvPr placeholder reference into a result object. */
@@ -97,6 +110,7 @@ export function readNvPrPlaceholder(
     hasCustomPrompt?: boolean;
     isPhoto?: boolean;
     userDrawn?: boolean;
+    modId?: string;
   },
 ): void {
   const nvPr = findChild(nvParent, "p:nvPr");
@@ -118,5 +132,14 @@ export function readNvPrPlaceholder(
       result.placeholderOrientation = ph.attributes["orient"] as PlaceholderOrientation;
     if (ph.attributes["hasCustomPrompt"] !== undefined)
       result.hasCustomPrompt = parseOnOff(ph.attributes["hasCustomPrompt"]) ?? false;
+  }
+  const extLst = findChild(nvPr, "p:extLst");
+  if (extLst) {
+    for (const ext of extLst.elements ?? []) {
+      if (ext.name !== "p:ext" || attr(ext, "uri") !== MODID_EXT_URI) continue;
+      const modId = findChild(ext, "p14:modId");
+      const val = modId ? attr(modId, "val") : undefined;
+      if (val) result.modId = val;
+    }
   }
 }

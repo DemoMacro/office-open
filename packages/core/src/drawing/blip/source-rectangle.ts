@@ -49,9 +49,12 @@ export interface SourceRectangleOptions {
  * createSourceRectangle({ left: 10, right: 10 });
  * ```
  */
-export const createSourceRectangle = (options?: SourceRectangleOptions): string => {
+export const createSourceRectangle = (
+  options?: SourceRectangleOptions,
+  tag: string = "a:srcRect",
+): string => {
   if (!options) {
-    return element("a:srcRect");
+    return element(tag);
   }
 
   const attrs: Record<string, string | number | undefined> = {};
@@ -60,5 +63,5 @@ export const createSourceRectangle = (options?: SourceRectangleOptions): string 
   if (options.right !== undefined) attrs.r = Math.round(options.right * 1000);
   if (options.bottom !== undefined) attrs.b = Math.round(options.bottom * 1000);
 
-  return element("a:srcRect", attrs);
+  return element(tag, attrs);
 };

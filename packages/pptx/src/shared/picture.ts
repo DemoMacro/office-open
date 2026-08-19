@@ -43,8 +43,16 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   effects?: EffectListOptions;
   /** Crop rectangle (a:srcRect) — integer percent insets. */
   sourceRectangle?: SourceRectangleOptions;
+  /**
+   * Fill rectangle inside the blip fill's a:stretch: undefined emits the
+   * standard empty `<a:fillRect/>`, false the bare `<a:stretch/>` some
+   * writers produce, an object carries inset percents.
+   */
+  fillRectangle?: SourceRectangleOptions | false;
   /** Blip color effects (a:lum, a:duotone, … children of a:blip). */
   blipEffects?: BlipEffectsOptions;
+  /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
+  useLocalDpi?: boolean;
   /** Fill on p:spPr (a:noFill on cropped pictures is common). */
   fill?: FillOptions;
   /** Outline on p:spPr (a:ln — decorated pictures carry one). */

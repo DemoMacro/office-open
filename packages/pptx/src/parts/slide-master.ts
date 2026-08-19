@@ -56,6 +56,11 @@ export interface SlideMasterOptions {
   customerData?: { rId: string }[];
   /** cSld/controls — embedded controls (ActiveX/legacy). */
   controls?: ControlOptions[];
+  /**
+   * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
+   * where p14:creationId lives) — verbatim round-trip.
+   */
+  cSldExt?: string;
   /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
   ext?: string;
 }

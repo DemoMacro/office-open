@@ -12,7 +12,7 @@ import {
   uniqueUuid,
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrNum, escapeXml, findChild, stringify } from "@office-open/xml";
+import { attr, attrNum, escapeXml, findChild, stringify, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type {
   PresentationPartOptions,
@@ -112,13 +112,16 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
     );
   }
 
-  // sldIdLst
-  parts.push("<p:sldIdLst>");
-  const sRidOff = opts.masterCount + 1;
-  for (let i = 0; i < opts.slideIds.length; i++) {
-    parts.push(`<p:sldId id="${opts.slideIds[i]}" r:id="rId${sRidOff + i}"/>`);
+  // sldIdLst — CT_Presentation optional; a source with no slides carries no
+  // element at all, so an empty list must not emit the wrapper.
+  if (opts.slideIds.length > 0) {
+    parts.push("<p:sldIdLst>");
+    const sRidOff = opts.masterCount + 1;
+    for (let i = 0; i < opts.slideIds.length; i++) {
+      parts.push(`<p:sldId id="${opts.slideIds[i]}" r:id="rId${sRidOff + i}"/>`);
+    }
+    parts.push("</p:sldIdLst>");
   }
-  parts.push("</p:sldIdLst>");
 
   const typeAttr =
     opts.slideSizeType && opts.slideSizeType !== "custom" ? ` type="${opts.slideSizeType}"` : "";
@@ -264,6 +267,7 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
 
   // p14:sectionLst — slide sections (Microsoft PowerPoint 2010 extension).
   // Only emitted when at least one slide carries a section name.
+  const extEntries: string[] = [];
   if (opts.sections && opts.sections.length > 0) {
     const sectionXml: string[] = [];
     for (const sec of opts.sections) {
@@ -277,10 +281,16 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
       );
     }
     if (sectionXml.length > 0) {
-      parts.push(
-        `<p:extLst><p:ext uri="{521415D9-36F7-43E2-AB2F-B90AF26B5E84}"><p14:sectionLst xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main">${sectionXml.join("")}</p14:sectionLst></p:ext></p:extLst>`,
+      extEntries.push(
+        `<p:ext uri="{521415D9-36F7-43E2-AB2F-B90AF26B5E84}"><p14:sectionLst xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main">${sectionXml.join("")}</p14:sectionLst></p:ext>`,
       );
     }
+  }
+
+  // Remaining extensions (verbatim) share the extLst with sections.
+  if (opts.ext) extEntries.push(opts.ext);
+  if (extEntries.length > 0) {
+    parts.push(`<p:extLst>${extEntries.join("")}</p:extLst>`);
   }
 
   parts.push("</p:presentation>");
@@ -499,6 +509,19 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
     result.defaultTextStyle = `<p:defaultTextStyle xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">${stringify(defaultTextStyle)}</p:defaultTextStyle>`;
   } else {
     result.defaultTextStyle = false;
+  }
+
+  // Trailing extLst — the sectionLst extension is modeled structurally
+  // (sections via slide.section); every other <p:ext> verbatim.
+  const extLst = findChild(el, "p:extLst");
+  if (extLst) {
+    const rest: string[] = [];
+    for (const ext of extLst.elements ?? []) {
+      if (ext.name !== "p:ext") continue;
+      if (attr(ext, "uri") === "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}") continue;
+      rest.push(stringifyElement(ext));
+    }
+    if (rest.length > 0) result.ext = rest.join("");
   }
 
   return result as PresentationPartOptions;

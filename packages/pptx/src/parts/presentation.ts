@@ -140,6 +140,12 @@ export interface PresentationPartOptions {
   customerData?: CustomerDataOptions;
   /** Slide sections (p14:sectionLst); slides are grouped by name. */
   sections?: PresentationSectionGroup[];
+  /**
+   * Raw `<p:ext>` entries of the presentation's trailing extLst outside the
+   * modeled sectionLst extension (e.g. p15:sldGuideLst slide guides) —
+   * verbatim round-trip, emitted alongside the sections extension.
+   */
+  ext?: string;
   /** Smart tags (p:smartTags) — r:id to the smart-tags part. */
   smartTags?: { rId: string };
 }

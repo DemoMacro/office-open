@@ -55,6 +55,11 @@ export interface ChartSeriesCommon {
   shape?: BarShape;
   /** 3D bubble (c:bubble3D on the bubble series). */
   bubble3D?: boolean;
+  /**
+   * Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where
+   * c16:uniqueId lives) — verbatim round-trip.
+   */
+  ext?: string;
 }
 
 // ── BubbleSeriesData ──
@@ -128,8 +133,16 @@ export interface DataLabelOptions {
   index: number;
   /** Drop the label for this point (c:delete). */
   delete?: boolean;
-  /** Manual label placement (c:layout > c:manualLayout, before EG_DLblShared). */
-  layout?: ManualLayoutOptions;
+  /**
+   * Custom label text (c:tx > c:rich) — replaces the auto-generated value
+   * label with authored rich text.
+   */
+  text?: TextBodyOptions;
+  /**
+   * Manual label placement (c:layout > c:manualLayout, before EG_DLblShared).
+   * true = the bare `<c:layout/>` form sources carry.
+   */
+  layout?: ManualLayoutOptions | true;
   position?: DataLabelPosition;
   /** Number format override (c:numFmt inside EG_DLblShared). */
   numberFormat?: string;

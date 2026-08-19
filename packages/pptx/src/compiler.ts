@@ -116,6 +116,8 @@ interface MasterInfo {
   index: number;
   master: string;
   theme: string;
+  /** Emitted theme part index — shared when masters carry identical themes. */
+  themeIndex: number;
   layouts: LayoutInfo[];
   masterRels: Relationships;
   layoutRels: Relationships[];
@@ -212,6 +214,10 @@ function buildMasterMap(
 
   let globalLayoutIndex = 0;
   const masters: MasterInfo[] = [];
+  // Identical master themes share one theme part (sources commonly point two
+  // masters at the same theme) — dedupe by serialized content, like media.
+  const themeIndexByXml = new Map<string, number>();
+  let themeCount = 0;
 
   for (const [mi, def] of defs.entries()) {
     const name = def.name ?? `master${mi + 1}`;
@@ -243,26 +249,16 @@ function buildMasterMap(
       id: layoutIdBase + li,
       relationshipId: `rId${li + 1}`,
     }));
-    const master =
-      slideMasterDesc.stringify(
-        {
-          background: def.background,
-          children: def.children,
-          placeholders: def.placeholders,
-          colorMapping: def.colorMapping,
-          headerFooter: def.headerFooter,
-          textStyles: def.textStyles,
-          preserve: def.preserve,
-          transition: def.transition,
-          animations: def.animations,
-          customerData: def.customerData,
-          controls: def.controls,
-          ext: def.ext,
-          slideLayoutIds,
-        },
-        ctx,
-      ) ?? "";
+    // Rest-spread so every SlideMasterOptions field flows to the descriptor —
+    // field-copy whitelists here have dropped newly added options before.
+    const { name: _masterName, theme: _theme, layouts: _layouts, ...masterOpts } = def;
+    const master = slideMasterDesc.stringify({ ...masterOpts, slideLayoutIds }, ctx) ?? "";
     const theme = createThemeXml(def.theme, ctx);
+    let themeIndex = themeIndexByXml.get(theme);
+    if (themeIndex === undefined) {
+      themeIndex = themeCount++;
+      themeIndexByXml.set(theme, themeIndex);
+    }
 
     const layouts: LayoutInfo[] = [];
     const layoutRels: Relationships[] = [];
@@ -319,7 +315,7 @@ function buildMasterMap(
     masterRelsEntries.push({
       id: layouts.length + 1,
       type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-      target: `../theme/theme${mi + 1}.xml`,
+      target: `../theme/theme${themeIndex + 1}.xml`,
     });
     // Master-level passthrough relationships (round-trip) — re-emitted as
     // written unless the model already registered the same kind (ownership
@@ -344,6 +340,7 @@ function buildMasterMap(
       index: mi,
       master,
       theme,
+      themeIndex,
       layouts,
       masterRels: buildRels(masterRelsEntries),
       layoutRels,
@@ -516,13 +513,14 @@ function initPresRels(masters: MasterInfo[], slideCount: number): Relationships 
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps",
     "viewProps.xml",
   );
-  for (let mi = 0; mi < masters.length; mi++) {
-    rels.addRelationship(
-      rid++,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-      `theme/theme${mi + 1}.xml`,
-    );
-  }
+  // presentation.xml.rels carries exactly one theme rel (the presentation's
+  // default theme) regardless of how many masters or theme parts exist —
+  // extra masters reference their themes through their own rels.
+  rels.addRelationship(
+    rid++,
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+    "theme/theme1.xml",
+  );
   rels.addRelationship(
     rid,
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
@@ -662,6 +660,12 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   parts.push(stringifyCustDataLst(slideOpts.customerData));
   parts.push(stringifyControls(slideOpts.controls));
 
+  // cSld-tail extLst (p14:creationId's home) — verbatim, before the cSld close
+  // and distinct from the root-level extLst emitted after timing.
+  if (slideOpts.cSldExt) {
+    parts.push(`<p:extLst>${slideOpts.cSldExt}</p:extLst>`);
+  }
+
   parts.push("</p:cSld>");
   parts.push(
     colorMappingOverrideDesc.stringify(slideOpts.colorMappingOverride, ctx) ??
@@ -709,7 +713,11 @@ export function compilePresentation(
   );
   const allLayouts = masters.flatMap((m) => m.layouts);
   const allLayoutRels = masters.flatMap((m) => m.layoutRels);
-  const themes = masters.map((m) => m.theme);
+  // Unique master themes in theme-index order (deduped in buildMasterMap) —
+  // notesMaster/handoutMaster themes append after these.
+  const uniqueMasterThemes: string[] = [];
+  for (const m of masters) uniqueMasterThemes[m.themeIndex] ??= m.theme;
+  const themes = uniqueMasterThemes;
   const masterRels = masters.map((m) => m.masterRels);
   const slideRels = buildSlideRels(masters, slides);
   const { authors: commentAuthorEntries, perSlide: slideCommentEntries } = buildCommentData(slides);
@@ -765,6 +773,7 @@ export function compilePresentation(
     masterCount: masters.length,
     sections,
     ...buildPresAttrOpts(options),
+    ...(options.ext !== undefined ? { ext: options.ext } : {}),
   };
   const fileRels = buildRootRelationships(
     "ppt/presentation.xml",
@@ -781,14 +790,14 @@ export function compilePresentation(
     options.htmlPublish ||
     options.colorMru ||
     options.show ||
-    options.ext
+    options.presentationPropertiesExt
       ? {
           web: options.web,
           print: options.print,
           htmlPublish: options.htmlPublish,
           colorMru: options.colorMru,
           show: options.show,
-          ext: options.ext,
+          ext: options.presentationPropertiesExt,
         }
       : undefined;
 
@@ -864,12 +873,25 @@ export function compilePresentation(
 
   // Slide Layouts
   for (const [li, layoutInfo] of allLayouts.entries()) {
+    const layoutXml = slideLayoutDesc.stringify(layoutInfo.def, descCtx) ?? "";
+    // Media referenced by layout shapes gets the same image-relationship
+    // wiring slides use (layout pictures otherwise lose their rel).
+    const layoutRels = allLayoutRels[li]!;
+    const layoutMediaData = getReferencedMedia(layoutXml, media.array);
+    const layoutImageOffset = layoutRels.relationshipCount + 1;
+    for (const [idx, mediaItem] of layoutMediaData.entries()) {
+      layoutRels.addRelationship(
+        layoutImageOffset + idx,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        `../media/${mediaItem.fileName}`,
+      );
+    }
     mapping[`SlideLayout${li}`] = {
-      data: XML_DECL + (slideLayoutDesc.stringify(layoutInfo.def, descCtx) ?? ""),
+      data: XML_DECL + replaceImagePlaceholders(layoutXml, layoutMediaData, layoutImageOffset),
       path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
     };
     mapping[`SlideLayoutRels${li}`] = {
-      data: XML_DECL + allLayoutRels[li]!.serialize(),
+      data: XML_DECL + layoutRels.serialize(),
       path: `ppt/slideLayouts/_rels/slideLayout${li + 1}.xml.rels`,
     };
     if (layoutInfo.themeOverride) {
@@ -890,10 +912,8 @@ export function compilePresentation(
     );
     presOptions.notesMasterRId = notesMasterRId;
     const notesMasterThemeIndex = themes.length + 1;
-    mapping["NotesMaster"] = {
-      data: XML_DECL + (notesMasterDesc.stringify(options.notesMasterOptions ?? {}, descCtx) ?? ""),
-      path: "ppt/notesMasters/notesMaster1.xml",
-    };
+    const notesMasterXml =
+      notesMasterDesc.stringify(options.notesMasterOptions ?? {}, descCtx) ?? "";
     const notesMasterThemeXml = createThemeXml(options.notesMasterOptions?.theme, descCtx);
     mapping["NotesMasterTheme"] = {
       data: XML_DECL + notesMasterThemeXml,
@@ -905,6 +925,22 @@ export function compilePresentation(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
       `../theme/theme${notesMasterThemeIndex}.xml`,
     );
+    // Media referenced by notes-master shapes gets slide-style image wiring.
+    const notesMasterMediaData = getReferencedMedia(notesMasterXml, media.array);
+    const notesMasterImageOffset = notesMasterRels.relationshipCount + 1;
+    for (const [idx, mediaItem] of notesMasterMediaData.entries()) {
+      notesMasterRels.addRelationship(
+        notesMasterImageOffset + idx,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        `../media/${mediaItem.fileName}`,
+      );
+    }
+    mapping["NotesMaster"] = {
+      data:
+        XML_DECL +
+        replaceImagePlaceholders(notesMasterXml, notesMasterMediaData, notesMasterImageOffset),
+      path: "ppt/notesMasters/notesMaster1.xml",
+    };
     mapping["NotesMasterRelationships"] = {
       data: XML_DECL + notesMasterRels.serialize(),
       path: "ppt/notesMasters/_rels/notesMaster1.xml.rels",
@@ -919,12 +955,8 @@ export function compilePresentation(
     );
     presOptions.handoutMasterRId = handoutMasterRId;
     const handoutMasterThemeIndex = themes.length + (includeNotesMasterPart ? 2 : 1);
-    mapping["HandoutMaster"] = {
-      data:
-        XML_DECL +
-        (handoutMasterDesc.stringify({ options: options.handoutMasterOptions }, descCtx) ?? ""),
-      path: "ppt/handoutMasters/handoutMaster1.xml",
-    };
+    const handoutMasterXml =
+      handoutMasterDesc.stringify({ options: options.handoutMasterOptions }, descCtx) ?? "";
     const handoutMasterThemeXml = createThemeXml(options.handoutMasterOptions?.theme, descCtx);
     mapping["HandoutMasterTheme"] = {
       data: XML_DECL + handoutMasterThemeXml,
@@ -936,6 +968,21 @@ export function compilePresentation(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
       `../theme/theme${handoutMasterThemeIndex}.xml`,
     );
+    // Media referenced by handout-master shapes gets slide-style image wiring.
+    const handoutMediaData = getReferencedMedia(handoutMasterXml, media.array);
+    const handoutImageOffset = handoutMasterRels.relationshipCount + 1;
+    for (const [idx, mediaItem] of handoutMediaData.entries()) {
+      handoutMasterRels.addRelationship(
+        handoutImageOffset + idx,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        `../media/${mediaItem.fileName}`,
+      );
+    }
+    mapping["HandoutMaster"] = {
+      data:
+        XML_DECL + replaceImagePlaceholders(handoutMasterXml, handoutMediaData, handoutImageOffset),
+      path: "ppt/handoutMasters/handoutMaster1.xml",
+    };
     mapping["HandoutMasterRelationships"] = {
       data: XML_DECL + handoutMasterRels.serialize(),
       path: "ppt/handoutMasters/_rels/handoutMaster1.xml.rels",

@@ -67,6 +67,11 @@ export interface LayoutDefinition {
   headerFooter?: SlideHeaderFooterOptions;
   controls?: ControlOptions[];
   customerData?: { rId: string }[];
+  /**
+   * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
+   * where p14:creationId lives) — verbatim round-trip.
+   */
+  cSldExt?: string;
   // Child slide elements
   colorMappingOverride?: ColorMappingOverrideOptions;
   transition?: TransitionOptions;
@@ -122,6 +127,11 @@ export interface SlideOptions {
   controls?: ControlOptions[];
   customerData?: { rId: string }[];
   slideSync?: SlideSyncOptions;
+  /**
+   * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
+   * where p14:creationId lives) — verbatim round-trip.
+   */
+  cSldExt?: string;
   /** Structured entries, or verbatim p:timing inner XML when the source tree exceeds the model. */
   animations?: SlideAnimation[] | string;
   /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
@@ -195,6 +205,12 @@ export interface PresentationOptions extends CorePropertiesOptions {
   smartTags?: { rId: string };
   colorMru?: string[];
   /** Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions). */
+  presentationPropertiesExt?: string;
+  /**
+   * Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside
+   * the modeled sectionLst extension (e.g. p15:sldGuideLst slide guides) —
+   * verbatim round-trip. Same slot naming as SlideOptions.ext.
+   */
   ext?: string;
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;

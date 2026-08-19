@@ -107,25 +107,11 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
         result.useBackgroundFill = parseOnOff(el.attributes["useBgFill"]) ?? false;
     }
 
-    // p:nvSpPr
+    // p:nvSpPr — readNvSpPr returns the full ShapeOptions shape; assign whole
+    // so fields added later flow without touching this whitelist.
     const nvSpPr = findChild(el, "p:nvSpPr");
     if (nvSpPr) {
-      const parsed = readNvSpPr(nvSpPr, ctx);
-      if (parsed.id !== undefined) result.id = parsed.id;
-      if (parsed.name !== undefined) result.name = parsed.name;
-      if (parsed.description !== undefined) result.description = parsed.description;
-      if (parsed.title !== undefined) result.title = parsed.title;
-      if (parsed.hidden !== undefined) result.hidden = parsed.hidden;
-      if (parsed.placeholder !== undefined) result.placeholder = parsed.placeholder;
-      if (parsed.placeholderIndex !== undefined) result.placeholderIndex = parsed.placeholderIndex;
-      if (parsed.placeholderSize !== undefined) result.placeholderSize = parsed.placeholderSize;
-      if (parsed.placeholderOrientation !== undefined)
-        result.placeholderOrientation = parsed.placeholderOrientation;
-      if (parsed.hasCustomPrompt !== undefined) result.hasCustomPrompt = parsed.hasCustomPrompt;
-      if (parsed.isPhoto !== undefined) result.isPhoto = parsed.isPhoto;
-      if (parsed.userDrawn !== undefined) result.userDrawn = parsed.userDrawn;
-      if (parsed.locking !== undefined) result.locking = parsed.locking;
-      if (parsed.hyperlink !== undefined) result.hyperlink = parsed.hyperlink;
+      Object.assign(result, readNvSpPr(nvSpPr, ctx));
     }
 
     // p:spPr
@@ -183,7 +169,14 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
 
     // ── p:blipFill ──
     parts.push(
-      stringifyPptxBlipFill(mediaEntry.fileName, opts.sourceRectangle, opts.blipEffects, ctx),
+      stringifyPptxBlipFill(
+        mediaEntry.fileName,
+        opts.sourceRectangle,
+        opts.blipEffects,
+        ctx,
+        opts.useLocalDpi,
+        opts.fillRectangle,
+      ),
     );
 
     // ── p:spPr ──
@@ -292,11 +285,33 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       result.sourceRectangle = rect;
     }
 
+    // Stretch fill rectangle — a bare <a:stretch/> (no a:fillRect child) is a
+    // distinct emitted form some writers produce; keep it tri-state.
+    const stretch = blipFill ? findChild(blipFill, "a:stretch") : undefined;
+    if (stretch) {
+      const fillRectEl = findChild(stretch, "a:fillRect");
+      if (!fillRectEl) {
+        result.fillRectangle = false;
+      } else {
+        const rect: SourceRectangleOptions = {};
+        const l = attrNum(fillRectEl, "l");
+        if (l !== undefined) rect.left = l / 1000;
+        const t = attrNum(fillRectEl, "t");
+        if (t !== undefined) rect.top = t / 1000;
+        const r = attrNum(fillRectEl, "r");
+        if (r !== undefined) rect.right = r / 1000;
+        const b = attrNum(fillRectEl, "b");
+        if (b !== undefined) rect.bottom = b / 1000;
+        if (Object.keys(rect).length > 0) result.fillRectangle = rect;
+      }
+    }
+
     // Image data from p:blipFill → a:blip → r:embed
     const blip = findFirst(el, "a:blip");
     if (blip) {
       const parsedBlip = parse(blipDesc, blip, ctx);
       if (parsedBlip.blipEffects) result.blipEffects = parsedBlip.blipEffects;
+      if (parsedBlip.useLocalDpi !== undefined) result.useLocalDpi = parsedBlip.useLocalDpi;
       const rEmbed = attr(blip, "r:embed");
       if (rEmbed) {
         const imagePath = ctx.resolveRelationship(rEmbed);
@@ -501,10 +516,16 @@ function stringifyPptxBlipFill(
   sourceRectangle?: SourceRectangleOptions,
   blipEffects?: PictureOptions["blipEffects"],
   ctx?: WriteContext,
+  useLocalDpi?: boolean,
+  fillRectangle?: SourceRectangleOptions | false,
 ): string {
-  const blipXml = stringify(blipDesc, { referenceId: fileName, blipEffects }, ctx);
+  const blipXml = stringify(blipDesc, { referenceId: fileName, blipEffects, useLocalDpi }, ctx);
   const srcRect = sourceRectangle ? createSourceRectangle(sourceRectangle) : "";
-  return `<p:blipFill>${blipXml}${srcRect}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`;
+  const fillRect =
+    fillRectangle === false
+      ? "<a:stretch/>"
+      : `<a:stretch>${createSourceRectangle(fillRectangle ?? {}, "a:fillRect")}</a:stretch>`;
+  return `<p:blipFill>${blipXml}${srcRect}${fillRect}</p:blipFill>`;
 }
 
 function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {

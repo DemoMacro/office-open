@@ -100,6 +100,9 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     parts.push(stringifyCustDataLst(opts.customerData));
     parts.push(stringifyControls(opts.controls));
 
+    // cSld-tail extLst (p14:creationId's home) — verbatim.
+    if (opts.cSldExt) parts.push(`<p:extLst>${opts.cSldExt}</p:extLst>`);
+
     parts.push("</p:cSld>");
 
     // EG_ChildSlide — p:clrMapOvr (always present; defaults to masterClrMapping).
@@ -181,6 +184,14 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       // custDataLst + controls (inside cSld).
       result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
       result.controls = parseControls(findChild(cSld, "p:controls"));
+
+      // cSld-tail extLst (p14:creationId's home) — verbatim, distinct from
+      // the root-level extLst read below (two separate XSD slots).
+      const cSldExtLst = findChild(cSld, "p:extLst");
+      if (cSldExtLst) {
+        const inner = stringifyXml(cSldExtLst);
+        if (inner) result.cSldExt = inner;
+      }
     }
 
     // EG_ChildSlide — p:clrMapOvr.

@@ -77,6 +77,14 @@ export const slideDesc: CustomDescriptor<SlideOptions> = {
       // (its own stringify writes them there; read from the same place).
       result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
       result.controls = parseControls(findChild(cSld, "p:controls"));
+
+      // cSld-tail extLst (p14:creationId's home) — verbatim, distinct from the
+      // root-level extLst read below (two separate XSD slots).
+      const cSldExtLst = findChild(cSld, "p:extLst");
+      if (cSldExtLst) {
+        const inner = stringify(cSldExtLst);
+        if (inner) result.cSldExt = inner;
+      }
     }
 
     // p:clrMapOvr (between cSld and transition per CT_Slide).

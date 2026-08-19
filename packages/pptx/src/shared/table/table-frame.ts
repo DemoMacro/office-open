@@ -35,6 +35,11 @@ export interface TableOptions
   tableStyleId?: string;
   /** Inline table style (a:tableStyle in a:tblPr) — alternative to tableStyleId. */
   tableStyle?: TableStyleOptions;
+  /**
+   * Office 2014 column stamps (a16:colId per a:gridCol extension list),
+   * parallel to {@link BaseTableOptions.columnWidths} — round-trip.
+   */
+  columnIds?: string[];
   borders?: {
     top?: CellBorderOptions;
     bottom?: CellBorderOptions;

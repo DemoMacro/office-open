@@ -13,8 +13,12 @@
 
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
+import { attr, findChild } from "@office-open/xml";
 
 import { parseOnOff } from "../../util/values";
+
+/** The a16:creationId extension uri (CT_NonVisualDrawingProps extLst). */
+const CREATION_ID_EXT_URI = "{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}";
 
 /** Mirrors a:CT_NonVisualDrawingProps — name/descr/title/hidden. id is runtime; hyperlinks stay package-side. */
 export interface NonVisualDrawingPropertiesOptions {
@@ -26,6 +30,11 @@ export interface NonVisualDrawingPropertiesOptions {
   title?: string;
   /** XSD `@hidden` (default false); emitted as "1" only when true. */
   hidden?: boolean;
+  /**
+   * a16:creationId `@id` from the cNvPr/docPr extension list — Office's
+   * per-object creation stamp, the sole known cNvPr ext content.
+   */
+  creationId?: string;
 }
 
 /**
@@ -47,7 +56,12 @@ export function stringifyNonVisualDrawingProperties(
   if (opts?.description) attrs += ` descr="${escapeXml(opts.description)}"`;
   if (opts?.title) attrs += ` title="${escapeXml(opts.title)}"`;
   if (opts?.hidden) attrs += ` hidden="1"`;
-  return innerXml ? `<${tag} ${attrs}>${innerXml}</${tag}>` : `<${tag} ${attrs}/>`;
+  // CT_NonVisualDrawingProps tail: hlinkClick/hover (caller innerXml) → extLst.
+  const extLst = opts?.creationId
+    ? `<a:extLst><a:ext uri="${CREATION_ID_EXT_URI}"><a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="${escapeXml(opts.creationId)}"/></a:ext></a:extLst>`
+    : "";
+  const content = (innerXml ?? "") + extLst;
+  return content ? `<${tag} ${attrs}>${content}</${tag}>` : `<${tag} ${attrs}/>`;
 }
 
 /**
@@ -57,16 +71,28 @@ export function stringifyNonVisualDrawingProperties(
 export function parseNonVisualDrawingProperties(
   el: XmlElement | undefined,
 ): Partial<NonVisualDrawingPropertiesOptions> {
-  if (!el?.attributes) return {};
-  const a = el.attributes;
+  if (!el) return {};
   const result: Partial<NonVisualDrawingPropertiesOptions> = {};
-  if (a["name"] !== undefined) result.name = String(a["name"]);
-  const descr = a["descr"];
-  if (descr !== undefined && descr !== "") result.description = String(descr);
-  const title = a["title"];
-  if (title !== undefined && title !== "") result.title = String(title);
-  const hidden = a["hidden"];
-  if (hidden !== undefined) result.hidden = parseOnOff(hidden) ?? false;
+  if (el.attributes) {
+    const a = el.attributes;
+    if (a["name"] !== undefined) result.name = String(a["name"]);
+    const descr = a["descr"];
+    if (descr !== undefined && descr !== "") result.description = String(descr);
+    const title = a["title"];
+    if (title !== undefined && title !== "") result.title = String(title);
+    const hidden = a["hidden"];
+    if (hidden !== undefined) result.hidden = parseOnOff(hidden) ?? false;
+  }
+  const extLst = findChild(el, "a:extLst");
+  if (extLst) {
+    for (const ext of extLst.elements ?? []) {
+      if (ext.name !== "a:ext" || attr(ext, "uri") !== CREATION_ID_EXT_URI) continue;
+      const creationId = findChild(ext, "a16:creationId");
+      // a16:creationId keys its GUID on @id (p14:creationId uses @val).
+      const id = creationId ? attr(creationId, "id") : undefined;
+      if (id) result.creationId = id;
+    }
+  }
   return result;
 }
 
@@ -85,5 +111,6 @@ export function pickNonVisualDrawingProperties(
   if (opts.description !== undefined) picked.description = opts.description;
   if (opts.title !== undefined) picked.title = opts.title;
   if (opts.hidden !== undefined) picked.hidden = opts.hidden;
+  if (opts.creationId !== undefined) picked.creationId = opts.creationId;
   return picked;
 }

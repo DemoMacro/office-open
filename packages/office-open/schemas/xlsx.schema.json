@@ -1058,6 +1058,10 @@
           "description": "Pie slice explosion offset in percent (c:explosion).",
           "type": "number"
         },
+        "ext": {
+          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "type": "string"
+        },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
@@ -2020,6 +2024,10 @@
         "explosion": {
           "description": "Pie slice explosion offset in percent (c:explosion).",
           "type": "number"
+        },
+        "ext": {
+          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "type": "string"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
@@ -3470,6 +3478,10 @@
           ],
           "description": "Column offset in EMU (default 0)"
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -4207,8 +4219,16 @@
           "type": "number"
         },
         "layout": {
-          "$ref": "#/definitions/ManualLayoutOptions",
-          "description": "Manual label placement (c:layout > c:manualLayout, before EG_DLblShared)."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            },
+            {
+              "const": true,
+              "type": "boolean"
+            }
+          ],
+          "description": "Manual label placement (c:layout > c:manualLayout, before EG_DLblShared). true = the bare `<c:layout/>` form sources carry."
         },
         "numberFormat": {
           "description": "Number format override (c:numFmt inside EG_DLblShared).",
@@ -4241,6 +4261,10 @@
         },
         "showVal": {
           "type": "boolean"
+        },
+        "text": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Custom label text (c:tx > c:rich) — replaces the auto-generated value label with authored rich text."
         },
         "textProperties": {
           "$ref": "#/definitions/TextBodyOptions",
@@ -6394,6 +6418,10 @@
       "additionalProperties": false,
       "description": "Connector nested inside a group (no anchor).",
       "properties": {
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -6518,6 +6546,10 @@
             "$ref": "#/definitions/GroupConnectorChildOptions"
           },
           "type": "array"
+        },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -6656,6 +6688,10 @@
       "additionalProperties": false,
       "description": "Shape nested inside a group (no anchor — positioned via spPr.xfrm).",
       "properties": {
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -8958,6 +8994,10 @@
             }
           ],
           "description": "Column offset in EMU (default 0)"
+        },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
         },
         "data": {
           "$ref": "#/definitions/DataType",
@@ -12647,6 +12687,10 @@
           ],
           "description": "Column offset in EMU (default 0)"
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -15931,6 +15975,10 @@
             }
           },
           "type": "object"
+        },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
         },
         "customSplitPoints": {
           "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",

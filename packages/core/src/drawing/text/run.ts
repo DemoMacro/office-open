@@ -26,7 +26,9 @@ export const textRunDesc: CustomDescriptor<TextRunOptions> = {
 
   stringify(opts, ctx) {
     const body = runPropertiesDesc.stringify(opts, ctx) ?? "";
-    if (opts.text) {
+    // Empty string keeps an explicit <a:t/> — sources carry empty text runs
+    // (a:br neighbors) and round-trip must not drop the element.
+    if (opts.text !== undefined) {
       return body
         ? `<a:r>${body}<a:t>${escapeXml(opts.text)}</a:t></a:r>`
         : stringifyTextRun(opts.text);

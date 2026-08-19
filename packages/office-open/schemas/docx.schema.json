@@ -1546,6 +1546,10 @@
           "description": "Pie slice explosion offset in percent (c:explosion).",
           "type": "number"
         },
+        "ext": {
+          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "type": "string"
+        },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
@@ -2643,6 +2647,10 @@
         "explosion": {
           "description": "Pie slice explosion offset in percent (c:explosion).",
           "type": "number"
+        },
+        "ext": {
+          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "type": "string"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
@@ -4461,6 +4469,10 @@
             "contentPart": {
               "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
             },
+            "creationId": {
+              "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+              "type": "string"
+            },
             "description": {
               "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
               "type": "string"
@@ -4797,8 +4809,16 @@
           "type": "number"
         },
         "layout": {
-          "$ref": "#/definitions/ManualLayoutOptions",
-          "description": "Manual label placement (c:layout > c:manualLayout, before EG_DLblShared)."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            },
+            {
+              "const": true,
+              "type": "boolean"
+            }
+          ],
+          "description": "Manual label placement (c:layout > c:manualLayout, before EG_DLblShared). true = the bare `<c:layout/>` form sources carry."
         },
         "numberFormat": {
           "description": "Number format override (c:numFmt inside EG_DLblShared).",
@@ -4831,6 +4851,10 @@
         },
         "showVal": {
           "type": "boolean"
+        },
+        "text": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Custom label text (c:tx > c:rich) — replaces the auto-generated value label with authored rich text."
         },
         "textProperties": {
           "$ref": "#/definitions/TextBodyOptions",
@@ -5494,6 +5518,10 @@
       "additionalProperties": false,
       "description": "Options for configuring document properties of a drawing.",
       "properties": {
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -7684,6 +7712,10 @@
               "properties": {
                 "contentPart": {
                   "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
+                },
+                "creationId": {
+                  "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+                  "type": "string"
                 },
                 "description": {
                   "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -10790,6 +10822,10 @@
       "additionalProperties": false,
       "description": "Round-trip of `pic:cNvPr` — the picture non-visual id/name/description. All fields optional to mirror the source element: `description` is omitted when absent rather than emitted as an empty attribute (Word never writes it empty).",
       "properties": {
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"

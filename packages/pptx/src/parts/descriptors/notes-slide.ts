@@ -13,7 +13,7 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { findChild } from "@office-open/xml";
+import { findChild, stringify as stringifyXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { buildNotesSlideXml } from "@parts/notes-slide";
 import type { SlideChild } from "@parts/slide/slide-child";
@@ -34,6 +34,11 @@ export interface NotesSlideOptions {
   children?: SlideChild[];
   background?: BackgroundOptions;
   colorMappingOverride?: ColorMappingOverrideOptions;
+  /**
+   * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
+   * where p14:creationId lives) — verbatim round-trip.
+   */
+  cSldExt?: string;
   showMasterShapes?: boolean;
   showMasterPlaceholderAnimations?: boolean;
   /** Hidden notes slide (p:notes/`@show`="0"). */
@@ -50,7 +55,8 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
     const structured =
       opts.children !== undefined ||
       opts.background !== undefined ||
-      opts.colorMappingOverride !== undefined;
+      opts.colorMappingOverride !== undefined ||
+      opts.cSldExt !== undefined;
     if (!structured) return buildNotesSlideXml({ text: opts.text });
 
     // Structured path — mirror slideDesc (p:notes has no transition/timing).
@@ -76,6 +82,8 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
       }
     }
     parts.push("</p:spTree>");
+    // cSld-tail extLst (p14:creationId's home) — verbatim.
+    if (opts.cSldExt) parts.push(`<p:extLst>${opts.cSldExt}</p:extLst>`);
     parts.push("</p:cSld>");
 
     parts.push(
@@ -115,6 +123,13 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
           if (parsed !== undefined) children.push(parsed as SlideChild);
         }
         if (children.length > 0) result.children = children;
+      }
+
+      // cSld-tail extLst (p14:creationId's home) — verbatim.
+      const cSldExtLst = findChild(cSld, "p:extLst");
+      if (cSldExtLst) {
+        const inner = stringifyXml(cSldExtLst);
+        if (inner) result.cSldExt = inner;
       }
     }
 

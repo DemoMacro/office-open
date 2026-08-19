@@ -113,6 +113,16 @@ function parseRootRels(doc: ParsedArchive): {
   const relsEl = doc.get("_rels/.rels");
   if (!relsEl) return {};
 
+  // Canonical OPC/docProps relationship types. Duplicate rels with variant
+  // URIs (camelCase …/extendedProperties, the …/officedocument/… core form)
+  // exist in the wild — the canonical spelling wins, the losing part flows
+  // through the passthrough pipeline untouched.
+  const canonicalCore =
+    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties";
+  const canonicalApp =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties";
+  const canonicalCustom =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties";
   let coreProps: string | undefined;
   let appProps: string | undefined;
   let customProps: string | undefined;
@@ -129,11 +139,11 @@ function parseRootRels(doc: ParsedArchive): {
     // (…/extendedProperties); normalize case and hyphens so both resolve.
     const relType = type.toLowerCase().replaceAll("-", "");
     if (relType.includes("/coreproperties")) {
-      coreProps = path;
+      if (type === canonicalCore || coreProps === undefined) coreProps = path;
     } else if (relType.includes("/extendedproperties")) {
-      appProps = path;
+      if (type === canonicalApp || appProps === undefined) appProps = path;
     } else if (relType.includes("/customproperties")) {
-      customProps = path;
+      if (type === canonicalCustom || customProps === undefined) customProps = path;
     }
   }
 
@@ -470,6 +480,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
     if (presPart.embeddedFonts) opts.embeddedFonts = presPart.embeddedFonts;
     if (presPart.modifyVerifier) opts.modifyVerifier = presPart.modifyVerifier;
     if (presPart.smartTags) opts.smartTags = presPart.smartTags;
+    if (presPart.ext) opts.ext = presPart.ext;
   }
 
   // 2. Parse core properties
@@ -511,7 +522,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (presPropsOpts.print) opts.print = presPropsOpts.print;
       if (presPropsOpts.htmlPublish) opts.htmlPublish = presPropsOpts.htmlPublish;
       if (presPropsOpts.colorMru) opts.colorMru = presPropsOpts.colorMru;
-      if (presPropsOpts.ext) opts.ext = presPropsOpts.ext;
+      if (presPropsOpts.ext) opts.presentationPropertiesExt = presPropsOpts.ext;
     }
   }
 
@@ -567,9 +578,23 @@ export function parsePresentation(data: DataType): PresentationOptions {
     const masterOpts = slideMasterDesc.parse(masterEl, masterReadCtx);
 
     // Layouts belonging to this master (resolved separately — relationship layer).
+    // A layout with no .rels (sources ship such packages) still belongs when
+    // the master's sldLayoutIdLst names it — fall back to that membership.
+    const masterListedLayouts = new Set<string>();
+    const sldLayoutIdLst = findChild(masterEl, "p:sldLayoutIdLst");
+    if (sldLayoutIdLst) {
+      const masterRelTargets = parseSlideRelMap(pptx.doc, masterPath);
+      for (const sldLayoutId of sldLayoutIdLst.elements ?? []) {
+        if (sldLayoutId.name !== "p:sldLayoutId") continue;
+        const rid = sldLayoutId.attributes?.["r:id"];
+        const target = rid ? masterRelTargets.get(String(rid)) : undefined;
+        if (target && pptx.slideLayouts.includes(target)) masterListedLayouts.add(target);
+      }
+    }
     const masterLayouts: LayoutDefinition[] = [];
     for (const layoutPath of pptx.slideLayouts) {
-      if (layoutMasterPaths.get(layoutPath) !== masterPath) continue;
+      if (layoutMasterPaths.get(layoutPath) !== masterPath && !masterListedLayouts.has(layoutPath))
+        continue;
       const layoutEl = pptx.doc.get(layoutPath);
       if (layoutEl) {
         // Fully structured def (children/background/clrMapOvr/transition/...).
@@ -598,6 +623,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
       animations: masterOpts.animations,
       customerData: masterOpts.customerData,
       controls: masterOpts.controls,
+      cSldExt: masterOpts.cSldExt,
       ext: masterOpts.ext,
     };
     if (themeOptions) masterDef.theme = themeOptions;
@@ -729,7 +755,8 @@ export function parsePresentation(data: DataType): PresentationOptions {
         notesData.children ||
         notesData.text ||
         notesData.background ||
-        notesData.colorMappingOverride
+        notesData.colorMappingOverride ||
+        notesData.cSldExt
       ) {
         slideOpts.notes = notesData;
       }

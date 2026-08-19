@@ -112,6 +112,9 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     parts.push(stringifyCustDataLst(opts.customerData));
     parts.push(stringifyControls(opts.controls));
 
+    // cSld-tail extLst (p14:creationId's home) — verbatim.
+    if (opts.cSldExt) parts.push(`<p:extLst>${opts.cSldExt}</p:extLst>`);
+
     parts.push("</p:cSld>");
 
     // EG_TopLevelSlide — p:clrMap (required; defaults to the standard mapping).
@@ -188,12 +191,26 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
           if (parsed !== undefined) children.push(parsed);
         }
         if (children.length > 0) result.children = children;
-        if (Object.keys(placeholders).length > 0) result.placeholders = placeholders;
+        // Round-trip always declares the placeholder set explicitly — absent
+        // slots become false so a source master with no (or partial)
+        // placeholders does not fall back to the fresh-file defaults.
+        for (const optKey of new Set(Object.values(PH_TYPE_TO_KEY))) {
+          if (placeholders[optKey] === undefined) placeholders[optKey] = false;
+        }
+        result.placeholders = placeholders;
       }
 
       // custDataLst + controls (inside cSld).
       result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
       result.controls = parseControls(findChild(cSld, "p:controls"));
+
+      // cSld-tail extLst (p14:creationId's home) — verbatim, distinct from
+      // the root-level extLst read below (two separate XSD slots).
+      const cSldExtLst = findChild(cSld, "p:extLst");
+      if (cSldExtLst) {
+        const inner = stringifyXml(cSldExtLst);
+        if (inner) result.cSldExt = inner;
+      }
     }
 
     // EG_TopLevelSlide — p:clrMap (required).

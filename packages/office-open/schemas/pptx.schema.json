@@ -1466,6 +1466,10 @@
           "description": "MIME content type of the linked audio (CT_AudioFile `@contentType`)",
           "type": "string"
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "data": {
           "$ref": "#/definitions/DataType",
           "description": "Audio bytes — required for file-based audio, omitted for CD audio"
@@ -2221,6 +2225,10 @@
           "description": "Pie slice explosion offset in percent (c:explosion).",
           "type": "number"
         },
+        "ext": {
+          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "type": "string"
+        },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
@@ -2756,6 +2764,10 @@
           },
           "type": "object"
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "customSplitPoints": {
           "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
           "items": {
@@ -2910,6 +2922,10 @@
         "markers": {
           "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",
           "type": "boolean"
+        },
+        "modId": {
+          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
+          "type": "string"
         },
         "multiLevelCategories": {
           "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
@@ -3262,6 +3278,10 @@
         "explosion": {
           "description": "Pie slice explosion offset in percent (c:explosion).",
           "type": "number"
+        },
+        "ext": {
+          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "type": "string"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
@@ -3889,6 +3909,10 @@
       "additionalProperties": false,
       "description": "Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint connection fields come from  {@link  BaseConnectorOptions } ; the rest is the pptx two-endpoint positioning model plus line fill/outline.",
       "properties": {
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -4322,8 +4346,16 @@
           "type": "number"
         },
         "layout": {
-          "$ref": "#/definitions/ManualLayoutOptions",
-          "description": "Manual label placement (c:layout > c:manualLayout, before EG_DLblShared)."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            },
+            {
+              "const": true,
+              "type": "boolean"
+            }
+          ],
+          "description": "Manual label placement (c:layout > c:manualLayout, before EG_DLblShared). true = the bare `<c:layout/>` form sources carry."
         },
         "numberFormat": {
           "description": "Number format override (c:numFmt inside EG_DLblShared).",
@@ -4356,6 +4388,10 @@
         },
         "showVal": {
           "type": "boolean"
+        },
+        "text": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Custom label text (c:tx > c:rich) — replaces the auto-generated value label with authored rich text."
         },
         "textProperties": {
           "$ref": "#/definitions/TextBodyOptions",
@@ -5774,6 +5810,10 @@
           },
           "type": "array"
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -6111,6 +6151,10 @@
         },
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
+        },
+        "cSldExt": {
+          "description": "Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail — where p14:creationId lives) — verbatim round-trip.",
+          "type": "string"
         },
         "children": {
           "items": {
@@ -6643,6 +6687,10 @@
     "LineShapeOptions": {
       "additionalProperties": false,
       "properties": {
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -6760,6 +6808,10 @@
           },
           "type": "array"
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -6799,6 +6851,10 @@
             }
           ],
           "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+        },
+        "modId": {
+          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
+          "type": "string"
         },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
@@ -7089,6 +7145,10 @@
         },
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
+        },
+        "cSldExt": {
+          "description": "Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail — where p14:creationId lives) — verbatim round-trip.",
+          "type": "string"
         },
         "children": {
           "items": {
@@ -7529,6 +7589,10 @@
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
         },
+        "cSldExt": {
+          "description": "Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail — where p14:creationId lives) — verbatim round-trip.",
+          "type": "string"
+        },
         "children": {
           "description": "Shape-tree children (structured). When set, the structured path is used.",
           "items": {
@@ -7657,6 +7721,10 @@
       "additionalProperties": false,
       "description": "OLE Object frame options for pptx slides (p:graphicFrame with p:oleObj). The cNvPr fields (name/description/title/hidden) come from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.",
       "properties": {
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -7716,6 +7784,10 @@
             }
           ],
           "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+        },
+        "modId": {
+          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
+          "type": "string"
         },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
@@ -8368,6 +8440,10 @@
           "$ref": "#/definitions/BlipEffectsOptions",
           "description": "Blip color effects (a:lum, a:duotone, … children of a:blip)."
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "data": {
           "$ref": "#/definitions/DataType",
           "description": "Image binary (base64 string, data URL, or Uint8Array)."
@@ -8383,6 +8459,18 @@
         "fill": {
           "$ref": "#/definitions/FillOptions",
           "description": "Fill on p:spPr (a:noFill on cropped pictures is common)."
+        },
+        "fillRectangle": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SourceRectangleOptions"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Fill rectangle inside the blip fill's a:stretch: undefined emits the standard empty `<a:fillRect/>`, false the bare `<a:stretch/>` some writers produce, an object carries inset percents."
         },
         "flipHorizontal": {
           "description": "Flip horizontally (a:xfrm `@flipH`).",
@@ -8429,6 +8517,10 @@
         "locking": {
           "$ref": "#/definitions/PictureLockingOptions",
           "description": "Picture locks (a:picLocks inside p:cNvPicPr)."
+        },
+        "modId": {
+          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
+          "type": "string"
         },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
@@ -8482,6 +8574,10 @@
           "description": "Image format. Loose string here; each package narrows to its supported union.",
           "enum": ["png", "jpg", "gif", "bmp", "emf", "wmf"],
           "type": "string"
+        },
+        "useLocalDpi": {
+          "description": "Local-DPI display hint (a14:useLocalDpi in the a:blip extension list).",
+          "type": "boolean"
         },
         "userDrawn": {
           "description": "p:nvPr `@userDrawn`.",
@@ -8934,7 +9030,7 @@
           "description": "The source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the plaintext needs the password, so the original bytes are carried verbatim and generate() re-emits them unchanged — every other field stays empty. Mixing slides is rejected — it would be silently dropped."
         },
         "ext": {
-          "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions).",
+          "description": "Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside the modeled sectionLst extension (e.g. p15:sldGuideLst slide guides) — verbatim round-trip. Same slot naming as SlideOptions.ext.",
           "type": "string"
         },
         "firstSlideNum": {
@@ -9016,6 +9112,10 @@
         },
         "photoAlbum": {
           "$ref": "#/definitions/PhotoAlbumOptions"
+        },
+        "presentationPropertiesExt": {
+          "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions).",
+          "type": "string"
         },
         "print": {
           "$ref": "#/definitions/PrintPropertiesOptions"
@@ -9966,6 +10066,10 @@
           "$ref": "#/definitions/BlackWhiteMode",
           "description": "`@bwMode` (ST_BlackWhiteMode) on `p:spPr` — how the shape renders in black-and-white view/print."
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
         },
@@ -10644,6 +10748,10 @@
         "background": {
           "$ref": "#/definitions/BackgroundOptions"
         },
+        "cSldExt": {
+          "description": "Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail — where p14:creationId lives) — verbatim round-trip.",
+          "type": "string"
+        },
         "children": {
           "items": {
             "$ref": "#/definitions/SlideChild"
@@ -10809,6 +10917,10 @@
           ],
           "description": "Built-in color transform ID (\"accent1_2\") or a custom color definition."
         },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
@@ -10859,6 +10971,10 @@
             }
           ],
           "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+        },
+        "modId": {
+          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
+          "type": "string"
         },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
@@ -11452,6 +11568,13 @@
           },
           "type": "object"
         },
+        "columnIds": {
+          "description": "Office 2014 column stamps (a16:colId per a:gridCol extension list), parallel to  {@link  BaseTableOptions.columnWidths }  — round-trip.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "columnWidths": {
           "description": "Column widths. `number` is the package's native unit (docx twip, pptx EMU); `PositiveUniversalMeasure` is consistent across packages. Cross-format conversion translates the native unit.",
           "items": {
@@ -11465,6 +11588,10 @@
             ]
           },
           "type": "array"
+        },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -11518,6 +11645,10 @@
             }
           ],
           "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+        },
+        "modId": {
+          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
+          "type": "string"
         },
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
@@ -11630,6 +11761,10 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ]
+        },
+        "rowId": {
+          "description": "Office 2014 row stamp (a16:rowId in the a:tr extension list) — round-trip.",
+          "type": "string"
         }
       },
       "required": ["cells"],
@@ -12891,6 +13026,10 @@
       "properties": {
         "contentType": {
           "description": "MIME content type of the linked video (CT_VideoFile `@contentType`)",
+          "type": "string"
+        },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
           "type": "string"
         },
         "data": {

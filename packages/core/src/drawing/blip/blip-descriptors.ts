@@ -6,7 +6,7 @@
 
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild } from "@office-open/xml";
+import { findChild, attr } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
@@ -331,7 +331,20 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
 
 // ── Blip descriptor (a:blip) ──
 
-export const blipDesc: CustomDescriptor<BlipOptions & { blipEffects?: BlipEffectsOptions }> = {
+/** The a14:useLocalDpi extension uri (CT_Blip extLst). */
+const USE_LOCAL_DPI_EXT_URI = "{28A0092B-C50C-407E-A947-70E740481C1C}";
+
+/** Input shape of blipDesc — BlipOptions plus round-trip-only blip content. */
+export type BlipDescriptorOptions = BlipOptions & {
+  blipEffects?: BlipEffectsOptions;
+  /**
+   * a14:useLocalDpi from the blip extension list — Office's local-DPI display
+   * hint, the dominant non-SVG a:blip ext content.
+   */
+  useLocalDpi?: boolean;
+};
+
+export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
   kind: "custom",
   stringify(opts, ctx) {
     const attrParts: string[] = [];
@@ -344,13 +357,18 @@ export const blipDesc: CustomDescriptor<BlipOptions & { blipEffects?: BlipEffect
     if (opts.blipEffects) {
       parts.push(stringifyBlipEffects(opts.blipEffects, ctx));
     }
+    if (opts.useLocalDpi !== undefined) {
+      parts.push(
+        `<a:extLst><a:ext uri="${USE_LOCAL_DPI_EXT_URI}"><a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" val="${opts.useLocalDpi ? 1 : 0}"/></a:ext></a:extLst>`,
+      );
+    }
 
     const content = parts.join("");
     if (!content) return `<a:blip${attrStr}/>`;
     return `<a:blip${attrStr}>${content}</a:blip>`;
   },
   parse(el, ctx) {
-    const result: Partial<BlipOptions & { blipEffects?: BlipEffectsOptions }> = {};
+    const result: Partial<BlipDescriptorOptions> = {};
     const embed = el.attributes?.["r:embed"];
     if (embed !== undefined) {
       // Strip { and } wrapper if present
@@ -362,7 +380,16 @@ export const blipDesc: CustomDescriptor<BlipOptions & { blipEffects?: BlipEffect
     }
     const effects = readBlipEffects(el, ctx);
     if (effects) result.blipEffects = effects;
-    return result as BlipOptions & { blipEffects?: BlipEffectsOptions };
+    const extLst = findChild(el, "a:extLst");
+    if (extLst) {
+      for (const ext of extLst.elements ?? []) {
+        if (ext.name !== "a:ext" || attr(ext, "uri") !== USE_LOCAL_DPI_EXT_URI) continue;
+        const useLocalDpi = findChild(ext, "a14:useLocalDpi");
+        if (useLocalDpi !== undefined)
+          result.useLocalDpi = parseOnOff(attr(useLocalDpi, "val")) ?? true;
+      }
+    }
+    return result as BlipDescriptorOptions;
   },
 };
 
