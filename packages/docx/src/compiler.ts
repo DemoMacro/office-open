@@ -289,7 +289,6 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     return bodyCtx;
   };
 
-  const documentRelationshipCount = ctx.document.relationships.relationshipCount + 1;
   // Per-part media-replacement results shared between the .rels pass and the
   // body-XML pass so both use identical rId offsets. Each header/footer part
   // has its own relationship numbering (independent of the document part).
@@ -308,6 +307,10 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   >();
   const docCtx = mkCtx(ctx.document);
   const documentXmlData = XML_DECL + stringifyDocumentXml(ctx, docCtx);
+  // Sampled after stringify: hyperlinks/altChunks registered during body
+  // stringification take sequential ids here, and the media/embedding offsets
+  // below must skip them (same ordering as the footnote part).
+  const documentRelationshipCount = ctx.document.relationships.relationshipCount + 1;
 
   // Comments is an optional part — skip it entirely (no comments.xml, no
   // comments rels, no [Content_Types] Override) when the document carries none.
@@ -315,13 +318,14 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   // violation that makes Word reject the package on open.
   const mergedCommentChildrenList = mergedCommentChildren(ctx);
   const hasComments = mergedCommentChildrenList.length > 0;
-  const commentRelationshipCount = hasComments
-    ? ctx.comments.relationships.relationshipCount + 1
-    : 0;
   const commentCtx = hasComments ? mkCtx({ relationships: ctx.comments.relationships }) : null;
   const commentXmlData = commentCtx
     ? XML_DECL + commentsDesc.stringify(mergedCommentChildrenList, commentCtx)
     : "";
+  // Sampled after stringify, like the document and footnote counts above.
+  const commentRelationshipCount = hasComments
+    ? ctx.comments.relationships.relationshipCount + 1
+    : 0;
 
   const footnoteCtx = mkCtx({
     relationships: ctx.footNotes.relationships,

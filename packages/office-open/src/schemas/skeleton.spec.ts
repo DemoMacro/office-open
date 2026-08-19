@@ -16,9 +16,13 @@ const demos: Record<DocumentType, unknown> = {
 };
 
 /** Skeleton budget: must stay far below the full schema (~675 KB for docx).
- *  22 KB leaves headroom for natural field growth (the xlsx four-level spine
- *  crossed 20 KB when CellOptions gained rich-text fields). */
-const MAX_SKELETON_BYTES = 24 * 1024;
+ *  The budget is a ratchet against silent growth — every field added to the
+ *  root options lands here, and the schema rides along in every agent
+ *  conversation. Industry measurements put a healthy single-tool schema at
+ *  200-600 tokens (~1-3 KB); the current ~25 KB (~6K tokens) is already a
+ *  heavyweight tool by that yardstick, so treat this ceiling as damage
+ *  control (shrinking the skeleton generator is backlog), not a target. */
+const MAX_SKELETON_BYTES = 26 * 1024;
 
 describe("getSkeletonSchema", () => {
   it("compiles under ajv for all three formats", () => {

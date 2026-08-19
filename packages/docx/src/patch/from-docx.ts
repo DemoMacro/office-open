@@ -49,6 +49,14 @@ const COMMENTS_REL_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
 const COMMENTS_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml";
+const HYPERLINK_REL_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+/**
+ * Rendered hyperlink ids start here so they can never collide with the real
+ * rIdN ids of the part's relationships — including the media entries the
+ * flush appends before hyperlinks. Rewritten on allocation (see flush).
+ */
+const HYPERLINK_TEMP_ID_BASE = 9_000_000;
 
 /** A comment injected by patch — same as CommentOptions but without an id
  *  (the patch assigns continuation ids). */
@@ -85,10 +93,11 @@ function createPatchContext(
     file: file as unknown as BodyContext["file"],
     viewWrapper: {
       relationships: {
-        // Sequential ids, mirroring Relationships.add. The bare number is
-        // stored — appendRelationship adds the rId prefix when flushing.
+        // Temporary ids far above any real rIdN a part can carry — the
+        // rendered r:id is rewritten to the allocated id when the
+        // relationships flush (media first, hyperlinks after) appends them.
         add: (_type: string, target: string) => {
-          const id = hyperlinkSink.length + 1;
+          const id = HYPERLINK_TEMP_ID_BASE + hyperlinkSink.length + 1;
           hyperlinkSink.push({ id: String(id), link: target });
           return id;
         },
@@ -587,7 +596,9 @@ export const patchDocument = async <T extends OutputType = OutputType>({
     // The cached snapshot predates the comments merge — re-serialize that one
     // part so the merge survives the placeholder rewrite.
     const sourceXml = key === "word/comments.xml" ? JSON.stringify(map.get(key)) : xml;
-    const newJson = replaceImagePlaceholders(sourceXml, mediaDatas, index, "plain");
+    // "rId" format — appendRelationship writes Id="rIdN", and the rendered
+    // r:embed must match it verbatim ("plain" left a dangling bare-number id).
+    const newJson = replaceImagePlaceholders(sourceXml, mediaDatas, index, "rId");
     map.set(key, JSON.parse(newJson) as Element);
 
     for (const [i, media] of mediaDatas.entries()) {
@@ -601,19 +612,37 @@ export const patchDocument = async <T extends OutputType = OutputType>({
     }
   }
 
-  for (const { key, hyperlink } of hyperlinkRelationshipAdditions) {
-    const relationshipKey = `word/_rels/${key.split("/").pop()}.rels`;
+  // Hyperlink relationships append after media (which already claimed ids via
+  // getNextRelationshipIndex above), so allocate the same way — then rewrite
+  // the rendered temporary rId9000001-style ids to the allocated ones.
+  const hyperlinksByPart = new Map<string, HyperlinkRelationshipAddition[]>();
+  for (const addition of hyperlinkRelationshipAdditions) {
+    const relationshipKey = `word/_rels/${addition.key.split("/").pop()}.rels`;
+    const group = hyperlinksByPart.get(relationshipKey);
+    if (group) group.push(addition);
+    else hyperlinksByPart.set(relationshipKey, [addition]);
+  }
 
+  for (const [relationshipKey, additions] of hyperlinksByPart) {
     const relationshipsJson = map.get(relationshipKey) ?? createRelationshipFile();
     map.set(relationshipKey, relationshipsJson);
 
-    appendRelationship(
-      relationshipsJson,
-      hyperlink.id,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-      hyperlink.link,
-      TargetModeType.EXTERNAL,
-    );
+    // Part path ↔ its rels path differ only in the _rels/ + .rels suffix;
+    // the addition group shares the key, so rewrite once per part.
+    const partKey = additions[0]!.key;
+    let partJson = JSON.stringify(map.get(partKey) as Element);
+    for (const { hyperlink } of additions) {
+      const id = getNextRelationshipIndex(relationshipsJson);
+      appendRelationship(
+        relationshipsJson,
+        id,
+        HYPERLINK_REL_TYPE,
+        hyperlink.link,
+        TargetModeType.EXTERNAL,
+      );
+      partJson = partJson.replaceAll(`"r:id":"rId${hyperlink.id}"`, `"r:id":"rId${id}"`);
+    }
+    map.set(partKey, JSON.parse(partJson) as Element);
   }
 
   if (hasMedia) {
