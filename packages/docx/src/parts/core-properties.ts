@@ -62,7 +62,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * The source file is an encrypted OOXML package (OLE2/CFB container).
    * Round-trip only: the plaintext needs the password, so the original bytes
    * are carried verbatim and generate() re-emits them unchanged — every
-   * other field stays empty.
+   * other field stays empty (`sections: []`). Mixing real content is
+   * rejected — it would be silently dropped.
    */
   encrypted?: EncryptedContainerOptions;
   styles?: StylesOptions;

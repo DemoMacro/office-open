@@ -5,7 +5,11 @@
  */
 
 import { createPacker, OoxmlMimeType } from "@office-open/core";
-import { encryptedContainerOutput, encryptedContainerStream } from "@office-open/core";
+import {
+  assertEncryptedExclusive,
+  encryptedContainerOutput,
+  encryptedContainerStream,
+} from "@office-open/core";
 import type { OutputByType, OutputType, PackerOptions } from "@office-open/core";
 import type { PresentationOptions } from "@shared/file";
 
@@ -16,6 +20,18 @@ const Packer = createPacker<PresentationOptions>({
   compile: (options, overrides, mediaLevel) => compilePresentation(options, overrides, mediaLevel),
   mimeType: OoxmlMimeType.PPTX,
 });
+
+/**
+ * Re-emit the verbatim encrypted-container bytes, or `undefined` to compile.
+ * Mixed content is rejected up front — compiling would silently drop it.
+ */
+function encryptedPassthrough<T extends OutputType>(
+  options: PresentationOptions,
+  type: T,
+): OutputByType[T] | undefined {
+  assertEncryptedExclusive(options, (options.slides?.length ?? 0) > 0);
+  return encryptedContainerOutput(options, type, OoxmlMimeType.PPTX);
+}
 
 /**
  * Generate a PPTX file from pure JSON options.
@@ -39,11 +55,7 @@ export function generatePresentation<T extends OutputType = "nodebuffer">(
   options: PresentationOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
-  const encrypted = encryptedContainerOutput(
-    options,
-    packerOptions?.type ?? "nodebuffer",
-    OoxmlMimeType.PPTX,
-  );
+  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
   if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
   return Packer.pack(options, packerOptions) as Promise<OutputByType[T]>;
 }
@@ -55,11 +67,7 @@ export function generatePresentationSync<T extends OutputType = "nodebuffer">(
   options: PresentationOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
-  const encrypted = encryptedContainerOutput(
-    options,
-    packerOptions?.type ?? "nodebuffer",
-    OoxmlMimeType.PPTX,
-  );
+  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
   if (encrypted) return encrypted as OutputByType[T];
   return Packer.packSync(options, packerOptions) as OutputByType[T];
 }
@@ -71,6 +79,7 @@ export function generatePresentationStream(
   options: PresentationOptions,
   packerOptions?: PackerOptions,
 ): ReadableStream<Uint8Array> {
+  assertEncryptedExclusive(options, (options.slides?.length ?? 0) > 0);
   const encrypted = encryptedContainerStream(options);
   if (encrypted) return encrypted;
   return Packer.toStream(options, packerOptions);

@@ -62,3 +62,21 @@ export function encryptedContainerStream(file: {
     },
   });
 }
+
+/**
+ * Reject encrypted passthrough mixed with real content: generate() re-emits
+ * the encrypted bytes, so every other field would be silently dropped.
+ *
+ * `hasContent` is the package's primary content collection being non-empty
+ * (e.g. `sections.length > 0`) — callers know their own shape.
+ */
+export function assertEncryptedExclusive(
+  file: { encrypted?: EncryptedContainerOptions },
+  hasContent: boolean,
+): void {
+  if (file.encrypted && hasContent) {
+    throw new Error(
+      "Encrypted passthrough carries no editable content — clear the content fields or drop `encrypted`.",
+    );
+  }
+}

@@ -5,7 +5,11 @@
  */
 
 import { createPacker, OoxmlMimeType } from "@office-open/core";
-import { encryptedContainerOutput, encryptedContainerStream } from "@office-open/core";
+import {
+  assertEncryptedExclusive,
+  encryptedContainerOutput,
+  encryptedContainerStream,
+} from "@office-open/core";
 import type { OutputByType, OutputType, PackerOptions } from "@office-open/core";
 import type { WorkbookOptions } from "@parts/file";
 
@@ -17,6 +21,27 @@ const Packer = createPacker<WorkbookOptions>({
   compile: (options, overrides, mediaLevel) => compileWorkbook(options, overrides, mediaLevel),
   mimeType: OoxmlMimeType.XLSX,
 });
+
+/** Whether any sheet collection carries content (encrypted passthrough must be exclusive). */
+function hasSheetContent(options: WorkbookOptions): boolean {
+  return (
+    (options.worksheets?.length ?? 0) > 0 ||
+    (options.chartsheets?.length ?? 0) > 0 ||
+    (options.dialogsheets?.length ?? 0) > 0
+  );
+}
+
+/**
+ * Re-emit the verbatim encrypted-container bytes, or `undefined` to compile.
+ * Mixed content is rejected up front — compiling would silently drop it.
+ */
+function encryptedPassthrough<T extends OutputType>(
+  options: WorkbookOptions,
+  type: T,
+): OutputByType[T] | undefined {
+  assertEncryptedExclusive(options, hasSheetContent(options));
+  return encryptedContainerOutput(options, type, OoxmlMimeType.XLSX);
+}
 
 /**
  * Generate an XLSX file from pure JSON options.
@@ -40,11 +65,7 @@ export function generateWorkbook<T extends OutputType = "nodebuffer">(
   options: WorkbookOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
-  const encrypted = encryptedContainerOutput(
-    options,
-    packerOptions?.type ?? "nodebuffer",
-    OoxmlMimeType.XLSX,
-  );
+  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
   if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
   return Packer.pack(options, packerOptions) as Promise<OutputByType[T]>;
 }
@@ -56,11 +77,7 @@ export function generateWorkbookSync<T extends OutputType = "nodebuffer">(
   options: WorkbookOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
-  const encrypted = encryptedContainerOutput(
-    options,
-    packerOptions?.type ?? "nodebuffer",
-    OoxmlMimeType.XLSX,
-  );
+  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
   if (encrypted) return encrypted as OutputByType[T];
   return Packer.packSync(options, packerOptions) as OutputByType[T];
 }
@@ -78,6 +95,7 @@ export function generateWorkbookStream(
   options: WorkbookOptions,
   packerOptions?: PackerOptions,
 ): ReadableStream<Uint8Array> {
+  assertEncryptedExclusive(options, hasSheetContent(options));
   const encrypted = encryptedContainerStream(options);
   if (encrypted) return encrypted;
   if (!canStreamWorkbook(options)) {

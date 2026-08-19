@@ -44,6 +44,7 @@ export { convertOutput, OoxmlMimeType, type OutputByType, type OutputType } from
 
 // Encrypted OOXML container passthrough
 export {
+  assertEncryptedExclusive,
   encryptedContainerOutput,
   encryptedContainerStream,
   isEncryptedContainer,

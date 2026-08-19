@@ -5,7 +5,11 @@
  */
 
 import { createPacker, OoxmlMimeType } from "@office-open/core";
-import { encryptedContainerOutput, encryptedContainerStream } from "@office-open/core";
+import {
+  assertEncryptedExclusive,
+  encryptedContainerOutput,
+  encryptedContainerStream,
+} from "@office-open/core";
 import type { OutputByType, OutputType, PackerOptions } from "@office-open/core";
 import type { DocumentOptions } from "@parts/core-properties";
 
@@ -16,6 +20,18 @@ const Packer = createPacker<DocumentOptions>({
   compile: (options, overrides, mediaLevel) => compileDocument(options, overrides, mediaLevel),
   mimeType: OoxmlMimeType.DOCX,
 });
+
+/**
+ * Re-emit the verbatim encrypted-container bytes, or `undefined` to compile.
+ * Mixed content is rejected up front — compiling would silently drop it.
+ */
+function encryptedPassthrough<T extends OutputType>(
+  options: DocumentOptions,
+  type: T,
+): OutputByType[T] | undefined {
+  assertEncryptedExclusive(options, options.sections.length > 0);
+  return encryptedContainerOutput(options, type, OoxmlMimeType.DOCX);
+}
 
 /**
  * Generate a DOCX file from pure JSON options.
@@ -39,11 +55,7 @@ export function generateDocument<T extends OutputType = "nodebuffer">(
   options: DocumentOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
-  const encrypted = encryptedContainerOutput(
-    options,
-    packerOptions?.type ?? "nodebuffer",
-    OoxmlMimeType.DOCX,
-  );
+  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
   if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
   return Packer.pack(options, packerOptions) as Promise<OutputByType[T]>;
 }
@@ -55,11 +67,7 @@ export function generateDocumentSync<T extends OutputType = "nodebuffer">(
   options: DocumentOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
-  const encrypted = encryptedContainerOutput(
-    options,
-    packerOptions?.type ?? "nodebuffer",
-    OoxmlMimeType.DOCX,
-  );
+  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
   if (encrypted) return encrypted as OutputByType[T];
   return Packer.packSync(options, packerOptions) as OutputByType[T];
 }
@@ -71,6 +79,7 @@ export function generateDocumentStream(
   options: DocumentOptions,
   packerOptions?: PackerOptions,
 ): ReadableStream<Uint8Array> {
+  assertEncryptedExclusive(options, options.sections.length > 0);
   const encrypted = encryptedContainerStream(options);
   if (encrypted) return encrypted;
   return Packer.toStream(options, packerOptions);

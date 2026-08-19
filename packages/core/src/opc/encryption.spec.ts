@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  assertEncryptedExclusive,
   encryptedContainerOutput,
   encryptedContainerStream,
   isEncryptedContainer,
@@ -40,6 +41,19 @@ describe("encryptedContainerOutput", () => {
 
   it("returns undefined without an encrypted payload", () => {
     expect(encryptedContainerOutput({}, "uint8array", OoxmlMimeType.DOCX)).toBeUndefined();
+  });
+});
+
+describe("assertEncryptedExclusive", () => {
+  it("rejects encrypted passthrough mixed with real content", () => {
+    expect(() => assertEncryptedExclusive({ encrypted: { data: CFB_BYTES } }, true)).toThrow(
+      /Encrypted passthrough/,
+    );
+  });
+
+  it("allows the empty passthrough shape and normal files", () => {
+    expect(() => assertEncryptedExclusive({ encrypted: { data: CFB_BYTES } }, false)).not.toThrow();
+    expect(() => assertEncryptedExclusive({}, true)).not.toThrow();
   });
 });
 
