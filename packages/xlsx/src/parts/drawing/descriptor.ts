@@ -63,7 +63,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       contentParts.length;
     if (total === 0) return undefined;
 
-    const p: string[] = [`<wsDr xmlns="${XDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">`];
+    const p: string[] = [`<xdr:wsDr xmlns:xdr="${XDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">`];
     let id = 1;
 
     for (const img of images) {
@@ -92,7 +92,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       id++;
     }
 
-    p.push("</wsDr>");
+    p.push("</xdr:wsDr>");
     return p.join("");
   },
 
@@ -116,13 +116,13 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
 
       const pic = findXdr(anchor, "pic");
       if (pic) {
-        images.push(parseImageAnchor(anchor, pic, name));
+        images.push(parseImageAnchor(anchor, pic, name, ctx));
         continue;
       }
 
       const graphicFrame = findXdr(anchor, "graphicFrame");
       if (graphicFrame) {
-        const chart = parseChartAnchor(anchor, graphicFrame, name);
+        const chart = parseChartAnchor(anchor, graphicFrame, name, ctx);
         if (chart) charts.push(chart);
         continue;
       }

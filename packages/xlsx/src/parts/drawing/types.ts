@@ -9,11 +9,17 @@
 
 import type { BaseConnectorOptions, BaseGroupOptions, UniversalMeasure } from "@office-open/core";
 import type {
+  BlackWhiteMode,
+  BlipEffectsOptions,
+  GraphicFrameLockingOptions,
   GroupTransform2DOptions,
   NonVisualDrawingPropertiesOptions,
+  PictureLockingOptions,
   ShapePropertiesOptions,
+  SourceRectangleOptions,
   TextBodyOptions,
 } from "@office-open/core/drawing";
+import type { DefaultShapeStyleOptions } from "@office-open/core/theme";
 
 // ── Types (used by compiler) ──
 
@@ -110,12 +116,35 @@ export interface DrawingPictureOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the image */
   rId: string;
+  /**
+   * Round-tripped pic/spPr — carries rotation/flip/bwMode/fill that the
+   * position-only default emission would drop. When absent, stringify emits
+   * the standard xfrm + rect geometry.
+   */
+  spPr?: ShapePropertiesOptions;
+  /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
+  sourceRectangle?: SourceRectangleOptions;
+  /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
+  blackWhiteMode?: BlackWhiteMode;
+  /** Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
+  locking?: PictureLockingOptions;
+  /**
+   * Relative-resize hint (cNvPicPr/@preferRelativeResize). Absent = attribute
+   * omitted (defaults true); explicit true/false round-trips the attribute.
+   */
+  preferRelativeResize?: boolean;
+  /** Image adjustment effects carried inside a:blip (a:lum, a:duotone, …). */
+  blipEffects?: BlipEffectsOptions;
 }
 
 export interface DrawingChartOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the chart */
   rId: string;
+  /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
+  frameLocks?: GraphicFrameLockingOptions;
+  /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
+  macro?: string;
 }
 
 /** Anchored shape (xdr:sp): geometry + optional text body. */
@@ -124,6 +153,8 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
   spPr: ShapePropertiesOptions;
   /** Text body (a:CT_TextBody). */
   textBody?: TextBodyOptions;
+  /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
+  style?: DefaultShapeStyleOptions;
   /** macro attribute (CT_Shape). */
   macro?: string;
   /** textlink attribute (CT_Shape). */

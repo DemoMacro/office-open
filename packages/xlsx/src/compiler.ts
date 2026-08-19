@@ -542,7 +542,8 @@ function compileWorksheetPart(
 
     // Process images
     for (const img of imgOpts) {
-      const ext = img.type === "jpg" ? "jpeg" : "png";
+      // Media-store extension (jpg → jpeg); vector formats pass through.
+      const ext = img.type === "jpg" ? "jpeg" : img.type;
       const rawBytes = toUint8Array(img.data, { encoding: "base64" });
       const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
         fileName,
@@ -562,6 +563,14 @@ function compileWorksheetPart(
         ...pickAnchorOptions(img),
         rId: `rId${rid}`,
         ...pickNonVisualDrawingProperties(img),
+        ...(img.spPr ? { spPr: img.spPr } : {}),
+        ...(img.blackWhiteMode ? { blackWhiteMode: img.blackWhiteMode } : {}),
+        ...(img.sourceRectangle ? { sourceRectangle: img.sourceRectangle } : {}),
+        ...(img.preferRelativeResize !== undefined
+          ? { preferRelativeResize: img.preferRelativeResize }
+          : {}),
+        ...(img.blipEffects ? { blipEffects: img.blipEffects } : {}),
+        ...(img.locking ? { locking: img.locking } : {}),
       });
       rid++;
       state.globalMediaIdx++;
@@ -588,6 +597,8 @@ function compileWorksheetPart(
         ...pickAnchorOptions(chart),
         ...chartCnvPr,
         rId: `rId${rid}`,
+        ...(chart.frameLocks ? { frameLocks: chart.frameLocks } : {}),
+        ...(chart.macro !== undefined ? { macro: chart.macro } : {}),
       });
       rid++;
       state.globalChartIdx++;
@@ -959,7 +970,10 @@ function compileChartsheets(
     // Minimal drawing XML with chart anchor — reuses the parts/drawing anchor
     // and graphicFrame builders (no hand-rolled xdr emitter). A chartsheet
     // chart fills the sheet: absolute anchor at origin with the full-page frame.
-    const frame = graphicFrameXml(1, undefined, `Chart ${i + 1}`, "rId1", 9308969, 6096000);
+    const frame = graphicFrameXml(1, undefined, `Chart ${i + 1}`, "rId1", 9308969, 6096000, ctx, {
+      frameLocks: csOpts.frameLocks,
+      macro: csOpts.macro,
+    });
     const anchor = wrapAnchor(
       {
         anchorType: "absolute",
@@ -970,9 +984,9 @@ function compileChartsheets(
         extentCx: 9308969,
         extentCy: 6096000,
       },
-      `${frame}<clientData/>`,
+      `${frame}<xdr:clientData/>`,
     );
-    const csDrawingXml = `<wsDr xmlns="${XDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">${anchor}</wsDr>`;
+    const csDrawingXml = `<xdr:wsDr xmlns:xdr="${XDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">${anchor}</xdr:wsDr>`;
 
     mapping[`ChartsheetDrawing${i}`] = {
       data: csDrawingXml,

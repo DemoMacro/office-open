@@ -638,6 +638,23 @@
       "required": ["threshold"],
       "type": "object"
     },
+    "BlackWhiteMode": {
+      "description": "ST_BlackWhiteMode — the 11 token values for the `@bwMode` attribute.",
+      "enum": [
+        "clr",
+        "auto",
+        "gray",
+        "ltGray",
+        "invGray",
+        "grayWhite",
+        "blackGray",
+        "blackWhite",
+        "black",
+        "white",
+        "hidden"
+      ],
+      "type": "string"
+    },
     "BlendEffectOptions": {
       "additionalProperties": false,
       "description": "Blend effect — blends with nested container (CT_BlendEffect).",
@@ -2451,9 +2468,17 @@
           "description": "VBA code name (CT_ChartsheetPr `@codeName`)",
           "type": "string"
         },
+        "frameLocks": {
+          "$ref": "#/definitions/GraphicFrameLockingOptions",
+          "description": "Frame locks on the chart's graphicFrame (a:graphicFrameLocks)."
+        },
         "headerFooter": {
           "$ref": "#/definitions/HeaderFooterOptions",
           "description": "Header/footer"
+        },
+        "macro": {
+          "description": "Macro reference on the chart's graphicFrame (CT_GraphicFrame/@macro).",
+          "type": "string"
         },
         "name": {
           "description": "Sheet name",
@@ -6139,6 +6164,30 @@
       "required": ["position", "color"],
       "type": "object"
     },
+    "GraphicFrameLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noChangeAspect": {
+          "type": "boolean"
+        },
+        "noDrilldown": {
+          "type": "boolean"
+        },
+        "noGrp": {
+          "type": "boolean"
+        },
+        "noMove": {
+          "type": "boolean"
+        },
+        "noResize": {
+          "type": "boolean"
+        },
+        "noSelect": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "GroupConnectorChildOptions": {
       "additionalProperties": false,
       "description": "Connector nested inside a group (no anchor).",
@@ -8492,6 +8541,56 @@
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
     },
+    "PictureLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noAdjustHandles": {
+          "description": "Prevent adjust handles",
+          "type": "boolean"
+        },
+        "noChangeArrowheads": {
+          "description": "Prevent changing arrowheads",
+          "type": "boolean"
+        },
+        "noChangeAspect": {
+          "description": "Prevent aspect ratio change",
+          "type": "boolean"
+        },
+        "noChangeShapeType": {
+          "description": "Prevent changing shape type",
+          "type": "boolean"
+        },
+        "noCrop": {
+          "description": "Prevent cropping",
+          "type": "boolean"
+        },
+        "noEditPoints": {
+          "description": "Prevent edit points",
+          "type": "boolean"
+        },
+        "noGrp": {
+          "description": "Prevent grouping",
+          "type": "boolean"
+        },
+        "noMove": {
+          "description": "Prevent moving",
+          "type": "boolean"
+        },
+        "noResize": {
+          "description": "Prevent resizing",
+          "type": "boolean"
+        },
+        "noRot": {
+          "description": "Prevent rotation",
+          "type": "boolean"
+        },
+        "noSelect": {
+          "description": "Prevent selection",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "PictureOptions": {
       "additionalProperties": false,
       "description": "Picture anchored to a worksheet cell.\n\nExtends the cross-format  {@link  BasePictureOptions }  (binary data + non-visual drawing properties) with the full spreadsheet-drawing anchor  {@link  DrawingAnchorOptions }  (1-based from/to cell corners, anchor type, extent). The base cNvPr fields (name/description/title/hidden) flow through to the drawing's cNvPr.",
@@ -8521,6 +8620,14 @@
         "anchorType": {
           "$ref": "#/definitions/AnchorType",
           "description": "Anchor type (default \"twoCell\")."
+        },
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+        },
+        "blipEffects": {
+          "$ref": "#/definitions/BlipEffectsOptions",
+          "description": "Image adjustment effects carried inside a:blip (a:lum, a:duotone, …)."
         },
         "col": {
           "description": "1-based column (from marker)",
@@ -8575,6 +8682,10 @@
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
         },
+        "locking": {
+          "$ref": "#/definitions/PictureLockingOptions",
+          "description": "Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr."
+        },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
           "type": "boolean"
@@ -8582,6 +8693,10 @@
         "name": {
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
+        },
+        "preferRelativeResize": {
+          "description": "Relative-resize hint (cNvPicPr/@preferRelativeResize). Absent = attribute omitted (defaults true); explicit true/false round-trips the attribute.",
+          "type": "boolean"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -8601,6 +8716,14 @@
             }
           ],
           "description": "Row offset in EMU (default 0)"
+        },
+        "sourceRectangle": {
+          "$ref": "#/definitions/SourceRectangleOptions",
+          "description": "Blip crop (a:srcRect); an empty object round-trips the bare marker."
+        },
+        "spPr": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position)."
         },
         "title": {
           "description": "XSD `@title`.",
@@ -8637,7 +8760,7 @@
           "description": "To cell row offset in EMU."
         },
         "type": {
-          "enum": ["png", "jpg"],
+          "enum": ["png", "jpg", "wmf", "emf"],
           "type": "string"
         }
       },
@@ -12167,6 +12290,10 @@
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Shape properties (a:CT_ShapeProperties)."
         },
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions",
+          "description": "Theme style-matrix references (xdr:style, CT_ShapeStyle)."
+        },
         "textBody": {
           "$ref": "#/definitions/TextBodyOptions",
           "description": "Text body (a:CT_TextBody)."
@@ -15345,6 +15472,10 @@
           "$ref": "#/definitions/SurfaceOptions",
           "description": "3D floor (c:floor)."
         },
+        "frameLocks": {
+          "$ref": "#/definitions/GraphicFrameLockingOptions",
+          "description": "Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty."
+        },
         "gapDepth": {
           "description": "3D bar/column gap depth as percent (c:gapDepth).",
           "type": "number"
@@ -15406,6 +15537,10 @@
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
           "type": "boolean"
+        },
+        "macro": {
+          "description": "Macro reference (CT_GraphicFrame/@macro); empty string round-trips.",
+          "type": "string"
         },
         "markers": {
           "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",

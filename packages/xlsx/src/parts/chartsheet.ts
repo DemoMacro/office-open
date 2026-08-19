@@ -14,6 +14,7 @@ import type { PositiveUniversalMeasure } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { GraphicFrameLockingOptions } from "@office-open/core/drawing";
 import { attrs, attr, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import { hashPassword } from "@util/index";
 
@@ -96,6 +97,10 @@ export interface ChartsheetOptions {
   zoomToFit?: boolean;
   /** Chart definition — the shared chart-space model, same shape as a worksheet chart. */
   chart?: ChartSpaceOptions;
+  /** Macro reference on the chart's graphicFrame (CT_GraphicFrame/@macro). */
+  macro?: string;
+  /** Frame locks on the chart's graphicFrame (a:graphicFrameLocks). */
+  frameLocks?: GraphicFrameLockingOptions;
 }
 
 // ── Descriptor Types ──

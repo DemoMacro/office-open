@@ -7,12 +7,17 @@
 import { parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
+import type { BlackWhiteMode } from "@office-open/core/drawing";
 import {
+  blipDesc,
   connectorLockingDesc,
+  graphicFrameLockingDesc,
+  pictureLockingDesc,
   parseEndpointConnection,
   groupShapePropertiesDesc,
   parseNonVisualDrawingProperties,
   shapePropertiesDesc,
+  sourceRectangleDesc,
   textBodyDesc,
 } from "@office-open/core/drawing";
 import type {
@@ -20,6 +25,7 @@ import type {
   EndpointConnectionOptions,
   NonVisualDrawingPropertiesOptions,
 } from "@office-open/core/drawing";
+import { parseShapeStyle } from "@office-open/core/theme";
 import { findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
@@ -151,12 +157,42 @@ export function parseImageAnchor(
   anchor: XmlElement,
   pic: XmlElement,
   name: string,
+  ctx: ReadContext,
 ): DrawingPictureOptions {
   const result: DrawingPictureOptions = {
     col: 1,
     row: 1,
     rId: readPicRId(pic) ?? "",
   };
+
+  // preferRelativeResize (defaults true) and the a:blip adjustment effects.
+  const blipFill = findXdr(pic, "blipFill");
+  const nvPicPr = findXdr(pic, "nvPicPr");
+  const cNvPicPr = nvPicPr ? findXdr(nvPicPr, "cNvPicPr") : undefined;
+  if (cNvPicPr?.attributes?.["preferRelativeResize"] !== undefined) {
+    result.preferRelativeResize =
+      parseOnOff(String(cNvPicPr.attributes["preferRelativeResize"])) ?? true;
+  }
+  if (cNvPicPr) {
+    const locks = findChild(cNvPicPr, "a:picLocks");
+    if (locks) result.locking = pictureLockingDesc.parse(locks, ctx);
+  }
+  const blip = blipFill ? findChild(blipFill, "a:blip") : undefined;
+  if (blip) {
+    const parsed = blipDesc.parse(blip, {} as never);
+    if (parsed.blipEffects) result.blipEffects = parsed.blipEffects;
+  }
+  const srcRect = blipFill ? findChild(blipFill, "a:srcRect") : undefined;
+  if (srcRect) result.sourceRectangle = sourceRectangleDesc.parse(srcRect, ctx);
+
+  // Full spPr (rotation/flip/fill) beyond the position-only default; @bwMode
+  // is a container attribute the descriptor leaves to the caller.
+  const spPrEl = findXdr(pic, "spPr");
+  if (spPrEl) {
+    result.spPr = shapePropertiesDesc.parse(spPrEl, ctx);
+    const bwMode = spPrEl.attributes?.["bwMode"];
+    if (bwMode !== undefined) result.blackWhiteMode = bwMode as BlackWhiteMode;
+  }
 
   // Actual image size (applies to all anchor types).
   const ext = readPicExtent(pic);
@@ -191,6 +227,7 @@ export function parseChartAnchor(
   anchor: XmlElement,
   graphicFrame: XmlElement,
   name: string,
+  ctx: ReadContext,
 ): DrawingChartOptions | undefined {
   const graphicData = findChild(
     findChild(graphicFrame, "a:graphic") ?? graphicFrame,
@@ -202,6 +239,17 @@ export function parseChartAnchor(
 
   const result = { col: 1, row: 1, rId } as DrawingChartOptions;
   Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr"));
+  const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
+  const cNvGraphicFramePr = nvGraphicFramePr
+    ? findXdr(nvGraphicFramePr, "cNvGraphicFramePr")
+    : undefined;
+  if (cNvGraphicFramePr) {
+    const locks = findChild(cNvGraphicFramePr, "a:graphicFrameLocks");
+    if (locks) result.frameLocks = graphicFrameLockingDesc.parse(locks, ctx);
+  }
+  if (graphicFrame.attributes?.["macro"] !== undefined)
+    result.macro = String(graphicFrame.attributes["macro"]);
+
   readAnchorFields(anchor, name, result);
   return result;
 }
@@ -219,6 +267,12 @@ export function parseShapeAnchor(
 
   const spPr = findXdr(sp, "spPr");
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
+
+  const styleEl = findXdr(sp, "style");
+  if (styleEl) {
+    const style = parseShapeStyle(styleEl, ctx);
+    if (style) result.style = style;
+  }
 
   const txBody = findXdr(sp, "txBody");
   if (txBody) result.textBody = textBodyDesc.parse(txBody, ctx);
@@ -299,7 +353,10 @@ export function parseGroupAnchor(
   const shapes: GroupShapeChildOptions[] = [];
   const childConnectors: GroupConnectorChildOptions[] = [];
   for (const child of grpSp.elements ?? []) {
-    if (child.name === "sp") {
+    // Group children appear in the default namespace (our own output) or with
+    // the xdr: prefix (external files) — match by local name.
+    const local = child.name?.startsWith("xdr:") ? child.name.slice(4) : child.name;
+    if (local === "sp") {
       const spPr = findXdr(child, "spPr");
       const childShape = {
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
@@ -312,7 +369,7 @@ export function parseGroupAnchor(
       if (child.attributes?.["textlink"] !== undefined)
         childShape.textlink = String(child.attributes["textlink"]);
       shapes.push(childShape);
-    } else if (child.name === "cxnSp") {
+    } else if (local === "cxnSp") {
       const spPr = findXdr(child, "spPr");
       const childConn = {
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},

@@ -11,6 +11,14 @@ import type {
   PositiveUniversalMeasure,
   UniversalMeasure,
 } from "@office-open/core";
+import type {
+  BlackWhiteMode,
+  BlipEffectsOptions,
+  GraphicFrameLockingOptions,
+  PictureLockingOptions,
+  ShapePropertiesOptions,
+  SourceRectangleOptions,
+} from "@office-open/core/drawing";
 
 import type {
   ConnectorOptions,
@@ -326,7 +334,22 @@ export interface FreezePaneOptions {
  * to the drawing's cNvPr.
  */
 export interface PictureOptions extends Omit<BasePictureOptions, "type">, DrawingAnchorOptions {
-  type: "png" | "jpg";
+  type: "png" | "jpg" | "wmf" | "emf";
+  /** Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position). */
+  spPr?: ShapePropertiesOptions;
+  /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
+  sourceRectangle?: SourceRectangleOptions;
+  /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
+  blackWhiteMode?: BlackWhiteMode;
+  /**
+   * Relative-resize hint (cNvPicPr/@preferRelativeResize). Absent = attribute
+   * omitted (defaults true); explicit true/false round-trips the attribute.
+   */
+  preferRelativeResize?: boolean;
+  /** Image adjustment effects carried inside a:blip (a:lum, a:duotone, …). */
+  blipEffects?: BlipEffectsOptions;
+  /** Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
+  locking?: PictureLockingOptions;
 }
 
 /**
@@ -338,7 +361,12 @@ export interface WorksheetChartOptions
   extends
     ChartSpaceOptions,
     DrawingAnchorOptions,
-    Omit<NonVisualDrawingPropertiesOptions, "title"> {}
+    Omit<NonVisualDrawingPropertiesOptions, "title"> {
+  /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
+  frameLocks?: GraphicFrameLockingOptions;
+  /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
+  macro?: string;
+}
 
 export interface SheetViewOptions {
   showGridLines?: boolean;

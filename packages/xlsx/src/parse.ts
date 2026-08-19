@@ -18,7 +18,6 @@ import {
 } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
-import type { ChartSeriesData } from "@office-open/core/chart";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
@@ -359,15 +358,32 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           const mediaPath = readContext.resolveWorksheetRel(dr.target, image.rId);
           const raw = mediaPath ? xlsx.doc.getRaw(mediaPath) : undefined;
           const ext = mediaPath?.split(".").pop();
-          if (!raw || (ext !== "png" && ext !== "jpeg" && ext !== "jpg")) continue;
+          // WMF/EMF clip-art images round-trip like raster ones (the media
+          // store keeps their bytes and extension verbatim).
+          const type =
+            ext === "png" ? "png" : ext === "wmf" ? "wmf" : ext === "emf" ? "emf" : "jpg";
+          if (
+            !raw ||
+            (ext !== "png" && ext !== "jpeg" && ext !== "jpg" && ext !== "wmf" && ext !== "emf")
+          ) {
+            continue;
+          }
           images.push({
             data: raw,
-            type: ext === "png" ? "png" : "jpg",
+            type,
             ...pickAnchorOptions(image),
             name: image.name,
             description: image.description,
             title: image.title,
             hidden: image.hidden,
+            ...(image.spPr ? { spPr: image.spPr } : {}),
+            ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
+            ...(image.sourceRectangle ? { sourceRectangle: image.sourceRectangle } : {}),
+            ...(image.preferRelativeResize !== undefined
+              ? { preferRelativeResize: image.preferRelativeResize }
+              : {}),
+            ...(image.blipEffects ? { blipEffects: image.blipEffects } : {}),
+            ...(image.locking ? { locking: image.locking } : {}),
           });
         }
         if (images.length > 0) wsOpts.images = images;
@@ -383,7 +399,13 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           // WorksheetChartOptions.title is the chart title, not the frame's.
           const chartCnvPr = pickNonVisualDrawingProperties(anchor);
           delete chartCnvPr.title;
-          charts.push({ ...chartSpace, ...pickAnchorOptions(anchor), ...chartCnvPr });
+          charts.push({
+            ...chartSpace,
+            ...pickAnchorOptions(anchor),
+            ...chartCnvPr,
+            ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
+            ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
+          });
         }
         if (charts.length > 0) wsOpts.charts = charts;
       }
@@ -541,17 +563,12 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           const chartPath = readContext.resolveWorksheetRel(dr.target, anchor.rId);
           const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
           if (!chartEl) continue;
-          const cs = chartSpaceDesc.parse(chartEl, readContext);
-          csData.chart = {
-            type: cs.type,
-            ...(cs.title !== undefined ? { title: cs.title } : {}),
-            ...(cs.categories ? { categories: [...cs.categories] } : {}),
-            // A chartsheet chart may carry no c:ser at all (empty chart shell).
-            series: ((cs.series as ChartSeriesData[]) ?? []).map((s) => ({
-              name: s.name,
-              values: [...(s.values ?? [])],
-            })),
-          };
+          // Full chartSpace passthrough — the simplified type/title/series
+          // projection dropped chartSpace-level fidelity (c:lang, c:date1904,
+          // axis/plot formatting, …) on round-trip.
+          csData.chart = chartSpaceDesc.parse(chartEl, readContext);
+          if (anchor.macro !== undefined) csData.macro = anchor.macro;
+          if (anchor.frameLocks) csData.frameLocks = anchor.frameLocks;
           break outer;
         }
       }
