@@ -308,7 +308,11 @@ function emitBlipFill(options: BlipFillConfigOptions & { type: "blip" }, embed?:
         blipChildren.length > 0 ? blipChildren : undefined,
       );
 
-  const children: string[] = [blip, createSourceRectangle(options.sourceRectangle)];
+  const children: string[] = [blip];
+  // a:srcRect is optional in CT_BlipFillProperties — emit it only when the
+  // source carried one (round-trip); a bare <a:srcRect/> round-trips as {}.
+  if (options.sourceRectangle !== undefined)
+    children.push(createSourceRectangle(options.sourceRectangle));
   if (options.tile) {
     children.push(createTileInfo(options.tile));
   } else {

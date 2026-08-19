@@ -75,7 +75,9 @@ function createLockingDesc<T extends BaseLockingOptions>(
         opts as unknown as Record<string, boolean | undefined>,
         allKeys,
       );
-      if (!attrStr) return undefined;
+      // An empty <a:*Locks/> container is meaningful (locks present, none set)
+      // and round-trips as {} — only an absent container stays undefined.
+      if (!attrStr) return `<${tag}/>`;
       return `<${tag}${attrStr}/>`;
     },
     parse(el, _ctx) {

@@ -30,6 +30,8 @@ export interface CorePropertiesOptions {
   category?: string;
   /** Document status (e.g. "Draft"), round-tripped from cp:contentStatus. */
   contentStatus?: string;
+  /** Content type (e.g. "Document"), round-tripped from cp:contentType. */
+  contentType?: string;
   /** Unique document identifier, round-tripped from dc:identifier. */
   identifier?: string;
   /** Document language (RFC 3066), round-tripped from dc:language. */
@@ -57,6 +59,7 @@ const FIELD_MAP: Array<{ name: string; key: keyof CorePropertiesOptions }> = [
   { name: "dcterms:modified", key: "modified" },
   { name: "cp:category", key: "category" },
   { name: "cp:contentStatus", key: "contentStatus" },
+  { name: "cp:contentType", key: "contentType" },
   { name: "dc:identifier", key: "identifier" },
   { name: "dc:language", key: "language" },
   { name: "cp:version", key: "version" },
@@ -153,6 +156,8 @@ export function buildCorePropertiesXmlString(opts: CorePropertiesOptions): strin
     p.push(`<${cp("category")}>${escapeXml(opts.category)}</${cp("category")}>`);
   if (opts.contentStatus !== undefined)
     p.push(`<${cp("contentStatus")}>${escapeXml(opts.contentStatus)}</${cp("contentStatus")}>`);
+  if (opts.contentType !== undefined)
+    p.push(`<${cp("contentType")}>${escapeXml(opts.contentType)}</${cp("contentType")}>`);
   if (opts.identifier !== undefined)
     p.push(`<dc:identifier>${escapeXml(opts.identifier)}</dc:identifier>`);
   if (opts.language !== undefined) p.push(`<dc:language>${escapeXml(opts.language)}</dc:language>`);
