@@ -560,6 +560,10 @@ export interface DataTableOptions {
   showVerticalBorder?: boolean;
   showOutline?: boolean;
   showLegendKeys?: boolean;
+  /** Table line/fill (c:spPr). */
+  shapeProperties?: ShapePropertiesOptions;
+  /** Table text (c:txPr). */
+  textProperties?: TextBodyOptions;
 }
 
 // ── ChartSpace-level containers (CT_ChartSpace) ──

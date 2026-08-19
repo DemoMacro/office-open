@@ -463,8 +463,8 @@ function stringifyUpDownBars(gapWidth: number | undefined): string {
   return `<c:upDownBars>${inner.join("")}</c:upDownBars>`;
 }
 
-function stringifyDataTable(opts: DataTableOptions): string {
-  // CT_DTable: showHorzBorder → showVertBorder → showOutline → showKeys
+function stringifyDataTable(opts: DataTableOptions, ctx: WriteContext): string {
+  // CT_DTable: showHorzBorder → showVertBorder → showOutline → showKeys → spPr → txPr
   const parts: string[] = [];
   if (opts.showHorizontalBorder !== undefined)
     parts.push(`<c:showHorzBorder${boolVal(opts.showHorizontalBorder)}/>`);
@@ -472,6 +472,10 @@ function stringifyDataTable(opts: DataTableOptions): string {
     parts.push(`<c:showVertBorder${boolVal(opts.showVerticalBorder)}/>`);
   if (opts.showOutline !== undefined) parts.push(`<c:showOutline${boolVal(opts.showOutline)}/>`);
   if (opts.showLegendKeys !== undefined) parts.push(`<c:showKeys${boolVal(opts.showLegendKeys)}/>`);
+  if (opts.shapeProperties) parts.push(chartSpPr(opts.shapeProperties, ctx));
+  if (opts.textProperties) {
+    parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
+  }
   return `<c:dTable>${parts.join("")}</c:dTable>`;
 }
 
@@ -1139,7 +1143,12 @@ function readTitle(titleEl: XmlElement, ctx: ReadContext): string | ChartTitleOp
   const overlayEl = findChild(titleEl, "c:overlay");
   const spPrEl = findChild(titleEl, "c:spPr");
   const txPrEl = findChild(titleEl, "c:txPr");
-  if (!layoutEl && !overlayEl && !spPrEl && !txPrEl) return body ?? text ?? "";
+  // A structured body must wrap as { text } — returning it bare would land a
+  // TextBodyOptions where stringify expects ChartTitleOptions and drop c:tx.
+  if (!layoutEl && !overlayEl && !spPrEl && !txPrEl) {
+    if (typeof body === "string" || body === undefined) return body ?? text ?? "";
+    return { text: body };
+  }
   const title: ChartTitleOptions = {};
   if (body !== undefined) title.text = body;
   else if (text !== undefined) title.text = text;
@@ -1575,7 +1584,10 @@ function readChartTypeDecorations(
 
 // ── Plot-area data table read (CT_DTable) ──
 
-function readDataTable(plotArea: XmlElement | undefined): DataTableOptions | undefined {
+function readDataTable(
+  plotArea: XmlElement | undefined,
+  ctx: ReadContext,
+): DataTableOptions | undefined {
   if (!plotArea) return undefined;
   const dTable = findChild(plotArea, "c:dTable");
   if (!dTable) return undefined;
@@ -1588,7 +1600,13 @@ function readDataTable(plotArea: XmlElement | undefined): DataTableOptions | und
   if (outline !== undefined) opts.showOutline = outline;
   const keys = readBoolAttr(dTable, "c:showKeys");
   if (keys !== undefined) opts.showLegendKeys = keys;
-  return Object.keys(opts).length ? opts : undefined;
+  const spPrEl = findChild(dTable, "c:spPr");
+  if (spPrEl)
+    opts.shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx) as ShapePropertiesOptions;
+  const txPrEl = findChild(dTable, "c:txPr");
+  if (txPrEl) opts.textProperties = textBodyDesc.parse(txPrEl, ctx);
+  // Presence round-trips: a bare <c:dTable/> stays an empty object.
+  return opts;
 }
 
 // ── ChartSpace-level read (CT_ChartSpace children) ──
@@ -2068,7 +2086,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     parts.push(stringifyAxes(opts, ctx));
 
     // Data table (CT_PlotArea: axes → dTable → spPr)
-    if (opts.dataTable) parts.push(stringifyDataTable(opts.dataTable));
+    if (opts.dataTable) parts.push(stringifyDataTable(opts.dataTable, ctx));
     parts.push(chartSpPr(opts.plotAreaShapeProperties, ctx));
 
     parts.push("</c:plotArea>");
@@ -2179,7 +2197,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       const manualLayout = readManualLayout(findChild(plotArea, "c:layout"));
       if (manualLayout) result.plotAreaLayout = manualLayout;
       // plot-area data table (CT_PlotArea tail)
-      const dataTable = readDataTable(plotArea);
+      const dataTable = readDataTable(plotArea, ctx);
       if (dataTable) result.dataTable = dataTable;
       let detectedType: ChartType | undefined;
       let threeD = false;

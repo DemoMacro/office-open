@@ -4355,6 +4355,10 @@
       "additionalProperties": false,
       "description": "Plot-area data table (CT_DTable).",
       "properties": {
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Table line/fill (c:spPr)."
+        },
         "showHorizontalBorder": {
           "type": "boolean"
         },
@@ -4366,6 +4370,10 @@
         },
         "showVerticalBorder": {
           "type": "boolean"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Table text (c:txPr)."
         }
       },
       "type": "object"
