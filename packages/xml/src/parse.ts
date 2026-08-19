@@ -99,7 +99,10 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // spaces of nodes that have content are preserved.
     if (xmlString.charCodeAt(i) !== 0x3c /* < */) {
       const start = i;
-      while (i < len && xmlString.charCodeAt(i) !== 0x3c) i++;
+      // Single-char indexOf runs as a native memchr scan — far faster than a
+      // JS byte-by-byte loop (the outer check already guarantees i is not '<').
+      const lt = xmlString.indexOf("<", i);
+      i = lt === -1 ? len : lt;
       let text = unescapeXml(xmlString.slice(start, i));
       if (trim) text = text.trim();
       if (ignoreText) continue;
@@ -252,13 +255,16 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     if (isSelfClosing) pos += 2;
     else pos++;
 
+    // Constant shape: every element node carries all four fields (undefined
+    // placeholders included), so attribute/children assignment writes an
+    // existing slot instead of walking a hidden-class transition — element
+    // access sites stay monomorphic instead of 2-3 shapes deep.
     const element: Element = {
       type: "element",
       name: tagName,
+      attributes: attrs,
+      elements: undefined,
     };
-    if (attrs) {
-      element.attributes = attrs;
-    }
 
     const parent = peek(stack);
     if (!parent.elements) {

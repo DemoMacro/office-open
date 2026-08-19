@@ -84,15 +84,15 @@ txml skips entity encoding by default (`encodeEntities: false`), which emits inv
 
 | Scenario      | @office-open/xml |            txml |       xml-js |
 | ------------- | ---------------: | --------------: | -----------: |
-| simple XML    |  1,308,871 ops/s | 1,059,176 ops/s | 99,580 ops/s |
-| complex OOXML |    408,131 ops/s |   415,538 ops/s | 53,799 ops/s |
+| simple XML    |  1,420,676 ops/s | 1,077,871 ops/s | 99,049 ops/s |
+| complex OOXML |    434,118 ops/s |   393,714 ops/s | 52,849 ops/s |
 
 **stringify() — Element tree → XML string**
 
 | Scenario       | @office-open/xml | txml (entities) |            txml |        xml-js |     xml (npm) |
 | -------------- | ---------------: | --------------: | --------------: | ------------: | ------------: |
-| simple element |  2,052,268 ops/s | 1,405,521 ops/s | 2,513,534 ops/s | 200,891 ops/s | 315,129 ops/s |
-| complex OOXML  |    579,092 ops/s |   507,070 ops/s | 1,436,626 ops/s | 132,122 ops/s | 186,575 ops/s |
+| simple element |  2,039,248 ops/s | 1,339,180 ops/s | 3,188,605 ops/s | 207,318 ops/s | 299,226 ops/s |
+| complex OOXML  |    579,213 ops/s |   465,948 ops/s | 1,409,039 ops/s | 137,595 ops/s | 186,069 ops/s |
 
 ## License
 
