@@ -154,6 +154,9 @@ importers:
       '@types/xml':
         specifier: 1.0.11
         version: 1.0.11
+      txml:
+        specifier: 6.0.1
+        version: 6.0.1
       xml:
         specifier: 1.0.1
         version: 1.0.1
@@ -7799,6 +7802,10 @@ packages:
 
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
+
+  txml@6.0.1:
+    resolution: {integrity: sha512-NdzaukxAFKttLElFcQevCFSGCvSyXViyX8s5zm1JP5XV/B/pX7GatMpRb+z4s9e8fKT/q2qIK8BrnBAoO2rhBA==}
+    engines: {node: '>=18.0.0'}
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -17050,6 +17057,8 @@ snapshots:
   tunnel-agent@0.6.0:
     dependencies:
       safe-buffer: 5.2.1
+
+  txml@6.0.1: {}
 
   type-check@0.4.0:
     dependencies:

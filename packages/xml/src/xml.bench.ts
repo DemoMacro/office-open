@@ -1,3 +1,4 @@
+import { parse as txmlParse, stringify as txmlStringify } from "txml";
 import { bench, describe } from "vite-plus/test";
 import xmlPkg from "xml";
 import { xml2js as xml2jsOriginal, js2xml as js2xmlOriginal } from "xml-js";
@@ -64,11 +65,22 @@ describe("Benchmark: parse — ours vs original xml-js", () => {
   bench("xml2js (original) with captureSpaces", () => {
     xml2jsOriginal(COMPLEX_XML, { compact: false, captureSpacesBetweenElements: true });
   });
+
+  bench("txml simple XML", () => {
+    txmlParse(XML_STRING);
+  });
+
+  bench("txml complex OOXML", () => {
+    txmlParse(COMPLEX_XML);
+  });
 });
 
 describe("Benchmark: stringify — ours vs xml-js & xml", () => {
   const parsedSimple = parse(XML_STRING, { compact: false });
   const parsedComplex = parse(COMPLEX_XML, { compact: false });
+  // txml consumes its own node format ({tagName, attributes, children}).
+  const txmlParsedSimple = txmlParse(XML_STRING);
+  const txmlParsedComplex = txmlParse(COMPLEX_XML);
 
   bench("stringify() simple element", () => {
     stringify(parsedSimple);
@@ -92,5 +104,23 @@ describe("Benchmark: stringify — ours vs xml-js & xml", () => {
 
   bench("xml (npm) complex OOXML", () => {
     xmlPkg(XML_PKG_COMPLEX);
+  });
+
+  bench("txml stringify() simple element", () => {
+    txmlStringify(txmlParsedSimple);
+  });
+
+  bench("txml stringify() complex OOXML", () => {
+    txmlStringify(txmlParsedComplex);
+  });
+
+  // txml skips entity encoding by default (encodeEntities: false), which is
+  // not output-equivalent to ours — this is the fair comparison.
+  bench("txml stringify() simple element (entities)", () => {
+    txmlStringify(txmlParsedSimple, { encodeEntities: true });
+  });
+
+  bench("txml stringify() complex OOXML (entities)", () => {
+    txmlStringify(txmlParsedComplex, { encodeEntities: true });
   });
 });

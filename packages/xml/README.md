@@ -76,21 +76,23 @@ interface Element {
 
 ## Benchmark
 
-Performance vs [xml-js](https://github.com/nashwaan/xml-js) and [xml](https://github.com/dylang/node-xml) (higher ops/s is better, Windows 11 / Node 24). `@office-open/xml` is a drop-in replacement for both. The `xml` (npm) package is generation-only (no parser), so it only appears under stringify.
+Performance vs [txml](https://github.com/TobiasNickel/tXml), [xml-js](https://github.com/nashwaan/xml-js), and [xml](https://github.com/dylang/node-xml) (higher ops/s is better, Windows 11 / Node 24; run with `pnpm exec vp test bench src/xml.bench.ts` in this package). `@office-open/xml` is a drop-in replacement for xml-js and xml. The `xml` (npm) package is generation-only (no parser), so it only appears under stringify.
+
+txml skips entity encoding by default (`encodeEntities: false`), which emits invalid XML when text contains `&`, `<`, or `>`; the `txml` column shows that raw mode and the `txml (entities)` column is the output-equivalent mode.
 
 **parse() — XML string → Element tree**
 
-| Scenario      | @office-open/xml |        xml-js |
-| ------------- | ---------------: | ------------: |
-| simple XML    |    837,902 ops/s | 100,244 ops/s |
-| complex OOXML |    354,836 ops/s |  54,457 ops/s |
+| Scenario      | @office-open/xml |            txml |       xml-js |
+| ------------- | ---------------: | --------------: | -----------: |
+| simple XML    |  1,308,871 ops/s | 1,059,176 ops/s | 99,580 ops/s |
+| complex OOXML |    408,131 ops/s |   415,538 ops/s | 53,799 ops/s |
 
 **stringify() — Element tree → XML string**
 
-| Scenario       | @office-open/xml |        xml-js |     xml (npm) |
-| -------------- | ---------------: | ------------: | ------------: |
-| simple element |    827,864 ops/s | 208,934 ops/s | 379,424 ops/s |
-| complex OOXML  |    374,933 ops/s | 135,967 ops/s | 203,205 ops/s |
+| Scenario       | @office-open/xml | txml (entities) |            txml |        xml-js |     xml (npm) |
+| -------------- | ---------------: | --------------: | --------------: | ------------: | ------------: |
+| simple element |  2,052,268 ops/s | 1,405,521 ops/s | 2,513,534 ops/s | 200,891 ops/s | 315,129 ops/s |
+| complex OOXML  |    579,092 ops/s |   507,070 ops/s | 1,436,626 ops/s | 132,122 ops/s | 186,575 ops/s |
 
 ## License
 

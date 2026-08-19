@@ -9,26 +9,15 @@ export function escapeXml(str: string): string {
   // reference means zero allocation for the common case.
   if (!XML_SPECIALS.test(str)) return str;
 
-  const firstSpecial = str.search(XML_SPECIALS);
-  // Slow path: collect all replacement positions, then batch slice
-  const parts: string[] = [str.slice(0, firstSpecial)];
-  for (let i = firstSpecial; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    if (c === 38) {
-      parts.push("&amp;");
-    } else if (c === 34) {
-      parts.push("&quot;");
-    } else if (c === 39) {
-      parts.push("&apos;");
-    } else if (c === 60) {
-      parts.push("&lt;");
-    } else if (c === 62) {
-      parts.push("&gt;");
-    } else {
-      parts.push(str.charAt(i));
-    }
-  }
-  return parts.join("");
+  // Chained native replaces: specials are sparse, so each pass after the
+  // first usually finds nothing and exits quickly. Raw /g literals carry no
+  // lastIndex state.
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 /**
