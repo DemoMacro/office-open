@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import { formatToolError } from "./error";
-import { docxTool, officeOpenTools, schemaLookupTool } from "./index";
+import { docxTool, officeOpenTools, schemaLookupTool, xlsxTool } from "./index";
 
 /** Tool-definition budget: the full docx schema is ~675 KB — the whole point
  *  of skeletons. Ratchet against silent growth; see skeleton.spec.ts for the
@@ -76,6 +76,26 @@ describe("generate tool validation gate", () => {
       input: unknown,
     ) => Promise<{ base64: string; mimeType: string }>;
     await expect(execute({ sections: "oops" })).rejects.toThrow("Invalid docx options");
+  });
+
+  it("generates a clean document through the OPC gate", async () => {
+    const execute = docxTool.execute as (
+      input: unknown,
+    ) => Promise<{ base64: string; mimeType: string }>;
+    const result = await execute({
+      sections: [{ children: [{ paragraph: { children: ["Hi"] } }] }],
+    });
+    expect(result.base64.length).toBeGreaterThan(100);
+    expect(result.mimeType).toContain("wordprocessingml");
+  });
+
+  it("rejects xlsx formulas referencing missing worksheets before generating", async () => {
+    const execute = xlsxTool.execute as (input: unknown) => Promise<unknown>;
+    await expect(
+      execute({
+        worksheets: [{ rows: [{ cells: [{ reference: "B1", formula: "Nope!A1" }] }] }],
+      }),
+    ).rejects.toThrow("Invalid xlsx formulas");
   });
 });
 

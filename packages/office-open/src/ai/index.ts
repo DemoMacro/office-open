@@ -17,11 +17,14 @@ import { jsonSchema, tool } from "ai";
 
 export { formatToolError } from "./error";
 
+import { lintWorkbookFormulas } from "@office-open/xlsx";
+
 import { generate } from "../generate";
 import { getSkeletonSchema, sliceDocumentSchema, validateDocumentInput } from "../schemas";
 import type { DocumentType } from "../schemas/schemas";
 import { UnknownDefinitionError } from "../schemas/slice";
 import { formatToolError } from "./error";
+import { generateVerifiedBase64 } from "./verify";
 
 /** Input accepted by the office-open-schema-lookup tool. */
 export interface SchemaLookupInput {
@@ -51,13 +54,13 @@ export const docxTool = tool({
   execute: async (options) => {
     try {
       const validated = validateDocumentInput("docx", options);
-      const base64 = (await generate({
+      const bytes = (await generate({
         type: "docx",
         options: validated as unknown as DocumentOptions,
-        outputType: "base64",
-      })) as string;
+        outputType: "uint8array",
+      })) as Uint8Array;
       return {
-        base64,
+        base64: generateVerifiedBase64("docx", bytes),
         mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       };
     } catch (error) {
@@ -83,13 +86,13 @@ export const pptxTool = tool({
   execute: async (options) => {
     try {
       const validated = validateDocumentInput("pptx", options);
-      const base64 = (await generate({
+      const bytes = (await generate({
         type: "pptx",
         options: validated as unknown as PresentationOptions,
-        outputType: "base64",
-      })) as string;
+        outputType: "uint8array",
+      })) as Uint8Array;
       return {
-        base64,
+        base64: generateVerifiedBase64("pptx", bytes),
         mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       };
     } catch (error) {
@@ -113,13 +116,22 @@ export const xlsxTool = tool({
   execute: async (options) => {
     try {
       const validated = validateDocumentInput("xlsx", options);
-      const base64 = (await generate({
+      const formulaIssues = lintWorkbookFormulas(validated as unknown as WorkbookOptions);
+      if (formulaIssues.length > 0) {
+        const lines = formulaIssues.map(
+          (i) => `  ${i.location}: ${i.message} — formula "${i.formula}"`,
+        );
+        throw new Error(
+          `Invalid xlsx formulas:\n${lines.join("\n")}\nFix the formula or add the missing worksheet.`,
+        );
+      }
+      const bytes = (await generate({
         type: "xlsx",
         options: validated as unknown as WorkbookOptions,
-        outputType: "base64",
-      })) as string;
+        outputType: "uint8array",
+      })) as Uint8Array;
       return {
-        base64,
+        base64: generateVerifiedBase64("xlsx", bytes),
         mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       };
     } catch (error) {
