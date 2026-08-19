@@ -105,6 +105,7 @@ function parseHeaderFooterRef(
   const children: SectionChild[] = [];
   ctx.withPart(path, () => {
     for (const child of partEl.elements ?? []) {
+      if (child.type !== "element") continue;
       const sectionChild = parseSectionChild(child, ctx);
       if (sectionChild !== undefined) {
         children.push(sectionChild);
@@ -467,6 +468,9 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
   };
 
   for (const el of elements) {
+    // Whitespace text nodes survive captureSpacesBetweenElements parsing;
+    // block content is element-only, so skip anything without an element name.
+    if (el.type !== "element") continue;
     if (tocBuffer !== null) {
       tocBuffer.push(el);
       tocDepth += countFieldDelta(el);

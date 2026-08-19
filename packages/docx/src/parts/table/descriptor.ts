@@ -1023,7 +1023,9 @@ function parseTableCellEl(el: Element, ctx: DocxReadContext): TableCellOptions {
     // Cell content is EG_BlockLevelElts — the same group the body holds, so
     // every non-property child (w:p, w:tbl, block sdt, customXml, altChunk,
     // subDoc, run-level markers) goes through the shared section-child parser.
-    if (child.name === "w:tcPr") continue;
+    // Whitespace text nodes survive captureSpacesBetweenElements parsing and
+    // must not reach the dispatcher (they stringify as empty rawXml noise).
+    if (child.type !== "element" || child.name === "w:tcPr") continue;
     if (_parseChild) childElements.push(_parseChild(child, ctx));
   }
 
