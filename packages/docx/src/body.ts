@@ -195,8 +195,15 @@ export function stringifyBodyChild(
   }
   if ("toc" in child) {
     const { alias, ...options } = child.toc;
-    const entriesXml = (options.entries ?? [])
-      .map((entry) => stringifyBodyChild(entry, ctx))
+    const entries = options.entries ?? [];
+    // A non-final section may host its sectPr in the TOC's closing entry
+    // paragraph (the section-break paragraph the field end shares).
+    const entriesXml = entries
+      .map((entry, i) =>
+        i === entries.length - 1
+          ? stringifyBodyChild(entry, ctx, sectionPropertiesXml)
+          : stringifyBodyChild(entry, ctx),
+      )
       .join("");
     return stringifyTableOfContents(alias, options, entriesXml);
   }
@@ -428,7 +435,11 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     let sectPrHosted = isLast || !sectPrXml;
     for (let ci = 0; ci < children.length; ci++) {
       const child = children[ci]!;
-      const inject = !isLast && sectPrXml && ci === children.length - 1 && "paragraph" in child;
+      const inject =
+        !isLast &&
+        sectPrXml &&
+        ci === children.length - 1 &&
+        ("paragraph" in child || "toc" in child);
       if (inject) sectPrHosted = true;
       parts.push(stringifyBodyChild(child, docCtx, inject ? sectPrXml : undefined));
     }
@@ -594,8 +605,9 @@ export function parseParagraphProperties(
     if (numId === "0") {
       // numId=0 is the OOXML reserved value that cancels numbering inherited
       // from the paragraph style — emit numId=0 verbatim instead of falling
-      // back to a bullet (which would inject ListParagraph + numId=1).
-      opts.numbering = false;
+      // back to a bullet (which would inject ListParagraph + numId=1). A
+      // w:ilvl alongside keeps its level pin.
+      opts.numbering = level !== undefined ? { none: true, level } : false;
     } else if (numId === undefined) {
       // A numPr without numId carries nothing resolvable — except tracked
       // revision markers (w:ins / w:numberingChange): the numbering property
@@ -1897,6 +1909,32 @@ function parseRunLevelChildren(
       }
       default:
         break;
+    }
+  }
+
+  // A complex field still open at the paragraph end spans paragraphs (e.g. a
+  // TOC head paragraph carrying the first entry). Release the buffered result
+  // runs as regular children — the aggregator rebuilds the outer field's
+  // control chain from its own capture, and a field nested inside the result
+  // (a PAGEREF page number) re-parses through the sub accumulator. The head
+  // runs stay unreleased: re-emitting them here would duplicate the chain the
+  // emit path injects.
+  if (fieldState.kind === "complex" && fieldState.resultRunEls.length > 0) {
+    const sub = initialFieldRunState();
+    for (const el of fieldState.resultRunEls) {
+      const fed = feedFieldRun(el, sub);
+      if (fed.consumed) {
+        if (fed.child) childList.push(fed.child);
+        continue;
+      }
+      const drawingChild = parseDrawingRunChild(el, ctx);
+      if (drawingChild) {
+        childList.push(drawingChild);
+        continue;
+      }
+      const parsed = parseRun(el, ctx);
+      const runOpts = parsedRunToOptions(parsed);
+      if (runOpts !== null) childList.push(runOpts);
     }
   }
 

@@ -12719,6 +12719,23 @@
             {
               "additionalProperties": false,
               "properties": {
+                "level": {
+                  "description": "Level in the numbering hierarchy (0-8).",
+                  "type": "number"
+                },
+                "none": {
+                  "const": true,
+                  "description": "numId=0 with a pinned level: cancels the numbering inherited from the style chain while keeping w:ilvl (false covers the level-less form — a bare `<w:numId w:val=\"0\"/>`).",
+                  "type": "boolean"
+                }
+              },
+              "required": ["none"],
+              "title": "none",
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
                 "autoStyle": {
                   "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
                   "type": "boolean"
@@ -13053,6 +13070,23 @@
         },
         "numbering": {
           "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "level": {
+                  "description": "Level in the numbering hierarchy (0-8).",
+                  "type": "number"
+                },
+                "none": {
+                  "const": true,
+                  "description": "numId=0 with a pinned level: cancels the numbering inherited from the style chain while keeping w:ilvl (false covers the level-less form — a bare `<w:numId w:val=\"0\"/>`).",
+                  "type": "boolean"
+                }
+              },
+              "required": ["none"],
+              "title": "none",
+              "type": "object"
+            },
             {
               "additionalProperties": false,
               "properties": {
@@ -13958,6 +13992,23 @@
         },
         "numbering": {
           "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "level": {
+                  "description": "Level in the numbering hierarchy (0-8).",
+                  "type": "number"
+                },
+                "none": {
+                  "const": true,
+                  "description": "numId=0 with a pinned level: cancels the numbering inherited from the style chain while keeping w:ilvl (false covers the level-less form — a bare `<w:numId w:val=\"0\"/>`).",
+                  "type": "boolean"
+                }
+              },
+              "required": ["none"],
+              "title": "none",
+              "type": "object"
+            },
             {
               "additionalProperties": false,
               "properties": {
@@ -17844,6 +17895,23 @@
                 },
                 "numbering": {
                   "anyOf": [
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "level": {
+                          "description": "Level in the numbering hierarchy (0-8).",
+                          "type": "number"
+                        },
+                        "none": {
+                          "const": true,
+                          "description": "numId=0 with a pinned level: cancels the numbering inherited from the style chain while keeping w:ilvl (false covers the level-less form — a bare `<w:numId w:val=\"0\"/>`).",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["none"],
+                      "title": "none",
+                      "type": "object"
+                    },
                     {
                       "additionalProperties": false,
                       "properties": {

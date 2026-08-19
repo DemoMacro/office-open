@@ -332,8 +332,8 @@ export function stringifyParagraphProperties(
     options.heading ??
     (options.bullet ||
     (options.numbering &&
-      !("revisionOnly" in options.numbering) &&
-      !("levelOnly" in options.numbering) &&
+      typeof options.numbering === "object" &&
+      "reference" in options.numbering &&
       options.numbering.autoStyle !== false)
       ? "ListParagraph"
       : undefined);
@@ -360,6 +360,9 @@ export function stringifyParagraphProperties(
   if (options.numbering) {
     if ("levelOnly" in options.numbering) {
       s += `<w:numPr><w:ilvl w:val="${Math.min(options.numbering.level ?? 0, 9)}"/></w:numPr>`;
+    } else if ("none" in options.numbering) {
+      // numId=0 cancels style-inherited numbering, keeping a pinned w:ilvl.
+      s += numPrStr(0, options.numbering.level);
     } else if ("revisionOnly" in options.numbering) {
       s += numPrStr(
         undefined,
@@ -382,7 +385,9 @@ export function stringifyParagraphProperties(
       );
     }
   } else if (options.numbering === false) {
-    s += numPrStr(0, 0);
+    // numId=0 cancels style-inherited numbering — no w:ilvl (the source form
+    // carries none; pinning level 0 would fabricate an element it never had).
+    s += numPrStr(0, undefined);
   } else if (options.bullet) {
     s += `<w:numPr><w:ilvl w:val="${Math.min(options.bullet.level, 9)}"/><w:numId w:val="1"/></w:numPr>`;
   }

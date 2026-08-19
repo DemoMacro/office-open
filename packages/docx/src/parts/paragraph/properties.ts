@@ -165,6 +165,16 @@ export type ParagraphStylePropertiesOptions = {
   /** Numbering configuration for lists, or false to remove numbering */
   numbering?:
     | {
+        /**
+         * numId=0 with a pinned level: cancels the numbering inherited from
+         * the style chain while keeping w:ilvl (false covers the level-less
+         * form — a bare `<w:numId w:val="0"/>`).
+         */
+        none: true;
+        /** Level in the numbering hierarchy (0-8). */
+        level?: number;
+      }
+    | {
         /** Reference ID of the numbering definition to use */
         reference: string;
         /**
