@@ -8,9 +8,11 @@ import { convertToEmu } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
 import {
+  buildHyperlinkElement,
   connectorLockingDesc,
   createSourceRectangle,
   graphicFrameLockingDesc,
+  registerHyperlink,
   pictureLockingDesc,
   groupShapePropertiesDesc,
   shapePropertiesDesc,
@@ -26,6 +28,7 @@ import type {
   NonVisualDrawingPropertiesOptions,
   ShapePropertiesOptions,
   TextBodyOptions,
+  TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import type { DefaultShapeStyleOptions } from "@office-open/core/theme";
 import { stringifyShapeStyle } from "@office-open/core/theme";
@@ -141,7 +144,7 @@ function picXml(
   const srcRect = img.sourceRectangle ? createSourceRectangle(img.sourceRectangle) : "";
   const bwModeAttr = img.blackWhiteMode ? ` bwMode="${img.blackWhiteMode}"` : "";
   return (
-    `<xdr:pic><xdr:nvPicPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, img, `Picture ${id}`)}${cNvPicPr}</xdr:nvPicPr>` +
+    `<xdr:pic><xdr:nvPicPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, img, `Picture ${id}`, hlinkClickXml(img.hyperlink, ctx))}${cNvPicPr}</xdr:nvPicPr>` +
     `<xdr:blipFill>${blip}${srcRect}<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>` +
     `<xdr:spPr${bwModeAttr}>${spPr}</xdr:spPr></xdr:pic>`
   );
@@ -159,6 +162,15 @@ export function stringifyImage(img: DrawingPictureOptions, id: number, ctx: Writ
  * caller's choice: twoCell anchors carry 0×0 (position comes from the cell
  * markers), absolute anchors carry the real frame size.
  */
+/** a:hlinkClick inside cNvPr — registers the target and returns the element. */
+function hlinkClickXml(
+  hyperlink: TextHyperlinkOptions | undefined,
+  ctx: WriteContext | undefined,
+): string | undefined {
+  if (!hyperlink || !ctx) return undefined;
+  return buildHyperlinkElement("a:hlinkClick", hyperlink, registerHyperlink(hyperlink, ctx));
+}
+
 export function graphicFrameXml(
   id: number,
   cNvPr: NonVisualDrawingPropertiesOptions | undefined,
@@ -167,7 +179,11 @@ export function graphicFrameXml(
   cx: number,
   cy: number,
   ctx?: WriteContext,
-  extras: { frameLocks?: GraphicFrameLockingOptions; macro?: string } = {},
+  extras: {
+    frameLocks?: GraphicFrameLockingOptions;
+    macro?: string;
+    hyperlink?: TextHyperlinkOptions;
+  } = {},
 ): string {
   // Locks are optional in CT_NonVisualGraphicFrameProperties — emit them only
   // when the source carried them (a bare <xdr:cNvGraphicFramePr/> round-trips).
@@ -182,7 +198,7 @@ export function graphicFrameXml(
     : "<xdr:cNvGraphicFramePr/>";
   const macroAttr = extras.macro === undefined ? "" : ` macro="${escapeXml(extras.macro)}"`;
   return (
-    `<xdr:graphicFrame${macroAttr}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, name)}` +
+    `<xdr:graphicFrame${macroAttr}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, name, hlinkClickXml(extras.hyperlink, ctx))}` +
     `${cNvGraphicFramePr}</xdr:nvGraphicFramePr>` +
     `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></xdr:xfrm>` +
     `<a:graphic><a:graphicData uri="${C_URI}">` +
@@ -191,7 +207,7 @@ export function graphicFrameXml(
   );
 }
 
-export function stringifyChart(chart: DrawingChartOptions, id: number): string {
+export function stringifyChart(chart: DrawingChartOptions, id: number, ctx?: WriteContext): string {
   // Charts keep their historical default footprint (10 columns × 17 rows)
   // when no to corner is set; graphicFrame xfrm stays 0×0 for twoCellAnchor
   // because the position comes from the cell markers.
@@ -200,16 +216,20 @@ export function stringifyChart(chart: DrawingChartOptions, id: number): string {
   const isTwoCell = (anchor.anchorType ?? ANCHOR_TYPES.twoCell) === ANCHOR_TYPES.twoCell;
   const cx = isTwoCell ? 0 : convertToEmu(anchor.extentCx ?? DEFAULT_EXTENT_CX);
   const cy = isTwoCell ? 0 : convertToEmu(anchor.extentCy ?? DEFAULT_EXTENT_CY);
-  const frame = graphicFrameXml(id, chart, `Chart ${id}`, chart.rId, cx, cy, undefined, {
+  const frame = graphicFrameXml(id, chart, `Chart ${id}`, chart.rId, cx, cy, ctx, {
     frameLocks: chart.frameLocks,
     macro: chart.macro,
+    hyperlink: chart.hyperlink,
   });
   return wrapAnchor(anchor, `${frame}${clientData}`);
 }
 
 /** Build the inner xdr:sp content (nvSpPr + spPr + optional style/txBody). */
 function buildShapeContent(
-  shape: NonVisualDrawingPropertiesOptions & { textBox?: boolean },
+  shape: NonVisualDrawingPropertiesOptions & {
+    textBox?: boolean;
+    hyperlink?: TextHyperlinkOptions;
+  },
   id: number,
   fallbackName: string,
   spPr: ShapePropertiesOptions,
@@ -224,12 +244,12 @@ function buildShapeContent(
   const txBodyXml = textBody
     ? `<xdr:txBody>${textBodyDesc.stringify(textBody, ctx)}</xdr:txBody>`
     : "";
-  return `<xdr:sp${attrs}><xdr:nvSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName)}<xdr:cNvSpPr${shape.textBox === undefined ? "" : ` txBox="${shape.textBox ? 1 : 0}"`}/></xdr:nvSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}${txBodyXml}</xdr:sp>`;
+  return `<xdr:sp${attrs}><xdr:nvSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName, hlinkClickXml(shape.hyperlink, ctx))}<xdr:cNvSpPr${shape.textBox === undefined ? "" : ` txBox="${shape.textBox ? 1 : 0}"`}/></xdr:nvSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}${txBodyXml}</xdr:sp>`;
 }
 
 /** Build the inner xdr:cxnSp content (nvCxnSpPr + spPr). */
 function buildConnectorContent(
-  cNvPr: NonVisualDrawingPropertiesOptions | undefined,
+  cNvPr: (NonVisualDrawingPropertiesOptions & { hyperlink?: TextHyperlinkOptions }) | undefined,
   id: number,
   fallbackName: string,
   spPr: ShapePropertiesOptions,
@@ -258,7 +278,7 @@ function buildConnectorContent(
   const cNvCxnSpPr = cNvCxnSpPrInner.length
     ? `<xdr:cNvCxnSpPr>${cNvCxnSpPrInner.join("")}</xdr:cNvCxnSpPr>`
     : "<xdr:cNvCxnSpPr/>";
-  return `<xdr:cxnSp${attrs}><xdr:nvCxnSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName)}${cNvCxnSpPr}</xdr:nvCxnSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}</xdr:cxnSp>`;
+  return `<xdr:cxnSp${attrs}><xdr:nvCxnSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName, hlinkClickXml(cNvPr?.hyperlink, ctx))}${cNvCxnSpPr}</xdr:nvCxnSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}</xdr:cxnSp>`;
 }
 
 export function stringifyShape(shape: ShapeOptions, id: number, ctx: WriteContext): string {
@@ -331,7 +351,7 @@ export function buildGroup(
     childId++;
   }
   const xml =
-    `<xdr:grpSp><xdr:nvGrpSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, grp, `Group ${id}`)}<xdr:cNvGrpSpPr/></xdr:nvGrpSpPr>` +
+    `<xdr:grpSp><xdr:nvGrpSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, grp, `Group ${id}`, hlinkClickXml(grp.hyperlink, ctx))}<xdr:cNvGrpSpPr/></xdr:nvGrpSpPr>` +
     `<xdr:grpSpPr>${grpSpPrXml}</xdr:grpSpPr>${children.join("")}</xdr:grpSp>`;
   return { xml, nextId: childId };
 }

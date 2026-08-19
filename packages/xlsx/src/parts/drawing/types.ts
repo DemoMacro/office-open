@@ -18,6 +18,7 @@ import type {
   ShapePropertiesOptions,
   SourceRectangleOptions,
   TextBodyOptions,
+  TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import type { DefaultShapeStyleOptions } from "@office-open/core/theme";
 
@@ -122,6 +123,11 @@ export interface DrawingPictureOptions
    * the standard xfrm + rect geometry.
    */
   spPr?: ShapePropertiesOptions;
+  /**
+   * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
+   * jump to a URL when the object is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
   /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
   sourceRectangle?: SourceRectangleOptions;
   /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
@@ -141,6 +147,11 @@ export interface DrawingChartOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the chart */
   rId: string;
+  /**
+   * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
+   * jump to a URL when the object is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
   /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
   frameLocks?: GraphicFrameLockingOptions;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
@@ -149,6 +160,11 @@ export interface DrawingChartOptions
 
 /** Anchored shape (xdr:sp): geometry + optional text body. */
 export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /**
+   * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
+   * jump to a URL when the object is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
   /** Shape properties (a:CT_ShapeProperties). */
   spPr: ShapePropertiesOptions;
   /** Text body (a:CT_TextBody). */
@@ -165,6 +181,11 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
 
 /** Anchored connector (xdr:cxnSp): line/arrow geometry via spPr. */
 export interface ConnectorOptions extends DrawingAnchorOptions, BaseConnectorOptions {
+  /**
+   * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
+   * jump to a URL when the object is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
   /** Shape properties (a:CT_ShapeProperties, typically prstGeom="line"). */
   spPr: ShapePropertiesOptions;
   /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
@@ -175,6 +196,11 @@ export interface ConnectorOptions extends DrawingAnchorOptions, BaseConnectorOpt
 
 /** Shape nested inside a group (no anchor — positioned via spPr.xfrm). */
 export interface GroupShapeChildOptions extends NonVisualDrawingPropertiesOptions {
+  /**
+   * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
+   * jump to a URL when the object is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
   spPr: ShapePropertiesOptions;
   textBody?: TextBodyOptions;
   /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
@@ -187,6 +213,11 @@ export interface GroupShapeChildOptions extends NonVisualDrawingPropertiesOption
 
 /** Connector nested inside a group (no anchor). */
 export interface GroupConnectorChildOptions extends BaseConnectorOptions {
+  /**
+   * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
+   * jump to a URL when the object is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
   spPr: ShapePropertiesOptions;
   /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
   style?: DefaultShapeStyleOptions;
@@ -195,6 +226,11 @@ export interface GroupConnectorChildOptions extends BaseConnectorOptions {
 
 /** Anchored group (xdr:grpSp): group transform + nested shapes/connectors. */
 export interface GroupOptions extends DrawingAnchorOptions, BaseGroupOptions {
+  /**
+   * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
+   * jump to a URL when the object is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
   /** Group shape properties (a:CT_GroupShapeProperties: group xfrm + fill/ln). */
   grpSpPr: GroupTransform2DOptions;
   /** Nested shapes. */

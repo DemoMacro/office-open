@@ -573,6 +573,7 @@ function compileWorksheetPart(
           : {}),
         ...(img.blipEffects ? { blipEffects: img.blipEffects } : {}),
         ...(img.locking ? { locking: img.locking } : {}),
+        ...(img.hyperlink ? { hyperlink: img.hyperlink } : {}),
       });
       rid++;
       state.globalMediaIdx++;
@@ -601,6 +602,7 @@ function compileWorksheetPart(
         rId: `rId${rid}`,
         ...(chart.frameLocks ? { frameLocks: chart.frameLocks } : {}),
         ...(chart.macro !== undefined ? { macro: chart.macro } : {}),
+        ...(chart.hyperlink ? { hyperlink: chart.hyperlink } : {}),
       });
       rid++;
       state.globalChartIdx++;
@@ -622,17 +624,25 @@ function compileWorksheetPart(
     // Resolve drawing shape text-hyperlink placeholders ({hlink:key} → real
     // rId) and register each as an External hyperlink relationship.
     let resolvedDrawingXml = drawingXml!;
+    // One External relationship per distinct URL — several objects/runs
+    // pointing at the same target share it (matches how Excel writes rels).
+    const hlinkRidByUrl = new Map<string, number>();
     for (const h of ctx.hyperlinks.slice(hyperlinkBase)) {
-      drawingRels.addRelationship(
-        rid,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-        h.url,
-        "External",
-      );
+      let hlinkRid = hlinkRidByUrl.get(h.url);
+      if (hlinkRid === undefined) {
+        drawingRels.addRelationship(
+          rid,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+          h.url,
+          "External",
+        );
+        hlinkRid = rid;
+        hlinkRidByUrl.set(h.url, hlinkRid);
+        rid++;
+      }
       resolvedDrawingXml = resolvedDrawingXml
         .split(`r:id="{hlink:${h.key}}"`)
-        .join(`r:id="rId${rid}"`);
-      rid++;
+        .join(`r:id="rId${hlinkRid}"`);
     }
     const drawingIdx = i + 1;
     mapping[`Drawing${i}`] = {
@@ -714,6 +724,20 @@ function compileWorksheetPart(
       `../media/${entry.fileName}`,
     );
     sheetXml = sheetXml.replace("<!--BACKGROUND_PICTURE-->", `<picture r:id="rId${bgRid}"/>`);
+  }
+
+  // Round-trip drawing/legacyDrawing references. The referenced part passes
+  // through verbatim when its anchors do not map onto options (e.g. OLE
+  // object shape representations), so the original id stays valid. Only the
+  // placeholders the derived legs left unreplaced are affected.
+  if (wsOpts.drawingRid) {
+    sheetXml = sheetXml.replace("<!--DRAWING-->", `<drawing r:id="${wsOpts.drawingRid}"/>`);
+  }
+  if (wsOpts.legacyDrawingRid) {
+    sheetXml = sheetXml.replace(
+      "<!--LEGACY_DRAWING-->",
+      `<legacyDrawing r:id="${wsOpts.legacyDrawingRid}"/>`,
+    );
   }
 
   // Pivot tables

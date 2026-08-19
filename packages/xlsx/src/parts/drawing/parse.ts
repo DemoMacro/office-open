@@ -16,6 +16,7 @@ import {
   parseEndpointConnection,
   groupShapePropertiesDesc,
   parseNonVisualDrawingProperties,
+  readHyperlink,
   shapePropertiesDesc,
   sourceRectangleDesc,
   textBodyDesc,
@@ -24,6 +25,7 @@ import type {
   ConnectorLockingOptions,
   EndpointConnectionOptions,
   NonVisualDrawingPropertiesOptions,
+  TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import { parseShapeStyle } from "@office-open/core/theme";
 import { findChild } from "@office-open/xml";
@@ -147,10 +149,16 @@ function readAnchorFields(anchor: XmlElement, name: string, result: DrawingAncho
 function readCNvPr(
   parent: XmlElement,
   nonVisualTag: string,
-): Partial<NonVisualDrawingPropertiesOptions> {
+  ctx: ReadContext,
+): Partial<NonVisualDrawingPropertiesOptions> & { hyperlink?: TextHyperlinkOptions } {
   const nonVisual = findXdr(parent, nonVisualTag);
   const cNvPr = nonVisual ? findXdr(nonVisual, "cNvPr") : undefined;
-  return parseNonVisualDrawingProperties(cNvPr);
+  const result: Partial<NonVisualDrawingPropertiesOptions> & {
+    hyperlink?: TextHyperlinkOptions;
+  } = parseNonVisualDrawingProperties(cNvPr);
+  const hlinkClick = cNvPr ? findChild(cNvPr, "a:hlinkClick") : undefined;
+  if (hlinkClick) result.hyperlink = readHyperlink(hlinkClick, ctx);
+  return result;
 }
 
 export function parseImageAnchor(
@@ -164,6 +172,7 @@ export function parseImageAnchor(
     row: 1,
     rId: readPicRId(pic) ?? "",
   };
+  Object.assign(result, readCNvPr(pic, "nvPicPr", ctx));
 
   // preferRelativeResize (defaults true) and the a:blip adjustment effects.
   const blipFill = findXdr(pic, "blipFill");
@@ -238,7 +247,7 @@ export function parseChartAnchor(
   if (!rId) return undefined;
 
   const result = { col: 1, row: 1, rId } as DrawingChartOptions;
-  Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr"));
+  Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
   const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
   const cNvGraphicFramePr = nvGraphicFramePr
     ? findXdr(nvGraphicFramePr, "cNvGraphicFramePr")
@@ -263,7 +272,7 @@ export function parseShapeAnchor(
   const result = { col: 1, row: 1, spPr: {} } as ShapeOptions;
   readAnchorFields(anchor, name, result);
 
-  Object.assign(result, readCNvPr(sp, "nvSpPr"));
+  Object.assign(result, readCNvPr(sp, "nvSpPr", ctx));
   const nvSpPr = findXdr(sp, "nvSpPr");
   const cNvSpPr = nvSpPr ? findXdr(nvSpPr, "cNvSpPr") : undefined;
   if (cNvSpPr?.attributes?.["txBox"] !== undefined)
@@ -327,7 +336,7 @@ export function parseConnectorAnchor(
   const result = { col: 1, row: 1, spPr: {} } as ConnectorOptions;
   readAnchorFields(anchor, name, result);
 
-  Object.assign(result, readCNvPr(cxnSp, "nvCxnSpPr"));
+  Object.assign(result, readCNvPr(cxnSp, "nvCxnSpPr", ctx));
 
   const spPr = findXdr(cxnSp, "spPr");
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
@@ -352,7 +361,7 @@ export function parseGroupAnchor(
   const result = { col: 1, row: 1, grpSpPr: {} } as GroupOptions;
   readAnchorFields(anchor, name, result);
 
-  Object.assign(result, readCNvPr(grpSp, "nvGrpSpPr"));
+  Object.assign(result, readCNvPr(grpSp, "nvGrpSpPr", ctx));
 
   const grpSpPrEl = findXdr(grpSp, "grpSpPr");
   if (grpSpPrEl) {
@@ -370,7 +379,7 @@ export function parseGroupAnchor(
       const childShape = {
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupShapeChildOptions;
-      Object.assign(childShape, readCNvPr(child, "nvSpPr"));
+      Object.assign(childShape, readCNvPr(child, "nvSpPr", ctx));
       const childNvSpPr = findXdr(child, "nvSpPr");
       const childCnVSpPr = childNvSpPr ? findXdr(childNvSpPr, "cNvSpPr") : undefined;
       if (childCnVSpPr?.attributes?.["txBox"] !== undefined)
@@ -392,7 +401,7 @@ export function parseGroupAnchor(
       const childConn = {
         spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupConnectorChildOptions;
-      Object.assign(childConn, readCNvPr(child, "nvCxnSpPr"));
+      Object.assign(childConn, readCNvPr(child, "nvCxnSpPr", ctx));
       if (child.attributes?.["macro"] !== undefined)
         childConn.macro = String(child.attributes["macro"]);
       readConnectorNonVisual(childConn, child, ctx);

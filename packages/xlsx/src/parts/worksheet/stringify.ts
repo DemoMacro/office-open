@@ -16,6 +16,7 @@ import { buildRstXml } from "../shared-strings";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles } from "../styles";
 import { FormulaType } from "./types";
+import type { AnchorMarkerOptions, EmbeddedObjectAnchorOptions } from "./types";
 import type {
   CellOptions,
   CfvoOptions,
@@ -706,6 +707,49 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push("<!--BACKGROUND_PICTURE-->");
   }
 
+  /** CT_Marker corner inside an objectPr/controlPr anchor. */
+  function anchorMarkerXml(tag: string, m: AnchorMarkerOptions): string {
+    return (
+      `<${tag}><xdr:col>${m.col}</xdr:col><xdr:colOff>${m.colOff ?? 0}</xdr:colOff>` +
+      `<xdr:row>${m.row}</xdr:row><xdr:rowOff>${m.rowOff ?? 0}</xdr:rowOff></${tag}>`
+    );
+  }
+
+  /** anchor element inside objectPr/controlPr (from/to corners, 0-based). */
+  function embeddedAnchorXml(anchor: EmbeddedObjectAnchorOptions): string {
+    // The worksheet root does not declare xdr:, so the anchor declares it
+    // locally — the marker children (xdr:col…) stay well-formed.
+    const XDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing";
+    const attrs = [
+      `xmlns:xdr="${XDR_NS}"`,
+      ...(anchor.moveWithCells ? ['moveWithCells="1"'] : []),
+      ...(anchor.sizeWithCells ? ['sizeWithCells="1"'] : []),
+    ].join(" ");
+    return `<anchor ${attrs}>${anchorMarkerXml("from", anchor.from)}${anchorMarkerXml("to", anchor.to)}</anchor>`;
+  }
+
+  /**
+   * mc:AlternateContent wrapper (Excel 2010+ form for worksheet OLE objects and
+   * ActiveX controls): the Choice carries the full element, the Fallback the
+   * bare one for older readers. Namespace declarations stay local so the
+   * wrapper works regardless of what the worksheet root declares.
+   */
+  function wrapAlternateContent(
+    choiceXml: string,
+    fallbackXml: string,
+    wrapped: boolean | undefined,
+  ): string {
+    if (!wrapped) return choiceXml;
+    const AC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+    const X14_NS = "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main";
+    return (
+      `<mc:AlternateContent xmlns:mc="${AC_NS}">` +
+      `<mc:Choice xmlns:x14="${X14_NS}" Requires="x14">${choiceXml}</mc:Choice>` +
+      `<mc:Fallback>${fallbackXml}</mc:Fallback>` +
+      `</mc:AlternateContent>`
+    );
+  }
+
   // OLE objects (CT_OleObjects, after picture per XSD sequence)
   if (oleObjects.length > 0) {
     const oleParts: string[] = ["<oleObjects>"];
@@ -719,6 +763,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (ole.autoLoad) oleAttrs.push('autoLoad="1"');
       if (ole.rId) oleAttrs.push(`r:id="${escapeXml(ole.rId)}"`);
       // objectPr (CT_ObjectPr, optional child)
+      let innerXml: string;
       if (ole.objectPr) {
         const opr = ole.objectPr;
         const oprAttrs: string[] = [];
@@ -733,13 +778,18 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         if (opr.macro) oprAttrs.push(`macro="${escapeXml(opr.macro)}"`);
         if (opr.altText) oprAttrs.push(`altText="${escapeXml(opr.altText)}"`);
         if (opr.dde) oprAttrs.push('dde="1"');
-        if (opr.rId) oprAttrs.push(`r:id="${escapeXml(opr.rId)}"`);
-        oleParts.push(
-          `<oleObject ${oleAttrs.join(" ")}><objectPr${oprAttrs.length ? " " + oprAttrs.join(" ") : ""}/></oleObject>`,
-        );
+        if (opr.iconRid) oprAttrs.push(`r:id="${escapeXml(opr.iconRid)}"`);
+        const anchorXml = opr.anchor ? embeddedAnchorXml(opr.anchor) : "";
+        innerXml = `<objectPr${oprAttrs.length ? " " + oprAttrs.join(" ") : ""}>${anchorXml}</objectPr>`;
       } else {
-        oleParts.push(`<oleObject ${oleAttrs.join(" ")}/>`);
+        innerXml = "";
       }
+      const full = innerXml
+        ? `<oleObject ${oleAttrs.join(" ")}>${innerXml}</oleObject>`
+        : `<oleObject ${oleAttrs.join(" ")}/>`;
+      oleParts.push(
+        wrapAlternateContent(full, `<oleObject ${oleAttrs.join(" ")}/>`, ole.alternateContent),
+      );
     }
     oleParts.push("</oleObjects>");
     p.push(oleParts.join(""));
@@ -759,13 +809,18 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (c.linkedCell) prAttrs.push(`linkedCell="${escapeXml(c.linkedCell)}"`);
       if (c.listFillRange) prAttrs.push(`listFillRange="${escapeXml(c.listFillRange)}"`);
       if (c.formula) prAttrs.push(`cf="${escapeXml(c.formula)}"`);
-      if (prAttrs.length > 0) {
-        ctrlParts.push(
-          `<control ${cAttrs.join(" ")}><controlPr${prAttrs.length ? " " + prAttrs.join(" ") : ""}/></control>`,
-        );
-      } else {
-        ctrlParts.push(`<control ${cAttrs.join(" ")}/>`);
-      }
+      if (c.defaultSize === false) prAttrs.push('defaultSize="0"');
+      if (c.autoLine === false) prAttrs.push('autoLine="0"');
+      if (c.autoPict === false) prAttrs.push('autoPict="0"');
+      if (c.iconRid) prAttrs.push(`r:id="${escapeXml(c.iconRid)}"`);
+      const anchorXml = c.anchor ? embeddedAnchorXml(c.anchor) : "";
+      const full =
+        prAttrs.length > 0 || anchorXml
+          ? `<control ${cAttrs.join(" ")}><controlPr${prAttrs.length ? " " + prAttrs.join(" ") : ""}>${anchorXml}</controlPr></control>`
+          : `<control ${cAttrs.join(" ")}/>`;
+      ctrlParts.push(
+        wrapAlternateContent(full, `<control ${cAttrs.join(" ")}/>`, c.alternateContent),
+      );
     }
     ctrlParts.push("</controls>");
     p.push(ctrlParts.join(""));

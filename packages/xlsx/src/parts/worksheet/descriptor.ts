@@ -29,6 +29,8 @@ import type {
   ConditionalFormatRule,
   ConditionalFormatType,
   ControlOptions,
+  AnchorMarkerOptions,
+  EmbeddedObjectAnchorOptions,
   CustomSheetPropertyOptions,
   CustomSheetViewOptions,
   DataConsolidateOptions,
@@ -695,6 +697,20 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (rId) result.legacyDrawingHF = rId;
     }
 
+    // Round-trip drawing/legacyDrawing references: the referenced part may
+    // pass through verbatim (anchors the bridge does not map onto options),
+    // so keep the original reference id to re-emit the element.
+    const drawingRefEl = findChild(el, "drawing");
+    if (drawingRefEl) {
+      const rId = drawingRefEl.attributes?.["r:id"] as string | undefined;
+      if (rId) result.drawingRid = rId;
+    }
+    const legacyRefEl = findChild(el, "legacyDrawing");
+    if (legacyRefEl) {
+      const rId = legacyRefEl.attributes?.["r:id"] as string | undefined;
+      if (rId) result.legacyDrawingRid = rId;
+    }
+
     // Data consolidation (CT_DataConsolidate — function/labels/link + dataRefs)
     const dcEl = findChild(el, "dataConsolidate");
     if (dcEl) {
@@ -794,15 +810,76 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (views.length > 0) result.customSheetViews = views;
     }
 
+    /**
+     * Unwrap mc:AlternateContent around an oleObject/control: the mc:Choice leg
+     * carries the full element, mc:Fallback the bare one. Returns the element
+     * found in either the Choice or directly (unwrapped legacy form), plus
+     * whether a wrapper was present.
+     */
+    function unwrapAlternateContent(
+      el: Element,
+      innerTag: string,
+    ): { element: Element | undefined; wrapped: boolean } {
+      if (el.name !== "mc:AlternateContent") {
+        return { element: el.name === innerTag ? el : undefined, wrapped: false };
+      }
+      const choice = (el.elements ?? []).find((c) => c.name === "mc:Choice");
+      const inner = (choice?.elements ?? []).find((c) => c.name === innerTag);
+      return { element: inner, wrapped: inner !== undefined };
+    }
+
+    /** Read the anchor element inside objectPr/controlPr (from/to CT_Marker corners). */
+    function readEmbeddedAnchor(anchorEl: Element): EmbeddedObjectAnchorOptions | undefined {
+      const fromEl = findChild(anchorEl, "from");
+      const toEl = findChild(anchorEl, "to");
+      if (!fromEl || !toEl) return undefined;
+      // col/colOff/row/rowOff are xdr-prefixed child elements (CT_Marker), not attrs.
+      const markerNum = (m: Element, tag: string): number | undefined => {
+        const child = findChild(m, tag);
+        const n = child === undefined ? undefined : Number(textOf(child));
+        return n === undefined || Number.isNaN(n) ? undefined : n;
+      };
+      const marker = (m: Element): AnchorMarkerOptions | undefined => {
+        const col = markerNum(m, "xdr:col");
+        const row = markerNum(m, "xdr:row");
+        if (col === undefined || row === undefined) return undefined;
+        return {
+          col,
+          row,
+          ...(markerNum(m, "xdr:colOff") !== undefined
+            ? { colOff: markerNum(m, "xdr:colOff")! }
+            : {}),
+          ...(markerNum(m, "xdr:rowOff") !== undefined
+            ? { rowOff: markerNum(m, "xdr:rowOff")! }
+            : {}),
+        };
+      };
+      const from = marker(fromEl);
+      const to = marker(toEl);
+      if (!from || !to) return undefined;
+      return {
+        from,
+        to,
+        ...(parseOnOff(attr(anchorEl, "moveWithCells")) ? { moveWithCells: true } : {}),
+        ...(parseOnOff(attr(anchorEl, "sizeWithCells")) ? { sizeWithCells: true } : {}),
+      };
+    }
+
     // OLE objects (CT_OleObjects — oleObject attrs + optional objectPr child)
     const oleObjsEl = findChild(el, "oleObjects");
     if (oleObjsEl) {
       const oleObjects: OleObjectOptions[] = [];
-      for (const ooEl of oleObjsEl.elements ?? []) {
-        if (ooEl.name !== "oleObject") continue;
+      for (const rawEl of oleObjsEl.elements ?? []) {
+        // Excel 2010+ wraps each oleObject in mc:AlternateContent: the Choice
+        // carries the full element (objectPr + anchor), the Fallback the bare
+        // one. Parse the Choice leg and remember the wrapper for re-emission.
+        const unwrapped = unwrapAlternateContent(rawEl, "oleObject");
+        const ooEl = unwrapped.element;
+        if (!ooEl) continue;
         const shapeId = attrNum(ooEl, "shapeId");
         if (shapeId === undefined) continue;
         const oo: OleObjectOptions = { shapeId };
+        if (unwrapped.wrapped) oo.alternateContent = true;
         const progId = attr(ooEl, "progId");
         if (progId !== undefined) oo.progId = progId;
         const dvAspect = attr(ooEl, "dvAspect");
@@ -831,7 +908,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (altText !== undefined) opr.altText = altText;
           if (parseOnOff(attr(oprEl, "dde"))) opr.dde = true;
           const oprRid = attr(oprEl, "r:id");
-          if (oprRid !== undefined) opr.rId = oprRid;
+          if (oprRid !== undefined) opr.iconRid = oprRid;
+          const anchorEl = findChild(oprEl, "anchor");
+          if (anchorEl) {
+            const anchor = readEmbeddedAnchor(anchorEl);
+            if (anchor) opr.anchor = anchor;
+          }
           if (Object.keys(opr).length > 0) oo.objectPr = opr;
         }
         oleObjects.push(oo);
@@ -843,12 +925,16 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const controlsEl = findChild(el, "controls");
     if (controlsEl) {
       const controls: ControlOptions[] = [];
-      for (const cEl of controlsEl.elements ?? []) {
-        if (cEl.name !== "control") continue;
+      for (const rawEl of controlsEl.elements ?? []) {
+        // Same mc:AlternateContent wrapper as oleObjects (Excel 2010+ form).
+        const unwrapped = unwrapAlternateContent(rawEl, "control");
+        const cEl = unwrapped.element;
+        if (!cEl) continue;
         const shapeId = attrNum(cEl, "shapeId");
         const cRid = attr(cEl, "r:id");
         if (shapeId === undefined || cRid === undefined) continue;
         const c: ControlOptions = { shapeId, rId: cRid };
+        if (unwrapped.wrapped) c.alternateContent = true;
         const name = attr(cEl, "name");
         if (name !== undefined) c.name = name;
         const prEl = findChild(cEl, "controlPr");
@@ -862,6 +948,16 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (listFillRange !== undefined) c.listFillRange = listFillRange;
           const cf = attr(prEl, "cf");
           if (cf !== undefined) c.formula = cf;
+          if (String(attr(prEl, "defaultSize")) === "0") c.defaultSize = false;
+          if (String(attr(prEl, "autoLine")) === "0") c.autoLine = false;
+          if (String(attr(prEl, "autoPict")) === "0") c.autoPict = false;
+          const prRid = attr(prEl, "r:id");
+          if (prRid !== undefined) c.iconRid = prRid;
+          const anchorEl = findChild(prEl, "anchor");
+          if (anchorEl) {
+            const anchor = readEmbeddedAnchor(anchorEl);
+            if (anchor) c.anchor = anchor;
+          }
         }
         controls.push(c);
       }

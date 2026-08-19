@@ -907,6 +907,88 @@ describe("Worksheet", () => {
       ]);
     });
 
+    it("round-trips mc:AlternateContent wrappers with objectPr anchors", () => {
+      const opts: WorksheetOptions = {
+        rows: [{ cells: [{ value: "A" }] }],
+        oleObjects: [
+          {
+            shapeId: 1,
+            progId: "Paint.Picture",
+            rId: "rId4",
+            alternateContent: true,
+            objectPr: {
+              defaultSize: false,
+              iconRid: "rId5",
+              anchor: {
+                moveWithCells: true,
+                from: { col: 0, row: 0 },
+                to: { col: 3, colOff: 552450, row: 12, rowOff: 95250 },
+              },
+            },
+          },
+        ],
+        controls: [
+          {
+            shapeId: 2,
+            rId: "rId6",
+            name: "Button1",
+            alternateContent: true,
+            defaultSize: false,
+            autoLine: false,
+            autoPict: false,
+            iconRid: "rId7",
+            anchor: {
+              from: { col: 0, row: 0 },
+              to: { col: 1, row: 1 },
+            },
+          },
+        ],
+      };
+      const xml = buildWorksheetXml(opts, {});
+      expect(xml).toContain(
+        '<mc:Choice xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main" Requires="x14">',
+      );
+      expect(xml).toContain(
+        '<mc:Fallback><oleObject shapeId="1" progId="Paint.Picture" r:id="rId4"/></mc:Fallback>',
+      );
+      expect(xml).toContain(
+        '<anchor xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" moveWithCells="1">',
+      );
+      expect(xml).toContain("<xdr:col>3</xdr:col><xdr:colOff>552450</xdr:colOff>");
+      expect(xml).toContain('autoLine="0" autoPict="0" r:id="rId7"');
+      const doc = parseXml(xml, { nativeTypeAttributes: true });
+      const el = doc.elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const result = worksheetDesc.parse(
+        el,
+        {} as unknown as ReadContext,
+      ) as unknown as WorksheetOptions;
+      // CT_Marker's four elements are all required in the XSD, so stringify
+      // materializes omitted offsets as explicit zeros and parse reads them
+      // back — compare against the materialized form.
+      expect(result.oleObjects).toEqual([
+        {
+          ...opts.oleObjects![0]!,
+          objectPr: {
+            ...opts.oleObjects![0]!.objectPr!,
+            anchor: {
+              ...opts.oleObjects![0]!.objectPr!.anchor!,
+              from: { col: 0, colOff: 0, row: 0, rowOff: 0 },
+            },
+          },
+        },
+      ]);
+      expect(result.controls).toEqual([
+        {
+          ...opts.controls![0]!,
+          anchor: {
+            from: { col: 0, colOff: 0, row: 0, rowOff: 0 },
+            to: { col: 1, colOff: 0, row: 1, rowOff: 0 },
+          },
+        },
+      ]);
+    });
+
     it("round-trips webPublishItems and ext", () => {
       const opts: WorksheetOptions = {
         rows: [{ cells: [{ value: "A" }] }],

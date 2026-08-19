@@ -71,7 +71,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       id++;
     }
     for (const chart of charts) {
-      p.push(stringifyChart(chart, id));
+      p.push(stringifyChart(chart, id, ctx));
       id++;
     }
     for (const shape of shapes) {

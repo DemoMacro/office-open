@@ -3460,6 +3460,10 @@
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
         },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+        },
         "locking": {
           "$ref": "#/definitions/ConnectorLockingOptions",
           "description": "a:cxnSpLocks — connector locking (inside cNvCxnSpPr)."
@@ -3566,8 +3570,32 @@
       "additionalProperties": false,
       "description": "Form control object (CT_Control)",
       "properties": {
+        "alternateContent": {
+          "description": "Source wrapped the control in mc:AlternateContent (Excel 2010+ form: Choice carries the full element, Fallback the bare one). Re-emit the wrapper only when the source had it.",
+          "type": "boolean"
+        },
+        "anchor": {
+          "$ref": "#/definitions/EmbeddedObjectAnchorOptions",
+          "description": "Cell anchor inside controlPr (from/to corners, 0-based)."
+        },
+        "autoLine": {
+          "description": "Auto line (CT_ControlPr `@autoLine`; default true).",
+          "type": "boolean"
+        },
+        "autoPict": {
+          "description": "Auto picture (CT_ControlPr `@autoPict`; default true).",
+          "type": "boolean"
+        },
+        "defaultSize": {
+          "description": "Use the default icon size (CT_ControlPr `@defaultSize`; default true).",
+          "type": "boolean"
+        },
         "formula": {
           "description": "Control formula (CT_ControlPr `@cf`)",
+          "type": "string"
+        },
+        "iconRid": {
+          "description": "Relationship ID of the icon image (controlPr `@r:id`). Round-trip only: the icon part is not re-emitted by the compiler.",
           "type": "string"
         },
         "linkedCell": {
@@ -5155,6 +5183,30 @@
       },
       "type": "object"
     },
+    "EmbeddedObjectAnchorOptions": {
+      "additionalProperties": false,
+      "description": "OLE object / ActiveX control anchor (CT anchor inside objectPr/controlPr). Mirrors the XML verbatim: 0-based markers (CT_Marker), offsets in EMU.",
+      "properties": {
+        "from": {
+          "$ref": "#/definitions/AnchorMarkerOptions",
+          "description": "Top-left corner."
+        },
+        "moveWithCells": {
+          "description": "Move with cells (@moveWithCells; default false).",
+          "type": "boolean"
+        },
+        "sizeWithCells": {
+          "description": "Resize with cells (@sizeWithCells; default false).",
+          "type": "boolean"
+        },
+        "to": {
+          "$ref": "#/definitions/AnchorMarkerOptions",
+          "description": "Bottom-right corner."
+        }
+      },
+      "required": ["from", "to"],
+      "type": "object"
+    },
     "EndpointConnectionOptions": {
       "additionalProperties": false,
       "description": "a:stCxn / a:endCxn — a connector endpoint glued to a shape connection site.",
@@ -6292,6 +6344,10 @@
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
         },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+        },
         "locking": {
           "$ref": "#/definitions/ConnectorLockingOptions",
           "description": "a:cxnSpLocks — connector locking (inside cNvCxnSpPr)."
@@ -6439,6 +6495,10 @@
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
         },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+        },
         "locking": {
           "anyOf": [
             {
@@ -6533,6 +6593,10 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
         },
         "macro": {
           "type": "string"
@@ -7799,6 +7863,10 @@
       "additionalProperties": false,
       "description": "OLE object (CT_OleObject)",
       "properties": {
+        "alternateContent": {
+          "description": "Source wrapped the oleObject in mc:AlternateContent (Excel 2010+ form: Choice carries the full element, Fallback the bare one). Re-emit the wrapper only when the source had it.",
+          "type": "boolean"
+        },
         "autoLoad": {
           "description": "Auto load (CT_OleObject `@autoLoad`)",
           "type": "boolean"
@@ -7845,6 +7913,10 @@
           "description": "Alt text",
           "type": "string"
         },
+        "anchor": {
+          "$ref": "#/definitions/EmbeddedObjectAnchorOptions",
+          "description": "Cell anchor inside objectPr (from/to corners, 0-based)."
+        },
         "autoFill": {
           "description": "Auto fill",
           "type": "boolean"
@@ -7869,6 +7941,10 @@
           "description": "Disabled",
           "type": "boolean"
         },
+        "iconRid": {
+          "description": "Relationship ID of the icon image (objectPr `@r:id`). Round-trip only: the icon part is not re-emitted by the compiler.",
+          "type": "string"
+        },
         "locked": {
           "description": "Locked",
           "type": "boolean"
@@ -7880,10 +7956,6 @@
         "print": {
           "description": "Print",
           "type": "boolean"
-        },
-        "rId": {
-          "description": "Relationship ID (round-trip only; the target part is not re-emitted)",
-          "type": "string"
         },
         "uiObject": {
           "description": "UI object",
@@ -8785,6 +8857,10 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the picture itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the picture is clicked."
         },
         "locking": {
           "$ref": "#/definitions/PictureLockingOptions",
@@ -12405,6 +12481,10 @@
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
         },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+        },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
           "type": "boolean"
@@ -15709,6 +15789,10 @@
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the chart frame itself (a:hlinkClick inside xdr:cNvPr)."
+        },
         "lang": {
           "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
           "type": "string"
@@ -16108,6 +16192,10 @@
           "$ref": "#/definitions/DrawingHfOptions",
           "description": "Drawing in header/footer (CT_DrawingHF)"
         },
+        "drawingRid": {
+          "description": "Drawing reference r:id (CT_Worksheet `<drawing>`). Round-trip only: a drawing part whose anchors the bridge does not map onto options (e.g. OLE object shape representations) passes through verbatim, so the original reference stays valid. Absent on freshly authored worksheets — the compiler derives the reference from images/charts/shapes.",
+          "type": "string"
+        },
         "ext": {
           "description": "Extension list (extLst)",
           "type": "string"
@@ -16146,6 +16234,10 @@
         },
         "legacyDrawingHF": {
           "description": "Legacy drawing for header/footer r:id (CT_LegacyDrawingHF). Round-trip only: the referenced VML part is not re-emitted by the compiler.",
+          "type": "string"
+        },
+        "legacyDrawingRid": {
+          "description": "Legacy drawing reference r:id (CT_Worksheet `<legacyDrawing>`). Round-trip only, same passthrough semantics as  {@link  drawingRid } .",
           "type": "string"
         },
         "mergeCells": {

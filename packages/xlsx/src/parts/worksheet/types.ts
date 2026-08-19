@@ -18,6 +18,7 @@ import type {
   PictureLockingOptions,
   ShapePropertiesOptions,
   SourceRectangleOptions,
+  TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 
 import type {
@@ -350,6 +351,11 @@ export interface PictureOptions extends Omit<BasePictureOptions, "type">, Drawin
   blipEffects?: BlipEffectsOptions;
   /** Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
   locking?: PictureLockingOptions;
+  /**
+   * Click hyperlink on the picture itself (a:hlinkClick inside xdr:cNvPr) —
+   * jump to a URL when the picture is clicked.
+   */
+  hyperlink?: TextHyperlinkOptions;
 }
 
 /**
@@ -364,6 +370,10 @@ export interface WorksheetChartOptions
     Omit<NonVisualDrawingPropertiesOptions, "title"> {
   /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
   frameLocks?: GraphicFrameLockingOptions;
+  /**
+   * Click hyperlink on the chart frame itself (a:hlinkClick inside xdr:cNvPr).
+   */
+  hyperlink?: TextHyperlinkOptions;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
 }
@@ -498,6 +508,21 @@ export interface AnchorMarkerOptions {
   row: number;
   /** Offset within the row, in EMU (default: 0) */
   rowOff?: number;
+}
+
+/**
+ * OLE object / ActiveX control anchor (CT anchor inside objectPr/controlPr).
+ * Mirrors the XML verbatim: 0-based markers (CT_Marker), offsets in EMU.
+ */
+export interface EmbeddedObjectAnchorOptions {
+  /** Move with cells (@moveWithCells; default false). */
+  moveWithCells?: boolean;
+  /** Resize with cells (@sizeWithCells; default false). */
+  sizeWithCells?: boolean;
+  /** Top-left corner. */
+  from: AnchorMarkerOptions;
+  /** Bottom-right corner. */
+  to: AnchorMarkerOptions;
 }
 
 /** Object anchor (CT_ObjectAnchor). */
@@ -1360,6 +1385,19 @@ export interface WorksheetOptions {
    * only: the referenced VML part is not re-emitted by the compiler.
    */
   legacyDrawingHF?: string;
+  /**
+   * Drawing reference r:id (CT_Worksheet `<drawing>`). Round-trip only: a
+   * drawing part whose anchors the bridge does not map onto options (e.g. OLE
+   * object shape representations) passes through verbatim, so the original
+   * reference stays valid. Absent on freshly authored worksheets — the
+   * compiler derives the reference from images/charts/shapes.
+   */
+  drawingRid?: string;
+  /**
+   * Legacy drawing reference r:id (CT_Worksheet `<legacyDrawing>`). Round-trip
+   * only, same passthrough semantics as {@link drawingRid}.
+   */
+  legacyDrawingRid?: string;
   /** Selections in sheet view (CT_Selection — one per pane, max 4) */
   selection?: SelectionOptions[];
   /** Pivot selection in sheet view (CT_PivotSelection) */
@@ -1428,6 +1466,25 @@ export interface ControlOptions {
   listFillRange?: string;
   /** Control formula (CT_ControlPr `@cf`) */
   formula?: string;
+  /** Use the default icon size (CT_ControlPr `@defaultSize`; default true). */
+  defaultSize?: boolean;
+  /** Auto line (CT_ControlPr `@autoLine`; default true). */
+  autoLine?: boolean;
+  /** Auto picture (CT_ControlPr `@autoPict`; default true). */
+  autoPict?: boolean;
+  /**
+   * Relationship ID of the icon image (controlPr `@r:id`). Round-trip only:
+   * the icon part is not re-emitted by the compiler.
+   */
+  iconRid?: string;
+  /** Cell anchor inside controlPr (from/to corners, 0-based). */
+  anchor?: EmbeddedObjectAnchorOptions;
+  /**
+   * Source wrapped the control in mc:AlternateContent (Excel 2010+ form:
+   * Choice carries the full element, Fallback the bare one). Re-emit the
+   * wrapper only when the source had it.
+   */
+  alternateContent?: boolean;
 }
 
 /** Custom property (CT_CustomProperty) */
@@ -1463,6 +1520,12 @@ export interface OleObjectOptions {
   rId?: string;
   /** Object properties (CT_ObjectPr) */
   objectPr?: OleObjectPropertiesOptions;
+  /**
+   * Source wrapped the oleObject in mc:AlternateContent (Excel 2010+ form:
+   * Choice carries the full element, Fallback the bare one). Re-emit the
+   * wrapper only when the source had it.
+   */
+  alternateContent?: boolean;
 }
 
 /** OLE object properties (CT_ObjectPr) */
@@ -1489,8 +1552,13 @@ export interface OleObjectPropertiesOptions {
   altText?: string;
   /** DDE */
   dde?: boolean;
-  /** Relationship ID (round-trip only; the target part is not re-emitted) */
-  rId?: string;
+  /**
+   * Relationship ID of the icon image (objectPr `@r:id`). Round-trip only:
+   * the icon part is not re-emitted by the compiler.
+   */
+  iconRid?: string;
+  /** Cell anchor inside objectPr (from/to corners, 0-based). */
+  anchor?: EmbeddedObjectAnchorOptions;
 }
 
 /** Web publish item (CT_WebPublishItem) */

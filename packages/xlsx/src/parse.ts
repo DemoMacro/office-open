@@ -14,6 +14,7 @@ import {
   collectPassthroughParts,
   partPathToRelsPath,
   pickNonVisualDrawingProperties,
+  resolveRelationshipTarget,
   toUint8Array,
 } from "@office-open/core";
 import type { DataType } from "@office-open/core";
@@ -349,7 +350,34 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     for (const dr of drawingRels) {
       const drawingEl = xlsx.doc.get(dr.target);
       if (!drawingEl) continue;
-      const drawingData = drawingDesc.parse(drawingEl, readContext);
+      // cNvPr hyperlinks (a:hlinkClick) resolve through the drawing part's own
+      // rels: internal targets resolve against the part path, External ones
+      // (absolute URLs) stay verbatim. Fall back to the workbook context.
+      const drawingRelById = new Map<string, { target: string; mode?: string }>();
+      const drawingRelsEl = xlsx.doc.get(partPathToRelsPath(dr.target));
+      for (const rel of drawingRelsEl?.elements ?? []) {
+        if (rel.name !== "Relationship") continue;
+        const id = rel.attributes?.["Id"];
+        const target = rel.attributes?.["Target"];
+        if (id === undefined || target === undefined) continue;
+        const mode =
+          rel.attributes?.["TargetMode"] !== undefined
+            ? String(rel.attributes["TargetMode"])
+            : undefined;
+        drawingRelById.set(String(id), { target: String(target), mode });
+      }
+      const drawingCtx: ReadContext = {
+        resolveRelationship: (rid) => {
+          const rel = drawingRelById.get(rid);
+          if (!rel) return readContext.resolveRelationship(rid);
+          return rel.mode === "External"
+            ? rel.target
+            : resolveRelationshipTarget(dr.target, rel.target);
+        },
+        getPart: (path) => readContext.getPart(path),
+        getRaw: (path) => readContext.getRaw(path),
+      };
+      const drawingData = drawingDesc.parse(drawingEl, drawingCtx);
       // drawingDesc.parse yields CT-layer anchors (rId-anchored DrawingImage/
       // DrawingChart); bridge them to the user-layer shapes the compiler
       // consumes: image bytes are read back through the drawing's image
@@ -386,6 +414,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
               : {}),
             ...(image.blipEffects ? { blipEffects: image.blipEffects } : {}),
             ...(image.locking ? { locking: image.locking } : {}),
+            ...(image.hyperlink ? { hyperlink: image.hyperlink } : {}),
           });
         }
         if (images.length > 0) wsOpts.images = images;
@@ -407,6 +436,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
             ...chartCnvPr,
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
+            ...(anchor.hyperlink ? { hyperlink: anchor.hyperlink } : {}),
           });
         }
         if (charts.length > 0) wsOpts.charts = charts;
