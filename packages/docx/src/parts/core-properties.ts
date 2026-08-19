@@ -8,7 +8,7 @@
  *
  * @module
  */
-import type { ContentTypesInput, DataType } from "@office-open/core";
+import type { ContentTypesInput, DataType, EncryptedContainerOptions } from "@office-open/core";
 import type { BibliographyOptions } from "@parts/bibliography";
 import type { CommentExtendedOptions } from "@parts/comments-extended";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
@@ -58,6 +58,13 @@ import type { WebSettingsOptions } from "./web-settings";
  */
 export interface DocumentOptions extends CorePropertiesOptions {
   sections: SectionOptions[];
+  /**
+   * The source file is an encrypted OOXML package (OLE2/CFB container).
+   * Round-trip only: the plaintext needs the password, so the original bytes
+   * are carried verbatim and generate() re-emits them unchanged — every
+   * other field stays empty.
+   */
+  encrypted?: EncryptedContainerOptions;
   styles?: StylesOptions;
   numbering?: NumberingOptions;
   comments?: CommentOptions[];

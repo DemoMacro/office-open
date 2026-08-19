@@ -3,6 +3,7 @@ import {
   appPropertiesDesc,
   collectPassthroughParts,
   customPropertiesDesc,
+  isEncryptedContainer,
   parseArchive,
   parseCorePropsElement,
   partPathToRelsPath,
@@ -402,7 +403,14 @@ function parseSlideSections(
  * @returns Parsed presentation options
  */
 export function parsePresentation(data: DataType): PresentationOptions {
-  const pptx = parsePptx(data);
+  // Encrypted package (OLE2/CFB container): the plaintext needs the password,
+  // so carry the source bytes verbatim for generate() to re-emit.
+  const uint8 = toUint8Array(data);
+  if (isEncryptedContainer(uint8)) {
+    return { encrypted: { data: uint8 } };
+  }
+
+  const pptx = parsePptx(uint8);
   const opts: Partial<PresentationOptions> = {};
   if (pptx.partRefs.handoutMaster) opts.includeHandoutMaster = true;
   const sectionBySlidePath = parseSlideSections(pptx.presentation, pptx.doc);

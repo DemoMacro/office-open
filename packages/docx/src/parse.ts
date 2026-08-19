@@ -3,6 +3,7 @@ import { parseArchive } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import {
   collectPassthroughParts,
+  isEncryptedContainer,
   resolveRelationshipTarget,
   toUint8Array,
 } from "@office-open/core";
@@ -317,7 +318,15 @@ function parseRootRels(doc: ParsedArchive): {
  * @returns Document options including sections and metadata
  */
 export function parseDocument(data: DataType): DocumentOptions {
-  const docx = parseDocx(data);
+  const uint8 = toUint8Array(data);
+
+  // Encrypted package (OLE2/CFB container): the plaintext needs the password,
+  // so carry the source bytes verbatim for generate() to re-emit.
+  if (isEncryptedContainer(uint8)) {
+    return { sections: [], encrypted: { data: uint8 } };
+  }
+
+  const docx = parseDocx(uint8);
   const ctx = new DocxReadContext(
     docx,
     buildStyleCache(docx.styles),

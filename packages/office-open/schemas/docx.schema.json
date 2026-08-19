@@ -5724,6 +5724,10 @@
         "description": {
           "type": "string"
         },
+        "encrypted": {
+          "$ref": "#/definitions/EncryptedContainerOptions",
+          "description": "The source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the plaintext needs the password, so the original bytes are carried verbatim and generate() re-emits them unchanged — every other field stays empty."
+        },
         "endnoteSeparators": {
           "additionalProperties": false,
           "description": "Separator endnotes — round-tripped verbatim from the source.",
@@ -6347,6 +6351,18 @@
         }
       },
       "required": ["name"],
+      "type": "object"
+    },
+    "EncryptedContainerOptions": {
+      "additionalProperties": false,
+      "description": "Verbatim payload of a source file whose OOXML package is encrypted.\n\nRound-trip only: the plaintext needs the password, so these bytes are the only faithful representation. Every other options field stays empty — there is no content to model until the file is decrypted.",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "Complete source file bytes (OLE2/CFB container)."
+        }
+      },
+      "required": ["data"],
       "type": "object"
     },
     "EndnoteOptions": {

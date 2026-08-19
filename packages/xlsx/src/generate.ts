@@ -5,6 +5,7 @@
  */
 
 import { createPacker, OoxmlMimeType } from "@office-open/core";
+import { encryptedContainerOutput, encryptedContainerStream } from "@office-open/core";
 import type { OutputByType, OutputType, PackerOptions } from "@office-open/core";
 import type { WorkbookOptions } from "@parts/file";
 
@@ -39,6 +40,12 @@ export function generateWorkbook<T extends OutputType = "nodebuffer">(
   options: WorkbookOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
+  const encrypted = encryptedContainerOutput(
+    options,
+    packerOptions?.type ?? "nodebuffer",
+    OoxmlMimeType.XLSX,
+  );
+  if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
   return Packer.pack(options, packerOptions) as Promise<OutputByType[T]>;
 }
 
@@ -49,6 +56,12 @@ export function generateWorkbookSync<T extends OutputType = "nodebuffer">(
   options: WorkbookOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
+  const encrypted = encryptedContainerOutput(
+    options,
+    packerOptions?.type ?? "nodebuffer",
+    OoxmlMimeType.XLSX,
+  );
+  if (encrypted) return encrypted as OutputByType[T];
   return Packer.packSync(options, packerOptions) as OutputByType[T];
 }
 
@@ -65,6 +78,8 @@ export function generateWorkbookStream(
   options: WorkbookOptions,
   packerOptions?: PackerOptions,
 ): ReadableStream<Uint8Array> {
+  const encrypted = encryptedContainerStream(options);
+  if (encrypted) return encrypted;
   if (!canStreamWorkbook(options)) {
     return Packer.toStream(options, packerOptions);
   }

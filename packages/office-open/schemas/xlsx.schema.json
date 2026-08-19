@@ -5203,6 +5203,18 @@
       },
       "type": "object"
     },
+    "EncryptedContainerOptions": {
+      "additionalProperties": false,
+      "description": "Verbatim payload of a source file whose OOXML package is encrypted.\n\nRound-trip only: the plaintext needs the password, so these bytes are the only faithful representation. Every other options field stays empty — there is no content to model until the file is decrypted.",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "Complete source file bytes (OLE2/CFB container)."
+        }
+      },
+      "required": ["data"],
+      "type": "object"
+    },
     "EndpointConnectionOptions": {
       "additionalProperties": false,
       "description": "a:stCxn / a:endCxn — a connector endpoint glued to a shape connection site.",
@@ -15212,6 +15224,10 @@
             "$ref": "#/definitions/DxfOptions"
           },
           "type": "array"
+        },
+        "encrypted": {
+          "$ref": "#/definitions/EncryptedContainerOptions",
+          "description": "The source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the plaintext needs the password, so the original bytes are carried verbatim and generate() re-emits them unchanged — every other field stays empty."
         },
         "extensions": {
           "description": "Trailing extension list (workbook > extLst > ext) — round-trip only.",

@@ -9,6 +9,7 @@ import type {
   CorePropertiesOptions,
   CustomPropertyOptions,
   DataType,
+  EncryptedContainerOptions,
 } from "@office-open/core";
 import type { ThemeOptions } from "@office-open/core/theme";
 import type {
@@ -47,6 +48,13 @@ import type { MapInfoOptions } from "./xml-mapping";
 
 export interface WorkbookOptions extends CorePropertiesOptions {
   worksheets?: WorksheetOptions[];
+  /**
+   * The source file is an encrypted OOXML package (OLE2/CFB container).
+   * Round-trip only: the plaintext needs the password, so the original bytes
+   * are carried verbatim and generate() re-emits them unchanged — every
+   * other field stays empty.
+   */
+  encrypted?: EncryptedContainerOptions;
   /**
    * Workbook folder path (x15ac:absPath/@url in an mc:AlternateContent after
    * workbookPr) — round-trip only.

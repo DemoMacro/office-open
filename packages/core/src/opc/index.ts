@@ -42,6 +42,14 @@ export {
 // Output types
 export { convertOutput, OoxmlMimeType, type OutputByType, type OutputType } from "./output";
 
+// Encrypted OOXML container passthrough
+export {
+  encryptedContainerOutput,
+  encryptedContainerStream,
+  isEncryptedContainer,
+  type EncryptedContainerOptions,
+} from "./encryption";
+
 // ZIP packer
 export {
   createPacker,

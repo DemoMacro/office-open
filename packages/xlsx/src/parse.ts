@@ -12,6 +12,7 @@ import {
 import type { ParsedArchive } from "@office-open/core";
 import {
   collectPassthroughParts,
+  isEncryptedContainer,
   partPathToRelsPath,
   pickNonVisualDrawingProperties,
   resolveRelationshipTarget,
@@ -190,7 +191,14 @@ export function parseXlsx(data: DataType): XlsxDocument {
  * The returned options can be passed to `new Workbook(parsed)`.
  */
 export function parseWorkbook(data: DataType): WorkbookOptions {
-  const xlsx = parseXlsx(data);
+  // Encrypted package (OLE2/CFB container): the plaintext needs the password,
+  // so carry the source bytes verbatim for generate() to re-emit.
+  const uint8 = toUint8Array(data);
+  if (isEncryptedContainer(uint8)) {
+    return { encrypted: { data: uint8 } };
+  }
+
+  const xlsx = parseXlsx(uint8);
 
   const opts: Partial<WorkbookOptions> = {};
 
