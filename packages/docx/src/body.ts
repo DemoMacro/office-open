@@ -597,10 +597,41 @@ export function parseParagraphProperties(
       // back to a bullet (which would inject ListParagraph + numId=1).
       opts.numbering = false;
     } else if (numId === undefined) {
-      // ilvl-only numPr: overrides just the level, inheriting the numbering
-      // from the style chain — there is nothing in the numbering part to
-      // resolve, and the bullet fallback would fabricate numId=1 +
-      // ListParagraph the source never had. Drop it.
+      // A numPr without numId carries nothing resolvable — except tracked
+      // revision markers (w:ins / w:numberingChange): the numbering property
+      // set itself is a revision inheriting its numbering from the style
+      // chain. Keep those; an ilvl-only numPr stays dropped (level override,
+      // nothing in the numbering part to resolve, and the bullet fallback
+      // would fabricate numId=1 + ListParagraph the source never had).
+      const insEl = findChild(numPr, "w:ins");
+      const numberingChangeEl = findChild(numPr, "w:numberingChange");
+      if (insEl || numberingChangeEl) {
+        const rev: {
+          revisionOnly: true;
+          numberingChange?: { original: string; id: string; author: string; date?: string };
+          insertion?: NumberingInsertionOptions;
+        } = { revisionOnly: true };
+        if (numberingChangeEl) {
+          const nc: { original: string; id: string; author: string; date?: string } = {
+            original: attr(numberingChangeEl, "w:original") ?? "",
+            id: attr(numberingChangeEl, "w:id") ?? "",
+            author: attr(numberingChangeEl, "w:author") ?? "",
+          };
+          const ncDate = attr(numberingChangeEl, "w:date");
+          if (ncDate) nc.date = ncDate;
+          rev.numberingChange = nc;
+        }
+        if (insEl) {
+          const ins: Partial<NumberingInsertionOptions> = {
+            id: attr(insEl, "w:id") ?? "",
+            author: attr(insEl, "w:author") ?? "",
+          };
+          const insDate = attr(insEl, "w:date");
+          if (insDate) ins.date = insDate;
+          rev.insertion = ins as NumberingInsertionOptions;
+        }
+        opts.numbering = rev;
+      }
     } else if (ctx.numberingCache.size > 0) {
       // Cache lookup ("" = a w:num lacking the abstractNumId child → treated
       // like an unknown id, falling to the bullet, same as the old inline scan).

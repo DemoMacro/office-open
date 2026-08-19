@@ -186,18 +186,25 @@ function framePrStr(opts: FrameOptions): string {
 // ── Number properties ──
 
 function numPrStr(
-  numberId: number | string,
+  numberId: number | string | undefined,
   indentLevel: number | undefined,
   numberingChange?: { original: string; id: string; author: string; date?: string },
   insertion?: NumberingInsertionOptions,
 ): string {
-  const idVal = typeof numberId === "string" ? `{${numberId}}` : numberId;
-  // w:ilvl is optional in CT_NumPr — omit it when the source numPr carried
-  // only w:numId (level inherited rather than pinned).
-  const parts =
-    indentLevel === undefined
-      ? [`<w:numId w:val="${idVal}"/>`]
-      : [`<w:ilvl w:val="${Math.min(indentLevel, 9)}"/>`, `<w:numId w:val="${idVal}"/>`];
+  // numberId undefined → a track-change-only numPr: just the revision
+  // markers, no w:ilvl/w:numId (the numbering inherits from the style chain).
+  // Otherwise w:ilvl is optional in CT_NumPr — omit it when the source numPr
+  // carried only w:numId (level inherited rather than pinned).
+  let parts: string[];
+  if (numberId === undefined) {
+    parts = [];
+  } else {
+    const idVal = typeof numberId === "string" ? `{${numberId}}` : numberId;
+    parts =
+      indentLevel === undefined
+        ? [`<w:numId w:val="${idVal}"/>`]
+        : [`<w:ilvl w:val="${Math.min(indentLevel, 9)}"/>`, `<w:numId w:val="${idVal}"/>`];
+  }
   if (numberingChange) {
     const a = attrsRaw({
       "w:original": numberingChange.original,
@@ -323,7 +330,10 @@ export function stringifyParagraphProperties(
   const pStyle =
     options.style ??
     options.heading ??
-    (options.bullet || (options.numbering && options.numbering.autoStyle !== false)
+    (options.bullet ||
+    (options.numbering &&
+      !("revisionOnly" in options.numbering) &&
+      options.numbering.autoStyle !== false)
       ? "ListParagraph"
       : undefined);
   if (pStyle) {
@@ -347,18 +357,27 @@ export function stringifyParagraphProperties(
   // numbering (or false = remove) wins over the bullet sugar, which pins the
   // built-in bullet list (numId 1).
   if (options.numbering) {
-    (numberingReferences ??= []).push({
-      instance: options.numbering.instance ?? 0,
-      reference: options.numbering.reference,
-    });
+    if ("revisionOnly" in options.numbering) {
+      s += numPrStr(
+        undefined,
+        undefined,
+        options.numbering.numberingChange,
+        options.numbering.insertion,
+      );
+    } else {
+      (numberingReferences ??= []).push({
+        instance: options.numbering.instance ?? 0,
+        reference: options.numbering.reference,
+      });
 
-    const numId = `${options.numbering.reference}-${options.numbering.instance ?? 0}`;
-    s += numPrStr(
-      numId,
-      options.numbering.level,
-      options.numbering.numberingChange,
-      options.numbering.insertion,
-    );
+      const numId = `${options.numbering.reference}-${options.numbering.instance ?? 0}`;
+      s += numPrStr(
+        numId,
+        options.numbering.level,
+        options.numbering.numberingChange,
+        options.numbering.insertion,
+      );
+    }
   } else if (options.numbering === false) {
     s += numPrStr(0, 0);
   } else if (options.bullet) {

@@ -195,6 +195,24 @@ export type ParagraphStylePropertiesOptions = {
         /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange) */
         insertion?: NumberingInsertionOptions;
       }
+    | {
+        /**
+         * Track-change-only numPr: the source carried no w:numId — the whole
+         * numbering property set is a tracked insertion whose numbering
+         * resolves through the style chain. Emits `<w:numPr>` with only the
+         * revision markers (no w:ilvl/w:numId).
+         */
+        revisionOnly: true;
+        /** Numbering change tracking (CT_TrackChangeNumbering) */
+        numberingChange?: {
+          original: string;
+          id: string;
+          author: string;
+          date?: string;
+        };
+        /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange) */
+        insertion?: NumberingInsertionOptions;
+      }
     | false;
 } & LevelParagraphStylePropertiesOptions;
 
