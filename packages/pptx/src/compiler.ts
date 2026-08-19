@@ -732,7 +732,11 @@ export function compilePresentation(
     sections,
     ...buildPresAttrOpts(options),
   };
-  const fileRels = buildRootRelationships("ppt/presentation.xml", hasCustomProperties);
+  const fileRels = buildRootRelationships(
+    "ppt/presentation.xml",
+    hasCustomProperties,
+    options.passthroughRelationships,
+  );
   const media = descCtx.mediaCollection;
   const charts = new ChartCollection();
   const smartArts = new SmartArtCollection();

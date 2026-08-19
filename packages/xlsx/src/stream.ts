@@ -152,7 +152,11 @@ export function streamWorkbook(
   writeString(
     "_rels/.rels",
     OOXML_XML_DECLARATION +
-      buildRootRelationships("xl/workbook.xml", hasCustomProperties).serialize(),
+      buildRootRelationships(
+        "xl/workbook.xml",
+        hasCustomProperties,
+        options.passthroughRelationships,
+      ).serialize(),
   );
   writeString("docProps/core.xml", OOXML_XML_DECLARATION + buildCorePropertiesXmlString(options));
   writeString(

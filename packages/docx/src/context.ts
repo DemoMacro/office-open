@@ -267,6 +267,7 @@ export class DocxWriteContext implements WriteContext {
     this.fileRelationships = buildRootRelationships(
       "word/document.xml",
       options.customProperties !== undefined,
+      options.passthroughRelationships,
     );
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };

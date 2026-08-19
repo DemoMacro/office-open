@@ -129,7 +129,11 @@ export function compileWorkbook(
   }
 
   // File-level relationships (_rels/.rels)
-  const fileRels = buildRootRelationships("xl/workbook.xml", hasCustomProperties);
+  const fileRels = buildRootRelationships(
+    "xl/workbook.xml",
+    hasCustomProperties,
+    options.passthroughRelationships,
+  );
   mapping["FileRelationships"] = {
     data: XML_DECL + fileRels.serialize(),
     path: "_rels/.rels",

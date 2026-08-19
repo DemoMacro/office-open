@@ -197,6 +197,11 @@ export function optionalRelsPart(
 export function buildRootRelationships(
   mainPartTarget: string,
   includeCustomProperties: boolean,
+  passthroughRelationships?: readonly {
+    source: string;
+    relationshipType: string;
+    target: string;
+  }[],
 ): Relationships {
   const rels = new Relationships();
   rels.addRelationship(
@@ -220,6 +225,14 @@ export function buildRootRelationships(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
       "docProps/custom.xml",
     );
+  }
+  // Root-level passthrough relationships (round-trip): the source _rels/.rels
+  // referenced parts the model carries verbatim — the package thumbnail above
+  // all. Re-emitted as written; targets never move.
+  for (const rel of passthroughRelationships ?? []) {
+    if (rel.source !== "") continue;
+    if (rels.hasRelationship(rel.relationshipType, rel.target)) continue;
+    rels.add(rel.relationshipType as RelationshipType, rel.target);
   }
   return rels;
 }

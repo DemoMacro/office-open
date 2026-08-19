@@ -14,7 +14,7 @@
  * @module
  */
 
-import { attr } from "@office-open/xml";
+import { attr, type Element } from "@office-open/xml";
 
 import {
   contentTypesDesc,
@@ -39,7 +39,10 @@ export interface PassthroughPart {
 }
 
 export interface PassthroughRelationship {
-  /** The rebuilt part whose source .rels referenced a passthrough part. */
+  /**
+   * The rebuilt part whose source .rels referenced a passthrough part; "" for
+   * root-level relationships from the always-rebuilt `_rels/.rels`.
+   */
   source: string;
   relationshipType: string;
   /** Target exactly as written in the source .rels (relative form). */
@@ -123,9 +126,8 @@ export function collectPassthroughParts(
   // External targets (URLs) are not part references — the caller handles
   // those through their own model fields.
   const relationships: PassthroughRelationship[] = [];
-  for (const source of rebuiltPaths) {
-    const relsEl = archive.get(partPathToRelsPath(source));
-    if (!relsEl) continue;
+  const captureRels = (relsEl: Element | undefined, source: string): void => {
+    if (!relsEl) return;
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
       if (attr(rel, "TargetMode") === "External") continue;
@@ -137,7 +139,14 @@ export function collectPassthroughParts(
         relationships.push({ source, relationshipType, target, rId });
       }
     }
+  };
+  for (const source of rebuiltPaths) {
+    captureRels(archive.get(partPathToRelsPath(source)), source);
   }
+  // Root-level relationships (_rels/.rels, source ""): the root rels are
+  // always rebuilt, so entries pointing at passthrough parts — the package
+  // thumbnail above all — must be captured the same way.
+  captureRels(archive.get("_rels/.rels"), "");
 
   return { parts, relationships };
 }
