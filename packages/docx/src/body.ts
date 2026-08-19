@@ -1849,23 +1849,18 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
 
   const childList = parseRunLevelChildren(el.elements, ctx);
 
-  // Simple text optimization: a run of text-only children collapses into a
-  // single opts.text (the canonical ParagraphOptions form) instead of a
-  // children array.
-  if (childList.length > 0) {
-    let combined = "";
-    let allText = true;
-    for (const c of childList) {
-      if (!isTextOnlyRun(c)) {
-        allText = false;
-        break;
-      }
-      combined += c.text;
-    }
-    if (allText && combined) {
-      opts.text = combined;
+  // Simple text optimization: a single text-only run collapses into opts.text
+  // (the canonical ParagraphOptions form). Multiple runs stay a children
+  // array — run boundaries carry spelling-check and session-edit history and
+  // must round-trip instead of merging into one emitted run.
+  if (childList.length === 1) {
+    const only = childList[0] as unknown;
+    if (isTextOnlyRun(only) && only.text) {
+      opts.text = only.text;
       return opts as ParagraphOptions;
     }
+  }
+  if (childList.length > 0) {
     opts.children = childList;
   }
 
