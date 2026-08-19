@@ -715,6 +715,9 @@ export function parsedRunToOptions(
     (hasBlockChild && nonRefChildren.length > 1) ||
     hasMixedSymbol ||
     extraChildren.length > 0 ||
+    // Multiple w:t in one run (Word splits text for session history) — joining
+    // them into `text` would re-emit a single w:t and lose the split points.
+    textParts.length > 1 ||
     (hasStructuredBreaks &&
       (breakCount > 0 || structuredBreaks.length > 1 || hasPageBreak || hasColumnBreak));
 

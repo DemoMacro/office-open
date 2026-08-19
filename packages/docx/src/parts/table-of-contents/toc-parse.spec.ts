@@ -91,7 +91,9 @@ describe("parseToc", () => {
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = parseToc(el, readCtx, (els, ctx) => els.map((e) => parseSectionChild(e, ctx)));
-    expect(result?.entries).toHaveLength(2);
+    // 2 rendered entries + the bare field-closing paragraph (the stringify
+    // path injects the end run back into it, keeping the paragraph count).
+    expect(result?.entries).toHaveLength(3);
   });
 });
 
@@ -135,7 +137,7 @@ describe("parseBody TOC entry preservation", () => {
     const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
-    expect(tocChild?.toc.entries).toHaveLength(2);
+    expect(tocChild?.toc.entries).toHaveLength(3);
   });
 
   it("omits entries when the TOC field has no rendered result", () => {
@@ -172,7 +174,7 @@ describe("parseBody TOC entry preservation", () => {
     const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
-    expect(tocChild?.toc.entries).toHaveLength(2);
+    expect(tocChild?.toc.entries).toHaveLength(3);
   });
 
   it("captures the first entry when begin+separate share its paragraph", () => {
@@ -194,7 +196,7 @@ describe("parseBody TOC entry preservation", () => {
     const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
-    expect(tocChild?.toc.entries).toHaveLength(2);
+    expect(tocChild?.toc.entries).toHaveLength(3);
   });
 
   it("keeps a nested HYPERLINK field inside an entry from fooling depth tracking", () => {
@@ -219,7 +221,7 @@ describe("parseBody TOC entry preservation", () => {
     const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
       | { toc: { entries?: unknown[] } }
       | undefined;
-    expect(tocChild?.toc.entries).toHaveLength(1);
+    expect(tocChild?.toc.entries).toHaveLength(2);
   });
 
   it("keeps the field-closing paragraph's properties as a trailing entry", () => {

@@ -168,13 +168,12 @@ export function parseTocFieldFromElements(els: Element[]): TableOfContentsOption
  * in one paragraph — while the `w:t` requirement excludes a pure control
  * paragraph (field head / separate-only / end).
  *
- * The paragraph that closes the field (depth drops to 0) is kept only as a
- * pure control paragraph — its own pPr, no rendered text (Word parks the entry
- * style's properties there). The parse path consumes the bare fldChar run, so
- * only those properties remain. A bare closing paragraph without pPr is
- * dropped: it would round-trip as an empty paragraph the markup never
- * semantically had; one carrying text is body content (see
- * keepTocClosingParagraph) and is returned to the body by the TOC aggregator.
+ * The paragraph that closes the field (depth drops to 0) is kept as a pure
+ * control paragraph when it carries a pPr or follows rendered entries — the
+ * source markup carried that paragraph, and the stringify path injects the
+ * field-end run back into it, keeping the paragraph count identical. One
+ * carrying text is body content (see keepTocClosingParagraph) and is returned
+ * to the body by the TOC aggregator.
  */
 export function selectTocEntryElements(els: Element[]): Element[] {
   const entries: Element[] = [];
@@ -195,7 +194,7 @@ export function selectTocEntryElements(els: Element[]): Element[] {
     };
     walk(el);
     if (afterSeparate && depth === 0 && depthBefore > 0) {
-      if (keepTocClosingParagraph(el)) entries.push(el);
+      if (keepTocClosingParagraph(el, entries.length > 0)) entries.push(el);
       afterSeparate = false;
     } else if (afterSeparate && depth >= 1 && findFirst(el, "w:t") !== undefined) {
       entries.push(el);
@@ -205,14 +204,19 @@ export function selectTocEntryElements(els: Element[]): Element[] {
 }
 
 /**
- * Whether the field-closing paragraph joins the rendered entries: only a pure
- * control paragraph (its own pPr but no rendered text — Word parks the entry
- * style's properties there). A closing paragraph WITH text is body content the
- * field end drifted into (Word drops the end marker into a following heading
- * when it updates the field) — it must stay in the body, not the TOC.
+ * Whether the field-closing paragraph joins the rendered entries: a pure
+ * control paragraph (no rendered text) that either carries a pPr (Word parks
+ * the entry style's properties there) or follows at least one rendered entry
+ * — a paragraph the source markup carried, so the stringify path injects the
+ * field-end run back into it, keeping the paragraph count identical. A bare
+ * closing paragraph with no entries before it belongs to a never-rendered
+ * field (fresh dirty TOC) and is dropped. A closing paragraph WITH text is
+ * body content the field end drifted into (Word drops the end marker into a
+ * following heading when it updates the field) — it must stay in the body,
+ * not the TOC.
  */
-export function keepTocClosingParagraph(el: Element): boolean {
-  return findFirst(el, "w:pPr") !== undefined && findFirst(el, "w:t") === undefined;
+export function keepTocClosingParagraph(el: Element, hasEntries: boolean): boolean {
+  return findFirst(el, "w:t") === undefined && (hasEntries || findFirst(el, "w:pPr") !== undefined);
 }
 
 /** Recursively feed every w:instrText to the TOC instruction parser. */
