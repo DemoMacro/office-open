@@ -258,25 +258,34 @@ export function nativeZip(files: Zippable, level: number = 6): Uint8Array {
 }
 
 export async function nativeZipAsync(files: Zippable, level: number = 6): Promise<Uint8Array> {
-  if (!_nativeDeflateAsync) throw new Error("Native async deflate not available");
+  const deflateAsync = _nativeDeflateAsync;
+  if (!deflateAsync) throw new Error("Native async deflate not available");
   const crc = _nativeCrc32 ?? computeCrc32;
-  const entries: Entry[] = [];
 
-  for (const key of Object.keys(files)) {
-    const raw = files[key];
-    if (raw === undefined) continue; // Object.keys guarantees presence; guard narrows the type
-    const { data, level: entryLevel } = resolveEntryData(raw, level);
-    const c = crc(data);
-    const { compressed, method } = await compressOneAsync(data, entryLevel, _nativeDeflateAsync);
-    entries.push({
-      filename: textEncoder.encode(key),
-      data: compressed,
-      uncompressedSize: data.length,
-      crc: c,
-      method,
-      localOffset: 0,
-    });
-  }
+  // All entries deflate in parallel — node:zlib async calls run on the libuv
+  // thread pool, so a multi-part package compresses in roughly one-deflate
+  // wall clock instead of the sum (pool size caps true parallelism; task
+  // queueing is cheap relative to the deflate work itself). CRC runs inline
+  // on the main thread before each entry's first await.
+  const entries = (
+    await Promise.all(
+      Object.keys(files).map(async (key): Promise<Entry | null> => {
+        const raw = files[key];
+        if (raw === undefined) return null; // Object.keys guarantees presence; guard narrows the type
+        const { data, level: entryLevel } = resolveEntryData(raw, level);
+        const c = crc(data);
+        const { compressed, method } = await compressOneAsync(data, entryLevel, deflateAsync);
+        return {
+          filename: textEncoder.encode(key),
+          data: compressed,
+          uncompressedSize: data.length,
+          crc: c,
+          method,
+          localOffset: 0,
+        };
+      }),
+    )
+  ).filter((e): e is Entry => e !== null);
 
   return writeZipBuffer(entries);
 }

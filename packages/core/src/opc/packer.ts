@@ -100,7 +100,8 @@ export interface PackerOptions<T extends OutputType = "nodebuffer"> {
 /**
  * Asynchronously compress files and convert to the requested output format.
  *
- * Uses fflate Web Workers for non-blocking DEFLATE compression.
+ * Where a native zlib resolved (Node/Bun), entries deflate in parallel on the
+ * libuv thread pool; elsewhere fflate compresses off the main thread.
  * XML entries use DEFLATE level 1 (SuperFast) by default. Media entries are
  * split by type, matching MS Office: already-compressed formats (PNG/JPEG/GIF)
  * are STOREd, everything else uses the `media` level (default Normal).
