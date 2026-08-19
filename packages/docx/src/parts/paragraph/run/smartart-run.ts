@@ -10,9 +10,11 @@
 import type {
   ColorDefinitionOptions,
   LayoutDefinitionOptions,
+  SmartArtRawParts,
   StyleDefinitionOptions,
 } from "@office-open/core/smartart";
 import type { Floating } from "@parts/drawing";
+import type { GraphicFrameLocksOptions } from "@parts/drawing/descriptor";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { MediaTransformation } from "@shared/media";
 
@@ -40,6 +42,8 @@ export interface SmartArtOptions {
   floating?: Floating;
   /** Alternative text for accessibility */
   altText?: DocPropertiesOptions;
+  /** wp:cNvGraphicFramePr locks (null = source had none; omit for default). */
+  graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** Built-in layout ID ("default", "process1") or a custom layout definition. */
   layout?: string | LayoutDefinitionOptions;
   /** Built-in quick style ID ("simple1") or a custom style definition. */
@@ -50,4 +54,11 @@ export interface SmartArtOptions {
   runProperties?: RunPropertiesOptions;
   /** Word's pagination hint sharing the drawing run (round-trip fidelity). */
   lastRenderedPageBreak?: boolean;
+  /**
+   * Verbatim source-part bytes for byte-exact round-trip. When present,
+   * generate re-emits these bytes under the diagrams part names instead of
+   * rebuilding from nodes/layout/style/color (which stay populated and
+   * readable); dropping raw rebuilds from the structured fields as usual.
+   */
+  raw?: SmartArtRawParts;
 }

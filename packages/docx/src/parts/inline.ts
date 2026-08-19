@@ -10,7 +10,7 @@
  * @module
  */
 
-import { toUint8Array } from "@office-open/core";
+import { encodeBase64, imageTypeFromPath, toUint8Array } from "@office-open/core";
 import { TargetModeType } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
 import { createDataModel, definitionId } from "@office-open/core/smartart";
@@ -844,13 +844,37 @@ export function stringifyChildDispatch(
       layout: opts.layout ?? "default",
       style: opts.style ?? "simple1",
       color: opts.color ?? "accent1_2",
+      ...(opts.raw ? { raw: opts.raw } : {}),
     });
+
+    // Data-part companion images (dgm:pt blipFill art): register through the
+    // media collection so name pinning and dedup match the picture path. The
+    // verbatim data rels reference these by their source file names.
+    if (opts.raw?.media) {
+      for (const m of opts.raw.media) {
+        const data = toUint8Array(m.data);
+        const type = imageTypeFromPath(m.fileName);
+        ctx.file.media.addMedia(
+          data,
+          type,
+          (fileName) =>
+            ({
+              type,
+              data,
+              fileName,
+              transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+            }) as MediaData,
+          m.fileName,
+        );
+      }
+    }
 
     const drawingXml = drawingDesc.stringify(
       {
         mediaData,
         docProperties: opts.altText,
         floating: opts.floating,
+        graphicFrameLocks: opts.graphicFrameLocks,
       },
       ctx,
     );
@@ -1310,12 +1334,16 @@ function serializeDispatchChildren(
 /** Hash SmartArt data for unique key generation (duplicated from SmartArtRun). */
 function hashSmartArtData(options: SmartArtOptions): number {
   // Layout/style/color participate: two diagrams with the same nodes but
-  // different definitions are distinct parts.
+  // different definitions are distinct parts. Raw source bytes too: a
+  // round-tripped document keeps one part set per source instance even when
+  // two instances fold to identical structured options.
   const data = JSON.stringify({
     nodes: options.nodes,
     layout: options.layout,
     style: options.style,
     color: options.color,
+    rawData:
+      options.raw?.data !== undefined ? encodeBase64(toUint8Array(options.raw.data)) : undefined,
   });
   let hash = 0;
   for (let i = 0; i < data.length; i++) {

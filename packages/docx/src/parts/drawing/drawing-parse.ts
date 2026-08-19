@@ -37,6 +37,7 @@ import {
   parseLayoutDefinition,
   parseStyleDefinition,
 } from "@office-open/core/smartart";
+import type { SmartArtRawParts } from "@office-open/core/smartart";
 import { attr, attrBool, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
@@ -1171,26 +1172,50 @@ function parseSmartArtDrawing(
   const opts = parseSmartArtDataXml(dataEl);
   if (!opts) return undefined;
 
+  // Verbatim source parts: byte-exact round-trip outranks the modeled fold.
+  const raw = readSmartArtRawParts(dataPath, ctx);
+
   // Custom definitions come back structured; built-in stubs fold to their id
   // string so round-tripping a built-in diagram keeps the compact form.
-  const layoutEl = readDiagramPart(ctx, relIds, "r:lo", ctx.docx.partRefs.diagramLayout);
-  if (layoutEl) {
-    const layout = parseLayoutDefinition(layoutEl);
-    const id = layout.uniqueId?.split("/").pop();
-    opts.layout = id && id in LAYOUT_CATEGORIES ? id : layout;
+  const layoutPath = readDiagramPartPath(relIds, "r:lo", ctx.docx.partRefs.diagramLayout);
+  if (layoutPath) {
+    const layoutEl = ctx.docx.doc.get(layoutPath);
+    if (layoutEl) {
+      const layout = parseLayoutDefinition(layoutEl);
+      const id = layout.uniqueId?.split("/").pop();
+      opts.layout = id && id in LAYOUT_CATEGORIES ? id : layout;
+    }
+    const bytes = ctx.docx.doc.getRaw(layoutPath);
+    if (bytes && raw) raw.layout = bytes;
   }
-  const styleEl = readDiagramPart(ctx, relIds, "r:qs", ctx.docx.partRefs.diagramQuickStyle);
-  if (styleEl) {
-    const style = parseStyleDefinition(styleEl);
-    const id = style.uniqueId?.split("/").pop();
-    opts.style = id && id in STYLE_CATEGORIES ? id : style;
+  const stylePath = readDiagramPartPath(relIds, "r:qs", ctx.docx.partRefs.diagramQuickStyle);
+  if (stylePath) {
+    const styleEl = ctx.docx.doc.get(stylePath);
+    if (styleEl) {
+      const style = parseStyleDefinition(styleEl);
+      const id = style.uniqueId?.split("/").pop();
+      opts.style = id && id in STYLE_CATEGORIES ? id : style;
+    }
+    const bytes = ctx.docx.doc.getRaw(stylePath);
+    if (bytes && raw) raw.style = bytes;
   }
-  const colorEl = readDiagramPart(ctx, relIds, "r:cs", ctx.docx.partRefs.diagramColors);
-  if (colorEl) {
-    const color = parseColorDefinition(colorEl);
-    const id = color.uniqueId?.split("/").pop();
-    opts.color = id && id in COLOR_CATEGORIES ? id : color;
+  const colorPath = readDiagramPartPath(relIds, "r:cs", ctx.docx.partRefs.diagramColors);
+  if (colorPath) {
+    const colorEl = ctx.docx.doc.get(colorPath);
+    if (colorEl) {
+      const color = parseColorDefinition(colorEl);
+      const id = color.uniqueId?.split("/").pop();
+      opts.color = id && id in COLOR_CATEGORIES ? id : color;
+    }
+    const bytes = ctx.docx.doc.getRaw(colorPath);
+    if (bytes && raw) raw.color = bytes;
   }
+  if (raw) opts.raw = raw;
+
+  // Anchor wrapper locks: null (source had no wp:cNvGraphicFramePr) must
+  // survive so stringify does not inject the authoring default.
+  const info = parseAnchorOrInline(el);
+  if (info?.graphicFrameLocks !== undefined) opts.graphicFrameLocks = info.graphicFrameLocks;
 
   const ext = getDrawingExtent(el);
   if (ext.width !== undefined || ext.height !== undefined) {
@@ -1202,17 +1227,64 @@ function parseSmartArtDrawing(
   return { smartArt: opts as unknown as SmartArtOptions };
 }
 
-/** Resolve a dgm:relIds attribute through a part-kind map to its element. */
-function readDiagramPart(
-  ctx: DocxReadContext,
+/** Resolve a dgm:relIds attribute through a part-kind map to its part path. */
+function readDiagramPartPath(
   relIds: Element,
   attrName: "r:lo" | "r:qs" | "r:cs",
   refs: Map<string, string>,
-): Element | undefined {
+): string | undefined {
   const rId = attr(relIds, attrName);
   if (!rId) return undefined;
-  const path = lookupRId(refs, rId);
-  return path ? ctx.docx.doc.get(path) : undefined;
+  return lookupRId(refs, rId);
+}
+
+/**
+ * Collect the verbatim source parts behind a SmartArt instance: the four
+ * diagram part bytes, plus the data part's own rels and the images it
+ * references (dgm:pt blipFill art). Returns undefined unless the data part
+ * bytes resolve — raw only makes sense as a complete set anchored on data.
+ */
+function readSmartArtRawParts(
+  dataPath: string,
+  ctx: DocxReadContext,
+): SmartArtRawParts | undefined {
+  const raw: SmartArtRawParts = {};
+  const dataBytes = ctx.docx.doc.getRaw(dataPath);
+  if (!dataBytes) return undefined;
+  raw.data = dataBytes;
+
+  const relsBytes = ctx.docx.doc.getRaw(partPathToRelsPath(dataPath));
+  if (relsBytes) {
+    raw.dataRels = relsBytes;
+    const relsXml = new TextDecoder().decode(relsBytes);
+    const media: { fileName: string; data: Uint8Array }[] = [];
+    for (const m of relsXml.matchAll(/<Relationship\b[^>]*>/g)) {
+      const tag = m[0];
+      if (!/Type="[^"]*\/image"/.test(tag) || /TargetMode="External"/.test(tag)) continue;
+      const target = /Target="([^"]+)"/.exec(tag)?.[1];
+      if (!target) continue;
+      // Resolve ../media/x.png relative to the part's own directory.
+      const mediaPath = resolvePartTarget(dataPath, target);
+      const bytes = mediaPath ? ctx.docx.doc.getRaw(mediaPath) : undefined;
+      if (mediaPath && bytes) {
+        media.push({ fileName: mediaPath.split("/").pop() ?? mediaPath, data: bytes });
+      }
+    }
+    if (media.length > 0) raw.media = media;
+  }
+  return raw;
+}
+
+/** Resolve a relationship target against its source part path ("word/…" OPC path). */
+function resolvePartTarget(sourcePartPath: string, target: string): string | undefined {
+  if (target.startsWith("/")) return target.slice(1);
+  const dir = sourcePartPath.split("/").slice(0, -1);
+  for (const seg of target.split("/")) {
+    if (seg === "." || seg === "") continue;
+    if (seg === "..") dir.pop();
+    else dir.push(seg);
+  }
+  return dir.length > 0 ? dir.join("/") : undefined;
 }
 
 /**

@@ -890,34 +890,59 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     ...(ctx.smartArts.array.length > 0
       ? {
           DiagramData: ctx.smartArts.array.map((smartArtData, i) => ({
-            data: XML_DECL + smartArtData.dataModelXml,
+            data:
+              smartArtData.raw?.data !== undefined
+                ? toUint8Array(smartArtData.raw.data)
+                : XML_DECL + smartArtData.dataModelXml,
             path: `word/diagrams/data${i + 1}.xml`,
           })),
           DiagramLayout: ctx.smartArts.array.map((smartArtData, i) => ({
             data:
-              typeof smartArtData.layout === "string"
-                ? getLayoutXml(smartArtData.layout)
-                : stringifyLayoutDefinitionPart(smartArtData.layout),
+              smartArtData.raw?.layout !== undefined
+                ? toUint8Array(smartArtData.raw.layout)
+                : typeof smartArtData.layout === "string"
+                  ? getLayoutXml(smartArtData.layout)
+                  : stringifyLayoutDefinitionPart(smartArtData.layout),
             path: `word/diagrams/layout${i + 1}.xml`,
           })),
           DiagramStyle: ctx.smartArts.array.map((smartArtData, i) => ({
             data:
-              typeof smartArtData.style === "string"
-                ? getStyleXml(smartArtData.style)
-                : stringifyStyleDefinitionPart(smartArtData.style),
+              smartArtData.raw?.style !== undefined
+                ? toUint8Array(smartArtData.raw.style)
+                : typeof smartArtData.style === "string"
+                  ? getStyleXml(smartArtData.style)
+                  : stringifyStyleDefinitionPart(smartArtData.style),
             path: `word/diagrams/quickStyle${i + 1}.xml`,
           })),
           DiagramColors: ctx.smartArts.array.map((smartArtData, i) => ({
             data:
-              typeof smartArtData.color === "string"
-                ? getColorXml(smartArtData.color)
-                : stringifyColorDefinitionPart(smartArtData.color),
+              smartArtData.raw?.color !== undefined
+                ? toUint8Array(smartArtData.raw.color)
+                : typeof smartArtData.color === "string"
+                  ? getColorXml(smartArtData.color)
+                  : stringifyColorDefinitionPart(smartArtData.color),
             path: `word/diagrams/colors${i + 1}.xml`,
           })),
           DiagramDrawing: ctx.smartArts.array.map((_, i) => ({
             data: DEFAULT_DRAWING_XML,
             path: `word/diagrams/drawing${i + 1}.xml`,
           })),
+          // Data parts with their own rels (blipFill art): re-emit the rels
+          // verbatim — its rIds and ../media targets match the pinned media.
+          ...(ctx.smartArts.array.some((s) => s.raw?.dataRels !== undefined)
+            ? {
+                SmartArtDataRels: ctx.smartArts.array.flatMap((smartArtData, i) =>
+                  smartArtData.raw?.dataRels !== undefined
+                    ? [
+                        {
+                          data: toUint8Array(smartArtData.raw.dataRels),
+                          path: `word/diagrams/_rels/data${i + 1}.xml.rels`,
+                        },
+                      ]
+                    : [],
+                ),
+              }
+            : {}),
         }
       : {}),
     ...(ctx.altChunks.array.length > 0

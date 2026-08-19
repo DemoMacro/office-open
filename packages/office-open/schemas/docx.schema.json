@@ -19404,6 +19404,17 @@
           "$ref": "#/definitions/Floating",
           "description": "Floating positioning"
         },
+        "graphicFrameLocks": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLocksOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "wp:cNvGraphicFramePr locks (null = source had none; omit for default)."
+        },
         "lastRenderedPageBreak": {
           "description": "Word's pagination hint sharing the drawing run (round-trip fidelity).",
           "type": "boolean"
@@ -19426,6 +19437,10 @@
           },
           "type": "array"
         },
+        "raw": {
+          "$ref": "#/definitions/SmartArtRawParts",
+          "description": "Verbatim source-part bytes for byte-exact round-trip. When present, generate re-emits these bytes under the diagrams part names instead of rebuilding from nodes/layout/style/color (which stay populated and readable); dropping raw rebuilds from the structured fields as usual."
+        },
         "runProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
           "description": "Run properties of the wrapping drawing run (round-trip fidelity)."
@@ -19447,6 +19462,50 @@
         }
       },
       "required": ["nodes", "transformation"],
+      "type": "object"
+    },
+    "SmartArtRawParts": {
+      "additionalProperties": false,
+      "description": "Verbatim source parts for byte-exact SmartArt round-trip. When set on a  {@link  SmartArtData }  entry, the compiler re-emits these bytes under the diagram part names instead of rebuilding from the modeled XML.",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/colorsN.xml source bytes."
+        },
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/dataN.xml source bytes."
+        },
+        "dataRels": {
+          "$ref": "#/definitions/DataType",
+          "description": "Verbatim rels XML of the data part (its rIds resolve against media)."
+        },
+        "layout": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/layoutN.xml source bytes."
+        },
+        "media": {
+          "description": "Images referenced by the data part's own rels (dgm:pt blipFill art).",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "data": {
+                "$ref": "#/definitions/DataType"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "required": ["fileName", "data"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "style": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/quickStyleN.xml source bytes."
+        }
+      },
       "type": "object"
     },
     "SolidFillOptions": {

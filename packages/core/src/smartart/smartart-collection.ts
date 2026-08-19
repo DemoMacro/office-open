@@ -4,9 +4,30 @@
  * @module
  */
 
+import type { DataType } from "../util/data-type";
 import type { ColorDefinitionOptions } from "./color-definition";
 import type { LayoutDefinitionOptions } from "./layout-definition";
 import type { StyleDefinitionOptions } from "./style-definition";
+
+/**
+ * Verbatim source parts for byte-exact SmartArt round-trip. When set on a
+ * {@link SmartArtData} entry, the compiler re-emits these bytes under the
+ * diagram part names instead of rebuilding from the modeled XML.
+ */
+export interface SmartArtRawParts {
+  /** word/diagrams/dataN.xml source bytes. */
+  data?: DataType;
+  /** word/diagrams/layoutN.xml source bytes. */
+  layout?: DataType;
+  /** word/diagrams/quickStyleN.xml source bytes. */
+  style?: DataType;
+  /** word/diagrams/colorsN.xml source bytes. */
+  color?: DataType;
+  /** Images referenced by the data part's own rels (dgm:pt blipFill art). */
+  media?: { fileName: string; data: DataType }[];
+  /** Verbatim rels XML of the data part (its rIds resolve against media). */
+  dataRels?: DataType;
+}
 
 export interface SmartArtData {
   key: string;
@@ -17,6 +38,12 @@ export interface SmartArtData {
   style: string | StyleDefinitionOptions;
   /** Built-in color-transform id ("accent1_2") or a full custom definition. */
   color: string | ColorDefinitionOptions;
+  /**
+   * Round-trip verbatim parts; emitted in place of the modeled XML. The
+   * modeled fields stay populated so the Options remain readable and dropping
+   * raw rebuilds from them.
+   */
+  raw?: SmartArtRawParts;
 }
 
 /**
