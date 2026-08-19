@@ -220,13 +220,19 @@ function appendHeaderFooterRefs(
 
 function stringifySectionPropertiesChange(opts: SectionPropertiesChangeOptions): string {
   const { author, date, id, ...inner } = opts;
-  const innerXml = stringifySectionPropertiesInner(inner);
+  // The inner w:sectPr is a snapshot of the PREVIOUS properties — emit only
+  // what the source carried. Injecting the fresh-document defaults (pgSz,
+  // pgMar, docGrid) would fabricate elements the revision never had.
+  const innerXml = stringifySectionPropertiesInner(inner, true);
   return `<w:sectPrChange w:author="${author}" w:date="${date}" w:id="${id}"><w:sectPr>${innerXml}</w:sectPr></w:sectPrChange>`;
 }
 
 // ── Core XML builder ──
 
-function stringifySectionPropertiesInner(opts: SectionPropertiesDescriptorOptions): string {
+function stringifySectionPropertiesInner(
+  opts: SectionPropertiesDescriptorOptions,
+  omitDefaults = false,
+): string {
   const parts: string[] = [];
 
   // Header/footer references
@@ -279,10 +285,15 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesDescriptorOption
   const hTwips = convertToTwip(height);
   const pgW = orientation === "landscape" ? hTwips : wTwips;
   const pgH = orientation === "landscape" ? wTwips : hTwips;
-  parts.push(pageSizeXml(pgW, pgH, orientation, code));
+  if (!omitDefaults || opts.pageSize) {
+    parts.push(pageSizeXml(pgW, pgH, orientation, code));
+  }
 
-  // Page margin (always present)
-  parts.push(pageMarginXml(top, right, bottom, left, header, footer, gutter));
+  // Page margin (always present on a fresh section; a revision snapshot only
+  // when the source carried one)
+  if (!omitDefaults || opts.pageMargin) {
+    parts.push(pageMarginXml(top, right, bottom, left, header, footer, gutter));
+  }
 
   // Page borders
   if (borders) parts.push(pageBordersXml(borders));
@@ -329,7 +340,7 @@ function stringifySectionPropertiesInner(opts: SectionPropertiesDescriptorOption
   //    312, type "lines") so generated docs match East Asian line-snapping.
   //  - object: emit provided values (round-trip fidelity).
   //  - false (explicit off, e.g. parsed source had no w:docGrid): omit.
-  if (opts.grid !== false) {
+  if (omitDefaults ? typeof opts.grid === "object" : opts.grid !== false) {
     parts.push(docGridXml(linePitch, charSpace, gridType));
   }
 
