@@ -527,6 +527,18 @@ export function parseRun(
         }
         break;
       }
+      // Positional tab (EG_RunInnerContent) — absolute-positioned tab stop.
+      case "w:ptab": {
+        const alignment = attr(child, "w:alignment");
+        const leader = attr(child, "w:leader");
+        const relativeTo = attr(child, "w:relativeTo");
+        if (alignment !== undefined && leader !== undefined && relativeTo !== undefined) {
+          children.push({
+            positionalTab: { alignment, leader, relativeTo },
+          } as unknown as ParsedRunChild);
+        }
+        break;
+      }
       // Footnote/endnote ref mark inside note content. Kept as a child so its
       // run properties round-trip (Word styles the ref mark run itself).
       case "w:footnoteRef":
@@ -683,7 +695,7 @@ export function parsedRunToOptions(
   const structuredBreaks: BreakOptions[] = [];
   let hasPageBreak = false;
   let hasColumnBreak = false;
-  const extraChildren: Record<string, true>[] = [];
+  const extraChildren: Record<string, unknown>[] = [];
 
   for (const child of nonRefChildren) {
     if (typeof child === "string") {
@@ -697,6 +709,10 @@ export function parsedRunToOptions(
     } else if (typeof child === "object" && child !== null && "break" in child) {
       // Line break carrying a clear attribute (w:br/@w:clear) — preserve structure
       structuredBreaks.push((child as { break: BreakOptions }).break);
+    } else if (typeof child === "object" && child !== null) {
+      // Valued object children the text loop cannot fold (positionalTab) —
+      // keep them so useChildrenForm re-emits the wrapper as-is.
+      extraChildren.push(child as Record<string, unknown>);
     } else {
       // Empty run elements (tab, noBreakHyphen, date fields, etc.)
       const mapped = SYMBOL_TO_CHILD.get(child as symbol);
