@@ -451,18 +451,25 @@ function stringifyTrackChangeChildren(
       const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
       if (typeof xml === "string") parts.push(xml);
     } else if (typeof c !== "string") {
-      // Drawings inside the wrapper — dispatch builds their complete <w:r>.
-      // A `undefined` dispatch result means the child is a plain run shape
-      // (the only variants dispatch does not recognize).
-      const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
-      if (typeof xml === "string") {
-        parts.push(xml);
+      // A deleted plain-text run must become w:delText here, before dispatch —
+      // dispatch is blind to the track-change context and its text fast path
+      // would emit a plain w:t run. Everything else keeps the old route:
+      // dispatch builds the complete <w:r> for drawings and other variants,
+      // and plain-run shapes it does not recognize take the wrapper-aware
+      // fallback below.
+      if (isDelete && isPlainTextRun(c as ParagraphChild)) {
+        parts.push(stringifyDeletedRun(c as RunOptions));
       } else {
-        parts.push(
-          isDelete
-            ? stringifyDeletedRun(c as RunOptions)
-            : stringifyRunInline(c as RunOptions, ctx),
-        );
+        const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
+        if (typeof xml === "string") {
+          parts.push(xml);
+        } else {
+          parts.push(
+            isDelete
+              ? stringifyDeletedRun(c as RunOptions)
+              : stringifyRunInline(c as RunOptions, ctx),
+          );
+        }
       }
     } else {
       // Plain string child — inside w:del it serializes as delText.
@@ -555,6 +562,25 @@ function runPropertiesXml(child: ParagraphChild): string {
   return stringifyRunProperties(child as RunOptions) ?? "";
 }
 
+/**
+ * The plain-run shape the dispatch text fast path claims: text set, with none
+ * of the variants that legally coexist with text and have their own dispatch
+ * branch (references, the { text, hyperlink } shorthand). Callers that need
+ * context-specific text spelling (w:delText inside a deletion wrapper) use
+ * this to claim the shape before dispatch does.
+ */
+function isPlainTextRun(child: ParagraphChild): boolean {
+  const run = child as RunOptions;
+  return (
+    "text" in child &&
+    run.text !== undefined &&
+    run.footnoteReference === undefined &&
+    run.endnoteReference === undefined &&
+    !("commentReference" in child) &&
+    !("hyperlink" in child)
+  );
+}
+
 export function stringifyChildDispatch(
   child: ParagraphChild,
   ctx: BodyContext,
@@ -567,16 +593,7 @@ export function stringifyChildDispatch(
   // Fast path: a plain run with text set is by far the most common child.
   // The chain below otherwise runs ~40 discriminant checks before the caller
   // falls back to stringifyRunInline — the exact function this returns.
-  // References and the { text, hyperlink } shorthand legally coexist with
-  // text and have their own branches, so they stay on the chain.
-  if (
-    "text" in child &&
-    child.text !== undefined &&
-    (child as RunOptions).footnoteReference === undefined &&
-    (child as RunOptions).endnoteReference === undefined &&
-    !("commentReference" in child) &&
-    !("hyperlink" in child)
-  ) {
+  if (isPlainTextRun(child)) {
     return stringifyRunInline(child as RunOptions, ctx);
   }
   // Simple break types — pure XML, no side effects. A break run may carry run
