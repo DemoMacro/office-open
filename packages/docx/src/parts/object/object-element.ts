@@ -180,14 +180,18 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       attrs.push(` ObjectID="${payload.objectId ?? `_${objectOleCounter++}`}"`);
       attrs.push(` r:id="{${fileName}}"`);
       let children = "";
-      if (link) {
-        attrs.push(` UpdateMode="${link.updateMode === "onCall" ? "OnCall" : "Always"}"`);
+      {
         const innerEls: string[] = [];
-        if (link.lockedField !== undefined) {
-          innerEls.push(`<o:LockedField>${link.lockedField ? "t" : "f"}</o:LockedField>`);
+        if (link) {
+          attrs.push(` UpdateMode="${link.updateMode === "onCall" ? "OnCall" : "Always"}"`);
+          if (link.lockedField !== undefined) {
+            innerEls.push(`<o:LockedField>${link.lockedField ? "t" : "f"}</o:LockedField>`);
+          }
         }
-        if (link.fieldCodes)
-          innerEls.push(`<o:FieldCodes>${escapeXml(link.fieldCodes)}</o:FieldCodes>`);
+        // CT_OLEObject children apply to the embed form too — an embedded
+        // chart carries o:FieldCodes for its field switches.
+        if (payload.fieldCodes)
+          innerEls.push(`<o:FieldCodes>${escapeXml(payload.fieldCodes)}</o:FieldCodes>`);
         children = innerEls.join("");
       }
       const open = `<o:OLEObject${attrs.join("")}`;

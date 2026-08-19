@@ -16,7 +16,6 @@ import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 import {
-  keepTocClosingParagraph,
   parseToc,
   parseTocFieldFromElements,
   selectTocEntryElements,
@@ -442,9 +441,11 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
     // as a standalone child. An unclosed field's tail keeps the legacy rescue.
     const lastEl = tocBuffer[tocBuffer.length - 1]!;
     const closed = tocDepth <= 0;
-    const keptInEntries = closed && keepTocClosingParagraph(lastEl);
-    const returnsToBody =
-      closed && !keepTocClosingParagraph(lastEl) && findFirst(lastEl, "w:t") !== undefined;
+    // Same rule selectTocEntryElements applied inside buildTocChild: the
+    // closing paragraph is kept iff it ends up as the last collected entry.
+    const entryEls = selectTocEntryElements(tocBuffer);
+    const keptInEntries = closed && entryEls[entryEls.length - 1] === lastEl;
+    const returnsToBody = closed && !keptInEntries && findFirst(lastEl, "w:t") !== undefined;
     if (returnsToBody) {
       // Direct parseParagraph: the paragraph lives inside the field span, its
       // orphan end fldChar run is consumed by the accumulator, and the
@@ -503,6 +504,13 @@ function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
   // The aggregated field span carries no w:sdt wrapper — keep it bare so the
   // re-emitted TOC does not grow a content control the source never had.
   tocOpts.bare = true;
+  // The field end drifted into a following body paragraph (carrying text) —
+  // that paragraph round-trips through the returnsToBody path, so the emit
+  // path must not inject a second end run into the last entry.
+  const lastEl = els[els.length - 1]!;
+  if (lastEl && countFieldDelta(lastEl) < 0 && findFirst(lastEl, "w:t") !== undefined) {
+    tocOpts.endInBody = true;
+  }
   const entryEls = selectTocEntryElements(els);
   if (entryEls.length > 0) {
     // Entry paragraphs live INSIDE the field: the per-paragraph accumulator

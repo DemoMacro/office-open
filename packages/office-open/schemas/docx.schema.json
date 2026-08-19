@@ -4109,6 +4109,10 @@
         "instruction": {
           "type": "string"
         },
+        "lastRenderedPageBreak": {
+          "description": "A pagination hint Word parked on the begin run itself (w:r > w:lastRenderedPageBreak + w:fldChar begin in one run).",
+          "type": "boolean"
+        },
         "rPrXml": {
           "type": "string"
         },
@@ -17376,6 +17380,10 @@
                   "description": "\\c option -  Includes figures, tables, charts, and other items that are numbered by a SEQ field (§17.16.5.56). The sequence identifier designated by text in this switch's field-argument, which corresponds to the caption label, shall match the identifier in the corresponding SEQ field.",
                   "type": "string"
                 },
+                "endInBody": {
+                  "description": "The field-end marker lives in a body paragraph that follows the rendered entries (Word drops it into the next heading when it updates the field). That paragraph round-trips on its own — the stringify path must not inject another end run into the last entry (round-trip only).",
+                  "type": "boolean"
+                },
                 "endRPrXml": {
                   "description": "Run properties of the field's closing `end` run when Word styles it differently from the control runs (round-trip only).",
                   "type": "string"
@@ -23931,6 +23939,10 @@
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
+        },
         "regroupid": {
           "type": "number"
         },
@@ -24632,6 +24644,10 @@
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
+        },
         "regroupid": {
           "type": "number"
         },
@@ -25235,6 +25251,10 @@
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
+        },
         "regroupid": {
           "type": "number"
         },
@@ -25685,6 +25705,10 @@
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
+        },
         "regroupid": {
           "type": "number"
         },
@@ -25969,6 +25993,10 @@
         },
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
         },
         "regroupid": {
           "type": "number"
@@ -26295,6 +26323,10 @@
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
+        },
         "regroupid": {
           "type": "number"
         },
@@ -26610,6 +26642,10 @@
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
+        },
         "regroupid": {
           "type": "number"
         },
@@ -26860,6 +26896,10 @@
         },
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
         },
         "regroupid": {
           "type": "number"
@@ -27143,6 +27183,10 @@
         },
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
         },
         "regroupid": {
           "type": "number"
@@ -27759,6 +27803,10 @@
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
+        },
         "regroupid": {
           "type": "number"
         },
@@ -28148,6 +28196,10 @@
         },
         "print": {
           "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "rawChildrenXml": {
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "type": "string"
         },
         "regroupid": {
           "type": "number"

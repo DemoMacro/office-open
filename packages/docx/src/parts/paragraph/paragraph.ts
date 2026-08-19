@@ -76,6 +76,9 @@ export interface ComplexFieldOptions {
    *  the cached value across runs with per-run properties — e.g. Word's
    *  locale-mixed date results where every segment carries its own rFonts. */
   resultRunsXml?: string;
+  /** A pagination hint Word parked on the begin run itself (w:r >
+   * w:lastRenderedPageBreak + w:fldChar begin in one run). */
+  lastRenderedPageBreak?: boolean;
 }
 
 /**

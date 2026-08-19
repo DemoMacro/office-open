@@ -14,7 +14,7 @@
  * @module
  */
 import type { Element as XmlElement } from "@office-open/xml";
-import { escapeXml } from "@office-open/xml";
+import { escapeXml, stringifyElement } from "@office-open/xml";
 
 import {
   stringifyVmlAttributes,
@@ -171,6 +171,13 @@ export interface VmlBaseShapeFields
   borderright?: VmlBorderOptions;
   clientData?: VmlClientDataOptions;
   textdata?: VmlTextDataOptions;
+  /**
+   * Verbatim XML of children this parser does not model — e.g. the office:word
+   * border elements re-prefixed by Word exporters (`wvml:bordertop` for
+   * `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's
+   * content model is an unordered repeating choice, so the tail is valid.
+   */
+  rawChildrenXml?: string;
 }
 
 /** ST_EditAs. */
@@ -410,6 +417,7 @@ function stringifyShapeElements(opts: VmlBaseShapeFields): string {
   }
   if (opts.clientData !== undefined) parts.push(stringifyVmlClientData(opts.clientData));
   if (opts.textdata !== undefined) parts.push(stringifyVmlTextData(opts.textdata));
+  if (opts.rawChildrenXml) parts.push(opts.rawChildrenXml);
   return parts.join("");
 }
 
@@ -424,6 +432,23 @@ function parseShapeAttrs(
     out.style = parseVmlShapeStyle(parseVmlStyle(String(el.attributes.style)));
   }
 }
+
+/** Child shape element names — collected by the group child loop, never by
+ * the EG_ShapeElements switch (their slots are group members, not shared
+ * shape-element children). */
+const NESTED_SHAPE_NAMES = new Set([
+  "v:shape",
+  "v:shapetype",
+  "v:group",
+  "v:rect",
+  "v:roundrect",
+  "v:oval",
+  "v:line",
+  "v:image",
+  "v:arc",
+  "v:curve",
+  "v:polyline",
+]);
 
 /** Parse the EG_ShapeElements children from `el` onto `out`. */
 function parseShapeElements(el: XmlElement, out: Record<string, unknown>): void {
@@ -501,6 +526,24 @@ function parseShapeElements(el: XmlElement, out: Record<string, unknown>): void 
         break;
       case "pvml:iscomment":
         out.iscomment = parseVmlIsComment(child);
+        break;
+      default:
+        // Unmodeled child — keep it verbatim instead of dropping it. Word
+        // exporters sometimes bind a standard namespace under a second prefix
+        // (wvml: for office:word), which the literal-prefix cases above miss.
+        // o:complex, o:ink and o:equationxml have dedicated collectors
+        // outside this switch, and nested v: shapes are collected by the
+        // group child loop — collecting any of them here too would emit
+        // them twice.
+        if (
+          child.name === "o:complex" ||
+          child.name === "o:ink" ||
+          child.name === "o:equationxml" ||
+          (child.name !== undefined && NESTED_SHAPE_NAMES.has(child.name))
+        ) {
+          break;
+        }
+        out.rawChildrenXml = (out.rawChildrenXml ?? "") + stringifyElement(child);
         break;
     }
   }

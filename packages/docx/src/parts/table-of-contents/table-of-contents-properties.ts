@@ -177,6 +177,14 @@ export interface TableOfContentsOptions {
   bare?: boolean;
 
   /**
+   * The field-end marker lives in a body paragraph that follows the rendered
+   * entries (Word drops it into the next heading when it updates the field).
+   * That paragraph round-trips on its own — the stringify path must not
+   * inject another end run into the last entry (round-trip only).
+   */
+  endInBody?: boolean;
+
+  /**
    * Verbatim XML of the field's begin→separate control runs, as serialized
    * `<w:r>…</w:r>` sequences (round-trip only; Word splits the instruction
    * across runs — leading space / text / trailing space, each with its own

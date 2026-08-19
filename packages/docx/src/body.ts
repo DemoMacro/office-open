@@ -934,6 +934,10 @@ interface FieldRunState {
   pendingResult: string;
   controlRPr?: string;
   resultRPr?: string;
+  /** Field nesting depth (1 = outermost field). */
+  depth: number;
+  /** The outer field's begin run — checked for a co-located pagination hint. */
+  beginRunEl?: Element;
   collectingResult: boolean;
   /** Instruction-stage run elements (begin → separate/end), buffered for the
    *  plain-shape check at the closing end marker. */
@@ -944,6 +948,7 @@ interface FieldRunState {
 
 const initialFieldRunState = (): FieldRunState => ({
   kind: null,
+  depth: 0,
   pendingFormField: null,
   pendingInstruction: "",
   pendingResult: "",
@@ -991,6 +996,16 @@ function feedFieldRun(
   if (fldCharEl) {
     const fctype = attr(fldCharEl, "w:fldCharType");
     if (fctype === "begin") {
+      // A nested field opening inside an outer field's instruction/result span
+      // (e.g. `t "<seq Appendix>-<seq Figure>"` marker fields): keep the whole
+      // nested chain verbatim in the outer field's stage buffer instead of
+      // resetting the accumulator — the plain state machine cannot represent
+      // interleaved instructions, and the verbatim channel round-trips them.
+      if (state.kind === "complex" && state.depth > 0) {
+        state.depth++;
+        (state.collectingResult ? state.resultRunEls : state.instrRunEls).push(run);
+        return { consumed: true };
+      }
       const ffDataEl = findChild(fldCharEl, "w:ffData");
       if (ffDataEl) {
         state.kind = "form";
@@ -1002,19 +1017,34 @@ function feedFieldRun(
       }
       // The begin run's rPr stands in for the field's control-run rPr.
       state.controlRPr = runRPrXml(run);
+      state.beginRunEl = run;
       state.resultRPr = undefined;
       state.collectingResult = false;
+      state.depth = 1;
       state.instrRunEls = [];
       state.resultRunEls = [];
     } else if (fctype === "separate") {
+      if (state.kind === "complex" && state.depth > 1) {
+        (state.collectingResult ? state.resultRunEls : state.instrRunEls).push(run);
+        return { consumed: true };
+      }
       state.collectingResult = true;
       state.resultRunEls = [];
     } else if (fctype === "end" && state.kind) {
+      if (state.kind === "complex" && state.depth > 1) {
+        state.depth--;
+        (state.collectingResult ? state.resultRunEls : state.instrRunEls).push(run);
+        return { consumed: true };
+      }
       let child: ParagraphChild | undefined;
       if (state.kind === "form" && state.pendingFormField) {
         child = { formField: state.pendingFormField };
       } else if (state.kind === "complex") {
         const cf: ComplexFieldOptions = { instruction: state.pendingInstruction };
+        // Pagination hint parked on the begin run — re-emit it on the begin run.
+        if (findChild(state.beginRunEl ?? run, "w:lastRenderedPageBreak")) {
+          cf.lastRenderedPageBreak = true;
+        }
         // Mark the result present when the field carried any result run — an
         // empty-text result still round-trips its separate marker.
         if (state.resultRunEls.length > 0) cf.result = state.pendingResult;
@@ -1041,11 +1071,28 @@ function feedFieldRun(
         child = { complexField: cf };
       }
       state.kind = null;
+      state.depth = 0;
       state.pendingFormField = null;
       state.collectingResult = false;
       state.instrRunEls = [];
       state.resultRunEls = [];
       return { consumed: true, child };
+    }
+    // An end (or separate) marker with no open field is the tail of a
+    // cross-paragraph field the accumulator never saw. A bare marker run is
+    // consumed silently (the field's own emit re-creates it); one carrying
+    // extra content (pagination hint, rPr) round-trips verbatim so nothing
+    // is lost.
+    if (!state.kind) {
+      // Only a run carrying real content beyond the marker (e.g. a pagination
+      // hint) needs the verbatim channel — a bare or rPr-only end run is
+      // re-created by the field's own emit path.
+      const extras = (run.elements ?? []).filter(
+        (c) => c.type === "element" && c.name !== "w:fldChar" && c.name !== "w:rPr",
+      );
+      if (extras.length > 0) {
+        return { consumed: true, child: { rawXml: stringifyElement(run) } };
+      }
     }
     return { consumed: true };
   }

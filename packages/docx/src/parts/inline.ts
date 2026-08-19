@@ -92,8 +92,9 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
         ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
           `<w:r>${res}<${textTag} xml:space="preserve">${escapeXml(cf.result)}</${textTag}></w:r>`
         : "";
+  const lrpb = cf.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
   return (
-    `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"/></w:r>` +
+    `<w:r>${ctrl}${lrpb}<w:fldChar w:fldCharType="begin"/></w:r>` +
     instrXml +
     resultXml +
     `<w:r>${cf.endRPrXml ?? ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
