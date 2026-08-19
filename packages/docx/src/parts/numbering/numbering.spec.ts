@@ -282,10 +282,12 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect((out.match(/<w:num /g) ?? []).length).toBe(1);
   });
 
-  it("replaces the level definition when a lvlOverride carries a nested w:lvl", () => {
+  it("keeps a nested w:lvl lvlOverride on the instance, abstract untouched", () => {
     // CT_NumLvl choice: startOverride | lvl. The nested-lvl form redefines the
-    // level wholesale (Word's "restart and redefine" shape) — parse must swap
-    // the level in, not just look at startOverride.
+    // level wholesale (Word's "restart and redefine" shape) — parse keeps it
+    // on the instance config so the abstract definition and the override both
+    // round-trip; merging into the abstract levels would re-emit the override
+    // content inside w:abstractNum and drop the w:lvlOverride wrapper.
     const xml =
       '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
       '<w:abstractNum w:abstractNumId="0">' +
@@ -304,15 +306,24 @@ describe("parseNumberingDefinitions (round-trip)", () => {
 
     const first = opts?.abstractNumberings[0];
     expect(first).toBeDefined();
-    expect(first!.levels[0]?.start).toBe(3);
-    expect(first!.levels[0]?.format).toBe("lowerLetter");
-    expect(first!.levels[0]?.text).toBe("(%1)");
+    expect(first!.levels[0]?.start).toBe(1);
+    expect(first!.levels[0]?.format).toBe("decimal");
+    expect(first!.overrideLevels?.[0]?.num).toBe(0);
+    expect(first!.overrideLevels?.[0]?.level?.start).toBe(3);
+    expect(first!.overrideLevels?.[0]?.level?.format).toBe("lowerLetter");
+    expect(first!.overrideLevels?.[0]?.level?.text).toBe("(%1)");
+
+    // Re-emitted: the override wrapper and its nested level survive verbatim.
+    const out = new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(writeCtx);
+    expect(out).toContain(
+      '<w:lvlOverride w:ilvl="0"><w:lvl w:ilvl="0"><w:start w:val="3"/><w:numFmt w:val="lowerLetter"/><w:lvlText w:val="(%1)"/>',
+    );
   });
 
-  it("applies per-instance lvlOverride/startOverride over the abstract level start", () => {
+  it("keeps per-instance lvlOverride/startOverride separate from the abstract level", () => {
     // abstract level 0 starts at 1; the concrete num re-pins it to 3 via
-    // lvlOverride. parse must apply the override or the list's restart
-    // numbering is silently lost on round-trip.
+    // lvlOverride. The override stays on the instance config so the w:num
+    // re-emits it instead of silently reverting the list's restart numbering.
     const xml =
       '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
       'xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml">' +
@@ -331,7 +342,11 @@ describe("parseNumberingDefinitions (round-trip)", () => {
 
     const first = opts?.abstractNumberings[0];
     expect(first).toBeDefined();
-    expect(first!.levels[0]?.start).toBe(3);
+    expect(first!.levels[0]?.start).toBe(1);
+    expect(first!.overrideLevels?.[0]).toEqual({ num: 0, start: 3 });
+
+    const out = new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(writeCtx);
+    expect(out).toContain('<w:lvlOverride w:ilvl="0"><w:startOverride w:val="3"/></w:lvlOverride>');
   });
 });
 

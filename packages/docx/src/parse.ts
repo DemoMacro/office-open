@@ -486,10 +486,12 @@ export function parseDocument(data: DataType): DocumentOptions {
   if (docx.numbering) {
     // withPart so picture bullets resolve their imagedata r:id against
     // numbering.xml's own rels, not the document's.
+    // An existing part always yields options — even an empty shell must
+    // round-trip as-is instead of falling back to the fresh default list.
     const numOpts = ctx.withPart("word/numbering.xml", () =>
       parseNumberingDefinitions(docx.numbering!, parseParagraphProperties, ctx),
     );
-    if (numOpts) opts.numbering = numOpts;
+    opts.numbering = numOpts ?? { abstractNumberings: [] };
   }
 
   // Font table

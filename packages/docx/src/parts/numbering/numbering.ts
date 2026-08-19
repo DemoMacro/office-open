@@ -42,6 +42,25 @@ export interface NumberingOptions {
      * or dead definitions) keep their w:num element.
      */
     instanceCount?: number;
+    /**
+     * Per-instance level overrides (the instance w:num's w:lvlOverride
+     * children): a wholesale level redefinition and/or a start re-pin,
+     * kept separate from the abstract definition so both round-trip.
+     */
+    overrideLevels?: LevelOverrideOptions[];
+    /**
+     * Additional references (other source w:num ids) pointing at the same
+     * abstract definition with identical overrides. Word documents routinely
+     * reference one w:abstractNum from several w:num; without the aliases
+     * each would emit its own copy of the definition.
+     */
+    aliases?: string[];
+    /**
+     * Reference of another config holding the same abstract definition: this
+     * config's instances share it (source w:num elements pointing at one
+     * w:abstractNumId with differing overrides). The definition emits once.
+     */
+    sharedDefinitionOf?: string;
   }[];
   /** Numbering cleanup ID (w:numIdMacAtCleanup) */
   numIdMacAtCleanup?: number;
@@ -161,7 +180,7 @@ export class Numbering {
       abstractNumId: number;
       reference: string;
       instance: number;
-      overrideLevels?: { num: number; start?: number }[];
+      overrideLevels?: LevelOverrideOptions[];
     }
   >();
   private referenceConfigMap = new Map<string, LevelsOptions[]>();
@@ -174,15 +193,17 @@ export class Numbering {
     drawing?: string;
   }[];
 
-  public constructor(options: NumberingOptions) {
+  public constructor(options: NumberingOptions, injectDefaultList = true) {
     this._numIdMacAtCleanup = options.numIdMacAtCleanup;
     this._numPicBullets = options.numPicBullets;
 
-    // Only inject the default bullet numbering when the caller supplied no
-    // numbering content at all. Round-tripped documents carry their own (even
-    // a part holding only numPicBullets or numIdMacAtCleanup), so injecting a
-    // default would inflate the part (extra abstractNum + 9 levels).
+    // Only inject the default bullet numbering on a fresh compile (Word ships
+    // a default bullet list) when the caller supplied no numbering content at
+    // all. Round-tripped documents carry their own — even an empty shell part
+    // or one holding only numPicBullets/numIdMacAtCleanup — so injecting a
+    // default would inflate or corrupt the part (extra abstractNum + 9 levels).
     if (
+      injectDefaultList &&
       options.abstractNumberings.length === 0 &&
       !options.numPicBullets &&
       options.numIdMacAtCleanup === undefined
@@ -202,17 +223,34 @@ export class Numbering {
     }
 
     for (const con of options.abstractNumberings) {
-      this.abstractNumberingData.set(con.reference, {
+      // A config sharing another's definition resolves to the same data
+      // object — the serializer's identity dedup emits the abstractNum once.
+      const shared = con.sharedDefinitionOf
+        ? this.abstractNumberingData.get(con.sharedDefinitionOf)
+        : undefined;
+      const abstractData = shared ?? {
         id: this.abstractNumUniqueNumericId(),
         levels: con.levels,
         properties: con.properties,
-      });
+      };
+      this.abstractNumberingData.set(con.reference, abstractData);
+      // Aliased references resolve to the same abstract data — several source
+      // w:num elements share one w:abstractNum.
+      for (const alias of con.aliases ?? []) {
+        this.abstractNumberingData.set(alias, abstractData);
+      }
       this.referenceConfigMap.set(con.reference, con.levels);
       // Round-tripped instances exist in the source regardless of body use —
       // pre-register them so their w:num is emitted even when no paragraph
-      // references the definition (styles-only or dead definitions).
+      // references the definition (styles-only or dead definitions). Each
+      // round-tripped config maps to one source w:num, so its lvlOverride
+      // children travel with it. Aliases are one w:num each, not a per-alias
+      // copy of the whole instance run.
       for (let i = 0; i < (con.instanceCount ?? 0); i++) {
-        this.registerConcreteInstance(con.reference, i);
+        this.registerConcreteInstance(con.reference, i, con.overrideLevels);
+      }
+      for (const alias of con.aliases ?? []) {
+        this.registerConcreteInstance(alias, 0, con.overrideLevels);
       }
     }
   }
@@ -239,7 +277,12 @@ export class Numbering {
       }
     }
 
+    // Alias references share the abstract data object — emit each definition
+    // once (object identity dedup).
+    const emittedAbstracts = new Set<unknown>();
     for (const an of this.abstractNumberingData.values()) {
+      if (emittedAbstracts.has(an)) continue;
+      emittedAbstracts.add(an);
       parts.push(stringifyAbstractNumbering(an.id, an.levels, an.properties));
     }
     for (const cn of this.concreteNumberingData.values()) {
@@ -275,7 +318,7 @@ export class Numbering {
   private registerConcreteInstance(
     reference: string,
     instance: number,
-    overrideLevels?: { num: number; start?: number }[],
+    overrideLevels?: LevelOverrideOptions[],
   ): void {
     const abstractNumbering = this.abstractNumberingData.get(reference);
     if (!abstractNumbering) return;
@@ -304,6 +347,20 @@ export class Numbering {
 }
 
 // ── Types ──
+
+/**
+ * Per-instance level override (CT_NumLvl, child of the instance's w:num):
+ * a nested w:lvl redefines the level wholesale, w:startOverride re-pins its
+ * start; both may appear together.
+ */
+export interface LevelOverrideOptions {
+  /** Level index the override applies to (w:lvlOverride @w:ilvl). */
+  num: number;
+  /** Start override (w:startOverride @w:val). */
+  start?: number;
+  /** Wholesale level redefinition (nested w:lvl). */
+  level?: LevelsOptions;
+}
 
 /** w:abstractNum attributes + child elements + w15 restart (CT_AbstractNum). */
 export interface AbstractNumberingPropertiesOptions {
@@ -372,7 +429,7 @@ function stringifyAbstractNumbering(
 function stringifyConcreteNumbering(cn: {
   numId: number;
   abstractNumId: number;
-  overrideLevels?: { num: number; start?: number }[];
+  overrideLevels?: LevelOverrideOptions[];
 }): string {
   const parts: string[] = [];
   parts.push(`<w:num w:numId="${decimalNumber(cn.numId)}">`);
@@ -380,10 +437,12 @@ function stringifyConcreteNumbering(cn: {
 
   if (cn.overrideLevels) {
     for (const level of cn.overrideLevels) {
-      if (level.start !== undefined) {
-        parts.push(
-          `<w:lvlOverride w:ilvl="${level.num}"><w:startOverride w:val="${level.start}"/></w:lvlOverride>`,
-        );
+      // CT_NumLvl sequence: startOverride before the nested lvl redefinition.
+      if (level.start !== undefined || level.level !== undefined) {
+        const inner =
+          (level.start !== undefined ? `<w:startOverride w:val="${level.start}"/>` : "") +
+          (level.level !== undefined ? stringifyLevel(level.level) : "");
+        parts.push(`<w:lvlOverride w:ilvl="${level.num}">${inner}</w:lvlOverride>`);
       } else {
         parts.push(`<w:lvlOverride w:ilvl="${level.num}"/>`);
       }
@@ -397,7 +456,11 @@ function stringifyConcreteNumbering(cn: {
 function stringifyLevel(opts: LevelsOptions): string {
   const children: string[] = [];
 
-  children.push(`<w:start w:val="${decimalNumber(opts.start ?? 1)}"/>`);
+  // w:start is optional (defaults to 1): a source level without it must not
+  // gain an explicit element on round-trip.
+  if (opts.start !== undefined) {
+    children.push(`<w:start w:val="${decimalNumber(opts.start)}"/>`);
+  }
   if (opts.format) children.push(`<w:numFmt w:val="${opts.format}"/>`);
   if (opts.levelRestart !== undefined)
     children.push(`<w:lvlRestart w:val="${decimalNumber(opts.levelRestart)}"/>`);
@@ -524,37 +587,84 @@ export function parseNumberingDefinitions(
     return { levels, properties };
   };
 
+  // Group the w:num entries referencing one w:abstractNum with identical
+  // overrides: Word documents routinely reference a shared definition from
+  // several instances (styles-lists reuse). The group becomes one config —
+  // one emitted abstractNum with the group's w:num count — and the extra
+  // source num ids travel as aliases so paragraphs referencing them still
+  // resolve. Differing overrides keep separate configs: an override belongs
+  // to its w:num, not to the shared definition.
+  const groups = new Map<
+    string,
+    { primary: string; aliases: string[]; overrides: LevelOverrideOptions[] }
+  >();
+  const parsedDefinitions = new Map<string, ReturnType<typeof parseAbstractDefinition>>();
   for (const { numId, abstractId, numEl } of numEntries) {
     const abstractEl = abstractNums.get(abstractId);
     if (!abstractEl) continue;
-
-    const parsed = parseAbstractDefinition(abstractEl);
-    if (!parsed) continue;
-    // Apply per-instance level overrides (CT_NumLvl sequence: both children
-    // may appear together — a nested w:lvl redefines the level wholesale, then
-    // startOverride re-pins its start). Dropping either silently reverts the
-    // list's numbering.
+    const overrides: LevelOverrideOptions[] = [];
     for (const overrideEl of numEl.elements ?? []) {
       if (overrideEl.name !== "w:lvlOverride") continue;
       const ilvl = attrNum(overrideEl, "w:ilvl");
       if (ilvl === undefined) continue;
+      const override: LevelOverrideOptions = { num: ilvl };
       const startOverrideEl = findChild(overrideEl, "w:startOverride");
-      const startOverride = startOverrideEl ? attrNum(startOverrideEl, "w:val") : undefined;
+      if (startOverrideEl) {
+        const val = attrNum(startOverrideEl, "w:val");
+        if (val !== undefined) override.start = val;
+      }
       const lvlEl = findChild(overrideEl, "w:lvl");
       if (lvlEl) {
         const levelOpts = parseLevelEl(lvlEl, parseParagraphProperties, ctx);
-        if (levelOpts) {
-          const idx = parsed.levels.findIndex((l) => l.level === ilvl);
-          if (idx >= 0) parsed.levels[idx] = levelOpts;
-          else parsed.levels.push(levelOpts);
-        }
+        if (levelOpts) override.level = levelOpts;
       }
-      if (startOverride !== undefined) {
-        const level = parsed.levels.find((l) => l.level === ilvl);
-        if (level) level.start = startOverride;
+      overrides.push(override);
+    }
+    // Per-instance level overrides (CT_NumLvl sequence: both children may
+    // appear together — a nested w:lvl redefines the level wholesale,
+    // startOverride re-pins its start). They stay on the instance config so
+    // the abstract definition and the override both round-trip; merging them
+    // into the abstract levels would re-emit the override twice and mutate
+    // the shared definition when several w:num reference it.
+    const key = `${abstractId}|${JSON.stringify(overrides)}`;
+    const group = groups.get(key);
+    if (group) {
+      group.aliases.push(`list_${numId}`);
+    } else {
+      groups.set(key, { primary: `list_${numId}`, aliases: [], overrides });
+      if (!parsedDefinitions.has(String(abstractId))) {
+        const parsed = parseAbstractDefinition(abstractEl);
+        if (parsed) parsedDefinitions.set(String(abstractId), parsed);
       }
     }
-    configs.push({ reference: `list_${numId}`, ...parsed, instanceCount: 1 });
+  }
+  // First group per abstractId owns the definition; later groups (same
+  // abstract, differing overrides) point back at it so it emits once.
+  const primaryPerAbstract = new Map<string, string>();
+  for (const [key, group] of groups) {
+    const abstractId = Number(key.split("|")[0]);
+    const parsed = parsedDefinitions.get(String(abstractId));
+    if (!parsed) continue;
+    const primary = primaryPerAbstract.get(String(abstractId));
+    if (primary === undefined) {
+      primaryPerAbstract.set(String(abstractId), group.primary);
+      configs.push({
+        reference: group.primary,
+        ...parsed,
+        instanceCount: 1,
+        ...(group.overrides.length > 0 ? { overrideLevels: group.overrides } : {}),
+        ...(group.aliases.length > 0 ? { aliases: group.aliases } : {}),
+      });
+    } else {
+      configs.push({
+        reference: group.primary,
+        ...parsed,
+        instanceCount: 1,
+        sharedDefinitionOf: primary,
+        ...(group.overrides.length > 0 ? { overrideLevels: group.overrides } : {}),
+        ...(group.aliases.length > 0 ? { aliases: group.aliases } : {}),
+      });
+    }
   }
 
   // Orphan abstractNums (no w:num references them) still carry their levels

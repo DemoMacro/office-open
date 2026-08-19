@@ -247,6 +247,9 @@ export class DocxWriteContext implements WriteContext {
 
     this.numbering = new Numbering(
       options.numbering ? options.numbering : { abstractNumberings: [] },
+      // Fresh compile ships Word's default bullet list; a round-tripped
+      // numbering part is emitted exactly as parsed (an empty shell included).
+      !options.contentTypes,
     );
 
     this.comments = {
