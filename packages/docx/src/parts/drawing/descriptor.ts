@@ -25,6 +25,8 @@ import type {
   EffectListOptions,
   FillOptions,
   OutlineOptions,
+  Scene3DOptions,
+  Shape3DOptions,
   SourceRectangleOptions,
   TileOptions,
 } from "@office-open/core/drawing";
@@ -127,6 +129,10 @@ export interface DrawingDescriptorOptions {
   fill?: FillOptions;
   /** Shape effects (shadow, glow, etc.) */
   effects?: EffectListOptions;
+  /** 3D scene (pic:spPr/a:scene3d) — camera and lighting. */
+  scene3d?: Scene3DOptions;
+  /** 3D shape properties (pic:spPr/a:sp3d). */
+  shape3d?: Shape3DOptions;
   /** Image blip effects (brightness, contrast, etc.) */
   blipEffects?: BlipEffectsOptions;
   /** Image tile fill mode */
@@ -328,6 +334,8 @@ function stringifyShapeProps(
   outline?: OutlineOptions,
   fill?: FillOptions,
   effects?: EffectListOptions,
+  scene3d?: Scene3DOptions,
+  shape3d?: Shape3DOptions,
 ): string {
   const spPr = shapePropertiesDesc.stringify(
     {
@@ -343,6 +351,8 @@ function stringifyShapeProps(
       fill,
       outline,
       effects,
+      scene3d,
+      shape3d,
     },
     NOOP_CTX,
   );
@@ -714,7 +724,7 @@ function stringifyGraphicDataContent(
   hlIds: HyperlinkIds,
   ctx: BodyContext,
 ): string {
-  const { outline, fill, effects, blipEffects, tile } = opts;
+  const { outline, fill, effects, scene3d, shape3d, blipEffects, tile } = opts;
   const transform = mediaData.transformation;
 
   if (mediaData.type === "chart") {
@@ -773,7 +783,7 @@ function stringifyGraphicDataContent(
     `<pic:pic xmlns:pic="${PIC_URI}">` +
     stringifyNvPicPr(hlIds, md.nonVisualProperties) +
     stringifyBlipFill(md, blipEffects, tile) +
-    stringifyShapeProps(transform, outline, fill, effects) +
+    stringifyShapeProps(transform, outline, fill, effects, scene3d, shape3d) +
     `</pic:pic></a:graphicData>`
   );
 }

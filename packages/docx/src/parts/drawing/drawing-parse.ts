@@ -339,6 +339,10 @@ export function parsePictureRun(
     if (ln) imageOpts.outline = outlineDesc.parse(ln, ctx);
     const effectLst = findChild(picSpPr, "a:effectLst");
     if (effectLst) imageOpts.effects = effectListDesc.parse(effectLst, ctx);
+    const scene3d = findChild(picSpPr, "a:scene3d");
+    if (scene3d) imageOpts.scene3d = scene3DDesc.parse(scene3d, ctx);
+    const sp3d = findChild(picSpPr, "a:sp3d");
+    if (sp3d) imageOpts.shape3d = shape3DDesc.parse(sp3d, ctx);
     // Rotation/flip live on pic:spPr/a:xfrm (ST_Angle in 1/60000 deg). Convert
     // to degrees to match the MediaTransformation API — createTransformation
     // multiplies back by 60_000 on stringify, so integer-degree rotation stays

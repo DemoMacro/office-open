@@ -760,6 +760,8 @@ export function stringifyChildDispatch(
         outline: opts.outline,
         fill: opts.fill,
         effects: opts.effects,
+        scene3d: opts.scene3d,
+        shape3d: opts.shape3d,
         blipEffects: opts.blipEffects,
         tile: opts.tile,
         graphicFrameLocks: opts.graphicFrameLocks,

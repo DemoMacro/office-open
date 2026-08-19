@@ -4,6 +4,8 @@ import type {
   EffectListOptions,
   FillOptions,
   OutlineOptions,
+  Scene3DOptions,
+  Shape3DOptions,
   SourceRectangleOptions,
   TileOptions,
 } from "@office-open/core/drawing";
@@ -35,6 +37,10 @@ interface CorePictureOptions {
   outline?: OutlineOptions;
   fill?: FillOptions;
   effects?: EffectListOptions;
+  /** 3D scene (pic:spPr/a:scene3d) — camera and lighting on the picture. */
+  scene3d?: Scene3DOptions;
+  /** 3D shape properties (pic:spPr/a:sp3d). */
+  shape3d?: Shape3DOptions;
   blipEffects?: BlipEffectsOptions;
   sourceRectangle?: SourceRectangleOptions;
   tile?: TileOptions;

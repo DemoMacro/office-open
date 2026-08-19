@@ -14374,6 +14374,14 @@
               "$ref": "#/definitions/RunPropertiesOptions",
               "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
             },
+            "scene3d": {
+              "$ref": "#/definitions/Scene3DOptions",
+              "description": "3D scene (pic:spPr/a:scene3d) — camera and lighting on the picture."
+            },
+            "shape3d": {
+              "$ref": "#/definitions/Shape3DOptions",
+              "description": "3D shape properties (pic:spPr/a:sp3d)."
+            },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions"
             },
@@ -14464,6 +14472,14 @@
             "runProperties": {
               "$ref": "#/definitions/RunPropertiesOptions",
               "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
+            },
+            "scene3d": {
+              "$ref": "#/definitions/Scene3DOptions",
+              "description": "3D scene (pic:spPr/a:scene3d) — camera and lighting on the picture."
+            },
+            "shape3d": {
+              "$ref": "#/definitions/Shape3DOptions",
+              "description": "3D shape properties (pic:spPr/a:sp3d)."
             },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions"
