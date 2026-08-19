@@ -5501,6 +5501,11 @@
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
               "type": "string"
             },
+            "noEmbed": {
+              "const": true,
+              "description": "An empty a:blip carrying no r:embed — Word emits this in a pic:spPr duplicate of pic:blipFill (the spPr copy references no image of its own). No media is registered; the blip re-emits empty. When set, data and imageType are meaningless.",
+              "type": "boolean"
+            },
             "rotWithShape": {
               "description": "Whether the fill rotates with the shape",
               "type": "boolean"
@@ -5518,7 +5523,8 @@
               "type": "string"
             }
           },
-          "required": ["data", "imageType", "type"],
+          "required": ["type"],
+          "title": "type",
           "type": "object"
         },
         {

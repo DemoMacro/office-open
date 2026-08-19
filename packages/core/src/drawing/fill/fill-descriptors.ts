@@ -291,18 +291,22 @@ function emitBlipFill(options: BlipFillConfigOptions & { type: "blip" }, embed?:
   // caller supplies embed (a media reference already registered with the write
   // context, e.g. `{image1.png}`), use it verbatim so the emitted reference
   // matches the registration.
-  const fileName = `${uniqueId()}.${options.imageType}`;
+  const fileName = `${uniqueId()}.${options.imageType ?? "png"}`;
   const embedRef = embed ?? `{${fileName}}`;
 
   const blipChildren: string[] = [];
   if (options.blipEffects) {
     blipChildren.push(...createBlipEffects(options.blipEffects));
   }
-  const blip = element(
-    "a:blip",
-    { cstate: "none", "r:embed": embedRef },
-    blipChildren.length > 0 ? blipChildren : undefined,
-  );
+  // noEmbed: the source blip carried no r:embed (an empty marker) — re-emit
+  // it bare instead of fabricating a media reference.
+  const blip = options.noEmbed
+    ? element("a:blip", undefined, blipChildren.length > 0 ? blipChildren : undefined)
+    : element(
+        "a:blip",
+        { cstate: "none", "r:embed": embedRef },
+        blipChildren.length > 0 ? blipChildren : undefined,
+      );
 
   const children: string[] = [blip, createSourceRectangle(options.sourceRectangle)];
   if (options.tile) {
@@ -320,12 +324,15 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
   kind: "custom",
   stringify(opts, ctx) {
     if (typeof opts !== "string" && opts.type === "blip") {
+      // noEmbed: an empty-marker blip — nothing to register with the media
+      // store; emit the bare a:blipFill shape (attrs, srcRect, stretch).
+      if (opts.noEmbed) return emitBlipFill(opts);
       // Register the image media via the write context, then emit a:blipFill
       // with the returned {fileName} placeholder. The format-package compiler
       // replaces the placeholder with a relationship rId at pack time.
       const placeholder = ctx.addMedia(
-        toUint8Array(opts.data, { encoding: "base64" }),
-        opts.imageType,
+        toUint8Array(opts.data!, { encoding: "base64" }),
+        opts.imageType!,
       );
       return emitBlipFill(opts, placeholder);
     }
@@ -371,6 +378,17 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
+          if (blipOpts.tile) blip.tile = blipOpts.tile;
+          return blip;
+        }
+        if (blipOpts.referenceId === undefined) {
+          // Empty a:blip (no r:embed) — Word's pic:spPr duplicate of
+          // pic:blipFill references no image of its own. Keep the fill shape
+          // (attrs, srcRect, stretch) instead of degrading to noFill.
+          const blip: BlipFillConfigOptions & { type: "blip" } = { type: "blip", noEmbed: true };
+          if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
+          if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
           return blip;

@@ -21,10 +21,17 @@ export interface GradientStopOptions {
  * Blip fill options (image fill) for DrawingML shapes.
  */
 export interface BlipFillConfigOptions {
+  /**
+   * An empty a:blip carrying no r:embed — Word emits this in a pic:spPr
+   * duplicate of pic:blipFill (the spPr copy references no image of its
+   * own). No media is registered; the blip re-emits empty. When set, data
+   * and imageType are meaningless.
+   */
+  noEmbed?: true;
   /** Image data: raw bytes, ArrayBuffer, or a base64 data URL string. */
-  data: DataType;
+  data?: DataType;
   /** Image type */
-  imageType: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  imageType?: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   /** DPI of the image */
   dpi?: number;
   /** Whether the fill rotates with the shape */
@@ -110,7 +117,9 @@ export const extractBlipFillMedia = (
   fill: FillOptions,
   nameAllocator?: (type: string) => string,
 ): BlipFillMediaData | undefined => {
-  if (typeof fill === "string" || fill.type !== "blip") return undefined;
+  // A noEmbed blip fill carries no media of its own (empty a:blip marker).
+  if (typeof fill === "string" || fill.type !== "blip" || !fill.data || !fill.imageType)
+    return undefined;
   const raw = toUint8Array(fill.data);
   const fileName = nameAllocator
     ? nameAllocator(fill.imageType)

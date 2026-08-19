@@ -392,7 +392,7 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
   // re-registers via addMedia, deduped to the same canonical.
   if (opts.fill && typeof opts.fill !== "string" && opts.fill.type === "blip" && opts.fill.data) {
     const blipFill = opts.fill;
-    const raw = toUint8Array(blipFill.data, { encoding: "base64" });
+    const raw = toUint8Array(blipFill.data!, { encoding: "base64" });
     const fileName = `image_blip.${blipFill.imageType ?? "png"}`;
     pptx.addImage(fileName, {
       key: fileName,
