@@ -180,7 +180,7 @@ function readGrpSpLocks(cNvGrpSpPr: Element | undefined): GroupShapeLocksOptions
  * Extract {@link AnchorInfo} from the drawing's wp:inline or wp:anchor.
  * Returns `null` when the drawing has neither wrapper.
  */
-function parseAnchorOrInline(el: Element): AnchorInfo | null {
+function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | null {
   const inline = findFirst(el, "wp:inline");
   const anchor = inline ? undefined : findFirst(el, "wp:anchor");
   const parent = inline ?? anchor;
@@ -213,9 +213,24 @@ function parseAnchorOrInline(el: Element): AnchorInfo | null {
   if (docPr) {
     const cNvPrOpts = parseNonVisualDrawingProperties(docPr);
     const id = attr(docPr, "id");
-    if (id !== undefined || Object.keys(cNvPrOpts).length > 0) {
+    // CT_NonVisualDrawingProps children: click/hover hyperlinks resolve to
+    // their external targets, re-registered on stringify.
+    const hyperlink: { click?: string; hover?: string } = {};
+    const clickRid = attr(findChild(docPr, "a:hlinkClick"), "r:id");
+    if (clickRid) hyperlink.click = ctx.docx.partRefs.hyperlinks.get(clickRid);
+    const hoverRid = attr(findChild(docPr, "a:hlinkHover"), "r:id");
+    if (hoverRid) hyperlink.hover = ctx.docx.partRefs.hyperlinks.get(hoverRid);
+    if (
+      id !== undefined ||
+      Object.keys(cNvPrOpts).length > 0 ||
+      hyperlink.click !== undefined ||
+      hyperlink.hover !== undefined
+    ) {
       const alt: Partial<DocPropertiesOptions> = { ...cNvPrOpts };
       if (id !== undefined) alt.id = id;
+      if (hyperlink.click !== undefined || hyperlink.hover !== undefined) {
+        alt.hyperlink = hyperlink as DocPropertiesOptions["hyperlink"];
+      }
       info.altText = alt as DocPropertiesOptions;
     }
   }
@@ -282,7 +297,7 @@ export function parsePictureRun(
   el: Element,
   ctx: DocxReadContext,
 ): { picture: PictureOptions } | undefined {
-  const info = parseAnchorOrInline(el);
+  const info = parseAnchorOrInline(el, ctx);
   if (!info) return undefined;
 
   // Get graphic → graphicData → blip
@@ -782,7 +797,7 @@ function parseWpsShapeDrawing(
   const wsp = findFirst(el, "wps:wsp");
   if (!wsp) return undefined;
 
-  const info = parseAnchorOrInline(el) ?? {};
+  const info = parseAnchorOrInline(el, ctx) ?? {};
   const data = parseWpsShapeCore(wsp, ctx);
 
   const shape: ShapeOptions = {
@@ -810,7 +825,7 @@ function parseWpgGroupDrawing(
   const wgp = findFirst(el, "wpg:wgp");
   if (!wgp) return undefined;
 
-  const info = parseAnchorOrInline(el) ?? {};
+  const info = parseAnchorOrInline(el, ctx) ?? {};
   const grpSpPr = findChild(wgp, "wpg:grpSpPr");
   const { childOffset, childExtent } = readGroupCoords(grpSpPr);
 
@@ -1142,7 +1157,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   bridgeChartExternalData(chartPath, chartSpace as ChartSpaceOptions, ctx);
 
   // Anchor wrapper fields: extent, alt text, frame locks, floating position.
-  const info = parseAnchorOrInline(el);
+  const info = parseAnchorOrInline(el, ctx);
   const ext = getDrawingExtent(el);
   const opts: ChartOptions = {
     ...chartSpace,
@@ -1219,7 +1234,7 @@ function parseSmartArtDrawing(
 
   // Anchor wrapper locks: null (source had no wp:cNvGraphicFramePr) must
   // survive so stringify does not inject the authoring default.
-  const info = parseAnchorOrInline(el);
+  const info = parseAnchorOrInline(el, ctx);
   if (info?.graphicFrameLocks !== undefined) opts.graphicFrameLocks = info.graphicFrameLocks;
 
   const ext = getDrawingExtent(el);
