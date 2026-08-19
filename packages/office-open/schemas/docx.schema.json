@@ -9215,6 +9215,10 @@
             "superScript": {
               "additionalProperties": false,
               "properties": {
+                "baseArgumentSize": {
+                  "description": "Argument size scaling for the base (m:e/m:argPr/m:argSz).",
+                  "type": "number"
+                },
                 "children": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
@@ -9230,6 +9234,10 @@
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "superScriptArgumentSize": {
+                  "description": "Argument size scaling for the superscript (m:sup/m:argPr/m:argSz).",
+                  "type": "number"
                 }
               },
               "required": ["children", "superScript"],
@@ -9246,6 +9254,10 @@
             "subScript": {
               "additionalProperties": false,
               "properties": {
+                "baseArgumentSize": {
+                  "description": "Argument size scaling for the base (m:e/m:argPr/m:argSz).",
+                  "type": "number"
+                },
                 "children": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
@@ -9261,6 +9273,10 @@
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "subScriptArgumentSize": {
+                  "description": "Argument size scaling for the subscript (m:sub/m:argPr/m:argSz).",
+                  "type": "number"
                 }
               },
               "required": ["children", "subScript"],
@@ -9281,6 +9297,10 @@
                   "description": "Align sub/super scripts (m:sSubSupPr/m:alnScr).",
                   "type": "boolean"
                 },
+                "baseArgumentSize": {
+                  "description": "Argument size scaling for the base (m:e/m:argPr/m:argSz).",
+                  "type": "number"
+                },
                 "children": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
@@ -9297,11 +9317,19 @@
                   },
                   "type": "array"
                 },
+                "subScriptArgumentSize": {
+                  "description": "Argument size scaling for the subscript (m:sub/m:argPr/m:argSz).",
+                  "type": "number"
+                },
                 "superScript": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "superScriptArgumentSize": {
+                  "description": "Argument size scaling for the superscript (m:sup/m:argPr/m:argSz).",
+                  "type": "number"
                 }
               },
               "required": ["children", "subScript", "superScript"],
@@ -9318,6 +9346,10 @@
             "preSubSuperScript": {
               "additionalProperties": false,
               "properties": {
+                "baseArgumentSize": {
+                  "description": "Argument size scaling for the base (m:e/m:argPr/m:argSz).",
+                  "type": "number"
+                },
                 "children": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
@@ -9334,11 +9366,19 @@
                   },
                   "type": "array"
                 },
+                "subScriptArgumentSize": {
+                  "description": "Argument size scaling for the subscript (m:sub/m:argPr/m:argSz).",
+                  "type": "number"
+                },
                 "superScript": {
                   "items": {
                     "$ref": "#/definitions/MathInput"
                   },
                   "type": "array"
+                },
+                "superScriptArgumentSize": {
+                  "description": "Argument size scaling for the superscript (m:sup/m:argPr/m:argSz).",
+                  "type": "number"
                 }
               },
               "required": ["children", "subScript", "superScript"],

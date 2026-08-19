@@ -94,28 +94,28 @@ export function stringifyMathInput(value: MathInput): string {
       opts.alignScript || ctrl
         ? `<m:sSubSupPr>${opts.alignScript ? `<m:alnScr m:val="${onOff(true)}"/>` : ""}${ctrl}</m:sSubSupPr>`
         : "<m:sSubSupPr/>";
-    return `<m:sSubSup>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:sub>${stringifyChildren(opts.subScript)}</m:sub><m:sup>${stringifyChildren(opts.superScript)}</m:sup></m:sSubSup>`;
+    return `<m:sSubSup>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup></m:sSubSup>`;
   }
 
   if ("preSubSuperScript" in value) {
     const opts = value.preSubSuperScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sPrePr>${ctrl}</m:sPrePr>` : "<m:sPrePr/>";
-    return `<m:sPre>${pr}<m:sub>${stringifyChildren(opts.subScript)}</m:sub><m:sup>${stringifyChildren(opts.superScript)}</m:sup><m:e>${stringifyChildren(opts.children)}</m:e></m:sPre>`;
+    return `<m:sPre>${pr}<m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup><m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e></m:sPre>`;
   }
 
   if ("superScript" in value) {
     const opts = value.superScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sSupPr>${ctrl}</m:sSupPr>` : "<m:sSupPr/>";
-    return `<m:sSup>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:sup>${stringifyChildren(opts.superScript)}</m:sup></m:sSup>`;
+    return `<m:sSup>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup></m:sSup>`;
   }
 
   if ("subScript" in value) {
     const opts = value.subScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sSubPr>${ctrl}</m:sSubPr>` : "<m:sSubPr/>";
-    return `<m:sSub>${pr}<m:e>${stringifyChildren(opts.children)}</m:e><m:sub>${stringifyChildren(opts.subScript)}</m:sub></m:sSub>`;
+    return `<m:sSub>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub></m:sSub>`;
   }
 
   if ("fraction" in value) {
@@ -580,10 +580,10 @@ function readNum(el: Element | undefined): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Read an m:argSz scaling value from an m:argPr-bearing argument element. */
+/** Read an m:argSz scaling value from an argument element (m:arg > m:argPr > m:argSz). */
 function readArgSize(argEl: Element | undefined): number | undefined {
   if (!argEl) return undefined;
-  return readNum(findChild(argEl, "m:argSz"));
+  return readNum(findChild(findChild(argEl, "m:argPr"), "m:argSz"));
 }
 
 function parseMathFraction(el: Element): MathInput {
@@ -625,20 +625,28 @@ function spreadCtrlPr(prEl: Element | undefined): { controlProperties?: RunPrope
 }
 
 function parseMathSuperScript(el: Element): MathInput {
+  const baseArgumentSize = readArgSize(findChild(el, "m:e"));
+  const supArgumentSize = readArgSize(findChild(el, "m:sup"));
   return {
     superScript: {
       children: parseMathArg(el, "m:e"),
       superScript: parseMathArg(el, "m:sup"),
+      ...(baseArgumentSize !== undefined ? { baseArgumentSize } : {}),
+      ...(supArgumentSize !== undefined ? { superScriptArgumentSize: supArgumentSize } : {}),
       ...spreadCtrlPr(findChild(el, "m:sSupPr")),
     },
   };
 }
 
 function parseMathSubScript(el: Element): MathInput {
+  const baseArgumentSize = readArgSize(findChild(el, "m:e"));
+  const subArgumentSize = readArgSize(findChild(el, "m:sub"));
   return {
     subScript: {
       children: parseMathArg(el, "m:e"),
       subScript: parseMathArg(el, "m:sub"),
+      ...(baseArgumentSize !== undefined ? { baseArgumentSize } : {}),
+      ...(subArgumentSize !== undefined ? { subScriptArgumentSize: subArgumentSize } : {}),
       ...spreadCtrlPr(findChild(el, "m:sSubPr")),
     },
   };
@@ -647,11 +655,17 @@ function parseMathSubScript(el: Element): MathInput {
 function parseMathSubSuperScript(el: Element): MathInput {
   const pr = findChild(el, "m:sSubSupPr");
   const alignScript = pr ? readOnOff(findChild(pr, "m:alnScr")) : undefined;
+  const baseArgumentSize = readArgSize(findChild(el, "m:e"));
+  const subArgumentSize = readArgSize(findChild(el, "m:sub"));
+  const supArgumentSize = readArgSize(findChild(el, "m:sup"));
   return {
     subSuperScript: {
       children: parseMathArg(el, "m:e"),
       subScript: parseMathArg(el, "m:sub"),
       superScript: parseMathArg(el, "m:sup"),
+      ...(baseArgumentSize !== undefined ? { baseArgumentSize } : {}),
+      ...(subArgumentSize !== undefined ? { subScriptArgumentSize: subArgumentSize } : {}),
+      ...(supArgumentSize !== undefined ? { superScriptArgumentSize: supArgumentSize } : {}),
       ...(alignScript !== undefined ? { alignScript } : {}),
       ...spreadCtrlPr(pr),
     },
@@ -875,11 +889,17 @@ function parseMathLimitUpper(el: Element): MathInput {
 }
 
 function parseMathPreSubSuperScript(el: Element): MathInput {
+  const baseArgumentSize = readArgSize(findChild(el, "m:e"));
+  const subArgumentSize = readArgSize(findChild(el, "m:sub"));
+  const supArgumentSize = readArgSize(findChild(el, "m:sup"));
   return {
     preSubSuperScript: {
       children: parseMathArg(el, "m:e"),
       subScript: parseMathArg(el, "m:sub"),
       superScript: parseMathArg(el, "m:sup"),
+      ...(baseArgumentSize !== undefined ? { baseArgumentSize } : {}),
+      ...(subArgumentSize !== undefined ? { subScriptArgumentSize: subArgumentSize } : {}),
+      ...(supArgumentSize !== undefined ? { superScriptArgumentSize: supArgumentSize } : {}),
       ...spreadCtrlPr(findChild(el, "m:sPrePr")),
     },
   };

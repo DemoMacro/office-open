@@ -208,6 +208,10 @@ export type MathInput =
       superScript: {
         children: MathInput[];
         superScript: MathInput[];
+        /** Argument size scaling for the base (m:e/m:argPr/m:argSz). */
+        baseArgumentSize?: number;
+        /** Argument size scaling for the superscript (m:sup/m:argPr/m:argSz). */
+        superScriptArgumentSize?: number;
         /** Control-character formatting (m:sSupPr/m:ctrlPr). */
         controlProperties?: RunPropertiesOptions;
       };
@@ -216,6 +220,10 @@ export type MathInput =
       subScript: {
         children: MathInput[];
         subScript: MathInput[];
+        /** Argument size scaling for the base (m:e/m:argPr/m:argSz). */
+        baseArgumentSize?: number;
+        /** Argument size scaling for the subscript (m:sub/m:argPr/m:argSz). */
+        subScriptArgumentSize?: number;
         /** Control-character formatting (m:sSubPr/m:ctrlPr). */
         controlProperties?: RunPropertiesOptions;
       };
@@ -225,6 +233,12 @@ export type MathInput =
         children: MathInput[];
         subScript: MathInput[];
         superScript: MathInput[];
+        /** Argument size scaling for the base (m:e/m:argPr/m:argSz). */
+        baseArgumentSize?: number;
+        /** Argument size scaling for the subscript (m:sub/m:argPr/m:argSz). */
+        subScriptArgumentSize?: number;
+        /** Argument size scaling for the superscript (m:sup/m:argPr/m:argSz). */
+        superScriptArgumentSize?: number;
         /** Align sub/super scripts (m:sSubSupPr/m:alnScr). */
         alignScript?: boolean;
         /** Control-character formatting (m:sSubSupPr/m:ctrlPr). */
@@ -236,6 +250,12 @@ export type MathInput =
         children: MathInput[];
         subScript: MathInput[];
         superScript: MathInput[];
+        /** Argument size scaling for the subscript (m:sub/m:argPr/m:argSz). */
+        subScriptArgumentSize?: number;
+        /** Argument size scaling for the superscript (m:sup/m:argPr/m:argSz). */
+        superScriptArgumentSize?: number;
+        /** Argument size scaling for the base (m:e/m:argPr/m:argSz). */
+        baseArgumentSize?: number;
         /** Control-character formatting (m:sPrePr/m:ctrlPr). */
         controlProperties?: RunPropertiesOptions;
       };
