@@ -1137,7 +1137,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   if (!chartSpace.type) return undefined;
   bridgeChartExternalData(chartPath, chartSpace as ChartSpaceOptions, ctx);
 
-  // Anchor wrapper fields: extent, alt text, frame locks.
+  // Anchor wrapper fields: extent, alt text, frame locks, floating position.
   const info = parseAnchorOrInline(el);
   const ext = getDrawingExtent(el);
   const opts: ChartOptions = {
@@ -1149,6 +1149,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   if (info?.graphicFrameLocks !== undefined) {
     opts.graphicFrameLocks = info.graphicFrameLocks;
   }
+  if (info?.floating) opts.floating = info.floating;
 
   return { chart: opts };
 }
