@@ -643,11 +643,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // stringify first, so there is exactly one row parsing implementation.
     const sheetDataEl = findChild(el, "sheetData");
     if (sheetDataEl) {
-      const rows = parseSheetDataRows(
-        sheetDataEl.raw ?? stringify(sheetDataEl),
-        strings,
-        ctx && "resolveStyle" in ctx ? (ctx as XlsxReadContext) : undefined,
-      );
+      const rows = parseSheetDataRows(sheetDataEl.raw ?? stringify(sheetDataEl), strings);
       if (rows.length > 0) result.rows = rows;
     }
 

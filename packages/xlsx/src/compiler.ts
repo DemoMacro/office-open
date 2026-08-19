@@ -139,17 +139,31 @@ export function compileWorkbook(
     path: "_rels/.rels",
   };
 
-  // Register predefined DXFs before worksheets use styles
-  for (const dxf of options.dxfs ?? []) {
-    ctx.registerDxf(dxf);
+  // Register predefined DXFs before worksheets use styles. options.dxfs === []
+  // means the source declared an empty <dxfs/> container — kept as-is.
+  if (options.dxfs !== undefined) ctx.styles.setDxfs(options.dxfs);
+
+  // Adopt the parsed style table wholesale (the SDK's Stylesheet model): fonts/
+  // fills/borders/cellXfs/numFmts replace the fresh-file defaults, so raw cell
+  // style indices carried by parsed rows resolve exactly as in the source.
+  // fonts !== undefined is the "source styles.xml was parsed" signal (parse
+  // fills all table sections with [] when the part exists, even bare).
+  if (options.fonts !== undefined) {
+    ctx.styles.adopt({
+      fonts: options.fonts,
+      fills: options.fills ?? [],
+      borders: options.borders ?? [],
+      cellXfs: options.cellXfs ?? [],
+      numFmts: options.numFmts,
+    });
   }
 
   // Re-apply parsed style sections so a declarative round-trip preserves
   // them (colors, table/cell styles, extensions) alongside DXFs.
   if (options.colors) ctx.styles.setColors(options.colors);
   if (options.tableStyles) ctx.styles.setTableStyles(options.tableStyles);
-  if (options.cellStyles) ctx.styles.setCustomCellStyles(options.cellStyles);
-  if (options.cellStyleXfs) ctx.styles.setCellStyleXfs(options.cellStyleXfs);
+  if (options.cellStyles !== undefined) ctx.styles.setCustomCellStyles(options.cellStyles);
+  if (options.cellStyleXfs !== undefined) ctx.styles.setCellStyleXfs(options.cellStyleXfs);
   if (options.styleExtensions) ctx.styles.setExtensions(options.styleExtensions);
 
   // Build workbook relationships

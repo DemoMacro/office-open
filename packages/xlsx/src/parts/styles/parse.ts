@@ -50,6 +50,9 @@ export function parseFont(el: XmlElement): FontOptions {
         break;
       case "color":
         result.color = parseColorHex(child);
+        readThemeColor(child, result);
+        const indexed = attrNum(child, "indexed");
+        if (indexed !== undefined) result.colorIndexed = indexed;
         if (parseOnOff(attr(child, "auto"))) result.autoColor = true;
         break;
       case "name":
@@ -79,11 +82,22 @@ export function parseFill(el: XmlElement): CellFillOptions {
     const patternType = attr(patternFill, "patternType");
     if (patternType) result.patternType = patternType;
     const fg = findChild(patternFill, "fgColor");
-    if (fg) result.color = parseColorHex(fg);
+    if (fg) {
+      result.color = parseColorHex(fg);
+      readThemeColor(fg, result);
+      const indexed = attrNum(fg, "indexed");
+      if (indexed !== undefined) result.colorIndexed = indexed;
+    }
     const bg = findChild(patternFill, "bgColor");
-    if (bg) result.bgColor = parseColorHex(bg);
-    const indexed = fg ? attrNum(fg, "indexed") : undefined;
-    if (indexed !== undefined) result.colorIndexed = indexed;
+    if (bg) {
+      result.bgColor = parseColorHex(bg);
+      const bgTheme = attrNum(bg, "theme");
+      if (bgTheme !== undefined) result.bgThemeColor = bgTheme;
+      const bgTint = attrNum(bg, "tint");
+      if (bgTint !== undefined) result.bgTint = bgTint;
+      const bgIndexed = attrNum(bg, "indexed");
+      if (bgIndexed !== undefined) result.bgColorIndexed = bgIndexed;
+    }
     return result;
   }
 
@@ -136,12 +150,21 @@ export function parseBorder(el: XmlElement): BorderSideOptions {
   ] as const) {
     const sideEl = findChild(el, side);
     if (sideEl) {
+      // Presence-preserving: an empty <left/> stays as left: {} so stringify
+      // re-emits it; Excel always writes the five cell sides, dxf adds
+      // vertical/horizontal — both round-trip byte-identically.
       const opts: BorderOptions = {};
       const style = attr(sideEl, "style");
       if (style) opts.style = style as BorderOptions["style"];
       const color = findChild(sideEl, "color");
-      if (color) opts.color = parseColorHex(color);
-      if (Object.keys(opts).length > 0) result[side] = opts;
+      if (color) {
+        opts.color = parseColorHex(color);
+        readThemeColor(color, opts);
+        if (parseOnOff(attr(color, "auto"))) opts.autoColor = true;
+        const indexed = attrNum(color, "indexed");
+        if (indexed !== undefined) opts.colorIndexed = indexed;
+      }
+      result[side] = opts;
     }
   }
 
@@ -188,4 +211,19 @@ export function parseColorHex(el: XmlElement): string | undefined {
     return rgb.length === 8 ? rgb.slice(2) : rgb;
   }
   return undefined;
+}
+
+/**
+ * Read an sml color element's theme channels (`@theme`/`@tint`) onto a target
+ * object. Called wherever a color element carries a palette reference instead
+ * of an explicit RGB (fonts, fills, border sides).
+ */
+export function readThemeColor(
+  el: XmlElement,
+  target: { themeColor?: number; tint?: number },
+): void {
+  const theme = attrNum(el, "theme");
+  if (theme !== undefined) target.themeColor = theme;
+  const tint = attrNum(el, "tint");
+  if (tint !== undefined) target.tint = tint;
 }

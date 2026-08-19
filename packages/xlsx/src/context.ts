@@ -14,8 +14,8 @@ import {
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
 import { SharedStrings } from "@parts/shared-strings";
-import { Styles, builtinNumFmtCode } from "@parts/styles";
-import type { DxfOptions, StyleOptions, StylesParseResult } from "@parts/styles";
+import { Styles } from "@parts/styles";
+import type { DxfOptions } from "@parts/styles";
 import type { PivotCacheReference } from "@parts/workbook";
 import type { RichTextOptions } from "@parts/worksheet";
 import { Media, type MediaData } from "@shared/media";
@@ -102,8 +102,6 @@ export class XlsxReadContext implements ReadContext {
    * (cell.value accepts both shapes).
    */
   public readonly sharedStrings: (string | RichTextOptions)[];
-  /** Parsed styles (fonts, fills, borders, cellXfs). Set by parseWorkbook(). */
-  public parsedStyles?: StylesParseResult;
 
   constructor(
     private xlsx: XlsxDocument,
@@ -176,41 +174,5 @@ export class XlsxReadContext implements ReadContext {
 
   public getRaw(path: string): Uint8Array | undefined {
     return this.xlsx.doc.getRaw(path);
-  }
-
-  /**
-   * Resolve a cell style index to a StyleOptions object by looking up
-   * the parsed cellXfs table and substituting font/fill/border/numFmt indices
-   * with their resolved values.
-   */
-  public resolveStyle(styleIndex: number): StyleOptions | undefined {
-    const ps = this.parsedStyles;
-    if (!ps) return undefined;
-    const { cellXfs, fonts, fills, borders, customNumFmtById } = ps;
-    if (!cellXfs || styleIndex >= cellXfs.length) return undefined;
-    const xf = cellXfs[styleIndex];
-    if (!xf) return undefined;
-    const result: StyleOptions = {};
-
-    const fontId = xf.fontId;
-    if (fontId !== undefined && fonts && fontId < fonts.length) result.font = fonts[fontId];
-    const fillId = xf.fillId;
-    if (fillId !== undefined && fills && fillId < fills.length) result.fill = fills[fillId];
-    const borderId = xf.borderId;
-    if (borderId !== undefined && borders && borderId < borders.length)
-      result.border = borders[borderId];
-    const numFmtId = xf.numFmtId;
-    if (numFmtId !== undefined) {
-      // Custom <numFmts> entries win; built-in ids (0-49) resolve through the
-      // builtin table so date/percent cells keep their format on round-trip.
-      const code = customNumFmtById?.get(numFmtId) ?? builtinNumFmtCode(numFmtId);
-      if (code !== undefined) result.numFmt = code;
-    }
-    if (xf.alignment) result.alignment = xf.alignment;
-    if (xf.protection) result.protection = xf.protection;
-    if (xf.quotePrefix) result.quotePrefix = xf.quotePrefix;
-    if (xf.pivotButton) result.pivotButton = xf.pivotButton;
-
-    return result as StyleOptions;
   }
 }

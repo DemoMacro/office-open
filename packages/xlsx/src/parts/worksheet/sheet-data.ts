@@ -13,7 +13,6 @@
 
 import { unescapeXml } from "@office-open/xml";
 
-import type { XlsxReadContext } from "../../context";
 import type { CellOptions, FormulaOptions, RichTextOptions, RowOptions } from "./types";
 
 // ── Tag scanning primitives ──
@@ -154,14 +153,14 @@ function inlineStringText(src: string, from: number, to: number): string | undef
 // ── Row scanner ──
 
 /**
- * Scan `sheetData` inner XML into RowOptions. `ctx` mirrors the descriptor
- * read context (shared strings + style resolution); callers without one pass
- * `undefined` and get raw values/style indices.
+ * Scan `sheetData` inner XML into RowOptions. Cell/row styles stay as raw
+ * cellXfs indices (the SDK's StyleIndex model) — the style table travels
+ * alongside on WorkbookOptions and the compiler adopts it wholesale, so the
+ * indices resolve exactly as they did in the source file.
  */
 export function parseSheetDataRows(
   raw: string,
   strings: (string | RichTextOptions)[],
-  ctx: XlsxReadContext | undefined,
 ): RowOptions[] {
   const rows: RowOptions[] = [];
   const len = raw.length;
@@ -224,10 +223,7 @@ export function parseSheetDataRows(
       }
     });
     if (rowStyleIdx !== undefined) {
-      // Same resolution as cells: concrete StyleOptions when the styles table
-      // resolves, raw index otherwise.
-      const resolved = ctx ? ctx.resolveStyle(rowStyleIdx) : undefined;
-      row.style = resolved ?? rowStyleIdx;
+      row.style = rowStyleIdx;
     }
 
     const cells: CellOptions[] = [];
@@ -295,11 +291,7 @@ export function parseSheetDataRows(
         }
 
         if (styleIdx !== undefined) {
-          // Resolve to a concrete StyleOptions so re-stringify registers it in
-          // the fresh Styles table (whose indices may differ). Fall back to the
-          // raw index when the styles table cannot be resolved.
-          const resolved = ctx ? ctx.resolveStyle(styleIdx) : undefined;
-          cell.style = resolved ?? styleIdx;
+          cell.style = styleIdx;
         }
 
         let cellEnd = cellTagEnd + 1;

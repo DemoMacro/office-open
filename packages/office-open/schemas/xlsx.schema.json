@@ -942,8 +942,16 @@
     "BorderOptions": {
       "additionalProperties": false,
       "properties": {
+        "autoColor": {
+          "description": "Automatic (system) color instead of an explicit RGB (CT_Color `@auto`)",
+          "type": "boolean"
+        },
         "color": {
           "type": "string"
+        },
+        "colorIndexed": {
+          "description": "Indexed color palette entry (CT_Color `@indexed`)",
+          "type": "number"
         },
         "style": {
           "enum": [
@@ -963,6 +971,14 @@
             "slantDashDot"
           ],
           "type": "string"
+        },
+        "themeColor": {
+          "description": "Theme palette index (CT_Color `@theme`) — takes precedence over `color`",
+          "type": "number"
+        },
+        "tint": {
+          "description": "Tint applied to the theme color (CT_Color `@tint`)",
+          "type": "number"
         }
       },
       "type": "object"
@@ -1509,6 +1525,18 @@
           "description": "Background color for pattern fill (CT_PatternFill/bgColor)",
           "type": "string"
         },
+        "bgColorIndexed": {
+          "description": "Background color indexed (CT_Color `@indexed` on bgColor)",
+          "type": "number"
+        },
+        "bgThemeColor": {
+          "description": "Background theme palette index (CT_Color `@theme` on bgColor)",
+          "type": "number"
+        },
+        "bgTint": {
+          "description": "Background tint (CT_Color `@tint` on bgColor)",
+          "type": "number"
+        },
         "color": {
           "description": "Foreground color hex without alpha, e.g. \"C6EFCE\"",
           "type": "string"
@@ -1551,6 +1579,14 @@
             "$ref": "#/definitions/CellGradientStopOptions"
           },
           "type": "array"
+        },
+        "themeColor": {
+          "description": "Foreground theme palette index (CT_Color `@theme` on fgColor)",
+          "type": "number"
+        },
+        "tint": {
+          "description": "Foreground tint (CT_Color `@tint` on fgColor)",
+          "type": "number"
         },
         "type": {
           "enum": ["solid", "pattern", "gradient"],
@@ -4884,6 +4920,9 @@
       "additionalProperties": false,
       "description": "Differential format — used by conditional formatting to specify what changes. Example: `{ font: { color: \"9C0006\", bold: true }, fill: { color: \"C6EFCE\" } }`.",
       "properties": {
+        "alignment": {
+          "$ref": "#/definitions/AlignmentOptions"
+        },
         "border": {
           "$ref": "#/definitions/BorderSideOptions"
         },
@@ -4895,6 +4934,9 @@
         },
         "numFmt": {
           "type": "string"
+        },
+        "protection": {
+          "$ref": "#/definitions/CellProtectionOptions"
         }
       },
       "type": "object"
@@ -5933,6 +5975,10 @@
         "color": {
           "type": "string"
         },
+        "colorIndexed": {
+          "description": "Indexed color palette entry (CT_Color `@indexed`)",
+          "type": "number"
+        },
         "condense": {
           "description": "Condense (macOS, CT_Font/condense)",
           "type": "boolean"
@@ -5969,6 +6015,14 @@
         },
         "strike": {
           "type": "boolean"
+        },
+        "themeColor": {
+          "description": "Theme palette index (CT_Color `@theme`) — takes precedence over `color` when both are set, matching the XSD's single-channel choice.",
+          "type": "number"
+        },
+        "tint": {
+          "description": "Tint applied to the theme color (CT_Color `@tint`)",
+          "type": "number"
         },
         "underline": {
           "type": "boolean"
@@ -6999,6 +7053,60 @@
       "required": ["rgb"],
       "type": "object"
     },
+    "IndexedXfEntry": {
+      "additionalProperties": false,
+      "description": "Indexed XF reference produced by  {@link  stylesDesc  } .parse — index-based (fontId/fillId/…) rather than resolved objects, consumed by callers that resolve indices into fonts/fills/borders arrays.",
+      "properties": {
+        "alignment": {
+          "$ref": "#/definitions/AlignmentOptions"
+        },
+        "applyAlignment": {
+          "type": "boolean"
+        },
+        "applyBorder": {
+          "type": "boolean"
+        },
+        "applyFill": {
+          "type": "boolean"
+        },
+        "applyFont": {
+          "description": "Explicit apply* flags from the source xf, preserved verbatim on round-trip. Undefined means the source omitted them — stringify derives them instead (the fresh-generation behavior).",
+          "type": "boolean"
+        },
+        "applyNumberFormat": {
+          "type": "boolean"
+        },
+        "applyProtection": {
+          "type": "boolean"
+        },
+        "borderId": {
+          "type": "number"
+        },
+        "fillId": {
+          "type": "number"
+        },
+        "fontId": {
+          "type": "number"
+        },
+        "numFmtId": {
+          "type": "number"
+        },
+        "pivotButton": {
+          "type": "boolean"
+        },
+        "protection": {
+          "$ref": "#/definitions/CellProtectionOptions"
+        },
+        "quotePrefix": {
+          "type": "boolean"
+        },
+        "xfId": {
+          "description": "Index into cellStyleXfs this xf derives from (CT_Xf/@xfId)",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "InnerShadowEffectOptions": {
       "additionalProperties": false,
       "description": "Options for inner shadow effect.",
@@ -7787,6 +7895,20 @@
         }
       },
       "required": ["from", "to"],
+      "type": "object"
+    },
+    "NumFmtEntry": {
+      "additionalProperties": false,
+      "description": "A numFmts section entry (CT_NumFmt), as written in the source.",
+      "properties": {
+        "formatCode": {
+          "type": "string"
+        },
+        "numFmtId": {
+          "type": "number"
+        }
+      },
+      "required": ["numFmtId", "formatCode"],
       "type": "object"
     },
     "ObjectAnchorOptions": {
@@ -15120,6 +15242,13 @@
           "$ref": "#/definitions/WorkbookViewOptions",
           "description": "Workbook view (CT_BookView)"
         },
+        "borders": {
+          "description": "Borders section of xl/styles.xml, in source order — round-trip only.",
+          "items": {
+            "$ref": "#/definitions/BorderSideOptions"
+          },
+          "type": "array"
+        },
         "calcChain": {
           "description": "Calculation chain cells (xl/calcChain.xml) — parse-only; compiler rebuilds from formulas",
           "items": {
@@ -15146,6 +15275,13 @@
           "description": "Custom named cell styles (CT_CellStyles)",
           "items": {
             "$ref": "#/definitions/CustomCellStyleOptions"
+          },
+          "type": "array"
+        },
+        "cellXfs": {
+          "description": "cellXfs section of xl/styles.xml, in source order — round-trip only.",
+          "items": {
+            "$ref": "#/definitions/IndexedXfEntry"
           },
           "type": "array"
         },
@@ -15251,6 +15387,20 @@
           "$ref": "#/definitions/FileSharingOptions",
           "description": "File sharing / read-only recommendation"
         },
+        "fills": {
+          "description": "Fills section of xl/styles.xml, in source order — round-trip only.",
+          "items": {
+            "$ref": "#/definitions/CellFillOptions"
+          },
+          "type": "array"
+        },
+        "fonts": {
+          "description": "Fonts section of xl/styles.xml, in source order — round-trip only. Present together with fills/borders/cellXfs, these adopt the parsed style table wholesale (cells keep raw style indices instead of resolved definitions, matching the source's own numbering).",
+          "items": {
+            "$ref": "#/definitions/FontOptions"
+          },
+          "type": "array"
+        },
         "functionGroups": {
           "description": "Custom VBA function group names",
           "items": {
@@ -15282,6 +15432,13 @@
         "modified": {
           "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as  {@link  created } .",
           "type": ["string", "null"]
+        },
+        "numFmts": {
+          "description": "numFmts section of xl/styles.xml, in source order — round-trip only.",
+          "items": {
+            "$ref": "#/definitions/NumFmtEntry"
+          },
+          "type": "array"
         },
         "oleSize": {
           "description": "OLE embedded range (CT_OleSize) — workbook-level, after calcPr",

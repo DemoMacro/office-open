@@ -26,6 +26,7 @@ import type {
   FontOptions,
   IndexedColorOptions,
   IndexedXfEntry,
+  NumFmtEntry,
   BorderSideOptions,
   StyleExtensionOptions,
   StylesDocOptions,
@@ -57,13 +58,17 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     // numFmts
     const numFmtsEl = findChild(el, "numFmts");
     if (numFmtsEl) {
+      const entries: NumFmtEntry[] = [];
       for (const nf of numFmtsEl.elements ?? []) {
         if (nf.name !== "numFmt") continue;
         const id = attrNum(nf, "numFmtId");
         const code = attr(nf, "formatCode");
-        if (id !== undefined && code) numFmtById.set(id, code);
+        if (id !== undefined && code) {
+          numFmtById.set(id, code);
+          entries.push({ numFmtId: id, formatCode: code });
+        }
       }
-      result.customNumFmtById = numFmtById;
+      result.numFmts = entries;
     }
 
     // fonts
@@ -155,11 +160,21 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (fillId > 0) style.fillId = fillId;
         if (borderId > 0) style.borderId = borderId;
         if (numFmtId > 0) style.numFmtId = numFmtId;
+        const xfId = attrNum(xf, "xfId");
+        if (xfId !== undefined && xfId > 0) style.xfId = xfId;
         if (alignment) style.alignment = alignment;
         if (protection) style.protection = protection;
         // nativeTypeAttributes (xlsx parse path) coerces "1"/"0" to numbers
         if (parseOnOff(attr(xf, "quotePrefix"))) style.quotePrefix = true;
         if (parseOnOff(attr(xf, "pivotButton"))) style.pivotButton = true;
+        // apply* flags preserved verbatim — presence distinguishes a source
+        // that wrote them from one that omitted them
+        if (parseOnOff(attr(xf, "applyFont"))) style.applyFont = true;
+        if (parseOnOff(attr(xf, "applyFill"))) style.applyFill = true;
+        if (parseOnOff(attr(xf, "applyBorder"))) style.applyBorder = true;
+        if (parseOnOff(attr(xf, "applyNumberFormat"))) style.applyNumberFormat = true;
+        if (parseOnOff(attr(xf, "applyAlignment"))) style.applyAlignment = true;
+        if (parseOnOff(attr(xf, "applyProtection"))) style.applyProtection = true;
 
         xfs.push(style);
       }
@@ -202,6 +217,10 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (borderEl) d.border = parseBorder(borderEl);
         const numFmtEl = findChild(dxf, "numFmt");
         if (numFmtEl && attr(numFmtEl, "formatCode")) d.numFmt = attr(numFmtEl, "formatCode");
+        const alignmentEl = findChild(dxf, "alignment");
+        if (alignmentEl) d.alignment = parseAlignment(alignmentEl);
+        const protectionEl = findChild(dxf, "protection");
+        if (protectionEl) d.protection = parseProtection(protectionEl);
         dxfs.push(d);
       }
       result.dxfs = dxfs;

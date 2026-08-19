@@ -1,6 +1,5 @@
 import { unzipSync, zipSync } from "@office-open/core";
 import type { WorkbookOptions } from "@parts/file";
-import type { StyleOptions } from "@parts/styles";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook } from "./generate";
@@ -49,10 +48,11 @@ describe("parseWorkbook round-trip", () => {
     expect(pt.pages).toEqual([{ field: "Year", item: 1 }]);
   });
 
-  it("resolves cell.style so a fresh Styles table keeps the right formatting", async () => {
-    // Two cells with distinct styles. After parse→regenerate the Styles table
-    // is rebuilt from scratch (indices may differ), so a carried raw index
-    // alone would point at the wrong xf. The fix resolves style options.
+  it("adopts the style table so cells keep raw indices and their formatting", async () => {
+    // Two cells with distinct styles. Parse exposes the style table sections
+    // (fonts/fills/borders/cellXfs) alongside the cells; cells carry raw
+    // cellXfs indices that resolve against that table — the SDK's Stylesheet
+    // model — so a re-generate keeps the source's own numbering.
     const opts: WorkbookOptions = {
       worksheets: [
         {
@@ -79,20 +79,26 @@ describe("parseWorkbook round-trip", () => {
 
     const parsed = await roundTrip(opts);
     const rows = parsed.worksheets![0]!.rows!;
-    const a1 = rows[0]!.cells![0];
-    const a2 = rows[0]!.cells![1];
+    const a1 = rows[0]!.cells![0]!;
+    const a2 = rows[0]!.cells![1]!;
 
-    // Resolved style objects must be present (not just raw indices).
-    expect(a1?.style).toBeDefined();
-    expect(a2?.style).toBeDefined();
-    expect((a1!.style as StyleOptions).font?.bold).toBe(true);
-    expect((a2!.style as StyleOptions).font?.italic).toBe(true);
+    // Raw indices plus the table they resolve against.
+    expect(typeof a1.style).toBe("number");
+    expect(typeof a2.style).toBe("number");
+    expect(parsed.cellXfs).toBeDefined();
+    expect(parsed.fonts).toBeDefined();
+    expect(parsed.fonts![parsed.cellXfs![a1.style as number]!.fontId!]!.bold).toBe(true);
+    expect(parsed.fonts![parsed.cellXfs![a2.style as number]!.fontId!]!.italic).toBe(true);
 
     // And the formatting survives a second generate→parse cycle intact.
     const reparsed = await roundTrip(parsed);
     const r2 = reparsed.worksheets![0]!.rows![0]!.cells!;
-    expect((r2[0]!.style as StyleOptions).font?.bold).toBe(true);
-    expect((r2[1]!.style as StyleOptions).font?.italic).toBe(true);
+    const b1 = r2[0]!;
+    const b2 = r2[1]!;
+    expect(typeof b1.style).toBe("number");
+    expect(typeof b2.style).toBe("number");
+    expect(reparsed.fonts![reparsed.cellXfs![b1.style as number]!.fontId!]!.bold).toBe(true);
+    expect(reparsed.fonts![reparsed.cellXfs![b2.style as number]!.fontId!]!.italic).toBe(true);
   });
 
   it("round-trips dxfs from options through the workbook", async () => {
@@ -106,10 +112,10 @@ describe("parseWorkbook round-trip", () => {
     expect(parsed.dxfs).toHaveLength(2);
   });
 
-  it("resolves built-in numFmt ids so date cells keep their format", async () => {
+  it("keeps built-in numFmt ids so date cells keep their format", async () => {
     // numFmt "mm-dd-yy" registers as built-in id 14 (no custom <numFmts>
-    // entry), so parse must resolve it through the builtin table or the
-    // round-tripped cell loses its date format.
+    // entry). The adopted cellXfs entry carries numFmtId 14 verbatim, so the
+    // round-tripped cell keeps its date format without a table rewrite.
     const opts: WorkbookOptions = {
       worksheets: [
         {
@@ -121,7 +127,8 @@ describe("parseWorkbook round-trip", () => {
 
     const parsed = await roundTrip(opts);
     const cell = parsed.worksheets![0]!.rows![0]!.cells![0]!;
-    expect((cell.style as StyleOptions).numFmt).toBe("mm-dd-yy");
+    expect(typeof cell.style).toBe("number");
+    expect(parsed.cellXfs![cell.style as number]!.numFmtId).toBe(14);
   });
 
   it("round-trips row outline level, collapsed flag, and row style", async () => {
@@ -147,7 +154,8 @@ describe("parseWorkbook round-trip", () => {
     const row = parsed.worksheets![0]!.rows![1]!;
     expect(row.outlineLevel).toBe(1);
     expect(row.collapsed).toBe(true);
-    expect((row.style as StyleOptions).font?.bold).toBe(true);
+    expect(typeof row.style).toBe("number");
+    expect(parsed.fonts![parsed.cellXfs![row.style as number]!.fontId!]!.bold).toBe(true);
   });
 
   it("reads the external link target from the sibling rels file", async () => {

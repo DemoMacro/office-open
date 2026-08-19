@@ -13,11 +13,16 @@ import type {
 } from "@office-open/core";
 import type { ThemeOptions } from "@office-open/core/theme";
 import type {
+  CellFillOptions,
   CellStyleXfOptions,
   ColorsOptions,
   CustomCellStyleOptions,
   CustomTableStyleOptions,
   DxfOptions,
+  FontOptions,
+  BorderSideOptions,
+  IndexedXfEntry,
+  NumFmtEntry,
   StyleExtensionOptions,
 } from "@parts/styles";
 import type {
@@ -69,6 +74,21 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   dialogsheets?: DialogsheetOptions[];
   /** Pre-defined differential formats for conditional formatting */
   dxfs?: DxfOptions[];
+  /**
+   * Fonts section of xl/styles.xml, in source order — round-trip only.
+   * Present together with fills/borders/cellXfs, these adopt the parsed
+   * style table wholesale (cells keep raw style indices instead of resolved
+   * definitions, matching the source's own numbering).
+   */
+  fonts?: FontOptions[];
+  /** Fills section of xl/styles.xml, in source order — round-trip only. */
+  fills?: CellFillOptions[];
+  /** Borders section of xl/styles.xml, in source order — round-trip only. */
+  borders?: BorderSideOptions[];
+  /** cellXfs section of xl/styles.xml, in source order — round-trip only. */
+  cellXfs?: IndexedXfEntry[];
+  /** numFmts section of xl/styles.xml, in source order — round-trip only. */
+  numFmts?: NumFmtEntry[];
   /** Custom color palette (CT_Colors) */
   colors?: ColorsOptions;
   /** Custom table/pivot table styles (CT_TableStyles) */

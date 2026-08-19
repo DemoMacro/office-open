@@ -22,6 +22,8 @@ import type {
   DxfOptions,
   CellFillOptions,
   FontOptions,
+  IndexedXfEntry,
+  NumFmtEntry,
   StyleExtensionOptions,
   StyleOptions,
   StylesState,
@@ -30,15 +32,18 @@ import type {
 // ── Style key helpers for deduplication ──
 
 function fontKey(f: FontOptions): string {
-  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}n${f.font ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
+  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}a${f.autoColor ? 1 : 0}n${f.font ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
 }
 
 function fillKey(f: CellFillOptions): string {
-  return `t${f.type ?? ""}c${f.color ?? ""}p${f.patternType ?? ""}bg${f.bgColor ?? ""}g${f.stops?.map((s) => `${s.position}_${s.color}`).join("|") ?? ""}`;
+  return `t${f.type ?? ""}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}p${f.patternType ?? ""}bg${f.bgColor ?? ""}bgtc${f.bgThemeColor ?? ""}bgti${f.bgTint ?? ""}bgix${f.bgColorIndexed ?? ""}g${f.stops?.map((s) => `${s.position}_${s.color}`).join("|") ?? ""}`;
 }
 
 function borderKey(b: BorderSideOptions): string {
-  const sk = (o?: BorderOptions) => `${o?.style ?? ""}_${o?.color ?? ""}`;
+  // Existence bit: an empty <vertical/> (side: {}) must not dedup against a
+  // border without that side — adopted tables rebuild keys from raw entries.
+  const sk = (o?: BorderOptions) =>
+    `${o ? 1 : 0}_${o?.style ?? ""}_${o?.color ?? ""}_${o?.themeColor ?? ""}_${o?.tint ?? ""}_${o?.colorIndexed ?? ""}_${o?.autoColor ? 1 : 0}`;
   return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}du${b.diagonalUp ? 1 : 0}dd${b.diagonalDown ? 1 : 0}st${sk(b.start)}en${sk(b.end)}v${sk(b.vertical)}h${sk(b.horizontal)}`;
 }
 
@@ -132,11 +137,19 @@ export class Styles {
     fillId: number;
     borderId: number;
     numFmtId: number;
+    /** cellStyleXfs reference from an adopted source xf; 0 = standalone. */
+    xfId?: number;
     alignment?: AlignmentOptions;
     quotePrefix?: boolean;
     pivotButton?: boolean;
     applyProtection?: boolean;
     protection?: CellProtectionOptions;
+    /** Explicit apply* flags from an adopted source xf; undefined = derive. */
+    applyFont?: boolean;
+    applyFill?: boolean;
+    applyBorder?: boolean;
+    applyNumberFormat?: boolean;
+    applyAlignment?: boolean;
   }> = [
     { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // default xf (index 0)
   ];
@@ -155,6 +168,16 @@ export class Styles {
   private customCellStyles?: CustomCellStyleOptions[];
   /** Style sheet extensions (CT_ExtensionList) */
   private styleExtensions?: StyleExtensionOptions[];
+  /**
+   * True once a parsed source table was adopted — switches optional
+   * containers (dxfs, tableStyles) from the fresh-file convention (always
+   * written, even empty) to emitting only what the source declared.
+   */
+  private roundTrip = false;
+  /** True once setDxfs() ran — an explicit empty `<dxfs/>` still serializes. */
+  private dxfsDeclared = false;
+  /** True once an adopted table declared a (possibly empty) numFmts section. */
+  private numFmtsDeclared = false;
 
   public constructor() {
     // Pre-register default font/fill/border keys. These arrays are seeded
@@ -206,6 +229,15 @@ export class Styles {
     const idx = this.dxfs.length;
     this.dxfs.push(opts);
     return idx;
+  }
+
+  /**
+   * Set the dxf list from parsed options. `[]` (the source declared an empty
+   * `<dxfs/>` container) is distinct from never setting it (fresh document).
+   */
+  public setDxfs(list: DxfOptions[]): void {
+    this.dxfs = [...list];
+    this.dxfsDeclared = true;
   }
 
   /**
@@ -326,6 +358,7 @@ export class Styles {
     fillId: number;
     borderId: number;
     numFmtId: number;
+    xfId?: number;
     alignment?: AlignmentOptions;
     quotePrefix?: boolean;
     pivotButton?: boolean;
@@ -338,7 +371,60 @@ export class Styles {
       : "";
     const pr = xf.protection;
     const pk = pr ? `l${pr.locked ?? ""}h${pr.hidden ?? ""}` : "";
-    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|${ak}|qp${xf.quotePrefix ? 1 : 0}|pb${xf.pivotButton ? 1 : 0}|${pk}`;
+    return `${xf.fontId}|${xf.fillId}|${xf.borderId}|${xf.numFmtId}|x${xf.xfId ?? ""}|${ak}|qp${xf.quotePrefix ? 1 : 0}|pb${xf.pivotButton ? 1 : 0}|${pk}`;
+  }
+
+  /**
+   * Adopt a parsed source style table wholesale, replacing the fresh-file
+   * defaults (the SDK's Stylesheet model: the table is a unit, cells carry
+   * its indices). Fonts/fills/borders/cellXfs keep their source order, so raw
+   * cell indices resolve exactly as they did in the source file; styles
+   * registered afterwards dedup against the adopted entries and extend the
+   * index space at the end.
+   */
+  public adopt(table: {
+    fonts?: FontOptions[];
+    fills?: CellFillOptions[];
+    borders?: BorderSideOptions[];
+    cellXfs?: IndexedXfEntry[];
+    numFmts?: NumFmtEntry[];
+  }): void {
+    this.roundTrip = true;
+    this.fonts = table.fonts ? [...table.fonts] : [this.fonts[0]!];
+    this.fontKeys = new Map(this.fonts.map((f, i) => [fontKey(f), i]));
+    this.fills = table.fills
+      ? [...table.fills]
+      : [{ patternType: "none" }, { patternType: "gray125" }];
+    this.fillKeys = new Map(this.fills.map((f, i) => [fillKey(f), i]));
+    this.borders = table.borders ? [...table.borders] : [{}];
+    this.borderKeys = new Map(this.borders.map((b, i) => [borderKey(b), i]));
+    this.cellXfs = (table.cellXfs ?? [{ fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }]).map(
+      (e) => ({
+        fontId: e.fontId ?? 0,
+        fillId: e.fillId ?? 0,
+        borderId: e.borderId ?? 0,
+        numFmtId: e.numFmtId ?? 0,
+        xfId: e.xfId,
+        alignment: e.alignment,
+        quotePrefix: e.quotePrefix,
+        pivotButton: e.pivotButton,
+        applyProtection: e.applyProtection,
+        protection: e.protection,
+        applyFont: e.applyFont,
+        applyFill: e.applyFill,
+        applyBorder: e.applyBorder,
+        applyNumberFormat: e.applyNumberFormat,
+        applyAlignment: e.applyAlignment,
+      }),
+    );
+    this.cellXfKeys = new Map(this.cellXfs.map((xf, i) => [this.cellXfKey(xf), i]));
+    if (table.numFmts) {
+      this.numFmtsDeclared = true;
+      this.customNumFmts = new Map(table.numFmts.map((e) => [e.formatCode, e.numFmtId]));
+      for (const id of this.customNumFmts.values()) {
+        if (id >= this.nextCustomNumFmtId) this.nextCustomNumFmtId = id + 1;
+      }
+    }
   }
 
   // ── XML generation ──
@@ -360,132 +446,172 @@ export class Styles {
         p.push(`<numFmt numFmtId="${id}" formatCode="${escapeXml(fmt)}"/>`);
       }
       p.push("</numFmts>");
+    } else if (this.numFmtsDeclared) {
+      p.push('<numFmts count="0"/>');
     }
 
-    // fonts
-    p.push(`<fonts count="${this.fonts.length}">`);
-    for (const f of this.fonts) {
-      p.push(`<font>${this.fontXmlStr(f)}</font>`);
+    // fonts (empty = adopted empty table; XSD-required sections are only
+    // omitted when the source's styles.xml carried nothing at all)
+    if (this.fonts.length > 0) {
+      p.push(`<fonts count="${this.fonts.length}">`);
+      for (const f of this.fonts) {
+        p.push(`<font>${this.fontXmlStr(f)}</font>`);
+      }
+      p.push("</fonts>");
     }
-    p.push("</fonts>");
 
     // fills
-    p.push(`<fills count="${this.fills.length}">`);
-    for (const f of this.fills) {
-      if (f.type === "gradient" && f.stops && f.stops.length > 0) {
-        const gfAttrs: Record<string, string | number | boolean | undefined> = {};
-        if (f.gradientType && f.gradientType !== "linear") gfAttrs.type = f.gradientType;
-        if (f.gradientDegree !== undefined) gfAttrs.degree = f.gradientDegree;
-        if (f.gradientLeft !== undefined) gfAttrs.left = f.gradientLeft;
-        if (f.gradientRight !== undefined) gfAttrs.right = f.gradientRight;
-        if (f.gradientTop !== undefined) gfAttrs.top = f.gradientTop;
-        if (f.gradientBottom !== undefined) gfAttrs.bottom = f.gradientBottom;
-        const stopParts = f.stops
-          .map((s) => `<stop position="${s.position}"><color rgb="FF${s.color}"/></stop>`)
-          .join("");
-        p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
-      } else {
-        const patternAttrs = attrs({ patternType: f.patternType ?? "solid" });
-        const fgColor = f.color
-          ? `<fgColor rgb="FF${f.color}"/>`
-          : f.colorIndexed !== undefined
-            ? `<fgColor indexed="${f.colorIndexed}"/>`
-            : "";
-        const bgColor = f.bgColor ? `<bgColor rgb="FF${f.bgColor}"/>` : "";
-        const colorContent = fgColor + bgColor;
-        p.push(
-          colorContent
-            ? `<fill><patternFill${patternAttrs}>${colorContent}</patternFill></fill>`
-            : `<fill><patternFill${patternAttrs}/></fill>`,
-        );
+    if (this.fills.length > 0) {
+      p.push(`<fills count="${this.fills.length}">`);
+      for (const f of this.fills) {
+        if (f.type === "gradient" && f.stops && f.stops.length > 0) {
+          const gfAttrs: Record<string, string | number | boolean | undefined> = {};
+          if (f.gradientType && f.gradientType !== "linear") gfAttrs.type = f.gradientType;
+          if (f.gradientDegree !== undefined) gfAttrs.degree = f.gradientDegree;
+          if (f.gradientLeft !== undefined) gfAttrs.left = f.gradientLeft;
+          if (f.gradientRight !== undefined) gfAttrs.right = f.gradientRight;
+          if (f.gradientTop !== undefined) gfAttrs.top = f.gradientTop;
+          if (f.gradientBottom !== undefined) gfAttrs.bottom = f.gradientBottom;
+          const stopParts = f.stops
+            .map((s) => `<stop position="${s.position}"><color rgb="FF${s.color}"/></stop>`)
+            .join("");
+          p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
+        } else {
+          const patternAttrs = attrs({ patternType: f.patternType ?? "solid" });
+          const fgChannel =
+            f.themeColor !== undefined
+              ? `theme="${f.themeColor}"`
+              : f.colorIndexed !== undefined
+                ? `indexed="${f.colorIndexed}"`
+                : f.color
+                  ? `rgb="FF${f.color}"`
+                  : "";
+          const fgTint = f.tint !== undefined ? ` tint="${f.tint}"` : "";
+          const fgColor = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
+          const bgChannel =
+            f.bgThemeColor !== undefined
+              ? `theme="${f.bgThemeColor}"`
+              : f.bgColorIndexed !== undefined
+                ? `indexed="${f.bgColorIndexed}"`
+                : f.bgColor
+                  ? `rgb="FF${f.bgColor}"`
+                  : "";
+          const bgTint = f.bgTint !== undefined ? ` tint="${f.bgTint}"` : "";
+          const bgColor = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
+          const colorContent = fgColor + bgColor;
+          p.push(
+            colorContent
+              ? `<fill><patternFill${patternAttrs}>${colorContent}</patternFill></fill>`
+              : `<fill><patternFill${patternAttrs}/></fill>`,
+          );
+        }
       }
+      p.push("</fills>");
     }
-    p.push("</fills>");
 
     // borders
-    p.push(`<borders count="${this.borders.length}">`);
-    for (const b of this.borders) {
-      const bAttrs: string[] = [];
-      if (b.diagonalUp) bAttrs.push('diagonalUp="1"');
-      if (b.diagonalDown) bAttrs.push('diagonalDown="1"');
-      const bAttr = bAttrs.length ? ` ${bAttrs.join(" ")}` : "";
-      p.push(`<border${bAttr}>${this.borderXmlStr(b)}</border>`);
+    if (this.borders.length > 0) {
+      p.push(`<borders count="${this.borders.length}">`);
+      for (const b of this.borders) {
+        const bAttrs: string[] = [];
+        if (b.diagonalUp) bAttrs.push('diagonalUp="1"');
+        if (b.diagonalDown) bAttrs.push('diagonalDown="1"');
+        const bAttr = bAttrs.length ? ` ${bAttrs.join(" ")}` : "";
+        p.push(`<border${bAttr}>${this.borderXmlStr(b)}</border>`);
+      }
+      p.push("</borders>");
     }
-    p.push("</borders>");
 
     // cellStyleXfs — named-style templates; applyXxx preserved verbatim (not derived)
-    p.push(`<cellStyleXfs count="${this.cellStyleXfs.length}">`);
-    for (const xf of this.cellStyleXfs) {
-      const xAttrs: Record<string, string | number | boolean | undefined> = {
-        numFmtId: xf.numFmtId,
-        fontId: xf.fontId,
-        fillId: xf.fillId,
-        borderId: xf.borderId,
-      };
-      if (xf.applyNumberFormat) xAttrs.applyNumberFormat = 1;
-      if (xf.applyFont) xAttrs.applyFont = 1;
-      if (xf.applyFill) xAttrs.applyFill = 1;
-      if (xf.applyBorder) xAttrs.applyBorder = 1;
-      if (xf.applyAlignment) xAttrs.applyAlignment = 1;
-      if (xf.applyProtection) xAttrs.applyProtection = 1;
-      if (xf.quotePrefix) xAttrs.quotePrefix = 1;
-      if (xf.pivotButton) xAttrs.pivotButton = 1;
-      const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
-      const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
-      const inner = alignStr + protStr;
-      p.push(inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`);
+    if (this.cellStyleXfs.length > 0) {
+      p.push(`<cellStyleXfs count="${this.cellStyleXfs.length}">`);
+      for (const xf of this.cellStyleXfs) {
+        const xAttrs: Record<string, string | number | boolean | undefined> = {
+          numFmtId: xf.numFmtId,
+          fontId: xf.fontId,
+          fillId: xf.fillId,
+          borderId: xf.borderId,
+        };
+        if (xf.applyNumberFormat) xAttrs.applyNumberFormat = 1;
+        if (xf.applyFont) xAttrs.applyFont = 1;
+        if (xf.applyFill) xAttrs.applyFill = 1;
+        if (xf.applyBorder) xAttrs.applyBorder = 1;
+        if (xf.applyAlignment) xAttrs.applyAlignment = 1;
+        if (xf.applyProtection) xAttrs.applyProtection = 1;
+        if (xf.quotePrefix) xAttrs.quotePrefix = 1;
+        if (xf.pivotButton) xAttrs.pivotButton = 1;
+        const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
+        const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
+        const inner = alignStr + protStr;
+        p.push(inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`);
+      }
+      p.push("</cellStyleXfs>");
     }
-    p.push("</cellStyleXfs>");
 
     // cellXfs
-    p.push(`<cellXfs count="${this.cellXfs.length}">`);
-    for (const xf of this.cellXfs) {
-      const xAttrs: Record<string, string | number | boolean | undefined> = {
-        numFmtId: xf.numFmtId,
-        fontId: xf.fontId,
-        fillId: xf.fillId,
-        borderId: xf.borderId,
-        xfId: 0,
-      };
-      if (xf.alignment) xAttrs.applyAlignment = 1;
-      if (xf.fontId > 0) xAttrs.applyFont = 1;
-      if (xf.fillId > 0) xAttrs.applyFill = 1;
-      if (xf.borderId > 0) xAttrs.applyBorder = 1;
-      if (xf.numFmtId > 0) xAttrs.applyNumberFormat = 1;
-      if (xf.quotePrefix) xAttrs.quotePrefix = 1;
-      if (xf.pivotButton) xAttrs.pivotButton = 1;
-      if (xf.applyProtection) xAttrs.applyProtection = 1;
-      if (xf.protection) xAttrs.applyProtection = xAttrs.applyProtection ?? 1;
+    if (this.cellXfs.length > 0) {
+      p.push(`<cellXfs count="${this.cellXfs.length}">`);
+      for (const xf of this.cellXfs) {
+        const xAttrs: Record<string, string | number | boolean | undefined> = {
+          numFmtId: xf.numFmtId,
+          fontId: xf.fontId,
+          fillId: xf.fillId,
+          borderId: xf.borderId,
+          xfId: xf.xfId ?? 0,
+        };
+        // Adopted xfs carry their source apply* flags verbatim; freshly
+        // registered ones derive them from non-zero component ids.
+        const applyFont = xf.applyFont ?? (xf.fontId > 0 || undefined);
+        const applyFill = xf.applyFill ?? (xf.fillId > 0 || undefined);
+        const applyBorder = xf.applyBorder ?? (xf.borderId > 0 || undefined);
+        const applyNumberFormat = xf.applyNumberFormat ?? (xf.numFmtId > 0 || undefined);
+        const applyAlignment = xf.applyAlignment ?? (xf.alignment ? true : undefined);
+        if (applyFont) xAttrs.applyFont = 1;
+        if (applyFill) xAttrs.applyFill = 1;
+        if (applyBorder) xAttrs.applyBorder = 1;
+        if (applyNumberFormat) xAttrs.applyNumberFormat = 1;
+        if (applyAlignment) xAttrs.applyAlignment = 1;
+        if (xf.quotePrefix) xAttrs.quotePrefix = 1;
+        if (xf.pivotButton) xAttrs.pivotButton = 1;
+        if (xf.applyProtection) xAttrs.applyProtection = 1;
+        if (xf.protection) xAttrs.applyProtection = xAttrs.applyProtection ?? 1;
 
-      const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
-      const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
-      const inner = alignStr + protStr;
-      p.push(inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`);
-    }
-    p.push("</cellXfs>");
-
-    // cellStyles
-    if (this.customCellStyles && this.customCellStyles.length > 0) {
-      // Normal (builtinId=0) is the implicit default; only auto-add it when the
-      // caller's list doesn't already include it, so a parsed list containing
-      // Normal round-trips instead of producing a duplicate.
-      const hasNormal = this.customCellStyles.some(
-        (cs) => cs.builtinId === 0 && cs.name === "Normal",
-      );
-      const csAttrs: string[] = [`count="${this.customCellStyles.length + (hasNormal ? 0 : 1)}"`];
-      const csParts: string[] = [`<cellStyles ${csAttrs.join(" ")}>`];
-      if (!hasNormal) csParts.push('<cellStyle name="Normal" xfId="0" builtinId="0"/>');
-      for (const cs of this.customCellStyles) {
-        const attrs: string[] = [`name="${escapeXml(cs.name)}"`, `xfId="${cs.xfId}"`];
-        if (cs.builtinId !== undefined) attrs.push(`builtinId="${cs.builtinId}"`);
-        if (cs.customBuiltin) attrs.push('customBuiltin="1"');
-        if (cs.iLevel !== undefined) attrs.push(`iLevel="${cs.iLevel}"`);
-        if (cs.hidden) attrs.push('hidden="1"');
-        csParts.push(`<cellStyle ${attrs.join(" ")}/>`);
+        const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
+        const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
+        const inner = alignStr + protStr;
+        p.push(inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`);
       }
-      csParts.push("</cellStyles>");
-      p.push(csParts.join(""));
-    } else {
+      p.push("</cellXfs>");
+    }
+
+    // cellStyles — undefined = fresh document (emit the implicit Normal);
+    // [] = adopted empty list (emit the empty container verbatim)
+    if (this.customCellStyles !== undefined) {
+      if (this.customCellStyles.length === 0) {
+        p.push('<cellStyles count="0"/>');
+      } else {
+        // Normal (builtinId=0) is the implicit default; only auto-add it when
+        // the caller's list doesn't already include it, so a parsed list
+        // containing Normal round-trips instead of producing a duplicate.
+        // Some sources omit builtinId — fall back to the name.
+        const hasNormal = this.customCellStyles.some(
+          (cs) => cs.builtinId === 0 || cs.name === "Normal",
+        );
+        const csAttrs: string[] = [`count="${this.customCellStyles.length + (hasNormal ? 0 : 1)}"`];
+        const csParts: string[] = [`<cellStyles ${csAttrs.join(" ")}>`];
+        if (!hasNormal) csParts.push('<cellStyle name="Normal" xfId="0" builtinId="0"/>');
+        for (const cs of this.customCellStyles) {
+          const attrs: string[] = [`name="${escapeXml(cs.name)}"`, `xfId="${cs.xfId}"`];
+          if (cs.builtinId !== undefined) attrs.push(`builtinId="${cs.builtinId}"`);
+          if (cs.customBuiltin) attrs.push('customBuiltin="1"');
+          if (cs.iLevel !== undefined) attrs.push(`iLevel="${cs.iLevel}"`);
+          if (cs.hidden) attrs.push('hidden="1"');
+          csParts.push(`<cellStyle ${attrs.join(" ")}/>`);
+        }
+        csParts.push("</cellStyles>");
+        p.push(csParts.join(""));
+      }
+    } else if (!this.roundTrip) {
       p.push(
         '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>',
       );
@@ -498,12 +624,33 @@ export class Styles {
         const dParts: string[] = [];
         if (dxf.font) dParts.push(`<font>${this.fontXmlStr(dxf.font)}</font>`);
         if (dxf.fill) {
-          const bgColor = dxf.fill.color ? `<bgColor rgb="FF${dxf.fill.color}"/>` : "";
-          const patAttrs = attrs({ patternType: dxf.fill.patternType ?? "solid" });
-          dParts.push(`<fill><patternFill${patAttrs}>${bgColor}</patternFill></fill>`);
+          const f = dxf.fill;
+          // Excel's dxf fill convention: the visible tint color carries on
+          // bgColor (often with no patternType). Explicit bg channels from the
+          // source round-trip verbatim; a fresh color-only fill falls back to
+          // bgColor so conditional formatting keeps showing the color.
+          const patAttrs = f.patternType !== undefined ? attrs({ patternType: f.patternType }) : "";
+          const bgChannel =
+            f.bgThemeColor !== undefined
+              ? `theme="${f.bgThemeColor}"`
+              : f.bgColorIndexed !== undefined
+                ? `indexed="${f.bgColorIndexed}"`
+                : f.bgColor || f.color
+                  ? `rgb="FF${f.bgColor ?? f.color}"`
+                  : "";
+          const bgTint = f.bgTint !== undefined ? ` tint="${f.bgTint}"` : "";
+          const colorContent = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
+          dParts.push(
+            colorContent
+              ? `<fill><patternFill${patAttrs}>${colorContent}</patternFill></fill>`
+              : `<fill><patternFill${patAttrs}/></fill>`,
+          );
         }
         if (dxf.numFmt) dParts.push(`<numFmt formatCode="${escapeXml(dxf.numFmt)}"/>`);
-        if (dxf.border) dParts.push(`<border>${this.borderXmlStr(dxf.border)}</border>`);
+        if (dxf.alignment) dParts.push(this.alignmentXmlStr(dxf.alignment));
+        // dxf borders carry only the sides the source wrote — no padding
+        if (dxf.border) dParts.push(`<border>${this.borderXmlStr(dxf.border, false)}</border>`);
+        if (dxf.protection) dParts.push(this.protectionXmlStr(dxf.protection));
         if (dParts.length > 0) {
           p.push(`<dxf>${dParts.join("")}</dxf>`);
         } else {
@@ -511,7 +658,10 @@ export class Styles {
         }
       }
       p.push("</dxfs>");
-    } else {
+    } else if (this.dxfsDeclared || !this.roundTrip) {
+      // Excel's fresh-file convention (and sources declaring an empty
+      // container) write it; a round-trip source that omitted the section
+      // keeps it omitted.
       p.push('<dxfs count="0"/>');
     }
     // tableStyles (CT_TableStyles)
@@ -538,7 +688,9 @@ export class Styles {
       }
       tsParts.push("</tableStyles>");
       p.push(tsParts.join(""));
-    } else {
+    } else if (this.tableStyles !== undefined || !this.roundTrip) {
+      // Fresh files (and sources declaring an empty container) write the
+      // defaults; a round-trip source without the section omits it.
       p.push(
         '<tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/>',
       );
@@ -581,8 +733,6 @@ export class Styles {
       }
       extParts.push("</extLst>");
       p.push(extParts.join(""));
-    } else {
-      p.push("<extLst/>");
     }
 
     p.push("</styleSheet>");
@@ -601,6 +751,11 @@ export class Styles {
     if (f.extend) parts.push("<extend/>");
     if (f.size) parts.push(`<sz val="${f.size}"/>`);
     if (f.autoColor) parts.push('<color auto="1"/>');
+    else if (f.themeColor !== undefined)
+      parts.push(
+        `<color theme="${f.themeColor}"${f.tint !== undefined ? ` tint="${f.tint}"` : ""}/>`,
+      );
+    else if (f.colorIndexed !== undefined) parts.push(`<color indexed="${f.colorIndexed}"/>`);
     else if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
     if (f.font) parts.push(`<name val="${escapeXml(f.font)}"/>`);
     if (f.charset !== undefined) parts.push(`<charset val="${f.charset}"/>`);
@@ -610,28 +765,35 @@ export class Styles {
     return parts.join("");
   }
 
-  private borderXmlStr(b: BorderSideOptions): string {
+  /**
+   * Serialize a border. `allSides` pads the five cell sides Excel always
+   * writes (cellXfs context); dxf borders carry only the sides present.
+   */
+  private borderXmlStr(b: BorderSideOptions, allSides = true): string {
     const parts: string[] = [];
-    const renderSide = (name: string, opts: BorderOptions | undefined, required = true) => {
-      if (opts && opts.style && opts.style !== "none") {
-        const colorStr = opts.color ? `<color rgb="FF${opts.color}"/>` : "";
-        parts.push(`<${name} style="${opts.style}">${colorStr}</${name}>`);
-      } else if (required) {
+    const sideColorXmlStr = (side: BorderOptions): string => {
+      if (side.autoColor) return '<color auto="1"/>';
+      if (side.themeColor !== undefined)
+        return `<color theme="${side.themeColor}"${side.tint !== undefined ? ` tint="${side.tint}"` : ""}/>`;
+      if (side.colorIndexed !== undefined) return `<color indexed="${side.colorIndexed}"/>`;
+      if (side.color) return `<color rgb="FF${side.color}"/>`;
+      return "";
+    };
+    const renderSide = (name: string, opts: BorderOptions | undefined, required: boolean) => {
+      if (opts?.style && opts.style !== "none") {
+        parts.push(`<${name} style="${opts.style}">${sideColorXmlStr(opts)}</${name}>`);
+      } else if (opts || required) {
         parts.push(`<${name}/>`);
       }
     };
-    for (const side of [
-      "left",
-      "right",
-      "top",
-      "bottom",
-      "diagonal",
-      "vertical",
-      "horizontal",
-    ] as const) {
-      renderSide(side, b[side] as BorderOptions | undefined);
+    const cellSides = ["left", "right", "top", "bottom", "diagonal"] as const;
+    for (const side of cellSides) {
+      renderSide(side, b[side] as BorderOptions | undefined, allSides);
     }
-    // start/end not in transitional XSD — only emit when styled
+    // vertical/horizontal/start/end: cell-range or RTL sides, only when present
+    renderSide("vertical", b.vertical, false);
+    renderSide("horizontal", b.horizontal, false);
+    // start/end not in transitional XSD — only emit when present
     renderSide("start", b.start, false);
     renderSide("end", b.end, false);
     return parts.join("");

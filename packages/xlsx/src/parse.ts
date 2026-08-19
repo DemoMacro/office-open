@@ -269,19 +269,29 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   // Parse styles (fonts, fills, borders, cellXfs)
   if (xlsx.styles) {
     const parsedStyles = stylesDesc.parse(xlsx.styles, readContext);
-    readContext.parsedStyles = parsedStyles;
 
-    // Expose styles sections onto the returned opts for round-trip. compiler.ts
-    // re-emits dxfs from options; colors/tableStyles/cellStyles/styleExtensions
-    // are surfaced here even though the compiler currently only consumes dxfs,
-    // so callers retain the parsed data and the fields stay documented.
+    // Expose styles sections onto the returned opts for round-trip. The six
+    // table sections fall back to [] so `undefined` keeps meaning "fresh
+    // document" — an adopted table (even empty, e.g. a bare <styleSheet/>) is
+    // distinct from the compiler's fresh-file defaults. fonts/fills/borders/
+    // cellXfs/numFmts adopt the parsed table wholesale: cells then keep raw
+    // style indices (the source's own numbering) instead of resolved
+    // definitions — the SDK's Stylesheet model.
     if (parsedStyles.dxfs) opts.dxfs = parsedStyles.dxfs;
+    opts.fonts = parsedStyles.fonts ?? [];
+    opts.fills = parsedStyles.fills ?? [];
+    opts.borders = parsedStyles.borders ?? [];
+    opts.cellXfs = parsedStyles.cellXfs ?? [];
+    if (parsedStyles.numFmts) opts.numFmts = parsedStyles.numFmts;
     if (parsedStyles.colors) opts.colors = parsedStyles.colors;
-    if (parsedStyles.customCellStyles) opts.cellStyles = parsedStyles.customCellStyles;
-    if (parsedStyles.cellStyleXfs) opts.cellStyleXfs = parsedStyles.cellStyleXfs;
+    // Optional sections: undefined (absent) stays absent; a present-but-empty
+    // section round-trips as an empty container.
+    if (parsedStyles.customCellStyles !== undefined)
+      opts.cellStyles = parsedStyles.customCellStyles;
+    if (parsedStyles.cellStyleXfs !== undefined) opts.cellStyleXfs = parsedStyles.cellStyleXfs;
     if (parsedStyles.styleExtensions) opts.styleExtensions = parsedStyles.styleExtensions;
-    if (parsedStyles.tableStylesInfo?.tableStyles)
-      opts.tableStyles = parsedStyles.tableStylesInfo.tableStyles;
+    if (parsedStyles.tableStylesInfo)
+      opts.tableStyles = parsedStyles.tableStylesInfo.tableStyles ?? [];
   }
 
   // Theme — structured round-trip so a custom source theme survives instead of

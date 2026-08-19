@@ -16,6 +16,15 @@ export interface FontOptions {
   strike?: boolean;
   size?: number;
   color?: string;
+  /**
+   * Theme palette index (CT_Color `@theme`) — takes precedence over `color`
+   * when both are set, matching the XSD's single-channel choice.
+   */
+  themeColor?: number;
+  /** Tint applied to the theme color (CT_Color `@tint`) */
+  tint?: number;
+  /** Indexed color palette entry (CT_Color `@indexed`) */
+  colorIndexed?: number;
   /** Automatic (system) color instead of an explicit RGB (CT_Color `@auto`) */
   autoColor?: boolean;
   font?: string;
@@ -54,11 +63,21 @@ export interface CellFillOptions {
   type?: "solid" | "pattern" | "gradient";
   /** Foreground color hex without alpha, e.g. "C6EFCE" */
   color?: string;
+  /** Foreground theme palette index (CT_Color `@theme` on fgColor) */
+  themeColor?: number;
+  /** Foreground tint (CT_Color `@tint` on fgColor) */
+  tint?: number;
   patternType?: string;
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
   bgColor?: string;
+  /** Background theme palette index (CT_Color `@theme` on bgColor) */
+  bgThemeColor?: number;
+  /** Background tint (CT_Color `@tint` on bgColor) */
+  bgTint?: number;
   /** Background color indexed (CT_Color `@indexed`) */
   colorIndexed?: number;
+  /** Background color indexed (CT_Color `@indexed` on bgColor) */
+  bgColorIndexed?: number;
   /** Gradient stops (CT_GradientFill/stop) */
   stops?: CellGradientStopOptions[];
   /** Gradient type (CT_GradientFill `@type`) */
@@ -92,6 +111,14 @@ export interface BorderOptions {
     | "mediumDashDotDot"
     | "slantDashDot";
   color?: string;
+  /** Theme palette index (CT_Color `@theme`) — takes precedence over `color` */
+  themeColor?: number;
+  /** Tint applied to the theme color (CT_Color `@tint`) */
+  tint?: number;
+  /** Automatic (system) color instead of an explicit RGB (CT_Color `@auto`) */
+  autoColor?: boolean;
+  /** Indexed color palette entry (CT_Color `@indexed`) */
+  colorIndexed?: number;
 }
 
 export interface BorderSideOptions {
@@ -185,6 +212,8 @@ export interface DxfOptions {
   fill?: CellFillOptions;
   border?: BorderSideOptions;
   numFmt?: string;
+  alignment?: AlignmentOptions;
+  protection?: CellProtectionOptions;
 }
 
 // ── Table / cell-style types ──
@@ -333,10 +362,23 @@ export interface IndexedXfEntry {
   fillId?: number;
   borderId?: number;
   numFmtId?: number;
+  /** Index into cellStyleXfs this xf derives from (CT_Xf/@xfId) */
+  xfId?: number;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
   quotePrefix?: boolean;
   pivotButton?: boolean;
+  /**
+   * Explicit apply* flags from the source xf, preserved verbatim on
+   * round-trip. Undefined means the source omitted them — stringify derives
+   * them instead (the fresh-generation behavior).
+   */
+  applyFont?: boolean;
+  applyFill?: boolean;
+  applyBorder?: boolean;
+  applyNumberFormat?: boolean;
+  applyAlignment?: boolean;
+  applyProtection?: boolean;
 }
 
 /** Table styles block (CT_TableStyles) produced by {@link stylesDesc}.parse. */
@@ -347,10 +389,16 @@ export interface TableStylesInfo {
   tableStyles?: CustomTableStyleOptions[];
 }
 
+/** A numFmts section entry (CT_NumFmt), as written in the source. */
+export interface NumFmtEntry {
+  numFmtId: number;
+  formatCode: string;
+}
+
 /** Result of {@link stylesDesc}.parse (xl/styles.xml → structured data). */
 export interface StylesParseResult {
-  /** Reverse map numFmtId → formatCode, for O(1) lookup in resolveStyle. */
-  customNumFmtById?: Map<number, string>;
+  /** numFmts section entries in document order (for table adoption). */
+  numFmts?: NumFmtEntry[];
   fonts?: FontOptions[];
   fills?: CellFillOptions[];
   borders?: BorderSideOptions[];
