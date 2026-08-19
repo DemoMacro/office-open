@@ -500,6 +500,9 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
  */
 function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
   const tocOpts = parseTocFieldFromElements(els);
+  // The aggregated field span carries no w:sdt wrapper — keep it bare so the
+  // re-emitted TOC does not grow a content control the source never had.
+  tocOpts.bare = true;
   const entryEls = selectTocEntryElements(els);
   if (entryEls.length > 0) {
     // Entry paragraphs live INSIDE the field: the per-paragraph accumulator
@@ -525,6 +528,12 @@ function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptions): vo
   let depth = 0;
   let controlRPr: string | undefined;
   let closed = false;
+  // Word splits the field instruction across runs (leading space / text /
+  // trailing space, each with its own rPr). Keep the begin→separate control
+  // chain verbatim so the run split round-trips instead of collapsing to a
+  // single re-composed instruction run.
+  let headOpen = false;
+  const headRuns: string[] = [];
   const walk = (node: Element): void => {
     if (closed || node.name !== "w:r" || !node.elements) {
       for (const c of node.elements ?? []) {
@@ -537,7 +546,17 @@ function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptions): vo
       const type = attr(fldChar, "w:fldCharType");
       if (type === "begin") {
         depth++;
-        if (depth === 1) controlRPr = runRPrXml(node);
+        if (depth === 1) {
+          controlRPr = runRPrXml(node);
+          headOpen = true;
+          headRuns.push(stringifyElement(node));
+          return;
+        }
+      } else if (type === "separate" && headOpen) {
+        headRuns.push(stringifyElement(node));
+        tocOpts.headRunsXml = headRuns.join("");
+        headOpen = false;
+        return;
       } else if (type === "end") {
         depth--;
         if (depth === 0) {
@@ -548,6 +567,10 @@ function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptions): vo
           return;
         }
       }
+    }
+    if (headOpen) {
+      headRuns.push(stringifyElement(node));
+      return;
     }
     for (const c of node.elements ?? []) {
       if (c.type === "element") walk(c);

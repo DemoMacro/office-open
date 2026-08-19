@@ -168,4 +168,19 @@ export interface TableOfContentsOptions {
    * differently from the control runs (round-trip only).
    */
   endRPrXml?: string;
+
+  /**
+   * Emit the TOC as a bare complex field instead of the sdt content control
+   * Word normally wraps it in. Set by parsing when the source carried no
+   * `w:sdt` wrapper, so the document round-trips in its original form.
+   */
+  bare?: boolean;
+
+  /**
+   * Verbatim XML of the field's begin→separate control runs, as serialized
+   * `<w:r>…</w:r>` sequences (round-trip only; Word splits the instruction
+   * across runs — leading space / text / trailing space, each with its own
+   * rPr — and the split must survive instead of collapsing to one run).
+   */
+  headRunsXml?: string;
 }

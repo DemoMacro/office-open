@@ -67,20 +67,27 @@ export function stringifyTableOfContents(
   // explicit style overrides on these invisible runs); a fresh TOC keeps the
   // default heading-font begin run.
   const ctrl = options.rPrXml;
+  // Round-trip keeps the captured control chain verbatim; only a freshly
+  // generated TOC composes its begin/instruction/separate runs here.
   const headRuns =
-    ctrl !== undefined
+    options.headRunsXml ??
+    (ctrl !== undefined
       ? `<w:r>${ctrl}<w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
         `<w:r>${ctrl}<w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
         `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>`
       : `<w:r><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:cstheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cs="Times New Roman"/></w:rPr><w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
         `<w:r><w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
-        `<w:r><w:fldChar w:fldCharType="separate"/></w:r>`;
+        `<w:r><w:fldChar w:fldCharType="separate"/></w:r>`);
   const endRun = `<w:r>${options.endRPrXml ?? ctrl ?? ""}<w:fldChar w:fldCharType="end"/></w:r>`;
   const endParagraph = `<w:p>${endRun}</w:p>`;
 
   const body = entriesXml
     ? injectFieldEnd(injectFieldHead(entriesXml, headRuns), endRun)
     : `<w:p>${headRuns}</w:p>` + endParagraph;
+
+  // A TOC parsed from a bare field (no w:sdt wrapper) re-emits without the
+  // content control so the document keeps its original form.
+  if (options.bare) return body;
 
   // SDT properties: alias + docPartObj
   const sdtPr =

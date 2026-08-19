@@ -17174,6 +17174,10 @@
                 "alias": {
                   "type": "string"
                 },
+                "bare": {
+                  "description": "Emit the TOC as a bare complex field instead of the sdt content control Word normally wraps it in. Set by parsing when the source carried no `w:sdt` wrapper, so the document round-trips in its original form.",
+                  "type": "boolean"
+                },
                 "captionLabel": {
                   "description": "\\a option - Includes captioned items, but omits caption labels and numbers. The identifier designated by text in this switch's field-argument corresponds to the caption label. Use captionLabelIncludingNumbers (\\c) to build a table of captions with labels and numbers.",
                   "type": "string"
@@ -17199,6 +17203,10 @@
                 },
                 "entryAndPageNumberSeparator": {
                   "description": "\\p option - Text in this switch's field-argument specifies a sequence of characters that separate an entry and its page number. The default is a tab with leader dots.",
+                  "type": "string"
+                },
+                "headRunsXml": {
+                  "description": "Verbatim XML of the field's begin→separate control runs, as serialized `<w:r>…</w:r>` sequences (round-trip only; Word splits the instruction across runs — leading space / text / trailing space, each with its own rPr — and the split must survive instead of collapsing to one run).",
                   "type": "string"
                 },
                 "headingStyleRange": {
