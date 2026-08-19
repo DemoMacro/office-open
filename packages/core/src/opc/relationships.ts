@@ -143,6 +143,21 @@ export class Relationships {
     return this.entries.some((e) => e.type.split("/").pop() === kind && e.target === target);
   }
 
+  /** True when an entry already occupies this exact relationship id. */
+  public hasId(id: string): boolean {
+    return this.entries.some((e) => e.id === id);
+  }
+
+  /**
+   * The id of the entry matching kind+target (same last-path-segment equality
+   * as {@link hasRelationship}), or undefined when absent. Round-trip legs use
+   * this to point a reference element at an already-registered relationship.
+   */
+  public idOf(type: string, target: string): string | undefined {
+    const kind = type.split("/").pop();
+    return this.entries.find((e) => e.type.split("/").pop() === kind && e.target === target)?.id;
+  }
+
   /** Directly builds XML string — zero intermediate tree allocation. */
   public serialize(): string {
     const p: string[] = [

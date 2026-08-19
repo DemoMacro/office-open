@@ -314,20 +314,26 @@ function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
   const autoScale = attr(el, "autoScale");
   if (autoScale !== undefined) pr.autoScale = parseOnOff(autoScale) ?? false;
   const anchorEl = findChild(el, "anchor");
-  if (anchorEl) pr.anchor = parseAnchor(anchorEl);
+  if (anchorEl) {
+    const anchor = parseAnchor(anchorEl);
+    if (anchor) pr.anchor = anchor;
+  }
   return pr;
 }
 
-function parseAnchor(el: XmlElement): ObjectAnchorOptions {
-  const anchor: ObjectAnchorOptions = {
+// CT_ObjectAnchor's from/to are required in the XSD; a malformed element
+// missing either corner yields undefined (commentPr is parse-only, so an
+// unparseable anchor simply drops instead of failing the part).
+function parseAnchor(el: XmlElement): ObjectAnchorOptions | undefined {
+  const from = findChild(el, "xdr:from");
+  const to = findChild(el, "xdr:to");
+  if (!from || !to) return undefined;
+  return {
     moveWithCells: parseOnOff(attr(el, "moveWithCells")),
     sizeWithCells: parseOnOff(attr(el, "sizeWithCells")),
+    from: parseMarker(from),
+    to: parseMarker(to),
   };
-  const from = findChild(el, "xdr:from");
-  if (from) anchor.from = parseMarker(from);
-  const to = findChild(el, "xdr:to");
-  if (to) anchor.to = parseMarker(to);
-  return anchor;
 }
 
 function parseMarker(el: XmlElement): AnchorMarkerOptions {

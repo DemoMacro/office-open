@@ -16,7 +16,7 @@ import { buildRstXml } from "../shared-strings";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles } from "../styles";
 import { FormulaType } from "./types";
-import type { AnchorMarkerOptions, EmbeddedObjectAnchorOptions } from "./types";
+import type { AnchorMarkerOptions, ObjectAnchorOptions } from "./types";
 import type {
   CellOptions,
   CfvoOptions,
@@ -716,7 +716,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   }
 
   /** anchor element inside objectPr/controlPr (from/to corners, 0-based). */
-  function embeddedAnchorXml(anchor: EmbeddedObjectAnchorOptions): string {
+  function embeddedAnchorXml(anchor: ObjectAnchorOptions): string {
     // The worksheet root does not declare xdr:, so the anchor declares it
     // locally — the marker children (xdr:col…) stay well-formed.
     const XDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing";

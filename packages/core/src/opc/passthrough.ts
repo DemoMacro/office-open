@@ -44,6 +44,8 @@ export interface PassthroughRelationship {
   relationshipType: string;
   /** Target exactly as written in the source .rels (relative form). */
   target: string;
+  /** The relationship id as written in the source .rels (e.g. "rId8"). */
+  rId: string;
 }
 
 export interface PassthroughResult {
@@ -129,9 +131,10 @@ export function collectPassthroughParts(
       if (attr(rel, "TargetMode") === "External") continue;
       const relationshipType = attr(rel, "Type");
       const target = attr(rel, "Target");
-      if (!relationshipType || !target) continue;
+      const rId = attr(rel, "Id");
+      if (!relationshipType || !target || !rId) continue;
       if (kept.has(resolveRelationshipTarget(source, target))) {
-        relationships.push({ source, relationshipType, target });
+        relationships.push({ source, relationshipType, target, rId });
       }
     }
   }

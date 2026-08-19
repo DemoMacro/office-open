@@ -141,7 +141,12 @@ export interface WorkbookOptions extends CorePropertiesOptions {
    * (e.g. workbook.xml → externalLink/pivotCache). Re-emitted verbatim —
    * target unchanged (passthrough paths never move), fresh rId. Round-trip only.
    */
-  passthroughRelationships?: { source: string; relationshipType: string; target: string }[];
+  passthroughRelationships?: {
+    source: string;
+    relationshipType: string;
+    target: string;
+    rId: string;
+  }[];
 }
 
 /** Shared-workbook revision tracking data. */

@@ -511,30 +511,19 @@ export interface AnchorMarkerOptions {
 }
 
 /**
- * OLE object / ActiveX control anchor (CT anchor inside objectPr/controlPr).
- * Mirrors the XML verbatim: 0-based markers (CT_Marker), offsets in EMU.
+ * Object anchor (CT_ObjectAnchor) — the anchor inside commentPr, objectPr,
+ * and controlPr alike. Mirrors the XML verbatim: 0-based markers
+ * (CT_Marker), offsets in EMU.
  */
-export interface EmbeddedObjectAnchorOptions {
-  /** Move with cells (@moveWithCells; default false). */
-  moveWithCells?: boolean;
-  /** Resize with cells (@sizeWithCells; default false). */
-  sizeWithCells?: boolean;
-  /** Top-left corner. */
-  from: AnchorMarkerOptions;
-  /** Bottom-right corner. */
-  to: AnchorMarkerOptions;
-}
-
-/** Object anchor (CT_ObjectAnchor). */
 export interface ObjectAnchorOptions {
   /** Move with cells (default: false) */
   moveWithCells?: boolean;
   /** Size with cells (default: false) */
   sizeWithCells?: boolean;
   /** Anchor start corner (xdr:from, CT_Marker) */
-  from?: AnchorMarkerOptions;
+  from: AnchorMarkerOptions;
   /** Anchor end corner (xdr:to, CT_Marker) */
-  to?: AnchorMarkerOptions;
+  to: AnchorMarkerOptions;
 }
 
 /**
@@ -1478,7 +1467,7 @@ export interface ControlOptions {
    */
   iconRid?: string;
   /** Cell anchor inside controlPr (from/to corners, 0-based). */
-  anchor?: EmbeddedObjectAnchorOptions;
+  anchor?: ObjectAnchorOptions;
   /**
    * Source wrapped the control in mc:AlternateContent (Excel 2010+ form:
    * Choice carries the full element, Fallback the bare one). Re-emit the
@@ -1558,7 +1547,7 @@ export interface OleObjectPropertiesOptions {
    */
   iconRid?: string;
   /** Cell anchor inside objectPr (from/to corners, 0-based). */
-  anchor?: EmbeddedObjectAnchorOptions;
+  anchor?: ObjectAnchorOptions;
 }
 
 /** Web publish item (CT_WebPublishItem) */

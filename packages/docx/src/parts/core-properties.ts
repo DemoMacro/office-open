@@ -118,7 +118,12 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * (e.g. document.xml → theme/customXml). Re-emitted verbatim — target
    * unchanged (passthrough paths never move), fresh rId. Round-trip only.
    */
-  passthroughRelationships?: { source: string; relationshipType: string; target: string }[];
+  passthroughRelationships?: {
+    source: string;
+    relationshipType: string;
+    target: string;
+    rId: string;
+  }[];
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
 }

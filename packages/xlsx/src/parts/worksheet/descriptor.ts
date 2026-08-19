@@ -30,7 +30,7 @@ import type {
   ConditionalFormatType,
   ControlOptions,
   AnchorMarkerOptions,
-  EmbeddedObjectAnchorOptions,
+  ObjectAnchorOptions,
   CustomSheetPropertyOptions,
   CustomSheetViewOptions,
   DataConsolidateOptions,
@@ -829,7 +829,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     }
 
     /** Read the anchor element inside objectPr/controlPr (from/to CT_Marker corners). */
-    function readEmbeddedAnchor(anchorEl: Element): EmbeddedObjectAnchorOptions | undefined {
+    function readEmbeddedAnchor(anchorEl: Element): ObjectAnchorOptions | undefined {
       const fromEl = findChild(anchorEl, "from");
       const toEl = findChild(anchorEl, "to");
       if (!fromEl || !toEl) return undefined;

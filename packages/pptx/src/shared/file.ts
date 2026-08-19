@@ -206,5 +206,10 @@ export interface PresentationOptions extends CorePropertiesOptions {
    * (e.g. presentation.xml → handoutMaster). Re-emitted verbatim — target
    * unchanged (passthrough paths never move), fresh rId. Round-trip only.
    */
-  passthroughRelationships?: { source: string; relationshipType: string; target: string }[];
+  passthroughRelationships?: {
+    source: string;
+    relationshipType: string;
+    target: string;
+    rId: string;
+  }[];
 }

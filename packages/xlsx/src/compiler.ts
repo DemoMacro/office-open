@@ -15,6 +15,7 @@ import {
   buildRootRelationships,
   compileMapping,
   contentTypesDesc,
+  type PassthroughRelationship,
   type RelationshipType,
   deriveContentTypes,
   pickNonVisualDrawingProperties,
@@ -28,7 +29,7 @@ import {
 } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
 import { buildThemeXml } from "@office-open/core/theme";
-import { OOXML_XML_DECLARATION } from "@office-open/xml";
+import { escapeXml, OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { CalcCell } from "@parts/calc-chain";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc, type ChartsheetOptions } from "@parts/chartsheet";
@@ -195,7 +196,16 @@ export function compileWorkbook(
     allTableParts: [],
   };
   for (const [i, wsOpts] of worksheetConfigs.entries()) {
-    compileWorksheetPart(wsOpts, i, worksheetConfigs, ctx, mapping, wsContext, state);
+    compileWorksheetPart(
+      wsOpts,
+      i,
+      worksheetConfigs,
+      ctx,
+      mapping,
+      wsContext,
+      state,
+      options.passthroughRelationships,
+    );
   }
 
   compileChartsheets(chartsheetConfigs, ctx, mapping);
@@ -456,6 +466,7 @@ function compileWorksheetPart(
   mapping: Record<string, { data: string; path: string }>,
   wsContext: WorksheetContext,
   state: WorksheetCompileState,
+  passthroughRelationships?: readonly PassthroughRelationship[],
 ): void {
   const imgOpts = wsOpts.images ?? [];
   const chartOpts = wsOpts.charts ?? [];
@@ -728,16 +739,36 @@ function compileWorksheetPart(
 
   // Round-trip drawing/legacyDrawing references. The referenced part passes
   // through verbatim when its anchors do not map onto options (e.g. OLE
-  // object shape representations), so the original id stays valid. Only the
-  // placeholders the derived legs left unreplaced are affected.
+  // object shape representations). With untouched (passthrough) worksheet
+  // rels the original id stays valid; when the rels were rebuilt because the
+  // same sheet carries comments/tables/…, re-register the passthrough
+  // relationship — keeping the source id when it is free — so the reference
+  // stays resolvable instead of dangling.
+  const wsPath = `xl/worksheets/sheet${i + 1}.xml`;
+  const resolvePassthroughRid = (typeFragment: string, originalRid: string): string => {
+    if (!wsRels) return originalRid;
+    const rel = (passthroughRelationships ?? []).find(
+      (r) =>
+        r.source === wsPath && r.rId === originalRid && r.relationshipType.endsWith(typeFragment),
+    );
+    if (!rel) return originalRid;
+    const existing = wsRels.idOf(rel.relationshipType, rel.target);
+    if (existing) return existing;
+    if (wsRels.hasId(originalRid)) {
+      const n = ++nextRid;
+      wsRels.addRelationship(n, rel.relationshipType as RelationshipType, rel.target);
+      return `rId${n}`;
+    }
+    wsRels.addRelationship(originalRid, rel.relationshipType as RelationshipType, rel.target);
+    return originalRid;
+  };
   if (wsOpts.drawingRid) {
-    sheetXml = sheetXml.replace("<!--DRAWING-->", `<drawing r:id="${wsOpts.drawingRid}"/>`);
+    const rid = escapeXml(resolvePassthroughRid("/drawing", wsOpts.drawingRid));
+    sheetXml = sheetXml.replace("<!--DRAWING-->", `<drawing r:id="${rid}"/>`);
   }
   if (wsOpts.legacyDrawingRid) {
-    sheetXml = sheetXml.replace(
-      "<!--LEGACY_DRAWING-->",
-      `<legacyDrawing r:id="${wsOpts.legacyDrawingRid}"/>`,
-    );
+    const rid = escapeXml(resolvePassthroughRid("/vmlDrawing", wsOpts.legacyDrawingRid));
+    sheetXml = sheetXml.replace("<!--LEGACY_DRAWING-->", `<legacyDrawing r:id="${rid}"/>`);
   }
 
   // Pivot tables

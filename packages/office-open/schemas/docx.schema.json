@@ -2045,6 +2045,11 @@
       },
       "type": "object"
     },
+    "ChartGrouping": {
+      "description": "Series grouping mode (c:grouping val) — bar/column/line/area groups.",
+      "enum": ["clustered", "standard", "stacked", "percentStacked"],
+      "type": "string"
+    },
     "ChartHeaderFooterOptions": {
       "additionalProperties": false,
       "description": "Print-time header/footer text (CT_HeaderFooter).",
@@ -2268,6 +2273,10 @@
           ],
           "description": "Graphic frame locks (wp:cNvGraphicFramePr). `{}` → empty element; omit → authoring default."
         },
+        "grouping": {
+          "$ref": "#/definitions/ChartGrouping",
+          "description": "Series grouping (c:grouping val). Absent → the per-type default the header always wrote (clustered for bar/column, standard for line/area)."
+        },
         "highLowLines": {
           "anyOf": [
             {
@@ -2398,9 +2407,12 @@
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
           "type": ["number", "string"]
         },
-        "secondaryGroup": {
-          "$ref": "#/definitions/SecondaryChartGroupOptions",
-          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags."
+        "secondaryGroups": {
+          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags.",
+          "items": {
+            "$ref": "#/definitions/SecondaryChartGroupOptions"
+          },
+          "type": "array"
         },
         "series": {
           "anyOf": [
@@ -2850,6 +2862,10 @@
           "description": "Bar/column gap width as percent of width (c:gapWidth).",
           "type": "number"
         },
+        "grouping": {
+          "$ref": "#/definitions/ChartGrouping",
+          "description": "Series grouping (c:grouping val). Absent → the per-type default the header always wrote (clustered for bar/column, standard for line/area)."
+        },
         "highLowLines": {
           "anyOf": [
             {
@@ -2972,9 +2988,12 @@
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
           "type": ["number", "string"]
         },
-        "secondaryGroup": {
-          "$ref": "#/definitions/SecondaryChartGroupOptions",
-          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags."
+        "secondaryGroups": {
+          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags.",
+          "items": {
+            "$ref": "#/definitions/SecondaryChartGroupOptions"
+          },
+          "type": "array"
         },
         "series": {
           "anyOf": [
@@ -5784,6 +5803,9 @@
           "items": {
             "additionalProperties": false,
             "properties": {
+              "rId": {
+                "type": "string"
+              },
               "relationshipType": {
                 "type": "string"
               },
@@ -5794,7 +5816,7 @@
                 "type": "string"
               }
             },
-            "required": ["source", "relationshipType", "target"],
+            "required": ["source", "relationshipType", "target", "rId"],
             "type": "object"
           },
           "type": "array"
@@ -17614,7 +17636,7 @@
     },
     "SecondaryChartGroupOptions": {
       "additionalProperties": false,
-      "description": "Second chart group in a combo chart (CT_PlotArea carries two *Chart groups).",
+      "description": "Additional chart groups in a combo chart (CT_PlotArea may carry several\n*Chart groups; each secondary one shares the category source and the axes list with the main group).",
       "properties": {
         "axisIds": {
           "description": "axId pair referencing entries of the shared axes list.",
@@ -17627,13 +17649,47 @@
           "$ref": "#/definitions/DataLabelsOptions",
           "description": "Group-level data labels (c:dLbls after the ser elements)."
         },
+        "dropLines": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "Drop lines (c:dropLines, line/area)."
+        },
+        "gapDepth": {
+          "description": "3D gap depth as percent (c:gapDepth).",
+          "type": "number"
+        },
         "gapWidth": {
           "description": "Bar/column gap width as percent (c:gapWidth, bar group).",
           "type": "number"
         },
+        "grouping": {
+          "$ref": "#/definitions/ChartGrouping",
+          "description": "Series grouping (c:grouping); defaults per type like the main group."
+        },
+        "highLowLines": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "High-low lines (c:hiLowLines, line/stock)."
+        },
         "markers": {
           "description": "Show line-chart markers (group-level c:marker, line 2D).",
           "type": "boolean"
+        },
+        "overlap": {
+          "description": "Bar/column overlap as percent (c:overlap, 2D bar group).",
+          "type": "number"
         },
         "series": {
           "description": "This group's series; categories come from the chart-level source.",
@@ -17641,6 +17697,17 @@
             "$ref": "#/definitions/ChartSeriesData"
           },
           "type": "array"
+        },
+        "seriesLines": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "Series connector lines (c:serLines, bar/ofPie groups)."
         },
         "smooth": {
           "description": "Smooth lines (group-level c:smooth, line 2D).",
@@ -17650,12 +17717,20 @@
           "$ref": "#/definitions/ChartType",
           "description": "Chart type of this group (drives the c:*Chart element and its header)."
         },
+        "upDownBars": {
+          "description": "Up/down bars container (c:upDownBars, line).",
+          "type": "boolean"
+        },
+        "upDownBarsGapWidth": {
+          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
+          "type": "number"
+        },
         "varyColors": {
           "description": "Vary data-point colors (group-level c:varyColors).",
           "type": "boolean"
         }
       },
-      "required": ["type", "series", "axisIds"],
+      "required": ["type", "series"],
       "type": "object"
     },
     "SectionChild": {
