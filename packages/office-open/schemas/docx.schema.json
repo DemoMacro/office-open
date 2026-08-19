@@ -371,6 +371,11 @@
       "additionalProperties": false,
       "description": "Options for docProps/app.xml extended properties (CT_Properties).\n\nProperty order follows the CT_Properties xsd:all sequence so the emitted XML matches the reference schema ordering.",
       "properties": {
+        "apPrefix": {
+          "const": true,
+          "description": "Emit the extended-properties vocabulary under the ap: prefix — the ISO strict binding, where the source declares xmlns:ap explicitly instead of using the namespace as the default. Round-trip only.",
+          "type": "boolean"
+        },
         "appVersion": {
           "description": "Application version",
           "type": "string"
@@ -3681,6 +3686,11 @@
           "description": "Resolved state; Word writes both 0 and 1 explicitly (w15:done).",
           "type": "boolean"
         },
+        "nextGen": {
+          "const": true,
+          "description": "Emit as w15:commentExNG — the next-gen comment variant element, same attribute set as w15:commentEx. Round-trip only.",
+          "type": "boolean"
+        },
         "paraId": {
           "description": "w14:paraId of the comment's first paragraph (w15:paraId, required).",
           "type": "string"
@@ -5558,8 +5568,8 @@
           "description": "Content types from [Content_Types].xml (parse path only)"
         },
         "created": {
-          "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created.",
-          "type": "string"
+          "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now.",
+          "type": ["string", "null"]
         },
         "creator": {
           "type": "string"
@@ -5569,6 +5579,11 @@
             "$ref": "#/definitions/CustomPropertyOptions"
           },
           "type": "array"
+        },
+        "defaultNamespace": {
+          "const": true,
+          "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+          "type": "boolean"
         },
         "description": {
           "type": "string"
@@ -5641,8 +5656,8 @@
           "type": "string"
         },
         "modified": {
-          "description": "Last modified timestamp (W3CDTF), round-tripped from dcterms:modified.",
-          "type": "string"
+          "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as  {@link  created } .",
+          "type": ["string", "null"]
         },
         "numbering": {
           "$ref": "#/definitions/NumberingOptions"

@@ -24,6 +24,11 @@ export interface CommentExtendedOptions {
   paraIdParent?: string;
   /** Resolved state; Word writes both 0 and 1 explicitly (w15:done). */
   done?: boolean;
+  /**
+   * Emit as w15:commentExNG — the next-gen comment variant element, same
+   * attribute set as w15:commentEx. Round-trip only.
+   */
+  nextGen?: true;
 }
 
 export const commentsExtendedDesc: CustomDescriptor<CommentExtendedOptions[]> = {
@@ -36,7 +41,7 @@ export const commentsExtendedDesc: CustomDescriptor<CommentExtendedOptions[]> = 
       if (ex.paraIdParent !== undefined)
         attrs.push(`w15:paraIdParent="${escapeXml(ex.paraIdParent)}"`);
       if (ex.done !== undefined) attrs.push(`w15:done="${ex.done ? 1 : 0}"`);
-      parts.push(`<w15:commentEx ${attrs.join(" ")}/>`);
+      parts.push(`<w15:${ex.nextGen ? "commentExNG" : "commentEx"} ${attrs.join(" ")}/>`);
     }
     parts.push("</w15:commentsEx>");
     return parts.join("");
@@ -45,7 +50,7 @@ export const commentsExtendedDesc: CustomDescriptor<CommentExtendedOptions[]> = 
   parse(el) {
     const entries: CommentExtendedOptions[] = [];
     for (const child of el.elements ?? []) {
-      if (child.name !== "w15:commentEx") continue;
+      if (child.name !== "w15:commentEx" && child.name !== "w15:commentExNG") continue;
       const paraId = attr(child, "w15:paraId");
       if (paraId === undefined) continue;
       const ex: Partial<CommentExtendedOptions> = { paraId };
@@ -53,6 +58,7 @@ export const commentsExtendedDesc: CustomDescriptor<CommentExtendedOptions[]> = 
       if (paraIdParent !== undefined) ex.paraIdParent = paraIdParent;
       const done = attr(child, "w15:done");
       if (done !== undefined) ex.done = parseOnOff(done) ?? false;
+      if (child.name === "w15:commentExNG") ex.nextGen = true;
       entries.push(ex as CommentExtendedOptions);
     }
     return entries;

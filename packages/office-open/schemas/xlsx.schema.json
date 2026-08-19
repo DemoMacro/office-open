@@ -181,6 +181,11 @@
       "additionalProperties": false,
       "description": "Options for docProps/app.xml extended properties (CT_Properties).\n\nProperty order follows the CT_Properties xsd:all sequence so the emitted XML matches the reference schema ordering.",
       "properties": {
+        "apPrefix": {
+          "const": true,
+          "description": "Emit the extended-properties vocabulary under the ap: prefix — the ISO strict binding, where the source declares xmlns:ap explicitly instead of using the namespace as the default. Round-trip only.",
+          "type": "boolean"
+        },
         "appVersion": {
           "description": "Application version",
           "type": "string"
@@ -14686,8 +14691,8 @@
           "type": "string"
         },
         "created": {
-          "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created.",
-          "type": "string"
+          "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now.",
+          "type": ["string", "null"]
         },
         "creator": {
           "type": "string"
@@ -14705,6 +14710,11 @@
             "$ref": "#/definitions/CustomWorkbookViewOptions"
           },
           "type": "array"
+        },
+        "defaultNamespace": {
+          "const": true,
+          "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+          "type": "boolean"
         },
         "definedNames": {
           "description": "Defined names — named ranges, constants, formulas (CT_DefinedNames)",
@@ -14774,8 +14784,8 @@
           "description": "Rich metadata block (xl/metadata.xml)"
         },
         "modified": {
-          "description": "Last modified timestamp (W3CDTF), round-tripped from dcterms:modified.",
-          "type": "string"
+          "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as  {@link  created } .",
+          "type": ["string", "null"]
         },
         "oleSize": {
           "description": "OLE embedded range (CT_OleSize) — workbook-level, after calcPr",

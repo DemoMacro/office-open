@@ -52,8 +52,11 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
   {
     id: "core-properties",
     optionsInterface: "CorePropertiesOptions",
-    // 15 interface fields — created/modified + the five CT_CoreProperties
+    // 15 content fields — created/modified + the five CT_CoreProperties
     // string fields (category/contentStatus/identifier/language/version).
+    // defaultNamespace is a round-trip form flag (prefix vs default-ns
+    // binding), not a serialized content field.
+    excludeFields: ["defaultNamespace"],
     interfaceFields: [
       "title",
       "subject",

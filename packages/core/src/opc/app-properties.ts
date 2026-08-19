@@ -84,6 +84,12 @@ export interface AppPropertiesOptions {
   headingPairs?: HeadingPairOptions[];
   /** Part titles (slide titles, sheet names, heading ranges) */
   titlesOfParts?: string[];
+  /**
+   * Emit the extended-properties vocabulary under the ap: prefix — the ISO
+   * strict binding, where the source declares xmlns:ap explicitly instead of
+   * using the namespace as the default. Round-trip only.
+   */
+  apPrefix?: true;
 }
 
 /** One HeadingPairs entry: a group name plus the number of parts it covers. */
@@ -101,35 +107,51 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    // xsd:all is unordered, but emit in schema order for readability.
-    const p: string[] = [
-      '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"' +
-        ' xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">',
-    ];
+    // xsd:all is unordered, but emit in schema order for readability. The
+    // ap-prefixed form (ISO strict round-trip) binds xmlns:ap explicitly;
+    // vt: children keep their own prefix either way.
+    const t = (name: string): string => (opts.apPrefix ? `ap:${name}` : name);
+    const p: string[] = opts.apPrefix
+      ? [
+          '<ap:Properties xmlns:ap="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"' +
+            ' xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">',
+        ]
+      : [
+          '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"' +
+            ' xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">',
+        ];
 
     // Schema order: Template, Manager, Company, Pages, Words, Characters,
     // PresentationFormat, Lines, Paragraphs, Slides, Notes, TotalTime,
     // HiddenSlides, MMClips, ScaleCrop, HeadingPairs, TitlesOfParts,
     // LinksUpToDate, CharactersWithSpaces, SharedDoc, HyperlinkBase, HLinks,
     // HyperlinksChanged, DigSig, Application, AppVersion, DocSecurity.
-    if (opts.template !== undefined) p.push(`<Template>${escapeXml(opts.template)}</Template>`);
-    if (opts.manager !== undefined) p.push(`<Manager>${escapeXml(opts.manager)}</Manager>`);
-    if (opts.company !== undefined) p.push(`<Company>${escapeXml(opts.company)}</Company>`);
-    if (opts.pages !== undefined) p.push(`<Pages>${opts.pages}</Pages>`);
-    if (opts.words !== undefined) p.push(`<Words>${opts.words}</Words>`);
-    if (opts.characters !== undefined) p.push(`<Characters>${opts.characters}</Characters>`);
+    if (opts.template !== undefined)
+      p.push(`<${t("Template")}>${escapeXml(opts.template)}</${t("Template")}>`);
+    if (opts.manager !== undefined)
+      p.push(`<${t("Manager")}>${escapeXml(opts.manager)}</${t("Manager")}>`);
+    if (opts.company !== undefined)
+      p.push(`<${t("Company")}>${escapeXml(opts.company)}</${t("Company")}>`);
+    if (opts.pages !== undefined) p.push(`<${t("Pages")}>${opts.pages}</${t("Pages")}>`);
+    if (opts.words !== undefined) p.push(`<${t("Words")}>${opts.words}</${t("Words")}>`);
+    if (opts.characters !== undefined)
+      p.push(`<${t("Characters")}>${opts.characters}</${t("Characters")}>`);
     if (opts.presentationFormat !== undefined)
-      p.push(`<PresentationFormat>${escapeXml(opts.presentationFormat)}</PresentationFormat>`);
-    if (opts.lines !== undefined) p.push(`<Lines>${opts.lines}</Lines>`);
-    if (opts.paragraphs !== undefined) p.push(`<Paragraphs>${opts.paragraphs}</Paragraphs>`);
-    if (opts.slides !== undefined) p.push(`<Slides>${opts.slides}</Slides>`);
-    if (opts.notes !== undefined) p.push(`<Notes>${opts.notes}</Notes>`);
-    if (opts.totalTime !== undefined) p.push(`<TotalTime>${opts.totalTime}</TotalTime>`);
+      p.push(
+        `<${t("PresentationFormat")}>${escapeXml(opts.presentationFormat)}</${t("PresentationFormat")}>`,
+      );
+    if (opts.lines !== undefined) p.push(`<${t("Lines")}>${opts.lines}</${t("Lines")}>`);
+    if (opts.paragraphs !== undefined)
+      p.push(`<${t("Paragraphs")}>${opts.paragraphs}</${t("Paragraphs")}>`);
+    if (opts.slides !== undefined) p.push(`<${t("Slides")}>${opts.slides}</${t("Slides")}>`);
+    if (opts.notes !== undefined) p.push(`<${t("Notes")}>${opts.notes}</${t("Notes")}>`);
+    if (opts.totalTime !== undefined)
+      p.push(`<${t("TotalTime")}>${opts.totalTime}</${t("TotalTime")}>`);
     if (opts.hiddenSlides !== undefined)
-      p.push(`<HiddenSlides>${opts.hiddenSlides}</HiddenSlides>`);
-    if (opts.mmClips !== undefined) p.push(`<MMClips>${opts.mmClips}</MMClips>`);
+      p.push(`<${t("HiddenSlides")}>${opts.hiddenSlides}</${t("HiddenSlides")}>`);
+    if (opts.mmClips !== undefined) p.push(`<${t("MMClips")}>${opts.mmClips}</${t("MMClips")}>`);
     if (opts.scaleCrop !== undefined)
-      p.push(`<ScaleCrop>${xsdBoolean(opts.scaleCrop)}</ScaleCrop>`);
+      p.push(`<${t("ScaleCrop")}>${xsdBoolean(opts.scaleCrop)}</${t("ScaleCrop")}>`);
     if (opts.headingPairs !== undefined && opts.headingPairs.length > 0) {
       // vt:lpstr is required here: Excel refuses to open a file whose
       // HeadingPairs variants carry lpwstr.
@@ -141,37 +163,48 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
         )
         .join("");
       p.push(
-        `<HeadingPairs><vt:vector size="${opts.headingPairs.length * 2}" baseType="variant">` +
-          `${items}</vt:vector></HeadingPairs>`,
+        `<${t("HeadingPairs")}><vt:vector size="${opts.headingPairs.length * 2}" baseType="variant">` +
+          `${items}</vt:vector></${t("HeadingPairs")}>`,
       );
     }
     if (opts.titlesOfParts !== undefined && opts.titlesOfParts.length > 0) {
-      p.push(`<TitlesOfParts>${stringifyStringVector(opts.titlesOfParts)}</TitlesOfParts>`);
+      p.push(
+        `<${t("TitlesOfParts")}>${stringifyStringVector(opts.titlesOfParts)}</${t("TitlesOfParts")}>`,
+      );
     }
     if (opts.linksUpToDate !== undefined)
-      p.push(`<LinksUpToDate>${xsdBoolean(opts.linksUpToDate)}</LinksUpToDate>`);
+      p.push(`<${t("LinksUpToDate")}>${xsdBoolean(opts.linksUpToDate)}</${t("LinksUpToDate")}>`);
     if (opts.charactersWithSpaces !== undefined)
-      p.push(`<CharactersWithSpaces>${opts.charactersWithSpaces}</CharactersWithSpaces>`);
+      p.push(
+        `<${t("CharactersWithSpaces")}>${opts.charactersWithSpaces}</${t("CharactersWithSpaces")}>`,
+      );
     if (opts.sharedDoc !== undefined)
-      p.push(`<SharedDoc>${xsdBoolean(opts.sharedDoc)}</SharedDoc>`);
+      p.push(`<${t("SharedDoc")}>${xsdBoolean(opts.sharedDoc)}</${t("SharedDoc")}>`);
     if (opts.hyperlinkBase !== undefined)
-      p.push(`<HyperlinkBase>${escapeXml(opts.hyperlinkBase)}</HyperlinkBase>`);
+      p.push(`<${t("HyperlinkBase")}>${escapeXml(opts.hyperlinkBase)}</${t("HyperlinkBase")}>`);
     if (opts.hlinks !== undefined && opts.hlinks.length > 0)
-      p.push(`<HLinks>${stringifyVariantVector(opts.hlinks)}</HLinks>`);
+      p.push(`<${t("HLinks")}>${stringifyVariantVector(opts.hlinks)}</${t("HLinks")}>`);
     if (opts.hyperlinksChanged !== undefined)
-      p.push(`<HyperlinksChanged>${xsdBoolean(opts.hyperlinksChanged)}</HyperlinksChanged>`);
+      p.push(
+        `<${t("HyperlinksChanged")}>${xsdBoolean(opts.hyperlinksChanged)}</${t("HyperlinksChanged")}>`,
+      );
     if (opts.application !== undefined)
-      p.push(`<Application>${escapeXml(opts.application)}</Application>`);
+      p.push(`<${t("Application")}>${escapeXml(opts.application)}</${t("Application")}>`);
     if (opts.appVersion !== undefined)
-      p.push(`<AppVersion>${escapeXml(opts.appVersion)}</AppVersion>`);
-    if (opts.docSecurity !== undefined) p.push(`<DocSecurity>${opts.docSecurity}</DocSecurity>`);
+      p.push(`<${t("AppVersion")}>${escapeXml(opts.appVersion)}</${t("AppVersion")}>`);
+    if (opts.docSecurity !== undefined)
+      p.push(`<${t("DocSecurity")}>${opts.docSecurity}</${t("DocSecurity")}>`);
 
-    p.push("</Properties>");
+    p.push(opts.apPrefix ? "</ap:Properties>" : "</Properties>");
     return p.join("");
   },
 
   parse(el, _ctx) {
     const result: AppPropertiesOptions = {};
+    // ISO strict binds the vocabulary under an explicit ap: prefix — strip
+    // any prefix so ap:Template matches the local-name cases, and remember
+    // the binding so stringify re-emits the same form.
+    if (el.name === "ap:Properties") result.apPrefix = true;
     for (const child of el.elements ?? []) {
       if (typeof child.name !== "string") continue;
       const text = child.elements?.[0]?.text;
@@ -179,7 +212,10 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
       // ("<Company>\n</Company>", which the XML parser reduces to no text)
       // — capture "" so the element round-trips instead of being dropped.
       const str = String(text ?? "");
-      switch (child.name) {
+      const name = child.name.includes(":")
+        ? child.name.slice(child.name.indexOf(":") + 1)
+        : child.name;
+      switch (name) {
         case "Template":
           result.template = str;
           break;

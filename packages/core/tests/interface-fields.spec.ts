@@ -18,7 +18,7 @@ const INTERFACE_SOURCE: Record<string, { interfaceName: string; file: string }> 
 };
 
 describe("extractInterfaceFields", () => {
-  it("reads a flat interface (CorePropertiesOptions, 15 fields, sorted)", () => {
+  it("reads a flat interface (CorePropertiesOptions, 16 fields, sorted)", () => {
     expect(
       extractInterfaceFields("CorePropertiesOptions", "packages/core/src/opc/core.ts"),
     ).toEqual([
@@ -26,6 +26,7 @@ describe("extractInterfaceFields", () => {
       "contentStatus",
       "created",
       "creator",
+      "defaultNamespace",
       "description",
       "identifier",
       "keywords",
