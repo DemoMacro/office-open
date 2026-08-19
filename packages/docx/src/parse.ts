@@ -83,6 +83,13 @@ export interface DocxPartRefs {
    * partPath → (rId → partPath).
    */
   partMedia: Map<string, Map<string, string>>;
+  /**
+   * Per-part external hyperlink targets, partPath → (rId → URL). Same
+   * independent-numbering rationale as partMedia: a hyperlink inside a
+   * footnote/header/comment resolves its r:id against that part's own rels,
+   * not document.xml's.
+   */
+  partHyperlinks: Map<string, Map<string, string>>;
   /** Alternative format chunks (word/afchunkN.*) keyed by rId */
   afChunks: Map<string, string>;
   /** Sub-documents (word/subdocs/subdocN.docx) keyed by rId */
@@ -166,6 +173,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     partMedia: new Map(),
     afChunks: new Map(),
     subDocs: new Map(),
+    partHyperlinks: new Map(),
   };
 
   const relsEl = doc.get("word/_rels/document.xml.rels");
@@ -232,22 +240,31 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
       const type = attr(rel, "Type") ?? "";
+      const id = attr(rel, "Id") ?? "";
+      const target = attr(rel, "Target") ?? "";
+      if (!id || !target) continue;
       const isBinaryPart =
         type.includes("/image") ||
         type.includes("/media") ||
         type.includes("/oleObject") ||
         // /package = embedded OPC workbook (xlsx/xlsb behind OLE objects)
         type.includes("/package");
-      if (!isBinaryPart) continue;
-      const id = attr(rel, "Id") ?? "";
-      const target = attr(rel, "Target") ?? "";
-      if (!id || !target) continue;
-      let partMap = refs.partMedia.get(partPath);
-      if (!partMap) {
-        partMap = new Map();
-        refs.partMedia.set(partPath, partMap);
+      if (isBinaryPart) {
+        let partMap = refs.partMedia.get(partPath);
+        if (!partMap) {
+          partMap = new Map();
+          refs.partMedia.set(partPath, partMap);
+        }
+        partMap.set(id, resolveRelationshipTarget(partPath, target));
+      } else if (type.includes("/hyperlink")) {
+        // External URL — keep the raw target (no path resolution).
+        let partMap = refs.partHyperlinks.get(partPath);
+        if (!partMap) {
+          partMap = new Map();
+          refs.partHyperlinks.set(partPath, partMap);
+        }
+        partMap.set(id, target);
       }
-      partMap.set(id, resolveRelationshipTarget(partPath, target));
     }
   }
 

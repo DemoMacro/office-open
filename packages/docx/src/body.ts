@@ -1480,7 +1480,11 @@ function parseRunLevelChildren(
         const hl: Partial<HyperlinkInlineOptions> = {};
         const rId = attr(child, "r:id");
         if (rId) {
-          const target = ctx.docx.partRefs.hyperlinks.get(rId);
+          // rId numbering is per-part: a hyperlink inside a footnote/header
+          // resolves against that part's own rels first, then document.xml's.
+          const target =
+            ctx.docx.partRefs.partHyperlinks.get(ctx.currentPart)?.get(rId) ??
+            ctx.docx.partRefs.hyperlinks.get(rId);
           if (target) hl.url = target;
         }
         const anchor = attr(child, "w:anchor");
