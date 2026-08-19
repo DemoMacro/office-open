@@ -89,11 +89,12 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "modified",
       "category",
       "contentStatus",
+      "contentType",
       "identifier",
       "language",
       "version",
     ],
-    // parse reads back all 15 interface fields.
+    // parse reads back all 16 interface fields.
     parseFields: [
       "title",
       "subject",
@@ -107,12 +108,14 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "modified",
       "category",
       "contentStatus",
+      "contentType",
       "identifier",
       "language",
       "version",
     ],
     sampleOptions: {
       title: "T",
+      contentType: "Document",
       subject: "S",
       creator: "C",
       keywords: "k1,k2",
