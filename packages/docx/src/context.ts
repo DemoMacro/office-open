@@ -612,6 +612,15 @@ export class DocxWriteContext implements WriteContext {
     );
     for (const rel of passthroughDocRels) {
       if (rel === themeRel) continue;
+      // The compiler owns media/chart/diagram/embedding parts: it re-emits
+      // them from the model and registers fresh relationships. Re-emitting
+      // the captured source rel as well would double-register — ISO-strict
+      // sources type these purl.oclc.org, which slips past the kind+target
+      // dedup check below.
+      if (rel.target.startsWith("charts/")) continue;
+      if (rel.target.startsWith("diagrams/")) continue;
+      if (rel.target.startsWith("media/")) continue;
+      if (rel.target.startsWith("embeddings/")) continue;
       if (this.document.relationships.hasRelationship(rel.relationshipType, rel.target)) continue;
       // Passthrough relationship types come from arbitrary source packages
       // (any third-party extension); the union only documents the known ones.
