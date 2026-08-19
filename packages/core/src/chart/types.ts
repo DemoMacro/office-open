@@ -118,9 +118,18 @@ export interface DataLabelOptions {
   index: number;
   /** Drop the label for this point (c:delete). */
   delete?: boolean;
+  /** Manual label placement (c:layout > c:manualLayout, before EG_DLblShared). */
+  layout?: ManualLayoutOptions;
   position?: DataLabelPosition;
   /** Number format override (c:numFmt inside EG_DLblShared). */
   numberFormat?: string;
+  showLegendKey?: boolean;
+  showVal?: boolean;
+  showCatName?: boolean;
+  showSerName?: boolean;
+  showPercent?: boolean;
+  showBubbleSize?: boolean;
+  separator?: string;
 }
 
 export interface DataLabelsOptions {
@@ -315,6 +324,8 @@ export interface ChartSpaceOptions {
   dataTable?: DataTableOptions;
   /** ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default "pie"). */
   ofPieType?: OfPieType;
+  /** Radar variant (c:radarStyle, default "standard"). */
+  radarStyle?: RadarStyle;
   /** ofPie split behavior (c:splitType, default "auto"). */
   splitType?: SplitType;
   /** ofPie split position (c:splitPos, used with splitType pos/val). */
@@ -648,6 +659,10 @@ export interface PrintSettingsOptions {
 
 export type OfPieType = "pie" | "bar";
 
+// ── Radar chart (CT_RadarChart) ──
+
+export type RadarStyle = "standard" | "marker" | "filled";
+
 export type SplitType = "auto" | "cust" | "percent" | "pos" | "val";
 
 // ── Pivot chart (CT_PivotSource / CT_PivotFmts) ──
@@ -680,4 +695,6 @@ export interface LegendEntryOptions {
   index: number;
   /** Hide this legend entry (c:delete). */
   delete?: boolean;
+  /** Per-entry text properties (c:legendEntry/c:txPr) — the non-delete form. */
+  textProperties?: TextBodyOptions;
 }

@@ -67,6 +67,7 @@ import type {
   ChartPivotFormatOptions,
   BandFormatOptions,
   LegendEntryOptions,
+  RadarStyle,
   LegendPosition,
 } from "./types";
 
@@ -200,9 +201,21 @@ function stringifyDataLabel(opts: DataLabelOptions): string {
     return `<c:dLbl><c:idx val="${opts.index}"/><c:delete val="1"/></c:dLbl>`;
   }
   const inner: string[] = [];
+  // Group_DLbl: layout → tx → EG_DLblShared (numFmt…dLblPos…show*…separator).
+  if (opts.layout) inner.push(stringifyLayout(opts.layout));
   if (opts.numberFormat !== undefined)
     inner.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
   if (opts.position !== undefined) inner.push(valEl("c:dLblPos", opts.position));
+  if (opts.showLegendKey !== undefined)
+    inner.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
+  if (opts.showVal !== undefined) inner.push(`<c:showVal${boolVal(opts.showVal)}/>`);
+  if (opts.showCatName !== undefined) inner.push(`<c:showCatName${boolVal(opts.showCatName)}/>`);
+  if (opts.showSerName !== undefined) inner.push(`<c:showSerName${boolVal(opts.showSerName)}/>`);
+  if (opts.showPercent !== undefined) inner.push(`<c:showPercent${boolVal(opts.showPercent)}/>`);
+  if (opts.showBubbleSize !== undefined)
+    inner.push(`<c:showBubbleSize${boolVal(opts.showBubbleSize)}/>`);
+  if (opts.separator !== undefined)
+    inner.push(`<c:separator>${escapeXml(opts.separator)}</c:separator>`);
   return `<c:dLbl><c:idx val="${opts.index}"/>${inner.join("")}</c:dLbl>`;
 }
 
@@ -581,7 +594,7 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
       headerParts.push(valEl("c:scatterStyle", "line"));
       break;
     case "radar":
-      headerParts.push(valEl("c:radarStyle", "standard"));
+      headerParts.push(valEl("c:radarStyle", opts.radarStyle ?? "standard"));
       break;
     case "ofPie":
       headerParts.push(valEl("c:ofPieType", opts.ofPieType ?? "pie"));
@@ -840,17 +853,21 @@ function stringifyTitle(title: string | ChartTitleOptions, ctx: WriteContext): s
 
 // ── Legend XML ──
 
-function stringifyLegendEntry(entry: LegendEntryOptions): string {
-  // CT_LegendEntry: idx → choice(delete | EG_LegendEntryData[txPr]). Non-delete
-  // entries require a txPr model (chart txPr wiring is a follow-up), so only
-  // delete entries are emitted here.
-  if (!entry.delete) return "";
-  return `<c:legendEntry><c:idx val="${entry.index}"/><c:delete val="1"/></c:legendEntry>`;
+function stringifyLegendEntry(entry: LegendEntryOptions, ctx: WriteContext): string {
+  // CT_LegendEntry: idx → choice(delete | EG_LegendEntryData[txPr]).
+  if (entry.delete) {
+    return `<c:legendEntry><c:idx val="${entry.index}"/><c:delete val="1"/></c:legendEntry>`;
+  }
+  if (entry.textProperties) {
+    const txPr = textBodyDesc.stringify(entry.textProperties, ctx) ?? "";
+    return `<c:legendEntry><c:idx val="${entry.index}"/><c:txPr>${txPr}</c:txPr></c:legendEntry>`;
+  }
+  return "";
 }
 
 function stringifyLegend(opts: ChartSpaceOptions, ctx: WriteContext): string {
   const pos = opts.legendPosition ?? "b";
-  const entries = (opts.legendEntries ?? []).map(stringifyLegendEntry).join("");
+  const entries = (opts.legendEntries ?? []).map((e) => stringifyLegendEntry(e, ctx)).join("");
   const layout =
     opts.legendLayout === true
       ? "<c:layout/>"
@@ -1305,10 +1322,25 @@ function readDataLabels(serEl: XmlElement): DataLabelsOptions | undefined {
     opts.labels = lblEls.map((el): DataLabelOptions => {
       const result: DataLabelOptions = { index: readValNum(el, "c:idx") ?? 0 };
       if (findChild(el, "c:delete")) result.delete = true;
+      const layout = readManualLayout(findChild(el, "c:layout"));
+      if (layout) result.layout = layout;
       const numFmt = attr(findChild(el, "c:numFmt"), "formatCode");
       if (numFmt) result.numberFormat = numFmt;
       const pos = readValStr(el, "c:dLblPos");
       if (pos) result.position = pos as DataLabelOptions["position"];
+      for (const flag of [
+        "showLegendKey",
+        "showVal",
+        "showCatName",
+        "showSerName",
+        "showPercent",
+        "showBubbleSize",
+      ] as const) {
+        const v = readBoolAttr(el, `c:${flag}`);
+        if (v !== undefined) result[flag] = v;
+      }
+      const sep = textOf(findChild(el, "c:separator"));
+      if (sep) result.separator = sep;
       return result;
     });
   }
@@ -1519,6 +1551,9 @@ function readChartTypeScalars(
     if (wireframe !== undefined) result.wireframe = wireframe;
     const bandFormats = readBandFormats(chartTypeEl);
     if (bandFormats) result.bandFormats = bandFormats;
+  } else if (type === "radar") {
+    const radarStyle = readValStr(chartTypeEl, "c:radarStyle");
+    if (radarStyle) result.radarStyle = radarStyle as RadarStyle;
   } else if (type === "ofPie") {
     const ofPieType = readValStr(chartTypeEl, "c:ofPieType");
     if (ofPieType) result.ofPieType = ofPieType as OfPieType;
@@ -1683,7 +1718,7 @@ function readBandFormats(chartTypeEl: XmlElement): BandFormatOptions[] | undefin
   return result.length ? result : undefined;
 }
 
-function readLegendEntries(legend: XmlElement): LegendEntryOptions[] | undefined {
+function readLegendEntries(legend: XmlElement, ctx: ReadContext): LegendEntryOptions[] | undefined {
   const entries = children(legend, "c:legendEntry");
   if (!entries.length) return undefined;
   const result: LegendEntryOptions[] = [];
@@ -1691,12 +1726,21 @@ function readLegendEntries(legend: XmlElement): LegendEntryOptions[] | undefined
     const idxEl = findChild(entry, "c:idx");
     if (!idxEl) continue;
     const deleteEl = findChild(entry, "c:delete");
-    if (!deleteEl) continue; // non-delete entries (txPr) need chart txPr wiring
-    const v = attr(deleteEl, "val");
-    result.push({
-      index: Number(attr(idxEl, "val")),
-      delete: parseOnOff(v) ?? true,
-    });
+    if (deleteEl) {
+      const v = attr(deleteEl, "val");
+      result.push({
+        index: Number(attr(idxEl, "val")),
+        delete: parseOnOff(v) ?? true,
+      });
+      continue;
+    }
+    const txPrEl = findChild(entry, "c:txPr");
+    if (txPrEl) {
+      result.push({
+        index: Number(attr(idxEl, "val")),
+        textProperties: textBodyDesc.parse(txPrEl, ctx) as TextBodyOptions,
+      });
+    }
   }
   return result.length ? result : undefined;
 }
@@ -1729,7 +1773,7 @@ function readLegend(
     const v = attr(posEl, "val");
     if (v) result.position = v as LegendPosition;
   }
-  const entries = readLegendEntries(legend);
+  const entries = readLegendEntries(legend, ctx);
   if (entries) result.entries = entries;
   const layoutEl = findChild(legend, "c:layout");
   if (layoutEl) result.layout = readManualLayout(layoutEl) ?? true;

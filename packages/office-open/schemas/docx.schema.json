@@ -2340,6 +2340,10 @@
           "$ref": "#/definitions/ProtectionOptions",
           "description": "Chart protection (c:protection, before c:chart)."
         },
+        "radarStyle": {
+          "$ref": "#/definitions/RadarStyle",
+          "description": "Radar variant (c:radarStyle, default \"standard\")."
+        },
         "roundedCorners": {
           "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
           "type": "boolean"
@@ -2876,6 +2880,10 @@
         "protection": {
           "$ref": "#/definitions/ProtectionOptions",
           "description": "Chart protection (c:protection, before c:chart)."
+        },
+        "radarStyle": {
+          "$ref": "#/definitions/RadarStyle",
+          "description": "Radar variant (c:radarStyle, default \"standard\")."
         },
         "roundedCorners": {
           "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
@@ -4666,12 +4674,37 @@
           "description": "Series point index this label applies to (c:idx, required).",
           "type": "number"
         },
+        "layout": {
+          "$ref": "#/definitions/ManualLayoutOptions",
+          "description": "Manual label placement (c:layout > c:manualLayout, before EG_DLblShared)."
+        },
         "numberFormat": {
           "description": "Number format override (c:numFmt inside EG_DLblShared).",
           "type": "string"
         },
         "position": {
           "$ref": "#/definitions/DataLabelPosition"
+        },
+        "separator": {
+          "type": "string"
+        },
+        "showBubbleSize": {
+          "type": "boolean"
+        },
+        "showCatName": {
+          "type": "boolean"
+        },
+        "showLegendKey": {
+          "type": "boolean"
+        },
+        "showPercent": {
+          "type": "boolean"
+        },
+        "showSerName": {
+          "type": "boolean"
+        },
+        "showVal": {
+          "type": "boolean"
         }
       },
       "required": ["index"],
@@ -8193,6 +8226,10 @@
         },
         "index": {
           "type": "number"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Per-entry text properties (c:legendEntry/c:txPr) — the non-delete form."
         }
       },
       "required": ["index"],
@@ -12722,6 +12759,43 @@
               "type": "object"
             },
             {
+              "additionalProperties": false,
+              "properties": {
+                "insertion": {
+                  "$ref": "#/definitions/NumberingInsertionOptions",
+                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                },
+                "numberingChange": {
+                  "additionalProperties": false,
+                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "properties": {
+                    "author": {
+                      "type": "string"
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "original": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["original", "id", "author"],
+                  "type": "object"
+                },
+                "revisionOnly": {
+                  "const": true,
+                  "description": "Track-change-only numPr: the source carried no w:numId — the whole numbering property set is a tracked insertion whose numbering resolves through the style chain. Emits `<w:numPr>` with only the revision markers (no w:ilvl/w:numId).",
+                  "type": "boolean"
+                }
+              },
+              "required": ["revisionOnly"],
+              "title": "revisionOnly",
+              "type": "object"
+            },
+            {
               "const": false,
               "type": "boolean"
             }
@@ -13002,6 +13076,43 @@
               },
               "required": ["reference"],
               "title": "reference",
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "insertion": {
+                  "$ref": "#/definitions/NumberingInsertionOptions",
+                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                },
+                "numberingChange": {
+                  "additionalProperties": false,
+                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "properties": {
+                    "author": {
+                      "type": "string"
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "original": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["original", "id", "author"],
+                  "type": "object"
+                },
+                "revisionOnly": {
+                  "const": true,
+                  "description": "Track-change-only numPr: the source carried no w:numId — the whole numbering property set is a tracked insertion whose numbering resolves through the style chain. Emits `<w:numPr>` with only the revision markers (no w:ilvl/w:numId).",
+                  "type": "boolean"
+                }
+              },
+              "required": ["revisionOnly"],
+              "title": "revisionOnly",
               "type": "object"
             },
             {
@@ -13853,6 +13964,43 @@
               },
               "required": ["reference"],
               "title": "reference",
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "insertion": {
+                  "$ref": "#/definitions/NumberingInsertionOptions",
+                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                },
+                "numberingChange": {
+                  "additionalProperties": false,
+                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "properties": {
+                    "author": {
+                      "type": "string"
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "original": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["original", "id", "author"],
+                  "type": "object"
+                },
+                "revisionOnly": {
+                  "const": true,
+                  "description": "Track-change-only numPr: the source carried no w:numId — the whole numbering property set is a tracked insertion whose numbering resolves through the style chain. Emits `<w:numPr>` with only the revision markers (no w:ilvl/w:numId).",
+                  "type": "boolean"
+                }
+              },
+              "required": ["revisionOnly"],
+              "title": "revisionOnly",
               "type": "object"
             },
             {
@@ -15107,6 +15255,10 @@
         }
       },
       "type": "object"
+    },
+    "RadarStyle": {
+      "enum": ["standard", "marker", "filled"],
+      "type": "string"
     },
     "ReadModeInkLockDownOptions": {
       "additionalProperties": false,
@@ -17677,6 +17829,43 @@
                       },
                       "required": ["reference"],
                       "title": "reference",
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "insertion": {
+                          "$ref": "#/definitions/NumberingInsertionOptions",
+                          "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                        },
+                        "numberingChange": {
+                          "additionalProperties": false,
+                          "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                          "properties": {
+                            "author": {
+                              "type": "string"
+                            },
+                            "date": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "original": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["original", "id", "author"],
+                          "type": "object"
+                        },
+                        "revisionOnly": {
+                          "const": true,
+                          "description": "Track-change-only numPr: the source carried no w:numId — the whole numbering property set is a tracked insertion whose numbering resolves through the style chain. Emits `<w:numPr>` with only the revision markers (no w:ilvl/w:numId).",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["revisionOnly"],
+                      "title": "revisionOnly",
                       "type": "object"
                     },
                     {
