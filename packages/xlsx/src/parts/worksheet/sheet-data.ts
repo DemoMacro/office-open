@@ -245,31 +245,54 @@ export function parseSheetDataRows(
         let type: string | undefined;
         let styleIdx: number | undefined;
 
-        scanAttrs(raw, cellOpen + 2, cellSelfClosing ? cellTagEnd - 1 : cellTagEnd, (n2, v2) => {
-          switch (n2) {
-            case "r":
-              cell.reference = v2;
-              break;
-            case "t":
-              type = v2;
-              break;
-            case "s": {
-              const n = Number(v2);
-              if (!isNaN(n)) styleIdx = n;
-              break;
-            }
-            case "cm": {
-              const n = Number(v2);
-              if (!isNaN(n)) cell.cellMetadataId = n;
-              break;
-            }
-            case "vm": {
-              const n = Number(v2);
-              if (!isNaN(n)) cell.valueMetadataId = n;
-              break;
-            }
+        // Inline attribute scan for the five cell attributes (r/t/s/cm/vm).
+        // scanAttrs + closure costs one closure allocation and one name-string
+        // slice per attribute on a 2M-cell sheet; dispatching on name length +
+        // first char keeps the hot attributes allocation-free (other names are
+        // skipped, same as the switch default they replace).
+        let ap = cellOpen + 2;
+        const attrLimit = cellSelfClosing ? cellTagEnd - 1 : cellTagEnd;
+        while (ap < attrLimit) {
+          while (ap < attrLimit) {
+            const c = raw.charCodeAt(ap);
+            if (c !== 0x20 && c !== 0x09 && c !== 0x0a && c !== 0x0d) break;
+            ap++;
           }
-        });
+          if (ap >= attrLimit) break;
+          const aNameStart = ap;
+          while (ap < attrLimit && raw.charCodeAt(ap) !== 0x3d) ap++;
+          if (ap >= attrLimit) break;
+          const aNameLen = ap - aNameStart;
+          ap++; // '='
+          while (ap < attrLimit) {
+            const c = raw.charCodeAt(ap);
+            if (c !== 0x20 && c !== 0x09 && c !== 0x0a && c !== 0x0d) break;
+            ap++;
+          }
+          const aQuote = raw.charCodeAt(ap);
+          if (aQuote !== 0x22 && aQuote !== 0x27) break;
+          ap++;
+          const aValueStart = ap;
+          while (ap < attrLimit && raw.charCodeAt(ap) !== aQuote) ap++;
+          const aFirst = raw.charCodeAt(aNameStart);
+          if (aNameLen === 1) {
+            if (aFirst === 0x72 /* r */) {
+              cell.reference = unescapeXml(raw.slice(aValueStart, ap));
+            } else if (aFirst === 0x74 /* t */) {
+              type = unescapeXml(raw.slice(aValueStart, ap));
+            } else if (aFirst === 0x73 /* s */) {
+              const n = Number(unescapeXml(raw.slice(aValueStart, ap)));
+              if (!isNaN(n)) styleIdx = n;
+            }
+          } else if (aNameLen === 2 && aFirst === 0x63 /* cm */) {
+            const n = Number(unescapeXml(raw.slice(aValueStart, ap)));
+            if (!isNaN(n)) cell.cellMetadataId = n;
+          } else if (aNameLen === 2 && aFirst === 0x76 /* vm */) {
+            const n = Number(unescapeXml(raw.slice(aValueStart, ap)));
+            if (!isNaN(n)) cell.valueMetadataId = n;
+          }
+          ap++;
+        }
 
         if (styleIdx !== undefined) {
           // Resolve to a concrete StyleOptions so re-stringify registers it in
@@ -285,6 +308,7 @@ export function parseSheetDataRows(
           if (cellClose === -1) break;
           cellEnd = cellClose + 4;
           let vText: string | undefined;
+          let vNum: number | undefined;
           let inlineText: string | undefined;
           let hasInline = false;
           let formula: FormulaOptions | undefined;
@@ -295,24 +319,50 @@ export function parseSheetDataRows(
             if (lt === -1 || lt >= cellClose) break;
             const tEnd = findTagEnd(raw, lt + 1);
             if (tEnd === -1) break;
-            let nameEnd = lt + 1;
+            let nameEnd = lt + 2;
             while (nameEnd < tEnd) {
               const c = raw.charCodeAt(nameEnd);
               if (c === 0x20 || c === 0x09 || c === 0x0a || c === 0x0d || c === 0x2f) break;
               nameEnd++;
             }
-            const name = raw.slice(lt + 1, nameEnd);
-            if (name === "v") {
+            // Dispatch on tag-name length + first char: v/is/f cover the
+            // children of virtually every cell, so the common path never
+            // allocates a name string.
+            const nameLen = nameEnd - (lt + 1);
+            const first = raw.charCodeAt(lt + 1);
+            if (nameLen === 1 && first === 0x76 /* v */) {
               if (raw.charCodeAt(tEnd - 1) === 0x2f) {
                 if (vText === undefined) vText = "";
               } else {
                 const close = raw.indexOf("</v>", tEnd + 1);
                 if (close === -1) break;
-                if (vText === undefined) vText = textContent(raw, tEnd + 1, close);
+                if (vText === undefined && vNum === undefined) {
+                  // Fast path: pure-digit <v> content (about half the cells in
+                  // data-heavy sheets) parses straight from char codes — no
+                  // slice, no entity scan, no Number() re-scan. Up to 15
+                  // digits is always exact in float64 (same bound as
+                  // nativeTypeValue); anything else takes the string path.
+                  const vStart = tEnd + 1;
+                  const vLen = close - vStart;
+                  let n = 0;
+                  let allDigits = vLen > 0 && vLen <= 15;
+                  if (allDigits) {
+                    for (let q = vStart; q < close; q++) {
+                      const d = raw.charCodeAt(q) - 0x30;
+                      if (d < 0 || d > 9) {
+                        allDigits = false;
+                        break;
+                      }
+                      n = n * 10 + d;
+                    }
+                  }
+                  if (allDigits) vNum = n;
+                  else vText = textContent(raw, vStart, close);
+                }
                 p = close + 4;
                 continue;
               }
-            } else if (name === "is") {
+            } else if (nameLen === 2 && first === 0x69 /* is */) {
               hasInline = true;
               const close = raw.indexOf("</is>", tEnd + 1);
               const isEnd = close === -1 ? cellClose : close;
@@ -320,7 +370,7 @@ export function parseSheetDataRows(
               if (close === -1) break;
               p = close + 5;
               continue;
-            } else if (name === "f") {
+            } else if (nameLen === 1 && first === 0x66 /* f */) {
               const fSelfClosing = raw.charCodeAt(tEnd - 1) === 0x2f;
               const f: FormulaOptions = { formula: "" };
               scanAttrs(raw, nameEnd, fSelfClosing ? tEnd - 1 : tEnd, (n3, v3) => {
@@ -362,14 +412,17 @@ export function parseSheetDataRows(
           }
 
           // Cell value — resolution order matches the former tree walk.
-          if (type === "s" && vText !== undefined) {
-            cell.value = strings[parseInt(vText, 10)] ?? "";
-          } else if (type === "b" && vText !== undefined) {
-            cell.value = vText === "1";
-          } else if (type === "e" && vText !== undefined) {
-            cell.error = vText;
+          if (type === "s" && (vText !== undefined || vNum !== undefined)) {
+            const idx = vNum !== undefined ? vNum : parseInt(vText!, 10);
+            cell.value = strings[idx] ?? "";
+          } else if (type === "b" && (vText !== undefined || vNum !== undefined)) {
+            cell.value = vNum !== undefined ? vNum === 1 : vText === "1";
+          } else if (type === "e" && (vText !== undefined || vNum !== undefined)) {
+            cell.error = vNum !== undefined ? String(vNum) : vText!;
           } else if (type === "inlineStr" && hasInline) {
             cell.value = inlineText ?? "";
+          } else if (vNum !== undefined) {
+            cell.value = vNum;
           } else if (vText !== undefined) {
             const num = Number(vText);
             cell.value = isNaN(num) ? vText : num;
