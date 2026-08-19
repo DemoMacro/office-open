@@ -52,7 +52,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
   {
     id: "core-properties",
     optionsInterface: "CorePropertiesOptions",
-    // 15 content fields — created/modified + the five CT_CoreProperties
+    // 16 content fields — created/modified + the six CT_CoreProperties
     // string fields (category/contentStatus/identifier/language/version).
     // defaultNamespace is a round-trip form flag (prefix vs default-ns
     // binding), not a serialized content field.
@@ -70,6 +70,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "modified",
       "category",
       "contentStatus",
+      "contentType",
       "identifier",
       "language",
       "version",

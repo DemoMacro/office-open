@@ -139,11 +139,12 @@ function valEl(tag: string, value: string | number): string {
   return `<${tag} ${attrVal("val", value)}/>`;
 }
 
-// ── Boolean helper (CT_OnOff: true → omit val, false → "0") ──
+// ── Boolean helper (CT_OnOff) ──
 
 function boolVal(value: boolean | undefined): string {
-  // XSD CT_OnOff: omit val for true, val="0" for false
-  return value === false ? ` val="0"` : "";
+  // Office chart writers always emit the explicit val attribute (val="1"/"0");
+  // the XSD allows omitting val for true, but the corpus never does.
+  return ` val="${value === false ? 0 : 1}"`;
 }
 
 // ── Numeric literal (c:numLit) ──
@@ -195,7 +196,7 @@ function stringifyErrBars(opts: ErrorBarOptions): string {
 
 // ── Data labels XML (CT_DLbls) ──
 
-function stringifyDataLabel(opts: DataLabelOptions): string {
+function stringifyDataLabel(opts: DataLabelOptions, ctx: WriteContext): string {
   // CT_DLbl: idx (required) → choice(delete | Group_DLbl needing ≥1 EG_DLblShared child).
   if (opts.delete) {
     return `<c:dLbl><c:idx val="${opts.index}"/><c:delete val="1"/></c:dLbl>`;
@@ -205,6 +206,9 @@ function stringifyDataLabel(opts: DataLabelOptions): string {
   if (opts.layout) inner.push(stringifyLayout(opts.layout));
   if (opts.numberFormat !== undefined)
     inner.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
+  inner.push(chartSpPr(opts.shapeProperties, ctx));
+  if (opts.textProperties)
+    inner.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
   if (opts.position !== undefined) inner.push(valEl("c:dLblPos", opts.position));
   if (opts.showLegendKey !== undefined)
     inner.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
@@ -219,14 +223,18 @@ function stringifyDataLabel(opts: DataLabelOptions): string {
   return `<c:dLbl><c:idx val="${opts.index}"/>${inner.join("")}</c:dLbl>`;
 }
 
-function stringifyDataLabels(opts: DataLabelsOptions): string {
+function stringifyDataLabels(opts: DataLabelsOptions, ctx: WriteContext): string {
   const parts: string[] = [];
   // CT_DLbls: per-point overrides (c:dLbl) precede the shared Group_DLbls settings.
   if (opts.labels) {
-    for (const lbl of opts.labels) parts.push(stringifyDataLabel(lbl));
+    for (const lbl of opts.labels) parts.push(stringifyDataLabel(lbl, ctx));
   }
+  if (opts.delete !== undefined) parts.push(`<c:delete${boolVal(opts.delete)}/>`);
   if (opts.numberFormat !== undefined)
     parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
+  parts.push(chartSpPr(opts.shapeProperties, ctx));
+  if (opts.textProperties)
+    parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
   if (opts.position !== undefined) parts.push(valEl("c:dLblPos", opts.position));
   if (opts.showLegendKey !== undefined)
     parts.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
@@ -419,7 +427,7 @@ function stringifyStrLit(values: readonly string[]): string {
   return `<c:strLit><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:strLit>`;
 }
 
-function stringifyMultiLvlStrRef(levels: readonly (readonly string[])[]): string {
+function stringifyMultiLvlStrRef(levels: readonly (readonly string[])[], formula?: string): string {
   const ptCount = levels.reduce((max, lvl) => Math.max(max, lvl.length), 0);
   const lvls = levels
     .map((lvl) => {
@@ -427,7 +435,7 @@ function stringifyMultiLvlStrRef(levels: readonly (readonly string[])[]): string
       return `<c:lvl>${pts}</c:lvl>`;
     })
     .join("");
-  return `<c:multiLvlStrRef><c:f/><c:multiLvlStrCache><c:ptCount ${attrVal("val", ptCount)}/>${lvls}</c:multiLvlStrCache></c:multiLvlStrRef>`;
+  return `<c:multiLvlStrRef>${refFormula(formula)}<c:multiLvlStrCache><c:ptCount ${attrVal("val", ptCount)}/>${lvls}</c:multiLvlStrCache></c:multiLvlStrRef>`;
 }
 
 // Numeric categories keep their literal text so formats survive verbatim.
@@ -452,7 +460,8 @@ function hasCategoryData(opts: ChartSpaceOptions): boolean {
 
 // CT_AxDataSource choice (c:cat / c:xVal slot): exactly one of multi-level/literal/reference.
 function stringifyCategorySource(opts: ChartSpaceOptions): string {
-  if (opts.multiLevelCategories) return stringifyMultiLvlStrRef(opts.multiLevelCategories);
+  if (opts.multiLevelCategories)
+    return stringifyMultiLvlStrRef(opts.multiLevelCategories, opts.categoryFormula);
   if (opts.categoryLabels) return stringifyStrLit(opts.categoryLabels);
   if (opts.numericCategories) {
     return stringifyNumCatRef(opts.categories ?? [], opts.categoryFormula, opts.categoryFormatCode);
@@ -463,6 +472,13 @@ function stringifyCategorySource(opts: ChartSpaceOptions): string {
 function stringifyNumRef(values: readonly number[], formula?: string, formatCode?: string): string {
   const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join("");
   return `<c:numRef>${refFormula(formula)}<c:numCache><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
+}
+
+// CT_NumData literal form (c:val > c:numLit) — Excel writes this for
+// hand-entered series with no worksheet reference.
+function stringifyNumLitList(values: readonly number[], formatCode?: string): string {
+  const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join("");
+  return `<c:numLit><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numLit>`;
 }
 
 // ── Chart type header XML ──
@@ -532,6 +548,7 @@ function stringifyHeaderFooter(opts: ChartHeaderFooterOptions): string {
   if (opts.differentFirst !== undefined)
     attrs.push(`differentFirst="${opts.differentFirst ? 1 : 0}"`);
   const attrStr = attrs.length ? " " + attrs.join(" ") : "";
+  if (parts.length === 0) return `<c:headerFooter${attrStr}/>`;
   return `<c:headerFooter${attrStr}>${parts.join("")}</c:headerFooter>`;
 }
 
@@ -561,6 +578,7 @@ function stringifyPageSetup(opts: ChartPageSetupOptions): string {
   if (opts.horizontalDpi !== undefined) attrs.push(`horizontalDpi="${opts.horizontalDpi}"`);
   if (opts.verticalDpi !== undefined) attrs.push(`verticalDpi="${opts.verticalDpi}"`);
   if (opts.copies !== undefined) attrs.push(`copies="${opts.copies}"`);
+  if (attrs.length === 0) return `<c:pageSetup/>`;
   return `<c:pageSetup ${attrs.join(" ")}/>`;
 }
 
@@ -642,6 +660,7 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
         if (opts.highLowLines) parts.push(emptyEl("c:hiLowLines"));
         if (opts.upDownBars) parts.push(stringifyUpDownBars(opts.upDownBarsGapWidth));
         if (opts.markers !== undefined) parts.push(`<c:marker${boolVal(opts.markers)}/>`);
+        if (opts.smooth !== undefined) parts.push(`<c:smooth${boolVal(opts.smooth)}/>`);
       } else if (opts.gapDepth !== undefined) {
         // CT_Line3DChart: dropLines → gapDepth
         parts.push(valEl("c:gapDepth", opts.gapDepth));
@@ -712,10 +731,11 @@ function chartTypeFooter(opts: ChartSpaceOptions): string {
 
 // ── Series sub-elements (CT_Marker / CT_DPt / CT_PictureOptions) ──
 
-function stringifyMarker(opts: MarkerOptions): string {
+function stringifyMarker(opts: MarkerOptions, ctx: WriteContext): string {
   const parts: string[] = [];
   if (opts.symbol !== undefined) parts.push(valEl("c:symbol", opts.symbol));
   if (opts.size !== undefined) parts.push(valEl("c:size", opts.size));
+  parts.push(chartSpPr(opts.shapeProperties, ctx));
   return `<c:marker>${parts.join("")}</c:marker>`;
 }
 
@@ -730,14 +750,15 @@ function stringifyPictureOptions(opts: PictureOptionsOptions): string {
   return `<c:pictureOptions>${parts.join("")}</c:pictureOptions>`;
 }
 
-function stringifyDataPoint(opts: DataPointOptions): string {
+function stringifyDataPoint(opts: DataPointOptions, ctx: WriteContext): string {
   // CT_DPt: idx → invertIfNegative → marker → bubble3D → explosion → spPr → pictureOptions
   const parts: string[] = [valEl("c:idx", opts.index)];
   if (opts.invertIfNegative !== undefined)
     parts.push(`<c:invertIfNegative${boolVal(opts.invertIfNegative)}/>`);
-  if (opts.marker) parts.push(stringifyMarker(opts.marker));
+  if (opts.marker) parts.push(stringifyMarker(opts.marker, ctx));
   if (opts.bubble3D !== undefined) parts.push(`<c:bubble3D${boolVal(opts.bubble3D)}/>`);
   if (opts.explosion !== undefined) parts.push(valEl("c:explosion", opts.explosion));
+  parts.push(chartSpPr(opts.shapeProperties, ctx));
   if (opts.pictureOptions) parts.push(stringifyPictureOptions(opts.pictureOptions));
   return `<c:dPt>${parts.join("")}</c:dPt>`;
 }
@@ -757,7 +778,9 @@ function stringifySeries(
   // EG_SerShared: idx, order, tx, spPr
   parts.push(valEl("c:idx", index));
   parts.push(valEl("c:order", index));
-  if (series.name !== undefined || series.nameFormula !== undefined)
+  if (series.nameLiteral && series.name !== undefined) {
+    parts.push(`<c:tx><c:v>${escapeXml(series.name)}</c:v></c:tx>`);
+  } else if (series.name !== undefined || series.nameFormula !== undefined)
     parts.push(`<c:tx>${stringifyStrRef([series.name], series.nameFormula)}</c:tx>`);
   // Series spPr is optional in CT_Ser — emit only when the source carried one
   // (round-trip); fresh series keep the bare form like legacy Word files.
@@ -765,7 +788,7 @@ function stringifySeries(
 
   // type-specific head before dPt (per CT_xxxSer content model)
   if (chartType === "line" || chartType === "scatter" || chartType === "radar") {
-    if (s.marker) parts.push(stringifyMarker(s.marker));
+    if (s.marker) parts.push(stringifyMarker(s.marker, ctx));
   } else if (chartType === "column" || chartType === "bar") {
     if (s.invertIfNegative !== undefined)
       parts.push(`<c:invertIfNegative${boolVal(s.invertIfNegative)}/>`);
@@ -781,9 +804,9 @@ function stringifySeries(
 
   // shared decorations (XSD order: dPt → dLbls → trendline → errBars)
   if (s.dataPoints) {
-    for (const dp of s.dataPoints) parts.push(stringifyDataPoint(dp));
+    for (const dp of s.dataPoints) parts.push(stringifyDataPoint(dp, ctx));
   }
-  if (s.dataLabels) parts.push(stringifyDataLabels(s.dataLabels));
+  if (s.dataLabels) parts.push(stringifyDataLabels(s.dataLabels, ctx));
   if (s.trendlines) {
     for (const tl of s.trendlines) parts.push(stringifyTrendline(tl));
   }
@@ -802,9 +825,13 @@ function stringifySeries(
     parts.push(`<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:yVal>`);
   } else if (hasCategoryData(opts)) {
     parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
-    parts.push(`<c:val>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`);
+    parts.push(
+      `<c:val>${s.valueLiteral ? stringifyNumLitList(s.values, s.formatCode) : stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`,
+    );
   } else {
-    parts.push(`<c:val>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`);
+    parts.push(
+      `<c:val>${s.valueLiteral ? stringifyNumLitList(s.values, s.formatCode) : stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`,
+    );
   }
 
   // type-specific tail after data references
@@ -887,11 +914,14 @@ function stringifyPivotSource(opts: PivotSourceOptions): string {
   return `<c:pivotSource><c:name>${escapeXml(opts.name)}</c:name><c:fmtId val="${opts.formatId}"/></c:pivotSource>`;
 }
 
-function stringifyPivotFormats(formats: readonly ChartPivotFormatOptions[]): string {
+function stringifyPivotFormats(
+  formats: readonly ChartPivotFormatOptions[],
+  ctx: WriteContext,
+): string {
   const inner = formats
     .map((f) => {
       let entry = `<c:idx val="${f.index}"/>`;
-      if (f.marker) entry += stringifyMarker(f.marker);
+      if (f.marker) entry += stringifyMarker(f.marker, ctx);
       return `<c:pivotFmt>${entry}</c:pivotFmt>`;
     })
     .join("");
@@ -1061,6 +1091,13 @@ function readRefMeta(el: XmlElement): { formula?: string; formatCode?: string } 
     const text = fc ? textOf(fc) : "";
     if (text) meta.formatCode = text;
   }
+  // c:numLit carries its formatCode as a direct child
+  const numLit = strRef || numRef ? undefined : findChild(el, "c:numLit");
+  if (numLit) {
+    const fc = findChild(numLit, "c:formatCode");
+    const text = fc ? textOf(fc) : "";
+    if (text) meta.formatCode = text;
+  }
   return meta;
 }
 
@@ -1099,7 +1136,22 @@ function readMultiLvlStrCache(el: XmlElement): string[][] | undefined {
   return levels;
 }
 
+function readNumLitPoints(numLit: XmlElement): number[] {
+  const result: number[] = [];
+  for (const pt of numLit.elements ?? []) {
+    if (pt.name === "c:pt") {
+      const v = findChild(pt, "c:v");
+      const text = v ? textOf(v) : "";
+      if (text !== "") result.push(Number(text));
+    }
+  }
+  return result;
+}
+
 function readNumCache(el: XmlElement): number[] {
+  // c:numLit literal points (CT_NumDataSource choice: numRef | numLit)
+  const numLit = findChild(el, "c:numLit");
+  if (numLit) return readNumLitPoints(numLit);
   const numRef = findChild(el, "c:numRef");
   if (!numRef) return [];
   const numCache = findChild(numRef, "c:numCache");
@@ -1115,11 +1167,17 @@ function readNumCache(el: XmlElement): number[] {
   return result;
 }
 
-function readSeriesName(serEl: XmlElement): string | undefined {
+function readSeriesName(serEl: XmlElement): { name: string | undefined; literal: boolean } {
   const tx = findChild(serEl, "c:tx");
-  if (!tx) return undefined;
+  if (!tx) return { name: undefined, literal: false };
+  // CT_SerTx choice: c:strRef (reference) or bare c:v (inline literal).
+  const v = findChild(tx, "c:v");
+  if (v && !findChild(tx, "c:strRef")) {
+    const text = textOf(v);
+    return { name: text !== "" ? text : undefined, literal: true };
+  }
   const values = readStrCache(tx);
-  return values[0] ?? "";
+  return { name: values[0] ?? "", literal: false };
 }
 
 /** Read a c:title. Plain text stays a string; layout/overlay/spPr/txPr
@@ -1292,12 +1350,24 @@ function readErrBars(serEl: XmlElement): ErrorBarOptions | undefined {
   return opts;
 }
 
-function readDataLabels(serEl: XmlElement): DataLabelsOptions | undefined {
+function readDataLabels(serEl: XmlElement, ctx: ReadContext): DataLabelsOptions | undefined {
   const dlEl = findChild(serEl, "c:dLbls");
   if (!dlEl) return undefined;
   const opts: DataLabelsOptions = {};
+  const groupDelete = readBoolAttr(dlEl, "c:delete");
+  if (groupDelete !== undefined) opts.delete = groupDelete;
   const numFmt = attr(findChild(dlEl, "c:numFmt"), "formatCode");
   if (numFmt) opts.numberFormat = numFmt;
+  const dlSpPr = findChild(dlEl, "c:spPr");
+  if (dlSpPr) {
+    const shapeProperties = shapePropertiesDesc.parse(dlSpPr, ctx);
+    if (shapeProperties) opts.shapeProperties = shapeProperties;
+  }
+  const dlTxPr = findChild(dlEl, "c:txPr");
+  if (dlTxPr) {
+    const textProperties = textBodyDesc.parse(dlTxPr, ctx);
+    if (textProperties) opts.textProperties = textProperties;
+  }
   const position = readValStr(dlEl, "c:dLblPos");
   if (position) opts.position = position as DataLabelsOptions["position"];
   const showLegendKey = readBoolAttr(dlEl, "c:showLegendKey");
@@ -1326,6 +1396,16 @@ function readDataLabels(serEl: XmlElement): DataLabelsOptions | undefined {
       if (layout) result.layout = layout;
       const numFmt = attr(findChild(el, "c:numFmt"), "formatCode");
       if (numFmt) result.numberFormat = numFmt;
+      const lblSpPr = findChild(el, "c:spPr");
+      if (lblSpPr) {
+        const shapeProperties = shapePropertiesDesc.parse(lblSpPr, ctx);
+        if (shapeProperties) result.shapeProperties = shapeProperties;
+      }
+      const lblTxPr = findChild(el, "c:txPr");
+      if (lblTxPr) {
+        const textProperties = textBodyDesc.parse(lblTxPr, ctx);
+        if (textProperties) result.textProperties = textProperties;
+      }
       const pos = readValStr(el, "c:dLblPos");
       if (pos) result.position = pos as DataLabelOptions["position"];
       for (const flag of [
@@ -1348,7 +1428,7 @@ function readDataLabels(serEl: XmlElement): DataLabelsOptions | undefined {
   return opts;
 }
 
-function readMarker(parent: XmlElement): MarkerOptions | undefined {
+function readMarker(parent: XmlElement, ctx: ReadContext): MarkerOptions | undefined {
   const el = findChild(parent, "c:marker");
   if (!el) return undefined;
   const opts: MarkerOptions = {};
@@ -1356,6 +1436,11 @@ function readMarker(parent: XmlElement): MarkerOptions | undefined {
   if (symbol) opts.symbol = symbol as MarkerSymbol;
   const size = readValNum(el, "c:size");
   if (size !== undefined) opts.size = size;
+  const spPr = findChild(el, "c:spPr");
+  if (spPr) {
+    const shapeProperties = shapePropertiesDesc.parse(spPr, ctx);
+    if (shapeProperties) opts.shapeProperties = shapeProperties;
+  }
   return Object.keys(opts).length ? opts : undefined;
 }
 
@@ -1376,19 +1461,24 @@ function readPictureOptions(parent: XmlElement): PictureOptionsOptions | undefin
   return Object.keys(opts).length ? opts : undefined;
 }
 
-function readDataPoints(serEl: XmlElement): DataPointOptions[] | undefined {
+function readDataPoints(serEl: XmlElement, ctx: ReadContext): DataPointOptions[] | undefined {
   const els = children(serEl, "c:dPt");
   if (els.length === 0) return undefined;
   return els.map((el): DataPointOptions => {
     const dp: DataPointOptions = { index: readValNum(el, "c:idx") ?? 0 };
     const invertIfNegative = readBoolAttr(el, "c:invertIfNegative");
     if (invertIfNegative !== undefined) dp.invertIfNegative = invertIfNegative;
-    const marker = readMarker(el);
+    const marker = readMarker(el, ctx);
     if (marker) dp.marker = marker;
     const bubble3D = readBoolAttr(el, "c:bubble3D");
     if (bubble3D !== undefined) dp.bubble3D = bubble3D;
     const explosion = readValNum(el, "c:explosion");
     if (explosion !== undefined) dp.explosion = explosion;
+    const spPr = findChild(el, "c:spPr");
+    if (spPr) {
+      const shapeProperties = shapePropertiesDesc.parse(spPr, ctx);
+      if (shapeProperties) dp.shapeProperties = shapeProperties;
+    }
     const pictureOptions = readPictureOptions(el);
     if (pictureOptions) dp.pictureOptions = pictureOptions;
     return dp;
@@ -1407,11 +1497,11 @@ function readSeriesCommon(serEl: XmlElement, ctx: ReadContext): Partial<ChartSer
   if (trendlines) common.trendlines = trendlines;
   const errorBars = readErrBars(serEl);
   if (errorBars) common.errorBars = errorBars;
-  const dataLabels = readDataLabels(serEl);
+  const dataLabels = readDataLabels(serEl, ctx);
   if (dataLabels) common.dataLabels = dataLabels;
-  const dataPoints = readDataPoints(serEl);
+  const dataPoints = readDataPoints(serEl, ctx);
   if (dataPoints) common.dataPoints = dataPoints;
-  const marker = readMarker(serEl);
+  const marker = readMarker(serEl, ctx);
   if (marker) common.marker = marker;
   const invertIfNegative = readBoolAttr(serEl, "c:invertIfNegative");
   if (invertIfNegative !== undefined) common.invertIfNegative = invertIfNegative;
@@ -1602,6 +1692,8 @@ function readChartTypeDecorations(
       if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
       const markers = readBoolAttr(chartTypeEl, "c:marker");
       if (markers !== undefined) result.markers = markers;
+      const smooth = readBoolAttr(chartTypeEl, "c:smooth");
+      if (smooth !== undefined) result.smooth = smooth;
     }
   } else if (type === "area") {
     if (findChild(chartTypeEl, "c:dropLines")) result.dropLines = true;
@@ -1692,7 +1784,10 @@ function readPivotSource(el: XmlElement): PivotSourceOptions | undefined {
   return { name: textOf(nameEl) ?? "", formatId: Number(attr(fmtIdEl, "val")) };
 }
 
-function readPivotFormats(chart: XmlElement): ChartPivotFormatOptions[] | undefined {
+function readPivotFormats(
+  chart: XmlElement,
+  ctx: ReadContext,
+): ChartPivotFormatOptions[] | undefined {
   const pf = findChild(chart, "c:pivotFmts");
   if (!pf) return undefined;
   const result: ChartPivotFormatOptions[] = [];
@@ -1700,7 +1795,7 @@ function readPivotFormats(chart: XmlElement): ChartPivotFormatOptions[] | undefi
     const idxEl = findChild(fmt, "c:idx");
     if (!idxEl) continue;
     const opt: ChartPivotFormatOptions = { index: Number(attr(idxEl, "val")) };
-    const marker = readMarker(fmt);
+    const marker = readMarker(fmt, ctx);
     if (marker) opt.marker = marker;
     result.push(opt);
   }
@@ -1819,7 +1914,8 @@ function readHeaderFooter(ps: XmlElement): ChartHeaderFooterOptions | undefined 
   if (differentOddEven !== undefined) opts.differentOddEven = differentOddEven;
   const differentFirst = readFlag("differentFirst");
   if (differentFirst !== undefined) opts.differentFirst = differentFirst;
-  return Object.keys(opts).length ? opts : undefined;
+  // An empty <c:headerFooter/> round-trips as {} — presence is the payload.
+  return opts;
 }
 
 function readPageMargins(ps: XmlElement): ChartPageMarginsOptions | undefined {
@@ -1879,7 +1975,8 @@ function readPageSetup(ps: XmlElement): ChartPageSetupOptions | undefined {
   if (verticalDpi !== undefined) opts.verticalDpi = verticalDpi;
   const copies = readNum("copies");
   if (copies !== undefined) opts.copies = copies;
-  return Object.keys(opts).length ? opts : undefined;
+  // An empty <c:pageSetup/> round-trips as {} — presence is the payload.
+  return opts;
 }
 
 function readPrintSettings(el: XmlElement): PrintSettingsOptions | undefined {
@@ -2099,7 +2196,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (opts.autoTitleDeleted !== undefined)
       parts.push(`<c:autoTitleDeleted${boolVal(opts.autoTitleDeleted)}/>`);
     // CT_Chart: autoTitleDeleted → pivotFmts → view3D
-    if (opts.pivotFormats?.length) parts.push(stringifyPivotFormats(opts.pivotFormats));
+    if (opts.pivotFormats?.length) parts.push(stringifyPivotFormats(opts.pivotFormats, ctx));
 
     // 3D view (before plotArea per CT_Chart sequence)
     if (opts.view3D) {
@@ -2124,7 +2221,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     }
 
     // Chart-group-level data labels follow the ser elements (EG_*ChartShared).
-    if (opts.dataLabels) parts.push(stringifyDataLabels(opts.dataLabels));
+    if (opts.dataLabels) parts.push(stringifyDataLabels(opts.dataLabels, ctx));
 
     parts.push(chartTypeFooter(opts));
 
@@ -2223,7 +2320,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (autoTitleDeleted !== undefined) result.autoTitleDeleted = autoTitleDeleted;
 
     // 3D view (before plotArea per CT_Chart sequence)
-    const pivotFormats = readPivotFormats(chart);
+    const pivotFormats = readPivotFormats(chart, ctx);
     if (pivotFormats) result.pivotFormats = pivotFormats;
     const view3D = readView3D(chart);
     if (view3D) result.view3D = view3D;
@@ -2273,7 +2370,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
         readChartTypeScalars(chartTypeEl, detectedType, threeD, result);
         readChartTypeDecorations(chartTypeEl, detectedType, threeD, result);
         // Chart-group-level data labels (after the ser elements).
-        const groupLabels = readDataLabels(chartTypeEl);
+        const groupLabels = readDataLabels(chartTypeEl, ctx);
         if (groupLabels) result.dataLabels = groupLabels;
         // The axId reference sequence is data in its own right (legacy files
         // carry dangling val="0" entries) — record it verbatim.
@@ -2289,7 +2386,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
         if (detectedType === "bubble") {
           const bubbleSeries: BubbleSeriesData[] = [];
           for (const serEl of seriesEls) {
-            const name = readSeriesName(serEl);
+            const { name } = readSeriesName(serEl);
             const xVal = findChild(serEl, "c:xVal");
             const yVal = findChild(serEl, "c:yVal");
             const bubbleSize = findChild(serEl, "c:bubbleSize");
@@ -2307,7 +2404,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
           let categories: string[] | undefined;
 
           for (const serEl of seriesEls) {
-            const name = readSeriesName(serEl);
+            const { name, literal: nameLiteral } = readSeriesName(serEl);
             const txEl = findChild(serEl, "c:tx");
             const nameFormula = txEl ? readRefMeta(txEl).formula : undefined;
 
@@ -2319,6 +2416,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
                 const multi = readMultiLvlStrCache(catEl);
                 if (multi) {
                   result.multiLevelCategories = multi;
+                  const multiRef = findChild(catEl, "c:multiLvlStrRef");
+                  const multiF = multiRef ? findChild(multiRef, "c:f") : undefined;
+                  const multiText = multiF ? textOf(multiF) : "";
+                  if (multiText) result.categoryFormula = multiText;
                 } else {
                   const lit = readStrLit(catEl);
                   if (lit) {
@@ -2342,12 +2443,15 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
             // Read values
             const valEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
+            const valueLiteral = valEl ? findChild(valEl, "c:numLit") !== undefined : false;
             const values = valEl ? readNumCache(valEl) : [];
             const valMeta = valEl ? readRefMeta(valEl) : {};
 
             chartSeries.push({
               name,
+              ...(nameLiteral ? { nameLiteral } : {}),
               ...(nameFormula ? { nameFormula } : {}),
+              ...(valueLiteral ? { valueLiteral } : {}),
               ...(valMeta.formula ? { valueFormula: valMeta.formula } : {}),
               ...(valMeta.formatCode ? { formatCode: valMeta.formatCode } : {}),
               values,

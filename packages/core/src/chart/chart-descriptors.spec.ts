@@ -151,8 +151,8 @@ describe("chartSpaceDesc", () => {
     expect(xml).toContain("c:trendline");
     expect(xml).toContain('c:trendlineType val="linear"');
     expect(xml).toContain('c:forward val="2"');
-    expect(xml).toContain("<c:dispEq/>");
-    expect(xml).toContain("<c:dispRSqr/>");
+    expect(xml).toContain('<c:dispEq val="1"/>');
+    expect(xml).toContain('<c:dispRSqr val="1"/>');
 
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
@@ -267,7 +267,7 @@ describe("chartSpaceDesc", () => {
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
     expect(xml).toContain("c:dLbls");
     expect(xml).toContain('c:dLblPos val="outEnd"');
-    expect(xml).toContain("<c:showVal/>");
+    expect(xml).toContain('<c:showVal val="1"/>');
     expect(xml).toContain('<c:showLegendKey val="0"/>');
     expect(xml).toContain("<c:separator>, </c:separator>");
 
@@ -300,7 +300,7 @@ describe("chartSpaceDesc", () => {
     expect(xml).toContain("c:view3D");
     expect(xml).toContain('c:rotX val="30"');
     expect(xml).toContain('c:rotY val="20"');
-    expect(xml).toContain("<c:rAngAx/>");
+    expect(xml).toContain('<c:rAngAx val="1"/>');
 
     const result = roundTrip(opts);
     expect(result.view3D).toBeDefined();
@@ -551,7 +551,7 @@ describe("chartSpaceDesc", () => {
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
     expect(xml).toContain('c:symbol val="circle"');
     expect(xml).toContain('c:size val="7"');
-    expect(xml).toContain("<c:smooth/>");
+    expect(xml).toContain('<c:smooth val="1"/>');
 
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
@@ -767,7 +767,7 @@ describe("chartSpaceDesc", () => {
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
     expect(xml).toContain('c:bubbleScale val="80"');
-    expect(xml).toContain("<c:showNegBubbles/>");
+    expect(xml).toContain('<c:showNegBubbles val="1"/>');
     expect(xml).toContain('c:sizeRepresents val="w"');
 
     const result = roundTrip(opts);
@@ -788,7 +788,7 @@ describe("chartSpaceDesc", () => {
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
     expect(xml).toContain('<c:plotVisOnly val="0"/>');
     expect(xml).toContain('c:dispBlanksAs val="span"');
-    expect(xml).toContain("<c:showDLblsOverMax/>");
+    expect(xml).toContain('<c:showDLblsOverMax val="1"/>');
 
     const result = roundTrip(opts);
     expect(result.plotVisOnly).toBe(false);
@@ -806,7 +806,7 @@ describe("chartSpaceDesc", () => {
     const result = roundTrip(opts);
     expect(result.wireframe).toBe(true);
     const xml = stringify(chartSpaceDesc, result, {} as WriteContext);
-    expect(xml).toContain("<c:wireframe/>");
+    expect(xml).toContain('<c:wireframe val="1"/>');
   });
 
   it("round-trips line chart high-low lines, up/down bars, and drop lines", () => {
@@ -860,10 +860,10 @@ describe("chartSpaceDesc", () => {
       },
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
-    expect(xml).toContain("<c:showHorzBorder/>");
+    expect(xml).toContain('<c:showHorzBorder val="1"/>');
     expect(xml).toContain('<c:showVertBorder val="0"/>');
-    expect(xml).toContain("<c:showOutline/>");
-    expect(xml).toContain("<c:showKeys/>");
+    expect(xml).toContain('<c:showOutline val="1"/>');
+    expect(xml).toContain('<c:showKeys val="1"/>');
 
     const result = roundTrip(opts);
     expect(result.dataTable?.showHorizontalBorder).toBe(true);
@@ -1127,7 +1127,7 @@ describe("chartSpaceDesc", () => {
     expect(xml).toContain('<c:date1904 val="0"/>');
     expect(xml).toContain('<c:lang val="de-DE"/>');
     expect(xml).toContain('<c:roundedCorners val="0"/>');
-    expect(xml).toContain("<c:autoTitleDeleted/>");
+    expect(xml).toContain('<c:autoTitleDeleted val="1"/>');
 
     const result = roundTrip(opts);
     expect(result.date1904).toBe(false);
@@ -1202,11 +1202,11 @@ describe("chartSpaceDesc", () => {
       dataLabels: { showVal: true },
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
-    expect(xml).toContain("<c:varyColors/>");
+    expect(xml).toContain('<c:varyColors val="1"/>');
     expect(xml).toContain('<c:shape val="box"/>');
     expect(xml).toContain('<c:axId val="111"/>');
     expect(xml).toContain('<c:axId val="0"/>');
-    expect(xml).toContain("<c:showVal/>");
+    expect(xml).toContain('<c:showVal val="1"/>');
 
     // axisIds without axes never applies — the default axes carry their own
     // ids, so the reference sequence stays consistent with emitted axes.
@@ -1233,7 +1233,7 @@ describe("chartSpaceDesc", () => {
       markers: true,
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
-    expect(xml).toContain("<c:marker/>");
+    expect(xml).toContain('<c:marker val="1"/>');
 
     const result = roundTrip(opts);
     expect(result.markers).toBe(true);

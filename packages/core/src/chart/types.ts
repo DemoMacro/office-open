@@ -20,8 +20,18 @@ export interface ChartSeriesCommon {
   name?: string;
   /** Series name reference formula (c:tx > c:strRef > c:f) — round-trip. */
   nameFormula?: string;
+  /**
+   * Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the
+   * dominant Excel form; parse sets this when the source carried a bare c:v.
+   */
+  nameLiteral?: boolean;
   /** Values reference formula (c:val > c:numRef > c:f) — round-trip. */
   valueFormula?: string;
+  /**
+   * Values are inline literals (c:val > c:numLit instead of c:numRef) —
+   * parse sets this when the source carried c:numLit.
+   */
+  valueLiteral?: boolean;
   /** Values number format (c:numCache > c:formatCode) — round-trip. */
   formatCode?: string;
   trendlines?: readonly TrendlineOptions[];
@@ -123,6 +133,10 @@ export interface DataLabelOptions {
   position?: DataLabelPosition;
   /** Number format override (c:numFmt inside EG_DLblShared). */
   numberFormat?: string;
+  /** Label fill/outline (c:dLbl > c:spPr) — round-trip. */
+  shapeProperties?: ShapePropertiesOptions;
+  /** Label text formatting (c:dLbl > c:txPr) — round-trip. */
+  textProperties?: TextBodyOptions;
   showLegendKey?: boolean;
   showVal?: boolean;
   showCatName?: boolean;
@@ -133,8 +147,17 @@ export interface DataLabelOptions {
 }
 
 export interface DataLabelsOptions {
+  /**
+   * Labels deleted at the group level (c:delete inside c:dLbls) — Office
+   * writes val="0" explicitly to keep labels on; round-trips the attribute.
+   */
+  delete?: boolean;
   /** Label number format (c:numFmt formatCode, before the position). */
   numberFormat?: string;
+  /** Shared label fill/outline (c:dLbls > c:spPr) — round-trip. */
+  shapeProperties?: ShapePropertiesOptions;
+  /** Shared label text formatting (c:dLbls > c:txPr) — round-trip. */
+  textProperties?: TextBodyOptions;
   position?: DataLabelPosition;
   showVal?: boolean;
   showCatName?: boolean;
@@ -256,6 +279,12 @@ export interface ChartSpaceOptions {
    * Emitted only when set.
    */
   markers?: boolean;
+  /**
+   * Smooth lines for the whole line-chart group (c:smooth CT_Boolean on
+   * c:lineChart, after c:marker) — distinct from the per-series `smooth`.
+   * Emitted only when set.
+   */
+  smooth?: boolean;
   /** 3D bar column shape (chart-group-level c:shape on c:bar3DChart). */
   shape?: BarShape;
   /** Chart-group-level data labels (c:dLbls after the ser elements). */
@@ -503,6 +532,8 @@ export interface MarkerOptions {
   symbol?: MarkerSymbol;
   /** Marker size, 2-72 (c:size val). */
   size?: number;
+  /** Marker fill/outline (c:marker > c:spPr) — round-trip. */
+  shapeProperties?: ShapePropertiesOptions;
 }
 
 /** Per-point override (CT_DPt). Field order follows the XSD content model. */
@@ -515,6 +546,8 @@ export interface DataPointOptions {
   bubble3D?: boolean;
   /** Pie explosion offset for this point (c:explosion). */
   explosion?: number;
+  /** Per-point fill/outline (c:dPt > c:spPr) — round-trip. */
+  shapeProperties?: ShapePropertiesOptions;
   pictureOptions?: PictureOptionsOptions;
 }
 
