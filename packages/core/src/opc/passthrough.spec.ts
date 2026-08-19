@@ -97,11 +97,11 @@ describe("collectPassthroughParts", () => {
   it("captures rebuilt→passthrough relationships, drops external targets", () => {
     const result = collectPassthroughParts(archiveOf(basePackage()), ["word/document.xml"]);
     const docRels = result.relationships.filter((r) => r.source === "word/document.xml");
-    expect(docRels.map((r) => r.relationshipType.split("/").pop()).sort()).toEqual([
-      "customXml",
-      "image",
-      "theme",
-    ]);
+    expect(
+      docRels
+        .map((r) => r.relationshipType.split("/").pop() ?? "")
+        .sort((a, b) => a.localeCompare(b)),
+    ).toEqual(["customXml", "image", "theme"]);
     // Targets stay in source-relative form.
     const theme = docRels.find((r) => r.relationshipType.endsWith("/theme"));
     expect(theme?.target).toBe("theme/theme1.xml");

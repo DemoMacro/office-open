@@ -543,7 +543,8 @@ function parseShapeElements(el: XmlElement, out: Record<string, unknown>): void 
         ) {
           break;
         }
-        out.rawChildrenXml = (out.rawChildrenXml ?? "") + stringifyElement(child);
+        const previous = typeof out.rawChildrenXml === "string" ? out.rawChildrenXml : "";
+        out.rawChildrenXml = previous + stringifyElement(child);
         break;
     }
   }
