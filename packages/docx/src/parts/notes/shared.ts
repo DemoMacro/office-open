@@ -107,7 +107,11 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
         parts.push(`<${cfg.noteTag} w:id="${id}">`);
         for (const [i, para] of paragraphs.entries()) {
           const pXml = stringifyParagraphInline(para, ctx);
-          if (i === 0) {
+          // Inject the reference run only on fresh content — a round-tripped
+          // note keeps the parsed ref-mark run (with its own rPr) in place, and
+          // injecting the template too would emit the mark twice.
+          const hasRefMark = pXml.includes("<w:footnoteRef/>") || pXml.includes("<w:endnoteRef/>");
+          if (i === 0 && !hasRefMark) {
             parts.push(injectRefRun(pXml, cfg));
           } else {
             parts.push(pXml);
