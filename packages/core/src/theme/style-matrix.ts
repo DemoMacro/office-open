@@ -74,12 +74,21 @@ function parseFontReference(
 
 // ── Shape style (a:style / CT_ShapeStyle) ──
 
-export function stringifyShapeStyle(opts: DefaultShapeStyleOptions, ctx: WriteContext): string {
+export function stringifyShapeStyle(
+  opts: DefaultShapeStyleOptions,
+  ctx: WriteContext,
+  /**
+   * Wrapper element — CT_ShapeStyle serializes under several names across
+   * packages (a:style in theme objectDefaults, xdr:style in spreadsheet
+   * drawings). Children stay in the a: namespace either way.
+   */
+  wrapTag = "a:style",
+): string {
   const lnRef = stringifyStyleMatrixReference("a:lnRef", opts.lineReference, ctx);
   const fillRef = stringifyStyleMatrixReference("a:fillRef", opts.fillReference, ctx);
   const effectRef = stringifyStyleMatrixReference("a:effectRef", opts.effectReference, ctx);
   const fontRef = stringifyFontReference(opts.fontReference, ctx);
-  return `<a:style>${lnRef}${fillRef}${effectRef}${fontRef}</a:style>`;
+  return `<${wrapTag}>${lnRef}${fillRef}${effectRef}${fontRef}</${wrapTag}>`;
 }
 
 export function parseShapeStyle(

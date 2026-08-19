@@ -13,7 +13,11 @@ import { stringify, parse } from "../../descriptor";
 import { emitAngle, emitPercent, parseAngle, parsePercentAttr } from "../../util/converters";
 import { xsdRectAlignment } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
-import { solidFillDesc } from "../color/color-descriptors";
+import {
+  parseColorChoice,
+  parseColorChoiceElement,
+  stringifyColorChoice,
+} from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlipOptions } from "./blip";
 import type {
@@ -111,7 +115,8 @@ export const stretchDesc: CustomDescriptor<SourceRectangleOptions> = {
 
 // ── Blip effects helpers ──
 
-function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): string {
+/** Serialize a:blip adjustment effects (a:lum, a:duotone, …) in public units. */
+export function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): string {
   const parts: string[] = [];
 
   if (opts.grayscale) {
@@ -148,9 +153,9 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.duotone) {
-    const c1 = stringify(solidFillDesc, opts.duotone.color1, ctx);
-    const c2 = stringify(solidFillDesc, opts.duotone.color2, ctx);
-    parts.push(`<a:duotone>${c1 ?? ""}${c2 ?? ""}</a:duotone>`);
+    const c1 = stringifyColorChoice(opts.duotone.color1, ctx);
+    const c2 = stringifyColorChoice(opts.duotone.color2, ctx);
+    parts.push(`<a:duotone>${c1}${c2}</a:duotone>`);
   }
 
   if (opts.biLevel) {
@@ -169,8 +174,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
     if (typeof opts.alphaInverse === "boolean") {
       parts.push("<a:alphaInv/>");
     } else {
-      const colorXml = stringify(solidFillDesc, opts.alphaInverse, ctx);
-      parts.push(`<a:alphaInv>${colorXml ?? ""}</a:alphaInv>`);
+      parts.push(`<a:alphaInv>${stringifyColorChoice(opts.alphaInverse, ctx)}</a:alphaInv>`);
     }
   }
 
@@ -188,8 +192,8 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.colorChange) {
-    const fromXml = stringify(solidFillDesc, opts.colorChange.from, ctx);
-    const toXml = stringify(solidFillDesc, opts.colorChange.to, ctx);
+    const fromXml = stringifyColorChoice(opts.colorChange.from, ctx);
+    const toXml = stringifyColorChoice(opts.colorChange.to, ctx);
     const attrParts: string[] = [];
     if (opts.colorChange.useAlpha === false) attrParts.push('useA="0"');
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
@@ -199,8 +203,7 @@ function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): stri
   }
 
   if (opts.colorReplace) {
-    const colorXml = stringify(solidFillDesc, opts.colorReplace.color, ctx);
-    parts.push(`<a:clrRepl>${colorXml ?? ""}</a:clrRepl>`);
+    parts.push(`<a:clrRepl>${stringifyColorChoice(opts.colorReplace.color, ctx)}</a:clrRepl>`);
   }
 
   if (opts.blur) {
@@ -260,12 +263,8 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
 
   const alphaInv = findChild(el, "a:alphaInv");
   if (alphaInv) {
-    const solidFill = findChild(alphaInv, "a:solidFill");
-    if (solidFill) {
-      result.alphaInverse = parse(solidFillDesc, solidFill, ctx);
-    } else {
-      result.alphaInverse = {} as SolidFillOptions;
-    }
+    const color = parseColorChoice(alphaInv, ctx);
+    result.alphaInverse = Object.keys(color).length > 0 ? color : ({} as SolidFillOptions);
   }
 
   const alphaModFix = findChild(el, "a:alphaModFix");
@@ -292,23 +291,15 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
     if (clrChange.attributes?.["useA"] !== undefined)
       opts.useAlpha = parseOnOff(clrChange.attributes["useA"]) ?? true;
     const clrFrom = findChild(clrChange, "a:clrFrom");
-    if (clrFrom) {
-      const fromFill = findChild(clrFrom, "a:solidFill");
-      if (fromFill) opts.from = parse(solidFillDesc, fromFill, ctx);
-    }
+    if (clrFrom) opts.from = parseColorChoice(clrFrom, ctx);
     const clrTo = findChild(clrChange, "a:clrTo");
-    if (clrTo) {
-      const toFill = findChild(clrTo, "a:solidFill");
-      if (toFill) opts.to = parse(solidFillDesc, toFill, ctx);
-    }
+    if (clrTo) opts.to = parseColorChoice(clrTo, ctx);
     result.colorChange = opts as ColorChangeEffectOptions;
   }
 
   const clrRepl = findChild(el, "a:clrRepl");
   if (clrRepl) {
-    const solidFill = findChild(clrRepl, "a:solidFill");
-    if (solidFill)
-      result.colorReplace = { color: parse(solidFillDesc, solidFill, ctx) as SolidFillOptions };
+    result.colorReplace = { color: parseColorChoice(clrRepl, ctx) as SolidFillOptions };
   }
 
   const blur = findChild(el, "a:blur");
@@ -322,11 +313,12 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
 
   const duotone = findChild(el, "a:duotone");
   if (duotone?.elements) {
-    // Try to read two solidFill children
+    // CT_Duotone carries two bare EG_ColorChoice children (no solidFill
+    // wrapper) — take the first two color elements in order.
     const fills: SolidFillOptions[] = [];
     for (const child of duotone.elements) {
-      const sf = findChild(child, "a:solidFill");
-      if (sf) fills.push(parse(solidFillDesc, sf, ctx) as SolidFillOptions);
+      const color = parseColorChoiceElement(child, ctx);
+      if (color) fills.push(color);
     }
     const [color1, color2] = fills;
     if (color1 && color2) {

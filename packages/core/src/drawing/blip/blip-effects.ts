@@ -11,6 +11,7 @@
  */
 import { element } from "@office-open/xml";
 
+import { emitAngle, emitPercent } from "../../util/converters";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
@@ -235,10 +236,10 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   if (options.luminance) {
     const attrs: Record<string, string | number | undefined> = {};
     if (options.luminance.bright !== undefined) {
-      attrs.bright = `${options.luminance.bright}`;
+      attrs.bright = `${emitPercent(options.luminance.bright)}`;
     }
     if (options.luminance.contrast !== undefined) {
-      attrs.contrast = `${options.luminance.contrast}`;
+      attrs.contrast = `${emitPercent(options.luminance.contrast)}`;
     }
     children.push(element("a:lum", attrs));
   }
@@ -246,13 +247,13 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   if (options.hsl) {
     const attrs: Record<string, string | number | undefined> = {};
     if (options.hsl.hue !== undefined) {
-      attrs.hue = String(options.hsl.hue);
+      attrs.hue = `${emitAngle(options.hsl.hue)}`;
     }
     if (options.hsl.saturation !== undefined) {
-      attrs.sat = `${options.hsl.saturation}`;
+      attrs.sat = `${emitPercent(options.hsl.saturation)}`;
     }
     if (options.hsl.luminance !== undefined) {
-      attrs.lum = `${options.hsl.luminance}`;
+      attrs.lum = `${emitPercent(options.hsl.luminance)}`;
     }
     children.push(element("a:hsl", attrs));
   }
@@ -260,10 +261,10 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   if (options.tint) {
     const attrs: Record<string, string | number | undefined> = {};
     if (options.tint.hue !== undefined) {
-      attrs.hue = String(options.tint.hue);
+      attrs.hue = `${emitAngle(options.tint.hue)}`;
     }
     if (options.tint.amount !== undefined) {
-      attrs.amt = `${options.tint.amount}`;
+      attrs.amt = `${emitPercent(options.tint.amount)}`;
     }
     children.push(element("a:tint", attrs));
   }
@@ -278,7 +279,7 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   }
 
   if (options.biLevel) {
-    children.push(`<a:biLevel thresh="${options.biLevel.threshold}"/>`);
+    children.push(`<a:biLevel thresh="${emitPercent(options.biLevel.threshold)}"/>`);
   }
 
   if (options.alphaCeiling) {
@@ -298,16 +299,16 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   }
 
   if (options.alphaModulateFixed) {
-    const amt = options.alphaModulateFixed.amount ?? 100;
+    const amt = emitPercent(options.alphaModulateFixed.amount ?? 100);
     children.push(`<a:alphaModFix amt="${amt}"/>`);
   }
 
   if (options.alphaReplace) {
-    children.push(`<a:alphaRepl a="${options.alphaReplace.alpha}"/>`);
+    children.push(`<a:alphaRepl a="${emitPercent(options.alphaReplace.alpha)}"/>`);
   }
 
   if (options.alphaBiLevel) {
-    children.push(`<a:alphaBiLevel thresh="${options.alphaBiLevel.threshold}"/>`);
+    children.push(`<a:alphaBiLevel thresh="${emitPercent(options.alphaBiLevel.threshold)}"/>`);
   }
 
   if (options.colorChange) {

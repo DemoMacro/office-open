@@ -10,6 +10,7 @@ export { themeDesc } from "./theme-descriptors";
 export { themeManagerDesc, themeOverrideDesc } from "./theme-override";
 export type { ThemeManagerOptions } from "./theme-override";
 export { DEFAULT_COLOR_MAPPING, parseColorMapping, stringifyColorMapping } from "./color-mapping";
+export { parseShapeStyle, stringifyShapeStyle } from "./style-matrix";
 export type {
   ColorMappingOptions,
   ColorSchemeIndex,

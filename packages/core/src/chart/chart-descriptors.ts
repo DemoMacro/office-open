@@ -2117,7 +2117,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // Chart type element (header + series + footer)
     parts.push(chartTypeHeader(opts));
 
-    for (const [i, series] of opts.series.entries()) {
+    // A parsed empty chart shell carries no series (parse omits the field
+    // when the source had no c:ser) — emit none instead of crashing.
+    for (const [i, series] of (opts.series ?? []).entries()) {
       parts.push(stringifySeries(i, series, opts, ctx));
     }
 
