@@ -67,15 +67,10 @@ export function parseToc(
   const sdtContent = findChild(el, "w:sdtContent");
 
   if (sdtContent) {
-    // Look for field instructions
-    for (const p of children(sdtContent, "w:p")) {
-      for (const r of children(p, "w:r")) {
-        for (const instrText of children(r, "w:instrText")) {
-          const instruction = textOf(instrText).trim();
-          parseTocFieldInstruction(instruction, tocOpts);
-        }
-      }
-    }
+    // Word splits one instruction across runs (` TOC ` + ` \o "1-1" `), so
+    // the outer field's instrText runs are joined before parsing.
+    const instruction = collectOuterFieldInstruction(sdtContent.elements ?? []);
+    if (instruction) parseTocFieldInstruction(instruction, tocOpts);
     // Rendered entries — the paragraphs between the field's separate and end
     // markers. Captured structurally so MS Office and WPS both display the
     // existing TOC instead of regenerating it from headings.
@@ -146,13 +141,14 @@ export function parseTocFieldInstruction(instruction: string, opts: Record<strin
 
 /**
  * Extract TOC options from the elements of a captured TOC field (SDT content or
- * a bare cross-paragraph field). Feeds every w:instrText to the instruction
- * parser; non-TOC fields (HYPERLINK/PAGEREF inside the rendered entries) are
- * ignored — parseTocFieldInstruction only acts on instructions starting "TOC".
+ * a bare cross-paragraph field). Non-TOC fields (HYPERLINK/PAGEREF inside the
+ * rendered entries) never reach the instruction parser — see
+ * collectOuterFieldInstruction.
  */
 export function parseTocFieldFromElements(els: Element[]): TableOfContentsOptions {
   const opts: Record<string, unknown> = {};
-  for (const el of els) collectTocInstructions(el, opts);
+  const instruction = collectOuterFieldInstruction(els);
+  if (instruction) parseTocFieldInstruction(instruction, opts);
   return opts as TableOfContentsOptions;
 }
 
@@ -219,15 +215,48 @@ export function keepTocClosingParagraph(el: Element, hasEntries: boolean): boole
   return findFirst(el, "w:t") === undefined && (hasEntries || findFirst(el, "w:pPr") !== undefined);
 }
 
-/** Recursively feed every w:instrText to the TOC instruction parser. */
-function collectTocInstructions(el: Element, opts: Record<string, unknown>): void {
-  if (el.name === "w:instrText") {
-    const instruction = textOf(el)?.trim();
-    if (instruction) parseTocFieldInstruction(instruction, opts);
-  }
-  for (const c of el.elements ?? []) {
-    if (c.type === "element") collectTocInstructions(c, opts);
-  }
+/**
+ * Concatenate the instrText runs of the OUTERMOST field in the given
+ * elements, trimmed. Word splits one instruction across runs (` TOC ` +
+ * ` \o "1-1" `), so the runs must be joined before parsing — feeding each
+ * run on its own loses every switch that lands in a later run. Nested
+ * fields (HYPERLINK/PAGEREF inside the rendered entries) sit at depth ≥ 2
+ * and are excluded, so their switches cannot leak into the TOC's.
+ */
+function collectOuterFieldInstruction(els: Element[]): string {
+  let depth = 0;
+  let inHead = false;
+  let instruction = "";
+  const walk = (node: Element): void => {
+    if (node.name === "w:r" && node.elements) {
+      // A run holds at most one fldChar marker; instrText runs carry none.
+      // Handle begin → instrText → separate in document order so a run
+      // combining markers still opens/closes the head window correctly.
+      for (const c of node.elements) {
+        if (c.type !== "element") continue;
+        if (c.name === "w:fldChar") {
+          const type = attr(c, "w:fldCharType");
+          if (type === "begin") {
+            depth++;
+            if (depth === 1) inHead = true;
+          } else if (type === "separate") {
+            if (depth === 1) inHead = false;
+          } else if (type === "end") {
+            if (depth === 1) inHead = false;
+            depth--;
+          }
+        } else if (c.name === "w:instrText" && inHead && depth === 1) {
+          instruction += textOf(c) ?? "";
+        }
+      }
+      return;
+    }
+    for (const c of node.elements ?? []) {
+      if (c.type === "element") walk(c);
+    }
+  };
+  for (const el of els) walk(el);
+  return instruction.trim();
 }
 
 /**
