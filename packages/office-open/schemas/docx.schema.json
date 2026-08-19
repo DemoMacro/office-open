@@ -12765,6 +12765,23 @@
             {
               "additionalProperties": false,
               "properties": {
+                "level": {
+                  "description": "Level in the numbering hierarchy (0-8).",
+                  "type": "number"
+                },
+                "levelOnly": {
+                  "const": true,
+                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level (CT_NumPr leaves both children optional). Emits `<w:numPr>` with only the w:ilvl.",
+                  "type": "boolean"
+                }
+              },
+              "required": ["levelOnly"],
+              "title": "levelOnly",
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
                 "insertion": {
                   "$ref": "#/definitions/NumberingInsertionOptions",
                   "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
@@ -13080,6 +13097,23 @@
               },
               "required": ["reference"],
               "title": "reference",
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "level": {
+                  "description": "Level in the numbering hierarchy (0-8).",
+                  "type": "number"
+                },
+                "levelOnly": {
+                  "const": true,
+                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level (CT_NumPr leaves both children optional). Emits `<w:numPr>` with only the w:ilvl.",
+                  "type": "boolean"
+                }
+              },
+              "required": ["levelOnly"],
+              "title": "levelOnly",
               "type": "object"
             },
             {
@@ -13968,6 +14002,23 @@
               },
               "required": ["reference"],
               "title": "reference",
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "level": {
+                  "description": "Level in the numbering hierarchy (0-8).",
+                  "type": "number"
+                },
+                "levelOnly": {
+                  "const": true,
+                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level (CT_NumPr leaves both children optional). Emits `<w:numPr>` with only the w:ilvl.",
+                  "type": "boolean"
+                }
+              },
+              "required": ["levelOnly"],
+              "title": "levelOnly",
               "type": "object"
             },
             {
@@ -17837,6 +17888,23 @@
                       },
                       "required": ["reference"],
                       "title": "reference",
+                      "type": "object"
+                    },
+                    {
+                      "additionalProperties": false,
+                      "properties": {
+                        "level": {
+                          "description": "Level in the numbering hierarchy (0-8).",
+                          "type": "number"
+                        },
+                        "levelOnly": {
+                          "const": true,
+                          "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level (CT_NumPr leaves both children optional). Emits `<w:numPr>` with only the w:ilvl.",
+                          "type": "boolean"
+                        }
+                      },
+                      "required": ["levelOnly"],
+                      "title": "levelOnly",
                       "type": "object"
                     },
                     {

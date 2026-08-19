@@ -333,6 +333,7 @@ export function stringifyParagraphProperties(
     (options.bullet ||
     (options.numbering &&
       !("revisionOnly" in options.numbering) &&
+      !("levelOnly" in options.numbering) &&
       options.numbering.autoStyle !== false)
       ? "ListParagraph"
       : undefined);
@@ -357,7 +358,9 @@ export function stringifyParagraphProperties(
   // numbering (or false = remove) wins over the bullet sugar, which pins the
   // built-in bullet list (numId 1).
   if (options.numbering) {
-    if ("revisionOnly" in options.numbering) {
+    if ("levelOnly" in options.numbering) {
+      s += `<w:numPr><w:ilvl w:val="${Math.min(options.numbering.level ?? 0, 9)}"/></w:numPr>`;
+    } else if ("revisionOnly" in options.numbering) {
       s += numPrStr(
         undefined,
         undefined,

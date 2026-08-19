@@ -197,6 +197,17 @@ export type ParagraphStylePropertiesOptions = {
       }
     | {
         /**
+         * Level-only numPr: the source carried w:ilvl with no w:numId — the
+         * numbering definition inherits from the style chain while this
+         * element overrides the level (CT_NumPr leaves both children
+         * optional). Emits `<w:numPr>` with only the w:ilvl.
+         */
+        levelOnly: true;
+        /** Level in the numbering hierarchy (0-8). */
+        level?: number;
+      }
+    | {
+        /**
          * Track-change-only numPr: the source carried no w:numId — the whole
          * numbering property set is a tracked insertion whose numbering
          * resolves through the style chain. Emits `<w:numPr>` with only the

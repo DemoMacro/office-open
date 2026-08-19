@@ -600,12 +600,15 @@ export function parseParagraphProperties(
       // A numPr without numId carries nothing resolvable — except tracked
       // revision markers (w:ins / w:numberingChange): the numbering property
       // set itself is a revision inheriting its numbering from the style
-      // chain. Keep those; an ilvl-only numPr stays dropped (level override,
-      // nothing in the numbering part to resolve, and the bullet fallback
-      // would fabricate numId=1 + ListParagraph the source never had).
+      // chain. Keep those, and keep a bare w:ilvl too (level override with
+      // the numbering definition still inherited from the style chain); the
+      // bullet fallback would fabricate numId=1 + ListParagraph the source
+      // never had.
       const insEl = findChild(numPr, "w:ins");
       const numberingChangeEl = findChild(numPr, "w:numberingChange");
-      if (insEl || numberingChangeEl) {
+      if (level !== undefined) {
+        opts.numbering = { levelOnly: true, level };
+      } else if (insEl || numberingChangeEl) {
         const rev: {
           revisionOnly: true;
           numberingChange?: { original: string; id: string; author: string; date?: string };

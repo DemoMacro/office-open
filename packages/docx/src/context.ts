@@ -356,7 +356,7 @@ export class DocxWriteContext implements WriteContext {
     if (options.styles?.paragraphStyles) {
       for (const style of options.styles.paragraphStyles) {
         const num = style.paragraph?.numbering;
-        if (num && !("revisionOnly" in num)) {
+        if (num && !("revisionOnly" in num) && !("levelOnly" in num)) {
           this.numbering.createConcreteNumberingInstance(num.reference, num.instance ?? 0);
         }
       }

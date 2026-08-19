@@ -75,10 +75,11 @@ describe("paragraph-properties field consistency", () => {
     expect(numIdOnly.numbering).toMatchObject({ reference: "list_1" });
     expect((numIdOnly.numbering as { level?: number }).level).toBeUndefined();
 
-    // ilvl-only (no w:numId) → inherits numbering from the style chain; no
-    // bullet fallback (which would fabricate numId=1 + ListParagraph).
+    // ilvl-only (no w:numId) → levelOnly: keeps the level override with the
+    // numbering definition still inherited from the style chain; no bullet
+    // fallback (which would fabricate numId=1 + ListParagraph).
     const ilvlOnly = parseWith(`<w:numPr><w:ilvl w:val="1"/></w:numPr>`);
-    expect(ilvlOnly.numbering).toBeUndefined();
+    expect(ilvlOnly.numbering).toEqual({ levelOnly: true, level: 1 });
     expect(ilvlOnly.bullet).toBeUndefined();
   });
 
