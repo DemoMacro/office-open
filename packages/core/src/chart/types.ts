@@ -236,12 +236,21 @@ export interface ChartLinesOptions {
   textProperties?: TextBodyOptions;
 }
 
-/** Second chart group in a combo chart (CT_PlotArea carries two *Chart groups). */
+/** Series grouping mode (c:grouping val) — bar/column/line/area groups. */
+export type ChartGrouping = "clustered" | "standard" | "stacked" | "percentStacked";
+
+/**
+ * Additional chart groups in a combo chart (CT_PlotArea may carry several
+ * *Chart groups; each secondary one shares the category source and the axes
+ * list with the main group).
+ */
 export interface SecondaryChartGroupOptions {
   /** Chart type of this group (drives the c:*Chart element and its header). */
   type: ChartType;
   /** This group's series; categories come from the chart-level source. */
   series: readonly ChartSeriesData[];
+  /** Series grouping (c:grouping); defaults per type like the main group. */
+  grouping?: ChartGrouping;
   /** Vary data-point colors (group-level c:varyColors). */
   varyColors?: boolean;
   /** Show line-chart markers (group-level c:marker, line 2D). */
@@ -252,8 +261,22 @@ export interface SecondaryChartGroupOptions {
   dataLabels?: DataLabelsOptions;
   /** Bar/column gap width as percent (c:gapWidth, bar group). */
   gapWidth?: number;
+  /** Bar/column overlap as percent (c:overlap, 2D bar group). */
+  overlap?: number;
+  /** 3D gap depth as percent (c:gapDepth). */
+  gapDepth?: number;
+  /** Series connector lines (c:serLines, bar/ofPie groups). */
+  seriesLines?: boolean | ChartLinesOptions;
+  /** Drop lines (c:dropLines, line/area). */
+  dropLines?: boolean | ChartLinesOptions;
+  /** High-low lines (c:hiLowLines, line/stock). */
+  highLowLines?: boolean | ChartLinesOptions;
+  /** Up/down bars container (c:upDownBars, line). */
+  upDownBars?: boolean;
+  /** Gap width inside the up/down bars container (c:upDownBars > c:gapWidth). */
+  upDownBarsGapWidth?: number;
   /** axId pair referencing entries of the shared axes list. */
-  axisIds: readonly number[];
+  axisIds?: readonly number[];
 }
 
 export interface ChartSpaceOptions {
@@ -303,6 +326,11 @@ export interface ChartSpaceOptions {
    */
   varyColors?: boolean;
   /**
+   * Series grouping (c:grouping val). Absent → the per-type default the
+   * header always wrote (clustered for bar/column, standard for line/area).
+   */
+  grouping?: ChartGrouping;
+  /**
    * Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only).
    * Emitted only when set.
    */
@@ -338,7 +366,7 @@ export interface ChartSpaceOptions {
    * Shares the plot area, categories, and the axes list; carries its own
    * series and group-level flags.
    */
-  secondaryGroup?: SecondaryChartGroupOptions;
+  secondaryGroups?: readonly SecondaryChartGroupOptions[];
   /** Manual plot-area layout (c:plotArea > c:layout > c:manualLayout). */
   plotAreaLayout?: ManualLayoutOptions;
   /** Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip. */

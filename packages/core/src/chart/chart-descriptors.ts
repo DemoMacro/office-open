@@ -20,6 +20,7 @@ import type {
   BubbleSeriesData,
   ChartSeriesData,
   ChartLinesOptions,
+  ChartGrouping,
   SecondaryChartGroupOptions,
   ChartType,
   DataLabelOptions,
@@ -594,7 +595,17 @@ function stringifyPrintSettings(opts: PrintSettingsOptions): string {
   return `<c:printSettings>${parts.join("")}</c:printSettings>`;
 }
 
-function chartTypeHeader(opts: ChartSpaceOptions): string {
+// Header fields shared by the main group and combo secondary groups.
+interface ChartGroupHeaderFields {
+  type: ChartType;
+  grouping?: ChartGrouping;
+  radarStyle?: RadarStyle;
+  ofPieType?: OfPieType;
+  wireframe?: boolean;
+  varyColors?: boolean;
+}
+
+function chartTypeHeader(opts: ChartGroupHeaderFields & { threeD?: boolean }): string {
   const tag = opts.threeD ? CHART_TYPE_TAGS_3D[opts.type] : CHART_TYPE_TAGS[opts.type];
   if (!tag) throw new Error(`Unsupported chart type: ${opts.type}`);
 
@@ -604,11 +615,11 @@ function chartTypeHeader(opts: ChartSpaceOptions): string {
     case "column":
     case "bar":
       headerParts.push(valEl("c:barDir", opts.type === "column" ? "col" : "bar"));
-      headerParts.push(valEl("c:grouping", "clustered"));
+      headerParts.push(valEl("c:grouping", opts.grouping ?? "clustered"));
       break;
     case "line":
     case "area":
-      headerParts.push(valEl("c:grouping", "standard"));
+      headerParts.push(valEl("c:grouping", opts.grouping ?? "standard"));
       break;
     case "scatter":
       headerParts.push(valEl("c:scatterStyle", "line"));
@@ -887,6 +898,89 @@ function readChartLines(
   return lines;
 }
 
+/** Read one secondary chart group (combo): own series, flags, and 2D group tail. */
+function readSecondaryGroup(
+  secondaryEl: XmlElement,
+  ctx: ReadContext,
+): SecondaryChartGroupOptions | undefined {
+  const mapping = TAG_TO_CHART_TYPE[secondaryEl.name ?? ""];
+  if (!mapping) return undefined;
+  let secType: ChartType = mapping.type;
+  const isBarTag = secondaryEl.name === "c:barChart" || secondaryEl.name === "c:bar3DChart";
+  if (isBarTag) {
+    const barDir = findChild(secondaryEl, "c:barDir");
+    const barDirVal = barDir ? attr(barDir, "val") : undefined;
+    if (barDirVal === "bar") secType = "bar";
+    else if (barDirVal === "col") secType = "column";
+  }
+  const g: SecondaryChartGroupOptions = { type: secType, series: [] };
+  const grouping = readValStr(secondaryEl, "c:grouping");
+  if (grouping) g.grouping = grouping as ChartGrouping;
+  const varyColors = readBoolAttr(secondaryEl, "c:varyColors");
+  if (varyColors !== undefined) g.varyColors = varyColors;
+  const groupLabels = readDataLabels(secondaryEl, ctx);
+  if (groupLabels) g.dataLabels = groupLabels;
+  // Group tails in XSD document order — same elements the main group reads.
+  if (secType === "bar" || secType === "column") {
+    const gapWidth = readValNum(secondaryEl, "c:gapWidth");
+    if (gapWidth !== undefined) g.gapWidth = gapWidth;
+    if (!mapping.threeD) {
+      const overlap = readValNum(secondaryEl, "c:overlap");
+      if (overlap !== undefined) g.overlap = overlap;
+    } else {
+      const gapDepth = readValNum(secondaryEl, "c:gapDepth");
+      if (gapDepth !== undefined) g.gapDepth = gapDepth;
+    }
+    const seriesLines = readChartLines(secondaryEl, "c:serLines", ctx);
+    if (seriesLines !== undefined) g.seriesLines = seriesLines;
+  } else if (secType === "line") {
+    const dropLines = readChartLines(secondaryEl, "c:dropLines", ctx);
+    if (dropLines !== undefined) g.dropLines = dropLines;
+    const highLowLines = readChartLines(secondaryEl, "c:hiLowLines", ctx);
+    if (highLowLines !== undefined) g.highLowLines = highLowLines;
+    const upDownBars = findChild(secondaryEl, "c:upDownBars");
+    if (upDownBars) {
+      g.upDownBars = true;
+      const gw = readValNum(upDownBars, "c:gapWidth");
+      if (gw !== undefined) g.upDownBarsGapWidth = gw;
+    }
+    const markers = readBoolAttr(secondaryEl, "c:marker");
+    if (markers !== undefined) g.markers = markers;
+    const smooth = readBoolAttr(secondaryEl, "c:smooth");
+    if (smooth !== undefined) g.smooth = smooth;
+  } else if (secType === "area") {
+    const dropLines = readChartLines(secondaryEl, "c:dropLines", ctx);
+    if (dropLines !== undefined) g.dropLines = dropLines;
+  }
+  const secAxIds = children(secondaryEl, "c:axId");
+  if (secAxIds.length > 0) {
+    const ids = secAxIds.map((e) => Number(attr(e, "val"))).filter((n) => !isNaN(n));
+    if (ids.length > 0) g.axisIds = ids;
+  }
+  const secSeries: ChartSeriesData[] = [];
+  for (const serEl of children(secondaryEl, "c:ser")) {
+    const { name, literal: nameLiteral } = readSeriesName(serEl);
+    const txEl = findChild(serEl, "c:tx");
+    const nameFormula = txEl ? readRefMeta(txEl).formula : undefined;
+    const valueEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
+    const valueLiteral = valueEl ? findChild(valueEl, "c:numLit") !== undefined : false;
+    const values = valueEl ? readNumCache(valueEl) : [];
+    const valMeta = valueEl ? readRefMeta(valueEl) : {};
+    secSeries.push({
+      name,
+      ...(nameLiteral ? { nameLiteral } : {}),
+      ...(nameFormula ? { nameFormula } : {}),
+      ...(valueLiteral ? { valueLiteral } : {}),
+      ...(valMeta.formula ? { valueFormula: valMeta.formula } : {}),
+      ...(valMeta.formatCode ? { formatCode: valMeta.formatCode } : {}),
+      values,
+      ...readSeriesCommon(serEl, ctx),
+    });
+  }
+  g.series = secSeries;
+  return g;
+}
+
 // ── Secondary chart group (combo charts) ──
 
 function stringifySecondaryGroup(
@@ -899,11 +993,32 @@ function stringifySecondaryGroup(
     parts.push(stringifySeries(i, series, opts, ctx, g.type));
   }
   if (g.dataLabels) parts.push(stringifyDataLabels(g.dataLabels, ctx));
-  // Group tails: line 2D ends marker → smooth; bar carries gapWidth.
-  if (g.type === "line" && g.markers !== undefined) parts.push(`<c:marker${boolVal(g.markers)}/>`);
-  if (g.type === "line" && g.smooth !== undefined) parts.push(`<c:smooth${boolVal(g.smooth)}/>`);
-  if ((g.type === "bar" || g.type === "column") && g.gapWidth !== undefined)
-    parts.push(valEl("c:gapWidth", g.gapWidth));
+  // Group tails in XSD document order (2D secondary groups only — same order
+  // chartTypeFooter emits for the main group).
+  switch (g.type) {
+    case "bar":
+    case "column":
+      // CT_BarChart: gapWidth → overlap → serLines
+      if (g.gapWidth !== undefined) parts.push(valEl("c:gapWidth", g.gapWidth));
+      if (g.overlap !== undefined) parts.push(valEl("c:overlap", g.overlap));
+      parts.push(stringifyChartLines("c:serLines", g.seriesLines, ctx));
+      break;
+    case "line":
+      // CT_LineChart: dropLines → hiLowLines → upDownBars → marker → smooth
+      parts.push(stringifyChartLines("c:dropLines", g.dropLines, ctx));
+      parts.push(stringifyChartLines("c:hiLowLines", g.highLowLines, ctx));
+      if (g.upDownBars) parts.push(stringifyUpDownBars(g.upDownBarsGapWidth));
+      if (g.markers !== undefined) parts.push(`<c:marker${boolVal(g.markers)}/>`);
+      if (g.smooth !== undefined) parts.push(`<c:smooth${boolVal(g.smooth)}/>`);
+      break;
+    case "area":
+      // EG_AreaChartShared tail: dropLines
+      parts.push(stringifyChartLines("c:dropLines", g.dropLines, ctx));
+      break;
+    case "scatter":
+      // CT_ScatterChart tail is nothing beyond axId.
+      break;
+  }
   for (const id of g.axisIds ?? []) parts.push(valEl("c:axId", id));
   return parts.join("");
 }
@@ -1646,6 +1761,15 @@ function readChartTypeScalars(
     const varyColors = readBoolAttr(chartTypeEl, "c:varyColors");
     if (varyColors !== undefined) result.varyColors = varyColors;
   }
+  // c:grouping sits in the header (before ser) of bar/column/line/area groups;
+  // only store a non-default value so fresh output keeps the per-type default.
+  if (type === "column" || type === "bar" || type === "line" || type === "area") {
+    const grouping = readValStr(chartTypeEl, "c:grouping");
+    if (grouping) {
+      const fallback = type === "column" || type === "bar" ? "clustered" : "standard";
+      if (grouping !== fallback) result.grouping = grouping as ChartSpaceOptions["grouping"];
+    }
+  }
   if (type === "column" || type === "bar") {
     const gapWidth = readValNum(chartTypeEl, "c:gapWidth");
     if (gapWidth !== undefined) result.gapWidth = gapWidth;
@@ -2276,7 +2400,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
     // Combo chart: a second group (e.g. lines over bars) shares the plot
     // area, the category source, and the axes list.
-    if (opts.secondaryGroup) parts.push(stringifySecondaryGroup(opts.secondaryGroup, opts, ctx));
+    for (const g of opts.secondaryGroups ?? []) parts.push(stringifySecondaryGroup(g, opts, ctx));
 
     // Axes
     parts.push(stringifyAxes(opts, ctx));
@@ -2398,16 +2522,17 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       let detectedType: ChartType | undefined;
       let threeD = false;
       let chartTypeEl: XmlElement | undefined;
-      // Combo charts carry a second chart group in the same plot area.
-      let secondaryEl: XmlElement | undefined;
+      // Combo charts carry further chart groups in the same plot area
+      // (CT_PlotArea allows any number of them).
+      const secondaryEls: XmlElement[] = [];
 
       for (const child of plotArea.elements) {
         if (!child.name) continue;
         const mapping = TAG_TO_CHART_TYPE[child.name];
         if (mapping) {
           if (chartTypeEl) {
-            secondaryEl = child;
-            break;
+            secondaryEls.push(child);
+            continue;
           }
           detectedType = mapping.type;
           threeD = mapping.threeD ?? false;
@@ -2522,56 +2647,15 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
         }
       }
 
-      // Second chart group (combo charts) — own series and group flags,
+      // Further chart groups (combo charts) — own series and group flags,
       // sharing the category source and the axes list with the main group.
-      if (secondaryEl) {
-        const mapping = TAG_TO_CHART_TYPE[secondaryEl.name ?? ""];
-        if (mapping) {
-          let secType: ChartType = mapping.type;
-          if (secondaryEl.name === "c:barChart" || secondaryEl.name === "c:bar3DChart") {
-            const barDir = findChild(secondaryEl, "c:barDir");
-            const barDirVal = barDir ? attr(barDir, "val") : undefined;
-            if (barDirVal === "bar") secType = "bar";
-            else if (barDirVal === "col") secType = "column";
-          }
-          const g: SecondaryChartGroupOptions = { type: secType, series: [], axisIds: [] };
-          const varyColors = readBoolAttr(secondaryEl, "c:varyColors");
-          if (varyColors !== undefined) g.varyColors = varyColors;
-          const groupLabels = readDataLabels(secondaryEl, ctx);
-          if (groupLabels) g.dataLabels = groupLabels;
-          const markers = readBoolAttr(secondaryEl, "c:marker");
-          if (markers !== undefined) g.markers = markers;
-          const smooth = readBoolAttr(secondaryEl, "c:smooth");
-          if (smooth !== undefined) g.smooth = smooth;
-          const gapWidth = readValNum(secondaryEl, "c:gapWidth");
-          if (gapWidth !== undefined) g.gapWidth = gapWidth;
-          const secAxIds = children(secondaryEl, "c:axId");
-          if (secAxIds.length > 0) {
-            g.axisIds = secAxIds.map((e) => Number(attr(e, "val"))).filter((n) => !isNaN(n));
-          }
-          const secSeries: ChartSeriesData[] = [];
-          for (const serEl of children(secondaryEl, "c:ser")) {
-            const { name, literal: nameLiteral } = readSeriesName(serEl);
-            const txEl = findChild(serEl, "c:tx");
-            const nameFormula = txEl ? readRefMeta(txEl).formula : undefined;
-            const valueEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
-            const valueLiteral = valueEl ? findChild(valueEl, "c:numLit") !== undefined : false;
-            const values = valueEl ? readNumCache(valueEl) : [];
-            const valMeta = valueEl ? readRefMeta(valueEl) : {};
-            secSeries.push({
-              name,
-              ...(nameLiteral ? { nameLiteral } : {}),
-              ...(nameFormula ? { nameFormula } : {}),
-              ...(valueLiteral ? { valueLiteral } : {}),
-              ...(valMeta.formula ? { valueFormula: valMeta.formula } : {}),
-              ...(valMeta.formatCode ? { formatCode: valMeta.formatCode } : {}),
-              values,
-              ...readSeriesCommon(serEl, ctx),
-            });
-          }
-          g.series = secSeries;
-          result.secondaryGroup = g;
+      if (secondaryEls.length > 0) {
+        const groups: SecondaryChartGroupOptions[] = [];
+        for (const secondaryEl of secondaryEls) {
+          const g = readSecondaryGroup(secondaryEl, ctx);
+          if (g) groups.push(g);
         }
+        if (groups.length > 0) result.secondaryGroups = groups;
       }
     }
 
