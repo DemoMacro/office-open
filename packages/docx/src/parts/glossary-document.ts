@@ -8,6 +8,11 @@
  */
 
 import { parseOnOff } from "@office-open/core";
+import {
+  parseSectionPropertiesEl,
+  sectionPropertiesDesc,
+} from "@parts/document/body/section-properties/descriptor";
+import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
 import { documentNamespaceAttributes } from "@parts/document/document-attributes";
 import type { SectionChild } from "@shared/section";
 
@@ -76,6 +81,14 @@ export const DocPartBehavior = {
 
 export type DocPartBehavior = (typeof DocPartBehavior)[keyof typeof DocPartBehavior];
 
+/** A section within a building block body (CT_Body section boundary). */
+export interface DocPartSectionOptions {
+  /** Block-level content in this section. */
+  children: SectionChild[];
+  /** Section properties carried by w:pPr/w:sectPr or terminal w:sectPr. */
+  properties?: SectionPropertiesOptions;
+}
+
 /** A single building block (CT_DocPart) */
 export interface DocPartOptions {
   /** Building block name (required) */
@@ -98,8 +111,8 @@ export interface DocPartOptions {
   decorated?: boolean;
   /** Style applied to this building block */
   style?: string;
-  /** Body content — paragraphs, tables, etc. */
-  children: SectionChild[];
+  /** Body sections, including section-break properties. */
+  sections: DocPartSectionOptions[];
 }
 
 /** Glossary document options */
@@ -112,7 +125,9 @@ export interface GlossaryDocumentOptions {
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml, findChild } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
+import { stringifyBodyChild } from "../body";
 import type { BodyContext, DocxReadContext } from "../context";
 import { parseSectionChild } from "../parse/body";
 
@@ -132,6 +147,74 @@ const GLOSSARY_NS = documentNamespaceAttributes([
   "wne",
   "wps",
 ]);
+
+function stringifyDocPartBody(part: DocPartOptions, ctx: BodyContext): string {
+  const parts: string[] = [];
+  for (let sectionIndex = 0; sectionIndex < part.sections.length; sectionIndex++) {
+    const section = part.sections[sectionIndex]!;
+    const sectPrXml = section.properties
+      ? (sectionPropertiesDesc.stringify(section.properties, ctx) ?? "")
+      : "";
+    const isLast = sectionIndex === part.sections.length - 1;
+    let sectPrHosted = isLast || !sectPrXml;
+
+    for (let childIndex = 0; childIndex < section.children.length; childIndex++) {
+      const child = section.children[childIndex]!;
+      const inject =
+        !isLast &&
+        !!sectPrXml &&
+        childIndex === section.children.length - 1 &&
+        ("paragraph" in child || "toc" in child);
+      if (inject) sectPrHosted = true;
+      parts.push(stringifyBodyChild(child, ctx, inject ? sectPrXml : undefined));
+    }
+    if (!isLast && sectPrXml && !sectPrHosted) {
+      parts.push(`<w:p><w:pPr>${sectPrXml}</w:pPr></w:p>`);
+    }
+    if (isLast && sectPrXml) parts.push(sectPrXml);
+  }
+  return parts.join("");
+}
+
+function parseDocPartBody(body: Element, ctx: DocxReadContext): DocPartSectionOptions[] {
+  const bodyChildren: Element[] = [];
+  const boundaries: { index: number; sectPr: Element }[] = [];
+  for (const child of body.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "w:sectPr") {
+      boundaries.push({ index: bodyChildren.length, sectPr: child });
+      continue;
+    }
+    bodyChildren.push(child);
+    if (child.name === "w:p") {
+      const pPr = findChild(child, "w:pPr");
+      const sectPr = findChild(pPr, "w:sectPr");
+      if (sectPr) boundaries.push({ index: bodyChildren.length, sectPr });
+    }
+  }
+
+  if (boundaries.length === 0) {
+    return [{ children: bodyChildren.map((child) => parseSectionChild(child, ctx)) }];
+  }
+
+  const sections: DocPartSectionOptions[] = [];
+  let start = 0;
+  for (const boundary of boundaries) {
+    sections.push({
+      children: bodyChildren
+        .slice(start, boundary.index)
+        .map((child) => parseSectionChild(child, ctx)),
+      properties: parseSectionPropertiesEl(boundary.sectPr),
+    });
+    start = boundary.index;
+  }
+  if (start < bodyChildren.length) {
+    sections.push({
+      children: bodyChildren.slice(start).map((child) => parseSectionChild(child, ctx)),
+    });
+  }
+  return sections;
+}
 
 function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
   const prParts: string[] = [];
@@ -172,13 +255,10 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
 
   stringify(opts, ctx) {
     const partsXml = opts.parts
-      .map((part) => {
-        const bodyContent = ((part.children ?? []) as SectionChild[])
-          .map((child) => ctx.stringifyChild(child))
-          .join("");
-
-        return `<w:docPart>${docPartPrXml(part)}<w:docPartBody>${bodyContent}</w:docPartBody></w:docPart>`;
-      })
+      .map(
+        (part) =>
+          `<w:docPart>${docPartPrXml(part)}<w:docPartBody>${stringifyDocPartBody(part, ctx)}</w:docPartBody></w:docPart>`,
+      )
       .join("");
 
     return `<w:glossaryDocument ${GLOSSARY_NS}><w:docParts>${partsXml}</w:docParts></w:glossaryDocument>`;
@@ -264,15 +344,10 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
         }
       }
 
-      // Parse w:docPartBody children
+      // Parse the CT_Body section boundaries. Paragraph-hosted w:sectPr ends
+      // a non-final section; a direct terminal w:sectPr describes the last one.
       const body = findChild(docPart, "w:docPartBody");
-      if (body) {
-        const childList: SectionChild[] = [];
-        for (const child of body.elements ?? []) {
-          if (child.type === "element") childList.push(parseSectionChild(child, dctx));
-        }
-        if (childList.length > 0) part.children = childList;
-      }
+      part.sections = body ? parseDocPartBody(body, dctx) : [];
 
       parts.push(part as DocPartOptions);
     }

@@ -15,17 +15,21 @@ const buffer = await generateDocument({
         behaviors: [DocPartBehavior.PARAGRAPH],
         description: "Standard company disclaimer text",
         guid: "{11111111-2222-3333-4444-555555555555}",
-        children: [
+        sections: [
           {
-            paragraph: {
-              children: [
-                {
-                  text: "CONFIDENTIAL: This document contains proprietary information.",
-                  italic: true,
-                  color: "808080",
+            children: [
+              {
+                paragraph: {
+                  children: [
+                    {
+                      text: "CONFIDENTIAL: This document contains proprietary information.",
+                      italic: true,
+                      color: "808080",
+                    },
+                  ],
                 },
-              ],
-            },
+              },
+            ],
           },
         ],
       },
@@ -35,11 +39,18 @@ const buffer = await generateDocument({
         category: "Corporate",
         types: [DocPartType.NORMAL],
         guid: "{AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE}",
-        children: [
+        sections: [
           {
-            paragraph: {
-              children: [{ text: "Meeting Notes — ", bold: true }, { text: "Date: [Insert Date]" }],
-            },
+            children: [
+              {
+                paragraph: {
+                  children: [
+                    { text: "Meeting Notes — ", bold: true },
+                    { text: "Date: [Insert Date]" },
+                  ],
+                },
+              },
+            ],
           },
         ],
       },
@@ -49,16 +60,20 @@ const buffer = await generateDocument({
         category: "Corporate",
         behaviors: [DocPartBehavior.CONTENT],
         guid: "{FFFFFFFF-0000-1111-2222-333333333333}",
-        children: [
+        sections: [
           {
-            paragraph: {
-              children: [
-                { text: "Page ", size: 9 },
-                { text: "1", size: 9 },
-                { text: " of ", size: 9 },
-                { text: "[Total]", size: 9 },
-              ],
-            },
+            children: [
+              {
+                paragraph: {
+                  children: [
+                    { text: "Page ", size: 9 },
+                    { text: "1", size: 9 },
+                    { text: " of ", size: 9 },
+                    { text: "[Total]", size: 9 },
+                  ],
+                },
+              },
+            ],
           },
         ],
       },

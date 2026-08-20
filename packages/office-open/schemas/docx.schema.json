@@ -5489,13 +5489,6 @@
           "description": "Category name within the gallery",
           "type": "string"
         },
-        "children": {
-          "description": "Body content — paragraphs, tables, etc.",
-          "items": {
-            "$ref": "#/definitions/SectionChild"
-          },
-          "type": "array"
-        },
         "decorated": {
           "description": "Whether the name is decorated (built-in)",
           "type": "boolean"
@@ -5516,6 +5509,13 @@
           "description": "Building block name (required)",
           "type": "string"
         },
+        "sections": {
+          "description": "Body sections, including section-break properties.",
+          "items": {
+            "$ref": "#/definitions/DocPartSectionOptions"
+          },
+          "type": "array"
+        },
         "style": {
           "description": "Style applied to this building block",
           "type": "string"
@@ -5528,7 +5528,26 @@
           "type": "array"
         }
       },
-      "required": ["name", "gallery", "children"],
+      "required": ["name", "gallery", "sections"],
+      "type": "object"
+    },
+    "DocPartSectionOptions": {
+      "additionalProperties": false,
+      "description": "A section within a building block body (CT_Body section boundary).",
+      "properties": {
+        "children": {
+          "description": "Block-level content in this section.",
+          "items": {
+            "$ref": "#/definitions/SectionChild"
+          },
+          "type": "array"
+        },
+        "properties": {
+          "$ref": "#/definitions/SectionPropertiesOptions",
+          "description": "Section properties carried by w:pPr/w:sectPr or terminal w:sectPr."
+        }
+      },
+      "required": ["children"],
       "type": "object"
     },
     "DocPartType": {
