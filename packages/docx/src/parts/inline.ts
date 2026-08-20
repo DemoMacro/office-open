@@ -1153,14 +1153,12 @@ export function stringifyChildDispatch(
       // re-generated document keeps byte-stable relationships (random ids
       // would drift on every compile). Later media/embedding offsets sample
       // relationshipCount after this registration, so no id collision.
-      // Multiple hyperlinks to the same URL share one relationship, matching
-      // Word's reuse (a per-reference entry duplicates the rel on round-trip).
+      // One relationship per hyperlink element — Word emits a distinct rel
+      // per reference even when the URL repeats (sharing would collapse the
+      // source's per-reference entries on round-trip).
       const relType =
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
-      const existingId = ctx.viewWrapper.relationships.idOf(relType, hl.url);
-      const linkId =
-        existingId ??
-        `rId${ctx.viewWrapper.relationships.add(relType, hl.url, TargetModeType.EXTERNAL)}`;
+      const linkId = `rId${ctx.viewWrapper.relationships.add(relType, hl.url, TargetModeType.EXTERNAL)}`;
       const attrs = [`r:id="${linkId}"`];
       pushHlAttrs(attrs);
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;

@@ -203,3 +203,42 @@ describe("ruby annotation parse", () => {
     expect(xml).not.toContain("<w:r><w:ruby><w:r><w:ruby>");
   });
 });
+
+describe("hyperlink relationships", () => {
+  const hlWriteCtx = {
+    viewWrapper: {
+      relationships: {
+        add: (type: string, target: string, mode: string) => {
+          relationships.push({ type, target, mode });
+          return relationships.length;
+        },
+      },
+    },
+  } as never;
+  let relationships: Array<{ type: string; target: string; mode: string }>;
+
+  it("registers one relationship per hyperlink element even for a repeated URL", () => {
+    relationships = [];
+    const xml = stringifyParagraph(
+      {
+        children: [
+          { hyperlink: { url: "https://example.com/a", children: ["one"] } },
+          { hyperlink: { url: "https://example.com/a", children: ["two"] } },
+        ],
+      },
+      hlWriteCtx,
+    );
+    expect(relationships).toHaveLength(2);
+    expect(
+      relationships.every(
+        (r) =>
+          r.type ===
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" &&
+          r.target === "https://example.com/a" &&
+          r.mode === "External",
+      ),
+    ).toBe(true);
+    expect(xml).toContain('r:id="rId1"');
+    expect(xml).toContain('r:id="rId2"');
+  });
+});
