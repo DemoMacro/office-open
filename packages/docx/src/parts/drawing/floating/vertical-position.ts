@@ -55,18 +55,24 @@ export const createVerticalPosition = ({
   relative,
   align,
   offset,
+  percentOffset,
 }: VerticalPositionOptions): string => {
+  const relativeFrom = relative ?? VerticalPositionRelativeFrom.PAGE;
+  if (percentOffset !== undefined) {
+    const position = `<wp:positionV relativeFrom="${relativeFrom}"><wp14:pctPosVOffset>${Math.round(percentOffset * 1000)}</wp14:pctPosVOffset></wp:positionV>`;
+    if (offset === undefined) return position;
+    return (
+      '<mc:AlternateContent><mc:Choice Requires="wp14">' +
+      position +
+      `</mc:Choice><mc:Fallback><wp:positionV relativeFrom="${relativeFrom}"><wp:posOffset>${convertToEmu(offset)}</wp:posOffset></wp:positionV></mc:Fallback></mc:AlternateContent>`
+    );
+  }
+
   const child = align
     ? `<wp:align>${align}</wp:align>`
     : offset !== undefined
       ? `<wp:posOffset>${convertToEmu(offset)}</wp:posOffset>`
       : `<wp:align>${VerticalPositionAlign.TOP}</wp:align>`;
 
-  return element(
-    "wp:positionV",
-    {
-      relativeFrom: relative ?? VerticalPositionRelativeFrom.PAGE,
-    },
-    [child],
-  );
+  return element("wp:positionV", { relativeFrom }, [child]);
 };

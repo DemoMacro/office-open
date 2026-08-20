@@ -8018,7 +8018,11 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ],
-          "description": "Offset in EMUs from the horizontal base, or universal measure (e.g., \"1in\", \"2cm\")"
+          "description": "Offset in EMUs from the horizontal base, or universal measure (e.g., \"1in\", \"2cm\"). When `percentOffset` is also present, this is the pre-Word-2010 fallback."
+        },
+        "percentOffset": {
+          "description": "Whole-number percentage from the horizontal base (wp14:pctPosHOffset, Word 2010+).",
+          "type": "number"
         },
         "relative": {
           "description": "The base from which horizontal position is calculated",
@@ -24556,7 +24560,11 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ],
-          "description": "Offset in EMUs from the vertical base, or universal measure (e.g., \"1in\", \"2cm\")"
+          "description": "Offset in EMUs from the vertical base, or universal measure (e.g., \"1in\", \"2cm\"). When `percentOffset` is also present, this is the pre-Word-2010 fallback."
+        },
+        "percentOffset": {
+          "description": "Whole-number percentage from the vertical base (wp14:pctPosVOffset, Word 2010+).",
+          "type": "number"
         },
         "relative": {
           "description": "The base from which vertical position is calculated",

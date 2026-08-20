@@ -807,8 +807,33 @@ function stringifyGraphicDataContent(
 
 // ── Position helpers (for anchor) ──
 
+function wrapPercentagePosition(
+  tag: "wp14:pctPosHOffset" | "wp14:pctPosVOffset",
+  positionTag: "wp:positionH" | "wp:positionV",
+  relative: string,
+  percentOffset: number,
+  fallbackOffset: HorizontalPositionOptions["offset"],
+): string {
+  const choice = `<${positionTag} relativeFrom="${relative}"><${tag}>${Math.round(percentOffset * 1000)}</${tag}></${positionTag}>`;
+  if (fallbackOffset === undefined) return choice;
+  return (
+    '<mc:AlternateContent><mc:Choice Requires="wp14">' +
+    choice +
+    `</mc:Choice><mc:Fallback><${positionTag} relativeFrom="${relative}"><wp:posOffset>${convertToEmu(fallbackOffset)}</wp:posOffset></${positionTag}></mc:Fallback></mc:AlternateContent>`
+  );
+}
+
 function stringifyPositionH(opts: HorizontalPositionOptions): string {
   const rel = opts.relative ?? HorizontalPositionRelativeFrom.PAGE;
+  if (opts.percentOffset !== undefined) {
+    return wrapPercentagePosition(
+      "wp14:pctPosHOffset",
+      "wp:positionH",
+      rel,
+      opts.percentOffset,
+      opts.offset,
+    );
+  }
   const child = opts.align
     ? `<wp:align>${opts.align}</wp:align>`
     : opts.offset !== undefined
@@ -819,6 +844,15 @@ function stringifyPositionH(opts: HorizontalPositionOptions): string {
 
 function stringifyPositionV(opts: VerticalPositionOptions): string {
   const rel = opts.relative ?? VerticalPositionRelativeFrom.PAGE;
+  if (opts.percentOffset !== undefined) {
+    return wrapPercentagePosition(
+      "wp14:pctPosVOffset",
+      "wp:positionV",
+      rel,
+      opts.percentOffset,
+      opts.offset,
+    );
+  }
   const child = opts.align
     ? `<wp:align>${opts.align}</wp:align>`
     : opts.offset !== undefined

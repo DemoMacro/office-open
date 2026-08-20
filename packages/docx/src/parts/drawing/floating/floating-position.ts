@@ -174,8 +174,13 @@ export interface HorizontalPositionOptions {
   relative?: (typeof HorizontalPositionRelativeFrom)[keyof typeof HorizontalPositionRelativeFrom];
   /** Alignment relative to the horizontal base */
   align?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
-  /** Offset in EMUs from the horizontal base, or universal measure (e.g., "1in", "2cm") */
+  /**
+   * Offset in EMUs from the horizontal base, or universal measure (e.g., "1in", "2cm").
+   * When `percentOffset` is also present, this is the pre-Word-2010 fallback.
+   */
   offset?: number | UniversalMeasure;
+  /** Whole-number percentage from the horizontal base (wp14:pctPosHOffset, Word 2010+). */
+  percentOffset?: number;
 }
 
 /**
@@ -186,8 +191,13 @@ export interface VerticalPositionOptions {
   relative?: (typeof VerticalPositionRelativeFrom)[keyof typeof VerticalPositionRelativeFrom];
   /** Alignment relative to the vertical base */
   align?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
-  /** Offset in EMUs from the vertical base, or universal measure (e.g., "1in", "2cm") */
+  /**
+   * Offset in EMUs from the vertical base, or universal measure (e.g., "1in", "2cm").
+   * When `percentOffset` is also present, this is the pre-Word-2010 fallback.
+   */
   offset?: number | UniversalMeasure;
+  /** Whole-number percentage from the vertical base (wp14:pctPosVOffset, Word 2010+). */
+  percentOffset?: number;
 }
 
 /**

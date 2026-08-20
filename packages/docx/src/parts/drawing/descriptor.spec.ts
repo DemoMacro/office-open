@@ -424,6 +424,72 @@ describe("drawingDesc round-trip", () => {
     expect(result.wpsShape?.presetGeometry?.preset).toBe("roundRect");
   });
 
+  it("round-trips wp14 percentage positioning", () => {
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      floating: {
+        horizontalPosition: { relative: "page", percentOffset: 45.5 },
+        verticalPosition: { relative: "page", percentOffset: 66 },
+      },
+    });
+    expect(xml).toContain("<wp14:pctPosHOffset>45500</wp14:pctPosHOffset>");
+    expect(xml).toContain("<wp14:pctPosVOffset>66000</wp14:pctPosVOffset>");
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
+    expect(result.picture?.floating?.horizontalPosition).toEqual({
+      relative: "page",
+      percentOffset: 45.5,
+    });
+    expect(result.picture?.floating?.verticalPosition).toEqual({
+      relative: "page",
+      percentOffset: 66,
+    });
+  });
+
+  it("parses percentage positioning from mc:AlternateContent choices", () => {
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      floating: {
+        horizontalPosition: { relative: "page", offset: 4576445 },
+        verticalPosition: { relative: "page", offset: 5129530 },
+      },
+    })
+      .replace(
+        '<wp:positionH relativeFrom="page"><wp:posOffset>4576445</wp:posOffset></wp:positionH>',
+        '<mc:AlternateContent><mc:Choice Requires="wp14"><wp:positionH relativeFrom="page"><wp14:pctPosHOffset>45500</wp14:pctPosHOffset></wp:positionH></mc:Choice><mc:Fallback><wp:positionH relativeFrom="page"><wp:posOffset>4576445</wp:posOffset></wp:positionH></mc:Fallback></mc:AlternateContent>',
+      )
+      .replace(
+        '<wp:positionV relativeFrom="page"><wp:posOffset>5129530</wp:posOffset></wp:positionV>',
+        '<mc:AlternateContent><mc:Choice Requires="wp14"><wp:positionV relativeFrom="page"><wp14:pctPosVOffset>66000</wp14:pctPosVOffset></wp:positionV></mc:Choice><mc:Fallback><wp:positionV relativeFrom="page"><wp:posOffset>5129530</wp:posOffset></wp:positionV></mc:Fallback></mc:AlternateContent>',
+      );
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
+    expect(result.picture?.floating?.horizontalPosition).toEqual({
+      relative: "page",
+      percentOffset: 45.5,
+      offset: 4576445,
+    });
+    expect(result.picture?.floating?.verticalPosition).toEqual({
+      relative: "page",
+      percentOffset: 66,
+      offset: 5129530,
+    });
+
+    const roundTripXml = stringify({
+      mediaData: makeImageMediaData(),
+      floating: result.picture!.floating,
+    });
+    expect(roundTripXml.match(/<mc:AlternateContent>/g)).toHaveLength(2);
+    expect(roundTripXml).toContain("<wp14:pctPosHOffset>45500</wp14:pctPosHOffset>");
+    expect(roundTripXml).toContain("<wp:posOffset>4576445</wp:posOffset>");
+  });
+
   it("round-trips floating image margins/flags/relativeFrom/wrap", () => {
     // parsePictureRun must read all Floating fields the anchor stringify writes:
     // margins (distT-D), relativeFrom, allowOverlap/behindDoc/locked/

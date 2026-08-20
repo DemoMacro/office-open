@@ -55,18 +55,24 @@ export const createHorizontalPosition = ({
   relative,
   align,
   offset,
+  percentOffset,
 }: HorizontalPositionOptions): string => {
+  const relativeFrom = relative ?? HorizontalPositionRelativeFrom.PAGE;
+  if (percentOffset !== undefined) {
+    const position = `<wp:positionH relativeFrom="${relativeFrom}"><wp14:pctPosHOffset>${Math.round(percentOffset * 1000)}</wp14:pctPosHOffset></wp:positionH>`;
+    if (offset === undefined) return position;
+    return (
+      '<mc:AlternateContent><mc:Choice Requires="wp14">' +
+      position +
+      `</mc:Choice><mc:Fallback><wp:positionH relativeFrom="${relativeFrom}"><wp:posOffset>${convertToEmu(offset)}</wp:posOffset></wp:positionH></mc:Fallback></mc:AlternateContent>`
+    );
+  }
+
   const child = align
     ? `<wp:align>${align}</wp:align>`
     : offset !== undefined
       ? `<wp:posOffset>${convertToEmu(offset)}</wp:posOffset>`
       : `<wp:align>${HorizontalPositionAlign.LEFT}</wp:align>`;
 
-  return element(
-    "wp:positionH",
-    {
-      relativeFrom: relative ?? HorizontalPositionRelativeFrom.PAGE,
-    },
-    [child],
-  );
+  return element("wp:positionH", { relativeFrom }, [child]);
 };

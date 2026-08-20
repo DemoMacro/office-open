@@ -272,15 +272,36 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     if (distR !== undefined) margins.right = distR;
     if (Object.keys(margins).length > 0) floating.margins = margins;
 
-    // Position H/V (relativeFrom + align/posOffset)
-    const posH = findChild(anchor, "wp:positionH");
+    // Position H/V. Word may wrap the wp14 percentage-position choice and its
+    // wp:posOffset fallback in mc:AlternateContent; preserve both representations.
+    const posHAlternate = (anchor.elements ?? []).find(
+      (child) =>
+        child.type === "element" &&
+        child.name === "mc:AlternateContent" &&
+        findFirst(child, "wp:positionH") !== undefined,
+    );
+    const posH = findFirst(posHAlternate ?? anchor, "wp:positionH");
     if (posH) {
       const hp = readPosition(posH);
+      const fallback = readPositionFallback(posHAlternate, "wp:positionH");
+      if (fallback?.offset !== undefined && hp?.percentOffset !== undefined) {
+        hp.offset = fallback.offset;
+      }
       if (hp) floating.horizontalPosition = hp as HorizontalPositionOptions;
     }
-    const posV = findChild(anchor, "wp:positionV");
+    const posVAlternate = (anchor.elements ?? []).find(
+      (child) =>
+        child.type === "element" &&
+        child.name === "mc:AlternateContent" &&
+        findFirst(child, "wp:positionV") !== undefined,
+    );
+    const posV = findFirst(posVAlternate ?? anchor, "wp:positionV");
     if (posV) {
       const vp = readPosition(posV);
+      const fallback = readPositionFallback(posVAlternate, "wp:positionV");
+      if (fallback?.offset !== undefined && vp?.percentOffset !== undefined) {
+        vp.offset = fallback.offset;
+      }
       if (vp) floating.verticalPosition = vp as VerticalPositionOptions;
     }
 
@@ -1104,7 +1125,14 @@ function readPosition(
   const relative = attr(posEl, "relativeFrom");
   const alignEl = findChild(posEl, "wp:align");
   const posOffset = findChild(posEl, "wp:posOffset");
-  const result: { relative?: string; align?: string; offset?: number } = {};
+  const percentOffset =
+    findChild(posEl, "wp14:pctPosHOffset") ?? findChild(posEl, "wp14:pctPosVOffset");
+  const result: {
+    relative?: string;
+    align?: string;
+    offset?: number;
+    percentOffset?: number;
+  } = {};
   if (relative) result.relative = relative;
   if (alignEl) {
     const a = textOf(alignEl);
@@ -1112,10 +1140,23 @@ function readPosition(
   } else if (posOffset) {
     const val = Number(textOf(posOffset));
     if (!isNaN(val)) result.offset = val;
+  } else if (percentOffset) {
+    const val = Number(textOf(percentOffset));
+    if (!isNaN(val)) result.percentOffset = val / 1000;
   }
   return Object.keys(result).length > 0
     ? (result as HorizontalPositionOptions | VerticalPositionOptions)
     : undefined;
+}
+
+function readPositionFallback(
+  alternateContent: Element | undefined,
+  positionName: "wp:positionH" | "wp:positionV",
+): HorizontalPositionOptions | VerticalPositionOptions | undefined {
+  if (!alternateContent) return undefined;
+  const fallback = findChild(alternateContent, "mc:Fallback");
+  const fallbackPosition = fallback ? findChild(fallback, positionName) : undefined;
+  return fallbackPosition ? readPosition(fallbackPosition) : undefined;
 }
 
 /** Read wp:wrapPolygon (start + lineTo points) into a WrapPolygon, if present. */
