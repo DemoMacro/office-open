@@ -19999,15 +19999,9 @@
           "$ref": "#/definitions/BodyPropertiesOptions"
         },
         "children": {
+          "description": "Block-level w:txbxContent children (w:EG_BlockLevelElts). Paragraphs keep their established shorthand; wrapped paragraphs and other block elements use SectionChild variants.",
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/definitions/ParagraphOptions"
-              },
-              {
-                "type": "string"
-              }
-            ]
+            "$ref": "#/definitions/ShapeTextBoxChild"
           },
           "type": "array"
         },
@@ -20142,15 +20136,9 @@
           "$ref": "#/definitions/BodyPropertiesOptions"
         },
         "children": {
+          "description": "Block-level w:txbxContent children (w:EG_BlockLevelElts). Paragraphs keep their established shorthand; wrapped paragraphs and other block elements use SectionChild variants.",
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/definitions/ParagraphOptions"
-              },
-              {
-                "type": "string"
-              }
-            ]
+            "$ref": "#/definitions/ShapeTextBoxChild"
           },
           "type": "array"
         },
@@ -20415,6 +20403,19 @@
       },
       "required": ["idx"],
       "type": "object"
+    },
+    "ShapeTextBoxChild": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ParagraphOptions"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/SectionChild"
+        }
+      ]
     },
     "SimpleFieldOptions": {
       "additionalProperties": false,

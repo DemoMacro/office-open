@@ -1,3 +1,4 @@
+import type { ShapeOptions as DocxShapeOptions } from "@office-open/docx";
 import type { ShapeOptions as PptxShapeOptions } from "@office-open/pptx";
 import type { ShapeOptions as XlsxShapeOptions } from "@office-open/xlsx";
 import { describe, expect, it } from "vitest";
@@ -96,6 +97,23 @@ describe("toPptxShape (docx → pptx)", () => {
     expect(back.geometry).toEqual({ preset: "rect" });
     expect(back.fill).toBe("4472C4");
     expect(back.textBody?.paragraphs?.[0]).toBe("Hello");
+  });
+
+  it("converts bare and wrapped paragraphs while skipping non-text blocks", () => {
+    const d: DocxShapeOptions = {
+      transformation: { width: 1219200, height: 381000 },
+      children: [
+        { children: ["Bare"] },
+        { paragraph: "Wrapped" },
+        { table: { rows: [] } },
+        { rawXml: "<w:unknown/>" },
+      ],
+    };
+
+    expect(toPptxShape(d).textBody?.paragraphs).toEqual([
+      { children: [{ text: "Bare" }] },
+      "Wrapped",
+    ]);
   });
 });
 

@@ -10,6 +10,7 @@ import type {
   SolidFillOptions,
 } from "@office-open/core/drawing";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { SectionChild } from "@shared/section";
 
 /**
  * Shape types for WordprocessingML drawings.
@@ -43,8 +44,15 @@ export interface ShapeStyleOptions {
   fontReference?: ShapeStyleReferenceOptions;
 }
 
+export type ShapeTextBoxChild = ParagraphOptions | string | SectionChild;
+
 export interface ShapeCoreOptions {
-  children: (ParagraphOptions | string)[];
+  /**
+   * Block-level w:txbxContent children (w:EG_BlockLevelElts). Paragraphs keep
+   * their established shorthand; wrapped paragraphs and other block elements
+   * use SectionChild variants.
+   */
+  children: ShapeTextBoxChild[];
   nonVisualProperties?: NonVisualShapePropertiesOptions;
   bodyProperties?: BodyPropertiesOptions;
   outline?: OutlineOptions;

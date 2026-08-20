@@ -395,6 +395,14 @@ export function setBodyParseChild(
   _parseBodyChild = parser;
 }
 
+/** Parse through the registered block-child dispatcher without importing parse/body.ts. */
+export function parseRegisteredBodyChild(
+  el: Element,
+  ctx: DocxReadContext,
+): SectionChild | undefined {
+  return _parseBodyChild?.(el, ctx);
+}
+
 function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionChild[] {
   if (!_parseBodyChild) return [];
   const result: SectionChild[] = [];

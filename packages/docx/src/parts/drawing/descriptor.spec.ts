@@ -2,7 +2,10 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { stringifyBodyChild } from "../../body";
 import type { BodyContext } from "../../context";
+import { parseSectionChild } from "../../parse/body";
+import { setBodyParseChild } from "../bodychildren";
 import { drawingDesc, resetDrawingIdGen } from "./descriptor";
 import type { DrawingDescriptorOptions } from "./descriptor";
 import type { Floating } from "./floating";
@@ -11,7 +14,7 @@ import { TextWrappingType } from "./text-wrap";
 const writeCtx = {
   addRelationship: () => "rId1",
   addMedia: () => "",
-  stringifyChild: (child: unknown) => (typeof child === "string" ? child : ""),
+  stringifyChild: undefined as unknown as BodyContext["stringifyChild"],
   file: {
     media: {
       addImage: () => {},
@@ -24,6 +27,8 @@ const writeCtx = {
     },
   },
 } as unknown as BodyContext;
+writeCtx.stringifyChild = (child) => stringifyBodyChild(child, writeCtx);
+setBodyParseChild(parseSectionChild);
 
 const readCtx = {
   resolveRelationship: () => undefined,
@@ -253,6 +258,87 @@ describe("drawingDesc round-trip", () => {
     };
     expect(result.wpsShape?.linkedTextBox).toEqual({ id: 7, sequence: 2 });
     expect(result.wpsShape?.normalEastAsianFlow).toBe(true);
+  });
+
+  it("round-trips block SDT content in a wps text box", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: {
+          children: [
+            {
+              sdt: {
+                properties: {
+                  alias: "Title",
+                  id: -958338334,
+                  showingPlaceholder: true,
+                  dataBinding: {
+                    prefixMappings:
+                      "xmlns:ns0='http://schemas.openxmlformats.org/package/2006/metadata/core-properties'",
+                    xpath: "/ns0:coreProperties[1]/dc:title[1]",
+                    storeItemID: "{6C3C8BC8-F283-45AE-878A-BAB7291924A1}",
+                  },
+                  text: {},
+                },
+                endProperties: {},
+                children: [{ paragraph: { children: [{ text: "     " }] } }],
+              },
+            },
+          ],
+        },
+      },
+    });
+    expect(xml).toContain("<wps:txbx><w:txbxContent><w:sdt>");
+    expect(xml).toContain('<w:alias w:val="Title"/>');
+    expect(xml).toContain('<w:id w:val="-958338334"/>');
+    expect(xml).toContain("<w:showingPlcHdr/>");
+    expect(xml).toContain('w:storeItemID="{6C3C8BC8-F283-45AE-878A-BAB7291924A1}"');
+    expect(xml).toContain('w:prefixMappings="xmlns:ns0=&apos;');
+    expect(xml).toContain('<w:text w:multiLine="false"/>');
+    expect(xml).toContain("<w:sdtEndPr/>");
+    expect(xml).toContain('<w:t xml:space="preserve">     </w:t>');
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: {
+        children: Array<{
+          sdt?: {
+            properties: { alias?: string; id?: number; showingPlaceholder?: boolean };
+            children?: unknown[];
+          };
+        }>;
+      };
+    };
+    const sdt = parsed.wpsShape?.children[0]?.sdt;
+    expect(sdt?.properties).toMatchObject({
+      alias: "Title",
+      id: -958338334,
+      showingPlaceholder: true,
+    });
+    expect(sdt?.children).toHaveLength(1);
+  });
+
+  it("parses every block-level child in a wps text box", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: {
+          children: [{ rawXml: "<w:unknown/>" }, { paragraph: "text" }],
+        },
+      },
+    });
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: { children: Array<Record<string, unknown>> };
+    };
+    expect(parsed.wpsShape?.children[0]).toEqual({ rawXml: "<w:unknown/>" });
+    expect(parsed.wpsShape?.children[1]).toEqual({ text: "text" });
   });
 
   it("stringifies a chart group child as wpg:graphicFrame", () => {

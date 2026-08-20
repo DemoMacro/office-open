@@ -34,6 +34,7 @@ import type {
   ShapeCoreOptions,
   MediaTransformation,
   ParagraphOptions as DocxParagraph,
+  ShapeTextBoxChild,
 } from "@office-open/docx";
 import type { ShapeOptions as PptxShapeOptions } from "@office-open/pptx";
 import type { ShapeOptions as XlsxShapeOptions } from "@office-open/xlsx";
@@ -103,13 +104,33 @@ export function textBodyToDocxChildren(textBody: TextBodyOptions): DocxParagraph
 
 /** docx w:p children + bodyProperties → DrawingML text body (a:p), or undefined when empty. */
 export function docxToTextBody(
-  children: (DocxParagraph | string)[] | undefined,
+  children: ShapeTextBoxChild[] | undefined,
   bodyProperties: TextBodyOptions["bodyProperties"],
 ): TextBodyOptions | undefined {
   const paragraphs: (ParagraphDescriptorOptions | string)[] = [];
-  for (const c of children ?? []) {
-    if (typeof c === "string") paragraphs.push(c);
-    else paragraphs.push(toDrawingParagraph(c));
+  for (const child of children ?? []) {
+    if (typeof child === "string") {
+      paragraphs.push(child);
+    } else if ("paragraph" in child) {
+      paragraphs.push(
+        typeof child.paragraph === "string" ? child.paragraph : toDrawingParagraph(child.paragraph),
+      );
+    } else if (
+      !(
+        "table" in child ||
+        "toc" in child ||
+        "textbox" in child ||
+        "sdt" in child ||
+        "altChunk" in child ||
+        "subDoc" in child ||
+        "customXml" in child ||
+        "bookmarkStart" in child ||
+        "bookmarkEnd" in child ||
+        "rawXml" in child
+      )
+    ) {
+      paragraphs.push(toDrawingParagraph(child));
+    }
   }
   if (paragraphs.length === 0 && bodyProperties === undefined) return undefined;
   const out: TextBodyOptions = {};

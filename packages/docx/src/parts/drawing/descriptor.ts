@@ -57,6 +57,7 @@ import type {
   ShapeMediaData,
 } from "@shared/media";
 import type { NonVisualPropertiesOptions } from "@shared/media/data";
+import type { SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../../context";
 import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/doc-properties";
@@ -379,6 +380,31 @@ interface WpsStringifyOptions extends ShapeCoreOptions {
   transformation: MediaDataTransformation;
 }
 
+const SECTION_CHILD_KEYS: ReadonlySet<string> = new Set([
+  "table",
+  "toc",
+  "textbox",
+  "sdt",
+  "altChunk",
+  "subDoc",
+  "customXml",
+  "bookmarkStart",
+  "bookmarkEnd",
+  "rawXml",
+]);
+
+function stringifyWpsTextBoxChild(
+  child: ShapeCoreOptions["children"][number],
+  ctx: BodyContext,
+): string {
+  if (typeof child === "string") return stringifyParagraphInline(child, ctx);
+  if ("paragraph" in child) return ctx.stringifyChild(child);
+  if (Object.keys(child).some((key) => SECTION_CHILD_KEYS.has(key))) {
+    return ctx.stringifyChild(child as SectionChild);
+  }
+  return stringifyParagraphInline(child as ParagraphOptions, ctx);
+}
+
 function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string {
   const transform = opts.transformation;
   const spPrContent =
@@ -409,11 +435,10 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
     ? stringifyNonVisualShapeProperties(opts.nonVisualProperties)
     : '<wps:cNvSpPr txBox="1"/>';
 
-  // Paragraph children — pure JSON stringification
+  // CT_TxbxContent contains the full Word block-level group, not only
+  // paragraphs: SDTs, tables, custom XML, and unknown raw children all survive.
   const childXml =
-    opts.children
-      ?.map((c) => stringifyParagraphInline(c as ParagraphOptions | string, ctx))
-      .join("") ?? "";
+    opts.children?.map((child) => stringifyWpsTextBoxChild(child, ctx)).join("") ?? "";
 
   // Shape style (wps:style) — theme references, emitted after spPr (XSD order)
   const styleXml = opts.style ? stringifyShapeStyle(opts.style) : "";

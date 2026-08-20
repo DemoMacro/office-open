@@ -45,6 +45,7 @@ import {
 import type { SmartArtRawParts } from "@office-open/core/smartart";
 import { attr, attrBool, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { parseRegisteredBodyChild } from "@parts/bodychildren";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 import type { PictureOptions } from "@parts/paragraph/run/picture-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
@@ -605,7 +606,13 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   const children: ShapeCoreOptions["children"] = [];
   if (txbxContent) {
     for (const child of txbxContent.elements ?? []) {
-      if (child.name === "w:p") children.push(parseParagraph(child, ctx));
+      if (child.type !== "element") continue;
+      if (child.name === "w:p") {
+        children.push(parseParagraph(child, ctx));
+        continue;
+      }
+      const parsed = parseRegisteredBodyChild(child, ctx);
+      if (parsed) children.push(parsed);
     }
   }
   result.children = children;
