@@ -39,6 +39,30 @@ describe("paragraph-properties field consistency", () => {
     expect(opts.cnfStyle).toEqual({ evenHBand: true });
   });
 
+  it("preserves all-zero and bare cnfStyle elements", () => {
+    const allZero = parsePPr(
+      `<w:cnfStyle w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" ` +
+        `w:oddVBand="0" w:evenVBand="0" w:oddHBand="0" w:evenHBand="0" ` +
+        `w:firstRowFirstColumn="0" w:firstRowLastColumn="0" ` +
+        `w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/>`,
+    ) as ParagraphPropertiesOptions;
+    expect(allZero.cnfStyle).toEqual({});
+    const allZeroXml = stringifyParagraphProperties(allZero).xml;
+    expect(allZeroXml).toContain("<w:cnfStyle");
+    expect(allZeroXml).toContain('w:firstRow="0"');
+    expect(allZeroXml).toContain('w:lastRowLastColumn="0"');
+
+    const bare = parsePPr("<w:cnfStyle/>") as ParagraphPropertiesOptions;
+    expect(bare.cnfStyle).toEqual({});
+    expect(stringifyParagraphProperties(bare).xml).toContain("<w:cnfStyle");
+  });
+
+  it("preserves an all-zero transitional cnfStyle value", () => {
+    const opts = parsePPr('<w:cnfStyle w:val="000000000000"/>') as ParagraphPropertiesOptions;
+    expect(opts.cnfStyle).toEqual({});
+    expect(stringifyParagraphProperties(opts).xml).toContain("<w:cnfStyle");
+  });
+
   it("round-trips revision (w:pPrChange)", () => {
     const opts = parsePPr(
       `<w:pPrChange w:id="1" w:author="a" w:date="2024-01-01T00:00:00Z">` +

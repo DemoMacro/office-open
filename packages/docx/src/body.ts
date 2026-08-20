@@ -936,9 +936,7 @@ const CNF_KEYS = [
 /** Read w:cnfStyle (CT_Cnf). Office's canonical w:val is a 12-char [01]*
  *  string (ST_Cnf), one digit per flag in CNF_KEYS order; the XSD also
  *  permits 12 individual w: attributes, parsed as a fallback. */
-function parseCnfStyle(
-  el: Element,
-): NonNullable<ParagraphPropertiesOptions["cnfStyle"]> | undefined {
+function parseCnfStyle(el: Element): NonNullable<ParagraphPropertiesOptions["cnfStyle"]> {
   const val = attr(el, "w:val");
   const result: Record<string, boolean> = {};
   if (val && val.length === 12) {
@@ -950,9 +948,9 @@ function parseCnfStyle(
       if (attrBool(el, `w:${key}`)) result[key] = true;
     }
   }
-  return Object.keys(result).length
-    ? (result as NonNullable<ParagraphPropertiesOptions["cnfStyle"]>)
-    : undefined;
+  // An empty object preserves the presence of a bare/all-zero CT_Cnf element;
+  // undefined remains reserved for an absent w:cnfStyle child.
+  return result as NonNullable<ParagraphPropertiesOptions["cnfStyle"]>;
 }
 
 /**

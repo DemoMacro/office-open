@@ -352,7 +352,7 @@ function parseCellMargins(marginEl: Element): TableCellMarginOptions | undefined
 }
 
 /** Parse a w:cnfStyle (CT_Cnf) element into CnfStyleOptions. */
-function parseCnfStyle(cnfEl: Element): CnfStyleOptions | undefined {
+function parseCnfStyle(cnfEl: Element): CnfStyleOptions {
   const cnf: CnfStyleOptions = {};
   const val = attr(cnfEl, "w:val");
   if (val) cnf.val = val;
@@ -380,7 +380,7 @@ function parseCnfStyle(cnfEl: Element): CnfStyleOptions | undefined {
   if (lastRowFirstColumn !== undefined) cnf.lastRowFirstColumn = lastRowFirstColumn;
   const lastRowLastColumn = attrBool(cnfEl, "w:lastRowLastColumn");
   if (lastRowLastColumn !== undefined) cnf.lastRowLastColumn = lastRowLastColumn;
-  if (Object.keys(cnf).length === 0) return undefined;
+  // Preserve a bare CT_Cnf as {}, distinct from an absent w:cnfStyle element.
   return cnf as CnfStyleOptions;
 }
 

@@ -44,6 +44,20 @@ describe("tableDesc round-trip", () => {
     expect((result.rows[0] as TableRowOptions).cells).toHaveLength(1);
   });
 
+  it("preserves bare row and cell cnfStyle elements", () => {
+    const result = roundTrip({
+      rows: [
+        {
+          cnfStyle: {},
+          cells: [{ cnfStyle: {}, children: [] }],
+        },
+      ],
+    });
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.cnfStyle).toEqual({});
+    expect((row.cells[0] as TableCellOptions).cnfStyle).toEqual({});
+  });
+
   it("round-trips table style", () => {
     const result = roundTrip({
       style: "TableGrid",
