@@ -23,6 +23,7 @@ import { fontTableDesc } from "@parts/fonts/descriptor";
 import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
 import { footnotesDesc } from "@parts/footnotes/descriptor";
 import { glossaryDesc } from "@parts/glossary-document";
+import { setNotesParseChild } from "@parts/notes/shared";
 import { parseNumberingDefinitions } from "@parts/numbering/numbering";
 import { peopleDesc } from "@parts/people";
 import { settingsDesc } from "@parts/settings/descriptor";
@@ -346,6 +347,7 @@ export function parseDocument(data: DataType): DocumentOptions {
   // Register the child parser for table and body child descriptors
   setTableParseChild(parseSectionChild);
   setBodyParseChild(parseSectionChild);
+  setNotesParseChild(parseSectionChild);
 
   const sections = parseBody(docx.body, ctx);
 

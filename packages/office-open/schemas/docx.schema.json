@@ -5906,6 +5906,10 @@
               },
               "target": {
                 "type": "string"
+              },
+              "targetMode": {
+                "const": "External",
+                "type": "string"
               }
             },
             "required": ["source", "relationshipType", "target", "rId"],
@@ -6459,14 +6463,7 @@
       "properties": {
         "children": {
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/definitions/ParagraphOptions"
-              },
-              {
-                "type": "string"
-              }
-            ]
+            "$ref": "#/definitions/NoteChild"
           },
           "type": "array"
         },
@@ -7066,14 +7063,7 @@
       "properties": {
         "children": {
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/definitions/ParagraphOptions"
-              },
-              {
-                "type": "string"
-              }
-            ]
+            "$ref": "#/definitions/NoteChild"
           },
           "type": "array"
         },
@@ -10988,28 +10978,34 @@
       },
       "type": "object"
     },
+    "NoteChild": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SectionChild"
+        },
+        {
+          "$ref": "#/definitions/ParagraphOptions"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
     "NoteSeparator": {
       "additionalProperties": false,
       "description": "System note (separator / continuationSeparator). Round-tripped verbatim.",
       "properties": {
-        "id": {
-          "type": "number"
-        },
-        "paragraphs": {
+        "children": {
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/definitions/ParagraphOptions"
-              },
-              {
-                "type": "string"
-              }
-            ]
+            "$ref": "#/definitions/SectionChild"
           },
           "type": "array"
+        },
+        "id": {
+          "type": "number"
         }
       },
-      "required": ["id", "paragraphs"],
+      "required": ["id", "children"],
       "type": "object"
     },
     "NumberingInsertionOptions": {
@@ -12614,17 +12610,6 @@
         {
           "additionalProperties": false,
           "properties": {
-            "ruby": {
-              "$ref": "#/definitions/RubyOptions"
-            }
-          },
-          "required": ["ruby"],
-          "title": "ruby",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
             "simpleField": {
               "$ref": "#/definitions/SimpleFieldOptions"
             }
@@ -13899,6 +13884,17 @@
                 },
                 "required": ["object"],
                 "title": "object",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "ruby": {
+                    "$ref": "#/definitions/RubyOptions"
+                  }
+                },
+                "required": ["ruby"],
+                "title": "ruby",
                 "type": "object"
               },
               {
@@ -15971,12 +15967,51 @@
       },
       "type": "object"
     },
+    "RubyContentOptions": {
+      "additionalProperties": false,
+      "description": "Formatted runs inside ruby text or ruby base content (CT_RubyContent).",
+      "properties": {
+        "children": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/RunOptions"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "RubyOptions": {
       "additionalProperties": false,
-      "description": "Options for a Ruby annotation.\n\nUsed as `{ ruby: RubyOptions }` in paragraph or run children.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_Ruby\">   <xsd:sequence>     <xsd:element name=\"rubyPr\" type=\"CT_RubyPr\"/>     <xsd:element name=\"rt\" type=\"CT_RubyContent\"/>     <xsd:element name=\"rubyBase\" type=\"CT_RubyContent\"/>   </xsd:sequence> </xsd:complexType> ```",
+      "description": "A ruby annotation (CT_Ruby).",
+      "properties": {
+        "base": {
+          "$ref": "#/definitions/RubyContentOptions",
+          "description": "Base text being annotated (`w:rubyBase`)."
+        },
+        "properties": {
+          "$ref": "#/definitions/RubyPropertiesOptions"
+        },
+        "text": {
+          "$ref": "#/definitions/RubyContentOptions",
+          "description": "Annotation text (`w:rt`)."
+        }
+      },
+      "required": ["properties", "text", "base"],
+      "type": "object"
+    },
+    "RubyPropertiesOptions": {
+      "additionalProperties": false,
+      "description": "Properties of a ruby annotation (CT_RubyPr).",
       "properties": {
         "alignment": {
-          "description": "Ruby alignment (defaults to \"center\").",
+          "description": "Alignment of the annotation text relative to its base text.",
           "enum": [
             "center",
             "distributeLetter",
@@ -15987,36 +16022,28 @@
           ],
           "type": "string"
         },
-        "base": {
-          "description": "Base text being annotated",
-          "type": "string"
-        },
         "baseFontSize": {
-          "description": "Font size for the base text in points. Used to calculate the ruby annotation positioning.",
+          "description": "Base-text font size in points.",
           "type": "number"
         },
         "dirty": {
-          "description": "Whether the ruby annotation is dirty (needs recalculation).",
+          "description": "Whether the annotation needs recalculation.",
           "type": "boolean"
         },
         "fontSize": {
-          "description": "Font size for the ruby annotation text in points (e.g., 10 = 10pt). Defaults to half the base text size if not specified.",
+          "description": "Annotation font size in points.",
           "type": "number"
         },
         "languageId": {
-          "description": "Language identifier for the ruby annotation (e.g., \"ja-JP\").",
+          "description": "Language identifier for the annotation text.",
           "type": "string"
         },
         "raise": {
-          "description": "Vertical offset for the ruby annotation in points. How far the annotation is raised above (or below) the base text.",
+          "description": "Vertical offset of the annotation in points.",
           "type": "number"
-        },
-        "text": {
-          "description": "Ruby annotation text (e.g., furigana, pinyin)",
-          "type": "string"
         }
       },
-      "required": ["text", "base"],
+      "required": ["alignment", "fontSize", "raise", "baseFontSize", "languageId"],
       "type": "object"
     },
     "RunFont": {
@@ -16321,6 +16348,17 @@
                 },
                 "required": ["object"],
                 "title": "object",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "ruby": {
+                    "$ref": "#/definitions/RubyOptions"
+                  }
+                },
+                "required": ["ruby"],
+                "title": "ruby",
                 "type": "object"
               },
               {
@@ -21468,6 +21506,17 @@
                 },
                 "required": ["object"],
                 "title": "object",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "ruby": {
+                    "$ref": "#/definitions/RubyOptions"
+                  }
+                },
+                "required": ["ruby"],
+                "title": "ruby",
                 "type": "object"
               },
               {

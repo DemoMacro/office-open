@@ -3,6 +3,14 @@ import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generateDocument } from "@office-open/docx";
 
+const rubyProperties = {
+  alignment: "center" as const,
+  fontSize: 10,
+  raise: 10,
+  baseFontSize: 20,
+  languageId: "ja-JP",
+};
+
 const buffer = await generateDocument({
   sections: [
     {
@@ -13,79 +21,39 @@ const buffer = await generateDocument({
             spacing: { after: 400 },
           },
         },
-
-        // Japanese furigana
-        {
-          paragraph: {
-            children: [{ bold: true, text: "Japanese Furigana", size: 14 }],
-            spacing: { after: 200 },
-          },
-        },
         {
           paragraph: {
             children: [
-              "Base text with ruby: ",
+              "Japanese furigana: ",
               {
-                ruby: {
-                  text: "かな",
-                  base: "漢字",
-                  alignment: "center",
-                  fontSize: 20,
-                  raise: 20,
-                  baseFontSize: 40,
-                  languageId: "ja-JP",
-                },
+                children: [
+                  {
+                    ruby: {
+                      properties: rubyProperties,
+                      text: { children: [{ text: "かな", size: 10 }] },
+                      base: { children: [{ text: "漢字", size: 20 }] },
+                    },
+                  },
+                ],
               },
             ],
           },
         },
-
-        { paragraph: { children: [""] } },
-
-        // Chinese pinyin
-        {
-          paragraph: {
-            children: [{ bold: true, text: "Chinese Pinyin", size: 14 }],
-            spacing: { after: 200 },
-          },
-        },
         {
           paragraph: {
             children: [
-              "Pinyin guide: ",
+              "Chinese pinyin: ",
               {
-                ruby: {
-                  text: "hàn zì",
-                  base: "汉字",
-                  alignment: "center",
-                  fontSize: 18,
-                  raise: 20,
-                  baseFontSize: 40,
-                  languageId: "zh-CN",
-                },
+                children: [
+                  {
+                    ruby: {
+                      properties: { ...rubyProperties, languageId: "zh-CN" },
+                      text: { children: ["hàn zì"] },
+                      base: { children: ["汉字"] },
+                    },
+                  },
+                ],
               },
-            ],
-          },
-        },
-
-        { paragraph: { children: [""] } },
-
-        // Alignment options
-        {
-          paragraph: {
-            children: [{ bold: true, text: "Alignment Options", size: 14 }],
-            spacing: { after: 200 },
-          },
-        },
-        {
-          paragraph: {
-            children: [
-              "Left: ",
-              { ruby: { text: "left", base: "Align", alignment: "left" } },
-              "  Center: ",
-              { ruby: { text: "center", base: "Align", alignment: "center" } },
-              "  Right: ",
-              { ruby: { text: "right", base: "Align", alignment: "right" } },
             ],
           },
         },

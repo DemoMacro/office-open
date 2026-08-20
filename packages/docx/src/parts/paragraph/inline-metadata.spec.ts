@@ -1,12 +1,13 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { parseParagraph } from "../../body";
+import { parseParagraph, stringifyParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
 
 // Inline metadata carriers never touch the read context, so an empty mock
 // suffices.
 const readCtx = {} as unknown as DocxReadContext;
+const writeCtx = {} as never;
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 
@@ -128,27 +129,42 @@ describe("bidirectional containers parse", () => {
 });
 
 describe("ruby annotation parse", () => {
-  it("parses ruby with properties, rt and rubyBase (half-points -> points)", () => {
+  it("parses ruby as formatted content inside a run", () => {
     const opts = parseParagraphXml(
-      `<w:ruby><w:rubyPr>` +
+      `<w:r><w:ruby><w:rubyPr>` +
         `<w:rubyAlign w:val="center"/><w:hps w:val="20"/><w:hpsRaise w:val="20"/>` +
-        `<w:hpsBaseText w:val="40"/><w:lid w:val="ja-JP"/><w:dirty/>` +
+        `<w:hpsBaseText w:val="40"/><w:lid w:val="ja-JP"/><w:dirty w:val="0"/>` +
         `</w:rubyPr>` +
-        `<w:rt><w:r><w:t>furi</w:t></w:r></w:rt>` +
-        `<w:rubyBase><w:r><w:t>base</w:t></w:r></w:rubyBase>` +
-        `</w:ruby>`,
+        `<w:rt><w:r><w:rPr><w:b/></w:rPr><w:t>fu</w:t></w:r><w:r><w:t>ri</w:t></w:r></w:rt>` +
+        `<w:rubyBase><w:r><w:rPr><w:i/></w:rPr><w:t>base</w:t></w:r></w:rubyBase>` +
+        `</w:ruby></w:r>`,
     );
-    const r = findChildByKey(opts, "ruby");
-    expect(r).toBeDefined();
-    expect(r!.ruby).toMatchObject({
-      text: "furi",
-      base: "base",
-      alignment: "center",
-      fontSize: 10, // hps 20 / 2
-      raise: 10, // hpsRaise 20 / 2
-      baseFontSize: 20, // hpsBaseText 40 / 2
-      languageId: "ja-JP",
-      dirty: true,
+    const run = opts.children?.[0] as Record<string, unknown>;
+    const runChildren = run.children as Array<Record<string, unknown>>;
+    expect(runChildren).toHaveLength(1);
+    expect(runChildren[0]!.ruby).toEqual({
+      properties: {
+        alignment: "center",
+        fontSize: 10,
+        raise: 10,
+        baseFontSize: 20,
+        languageId: "ja-JP",
+        dirty: false,
+      },
+      text: { children: [{ bold: true, text: "fu" }, { text: "ri" }] },
+      base: { children: [{ italic: true, text: "base" }] },
     });
+
+    const xml = stringifyParagraph(opts as never, writeCtx);
+    expect(xml).toContain("<w:r><w:ruby><w:rubyPr>");
+    expect(xml).toContain('<w:dirty w:val="0"/>');
+    expect(xml).toContain(
+      '<w:rt><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">fu</w:t></w:r>' +
+        '<w:r><w:t xml:space="preserve">ri</w:t></w:r></w:rt>',
+    );
+    expect(xml).toContain(
+      '<w:rubyBase><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">base</w:t></w:r></w:rubyBase>',
+    );
+    expect(xml).not.toContain("<w:r><w:ruby><w:r><w:ruby>");
   });
 });

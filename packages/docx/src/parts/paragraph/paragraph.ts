@@ -29,7 +29,6 @@ import type { CommentChildOptions } from "./run/comment-run";
 import type { FormFieldOptions } from "./run/form-field";
 import type { PictureOptions } from "./run/picture-run";
 import type { PositionalTabOptions } from "./run/positional-tab";
-import type { RubyOptions } from "./run/ruby";
 import type { SimpleFieldOptions } from "./run/simple-field";
 import type { SmartArtOptions } from "./run/smartart-run";
 import type { SymbolRunOptions } from "./run/symbol-run";
@@ -203,8 +202,6 @@ export type ParagraphChild =
   | { customXmlMoveFromRangeEnd: number }
   | { customXmlMoveToRangeStart: { id: number; author?: string; date?: string } }
   | { customXmlMoveToRangeEnd: number }
-  // Ruby annotation (East Asian pronunciation guides)
-  | { ruby: RubyOptions }
   // Simple field
   | { simpleField: SimpleFieldOptions }
   // Form field (checkbox, dropdown list, text input)

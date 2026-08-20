@@ -12,8 +12,12 @@
  */
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { createNotesDesc, type NoteSeparator, type NotesData } from "@parts/notes/shared";
-import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import {
+  createNotesDesc,
+  type NoteChild,
+  type NoteSeparator,
+  type NotesData,
+} from "@parts/notes/shared";
 
 import type { BodyContext } from "../../context";
 
@@ -22,7 +26,7 @@ import type { BodyContext } from "../../context";
 /** A user footnote. `id` is auto-assigned (1, 2, …) when omitted; round-tripped entries carry theirs. */
 export interface FootnoteOptions {
   id?: number;
-  children: (ParagraphOptions | string)[];
+  children: NoteChild[];
 }
 
 /** System footnote (separator / continuationSeparator). Round-tripped verbatim. */

@@ -10,7 +10,7 @@
  * @module
  */
 
-import { encodeBase64, imageTypeFromPath, toUint8Array } from "@office-open/core";
+import { encodeBase64, hpsMeasureValue, imageTypeFromPath, toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { TargetModeType } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
@@ -59,7 +59,7 @@ import { checkboxSymbolRunInner, stringifyCustomXmlShell, stringifySdtShell } fr
 import { drawingDesc } from "./drawing";
 import { stringifyMath, stringifyMathParagraph } from "./paragraph/math/stringify";
 import { createBegin, createSeparate, createEnd } from "./paragraph/run/field";
-import { stringifyParagraphProperties, stringifyRunProperties } from "./paragraph/stringify";
+import { onOff, stringifyParagraphProperties, stringifyRunProperties } from "./paragraph/stringify";
 
 // ── Run ──
 
@@ -129,6 +129,31 @@ function stringifyDeletedRun(c: RunOptions | string): string {
     parts.push(`<w:delText xml:space="preserve">${escapeXml(String(opts.text))}</w:delText>`);
   }
   return `${openTag}${parts.join("")}</w:r>`;
+}
+
+function stringifyRubyContent(opts: RubyOptions["text"], ctx: BodyContext): string {
+  return (
+    opts.children
+      ?.map((child) => stringifyRunInline(typeof child === "string" ? { text: child } : child, ctx))
+      .join("") ?? ""
+  );
+}
+
+function stringifyRuby(opts: RubyOptions, ctx: BodyContext): string {
+  const properties = opts.properties;
+  const dirty = properties.dirty !== undefined ? onOff("w:dirty", properties.dirty) : "";
+  return (
+    `<w:ruby><w:rubyPr>` +
+    `<w:rubyAlign w:val="${properties.alignment}"/>` +
+    `<w:hps w:val="${hpsMeasureValue(properties.fontSize * 2)}"/>` +
+    `<w:hpsRaise w:val="${hpsMeasureValue(properties.raise * 2)}"/>` +
+    `<w:hpsBaseText w:val="${hpsMeasureValue(properties.baseFontSize * 2)}"/>` +
+    `<w:lid w:val="${escapeXml(properties.languageId)}"/>` +
+    `${dirty}</w:rubyPr>` +
+    `<w:rt>${stringifyRubyContent(opts.text, ctx)}</w:rt>` +
+    `<w:rubyBase>${stringifyRubyContent(opts.base, ctx)}</w:rubyBase>` +
+    `</w:ruby>`
+  );
 }
 
 export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
@@ -238,6 +263,10 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         const emptyXml = firstKey !== undefined ? EMPTY_RUN_ELEMENTS[firstKey] : undefined;
         if (emptyXml) {
           body += emptyXml;
+          continue;
+        }
+        if ("ruby" in child) {
+          body += stringifyRuby((child as { ruby: RubyOptions }).ruby, ctx);
           continue;
         }
         // OLE object — w:object (VML shape + objectEmbed/link/control/movie)
@@ -1046,30 +1075,6 @@ export function stringifyChildDispatch(
     );
     registerVmlFallbackMedia(opts, ctx);
     return wrapDrawingRun(drawingXml, opts);
-  }
-
-  // Ruby annotation — pure string concatenation
-  if ("ruby" in child && typeof child.ruby === "object" && child.ruby !== null) {
-    const r = child.ruby as RubyOptions;
-    const align = r.alignment ?? "center";
-    const hps = (r.fontSize ?? 10) * 2;
-    const hpsRaise = (r.raise ?? 10) * 2;
-    const hpsBaseText = (r.baseFontSize ?? 20) * 2;
-    const lid = r.languageId ?? "ja-JP";
-
-    const prParts = [
-      `<w:rubyAlign w:val="${align}"/>`,
-      `<w:hps w:val="${hps}"/>`,
-      `<w:hpsRaise w:val="${hpsRaise}"/>`,
-      `<w:hpsBaseText w:val="${hpsBaseText}"/>`,
-      `<w:lid w:val="${lid}"/>`,
-    ];
-    if (r.dirty) prParts.push("<w:dirty/>");
-
-    const rt = `<w:rt><w:r><w:t xml:space="preserve">${escapeXml(r.text)}</w:t></w:r></w:rt>`;
-    const rubyBase = `<w:rubyBase><w:r><w:t xml:space="preserve">${escapeXml(r.base)}</w:t></w:r></w:rubyBase>`;
-
-    return `<w:ruby><w:rubyPr>${prParts.join("")}</w:rubyPr>${rt}${rubyBase}</w:ruby>`;
   }
 
   // Math — pure string concatenation. A justification or the display flag

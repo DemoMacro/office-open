@@ -182,6 +182,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
     relationshipType: string;
     target: string;
     rId: string;
+    targetMode?: "External";
   }[];
 }
 

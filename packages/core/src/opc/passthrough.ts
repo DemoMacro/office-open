@@ -50,6 +50,8 @@ export interface PassthroughRelationship {
   target: string;
   /** The relationship id as written in the source .rels (e.g. "rId8"). */
   rId: string;
+  /** External target mode, retained only for package-root relationships. */
+  targetMode?: "External";
 }
 
 export interface PassthroughResult {
@@ -138,11 +140,20 @@ export function collectPassthroughParts(
     if (!relsEl) return;
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
-      if (attr(rel, "TargetMode") === "External") continue;
+      const targetMode = attr(rel, "TargetMode");
       const relationshipType = attr(rel, "Type");
       const target = attr(rel, "Target");
       const rId = attr(rel, "Id");
       if (!relationshipType || !target || !rId) continue;
+      if (targetMode === "External") {
+        // A rebuilt owner can only preserve an external relationship when its
+        // modeled XML also remaps the local rId. Package-root relationships have
+        // no owner XML, so they are safe to retain directly.
+        if (source === "") {
+          relationships.push({ source, relationshipType, target, rId, targetMode });
+        }
+        continue;
+      }
       if (kept.has(resolveRelationshipTarget(source, target))) {
         relationships.push({ source, relationshipType, target, rId });
       }

@@ -33,6 +33,7 @@ import type { DocxReadContext } from "../../../context";
 import { replaceRelsWithPlaceholders } from "../../../util/replace-media-placeholders";
 import { stringifyElement } from "../../../util/stringify-element";
 import type { LanguageOptions } from "./language";
+import type { RubyContentOptions, RubyOptions, RubyPropertiesOptions } from "./ruby";
 
 // On/off run properties: XML child tag → options key.
 const ON_OFF_RUN_PROPS: readonly (readonly [string, keyof RunPropertiesOptions & string])[] = [
@@ -392,9 +393,66 @@ export type ParsedRunChild =
   | typeof PARSED_LAST_RENDERED_PAGE_BREAK
   | { commentReference: number }
   | { object: ObjectElementOptions }
+  | { ruby: RubyOptions }
   | { break: number | BreakOptions }
   | { footnoteReference: number | FootnoteEndnoteReferenceOptions }
   | { endnoteReference: number | FootnoteEndnoteReferenceOptions };
+
+function parseRubyContent(el: Element, ctx: DocxReadContext): RubyContentOptions {
+  const children: (RunOptions | string)[] = [];
+  for (const child of el.elements ?? []) {
+    if (child.type !== "element" || child.name !== "w:r") continue;
+    const run = parsedRunToOptions(parseRun(child, ctx));
+    if (run !== null && !("commentReference" in run)) children.push(run);
+  }
+  return children.length > 0 ? { children } : {};
+}
+
+function parseRubyProperties(el: Element): RubyPropertiesOptions | undefined {
+  const rubyAlign = findChild(el, "w:rubyAlign");
+  const hps = findChild(el, "w:hps");
+  const hpsRaise = findChild(el, "w:hpsRaise");
+  const hpsBaseText = findChild(el, "w:hpsBaseText");
+  const lid = findChild(el, "w:lid");
+  const alignment = attr(rubyAlign, "w:val");
+  const fontSize = attrNum(hps, "w:val");
+  const raise = attrNum(hpsRaise, "w:val");
+  const baseFontSize = attrNum(hpsBaseText, "w:val");
+  const languageId = attr(lid, "w:val");
+  if (
+    alignment === undefined ||
+    fontSize === undefined ||
+    raise === undefined ||
+    baseFontSize === undefined ||
+    languageId === undefined
+  ) {
+    return undefined;
+  }
+  const properties: RubyPropertiesOptions = {
+    alignment: alignment as RubyPropertiesOptions["alignment"],
+    fontSize: fontSize / 2,
+    raise: raise / 2,
+    baseFontSize: baseFontSize / 2,
+    languageId,
+  };
+  const dirty = findChild(el, "w:dirty");
+  if (dirty) properties.dirty = attrBool(dirty, "w:val") ?? true;
+  return properties;
+}
+
+function parseRuby(el: Element, ctx: DocxReadContext): RubyOptions | undefined {
+  const propertiesEl = findChild(el, "w:rubyPr");
+  const textEl = findChild(el, "w:rt");
+  const baseEl = findChild(el, "w:rubyBase");
+  if (!propertiesEl || !textEl || !baseEl) return undefined;
+  const properties = parseRubyProperties(propertiesEl);
+  if (!properties) return undefined;
+  return {
+    properties,
+    text: parseRubyContent(textEl, ctx),
+    base: parseRubyContent(baseEl, ctx),
+  };
+}
 
 /**
  * Parse a w:r element into run data.
@@ -515,6 +573,11 @@ export function parseRun(
       }
       case "w:object": {
         children.push({ object: objectDesc.parse(child, _ctx) } as unknown as ParsedRunChild);
+        break;
+      }
+      case "w:ruby": {
+        const ruby = parseRuby(child, _ctx);
+        if (ruby) children.push({ ruby });
         break;
       }
       // Symbol run — extract char and font attributes

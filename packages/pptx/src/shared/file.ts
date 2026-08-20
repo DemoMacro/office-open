@@ -246,5 +246,6 @@ export interface PresentationOptions extends CorePropertiesOptions {
     relationshipType: string;
     target: string;
     rId: string;
+    targetMode?: "External";
   }[];
 }

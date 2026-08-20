@@ -15557,6 +15557,10 @@
               },
               "target": {
                 "type": "string"
+              },
+              "targetMode": {
+                "const": "External",
+                "type": "string"
               }
             },
             "required": ["source", "relationshipType", "target", "rId"],

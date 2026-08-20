@@ -57,7 +57,6 @@ import type {
   ParagraphRunPropertiesOptions,
   RunPropertiesOptions,
 } from "@parts/paragraph/run/properties";
-import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
@@ -1331,15 +1330,6 @@ function collectRunText(el: Element): string {
   return text;
 }
 
-/** Concatenate `<w:t>` text across all `<w:r>` children of a container (rt/rubyBase). */
-function collectRunsText(el: Element): string {
-  let text = "";
-  for (const r of el.elements ?? []) {
-    if (r.name === "w:r") text += collectRunText(r);
-  }
-  return text;
-}
-
 /**
  * Parse the inline children of a smartTag/customXml container (recursive).
  *
@@ -1789,49 +1779,6 @@ function parseRunLevelChildren(
           if (content.length > 0) bdo.children = content;
           childList.push({ bdo });
         }
-        break;
-      }
-      // ── Ruby annotation (East Asian pronunciation guides) ──
-      case "w:ruby": {
-        const rt = findChild(child, "w:rt");
-        const rubyBase = findChild(child, "w:rubyBase");
-        // text and base are required by CT_Ruby; skip the ruby if either is missing.
-        if (!rt || !rubyBase) break;
-        const ruby: RubyOptions = {
-          text: collectRunsText(rt),
-          base: collectRunsText(rubyBase),
-        };
-        const pr = findChild(child, "w:rubyPr");
-        if (pr) {
-          const alignEl = findChild(pr, "w:rubyAlign");
-          if (alignEl) {
-            const v = attr(alignEl, "w:val");
-            if (v) ruby.alignment = v as RubyOptions["alignment"];
-          }
-          // hps / hpsRaise / hpsBaseText are half-points; the API uses points.
-          const hpsEl = findChild(pr, "w:hps");
-          if (hpsEl) {
-            const v = attrNum(hpsEl, "w:val");
-            if (v !== undefined) ruby.fontSize = v / 2;
-          }
-          const hpsRaiseEl = findChild(pr, "w:hpsRaise");
-          if (hpsRaiseEl) {
-            const v = attrNum(hpsRaiseEl, "w:val");
-            if (v !== undefined) ruby.raise = v / 2;
-          }
-          const hpsBaseEl = findChild(pr, "w:hpsBaseText");
-          if (hpsBaseEl) {
-            const v = attrNum(hpsBaseEl, "w:val");
-            if (v !== undefined) ruby.baseFontSize = v / 2;
-          }
-          const lidEl = findChild(pr, "w:lid");
-          if (lidEl) {
-            const v = attr(lidEl, "w:val");
-            if (v) ruby.languageId = v;
-          }
-          if (findChild(pr, "w:dirty")) ruby.dirty = true;
-        }
-        childList.push({ ruby });
         break;
       }
       // ── Range markers: proof errors, positional tabs, permissions, revisions ──

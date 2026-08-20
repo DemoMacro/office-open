@@ -1,7 +1,11 @@
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { stringifyBodyChild } from "../../body";
+import { parseSectionChild } from "../../parse/body";
+import { setNotesParseChild } from "../notes/shared";
+import { setTableParseChild } from "../table/descriptor";
 import { endnotesDesc } from "./descriptor";
 
 const writeCtx = {
@@ -10,8 +14,13 @@ const writeCtx = {
   fileData: {},
   file: {},
   viewWrapper: { relationships: { toXml: () => "" } },
-  stringifyChild: () => "",
-} as unknown as WriteContext;
+  stringifyChild: undefined,
+};
+(writeCtx as any).stringifyChild = (child: Parameters<typeof stringifyBodyChild>[0]) =>
+  stringifyBodyChild(child, writeCtx as any);
+
+setNotesParseChild(parseSectionChild);
+setTableParseChild(parseSectionChild);
 
 const readCtx = {
   resolveRelationship: () => undefined,
@@ -59,5 +68,22 @@ describe("endnotesDesc round-trip", () => {
     for (const id of result.notes.keys()) {
       expect(id).toBeGreaterThanOrEqual(1);
     }
+  });
+
+  it("round-trips a block-level table before a paragraph", () => {
+    const source =
+      '<w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:endnote w:id="1"><w:tbl><w:tblPr/><w:tblGrid><w:gridCol w:w="1000"/></w:tblGrid>' +
+      "<w:tr><w:tc><w:tcPr/><w:p><w:r><w:t>cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl>" +
+      "<w:p><w:r><w:t>after</w:t></w:r></w:p></w:endnote></w:endnotes>";
+    const root = parseXml(source).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = endnotesDesc.parse(root, readCtx);
+    expect(parsed.notes.get(1)?.[0]).toMatchObject({ table: {} });
+
+    const xml = endnotesDesc.stringify(parsed, writeCtx as any)!;
+    expect(xml).toContain("<w:tbl>");
+    expect(xml).toContain('<w:t xml:space="preserve">cell</w:t>');
+    expect(xml).not.toContain("<w:endnoteRef/>");
   });
 });

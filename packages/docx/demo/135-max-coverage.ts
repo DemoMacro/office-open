@@ -220,7 +220,21 @@ const doc: DocumentOptions = {
           paragraph: {
             children: [
               {
-                ruby: { base: "漢字", text: "かんじ", alignment: "center", fontSize: 9 },
+                children: [
+                  {
+                    ruby: {
+                      properties: {
+                        alignment: "center",
+                        fontSize: 9,
+                        raise: 9,
+                        baseFontSize: 18,
+                        languageId: "ja-JP",
+                      },
+                      text: { children: ["かんじ"] },
+                      base: { children: ["漢字"] },
+                    },
+                  },
+                ],
               },
               " annotated",
             ],

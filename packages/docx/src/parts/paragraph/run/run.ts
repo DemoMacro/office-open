@@ -12,6 +12,7 @@ import type { FootnoteEndnoteReferenceOptions, ParagraphChild } from "../paragra
  * @module
  */
 import type { ParagraphRunPropertiesOptions, RunPropertiesOptions } from "./properties";
+import type { RubyOptions } from "./ruby";
 
 /** w:br/`@w:clear` values (ST_BrClear) — clears floating content on the given side(s). */
 export type BreakClear = "none" | "left" | "right" | "all";
@@ -93,6 +94,7 @@ interface RunOptionsBase {
     | { carriageReturn: true }
     | { lastRenderedPageBreak: true }
     | { object: ObjectElementOptions }
+    | { ruby: RubyOptions }
     | ParagraphChild
   )[];
   break?: number | BreakOptions;

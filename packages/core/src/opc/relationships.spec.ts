@@ -53,6 +53,20 @@ describe("Relationships", () => {
     expect(withCustom).toContain('Target="docProps/custom.xml"');
   });
 
+  it("buildRootRelationships preserves package-root external target mode", () => {
+    const xml = buildRootRelationships("word/document.xml", false, [
+      {
+        source: "",
+        relationshipType: "urn:example:external-root",
+        target: "https://example.com/package",
+        targetMode: "External",
+      },
+    ]).serialize();
+    expect(xml).toContain(
+      'Type="urn:example:external-root" Target="https://example.com/package" TargetMode="External"',
+    );
+  });
+
   it("serialize() escapes special characters in target and id", () => {
     const rels = new Relationships();
     rels.add(

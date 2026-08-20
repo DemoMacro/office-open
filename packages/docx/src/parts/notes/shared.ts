@@ -12,21 +12,23 @@
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 import { documentNamespaceAttributes } from "@parts/document/document-attributes";
-import { stringifyParagraphInline } from "@parts/inline";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import type { SectionChild } from "@shared/section";
 
-import { parseParagraph } from "../../body";
 import type { BodyContext, DocxReadContext } from "../../context";
+
+export type NoteChild = SectionChild | ParagraphOptions | string;
 
 /** System note (separator / continuationSeparator). Round-tripped verbatim. */
 export interface NoteSeparator {
   id: number;
-  paragraphs: (ParagraphOptions | string)[];
+  children: SectionChild[];
 }
 
 export interface NotesData {
-  notes: Map<number, (ParagraphOptions | string)[]>;
+  notes: Map<number, NoteChild[]>;
   /**
    * Separator note — id + content round-tripped from the source so it stays
    * consistent with settings.footnoteProperties/endnoteProperties, which reference this id.
@@ -59,6 +61,15 @@ const NS = documentNamespaceAttributes([
   "wps",
 ]);
 
+type ParseNoteChild = (el: Element, ctx: DocxReadContext) => SectionChild;
+
+let parseNoteChild: ParseNoteChild | undefined;
+
+/** Register the block-level child parser without introducing a notes↔body cycle. */
+export function setNotesParseChild(fn: ParseNoteChild): void {
+  parseNoteChild = fn;
+}
+
 export interface NotesDescConfig {
   /** Root element name (`w:footnotes` / `w:endnotes`). */
   rootTag: string;
@@ -86,7 +97,7 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
     // null = the parsed source carried no such system note — emit nothing.
     if (sep === null) return "";
     if (!sep) return fallback;
-    const inner = sep.paragraphs.map((p) => stringifyParagraphInline(p, ctx)).join("");
+    const inner = sep.children.map((child) => ctx.stringifyChild(child)).join("");
     return `<${cfg.noteTag} w:type="${type}" w:id="${sep.id}">${inner}</${cfg.noteTag}>`;
   };
 
@@ -113,21 +124,37 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
         parts.push(systemNote("continuationNotice", data.continuationNotice, "", ctx));
       }
 
-      for (const [id, paragraphs] of data.notes) {
+      for (const [id, children] of data.notes) {
         parts.push(`<${cfg.noteTag} w:id="${id}">`);
-        for (const [i, para] of paragraphs.entries()) {
-          const pXml = stringifyParagraphInline(para, ctx);
-          // Inject the reference run only on fresh content — a round-tripped
-          // note keeps the parsed ref-mark run (with its own rPr) in place, and
-          // injecting the template too would emit the mark twice. A paragraph
-          // with no children at all (parsed empty notes) takes no mark: the
-          // injection could only land outside the paragraph, which CT_FtnEdn
-          // does not allow.
-          const hasRefMark = pXml.includes("<w:footnoteRef/>") || pXml.includes("<w:endnoteRef/>");
-          if (i === 0 && !hasRefMark && !isEmptyParagraph(pXml)) {
-            parts.push(injectRefRun(pXml, cfg));
+        for (const [i, child] of children.entries()) {
+          const isSectionChild =
+            typeof child === "object" &&
+            child !== null &&
+            ("paragraph" in child ||
+              "table" in child ||
+              "toc" in child ||
+              "textbox" in child ||
+              "sdt" in child ||
+              "altChunk" in child ||
+              "subDoc" in child ||
+              "customXml" in child ||
+              "bookmarkStart" in child ||
+              "bookmarkEnd" in child ||
+              "rawXml" in child);
+          const isParagraphInput = !isSectionChild || (isSectionChild && "paragraph" in child);
+          const sectionChild: SectionChild = isSectionChild
+            ? child
+            : { paragraph: child as ParagraphOptions | string };
+          const childXml = ctx.stringifyChild(sectionChild);
+          // The conventional reference mark belongs only in a first paragraph.
+          // A note beginning with a table or another block is valid and must not
+          // receive an invalid run outside w:p.
+          const hasRefMark =
+            childXml.includes("<w:footnoteRef/>") || childXml.includes("<w:endnoteRef/>");
+          if (i === 0 && isParagraphInput && !hasRefMark && !isEmptyParagraph(childXml)) {
+            parts.push(injectRefRun(childXml, cfg));
           } else {
-            parts.push(pXml);
+            parts.push(childXml);
           }
         }
         parts.push(`</${cfg.noteTag}>`);
@@ -138,7 +165,7 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
     },
 
     parse(el, ctx) {
-      const notes = new Map<number, (ParagraphOptions | string)[]>();
+      const notes = new Map<number, NoteChild[]>();
       let separator: NoteSeparator | undefined;
       let continuationSeparator: NoteSeparator | undefined;
       let continuationNotice: NoteSeparator | undefined;
@@ -148,11 +175,11 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
         if (id === undefined) continue;
         const type = attr(child, "w:type");
 
-        const paragraphs: (ParagraphOptions | string)[] = [];
+        const children: SectionChild[] = [];
         for (const sub of child.elements ?? []) {
-          if (sub.name === "w:p") {
-            paragraphs.push(parseParagraph(sub, ctx as DocxReadContext));
-          }
+          if (sub.type !== "element") continue;
+          if (!parseNoteChild) throw new Error("Notes child parser is not registered");
+          children.push(parseNoteChild(sub, ctx as DocxReadContext));
         }
 
         // System notes carry a w:type (separator/continuationSeparator/
@@ -160,13 +187,13 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
         // id + content so stringify round-trips them verbatim (settings
         // references these ids). Normal notes (type absent/"normal") go to notes.
         if (type === "separator") {
-          separator = { id, paragraphs };
+          separator = { id, children };
         } else if (type === "continuationSeparator") {
-          continuationSeparator = { id, paragraphs };
+          continuationSeparator = { id, children };
         } else if (type === "continuationNotice") {
-          continuationNotice = { id, paragraphs };
+          continuationNotice = { id, children };
         } else {
-          notes.set(id, paragraphs);
+          notes.set(id, children);
         }
       }
       return { notes, separator, continuationSeparator, continuationNotice } as NotesData;

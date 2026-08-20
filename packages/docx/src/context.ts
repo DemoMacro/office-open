@@ -20,8 +20,8 @@ import { FontWrapper } from "@parts/fonts/font-wrapper";
 import type { FootnoteSeparator } from "@parts/footnotes/descriptor";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { HeaderFooterEntry } from "@parts/header-footer";
+import type { NoteChild } from "@parts/notes/shared";
 import { Numbering } from "@parts/numbering";
-import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 import type { SettingsOptions } from "@parts/settings/settings";
 import { Styles, extractStyleId } from "@parts/styles";
@@ -163,14 +163,14 @@ export class DocxWriteContext implements WriteContext {
   };
   declare public footNotes: {
     relationships: Relationships;
-    notes: Map<number, (ParagraphOptions | string)[]>;
+    notes: Map<number, NoteChild[]>;
     separator?: FootnoteSeparator | null;
     continuationSeparator?: FootnoteSeparator | null;
     continuationNotice?: FootnoteSeparator;
   };
   declare public endnotes: {
     relationships: Relationships;
-    notes: Map<number, (ParagraphOptions | string)[]>;
+    notes: Map<number, NoteChild[]>;
     separator?: EndnoteSeparator | null;
     continuationSeparator?: EndnoteSeparator | null;
     continuationNotice?: EndnoteSeparator;

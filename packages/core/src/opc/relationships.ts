@@ -212,6 +212,7 @@ export function buildRootRelationships(
     source: string;
     relationshipType: string;
     target: string;
+    targetMode?: "External";
   }[],
 ): Relationships {
   const rels = new Relationships();
@@ -243,7 +244,7 @@ export function buildRootRelationships(
   for (const rel of passthroughRelationships ?? []) {
     if (rel.source !== "") continue;
     if (rels.hasRelationship(rel.relationshipType, rel.target)) continue;
-    rels.add(rel.relationshipType as RelationshipType, rel.target);
+    rels.add(rel.relationshipType as RelationshipType, rel.target, rel.targetMode);
   }
   return rels;
 }

@@ -137,6 +137,7 @@ export interface DocumentOptions extends CorePropertiesOptions {
     relationshipType: string;
     target: string;
     rId: string;
+    targetMode?: "External";
   }[];
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;

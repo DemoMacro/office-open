@@ -21,7 +21,12 @@ const CONTENT_TYPES =
   `<Override PartName="/customXml/item1.xml" ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"/>` +
   `</Types>`;
 
-const ROOT_RELS = `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>`;
+const ROOT_RELS =
+  `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+  `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+  `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail" Target="docProps/thumbnail.jpeg"/>` +
+  `<Relationship Id="rId3" Type="urn:example:external-root" Target="https://example.com/package" TargetMode="External"/>` +
+  `</Relationships>`;
 
 const DOC_RELS =
   `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
@@ -46,6 +51,7 @@ function basePackage(): Record<string, string | Uint8Array> {
     "word/theme/_rels/theme1.xml.rels": THEME_RELS,
     "customXml/item1.xml": "<b:customXml/>",
     "customXml/itemProps1.xml": "<b:props/>",
+    "docProps/thumbnail.jpeg": new Uint8Array([0xff, 0xd8, 0xff]),
     "word/media/image1.png": new Uint8Array([1, 2, 3]),
     "word/media/texture1.jpeg": new Uint8Array([4, 5, 6]),
     "word/embeddings/oleObject1.bin": new Uint8Array([7, 8]),
@@ -66,6 +72,7 @@ describe("collectPassthroughParts", () => {
     expect(paths).toEqual([
       "customXml/item1.xml",
       "customXml/itemProps1.xml",
+      "docProps/thumbnail.jpeg",
       "word/embeddings/oleObject1.bin",
       "word/media/image1.png",
       "word/media/texture1.jpeg",
@@ -94,7 +101,7 @@ describe("collectPassthroughParts", () => {
     expect(mystery && "contentType" in mystery).toBe(false);
   });
 
-  it("captures rebuilt→passthrough relationships, drops external targets", () => {
+  it("captures internal passthrough targets and drops rebuilt-owner external targets", () => {
     const result = collectPassthroughParts(archiveOf(basePackage()), ["word/document.xml"]);
     const docRels = result.relationships.filter((r) => r.source === "word/document.xml");
     expect(
@@ -107,6 +114,28 @@ describe("collectPassthroughParts", () => {
     expect(theme?.target).toBe("theme/theme1.xml");
     const customXml = docRels.find((r) => r.relationshipType.endsWith("/customXml"));
     expect(customXml?.target).toBe("../customXml/item1.xml");
+    expect(docRels.some((r) => r.targetMode === "External")).toBe(false);
+  });
+
+  it("captures internal and external package-root relationships", () => {
+    const result = collectPassthroughParts(archiveOf(basePackage()), ["word/document.xml"]);
+    const rootRels = result.relationships.filter((r) => r.source === "");
+    expect(rootRels).toEqual([
+      {
+        source: "",
+        relationshipType:
+          "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail",
+        target: "docProps/thumbnail.jpeg",
+        rId: "rId2",
+      },
+      {
+        source: "",
+        relationshipType: "urn:example:external-root",
+        target: "https://example.com/package",
+        rId: "rId3",
+        targetMode: "External",
+      },
+    ]);
   });
 
   it("does not capture relationships whose target is itself rebuilt", () => {
