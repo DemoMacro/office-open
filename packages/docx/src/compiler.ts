@@ -811,6 +811,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
           "fontTable.xml",
         );
+        ctx.addPassthroughDocumentRelationships();
 
         return XML_DECL + ctx.document.relationships.serialize();
       })(),

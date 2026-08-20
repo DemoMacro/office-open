@@ -640,22 +640,22 @@ export class DocxWriteContext implements WriteContext {
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
       themeRel ? themeRel.target : "theme/theme1.xml",
     );
-    for (const rel of passthroughDocRels) {
-      if (rel === themeRel) continue;
-      // The compiler owns media/chart/diagram/embedding parts: it re-emits
-      // them from the model and registers fresh relationships. Re-emitting
-      // the captured source rel as well would double-register — ISO-strict
-      // sources type these purl.oclc.org, which slips past the kind+target
-      // dedup check below.
-      if (rel.target.startsWith("charts/")) continue;
-      if (rel.target.startsWith("diagrams/")) continue;
-      if (rel.target.startsWith("media/")) continue;
-      if (rel.target.startsWith("embeddings/")) continue;
+  }
+
+  /**
+   * Re-register source relationships whose targets remain opaque passthrough
+   * parts. This runs after document stringification and compiler-owned drawing,
+   * media, chart, and SmartArt wiring, so kind+target is a reliable ownership
+   * test instead of guessing from conventional target-directory prefixes.
+   */
+  public addPassthroughDocumentRelationships(): void {
+    for (const rel of this._options.passthroughRelationships ?? []) {
+      if (rel.source !== "word/document.xml" || rel.relationshipType.endsWith("/theme")) continue;
       if (this.document.relationships.hasRelationship(rel.relationshipType, rel.target)) continue;
       // Passthrough relationship types come from arbitrary source packages
       // (any third-party extension); the union only documents the known ones.
       this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+        this.document.relationships.relationshipCount + 1,
         rel.relationshipType as RelationshipType,
         rel.target,
       );

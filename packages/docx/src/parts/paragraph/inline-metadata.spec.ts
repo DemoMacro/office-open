@@ -10,6 +10,7 @@ const readCtx = {} as unknown as DocxReadContext;
 const writeCtx = {} as never;
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+const W16SE_NS = 'xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"';
 
 function parseParagraphXml(inner: string): { children?: unknown[] } {
   const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
@@ -125,6 +126,21 @@ describe("bidirectional containers parse", () => {
     const b = findChildByKey(opts, "bdo");
     expect(b!.bdo).toMatchObject({ val: "ltr" });
     expect((b!.bdo as Record<string, unknown>).children).toEqual([{ text: "text" }]);
+  });
+});
+
+describe("Office 2016 symbol round-trip", () => {
+  it("re-emits the extension symbol without downgrading it to w:sym", () => {
+    const doc = parseXml(
+      `<w:p ${W_NS} ${W16SE_NS}><w:r><w16se:sym w:font="Webdings" w:char="F04E"/></w:r></w:p>`,
+    );
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseParagraph(el, readCtx);
+
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w16se:sym w:char="F04E" w:font="Webdings"/>',
+    );
   });
 });
 

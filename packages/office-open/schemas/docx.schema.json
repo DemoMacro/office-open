@@ -21673,6 +21673,11 @@
           ],
           "description": "Kerning threshold in points (w:kern, half-points in XML)."
         },
+        "kind": {
+          "description": "Symbol element vocabulary; omitted emits the standard w:sym element.",
+          "enum": ["standard", "office2016"],
+          "type": "string"
+        },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
         },

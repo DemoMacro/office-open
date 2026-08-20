@@ -43,6 +43,7 @@ import {
   type RunOptions,
 } from "@parts/paragraph/run/run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
+import type { SymbolRunOptions } from "@parts/paragraph/run/symbol-run";
 import { stringifyPict, type PictOptions } from "@parts/pict";
 import type {
   ChartMediaData,
@@ -62,6 +63,11 @@ import { createBegin, createSeparate, createEnd } from "./paragraph/run/field";
 import { onOff, stringifyParagraphProperties, stringifyRunProperties } from "./paragraph/stringify";
 
 // ── Run ──
+
+function stringifySymbolRunInner(opts: SymbolRunOptions): string {
+  const tag = opts.kind === "office2016" ? "w16se:sym" : "w:sym";
+  return `<${tag} w:char="${escapeXml(opts.char)}" w:font="${escapeXml(opts.symbolFont ?? "Wingdings")}"/>`;
+}
 
 /** Serialize a complex field's run chain. Inside a w:del wrapper the
  *  instruction is spelled w:delInstrText and the cached result w:delText. */
@@ -228,7 +234,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         // <w:r>, which would nest illegally inside this run.
         if ("symbolRun" in child) {
           const sym = child.symbolRun;
-          body += `${stringifyRunProperties(sym) ?? ""}<w:sym w:char="${sym.char}" w:font="${sym.symbolFont ?? "Wingdings"}"/>`;
+          body += `${stringifyRunProperties(sym) ?? ""}${stringifySymbolRunInner(sym)}`;
           continue;
         }
         // Reference elements inside a run's children[] (mixed-content runs)
@@ -694,13 +700,12 @@ export function stringifyChildDispatch(
   // Bookmark sugar — library allocates the id and pairs start/end.
   if ("bookmark" in child) return stringifyBookmarkChild(child.bookmark, ctx);
 
-  // Symbol run — direct XML output.
-  // <w:sym> is a self-closing element, not text: emit it directly so it is
-  // not escaped into a <w:t> by the run children path.
+  // Symbol runs are self-closing elements, not text: emit them directly so
+  // they are not escaped into a <w:t> by the run children path.
   if ("symbolRun" in child) {
     const opts = child.symbolRun;
     const rPr = stringifyRunProperties(opts) ?? "";
-    return `<w:r>${rPr}<w:sym w:char="${opts.char}" w:font="${opts.symbolFont ?? "Wingdings"}"/></w:r>`;
+    return `<w:r>${rPr}${stringifySymbolRunInner(opts)}</w:r>`;
   }
 
   // OLE object run — the parse path flattens a pure w:object run to a bare

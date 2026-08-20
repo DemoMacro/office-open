@@ -7,6 +7,7 @@ import { breakXml } from "./run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "./run-parse";
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+const W16SE_NS = 'xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"';
 
 function roundTrip(opts: RunPropertiesOptions): RunPropertiesOptions {
   const rPr = stringifyRunProperties(opts)!;
@@ -192,6 +193,32 @@ describe("parseRun customMarkFollows (CT_FtnEdnRef)", () => {
       footnoteReference: number;
     };
     expect(opts.footnoteReference).toBe(5);
+  });
+});
+
+describe("Office 2016 symbol parse", () => {
+  it("preserves the w16se symbol vocabulary used by Word", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS} ${W16SE_NS}><w16se:sym w:font="Webdings" w:char="F04E"/></w:r>`,
+    );
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+
+    expect(parsedRunToOptions(parseRun(el, {} as never))).toEqual({
+      symbolRun: { char: "F04E", symbolFont: "Webdings", kind: "office2016" },
+    });
+  });
+
+  it("accepts the schema symEx spelling and extension-qualified attributes", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS} ${W16SE_NS}><w16se:symEx w16se:font="Webdings" w16se:char="F04E"/></w:r>`,
+    );
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+
+    expect(parsedRunToOptions(parseRun(el, {} as never))).toEqual({
+      symbolRun: { char: "F04E", symbolFont: "Webdings", kind: "office2016" },
+    });
   });
 });
 

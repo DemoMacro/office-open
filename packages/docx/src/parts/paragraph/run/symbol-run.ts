@@ -17,4 +17,6 @@ export type SymbolRunOptions = {
   char: string;
   /** The font to use for the symbol (e.g., "Wingdings", "Symbol") */
   symbolFont?: string;
+  /** Symbol element vocabulary; omitted emits the standard w:sym element. */
+  kind?: "standard" | "office2016";
 } & RunOptions;

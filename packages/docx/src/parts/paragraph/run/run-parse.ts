@@ -580,13 +580,21 @@ export function parseRun(
         if (ruby) children.push({ ruby });
         break;
       }
-      // Symbol run — extract char and font attributes
-      case "w:sym": {
-        const charVal = attr(child, "w:char");
-        const fontVal = attr(child, "w:font");
+      // Symbol run — the Office 2016 extension uses its own element namespace.
+      // Real Word files use w16se:sym, while the published extension schema and
+      // SDK metadata call the element w16se:symEx; accept both spellings.
+      case "w:sym":
+      case "w16se:sym":
+      case "w16se:symEx": {
+        const charVal = attr(child, "w:char") ?? attr(child, "w16se:char");
+        const fontVal = attr(child, "w:font") ?? attr(child, "w16se:font");
         if (charVal) {
           children.push({
-            symbolRun: { char: charVal, symbolFont: fontVal ?? "Wingdings" },
+            symbolRun: {
+              char: charVal,
+              symbolFont: fontVal ?? "Wingdings",
+              ...(child.name === "w:sym" ? {} : { kind: "office2016" as const }),
+            },
           } as unknown as ParsedRunChild);
         }
         break;
