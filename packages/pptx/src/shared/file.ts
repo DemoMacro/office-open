@@ -221,7 +221,11 @@ export interface PresentationOptions extends CorePropertiesOptions {
    * base declaration table and derives only what they leave uncovered.
    */
   contentTypes?: ContentTypesInput;
-  /** Custom properties (docProps/custom.xml); omitted from the package when empty */
+  /**
+   * Custom properties (docProps/custom.xml). Round-trip is presence-based:
+   * a source part round-trips even when it carries no properties; fresh
+   * documents omit the field (and the part) entirely.
+   */
   customProperties?: CustomPropertyOptions[];
   /**
    * Parts carried verbatim from the source that generate() does not rebuild

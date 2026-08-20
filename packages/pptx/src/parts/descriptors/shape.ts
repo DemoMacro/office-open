@@ -434,11 +434,15 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
       : (opts.geometry ?? "rect");
   // A shape whose p:style carries a fillRef inherits its fill from the style
   // matrix — an explicit noFill would override that, so leave the spPr fill
-  // unset unless the source (or the fresh caller) says otherwise.
+  // unset unless the source (or the fresh caller) says otherwise. `fill: null`
+  // marks a parsed source with no fill child — emit nothing there too.
   const styleOwnsFill = opts.style?.fillReference !== undefined;
-  const fill = isPlaceholder
-    ? opts.fill
-    : (opts.fill ?? (styleOwnsFill ? undefined : ({ type: "none" } as const)));
+  const fill =
+    opts.fill === null
+      ? undefined
+      : isPlaceholder || styleOwnsFill
+        ? opts.fill
+        : (opts.fill ?? ({ type: "none" } as const));
 
   const spPrContent = shapePropertiesDesc.stringify(
     {
@@ -634,6 +638,10 @@ export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
 /** Parse p:spPr via the shared core descriptor. */
 function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeOptions {
   const result = parse(shapePropertiesDesc, spPr, ctx) as ShapeOptions;
+
+  // A source spPr with no fill child inherits its fill — mark the absence so
+  // stringify does not apply the fresh-authoring noFill default.
+  if (result.fill === undefined) result.fill = null;
 
   // @bwMode lives on the spPr container, not the p:sp root.
   const bwMode = spPr.attributes?.["bwMode"];

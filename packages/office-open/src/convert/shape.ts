@@ -53,7 +53,8 @@ export type DocxShapeOptions = DocxShapeRunOptions;
 
 /** The five-plus shape-content fields shared verbatim across all three packages. */
 export interface ShapeContent {
-  fill?: FillOptions;
+  /** pptx adds null (a source spPr with no fill child); pickContent drops it. */
+  fill?: FillOptions | null;
   outline?: OutlineOptions;
   effects?: EffectListOptions;
   effectDag?: EffectDagOptions;
@@ -61,10 +62,16 @@ export interface ShapeContent {
   shape3d?: Shape3DOptions;
 }
 
+/** pickContent's result: the shared fields with pptx's null fill filtered out. */
+type PickedContent = Omit<ShapeContent, "fill"> & { fill?: FillOptions };
+
 /** Copy the shared shape-content fields that are present on the source. */
-export function pickContent<T extends ShapeContent>(source: T): ShapeContent {
-  const out: ShapeContent = {};
-  if (source.fill !== undefined) out.fill = source.fill;
+export function pickContent<T extends ShapeContent>(source: T): PickedContent {
+  const out: PickedContent = {};
+  // pptx carries fill: null for a source spPr with no fill child; the target
+  // packages express the same "emit no fill" as an absent field, so null maps
+  // to skipped rather than copied.
+  if (source.fill !== undefined && source.fill !== null) out.fill = source.fill;
   if (source.outline !== undefined) out.outline = source.outline;
   if (source.effects !== undefined) out.effects = source.effects;
   if (source.effectDag !== undefined) out.effectDag = source.effectDag;

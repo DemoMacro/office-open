@@ -21,6 +21,13 @@ export interface CommentPersonOptions {
   author: string;
   /** Contact address, usually an email (w15:contact). */
   contact?: string;
+  /** w15:presenceInfo — the author's identity on a collaboration provider. */
+  presenceInfo?: {
+    /** w15:providerId — the provider identifier (e.g. "None"). */
+    providerId?: string;
+    /** w15:userId — the author's identifier at the provider. */
+    userId?: string;
+  };
 }
 
 export const peopleDesc: CustomDescriptor<CommentPersonOptions[]> = {
@@ -31,7 +38,14 @@ export const peopleDesc: CustomDescriptor<CommentPersonOptions[]> = {
     for (const person of opts) {
       const attrs = [`w15:author="${escapeXml(person.author)}"`];
       if (person.contact !== undefined) attrs.push(`w15:contact="${escapeXml(person.contact)}"`);
-      parts.push(`<w15:person ${attrs.join(" ")}/>`);
+      const presence = person.presenceInfo
+        ? `<w15:presenceInfo${person.presenceInfo.providerId !== undefined ? ` w15:providerId="${escapeXml(person.presenceInfo.providerId)}"` : ""}${person.presenceInfo.userId !== undefined ? ` w15:userId="${escapeXml(person.presenceInfo.userId)}"` : ""}/>`
+        : "";
+      parts.push(
+        presence
+          ? `<w15:person ${attrs.join(" ")}>${presence}</w15:person>`
+          : `<w15:person ${attrs.join(" ")}/>`,
+      );
     }
     parts.push("</w15:people>");
     return parts.join("");
@@ -46,6 +60,15 @@ export const peopleDesc: CustomDescriptor<CommentPersonOptions[]> = {
       const person: Partial<CommentPersonOptions> = { author };
       const contact = attr(child, "w15:contact");
       if (contact !== undefined) person.contact = contact;
+      const presenceEl = (child.elements ?? []).find((e) => e.name === "w15:presenceInfo");
+      if (presenceEl) {
+        const providerId = attr(presenceEl, "w15:providerId");
+        const userId = attr(presenceEl, "w15:userId");
+        const presenceInfo: NonNullable<CommentPersonOptions["presenceInfo"]> = {};
+        if (providerId !== undefined) presenceInfo.providerId = providerId;
+        if (userId !== undefined) presenceInfo.userId = userId;
+        person.presenceInfo = presenceInfo;
+      }
       people.push(person as CommentPersonOptions);
     }
     return people;

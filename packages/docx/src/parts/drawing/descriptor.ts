@@ -32,9 +32,11 @@ import type {
 } from "@office-open/core/drawing";
 import {
   calculateEffectExtent,
+  connectorLockingDesc,
   createColorElement,
   groupShapePropertiesDesc,
   pictureLockingDesc,
+  shapeLockingDesc,
   shapePropertiesDesc,
   stringifyNonVisualContentPartProperties,
   stringifyNonVisualDrawingProperties,
@@ -100,6 +102,12 @@ export interface GraphicFrameLocksOptions {
   noChangeAspect?: boolean;
   noMove?: boolean;
   noResize?: boolean;
+  /**
+   * The source carried a bare `<a:graphicFrameLocks/>` with no attributes.
+   * Round-trip marker only — re-emits the empty element (element presence is
+   * part of the source's fidelity) instead of dropping it.
+   */
+  emptyLocks?: boolean;
 }
 
 /**
@@ -463,13 +471,15 @@ function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions
     xml += `<wps:cNvPr ${attrs.join(" ")}/>`;
   }
   // CT_WordprocessingShape choice: wps:cNvSpPr (text box/autoshape) or
-  // wps:cNvCnPr (connector). Connectors carry empty cNvCnPr.
+  // wps:cNvCnPr (connector). Each carries its optional locks element.
   if (opts.connector) {
-    xml += "<wps:cNvCnPr/>";
-  } else if (opts.textBox !== undefined) {
-    xml += `<wps:cNvSpPr txBox="${opts.textBox}"/>`;
+    xml += opts.connectorLocking
+      ? `<wps:cNvCnPr>${connectorLockingDesc.stringify(opts.connectorLocking, NOOP_CTX)}</wps:cNvCnPr>`
+      : "<wps:cNvCnPr/>";
   } else {
-    xml += "<wps:cNvSpPr/>";
+    const locks = opts.locking ? (shapeLockingDesc.stringify(opts.locking, NOOP_CTX) ?? "") : "";
+    const txBox = opts.textBox !== undefined ? ` txBox="${opts.textBox}"` : "";
+    xml += locks ? `<wps:cNvSpPr${txBox}>${locks}</wps:cNvSpPr>` : `<wps:cNvSpPr${txBox}/>`;
   }
   return xml;
 }
@@ -886,11 +896,15 @@ function wrapTopAndBottomStr(margins?: Margins): string {
 // ── Inline wrapper ──
 
 /** Render wp:cNvGraphicFramePr. Null → source had none, omit the element;
- *  undefined → authoring default (noChangeAspect=1); `{}` → empty element;
+ *  undefined → authoring default (noChangeAspect=1); `{}` → source had the
+ *  frame without a locks child; `emptyLocks` → bare `<a:graphicFrameLocks/>`;
  *  otherwise the given lock flags. */
 function stringifyCnvGraphicFramePr(locks?: GraphicFrameLocksOptions | null): string {
   if (locks === null) return "";
   const resolved = locks ?? { noChangeAspect: true };
+  if (resolved.emptyLocks) {
+    return '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr>';
+  }
   const attrParts: string[] = [];
   if (resolved.noGrp) attrParts.push('noGrp="1"');
   if (resolved.noDrilldown) attrParts.push('noDrilldown="1"');
@@ -962,7 +976,7 @@ function stringifyAnchor(
   const cx = mediaData.transformation.emus.x;
   const cy = mediaData.transformation.emus.y;
 
-  const floating: Required<Floating> = {
+  const floating: Floating = {
     allowOverlap: true,
     behindDocument: false,
     horizontalPosition: {},
@@ -994,9 +1008,9 @@ function stringifyAnchor(
   if (rawWrap?.type === TextWrappingType.SQUARE) {
     wrapXml = wrapSquareStr(rawWrap, floating.margins);
   } else if (rawWrap?.type === TextWrappingType.TIGHT) {
-    wrapXml = wrapTightStr(rawWrap, floating.margins, cx, cy);
+    wrapXml = wrapTightStr(rawWrap, floating.margins ?? {}, cx, cy);
   } else if (rawWrap?.type === TextWrappingType.THROUGH) {
-    wrapXml = wrapThroughStr(rawWrap, floating.margins, cx, cy);
+    wrapXml = wrapThroughStr(rawWrap, floating.margins ?? {}, cx, cy);
   } else if (rawWrap?.type === TextWrappingType.TOP_AND_BOTTOM) {
     wrapXml = wrapTopAndBottomStr(floating.margins);
   } else {
@@ -1013,6 +1027,20 @@ function stringifyAnchor(
     ? `<wp:effectExtent l="${ee.l}" t="${ee.t}" r="${ee.r}" b="${ee.b}"/>`
     : '<wp:effectExtent l="0" t="0" r="0" b="0"/>';
 
+  // wp14:sizeRelH/V trail a:graphic in CT_Anchor (Word 2010+); percent is a
+  // whole-number percentage in the API, pctWidth/pctHeight carry 1/1000 %.
+  const sizeRelH = rawFloating?.horizontalSize;
+  const sizeRelV = rawFloating?.verticalSize;
+  const sizeRelXml =
+    (sizeRelH
+      ? `<wp14:sizeRelH${sizeRelH.relative ? ` relativeFrom="${sizeRelH.relative}"` : ""}>` +
+        `<wp14:pctWidth>${Math.round((sizeRelH.percent ?? 0) * 1000)}</wp14:pctWidth></wp14:sizeRelH>`
+      : "") +
+    (sizeRelV
+      ? `<wp14:sizeRelV${sizeRelV.relative ? ` relativeFrom="${sizeRelV.relative}"` : ""}>` +
+        `<wp14:pctHeight>${Math.round((sizeRelV.percent ?? 0) * 1000)}</wp14:pctHeight></wp14:sizeRelV>`
+      : "");
+
   return (
     `<w:drawing><wp:anchor ${attrParts.join(" ")}>` +
     '<wp:simplePos x="0" y="0"/>' +
@@ -1024,6 +1052,7 @@ function stringifyAnchor(
     stringifyDocPr(docProperties, hlIds) +
     stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
     choiceXml +
+    sizeRelXml +
     `</wp:anchor></w:drawing>`
   );
 }

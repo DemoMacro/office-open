@@ -9,6 +9,7 @@
  */
 
 import { escapeXml } from "@office-open/xml";
+import { stringifyRunProperties, stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 
 // ── Field instruction string ──
@@ -43,9 +44,11 @@ function tocInstructionStr(opts: TableOfContentsOptions): string {
 // ── Main stringifier ──
 
 export function stringifyTableOfContents(
-  alias: string = "Table of Contents",
+  alias: string | undefined,
   options: TableOfContentsOptions = {},
   entriesXml: string = "",
+  leadingXml: string = "",
+  trailingXml: string = "",
 ): string {
   const instr = tocInstructionStr(options);
   const aliasAttr = alias ? ` w:val="${escapeXml(alias)}"` : "";
@@ -78,6 +81,9 @@ export function stringifyTableOfContents(
       : `<w:r><w:rPr><w:rFonts w:asciiTheme="majorHAnsi" w:cstheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cs="Times New Roman"/></w:rPr><w:fldChar w:fldCharType="begin"${dirtyAttr}/></w:r>` +
         `<w:r><w:instrText xml:space="preserve"> ${instr} </w:instrText></w:r>` +
         `<w:r><w:fldChar w:fldCharType="separate"/></w:r>`);
+  // The end run's rPr is independent of the control runs in Word: "" = the
+  // source's end run carried no rPr (must stay bare), undefined = same as
+  // the control rPr (reuse it), otherwise its own captured rPr.
   const endRun = `<w:r>${options.endRPrXml ?? ctrl ?? ""}<w:fldChar w:fldCharType="end"/></w:r>`;
   const endParagraph = `<w:p>${endRun}</w:p>`;
 
@@ -93,16 +99,31 @@ export function stringifyTableOfContents(
   // content control so the document keeps its original form.
   if (options.bare) return body;
 
-  // SDT properties: alias + docPartObj
+  // SDT properties (CT_SdtPr order: rPr → alias → … → id → … → docPartObj):
+  // the round-trip fields (runProperties/id/docPartUnique) ride along when
+  // the source carried them; alias defaults only for a freshly generated TOC.
   const sdtPr =
     `<w:sdtPr>` +
-    `<w:alias${aliasAttr}/>` +
-    `<w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj>` +
+    (stringifyRunProperties(options.runProperties) ?? "") +
+    (alias !== undefined ? `<w:alias${aliasAttr}/>` : "") +
+    (options.id !== undefined ? `<w:id w:val="${options.id}"/>` : "") +
+    `<w:docPartObj><w:docPartGallery w:val="Table of Contents"/>${options.docPartUnique ? "<w:docPartUnique/>" : ""}</w:docPartObj>` +
     `</w:sdtPr>`;
+  // sdtEndPr mirrors the generic SDT shell: omitted when the source had
+  // none, bare element for an empty one.
+  const endPrInner = options.endProperties
+    ? stringifyRunPropertiesInner(options.endProperties)
+    : undefined;
+  const sdtEndPr =
+    options.endProperties === undefined
+      ? ""
+      : endPrInner
+        ? `<w:sdtEndPr><w:rPr>${endPrInner}</w:rPr></w:sdtEndPr>`
+        : "<w:sdtEndPr/>";
 
-  const content = `<w:sdtContent>${body}</w:sdtContent>`;
+  const content = `<w:sdtContent>${leadingXml}${body}${trailingXml}</w:sdtContent>`;
 
-  return `<w:sdt>${sdtPr}${content}</w:sdt>`;
+  return `<w:sdt>${sdtPr}${sdtEndPr}${content}</w:sdt>`;
 }
 
 /**

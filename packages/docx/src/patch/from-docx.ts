@@ -101,6 +101,9 @@ function createPatchContext(
           hyperlinkSink.push({ id: String(id), link: target });
           return id;
         },
+        // No registered relationships to share here — every patched-in
+        // hyperlink allocates its own temp id via add.
+        idOf: () => undefined,
         relationshipCount: 0,
       },
     } as unknown as BodyContext["viewWrapper"],

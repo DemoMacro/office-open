@@ -163,6 +163,12 @@ export interface RunStylePropertiesOptions {
    * stays structured and editable.
    */
   w14RawXml?: string;
+  /**
+   * The source carried a bare `<w:rPr/>` with no attributes or children.
+   * Round-trip marker only — re-emits the empty element instead of dropping
+   * it (element presence is part of the source's fidelity).
+   */
+  emptyProperties?: boolean;
 }
 
 /**

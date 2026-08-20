@@ -1,7 +1,7 @@
-import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { DocxReadContext } from "../../context";
 import type { BodyContext } from "../../context";
 import { parsePict, stringifyPict } from "./pict";
 
@@ -25,7 +25,7 @@ const readCtx = (binaries: Record<string, { path: string; bytes: Uint8Array }>) 
       for (const b of Object.values(binaries)) if (b.path === path) return b.bytes;
       return undefined;
     },
-  }) as unknown as ReadContext;
+  }) as unknown as DocxReadContext;
 
 describe("parsePict", () => {
   it("keeps shapetype + shape children ordered", () => {

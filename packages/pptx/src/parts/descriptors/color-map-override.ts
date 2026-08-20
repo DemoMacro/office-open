@@ -19,7 +19,10 @@ export const colorMappingOverrideDesc: CustomDescriptor<ColorMappingOverrideOpti
   kind: "custom",
 
   stringify(opts, _ctx) {
-    if (opts?.kind === "override") {
+    // undefined omits the element — CT_Slide makes it optional and writers
+    // that omit it (pandoc) must round-trip without one.
+    if (opts === undefined) return "";
+    if (opts.kind === "override") {
       return `<p:clrMapOvr>${stringifyColorMapping(opts.colorMapping, "a:overrideClrMapping")}</p:clrMapOvr>`;
     }
     return "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>";

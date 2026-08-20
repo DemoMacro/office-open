@@ -558,6 +558,15 @@ export function parseNumberingDefinitions(
 
   const configs: NumberingOptions["abstractNumberings"] = [];
 
+  // A definition with no w:lvl children is still worth keeping when it
+  // carries style-link metadata: w:numStyleLink points at a numbering style
+  // (the definition is a bridge, its levels live in the style's definition)
+  // and dropping the whole w:abstractNum takes every w:num referencing it —
+  // and their lvlOverride children — down with it.
+  const hasStyleProperties = (abstractEl: Element): boolean =>
+    ABSTRACT_EXTRA_PROPS.some(([tag]) => findChild(abstractEl, tag) !== undefined) ||
+    findChild(abstractEl, "w:multiLevelType") !== undefined;
+
   // Levels + style metadata of one w:abstractNum, shared by the referenced
   // definitions below and the orphan sweep after them.
   const parseAbstractDefinition = (
@@ -569,7 +578,7 @@ export function parseNumberingDefinitions(
       const levelOpts = parseLevelEl(child, parseParagraphProperties, ctx);
       if (levelOpts) levels.push(levelOpts);
     }
-    if (levels.length === 0) return undefined;
+    if (levels.length === 0 && !hasStyleProperties(abstractEl)) return undefined;
 
     const properties: AbstractNumberingPropertiesOptions = {};
     for (const [tag, key] of ABSTRACT_EXTRA_PROPS) {

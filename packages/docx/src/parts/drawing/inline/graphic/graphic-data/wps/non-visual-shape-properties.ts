@@ -1,3 +1,5 @@
+import type { ConnectorLockingOptions, ShapeLockingOptions } from "@office-open/core/drawing";
+
 export interface NonVisualShapePropertiesOptions {
   /** Drawing id (wps:cNvPr `@id`). */
   id?: number;
@@ -15,8 +17,8 @@ export interface NonVisualShapePropertiesOptions {
    * choice these are mutually exclusive.
    */
   connector?: boolean;
+  /** Shape locks (wps:cNvSpPr/a:spLocks). An empty object = bare element. */
+  locking?: ShapeLockingOptions;
+  /** Connector locks (wps:cNvCnPr/a:cxnSpLocks), when connector is set. */
+  connectorLocking?: ConnectorLockingOptions;
 }
-
-export const createNonVisualShapeProperties = (
-  options: NonVisualShapePropertiesOptions = { textBox: "1" },
-): string => `<wps:cNvSpPr txBox="${options.textBox ?? "1"}"/>`;

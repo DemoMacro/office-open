@@ -81,6 +81,18 @@ export interface ParseOptions extends IgnoreOptions {
    * the capture always ends at the truly matching close tag.
    */
   deferElements?: string[];
+  /**
+   * Namespace URI → canonical prefix (empty string = unprefixed form).
+   * Present, every prefixed element and attribute name resolves through the
+   * in-scope xmlns bindings and rewrites to the canonical prefix when the
+   * bound URI is known — a source that binds the Word namespace to `ns0:`
+   * parses into `w:` names, so prefix-agnostic downstream matching works.
+   * The xmlns declarations themselves follow the rewrite (xmlns:ns0 → xmlns:w
+   * for the same URI), keeping serialized output self-consistent; unknown
+   * URIs keep their source prefix verbatim. The reserved `xml` prefix and
+   * unprefixed attributes (no namespace) are never rewritten.
+   */
+  normalizeNamespaces?: Readonly<Record<string, string>>;
   doctypeFn?: (value: string, parentElement: object) => string;
   instructionFn?: (value: string, instructionName: string, parentElement: string) => string;
   cdataFn?: (value: string, parentElement: object) => string;

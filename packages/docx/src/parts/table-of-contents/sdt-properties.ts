@@ -200,4 +200,11 @@ export interface SdtPropertiesOptions {
   bibliography?: boolean;
   /** Checkbox content control SDT (Word 2010+, w14:checkbox) */
   checkbox?: SdtCheckboxOptions;
+
+  /**
+   * Visual chrome of the content control in Word 2013+ (w15:appearance):
+   * boundingBox (title bar + borders), tags (start/end markers only), or
+   * hidden (no chrome).
+   */
+  appearance?: "boundingBox" | "tags" | "hidden";
 }

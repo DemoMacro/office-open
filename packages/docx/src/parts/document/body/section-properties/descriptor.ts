@@ -11,7 +11,7 @@
 
 import { convertToTwip } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrBool, attrMeasure, attrNum, findChild } from "@office-open/xml";
+import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { ColumnProperties } from "@parts/document/body/section-properties/properties/column";
 import type { ColumnsProperties } from "@parts/document/body/section-properties/properties/columns";
@@ -224,7 +224,7 @@ function stringifySectionPropertiesChange(opts: SectionPropertiesChangeOptions):
   // what the source carried. Injecting the fresh-document defaults (pgSz,
   // pgMar, docGrid) would fabricate elements the revision never had.
   const innerXml = stringifySectionPropertiesInner(inner, true);
-  return `<w:sectPrChange w:author="${author}" w:date="${date}" w:id="${id}"><w:sectPr>${innerXml}</w:sectPr></w:sectPrChange>`;
+  return `<w:sectPrChange w:author="${escapeXml(author)}" w:date="${escapeXml(date)}" w:id="${id}"><w:sectPr>${innerXml}</w:sectPr></w:sectPrChange>`;
 }
 
 // ── Core XML builder ──
@@ -239,27 +239,24 @@ function stringifySectionPropertiesInner(
   appendHeaderFooterRefs(parts, "w:headerReference", opts.headerReferences);
   appendHeaderFooterRefs(parts, "w:footerReference", opts.footerReferences);
 
-  // Destructure page options with defaults
+  // Page options with defaults (false = parsed source omitted the element —
+  // keep the fresh defaults out of the emission decision below)
   const {
-    pageSize: {
-      width = sectionPageSizeDefaults.WIDTH,
-      height = sectionPageSizeDefaults.HEIGHT,
-      orientation = sectionPageSizeDefaults.ORIENTATION,
-      code,
-    } = {},
-    pageMargin: {
-      top = sectionMarginDefaults.TOP,
-      right = sectionMarginDefaults.RIGHT,
-      bottom = sectionMarginDefaults.BOTTOM,
-      left = sectionMarginDefaults.LEFT,
-      header = sectionMarginDefaults.HEADER,
-      footer = sectionMarginDefaults.FOOTER,
-      gutter = sectionMarginDefaults.GUTTER,
-    } = {},
-    pageNumberType = {},
-    pageBorders: borders,
-    textDirection,
-  } = opts;
+    width = sectionPageSizeDefaults.WIDTH,
+    height = sectionPageSizeDefaults.HEIGHT,
+    orientation = sectionPageSizeDefaults.ORIENTATION,
+    code,
+  } = typeof opts.pageSize === "object" ? opts.pageSize : {};
+  const {
+    top = sectionMarginDefaults.TOP,
+    right = sectionMarginDefaults.RIGHT,
+    bottom = sectionMarginDefaults.BOTTOM,
+    left = sectionMarginDefaults.LEFT,
+    header = sectionMarginDefaults.HEADER,
+    footer = sectionMarginDefaults.FOOTER,
+    gutter = sectionMarginDefaults.GUTTER,
+  } = typeof opts.pageMargin === "object" ? opts.pageMargin : {};
+  const { pageNumberType = {}, pageBorders: borders, textDirection } = opts;
 
   const {
     linePitch = 312,
@@ -285,13 +282,14 @@ function stringifySectionPropertiesInner(
   const hTwips = convertToTwip(height);
   const pgW = orientation === "landscape" ? hTwips : wTwips;
   const pgH = orientation === "landscape" ? wTwips : hTwips;
-  if (!omitDefaults || opts.pageSize) {
+  // Page size — fresh sections get the default; a parsed source without
+  // w:pgSz (false) stays absent (the XSD leaves it optional).
+  if (opts.pageSize !== false && (!omitDefaults || opts.pageSize !== undefined)) {
     parts.push(pageSizeXml(pgW, pgH, orientation, code));
   }
 
-  // Page margin (always present on a fresh section; a revision snapshot only
-  // when the source carried one)
-  if (!omitDefaults || opts.pageMargin) {
+  // Page margin — same three states as the page size.
+  if (opts.pageMargin !== false && (!omitDefaults || opts.pageMargin !== undefined)) {
     parts.push(pageMarginXml(top, right, bottom, left, header, footer, gutter));
   }
 
@@ -417,7 +415,9 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // (each minOccurs=0). Do not gate pgMar/pgNumType on pgSz: a sectPr that
   // omits <w:pgSz> must still round-trip its margins and page-number type.
 
-  // Page size
+  // Page size — three states: object (source had w:pgSz → preserve),
+  // false (parsed source had none → stringify omits), undefined (fresh →
+  // the stringify-side default page size).
   const pgSz = findChild(el, "w:pgSz");
   if (pgSz) {
     const size: PageSizeProperties = {};
@@ -434,7 +434,9 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (orient) size.orientation = orient as PageSizeProperties["orientation"];
     const code = attrNum(pgSz, "w:code");
     if (code !== undefined) size.code = code;
-    if (Object.keys(size).length > 0) opts.pageSize = size;
+    opts.pageSize = Object.keys(size).length > 0 ? size : false;
+  } else {
+    opts.pageSize = false;
   }
 
   // Page margins
@@ -453,7 +455,10 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
       const val = attrNum(pgMar, a);
       if (val !== undefined) margin[o] = val;
     }
-    if (Object.keys(margin).length > 0) opts.pageMargin = margin;
+    // Same three states as pageSize (object / false / undefined-fresh).
+    opts.pageMargin = Object.keys(margin).length > 0 ? margin : false;
+  } else {
+    opts.pageMargin = false;
   }
 
   // Page number type

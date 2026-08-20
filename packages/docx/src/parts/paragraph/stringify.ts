@@ -209,16 +209,16 @@ function numPrStr(
     const a = attrsRaw({
       "w:original": numberingChange.original,
       "w:id": numberingChange.id,
-      "w:author": numberingChange.author,
-      "w:date": numberingChange.date,
+      "w:author": escapeXml(numberingChange.author),
+      "w:date": numberingChange.date !== undefined ? escapeXml(numberingChange.date) : undefined,
     });
     parts.push(`<w:numberingChange${a}/>`);
   }
   if (insertion) {
     const a = attrsRaw({
       "w:id": insertion.id,
-      "w:author": insertion.author,
-      "w:date": insertion.date,
+      "w:author": escapeXml(insertion.author),
+      "w:date": insertion.date !== undefined ? escapeXml(insertion.date) : undefined,
     });
     parts.push(`<w:ins${a}/>`);
   }
@@ -478,11 +478,12 @@ export function stringifyParagraphProperties(
   if (options.cnfStyle) s += cnfStyleStr(options.cnfStyle);
 
   // Embedded run properties (w:rPr inside w:pPr) — emitted even when the rPr
-  // holds only a paragraph-mark track-change marker (w:ins/w:del).
+  // holds only a paragraph-mark track-change marker (w:ins/w:del) or is a
+  // parsed bare <w:rPr/> (emptyProperties).
   if (options.run) {
     const inner = stringifyRunPropertiesInner(options.run);
     const runOpts = options.run as ParagraphRunPropertiesOptions;
-    if (inner !== undefined || runOpts.insertion || runOpts.deletion) {
+    if (inner !== undefined || runOpts.insertion || runOpts.deletion || runOpts.emptyProperties) {
       const extra: string[] = [];
       if (runOpts.insertion) {
         const { id, author, date } = runOpts.insertion;
@@ -493,7 +494,7 @@ export function stringifyParagraphProperties(
         extra.push(`<w:del w:id="${id}" w:author="${escapeXml(author)}" w:date="${date}"/>`);
       }
       const body = (inner ?? "") + extra.join("");
-      s += `<w:rPr>${body}</w:rPr>`;
+      s += body ? `<w:rPr>${body}</w:rPr>` : "<w:rPr/>";
     }
   }
 
@@ -506,7 +507,13 @@ export function stringifyParagraphProperties(
   }
 
   const body = s;
-  const xml = options.includeIfEmpty || body.length > 0 ? `<w:pPr>${body}</w:pPr>` : undefined;
+  // A parsed bare <w:pPr/> round-trips as the empty element.
+  const xml =
+    options.includeIfEmpty || body.length > 0
+      ? `<w:pPr>${body}</w:pPr>`
+      : options.emptyProperties
+        ? "<w:pPr/>"
+        : undefined;
   if (numberingReferences === undefined) {
     return xml === undefined
       ? EMPTY_PPR_RESULT
@@ -672,5 +679,7 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
  */
 export function stringifyRunProperties(opts?: RunPropertiesOptions): string | undefined {
   const inner = stringifyRunPropertiesInner(opts);
-  return inner ? `<w:rPr>${inner}</w:rPr>` : undefined;
+  if (inner) return `<w:rPr>${inner}</w:rPr>`;
+  // A parsed bare <w:rPr/> round-trips as the empty element.
+  return opts?.emptyProperties ? "<w:rPr/>" : undefined;
 }

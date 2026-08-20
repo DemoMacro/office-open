@@ -215,4 +215,25 @@ export interface Floating {
   margins?: Margins;
   wrap?: TextWrapping;
   zIndex?: number;
+  /**
+   * Horizontal size as a percentage of a base (wp14:sizeRelH, Word 2010+).
+   * `percent` is a whole-number percentage (0 = auto-size from the extent).
+   */
+  horizontalSize?: RelativeSizeOptions;
+  /**
+   * Vertical size as a percentage of a base (wp14:sizeRelV, Word 2010+).
+   * `percent` is a whole-number percentage (0 = auto-size from the extent).
+   */
+  verticalSize?: RelativeSizeOptions;
+}
+
+/**
+ * Options for sizing a floating drawing relative to a page base
+ * (CT_SizeRelH/CT_SizeRelV).
+ */
+export interface RelativeSizeOptions {
+  /** The base the percentage is relative to (relativeFrom). */
+  relative?: "margin" | "page" | "leftMargin" | "rightMargin" | "topMargin" | "bottomMargin";
+  /** Whole-number percentage (wp14:pctWidth / wp14:pctHeight, 0-100). */
+  percent?: number;
 }

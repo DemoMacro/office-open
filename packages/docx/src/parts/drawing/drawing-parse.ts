@@ -22,7 +22,12 @@ import {
   presetGeometryDesc,
 } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
-import { scene3DDesc, shape3DDesc } from "@office-open/core/drawing";
+import {
+  connectorLockingDesc,
+  scene3DDesc,
+  shape3DDesc,
+  shapeLockingDesc,
+} from "@office-open/core/drawing";
 import type {
   BlackWhiteMode,
   NonVisualContentPartPropertiesOptions,
@@ -65,6 +70,7 @@ import type {
   Floating,
   HorizontalPositionOptions,
   Margins,
+  RelativeSizeOptions,
   VerticalPositionOptions,
 } from "./floating";
 import type { ChildOffset, ChildExtent } from "./inline/graphic/graphic-data/wpg/wpg-group";
@@ -139,11 +145,20 @@ interface AnchorInfo {
 }
 
 /** Read wp:cNvGraphicFramePr locking flags. An empty element (no graphicFrameLocks
- *  child) returns `{}` so it round-trips as `<wp:cNvGraphicFramePr/>`. */
+ *  child) returns `{}` so it round-trips as `<wp:cNvGraphicFramePr/>`; a bare
+ *  `<a:graphicFrameLocks/>` carries `emptyLocks` so the child re-emits too. */
 function readGraphicFrameLocks(el: Element): GraphicFrameLocksOptions {
   const locks = findChild(el, "a:graphicFrameLocks");
   const result: GraphicFrameLocksOptions = {};
   if (!locks) return result;
+  // The parsed attributes keep namespace declarations (xmlns:a) — a locks
+  // element whose only "attribute" is its namespace prefix declaration is
+  // semantically bare.
+  const hasRealAttrs = Object.keys(locks.attributes ?? {}).some((k) => !k.startsWith("xmlns"));
+  if (!hasRealAttrs) {
+    result.emptyLocks = true;
+    return result;
+  }
   const a = locks.attributes ?? {};
   if (a["noGrp"] !== undefined) result.noGrp = parseOnOff(a["noGrp"]) ?? true;
   if (a["noDrilldown"] !== undefined) result.noDrilldown = parseOnOff(a["noDrilldown"]) ?? true;
@@ -283,6 +298,31 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     if (layoutInCell !== undefined) floating.layoutInCell = layoutInCell;
     const relativeHeight = attrNum(anchor, "relativeHeight");
     if (relativeHeight !== undefined) floating.zIndex = relativeHeight;
+
+    // wp14:sizeRelH/V (Word 2010+) — pctWidth/pctHeight carry 1/1000 %, the
+    // API exposes a whole-number percentage.
+    const sizeRelH = findChild(anchor, "wp14:sizeRelH");
+    if (sizeRelH) {
+      const hs: Partial<RelativeSizeOptions> = {};
+      const rel = attr(sizeRelH, "relativeFrom");
+      if (rel) hs.relative = rel as RelativeSizeOptions["relative"];
+      const pct =
+        attrNum(findChild(sizeRelH, "wp14:pctWidth"), "w14:val") ??
+        Number(textOf(findChild(sizeRelH, "wp14:pctWidth")));
+      if (pct !== undefined && !Number.isNaN(pct)) hs.percent = pct / 1000;
+      floating.horizontalSize = hs as RelativeSizeOptions;
+    }
+    const sizeRelV = findChild(anchor, "wp14:sizeRelV");
+    if (sizeRelV) {
+      const vs: Partial<RelativeSizeOptions> = {};
+      const rel = attr(sizeRelV, "relativeFrom");
+      if (rel) vs.relative = rel as RelativeSizeOptions["relative"];
+      const pct =
+        attrNum(findChild(sizeRelV, "wp14:pctHeight"), "w14:val") ??
+        Number(textOf(findChild(sizeRelV, "wp14:pctHeight")));
+      if (pct !== undefined && !Number.isNaN(pct)) vs.percent = pct / 1000;
+      floating.verticalSize = vs as RelativeSizeOptions;
+    }
 
     if (Object.keys(floating).length > 0) info.floating = floating as Floating;
   }
@@ -588,7 +628,9 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   const cNvSpPr = findChild(wspEl, "wps:cNvSpPr");
   const cNvCnPr = findChild(wspEl, "wps:cNvCnPr");
   const txBox = cNvSpPr ? attr(cNvSpPr, "txBox") : undefined;
-  if (cNvPr || txBox !== undefined || cNvCnPr) {
+  const spLocks = cNvSpPr ? findChild(cNvSpPr, "a:spLocks") : undefined;
+  const cxnSpLocks = cNvCnPr ? findChild(cNvCnPr, "a:cxnSpLocks") : undefined;
+  if (cNvPr || txBox !== undefined || cNvCnPr || spLocks) {
     const nvp: NonVisualShapePropertiesOptions = {};
     if (cNvPr) {
       const id = attrNum(cNvPr, "id");
@@ -600,8 +642,13 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
       if (descr) nvp.description = descr;
       if (title) nvp.title = title;
     }
-    if (cNvCnPr) nvp.connector = true;
-    else if (txBox !== undefined) nvp.textBox = txBox;
+    if (cNvCnPr) {
+      nvp.connector = true;
+      if (cxnSpLocks) nvp.connectorLocking = connectorLockingDesc.parse(cxnSpLocks, ctx);
+    } else if (txBox !== undefined || spLocks) {
+      if (txBox !== undefined) nvp.textBox = txBox;
+      if (spLocks) nvp.locking = shapeLockingDesc.parse(spLocks, ctx);
+    }
     result.nonVisualProperties = nvp as NonVisualShapePropertiesOptions;
   }
 
@@ -1283,6 +1330,16 @@ function readSmartArtRawParts(
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
       const type = attr(rel, "Type") ?? "";
+      if (type.includes("/diagramDrawing") && attr(rel, "TargetMode") !== "External") {
+        // Word-standard wiring: the data part's own rels point at the
+        // pre-rendered dsp:drawing snapshot.
+        const target = attr(rel, "Target");
+        if (target) {
+          const bytes = ctx.docx.doc.getRaw(resolveRelationshipTarget(dataPath, target));
+          if (bytes) raw.drawing = bytes;
+        }
+        continue;
+      }
       if (!type.includes("/image")) continue;
       if (attr(rel, "TargetMode") === "External") continue;
       const target = attr(rel, "Target");
@@ -1295,7 +1352,26 @@ function readSmartArtRawParts(
     }
     if (media.length > 0) raw.media = media;
   }
+  if (raw.drawing === undefined) {
+    // Pandoc wiring: document.xml.rels points at the snapshot directly. No
+    // rel-graph edge ties it to this instance — pair by part index (drawingN
+    // beside dataN), the same convention the compiler emits with.
+    const drawingPath = matchDrawingPartByIndex(dataPath, [
+      ...ctx.docx.partRefs.diagramDrawing.values(),
+    ]);
+    if (drawingPath) {
+      const bytes = ctx.docx.doc.getRaw(drawingPath);
+      if (bytes) raw.drawing = bytes;
+    }
+  }
   return raw;
+}
+
+/** Pair a dataN.xml path with drawingN.xml from the given part paths. */
+function matchDrawingPartByIndex(dataPath: string, drawingPaths: string[]): string | undefined {
+  const index = dataPath.match(/\/data(\d+)\.xml$/)?.[1];
+  if (index === undefined) return undefined;
+  return drawingPaths.find((p) => p.endsWith(`/drawing${index}.xml`));
 }
 
 /**

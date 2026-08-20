@@ -77,7 +77,12 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   height?: number | UniversalMeasure;
   geometry?: string | PresetGeometryOptions;
   customGeometry?: CustomGeometryOptions;
-  fill?: FillOptions;
+  /**
+   * `null` marks a source spPr with no fill child — absence is the fidelity
+   * (the shape inherits its fill), so stringify emits nothing instead of the
+   * fresh-authoring noFill default.
+   */
+  fill?: FillOptions | null;
   outline?: OutlineOptions;
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;

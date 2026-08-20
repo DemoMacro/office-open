@@ -425,7 +425,9 @@ export function parsePresentation(data: DataType): PresentationOptions {
   const opts: Partial<PresentationOptions> = {};
   if (pptx.partRefs.handoutMaster) opts.includeHandoutMaster = true;
   const sectionBySlidePath = parseSlideSections(pptx.presentation, pptx.doc);
-  const masterReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
+  // Package-level fallback context — parts parsed with it carry no rel wiring
+  // (their relationship layer is resolved separately around the descriptor).
+  const bareReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
 
   // 1. Parse slide size from p:sldSz
   if (pptx.presentation) {
@@ -473,7 +475,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   // 1b. Presentation-level data fields — via the descriptor's own parse (the
   // same contract stringify uses); id/count/rId wiring stays compiler-owned.
   if (pptx.presentation) {
-    const presPart = presentationDesc.parse(pptx.presentation, masterReadCtx);
+    const presPart = presentationDesc.parse(pptx.presentation, bareReadCtx);
     opts.photoAlbum = presPart.photoAlbum;
     opts.defaultTextStyle = presPart.defaultTextStyle;
     if (presPart.kinsoku) opts.kinsoku = presPart.kinsoku;
@@ -504,12 +506,13 @@ export function parsePresentation(data: DataType): PresentationOptions {
     }
   }
 
-  // 2c. Parse custom properties
+  // 2c. Parse custom properties — presence-based: an empty docProps/custom.xml
+  // round-trips as an empty part, keeping part + rel + Override in sync.
   if (pptx.customProps) {
     const customPropsEl = pptx.doc.get(pptx.customProps);
     if (customPropsEl) {
       const cp = customPropertiesDesc.parse(customPropsEl, {} as ReadContext);
-      if (cp.properties?.length) opts.customProperties = cp.properties;
+      opts.customProperties = cp.properties ?? [];
     }
   }
 
@@ -572,10 +575,15 @@ export function parsePresentation(data: DataType): PresentationOptions {
     // Theme (resolved separately — the descriptor does not handle theme).
     const themePath = masterThemePaths.get(masterPath);
     const themeEl = themePath ? pptx.doc.get(themePath) : undefined;
-    const themeOptions = themeEl ? themeDesc.parse(themeEl, masterReadCtx) : undefined;
+    const themeOptions = themeEl ? themeDesc.parse(themeEl, bareReadCtx) : undefined;
 
     // Structured master (cSld/clrMap/sldLayoutIdLst/transition/timing/hf/txStyles).
     // Placeholders are derived from spTree, so their positions survive round-trip.
+    // The master's own rels back r:embed resolution (a blip-filled master
+    // background references its image here).
+    const masterReadCtx = new PptxReadContext(
+      new ParseContext(pptx, parseSlideRelMap(pptx.doc, masterPath)),
+    );
     const masterOpts = slideMasterDesc.parse(masterEl, masterReadCtx);
 
     // Layouts belonging to this master (resolved separately — relationship layer).
@@ -600,11 +608,15 @@ export function parsePresentation(data: DataType): PresentationOptions {
       if (layoutEl) {
         // Fully structured def (children/background/clrMapOvr/transition/...).
         // The compiler re-stringifies from structure, so edits survive round-trip.
-        const layoutDef = slideLayoutDesc.parse(layoutEl, masterReadCtx);
+        // The layout's own rels back its r:embed resolution (background blips).
+        const layoutReadCtx = new PptxReadContext(
+          new ParseContext(pptx, parseSlideRelMap(pptx.doc, layoutPath)),
+        );
+        const layoutDef = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
         const themeOverridePath = layoutThemeOverridePaths.get(layoutPath);
         const themeOverrideEl = themeOverridePath ? pptx.doc.get(themeOverridePath) : undefined;
         if (themeOverrideEl) {
-          layoutDef.themeOverride = themeOverrideDesc.parse(themeOverrideEl, masterReadCtx);
+          layoutDef.themeOverride = themeOverrideDesc.parse(themeOverrideEl, layoutReadCtx);
         }
         masterLayouts.push(layoutDef);
       }
@@ -647,10 +659,10 @@ export function parsePresentation(data: DataType): PresentationOptions {
   for (const nmPath of pptx.partRefs.notesMasters) {
     const nmEl = pptx.doc.get(nmPath);
     if (nmEl) {
-      const nmOpts = notesMasterDesc.parse(nmEl, masterReadCtx);
+      const nmOpts = notesMasterDesc.parse(nmEl, bareReadCtx);
       const nmThemePath = notesMasterThemePaths.get(nmPath);
       const nmThemeEl = nmThemePath ? pptx.doc.get(nmThemePath) : undefined;
-      if (nmThemeEl) nmOpts.theme = themeDesc.parse(nmThemeEl, masterReadCtx);
+      if (nmThemeEl) nmOpts.theme = themeDesc.parse(nmThemeEl, bareReadCtx);
       if (Object.keys(nmOpts).length > 0) {
         opts.includeNotesMaster = true;
         opts.notesMasterOptions = nmOpts;
@@ -667,11 +679,11 @@ export function parsePresentation(data: DataType): PresentationOptions {
   for (const hmPath of pptx.partRefs.handoutMasters) {
     const hmEl = pptx.doc.get(hmPath);
     if (!hmEl) continue;
-    const hmParsed = handoutMasterDesc.parse(hmEl, masterReadCtx);
+    const hmParsed = handoutMasterDesc.parse(hmEl, bareReadCtx);
     if (hmParsed.options) {
       const hmThemePath = handoutMasterThemePaths.get(hmPath);
       const hmThemeEl = hmThemePath ? pptx.doc.get(hmThemePath) : undefined;
-      if (hmThemeEl) hmParsed.options.theme = themeDesc.parse(hmThemeEl, masterReadCtx);
+      if (hmThemeEl) hmParsed.options.theme = themeDesc.parse(hmThemeEl, bareReadCtx);
       opts.handoutMasterOptions = hmParsed.options;
     }
   }
@@ -681,7 +693,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
   if (pptx.partRefs.commentAuthors) {
     const authorsEl = pptx.doc.get(pptx.partRefs.commentAuthors);
     if (authorsEl) {
-      const authors = commentAuthorsDesc.parse(authorsEl, masterReadCtx);
+      const authors = commentAuthorsDesc.parse(authorsEl, bareReadCtx);
       for (const a of authors) {
         commentAuthors.set(a.id, { name: a.name, initials: a.initials });
       }
@@ -707,7 +719,11 @@ export function parsePresentation(data: DataType): PresentationOptions {
     if (layoutPath) {
       const layoutEl = pptx.doc.get(layoutPath);
       if (layoutEl) {
-        const layoutOpts = slideLayoutDesc.parse(layoutEl, readCtx);
+        // The layout's own rels back its r:embed resolution (background blips).
+        const layoutReadCtx = new PptxReadContext(
+          new ParseContext(pptx, parseSlideRelMap(pptx.doc, layoutPath)),
+        );
+        const layoutOpts = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
         slideOpts.layout = (layoutOpts.type ?? "blank") as SlideLayoutType;
       }
 

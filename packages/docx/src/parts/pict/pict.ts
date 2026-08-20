@@ -13,17 +13,18 @@
  */
 import { stringifyVmlShapeChild, parseVmlShapeChild } from "@office-open/core";
 import type { VmlBaseShapeFields, VmlShapeChild } from "@office-open/core";
-import type { ReadContext } from "@office-open/core/descriptor";
 import type { Element } from "@office-open/xml";
 import type { MediaData } from "@shared/media";
 
-import type { BodyContext } from "../../context";
+import type { BodyContext, DocxReadContext } from "../../context";
+import { replaceRelsWithPlaceholders } from "../../util/replace-media-placeholders";
 
 // ── Options ──
 
-/** Binary backing one v:imagedata r:id reference in the shape tree. */
+/** Binary backing one `{fileName}` placeholder in the pict (imagedata or raw
+ *  passthrough XML — fallback copies, textbox content). */
 export interface PictMediaOptions {
-  /** Placeholder key matching the `{fileName}` token in the imagedata r:id. */
+  /** Placeholder key matching the `{fileName}` token in the pict XML. */
   fileName: string;
   /** Image bytes captured from the source part. */
   data: Uint8Array;
@@ -34,9 +35,20 @@ export interface PictMediaOptions {
 export interface PictOptions {
   /** Ordered shape elements — shapetype preambles, shapes, groups, … */
   children?: VmlShapeChild[];
-  /** Binaries referenced by v:imagedata r:id (round-trip; authoring supplies
-   *  media entries and matching `{fileName}` relationshipId placeholders). */
+  /** Binaries referenced by `{fileName}` placeholders — v:imagedata r:id in
+   *  the shape tree plus any r:id/r:embed/r:link inside the VML fallback or
+   *  textbox content (round-trip; authoring supplies media entries and
+   *  matching placeholders). */
   media?: PictMediaOptions[];
+  /** Serialized mc:Fallback element from parse — carried when the source
+   *  wrapped this pict in mc:AlternateContent (Choice = this pict, Fallback =
+   *  a compatibility copy). Round-trips verbatim; the wrapper is rebuilt on
+   *  stringify (drawing vmlFallback pattern). */
+  vmlFallback?: string;
+  /** mc:Choice @Requires namespace prefix; defaults to "w14" on stringify. */
+  mcChoiceRequires?: string;
+  /** w14:anchorId extension attribute on w:pict. */
+  w14AnchorId?: string;
 }
 
 // ── Stringify ──
@@ -74,18 +86,25 @@ export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">)
     if (fileName !== m.fileName) renames.set(m.fileName, fileName);
   }
   let children = opts.children ?? [];
+  let vmlFallback = opts.vmlFallback;
   if (renames.size > 0) {
     // Remap a copy — the caller's PictOptions must stay untouched (options
     // objects are shared, serializable data; mutating them would leak renamed
     // placeholders into the next document built from the same object).
     children = structuredClone(children);
     remapPlaceholders(children, renames);
+    if (vmlFallback !== undefined) vmlFallback = remapRawPlaceholders(vmlFallback, renames);
   }
+  const anchor = opts.w14AnchorId !== undefined ? ` w14:anchorId="${opts.w14AnchorId}"` : "";
   const inner = children.map(stringifyVmlShapeChild).join("");
-  return inner !== "" ? `<w:pict>${inner}</w:pict>` : "<w:pict/>";
+  const pictXml = inner !== "" ? `<w:pict${anchor}>${inner}</w:pict>` : `<w:pict${anchor}/>`;
+  if (vmlFallback !== undefined) {
+    return `<mc:AlternateContent><mc:Choice Requires="${opts.mcChoiceRequires ?? "w14"}">${pictXml}</mc:Choice>${vmlFallback}</mc:AlternateContent>`;
+  }
+  return pictXml;
 }
 
-/** Replace `{old}` imagedata placeholders with their registered file names. */
+/** Replace `{old}` imagedata/textbox placeholders with their registered names. */
 function remapPlaceholders(children: VmlShapeChild[], renames: Map<string, string>): void {
   for (const child of children) {
     const fields = shapeFieldsOf(child);
@@ -94,14 +113,26 @@ function remapPlaceholders(children: VmlShapeChild[], renames: Map<string, strin
       const mapped = renames.get(rid.slice(1, -1));
       if (mapped !== undefined) fields.imagedata!.relationshipId = `{${mapped}}`;
     }
+    const textbox = "shape" in child ? child.shape.textbox : undefined;
+    if (textbox?.txbxContent !== undefined) {
+      textbox.txbxContent = remapRawPlaceholders(textbox.txbxContent, renames);
+    }
     if ("group" in child) remapPlaceholders(child.group.children ?? [], renames);
   }
+}
+
+/** Replace `{old}` placeholders inside a raw XML string. */
+function remapRawPlaceholders(xml: string, renames: Map<string, string>): string {
+  for (const [oldName, newName] of renames) {
+    xml = xml.split(`{${oldName}}`).join(`{${newName}}`);
+  }
+  return xml;
 }
 
 // ── Parse ──
 
 /** Parse w:pict into ordered shape children, bridging imagedata r:id media. */
-export function parsePict(el: Element, ctx: ReadContext): PictOptions {
+export function parsePict(el: Element, ctx: DocxReadContext): PictOptions {
   const children: VmlShapeChild[] = [];
   for (const child of el.elements ?? []) {
     if (child.type !== "element") continue;
@@ -110,17 +141,51 @@ export function parsePict(el: Element, ctx: ReadContext): PictOptions {
   }
   const media: PictMediaOptions[] = [];
   bridgeImagedata(children, ctx, media);
+  bridgeTxbxContent(children, ctx, media);
   return {
     ...(children.length > 0 ? { children } : {}),
     ...(media.length > 0 ? { media } : {}),
   };
 }
 
+/**
+ * Replace relationship references inside a raw XML string (textbox content,
+ * mc:Fallback copies) with `{fileName}` placeholders and collect the media.
+ *
+ * Raw passthrough keeps the source rIds verbatim, but the generated rels
+ * renumber — the placeholders let the compiler's media bridge re-register the
+ * binaries and resolve fresh ids (same pattern as v:imagedata).
+ */
+function bridgeRawRels(xml: string, ctx: DocxReadContext, media: PictMediaOptions[]): string {
+  const { rawXml, rawMedia } = replaceRelsWithPlaceholders(xml, ctx);
+  for (const m of rawMedia) {
+    if (!media.some((e) => e.fileName === m.fileName)) {
+      media.push({ fileName: m.fileName, data: m.data as Uint8Array, type: m.type });
+    }
+  }
+  return rawXml;
+}
+
+/** Bridge r:id/r:embed/r:link references inside each shape's textbox content. */
+function bridgeTxbxContent(
+  children: VmlShapeChild[],
+  ctx: DocxReadContext,
+  media: PictMediaOptions[],
+): void {
+  for (const child of children) {
+    const textbox = "shape" in child ? child.shape.textbox : undefined;
+    if (textbox?.txbxContent !== undefined) {
+      textbox.txbxContent = bridgeRawRels(textbox.txbxContent, ctx, media);
+    }
+    if ("group" in child) bridgeTxbxContent(child.group.children ?? [], ctx, media);
+  }
+}
+
 /** Capture the binary behind each imagedata r:id, leaving a `{fileName}`
  *  placeholder for the stringify-side re-registration. */
 function bridgeImagedata(
   children: VmlShapeChild[],
-  ctx: ReadContext,
+  ctx: DocxReadContext,
   media: PictMediaOptions[],
 ): void {
   for (const child of children) {

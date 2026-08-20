@@ -1167,6 +1167,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // (decimalSymbol → listSeparator → w14:docId → w15:chartTrackingRefBased → w15:docId).
     // Preserved verbatim for round-trip fidelity; val attribute is namespace-scoped.
     if (opts.w14DocId !== undefined) p.push(strVal("w14:docId", opts.w14DocId));
+    p.push(onOff("w14:discardImageEditingData", opts.w14DiscardImageEditingData));
     if (opts.w14DefaultImageDpi !== undefined)
       p.push(strVal("w14:defaultImageDpi", String(opts.w14DefaultImageDpi)));
     if (opts.w15ChartTrackingRefBased) p.push(`<w15:chartTrackingRefBased/>`);
@@ -1534,16 +1535,17 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     }
     if (attachedSchemas.length > 0) opts.attachedSchema = attachedSchemas;
 
-    // themeFontLang → w:themeFontLang (CT_Language: val/eastAsia/bidi)
+    // themeFontLang → w:themeFontLang (CT_Language: val/eastAsia/bidi) —
+    // empty-string attributes are meaningful (explicitly unset), keep them.
     const tflEl = findChild(el, "w:themeFontLang");
     if (tflEl) {
       const tfl: Record<string, string> = {};
       const val = attr(tflEl, "w:val");
-      if (val) tfl.val = val;
+      if (val !== undefined) tfl.val = val;
       const eastAsia = attr(tflEl, "w:eastAsia");
-      if (eastAsia) tfl.eastAsia = eastAsia;
+      if (eastAsia !== undefined) tfl.eastAsia = eastAsia;
       const bidi = attr(tflEl, "w:bidi");
-      if (bidi) tfl.bidi = bidi;
+      if (bidi !== undefined) tfl.bidi = bidi;
       if (Object.keys(tfl).length > 0) opts.themeFontLang = tfl;
     }
 
@@ -1619,6 +1621,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // Word 2010/2013 document identifiers — preserve for round-trip fidelity
     const w14DocId = readStr(findChild(el, "w14:docId"), "w14:val");
     if (w14DocId) opts.w14DocId = w14DocId;
+    const w14Discard = findChild(el, "w14:discardImageEditingData");
+    if (w14Discard)
+      opts.w14DiscardImageEditingData = parseOnOff(attr(w14Discard, "w14:val")) ?? true;
     const w14DefaultImageDpi = readStr(findChild(el, "w14:defaultImageDpi"), "w14:val");
     if (w14DefaultImageDpi !== undefined) {
       const dpi = Number(w14DefaultImageDpi);

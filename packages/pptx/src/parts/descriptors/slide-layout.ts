@@ -105,11 +105,9 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     parts.push("</p:cSld>");
 
-    // EG_ChildSlide — p:clrMapOvr (always present; defaults to masterClrMapping).
-    parts.push(
-      colorMappingOverrideDesc.stringify(opts.colorMappingOverride, ctx) ??
-        "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>",
-    );
+    // EG_ChildSlide — p:clrMapOvr (optional; undefined omits it, sources
+    // that carry one round-trip it).
+    parts.push(colorMappingOverrideDesc.stringify(opts.colorMappingOverride, ctx) ?? "");
 
     // p:transition (optional, after clrMapOvr).
     if (opts.transition) {

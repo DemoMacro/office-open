@@ -127,8 +127,11 @@ export function stringifyParagraph(
   // Paragraph properties XML
   if (props.xml) {
     if (sectionPropertiesXml) {
-      // Insert sectPr before closing </w:pPr>
-      body += props.xml.replace("</w:pPr>", sectionPropertiesXml + "</w:pPr>");
+      // Insert sectPr before closing </w:pPr>; a self-closed empty pPr
+      // (emptyProperties round-trip marker) expands to host the section break.
+      body += props.xml.includes("</w:pPr>")
+        ? props.xml.replace("</w:pPr>", sectionPropertiesXml + "</w:pPr>")
+        : props.xml.replace(/\/>$/, `>${sectionPropertiesXml}</w:pPr>`);
     } else {
       body += props.xml;
     }
@@ -194,7 +197,7 @@ export function stringifyBodyChild(
     return tableDesc.stringify(child.table, ctx) ?? "";
   }
   if ("toc" in child) {
-    const { alias, ...options } = child.toc;
+    const { alias, leading, trailing, ...options } = child.toc;
     const entries = options.entries ?? [];
     // A non-final section may host its sectPr in the TOC's closing entry
     // paragraph (the section-break paragraph the field end shares).
@@ -205,7 +208,18 @@ export function stringifyBodyChild(
           : stringifyBodyChild(entry, ctx),
       )
       .join("");
-    return stringifyTableOfContents(alias, options, entriesXml);
+    const contentAround = (nodes: SectionChild[] | undefined): string =>
+      (nodes ?? []).map((node) => stringifyBodyChild(node, ctx)).join("");
+    // A freshly generated TOC (no entries) gets the conventional alias; a
+    // round-tripped one emits alias only when the source carried it.
+    const isFresh = entries.length === 0 && leading === undefined && trailing === undefined;
+    return stringifyTableOfContents(
+      alias ?? (isFresh ? "Table of Contents" : undefined),
+      options,
+      entriesXml,
+      contentAround(leading),
+      contentAround(trailing),
+    );
   }
   if ("textbox" in child) {
     return stringifyTextbox(child.textbox, ctx);
@@ -893,6 +907,14 @@ export function parseParagraphProperties(
     if (Object.keys(rev).length > 0) opts.revision = rev as ParagraphPropertiesChangeOptions;
   }
 
+  // A bare <w:pPr/> yields no fields — mark the presence so stringify
+  // re-emits the empty element. A pPr whose only child is w:sectPr is not
+  // empty: the section model owns that sectPr and re-injects it here, so the
+  // marker must not claim the pPr.
+  if (Object.keys(opts).length === 0 && !findChild(el, "w:sectPr")) {
+    opts.emptyProperties = true;
+  }
+
   return opts;
 }
 
@@ -1454,6 +1476,104 @@ export function runRPrXml(run: Element): string | undefined {
   return rPr ? stringifyElement(rPr) : undefined;
 }
 
+/** Parse a w:bookmarkStart element (id + name + table-column extents). */
+export function parseBookmarkStartOptions(el: Element): BookmarkStartOptions | undefined {
+  const id = attrNum(el, "w:id");
+  const name = attr(el, "w:name");
+  if (id === undefined || !name) return undefined;
+  const bookmarkStart: Partial<BookmarkStartOptions> = { id, name };
+  const disp = attr(el, "w:displacedByCustomXml");
+  if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
+  const colFirst = attrNum(el, "w:colFirst");
+  if (colFirst !== undefined) bookmarkStart.colFirst = colFirst;
+  const colLast = attrNum(el, "w:colLast");
+  if (colLast !== undefined) bookmarkStart.colLast = colLast;
+  return bookmarkStart as BookmarkStartOptions;
+}
+
+/** Parse a w:bookmarkEnd element (id + displacedByCustomXml). */
+export function parseBookmarkEndOptions(el: Element): MarkupRangeOptions | undefined {
+  const id = attrNum(el, "w:id");
+  if (id === undefined) return undefined;
+  const bookmarkEnd: Partial<MarkupRangeOptions> = { id };
+  const disp = attr(el, "w:displacedByCustomXml");
+  if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
+  return bookmarkEnd as MarkupRangeOptions;
+}
+
+/**
+ * Parses one w:hyperlink element into a `{ hyperlink }` child, or null when it
+ * carries no content. CT_Hyperlink content is EG_PContent, so a hyperlink may
+ * nest another hyperlink (pandoc emits these for nested anchors) — recursion
+ * handles both levels through the same shape.
+ */
+function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChild | null {
+  const hl: Partial<HyperlinkInlineOptions> = {};
+  const rId = attr(child, "r:id");
+  if (rId) {
+    // rId numbering is per-part: a hyperlink inside a footnote/header
+    // resolves against that part's own rels first, then document.xml's.
+    const target =
+      ctx.docx.partRefs.partHyperlinks.get(ctx.currentPart)?.get(rId) ??
+      ctx.docx.partRefs.hyperlinks.get(rId);
+    if (target) hl.url = target;
+  }
+  const anchor = attr(child, "w:anchor");
+  if (anchor) hl.anchor = anchor;
+  const tooltip = attr(child, "w:tooltip");
+  if (tooltip) hl.tooltip = tooltip;
+  const tgtFrame = attr(child, "w:tgtFrame");
+  if (tgtFrame) hl.targetFrame = tgtFrame;
+  const docLocation = attr(child, "w:docLocation");
+  if (docLocation) hl.docLocation = docLocation;
+  const history = attrBool(child, "w:history");
+  if (history !== undefined) hl.history = history;
+
+  const linkRuns: (RunOptions | string | ParagraphChild)[] = [];
+  // Field accumulator scoped to the hyperlink: Word nests complex fields
+  // inside link content (e.g. the PAGEREF page number of a TOC entry),
+  // fully closed within the hyperlink element.
+  const fieldState = initialFieldRunState();
+  for (const sub of child.elements ?? []) {
+    if (sub.name === "w:r") {
+      const fed = feedFieldRun(sub, fieldState);
+      if (fed.consumed) {
+        if (fed.child) linkRuns.push(fed.child);
+        continue;
+      }
+      // Drawing runs inside hyperlinks (image links) resolve through the
+      // same paragraph-child extraction — parseRun skips w:drawing.
+      const drawingChild = parseDrawingRunChild(sub, ctx);
+      if (drawingChild) {
+        linkRuns.push(drawingChild);
+        continue;
+      }
+      const parsed = parseRun(sub, ctx);
+      const runOpts = parsedRunToOptions(parsed);
+      // parsedRunToOptions returns null for auto-generated/empty runs
+      // (e.g. footnoteRef) and { commentReference } for pure
+      // comment-reference runs; hyperlink children are runs, so skip both.
+      if (runOpts !== null && !("commentReference" in runOpts)) {
+        linkRuns.push(runOpts);
+      }
+    } else if (sub.name === "w:hyperlink") {
+      const nested = parseHyperlinkChild(sub, ctx);
+      if (nested) linkRuns.push(nested);
+    } else if (sub.name === "w:bookmarkStart") {
+      // Bookmarks may open inside link content (Word parks _GoBack on the
+      // last edit position, often an image link run).
+      const bookmarkStart = parseBookmarkStartOptions(sub);
+      if (bookmarkStart) linkRuns.push({ bookmarkStart });
+    } else if (sub.name === "w:bookmarkEnd") {
+      const bookmarkEnd = parseBookmarkEndOptions(sub);
+      if (bookmarkEnd) linkRuns.push({ bookmarkEnd });
+    }
+  }
+  if (linkRuns.length === 0) return null;
+  hl.children = linkRuns;
+  return { hyperlink: hl };
+}
+
 /**
  * Parse run-level children shared by paragraphs and inline-SDT content.
  * Includes the field accumulator that collapses form/complex fields spanning
@@ -1492,85 +1612,18 @@ function parseRunLevelChildren(
         break;
       }
       case "w:hyperlink": {
-        const hl: Partial<HyperlinkInlineOptions> = {};
-        const rId = attr(child, "r:id");
-        if (rId) {
-          // rId numbering is per-part: a hyperlink inside a footnote/header
-          // resolves against that part's own rels first, then document.xml's.
-          const target =
-            ctx.docx.partRefs.partHyperlinks.get(ctx.currentPart)?.get(rId) ??
-            ctx.docx.partRefs.hyperlinks.get(rId);
-          if (target) hl.url = target;
-        }
-        const anchor = attr(child, "w:anchor");
-        if (anchor) hl.anchor = anchor;
-        const tooltip = attr(child, "w:tooltip");
-        if (tooltip) hl.tooltip = tooltip;
-        const tgtFrame = attr(child, "w:tgtFrame");
-        if (tgtFrame) hl.targetFrame = tgtFrame;
-        const docLocation = attr(child, "w:docLocation");
-        if (docLocation) hl.docLocation = docLocation;
-        const history = attrBool(child, "w:history");
-        if (history !== undefined) hl.history = history;
-
-        const linkRuns: (RunOptions | string | ParagraphChild)[] = [];
-        // Field accumulator scoped to the hyperlink: Word nests complex fields
-        // inside link content (e.g. the PAGEREF page number of a TOC entry),
-        // fully closed within the hyperlink element.
-        const fieldState = initialFieldRunState();
-        for (const sub of child.elements ?? []) {
-          if (sub.name === "w:r") {
-            const fed = feedFieldRun(sub, fieldState);
-            if (fed.consumed) {
-              if (fed.child) linkRuns.push(fed.child);
-              continue;
-            }
-            // Drawing runs inside hyperlinks (image links) resolve through the
-            // same paragraph-child extraction — parseRun skips w:drawing.
-            const drawingChild = parseDrawingRunChild(sub, ctx);
-            if (drawingChild) {
-              linkRuns.push(drawingChild);
-              continue;
-            }
-            const parsed = parseRun(sub, ctx);
-            const runOpts = parsedRunToOptions(parsed);
-            // parsedRunToOptions returns null for auto-generated/empty runs
-            // (e.g. footnoteRef) and { commentReference } for pure
-            // comment-reference runs; hyperlink children are runs, so skip both.
-            if (runOpts !== null && !("commentReference" in runOpts)) {
-              linkRuns.push(runOpts);
-            }
-          }
-        }
-        if (linkRuns.length > 0) {
-          hl.children = linkRuns;
-          childList.push({ hyperlink: hl });
-        }
+        const hlChild = parseHyperlinkChild(child, ctx);
+        if (hlChild) childList.push(hlChild);
         break;
       }
       case "w:bookmarkStart": {
-        const id = attrNum(child, "w:id");
-        const name = attr(child, "w:name");
-        if (id !== undefined && name) {
-          const bookmarkStart: Partial<BookmarkStartOptions> = { id, name };
-          const disp = attr(child, "w:displacedByCustomXml");
-          if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
-          const colFirst = attrNum(child, "w:colFirst");
-          if (colFirst !== undefined) bookmarkStart.colFirst = colFirst;
-          const colLast = attrNum(child, "w:colLast");
-          if (colLast !== undefined) bookmarkStart.colLast = colLast;
-          childList.push({ bookmarkStart: bookmarkStart as BookmarkStartOptions });
-        }
+        const bookmarkStart = parseBookmarkStartOptions(child);
+        if (bookmarkStart) childList.push({ bookmarkStart });
         break;
       }
       case "w:bookmarkEnd": {
-        const id = attrNum(child, "w:id");
-        if (id !== undefined) {
-          const bookmarkEnd: Partial<MarkupRangeOptions> = { id };
-          const disp = attr(child, "w:displacedByCustomXml");
-          if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
-          childList.push({ bookmarkEnd: bookmarkEnd as MarkupRangeOptions });
-        }
+        const bookmarkEnd = parseBookmarkEndOptions(child);
+        if (bookmarkEnd) childList.push({ bookmarkEnd });
         break;
       }
       case "w:commentRangeStart": {

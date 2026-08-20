@@ -339,6 +339,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         notes: ctx.footNotes.notes,
         separator: ctx.footNotes.separator,
         continuationSeparator: ctx.footNotes.continuationSeparator,
+        continuationNotice: ctx.footNotes.continuationNotice,
       },
       footnoteCtx,
     ) ?? "");
@@ -540,6 +541,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                     notes: ctx.endnotes.notes,
                     separator: ctx.endnotes.separator,
                     continuationSeparator: ctx.endnotes.continuationSeparator,
+                    continuationNotice: ctx.endnotes.continuationNotice,
                   },
                   endnoteCtx,
                 ) ?? "");
@@ -929,8 +931,11 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                   : stringifyColorDefinitionPart(smartArtData.color),
             path: `word/diagrams/colors${i + 1}.xml`,
           })),
-          DiagramDrawing: ctx.smartArts.array.map((_, i) => ({
-            data: DEFAULT_DRAWING_XML,
+          DiagramDrawing: ctx.smartArts.array.map((smartArtData, i) => ({
+            data:
+              smartArtData.raw?.drawing !== undefined
+                ? toUint8Array(smartArtData.raw.drawing)
+                : DEFAULT_DRAWING_XML,
             path: `word/diagrams/drawing${i + 1}.xml`,
           })),
           // Data parts with their own rels (blipFill art): re-emit the rels

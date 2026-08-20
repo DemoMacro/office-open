@@ -181,6 +181,15 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     opts.checkbox = cbObj;
   }
 
+  // w15:appearance (Word 2013+) — ST_SdtAppearance: boundingBox/tags/hidden
+  const appearance = findChild(el, "w15:appearance");
+  if (appearance) {
+    const val = attr(appearance, "w15:val");
+    if (val === "boundingBox" || val === "tags" || val === "hidden") {
+      opts.appearance = val;
+    }
+  }
+
   return opts as SdtPropertiesOptions;
 }
 

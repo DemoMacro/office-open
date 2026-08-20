@@ -9038,7 +9038,7 @@
           "type": "string"
         },
         "customProperties": {
-          "description": "Custom properties (docProps/custom.xml); omitted from the package when empty",
+          "description": "Custom properties (docProps/custom.xml). Round-trip is presence-based: a source part round-trips even when it carries no properties; fresh documents omit the field (and the part) entirely.",
           "items": {
             "$ref": "#/definitions/CustomPropertyOptions"
           },
@@ -10142,7 +10142,15 @@
           "type": "string"
         },
         "fill": {
-          "$ref": "#/definitions/FillOptions"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "`null` marks a source spPr with no fill child — absence is the fidelity (the shape inherits its fill), so stringify emits nothing instead of the fresh-authoring noFill default."
         },
         "flipHorizontal": {
           "type": "boolean"
@@ -11484,6 +11492,10 @@
           "$ref": "#/definitions/Cell3DOptions",
           "description": "Cell bevel (a:cell3D in a:tcPr)."
         },
+        "cellProperties": {
+          "description": "The source carried an `<a:tcPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (real-world sources write a bare tcPr on every cell).",
+          "type": "boolean"
+        },
         "children": {
           "items": {
             "anyOf": [
@@ -12470,6 +12482,10 @@
           "$ref": "#/definitions/TextCapitalization"
         },
         "dirty": {
+          "type": "boolean"
+        },
+        "emptyProperties": {
+          "description": "The source carried a bare `<a:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
           "type": "boolean"
         },
         "err": {

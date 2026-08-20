@@ -2,12 +2,18 @@ import { parse, stringify } from "@office-open/xml";
 import type { Element, ParseOptions } from "@office-open/xml";
 import { unzipSync, zipSync, strFromU8, strToU8, type ZipOptions, type Zippable } from "fflate";
 
+import { OOXML_CANONICAL_PREFIXES } from "./namespaces";
 import { levelForMediaName, ZIP_MEDIA_LEVEL } from "./packer";
 import { hasNativeInflate, nativeUnzip } from "./zip-native";
 
 const XML_PARSE_OPTIONS = {
   nativeTypeAttributes: true,
   captureSpacesBetweenElements: true,
+  // Normalize namespace prefixes to the canonical ones the library itself
+  // emits — sources binding the Word namespace to ns0: or the spreadsheet
+  // namespace to x: parse into canonical names, so descriptor matching and
+  // registry paths see the elements they address.
+  normalizeNamespaces: OOXML_CANONICAL_PREFIXES,
 };
 
 /**

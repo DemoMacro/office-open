@@ -23,6 +23,12 @@ export interface SmartArtRawParts {
   style?: DataType;
   /** word/diagrams/colorsN.xml source bytes. */
   color?: DataType;
+  /**
+   * word/diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing
+   * snapshot (MS-ODRAWXML 2008 extension) Word caches beside the data model.
+   * Falls back to an empty spTree shell when absent.
+   */
+  drawing?: DataType;
   /** Images referenced by the data part's own rels (dgm:pt blipFill art). */
   media?: { fileName: string; data: DataType }[];
   /** Verbatim rels XML of the data part (its rIds resolve against media). */

@@ -9,6 +9,7 @@
  * @module
  */
 
+import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { SectionChild } from "@shared/section";
 
 /**
@@ -164,8 +165,9 @@ export interface TableOfContentsOptions {
   rPrXml?: string;
 
   /**
-   * Run properties of the field's closing `end` run when Word styles it
-   * differently from the control runs (round-trip only).
+   * Run properties of the field's closing `end` run (round-trip only).
+   * `""` means the end run carried no rPr (stays bare rather than inheriting
+   * the control rPr); `undefined` means it matched the control runs' rPr.
    */
   endRPrXml?: string;
 
@@ -191,4 +193,34 @@ export interface TableOfContentsOptions {
    * rPr — and the split must survive instead of collapsing to one run).
    */
   headRunsXml?: string;
+
+  /**
+   * Run properties of the SDT start mark — sdtPr's leading w:rPr element
+   * (round-trip only; Word parks the TOC style's font overrides there).
+   */
+  runProperties?: RunPropertiesOptions;
+
+  /** SDT identifier (w:id) of the TOC content control (round-trip only). */
+  id?: number;
+
+  /** Emit w:docPartUnique inside sdtPr's w:docPartObj (round-trip only). */
+  docPartUnique?: boolean;
+
+  /**
+   * Run properties of the SDT end mark (w:sdtEndPr). An empty object means
+   * the source carried a bare `<w:sdtEndPr/>` (round-trip only).
+   */
+  endProperties?: RunPropertiesOptions;
+
+  /**
+   * Block content the sdtContent carries before the TOC field — the TOC
+   * heading paragraph, a wrapping bookmarkStart (round-trip only).
+   */
+  leading?: SectionChild[];
+
+  /**
+   * Block content the sdtContent carries after the TOC field — the closing
+   * bookmarkEnd of a wrapping bookmark (round-trip only).
+   */
+  trailing?: SectionChild[];
 }

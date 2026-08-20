@@ -366,7 +366,9 @@ function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
     if (fillXml) parts.push(fillXml);
   }
 
-  if (parts.length === 0) return "<a:tcPr/>";
+  // A source cell may carry no a:tcPr at all (pandoc-style minimal output) —
+  // only the round-trip marker re-emits the bare element.
+  if (parts.length === 0) return cell.cellProperties ? "<a:tcPr/>" : "";
 
   const first = parts[0];
   if (first !== undefined && !first.startsWith("<")) {
@@ -488,6 +490,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
   // a:tcPr
   const tcPr = findChild(tc, "a:tcPr");
   if (tcPr) {
+    const keysBefore = Object.keys(result).length;
     const anchor = attr(tcPr, "anchor");
     if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as VerticalAlignment;
     const vert = attr(tcPr, "vert");
@@ -542,6 +545,10 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
       }
     }
     if (Object.keys(borders).length > 0) result.borders = borders;
+
+    // A bare <a:tcPr/> yields no fields — mark the presence so stringify
+    // re-emits the empty element.
+    if (Object.keys(result).length === keysBefore) result.cellProperties = true;
   }
 
   return result;

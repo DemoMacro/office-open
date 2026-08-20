@@ -155,10 +155,13 @@ describe("slideDesc round-trip", () => {
     });
   });
 
-  it("defaults clrMapOvr to masterClrMapping on stringify", () => {
-    const xml = slideDesc.stringify({}, writeCtx) ?? "";
+  it("omits clrMapOvr when unset and emits it when set", () => {
+    const bare = slideDesc.stringify({}, writeCtx) ?? "";
+    expect(bare).not.toContain("clrMapOvr");
 
-    expect(xml).toContain("<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>");
+    const mapped =
+      slideDesc.stringify({ colorMappingOverride: { kind: "master" } }, writeCtx) ?? "";
+    expect(mapped).toContain("<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>");
   });
 
   it("round-trips customerData inside p:cSld", () => {

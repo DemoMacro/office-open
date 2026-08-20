@@ -30,6 +30,7 @@ import type { PictOptions } from "@parts/pict";
 import { parseShading } from "@shared/shading";
 
 import type { DocxReadContext } from "../../../context";
+import { replaceRelsWithPlaceholders } from "../../../util/replace-media-placeholders";
 import { stringifyElement } from "../../../util/stringify-element";
 import type { LanguageOptions } from "./language";
 
@@ -279,6 +280,10 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
 
   if (w14Parts !== undefined && w14Parts.length > 0) opts.w14RawXml = w14Parts.join("");
 
+  // A bare <w:rPr/> yields no fields — mark the presence so stringify
+  // re-emits the empty element.
+  if (Object.keys(opts).length === 0) opts.emptyProperties = true;
+
   return opts as RunPropertiesOptions;
 }
 
@@ -475,6 +480,37 @@ export function parseRun(
       // from the part's rels (r:id → bytes → `{fileName}` placeholder).
       case "w:pict": {
         children.push({ pict: parsePict(child, _ctx) } as unknown as ParsedRunChild);
+        break;
+      }
+      // MCE wrapper around a VML pict (pandoc textbox double-encoding): the
+      // Choice pict stays structured/editable, the Fallback copy round-trips
+      // verbatim — the same split the drawing AlternateContent path uses.
+      case "mc:AlternateContent": {
+        const choice = findChild(child, "mc:Choice");
+        const pictEl = choice ? findChild(choice, "w:pict") : undefined;
+        if (!pictEl) break;
+        const pict = parsePict(pictEl, _ctx);
+        const requires = attr(choice, "Requires");
+        if (requires) pict.mcChoiceRequires = requires;
+        const anchorId = attr(pictEl, "w14:anchorId");
+        if (anchorId) pict.w14AnchorId = anchorId;
+        const fallback = findChild(child, "mc:Fallback");
+        if (fallback) {
+          const { rawXml, rawMedia } = replaceRelsWithPlaceholders(
+            stringifyElement(fallback),
+            _ctx,
+          );
+          pict.vmlFallback = rawXml;
+          pict.media = [
+            ...(pict.media ?? []),
+            ...rawMedia.map((m) => ({
+              fileName: m.fileName,
+              data: m.data as Uint8Array,
+              type: m.type,
+            })),
+          ];
+        }
+        children.push({ pict } as unknown as ParsedRunChild);
         break;
       }
       case "w:object": {

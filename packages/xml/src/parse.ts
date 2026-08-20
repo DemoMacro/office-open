@@ -87,6 +87,22 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       ? new Set(options.deferElements)
       : undefined;
 
+  // Namespace normalization (see ParseOptions.normalizeNamespaces): in-scope
+  // prefix → canonical-prefix bindings, copy-on-write per element that carries
+  // xmlns declarations. `prefixes === undefined` means nothing is bound yet
+  // (the common subtree shares the root layer object untouched).
+  const nsTable =
+    options?.normalizeNamespaces !== undefined
+      ? new Map(Object.entries(options.normalizeNamespaces))
+      : undefined;
+  interface NsLayer {
+    prefixes: Map<string, string> | undefined;
+    /** Canonical form of the default namespace; undefined = none/unknown. */
+    defaultCanonical: string | undefined;
+  }
+  const nsRootLayer: NsLayer = { prefixes: undefined, defaultCanonical: undefined };
+  const nsStack: NsLayer[] = [nsRootLayer];
+
   const result: Element = {};
   const stack: Element[] = [result];
 
@@ -201,6 +217,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       if (end === -1) break;
       i = end + 1;
       stack.pop();
+      if (nsTable !== undefined) nsStack.pop();
       continue;
     }
 
@@ -208,6 +225,13 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     const tagNameEnd = findTagNameEnd(xmlString, i);
     const tagName = xmlString.slice(i, tagNameEnd);
     let pos = tagNameEnd;
+
+    // Namespace bindings for this element: inherit the parent layer; the
+    // attribute scan clones it on the first xmlns declaration it meets.
+    const nsParent = nsTable !== undefined ? nsStack[nsStack.length - 1]! : undefined;
+    let nsPrefixes = nsParent?.prefixes;
+    let nsDefault = nsParent?.defaultCanonical;
+    let nsDeclared = false;
 
     // Attribute scan, inlined from parseAttributesFromXml: called once per
     // opening tag, the `{ attrs, pos }` wrapper was one allocation per element.
@@ -240,14 +264,85 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       pos++;
       const valueStart = pos;
       while (pos < len && xmlString.charCodeAt(pos) !== quote) pos++;
-      if (attrs === undefined) attrs = {};
-      attrs[name] = unescapeXml(xmlString.slice(valueStart, pos));
+      const value = unescapeXml(xmlString.slice(valueStart, pos));
       pos++;
+
+      if (nsTable !== undefined && (name === "xmlns" || name.startsWith("xmlns:"))) {
+        if (attrs === undefined) attrs = {};
+        const canonical = nsTable.get(value);
+        if (name === "xmlns") {
+          nsDefault = canonical;
+          if (canonical !== undefined && canonical !== "") {
+            // Known non-default canonical form: upgrade the declaration to a
+            // prefixed one (xmlns="uri" → xmlns:w="uri") so the rewritten
+            // element names stay declared.
+            attrs[`xmlns:${canonical}`] = value;
+          } else {
+            attrs[name] = value;
+          }
+        } else {
+          const prefix = name.slice(6);
+          if (canonical !== undefined && canonical !== "") {
+            attrs[`xmlns:${canonical}`] = value;
+          } else if (canonical === "" && !("xmlns" in attrs)) {
+            // Canonical form is unprefixed: demote to a default declaration.
+            attrs.xmlns = value;
+          } else {
+            attrs[name] = value;
+          }
+          if (!nsDeclared) {
+            nsPrefixes = new Map(nsPrefixes ?? []);
+            nsDeclared = true;
+          }
+          // Unknown URI keeps the source prefix bound to itself, which the
+          // rewrite step treats as "leave names as written". Non-null: either
+          // just assigned above or already a Map from a prior nsDeclared pass.
+          nsPrefixes!.set(prefix, canonical ?? prefix);
+        }
+        continue;
+      }
+      if (attrs === undefined) attrs = {};
+      attrs[name] = value;
     }
 
     if (attrs && nativeTypeAttributes) {
       for (const key in attrs) {
         attrs[key] = nativeTypeValue(attrs[key] as string) as string;
+      }
+    }
+
+    // Namespace-normalize the element name and the non-declaration attribute
+    // names onto this element's effective bindings (its own declarations
+    // included — attributes see the element's in-scope bindings).
+    let finalName = tagName;
+    if (nsTable !== undefined) {
+      const colon = tagName.indexOf(":");
+      if (colon > 0) {
+        const p = tagName.slice(0, colon);
+        if (p !== "xml") {
+          const c = nsPrefixes?.get(p);
+          if (c !== undefined && c !== p) {
+            finalName = c === "" ? tagName.slice(colon + 1) : c + tagName.slice(colon);
+          }
+        }
+      } else if (colon < 0 && nsDefault !== undefined && nsDefault !== "") {
+        finalName = nsDefault + ":" + tagName;
+      }
+      if (attrs !== undefined && nsPrefixes !== undefined) {
+        for (const key of Object.keys(attrs)) {
+          if (key === "xmlns" || key.startsWith("xmlns:")) continue;
+          const kcolon = key.indexOf(":");
+          if (kcolon <= 0) continue;
+          const p = key.slice(0, kcolon);
+          if (p === "xml") continue;
+          const c = nsPrefixes.get(p);
+          if (c !== undefined && c !== p) {
+            const renamed = c === "" ? key.slice(kcolon + 1) : c + key.slice(kcolon);
+            const attrValue = attrs[key];
+            if (attrValue !== undefined) attrs[renamed] = attrValue;
+            delete attrs[key];
+          }
+        }
       }
     }
 
@@ -261,7 +356,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // access sites stay monomorphic instead of 2-3 shapes deep.
     const element: Element = {
       type: "element",
-      name: tagName,
+      name: finalName,
       attributes: attrs,
       elements: undefined,
     };
@@ -316,6 +411,14 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
         continue;
       }
       stack.push(element);
+      if (nsTable !== undefined) {
+        // Share the parent layer unless this element declared anything (a
+        // cloned prefix map, or a default declaration that can shadow one).
+        const layerChanged = nsDeclared || nsDefault !== nsParent!.defaultCanonical;
+        nsStack.push(
+          layerChanged ? { prefixes: nsPrefixes, defaultCanonical: nsDefault } : nsParent!,
+        );
+      }
     }
 
     i = pos;

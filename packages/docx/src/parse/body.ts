@@ -11,7 +11,6 @@ import { parseAltChunk } from "@parts/alt-chunk/alt-chunk-parse";
 import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
 import { parseSectionPropertiesEl } from "@parts/document/body/section-properties/descriptor";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
-import type { MarkupRangeOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
@@ -26,7 +25,12 @@ import { parseTextbox } from "@parts/textbox/textbox-parse";
 import type { SectionOptions } from "@shared/section";
 import type { SectionChild } from "@shared/section";
 
-import { parseParagraph, runRPrXml } from "../body";
+import {
+  parseBookmarkEndOptions,
+  parseBookmarkStartOptions,
+  parseParagraph,
+  runRPrXml,
+} from "../body";
 import { DocxReadContext } from "../context";
 import { setBodyParseChild } from "../parts";
 import { stringifyElement } from "../util/stringify-element";
@@ -190,29 +194,12 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       // Body-level range markers sitting between paragraphs (e.g. _Toc bookmark
       // ends grouped after a heading). Carry them as first-class children so
       // they round-trip even though they are not wrapped in a paragraph.
-      const idRaw = attr(el, "w:id");
-      const name = attr(el, "w:name");
-      if (idRaw !== undefined && name) {
-        const bookmarkStart: Partial<BookmarkStartOptions> = { id: Number(idRaw), name };
-        const disp = attr(el, "w:displacedByCustomXml");
-        if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
-        const colFirstRaw = attr(el, "w:colFirst");
-        if (colFirstRaw !== undefined) bookmarkStart.colFirst = Number(colFirstRaw);
-        const colLastRaw = attr(el, "w:colLast");
-        if (colLastRaw !== undefined) bookmarkStart.colLast = Number(colLastRaw);
-        return { bookmarkStart: bookmarkStart as BookmarkStartOptions };
-      }
-      return { rawXml: stringifyElement(el) };
+      const bookmarkStart = parseBookmarkStartOptions(el);
+      return bookmarkStart ? { bookmarkStart } : { rawXml: stringifyElement(el) };
     }
     case "w:bookmarkEnd": {
-      const idRaw = attr(el, "w:id");
-      if (idRaw !== undefined) {
-        const bookmarkEnd: Partial<MarkupRangeOptions> = { id: Number(idRaw) };
-        const disp = attr(el, "w:displacedByCustomXml");
-        if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
-        return { bookmarkEnd: bookmarkEnd as MarkupRangeOptions };
-      }
-      return { rawXml: stringifyElement(el) };
+      const bookmarkEnd = parseBookmarkEndOptions(el);
+      return bookmarkEnd ? { bookmarkEnd } : { rawXml: stringifyElement(el) };
     }
     default:
       return { rawXml: stringifyElement(el) };
@@ -358,6 +345,11 @@ function countFieldDelta(el: Element): number {
  */
 function isTocFieldBegin(el: Element): boolean {
   if (el.name !== "w:p") return false;
+  // A self-contained field paragraph (begin→end balanced inside one w:p, e.g.
+  // pandoc's empty caption TOCs) round-trips through the per-paragraph field
+  // accumulator as a single { field } child — aggregating it here would emit
+  // it twice (an entry-less TOC plus the paragraph itself).
+  if (countFieldDelta(el) === 0) return false;
   let hasBegin = false;
   let instr = "";
   const walk = (node: Element): void => {
@@ -532,7 +524,7 @@ function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
  * The re-emitted field chain carries them so Word's explicit style overrides on
  * these invisible runs round-trip.
  */
-function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptions): void {
+export function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptions): void {
   let depth = 0;
   let controlRPr: string | undefined;
   let closed = false;
@@ -568,9 +560,12 @@ function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptions): vo
       } else if (type === "end") {
         depth--;
         if (depth === 0) {
+          // endRPrXml distinguishes the three end-run shapes: "" = no rPr
+          // (must stay bare, not inherit the control rPr), undefined = same
+          // as the control rPr (emit falls back to it), otherwise its own.
           const endRPr = runRPrXml(node);
           if (controlRPr) tocOpts.rPrXml = controlRPr;
-          if (endRPr && endRPr !== controlRPr) tocOpts.endRPrXml = endRPr;
+          if (endRPr !== controlRPr) tocOpts.endRPrXml = endRPr ?? "";
           closed = true;
           return;
         }

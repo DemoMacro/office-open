@@ -74,6 +74,7 @@ export { decodeBase64, encodeBase64 } from "../util/base64";
 
 // Archive parser
 export { parseArchive, ParsedArchive } from "./parser";
+export { OOXML_CANONICAL_PREFIXES } from "./namespaces";
 
 // OPC consistency validation
 export {

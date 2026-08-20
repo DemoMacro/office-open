@@ -586,11 +586,13 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   const tblBorders = findChild(el, "w:tblBorders");
   if (tblBorders) {
     // XML side names → TableBordersOptions keys (insideH/insideV map to
-    // insideHorizontal/insideVertical); all 6 sides are CT_TblBorders-optional.
+    // insideHorizontal/insideVertical); all 8 sides are CT_TblBorders-optional.
     const SIDE_KEYS: ReadonlyArray<[string, keyof TableBordersOptions]> = [
       ["top", "top"],
+      ["start", "start"],
       ["left", "left"],
       ["bottom", "bottom"],
+      ["end", "end"],
       ["right", "right"],
       ["insideH", "insideHorizontal"],
       ["insideV", "insideVertical"],
@@ -1052,7 +1054,11 @@ function parseTableCellEl(el: Element, ctx: DocxReadContext): TableCellOptions {
 
   const tcPr = findChild(el, "w:tcPr");
   if (tcPr) {
-    Object.assign(opts, parseTableCellPropertiesEl(tcPr));
+    const props = parseTableCellPropertiesEl(tcPr);
+    Object.assign(opts, props);
+    // A bare <w:tcPr/> yields no fields — mark the presence so stringify
+    // re-emits the empty element.
+    if (Object.keys(props).length === 0) opts.cellProperties = true;
   }
 
   const childElements: SectionChild[] = [];

@@ -30,10 +30,14 @@ export interface NotesData {
   /**
    * Separator note — id + content round-tripped from the source so it stays
    * consistent with settings.footnoteProperties/endnoteProperties, which reference this id.
+   * null = the parsed part carried no separator note (emit nothing; only fresh
+   * data falls back to the spec default).
    */
-  separator?: NoteSeparator;
-  /** Continuation separator note — id + content round-tripped from the source. */
-  continuationSeparator?: NoteSeparator;
+  separator?: NoteSeparator | null;
+  /** Continuation separator note — same states as separator. */
+  continuationSeparator?: NoteSeparator | null;
+  /** Continuation notice note (w:type="continuationNotice") — same states. */
+  continuationNotice?: NoteSeparator | null;
 }
 
 const NS = documentNamespaceAttributes([
@@ -74,11 +78,13 @@ export interface NotesDescConfig {
 export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesData, BodyContext> {
   /** Render a system note from round-tripped id + content, or the spec default. */
   const systemNote = (
-    type: "separator" | "continuationSeparator",
-    sep: NoteSeparator | undefined,
+    type: "separator" | "continuationSeparator" | "continuationNotice",
+    sep: NoteSeparator | null | undefined,
     fallback: string,
     ctx: BodyContext,
   ): string => {
+    // null = the parsed source carried no such system note — emit nothing.
+    if (sep === null) return "";
     if (!sep) return fallback;
     const inner = sep.paragraphs.map((p) => stringifyParagraphInline(p, ctx)).join("");
     return `<${cfg.noteTag} w:type="${type}" w:id="${sep.id}">${inner}</${cfg.noteTag}>`;
@@ -92,7 +98,8 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
 
       // Separator / continuation separator: round-trip id + content verbatim so
       // they stay consistent with settings (which references these ids). Fall
-      // back to spec defaults only for freshly generated documents.
+      // back to spec defaults only for freshly generated documents. The
+      // continuation notice has no spec default — it only ever round-trips.
       parts.push(systemNote("separator", data.separator, cfg.separatorXml, ctx));
       parts.push(
         systemNote(
@@ -102,6 +109,9 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
           ctx,
         ),
       );
+      if (data.continuationNotice) {
+        parts.push(systemNote("continuationNotice", data.continuationNotice, "", ctx));
+      }
 
       for (const [id, paragraphs] of data.notes) {
         parts.push(`<${cfg.noteTag} w:id="${id}">`);
@@ -109,9 +119,12 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
           const pXml = stringifyParagraphInline(para, ctx);
           // Inject the reference run only on fresh content — a round-tripped
           // note keeps the parsed ref-mark run (with its own rPr) in place, and
-          // injecting the template too would emit the mark twice.
+          // injecting the template too would emit the mark twice. A paragraph
+          // with no children at all (parsed empty notes) takes no mark: the
+          // injection could only land outside the paragraph, which CT_FtnEdn
+          // does not allow.
           const hasRefMark = pXml.includes("<w:footnoteRef/>") || pXml.includes("<w:endnoteRef/>");
-          if (i === 0 && !hasRefMark) {
+          if (i === 0 && !hasRefMark && !isEmptyParagraph(pXml)) {
             parts.push(injectRefRun(pXml, cfg));
           } else {
             parts.push(pXml);
@@ -128,6 +141,7 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
       const notes = new Map<number, (ParagraphOptions | string)[]>();
       let separator: NoteSeparator | undefined;
       let continuationSeparator: NoteSeparator | undefined;
+      let continuationNotice: NoteSeparator | undefined;
       for (const child of el.elements ?? []) {
         if (child.name !== cfg.noteTag) continue;
         const id = attrNum(child, "w:id");
@@ -141,18 +155,21 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
           }
         }
 
-        // System notes carry type="separator"/"continuationSeparator" — capture
-        // their id + content so stringify round-trips them verbatim (settings
+        // System notes carry a w:type (separator/continuationSeparator/
+        // continuationNotice — the ST_FtnEdn system members) — capture their
+        // id + content so stringify round-trips them verbatim (settings
         // references these ids). Normal notes (type absent/"normal") go to notes.
         if (type === "separator") {
           separator = { id, paragraphs };
         } else if (type === "continuationSeparator") {
           continuationSeparator = { id, paragraphs };
+        } else if (type === "continuationNotice") {
+          continuationNotice = { id, paragraphs };
         } else {
           notes.set(id, paragraphs);
         }
       }
-      return { notes, separator, continuationSeparator } as NotesData;
+      return { notes, separator, continuationSeparator, continuationNotice } as NotesData;
     },
   };
 }
@@ -170,4 +187,9 @@ function injectRefRun(pXml: string, cfg: NotesDescConfig): string {
   return openIdx !== -1
     ? pXml.slice(0, openIdx + 1) + cfg.refRunXml + pXml.slice(openIdx + 1)
     : pXml;
+}
+
+/** A paragraph element with no children at all — self-closed or open+close. */
+function isEmptyParagraph(pXml: string): boolean {
+  return /^<[^/>]+\/>$/.test(pXml) || /^<[^>]+><\/[^>]+>$/.test(pXml);
 }

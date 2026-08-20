@@ -1143,12 +1143,15 @@ export function stringifyChildDispatch(
       // re-generated document keeps byte-stable relationships (random ids
       // would drift on every compile). Later media/embedding offsets sample
       // relationshipCount after this registration, so no id collision.
-      const linkId = ctx.viewWrapper.relationships.add(
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-        hl.url,
-        TargetModeType.EXTERNAL,
-      );
-      const attrs = [`r:id="rId${linkId}"`];
+      // Multiple hyperlinks to the same URL share one relationship, matching
+      // Word's reuse (a per-reference entry duplicates the rel on round-trip).
+      const relType =
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+      const existingId = ctx.viewWrapper.relationships.idOf(relType, hl.url);
+      const linkId =
+        existingId ??
+        `rId${ctx.viewWrapper.relationships.add(relType, hl.url, TargetModeType.EXTERNAL)}`;
+      const attrs = [`r:id="${linkId}"`];
       pushHlAttrs(attrs);
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;
     }
@@ -1473,7 +1476,10 @@ export function stringifyParagraphInline(
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
           body += Array.isArray(jsonResult) ? jsonResult.join("") : jsonResult;
-        } else if ("text" in child || "children" in child || "break" in child) {
+        } else {
+          // RunOptions-like plain object — may be an empty run carrying only
+          // run properties (round-tripped from <w:r><w:rPr>…</w:rPr></w:r>);
+          // same fallback contract as the body-level paragraph stringifier.
           body += stringifyRunInline(child as RunOptions, ctx);
         }
       }

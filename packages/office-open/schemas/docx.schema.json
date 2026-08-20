@@ -3901,6 +3901,21 @@
         "contact": {
           "description": "Contact address, usually an email (w15:contact).",
           "type": "string"
+        },
+        "presenceInfo": {
+          "additionalProperties": false,
+          "description": "w15:presenceInfo — the author's identity on a collaboration provider.",
+          "properties": {
+            "providerId": {
+              "description": "w15:providerId — the provider identifier (e.g. \"None\").",
+              "type": "string"
+            },
+            "userId": {
+              "description": "w15:userId — the author's identifier at the provider.",
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
       },
       "required": ["author"],
@@ -4318,6 +4333,9 @@
       },
       "required": ["angle", "position"],
       "type": "object"
+    },
+    "ConnectorLockingOptions": {
+      "$ref": "#/definitions/BaseLockingOptions"
     },
     "ConstraintOperator": {
       "description": "ST_BoolOperator (dgm:constr `@op`).",
@@ -5760,11 +5778,30 @@
           "additionalProperties": false,
           "description": "Separator endnotes — round-tripped verbatim from the source.",
           "properties": {
+            "continuationNotice": {
+              "$ref": "#/definitions/EndnoteSeparator",
+              "description": "w:type=\"continuationNotice\" — round-tripped verbatim, no fresh default."
+            },
             "continuationSeparator": {
-              "$ref": "#/definitions/EndnoteSeparator"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/EndnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "separator": {
-              "$ref": "#/definitions/EndnoteSeparator"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/EndnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null = the parsed source carried no such note (emit nothing)."
             }
           },
           "type": "object"
@@ -5786,11 +5823,30 @@
           "additionalProperties": false,
           "description": "Separator footnotes — id + content round-tripped verbatim from the source so the generated id stays consistent with settings.footnoteProperties, references it. Omit for freshly generated documents (defaults apply).",
           "properties": {
+            "continuationNotice": {
+              "$ref": "#/definitions/FootnoteSeparator",
+              "description": "w:type=\"continuationNotice\" — round-tripped verbatim, no fresh default."
+            },
             "continuationSeparator": {
-              "$ref": "#/definitions/FootnoteSeparator"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/FootnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "separator": {
-              "$ref": "#/definitions/FootnoteSeparator"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/FootnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "null = the parsed source carried no such note (emit nothing)."
             }
           },
           "type": "object"
@@ -6829,6 +6885,10 @@
         "horizontalPosition": {
           "$ref": "#/definitions/HorizontalPositionOptions"
         },
+        "horizontalSize": {
+          "$ref": "#/definitions/RelativeSizeOptions",
+          "description": "Horizontal size as a percentage of a base (wp14:sizeRelH, Word 2010+). `percent` is a whole-number percentage (0 = auto-size from the extent)."
+        },
         "layoutInCell": {
           "type": "boolean"
         },
@@ -6840,6 +6900,10 @@
         },
         "verticalPosition": {
           "$ref": "#/definitions/VerticalPositionOptions"
+        },
+        "verticalSize": {
+          "$ref": "#/definitions/RelativeSizeOptions",
+          "description": "Vertical size as a percentage of a base (wp14:sizeRelV, Word 2010+). `percent` is a whole-number percentage (0 = auto-size from the extent)."
         },
         "wrap": {
           "$ref": "#/definitions/TextWrapping"
@@ -7450,6 +7514,10 @@
       "additionalProperties": false,
       "description": "Locking flags for wp:cNvGraphicFramePr (CT_GraphicalObjectFrameLocking).",
       "properties": {
+        "emptyLocks": {
+          "description": "The source carried a bare `<a:graphicFrameLocks/>` with no attributes. Round-trip marker only — re-emits the empty element (element presence is part of the source's fidelity) instead of dropping it.",
+          "type": "boolean"
+        },
         "noChangeAspect": {
           "type": "boolean"
         },
@@ -10870,6 +10938,10 @@
           "description": "Connector shape marker — when true the shape emits wps:cNvCnPr (connector non-visual properties) instead of wps:cNvSpPr. Per the CT_WordprocessingShape choice these are mutually exclusive.",
           "type": "boolean"
         },
+        "connectorLocking": {
+          "$ref": "#/definitions/ConnectorLockingOptions",
+          "description": "Connector locks (wps:cNvCnPr/a:cxnSpLocks), when connector is set."
+        },
         "description": {
           "description": "Alt-text description (wps:cNvPr `@descr`).",
           "type": "string"
@@ -10877,6 +10949,10 @@
         "id": {
           "description": "Drawing id (wps:cNvPr `@id`).",
           "type": "number"
+        },
+        "locking": {
+          "$ref": "#/definitions/ShapeLockingOptions",
+          "description": "Shape locks (wps:cNvSpPr/a:spLocks). An empty object = bare element."
         },
         "name": {
           "description": "Drawing name (wps:cNvPr `@name`).",
@@ -12931,6 +13007,10 @@
           "description": "HTML div ID reference",
           "type": "number"
         },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:pPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
+        },
         "frame": {
           "$ref": "#/definitions/FrameOptions",
           "description": "Frame properties for positioning the paragraph"
@@ -13280,6 +13360,10 @@
         "divId": {
           "description": "HTML div ID reference",
           "type": "number"
+        },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:pPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
         },
         "frame": {
           "$ref": "#/definitions/FrameOptions",
@@ -13871,6 +13955,10 @@
           },
           "type": "object"
         },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
+        },
         "endnoteReference": {
           "anyOf": [
             {
@@ -14206,6 +14294,10 @@
         "divId": {
           "description": "HTML div ID reference",
           "type": "number"
+        },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:pPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
         },
         "frame": {
           "$ref": "#/definitions/FrameOptions",
@@ -14778,13 +14870,13 @@
     },
     "PictMediaOptions": {
       "additionalProperties": false,
-      "description": "Binary backing one v:imagedata r:id reference in the shape tree.",
+      "description": "Binary backing one `{fileName}` placeholder in the pict (imagedata or raw passthrough XML — fallback copies, textbox content).",
       "properties": {
         "data": {
           "$ref": "#/definitions/DataType"
         },
         "fileName": {
-          "description": "Placeholder key matching the `{fileName}` token in the imagedata r:id.",
+          "description": "Placeholder key matching the `{fileName}` token in the pict XML.",
           "type": "string"
         },
         "type": {
@@ -14805,12 +14897,24 @@
           },
           "type": "array"
         },
+        "mcChoiceRequires": {
+          "description": "mc:Choice",
+          "type": "string"
+        },
         "media": {
-          "description": "Binaries referenced by v:imagedata r:id (round-trip; authoring supplies media entries and matching `{fileName}` relationshipId placeholders).",
+          "description": "Binaries referenced by `{fileName}` placeholders — v:imagedata r:id in the shape tree plus any r:id/r:embed/r:link inside the VML fallback or textbox content (round-trip; authoring supplies media entries and matching placeholders).",
           "items": {
             "$ref": "#/definitions/PictMediaOptions"
           },
           "type": "array"
+        },
+        "vmlFallback": {
+          "description": "Serialized mc:Fallback element from parse — carried when the source wrapped this pict in mc:AlternateContent (Choice = this pict, Fallback = a compatibility copy). Round-trips verbatim; the wrapper is rebuilt on stringify (drawing vmlFallback pattern).",
+          "type": "string"
+        },
+        "w14AnchorId": {
+          "description": "w14:anchorId extension attribute on w:pict.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -15781,6 +15885,22 @@
       },
       "type": "object"
     },
+    "RelativeSizeOptions": {
+      "additionalProperties": false,
+      "description": "Options for sizing a floating drawing relative to a page base (CT_SizeRelH/CT_SizeRelV).",
+      "properties": {
+        "percent": {
+          "description": "Whole-number percentage (wp14:pctWidth / wp14:pctHeight, 0-100).",
+          "type": "number"
+        },
+        "relative": {
+          "description": "The base the percentage is relative to (relativeFrom).",
+          "enum": ["margin", "page", "leftMargin", "rightMargin", "topMargin", "bottomMargin"],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "ResizeHandles": {
       "description": "ST_ResizeHandlesStr (dgm:resizeHandles `@val`).",
       "enum": ["exact", "rel"],
@@ -16258,6 +16378,10 @@
           },
           "type": "object"
         },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
+        },
         "endnoteReference": {
           "anyOf": [
             {
@@ -16550,6 +16674,10 @@
           },
           "type": "object"
         },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
+        },
         "fitText": {
           "type": "number"
         },
@@ -16810,6 +16938,10 @@
           },
           "type": "object"
         },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
+        },
         "fitText": {
           "type": "number"
         },
@@ -17064,6 +17196,10 @@
             }
           },
           "type": "object"
+        },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
         },
         "fitText": {
           "type": "number"
@@ -17499,6 +17635,11 @@
           "description": "Display name",
           "type": "string"
         },
+        "appearance": {
+          "description": "Visual chrome of the content control in Word 2013+ (w15:appearance): boundingBox (title bar + borders), tags (start/end markers only), or hidden (no chrome).",
+          "enum": ["boundingBox", "tags", "hidden"],
+          "type": "string"
+        },
         "bibliography": {
           "description": "Bibliography SDT",
           "type": "boolean"
@@ -17837,12 +17978,20 @@
                   "description": "\\c option -  Includes figures, tables, charts, and other items that are numbered by a SEQ field (§17.16.5.56). The sequence identifier designated by text in this switch's field-argument, which corresponds to the caption label, shall match the identifier in the corresponding SEQ field.",
                   "type": "string"
                 },
+                "docPartUnique": {
+                  "description": "Emit w:docPartUnique inside sdtPr's w:docPartObj (round-trip only).",
+                  "type": "boolean"
+                },
                 "endInBody": {
                   "description": "The field-end marker lives in a body paragraph that follows the rendered entries (Word drops it into the next heading when it updates the field). That paragraph round-trips on its own — the stringify path must not inject another end run into the last entry (round-trip only).",
                   "type": "boolean"
                 },
+                "endProperties": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Run properties of the SDT end mark (w:sdtEndPr). An empty object means the source carried a bare `<w:sdtEndPr/>` (round-trip only)."
+                },
                 "endRPrXml": {
-                  "description": "Run properties of the field's closing `end` run when Word styles it differently from the control runs (round-trip only).",
+                  "description": "Run properties of the field's closing `end` run (round-trip only). `\"\"` means the end run carried no rPr (stays bare rather than inheriting the control rPr); `undefined` means it matched the control runs' rPr.",
                   "type": "string"
                 },
                 "entries": {
@@ -17876,6 +18025,17 @@
                   "description": "\\h option - Makes the table of contents entries hyperlinks.",
                   "type": "boolean"
                 },
+                "id": {
+                  "description": "SDT identifier (w:id) of the TOC content control (round-trip only).",
+                  "type": "number"
+                },
+                "leading": {
+                  "description": "Block content the sdtContent carries before the TOC field — the TOC heading paragraph, a wrapping bookmarkStart (round-trip only).",
+                  "items": {
+                    "$ref": "#/definitions/SectionChild"
+                  },
+                  "type": "array"
+                },
                 "pageNumbersEntryLevelsRange": {
                   "description": "\\n option - Without field-argument, omits page numbers from the table of contents. Page numbers are omitted from all levels unless a range of entry levels is specified by text in this switch's field-argument. A range is specified as for \\l.",
                   "type": "string"
@@ -17891,6 +18051,10 @@
                 "rPrXml": {
                   "description": "Run properties carried by the field's begin/instruction/separate control runs, as serialized `<w:rPr>…</w:rPr>` XML (round-trip only; Word parks explicit style overrides — e.g. `b w:val=\"0\"` — on these invisible runs).",
                   "type": "string"
+                },
+                "runProperties": {
+                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "description": "Run properties of the SDT start mark — sdtPr's leading w:rPr element (round-trip only; Word parks the TOC style's font overrides there)."
                 },
                 "seqFieldIdentifierForPrefix": {
                   "description": "\\s option - For entries numbered with a SEQ field (§17.16.5.56), adds a prefix to the page number. The prefix depends on the type of entry. text in this switch's field-argument shall match the identifier in the SEQ field.",
@@ -17914,6 +18078,13 @@
                 "tcFieldLevelRange": {
                   "description": "\\l option - Includes TC fields that assign entries to one of the levels specified by text in this switch's field-argument as a range having the form startLevel-endLevel, where startLevel and endLevel are integers, and startLevel has a value equal-to or less-than endLevel. TC fields that assign entries to lower levels are skipped.",
                   "type": "string"
+                },
+                "trailing": {
+                  "description": "Block content the sdtContent carries after the TOC field — the closing bookmarkEnd of a wrapping bookmark (round-trip only).",
+                  "items": {
+                    "$ref": "#/definitions/SectionChild"
+                  },
+                  "type": "array"
                 },
                 "useAppliedParagraphOutlineLevel": {
                   "description": "\\u Uses the applied paragraph outline level.",
@@ -18012,6 +18183,10 @@
                 "divId": {
                   "description": "HTML div ID reference",
                   "type": "number"
+                },
+                "emptyProperties": {
+                  "description": "The source carried a bare `<w:pPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+                  "type": "boolean"
                 },
                 "frame": {
                   "$ref": "#/definitions/FrameOptions",
@@ -18743,16 +18918,32 @@
           "description": "Page borders (w:pgBorders)."
         },
         "pageMargin": {
-          "$ref": "#/definitions/PageMarginProperties",
-          "description": "Page margins in twips (w:pgMar). Defaults to Word's standard margins."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PageMarginProperties"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Page margins in twips (w:pgMar). Three states: omitted (fresh generation defaults to Word's standard margins); a PageMarginProperties object; or false (a parsed source with no w:pgMar is preserved by emitting nothing)."
         },
         "pageNumberType": {
           "$ref": "#/definitions/PageNumberTypeProperties",
           "description": "Page numbering (w:pgNumType)."
         },
         "pageSize": {
-          "$ref": "#/definitions/PageSizeProperties",
-          "description": "Page size (w:pgSz). Defaults to A4 portrait."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PageSizeProperties"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Page size (w:pgSz). Three states: omitted (fresh generation defaults to A4 portrait); a PageSizeProperties object (emits provided values); or false (a parsed source with no w:pgSz is preserved by emitting nothing)."
         },
         "paperSrc": {
           "additionalProperties": false,
@@ -18841,16 +19032,32 @@
           "description": "Page borders (w:pgBorders)."
         },
         "pageMargin": {
-          "$ref": "#/definitions/PageMarginProperties",
-          "description": "Page margins in twips (w:pgMar). Defaults to Word's standard margins."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PageMarginProperties"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Page margins in twips (w:pgMar). Three states: omitted (fresh generation defaults to Word's standard margins); a PageMarginProperties object; or false (a parsed source with no w:pgMar is preserved by emitting nothing)."
         },
         "pageNumberType": {
           "$ref": "#/definitions/PageNumberTypeProperties",
           "description": "Page numbering (w:pgNumType)."
         },
         "pageSize": {
-          "$ref": "#/definitions/PageSizeProperties",
-          "description": "Page size (w:pgSz). Defaults to A4 portrait."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PageSizeProperties"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Page size (w:pgSz). Three states: omitted (fresh generation defaults to A4 portrait); a PageSizeProperties object (emits provided values); or false (a parsed source with no w:pgSz is preserved by emitting nothing)."
         },
         "paperSrc": {
           "additionalProperties": false,
@@ -19531,6 +19738,10 @@
           "description": "Default image DPI for pictures inserted in this document (w14:defaultImageDpi)",
           "type": "number"
         },
+        "w14DiscardImageEditingData": {
+          "description": "Discard cropped-out image data when saving (w14:discardImageEditingData)",
+          "type": "boolean"
+        },
         "w14DocId": {
           "description": "Word 2010 document identifier (w14:docId/`@w14:val`, e.g. \"1A190769\")",
           "type": "string"
@@ -19805,6 +20016,56 @@
         "shapelayout": {
           "$ref": "#/definitions/VmlShapeLayoutOptions",
           "description": "o:shapelayout — shape id map / regroup table / rules."
+        }
+      },
+      "type": "object"
+    },
+    "ShapeLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noAdjustHandles": {
+          "description": "Prevent adjust handles",
+          "type": "boolean"
+        },
+        "noChangeArrowheads": {
+          "description": "Prevent changing arrowheads",
+          "type": "boolean"
+        },
+        "noChangeAspect": {
+          "description": "Prevent aspect ratio change",
+          "type": "boolean"
+        },
+        "noChangeShapeType": {
+          "description": "Prevent changing shape type",
+          "type": "boolean"
+        },
+        "noEditPoints": {
+          "description": "Prevent edit points",
+          "type": "boolean"
+        },
+        "noGrp": {
+          "description": "Prevent grouping",
+          "type": "boolean"
+        },
+        "noMove": {
+          "description": "Prevent moving",
+          "type": "boolean"
+        },
+        "noResize": {
+          "description": "Prevent resizing",
+          "type": "boolean"
+        },
+        "noRot": {
+          "description": "Prevent rotation",
+          "type": "boolean"
+        },
+        "noSelect": {
+          "description": "Prevent selection",
+          "type": "boolean"
+        },
+        "noTextEdit": {
+          "description": "Prevent text editing",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -20241,6 +20502,10 @@
         "dataRels": {
           "$ref": "#/definitions/DataType",
           "description": "Verbatim rels XML of the data part (its rIds resolve against media)."
+        },
+        "drawing": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing snapshot (MS-ODRAWXML 2008 extension) Word caches beside the data model. Falls back to an empty spTree shell when absent."
         },
         "layout": {
           "$ref": "#/definitions/DataType",
@@ -21260,6 +21525,10 @@
           },
           "type": "object"
         },
+        "emptyProperties": {
+          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
+        },
         "endnoteReference": {
           "anyOf": [
             {
@@ -21572,9 +21841,12 @@
     },
     "TableBordersOptions": {
       "additionalProperties": false,
-      "description": "Options for configuring table borders.\n\nBorders can be applied to the outside edges (top, bottom, left, right) and inside lines (insideHorizontal, insideVertical) of the table.",
+      "description": "Options for configuring table borders.\n\nBorders can be applied to the outside edges (top, bottom, left, right, start, end) and inside lines (insideHorizontal, insideVertical) of the table. start/end are the bidi-aware equivalents of left/right (CT_TblBorders carries both; Word emits whichever the table's direction selects).",
       "properties": {
         "bottom": {
+          "$ref": "#/definitions/BorderOptions"
+        },
+        "end": {
           "$ref": "#/definitions/BorderOptions"
         },
         "insideHorizontal": {
@@ -21587,6 +21859,9 @@
           "$ref": "#/definitions/BorderOptions"
         },
         "right": {
+          "$ref": "#/definitions/BorderOptions"
+        },
+        "start": {
           "$ref": "#/definitions/BorderOptions"
         },
         "top": {
@@ -21683,6 +21958,10 @@
         },
         "cellMerge": {
           "$ref": "#/definitions/CellMergeAttributes"
+        },
+        "cellProperties": {
+          "description": "The source carried a bare `<w:tcPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
+          "type": "boolean"
         },
         "children": {
           "description": "Array of Paragraph, Table, or plain objects that make up the cell content",
@@ -23552,6 +23831,10 @@
           "$ref": "#/definitions/TextCapitalization"
         },
         "dirty": {
+          "type": "boolean"
+        },
+        "emptyProperties": {
+          "description": "The source carried a bare `<a:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
           "type": "boolean"
         },
         "err": {

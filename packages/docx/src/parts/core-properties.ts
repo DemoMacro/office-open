@@ -89,15 +89,21 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * references it. Omit for freshly generated documents (defaults apply).
    */
   footnoteSeparators?: {
-    separator?: FootnoteSeparator;
-    continuationSeparator?: FootnoteSeparator;
+    /** null = the parsed source carried no such note (emit nothing). */
+    separator?: FootnoteSeparator | null;
+    continuationSeparator?: FootnoteSeparator | null;
+    /** w:type="continuationNotice" — round-tripped verbatim, no fresh default. */
+    continuationNotice?: FootnoteSeparator;
   };
   /** User endnotes (word/endnotes.xml). `id` auto-assigns 1, 2, … when omitted. */
   endnotes?: EndnoteOptions[];
   /** Separator endnotes — round-tripped verbatim from the source. */
   endnoteSeparators?: {
-    separator?: EndnoteSeparator;
-    continuationSeparator?: EndnoteSeparator;
+    /** null = the parsed source carried no such note (emit nothing). */
+    separator?: EndnoteSeparator | null;
+    continuationSeparator?: EndnoteSeparator | null;
+    /** w:type="continuationNotice" — round-tripped verbatim, no fresh default. */
+    continuationNotice?: EndnoteSeparator;
   };
   background?: DocumentBackgroundOptions;
   customProperties?: CustomPropertyOptions[];

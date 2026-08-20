@@ -164,14 +164,16 @@ export class DocxWriteContext implements WriteContext {
   declare public footNotes: {
     relationships: Relationships;
     notes: Map<number, (ParagraphOptions | string)[]>;
-    separator?: FootnoteSeparator;
-    continuationSeparator?: FootnoteSeparator;
+    separator?: FootnoteSeparator | null;
+    continuationSeparator?: FootnoteSeparator | null;
+    continuationNotice?: FootnoteSeparator;
   };
   declare public endnotes: {
     relationships: Relationships;
     notes: Map<number, (ParagraphOptions | string)[]>;
-    separator?: EndnoteSeparator;
-    continuationSeparator?: EndnoteSeparator;
+    separator?: EndnoteSeparator | null;
+    continuationSeparator?: EndnoteSeparator | null;
+    continuationNotice?: EndnoteSeparator;
   };
 
   // --- Additional state used by the compiler ---
@@ -183,8 +185,10 @@ export class DocxWriteContext implements WriteContext {
   declare public webSettings: WebSettingsOptions | undefined;
 
   // --- Section properties (one per section, raw options for descriptor pipeline) ---
-  private _sectionProperties: SectionPropertiesDescriptorOptions[] = [];
-  public get sectionProperties(): readonly SectionPropertiesDescriptorOptions[] {
+  // An entry is undefined when the source body carried no sectPr for that
+  // section — emitting a synthesized one would not round-trip.
+  private _sectionProperties: (SectionPropertiesDescriptorOptions | undefined)[] = [];
+  public get sectionProperties(): readonly (SectionPropertiesDescriptorOptions | undefined)[] {
     return this._sectionProperties;
   }
 
@@ -394,8 +398,15 @@ export class DocxWriteContext implements WriteContext {
         nextNoteId = Math.max(nextNoteId, id + 1);
         this.footNotes.notes.set(id, note.children);
       }
-      this.footNotes.separator = options.footnoteSeparators?.separator;
-      this.footNotes.continuationSeparator = options.footnoteSeparators?.continuationSeparator;
+      // A present separators object comes from parse — its missing members are
+      // null (source carried none); an absent object is fresh (defaults apply).
+      this.footNotes.separator = options.footnoteSeparators
+        ? (options.footnoteSeparators.separator ?? null)
+        : undefined;
+      this.footNotes.continuationSeparator = options.footnoteSeparators
+        ? (options.footnoteSeparators.continuationSeparator ?? null)
+        : undefined;
+      this.footNotes.continuationNotice = options.footnoteSeparators?.continuationNotice;
     }
 
     if (options.endnotes || options.endnoteSeparators) {
@@ -405,8 +416,13 @@ export class DocxWriteContext implements WriteContext {
         nextNoteId = Math.max(nextNoteId, id + 1);
         this.endnotes.notes.set(id, note.children);
       }
-      this.endnotes.separator = options.endnoteSeparators?.separator;
-      this.endnotes.continuationSeparator = options.endnoteSeparators?.continuationSeparator;
+      this.endnotes.separator = options.endnoteSeparators
+        ? (options.endnoteSeparators.separator ?? null)
+        : undefined;
+      this.endnotes.continuationSeparator = options.endnoteSeparators
+        ? (options.endnoteSeparators.continuationSeparator ?? null)
+        : undefined;
+      this.endnotes.continuationNotice = options.endnoteSeparators?.continuationNotice;
     }
 
     this.fontTable = new FontWrapper(options.fonts ?? []);
@@ -441,6 +457,20 @@ export class DocxWriteContext implements WriteContext {
   // --- Private helpers ---
 
   private addSection({ headers = {}, footers = {}, properties }: SectionOptions): void {
+    // A section with no properties and no header/footer references had no
+    // sectPr in the source (Word writes one whenever any of these exist) —
+    // keep it absent so the body round-trips.
+    const hasRefs =
+      headers.default !== undefined ||
+      headers.even !== undefined ||
+      headers.first !== undefined ||
+      footers.default !== undefined ||
+      footers.even !== undefined ||
+      footers.first !== undefined;
+    if (properties === undefined && !hasRefs) {
+      this._sectionProperties.push(undefined);
+      return;
+    }
     const sectPrOptions: SectionPropertiesDescriptorOptions = {
       ...properties,
       footerReferences: {

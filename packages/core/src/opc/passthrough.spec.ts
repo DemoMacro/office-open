@@ -132,4 +132,23 @@ describe("collectPassthroughParts", () => {
     expect(paths).not.toContain("word/glossary/document.xml");
     expect(paths).toContain("word/glossary/_rels/document.xml.rels");
   });
+
+  it("normalizes obsolete namespace URIs in passthrough XML without touching binaries", () => {
+    const files = basePackage();
+    files["word/stylesWithEffects.xml"] =
+      '<?xml version="1.0"?>\r\n<w:styles xmlns:w15="http://schemas.microsoft.com/office/word/2010/11/wordml"><w:t>http://schemas.microsoft.com/office/word/2010/11/wordml</w:t></w:styles>';
+    const binary = new TextEncoder().encode(
+      "http://schemas.microsoft.com/office/word/2010/11/wordml",
+    );
+    files["word/media/namespace.bin"] = binary;
+
+    const result = collectPassthroughParts(archiveOf(files), ["word/document.xml"]);
+    const styles = result.parts.find((p) => p.path === "word/stylesWithEffects.xml");
+    const media = result.parts.find((p) => p.path === "word/media/namespace.bin");
+
+    expect(new TextDecoder().decode(styles?.data)).toBe(
+      '<?xml version="1.0"?>\r\n<w:styles xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"><w:t>http://schemas.microsoft.com/office/word/2010/11/wordml</w:t></w:styles>',
+    );
+    expect(Array.from(media?.data ?? [])).toEqual(Array.from(binary));
+  });
 });

@@ -7,6 +7,7 @@
  */
 import { attr, children, findChild, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
   StyleLevel,
   TableOfContentsOptions,
@@ -14,6 +15,7 @@ import type {
 import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext } from "../../context";
+import { captureTocFieldRPr } from "../../parse/body";
 
 /**
  * Try to parse a w:sdt element as a TOC.
@@ -66,16 +68,46 @@ export function parseToc(
   const tocOpts: Record<string, unknown> = {};
   const sdtContent = findChild(el, "w:sdtContent");
 
+  // sdtPr round-trip fields: the start mark's rPr, the SDT id, and
+  // docPartObj's w:docPartUnique (gallery is the TOC detection key).
+  const rPr = findChild(sdtPr, "w:rPr");
+  if (rPr) tocOpts.runProperties = parseRunProperties(rPr);
+  const idEl = findChild(sdtPr, "w:id");
+  if (idEl) {
+    const val = attr(idEl, "w:val");
+    const num = val !== undefined ? Number(val) : NaN;
+    if (!Number.isNaN(num)) tocOpts.id = num;
+  }
+  if (docPartObj && findChild(docPartObj, "w:docPartUnique")) tocOpts.docPartUnique = true;
+
+  // CT_SdtEndPr wraps its run properties in a w:rPr child; a bare element is
+  // carried as an empty object so stringify re-emits it.
+  const sdtEndPr = findChild(el, "w:sdtEndPr");
+  if (sdtEndPr) {
+    const endRPr = findChild(sdtEndPr, "w:rPr");
+    tocOpts.endProperties = endRPr ? parseRunProperties(endRPr) : {};
+  }
+
   if (sdtContent) {
+    const elements = sdtContent.elements ?? [];
     // Word splits one instruction across runs (` TOC ` + ` \o "1-1" `), so
     // the outer field's instrText runs are joined before parsing.
-    const instruction = collectOuterFieldInstruction(sdtContent.elements ?? []);
+    const instruction = collectOuterFieldInstruction(elements);
     if (instruction) parseTocFieldInstruction(instruction, tocOpts);
-    // Rendered entries — the paragraphs between the field's separate and end
-    // markers. Captured structurally so MS Office and WPS both display the
-    // existing TOC instead of regenerating it from headings.
+    // Capture the field's control runs verbatim (begin→separate chain, the
+    // control rPr, the end run's rPr) — same contract as the bare-field TOC.
+    captureTocFieldRPr(elements, tocOpts as TableOfContentsOptions);
+    // sdtContent may carry block content around the field — the TOC heading
+    // paragraph before it, the wrapping bookmarkStart/bookmarkEnd pair. Split
+    // the element list at the field's outer begin/end so nothing drops.
+    const { leadingEls, fieldEls, trailingEls } = splitAroundOuterField(elements);
     if (parseChildren) {
-      const entryEls = selectTocEntryElements(sdtContent.elements ?? []);
+      if (leadingEls.length > 0) tocOpts.leading = parseChildren(leadingEls, ctx);
+      if (trailingEls.length > 0) tocOpts.trailing = parseChildren(trailingEls, ctx);
+      // Rendered entries — the paragraphs between the field's separate and end
+      // markers. Captured structurally so MS Office and WPS both display the
+      // existing TOC instead of regenerating it from headings.
+      const entryEls = selectTocEntryElements(fieldEls);
       if (entryEls.length > 0) {
         tocOpts.entries = parseChildren(entryEls, ctx);
       }
@@ -83,6 +115,48 @@ export function parseToc(
   }
 
   return { alias, ...tocOpts } as { alias?: string } & TableOfContentsOptions;
+}
+
+/**
+ * Split sdtContent's element list into leading / field / trailing around the
+ * outermost complex field. The field span runs from the element that opens
+ * the outer field (depth 0→1) through the element that closes it (back to 0);
+ * an unterminated field (its end marker lives in a later body paragraph —
+ * endInBody) keeps the remainder in the field slice.
+ */
+function splitAroundOuterField(els: Element[]): {
+  leadingEls: Element[];
+  fieldEls: Element[];
+  trailingEls: Element[];
+} {
+  let depth = 0;
+  let startIdx = -1;
+  let endIdx = -1;
+  for (let i = 0; i < els.length; i++) {
+    const depthBefore = depth;
+    const walk = (node: Element): void => {
+      if (node.name === "w:fldChar") {
+        const type = attr(node, "w:fldCharType");
+        if (type === "begin") depth++;
+        else if (type === "end") depth--;
+      }
+      for (const c of node.elements ?? []) {
+        if (c.type === "element") walk(c);
+      }
+    };
+    walk(els[i]!);
+    if (startIdx < 0 && depth > depthBefore) startIdx = i;
+    if (startIdx >= 0 && endIdx < 0 && depthBefore > 0 && depth === 0) {
+      endIdx = i;
+      break;
+    }
+  }
+  if (startIdx < 0) return { leadingEls: els, fieldEls: [], trailingEls: [] };
+  return {
+    leadingEls: els.slice(0, startIdx),
+    fieldEls: els.slice(startIdx, endIdx >= 0 ? endIdx + 1 : els.length),
+    trailingEls: endIdx >= 0 ? els.slice(endIdx + 1) : [],
+  };
 }
 
 /**

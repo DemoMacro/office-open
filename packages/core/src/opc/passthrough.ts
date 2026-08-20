@@ -21,6 +21,7 @@ import {
   type ContentTypeDefault,
   type ContentTypeOverride,
 } from "./content-types-input";
+import { normalizeObsoleteNamespaceAliases } from "./namespaces";
 import type { ParsedArchive } from "./parser";
 import { partPathToRelsPath, resolveRelationshipTarget } from "./relationships";
 
@@ -114,8 +115,15 @@ export function collectPassthroughParts(
   const kept = new Set<string>();
   for (const path of archive.keys()) {
     if (path.endsWith("/") || rebuilt.has(path)) continue;
-    const data = archive.getRaw(path);
-    if (!data) continue;
+    const sourceData = archive.getRaw(path);
+    if (!sourceData) continue;
+    // Modeled XML is parsed through the same obsolete→final namespace aliases;
+    // normalize raw XML/rels bytes as well so one generated package never mixes
+    // both dialects. Non-XML binaries remain byte-identical.
+    const data =
+      path.endsWith(".xml") || path.endsWith(".rels")
+        ? normalizeObsoleteNamespaceAliases(sourceData)
+        : sourceData;
     kept.add(path);
     const contentType = contentTypeFor(path);
     parts.push(contentType === undefined ? { path, data } : { path, data, contentType });

@@ -74,6 +74,12 @@ export interface DocxPartRefs {
   diagramQuickStyle: Map<string, string>;
   /** word/diagrams/colorsN.xml keyed by rId */
   diagramColors: Map<string, string>;
+  /**
+   * word/diagrams/drawingN.xml keyed by rId — the pre-rendered dsp:drawing
+   * snapshot. Word wires it through the data part's own rels; pandoc through
+   * document.xml.rels, so both feeds land here.
+   */
+  diagramDrawing: Map<string, string>;
   /** word/media/* keyed by rId (from document.xml.rels) */
   media: Map<string, string>;
   /**
@@ -170,6 +176,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     diagramLayout: new Map(),
     diagramQuickStyle: new Map(),
     diagramColors: new Map(),
+    diagramDrawing: new Map(),
     media: new Map(),
     partMedia: new Map(),
     afChunks: new Map(),
@@ -213,6 +220,8 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       refs.diagramQuickStyle.set(id, path);
     } else if (type.includes("/diagramColors")) {
       refs.diagramColors.set(id, path);
+    } else if (type.includes("/diagramDrawing")) {
+      refs.diagramDrawing.set(id, path);
     } else if (type.includes("/image") || type.includes("/media")) {
       refs.media.set(id, path);
     } else if (type.includes("/aFChunk")) {
@@ -470,13 +479,16 @@ export function parseDocument(data: DataType): DocumentOptions {
         footnotes.push({ id, children: paragraphs });
       }
       if (footnotes.length > 0) opts.footnotes = footnotes;
-      // Preserve round-tripped separators so the generated ids stay consistent
-      // with settings.footnoteProperties (which references them).
-      if (fnResult.separator || fnResult.continuationSeparator) {
-        opts.footnoteSeparators = {
-          separator: fnResult.separator,
-          continuationSeparator: fnResult.continuationSeparator,
-        };
+      // Preserve the parsed separator state so the generated ids stay consistent
+      // with settings.footnoteProperties (which references them). null marks a
+      // part that carried no such system note — stringify must not fall back to
+      // the spec default (the source part stays without it).
+      opts.footnoteSeparators = {
+        separator: fnResult.separator ?? null,
+        continuationSeparator: fnResult.continuationSeparator ?? null,
+      };
+      if (fnResult.continuationNotice) {
+        opts.footnoteSeparators.continuationNotice = fnResult.continuationNotice;
       }
     }
   }
@@ -493,11 +505,13 @@ export function parseDocument(data: DataType): DocumentOptions {
         endnotes.push({ id, children: paragraphs });
       }
       if (endnotes.length > 0) opts.endnotes = endnotes;
-      if (enResult.separator || enResult.continuationSeparator) {
-        opts.endnoteSeparators = {
-          separator: enResult.separator,
-          continuationSeparator: enResult.continuationSeparator,
-        };
+      // Same null-for-absence contract as the footnote separators.
+      opts.endnoteSeparators = {
+        separator: enResult.separator ?? null,
+        continuationSeparator: enResult.continuationSeparator ?? null,
+      };
+      if (enResult.continuationNotice) {
+        opts.endnoteSeparators.continuationNotice = enResult.continuationNotice;
       }
     }
   }

@@ -25,7 +25,9 @@ export const textRunDesc: CustomDescriptor<TextRunOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const body = runPropertiesDesc.stringify(opts, ctx) ?? "";
+    let body = runPropertiesDesc.stringify(opts, ctx) ?? "";
+    // A bare <a:rPr/> is presence, not nothing — keep the empty element.
+    if (!body && opts.emptyProperties) body = "<a:rPr/>";
     // Empty string keeps an explicit <a:t/> — sources carry empty text runs
     // (a:br neighbors) and round-trip must not drop the element.
     if (opts.text !== undefined) {
@@ -41,7 +43,9 @@ export const textRunDesc: CustomDescriptor<TextRunOptions> = {
 
     const rPr = findChild(el, "a:rPr");
     if (rPr) {
-      Object.assign(result, runPropertiesDesc.parse(rPr, _ctx));
+      const props = runPropertiesDesc.parse(rPr, _ctx);
+      Object.assign(result, props);
+      if (Object.keys(props).length === 0) result.emptyProperties = true;
     }
 
     const t = findChild(el, "a:t");

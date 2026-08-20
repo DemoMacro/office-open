@@ -175,6 +175,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "divId",
       "cnfStyle",
       "revision",
+      "emptyProperties",
     ],
     // stringify writes every interface field (pPrChange is revision's XML).
     writeFields: [
@@ -215,6 +216,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "divId",
       "cnfStyle",
       "revision",
+      "emptyProperties",
     ],
     // parse covers every write field (round-trip complete).
     parseFields: [
@@ -255,6 +257,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       "divId",
       "cnfStyle",
       "revision",
+      "emptyProperties",
     ],
     order: [
       "pStyle",

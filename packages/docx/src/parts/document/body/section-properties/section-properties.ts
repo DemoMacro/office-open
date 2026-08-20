@@ -41,10 +41,18 @@ export interface SectionPropertiesOptionsBase {
   deletionRsid?: string;
   additionRsid?: string;
   sectionRsid?: string;
-  /** Page size (w:pgSz). Defaults to A4 portrait. */
-  pageSize?: PageSizeProperties;
-  /** Page margins in twips (w:pgMar). Defaults to Word's standard margins. */
-  pageMargin?: PageMarginProperties;
+  /**
+   * Page size (w:pgSz). Three states: omitted (fresh generation defaults to
+   * A4 portrait); a PageSizeProperties object (emits provided values); or
+   * false (a parsed source with no w:pgSz is preserved by emitting nothing).
+   */
+  pageSize?: PageSizeProperties | false;
+  /**
+   * Page margins in twips (w:pgMar). Three states: omitted (fresh generation
+   * defaults to Word's standard margins); a PageMarginProperties object; or
+   * false (a parsed source with no w:pgMar is preserved by emitting nothing).
+   */
+  pageMargin?: PageMarginProperties | false;
   /** Page numbering (w:pgNumType). */
   pageNumberType?: PageNumberTypeProperties;
   /** Page borders (w:pgBorders). */

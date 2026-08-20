@@ -667,10 +667,8 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   }
 
   parts.push("</p:cSld>");
-  parts.push(
-    colorMappingOverrideDesc.stringify(slideOpts.colorMappingOverride, ctx) ??
-      "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>",
-  );
+  // Optional per CT_Slide — undefined (a source without one) omits it.
+  parts.push(colorMappingOverrideDesc.stringify(slideOpts.colorMappingOverride, ctx) ?? "");
 
   if (slideOpts.transition) {
     parts.push(buildTransition(slideOpts.transition, ctx));
@@ -744,7 +742,9 @@ export function compilePresentation(
 
   // ── Mutable state ──
 
-  const hasCustomProperties = !!options.customProperties && options.customProperties.length > 0;
+  // Presence-based: a parsed empty docProps/custom.xml round-trips as an
+  // empty part (undefined = fresh document, omit the part).
+  const hasCustomProperties = options.customProperties !== undefined;
   const presRels = initPresRels(masters, slides.length);
   // Group slides into p14:sections by name (first-occurrence order); slides
   // without a section name are left ungrouped (absent from p14:sectionLst).

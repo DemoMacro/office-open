@@ -31,6 +31,12 @@ export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAl
   };
   horizontalMerge?: "continue" | "restart";
   verticalMerge?: "continue" | "restart";
+  /**
+   * The source carried an `<a:tcPr/>` with no attributes or children.
+   * Round-trip marker only — re-emits the empty element instead of dropping
+   * it (real-world sources write a bare tcPr on every cell).
+   */
+  cellProperties?: boolean;
   margins?: {
     top?: number | UniversalMeasure;
     bottom?: number | UniversalMeasure;

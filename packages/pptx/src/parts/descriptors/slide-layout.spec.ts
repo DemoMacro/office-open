@@ -55,9 +55,12 @@ describe("slideLayoutDesc stringify/parse", () => {
     expect(result.showMasterShapes).toBe(false);
   });
 
-  it("defaults colorMappingOverride to masterClrMapping and round-trips it", () => {
-    const result = roundTrip({ type: "blank" });
-    expect(result.colorMappingOverride).toEqual({ kind: "master" });
+  it("omits clrMapOvr when unset; an explicit master mapping round-trips", () => {
+    const bare = roundTrip({ type: "blank" });
+    expect(bare.colorMappingOverride).toBeUndefined();
+
+    const mapped = roundTrip({ type: "blank", colorMappingOverride: { kind: "master" } });
+    expect(mapped.colorMappingOverride).toEqual({ kind: "master" });
   });
 
   it("round-trips an explicit color-mapping override", () => {

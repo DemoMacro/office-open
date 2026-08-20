@@ -10,7 +10,7 @@
 
 import { convertToTwip, mapOptional, xsdVerticalMergeRev } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
-import { attrsRaw } from "@office-open/xml";
+import { attrsRaw, escapeXml } from "@office-open/xml";
 import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
 import type { TableCellBordersOptions } from "@parts/table/table-cell/table-cell-components";
 import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components";
@@ -91,12 +91,15 @@ function cellMarginStr(tag: string, opts: TableCellMarginOptions): string | unde
 
 // ── Table borders string ──
 
-// CT_TblBorders — all 6 sides are optional (minOccurs=0); emit only those set.
+// CT_TblBorders — all 8 sides are optional (minOccurs=0); emit only those set.
+// Sequence order: top, start, left, bottom, end, right, insideH, insideV.
 function tableBordersStr(opts: TableBordersOptions): string | undefined {
   const parts: string[] = [];
   if (opts.top) parts.push(borderStr("w:top", opts.top));
+  if (opts.start) parts.push(borderStr("w:start", opts.start));
   if (opts.left) parts.push(borderStr("w:left", opts.left));
   if (opts.bottom) parts.push(borderStr("w:bottom", opts.bottom));
+  if (opts.end) parts.push(borderStr("w:end", opts.end));
   if (opts.right) parts.push(borderStr("w:right", opts.right));
   if (opts.insideHorizontal) parts.push(borderStr("w:insideH", opts.insideHorizontal));
   if (opts.insideVertical) parts.push(borderStr("w:insideV", opts.insideVertical));
@@ -190,7 +193,11 @@ function cnfStyleStr(opts: CnfStyleOptions): string {
 // ── Change/revision attribute string ──
 
 function changeAttrStr(tag: string, opts: ChangedProperties): string {
-  const a = attrsRaw({ "w:author": opts.author, "w:date": opts.date, "w:id": opts.id });
+  const a = attrsRaw({
+    "w:author": escapeXml(opts.author),
+    "w:date": escapeXml(opts.date),
+    "w:id": opts.id,
+  });
   return `<${tag}${a}/>`;
 }
 
@@ -198,8 +205,8 @@ function changeAttrStr(tag: string, opts: ChangedProperties): string {
 
 function cellMergeStr(opts: CellMergeAttributes): string {
   const attrs: Record<string, string | number | boolean | undefined> = {
-    "w:author": opts.author,
-    "w:date": opts.date,
+    "w:author": escapeXml(opts.author),
+    "w:date": escapeXml(opts.date),
     "w:id": opts.id,
   };
   if (opts.verticalMerge !== undefined) {
@@ -226,7 +233,11 @@ function cellSpacingStr(opts: TableCellSpacingProperties): string {
 
 function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptions): string {
   const inner = stringifyTablePropertiesInner({ ...options, includeIfEmpty: true });
-  const a = attrsRaw({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
+  const a = attrsRaw({
+    "w:author": escapeXml(options.author),
+    "w:date": escapeXml(options.date),
+    "w:id": options.id,
+  });
   return `<w:tblPrChange ${a}><w:tblPr>${inner}</w:tblPr></w:tblPrChange>`;
 }
 
@@ -327,7 +338,11 @@ export function stringifyTableProperties(
 
 function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChangeOptions): string {
   const inner = stringifyTableRowPropertiesInner({ ...options, includeIfEmpty: true });
-  const a = attrsRaw({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
+  const a = attrsRaw({
+    "w:author": escapeXml(options.author),
+    "w:date": escapeXml(options.date),
+    "w:id": options.id,
+  });
   return `<w:trPrChange ${a}><w:trPr>${inner}</w:trPr></w:trPrChange>`;
 }
 
@@ -421,7 +436,11 @@ function stringifyTableCellPropertiesChangeInner(
   options: TableCellPropertiesChangeOptions,
 ): string {
   const inner = stringifyTableCellPropertiesInner({ ...options, includeIfEmpty: true });
-  const a = attrsRaw({ "w:author": options.author, "w:date": options.date, "w:id": options.id });
+  const a = attrsRaw({
+    "w:author": escapeXml(options.author),
+    "w:date": escapeXml(options.date),
+    "w:id": options.id,
+  });
   return `<w:tcPrChange ${a}><w:tcPr>${inner}</w:tcPr></w:tcPrChange>`;
 }
 
@@ -520,10 +539,11 @@ function stringifyTableCellPropertiesInner(
 }
 
 export function stringifyTableCellProperties(
-  options: TableCellPropertiesOptions & { includeIfEmpty?: boolean },
+  options: TableCellPropertiesOptions & { includeIfEmpty?: boolean; cellProperties?: boolean },
 ): string | undefined {
   const inner = stringifyTableCellPropertiesInner(options);
-  if (options.includeIfEmpty || inner) {
+  // cellProperties marks a parsed bare <w:tcPr/> — round-trip as the empty element.
+  if (options.includeIfEmpty || options.cellProperties === true || inner) {
     return `<w:tcPr>${inner}</w:tcPr>`;
   }
   return undefined;
@@ -574,7 +594,11 @@ function stringifyTablePropertyExceptionsInner(options: TablePropertyExOptions):
 
   if (options.tblPrExChange) {
     const change = options.tblPrExChange;
-    const a = attrsRaw({ "w:author": change.author, "w:date": change.date, "w:id": change.id });
+    const a = attrsRaw({
+      "w:author": escapeXml(change.author),
+      "w:date": escapeXml(change.date),
+      "w:id": change.id,
+    });
     // CT_TblPrExChange requires a tblPrEx child holding the previous (pre-change) values.
     const revInner = stringifyTablePropertyExceptionsInner(change);
     parts.push(`<w:tblPrExChange ${a}><w:tblPrEx>${revInner}</w:tblPrEx></w:tblPrExChange>`);

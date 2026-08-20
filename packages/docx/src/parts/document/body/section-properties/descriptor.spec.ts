@@ -5,6 +5,8 @@ import { describe, expect, it } from "vite-plus/test";
 import type { BodyContext } from "../../../../context";
 import { sectionPropertiesDesc } from "./descriptor";
 import type { DocGridProperties } from "./properties/doc-grid";
+import type { PageMarginProperties } from "./properties/page-margin";
+import type { PageSizeProperties } from "./properties/page-size";
 import type { SectionPropertiesOptions } from "./section-properties";
 
 const writeCtx = {
@@ -15,6 +17,11 @@ const writeCtx = {
 } as unknown as BodyContext;
 
 const readCtx = {} as unknown as ReadContext;
+
+// Narrow the pageSize/pageMargin three-state unions (object | false | absent)
+// to the object branch these assertions inspect.
+const pageSize = (r: SectionPropertiesOptions) => r.pageSize as PageSizeProperties;
+const pageMargin = (r: SectionPropertiesOptions) => r.pageMargin as PageMarginProperties;
 
 function roundTrip(opts: SectionPropertiesOptions) {
   const xml = sectionPropertiesDesc.stringify(opts, writeCtx)!;
@@ -47,8 +54,8 @@ describe("sectionPropertiesDesc round-trip", () => {
     const result = roundTrip({
       pageSize: { width: 12240, height: 15840 },
     });
-    expect(result.pageSize!.width).toBe(12240);
-    expect(result.pageSize!.height).toBe(15840);
+    expect(pageSize(result).width).toBe(12240);
+    expect(pageSize(result).height).toBe(15840);
   });
 
   it("round-trips landscape orientation (swaps w/h and swaps back)", () => {
@@ -57,9 +64,9 @@ describe("sectionPropertiesDesc round-trip", () => {
     });
     // Logical width/height (portrait perspective) must survive the stringify
     // swap (w:w=height, w:h=width) and the parse swap-back.
-    expect(result.pageSize!.orientation).toBe("landscape");
-    expect(result.pageSize!.width).toBe(12240);
-    expect(result.pageSize!.height).toBe(15840);
+    expect(pageSize(result).orientation).toBe("landscape");
+    expect(pageSize(result).width).toBe(12240);
+    expect(pageSize(result).height).toBe(15840);
   });
 
   it("parses a Word-emitted landscape page size (physical w > h)", () => {
@@ -72,9 +79,9 @@ describe("sectionPropertiesDesc round-trip", () => {
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = sectionPropertiesDesc.parse(el, readCtx);
-    expect(result.pageSize!.orientation).toBe("landscape");
-    expect(result.pageSize!.width).toBe(12240);
-    expect(result.pageSize!.height).toBe(15840);
+    expect(pageSize(result).orientation).toBe("landscape");
+    expect(pageSize(result).width).toBe(12240);
+    expect(pageSize(result).height).toBe(15840);
   });
 
   it("parses portrait page size without swapping (w = logical width)", () => {
@@ -84,9 +91,9 @@ describe("sectionPropertiesDesc round-trip", () => {
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = sectionPropertiesDesc.parse(el, readCtx);
-    expect(result.pageSize!.width).toBe(12240);
-    expect(result.pageSize!.height).toBe(15840);
-    expect(result.pageSize!.orientation).toBeUndefined();
+    expect(pageSize(result).width).toBe(12240);
+    expect(pageSize(result).height).toBe(15840);
+    expect(pageSize(result).orientation).toBeUndefined();
   });
 
   it("round-trips portrait page size with UniversalMeasure (mm → twips)", () => {
@@ -96,17 +103,17 @@ describe("sectionPropertiesDesc round-trip", () => {
     const result = roundTrip({
       pageSize: { width: "210mm", height: "297mm" },
     });
-    expect(result.pageSize!.width).toBe(11905);
-    expect(result.pageSize!.height).toBe(16837);
+    expect(pageSize(result).width).toBe(11905);
+    expect(pageSize(result).height).toBe(16837);
     // orientation defaults to portrait when omitted.
-    expect(result.pageSize!.orientation).toBe("portrait");
+    expect(pageSize(result).orientation).toBe("portrait");
   });
 
   it("round-trips page size code (printer paper code)", () => {
     const result = roundTrip({
       pageSize: { width: 12240, height: 15840, code: 1 },
     });
-    expect(result.pageSize!.code).toBe(1);
+    expect(pageSize(result).code).toBe(1);
   });
 
   it("round-trips page margins", () => {
@@ -121,7 +128,7 @@ describe("sectionPropertiesDesc round-trip", () => {
         gutter: 0,
       },
     });
-    const margin = result.pageMargin!;
+    const margin = pageMargin(result);
     expect(margin.top).toBe(1440);
     expect(margin.right).toBe(1440);
     expect(margin.bottom).toBe(1440);

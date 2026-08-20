@@ -86,10 +86,7 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
     if (opts.cSldExt) parts.push(`<p:extLst>${opts.cSldExt}</p:extLst>`);
     parts.push("</p:cSld>");
 
-    parts.push(
-      colorMappingOverrideDesc.stringify(opts.colorMappingOverride, ctx) ??
-        "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>",
-    );
+    parts.push(colorMappingOverrideDesc.stringify(opts.colorMappingOverride, ctx) ?? "");
 
     parts.push("</p:notes>");
     return parts.join("");

@@ -324,6 +324,9 @@ export function stringifySdtPr(opts: SdtPropertiesOptions): string {
     parts.push(sdtCheckboxXml(opts.checkbox));
   }
 
+  // w15:appearance (Word 2013+) trails the CT_SdtPr sequence.
+  if (opts.appearance) parts.push(`<w15:appearance w15:val="${opts.appearance}"/>`);
+
   return parts.length ? `<w:sdtPr>${parts.join("")}</w:sdtPr>` : "<w:sdtPr/>";
 }
 
