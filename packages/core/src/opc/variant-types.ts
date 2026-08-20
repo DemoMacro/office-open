@@ -41,18 +41,44 @@ const NUMERIC_VT_TAGS = new Set([
   "vt:decimal",
 ]);
 
+/** Every scalar vt:* element stringifyVariantValue can emit. */
+const VT_TAGS = new Set([
+  ...NUMERIC_VT_TAGS,
+  "vt:lpwstr",
+  "vt:lpstr",
+  "vt:bstr",
+  "vt:bool",
+  "vt:date",
+  "vt:filetime",
+]);
+
+/** The vt:* element the default JS mapping picks for a value. */
+export function defaultVariantTag(value: VariantValue): string {
+  if (typeof value === "string") return "vt:lpwstr";
+  if (typeof value === "boolean") return "vt:bool";
+  if (value instanceof Date) return "vt:filetime";
+  return Number.isInteger(value) ? "vt:i4" : "vt:r8";
+}
+
 /**
  * Serialize a JS value as its vt:* element (stringify side, custom.xml domain).
  *
  * Strings stay lpwstr (the spelling Office writes for custom property
  * values), integers become i4, other numbers r8, booleans bool, and Dates
- * filetime (xsd:dateTime form).
+ * filetime (xsd:dateTime form). A `sourceTag` captured at parse overrides the
+ * default mapping so a source spelling the mapping would rewrite (an integer
+ * carried as vt:r8, an lpstr string) round-trips unchanged.
  */
-export function stringifyVariantValue(value: VariantValue): string {
-  if (typeof value === "string") return `<vt:lpwstr>${escapeXml(value)}</vt:lpwstr>`;
-  if (typeof value === "boolean") return `<vt:bool>${value ? "true" : "false"}</vt:bool>`;
-  if (value instanceof Date) return `<vt:filetime>${value.toISOString()}</vt:filetime>`;
-  return Number.isInteger(value) ? `<vt:i4>${value}</vt:i4>` : `<vt:r8>${value}</vt:r8>`;
+export function stringifyVariantValue(value: VariantValue, sourceTag?: string): string {
+  const tag =
+    sourceTag !== undefined && VT_TAGS.has(sourceTag) ? sourceTag : defaultVariantTag(value);
+  let inner: string;
+  if (tag === "vt:bool") inner = value ? "true" : "false";
+  else if (tag === "vt:date" || tag === "vt:filetime")
+    inner = value instanceof Date ? value.toISOString() : String(value);
+  else if (typeof value === "string") inner = escapeXml(value);
+  else inner = String(value);
+  return `<${tag}>${inner}</${tag}>`;
 }
 
 /**

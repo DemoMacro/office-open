@@ -3896,6 +3896,10 @@
         "value": {
           "$ref": "#/definitions/VariantValue",
           "description": "The property value (as string)"
+        },
+        "valueType": {
+          "description": "Source vt:* element spelling (round-trip), set only when the default JS mapping would rewrite it — an integer carried as vt:r8 would otherwise re-emit as vt:i4.",
+          "type": "string"
         }
       },
       "required": ["name", "value"],

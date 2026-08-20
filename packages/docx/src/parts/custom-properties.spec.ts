@@ -75,3 +75,40 @@ describe("customPropertiesDesc round-trip", () => {
     expect(xml).toContain("<vt:bool>true</vt:bool>");
   });
 });
+
+describe("customPropertiesDesc source vt spelling", () => {
+  const parseXmlPart = (inner: string) => {
+    const doc = parseXml(
+      '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties"' +
+        ' xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">' +
+        inner +
+        "</Properties>",
+    );
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    return customPropertiesDesc.parse(el, readCtx);
+  };
+
+  it("preserves an integer the source carried as vt:r8", () => {
+    // Word writes _LCID as vt:r8 even though the value is integral; the
+    // default mapping would rewrite it to vt:i4.
+    const parsed = parseXmlPart(
+      '<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="_LCID">' +
+        "<vt:r8>1033</vt:r8></property>",
+    );
+    expect(parsed.properties[0]?.value).toBe(1033);
+    expect(parsed.properties[0]?.valueType).toBe("vt:r8");
+    const xml = customPropertiesDesc.stringify(parsed, writeCtx)!;
+    expect(xml).toContain("<vt:r8>1033</vt:r8>");
+    expect(xml).not.toContain("vt:i4");
+  });
+
+  it("leaves default-mapped spellings without valueType", () => {
+    const parsed = parseXmlPart(
+      '<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Count">' +
+        "<vt:i4>42</vt:i4></property>",
+    );
+    expect(parsed.properties[0]?.value).toBe(42);
+    expect(parsed.properties[0]?.valueType).toBeUndefined();
+  });
+});
