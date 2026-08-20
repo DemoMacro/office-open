@@ -329,7 +329,10 @@ export class DocxWriteContext implements WriteContext {
           s.default?.document !== undefined
             ? stringifyDocDefaults(s.default.document, false)
             : (s.docDefaultsXml ?? f.importedStyles?.[0] ?? "");
-        const latentStyles = s.latentStylesXml ?? f.importedStyles?.[1] ?? "";
+        // A source without w:latentStyles stays without it — falling back to
+        // the factory table would inject lsdException entries the source
+        // never carried.
+        const latentStyles = s.latentStylesXml ?? "";
         this.styles = new Styles({
           importedStyles: [docDefaults, latentStyles],
           initialAttributes: s.initialAttributes ?? f.initialAttributes,

@@ -65,3 +65,20 @@ describe("DocxWriteContext passthrough relationships", () => {
     expect(xml.match(/Target="charts\/chart2\.xml"/g)).toHaveLength(1);
   });
 });
+
+describe("round-tripped styles without latentStyles", () => {
+  it("does not inject the factory latent-style table", () => {
+    // Word 2010 transitional documents can omit w:latentStyles entirely; the
+    // factory fallback would add 20 lsdException entries the source lacks.
+    const ctx = new DocxWriteContext({
+      sections: [],
+      styles: {
+        roundTripped: true,
+        paragraphStyles: [{ id: "Normal", name: "Normal", default: true }],
+      },
+    });
+    const xml = ctx.styles.serialize();
+    expect(xml).not.toContain("w:latentStyles");
+    expect(xml).not.toContain("w:lsdException");
+  });
+});
