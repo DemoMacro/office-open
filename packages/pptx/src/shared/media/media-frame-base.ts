@@ -29,4 +29,17 @@ export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions
    * p:cNvPr) — Office emits it on media frames.
    */
   mediaAction?: boolean;
+  /**
+   * Play window trim of the p14:media extension copy (p14:trim, seconds).
+   * undefined = no trim child.
+   */
+  trim?: MediaTrimOptions;
+}
+
+/** Play window trim (p14:trim @st/@end, seconds). */
+export interface MediaTrimOptions {
+  /** Trim start (p14:trim `@st`). */
+  start?: number;
+  /** Trim end (p14:trim `@end`). */
+  end?: number;
 }

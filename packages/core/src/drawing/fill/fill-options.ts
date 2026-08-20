@@ -32,6 +32,12 @@ export interface BlipFillConfigOptions {
   data?: DataType;
   /** Image type */
   imageType?: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  /**
+   * Source media file name, pinned on round-trip so re-emitting registers the
+   * media under its original name instead of a re-derived one (jpeg→jpg
+   * normalization would otherwise fork a second media part).
+   */
+  fileName?: string;
   /** DPI of the image */
   dpi?: number;
   /** Whether the fill rotates with the shape */

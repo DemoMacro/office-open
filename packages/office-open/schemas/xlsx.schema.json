@@ -5789,6 +5789,10 @@
               "description": "DPI of the image",
               "type": "number"
             },
+            "fileName": {
+              "description": "Source media file name, pinned on round-trip so re-emitting registers the media under its original name instead of a re-derived one (jpeg→jpg normalization would otherwise fork a second media part).",
+              "type": "string"
+            },
             "imageType": {
               "description": "Image type",
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],

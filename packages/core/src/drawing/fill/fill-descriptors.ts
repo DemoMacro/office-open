@@ -378,6 +378,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
             type: "blip",
             data,
             imageType: imageTypeFromPath(mediaPath),
+            fileName: mediaPath.split("/").pop(),
           };
           if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;

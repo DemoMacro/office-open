@@ -1520,6 +1520,10 @@
           "description": "XSD `@title`.",
           "type": "string"
         },
+        "trim": {
+          "$ref": "#/definitions/MediaTrimOptions",
+          "description": "Play window trim of the p14:media extension copy (p14:trim, seconds). undefined = no trim child."
+        },
         "type": {
           "$ref": "#/definitions/AudioType",
           "description": "Audio format (required when data is set)"
@@ -5342,6 +5346,10 @@
               "description": "DPI of the image",
               "type": "number"
             },
+            "fileName": {
+              "description": "Source media file name, pinned on round-trip so re-emitting registers the media under its original name instead of a re-derived one (jpeg→jpg normalization would otherwise fork a second media part).",
+              "type": "string"
+            },
             "imageType": {
               "description": "Image type",
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
@@ -7386,6 +7394,21 @@
     "MediaAnimationType": {
       "enum": ["playAudio", "playVideo", "play"],
       "type": "string"
+    },
+    "MediaTrimOptions": {
+      "additionalProperties": false,
+      "description": "Play window trim (p14:trim",
+      "properties": {
+        "end": {
+          "description": "Trim end (p14:trim `@end`).",
+          "type": "number"
+        },
+        "start": {
+          "description": "Trim start (p14:trim `@st`).",
+          "type": "number"
+        }
+      },
+      "type": "object"
     },
     "ModelConnectionOptions": {
       "additionalProperties": false,
@@ -13232,6 +13255,10 @@
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
+        },
+        "trim": {
+          "$ref": "#/definitions/MediaTrimOptions",
+          "description": "Play window trim of the p14:media extension copy (p14:trim, seconds). undefined = no trim child."
         },
         "type": {
           "$ref": "#/definitions/VideoType"

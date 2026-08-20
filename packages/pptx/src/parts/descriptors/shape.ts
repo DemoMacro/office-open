@@ -147,10 +147,11 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     const heightEmu = convertToEmu(opts.height ?? 0);
 
     // A linked-only picture (external URL, no bytes) registers no media —
-    // its slide carries one External image relationship instead.
-    const linkedOnly = opts.data === undefined && opts.sourceUrl !== undefined;
+    // its slide carries one External image relationship instead. A byteless
+    // picture with no link either (a broken source reference) registers none
+    // as well: there are no bytes to store, so the blip re-emits bare.
     let mediaFileName: string | undefined;
-    if (!linkedOnly) {
+    if (opts.data !== undefined) {
       const fileName = opts.fileName ?? `${name.replace(/\s+/g, "_")}.${opts.type}`;
       // Register media with the PPTX context (content-deduplicated)
       const mediaEntry = pptx.addImage(fileName, {
@@ -347,9 +348,9 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       }
     }
 
-    // Fabricate empty bytes only when there is no linked source either — a
-    // linked-only picture has no bytes by design and must not grow a media part.
-    if (!result.data && result.sourceUrl === undefined) result.data = new Uint8Array(0);
+    // A picture whose rel target resolves to no part (a broken reference)
+    // stays byteless: fabricating empty bytes would grow a 0-byte media part
+    // the source never had. A linked-only picture is byteless by design.
     if (!result.type) result.type = "png";
 
     return result as PictureOptions;
@@ -426,12 +427,14 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
   const pptx = ctx as PptxWriteContext;
 
   // Blip fill: pre-register via addImage so the deduped canonical keeps the
-  // pptx-local fileName (image_blip.<type>). shapePropertiesDesc's fillDesc
-  // re-registers via addMedia, deduped to the same canonical.
+  // pinned source name on round-trip (imageType normalization like jpeg→jpg
+  // would otherwise fork a second media part); fresh fills get the
+  // pptx-local image_blip.<type>. shapePropertiesDesc's fillDesc re-registers
+  // via addMedia, deduped to the same canonical.
   if (opts.fill && typeof opts.fill !== "string" && opts.fill.type === "blip" && opts.fill.data) {
     const blipFill = opts.fill;
     const raw = toUint8Array(blipFill.data!, { encoding: "base64" });
-    const fileName = `image_blip.${blipFill.imageType ?? "png"}`;
+    const fileName = blipFill.fileName ?? `image_blip.${blipFill.imageType ?? "png"}`;
     pptx.addImage(fileName, {
       key: fileName,
       data: raw,

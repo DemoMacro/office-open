@@ -21,7 +21,7 @@ import { attr, attrNum, escapeXml, findChild, findFirst, stringify } from "@offi
 import type { Element } from "@office-open/xml";
 import type { AudioCdOptions, AudioFrameOptions, AudioType } from "@shared/media/audio-frame";
 import { imageTypeFromPath } from "@shared/media/image-type";
-import type { MediaFrameBaseOptions } from "@shared/media/media-frame-base";
+import type { MediaFrameBaseOptions, MediaTrimOptions } from "@shared/media/media-frame-base";
 import type { VideoFrameOptions, VideoType } from "@shared/media/video-frame";
 
 import type { MediaEntry, PptxWriteContext } from "../../context";
@@ -53,6 +53,31 @@ function stringifyAudioCdTime(t: AudioCdOptions["start"]): string {
   let s = ` track="${t.track}"`;
   if (t.time !== undefined) s += ` time="${t.time}"`;
   return s;
+}
+
+/** p14:media extension body — embed reference plus optional trim child. */
+function stringifyP14Media(mediaFileName: string, trim?: MediaTrimOptions): string {
+  const trimXml = trim
+    ? `<p14:trim${trim.start !== undefined ? ` st="${trim.start}"` : ""}${trim.end !== undefined ? ` end="${trim.end}"` : ""}/>`
+    : "";
+  return (
+    `<p:extLst><p:ext uri="${MEDIA_EXT_URI}">` +
+    `<p14:media r:embed="{media:${mediaFileName}}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"` +
+    (trimXml ? `>${trimXml}</p14:media>` : "/>") +
+    `</p:ext></p:extLst>`
+  );
+}
+
+/** Read p14:trim (play window) off a p14:media element. */
+function readMediaTrim(p14media: Element): MediaTrimOptions | undefined {
+  const trimEl = (p14media.elements ?? []).find((c) => c.name === "p14:trim");
+  if (!trimEl) return undefined;
+  const trim: MediaTrimOptions = {};
+  const st = attrNum(trimEl, "st");
+  if (st !== undefined) trim.start = st;
+  const end = attrNum(trimEl, "end");
+  if (end !== undefined) trim.end = end;
+  return Object.keys(trim).length > 0 ? trim : {};
 }
 
 /** a:audioFile / a:wavAudioFile — linked/embedded audio file. */
@@ -98,11 +123,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
       `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
         `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
-        (mediaFileName
-          ? `<p:extLst><p:ext uri="${MEDIA_EXT_URI}">` +
-            `<p14:media r:embed="{media:${mediaFileName}}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"/>` +
-            `</p:ext></p:extLst>`
-          : "") +
+        (mediaFileName ? stringifyP14Media(mediaFileName, opts.trim) : "") +
         `</p:nvPr></p:nvPicPr>`,
     );
 
@@ -143,22 +164,37 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     const quickTimeEl = findFirst(el, "a:quickTimeFile");
     const videoFileEl = findFirst(el, "a:videoFile") ?? quickTimeEl;
     const rLink = videoFileEl ? attr(videoFileEl, "r:link") : undefined;
-    const p14media = !videoFileEl ? findFirst(el, "p14:media") : undefined;
+    // The p14:media extension copy coexists with the EG_Media element — a
+    // source whose r:link is a broken external target still carries the real
+    // bytes under r:embed here, so it is always read.
+    const p14media = findFirst(el, "p14:media");
     const rEmbed = p14media ? attr(p14media, "r:embed") : undefined;
+    if (p14media) {
+      const trim = readMediaTrim(p14media);
+      if (trim) result.trim = trim;
+    }
     const mediaRef = rLink ?? rEmbed;
     if (mediaRef) {
       const mediaPath = _ctx.resolveRelationship(mediaRef);
-      if (mediaPath) {
-        const data = _ctx.getRaw(mediaPath);
+      let data: Uint8Array | undefined;
+      let resolvedPath = mediaPath;
+      if (mediaPath) data = _ctx.getRaw(mediaPath);
+      if (!data && rEmbed && rEmbed !== mediaRef) {
+        // The link target is unreadable (broken or external) — fall back to
+        // the embedded p14:media copy.
+        resolvedPath = _ctx.resolveRelationship(rEmbed);
+        data = resolvedPath ? _ctx.getRaw(resolvedPath) : undefined;
+      }
+      if (resolvedPath) {
         if (data) result.data = data;
         // Keep the source file name — re-deriving it from the frame name
         // renames the media part (a name that already carries the extension
         // would even double it).
-        result.fileName = mediaPath.split("/").pop();
+        result.fileName = resolvedPath.split("/").pop();
       }
       // Fall back to the placeholder reference (e.g. "{media:foo.mp4}") when the
       // relationship isn't registered, so the type survives a round-trip.
-      result.type = mediaTypeFromPath(mediaPath ?? mediaRef, "video");
+      result.type = mediaTypeFromPath(resolvedPath ?? mediaRef, "video");
     }
     if (quickTimeEl) result.type = "mov";
     if (videoFileEl) {
@@ -210,11 +246,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
       `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
         `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
-        (emitExt
-          ? `<p:extLst><p:ext uri="${MEDIA_EXT_URI}">` +
-            `<p14:media r:embed="{media:${mediaFileName}}" xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"/>` +
-            `</p:ext></p:extLst>`
-          : "") +
+        (emitExt ? stringifyP14Media(mediaFileName!, opts.trim) : "") +
         `</p:nvPr></p:nvPicPr>`,
     );
 
@@ -274,21 +306,36 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     const audioFileEl = findFirst(el, "a:audioFile") ?? wavFileEl;
     const rLink = audioFileEl ? attr(audioFileEl, "r:link") : undefined;
     const rEmbedAttr = audioFileEl ? attr(audioFileEl, "r:embed") : undefined;
-    const p14media = !audioFileEl ? findFirst(el, "p14:media") : undefined;
+    // The p14:media extension copy coexists with the EG_Media element — a
+    // source whose r:link is a broken external target still carries the real
+    // bytes under r:embed here, so it is always read.
+    const p14media = findFirst(el, "p14:media");
     const rEmbedExt = p14media ? attr(p14media, "r:embed") : undefined;
+    if (p14media) {
+      const trim = readMediaTrim(p14media);
+      if (trim) result.trim = trim;
+    }
     const mediaRef = rLink ?? rEmbedAttr ?? rEmbedExt;
     if (mediaRef) {
       const mediaPath = _ctx.resolveRelationship(mediaRef);
-      if (mediaPath) {
-        const data = _ctx.getRaw(mediaPath);
+      let data: Uint8Array | undefined;
+      let resolvedPath = mediaPath;
+      if (mediaPath) data = _ctx.getRaw(mediaPath);
+      if (!data && rEmbedExt && rEmbedExt !== mediaRef) {
+        // The link target is unreadable (broken or external) — fall back to
+        // the embedded p14:media copy.
+        resolvedPath = _ctx.resolveRelationship(rEmbedExt);
+        data = resolvedPath ? _ctx.getRaw(resolvedPath) : undefined;
+      }
+      if (resolvedPath) {
         if (data) result.data = data;
         // Keep the source file name — re-deriving it from the frame name
         // renames the media part.
-        result.fileName = mediaPath.split("/").pop();
+        result.fileName = resolvedPath.split("/").pop();
       }
       // Fall back to the placeholder reference (e.g. "{media:foo.wav}") when the
       // relationship isn't registered, so the type survives a round-trip.
-      result.type = mediaTypeFromPath(mediaPath ?? mediaRef, "audio");
+      result.type = mediaTypeFromPath(resolvedPath ?? mediaRef, "audio");
     }
     if (wavFileEl) result.type = "wav";
     if (audioFileEl) {
