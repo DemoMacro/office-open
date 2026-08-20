@@ -717,6 +717,11 @@ export class DocxReadContext implements ReadContext {
     return this.docx.partRefs.partEmbeddingTypes.get(this.currentPart)?.get(rId);
   }
 
+  /** External image source URL of an a:blip @r:link rId in the current part. */
+  resolveExternalImage(rId: string): string | undefined {
+    return this.docx.partRefs.partExternalImages.get(this.currentPart)?.get(rId);
+  }
+
   /**
    * Run `fn` with `currentPart` temporarily set to `partPath`, restoring the
    * previous value afterwards. Use when parsing a sub-document part (header,

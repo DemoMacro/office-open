@@ -460,4 +460,83 @@ describe("pictureDesc round-trip", () => {
     expect(result.flipVertical).toBe(true);
     expect(result.rotation).toBe(90);
   });
+
+  it("emits a linked-only blip (r:link, no media registration)", () => {
+    const imageLinks: string[] = [];
+    const ctx = {
+      addRelationship: () => "rId1",
+      addMedia: () => "",
+      addImage: () => {
+        throw new Error("linked-only picture must not register media");
+      },
+      addImageLink: (url: string) => {
+        imageLinks.push(url);
+        return `img-link_${imageLinks.length}`;
+      },
+    } as unknown as WriteContext;
+    const xml = pictureDesc.stringify(
+      {
+        id: 3,
+        name: "Linked",
+        type: "gif",
+        sourceUrl: "http://example.com/logo.gif",
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+      },
+      ctx,
+    )!;
+    expect(xml).toContain('r:link="{img-link:img-link_1}"');
+    expect(xml).not.toContain("r:embed");
+    expect(imageLinks).toEqual(["http://example.com/logo.gif"]);
+  });
+
+  it("parses a linked-only blip without fabricating bytes", () => {
+    const xml =
+      '<p:pic xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"' +
+      ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"' +
+      ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<p:nvPicPr><p:cNvPr id="2" name="Rectangle 3"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>' +
+      '<p:blipFill><a:blip r:link="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>' +
+      "<p:spPr/></p:pic>";
+    const linkedReadCtx = {
+      resolveRelationship: (rId: string) =>
+        rId === "rId2" ? "http://www.google.com/intl/en/images/logo.gif" : undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = pictureDesc.parse(el, linkedReadCtx);
+    expect(result.sourceUrl).toBe("http://www.google.com/intl/en/images/logo.gif");
+    expect(result.data).toBeUndefined();
+    expect(result.type).toBe("gif");
+  });
+
+  it("round-trips blip compression and omits cstate when unset", () => {
+    const withCompression = pictureDesc.stringify(
+      {
+        id: 5,
+        name: "C",
+        data: "dummy",
+        type: "png",
+        compression: "print",
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 10,
+      },
+      picWriteCtx,
+    )!;
+    expect(withCompression).toContain('cstate="print"');
+    const parsed = pictureDesc.parse(parseXml(withCompression).elements![0]!, readCtx);
+    expect(parsed.compression).toBe("print");
+
+    const without = pictureDesc.stringify(
+      { id: 6, name: "N", data: "dummy", type: "png", x: 0, y: 0, width: 10, height: 10 },
+      picWriteCtx,
+    )!;
+    expect(without).not.toContain("cstate");
+  });
 });

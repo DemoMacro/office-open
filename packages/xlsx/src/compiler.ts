@@ -70,6 +70,8 @@ import { XlsxWriteContext } from "./context";
 
 const XML_DECL = OOXML_XML_DECLARATION;
 
+const IMAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+
 /** XLSX part path → content type, derived from the part registry. Matches
  * actual file paths, so the dense/sequential xlsx part naming is handled. */
 const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
@@ -582,26 +584,39 @@ function compileWorksheetPart(
 
     // Process images
     for (const img of imgOpts) {
-      // Media-store extension (jpg → jpeg); vector formats pass through.
-      const ext = img.type === "jpg" ? "jpeg" : img.type;
-      const rawBytes = toUint8Array(img.data, { encoding: "base64" });
-      const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
-        fileName,
-        type: ext,
-        data: rawBytes,
-        width: 0,
-        height: 0,
-      }));
+      let embedRid: string | undefined;
+      let linkRid: string | undefined;
 
-      drawingRels.addRelationship(
-        rid,
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-        `../media/${entry.fileName}`,
-      );
+      if (img.data !== undefined) {
+        // Media-store extension (jpg → jpeg); vector formats pass through.
+        const ext = img.type === "jpg" ? "jpeg" : img.type;
+        const rawBytes = toUint8Array(img.data, { encoding: "base64" });
+        const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
+          fileName,
+          type: ext,
+          data: rawBytes,
+          width: 0,
+          height: 0,
+        }));
+
+        drawingRels.addRelationship(rid, IMAGE_REL, `../media/${entry.fileName}`);
+        embedRid = `rId${rid}`;
+        rid++;
+        state.globalMediaIdx++;
+      }
+
+      // Linked source (a:blip @r:link): one External image relationship per
+      // URL — no media part, no bytes.
+      if (img.sourceUrl !== undefined) {
+        drawingRels.addRelationship(rid, IMAGE_REL, img.sourceUrl, "External");
+        linkRid = `rId${rid}`;
+        rid++;
+      }
 
       drawingImages.push({
         ...pickAnchorOptions(img),
-        rId: `rId${rid}`,
+        rId: embedRid ?? "",
+        ...(linkRid ? { linkRId: linkRid } : {}),
         ...pickNonVisualDrawingProperties(img),
         ...(img.spPr ? { spPr: img.spPr } : {}),
         ...(img.blackWhiteMode ? { blackWhiteMode: img.blackWhiteMode } : {}),
@@ -615,8 +630,6 @@ function compileWorksheetPart(
         ...(img.zOrder !== undefined ? { zOrder: img.zOrder } : {}),
         ...(img.shapeId !== undefined ? { shapeId: img.shapeId } : {}),
       });
-      rid++;
-      state.globalMediaIdx++;
     }
 
     // Process charts
@@ -760,11 +773,7 @@ function compileWorksheetPart(
     }));
     state.globalMediaIdx++;
     const bgRid = ++nextRid;
-    wsRels!.addRelationship(
-      bgRid,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-      `../media/${entry.fileName}`,
-    );
+    wsRels!.addRelationship(bgRid, IMAGE_REL, `../media/${entry.fileName}`);
     sheetXml = sheetXml.replace("<!--BACKGROUND_PICTURE-->", `<picture r:id="rId${bgRid}"/>`);
   }
 

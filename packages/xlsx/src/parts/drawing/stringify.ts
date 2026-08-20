@@ -138,9 +138,14 @@ function picXml(
     ? `<xdr:cNvPicPr${prAttr}>${locks}</xdr:cNvPicPr>`
     : `<xdr:cNvPicPr${prAttr}/>`;
   const effects = img.blipEffects ? stringifyBlipEffects(img.blipEffects, ctx) : "";
-  const blip = effects
-    ? `<a:blip r:embed="${img.rId}">${effects}</a:blip>`
-    : `<a:blip r:embed="${img.rId}"/>`;
+  // r:embed carries the embedded copy, r:link the external source — a
+  // linked-only picture has no rId, a purely embedded one no linkRId.
+  const blipAttrs: string[] = [];
+  if (img.rId) blipAttrs.push(`r:embed="${img.rId}"`);
+  if (img.linkRId) blipAttrs.push(`r:link="${img.linkRId}"`);
+  const attrs = blipAttrs.join(" ");
+  const open = blipAttrs.length ? `<a:blip ${attrs}` : "<a:blip";
+  const blip = effects ? `${open}>${effects}</a:blip>` : `${open}/>`;
   const srcRect = img.sourceRectangle ? createSourceRectangle(img.sourceRectangle) : "";
   const bwModeAttr = img.blackWhiteMode ? ` bwMode="${img.blackWhiteMode}"` : "";
   return (

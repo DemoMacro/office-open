@@ -404,22 +404,61 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       if (drawingData.images) {
         const images: PictureOptions[] = [];
         for (const image of drawingData.images) {
-          const mediaPath = readContext.resolveWorksheetRel(dr.target, image.rId);
+          // Linked source (a:blip @r:link): only an External relationship
+          // carries a usable URL; internal link targets have no media part.
+          const linkRel = image.linkRId ? drawingRelById.get(image.linkRId) : undefined;
+          const sourceUrl = linkRel?.mode === "External" ? linkRel.target : undefined;
+          const mediaPath = image.rId
+            ? readContext.resolveWorksheetRel(dr.target, image.rId)
+            : undefined;
           const raw = mediaPath ? xlsx.doc.getRaw(mediaPath) : undefined;
           const ext = mediaPath?.split(".").pop();
-          // WMF/EMF clip-art images round-trip like raster ones (the media
-          // store keeps their bytes and extension verbatim).
-          const type =
-            ext === "png" ? "png" : ext === "wmf" ? "wmf" : ext === "emf" ? "emf" : "jpg";
           if (
             !raw ||
             (ext !== "png" && ext !== "jpeg" && ext !== "jpg" && ext !== "wmf" && ext !== "emf")
           ) {
+            // Linked-only picture (no bytes in the package): keep the URL,
+            // derive the type token from it (png fallback for extension-less).
+            if (sourceUrl !== undefined) {
+              const linkExt = sourceUrl.split(".").pop()?.toLowerCase() ?? "";
+              images.push({
+                type:
+                  linkExt === "wmf"
+                    ? "wmf"
+                    : linkExt === "emf"
+                      ? "emf"
+                      : linkExt === "jpg" || linkExt === "jpeg"
+                        ? "jpg"
+                        : "png",
+                sourceUrl,
+                ...pickAnchorOptions(image),
+                name: image.name,
+                description: image.description,
+                title: image.title,
+                hidden: image.hidden,
+                ...(image.spPr ? { spPr: image.spPr } : {}),
+                ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
+                ...(image.sourceRectangle ? { sourceRectangle: image.sourceRectangle } : {}),
+                ...(image.preferRelativeResize !== undefined
+                  ? { preferRelativeResize: image.preferRelativeResize }
+                  : {}),
+                ...(image.blipEffects ? { blipEffects: image.blipEffects } : {}),
+                ...(image.locking ? { locking: image.locking } : {}),
+                ...(image.hyperlink ? { hyperlink: image.hyperlink } : {}),
+                ...(image.zOrder !== undefined ? { zOrder: image.zOrder } : {}),
+                ...(image.shapeId !== undefined ? { shapeId: image.shapeId } : {}),
+              });
+            }
             continue;
           }
+          // WMF/EMF clip-art images round-trip like raster ones (the media
+          // store keeps their bytes and extension verbatim).
+          const type =
+            ext === "png" ? "png" : ext === "wmf" ? "wmf" : ext === "emf" ? "emf" : "jpg";
           images.push({
             data: raw,
             type,
+            ...(sourceUrl !== undefined ? { sourceUrl } : {}),
             ...pickAnchorOptions(image),
             name: image.name,
             description: image.description,

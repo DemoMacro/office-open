@@ -368,30 +368,45 @@ export function parsePictureRun(
   if (!blip) return undefined;
 
   const rEmbed = attr(blip, "r:embed");
-  if (!rEmbed) return undefined;
+  const rLink = attr(blip, "r:link");
+  // A linked-only picture (r:link alone, no embedded copy) keeps the drawing;
+  // only a blip with neither reference has nothing picture-shaped to build.
+  if (!rEmbed && !rLink) return undefined;
 
-  // Resolve the media path against the current part's relationships
-  const mediaPath = ctx.resolveRelationship(rEmbed);
-  if (!mediaPath) return undefined;
-
-  // Read image data from ZIP
-  const imageData = ctx.docx.doc.getRaw(mediaPath);
-  if (!imageData) return undefined;
-
-  const type = imageTypeFromPath(mediaPath);
-
-  const imageOpts: Record<string, unknown> = {
-    type,
-    data: imageData,
-    // Pin the source file name: type normalization (jpeg→jpg) would otherwise
-    // rewrite the extension and drop the source [Content_Types] Default entry.
-    fileName: mediaPath.split("/").pop() ?? mediaPath,
-    transformation: {
-      ...(info.width !== undefined ? { width: info.width } : {}),
-      ...(info.height !== undefined ? { height: info.height } : {}),
-      ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
-    },
+  const transformation = {
+    ...(info.width !== undefined ? { width: info.width } : {}),
+    ...(info.height !== undefined ? { height: info.height } : {}),
+    ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
   };
+
+  let imageOpts: Record<string, unknown>;
+  if (rEmbed) {
+    // Resolve the media path against the current part's relationships
+    const mediaPath = ctx.resolveRelationship(rEmbed);
+    if (!mediaPath) return undefined;
+
+    // Read image data from ZIP
+    const imageData = ctx.docx.doc.getRaw(mediaPath);
+    if (!imageData) return undefined;
+
+    imageOpts = {
+      type: imageTypeFromPath(mediaPath),
+      data: imageData,
+      // Pin the source file name: type normalization (jpeg→jpg) would otherwise
+      // rewrite the extension and drop the source [Content_Types] Default entry.
+      fileName: mediaPath.split("/").pop() ?? mediaPath,
+      transformation,
+    };
+  } else {
+    // Linked-only: the external target is the whole image source.
+    const sourceUrl = ctx.resolveExternalImage?.(rLink!);
+    if (!sourceUrl) return undefined;
+    imageOpts = {
+      type: imageTypeFromPath(sourceUrl),
+      sourceUrl,
+      transformation,
+    };
+  }
   if (info.altText) imageOpts.altText = info.altText;
   if (info.floating) imageOpts.floating = info.floating;
   if (info.graphicFrameLocks !== undefined) imageOpts.graphicFrameLocks = info.graphicFrameLocks;
@@ -449,6 +464,13 @@ export function parsePictureRun(
   const blipResult = blipDesc.parse(blip, ctx);
   if (blipResult.blipEffects) imageOpts.blipEffects = blipResult.blipEffects;
 
+  // External linked source (a:blip @r:link) — resolve the URL from the
+  // current part's rels so stringify re-registers the External relationship.
+  if (blipResult.linkReferenceId) {
+    const sourceUrl = ctx.resolveExternalImage?.(blipResult.linkReferenceId);
+    if (sourceUrl) imageOpts.sourceUrl = sourceUrl;
+  }
+
   // Blip extension: a14:useLocalDpi (rendering hint, round-trip verbatim).
   const useLocalDpi = readBlipUseLocalDpi(blip);
   if (useLocalDpi !== undefined) imageOpts.useLocalDpi = useLocalDpi;
@@ -459,7 +481,14 @@ export function parsePictureRun(
   // both branches; otherwise the SVG is dropped on round-trip.
   const svg = readBlipSvg(blip, ctx);
   if (svg) {
-    imageOpts.fallback = { type, data: imageData, fileName: imageOpts.fileName };
+    if (rEmbed) {
+      // The embedded copy becomes the raster fallback (type/data/media name).
+      imageOpts.fallback = {
+        type: imageOpts.type,
+        data: imageOpts.data,
+        fileName: imageOpts.fileName,
+      };
+    }
     imageOpts.type = "svg";
     imageOpts.data = svg.data;
     // The vector part keeps the svg source name; the raster fallback keeps the

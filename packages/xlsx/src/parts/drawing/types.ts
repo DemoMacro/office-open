@@ -123,8 +123,17 @@ export function pickAnchorOptions<T extends DrawingAnchorOptions>(source: T): Dr
 
 export interface DrawingPictureOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
-  /** Relationship ID for the image */
+  /**
+   * Relationship ID for the embedded image (a:blip @r:embed). Empty on a
+   * linked-only picture, which carries {@link linkRId} alone.
+   */
   rId: string;
+  /**
+   * Relationship ID for the linked source (a:blip @r:link) — an External
+   * image relationship targeting the source URL. Absent when the picture is
+   * purely embedded.
+   */
+  linkRId?: string;
   /**
    * Round-tripped pic/spPr — carries rotation/flip/bwMode/fill that the
    * position-only default emission would drop. When absent, stringify emits

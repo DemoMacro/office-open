@@ -14,12 +14,27 @@ import { createBlipEffects } from "./blip-effects";
 import type { BlipEffectsOptions } from "./blip-effects";
 import { createExtensionList } from "./blip-extensions";
 
+/** Blip compression states (ST_BlipCompression, the a:blip @cstate attribute). */
+export type BlipCompression = "email" | "screen" | "print" | "hqprint" | "none";
+
 /**
  * Options for creating a blip element.
  */
 export interface BlipOptions {
-  /** File name used as placeholder; the packer's ImageReplacer replaces `{referenceId}` with `rId{N}` */
-  referenceId: string;
+  /**
+   * File name used as placeholder for the embedded image; the packer's
+   * ImageReplacer replaces `{referenceId}` with `rId{N}`. Absent on a
+   * linked-only picture (external URL, no bytes in the package).
+   */
+  referenceId?: string;
+  /**
+   * Placeholder key for the linked image source (a:blip @r:link) — an external
+   * URL relationship. Present alone on linked-only pictures, alongside
+   * referenceId when the package also caches a local copy.
+   */
+  linkReferenceId?: string;
+  /** Compression state (a:blip @cstate); absent = attribute omitted (schema default "none"). */
+  compression?: BlipCompression;
   /** Image type for SVG detection */
   type?: "svg" | string;
   /** For SVG images, the fallback image file name */
@@ -77,15 +92,22 @@ export const createBlip = (options: BlipOptions, blipEffects?: BlipEffectsOption
     children.push(...createBlipEffects(blipEffects));
   }
 
-  if (options.type === "svg" && options.fallbackFileName) {
+  if (options.type === "svg" && options.fallbackFileName && options.referenceId !== undefined) {
     children.push(createExtensionList(options.referenceId));
   }
 
   return element(
     "a:blip",
     {
-      cstate: "none",
-      "r:embed": `{${options.type === "svg" && options.fallbackFileName ? options.fallbackFileName : options.referenceId}}`,
+      ...(options.referenceId !== undefined
+        ? {
+            "r:embed": `{${options.type === "svg" && options.fallbackFileName ? options.fallbackFileName : options.referenceId}}`,
+          }
+        : {}),
+      ...(options.compression !== undefined ? { cstate: options.compression } : {}),
+      ...(options.linkReferenceId !== undefined
+        ? { "r:link": `{${options.linkReferenceId}}` }
+        : {}),
     },
     children.length > 0 ? children : undefined,
   );

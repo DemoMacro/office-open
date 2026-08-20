@@ -50,6 +50,7 @@ import type {
   ContentPartMediaData,
   ExtendedMediaData,
   GroupChildMediaData,
+  LinkedPictureMediaData,
   MediaData,
   MediaDataTransformation,
   SmartArtMediaData,
@@ -170,6 +171,7 @@ const WPS_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingSha
 const WPG_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup";
 const HYPERLINK_REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+const IMAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
 const TEXT_BOX_REL = "http://schemas.microsoft.com/office/2006/relationships/txbx";
 // Blip extension URIs (a:extLst under a:blip).
 const SVG_BLIP_EXT_URI = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}";
@@ -259,20 +261,35 @@ function buildSrcRectXml(srcRect: SourceRectangleOptions | undefined): string {
 }
 
 function stringifyBlipFill(
-  mediaData: MediaData,
+  mediaData: MediaData | LinkedPictureMediaData,
   blipEffects?: BlipEffectsOptions,
   tile?: TileOptions,
+  ctx?: BodyContext,
 ): string {
   const fileName =
     mediaData.type === "svg" && "fallback" in mediaData
       ? mediaData.fallback.fileName
-      : mediaData.fileName;
+      : "fileName" in mediaData
+        ? mediaData.fileName
+        : undefined;
 
   const parts: string[] = [];
 
   // a:blip — cstate omitted unless set; Word's default is "none", so emitting
   // it unconditionally inflates round-trip output that originally had none.
-  const blipAttrs: string[] = [`r:embed="{${escapeXml(fileName)}}"`];
+  // A linked-only picture has no embedded copy: r:link alone.
+  const blipAttrs: string[] = [];
+  if (fileName !== undefined) blipAttrs.push(`r:embed="{${escapeXml(fileName)}}"`);
+  // External linked source (r:link) — a direct External image relationship of
+  // the owning part, the same channel docPr hyperlinks use.
+  if (mediaData.sourceUrl !== undefined && ctx) {
+    const linkId = ctx.viewWrapper.relationships.add(
+      IMAGE_REL,
+      mediaData.sourceUrl,
+      TargetModeType.EXTERNAL,
+    );
+    blipAttrs.push(`r:link="rId${linkId}"`);
+  }
 
   // Blip extension list: useLocalDpi (rendering hint) + SVG blip reference.
   // Both live in a single shared a:extLst; emitted only when at least one ext
@@ -815,12 +832,12 @@ function stringifyGraphicDataContent(
   }
 
   // Default: image (pic:pic)
-  const md = mediaData as MediaData;
+  const md = mediaData as MediaData | LinkedPictureMediaData;
   return (
     `<a:graphicData uri="${PIC_URI}">` +
     `<pic:pic xmlns:pic="${PIC_URI}">` +
     stringifyNvPicPr(hlIds, md.nonVisualProperties) +
-    stringifyBlipFill(md, blipEffects, tile) +
+    stringifyBlipFill(md, blipEffects, tile, ctx) +
     stringifyShapeProps(transform, outline, fill, effects, scene3d, shape3d) +
     `</pic:pic></a:graphicData>`
   );

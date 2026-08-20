@@ -30,6 +30,7 @@ import {
   replaceAudioPlaceholders,
   replaceChartPlaceholders,
   replaceHyperlinkPlaceholders,
+  replaceImageLinkPlaceholders,
   replaceImagePlaceholders,
   replaceMediaPlaceholders,
   replaceOlePlaceholders,
@@ -886,8 +887,29 @@ export function compilePresentation(
         `../media/${mediaItem.fileName}`,
       );
     }
+    let replacedLayoutXml = replaceImagePlaceholders(layoutXml, layoutMediaData, layoutImageOffset);
+    // Linked image sources on layout shapes get the same External wiring.
+    const layoutImgLinkKeys = collectPlaceholderKeys(replacedLayoutXml, "img-link:");
+    if (layoutImgLinkKeys.length > 0) {
+      const layoutImgLinkSet = new Set(layoutImgLinkKeys);
+      const layoutImgLinks = descCtx.imageLinks.filter((l) => layoutImgLinkSet.has(l.key));
+      const imgLinkOffset = layoutRels.relationshipCount + 1;
+      replacedLayoutXml = replaceImageLinkPlaceholders(
+        replacedLayoutXml,
+        layoutImgLinks,
+        imgLinkOffset,
+      );
+      for (const [ili, imgLink] of layoutImgLinks.entries()) {
+        layoutRels.addRelationship(
+          imgLinkOffset + ili,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+          imgLink.url,
+          "External",
+        );
+      }
+    }
     mapping[`SlideLayout${li}`] = {
-      data: XML_DECL + replaceImagePlaceholders(layoutXml, layoutMediaData, layoutImageOffset),
+      data: XML_DECL + replacedLayoutXml,
       path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
     };
     mapping[`SlideLayoutRels${li}`] = {
@@ -1131,6 +1153,28 @@ export function compilePresentation(
               "External",
             );
           }
+        }
+      }
+
+      // Linked image sources (a:blip @r:link) — one External image relationship
+      // per referenced URL.
+      const slideImgLinkKeys = collectPlaceholderKeys(replacedSlideXml, "img-link:");
+      if (slideImgLinkKeys.length > 0) {
+        const slideImgLinkSet = new Set(slideImgLinkKeys);
+        const slideImgLinks = descCtx.imageLinks.filter((l) => slideImgLinkSet.has(l.key));
+        const imgLinkOffset = currentSlideRels.relationshipCount + 1;
+        replacedSlideXml = replaceImageLinkPlaceholders(
+          replacedSlideXml,
+          slideImgLinks,
+          imgLinkOffset,
+        );
+        for (const [li, imgLink] of slideImgLinks.entries()) {
+          currentSlideRels.addRelationship(
+            imgLinkOffset + li,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            imgLink.url,
+            "External",
+          );
         }
       }
 

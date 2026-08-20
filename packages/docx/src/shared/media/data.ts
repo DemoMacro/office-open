@@ -95,6 +95,11 @@ interface CoreMediaData extends BaseMediaEntry {
    * for round-trip fidelity. Omitted when absent (Word's default behavior).
    */
   useLocalDpi?: boolean;
+  /**
+   * External image source URL (a:blip @r:link) — registered as an External
+   * image relationship of the owning part when the picture is emitted.
+   */
+  sourceUrl?: string;
 }
 
 /**
@@ -116,6 +121,22 @@ export interface SvgMediaData {
    * This ensures the document displays correctly in all viewers.
    */
   fallback: RegularMediaData & CoreMediaData;
+}
+
+/**
+ * Linked-only picture (a:blip @r:link alone — external source, no bytes, no
+ * media part). The owning part registers one External image relationship.
+ */
+export interface LinkedPictureMediaData {
+  type: RegularMediaData["type"];
+  sourceUrl: string;
+  transformation: MediaDataTransformation;
+  /** Blip crop (a:srcRect). */
+  sourceRectangle?: SourceRectangleOptions;
+  /** Picture non-visual properties (pic:cNvPr) for round-trip fidelity. */
+  nonVisualProperties?: NonVisualPropertiesOptions;
+  /** Blip rendering hint `a14:useLocalDpi` (round-trip). */
+  useLocalDpi?: boolean;
 }
 
 export interface ShapeMediaData {
@@ -215,6 +236,7 @@ export interface SmartArtMediaData {
 
 export type ExtendedMediaData =
   | MediaData
+  | LinkedPictureMediaData
   | ShapeMediaData
   | GroupMediaData
   | ChartMediaData

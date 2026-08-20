@@ -1947,6 +1947,11 @@
       },
       "type": "object"
     },
+    "BlipCompression": {
+      "description": "Blip compression states (ST_BlipCompression, the a:blip",
+      "enum": ["email", "screen", "print", "hqprint", "none"],
+      "type": "string"
+    },
     "BlipEffectsOptions": {
       "additionalProperties": false,
       "description": "All blip image adjustment effects.",
@@ -8503,13 +8508,17 @@
           "$ref": "#/definitions/BlipEffectsOptions",
           "description": "Blip color effects (a:lum, a:duotone, … children of a:blip)."
         },
+        "compression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state (a:blip"
+        },
         "creationId": {
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
           "type": "string"
         },
         "data": {
           "$ref": "#/definitions/DataType",
-          "description": "Image binary (base64 string, data URL, or Uint8Array)."
+          "description": "Image binary (base64 string, data URL, or Uint8Array). Absent on a linked-only picture whose source is an external URL (no bytes in the package) — that shape carries  {@link  sourceUrl }  instead."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -8629,6 +8638,10 @@
           "$ref": "#/definitions/SourceRectangleOptions",
           "description": "Crop rectangle (a:srcRect) — integer percent insets."
         },
+        "sourceUrl": {
+          "description": "External image source URL (a:blip",
+          "type": "string"
+        },
         "style": {
           "$ref": "#/definitions/ShapeStyleOptions",
           "description": "Shape style matrix reference (p:style)."
@@ -8681,7 +8694,7 @@
           ]
         }
       },
-      "required": ["data", "type"],
+      "required": ["type"],
       "type": "object"
     },
     "PictureOptionsOptions": {

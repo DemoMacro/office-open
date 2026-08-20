@@ -7608,6 +7608,10 @@
               "$ref": "#/definitions/SourceRectangleOptions",
               "description": "Source rectangle for image cropping"
             },
+            "sourceUrl": {
+              "description": "External image source URL (a:blip",
+              "type": "string"
+            },
             "transformation": {
               "$ref": "#/definitions/MediaDataTransformation",
               "description": "Transformation settings for display"
@@ -7649,6 +7653,10 @@
                   "$ref": "#/definitions/SourceRectangleOptions",
                   "description": "Source rectangle for image cropping"
                 },
+                "sourceUrl": {
+                  "description": "External image source URL (a:blip",
+                  "type": "string"
+                },
                 "transformation": {
                   "$ref": "#/definitions/MediaDataTransformation",
                   "description": "Transformation settings for display"
@@ -7682,6 +7690,10 @@
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
               "description": "Source rectangle for image cropping"
+            },
+            "sourceUrl": {
+              "description": "External image source URL (a:blip",
+              "type": "string"
             },
             "transformation": {
               "$ref": "#/definitions/MediaDataTransformation",
@@ -15029,7 +15041,8 @@
               "$ref": "#/definitions/BlipEffectsOptions"
             },
             "data": {
-              "$ref": "#/definitions/DataType"
+              "$ref": "#/definitions/DataType",
+              "description": "Image binary. Absent on a linked-only picture (external sourceUrl, no bytes in the package) — the emitted a:blip carries r:link alone."
             },
             "effects": {
               "$ref": "#/definitions/EffectListOptions"
@@ -15081,6 +15094,10 @@
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions"
             },
+            "sourceUrl": {
+              "description": "External image source URL (a:blip",
+              "type": "string"
+            },
             "tile": {
               "$ref": "#/definitions/TileOptions"
             },
@@ -15096,7 +15113,7 @@
               "type": "boolean"
             }
           },
-          "required": ["data", "transformation", "type"],
+          "required": ["transformation", "type"],
           "type": "object"
         },
         {
@@ -15116,10 +15133,11 @@
             },
             "fallback": {
               "additionalProperties": false,
-              "description": "Required in case the Word processor does not support SVG.",
+              "description": "Required in case the Word processor does not support SVG. A raster fallback always carries bytes — the linked-only form has no vector part to fall back from.",
               "properties": {
                 "data": {
-                  "$ref": "#/definitions/DataType"
+                  "$ref": "#/definitions/DataType",
+                  "description": "Image binary. Absent on a linked-only picture (external sourceUrl, no bytes in the package) — the emitted a:blip carries r:link alone."
                 },
                 "fileName": {
                   "description": "Source media file basename (round-trip). `type` normalizes jpeg→jpg etc., which would otherwise rewrite imageN.jpeg to imageN.jpg and drop the source [Content_Types] Default extension. Omit for fresh authoring.",
@@ -15130,7 +15148,7 @@
                   "type": "string"
                 }
               },
-              "required": ["type", "data"],
+              "required": ["data", "type"],
               "type": "object"
             },
             "fileName": {
@@ -15179,6 +15197,10 @@
             },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions"
+            },
+            "sourceUrl": {
+              "description": "External image source URL (a:blip",
+              "type": "string"
             },
             "tile": {
               "$ref": "#/definitions/TileOptions"

@@ -61,6 +61,12 @@ export interface HyperlinkEntry {
   tooltip?: string;
 }
 
+/** An externally linked image source (a:blip @r:link, TargetMode="External"). */
+export interface ImageLinkEntry {
+  key: string;
+  url: string;
+}
+
 // ── Context ──
 
 /**
@@ -76,6 +82,8 @@ export class PptxWriteContext implements WriteContext {
   private _charts = new Map<string, ChartEntry>();
   private _smartArts = new Map<string, SmartArtEntry>();
   private _hyperlinks = new Map<string, HyperlinkEntry>();
+  private _imageLinks = new Map<string, ImageLinkEntry>();
+  private _nextImageLinkId = 1;
   private _nextRelId = 1;
   private _nextChartId = 1;
   private _nextSmartArtId = 1;
@@ -144,6 +152,19 @@ export class PptxWriteContext implements WriteContext {
     });
   }
 
+  /**
+   * Register an externally linked image source and return its `{img-link:key}`
+   * placeholder. The compiler rewrites the placeholder to a relationship id
+   * and adds the External image relationship per slide/layout.
+   */
+  public addImageLink(url: string): string {
+    const existing = [...this._imageLinks.values()].find((l) => l.url === url);
+    if (existing) return existing.key;
+    const key = `img-link_${this._nextImageLinkId++}`;
+    this._imageLinks.set(key, { key, url });
+    return key;
+  }
+
   public nextChartKey(): string {
     return `chart_${this._nextChartId++}`;
   }
@@ -178,6 +199,10 @@ export class PptxWriteContext implements WriteContext {
 
   public get hyperlinks(): HyperlinkEntry[] {
     return [...this._hyperlinks.values()];
+  }
+
+  public get imageLinks(): ImageLinkEntry[] {
+    return [...this._imageLinks.values()];
   }
 }
 

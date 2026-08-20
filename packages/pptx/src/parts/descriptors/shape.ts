@@ -31,7 +31,7 @@ import {
   buildHyperlinkElement,
   readHyperlink,
 } from "@office-open/core/drawing";
-import type { SourceRectangleOptions } from "@office-open/core/drawing";
+import type { BlipCompression, SourceRectangleOptions } from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, attrNum, attr } from "@office-open/xml";
 import { imageTypeFromPath } from "@shared/media/image-type";
@@ -141,26 +141,33 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     const pptx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextPictureId++;
     const name = opts.name ?? `Picture ${id}`;
-    const fileName = opts.fileName ?? `${name.replace(/\s+/g, "_")}.${opts.type}`;
 
     // Geometry: number is already EMU, string is UniversalMeasure → EMU
     const widthEmu = convertToEmu(opts.width ?? 0);
     const heightEmu = convertToEmu(opts.height ?? 0);
 
-    // Register media with the PPTX context (content-deduplicated)
-    const mediaEntry = pptx.addImage(fileName, {
-      key: fileName,
-      type: opts.type,
-      fileName,
-      data: toUint8Array(opts.data, { encoding: "base64" }),
-      transformation: {
-        pixels: {
-          x: Math.round(convertEmuToPixels(widthEmu)),
-          y: Math.round(convertEmuToPixels(heightEmu)),
+    // A linked-only picture (external URL, no bytes) registers no media —
+    // its slide carries one External image relationship instead.
+    const linkedOnly = opts.data === undefined && opts.sourceUrl !== undefined;
+    let mediaFileName: string | undefined;
+    if (!linkedOnly) {
+      const fileName = opts.fileName ?? `${name.replace(/\s+/g, "_")}.${opts.type}`;
+      // Register media with the PPTX context (content-deduplicated)
+      const mediaEntry = pptx.addImage(fileName, {
+        key: fileName,
+        type: opts.type,
+        fileName,
+        data: toUint8Array(opts.data ?? new Uint8Array(0), { encoding: "base64" }),
+        transformation: {
+          pixels: {
+            x: Math.round(convertEmuToPixels(widthEmu)),
+            y: Math.round(convertEmuToPixels(heightEmu)),
+          },
+          emus: { x: widthEmu, y: heightEmu },
         },
-        emus: { x: widthEmu, y: heightEmu },
-      },
-    });
+      });
+      mediaFileName = mediaEntry.fileName;
+    }
 
     const parts: string[] = [];
 
@@ -170,7 +177,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     // ── p:blipFill ──
     parts.push(
       stringifyPptxBlipFill(
-        mediaEntry.fileName,
+        { fileName: mediaFileName, sourceUrl: opts.sourceUrl, compression: opts.compression },
         opts.sourceRectangle,
         opts.blipEffects,
         ctx,
@@ -307,12 +314,13 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       }
     }
 
-    // Image data from p:blipFill → a:blip → r:embed
+    // Image data from p:blipFill → a:blip → r:embed / r:link
     const blip = findFirst(el, "a:blip");
     if (blip) {
       const parsedBlip = parse(blipDesc, blip, ctx);
       if (parsedBlip.blipEffects) result.blipEffects = parsedBlip.blipEffects;
       if (parsedBlip.useLocalDpi !== undefined) result.useLocalDpi = parsedBlip.useLocalDpi;
+      if (parsedBlip.compression !== undefined) result.compression = parsedBlip.compression;
       const rEmbed = attr(blip, "r:embed");
       if (rEmbed) {
         const imagePath = ctx.resolveRelationship(rEmbed);
@@ -327,10 +335,21 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
           result.fileName = imagePath.split("/").pop();
         }
       }
+      const rLink = attr(blip, "r:link");
+      if (rLink) {
+        // External image source — the per-part rels keep External targets raw,
+        // so resolveRelationship returns the URL itself.
+        const url = ctx.resolveRelationship(rLink);
+        if (url) {
+          result.sourceUrl = url;
+          if (!result.type) result.type = imageTypeFromPath(url);
+        }
+      }
     }
 
-    // Defaults if image data could not be resolved
-    if (!result.data) result.data = new Uint8Array(0);
+    // Fabricate empty bytes only when there is no linked source either — a
+    // linked-only picture has no bytes by design and must not grow a media part.
+    if (!result.data && result.sourceUrl === undefined) result.data = new Uint8Array(0);
     if (!result.type) result.type = "png";
 
     return result as PictureOptions;
@@ -521,14 +540,38 @@ function stringifyNvPicPr(
 
 /** PPTX uses p:blipFill (not pic:blipFill). */
 function stringifyPptxBlipFill(
-  fileName: string,
+  blip: {
+    /** Embedded media file name; undefined on a linked-only picture. */
+    fileName?: string;
+    /** External image source URL (a:blip @r:link). */
+    sourceUrl?: string;
+    /** Compression state (a:blip @cstate); absent = attribute omitted. */
+    compression?: BlipCompression;
+  },
   sourceRectangle?: SourceRectangleOptions,
   blipEffects?: PictureOptions["blipEffects"],
   ctx?: WriteContext,
   useLocalDpi?: boolean,
   fillRectangle?: SourceRectangleOptions | false,
 ): string {
-  const blipXml = stringify(blipDesc, { referenceId: fileName, blipEffects, useLocalDpi }, ctx);
+  // The linked source registers an {img-link:key} placeholder the compiler
+  // rewrites per slide/layout while adding the External image relationship.
+  // The placeholder body carries the "img-link:" prefix (hlink convention).
+  const linkKey =
+    blip.sourceUrl !== undefined && ctx
+      ? `img-link:${(ctx as PptxWriteContext).addImageLink(blip.sourceUrl)}`
+      : undefined;
+  const blipXml = stringify(
+    blipDesc,
+    {
+      referenceId: blip.fileName,
+      linkReferenceId: linkKey,
+      compression: blip.compression,
+      blipEffects,
+      useLocalDpi,
+    },
+    ctx,
+  );
   const srcRect = sourceRectangle ? createSourceRectangle(sourceRectangle) : "";
   const fillRect =
     fillRectangle === false

@@ -9053,7 +9053,7 @@
         },
         "data": {
           "$ref": "#/definitions/DataType",
-          "description": "Image binary (base64 string, data URL, or Uint8Array)."
+          "description": "Image binary (base64 string, data URL, or Uint8Array). Absent on a linked-only picture whose source is an external URL (no bytes in the package) — that shape carries  {@link  sourceUrl }  instead."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -9136,6 +9136,10 @@
           "$ref": "#/definitions/SourceRectangleOptions",
           "description": "Blip crop (a:srcRect); an empty object round-trips the bare marker."
         },
+        "sourceUrl": {
+          "description": "External image source URL (a:blip",
+          "type": "string"
+        },
         "spPr": {
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position)."
@@ -9183,7 +9187,7 @@
           "type": "number"
         }
       },
-      "required": ["col", "data", "row", "type"],
+      "required": ["col", "row", "type"],
       "type": "object"
     },
     "PictureOptionsOptions": {

@@ -54,11 +54,21 @@ interface CorePictureOptions {
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** Blip rendering hint `a14:useLocalDpi` (round-trip). */
   useLocalDpi?: boolean;
+  /**
+   * External image source URL (a:blip @r:link) — BasePictureOptions.sourceUrl
+   * spelled on the docx union (which does not extend the base). Paired with
+   * data it is the linked source of the local cache; alone it is linked-only.
+   */
+  sourceUrl?: string;
 }
 
 interface RegularPictureOptions {
   type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
-  data: DataType;
+  /**
+   * Image binary. Absent on a linked-only picture (external sourceUrl, no
+   * bytes in the package) — the emitted a:blip carries r:link alone.
+   */
+  data?: DataType;
   /**
    * Source media file basename (round-trip). `type` normalizes jpeg→jpg etc.,
    * which would otherwise rewrite imageN.jpeg to imageN.jpg and drop the
@@ -71,9 +81,11 @@ interface SvgMediaOptions {
   type: "svg";
   data: DataType;
   /**
-   * Required in case the Word processor does not support SVG.
+   * Required in case the Word processor does not support SVG. A raster
+   * fallback always carries bytes — the linked-only form has no vector part
+   * to fall back from.
    */
-  fallback: RegularPictureOptions;
+  fallback: RegularPictureOptions & { data: DataType };
   /** Source vector file basename (round-trip). See RegularPictureOptions. */
   fileName?: string;
 }

@@ -347,11 +347,16 @@ export type BlipDescriptorOptions = BlipOptions & {
 export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
   kind: "custom",
   stringify(opts, ctx) {
+    // Attribute order matches Office output: r:embed, cstate, r:link. Every
+    // attribute is optional (CT_Blip) and omitted when unset — a linked-only
+    // picture carries r:link alone.
     const attrParts: string[] = [];
-    const embedValue = `{${opts.referenceId}}`;
-    attrParts.push(`r:embed="${escapeXml(embedValue)}"`);
-    attrParts.push('cstate="none"');
-    const attrStr = " " + attrParts.join(" ");
+    if (opts.referenceId !== undefined)
+      attrParts.push(`r:embed="{${escapeXml(opts.referenceId)}}"`);
+    if (opts.compression !== undefined) attrParts.push(`cstate="${opts.compression}"`);
+    if (opts.linkReferenceId !== undefined)
+      attrParts.push(`r:link="{${escapeXml(opts.linkReferenceId)}}"`);
+    const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
 
     const parts: string[] = [];
     if (opts.blipEffects) {
@@ -376,8 +381,10 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
     }
     const link = el.attributes?.["r:link"];
     if (link !== undefined) {
-      result.referenceId = String(link).replace(/^\{(.+)\}$/, "$1");
+      result.linkReferenceId = String(link).replace(/^\{(.+)\}$/, "$1");
     }
+    const cstate = el.attributes?.["cstate"];
+    if (cstate !== undefined) result.compression = cstate as BlipDescriptorOptions["compression"];
     const effects = readBlipEffects(el, ctx);
     if (effects) result.blipEffects = effects;
     const extLst = findChild(el, "a:extLst");

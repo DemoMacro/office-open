@@ -43,6 +43,11 @@ export interface ReadContext {
    * distinguish the two embedding styles implement it.
    */
   resolveEmbeddingType?(rId: string): "oleObject" | "package" | undefined;
+  /**
+   * External image source URL of an a:blip @r:link rId in the current part.
+   * Optional — formats without linked-image support implement nothing.
+   */
+  resolveExternalImage?(rId: string): string | undefined;
   /** Get a parsed XML part by path. */
   getPart(path: string): XmlElement | undefined;
   /** Get raw binary data (images, media, etc.) by path. */

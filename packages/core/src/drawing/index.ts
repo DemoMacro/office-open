@@ -107,7 +107,7 @@ export type {
 
 // Blip
 export { createBlip } from "./blip/blip";
-export type { BlipOptions } from "./blip/blip";
+export type { BlipCompression, BlipOptions } from "./blip/blip";
 export { createBlipFill } from "./blip/blip-fill";
 export type { BlipFillOptions } from "./blip/blip-fill";
 export { createBlipEffects } from "./blip/blip-effects";

@@ -1,5 +1,6 @@
 import type {
   BasePictureOptions,
+  BlipCompression,
   EffectListOptions,
   PictureLockingOptions,
   UniversalMeasure,
@@ -44,6 +45,8 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
    * keeps the source name; fresh generation derives it from the shape name.
    */
   fileName?: string;
+  /** Compression state (a:blip @cstate); absent = attribute omitted. */
+  compression?: BlipCompression;
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
   effects?: EffectListOptions;
   /** Crop rectangle (a:srcRect) — integer percent insets. */

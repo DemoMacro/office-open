@@ -122,6 +122,62 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain('r:embed="{image1.png}"');
   });
 
+  it("registers an External image relationship for a linked source (a:blip @r:link)", () => {
+    const registered: Array<{ type: string; target: string; mode?: string }> = [];
+    const linkedWriteCtx = {
+      ...writeCtx,
+      viewWrapper: {
+        relationships: {
+          addRelationship: () => {},
+          add: (type: string, target: string, mode?: string) => {
+            registered.push({ type, target, mode });
+            return 7;
+          },
+        },
+      },
+    } as unknown as BodyContext;
+    resetDrawingIdGen();
+    const xml = drawingDesc.stringify(
+      { mediaData: { ...makeImageMediaData(), sourceUrl: "http://example.com/moon.jpg" } },
+      linkedWriteCtx,
+    )!;
+    expect(xml).toContain('r:embed="{image1.png}"');
+    expect(xml).toContain('r:link="rId7"');
+    expect(registered).toEqual([
+      {
+        type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        target: "http://example.com/moon.jpg",
+        mode: "External",
+      },
+    ]);
+  });
+
+  it("round-trips an embed+link blip into picture.sourceUrl", () => {
+    const linkedWriteCtx = {
+      ...writeCtx,
+      viewWrapper: {
+        relationships: {
+          addRelationship: () => {},
+          add: () => 7,
+        },
+      },
+    } as unknown as BodyContext;
+    resetDrawingIdGen();
+    const xml = drawingDesc.stringify(
+      { mediaData: { ...makeImageMediaData(), sourceUrl: "http://example.com/moon.jpg" } },
+      linkedWriteCtx,
+    )!;
+    const linkedReadCtx = {
+      ...mediaReadCtx,
+      resolveExternalImage: (rId: string) =>
+        rId === "rId7" ? "http://example.com/moon.jpg" : undefined,
+    } as unknown as ReadContext;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, linkedReadCtx) as { picture?: { sourceUrl?: string } };
+    expect(result.picture?.sourceUrl).toBe("http://example.com/moon.jpg");
+  });
+
   it("stringifies image effects through the shared blip serializer", () => {
     const xml = stringify({
       mediaData: makeImageMediaData(),

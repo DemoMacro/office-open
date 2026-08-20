@@ -35,6 +35,7 @@ import { DEFAULT_COL_EMU, DEFAULT_ROW_EMU, emuToCell, toEmu } from "./position";
 const baseFromPptx = (p: PptxPictureOptions): BasePictureOptions => ({
   data: p.data,
   type: p.type,
+  ...(p.sourceUrl !== undefined ? { sourceUrl: p.sourceUrl } : {}),
   ...pickNonVisualDrawingProperties(p),
 });
 
@@ -42,6 +43,7 @@ const baseFromPptx = (p: PptxPictureOptions): BasePictureOptions => ({
 const baseFromXlsx = (x: XlsxPictureOptions): BasePictureOptions => ({
   data: x.data,
   type: x.type,
+  ...(x.sourceUrl !== undefined ? { sourceUrl: x.sourceUrl } : {}),
   ...pickNonVisualDrawingProperties(x),
 });
 
@@ -56,7 +58,12 @@ const baseFromDocx = (d: DocxPictureOptions): BasePictureOptions => {
   if (d.type === "svg") {
     return { data: d.fallback.data, type: d.fallback.type, ...cNvPr };
   }
-  return { data: d.data, type: d.type, ...cNvPr };
+  return {
+    data: d.data,
+    type: d.type,
+    ...(d.sourceUrl !== undefined ? { sourceUrl: d.sourceUrl } : {}),
+    ...cNvPr,
+  };
 };
 
 // ── type narrowing ──
@@ -121,6 +128,7 @@ export function toDocxPicture(source: PptxPictureOptions | XlsxPictureOptions): 
     return {
       type: docxType(base.type),
       data: base.data,
+      ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
       transformation: {
         width: p.width ?? 0,
         height: p.height ?? 0,
@@ -137,6 +145,7 @@ export function toDocxPicture(source: PptxPictureOptions | XlsxPictureOptions): 
   return {
     type: docxType(base.type),
     data: base.data,
+    ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
     transformation: {
       width: 0,
       height: 0,
@@ -161,6 +170,7 @@ export function toPptxPicture(source: DocxPictureOptions | XlsxPictureOptions): 
     return {
       type: pptxType(base.type),
       data: base.data,
+      ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
       width: t.width,
       height: t.height,
       ...(t.offset ? { x: t.offset.left, y: t.offset.top } : {}),
@@ -173,6 +183,7 @@ export function toPptxPicture(source: DocxPictureOptions | XlsxPictureOptions): 
   return {
     type: pptxType(base.type),
     data: base.data,
+    ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
     x: (x.col - 1) * DEFAULT_COL_EMU,
     y: (x.row - 1) * DEFAULT_ROW_EMU,
     width: 0,
@@ -197,6 +208,7 @@ export function toXlsxPicture(source: DocxPictureOptions | PptxPictureOptions): 
     return {
       data: base.data,
       type: xlsxType(base.type),
+      ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
       col: emuToCell(left, DEFAULT_COL_EMU),
       row: emuToCell(top, DEFAULT_ROW_EMU),
       ...pickNonVisualDrawingProperties(base),
@@ -208,6 +220,7 @@ export function toXlsxPicture(source: DocxPictureOptions | PptxPictureOptions): 
   return {
     data: base.data,
     type: xlsxType(base.type),
+    ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
     col: emuToCell(toEmu(p.x), DEFAULT_COL_EMU),
     row: emuToCell(toEmu(p.y), DEFAULT_ROW_EMU),
     ...pickNonVisualDrawingProperties(base),

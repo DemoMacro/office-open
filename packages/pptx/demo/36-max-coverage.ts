@@ -79,6 +79,17 @@ const options: PresentationOptions = {
           },
         },
         {
+          picture: {
+            x: "9cm",
+            y: "4cm",
+            width: "4cm",
+            height: "3cm",
+            type: "png",
+            sourceUrl: "https://example.com/logo.png",
+            description: "Linked from the web",
+          },
+        },
+        {
           shape: {
             x: "9cm",
             y: "2cm",

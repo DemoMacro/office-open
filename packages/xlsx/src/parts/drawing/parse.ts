@@ -167,10 +167,12 @@ export function parseImageAnchor(
   name: string,
   ctx: ReadContext,
 ): DrawingPictureOptions {
+  const refs = readPicRefs(pic);
   const result: DrawingPictureOptions = {
     col: 1,
     row: 1,
-    rId: readPicRId(pic) ?? "",
+    rId: refs.embed ?? "",
+    ...(refs.link ? { linkRId: refs.link } : {}),
   };
   Object.assign(result, readCNvPr(pic, "nvPicPr", ctx));
 
@@ -212,10 +214,14 @@ export function parseImageAnchor(
   return result;
 }
 
-function readPicRId(pic: XmlElement): string | undefined {
+/** Picture blip references: r:embed (local copy) and/or r:link (external source). */
+function readPicRefs(pic: XmlElement): { embed?: string; link?: string } {
   const blipFill = findXdr(pic, "blipFill") ?? pic;
-  const blip = findChild(blipFill, "a:blip");
-  return blip?.attributes?.["r:embed"] as string | undefined;
+  const attrs = findChild(blipFill, "a:blip")?.attributes;
+  return {
+    embed: attrs?.["r:embed"] as string | undefined,
+    link: attrs?.["r:link"] as string | undefined,
+  };
 }
 
 /** Picture extent from pic/spPr/a:xfrm/a:ext (actual image size in EMU). */

@@ -401,3 +401,17 @@ export function replaceHyperlinkPlaceholders(
   }
   return replacePlaceholders(xml, map);
 }
+
+/** Replace `{img-link:key}` placeholders with relationship IDs. */
+export function replaceImageLinkPlaceholders(
+  xml: string,
+  links: { key: string }[],
+  offset: number,
+): string {
+  if (links.length === 0) return xml;
+  const map = new Map<string, string>();
+  for (const [i, link] of links.entries()) {
+    map.set(`img-link:${link.key}`, formatId(offset, i, "rId"));
+  }
+  return replacePlaceholders(xml, map);
+}

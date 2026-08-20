@@ -106,6 +106,12 @@ export interface DocxPartRefs {
    * not document.xml's.
    */
   partHyperlinks: Map<string, Map<string, string>>;
+  /**
+   * Per-part externally linked image sources (a:blip @r:link),
+   * partPath → (rId → URL). External targets stay raw — path resolution
+   * would splice an absolute URL into the part directory.
+   */
+  partExternalImages: Map<string, Map<string, string>>;
   /** Alternative format chunks (word/afchunkN.*) keyed by rId */
   afChunks: Map<string, string>;
   /** Sub-documents (word/subdocs/subdocN.docx) keyed by rId */
@@ -191,6 +197,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     media: new Map(),
     partMedia: new Map(),
     partEmbeddingTypes: new Map(),
+    partExternalImages: new Map(),
     afChunks: new Map(),
     subDocs: new Map(),
     partTextBoxes: new Map(),
@@ -273,6 +280,17 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
         // /package = embedded OPC workbook (xlsx/xlsb behind OLE objects)
         type.includes("/package");
       if (isBinaryPart) {
+        // External image links (a:blip @r:link) keep the raw URL target —
+        // path resolution would splice the URL into the part directory.
+        if (attr(rel, "TargetMode") === "External") {
+          let extMap = refs.partExternalImages.get(partPath);
+          if (!extMap) {
+            extMap = new Map();
+            refs.partExternalImages.set(partPath, extMap);
+          }
+          extMap.set(id, target);
+          continue;
+        }
         let partMap = refs.partMedia.get(partPath);
         if (!partMap) {
           partMap = new Map();

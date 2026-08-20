@@ -112,6 +112,35 @@ describe("blipDesc", () => {
     expect(result.blipEffects!.luminance?.bright).toBe(20);
     expect(result.blipEffects!.luminance?.contrast).toBe(10);
   });
+
+  it("round-trips a linked-only blip (r:link, no r:embed)", () => {
+    const xml = stringify(blipDesc, { linkReferenceId: "img-link_0" }, {} as WriteContext);
+    expect(xml).toBe('<a:blip r:link="{img-link_0}"/>');
+    const doc = parseXml(xml!);
+    const result = parse(blipDesc, doc.elements![0]!, {} as ReadContext);
+    expect(result.linkReferenceId).toBe("img-link_0");
+    expect(result.referenceId).toBeUndefined();
+  });
+
+  it("round-trips embed + link with compression", () => {
+    const xml = stringify(
+      blipDesc,
+      { referenceId: "image1.png", linkReferenceId: "img-link_1", compression: "print" },
+      {} as WriteContext,
+    );
+    // Attribute order matches Office output: r:embed, cstate, r:link.
+    expect(xml).toBe('<a:blip r:embed="{image1.png}" cstate="print" r:link="{img-link_1}"/>');
+    const doc = parseXml(xml!);
+    const result = parse(blipDesc, doc.elements![0]!, {} as ReadContext);
+    expect(result.referenceId).toBe("image1.png");
+    expect(result.linkReferenceId).toBe("img-link_1");
+    expect(result.compression).toBe("print");
+  });
+
+  it("omits cstate when unset", () => {
+    const xml = stringify(blipDesc, { referenceId: "image1.png" }, {} as WriteContext);
+    expect(xml).toBe('<a:blip r:embed="{image1.png}"/>');
+  });
 });
 
 describe("blipFillDesc", () => {

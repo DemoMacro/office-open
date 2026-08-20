@@ -416,3 +416,52 @@ describe("drawing picture cNvPr — compiler passthrough", () => {
     expect(drawingXml).toContain('hidden="1"');
   });
 });
+
+describe("linked-only picture (a:blip @r:link)", () => {
+  it("round-trips a linked-only blip as rId-less linkRId", () => {
+    const opts: DrawingOptions = {
+      images: [{ col: 1, row: 1, rId: "", linkRId: "rId2" }],
+    };
+    const xml = drawingDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<a:blip r:link="rId2"/>');
+    expect(xml).not.toContain("r:embed");
+
+    const result = roundTrip(opts);
+    const image = result.images![0]!;
+    expect(image.rId).toBe("");
+    expect(image.linkRId).toBe("rId2");
+  });
+
+  it("emits an External image relationship and no media part from sourceUrl", async () => {
+    const buffer = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet1",
+            images: [
+              {
+                type: "png",
+                sourceUrl: "https://example.com/logo.png",
+                col: 1,
+                row: 1,
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    const unzipped = unzipSync(buffer);
+    const drawingXml = new TextDecoder().decode(unzipped["xl/drawings/drawing1.xml"]);
+    const drawingRels = new TextDecoder().decode(unzipped["xl/drawings/_rels/drawing1.xml.rels"]);
+
+    // Linked-only: the blip carries r:link alone — no r:embed, no media bytes.
+    expect(drawingXml).toMatch(/<a:blip r:link="rId\d+"\/>/);
+    expect(drawingXml).not.toContain("r:embed");
+    expect(drawingRels).toContain("/relationships/image");
+    expect(drawingRels).toContain('TargetMode="External"');
+    expect(drawingRels).toContain("https://example.com/logo.png");
+    expect(Object.keys(unzipped).some((p) => p.startsWith("xl/media/"))).toBe(false);
+  });
+});

@@ -761,7 +761,41 @@ export function stringifyChildDispatch(
   // Picture — side effect: media registration (content-deduplicated via core Media)
   if ("picture" in child) {
     const opts = child.picture;
-    const rawData = toUint8Array(opts.data, { encoding: "base64" }) as Uint8Array;
+
+    // Linked-only picture (external URL, no bytes) — no media registration;
+    // the blip carries r:link alone and the owning part gets one External
+    // image relationship.
+    if (opts.type !== "svg" && opts.data === undefined && opts.sourceUrl !== undefined) {
+      const drawingXml = drawingDesc.stringify(
+        {
+          mediaData: {
+            type: opts.type,
+            sourceUrl: opts.sourceUrl,
+            transformation: createTransformation(opts.transformation),
+            sourceRectangle: opts.sourceRectangle,
+            nonVisualProperties: opts.nonVisualProperties,
+            useLocalDpi: opts.useLocalDpi,
+          },
+          docProperties: opts.altText,
+          floating: opts.floating,
+          outline: opts.outline,
+          fill: opts.fill,
+          effects: opts.effects,
+          scene3d: opts.scene3d,
+          shape3d: opts.shape3d,
+          blipEffects: opts.blipEffects,
+          tile: opts.tile,
+          graphicFrameLocks: opts.graphicFrameLocks,
+        },
+        ctx,
+      );
+      return wrapDrawingRun(drawingXml, opts);
+    }
+
+    // Data is required past this point: linked-only pictures returned above,
+    // and toUint8Array(undefined) throws the clear TypeError for degenerate
+    // authoring input (neither bytes nor a linked source).
+    const rawData = toUint8Array(opts.data!, { encoding: "base64" }) as Uint8Array;
 
     let mediaData: MediaData;
     if (opts.type === "svg") {
@@ -813,6 +847,7 @@ export function stringifyChildDispatch(
               opts.nonVisualProperties,
             ),
             useLocalDpi: opts.useLocalDpi,
+            sourceUrl: opts.sourceUrl,
           }) as MediaData,
         opts.fileName,
       );
