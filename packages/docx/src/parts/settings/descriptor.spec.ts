@@ -67,6 +67,24 @@ describe("settingsDesc round-trip", () => {
     expect((result.compatibility as CompatibilityOptions).version).toBe(15);
   });
 
+  it("folds a settings-root compatSetting into the compatibility domain", () => {
+    // Word 2010 transitional documents can strand the entry outside w:compat.
+    const xml =
+      `<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:compat><w:useFELayout/></w:compat>` +
+      `<w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="14"/>` +
+      `</w:settings>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = settingsDesc.parse(el, readCtx);
+    expect(parsed.compatibility).toMatchObject({ useFELayout: true, version: 14 });
+
+    const out = settingsDesc.stringify(parsed, writeCtx)!;
+    expect(out).toContain(
+      '<w:compat><w:useFELayout w:val="1"/><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="14"/></w:compat>',
+    );
+  });
+
   it("emits MS Office default compatSettings for fresh documents", () => {
     const xml = settingsDesc.stringify({}, writeCtx)!;
     expect(xml).toContain(

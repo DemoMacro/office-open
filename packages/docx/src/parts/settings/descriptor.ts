@@ -261,13 +261,31 @@ function parseFtnEdnPr(
   return Object.keys(o).length > 0 ? o : undefined;
 }
 
+/** Apply one w:compatSetting entry to a compatibility options object: named
+ *  sugar fields first, remaining entries accumulate into compatSettings[]. */
+function applyCompatSetting(target: Record<string, unknown>, child: Element): void {
+  const name = attr(child, "w:name");
+  const val = attr(child, "w:val");
+  if (name === undefined || val === undefined) return;
+  const sugar = COMPAT_SETTING_SUGAR[name];
+  if (sugar === "version") {
+    const n = parseInt(val, 10);
+    if (!Number.isNaN(n)) target.version = n;
+  } else if (sugar !== undefined) {
+    target[sugar] = parseOnOff(val) ?? true;
+  } else {
+    const extras = (target.compatSettings as CompatSettingOptions[] | undefined) ?? [];
+    extras.push({ name, val, uri: attr(child, "w:uri") });
+    target.compatSettings = extras;
+  }
+}
+
 /** Parse w:compat (CT_Compat): on/off flag elements + w:compatSetting entries. */
 function parseCompatibility(el: Element): CompatibilityOptions | undefined {
   const o: Record<string, unknown> = {};
   const flagMap: Record<string, string> = Object.fromEntries(
     COMPAT_FLAG_MAP.map(([key, tag]) => [tag, key]),
   );
-  const extras: CompatSettingOptions[] = [];
   for (const child of el.elements ?? []) {
     if (child.type !== "element" || !child.name) continue;
     const key = flagMap[child.name];
@@ -276,23 +294,11 @@ function parseCompatibility(el: Element): CompatibilityOptions | undefined {
       continue;
     }
     if (child.name === "w:compatSetting") {
-      const name = attr(child, "w:name");
-      const val = attr(child, "w:val");
-      if (name === undefined || val === undefined) continue;
-      const sugar = COMPAT_SETTING_SUGAR[name];
-      if (sugar === "version") {
-        const n = parseInt(val, 10);
-        if (!Number.isNaN(n)) o.version = n;
-      } else if (sugar !== undefined) {
-        o[sugar] = parseOnOff(val) ?? true;
-      } else {
-        extras.push({ name, val, uri: attr(child, "w:uri") });
-      }
+      applyCompatSetting(o, child);
     } else if (child.name === "w14:enableOpenTypeKerning") {
       o.enableOpenTypeKerning = parseOnOff(attr(child, "w14:val")) ?? true;
     }
   }
-  if (extras.length > 0) o.compatSettings = extras;
   // Presence-based: a bare `<w:compat/>` (no flags) round-trips as an empty
   // object — returning undefined here would drop the element and let the
   // fresh-document defaults get injected over it.
@@ -1481,7 +1487,18 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // compatibility — tri-state: object when <w:compat> holds content, false
     // when absent (prevents fresh defaults from being injected on round-trip).
     const compatEl = findChild(el, "w:compat");
-    const compat = compatEl ? parseCompatibility(compatEl) : undefined;
+    let compat: CompatibilityOptions | undefined = compatEl
+      ? parseCompatibility(compatEl)
+      : undefined;
+    // Word 2010 transitional documents can strand compatSetting entries at
+    // the settings root, outside w:compat — fold them into the same domain so
+    // they re-emit at their XSD position inside w:compat.
+    for (const child of el.elements ?? []) {
+      if (child.type === "element" && child.name === "w:compatSetting") {
+        compat = compat ?? ({} as CompatibilityOptions);
+        applyCompatSetting(compat as unknown as Record<string, unknown>, child);
+      }
+    }
     opts.compatibility = compat ?? false;
 
     // docVars → w:docVars/w:docVar
