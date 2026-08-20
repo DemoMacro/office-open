@@ -427,6 +427,7 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
         effects: opts.effects,
         scene3d: opts.scene3d,
         shape3d: opts.shape3d,
+        extensions: opts.extensions,
       },
       ctx,
     ) ?? "";
@@ -787,8 +788,8 @@ function stringifyGraphicDataContent(
     const wpsXml = stringifyWpsShape(
       {
         ...md.data,
-        outline,
-        fill,
+        outline: outline ?? md.data.outline,
+        fill: fill ?? md.data.fill,
         transformation: transform,
       },
       ctx,

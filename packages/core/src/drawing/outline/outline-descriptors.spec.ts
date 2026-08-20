@@ -129,6 +129,14 @@ describe("outlineDesc", () => {
     expect(result.tailEnd!.type).toBe("arrow");
   });
 
+  it("round-trips the line-property extension list", () => {
+    const opts: OutlineOptions = {
+      type: "noFill",
+      ext: '<a:ext uri="urn:example"><x:payload xmlns:x="urn:example"/></a:ext>',
+    };
+    expect(roundTrip(opts).ext).toBe(opts.ext);
+  });
+
   it("treats a bare-string color as sRGB hex sugar with implicit solidFill", () => {
     const xml = stringify(outlineDesc, { color: "2E74B5", width: 12700 }, {} as WriteContext)!;
     expect(xml).toContain("<a:solidFill>");

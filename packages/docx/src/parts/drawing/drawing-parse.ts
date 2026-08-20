@@ -20,6 +20,7 @@ import {
   parseNonVisualDrawingProperties,
   pictureLockingDesc,
   presetGeometryDesc,
+  shapePropertiesDesc,
 } from "@office-open/core";
 import { chartSpaceDesc } from "@office-open/core/chart";
 import {
@@ -713,6 +714,10 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
     if (scene3d) result.scene3d = scene3DDesc.parse(scene3d, ctx);
     const sp3d = findChild(spPr, "a:sp3d");
     if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
+    const shapeProperties = shapePropertiesDesc.parse(spPr, ctx);
+    if (shapeProperties.extensions !== undefined) {
+      result.extensions = shapeProperties.extensions;
+    }
   }
 
   // Body properties (wps:bodyPr)

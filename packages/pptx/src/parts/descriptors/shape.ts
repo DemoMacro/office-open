@@ -460,6 +460,7 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
       effects: opts.effects,
       scene3d: opts.scene3d,
       shape3d: opts.shape3d,
+      extensions: opts.extensions,
       ext: opts.ext,
     },
     ctx,

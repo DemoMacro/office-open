@@ -5,6 +5,7 @@ import type {
   FillOptions,
   OutlineOptions,
   PresetGeometryOptions,
+  ShapePropertiesExtensionOptions,
   Scene3DOptions,
   Shape3DOptions,
   SolidFillOptions,
@@ -71,6 +72,8 @@ export interface ShapeCoreOptions {
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;
   shape3d?: Shape3DOptions;
+  /** Shape-property extensions (wps:spPr/a:extLst/a:ext). */
+  extensions?: ShapePropertiesExtensionOptions[];
   /** Theme style references (wps:style → lnRef/fillRef/effectRef/fontRef). */
   style?: ShapeStyleOptions;
   /**

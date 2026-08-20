@@ -4,9 +4,8 @@
  * @module
  */
 
-import { escapeXml } from "@office-open/xml";
+import { escapeXml, findChild, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
@@ -113,6 +112,8 @@ export function stringifyLineProperties(
   if (opts.headEnd) parts.push(stringifyLineEnd("a:headEnd", opts.headEnd));
   if (opts.tailEnd) parts.push(stringifyLineEnd("a:tailEnd", opts.tailEnd));
 
+  if (opts.ext !== undefined) parts.push(`<a:extLst>${opts.ext}</a:extLst>`);
+
   // An empty object emits the bare element — sources often carry a bare
   // <a:ln/> (or <a:uLn/>) that must survive a round-trip.
   if (parts.length === 0 && !attrStr) return `<${tag}/>`;
@@ -195,6 +196,9 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     if (headEnd) result.headEnd = readLineEnd(headEnd);
     const tailEnd = findChild(el, "a:tailEnd");
     if (tailEnd) result.tailEnd = readLineEnd(tailEnd);
+
+    const extLst = findChild(el, "a:extLst");
+    if (extLst) result.ext = stringifyXml(extLst);
 
     return result;
   },

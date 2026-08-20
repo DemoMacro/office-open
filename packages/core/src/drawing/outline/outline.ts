@@ -156,6 +156,8 @@ export interface OutlineProperties {
   headEnd?: LineEndOptions;
   /** Line end arrow/tail */
   tailEnd?: LineEndOptions;
+  /** Trailing a:extLst inner XML for line-property extensions. */
+  ext?: string;
 }
 
 /**

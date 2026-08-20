@@ -7297,14 +7297,13 @@
         },
         "type": {
           "$ref": "#/definitions/LineEndType",
-          "description": "Arrow/head type"
+          "description": "Arrow/head type (omitted in source means the OOXML default `none`)."
         },
         "width": {
           "$ref": "#/definitions/LineEndWidth",
           "description": "Arrow width"
         }
       },
-      "required": ["type"],
       "type": "object"
     },
     "LineEndType": {
@@ -8283,6 +8282,10 @@
         "dash": {
           "$ref": "#/definitions/PresetDash",
           "description": "Preset dash style.\n\nMutually exclusive with `customDash` — only one can be specified."
+        },
+        "ext": {
+          "description": "Trailing a:extLst inner XML for line-property extensions.",
+          "type": "string"
         },
         "gradientFill": {
           "$ref": "#/definitions/GradientFillOptions",
@@ -12871,6 +12874,23 @@
       "required": ["col", "row", "spPr"],
       "type": "object"
     },
+    "ShapePropertiesExtensionOptions": {
+      "additionalProperties": false,
+      "description": "A shape-property extension (a:ext). Known Office extensions are structured; unknown payloads remain verbatim in `content`.",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "hiddenLine": {
+          "$ref": "#/definitions/OutlineOptions"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": ["uri"],
+      "type": "object"
+    },
     "ShapePropertiesOptions": {
       "additionalProperties": false,
       "description": "Shape properties (CT_ShapeProperties children). Field order follows the XSD content model; the serializer emits in that order. Container-only attributes (bwMode, rotWithShape) and the wrapping tag are the caller's responsibility.",
@@ -12925,8 +12945,15 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip for unmodeled extensions.",
+          "description": "Raw a:extLst inner XML. Prefer `extensions` for structured shape-property extensions; retained for existing callers and unmodeled payloads.",
           "type": "string"
+        },
+        "extensions": {
+          "description": "Shape-property extensions (a:extLst/a:ext).",
+          "items": {
+            "$ref": "#/definitions/ShapePropertiesExtensionOptions"
+          },
+          "type": "array"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"

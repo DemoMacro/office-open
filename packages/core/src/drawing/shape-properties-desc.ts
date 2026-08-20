@@ -12,7 +12,7 @@
  * @module
  */
 
-import { findChild, stringify } from "@office-open/xml";
+import { escapeXml, findChild, stringifyElement } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import { parse } from "../descriptor";
@@ -27,7 +27,7 @@ import type { CustomGeometryOptions } from "./geometry/custom-geometry";
 import { presetGeometryDesc, customGeometryDesc } from "./geometry/geometry-descriptors";
 import type { PresetGeometryOptions } from "./geometry/preset-geometry";
 import type { OutlineOptions } from "./outline/outline";
-import { outlineDesc } from "./outline/outline-descriptors";
+import { outlineDesc, stringifyLineProperties } from "./outline/outline-descriptors";
 import type { Scene3DOptions } from "./three-d/scene-3d";
 import type { Shape3DOptions } from "./three-d/shape-3d";
 import { scene3DDesc, shape3DDesc } from "./three-d/three-d-descriptors";
@@ -35,6 +35,14 @@ import type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
 import { transform2DDesc, groupTransform2DDesc } from "./transform-descriptors";
 
 // ── Types ──
+
+/** A shape-property extension (a:ext). Known Office extensions are structured;
+ * unknown payloads remain verbatim in `content`. */
+export interface ShapePropertiesExtensionOptions {
+  uri: string;
+  hiddenLine?: OutlineOptions;
+  content?: string;
+}
 
 /**
  * Shape properties (CT_ShapeProperties children). Field order follows the XSD
@@ -72,7 +80,12 @@ export interface ShapePropertiesOptions {
   // 3D
   scene3d?: Scene3DOptions;
   shape3d?: Shape3DOptions;
-  /** Raw a:extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  /** Shape-property extensions (a:extLst/a:ext). */
+  extensions?: ShapePropertiesExtensionOptions[];
+  /**
+   * Raw a:extLst inner XML. Prefer `extensions` for structured shape-property
+   * extensions; retained for existing callers and unmodeled payloads.
+   */
   ext?: string;
 }
 
@@ -163,8 +176,27 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
       if (sp) parts.push(sp);
     }
 
-    // a:extLst — verbatim round-trip (last child per CT_ShapeProperties sequence).
-    if (opts.ext) parts.push(`<a:extLst>${opts.ext}</a:extLst>`);
+    // a:extLst — last child per CT_ShapeProperties sequence. Structured
+    // extensions take precedence over the legacy raw inner XML field.
+    if (opts.extensions !== undefined) {
+      const extensions = opts.extensions
+        .map((extension) => {
+          let content = extension.content ?? "";
+          if (extension.hiddenLine) {
+            const hiddenLine =
+              stringifyLineProperties("a14:hiddenLine", extension.hiddenLine, ctx) ?? "";
+            content += hiddenLine.replace(
+              "<a14:hiddenLine",
+              '<a14:hiddenLine xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main"',
+            );
+          }
+          return `<a:ext uri="${escapeXml(extension.uri)}">${content}</a:ext>`;
+        })
+        .join("");
+      parts.push(`<a:extLst>${extensions}</a:extLst>`);
+    } else if (opts.ext !== undefined) {
+      parts.push(`<a:extLst>${opts.ext}</a:extLst>`);
+    }
 
     return parts.length > 0 ? parts.join("") : undefined;
   },
@@ -216,11 +248,33 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
     const sp3d = findChild(el, "a:sp3d");
     if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
 
-    // a:extLst — verbatim inner XML for unmodeled extensions.
+    // a:extLst — structure known Office extensions. Lists with no known
+    // payload stay on the legacy raw field so existing public APIs keep their
+    // established shape; mixed lists retain unknown payloads per extension.
     const extLst = findChild(el, "a:extLst");
     if (extLst) {
-      const inner = stringify(extLst);
-      if (inner) result.ext = inner;
+      const extensions = (extLst.elements ?? [])
+        .filter((child) => child.type === "element" && child.name === "a:ext")
+        .map((extension) => {
+          const parsed: ShapePropertiesExtensionOptions = {
+            uri: String(extension.attributes?.["uri"] ?? ""),
+          };
+          const unknown: string[] = [];
+          for (const child of extension.elements ?? []) {
+            if (child.type === "element" && child.name === "a14:hiddenLine") {
+              parsed.hiddenLine = outlineDesc.parse(child, ctx);
+            } else {
+              unknown.push(stringifyElement(child));
+            }
+          }
+          if (unknown.length > 0) parsed.content = unknown.join("");
+          return parsed;
+        });
+      if (extensions.some((extension) => extension.hiddenLine !== undefined)) {
+        result.extensions = extensions;
+      } else {
+        result.ext = (extLst.elements ?? []).map(stringifyElement).join("");
+      }
     }
 
     return result as ShapePropertiesOptions;

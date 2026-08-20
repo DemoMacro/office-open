@@ -81,8 +81,8 @@ export type LineEndLength = "small" | "medium" | "large";
  * ```
  */
 export interface LineEndOptions {
-  /** Arrow/head type */
-  type: LineEndType;
+  /** Arrow/head type (omitted in source means the OOXML default `none`). */
+  type?: LineEndType;
   /** Arrow width */
   width?: LineEndWidth;
   /** Arrow length */

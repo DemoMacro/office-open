@@ -12,6 +12,7 @@ import type {
   EffectListOptions,
   Scene3DOptions,
   Shape3DOptions,
+  ShapePropertiesExtensionOptions,
   FillOptions,
   BlackWhiteMode,
   TextHyperlinkOptions,
@@ -87,6 +88,8 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;
   shape3d?: Shape3DOptions;
+  /** Shape-property extensions (p:spPr/a:extLst/a:ext). */
+  extensions?: ShapePropertiesExtensionOptions[];
   /** Raw a:extLst inner XML — verbatim round-trip for unmodeled extensions. */
   ext?: string;
   flipHorizontal?: boolean;

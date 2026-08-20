@@ -234,6 +234,46 @@ describe("drawingDesc round-trip", () => {
     expect(xml).not.toContain('prst="rect"');
   });
 
+  it("round-trips a wps hidden-line shape extension", () => {
+    const uri = "{91240B29-F687-4F45-9708-019B960494DF}";
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: {
+          children: [],
+          extensions: [
+            {
+              uri,
+              hiddenLine: {
+                width: 0,
+                type: "solidFill" as const,
+                color: { value: "000000" },
+                join: "round" as const,
+                headEnd: {},
+                tailEnd: {},
+              },
+            },
+          ],
+        },
+      },
+    });
+    expect(xml).toContain(
+      `<a:ext uri="${uri}"><a14:hiddenLine xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" w="0">`,
+    );
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: {
+        extensions?: Array<{ uri: string; hiddenLine?: { join?: string } }>;
+      };
+    };
+    expect(result.wpsShape?.extensions?.[0]?.uri).toBe(uri);
+    expect(result.wpsShape?.extensions?.[0]?.hiddenLine?.join).toBe("round");
+  });
+
   it("round-trips wps linked text box and normalEastAsianFlow", () => {
     const xml = stringify({
       mediaData: {
