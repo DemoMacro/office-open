@@ -12,7 +12,12 @@
 import type { UniversalMeasure } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
-import type { ShapePropertiesOptions, TextBodyOptions } from "@office-open/core/drawing";
+import type {
+  NonVisualDrawingPropertiesOptions,
+  ShapePropertiesOptions,
+  TextBodyOptions,
+} from "@office-open/core/drawing";
+import { parseNonVisualDrawingProperties } from "@office-open/core/drawing";
 import { attr, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
@@ -61,11 +66,13 @@ export interface PlaceholderFacets {
 }
 
 /**
- * A complete placeholder template on a master/layout: position plus any
- * inheritable facets the source defined. Backward-compatible with the old
+ * A complete placeholder template on a master/layout: position, inheritable
+ * facets the source defined, and the cNvPr fields (a16:creationId etc.) so a
+ * re-emitted placeholder keeps its identity. Backward-compatible with the old
  * position-only input shape (flat x/y/width/height).
  */
-export interface PlaceholderDefinition extends PlaceholderPosition, PlaceholderFacets {}
+export interface PlaceholderDefinition
+  extends PlaceholderPosition, PlaceholderFacets, NonVisualDrawingPropertiesOptions {}
 
 /** Result of resolving a placeholder against the layout/master chain. */
 export interface ResolvedPlaceholder {
@@ -193,6 +200,11 @@ export function extractPlaceholderDefinition(
   if (attr(ph, "sz") === "0") return { key, def: false };
 
   const def: Partial<PlaceholderDefinition> = {};
+
+  // cNvPr fields (name/description/title/hidden + a16:creationId) so a
+  // re-emitted placeholder keeps its identity.
+  const cNvPr = nvSpPr ? findChild(nvSpPr, "p:cNvPr") : undefined;
+  Object.assign(def, parseNonVisualDrawingProperties(cNvPr));
 
   // Position + spPr facets from shapePropertiesDesc.parse.
   const spPr = findChild(spEl, "p:spPr");

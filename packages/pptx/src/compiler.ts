@@ -168,6 +168,9 @@ interface XmlifyedFileMapping {
 
 // ── Pure helper functions (extracted from File class) ──
 
+/** Rel kinds whose targets are media files the model may rename on absorb. */
+const MEDIA_REL_KINDS = new Set(["image", "media", "audio", "video"]);
+
 function buildRels(entries: RelEntry[]): Relationships {
   const rels = new Relationships();
   for (const e of entries) {
@@ -319,6 +322,36 @@ function buildMasterMap(
       type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
       target: `../theme/theme${themeIndex + 1}.xml`,
     });
+    // Media referenced by master shapes gets the same image-relationship
+    // wiring slides/layouts use (master pictures otherwise lose their rel).
+    // Registered before the passthrough loop so its kind ownership test sees
+    // the model registration and skips the source's stale image rels.
+    const masterMediaData = getReferencedMedia(master, ctx.mediaCollection.array);
+    const masterImageOffset = masterRelsEntries.length + 1;
+    for (const [idx, mediaItem] of masterMediaData.entries()) {
+      masterRelsEntries.push({
+        id: masterImageOffset + idx,
+        type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        target: `../media/${mediaItem.fileName}`,
+      });
+    }
+    let masterXml = replaceImagePlaceholders(master, masterMediaData, masterImageOffset);
+    // Linked image sources on master shapes get the same External wiring.
+    const masterImgLinkKeys = collectPlaceholderKeys(masterXml, "img-link:");
+    if (masterImgLinkKeys.length > 0) {
+      const masterImgLinkSet = new Set(masterImgLinkKeys);
+      const masterImgLinks = ctx.imageLinks.filter((l) => masterImgLinkSet.has(l.key));
+      const imgLinkOffset = masterRelsEntries.length + 1;
+      masterXml = replaceImageLinkPlaceholders(masterXml, masterImgLinks, imgLinkOffset);
+      for (const [ili, imgLink] of masterImgLinks.entries()) {
+        masterRelsEntries.push({
+          id: imgLinkOffset + ili,
+          type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+          target: imgLink.url,
+          mode: "External",
+        });
+      }
+    }
     // Master-level passthrough relationships (round-trip) — re-emitted as
     // written unless the model already registered the same kind (ownership
     // test: targets may be renamed and ISO-strict types differ in URI only).
@@ -340,7 +373,7 @@ function buildMasterMap(
     masters.push({
       name,
       index: mi,
-      master,
+      master: masterXml,
       theme,
       themeIndex,
       layouts,
@@ -1299,18 +1332,19 @@ export function compilePresentation(
     }
 
     // Slide-level passthrough relationships (round-trip), appended last so the
-    // kind ownership test sees every model registration above: a source rel
-    // whose kind the model already registered (comments, notesSlide, image
-    // under a renamed file, …) is skipped; the rest (tags, VML drawings, OLE
-    // embeddings the model did not absorb, …) re-emit as written.
+    // ownership test sees every model registration above. Ownership is decided
+    // by kind+target: the model registers the rels it absorbed (comments,
+    // notesSlide, a slide layout) with the same target, so those skip;
+    // same-kind-different-target rels — one diagramDrawing per SmartArt
+    // instance — are distinct facts and re-emit as written. Media-targeted
+    // kinds are the exception: the model renames media files, so a registered
+    // kind means the source rel was absorbed under a new name — skip on kind
+    // alone or the stale target would re-emit dangling.
     for (const rel of options.passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
       if (rel.targetMode === "External") {
         // External targets serve verbatim (rawXml) content whose source rIds
-        // never renumber — keep the source id when free. The ownership test is
-        // kind+target (the model registers hyperlinks, linked images, and
-        // linked OLE objects under their URL), not kind alone: an embedded
-        // rel of the same kind must not shadow a linked one.
+        // never renumber — keep the source id when free.
         if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
         const numeric = /^rId(\d+)$/.exec(rel.rId);
         if (numeric && !currentSlideRels.hasId(rel.rId)) {
@@ -1325,7 +1359,8 @@ export function compilePresentation(
         }
         continue;
       }
-      if (currentSlideRels.hasRelationshipKind(rel.relationshipType.split("/").pop()!)) continue;
+      const kind = rel.relationshipType.split("/").pop()!;
+      if (MEDIA_REL_KINDS.has(kind) && currentSlideRels.hasRelationshipKind(kind)) continue;
       if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
       currentSlideRels.add(rel.relationshipType as RelationshipType, rel.target);
     }

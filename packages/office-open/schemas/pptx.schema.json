@@ -8736,10 +8736,18 @@
     },
     "PlaceholderDefinition": {
       "additionalProperties": false,
-      "description": "A complete placeholder template on a master/layout: position plus any inheritable facets the source defined. Backward-compatible with the old position-only input shape (flat x/y/width/height).",
+      "description": "A complete placeholder template on a master/layout: position, inheritable facets the source defined, and the cNvPr fields (a16:creationId etc.) so a re-emitted placeholder keeps its identity. Backward-compatible with the old position-only input shape (flat x/y/width/height).",
       "properties": {
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
+        },
+        "description": {
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions"
@@ -8767,6 +8775,14 @@
             }
           ]
         },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
+          "type": "string"
+        },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
@@ -8781,6 +8797,10 @@
         },
         "textBody": {
           "$ref": "#/definitions/TextBodyOptions"
+        },
+        "title": {
+          "description": "XSD `@title`.",
+          "type": "string"
         },
         "width": {
           "anyOf": [

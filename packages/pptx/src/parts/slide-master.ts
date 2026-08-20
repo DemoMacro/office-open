@@ -1,7 +1,12 @@
 import { convertToEmu } from "@office-open/core";
 import type { ColorMappingOptions, UniversalMeasure } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
-import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
+import {
+  pickNonVisualDrawingProperties,
+  shapePropertiesDesc,
+  stringifyNonVisualDrawingProperties,
+  textBodyDesc,
+} from "@office-open/core/drawing";
 import type { ShapePropertiesOptions } from "@office-open/core/drawing";
 import type { BackgroundOptions } from "@parts/background";
 import { DEFAULT_BACKGROUND_REFERENCE } from "@parts/background";
@@ -128,6 +133,7 @@ function resolveDef(
     def.width = convertToEmu(opt.width);
     def.height = convertToEmu(opt.height);
     copyFacets(opt, def);
+    Object.assign(def, pickNonVisualDrawingProperties(opt));
   }
   return def as PlaceholderDefinition;
 }
@@ -176,7 +182,12 @@ function phSp(
   const styleXml = def.style ? stringifyShapeStyle(def.style, ctx) : "";
   const bodyContent = def.textBody ? textBodyDesc.stringify(def.textBody, ctx) : defaultBody;
 
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${name}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr>${spPr}${styleXml}<p:txBody>${bodyContent}</p:txBody></p:sp>`;
+  // cNvPr via the shared serializer — carries description/title/hidden and the
+  // a16:creationId extension when the definition (round-trip) has them; fresh
+  // definitions emit the same plain `<p:cNvPr id name/>` as before.
+  const cNvPr = stringifyNonVisualDrawingProperties("p:cNvPr", id, def, name);
+
+  return `<p:sp><p:nvSpPr>${cNvPr}<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr>${spPr}${styleXml}<p:txBody>${bodyContent}</p:txBody></p:sp>`;
 }
 
 export const BODY_DEFAULT = `<a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p>`;
