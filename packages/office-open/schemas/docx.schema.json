@@ -20059,6 +20059,10 @@
         "style": {
           "$ref": "#/definitions/ShapeStyleOptions",
           "description": "Theme style references (wps:style → lnRef/fillRef/effectRef/fontRef)."
+        },
+        "textBoxPart": {
+          "$ref": "#/definitions/TextBoxPartOptions",
+          "description": "External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx` while the part bytes remain in DocumentOptions.rawParts."
         }
       },
       "required": ["children"],
@@ -20222,6 +20226,10 @@
         "style": {
           "$ref": "#/definitions/ShapeStyleOptions",
           "description": "Theme style references (wps:style → lnRef/fillRef/effectRef/fontRef)."
+        },
+        "textBoxPart": {
+          "$ref": "#/definitions/TextBoxPartOptions",
+          "description": "External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx` while the part bytes remain in DocumentOptions.rawParts."
         },
         "transformation": {
           "$ref": "#/definitions/MediaTransformation"
@@ -23483,6 +23491,22 @@
       "description": "Text body wrapping type (ST_TextWrappingType).",
       "enum": ["none", "square"],
       "type": "string"
+    },
+    "TextBoxPartOptions": {
+      "additionalProperties": false,
+      "description": "A Word 2010 text-box content part referenced by `wps:txbx/@r:txbx`.",
+      "properties": {
+        "path": {
+          "description": "Package path of the text-box part (e.g. `word/txbx1.xml`).",
+          "type": "string"
+        },
+        "sequence": {
+          "description": "Text-box sequence (`wps:txbx/@txbxSeq`).",
+          "type": "number"
+        }
+      },
+      "required": ["path", "sequence"],
+      "type": "object"
     },
     "TextBreakOptions": {
       "additionalProperties": false,

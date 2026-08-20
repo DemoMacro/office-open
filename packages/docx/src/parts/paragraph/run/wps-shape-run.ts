@@ -13,6 +13,11 @@ import type { Floating } from "../../drawing";
 import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
 
 export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
+export type {
+  ShapeCoreOptions,
+  ShapeTextBoxChild,
+  TextBoxPartOptions,
+} from "@parts/drawing/inline/graphic/graphic-data/wps/wps-shape";
 
 interface ShapeRunOptions {
   transformation: MediaTransformation;

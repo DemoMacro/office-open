@@ -40,6 +40,7 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/subDocument"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject"
+  | "http://schemas.microsoft.com/office/2006/relationships/txbx"
   // PresentationML specific
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster"

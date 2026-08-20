@@ -109,6 +109,8 @@ function scanDocumentTree(value: unknown, acc: DocumentTreeScan): void {
 /** Interface for document view wrappers — provides relationships access. */
 export interface ViewWrapper {
   relationships: Relationships;
+  /** Package path of the part owning these relationships. */
+  partName?: string;
 }
 
 // ── BodyContext ──
@@ -124,8 +126,8 @@ export interface BodyContext extends WriteContext {
   fileData: DocxWriteContext;
   /** Alias for fileData — some descriptor internals access context.file. */
   file: DocxWriteContext;
-  /** Current view wrapper for relationship access. */
-  viewWrapper: { relationships: Relationships };
+  /** Current part wrapper for relationship access and relative targets. */
+  viewWrapper: ViewWrapper;
   /**
    * Stringify a body-level child element — injected to break circular imports.
    * Bound to its owning context via closure at injection time, so callers pass
@@ -140,7 +142,7 @@ export class DocxWriteContext implements WriteContext {
   private _currentRelationshipId = 1;
 
   // --- Accessed by XmlComponent via context.file.* during toXml() ---
-  declare public document: { relationships: Relationships };
+  declare public document: ViewWrapper;
   declare public numbering: Numbering;
   declare public media: Media<MediaData>;
   declare public charts: ChartCollection;
@@ -275,7 +277,7 @@ export class DocxWriteContext implements WriteContext {
     );
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };
-    this.document = { relationships: new Relationships() };
+    this.document = { relationships: new Relationships(), partName: "word/document.xml" };
     // Settings.xml content has a single entry point: `settings`. The
     // background fallback turns the display flag on when a background image
     // needs showing; an explicit settings value wins via the spread.

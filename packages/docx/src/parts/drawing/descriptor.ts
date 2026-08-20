@@ -170,6 +170,7 @@ const WPS_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingSha
 const WPG_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup";
 const HYPERLINK_REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+const TEXT_BOX_REL = "http://schemas.microsoft.com/office/2006/relationships/txbx";
 // Blip extension URIs (a:extLst under a:blip).
 const SVG_BLIP_EXT_URI = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}";
 const USE_LOCAL_DPI_EXT_URI = "{28A0092B-C50C-407E-A947-70E740481C1C}";
@@ -442,13 +443,21 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
 
   // Shape style (wps:style) — theme references, emitted after spPr (XSD order)
   const styleXml = opts.style ? stringifyShapeStyle(opts.style) : "";
-  // wps:txbx — only emit when the shape carries text (text boxes). Pure
-  // geometry shapes (no paragraphs) omit txbx in the source.
-  const txbxXml = childXml ? `<wps:txbx><w:txbxContent>${childXml}</w:txbxContent></wps:txbx>` : "";
+  // wps:txbx — inline block content or a relationship to a passthrough
+  // w14:txbx part. The relationship belongs to the current owner part, not
+  // necessarily document.xml (the same shape can live in a header/footer).
+  let txbxXml = childXml ? `<wps:txbx><w:txbxContent>${childXml}</w:txbxContent></wps:txbx>` : "";
+  if (!childXml && opts.textBoxPart) {
+    const target = textBoxRelationshipTarget(opts.textBoxPart.path, ctx);
+    const existingId = ctx.viewWrapper.relationships.idOf(TEXT_BOX_REL, target);
+    const relationshipId =
+      existingId ?? `rId${ctx.viewWrapper.relationships.add(TEXT_BOX_REL, target)}`;
+    txbxXml = `<wps:txbx r:txbx="${relationshipId}" txbxSeq="${opts.textBoxPart.sequence}"/>`;
+  }
   // wps:linkedTxbx — XSD choice partner of txbx: the text lives in the linked
   // part, so the shape carries the chain reference instead of inline content.
   const linkedTxbxXml =
-    !childXml && opts.linkedTextBox
+    !txbxXml && opts.linkedTextBox
       ? `<wps:linkedTxbx id="${opts.linkedTextBox.id}" seq="${opts.linkedTextBox.sequence}"/>`
       : "";
   // East-Asian vertical flow attribute (default false — emit only when set)
@@ -464,6 +473,17 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
     stringifyBodyPr(opts.bodyProperties) +
     "</wps:wsp>"
   );
+}
+
+function textBoxRelationshipTarget(partPath: string, ctx: BodyContext): string {
+  if (!partPath.startsWith("word/")) return partPath;
+  const ownerPart = ctx.viewWrapper.partName;
+  if (!ownerPart?.startsWith("word/")) return partPath.slice("word/".length);
+  const ownerSlash = ownerPart.lastIndexOf("/");
+  const ownerDirectory = ownerSlash < 0 ? "" : ownerPart.slice(0, ownerSlash + 1);
+  return partPath.startsWith(ownerDirectory)
+    ? partPath.slice(ownerDirectory.length)
+    : partPath.slice("word/".length);
 }
 
 function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions): string {

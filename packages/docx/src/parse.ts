@@ -102,6 +102,8 @@ export interface DocxPartRefs {
   afChunks: Map<string, string>;
   /** Sub-documents (word/subdocs/subdocN.docx) keyed by rId */
   subDocs: Map<string, string>;
+  /** Per-part Word 2010 text-box relationships, partPath → (rId → partPath). */
+  partTextBoxes: Map<string, Map<string, string>>;
   /** word/bibliography.xml */
   bibliography?: string;
   /** word/glossary/document.xml */
@@ -182,6 +184,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     partMedia: new Map(),
     afChunks: new Map(),
     subDocs: new Map(),
+    partTextBoxes: new Map(),
     partHyperlinks: new Map(),
   };
 
@@ -275,6 +278,13 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
           refs.partHyperlinks.set(partPath, partMap);
         }
         partMap.set(id, target);
+      } else if (type.endsWith("/txbx")) {
+        let partMap = refs.partTextBoxes.get(partPath);
+        if (!partMap) {
+          partMap = new Map();
+          refs.partTextBoxes.set(partPath, partMap);
+        }
+        partMap.set(id, resolveRelationshipTarget(partPath, target));
       }
     }
   }

@@ -638,6 +638,21 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   }
   result.children = children;
 
+  // Word 2010 can externalize text-box content into a w14:txbx part. The part
+  // itself stays in rawParts; retain its resolved path so stringify can bind
+  // this shape to the fresh document relationship id.
+  const txbx = findChild(wspEl, "wps:txbx");
+  const textBoxRelationshipId = attr(txbx, "r:txbx");
+  const textBoxPath = textBoxRelationshipId
+    ? ctx.docx.partRefs.partTextBoxes.get(ctx.currentPart)?.get(textBoxRelationshipId)
+    : undefined;
+  if (textBoxPath) {
+    result.textBoxPart = {
+      path: textBoxPath,
+      sequence: attrNum(txbx, "txbxSeq") ?? 0,
+    };
+  }
+
   // Linked text box chain (wps:linkedTxbx) — XSD choice partner of txbx.
   const linkedTxbx = findChild(wspEl, "wps:linkedTxbx");
   if (linkedTxbx) {

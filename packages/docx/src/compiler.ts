@@ -624,7 +624,10 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       : {}),
     FooterRelationships: ctx.footers
       .map((entry, index) => {
-        const footerCtx = mkCtx({ relationships: entry.relationships });
+        const footerCtx = mkCtx({
+          relationships: entry.relationships,
+          partName: `word/${entry.partName ?? `footer${index + 1}.xml`}`,
+        });
         const xmlData =
           XML_DECL + stringifyHeaderFooter("w:ftr", FOOTER_NAMESPACES, entry.children, footerCtx);
         // Footer images get per-part relationship IDs starting at
@@ -679,7 +682,10 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     }),
     HeaderRelationships: ctx.headers
       .map((entry, index) => {
-        const headerCtx = mkCtx({ relationships: entry.relationships });
+        const headerCtx = mkCtx({
+          relationships: entry.relationships,
+          partName: `word/${entry.partName ?? `header${index + 1}.xml`}`,
+        });
         const xmlData =
           XML_DECL + stringifyHeaderFooter("w:hdr", HEADER_NAMESPACES, entry.children, headerCtx);
         // Header images get per-part relationship IDs starting at

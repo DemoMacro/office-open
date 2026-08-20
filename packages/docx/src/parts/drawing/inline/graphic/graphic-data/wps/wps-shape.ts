@@ -46,6 +46,14 @@ export interface ShapeStyleOptions {
 
 export type ShapeTextBoxChild = ParagraphOptions | string | SectionChild;
 
+/** A Word 2010 text-box content part referenced by `wps:txbx/@r:txbx`. */
+export interface TextBoxPartOptions {
+  /** Package path of the text-box part (e.g. `word/txbx1.xml`). */
+  path: string;
+  /** Text-box sequence (`wps:txbx/@txbxSeq`). */
+  sequence: number;
+}
+
 export interface ShapeCoreOptions {
   /**
    * Block-level w:txbxContent children (w:EG_BlockLevelElts). Paragraphs keep
@@ -65,6 +73,11 @@ export interface ShapeCoreOptions {
   shape3d?: Shape3DOptions;
   /** Theme style references (wps:style → lnRef/fillRef/effectRef/fontRef). */
   style?: ShapeStyleOptions;
+  /**
+   * External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx`
+   * while the part bytes remain in DocumentOptions.rawParts.
+   */
+  textBoxPart?: TextBoxPartOptions;
   /**
    * Linked text box chain (wps:linkedTxbx) — the shape's text lives in the
    * linked part instead of inline w:txbxContent. XSD choice: exclusive with

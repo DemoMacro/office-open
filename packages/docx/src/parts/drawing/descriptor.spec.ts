@@ -1,3 +1,4 @@
+import { Relationships } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
@@ -30,7 +31,7 @@ const writeCtx = {
 writeCtx.stringifyChild = (child) => stringifyBodyChild(child, writeCtx);
 setBodyParseChild(parseSectionChild);
 
-const readCtx = {
+const readContextData = {
   resolveRelationship: () => undefined,
   getPart: () => undefined,
   getRaw: () => undefined,
@@ -45,7 +46,8 @@ const readCtx = {
       getRaw: () => undefined,
     },
   },
-} as unknown as ReadContext;
+};
+const readCtx = readContextData as unknown as ReadContext;
 
 function makeImageMediaData() {
   return {
@@ -258,6 +260,53 @@ describe("drawingDesc round-trip", () => {
     };
     expect(result.wpsShape?.linkedTextBox).toEqual({ id: 7, sequence: 2 });
     expect(result.wpsShape?.normalEastAsianFlow).toBe(true);
+  });
+
+  it("round-trips a relationship-based wps text box part", () => {
+    const relationships = new Relationships();
+    const relationCtx = {
+      ...writeCtx,
+      viewWrapper: { relationships },
+    } as BodyContext;
+    relationCtx.stringifyChild = (child) => stringifyBodyChild(child, relationCtx);
+    const xml = drawingDesc.stringify(
+      {
+        mediaData: {
+          type: "wps" as const,
+          transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+          data: {
+            children: [],
+            textBoxPart: { path: "word/txbx1.xml", sequence: 0 },
+          },
+        },
+      },
+      relationCtx,
+    )!;
+
+    expect(xml).toContain('<wps:txbx r:txbx="rId1" txbxSeq="0"/>');
+    expect(relationships.serialize()).toContain(
+      'Type="http://schemas.microsoft.com/office/2006/relationships/txbx" Target="txbx1.xml"',
+    );
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const relationReadCtx = {
+      ...readCtx,
+      currentPart: "word/document.xml",
+      docx: {
+        ...readContextData.docx,
+        partRefs: {
+          ...readContextData.docx.partRefs,
+          partTextBoxes: new Map([["word/document.xml", new Map([["rId1", "word/txbx1.xml"]])]]),
+        },
+      },
+    } as unknown as ReadContext;
+    const parsed = drawingDesc.parse(el, relationReadCtx) as {
+      wpsShape?: { children: unknown[]; textBoxPart?: { path: string; sequence: number } };
+    };
+    expect(parsed.wpsShape?.children).toEqual([]);
+    expect(parsed.wpsShape?.textBoxPart).toEqual({ path: "word/txbx1.xml", sequence: 0 });
   });
 
   it("round-trips block SDT content in a wps text box", () => {
