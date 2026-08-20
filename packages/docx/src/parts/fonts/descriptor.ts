@@ -8,7 +8,11 @@
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, escapeXml, findChild } from "@office-open/xml";
-import { documentNamespaceAttributes } from "@parts/document/document-attributes";
+import type { Element } from "@office-open/xml";
+import {
+  DocumentAttributeNamespaces,
+  documentNamespaceAttributes,
+} from "@parts/document/document-attributes";
 import type { FontSignature } from "@parts/fonts/font-table";
 import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
 
@@ -89,11 +93,25 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
+    // Declare each Requires= prefix referenced by a wrapped font; the base NS
+    // list stays fixed so ordinary tables keep their byte layout.
+    const nsByPrefix = DocumentAttributeNamespaces as Record<string, string>;
+    const requiredNs = [...new Set(opts.fonts.map((font) => font.requires).filter(Boolean))]
+      .flatMap((prefix): string[] => {
+        const uri = prefix === undefined ? undefined : nsByPrefix[prefix];
+        return uri === undefined ? [] : [` xmlns:${prefix}="${uri}"`];
+      })
+      .join("");
     const parts: string[] = [
-      `<w:fonts ${NS} mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh">`,
+      `<w:fonts ${NS}${requiredNs} mc:Ignorable="w14 w15 w16se w16cid w16 w16cex w16sdtdh">`,
     ];
     for (const font of opts.fonts) {
-      parts.push(fontXml(font));
+      const xml = fontXml(font);
+      parts.push(
+        font.requires
+          ? `<mc:AlternateContent><mc:Choice Requires="${escapeXml(font.requires)}">${xml}</mc:Choice><mc:Fallback/></mc:AlternateContent>`
+          : xml,
+      );
     }
     parts.push("</w:fonts>");
     return parts.join("");
@@ -101,9 +119,9 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
 
   parse(el, _ctx) {
     const fonts: EmbeddedFontOptionsWithKey[] = [];
-    for (const child of el.elements ?? []) {
-      if (child.name !== "w:font") continue;
+    const pushFont = (child: Element, requires?: string) => {
       const font: Partial<EmbeddedFontOptionsWithKey> = { fontKey: "" };
+      if (requires) font.requires = requires;
       const name = child.attributes?.["w:name"];
       if (name) font.name = String(name);
 
@@ -175,6 +193,19 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
       }
 
       fonts.push(font as EmbeddedFontOptionsWithKey);
+    };
+    for (const child of el.elements ?? []) {
+      if (child.name === "w:font") {
+        pushFont(child);
+        continue;
+      }
+      // Word 2010+ can gate a font declaration behind a markup-compatibility
+      // Choice (e.g. Requires="wpc"); the Fallback branch is empty in practice.
+      if (child.name === "mc:AlternateContent") {
+        const choice = findChild(child, "mc:Choice");
+        const choiceFont = choice ? findChild(choice, "w:font") : undefined;
+        if (choiceFont) pushFont(choiceFont, attr(choice, "Requires") ?? undefined);
+      }
     }
     return { fonts };
   },

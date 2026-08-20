@@ -80,6 +80,12 @@ export interface EmbeddedFontOptions {
    * Round-trip flag preserved from source embedRegular.
    */
   subsetted?: boolean;
+  /**
+   * Markup-compatibility namespace prefix gating this declaration
+   * (`mc:AlternateContent/mc:Choice/@Requires`, e.g. "wpc"). When set, the
+   * font is emitted inside an AlternateContent/Choice wrapper.
+   */
+  requires?: string;
 }
 
 /**

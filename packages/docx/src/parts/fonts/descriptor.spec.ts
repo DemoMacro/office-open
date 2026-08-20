@@ -99,4 +99,30 @@ describe("fontTableDesc round-trip", () => {
     const result = roundTrip({ fonts: [] });
     expect(result.fonts).toHaveLength(0);
   });
+
+  it("round-trips a markup-compatibility gated font declaration", () => {
+    const xml =
+      '<w:fonts xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+      'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas">' +
+      '<w:font w:name="Calibri"><w:pitch w:val="variable"/></w:font>' +
+      '<mc:AlternateContent><mc:Choice Requires="wpc">' +
+      '<w:font w:name="Calibri1"><w:pitch w:val="variable"/></w:font>' +
+      "</mc:Choice><mc:Fallback></mc:Fallback></mc:AlternateContent>" +
+      "</w:fonts>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = fontTableDesc.parse(el, readCtx);
+    expect(parsed.fonts).toHaveLength(2);
+    expect(parsed.fonts[0]?.requires).toBeUndefined();
+    expect(parsed.fonts[1]?.name).toBe("Calibri1");
+    expect(parsed.fonts[1]?.requires).toBe("wpc");
+
+    const generated = fontTableDesc.stringify(parsed, writeCtx)!;
+    expect(generated).toContain(
+      'xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"',
+    );
+    expect(generated).toContain('<mc:Choice Requires="wpc"><w:font w:name="Calibri1">');
+    expect(generated).toContain("<mc:Fallback/></mc:AlternateContent>");
+  });
 });

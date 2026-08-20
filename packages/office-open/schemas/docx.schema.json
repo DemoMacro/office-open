@@ -6452,6 +6452,10 @@
           "description": "Internal round-trip flag: when set, `data` holds already-obfuscated .odttf bytes that must be copied verbatim instead of re-obfuscated.",
           "type": "boolean"
         },
+        "requires": {
+          "description": "Markup-compatibility namespace prefix gating this declaration (`mc:AlternateContent/mc:Choice/@Requires`, e.g. \"wpc\"). When set, the font is emitted inside an AlternateContent/Choice wrapper.",
+          "type": "string"
+        },
         "sig": {
           "$ref": "#/definitions/FontSignature",
           "description": "Font signature (Unicode/code-page bitfields)"
