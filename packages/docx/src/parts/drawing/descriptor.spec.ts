@@ -115,6 +115,23 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain('r:embed="{image1.png}"');
   });
 
+  it("stringifies image effects through the shared blip serializer", () => {
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      blipEffects: {
+        luminance: { bright: 20 },
+        duotone: {
+          color1: { value: "002060" },
+          color2: { value: "D0CECE" },
+        },
+      },
+    });
+    expect(xml).toContain('<a:lum bright="20000"/>');
+    expect(xml).toContain(
+      '<a:duotone><a:srgbClr val="002060"/><a:srgbClr val="D0CECE"/></a:duotone>',
+    );
+  });
+
   it("stringifies docPr with custom properties", () => {
     const xml = stringify({
       mediaData: makeImageMediaData(),

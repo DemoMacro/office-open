@@ -22,6 +22,60 @@ describe("Worksheet", () => {
     });
   });
 
+  describe("cell presence", () => {
+    it("preserves a reference-only empty cell", () => {
+      const xml = buildWorksheetXml(
+        { rows: [{ rowNumber: 5, cells: [{ reference: "B5" }, { reference: "C5" }] }] },
+        {},
+      );
+      expect(xml).toContain('<c r="B5"/>');
+      expect(xml).toContain('<c r="C5"/>');
+    });
+
+    it("omits an empty generated placeholder cell", () => {
+      const xml = buildWorksheetXml({ rows: [{ cells: [{}] }] }, {});
+      expect(xml).not.toContain("<c ");
+    });
+  });
+
+  describe("conditional formatting formulas", () => {
+    it("emits formulas before specialized rule content", () => {
+      const formula = 'MAX(IF(A1="", 0, A1))';
+      const xml = buildWorksheetXml(
+        {
+          rows: [{ cells: [{ value: 1 }] }],
+          conditionalFormats: [
+            {
+              sqref: "A1:A10",
+              rules: [
+                {
+                  type: "colorScale",
+                  formulas: [formula],
+                  colorScale: {
+                    cfvo: [{ type: "min" }, { type: "max" }],
+                    colors: ["FF0000", "00FF00"],
+                  },
+                },
+                {
+                  type: "dataBar",
+                  formulas: [formula],
+                  dataBar: {
+                    cfvo: [{ type: "min" }, { type: "max" }],
+                    color: "638EC6",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {},
+      );
+      const escapedFormula = "<formula>MAX(IF(A1=&quot;&quot;, 0, A1))</formula>";
+      expect(xml).toContain(`${escapedFormula}<colorScale>`);
+      expect(xml).toContain(`${escapedFormula}<dataBar>`);
+    });
+  });
+
   describe("sheetProtection", () => {
     it("omits sheetProtection when not configured", () => {
       const xml = buildWorksheetXml({ rows: [{ cells: [{ value: "A" }] }] }, {});

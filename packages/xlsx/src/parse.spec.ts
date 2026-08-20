@@ -14,6 +14,26 @@ async function roundTrip(opts: WorkbookOptions): Promise<WorkbookOptions> {
 }
 
 describe("parseWorkbook round-trip", () => {
+  it("emits the shared strings relationship only when the part exists", async () => {
+    const withoutStrings = (await generateWorkbook(
+      { worksheets: [{ rows: [{ cells: [{ value: 1 }] }] }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const withoutArchive = unzipSync(withoutStrings);
+    const withoutRels = new TextDecoder().decode(withoutArchive["xl/_rels/workbook.xml.rels"]!);
+    expect(withoutArchive["xl/sharedStrings.xml"]).toBeUndefined();
+    expect(withoutRels).not.toContain("/sharedStrings");
+
+    const withStrings = (await generateWorkbook(
+      { worksheets: [{ rows: [{ cells: [{ value: "text" }] }] }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const withArchive = unzipSync(withStrings);
+    const withRels = new TextDecoder().decode(withArchive["xl/_rels/workbook.xml.rels"]!);
+    expect(withArchive["xl/sharedStrings.xml"]).toBeDefined();
+    expect(withRels).toContain("/sharedStrings");
+  });
+
   it("round-trips pivot table page filters", async () => {
     const opts: WorkbookOptions = {
       worksheets: [

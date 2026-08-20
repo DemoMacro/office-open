@@ -96,6 +96,8 @@ export interface DocPartOptions {
   guid?: string;
   /** Whether the name is decorated (built-in) */
   decorated?: boolean;
+  /** Style applied to this building block */
+  style?: string;
   /** Body content — paragraphs, tables, etc. */
   children: SectionChild[];
 }
@@ -111,8 +113,8 @@ export interface GlossaryDocumentOptions {
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml, findChild } from "@office-open/xml";
 
-import { parseParagraph } from "../body";
 import type { BodyContext, DocxReadContext } from "../context";
+import { parseSectionChild } from "../parse/body";
 
 const GLOSSARY_NS = documentNamespaceAttributes([
   "wpc",
@@ -158,6 +160,9 @@ function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
   }
   if (part.guid) {
     prParts.push(`<w:guid w:val="${escapeXml(part.guid)}"/>`);
+  }
+  if (part.style) {
+    prParts.push(`<w:style w:val="${escapeXml(part.style)}"/>`);
   }
   return `<w:docPartPr>${prParts.join("")}</w:docPartPr>`;
 }
@@ -251,18 +256,22 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
           const val = attr(guid, "w:val");
           if (val) part.guid = val;
         }
+
+        const style = findChild(pr, "w:style");
+        if (style) {
+          const val = attr(style, "w:val");
+          if (val) part.style = val;
+        }
       }
 
       // Parse w:docPartBody children
       const body = findChild(docPart, "w:docPartBody");
       if (body) {
-        const childList: unknown[] = [];
-        for (const sub of body.elements ?? []) {
-          if (sub.name === "w:p") {
-            childList.push({ paragraph: parseParagraph(sub, dctx) });
-          }
+        const childList: SectionChild[] = [];
+        for (const child of body.elements ?? []) {
+          if (child.type === "element") childList.push(parseSectionChild(child, dctx));
         }
-        if (childList.length > 0) part.children = childList as DocPartOptions["children"];
+        if (childList.length > 0) part.children = childList;
       }
 
       parts.push(part as DocPartOptions);

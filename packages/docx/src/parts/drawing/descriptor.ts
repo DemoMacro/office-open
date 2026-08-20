@@ -38,6 +38,7 @@ import {
   pictureLockingDesc,
   shapeLockingDesc,
   shapePropertiesDesc,
+  stringifyBlipEffects,
   stringifyNonVisualContentPartProperties,
   stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
@@ -287,7 +288,7 @@ function stringifyBlipFill(
   const extLstXml = extParts.length > 0 ? `<a:extLst>${extParts.join("")}</a:extLst>` : "";
 
   // Blip effects
-  const blipEffectsXml = blipEffects ? buildBlipEffectsXml(blipEffects) : "";
+  const blipEffectsXml = blipEffects ? stringifyBlipEffects(blipEffects, NOOP_CTX) : "";
 
   const blipContent = extLstXml + blipEffectsXml;
   if (blipContent) {
@@ -314,25 +315,6 @@ function stringifyBlipFill(
   }
 
   return `<pic:blipFill>${parts.join("")}</pic:blipFill>`;
-}
-
-function buildBlipEffectsXml(opts: BlipEffectsOptions): string {
-  const parts: string[] = [];
-  if (opts.grayscale) parts.push("<a:grayscl/>");
-  if (opts.luminance) {
-    const a: string[] = [];
-    if (opts.luminance.bright !== undefined) a.push(`bright="${opts.luminance.bright}"`);
-    if (opts.luminance.contrast !== undefined) a.push(`contrast="${opts.luminance.contrast}"`);
-    parts.push(`<a:lum${a.length ? " " + a.join(" ") : ""}/>`);
-  }
-  if (opts.biLevel) parts.push(`<a:biLevel thresh="${opts.biLevel.threshold}"/>`);
-  if (opts.blur) {
-    const a: string[] = [];
-    if (opts.blur.radius !== undefined) a.push(`rad="${opts.blur.radius}"`);
-    if (opts.blur.grow === false) a.push('grow="0"');
-    parts.push(`<a:blur${a.length ? " " + a.join(" ") : ""}/>`);
-  }
-  return parts.join("");
 }
 
 // ── Shape Properties (pic:spPr) ──

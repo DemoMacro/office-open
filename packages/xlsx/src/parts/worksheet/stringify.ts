@@ -409,6 +409,10 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         if (rule.aboveAverage === false) ruleAttrs.aboveAverage = 0;
         if (rule.stdDev !== undefined) ruleAttrs.stdDev = rule.stdDev;
 
+        const formulaXml = rule.formulas
+          ?.map((formula) => `<formula>${escapeXml(formula)}</formula>`)
+          .join("");
+
         // Color scale
         if (rule.type === "colorScale" && rule.colorScale) {
           const cs = rule.colorScale;
@@ -419,7 +423,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
           for (const c of cs.colors) {
             inner.push(`<color rgb="FF${c}"/>`);
           }
-          p.push(`<cfRule${attrs(ruleAttrs)}><colorScale>${inner.join("")}</colorScale></cfRule>`);
+          p.push(
+            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<colorScale>${inner.join("")}</colorScale></cfRule>`,
+          );
         }
         // Data bar
         else if (rule.type === "dataBar" && rule.dataBar) {
@@ -435,7 +441,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
           if (db.showValue === false) dbAttrs.showValue = 0;
           const attrStr = Object.keys(dbAttrs).length > 0 ? attrs(dbAttrs) : "";
           p.push(
-            `<cfRule${attrs(ruleAttrs)}><dataBar${attrStr}>${inner.join("")}</dataBar></cfRule>`,
+            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<dataBar${attrStr}>${inner.join("")}</dataBar></cfRule>`,
           );
         }
         // Icon set
@@ -453,14 +459,13 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
           if (is.reverse) isAttrs.reverse = 1;
           const attrStr = Object.keys(isAttrs).length > 0 ? attrs(isAttrs) : "";
           p.push(
-            `<cfRule${attrs(ruleAttrs)}><iconSet${attrStr}>${inner.join("")}</iconSet></cfRule>`,
+            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<iconSet${attrStr}>${inner.join("")}</iconSet></cfRule>`,
           );
         }
         // Standard rules (cellIs, containsText, expression, top10, aboveAverage)
         else {
-          if (rule.formulas && rule.formulas.length > 0) {
-            const formulaParts = rule.formulas.map((f) => `<formula>${escapeXml(f)}</formula>`);
-            p.push(`<cfRule${attrs(ruleAttrs)}>`, ...formulaParts, "</cfRule>");
+          if (formulaXml) {
+            p.push(`<cfRule${attrs(ruleAttrs)}>${formulaXml}</cfRule>`);
           } else {
             p.push(selfCloseElement("cfRule", attrs(ruleAttrs)));
           }
@@ -1091,7 +1096,7 @@ function buildCellString(
   }
 
   if (value === null || value === undefined) {
-    if (cell.style !== undefined) {
+    if (cell.reference !== undefined || cell.style !== undefined || mdAttr) {
       return `<c${rAttr}${sAttr}${mdAttr}/>`;
     }
     return "";

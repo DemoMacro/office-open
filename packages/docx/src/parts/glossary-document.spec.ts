@@ -3,8 +3,10 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { BodyContext } from "../context";
+import { parseSectionChild } from "../parse/body";
 import { glossaryDesc } from "./glossary-document";
 import type { GlossaryDocumentOptions } from "./glossary-document";
+import { setTableParseChild } from "./table/descriptor";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -18,6 +20,8 @@ const readCtx = {
   getPart: () => undefined,
   getRaw: () => undefined,
 } as unknown as ReadContext;
+
+setTableParseChild(parseSectionChild);
 
 function roundTrip(opts: GlossaryDocumentOptions) {
   const xml = glossaryDesc.stringify(opts, writeCtx)!;
@@ -114,6 +118,20 @@ describe("glossaryDesc round-trip", () => {
     expect(result.parts[0]?.guid).toBe("12345678-ABCD-EF01-2345-6789ABCDEF01");
   });
 
+  it("round-trips the building block style", () => {
+    const result = roundTrip({
+      parts: [
+        {
+          name: "Styled",
+          gallery: "default",
+          style: "Header/Footer",
+          children: [],
+        },
+      ],
+    });
+    expect(result.parts[0]?.style).toBe("Header/Footer");
+  });
+
   it("round-trips multiple parts", () => {
     const result = roundTrip({
       parts: [
@@ -129,5 +147,20 @@ describe("glossaryDesc round-trip", () => {
   it("round-trips empty parts", () => {
     const result = roundTrip({ parts: [] });
     expect(result.parts).toHaveLength(0);
+  });
+
+  it("parses every section child in a building block body", () => {
+    const doc = parseXml(
+      '<w:glossaryDocument xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docParts><w:docPart><w:docPartPr><w:name w:val="TableBlock"/><w:category><w:gallery w:val="tbls"/></w:category></w:docPartPr><w:docPartBody><w:tbl><w:tblPr/><w:tblGrid><w:gridCol w:w="1000"/></w:tblGrid><w:tr><w:tc><w:tcPr/><w:p><w:r><w:t>Cell text</w:t></w:r></w:p></w:tc></w:tr></w:tbl><w:unknown/></w:docPartBody></w:docPart></w:docParts></w:glossaryDocument>',
+    );
+    const root = doc.elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+
+    const result = glossaryDesc.parse(root, readCtx);
+    const children = result.parts[0]?.children ?? [];
+    expect(children).toHaveLength(2);
+    expect(children[0]).toHaveProperty("table");
+    expect(JSON.stringify(children[0])).toContain("Cell text");
+    expect(children[1]).toEqual({ rawXml: "<w:unknown/>" });
   });
 });

@@ -310,8 +310,7 @@ function stringifyCell(cell: TableCellOptions, ctx: PptxWriteContext): string {
 function stringifyTxBody(cell: TableCellOptions, ctx: PptxWriteContext): string {
   const txParts: string[] = [];
 
-  // a:bodyPr — core owns the inset conversion (UniversalMeasure → EMU)
-  txParts.push(createBodyProperties({ margins: cell.margins }));
+  txParts.push(createBodyProperties({}));
   txParts.push("<a:lstStyle/>");
 
   // Paragraphs
@@ -336,49 +335,44 @@ function stringifyTxBody(cell: TableCellOptions, ctx: PptxWriteContext): string 
 }
 
 function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
-  const parts: string[] = [];
+  const attrs: string[] = [];
+  const children: string[] = [];
 
-  if (cell.verticalAlign) {
-    parts.push(`anchor="${xsdTextAnchor.to(cell.verticalAlign)}"`);
-  }
-  if (cell.vertical) {
-    parts.push(`vert="${cell.vertical}"`);
-  }
+  if (cell.verticalAlign) attrs.push(`anchor="${xsdTextAnchor.to(cell.verticalAlign)}"`);
+  if (cell.vertical) attrs.push(`vert="${cell.vertical}"`);
+  if (cell.margins?.left !== undefined) attrs.push(`marL="${convertToEmu(cell.margins.left)}"`);
+  if (cell.margins?.right !== undefined) attrs.push(`marR="${convertToEmu(cell.margins.right)}"`);
+  if (cell.margins?.top !== undefined) attrs.push(`marT="${convertToEmu(cell.margins.top)}"`);
+  if (cell.margins?.bottom !== undefined) attrs.push(`marB="${convertToEmu(cell.margins.bottom)}"`);
 
   if (cell.borders) {
-    if (cell.borders.left) parts.push(buildBorderLine("a:lnL", cell.borders.left, ctx));
-    if (cell.borders.right) parts.push(buildBorderLine("a:lnR", cell.borders.right, ctx));
-    if (cell.borders.top) parts.push(buildBorderLine("a:lnT", cell.borders.top, ctx));
-    if (cell.borders.bottom) parts.push(buildBorderLine("a:lnB", cell.borders.bottom, ctx));
+    if (cell.borders.left) children.push(buildBorderLine("a:lnL", cell.borders.left, ctx));
+    if (cell.borders.right) children.push(buildBorderLine("a:lnR", cell.borders.right, ctx));
+    if (cell.borders.top) children.push(buildBorderLine("a:lnT", cell.borders.top, ctx));
+    if (cell.borders.bottom) children.push(buildBorderLine("a:lnB", cell.borders.bottom, ctx));
     if (cell.borders.diagonalTopLeftToBottomRight)
-      parts.push(buildBorderLine("a:lnTlToBr", cell.borders.diagonalTopLeftToBottomRight, ctx));
+      children.push(buildBorderLine("a:lnTlToBr", cell.borders.diagonalTopLeftToBottomRight, ctx));
     if (cell.borders.diagonalBottomLeftToTopRight)
-      parts.push(buildBorderLine("a:lnBlToTr", cell.borders.diagonalBottomLeftToTopRight, ctx));
+      children.push(buildBorderLine("a:lnBlToTr", cell.borders.diagonalBottomLeftToTopRight, ctx));
   }
 
   if (cell.cell3D) {
     const cell3DXml = stringify(cell3DDesc, cell.cell3D, ctx);
-    if (cell3DXml) parts.push(cell3DXml);
+    if (cell3DXml) children.push(cell3DXml);
   }
 
   if (cell.fill !== undefined) {
     const fillXml = stringify(fillDesc, cell.fill, ctx);
-    if (fillXml) parts.push(fillXml);
+    if (fillXml) children.push(fillXml);
   }
 
   // A source cell may carry no a:tcPr at all (pandoc-style minimal output) —
   // only the round-trip marker re-emits the bare element.
-  if (parts.length === 0) return cell.cellProperties ? "<a:tcPr/>" : "";
+  if (attrs.length === 0 && children.length === 0) return cell.cellProperties ? "<a:tcPr/>" : "";
 
-  const first = parts[0];
-  if (first !== undefined && !first.startsWith("<")) {
-    const attrStr = first;
-    const children = parts.slice(1);
-    if (children.length === 0) return `<a:tcPr ${attrStr}/>`;
-    return `<a:tcPr ${attrStr}>${children.join("")}</a:tcPr>`;
-  }
-
-  return `<a:tcPr>${parts.join("")}</a:tcPr>`;
+  const attrStr = attrs.length > 0 ? ` ${attrs.join(" ")}` : "";
+  if (children.length === 0) return `<a:tcPr${attrStr}/>`;
+  return `<a:tcPr${attrStr}>${children.join("")}</a:tcPr>`;
 }
 
 function buildBorderLine(name: string, options: CellBorderOptions, ctx: PptxWriteContext): string {

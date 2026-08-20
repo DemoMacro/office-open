@@ -5516,6 +5516,10 @@
           "description": "Building block name (required)",
           "type": "string"
         },
+        "style": {
+          "description": "Style applied to this building block",
+          "type": "string"
+        },
         "types": {
           "description": "Building block types",
           "items": {

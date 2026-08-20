@@ -214,6 +214,31 @@ describe("tableDesc round-trip", () => {
     expect(cell.verticalAlign).toBe("center");
   });
 
+  it("writes multiple cell properties as tcPr attributes", () => {
+    const writeCtx = new MockWriteContext() as unknown as WriteContext;
+    const xml = tableDesc.stringify(
+      {
+        rows: [
+          {
+            cells: [
+              {
+                text: "Cell",
+                verticalAlign: "center",
+                vertical: "vert270",
+                margins: { left: "2.5mm", right: 365760, top: 274320, bottom: 457200 },
+              },
+            ],
+          },
+        ],
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain(
+      '<a:tcPr anchor="ctr" vert="vert270" marL="90000" marR="365760" marT="274320" marB="457200"/>',
+    );
+    expect(xml).not.toMatch(/<a:bodyPr[^>]*(?:lIns|rIns|tIns|bIns)=/);
+  });
+
   it("round-trips table properties (bandRow, firstRow, etc.)", () => {
     const opts: TableOptions = {
       bandRow: true,
@@ -291,6 +316,24 @@ describe("tableDesc round-trip", () => {
     expect(margins.bottom).toBe(2000);
     expect(margins.left).toBe(3000);
     expect(margins.right).toBe(4000);
+  });
+
+  it("parses source tcPr margin attributes and writes them back", () => {
+    const source =
+      '<p:graphicFrame xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><p:nvGraphicFramePr><p:cNvPr id="1" name="Table"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/><a:ext cx="1000" cy="1000"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr/><a:tblGrid><a:gridCol w="1000"/></a:tblGrid><a:tr h="1000"><a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p/></a:txBody><a:tcPr marL="182880" marR="365760" marT="274320" marB="457200"/></a:tc></a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame>';
+    const root = parseXml(source).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = tableDesc.parse(root, readCtx);
+    const writeCtx = new MockWriteContext() as unknown as WriteContext;
+    const xml = tableDesc.stringify(parsed, writeCtx)!;
+
+    expect(parsed.rows?.[0]?.cells?.[0]?.margins).toEqual({
+      left: 182880,
+      right: 365760,
+      top: 274320,
+      bottom: 457200,
+    });
+    expect(xml).toContain('<a:tcPr marL="182880" marR="365760" marT="274320" marB="457200"/>');
   });
 
   it("round-trips cell margins with UniversalMeasure (mm)", () => {

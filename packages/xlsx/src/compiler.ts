@@ -350,6 +350,11 @@ export function compileWorkbook(
 
   // Shared Strings — AFTER worksheets so all strings are collected
   if (ctx.sharedStrings.count > 0) {
+    ctx.workbookRels.addRelationship(
+      ctx.workbookRels.relationshipCount + 1,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
+      "sharedStrings.xml",
+    );
     const ssXml = sharedStringsDesc.stringify(ctx.sharedStrings.toDescriptorOptions(), ctx);
     mapping["SharedStrings"] = {
       data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${ssXml}`,
@@ -1200,11 +1205,6 @@ function buildWorkbookRelationships(
     rid++,
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
     "theme/theme1.xml",
-  );
-  rels.addRelationship(
-    rid++,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
-    "sharedStrings.xml",
   );
 }
 
