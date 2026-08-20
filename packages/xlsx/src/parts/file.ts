@@ -6,6 +6,7 @@
 
 import type {
   AppPropertiesOptions,
+  ContentTypesInput,
   CorePropertiesOptions,
   CustomPropertyOptions,
   DataType,
@@ -156,6 +157,12 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   customProperties?: CustomPropertyOptions[];
   /** Shared-workbook revision log (xl/revisionHeaders.xml + xl/revisions/revisionN.xml + xl/users.xml). */
   revisionLog?: SharedWorkbookOptions;
+  /**
+   * Content types from the source [Content_Types].xml (round-trip only).
+   * Present, generate() keeps the source Default/Override entries as the
+   * base declaration table and derives only what they leave uncovered.
+   */
+  contentTypes?: ContentTypesInput;
   /**
    * Parts carried verbatim from the source that generate() does not rebuild
    * (drawings, VML, external links, any unknown extension part). Collected

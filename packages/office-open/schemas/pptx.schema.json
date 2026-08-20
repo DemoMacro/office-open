@@ -1478,6 +1478,10 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "fileName": {
+          "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the frame name.",
+          "type": "string"
+        },
         "height": {
           "anyOf": [
             {
@@ -4151,6 +4155,51 @@
         "wOff"
       ],
       "type": "string"
+    },
+    "ContentTypeDefault": {
+      "additionalProperties": false,
+      "properties": {
+        "contentType": {
+          "type": "string"
+        },
+        "extension": {
+          "type": "string"
+        }
+      },
+      "required": ["extension", "contentType"],
+      "type": "object"
+    },
+    "ContentTypeOverride": {
+      "additionalProperties": false,
+      "properties": {
+        "contentType": {
+          "type": "string"
+        },
+        "partName": {
+          "type": "string"
+        }
+      },
+      "required": ["partName", "contentType"],
+      "type": "object"
+    },
+    "ContentTypesInput": {
+      "additionalProperties": false,
+      "properties": {
+        "defaults": {
+          "items": {
+            "$ref": "#/definitions/ContentTypeDefault"
+          },
+          "type": "array"
+        },
+        "overrides": {
+          "items": {
+            "$ref": "#/definitions/ContentTypeOverride"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["defaults", "overrides"],
+      "type": "object"
     },
     "ControlOptions": {
       "additionalProperties": false,
@@ -8456,6 +8505,10 @@
           "$ref": "#/definitions/EffectListOptions",
           "description": "Shape-level effects on p:spPr (e.g. shadow/reflection)."
         },
+        "fileName": {
+          "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the shape name.",
+          "type": "string"
+        },
         "fill": {
           "$ref": "#/definitions/FillOptions",
           "description": "Fill on p:spPr (a:noFill on cropped pictures is common)."
@@ -8972,6 +9025,10 @@
         "contentType": {
           "description": "Content type (e.g. \"Document\"), round-tripped from cp:contentType.",
           "type": "string"
+        },
+        "contentTypes": {
+          "$ref": "#/definitions/ContentTypesInput",
+          "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered."
         },
         "created": {
           "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now.",
@@ -13037,6 +13094,10 @@
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
+        },
+        "fileName": {
+          "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the frame name.",
           "type": "string"
         },
         "height": {

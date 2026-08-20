@@ -141,7 +141,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     const pptx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextPictureId++;
     const name = opts.name ?? `Picture ${id}`;
-    const fileName = `${name.replace(/\s+/g, "_")}.${opts.type}`;
+    const fileName = opts.fileName ?? `${name.replace(/\s+/g, "_")}.${opts.type}`;
 
     // Geometry: number is already EMU, string is UniversalMeasure → EMU
     const widthEmu = convertToEmu(opts.width ?? 0);
@@ -208,8 +208,9 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       const cNvPicPr = findChild(nvPicPr, "p:cNvPicPr");
       const picLocks = cNvPicPr ? findChild(cNvPicPr, "a:picLocks") : undefined;
       if (picLocks) {
-        const locks = parse(pictureLockingDesc, picLocks, ctx);
-        if (locks && Object.keys(locks).length > 0) result.locking = locks;
+        // Element presence is the signal — a bare <a:picLocks/> round-trips
+        // as an empty locking object, not as a dropped element.
+        result.locking = parse(pictureLockingDesc, picLocks, ctx) ?? {};
       }
       readNvPrPlaceholder(nvPicPr, result);
     }
@@ -321,6 +322,9 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
             result.data = imageData;
             result.type = imageTypeFromPath(imagePath);
           }
+          // Keep the source file name — re-deriving it from the shape name
+          // renames the media part and forks it from its passthrough copy.
+          result.fileName = imagePath.split("/").pop();
         }
       }
     }

@@ -133,6 +133,24 @@ export interface DeriveContentTypesOptions {
    * leading slash and takes precedence over a resolver match for the same
    * path. */
   overrides?: ReadonlyArray<{ path: string; contentType: string }>;
+  /**
+   * The source package's [Content_Types].xml (round-trip). Present, the
+   * derived table is merged onto it: every source Default survives verbatim,
+   * source Overrides survive for parts that still exist at the same path,
+   * and derived entries only fill what the surviving source table leaves
+   * uncovered or mistyped (renamed media, synthesized parts, a Default whose
+   * type disagrees with a surviving part). Fresh generation (no source) is
+   * unaffected.
+   */
+  source?: ContentTypesInput;
+  /**
+   * Paths whose bytes are carried verbatim from the source package (same form
+   * as `filePaths` entries). With a source table present, derivation never
+   * types these parts — whatever the surviving source table says about them
+   * is their type, exactly as it was in the source. Only parts the compiler
+   * (re)writes get derived declarations.
+   */
+  verbatimPaths?: ReadonlySet<string>;
 }
 
 function extensionOf(path: string): string | undefined {
@@ -154,35 +172,148 @@ export function deriveContentTypes(
   filePaths: Iterable<string>,
   options: DeriveContentTypesOptions,
 ): ContentTypesInput {
+  const files = [...filePaths].filter((p) => p !== "[Content_Types].xml");
   const defaults: ContentTypeDefault[] = [...(options.baseDefaults ?? BASE_DEFAULTS)];
   const seenExt = new Set(defaults.map((d) => d.extension.toLowerCase()));
   // Keyed by lowercased PartName so explicit `overrides` entries (altChunks,
   // sub-documents) take precedence over a resolver match for the same path.
   const overrideMap = new Map<string, ContentTypeOverride>();
+  // Per-part derived types (resolver match or extension MIME) — the merge with
+  // a source table compares part types against surviving source Defaults.
+  const partTypes: Array<{ partName: string; contentType: string }> = [];
 
-  for (const path of filePaths) {
-    if (path === "[Content_Types].xml") continue;
+  for (const path of files) {
     const partType = options.resolve(path);
     if (partType) {
       const partName = withLeadingSlash(path);
       overrideMap.set(partName.toLowerCase(), { partName, contentType: partType });
+      partTypes.push({ partName, contentType: partType });
       continue;
     }
     const ext = extensionOf(path);
     if (!ext) continue;
     const key = ext.toLowerCase();
-    if (seenExt.has(key)) continue;
     const mime = options.mediaContentTypes[key];
-    if (mime) {
+    if (!seenExt.has(key) && mime) {
       defaults.push({ extension: ext, contentType: mime });
       seenExt.add(key);
     }
+    if (mime) partTypes.push({ partName: withLeadingSlash(path), contentType: mime });
   }
   for (const extra of options.overrides ?? []) {
     const partName = withLeadingSlash(extra.path);
     overrideMap.set(partName.toLowerCase(), { partName, contentType: extra.contentType });
   }
-  return { defaults, overrides: [...overrideMap.values()] };
+  if (!options.source) return { defaults, overrides: [...overrideMap.values()] };
+  return mergeSourceContentTypes(options.source, files, defaults, overrideMap, partTypes, {
+    verbatim: options.verbatimPaths,
+  });
+}
+
+/**
+ * Merge derived declarations onto the source package's table (round-trip).
+ *
+ * - Source Defaults survive verbatim — extension-level entries are harmless
+ *   when unused, and dropping them (or retyping the shared .bin extension)
+ *   is what a purely derived table gets wrong.
+ * - Source Overrides survive for parts that still exist at the same path;
+ *   media the pipeline renamed drops out.
+ * - Derived Overrides fill only what the surviving source table leaves
+ *   uncovered: parts with no source Override whose covering source Default
+ *   disagrees with (or omits) their derived type. A part the compiler
+ *   rebuilds from its parsed source stays the same part kind, so a surviving
+ *   source Override (macro-enabled variants included) keeps the source type —
+ *   the static registry cannot know the package variant the source declared.
+ * - A derived Default joins only when an output part of that extension is
+ *   still uncovered after Overrides — a source table that declares its .jpg
+ *   parts via per-part Overrides stays as-is.
+ */
+function mergeSourceContentTypes(
+  source: ContentTypesInput,
+  files: string[],
+  derivedDefaults: ContentTypeDefault[],
+  derivedOverrides: Map<string, ContentTypeOverride>,
+  partTypes: Array<{ partName: string; contentType: string }>,
+  mergeOpts: { verbatim?: ReadonlySet<string> },
+): ContentTypesInput {
+  const filePaths = new Set(files.map((p) => withLeadingSlash(p).toLowerCase()));
+  // OPC part-name matching is case-insensitive (ECMA-376-2 §10.1.2.1), so the
+  // verbatim lookup lowercases both sides.
+  const verbatimLower = new Set([...(mergeOpts.verbatim ?? [])].map((p) => p.toLowerCase()));
+  const isVerbatim = (partName: string) => verbatimLower.has(partName.slice(1).toLowerCase());
+  const partExt = (partName: string) => {
+    const dot = partName.lastIndexOf(".");
+    return dot > partName.lastIndexOf("/") ? partName.slice(dot + 1) : "";
+  };
+  // Candidate Default types (source wins per extension, derived fills the
+  // rest) — membership in the emitted table is decided after Overrides.
+  const defaultTypeByExt = new Map<string, string>();
+  const derivedDefaultByExt = new Map<string, ContentTypeDefault>();
+  for (const d of source.defaults) {
+    const key = d.extension.toLowerCase();
+    if (!defaultTypeByExt.has(key)) defaultTypeByExt.set(key, d.contentType);
+  }
+  for (const d of derivedDefaults) {
+    const key = d.extension.toLowerCase();
+    if (defaultTypeByExt.has(key)) continue;
+    defaultTypeByExt.set(key, d.contentType);
+    derivedDefaultByExt.set(key, d);
+  }
+  const overrides: ContentTypeOverride[] = [];
+  const seenOverride = new Set<string>();
+  const keptSourceTypeByPath = new Map<string, string>();
+  for (const o of source.overrides) {
+    const key = o.partName.toLowerCase();
+    if (!filePaths.has(key)) continue; // renamed media or dropped part
+    if (seenOverride.has(key)) continue;
+    seenOverride.add(key);
+    overrides.push(o);
+    keptSourceTypeByPath.set(key, o.contentType);
+  }
+  for (const o of derivedOverrides.values()) {
+    const key = o.partName.toLowerCase();
+    if (isVerbatim(key)) continue; // source bytes, source declaration
+    if (keptSourceTypeByPath.has(key)) continue; // rebuilt, same part kind — keep source type
+    const ext = partExt(key);
+    const coveringDefault = ext ? defaultTypeByExt.get(ext) : undefined;
+    if (coveringDefault === o.contentType) continue; // covered by a Default
+    seenOverride.add(key);
+    overrides.push(o);
+  }
+  // Extension-typed parts (media, embeddings) whose surviving source Default
+  // disagrees with the derived type need a per-part Override — e.g. a package
+  // whose Default .bin types printer settings while an OLE .bin survives.
+  for (const { partName, contentType } of partTypes) {
+    const key = partName.toLowerCase();
+    if (derivedOverrides.has(key) || keptSourceTypeByPath.has(key)) continue;
+    if (isVerbatim(key)) continue; // source bytes, source declaration
+    const ext = partExt(key);
+    const coveringDefault = ext ? defaultTypeByExt.get(ext) : undefined;
+    if (coveringDefault === undefined || coveringDefault === contentType) continue;
+    if (seenOverride.has(key)) continue;
+    seenOverride.add(key);
+    overrides.push({ partName, contentType });
+  }
+  const defaults: ContentTypeDefault[] = [];
+  const seenDefault = new Set<string>();
+  for (const d of source.defaults) {
+    const key = d.extension.toLowerCase();
+    if (seenDefault.has(key)) continue;
+    seenDefault.add(key);
+    defaults.push(d);
+  }
+  for (const [key, d] of derivedDefaultByExt) {
+    // A part of this extension with no Override is what makes the Default
+    // load-bearing; extensions fully covered by Overrides stay undeclared,
+    // matching a source table that never had them.
+    const needed = files.some(
+      (f) =>
+        extensionOf(f)?.toLowerCase() === key &&
+        !seenOverride.has(withLeadingSlash(f).toLowerCase()),
+    );
+    if (needed) defaults.push(d);
+  }
+  return { defaults, overrides };
 }
 
 /**

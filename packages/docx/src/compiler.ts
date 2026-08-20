@@ -254,6 +254,8 @@ function buildContentTypesData(
     resolve: DOCX_CONTENT_TYPE_RESOLVER,
     mediaContentTypes: DOCX_MEDIA_CONTENT_TYPES,
     overrides,
+    source: ctx._options.contentTypes,
+    verbatimPaths: new Set((ctx._options.rawParts ?? []).map((p) => p.path)),
   });
   // Passthrough parts whose extension has no covering Default would leave the
   // package invalid (an undeclared part — Word refuses to open). Only those

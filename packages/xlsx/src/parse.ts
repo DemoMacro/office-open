@@ -5,6 +5,7 @@
  */
 import {
   appPropertiesDesc,
+  contentTypesDesc,
   customPropertiesDesc,
   parseArchive,
   parseCorePropsElement,
@@ -793,6 +794,14 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   );
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
+
+  // Source content-type declarations — the compiler keeps them as the base
+  // table so round-trip preserves the Default/Override split as written.
+  const sourceContentTypes = xlsx.doc.get("[Content_Types].xml");
+  if (sourceContentTypes) {
+    const ct = contentTypesDesc.parse(sourceContentTypes, {} as ReadContext);
+    if (ct) opts.contentTypes = ct;
+  }
 
   return opts as WorkbookOptions;
 }

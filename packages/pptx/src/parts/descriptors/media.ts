@@ -83,7 +83,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
       pptx,
       opts.data,
       opts.type ?? "mp4",
-      `${name.replace(/\s+/g, "_")}.${opts.type ?? "mp4"}`,
+      opts.fileName ?? `${name.replace(/\s+/g, "_")}.${opts.type ?? "mp4"}`,
     );
 
     const parts: string[] = [];
@@ -151,6 +151,10 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
       if (mediaPath) {
         const data = _ctx.getRaw(mediaPath);
         if (data) result.data = data;
+        // Keep the source file name — re-deriving it from the frame name
+        // renames the media part (a name that already carries the extension
+        // would even double it).
+        result.fileName = mediaPath.split("/").pop();
       }
       // Fall back to the placeholder reference (e.g. "{media:foo.mp4}") when the
       // relationship isn't registered, so the type survives a round-trip.
@@ -184,7 +188,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
             pptx,
             opts.data,
             opts.type ?? "mp3",
-            `${name.replace(/\s+/g, "_")}.${opts.type ?? "mp3"}`,
+            opts.fileName ?? `${name.replace(/\s+/g, "_")}.${opts.type ?? "mp3"}`,
           )
         : undefined;
 
@@ -278,6 +282,9 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
       if (mediaPath) {
         const data = _ctx.getRaw(mediaPath);
         if (data) result.data = data;
+        // Keep the source file name — re-deriving it from the frame name
+        // renames the media part.
+        result.fileName = mediaPath.split("/").pop();
       }
       // Fall back to the placeholder reference (e.g. "{media:foo.wav}") when the
       // relationship isn't registered, so the type survives a round-trip.

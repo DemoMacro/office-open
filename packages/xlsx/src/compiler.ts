@@ -436,6 +436,10 @@ export function compileWorkbook(
   const contentTypesInput = deriveContentTypes(Object.keys(files), {
     resolve: XLSX_CONTENT_TYPE_RESOLVER,
     mediaContentTypes: XLSX_MEDIA_CONTENT_TYPES,
+    // Round-trip: the source declaration table is the base; derived entries
+    // only fill what surviving source entries leave uncovered or mistyped.
+    source: options.contentTypes,
+    verbatimPaths: new Set((options.rawParts ?? []).map((p) => p.path)),
   });
   // Passthrough parts whose extension has no covering Default would leave the
   // package invalid (an undeclared part — Excel refuses to open). Only those

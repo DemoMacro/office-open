@@ -3634,6 +3634,51 @@
       ],
       "type": "string"
     },
+    "ContentTypeDefault": {
+      "additionalProperties": false,
+      "properties": {
+        "contentType": {
+          "type": "string"
+        },
+        "extension": {
+          "type": "string"
+        }
+      },
+      "required": ["extension", "contentType"],
+      "type": "object"
+    },
+    "ContentTypeOverride": {
+      "additionalProperties": false,
+      "properties": {
+        "contentType": {
+          "type": "string"
+        },
+        "partName": {
+          "type": "string"
+        }
+      },
+      "required": ["partName", "contentType"],
+      "type": "object"
+    },
+    "ContentTypesInput": {
+      "additionalProperties": false,
+      "properties": {
+        "defaults": {
+          "items": {
+            "$ref": "#/definitions/ContentTypeDefault"
+          },
+          "type": "array"
+        },
+        "overrides": {
+          "items": {
+            "$ref": "#/definitions/ContentTypeOverride"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["defaults", "overrides"],
+      "type": "object"
+    },
     "ControlOptions": {
       "additionalProperties": false,
       "description": "Form control object (CT_Control)",
@@ -15354,6 +15399,10 @@
         "contentType": {
           "description": "Content type (e.g. \"Document\"), round-tripped from cp:contentType.",
           "type": "string"
+        },
+        "contentTypes": {
+          "$ref": "#/definitions/ContentTypesInput",
+          "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered."
         },
         "created": {
           "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now.",

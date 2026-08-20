@@ -20,6 +20,11 @@ export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions
   data: DataType;
   type: MediaData["type"];
   /**
+   * Media file name inside the package (ppt/media/<fileName>). Round-trip
+   * keeps the source name; fresh generation derives it from the frame name.
+   */
+  fileName?: string;
+  /**
    * Click-to-play hyperlink (a:hlinkClick `action="ppaction://media"` on
    * p:cNvPr) — Office emits it on media frames.
    */

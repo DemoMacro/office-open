@@ -39,6 +39,11 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
   type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
+  /**
+   * Media file name inside the package (ppt/media/<fileName>). Round-trip
+   * keeps the source name; fresh generation derives it from the shape name.
+   */
+  fileName?: string;
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
   effects?: EffectListOptions;
   /** Crop rectangle (a:srcRect) — integer percent insets. */

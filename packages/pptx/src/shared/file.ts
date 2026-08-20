@@ -1,4 +1,5 @@
 import type { DataType, EncryptedContainerOptions, TableStyleListOptions } from "@office-open/core";
+import type { ContentTypesInput } from "@office-open/core";
 import type {
   AppPropertiesOptions,
   CorePropertiesOptions,
@@ -214,6 +215,12 @@ export interface PresentationOptions extends CorePropertiesOptions {
   ext?: string;
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
+  /**
+   * Content types from the source [Content_Types].xml (round-trip only).
+   * Present, generate() keeps the source Default/Override entries as the
+   * base declaration table and derives only what they leave uncovered.
+   */
+  contentTypes?: ContentTypesInput;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */
   customProperties?: CustomPropertyOptions[];
   /**
