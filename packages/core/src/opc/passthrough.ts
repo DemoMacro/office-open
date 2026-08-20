@@ -114,6 +114,9 @@ export function collectPassthroughParts(
   // out of this same loop — no closure walk needed, because not-rebuilt IS
   // the kept set.
   const parts: PassthroughPart[] = [];
+  // OPC part-name matching is case-insensitive: a source can spell the rel
+  // target with different casing than the ZIP entry (docProps/thumbnail.jpeg
+  // vs docProps/Thumbnail.jpeg) and Office still resolves it.
   const kept = new Set<string>();
   for (const path of archive.keys()) {
     if (path.endsWith("/") || rebuilt.has(path)) continue;
@@ -126,7 +129,7 @@ export function collectPassthroughParts(
       path.endsWith(".xml") || path.endsWith(".rels")
         ? normalizeObsoleteNamespaceAliases(sourceData)
         : sourceData;
-    kept.add(path);
+    kept.add(path.toLowerCase());
     const contentType = contentTypeFor(path);
     parts.push(contentType === undefined ? { path, data } : { path, data, contentType });
   }
@@ -154,7 +157,7 @@ export function collectPassthroughParts(
         }
         continue;
       }
-      if (kept.has(resolveRelationshipTarget(source, target))) {
+      if (kept.has(resolveRelationshipTarget(source, target).toLowerCase())) {
         relationships.push({ source, relationshipType, target, rId });
       }
     }

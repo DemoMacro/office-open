@@ -32,7 +32,6 @@ import {
 } from "@office-open/core";
 import type { XmlifyedFile, Zippable } from "@office-open/core";
 import {
-  DEFAULT_DRAWING_XML,
   getColorXml,
   getLayoutXml,
   getStyleXml,
@@ -827,6 +826,10 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
             pathPrefix: "",
             styleRelType:
               "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramQuickStyle",
+            // The drawing part is an Office render cache, present only when the
+            // source carried it — Word never emits it for a fresh SmartArt.
+            hasDrawing: (key) =>
+              ctx.smartArts.array.find((s) => s.key === key)?.raw?.drawing !== undefined,
           },
         );
 
@@ -956,13 +959,15 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                   : stringifyColorDefinitionPart(smartArtData.color),
             path: `word/diagrams/colors${i + 1}.xml`,
           })),
-          DiagramDrawing: ctx.smartArts.array.map((smartArtData, i) => ({
-            data:
-              smartArtData.raw?.drawing !== undefined
-                ? toUint8Array(smartArtData.raw.drawing)
-                : DEFAULT_DRAWING_XML,
-            path: `word/diagrams/drawing${i + 1}.xml`,
-          })),
+          DiagramDrawing: ctx.smartArts.array
+            .map((smartArtData, i) => ({ smartArtData, i }))
+            .filter(({ smartArtData }) => smartArtData.raw?.drawing !== undefined)
+            .map(({ smartArtData, i }) => ({
+              data: toUint8Array(smartArtData.raw!.drawing!),
+              // Source-aligned index: a package can carry drawing2 without
+              // drawing1, so the numbering skips alongside the relationship.
+              path: `word/diagrams/drawing${i + 1}.xml`,
+            })),
           // Data parts with their own rels (blipFill art): re-emit the rels
           // verbatim — its rIds and ../media targets match the pinned media.
           ...(ctx.smartArts.array.some((s) => s.raw?.dataRels !== undefined)

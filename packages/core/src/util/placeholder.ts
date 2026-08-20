@@ -197,6 +197,12 @@ import type { RelationshipType } from "../opc/relationships";
 export interface SmartArtRelOptions {
   pathPrefix: string;
   styleRelType: RelationshipType;
+  /**
+   * Whether a SmartArt carries the optional diagramDrawing part (the Office
+   * render cache). Unset means every SmartArt does — a fresh authoring
+   * package never carries it, so round-trip callers pass the source fact.
+   */
+  hasDrawing?: (key: string) => boolean;
 }
 
 export function replaceSmartArtPlaceholders(
@@ -228,7 +234,7 @@ export function addSmartArtRelationships(
   globalStartIndex: number,
   options: SmartArtRelOptions,
 ): void {
-  const { pathPrefix, styleRelType } = options;
+  const { pathPrefix, styleRelType, hasDrawing } = options;
   const count = keys.length;
   const loOffset = baseOffset + count;
   const qsOffset = loOffset + count;
@@ -252,12 +258,14 @@ export function addSmartArtRelationships(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramColors",
       `${pathPrefix}diagrams/colors${gi + 1}.xml`,
     );
-    const drOffset = csOffset + count;
-    addRel(
-      drOffset + i,
-      "http://schemas.microsoft.com/office/2007/relationships/diagramDrawing",
-      `${pathPrefix}diagrams/drawing${gi + 1}.xml`,
-    );
+    if (hasDrawing === undefined || hasDrawing(keys[i]!)) {
+      const drOffset = csOffset + count;
+      addRel(
+        drOffset + i,
+        "http://schemas.microsoft.com/office/2007/relationships/diagramDrawing",
+        `${pathPrefix}diagrams/drawing${gi + 1}.xml`,
+      );
+    }
   }
 }
 

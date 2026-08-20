@@ -138,6 +138,17 @@ describe("collectPassthroughParts", () => {
     ]);
   });
 
+  it("matches passthrough targets case-insensitively (OPC part-name rule)", () => {
+    // A source can spell the rel target with different casing than the ZIP
+    // entry; Office still resolves it, so the relationship must survive.
+    const files = basePackage();
+    delete files["docProps/thumbnail.jpeg"];
+    files["docProps/Thumbnail.jpeg"] = new Uint8Array([0xff, 0xd8, 0xff]);
+    const result = collectPassthroughParts(archiveOf(files), ["word/document.xml"]);
+    const rootRels = result.relationships.filter((r) => r.source === "");
+    expect(rootRels.map((r) => r.relationshipType.split("/").pop())).toContain("thumbnail");
+  });
+
   it("does not capture relationships whose target is itself rebuilt", () => {
     // image1.png absorbed into the model this time — its relationship is the
     // compiler's own wiring, not a passthrough one.
