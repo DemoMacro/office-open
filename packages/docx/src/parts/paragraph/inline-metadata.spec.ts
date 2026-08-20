@@ -110,6 +110,25 @@ describe("inline metadata parse", () => {
     );
     expect(findChildByKey(opts, "smartTag")).toBeUndefined();
   });
+
+  it("round-trips an empty run inside customXml as <w:r/>", () => {
+    const opts = parseParagraphXml(`<w:customXml w:element="field"><w:r/></w:customXml>`);
+
+    const cx = findChildByKey(opts, "customXml");
+    expect(cx).toBeDefined();
+    expect((cx!.customXml as Record<string, unknown>).children).toEqual([{}]);
+
+    const xml = stringifyParagraph(opts as never, writeCtx);
+    expect(xml).toContain('<w:customXml w:element="field"><w:r/></w:customXml>');
+  });
+
+  it("round-trips an empty run as a paragraph child", () => {
+    const opts = parseParagraphXml(`<w:r/>`);
+    expect(opts.children).toEqual([{}]);
+
+    const xml = stringifyParagraph(opts as never, writeCtx);
+    expect(xml).toContain("<w:r/>");
+  });
 });
 
 describe("bidirectional containers parse", () => {

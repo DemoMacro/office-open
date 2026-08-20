@@ -1270,7 +1270,6 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
       }
       const parsed = parseRun(sub, ctx);
       const runOpts = parsedRunToOptions(parsed);
-      if (runOpts === null) continue;
       if (typeof runOpts === "object" && "commentReference" in runOpts) {
         const { commentReference, properties } = runOpts as {
           commentReference: number;
@@ -1341,8 +1340,7 @@ function parseContainerChildren(el: Element, ctx: DocxReadContext): ParagraphChi
     switch (sub.name) {
       case "w:r": {
         const parsed = parseRun(sub, ctx);
-        const runOpts = parsedRunToOptions(parsed);
-        if (runOpts !== null) children.push(runOpts);
+        children.push(parsedRunToOptions(parsed));
         break;
       }
       case "w:smartTag": {
@@ -1538,10 +1536,9 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
       }
       const parsed = parseRun(sub, ctx);
       const runOpts = parsedRunToOptions(parsed);
-      // parsedRunToOptions returns null for auto-generated/empty runs
-      // (e.g. footnoteRef) and { commentReference } for pure
-      // comment-reference runs; hyperlink children are runs, so skip both.
-      if (runOpts !== null && !("commentReference" in runOpts)) {
+      // parsedRunToOptions returns { commentReference } for pure
+      // comment-reference runs; hyperlink children are runs, so skip it.
+      if (!("commentReference" in runOpts)) {
         linkRuns.push(runOpts);
       }
     } else if (sub.name === "w:hyperlink") {
@@ -1595,8 +1592,7 @@ function parseRunLevelChildren(
           break;
         }
         const parsed = parseRun(child, ctx);
-        const runOpts = parsedRunToOptions(parsed);
-        if (runOpts !== null) childList.push(runOpts);
+        childList.push(parsedRunToOptions(parsed));
         break;
       }
       case "w:hyperlink": {
@@ -1931,8 +1927,7 @@ function parseRunLevelChildren(
         continue;
       }
       const parsed = parseRun(el, ctx);
-      const runOpts = parsedRunToOptions(parsed);
-      if (runOpts !== null) childList.push(runOpts);
+      childList.push(parsedRunToOptions(parsed));
     }
   }
 

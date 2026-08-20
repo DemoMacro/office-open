@@ -403,7 +403,7 @@ function parseRubyContent(el: Element, ctx: DocxReadContext): RubyContentOptions
   for (const child of el.elements ?? []) {
     if (child.type !== "element" || child.name !== "w:r") continue;
     const run = parsedRunToOptions(parseRun(child, ctx));
-    if (run !== null && !("commentReference" in run)) children.push(run);
+    if (!("commentReference" in run)) children.push(run);
   }
   return children.length > 0 ? { children } : {};
 }
@@ -696,6 +696,10 @@ export function parseRun(
  *
  * When empty run elements (tab, noBreakHyphen, date fields, etc.) are present,
  * uses children[] format to preserve them for round-trip fidelity.
+ *
+ * A run with no content and no properties stays as {}: CT_Run allows an empty
+ * w:r, and unhandled inner elements (w:drawing outside the paragraph path,
+ * bare text nodes) must not drop the element itself — {} re-emits as <w:r/>.
  */
 
 /** Mapping from parse symbols to RunOptions child objects for empty elements. */
@@ -721,7 +725,7 @@ const SYMBOL_TO_CHILD = new Map<symbol, Record<string, true>>([
 
 export function parsedRunToOptions(
   parsed: ReturnType<typeof parseRun>,
-): RunOptions | { commentReference: number } | null {
+): RunOptions | { commentReference: number } {
   const contentChildren = parsed.children;
 
   // Fast path: the overwhelmingly common run shape — one plain text node, no
@@ -886,19 +890,6 @@ export function parsedRunToOptions(
     if (hasColumnBreak) {
       opts.columnBreak = true;
     }
-  }
-
-  // If the run has no content and no properties (e.g., a pure drawing run),
-  // return null so it can be skipped by the caller.
-  if (
-    Object.keys(opts).length === 0 &&
-    textParts.length === 0 &&
-    breakCount === 0 &&
-    !hasPageBreak &&
-    !hasColumnBreak &&
-    extraChildren.length === 0
-  ) {
-    return null;
   }
 
   return opts as RunOptions;

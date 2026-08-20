@@ -143,6 +143,22 @@ describe("parseRun rsid attributes", () => {
   });
 });
 
+describe("empty run preservation (CT_Run allows an empty w:r)", () => {
+  it("keeps a content-less run as {} instead of dropping it", () => {
+    const doc = parseXml(`<w:r ${W_NS}/>`);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    expect(parsedRunToOptions(parseRun(el, {} as never))).toEqual({});
+  });
+
+  it("keeps a run whose bare text node falls outside the content model", () => {
+    const doc = parseXml(`<w:r ${W_NS}>stray</w:r>`);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    expect(parsedRunToOptions(parseRun(el, {} as never))).toEqual({});
+  });
+});
+
 describe("parseRun break clear (CT_Br/@w:clear)", () => {
   it("parses w:br/@w:clear into a structured break", () => {
     const doc = parseXml(`<w:r ${W_NS}><w:br w:clear="all"/></w:r>`);
