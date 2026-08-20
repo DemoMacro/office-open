@@ -711,6 +711,12 @@ export class DocxReadContext implements ReadContext {
     );
   }
 
+  /** Relationship kind of an OLE embedding rId in the current part
+   *  ("oleObject" | "package"; undefined when unknown). */
+  resolveEmbeddingType(rId: string): "oleObject" | "package" | undefined {
+    return this.docx.partRefs.partEmbeddingTypes.get(this.currentPart)?.get(rId);
+  }
+
   /**
    * Run `fn` with `currentPart` temporarily set to `partPath`, restoring the
    * previous value afterwards. Use when parsing a sub-document part (header,

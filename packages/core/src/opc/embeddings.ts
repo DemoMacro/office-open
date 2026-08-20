@@ -16,6 +16,13 @@ export interface EmbeddingData {
   data: Uint8Array;
   /** OLE program id (e.g. "Excel.Sheet.12") — informational only. */
   progId?: string;
+  /**
+   * Source relationship kind (round-trip): "package" for native-format
+   * embeddings (xlsx/docx), "oleObject" for OLE compound binaries. Controls
+   * the re-emitted relationship type; undefined (fresh authoring) means
+   * oleObject.
+   */
+  relationshipType?: "oleObject" | "package";
 }
 
 /**
@@ -43,25 +50,26 @@ export class EmbeddingCollection {
    * to a fresh sequential name — overwriting would silently drop the other
    * object's payload.
    */
-  public addEmbedding(data: Uint8Array, requestedName?: string, progId?: string): EmbeddingData {
+  public addEmbedding(
+    data: Uint8Array,
+    requestedName?: string,
+    progId?: string,
+    relationshipType?: EmbeddingData["relationshipType"],
+  ): EmbeddingData {
     const requested = requestedName ?? this.nextEmbeddingName();
+    const extras = {
+      ...(progId !== undefined ? { progId } : {}),
+      ...(relationshipType !== undefined ? { relationshipType } : {}),
+    };
     const existing = this.map.get(requested);
     if (existing) {
       if (this.byteEqual(existing.data, data)) return existing;
       const fallbackName = this.nextEmbeddingName();
-      const entry: EmbeddingData = {
-        fileName: fallbackName,
-        data,
-        ...(progId !== undefined ? { progId } : {}),
-      };
+      const entry: EmbeddingData = { fileName: fallbackName, data, ...extras };
       this.map.set(fallbackName, entry);
       return entry;
     }
-    const entry: EmbeddingData = {
-      fileName: requested,
-      data,
-      ...(progId !== undefined ? { progId } : {}),
-    };
+    const entry: EmbeddingData = { fileName: requested, data, ...extras };
     this.map.set(requested, entry);
     return entry;
   }

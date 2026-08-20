@@ -11328,6 +11328,11 @@
           "description": "OLE program id (e.g. \"Excel.Sheet.12\").",
           "type": "string"
         },
+        "relationshipType": {
+          "description": "Source relationship kind (round-trip): \"package\" when the source related the part as a native OPC package (embedded xlsx/docx), \"oleObject\" for an OLE compound binary. Not derivable from the file name, so it is captured for the relationship to re-emit with the same type.",
+          "enum": ["oleObject", "package"],
+          "type": "string"
+        },
         "shapeId": {
           "description": "Shape id (o:OLEObject/`@ShapeID`). Defaults to the preview shape's id.",
           "type": "string"
@@ -11403,6 +11408,11 @@
         },
         "progId": {
           "description": "OLE program id (e.g. \"Excel.Sheet.12\").",
+          "type": "string"
+        },
+        "relationshipType": {
+          "description": "Source relationship kind (round-trip): \"package\" when the source related the part as a native OPC package (embedded xlsx/docx), \"oleObject\" for an OLE compound binary. Not derivable from the file name, so it is captured for the relationship to re-emit with the same type.",
+          "enum": ["oleObject", "package"],
           "type": "string"
         },
         "shapeId": {

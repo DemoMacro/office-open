@@ -41,6 +41,13 @@ export interface ObjectEmbedOptions {
   fileName?: string;
   /** OLE program id (e.g. "Excel.Sheet.12"). */
   progId?: string;
+  /**
+   * Source relationship kind (round-trip): "package" when the source related
+   * the part as a native OPC package (embedded xlsx/docx), "oleObject" for an
+   * OLE compound binary. Not derivable from the file name, so it is captured
+   * for the relationship to re-emit with the same type.
+   */
+  relationshipType?: "oleObject" | "package";
   /** Draw aspect — how the object displays. */
   drawAspect?: "content" | "icon";
   /** Shape id (o:OLEObject/`@ShapeID`). Defaults to the preview shape's id. */
@@ -264,6 +271,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       if (payload) {
         common.data = payload.bytes;
         common.fileName = payload.path.split("/").pop() ?? payload.path;
+        if (payload.relType) common.relationshipType = payload.relType;
       }
       if (attr(oleEl, "Type") === "Link") {
         const updateMode = attr(oleEl, "UpdateMode");
@@ -285,6 +293,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       if (payload) {
         embed.data = payload.bytes;
         embed.fileName = payload.path.split("/").pop() ?? payload.path;
+        if (payload.relType) embed.relationshipType = payload.relType;
       }
       result.embed = embed;
     }
@@ -296,6 +305,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       if (payload) {
         base.data = payload.bytes;
         base.fileName = payload.path.split("/").pop() ?? payload.path;
+        if (payload.relType) base.relationshipType = payload.relType;
       }
       const updateMode = attr(linkEl, "w:updateMode");
       const lockedField = attr(linkEl, "w:lockedField");
@@ -337,13 +347,13 @@ function extensionOf(ref: string): string {
 function resolveBinary(
   rId: string | undefined,
   ctx: ReadContext,
-): { path: string; bytes: Uint8Array } | undefined {
+): { path: string; bytes: Uint8Array; relType?: "oleObject" | "package" } | undefined {
   if (!rId) return undefined;
   const path = ctx.resolveRelationship(rId);
   if (!path) return undefined;
   const bytes = ctx.getRaw(path);
   if (!bytes) return undefined;
-  return { path, bytes };
+  return { path, bytes, relType: ctx.resolveEmbeddingType?.(rId) };
 }
 
 /** Register an OLE embedding and return its allocated file name. */
@@ -355,6 +365,7 @@ function registerEmbedding(opts: ObjectEmbedOptions, ctx: BodyContext): string {
     toUint8Array(opts.data) as Uint8Array,
     opts.fileName,
     opts.progId,
+    opts.relationshipType,
   );
   return entry.fileName;
 }

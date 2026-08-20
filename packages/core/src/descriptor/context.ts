@@ -37,6 +37,12 @@ export interface WriteContext {
 export interface ReadContext {
   /** Resolve a relationship rId to its target path. */
   resolveRelationship(rId: string): string | undefined;
+  /**
+   * Relationship kind of an OLE embedding rId in the current part
+   * ("oleObject" | "package"). Optional — only document formats that
+   * distinguish the two embedding styles implement it.
+   */
+  resolveEmbeddingType?(rId: string): "oleObject" | "package" | undefined;
   /** Get a parsed XML part by path. */
   getPart(path: string): XmlElement | undefined;
   /** Get raw binary data (images, media, etc.) by path. */

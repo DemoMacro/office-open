@@ -10,6 +10,7 @@
  */
 
 import {
+  type RelationshipType,
   addBinaryFile,
   addSmartArtRelationships,
   compileMapping,
@@ -44,6 +45,7 @@ import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 import { HEADER_NAMESPACES, FOOTER_NAMESPACES, stringifyHeaderFooter } from "@parts/header-footer";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
+import type { EmbeddingCollection } from "@shared/embeddings/embeddings";
 
 import { stringifyDocumentXml, stringifyBodyChild, type BodyContext } from "./body";
 import { DocxWriteContext } from "./context";
@@ -69,6 +71,21 @@ const encoder = new TextEncoder();
 /** Relationship type for OLE embedding parts (word|ppt/embeddings/*). */
 const OLE_OBJECT_RELATIONSHIP =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
+
+/** Relationship type for native-format embedding parts (embedded xlsx/docx). */
+const PACKAGE_RELATIONSHIP =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
+
+/** Re-emit the relationship type the source used for an embedding part — a
+ *  native OPC package (xlsx/docx) stays a package rel, an OLE compound binary
+ *  stays an oleObject rel. */
+const embeddingRelationship = (
+  embeddings: EmbeddingCollection,
+  fileName: string,
+): RelationshipType =>
+  embeddings.array.find((e) => e.fileName === fileName)?.relationshipType === "package"
+    ? PACKAGE_RELATIONSHIP
+    : OLE_OBJECT_RELATIONSHIP;
 
 /** XML declaration prepended to every OOXML part. */
 const XML_DECL = OOXML_XML_DECLARATION;
@@ -400,7 +417,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   for (const [i, ref] of footnoteEmbeddings.referenced.entries()) {
     ctx.footNotes.relationships.addRelationship(
       footnoteEmbeddingOffset + i,
-      OLE_OBJECT_RELATIONSHIP,
+      embeddingRelationship(ctx.embeddings, ref.fileName),
       `embeddings/${ref.fileName}`,
     );
   }
@@ -430,7 +447,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
             for (const [i, ref] of commentEmbeddings.referenced.entries()) {
               ctx.comments.relationships.addRelationship(
                 commentEmbeddingOffset + i,
-                OLE_OBJECT_RELATIONSHIP,
+                embeddingRelationship(ctx.embeddings, ref.fileName),
                 `embeddings/${ref.fileName}`,
               );
             }
@@ -569,7 +586,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
               for (const [i, ref] of endnoteEmbeddings.referenced.entries()) {
                 ctx.endnotes.relationships.addRelationship(
                   endnoteEmbeddingOffset + i,
-                  OLE_OBJECT_RELATIONSHIP,
+                  embeddingRelationship(ctx.embeddings, ref.fileName),
                   `embeddings/${ref.fileName}`,
                 );
               }
@@ -660,7 +677,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         for (const [i, ref] of footerEmbeddings.referenced.entries()) {
           entry.relationships.addRelationship(
             footerEmbeddingOffset + i,
-            OLE_OBJECT_RELATIONSHIP,
+            embeddingRelationship(ctx.embeddings, ref.fileName),
             `embeddings/${ref.fileName}`,
           );
         }
@@ -718,7 +735,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         for (const [i, ref] of headerEmbeddings.referenced.entries()) {
           entry.relationships.addRelationship(
             headerEmbeddingOffset + i,
-            OLE_OBJECT_RELATIONSHIP,
+            embeddingRelationship(ctx.embeddings, ref.fileName),
             `embeddings/${ref.fileName}`,
           );
         }
@@ -779,7 +796,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         for (const [i, ref] of documentEmbeddings.referenced.entries()) {
           ctx.document.relationships.addRelationship(
             documentEmbeddingOffset + i,
-            OLE_OBJECT_RELATIONSHIP,
+            embeddingRelationship(ctx.embeddings, ref.fileName),
             `embeddings/${ref.fileName}`,
           );
         }
@@ -808,7 +825,8 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           0,
           {
             pathPrefix: "",
-            styleRelType: "http://schemas.microsoft.com/office/2007/relationships/diagramStyle",
+            styleRelType:
+              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramQuickStyle",
           },
         );
 

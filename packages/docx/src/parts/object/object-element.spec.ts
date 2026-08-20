@@ -16,9 +16,12 @@ function parseObjectXml(inner: string) {
   return doc.elements![0]!;
 }
 
-const readCtx = (binaries: Record<string, { path: string; bytes: Uint8Array }>) =>
+const readCtx = (
+  binaries: Record<string, { path: string; bytes: Uint8Array; relType?: "oleObject" | "package" }>,
+) =>
   ({
     resolveRelationship: (rid: string) => binaries[rid]?.path,
+    resolveEmbeddingType: (rid: string) => binaries[rid]?.relType,
     getPart: () => undefined,
     getRaw: (path: string) => {
       for (const b of Object.values(binaries)) if (b.path === path) return b.bytes;
@@ -96,5 +99,45 @@ describe("objectDesc.stringify", () => {
     expect(stIdx).toBeGreaterThanOrEqual(0);
     expect(stIdx).toBeLessThan(shapeIdx);
     expect(xml).toContain('o:spt="75"');
+  });
+});
+
+describe("objectDesc.parse embedding relationship type", () => {
+  it("captures a package-typed embedding rel for native-format parts", () => {
+    // Word relates an embedded workbook as an OPC package, not an OLE
+    // compound; the distinction must survive for the rel to re-emit correctly.
+    const el = parseObjectXml(
+      `<o:OLEObject Type="Embed" ProgID="Excel.Sheet.12" ShapeID="_x0000_i1025" ` +
+        `DrawAspect="Content" ObjectID="_1" r:id="rId5"/>`,
+    );
+    const opts = objectDesc.parse(
+      el,
+      readCtx({
+        rId5: {
+          path: "word/embeddings/Book1.xlsx",
+          bytes: new Uint8Array([9]),
+          relType: "package",
+        },
+      }),
+    );
+    expect(opts.embed!.relationshipType).toBe("package");
+  });
+
+  it("captures an oleObject-typed embedding rel", () => {
+    const el = parseObjectXml(
+      `<o:OLEObject Type="Embed" ProgID="Package" ShapeID="_x0000_i1025" ` +
+        `DrawAspect="Content" ObjectID="_2" r:id="rId6"/>`,
+    );
+    const opts = objectDesc.parse(
+      el,
+      readCtx({
+        rId6: {
+          path: "word/embeddings/oleObject1.bin",
+          bytes: new Uint8Array([8]),
+          relType: "oleObject",
+        },
+      }),
+    );
+    expect(opts.embed!.relationshipType).toBe("oleObject");
   });
 });

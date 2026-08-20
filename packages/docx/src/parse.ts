@@ -92,6 +92,14 @@ export interface DocxPartRefs {
    */
   partMedia: Map<string, Map<string, string>>;
   /**
+   * Per-part OLE embedding relationship kinds, partPath → (rId →
+   * "oleObject" | "package"). A source relates an embedded workbook either as
+   * an OLE compound (oleObject) or as the native OPC package (package); the
+   * distinction is not derivable from the target path, so it is captured for
+   * the compiler to re-emit the same relationship type.
+   */
+  partEmbeddingTypes: Map<string, Map<string, "oleObject" | "package">>;
+  /**
    * Per-part external hyperlink targets, partPath → (rId → URL). Same
    * independent-numbering rationale as partMedia: a hyperlink inside a
    * footnote/header/comment resolves its r:id against that part's own rels,
@@ -182,6 +190,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     diagramDrawing: new Map(),
     media: new Map(),
     partMedia: new Map(),
+    partEmbeddingTypes: new Map(),
     afChunks: new Map(),
     subDocs: new Map(),
     partTextBoxes: new Map(),
@@ -270,6 +279,14 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
           refs.partMedia.set(partPath, partMap);
         }
         partMap.set(id, resolveRelationshipTarget(partPath, target));
+        if (type.includes("/oleObject") || type.includes("/package")) {
+          let typeMap = refs.partEmbeddingTypes.get(partPath);
+          if (!typeMap) {
+            typeMap = new Map();
+            refs.partEmbeddingTypes.set(partPath, typeMap);
+          }
+          typeMap.set(id, type.includes("/package") ? "package" : "oleObject");
+        }
       } else if (type.includes("/hyperlink")) {
         // External URL — keep the raw target (no path resolution).
         let partMap = refs.partHyperlinks.get(partPath);
