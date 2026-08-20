@@ -11,6 +11,7 @@ const writeCtx = {
   addRelationship: () => "rId1",
   addMedia: () => "{image1.png}",
   addOle: () => "{ole:oleObject1.bin}",
+  addOleLink: () => "ole-link_1",
 } as unknown as WriteContext;
 
 const readCtx = {
@@ -81,6 +82,14 @@ describe("oleDesc round-trip", () => {
   });
 
   it("round-trips linked OLE object", () => {
+    // Descriptor parse sees the {ole-link:…} placeholder as the raw r:id — map
+    // it the way the compiler would map the rewritten External relationship.
+    const readCtxWithOleLink = {
+      resolveRelationship: (rId: string) =>
+        rId === "{ole-link:ole-link_1}" ? "file:///C:/data/sheet.xlsx" : undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
     const opts: OleOptions = {
       id: 200,
       name: "Linked OLE",
@@ -89,27 +98,35 @@ describe("oleDesc round-trip", () => {
       width: 300,
       height: 200,
       progId: "Word.Document.12",
-      link: { rId: "rId3", autoUpdate: true },
+      link: { url: "file:///C:/data/sheet.xlsx", autoUpdate: true },
     };
-    const { parsed } = roundTrip(opts);
+    const { parsed, xml } = roundTrip(opts, readCtxWithOleLink);
 
+    expect(xml).toContain('r:id="{ole-link:ole-link_1}"');
+    expect(xml).toContain('<p:link updateAutomatic="1"/>');
     expect(parsed.id).toBe(200);
     expect(parsed.name).toBe("Linked OLE");
     expect(parsed.progId).toBe("Word.Document.12");
     expect(parsed.link).toBeDefined();
-    expect(parsed.link!.rId).toBe("rId3");
+    expect(parsed.link!.url).toBe("file:///C:/data/sheet.xlsx");
     expect(parsed.link!.autoUpdate).toBe(true);
   });
 
   it("round-trips linked OLE without autoUpdate", () => {
+    const readCtxWithOleLink = {
+      resolveRelationship: (rId: string) =>
+        rId === "{ole-link:ole-link_1}" ? "https://example.com/doc.docx" : undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
     const opts: OleOptions = {
       id: 250,
-      link: { rId: "rId4" },
+      link: { url: "https://example.com/doc.docx" },
     };
-    const { parsed } = roundTrip(opts);
+    const { parsed } = roundTrip(opts, readCtxWithOleLink);
 
     expect(parsed.link).toBeDefined();
-    expect(parsed.link!.rId).toBe("rId4");
+    expect(parsed.link!.url).toBe("https://example.com/doc.docx");
     expect(parsed.link!.autoUpdate).toBeUndefined();
   });
 

@@ -67,6 +67,12 @@ export interface ImageLinkEntry {
   url: string;
 }
 
+/** An externally linked OLE object source (p:oleObj @r:id, TargetMode="External"). */
+export interface OleLinkEntry {
+  key: string;
+  url: string;
+}
+
 // ── Context ──
 
 /**
@@ -84,6 +90,8 @@ export class PptxWriteContext implements WriteContext {
   private _hyperlinks = new Map<string, HyperlinkEntry>();
   private _imageLinks = new Map<string, ImageLinkEntry>();
   private _nextImageLinkId = 1;
+  private _oleLinks = new Map<string, OleLinkEntry>();
+  private _nextOleLinkId = 1;
   private _nextRelId = 1;
   private _nextChartId = 1;
   private _nextSmartArtId = 1;
@@ -165,6 +173,20 @@ export class PptxWriteContext implements WriteContext {
     return key;
   }
 
+  /**
+   * Register an externally linked OLE object source and return its
+   * `{ole-link:key}` placeholder. The compiler rewrites the placeholder to a
+   * relationship id and adds the External oleObject relationship per
+   * slide/layout.
+   */
+  public addOleLink(url: string): string {
+    const existing = [...this._oleLinks.values()].find((l) => l.url === url);
+    if (existing) return existing.key;
+    const key = `ole-link_${this._nextOleLinkId++}`;
+    this._oleLinks.set(key, { key, url });
+    return key;
+  }
+
   public nextChartKey(): string {
     return `chart_${this._nextChartId++}`;
   }
@@ -203,6 +225,10 @@ export class PptxWriteContext implements WriteContext {
 
   public get imageLinks(): ImageLinkEntry[] {
     return [...this._imageLinks.values()];
+  }
+
+  public get oleLinks(): OleLinkEntry[] {
+    return [...this._oleLinks.values()];
   }
 }
 

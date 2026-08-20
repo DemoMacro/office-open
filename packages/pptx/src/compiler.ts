@@ -33,6 +33,7 @@ import {
   replaceImageLinkPlaceholders,
   replaceImagePlaceholders,
   replaceMediaPlaceholders,
+  replaceOleLinkPlaceholders,
   replaceOlePlaceholders,
   replaceSmartArtPlaceholders,
   replaceVideoPlaceholders,
@@ -908,6 +909,26 @@ export function compilePresentation(
         );
       }
     }
+    // Linked OLE objects on layout shapes get the same External wiring.
+    const layoutOleLinkKeys = collectPlaceholderKeys(replacedLayoutXml, "ole-link:");
+    if (layoutOleLinkKeys.length > 0) {
+      const layoutOleLinkSet = new Set(layoutOleLinkKeys);
+      const layoutOleLinks = descCtx.oleLinks.filter((l) => layoutOleLinkSet.has(l.key));
+      const oleLinkOffset = layoutRels.relationshipCount + 1;
+      replacedLayoutXml = replaceOleLinkPlaceholders(
+        replacedLayoutXml,
+        layoutOleLinks,
+        oleLinkOffset,
+      );
+      for (const [oli, oleLink] of layoutOleLinks.entries()) {
+        layoutRels.addRelationship(
+          oleLinkOffset + oli,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
+          oleLink.url,
+          "External",
+        );
+      }
+    }
     mapping[`SlideLayout${li}`] = {
       data: XML_DECL + replacedLayoutXml,
       path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
@@ -1178,6 +1199,28 @@ export function compilePresentation(
         }
       }
 
+      // Linked OLE objects (p:oleObj @r:id with p:link) — one External
+      // oleObject relationship per referenced URL.
+      const slideOleLinkKeys = collectPlaceholderKeys(replacedSlideXml, "ole-link:");
+      if (slideOleLinkKeys.length > 0) {
+        const slideOleLinkSet = new Set(slideOleLinkKeys);
+        const slideOleLinks = descCtx.oleLinks.filter((l) => slideOleLinkSet.has(l.key));
+        const oleLinkOffset = currentSlideRels.relationshipCount + 1;
+        replacedSlideXml = replaceOleLinkPlaceholders(
+          replacedSlideXml,
+          slideOleLinks,
+          oleLinkOffset,
+        );
+        for (const [oli, oleLink] of slideOleLinks.entries()) {
+          currentSlideRels.addRelationship(
+            oleLinkOffset + oli,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
+            oleLink.url,
+            "External",
+          );
+        }
+      }
+
       // Media (video/audio)
       const slideMediaRefs = getMediaRefs(replacedSlideXml, media.array);
       const slideAudioRefs = getAudioRefs(replacedSlideXml, media.array);
@@ -1262,6 +1305,26 @@ export function compilePresentation(
     // embeddings the model did not absorb, …) re-emit as written.
     for (const rel of options.passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
+      if (rel.targetMode === "External") {
+        // External targets serve verbatim (rawXml) content whose source rIds
+        // never renumber — keep the source id when free. The ownership test is
+        // kind+target (the model registers hyperlinks, linked images, and
+        // linked OLE objects under their URL), not kind alone: an embedded
+        // rel of the same kind must not shadow a linked one.
+        if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
+        const numeric = /^rId(\d+)$/.exec(rel.rId);
+        if (numeric && !currentSlideRels.hasId(rel.rId)) {
+          currentSlideRels.addRelationship(
+            Number(numeric[1]),
+            rel.relationshipType as RelationshipType,
+            rel.target,
+            "External",
+          );
+        } else {
+          currentSlideRels.add(rel.relationshipType as RelationshipType, rel.target, "External");
+        }
+        continue;
+      }
       if (currentSlideRels.hasRelationshipKind(rel.relationshipType.split("/").pop()!)) continue;
       if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
       currentSlideRels.add(rel.relationshipType as RelationshipType, rel.target);

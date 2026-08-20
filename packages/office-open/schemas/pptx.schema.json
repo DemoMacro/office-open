@@ -7770,15 +7770,15 @@
       "additionalProperties": false,
       "properties": {
         "autoUpdate": {
-          "description": "Automatic or manual update",
+          "description": "Automatic or manual update (p:link `@updateAutomatic`)",
           "type": "boolean"
         },
-        "rId": {
-          "description": "Relationship ID for the linked OLE data",
+        "url": {
+          "description": "Linked OLE source URL — registered as an External oleObject relationship of the owning slide/layout when the object is emitted.",
           "type": "string"
         }
       },
-      "required": ["rId"],
+      "required": ["url"],
       "type": "object"
     },
     "OleOptions": {
@@ -7836,7 +7836,7 @@
         },
         "link": {
           "$ref": "#/definitions/OleLinkOptions",
-          "description": "Link mode (provides rId for linked OLE data); mutually exclusive with embed."
+          "description": "Linked OLE object (external source URL, no bytes in the package); mutually exclusive with embed."
         },
         "locking": {
           "anyOf": [

@@ -62,7 +62,8 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
 
     // Embedded OLE: register the binary as ppt/embeddings/oleObjectN.bin and
     // emit a {ole:…} placeholder — the compiler rewrites it to a real r:id and
-    // adds the oleObject relationship. Linked OLE keeps its external rId as-is.
+    // adds the oleObject relationship. Linked OLE emits an {ole-link:…}
+    // placeholder resolved to an External oleObject relationship the same way.
     // followColorScheme is CT_OleObjectEmbed's attribute, not oleObj's.
     const oleChildren: string[] = [];
     if (opts.embed) {
@@ -74,7 +75,9 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
         : "";
       oleChildren.push(`<p:embed${fcs}/>`);
     } else if (opts.link) {
-      oleAttrs.push(`r:id="${opts.link.rId}"`);
+      const pptxCtx = ctx as PptxWriteContext;
+      const linkKey = pptxCtx.addOleLink(opts.link.url);
+      oleAttrs.push(`r:id="{ole-link:${linkKey}}"`);
       const linkAttrs = opts.link.autoUpdate ? ' updateAutomatic="1"' : "";
       oleChildren.push(`<p:link${linkAttrs}/>`);
     } else {
@@ -160,8 +163,12 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
         const linkEl = findChild(oleObj, "p:link");
         if (linkEl) {
           const rId = attr(oleObj, "r:id");
+          // The linked source resolves through the External oleObject
+          // relationship — the URL is the durable fact; the source rId itself
+          // does not survive renumbering.
+          const url = rId ? ctx.resolveRelationship(rId) : undefined;
           const autoUpdate = attrBool(linkEl, "updateAutomatic") === true;
-          result.link = { rId: rId ?? "", ...(autoUpdate ? { autoUpdate: true } : {}) };
+          if (url) result.link = { url, ...(autoUpdate ? { autoUpdate: true } : {}) };
         }
       }
 

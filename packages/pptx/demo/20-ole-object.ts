@@ -91,6 +91,30 @@ const options: PresentationOptions = {
         },
       ],
     },
+    {
+      children: [
+        {
+          ole: {
+            x: "2.6cm",
+            y: "2.6cm",
+            width: "10.6cm",
+            height: "7.9cm",
+            progId: "Excel.Sheet.12",
+            name: "Linked Worksheet",
+            // Linked OLE — no bytes in the package; the source URL becomes an
+            // External oleObject relationship of this slide (p:oleObj + p:link).
+            link: {
+              url: "https://example.com/sales.xlsx",
+              autoUpdate: true,
+            },
+            iconImage: {
+              data: "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNwKTpCEmIY1TCqYfhqAAB07noQI9onJgAAAABJRU5ErkJggg==",
+              type: "png",
+            },
+          },
+        },
+      ],
+    },
   ],
 };
 

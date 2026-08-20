@@ -1,4 +1,4 @@
-import type { ParsedArchive } from "@office-open/core";
+import type { ParsedArchive, PassthroughRelationship } from "@office-open/core";
 import {
   appPropertiesDesc,
   collectPassthroughParts,
@@ -315,6 +315,34 @@ function parseSlideRelMap(doc: ParsedArchive, slidePath: string): Map<string, st
   }
 
   return rels;
+}
+
+/**
+ * External relationships of slide parts. The shared collector drops
+ * part-level External entries because a rebuilt owner usually remaps its
+ * rIds — but a slide re-emits unrecognized content verbatim (rawXml children,
+ * e.g. a linked p:oleObj) whose source rIds never renumber, so each
+ * relationship must survive with its source id for the reference to stay
+ * resolvable.
+ */
+function collectExternalPartRelationships(
+  doc: ParsedArchive,
+  partPaths: readonly string[],
+): PassthroughRelationship[] {
+  const out: PassthroughRelationship[] = [];
+  for (const partPath of partPaths) {
+    const relsEl = doc.get(partPathToRelsPath(partPath));
+    for (const rel of relsEl?.elements ?? []) {
+      if (rel.name !== "Relationship") continue;
+      if (attr(rel, "TargetMode") !== "External") continue;
+      const relationshipType = attr(rel, "Type");
+      const target = attr(rel, "Target");
+      const rId = attr(rel, "Id");
+      if (!relationshipType || !target || !rId) continue;
+      out.push({ source: partPath, relationshipType, target, rId, targetMode: "External" });
+    }
+  }
+  return out;
 }
 
 /**
@@ -814,6 +842,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
     pptx.doc,
     rebuilt,
   );
+  passthroughRels.push(...collectExternalPartRelationships(pptx.doc, pptx.slides));
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
 

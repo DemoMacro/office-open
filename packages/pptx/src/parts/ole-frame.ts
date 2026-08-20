@@ -22,9 +22,12 @@ export interface OleEmbedOptions {
 }
 
 export interface OleLinkOptions {
-  /** Relationship ID for the linked OLE data */
-  rId: string;
-  /** Automatic or manual update */
+  /**
+   * Linked OLE source URL — registered as an External oleObject relationship
+   * of the owning slide/layout when the object is emitted.
+   */
+  url: string;
+  /** Automatic or manual update (p:link `@updateAutomatic`) */
   autoUpdate?: boolean;
 }
 
@@ -68,7 +71,10 @@ export interface OleOptions extends NonVisualDrawingPropertiesOptions, NvPrPlace
    * required choice between p:embed and p:link.
    */
   embed?: OleEmbedOptions;
-  /** Link mode (provides rId for linked OLE data); mutually exclusive with embed. */
+  /**
+   * Linked OLE object (external source URL, no bytes in the package);
+   * mutually exclusive with embed.
+   */
   link?: OleLinkOptions;
   /**
    * Icon/preview image (p:pic under p:oleObj). MS Office refuses to open a

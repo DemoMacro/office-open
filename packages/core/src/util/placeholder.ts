@@ -388,18 +388,28 @@ function collectPrefixedRefs(
 
 // ── Hyperlink placeholders (PPTX) ──
 
+/** Replace `{prefix:key}` placeholders with relationship IDs. */
+function replaceKeyedPlaceholders(
+  xml: string,
+  items: { key: string }[],
+  offset: number,
+  prefix: string,
+): string {
+  if (items.length === 0) return xml;
+  const map = new Map<string, string>();
+  for (const [i, item] of items.entries()) {
+    map.set(`${prefix}${item.key}`, formatId(offset, i, "rId"));
+  }
+  return replacePlaceholders(xml, map);
+}
+
 /** Replace `{hlink:key}` placeholders with relationship IDs. */
 export function replaceHyperlinkPlaceholders(
   xml: string,
   hyperlinks: { key: string }[],
   offset: number,
 ): string {
-  if (hyperlinks.length === 0) return xml;
-  const map = new Map<string, string>();
-  for (const [i, h] of hyperlinks.entries()) {
-    map.set(`hlink:${h.key}`, formatId(offset, i, "rId"));
-  }
-  return replacePlaceholders(xml, map);
+  return replaceKeyedPlaceholders(xml, hyperlinks, offset, "hlink:");
 }
 
 /** Replace `{img-link:key}` placeholders with relationship IDs. */
@@ -408,10 +418,14 @@ export function replaceImageLinkPlaceholders(
   links: { key: string }[],
   offset: number,
 ): string {
-  if (links.length === 0) return xml;
-  const map = new Map<string, string>();
-  for (const [i, link] of links.entries()) {
-    map.set(`img-link:${link.key}`, formatId(offset, i, "rId"));
-  }
-  return replacePlaceholders(xml, map);
+  return replaceKeyedPlaceholders(xml, links, offset, "img-link:");
+}
+
+/** Replace `{ole-link:key}` placeholders with relationship IDs. */
+export function replaceOleLinkPlaceholders(
+  xml: string,
+  links: { key: string }[],
+  offset: number,
+): string {
+  return replaceKeyedPlaceholders(xml, links, offset, "ole-link:");
 }
