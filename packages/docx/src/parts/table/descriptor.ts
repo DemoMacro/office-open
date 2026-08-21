@@ -8,6 +8,8 @@
  */
 
 import { convertToTwip } from "@office-open/core";
+import { xsdJcAlignment } from "@office-open/core";
+import { xsdTableWidthType } from "@office-open/core";
 import { xsdVerticalMergeRev } from "@office-open/core";
 import type { PositiveUniversalMeasure, UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
@@ -49,6 +51,12 @@ import type {
 import type { CnfStyleOptions } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { widthFiftiethsToPct } from "@parts/table/table-width";
+
+/** Read a CT_TblWidth @w:type as the Options-side width unit word. */
+const widthTypeOf = (el: Element): string | undefined => {
+  const raw = attr(el, "w:type");
+  return raw !== undefined ? xsdTableWidthType.from(raw) : undefined;
+};
 import { parseBorderSide } from "@shared/border";
 import type { SectionChild } from "@shared/section";
 import { parseShading, type ShadingProperties } from "@shared/shading";
@@ -338,7 +346,7 @@ function parseCellMargins(marginEl: Element): TableCellMarginOptions | undefined
   for (const side of ["top", "start", "left", "bottom", "end", "right"] as const) {
     const sideEl = findChild(marginEl, `w:${side}`);
     if (sideEl) {
-      const type = attr(sideEl, "w:type");
+      const type = widthTypeOf(sideEl);
       const size = widthFiftiethsToPct(attrMeasure(sideEl, "w:w"), type);
       if (size !== undefined) {
         margins[side] = (
@@ -564,7 +572,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
 
   const tblW = findChild(el, "w:tblW");
   if (tblW) {
-    const type = attr(tblW, "w:type");
+    const type = widthTypeOf(tblW);
     const size = widthFiftiethsToPct(attrMeasure(tblW, "w:w"), type);
     if (size !== undefined || type) {
       opts.width = { size: size ?? 0, ...(type ? { type } : {}) } as TableWidthProperties;
@@ -574,7 +582,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   const jc = findChild(el, "w:jc");
   if (jc) {
     const val = attr(jc, "w:val");
-    if (val) opts.alignment = val as TablePropertiesOptions["alignment"];
+    if (val) opts.alignment = xsdJcAlignment.from(val) as TablePropertiesOptions["alignment"];
   }
 
   const layout = findChild(el, "w:tblLayout");
@@ -669,7 +677,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   // indent → w:tblInd/@w:w and @w:type
   const tblInd = findChild(el, "w:tblInd");
   if (tblInd) {
-    const type = attr(tblInd, "w:type");
+    const type = widthTypeOf(tblInd);
     const size = widthFiftiethsToPct(attrMeasure(tblInd, "w:w"), type);
     if (size !== undefined) {
       opts.indent = { size, ...(type ? { type } : {}) } as TableWidthProperties;
@@ -702,7 +710,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   // cellSpacing → w:tblCellSpacing
   const tblCellSpacing = findChild(el, "w:tblCellSpacing");
   if (tblCellSpacing) {
-    const type = attr(tblCellSpacing, "w:type");
+    const type = widthTypeOf(tblCellSpacing);
     const w = widthFiftiethsToPct(attrMeasure(tblCellSpacing, "w:w"), type);
     if (w !== undefined)
       opts.cellSpacing = { size: w, ...(type ? { type } : {}) } as TableCellSpacingProperties;
@@ -830,14 +838,14 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
   // wBefore / wAfter → widthBefore / widthAfter
   const wBefore = findChild(el, "w:wBefore");
   if (wBefore) {
-    const type = attr(wBefore, "w:type");
+    const type = widthTypeOf(wBefore);
     const size = widthFiftiethsToPct(attrMeasure(wBefore, "w:w"), type);
     if (size !== undefined)
       opts.widthBefore = { size, ...(type ? { type } : {}) } as TableWidthProperties;
   }
   const wAfter = findChild(el, "w:wAfter");
   if (wAfter) {
-    const type = attr(wAfter, "w:type");
+    const type = widthTypeOf(wAfter);
     const size = widthFiftiethsToPct(attrMeasure(wAfter, "w:w"), type);
     if (size !== undefined)
       opts.widthAfter = { size, ...(type ? { type } : {}) } as TableWidthProperties;
@@ -847,7 +855,8 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
   const jc = findChild(el, "w:jc");
   if (jc) {
     const val = attr(jc, "w:val");
-    if (val) opts.rowAlignment = val as TableRowPropertiesOptions["rowAlignment"];
+    if (val)
+      opts.rowAlignment = xsdJcAlignment.from(val) as TableRowPropertiesOptions["rowAlignment"];
   }
 
   // hidden → w:hidden
@@ -857,7 +866,7 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
   // cellSpacing → w:tblCellSpacing
   const tblCellSpacing = findChild(el, "w:tblCellSpacing");
   if (tblCellSpacing) {
-    const type = attr(tblCellSpacing, "w:type");
+    const type = widthTypeOf(tblCellSpacing);
     const w = widthFiftiethsToPct(attrMeasure(tblCellSpacing, "w:w"), type);
     if (w !== undefined)
       opts.cellSpacing = { size: w, ...(type ? { type } : {}) } as TableCellSpacingProperties;
@@ -910,7 +919,7 @@ export function parseTableCellPropertiesEl(el: Element): TableCellPropertiesOpti
 
   const tcW = findChild(el, "w:tcW");
   if (tcW) {
-    const type = attr(tcW, "w:type");
+    const type = widthTypeOf(tcW);
     const size = widthFiftiethsToPct(attrMeasure(tcW, "w:w"), type);
     if (size !== undefined) {
       opts.width = { size, ...(type ? { type } : {}) } as TableWidthProperties;

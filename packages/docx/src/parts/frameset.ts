@@ -26,9 +26,7 @@ export interface WebFrameOptions {
   marginHeight?: number;
   /** Scrollbar mode */
   scrollbar?: "on" | "off" | "auto";
-  /** No resize allowed */
   noResizeAllowed?: boolean;
-  /** Linked to file */
   linkedToFile?: boolean;
   /** Long description relationship ID (round-trip only). */
   longDescRId?: string;
@@ -39,9 +37,7 @@ export interface FramesetSplitbarOptions {
   width?: number;
   /** Splitbar color (hex, e.g., "auto") */
   color?: string;
-  /** No border */
   noBorder?: boolean;
-  /** Flat borders */
   flatBorders?: boolean;
 }
 

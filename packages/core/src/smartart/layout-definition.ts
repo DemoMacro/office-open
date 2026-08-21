@@ -28,6 +28,12 @@ import type {
   AnimationLevel,
   HierBranch,
 } from "../drawing/diagram/layout-vars";
+import {
+  xsdAnimLevel,
+  xsdDiagramDirection,
+  xsdHierBranch,
+  xsdResizeHandles,
+} from "../util/mappings";
 import { parseDataModelOptions, stringifyDataModelOptions } from "./data-model";
 import type { DataModelOptions } from "./data-model";
 
@@ -137,10 +143,10 @@ export type ConditionFunction =
 export type ConditionOperator = "equ" | "neq" | "gt" | "lt" | "gte" | "lte";
 
 /** ST_Direction (dgm:dir `@val`). */
-export type DiagramDirection = "norm" | "rev";
+export type DiagramDirection = "normal" | "reversed";
 
 /** ST_ResizeHandlesStr (dgm:resizeHandles `@val`). */
-export type ResizeHandles = "exact" | "rel";
+export type ResizeHandles = "exact" | "relative";
 
 // ST_FunctionArgument / ST_FunctionValue are unions of every layout-parameter
 // enum plus numbers; ST_AxisTypes / ST_ElementTypes / ST_Booleans / ST_Ints are
@@ -457,11 +463,17 @@ function stringifyVariables(o: VariableListOptions): string {
     emit("chMax", o.childMaximum) +
     emit("chPref", o.childPreferred) +
     emit("bulletEnabled", booleanAttr(o.bulletEnabled)) +
-    emit("dir", o.direction) +
-    emit("hierBranch", o.hierarchyBranchStyle) +
+    emit("dir", o.direction !== undefined ? xsdDiagramDirection.to(o.direction) : undefined) +
+    emit(
+      "hierBranch",
+      o.hierarchyBranchStyle !== undefined ? xsdHierBranch.to(o.hierarchyBranchStyle) : undefined,
+    ) +
     emit("animOne", o.animateOne) +
-    emit("animLvl", o.animateLevel) +
-    emit("resizeHandles", o.resizeHandles) +
+    emit("animLvl", o.animateLevel !== undefined ? xsdAnimLevel.to(o.animateLevel) : undefined) +
+    emit(
+      "resizeHandles",
+      o.resizeHandles !== undefined ? xsdResizeHandles.to(o.resizeHandles) : undefined,
+    ) +
     "</dgm:varLst>"
   );
 }
@@ -762,15 +774,15 @@ function parseVariables(el: Element): VariableListOptions {
   const bulletEnabled = readBool("bulletEnabled");
   if (bulletEnabled !== undefined) result.bulletEnabled = bulletEnabled;
   const direction = readEnum("dir");
-  if (direction) result.direction = direction as DiagramDirection;
+  if (direction) result.direction = xsdDiagramDirection.from(direction) as DiagramDirection;
   const hierBranch = readEnum("hierBranch");
-  if (hierBranch) result.hierarchyBranchStyle = hierBranch as HierBranch;
+  if (hierBranch) result.hierarchyBranchStyle = xsdHierBranch.from(hierBranch) as HierBranch;
   const animOne = readEnum("animOne");
   if (animOne) result.animateOne = animOne as AnimateOneByOne;
   const animLvl = readEnum("animLvl");
-  if (animLvl) result.animateLevel = animLvl as AnimationLevel;
+  if (animLvl) result.animateLevel = xsdAnimLevel.from(animLvl) as AnimationLevel;
   const resizeHandles = readEnum("resizeHandles");
-  if (resizeHandles) result.resizeHandles = resizeHandles as ResizeHandles;
+  if (resizeHandles) result.resizeHandles = xsdResizeHandles.from(resizeHandles) as ResizeHandles;
   return result as VariableListOptions;
 }
 

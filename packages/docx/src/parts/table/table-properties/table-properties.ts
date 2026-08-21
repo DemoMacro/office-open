@@ -64,7 +64,7 @@ export interface TablePropertiesOptionsBase {
   float?: TableFloatOptions;
   shading?: ShadingProperties;
   style?: string;
-  /** Justification (ST_JcTable): "both"/"distribute" stretch rows to full width, "mediumKashida"/"highKashida"/"lowKashida" Kashida elongation, "numTab" at the numeric tab. */
+  /** Justification (ST_JcTable): "both"/"distribute" stretch rows to full width, "mediumKashida"/"highKashida"/"lowKashida" Kashida elongation, "numericTab" at the numeric tab. */
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   margins?: TableCellMarginOptions;
   visuallyRightToLeft?: boolean;

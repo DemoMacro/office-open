@@ -287,7 +287,8 @@ describe("workbookDesc round-trip", () => {
       '<x15:absPath url="C:\\Users\\kazuma\\Desktop\\"/></mc:Choice></mc:AlternateContent>' +
       '<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>';
     const doc = parseXml(xml);
-    const el = doc.elements?.[0]!;
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("no root element");
     const result = workbookDesc.parse(el, readCtx) as unknown as WorkbookDescriptorOptions;
     expect(result.absPath).toBe("C:\\Users\\kazuma\\Desktop\\");
   });

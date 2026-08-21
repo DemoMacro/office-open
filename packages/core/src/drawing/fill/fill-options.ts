@@ -30,7 +30,6 @@ export interface BlipFillConfigOptions {
   noEmbed?: true;
   /** Image data: raw bytes, ArrayBuffer, or a base64 data URL string. */
   data?: DataType;
-  /** Image type */
   imageType?: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   /**
    * Source media file name, pinned on round-trip so re-emitting registers the

@@ -41,7 +41,6 @@ export interface ReflectionEffectOptions {
   skewX?: number;
   /** Vertical skew angle in degrees. */
   skewY?: number;
-  /** Alignment */
   alignment?: string;
   /** Whether reflection rotates with shape */
   rotWithShape?: boolean;

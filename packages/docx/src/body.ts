@@ -8,6 +8,7 @@
  */
 
 import type { UniversalMeasure } from "@office-open/core";
+import { xsdJcAlignment } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import { hexColorValue, uCharHexNumber } from "@office-open/core";
 import { stringifyVmlShape } from "@office-open/core";
@@ -545,7 +546,7 @@ export function parseParagraphProperties(
   const jc = findChild(el, "w:jc");
   if (jc) {
     const val = attr(jc, "w:val");
-    if (val) opts.alignment = val as ParagraphPropertiesOptions["alignment"];
+    if (val) opts.alignment = xsdJcAlignment.from(val) as ParagraphPropertiesOptions["alignment"];
   }
 
   // Spacing — before/after/line are ST_TwipsMeasure (number | UniversalMeasure);

@@ -22,7 +22,7 @@ const demos: Record<DocumentType, unknown> = {
  *  200-600 tokens (~1-3 KB); the current ~25 KB (~6K tokens) is already a
  *  heavyweight tool by that yardstick, so treat this ceiling as damage
  *  control (shrinking the skeleton generator is backlog), not a target. */
-const MAX_SKELETON_BYTES = 26 * 1024;
+const MAX_SKELETON_BYTES = 28 * 1024;
 
 describe("getSkeletonSchema", () => {
   it("compiles under ajv for all three formats", () => {

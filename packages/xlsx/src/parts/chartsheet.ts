@@ -35,7 +35,6 @@ export interface ChartsheetPageSetup {
   paperHeight?: number | PositiveUniversalMeasure;
   /** Paper width (ST_PositiveUniversalMeasure) */
   paperWidth?: number | PositiveUniversalMeasure;
-  /** First page number */
   firstPageNumber?: number;
   /** Orientation (ST_Orientation) */
   orientation?: PageOrientation;
@@ -47,9 +46,7 @@ export interface ChartsheetPageSetup {
   draft?: boolean;
   /** Use firstPageNumber as the starting page number */
   useFirstPageNumber?: boolean;
-  /** Horizontal DPI */
   horizontalDpi?: number;
-  /** Vertical DPI */
   verticalDpi?: number;
   /** Copies to print */
   copies?: number;
@@ -87,13 +84,9 @@ export interface ChartsheetOptions {
   state?: "visible" | "hidden" | "veryHidden";
   /** Tab color (hex ARGB, e.g. "FF4472C4") */
   tabColor?: string;
-  /** Page margins */
   pageMargins?: PageMarginsOptions;
-  /** Page setup */
   pageSetup?: ChartsheetPageSetup;
-  /** Header/footer */
   headerFooter?: HeaderFooterOptions;
-  /** Sheet protection */
   sheetProtection?: ChartsheetProtectionOptions;
   /** Published to server (CT_ChartsheetPr `@published`, XSD default true — only false is emitted) */
   published?: boolean;

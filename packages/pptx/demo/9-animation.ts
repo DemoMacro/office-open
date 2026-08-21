@@ -272,16 +272,22 @@ const options: PresentationOptions = {
       animations: [
         {
           shapeId: 2,
-          class: "emph",
+          class: "emphasis",
           emphasisType: "growShrink",
           zoomContents: true,
           duration: 800,
         },
-        { shapeId: 3, class: "emph", emphasisType: "spin", duration: 1000 },
-        { shapeId: 4, class: "emph", emphasisType: "colorChange", color: "FF0000", duration: 800 },
-        { shapeId: 5, class: "emph", emphasisType: "transparency", duration: 600 },
-        { shapeId: 6, class: "emph", emphasisType: "pulse", duration: 500 },
-        { shapeId: 7, class: "emph", emphasisType: "boldFlash", duration: 500 },
+        { shapeId: 3, class: "emphasis", emphasisType: "spin", duration: 1000 },
+        {
+          shapeId: 4,
+          class: "emphasis",
+          emphasisType: "colorChange",
+          color: "FF0000",
+          duration: 800,
+        },
+        { shapeId: 5, class: "emphasis", emphasisType: "transparency", duration: 600 },
+        { shapeId: 6, class: "emphasis", emphasisType: "pulse", duration: 500 },
+        { shapeId: 7, class: "emphasis", emphasisType: "boldFlash", duration: 500 },
       ],
     },
 
@@ -425,7 +431,7 @@ const options: PresentationOptions = {
           type: "fade",
           duration: 300,
           iterate: {
-            type: "el",
+            type: "element",
             interval: 200,
             backwards: false,
           },
@@ -522,13 +528,13 @@ const options: PresentationOptions = {
           duration: 500,
           // Build list: paragraph build for shape 2
           builds: [
-            { type: "paragraph", shapeId: 3, groupId: 1, build: "p" },
+            { type: "paragraph", shapeId: 3, groupId: 1, build: "paragraph" },
             { type: "diagram", shapeId: 4, groupId: 2, diagramBuild: "depthByNode" },
           ],
         },
         {
           shapeId: 3,
-          class: "emph",
+          class: "emphasis",
           emphasisType: "colorChange",
           colorFrom: "FFC000",
           colorTo: "FF0000",
@@ -545,7 +551,7 @@ const options: PresentationOptions = {
         {
           shapeId: 5,
           attributeName: "style.width",
-          calcMode: "lin",
+          calcMode: "linear",
           variantInt: 1,
           from: "0",
           to: "100000",
@@ -564,7 +570,7 @@ const options: PresentationOptions = {
           type: "fade",
           duration: 500,
           exclusiveMode: true,
-          iterate: { type: "el", iteratePercentage: 50 },
+          iterate: { type: "element", iteratePercentage: 50 },
         },
       ],
     },

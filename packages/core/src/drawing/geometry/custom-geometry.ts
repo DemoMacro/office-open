@@ -270,7 +270,6 @@ const createPolarAdjustHandle = (handle: PolarAdjustHandle): string => {
 export interface ConnectionSite {
   /** Angle (absolute value or guide name) */
   angle: string;
-  /** Position */
   position: AdjustHandlePosition;
 }
 

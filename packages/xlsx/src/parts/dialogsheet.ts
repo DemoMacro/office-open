@@ -46,11 +46,8 @@ export interface DialogsheetOptions {
   published?: boolean;
   /** VBA code name (CT_SheetPr `@codeName`) */
   codeName?: string;
-  /** Page margins */
   pageMargins?: PageMarginsOptions;
-  /** Page setup */
   pageSetup?: PageSetupOptions;
-  /** Sheet protection */
   sheetProtection?: SheetProtectionOptions;
   /** Print options (CT_PrintOptions) */
   printOptions?: PrintOptions;

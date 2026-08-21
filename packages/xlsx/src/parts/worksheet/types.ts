@@ -85,19 +85,13 @@ export interface RichTextRunPropertiesOptions {
   charset?: number;
   /** Font family (CT_IntProperty) */
   family?: number;
-  /** Bold */
   bold?: boolean;
-  /** Italic */
   italic?: boolean;
   /** Strikethrough */
   strike?: boolean;
-  /** Outline */
   outline?: boolean;
-  /** Shadow */
   shadow?: boolean;
-  /** Condense */
   condense?: boolean;
-  /** Extend */
   extend?: boolean;
   /** Font color (hex RGB, e.g. "FF0000") */
   color?: string;
@@ -228,7 +222,6 @@ export interface ScenarioDefinition {
   count?: number;
   /** Creator user name */
   user?: string;
-  /** Comment */
   comment?: string;
   /** Whether the scenario is hidden */
   hidden?: boolean;
@@ -584,29 +577,20 @@ export interface ObjectAnchorOptions {
  * callers can inspect them; stringify always drops them.
  */
 export interface CommentPropertiesOptions {
-  /** Locked */
   locked?: boolean;
-  /** Default size */
   defaultSize?: boolean;
-  /** Print */
   print?: boolean;
-  /** Disabled */
   disabled?: boolean;
-  /** Auto fill */
   autoFill?: boolean;
-  /** Auto line */
   autoLine?: boolean;
-  /** Alt text */
   altText?: string;
   /** Text horizontal alignment */
   textHAlign?: "left" | "center" | "right" | "justify" | "distributed";
   /** Text vertical alignment */
   textVAlign?: "top" | "center" | "bottom" | "justify" | "distributed";
-  /** Lock text */
   lockText?: boolean;
   /** Justify last line */
   justLastX?: boolean;
-  /** Auto scale */
   autoScale?: boolean;
   /** Object anchor position */
   anchor?: ObjectAnchorOptions;
@@ -1082,7 +1066,6 @@ export interface SheetFormatPropertiesOptions {
   baseColWidth?: number;
   /** Default column width (CT_SheetFormatPr `@defaultColWidth`) */
   defaultColWidth?: number;
-  /** Default row height */
   defaultRowHeight?: number;
   /** Zero height rows hidden (CT_SheetFormatPr `@zeroHeight`) */
   zeroHeight?: boolean;
@@ -1198,7 +1181,6 @@ export interface PivotSelectionOptions {
   extendable?: boolean;
   /** Selection count (default 0) */
   count?: number;
-  /** Axis */
   axis?: "axisRow" | "axisCol" | "axisPage" | "axisValues";
   /** Dimension (default 0) */
   dimension?: number;
@@ -1244,7 +1226,6 @@ export interface CellSmartTagOptions {
   deleted?: boolean;
   /** XML-based (default false) */
   xmlBased?: boolean;
-  /** Properties */
   properties?: CellSmartTagPropertyOptions[];
 }
 
@@ -1252,7 +1233,6 @@ export interface CellSmartTagOptions {
 export interface CellSmartTagsOptions {
   /** Cell reference (required) */
   reference: string;
-  /** Smart tags */
   smartTags: CellSmartTagOptions[];
 }
 
@@ -1306,15 +1286,15 @@ export interface DataConsolidateOptions {
   function?:
     | "average"
     | "count"
-    | "countNums"
+    | "countNumbers"
     | "max"
     | "min"
     | "product"
-    | "stdDev"
-    | "stdDevp"
+    | "standardDeviation"
+    | "standardDeviationPopulation"
     | "sum"
-    | "var"
-    | "varp";
+    | "variance"
+    | "variancePopulation";
   /** Use top row labels (CT_DataConsolidate `@topLabels`) */
   topLabels?: boolean;
   /** Use left column labels (CT_DataConsolidate `@leftLabels`) */
@@ -1597,27 +1577,17 @@ export interface OleObjectOptions {
 
 /** OLE object properties (CT_ObjectPr) */
 export interface OleObjectPropertiesOptions {
-  /** Locked */
   locked?: boolean;
-  /** Default size */
   defaultSize?: boolean;
-  /** Print */
   print?: boolean;
-  /** Disabled */
   disabled?: boolean;
-  /** UI object */
   uiObject?: boolean;
-  /** Auto fill */
   autoFill?: boolean;
-  /** Auto line */
   autoLine?: boolean;
   /** Auto picture */
   autoPict?: boolean;
-  /** Macro */
   macro?: string;
-  /** Alt text */
   altText?: string;
-  /** DDE */
   dde?: boolean;
   /**
    * Relationship ID of the icon image (objectPr `@r:id`). Round-trip only:
@@ -1634,7 +1604,6 @@ export interface WebPublishItemOptions {
   id: number;
   /** HTML div ID */
   divId: string;
-  /** Source type */
   sourceType:
     | "sheet"
     | "printArea"
@@ -1650,9 +1619,7 @@ export interface WebPublishItemOptions {
   sourceObject?: string;
   /** Destination file path */
   destinationFile: string;
-  /** Title */
   title?: string;
-  /** Auto republish */
   autoRepublish?: boolean;
 }
 

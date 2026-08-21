@@ -115,7 +115,6 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   metadata?: MetadataOptions;
   /** XML mappings (xl/xmlMaps.xml) */
   xmlMaps?: MapInfoOptions;
-  /** Custom workbook views */
   customWorkbookViews?: CustomWorkbookViewOptions[];
   /** File recovery properties */
   fileRecoveryPr?: FileRecoveryPropertiesOptions;

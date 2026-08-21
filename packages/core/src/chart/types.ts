@@ -83,12 +83,14 @@ export interface BubbleSeriesData extends ChartSeriesCommon {
 
 // ── Trendline ──
 
-/**
- * Trendline fit (ST_TrendlineType): "exp" exponential, "log" logarithmic,
- * "movingAvg" moving average (see period), "poly" polynomial (see order),
- * "power" power.
- */
-export type TrendlineType = "exp" | "linear" | "log" | "movingAvg" | "poly" | "power";
+/** Trendline fit; see period/order for the moving-average and polynomial degrees. */
+export type TrendlineType =
+  | "exponential"
+  | "linear"
+  | "logarithmic"
+  | "movingAverage"
+  | "polynomial"
+  | "power";
 
 /** Trendline label formatting (CT_TrendlineLbl — all children optional). */
 export interface TrendlineLabelOptions {
@@ -118,12 +120,13 @@ export type ErrorBarDirection = "both" | "x" | "y";
 /** Which side of the point gets a bar: both, minus (below/left), or plus (above/right). */
 export type ErrorBarType = "both" | "minus" | "plus";
 
-/**
- * Error amount source (ST_ErrorValueType): "cust" custom plus/minus values
- * (see plusValue/minusValue), "fixedVal" a fixed value, "percentage" percent
- * of the data point, "stdDev" standard deviation, "stdErr" standard error.
- */
-export type ErrorValueType = "cust" | "fixedVal" | "percentage" | "stdDev" | "stdErr";
+/** Error amount source: custom plus/minus values (see plusValue/minusValue), a fixed value, a percentage of the data point, standard deviation, or standard error. */
+export type ErrorValueType =
+  | "custom"
+  | "fixedValue"
+  | "percentage"
+  | "standardDeviation"
+  | "standardError";
 
 export interface ErrorBarOptions {
   direction?: ErrorBarDirection;
@@ -139,21 +142,17 @@ export interface ErrorBarOptions {
 
 // ── Data labels ──
 
-/**
- * Data-label placement (ST_DLblPos): "bestFit" auto (pie), "b" bottom,
- * "ctr" center, "inBase" inside the bar base, "inEnd" inside the bar tip,
- * "outEnd" outside the bar tip, "l"/"r"/"t" left/right/top.
- */
+/** Data-label placement; "bestFit" lets the renderer choose (pie). */
 export type DataLabelPosition =
   | "bestFit"
-  | "b"
-  | "ctr"
-  | "inBase"
-  | "inEnd"
-  | "l"
-  | "outEnd"
-  | "r"
-  | "t";
+  | "bottom"
+  | "center"
+  | "insideBase"
+  | "insideEnd"
+  | "left"
+  | "outsideEnd"
+  | "right"
+  | "top";
 
 /** Single data-point label override (CT_DLbl). */
 export interface DataLabelOptions {
@@ -535,8 +534,8 @@ export interface View3DOptions {
 /** Axis role; decides the CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx element. */
 export type AxisKind = "category" | "value" | "date" | "series";
 
-/** Axis side (c:axPos): "b" bottom, "l" left, "r" right, "t" top. */
-export type AxisPosition = "b" | "l" | "r" | "t";
+/** Axis side (c:axPos). */
+export type AxisPosition = "bottom" | "left" | "right" | "top";
 
 /** Tick-mark style: "cross" spanning the axis, "in" inside the plot, "out" outside, "none". */
 export type AxisTickMark = "cross" | "in" | "none" | "out";
@@ -544,17 +543,17 @@ export type AxisTickMark = "cross" | "in" | "none" | "out";
 /** Tick-label placement: "high" top of the plot, "low" bottom, "nextTo" beside the axis, "none". */
 export type AxisTickLabelPosition = "high" | "low" | "nextTo" | "none";
 
-/** Where the crossing axis meets this one: "autoZero" at zero, "max" at maximum, "min" at minimum. */
-export type AxisCrosses = "autoZero" | "max" | "min";
+/** Where the crossing axis meets this one: at zero, the maximum, or the minimum. */
+export type AxisCrosses = "zero" | "max" | "min";
 
-/** Value-axis crossing mode: "between" between category bands, "midCat" at the band middle. */
-export type AxisCrossBetween = "between" | "midCat";
+/** Value-axis crossing mode: between category bands or at the band middle. */
+export type AxisCrossBetween = "between" | "middleOfCategory";
 
-/** Value direction: "minMax" ascending, "maxMin" descending. */
-export type AxisOrientation = "minMax" | "maxMin";
+/** Value direction along the axis. */
+export type AxisOrientation = "ascending" | "descending";
 
-/** Category tick-label alignment: "ctr" center, "l" left, "r" right. */
-export type AxisLabelAlignment = "ctr" | "l" | "r";
+/** Category tick-label alignment. */
+export type AxisLabelAlignment = "center" | "left" | "right";
 
 /** Built-in value-axis scaling unit (ST_BuiltInUnit), e.g. "millions" divides tick values by 1e6. */
 export type BuiltInDisplayUnit =
@@ -742,8 +741,8 @@ export interface SurfaceOptions {
 /** How blank cells plot (ST_DispBlanksAs): "gap" skip with a line break, "span" bridge with a straight line, "zero" treat as 0. */
 export type DisplayBlanksAs = "gap" | "span" | "zero";
 
-/** Which bubble measure the size drives (ST_SizeRepresents): "area" the area, "w" the width. */
-export type SizeRepresents = "area" | "w";
+/** What the bubble size drives: the area or the width. */
+export type SizeRepresents = "area" | "width";
 
 /** Plot-area data table (CT_DTable). */
 export interface DataTableOptions {
@@ -847,11 +846,11 @@ export type OfPieType = "pie" | "bar";
 export type RadarStyle = "standard" | "marker" | "filled";
 
 /**
- * ofPie split rule (ST_SplitType): "auto" Excel decides, "cust" the indices
- * in customSplitPoints, "percent" smallest values under splitPosition %,
- * "pos" the last splitPosition points, "val" points below splitPosition.
+ * ofPie split rule: "auto" lets Excel decide, "custom" takes the indices in
+ * customSplitPoints, "percent" the smallest values under splitPosition %,
+ * "position" the last splitPosition points, "value" points below splitPosition.
  */
-export type SplitType = "auto" | "cust" | "percent" | "pos" | "val";
+export type SplitType = "auto" | "custom" | "percent" | "position" | "value";
 
 // ── Pivot chart (CT_PivotSource / CT_PivotFmts) ──
 
@@ -876,8 +875,8 @@ export interface BandFormatOptions {
 
 // ── Legend entries (CT_Legend / CT_LegendEntry) ──
 
-/** Legend placement (ST_LegendPos): "b" bottom, "tr" top-right, "l" left, "r" right, "t" top. */
-export type LegendPosition = "b" | "tr" | "l" | "r" | "t";
+/** Legend placement (c:legendPos); "topRight" is the corner slot. */
+export type LegendPosition = "bottom" | "topRight" | "left" | "right" | "top";
 
 /** Legend entry override (CT_LegendEntry: idx + delete | txPr). */
 export interface LegendEntryOptions {

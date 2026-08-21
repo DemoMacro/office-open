@@ -9,6 +9,7 @@
 import { element } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import { xsdHueDirection } from "../../util/mappings";
 import { parseColorChoiceElement } from "../color/color-descriptors";
 import { SchemeColor } from "../color/scheme-color";
 import type { SolidFillOptions } from "../color/solid-fill";
@@ -98,8 +99,8 @@ export const createDiagramStyle = (options?: DiagramStyleOptions): string => {
 /** How the color list maps onto shapes (ST_ColorMethod): "span" interpolate across the list, "cycle" repeat in order, "repeat" alternate. */
 export type ColorMethod = "span" | "cycle" | "repeat";
 
-/** Hue rotation direction: "cw" clockwise, "ccw" counter-clockwise. */
-export type HueDirection = "cw" | "ccw";
+/** Hue rotation direction (ST_HueDir). */
+export type HueDirection = "clockwise" | "counterClockwise";
 
 export interface ColorListOptions {
   /** Color method (default: span) */
@@ -122,7 +123,7 @@ export const createColorList = (tag: string, options?: ColorListOptions): string
   const hasAttrs = options?.meth !== undefined || options?.hueDir !== undefined;
   const attrs: Record<string, string> = {};
   if (options?.meth) attrs.meth = options.meth;
-  if (options?.hueDir) attrs.hueDir = options.hueDir;
+  if (options?.hueDir) attrs.hueDir = xsdHueDirection.to(options.hueDir);
 
   return element(tag, hasAttrs ? attrs : undefined, children.length > 0 ? children : undefined);
 };
@@ -134,7 +135,8 @@ export const createColorList = (tag: string, options?: ColorListOptions): string
 export const parseColorList = (el: Element): ColorListOptions => {
   const result: ColorListOptions = {};
   if (el.attributes?.meth !== undefined) result.meth = el.attributes.meth as ColorMethod;
-  if (el.attributes?.hueDir !== undefined) result.hueDir = el.attributes.hueDir as HueDirection;
+  if (el.attributes?.hueDir !== undefined)
+    result.hueDir = xsdHueDirection.from(String(el.attributes.hueDir)) as HueDirection;
   const colors: SolidFillOptions[] = [];
   for (const child of el.elements ?? []) {
     const color = parseColorChoiceElement(child, NOOP_READ_CTX);

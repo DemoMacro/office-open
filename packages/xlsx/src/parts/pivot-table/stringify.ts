@@ -4,6 +4,7 @@
  * @module
  */
 
+import { xsdConsolidateFunction } from "@office-open/core";
 import { attrs, escapeXml } from "@office-open/xml";
 import { columnToLetter, letterToColumn } from "@util/index";
 
@@ -459,7 +460,7 @@ function buildDataFields(dataFields: PivotDataField[], dataFieldIndices: number[
     const dfAttrs: string[] = [
       `name="${escapeXml(name)}"`,
       `fld="${dataFieldIndices[i] ?? 0}"`,
-      `subtotal="${subtotal}"`,
+      `subtotal="${xsdConsolidateFunction.to(subtotal)}"`,
     ];
     if (df.showDataAs) dfAttrs.push(`showDataAs="${df.showDataAs}"`);
     if (df.baseField !== undefined) dfAttrs.push(`baseField="${df.baseField}"`);

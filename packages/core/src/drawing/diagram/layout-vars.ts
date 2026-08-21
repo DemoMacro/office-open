@@ -8,6 +8,8 @@
  */
 import { element } from "@office-open/xml";
 
+import { xsdAnimLevel, xsdHierBranch } from "../../util/mappings";
+
 // ---------------------------------------------------------------------------
 // dgm:adj — adjustment handle (CT_Adj)
 // ---------------------------------------------------------------------------
@@ -27,8 +29,8 @@ export const createAdjust = (options: AdjustOptions): string =>
 // dgm:animLvl — animation level (CT_AnimLvl)
 // ---------------------------------------------------------------------------
 
-/** Diagram animation granularity (ST_AnimLvl): "lvl" by level, "ctr" from the center outward, "none". */
-export type AnimationLevel = "none" | "lvl" | "ctr";
+/** Diagram animation granularity (ST_AnimLvl). */
+export type AnimationLevel = "none" | "level" | "center";
 
 export interface AnimationLevelOptions {
   val?: AnimationLevel;
@@ -36,7 +38,9 @@ export interface AnimationLevelOptions {
 
 /** Creates a dgm:animLvl element. */
 export const createAnimationLevel = (options?: AnimationLevelOptions): string =>
-  options?.val !== undefined ? `<dgm:animLvl val="${options.val}"/>` : "<dgm:animLvl/>";
+  options?.val !== undefined
+    ? `<dgm:animLvl val="${xsdAnimLevel.to(options.val)}"/>`
+    : "<dgm:animLvl/>";
 
 // ---------------------------------------------------------------------------
 // dgm:animOne — animation one-by-one (CT_AnimOne)
@@ -93,8 +97,8 @@ export const createOrgChart = (options?: OrgChartOptions): string =>
 // dgm:hierBranch — hierarchy branch style (CT_HierBranchStyle)
 // ---------------------------------------------------------------------------
 
-/** Hierarchy branch style (ST_HierBranchStyle): "l"/"r" hang left/right, "hang" hanging tree, "std" standard tree, "init" initial. */
-export type HierBranch = "l" | "r" | "hang" | "std" | "init";
+/** Hierarchy branch style (ST_HierBranchStyle). */
+export type HierBranch = "left" | "right" | "hanging" | "standard" | "initial";
 
 export interface HierBranchOptions {
   val?: HierBranch;
@@ -102,7 +106,9 @@ export interface HierBranchOptions {
 
 /** Creates a dgm:hierBranch element. */
 export const createHierBranch = (options?: HierBranchOptions): string =>
-  options?.val !== undefined ? `<dgm:hierBranch val="${options.val}"/>` : "<dgm:hierBranch/>";
+  options?.val !== undefined
+    ? `<dgm:hierBranch val="${xsdHierBranch.to(options.val)}"/>`
+    : "<dgm:hierBranch/>";
 
 // ---------------------------------------------------------------------------
 // dgm:presLayoutVars — presentation layout variables (CT_LayoutVariablePropertySet)

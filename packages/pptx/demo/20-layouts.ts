@@ -100,7 +100,7 @@ const options: PresentationOptions = {
       ],
     },
     {
-      layout: "obj",
+      layout: "object",
       children: [
         {
           shape: {
@@ -125,7 +125,7 @@ const options: PresentationOptions = {
       ],
     },
     {
-      layout: "twoColTx",
+      layout: "twoColumnText",
       children: [
         {
           shape: {

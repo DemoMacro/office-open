@@ -6,7 +6,7 @@ import { docxTool, officeOpenTools, schemaLookupTool, xlsxTool } from "./index";
 /** Tool-definition budget: the full docx schema is ~675 KB — the whole point
  *  of skeletons. Ratchet against silent growth; see skeleton.spec.ts for the
  *  industry yardstick (healthy single-tool schema ≈ 200-600 tokens). */
-const MAX_INPUT_SCHEMA_BYTES = 26 * 1024;
+const MAX_INPUT_SCHEMA_BYTES = 28 * 1024;
 
 describe("officeOpenTools", () => {
   it("should export four tools with correct keys", () => {

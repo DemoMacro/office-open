@@ -50,7 +50,6 @@ export interface CompatibilityOptions {
   printBodyTextBeforeHeader?: boolean;
   /** Print Colors as Black And White without Dithering */
   printColorsBlack?: boolean;
-  /** Space width */
   spaceWidth?: boolean;
   /** Display Page/Column Breaks Present in Frames */
   showBreaksInFrames?: boolean;
@@ -144,17 +143,13 @@ export interface CompatibilityOptions {
   doNotVerticallyAlignCellWithSp?: boolean;
   /** Don't Break Table Rows Around Floating Tables */
   doNotBreakConstrainedForcedTable?: boolean;
-  /** Ignore Vertical Alignment in Textboxes */
   ignoreVerticalAlignmentInTextboxes?: boolean;
   /** Use ANSI Kerning Pairs from Fonts */
   useAnsiKerningPairs?: boolean;
   /** Use Cached Paragraph Information for Column Balancing */
   cachedColumnBalance?: boolean;
-  /** Override Table Style Font Size and Justification */
   overrideTableStyleFontSizeAndJustification?: boolean;
-  /** Enable OpenType Features */
   enableOpenTypeFeatures?: boolean;
-  /** Do Not Flip Mirror Indents */
   doNotFlipMirrorIndents?: boolean;
   /**
    * Additional w:compatSetting entries beyond the named sugar fields above.

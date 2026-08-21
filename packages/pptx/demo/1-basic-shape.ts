@@ -80,7 +80,7 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              bodyProperties: { vertical: "vert" },
+              bodyProperties: { vertical: "vertical" },
               paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
@@ -103,7 +103,7 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              bodyProperties: { vertical: "vert270" },
+              bodyProperties: { vertical: "vertical270" },
               paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
@@ -121,7 +121,7 @@ const options: PresentationOptions = {
             width: "3.2cm",
             height: "7.9cm",
             textBody: {
-              bodyProperties: { vertical: "horz" },
+              bodyProperties: { vertical: "horizontal" },
               paragraphs: [
                 {
                   properties: { bullet: { type: "none" } },
@@ -154,7 +154,7 @@ const options: PresentationOptions = {
             y: "3.2cm",
             width: "5.3cm",
             height: "5.3cm",
-            textBody: { bodyProperties: { anchor: "t" }, text: "Top anchored text" },
+            textBody: { bodyProperties: { anchor: "top" }, text: "Top anchored text" },
             outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },
@@ -165,7 +165,7 @@ const options: PresentationOptions = {
             y: "3.2cm",
             width: "5.3cm",
             height: "5.3cm",
-            textBody: { bodyProperties: { anchor: "ctr" }, text: "Center anchored text" },
+            textBody: { bodyProperties: { anchor: "center" }, text: "Center anchored text" },
             outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },
@@ -176,7 +176,7 @@ const options: PresentationOptions = {
             y: "3.2cm",
             width: "5.3cm",
             height: "5.3cm",
-            textBody: { bodyProperties: { anchor: "b" }, text: "Bottom anchored text" },
+            textBody: { bodyProperties: { anchor: "bottom" }, text: "Bottom anchored text" },
             outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
           },
         },

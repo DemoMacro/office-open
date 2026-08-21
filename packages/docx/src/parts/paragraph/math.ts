@@ -20,8 +20,8 @@ export type MathScriptType =
   | "sans-serif"
   | "monospace";
 
-/** Math run style (ST_Style): "p" plain, "b" bold, "i" italic, "bi" bold-italic. */
-export type MathStyleType = "p" | "b" | "i" | "bi";
+/** Math run style (ST_Style). */
+export type MathStyleType = "plain" | "bold" | "italic" | "boldItalic";
 
 export interface MathRunPropertiesOptions {
   literal?: boolean;

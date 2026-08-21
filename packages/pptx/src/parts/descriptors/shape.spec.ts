@@ -332,10 +332,10 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      textBody: { text: "Vertical", bodyProperties: { vertical: "vert" } },
+      textBody: { text: "Vertical", bodyProperties: { vertical: "vertical" } },
     });
     const textBody = result.textBody!;
-    expect(textBody.bodyProperties?.vertical).toBe("vert");
+    expect(textBody.bodyProperties?.vertical).toBe("vertical");
   });
 
   it("round-trips shape with textBody anchor", () => {
@@ -344,10 +344,10 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      textBody: { text: "Centered", bodyProperties: { anchor: "ctr" } },
+      textBody: { text: "Centered", bodyProperties: { anchor: "center" } },
     });
     const textBody = result.textBody!;
-    expect(textBody.bodyProperties?.anchor).toBe("ctr");
+    expect(textBody.bodyProperties?.anchor).toBe("center");
   });
 
   it("round-trips shape with textBody autofit", () => {

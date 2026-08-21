@@ -72,8 +72,8 @@ const options: PresentationOptions = {
         {
           shapeId: 2,
           attributeName: "style.opacity",
-          calcMode: "lin",
-          valueType: "num",
+          calcMode: "linear",
+          valueType: "number",
           from: "1",
           to: "0.3",
           duration: 1000,

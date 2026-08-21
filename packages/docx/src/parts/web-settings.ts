@@ -94,9 +94,7 @@ export interface WebSettingsOptions {
   doNotUseLongFileNames?: boolean;
   /** Pixels per inch for web output */
   pixelsPerInch?: number;
-  /** Target screen size */
   targetScreenSize?: (typeof TargetScreenSize)[keyof typeof TargetScreenSize];
-  /** Save smart tags as XML */
   saveSmartTagsAsXml?: boolean;
 }
 

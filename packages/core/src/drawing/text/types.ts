@@ -190,8 +190,8 @@ export type BulletOptions =
 
 // ── Tab stops (a:tabLst) ──
 
-/** Tab-stop alignment (ST_TextTabAlignType): "l" left, "ctr" center, "r" right, "dec" on the decimal point. */
-export type TextTabAlignment = "l" | "ctr" | "r" | "dec";
+/** Tab-stop alignment (ST_TextTabAlignType). */
+export type TextTabAlignment = "left" | "center" | "right" | "decimal";
 
 export interface TabStopOptions {
   /** a:tab `@pos` — tab stop position in EMU. */
@@ -228,7 +228,8 @@ export interface TextParagraphPropertiesOptions {
   /** a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties). */
   defaultRunProperties?: TextCharacterPropertiesOptions;
   /** `@fontAlgn` — baseline reference (ST_TextFontAlign): "t" top, "ctr" center, "b" bottom, "base" baseline, "auto". */
-  fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
+  /** Character-to-baseline alignment (a:pPr @fontAlgn). */
+  fontAlignment?: "auto" | "top" | "center" | "bottom" | "base";
   /** `@rtl` — paragraph right-to-left. */
   rightToLeft?: boolean;
   /** `@eaLnBrk` — East Asian line break. */

@@ -9,6 +9,8 @@
  */
 
 import { convertToTwip, mapOptional, xsdVerticalMergeRev } from "@office-open/core";
+import { xsdJcAlignment } from "@office-open/core";
+import { xsdTableWidthType } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import { attrsRaw, escapeXml } from "@office-open/xml";
 import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
@@ -60,7 +62,7 @@ function tableWidthStr(name: string, opts: TableWidthProperties): string {
   const type = opts.type ?? WidthType.AUTO;
   const a = attrsRaw({
     "w:w": tableWidthValue(opts.size, type),
-    "w:type": type,
+    "w:type": xsdTableWidthType.to(type),
   });
   return `<${name}${a}/>`;
 }
@@ -224,7 +226,7 @@ function cellMergeStr(opts: CellMergeAttributes): string {
 function cellSpacingStr(opts: TableCellSpacingProperties): string {
   const a = attrsRaw({
     "w:w": tableWidthValue(opts.size, opts.type),
-    "w:type": opts.type,
+    "w:type": opts.type !== undefined ? xsdTableWidthType.to(opts.type) : undefined,
   });
   return `<w:tblCellSpacing${a}/>`;
 }
@@ -276,7 +278,7 @@ function stringifyTablePropertiesInner(
   }
 
   if (options.alignment) {
-    parts.push(`<w:jc w:val="${options.alignment}"/>`);
+    parts.push(`<w:jc w:val="${xsdJcAlignment.to(options.alignment)}"/>`);
   }
 
   if (options.cellSpacing) {
@@ -398,7 +400,7 @@ function stringifyTableRowPropertiesInner(
   }
 
   if (options.rowAlignment) {
-    parts.push(`<w:jc w:val="${options.rowAlignment}"/>`);
+    parts.push(`<w:jc w:val="${xsdJcAlignment.to(options.rowAlignment)}"/>`);
   }
 
   if (options.hidden !== undefined) {
@@ -559,7 +561,7 @@ function stringifyTablePropertyExceptionsInner(options: TablePropertyExOptions):
   }
 
   if (options.alignment) {
-    parts.push(`<w:jc w:val="${options.alignment}"/>`);
+    parts.push(`<w:jc w:val="${xsdJcAlignment.to(options.alignment)}"/>`);
   }
 
   if (options.cellSpacing) {

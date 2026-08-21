@@ -5,6 +5,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
+import { xsdOrient } from "@office-open/core";
 import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { attr, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -209,7 +210,8 @@ export function readTransition(el: XmlElement, ctx?: ReadContext): TransitionOpt
       const direction = XML_DIR_TO_DIRECTION[String(dir)];
       if (direction) result.direction = direction;
     }
-    if (attrs["orient"] !== undefined) result.orient = attrs["orient"] as "horz" | "vert";
+    if (attrs["orient"] !== undefined)
+      result.orient = xsdOrient.from(String(attrs["orient"])) as "horizontal" | "vertical";
     if (attrs["spokes"] !== undefined) result.spokes = Number(attrs["spokes"]);
     if (attrs["thruBlk"] !== undefined) result.thruBlk = parseOnOff(attrs["thruBlk"]) ?? false;
     break;

@@ -96,7 +96,7 @@
     },
     "AlphaBiLevelEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for alpha bi-level effect.\n\n## XSD: CT_AlphaBiLevelEffect ```xml <xsd:attribute name=\"thresh\" type=\"ST_PositiveFixedPercentage\" use=\"required\"/> ```",
+      "description": "Options for alpha bi-level effect.",
       "properties": {
         "threshold": {
           "description": "Threshold percentage (0 to 100). Alpha above is fully opaque, below is fully transparent.",
@@ -119,7 +119,7 @@
     },
     "AlphaModulateFixedEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for alpha modulate fixed effect.\n\n## XSD: CT_AlphaModulateFixedEffect ```xml <xsd:attribute name=\"amt\" type=\"ST_PositivePercentage\" default=\"100%\"/> ```",
+      "description": "Options for alpha modulate fixed effect.",
       "properties": {
         "amount": {
           "description": "Alpha amount in percentage (0 to 100). Default 100.",
@@ -141,7 +141,7 @@
     },
     "AlphaReplaceEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for alpha replace effect.\n\n## XSD: CT_AlphaReplaceEffect ```xml <xsd:attribute name=\"a\" type=\"ST_PositiveFixedPercentage\" use=\"required\"/> ```",
+      "description": "Options for alpha replace effect.",
       "properties": {
         "alpha": {
           "description": "Alpha percentage (0 = fully transparent, 100 = fully opaque). Maps to `@a`.",
@@ -328,13 +328,13 @@
       "type": "object"
     },
     "AxisCrossBetween": {
-      "description": "Value-axis crossing mode: \"between\" between category bands, \"midCat\" at the band middle.",
-      "enum": ["between", "midCat"],
+      "description": "Value-axis crossing mode: between category bands or at the band middle.",
+      "enum": ["between", "middleOfCategory"],
       "type": "string"
     },
     "AxisCrosses": {
-      "description": "Where the crossing axis meets this one: \"autoZero\" at zero, \"max\" at maximum, \"min\" at minimum.",
-      "enum": ["autoZero", "max", "min"],
+      "description": "Where the crossing axis meets this one: at zero, the maximum, or the minimum.",
+      "enum": ["zero", "max", "min"],
       "type": "string"
     },
     "AxisKind": {
@@ -343,8 +343,8 @@
       "type": "string"
     },
     "AxisLabelAlignment": {
-      "description": "Category tick-label alignment: \"ctr\" center, \"l\" left, \"r\" right.",
-      "enum": ["ctr", "l", "r"],
+      "description": "Category tick-label alignment.",
+      "enum": ["center", "left", "right"],
       "type": "string"
     },
     "AxisNumberFormatOptions": {
@@ -498,13 +498,13 @@
       "type": "object"
     },
     "AxisOrientation": {
-      "description": "Value direction: \"minMax\" ascending, \"maxMin\" descending.",
-      "enum": ["minMax", "maxMin"],
+      "description": "Value direction along the axis.",
+      "enum": ["ascending", "descending"],
       "type": "string"
     },
     "AxisPosition": {
-      "description": "Axis side (c:axPos): \"b\" bottom, \"l\" left, \"r\" right, \"t\" top.",
-      "enum": ["b", "l", "r", "t"],
+      "description": "Axis side (c:axPos).",
+      "enum": ["bottom", "left", "right", "top"],
       "type": "string"
     },
     "AxisScalingOptions": {
@@ -539,7 +539,7 @@
     },
     "BackdropOptions": {
       "additionalProperties": false,
-      "description": "Backdrop options (CT_Backdrop).\n\nDefines the backdrop plane for the 3D scene.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_Backdrop\">   <xsd:sequence>     <xsd:element name=\"anchor\" type=\"CT_Point3D\" use=\"required\"/>     <xsd:element name=\"norm\" type=\"CT_Vector3D\" use=\"required\"/>     <xsd:element name=\"up\" type=\"CT_Vector3D\" use=\"required\"/>   </xsd:sequence> </xsd:complexType> ```",
+      "description": "Backdrop options (CT_Backdrop).\n\nDefines the backdrop plane for the 3D scene.",
       "properties": {
         "anchor": {
           "$ref": "#/definitions/Point3D",
@@ -573,7 +573,7 @@
       "type": "object"
     },
     "BarShape": {
-      "description": "3D bar column shape (ST_Shape): \"coneToMax\"/\"pyramidToMax\" taper to a point at the full height; plain \"cone\"/\"pyramid\" taper halfway, then run cylindrically.",
+      "description": "3D bar column shape: \"coneToMax\"/\"pyramidToMax\" taper to a point at the full height; plain \"cone\"/\"pyramid\" taper halfway, then run cylindrically.",
       "enum": ["cone", "coneToMax", "box", "cylinder", "pyramid", "pyramidToMax"],
       "type": "string"
     },
@@ -643,7 +643,7 @@
       "type": "object"
     },
     "BevelPreset": {
-      "description": "Bevel preset types (12 variations).\n\nReference: ISO/IEC 29500-4, dml-main.xsd, ST_BevelPresetType",
+      "description": "Bevel preset types (12 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
       "enum": [
         "relaxedInset",
         "circle",
@@ -662,7 +662,7 @@
     },
     "BiLevelEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for biLevel (black & white threshold) effect.\n\n## XSD: CT_BiLevelEffect ```xml <xsd:attribute name=\"thresh\" type=\"ST_PositiveFixedPercentage\" use=\"required\"/> ```",
+      "description": "Options for biLevel (black & white threshold) effect.",
       "properties": {
         "threshold": {
           "description": "Threshold percentage (0 to 100). Pixels above are white, below are black.",
@@ -673,7 +673,7 @@
       "type": "object"
     },
     "BlackWhiteMode": {
-      "description": "ST_BlackWhiteMode — the 11 token values for the `@bwMode` attribute.",
+      "description": "the 11 token values for the `@bwMode` attribute.",
       "enum": [
         "clr",
         "auto",
@@ -708,7 +708,7 @@
     },
     "BlipBlurEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for blur effect on blip.\n\n## XSD: CT_BlurEffect ```xml <xsd:attribute name=\"rad\" type=\"ST_PositiveCoordinate\" default=\"0\"/> <xsd:attribute name=\"grow\" type=\"xsd:boolean\" default=\"true\"/> ```",
+      "description": "Options for blur effect on blip.",
       "properties": {
         "grow": {
           "description": "Whether to grow the blur boundary. Default true.",
@@ -988,7 +988,7 @@
           "type": "number"
         },
         "style": {
-          "description": "Border pattern (ST_BorderStyle); \"medium*\" variants thicken the pattern, \"hair\" is the thinnest hairline, \"slantDashDot\" slanted dashes with dots.",
+          "description": "Border pattern; \"medium*\" variants thicken the pattern, \"hair\" is the thinnest hairline, \"slantDashDot\" slanted dashes with dots.",
           "enum": [
             "none",
             "thin",
@@ -1176,7 +1176,7 @@
       "type": "object"
     },
     "BuiltInDisplayUnit": {
-      "description": "Built-in value-axis scaling unit (ST_BuiltInUnit), e.g. \"millions\" divides tick values by 1e6.",
+      "description": "Built-in value-axis scaling unit, e.g. \"millions\" divides tick values by 1e6.",
       "enum": [
         "hundreds",
         "thousands",
@@ -1436,7 +1436,6 @@
           "type": "number"
         },
         "formula": {
-          "description": "Formula",
           "type": "string"
         },
         "pivotArea": {
@@ -1451,7 +1450,6 @@
       "description": "Calculated member in a pivot table (CT_CalculatedMember)",
       "properties": {
         "hierarchy": {
-          "description": "Hierarchy",
           "type": "string"
         },
         "mdx": {
@@ -1459,7 +1457,6 @@
           "type": "string"
         },
         "memberName": {
-          "description": "Member name",
           "type": "string"
         },
         "name": {
@@ -1507,11 +1504,9 @@
           "type": "boolean"
         },
         "concurrentManualCount": {
-          "description": "Concurrent manual count",
           "type": "number"
         },
         "forceFullCalc": {
-          "description": "Force full calc",
           "type": "boolean"
         },
         "fullCalcOnLoad": {
@@ -1543,7 +1538,7 @@
     },
     "CameraOptions": {
       "additionalProperties": false,
-      "description": "Camera options (CT_Camera).\n\nDefines the camera type and optional rotation for the 3D scene.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_Camera\">   <xsd:sequence>     <xsd:element name=\"rot\" type=\"CT_SphereCoords\" minOccurs=\"0\"/>   </xsd:sequence>   <xsd:attribute name=\"prst\" type=\"ST_PresetCameraType\" use=\"required\"/>   <xsd:attribute name=\"fov\" type=\"ST_FOVAngle\" use=\"optional\"/>   <xsd:attribute name=\"zoom\" type=\"ST_PositivePercentage\" use=\"optional\" default=\"100%\"/> </xsd:complexType> ```",
+      "description": "Camera options (CT_Camera).\n\nDefines the camera type and optional rotation for the 3D scene.",
       "properties": {
         "fov": {
           "description": "Field of view angle in degrees (0–180).",
@@ -1758,7 +1753,6 @@
           "type": "boolean"
         },
         "properties": {
-          "description": "Properties",
           "items": {
             "$ref": "#/definitions/CellSmartTagPropertyOptions"
           },
@@ -1801,7 +1795,6 @@
           "type": "string"
         },
         "smartTags": {
-          "description": "Smart tags",
           "items": {
             "$ref": "#/definitions/CellSmartTagOptions"
           },
@@ -1914,7 +1907,7 @@
       "type": "object"
     },
     "CfvoType": {
-      "description": "Conditional format value object type (ST_CfvoType)",
+      "description": "Conditional format value object type",
       "enum": ["num", "percent", "max", "min", "formula", "percentile"],
       "type": "string"
     },
@@ -1931,8 +1924,7 @@
           "type": "number"
         },
         "pivotArea": {
-          "$ref": "#/definitions/PivotAreaOptions",
-          "description": "Pivot area"
+          "$ref": "#/definitions/PivotAreaOptions"
         },
         "series": {
           "description": "Is series (default: false)",
@@ -2699,8 +2691,7 @@
           "description": "Frame locks on the chart's graphicFrame (a:graphicFrameLocks)."
         },
         "headerFooter": {
-          "$ref": "#/definitions/HeaderFooterOptions",
-          "description": "Header/footer"
+          "$ref": "#/definitions/HeaderFooterOptions"
         },
         "macro": {
           "description": "Macro reference on the chart's graphicFrame (CT_GraphicFrame/@macro).",
@@ -2711,12 +2702,10 @@
           "type": "string"
         },
         "pageMargins": {
-          "$ref": "#/definitions/PageMarginsOptions",
-          "description": "Page margins"
+          "$ref": "#/definitions/PageMarginsOptions"
         },
         "pageSetup": {
-          "$ref": "#/definitions/ChartsheetPageSetup",
-          "description": "Page setup"
+          "$ref": "#/definitions/ChartsheetPageSetup"
         },
         "published": {
           "description": "Published to server (CT_ChartsheetPr `@published`, XSD default true — only false is emitted)",
@@ -2731,8 +2720,7 @@
           "type": "number"
         },
         "sheetProtection": {
-          "$ref": "#/definitions/ChartsheetProtectionOptions",
-          "description": "Sheet protection"
+          "$ref": "#/definitions/ChartsheetProtectionOptions"
         },
         "state": {
           "description": "Visibility (CT_Sheet `@state`)",
@@ -2775,16 +2763,14 @@
           "type": "boolean"
         },
         "firstPageNumber": {
-          "description": "First page number",
           "type": "number"
         },
         "horizontalDpi": {
-          "description": "Horizontal DPI",
           "type": "number"
         },
         "orientation": {
           "$ref": "#/definitions/PageOrientation",
-          "description": "Orientation (ST_Orientation)"
+          "description": "Orientation"
         },
         "paperHeight": {
           "anyOf": [
@@ -2795,7 +2781,7 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "Paper height (ST_PositiveUniversalMeasure)"
+          "description": "Paper height"
         },
         "paperSize": {
           "description": "Paper size (1=Letter, 9=A4, etc.)",
@@ -2810,7 +2796,7 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "Paper width (ST_PositiveUniversalMeasure)"
+          "description": "Paper width"
         },
         "printerSettingsRId": {
           "description": "Relationship ID for the printer settings part (CT_CsPageSetup `@r:id`)",
@@ -2825,7 +2811,6 @@
           "type": "boolean"
         },
         "verticalDpi": {
-          "description": "Vertical DPI",
           "type": "number"
         }
       },
@@ -2867,7 +2852,7 @@
     },
     "ColorChangeEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for color change effect.\n\n## XSD: CT_ColorChangeEffect ```xml <xsd:element name=\"clrFrom\" type=\"CT_Color\"/> <xsd:element name=\"clrTo\" type=\"CT_Color\"/> <xsd:attribute name=\"useA\" type=\"xsd:boolean\" default=\"true\"/> ```",
+      "description": "Options for color change effect.",
       "properties": {
         "from": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -2902,7 +2887,7 @@
     },
     "ColorReplaceEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for color replace effect.\n\n## XSD: CT_ColorReplaceEffect ```xml <xsd:group ref=\"EG_ColorChoice\" minOccurs=\"1\" maxOccurs=\"1\"/> ```",
+      "description": "Options for color replace effect.",
       "properties": {
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -3232,7 +3217,6 @@
       "description": "Comment property (CT_CommentPr).\n\nParsed but never re-emitted: a commentPr alongside the sheet's legacy VML note drawing produces a file Excel refuses to open — commentPr and the VML note shape are rival property systems for the same note, and Excel reads note properties from the shape's x:ClientData. The fields survive parse so callers can inspect them; stringify always drops them.",
       "properties": {
         "altText": {
-          "description": "Alt text",
           "type": "string"
         },
         "anchor": {
@@ -3240,23 +3224,18 @@
           "description": "Object anchor position"
         },
         "autoFill": {
-          "description": "Auto fill",
           "type": "boolean"
         },
         "autoLine": {
-          "description": "Auto line",
           "type": "boolean"
         },
         "autoScale": {
-          "description": "Auto scale",
           "type": "boolean"
         },
         "defaultSize": {
-          "description": "Default size",
           "type": "boolean"
         },
         "disabled": {
-          "description": "Disabled",
           "type": "boolean"
         },
         "justLastX": {
@@ -3264,15 +3243,12 @@
           "type": "boolean"
         },
         "lockText": {
-          "description": "Lock text",
           "type": "boolean"
         },
         "locked": {
-          "description": "Locked",
           "type": "boolean"
         },
         "print": {
-          "description": "Print",
           "type": "boolean"
         },
         "textHAlign": {
@@ -3420,7 +3396,7 @@
       "type": "object"
     },
     "ConditionalFormatType": {
-      "description": "Conditional-format rule kind (ST_CfType): \"cellIs\" value comparison (see operator), \"expression\" formula trigger, \"top10\" ranked values, \"containsText\" substring match.",
+      "description": "Conditional-format rule kind: \"cellIs\" value comparison (see operator), \"expression\" formula trigger, \"top10\" ranked values, \"containsText\" substring match.",
       "enum": [
         "cellIs",
         "containsText",
@@ -3553,8 +3529,7 @@
           "type": "string"
         },
         "position": {
-          "$ref": "#/definitions/AdjustHandlePosition",
-          "description": "Position"
+          "$ref": "#/definitions/AdjustHandlePosition"
         }
       },
       "required": ["angle", "position"],
@@ -3569,7 +3544,7 @@
           "type": "number"
         },
         "type": {
-          "description": "Field data type (ST_ExternalConnectionType, default \"general\")",
+          "description": "Field data type",
           "type": "string"
         }
       },
@@ -3767,7 +3742,7 @@
       "type": "object"
     },
     "ConsolidateFunction": {
-      "description": "Aggregation function for data fields (maps to ST_DataConsolidateFunction).",
+      "description": "Aggregation function for data fields (maps to).",
       "enum": [
         "sum",
         "count",
@@ -3775,11 +3750,11 @@
         "max",
         "min",
         "product",
-        "countNums",
-        "stdDev",
-        "stdDevp",
-        "var",
-        "varp"
+        "countNumbers",
+        "standardDeviation",
+        "standardDeviationPopulation",
+        "variance",
+        "variancePopulation"
       ],
       "type": "string"
     },
@@ -3901,7 +3876,6 @@
       "description": "Custom cell style (CT_CellStyle) — a named reference to a cell-style XF.",
       "properties": {
         "builtinId": {
-          "description": "Built-in ID",
           "type": "number"
         },
         "customBuiltin": {
@@ -3959,7 +3933,7 @@
       "type": "object"
     },
     "CustomFilterOperator": {
-      "description": "Custom filter comparison operator (ST_FilterOperator).",
+      "description": "Custom filter comparison operator.",
       "enum": [
         "equal",
         "notEqual",
@@ -3990,7 +3964,7 @@
     },
     "CustomGeometryOptions": {
       "additionalProperties": false,
-      "description": "Options for a custom 2D geometry (CT_CustomGeometry2D).\n\nOnly `pathList` is required. All other sub-elements are optional.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_CustomGeometry2D\">   <xsd:sequence>     <xsd:element name=\"avLst\" type=\"CT_GeomGuideList\" minOccurs=\"0\"/>     <xsd:element name=\"gdLst\" type=\"CT_GeomGuideList\" minOccurs=\"0\"/>     <xsd:element name=\"ahLst\" type=\"CT_AdjustHandleList\" minOccurs=\"0\"/>     <xsd:element name=\"cxnLst\" type=\"CT_ConnectionSiteList\" minOccurs=\"0\"/>     <xsd:element name=\"rect\" type=\"CT_GeomRect\" minOccurs=\"0\"/>     <xsd:element name=\"pathLst\" type=\"CT_Path2DList\" minOccurs=\"1\"/>   </xsd:sequence> </xsd:complexType> ```",
+      "description": "Options for a custom 2D geometry (CT_CustomGeometry2D).\n\nOnly `pathList` is required. All other sub-elements are optional.",
       "properties": {
         "adjustHandles": {
           "description": "Adjust handles (a:ahLst)",
@@ -4227,7 +4201,7 @@
           "type": "boolean"
         },
         "showComments": {
-          "description": "Show comments (CT_CustomWorkbookView `@showComments`, ST_Comments)",
+          "description": "Show comments (CT_CustomWorkbookView `@showComments`,)",
           "enum": ["none", "indicator", "comment"],
           "type": "string"
         },
@@ -4240,7 +4214,7 @@
           "type": "boolean"
         },
         "showObjects": {
-          "description": "Object display mode (CT_CustomWorkbookView `@showObjects`, ST_Objects)",
+          "description": "Object display mode (CT_CustomWorkbookView `@showObjects`,)",
           "enum": ["all", "placeholders", "none"],
           "type": "string"
         },
@@ -4282,7 +4256,7 @@
     },
     "DashStop": {
       "additionalProperties": false,
-      "description": "A single dash stop in a custom dash pattern.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_DashStop\">   <xsd:attribute name=\"d\" type=\"ST_PositivePercentage\" use=\"required\"/>   <xsd:attribute name=\"sp\" type=\"ST_PositivePercentage\" use=\"required\"/> </xsd:complexType> ```\n\n`ST_PositivePercentage` is a string matching `[0-9]+(\\.[0-9]+)?%` (e.g., `\"100%\"`, `\"500%\"`, `\"50.5%\"`).",
+      "description": "A single dash stop in a custom dash pattern. `` is a string matching `[0-9]+(\\.[0-9]+)?%` (e.g., `\"100%\"`, `\"500%\"`, `\"50.5%\"`).",
       "properties": {
         "d": {
           "description": "Dash length as a percentage of line width (e.g., \"500%\")",
@@ -4366,15 +4340,15 @@
           "enum": [
             "average",
             "count",
-            "countNums",
+            "countNumbers",
             "max",
             "min",
             "product",
-            "stdDev",
-            "stdDevp",
+            "standardDeviation",
+            "standardDeviationPopulation",
             "sum",
-            "var",
-            "varp"
+            "variance",
+            "variancePopulation"
           ],
           "type": "string"
         },
@@ -4473,8 +4447,18 @@
       "type": "object"
     },
     "DataLabelPosition": {
-      "description": "Data-label placement (ST_DLblPos): \"bestFit\" auto (pie), \"b\" bottom, \"ctr\" center, \"inBase\" inside the bar base, \"inEnd\" inside the bar tip, \"outEnd\" outside the bar tip, \"l\"/\"r\"/\"t\" left/right/top.",
-      "enum": ["bestFit", "b", "ctr", "inBase", "inEnd", "l", "outEnd", "r", "t"],
+      "description": "Data-label placement; \"bestFit\" lets the renderer choose (pie).",
+      "enum": [
+        "bestFit",
+        "bottom",
+        "center",
+        "insideBase",
+        "insideEnd",
+        "left",
+        "outsideEnd",
+        "right",
+        "top"
+      ],
       "type": "string"
     },
     "DataLabelsOptions": {
@@ -4699,7 +4683,7 @@
       "type": "object"
     },
     "DataValidationType": {
-      "description": "What cell input is validated against (ST_DataValidationType): \"whole\" whole number, \"textLength\" character count, \"list\" values from formula1, \"custom\" formula must be true.",
+      "description": "What cell input is validated against: \"whole\" whole number, \"textLength\" character count, \"list\" values from formula1, \"custom\" formula must be true.",
       "enum": ["none", "whole", "decimal", "list", "date", "time", "textLength", "custom"],
       "type": "string"
     },
@@ -4796,7 +4780,6 @@
       "description": "DDE link (CT_DdeLink — ddeService/ddeTopic + items)",
       "properties": {
         "ddeItems": {
-          "description": "DDE items",
           "items": {
             "$ref": "#/definitions/DdeItemOptions"
           },
@@ -4807,7 +4790,6 @@
           "type": "string"
         },
         "ddeTopic": {
-          "description": "DDE topic",
           "type": "string"
         }
       },
@@ -4819,7 +4801,7 @@
       "description": "One cached DDE value (CT_DdeValue — val element + type attribute).",
       "properties": {
         "type": {
-          "description": "Value type (ST_DdeValueType, default \"n\")",
+          "description": "Value type",
           "enum": ["nil", "b", "n", "e", "str"],
           "type": "string"
         },
@@ -4894,7 +4876,7 @@
     },
     "DefinedNameOptions": {
       "additionalProperties": false,
-      "description": "A named range, constant, or formula (CT_DefinedName, sml.xsd:4317).\n\nThe element text holds the formula or reference (ST_Formula); the attributes carry metadata (scope, visibility, function metadata).",
+      "description": "A named range, constant, or formula (CT_DefinedName, sml.xsd:4317). The element text holds the formula or reference; the attributes carry metadata (scope, visibility, function metadata).",
       "properties": {
         "comment": {
           "description": "Comment (CT_DefinedName `@comment`)",
@@ -4992,12 +4974,10 @@
           "type": "string"
         },
         "pageMargins": {
-          "$ref": "#/definitions/PageMarginsOptions",
-          "description": "Page margins"
+          "$ref": "#/definitions/PageMarginsOptions"
         },
         "pageSetup": {
-          "$ref": "#/definitions/PageSetupOptions",
-          "description": "Page setup"
+          "$ref": "#/definitions/PageSetupOptions"
         },
         "printOptions": {
           "$ref": "#/definitions/PrintOptions",
@@ -5012,8 +4992,7 @@
           "type": "number"
         },
         "sheetProtection": {
-          "$ref": "#/definitions/SheetProtectionOptions",
-          "description": "Sheet protection"
+          "$ref": "#/definitions/SheetProtectionOptions"
         },
         "state": {
           "description": "Visibility (CT_Sheet `@state`)",
@@ -5028,7 +5007,7 @@
       "type": "object"
     },
     "DisplayBlanksAs": {
-      "description": "How blank cells plot (ST_DispBlanksAs): \"gap\" skip with a line break, \"span\" bridge with a straight line, \"zero\" treat as 0.",
+      "description": "How blank cells plot: \"gap\" skip with a line break, \"span\" bridge with a straight line, \"zero\" treat as 0.",
       "enum": ["gap", "span", "zero"],
       "type": "string"
     },
@@ -5137,7 +5116,7 @@
     },
     "DuotoneEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for duotone effect.\n\n## XSD: CT_DuotoneEffect ```xml <xsd:group ref=\"EG_ColorChoice\" minOccurs=\"2\" maxOccurs=\"2\"/> ```",
+      "description": "Options for duotone effect.",
       "properties": {
         "color1": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -5269,13 +5248,13 @@
       "type": "string"
     },
     "EffectContainer": {
-      "description": "Effect container type (ST_EffectContainerType).\n\nControls how child effects are combined:\n- `sib`: sibling effects are applied in parallel\n- `tree`: effects are applied sequentially in tree order\n\nNote: the `sib` token maps to the `\"sibling\"` value accepted here.\n\n## XSD Schema ```xml <xsd:simpleType name=\"ST_EffectContainerType\">   <xsd:restriction base=\"xsd:token\">     <xsd:enumeration value=\"sib\"/>     <xsd:enumeration value=\"tree\"/>   </xsd:restriction> </xsd:simpleType> ```",
+      "description": "Effect container type. Controls how child effects are combined:\n`sib`: sibling effects are applied in parallel\n`tree`: effects are applied sequentially in tree order Note: the `sib` token maps to the `\"sibling\"` value accepted here.",
       "enum": ["sibling", "tree"],
       "type": "string"
     },
     "EffectDagOptions": {
       "additionalProperties": false,
-      "description": "Options for an effect container (CT_EffectContainer).\n\nSupports all 28 effect types from EG_Effect, including recursive nesting.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_EffectContainer\">   <xsd:group ref=\"EG_Effect\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>   <xsd:attribute name=\"type\" type=\"ST_EffectContainerType\" default=\"sib\"/>   <xsd:attribute name=\"name\" type=\"xsd:token\"/> </xsd:complexType> ```",
+      "description": "Options for an effect container (CT_EffectContainer).\n\nSupports all 28 effect types from EG_Effect, including recursive nesting.",
       "properties": {
         "alphaBiLevel": {
           "$ref": "#/definitions/AlphaBiLevelEffectOptions",
@@ -5520,7 +5499,7 @@
       "description": "a:stCxn / a:endCxn — a connector endpoint glued to a shape connection site.",
       "properties": {
         "id": {
-          "description": "Target shape cNvPr id (ST_DrawingElementId).",
+          "description": "Target shape cNvPr id.",
           "type": "number"
         },
         "index": {
@@ -5571,8 +5550,8 @@
       "type": "string"
     },
     "ErrorValueType": {
-      "description": "Error amount source (ST_ErrorValueType): \"cust\" custom plus/minus values (see plusValue/minusValue), \"fixedVal\" a fixed value, \"percentage\" percent of the data point, \"stdDev\" standard deviation, \"stdErr\" standard error.",
-      "enum": ["cust", "fixedVal", "percentage", "stdDev", "stdErr"],
+      "description": "Error amount source: custom plus/minus values (see plusValue/minusValue), a fixed value, a percentage of the data point, standard deviation, or standard error.",
+      "enum": ["custom", "fixedValue", "percentage", "standardDeviation", "standardError"],
       "type": "string"
     },
     "ExternalBookOptions": {
@@ -5861,24 +5840,20 @@
       "description": "Fill effect — applies a fill as an effect (CT_FillEffect).",
       "properties": {
         "gradientFill": {
-          "$ref": "#/definitions/GradientFillOptions",
-          "description": "Gradient fill"
+          "$ref": "#/definitions/GradientFillOptions"
         },
         "groupFill": {
           "description": "Group fill (inherit from parent)",
           "type": "boolean"
         },
         "noFill": {
-          "description": "No fill",
           "type": "boolean"
         },
         "patternFill": {
-          "$ref": "#/definitions/PatternFillOptions",
-          "description": "Pattern fill"
+          "$ref": "#/definitions/PatternFillOptions"
         },
         "solidFill": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "Solid fill"
+          "$ref": "#/definitions/SolidFillOptions"
         }
       },
       "type": "object"
@@ -5982,7 +5957,6 @@
               "type": "string"
             },
             "imageType": {
-              "description": "Image type",
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
               "type": "string"
             },
@@ -6071,20 +6045,17 @@
           "type": "string"
         },
         "gradientFill": {
-          "$ref": "#/definitions/GradientFillOptions",
-          "description": "Gradient fill"
+          "$ref": "#/definitions/GradientFillOptions"
         },
         "groupFill": {
           "description": "Group fill (inherit from parent)",
           "type": "boolean"
         },
         "noFill": {
-          "description": "No fill",
           "type": "boolean"
         },
         "patternFill": {
-          "$ref": "#/definitions/PatternFillOptions",
-          "description": "Pattern fill"
+          "$ref": "#/definitions/PatternFillOptions"
         },
         "solidFill": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -6147,7 +6118,7 @@
           "type": "boolean"
         },
         "calendarType": {
-          "description": "Calendar type (CT_Filters `@calendarType`, ST_CalendarType)",
+          "description": "Calendar type (CT_Filters `@calendarType`,)",
           "enum": [
             "gregorian",
             "gregorianUs",
@@ -6305,7 +6276,7 @@
       "description": "Font reference — a:fontRef (CT_FontReference).",
       "properties": {
         "collection": {
-          "description": "Font collection (idx attribute: ST_FontCollectionIndex).",
+          "description": "Font collection (idx attribute:).",
           "enum": ["major", "minor", "none"],
           "type": "string"
         },
@@ -6432,7 +6403,7 @@
       "type": "object"
     },
     "FormulaType": {
-      "description": "Cell formula type (maps to ST_CellFormulaType).",
+      "description": "Cell formula type (maps to).",
       "enum": ["normal", "array", "shared"],
       "type": "string"
     },
@@ -6554,7 +6525,7 @@
     },
     "GradientFillOptions": {
       "additionalProperties": false,
-      "description": "Options for gradient fill.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_GradientFillProperties\">   <xsd:sequence>     <xsd:element name=\"gsLst\" type=\"CT_GradientStopList\" minOccurs=\"0\"/>     <xsd:group ref=\"EG_ShadeProperties\" minOccurs=\"0\"/>     <xsd:element name=\"tileRect\" type=\"CT_RelativeRect\" minOccurs=\"0\"/>   </xsd:sequence>   <xsd:attribute name=\"flip\" type=\"ST_TileFlipMode\" use=\"optional\"/>   <xsd:attribute name=\"rotWithShape\" type=\"xsd:boolean\" use=\"optional\"/> </xsd:complexType> ```",
+      "description": "Options for gradient fill.",
       "properties": {
         "flip": {
           "$ref": "#/definitions/TileFlipMode",
@@ -7091,7 +7062,7 @@
     },
     "HSLEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for HSL effect.\n\n## XSD: CT_HSLEffect ```xml <xsd:attribute name=\"hue\" type=\"ST_PositiveFixedAngle\" default=\"0\"/> <xsd:attribute name=\"sat\" type=\"ST_FixedPercentage\" default=\"0%\"/> <xsd:attribute name=\"lum\" type=\"ST_FixedPercentage\" default=\"0%\"/> ```",
+      "description": "Options for HSL effect.",
       "properties": {
         "hue": {
           "description": "Hue rotation in degrees. Default 0.",
@@ -7235,7 +7206,7 @@
         },
         "iconSet": {
           "$ref": "#/definitions/IconSetType",
-          "description": "Icon set name (CT_IconFilter `@iconSet`, ST_IconSetType — required)"
+          "description": "Icon set name (CT_IconFilter `@iconSet`, — required)"
         }
       },
       "required": ["iconSet"],
@@ -7273,7 +7244,7 @@
       "type": "object"
     },
     "IconSetType": {
-      "description": "Icon set type (ST_IconSetType)",
+      "description": "Icon set type",
       "enum": [
         "3Arrows",
         "3ArrowsGray",
@@ -7439,12 +7410,12 @@
       "type": "object"
     },
     "LayoutMode": {
-      "description": "How x/y/w/h are read (ST_LayoutMode): \"edge\" offset from the chart edge, \"factor\" fraction of the plot area.",
+      "description": "How x/y/w/h are read: \"edge\" offset from the chart edge, \"factor\" fraction of the plot area.",
       "enum": ["edge", "factor"],
       "type": "string"
     },
     "LayoutTarget": {
-      "description": "Manual-layout region (ST_LayoutTarget): \"inner\" plot area only, \"outer\" including tick labels and axis titles.",
+      "description": "Manual-layout region: \"inner\" plot area only, \"outer\" including tick labels and axis titles.",
       "enum": ["inner", "outer"],
       "type": "string"
     },
@@ -7468,13 +7439,13 @@
       "type": "object"
     },
     "LegendPosition": {
-      "description": "Legend placement (ST_LegendPos): \"b\" bottom, \"tr\" top-right, \"l\" left, \"r\" right, \"t\" top.",
-      "enum": ["b", "tr", "l", "r", "t"],
+      "description": "Legend placement (c:legendPos); \"topRight\" is the corner slot.",
+      "enum": ["bottom", "topRight", "left", "right", "top"],
       "type": "string"
     },
     "LightRigOptions": {
       "additionalProperties": false,
-      "description": "Light rig options (CT_LightRig).\n\nDefines the lighting setup for the 3D scene.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_LightRig\">   <xsd:sequence>     <xsd:element name=\"rot\" type=\"CT_SphereCoords\" minOccurs=\"0\"/>   </xsd:sequence>   <xsd:attribute name=\"rig\" type=\"ST_LightRigType\" use=\"required\"/>   <xsd:attribute name=\"dir\" type=\"ST_LightRigDirection\" use=\"required\"/> </xsd:complexType> ```",
+      "description": "Light rig options (CT_LightRig).\n\nDefines the lighting setup for the 3D scene.",
       "properties": {
         "direction": {
           "description": "Light direction (e.g., \"tl\", \"t\", \"tr\", \"l\", \"r\", \"bl\", \"b\", \"br\")",
@@ -7498,13 +7469,13 @@
       "type": "string"
     },
     "LineEndLength": {
-      "description": "Line end length options.\n\n## XSD Schema ```xml <xsd:simpleType name=\"ST_LineEndLength\">   <xsd:restriction base=\"xsd:token\">     <xsd:enumeration value=\"sm\"/>     <xsd:enumeration value=\"med\"/>     <xsd:enumeration value=\"lg\"/>   </xsd:restriction> </xsd:simpleType> ```",
+      "description": "Line end length options.",
       "enum": ["small", "medium", "large"],
       "type": "string"
     },
     "LineEndOptions": {
       "additionalProperties": false,
-      "description": "Options for line end (arrow) properties.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_LineEndProperties\">   <xsd:attribute name=\"type\" type=\"ST_LineEndType\" use=\"optional\" default=\"none\"/>   <xsd:attribute name=\"w\" type=\"ST_LineEndWidth\" use=\"optional\"/>   <xsd:attribute name=\"len\" type=\"ST_LineEndLength\" use=\"optional\"/> </xsd:complexType> ```",
+      "description": "Options for line end (arrow) properties.",
       "properties": {
         "length": {
           "$ref": "#/definitions/LineEndLength",
@@ -7522,12 +7493,12 @@
       "type": "object"
     },
     "LineEndType": {
-      "description": "Line end types (arrow head styles).\n\n## XSD Schema ```xml <xsd:simpleType name=\"ST_LineEndType\">   <xsd:restriction base=\"xsd:token\">     <xsd:enumeration value=\"none\"/>     <xsd:enumeration value=\"triangle\"/>     <xsd:enumeration value=\"stealth\"/>     <xsd:enumeration value=\"diamond\"/>     <xsd:enumeration value=\"oval\"/>     <xsd:enumeration value=\"arrow\"/>   </xsd:restriction> </xsd:simpleType> ```",
+      "description": "Line end types (arrow head styles).",
       "enum": ["none", "triangle", "stealth", "diamond", "oval", "arrow"],
       "type": "string"
     },
     "LineEndWidth": {
-      "description": "Line end width options.\n\n## XSD Schema ```xml <xsd:simpleType name=\"ST_LineEndWidth\">   <xsd:restriction base=\"xsd:token\">     <xsd:enumeration value=\"sm\"/>     <xsd:enumeration value=\"med\"/>     <xsd:enumeration value=\"lg\"/>   </xsd:restriction> </xsd:simpleType> ```",
+      "description": "Line end width options.",
       "enum": ["small", "medium", "large"],
       "type": "string"
     },
@@ -7553,7 +7524,7 @@
     },
     "LuminanceEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for luminance (brightness/contrast) effect.\n\n## XSD: CT_LuminanceEffect ```xml <xsd:attribute name=\"bright\" type=\"ST_FixedPercentage\" default=\"0%\"/> <xsd:attribute name=\"contrast\" type=\"ST_FixedPercentage\" default=\"0%\"/> ```",
+      "description": "Options for luminance (brightness/contrast) effect.",
       "properties": {
         "bright": {
           "description": "Brightness adjustment in percentage points (-100 to 100). Default 0.",
@@ -7693,7 +7664,7 @@
       "type": "object"
     },
     "MarkerSymbol": {
-      "description": "Point-marker glyph (ST_MarkerStyle).",
+      "description": "Point-marker glyph.",
       "enum": [
         "circle",
         "dash",
@@ -7710,7 +7681,7 @@
       "type": "string"
     },
     "MdxFunctionType": {
-      "description": "ST_MdxFunctionType — the MDX function discriminator on mdx `@f`.",
+      "description": "the MDX function discriminator on mdx `@f`.",
       "enum": ["m", "v", "s", "c", "r", "p", "k"],
       "type": "string"
     },
@@ -7735,7 +7706,7 @@
       "type": "object"
     },
     "MdxKpiProperty": {
-      "description": "ST_MdxKPIProperty — the KPI property kind on k `@p`.",
+      "description": "the KPI property kind on k `@p`.",
       "enum": ["v", "g", "s", "t", "w", "m"],
       "type": "string"
     },
@@ -7823,7 +7794,6 @@
           "type": "string"
         },
         "bold": {
-          "description": "Bold",
           "type": "boolean"
         },
         "count": {
@@ -7843,11 +7813,9 @@
           "type": "number"
         },
         "italic": {
-          "description": "Italic",
           "type": "boolean"
         },
         "strikethrough": {
-          "description": "Strikethrough",
           "type": "boolean"
         },
         "stringIndexes": {
@@ -7862,7 +7830,6 @@
           "type": "number"
         },
         "underline": {
-          "description": "Underline",
           "type": "boolean"
         }
       },
@@ -7913,11 +7880,9 @@
           "type": "boolean"
         },
         "showCell": {
-          "description": "Show cell?",
           "type": "boolean"
         },
         "showTip": {
-          "description": "Show tip?",
           "type": "boolean"
         }
       },
@@ -8047,11 +8012,9 @@
       "description": "Metadata type declaration (CT_MetadataType).",
       "properties": {
         "adjust": {
-          "description": "Adjust",
           "type": "boolean"
         },
         "assign": {
-          "description": "Assign",
           "type": "boolean"
         },
         "cellMeta": {
@@ -8059,23 +8022,18 @@
           "type": "boolean"
         },
         "clearAll": {
-          "description": "Clear all",
           "type": "boolean"
         },
         "clearComments": {
-          "description": "Clear comments",
           "type": "boolean"
         },
         "clearContents": {
-          "description": "Clear contents",
           "type": "boolean"
         },
         "clearFormats": {
-          "description": "Clear formats",
           "type": "boolean"
         },
         "coerce": {
-          "description": "Coerce",
           "type": "boolean"
         },
         "copy": {
@@ -8111,11 +8069,9 @@
           "type": "string"
         },
         "pasteAll": {
-          "description": "Paste all",
           "type": "boolean"
         },
         "pasteBorders": {
-          "description": "Paste borders",
           "type": "boolean"
         },
         "pasteColWidths": {
@@ -8123,27 +8079,21 @@
           "type": "boolean"
         },
         "pasteComments": {
-          "description": "Paste comments",
           "type": "boolean"
         },
         "pasteDataValidation": {
-          "description": "Paste data validation",
           "type": "boolean"
         },
         "pasteFormats": {
-          "description": "Paste formats",
           "type": "boolean"
         },
         "pasteFormulas": {
-          "description": "Paste formulas",
           "type": "boolean"
         },
         "pasteNumberFormats": {
-          "description": "Paste number formats",
           "type": "boolean"
         },
         "pasteValues": {
-          "description": "Paste values",
           "type": "boolean"
         },
         "rowColShift": {
@@ -8151,11 +8101,9 @@
           "type": "boolean"
         },
         "splitAll": {
-          "description": "Split all",
           "type": "boolean"
         },
         "splitFirst": {
-          "description": "Split first",
           "type": "boolean"
         }
       },
@@ -8294,7 +8242,7 @@
       "type": "object"
     },
     "OfPieType": {
-      "description": "ofPie variant (ST_OfPieType): \"pie\" pie-of-pie, \"bar\" bar-of-pie.",
+      "description": "ofPie variant: \"pie\" pie-of-pie, \"bar\" bar-of-pie.",
       "enum": ["pie", "bar"],
       "type": "string"
     },
@@ -8325,7 +8273,6 @@
       "additionalProperties": false,
       "properties": {
         "oleItems": {
-          "description": "OLE items",
           "items": {
             "$ref": "#/definitions/OleItemOptions"
           },
@@ -8389,7 +8336,6 @@
       "description": "OLE object properties (CT_ObjectPr)",
       "properties": {
         "altText": {
-          "description": "Alt text",
           "type": "string"
         },
         "anchor": {
@@ -8397,11 +8343,9 @@
           "description": "Cell anchor inside objectPr (from/to corners, 0-based)."
         },
         "autoFill": {
-          "description": "Auto fill",
           "type": "boolean"
         },
         "autoLine": {
-          "description": "Auto line",
           "type": "boolean"
         },
         "autoPict": {
@@ -8409,15 +8353,12 @@
           "type": "boolean"
         },
         "dde": {
-          "description": "DDE",
           "type": "boolean"
         },
         "defaultSize": {
-          "description": "Default size",
           "type": "boolean"
         },
         "disabled": {
-          "description": "Disabled",
           "type": "boolean"
         },
         "iconRid": {
@@ -8425,19 +8366,15 @@
           "type": "string"
         },
         "locked": {
-          "description": "Locked",
           "type": "boolean"
         },
         "macro": {
-          "description": "Macro",
           "type": "string"
         },
         "print": {
-          "description": "Print",
           "type": "boolean"
         },
         "uiObject": {
-          "description": "UI object",
           "type": "boolean"
         }
       },
@@ -8686,7 +8623,7 @@
       "type": "object"
     },
     "PageOrientation": {
-      "description": "Print orientation (ST_Orientation): \"default\" keeps the printer's own setting.",
+      "description": "Print orientation: \"default\" keeps the printer's own setting.",
       "enum": ["default", "portrait", "landscape"],
       "type": "string"
     },
@@ -8791,7 +8728,7 @@
       "type": "object"
     },
     "PageSetupOrientation": {
-      "description": "Print orientation (ST_Orientation): \"default\" keeps the printer's own setting.",
+      "description": "Print orientation: \"default\" keeps the printer's own setting.",
       "enum": ["default", "portrait", "landscape"],
       "type": "string"
     },
@@ -8967,7 +8904,7 @@
       "type": "object"
     },
     "PathFillMode": {
-      "description": "Path fill mode (ST_PathFillMode).\n\nNote: the `\"normal\"` value here maps to the XSD `norm` token.\n\n## XSD Schema ```xml <xsd:simpleType name=\"ST_PathFillMode\">   <xsd:restriction base=\"xsd:token\">     <xsd:enumeration value=\"none\"/>     <xsd:enumeration value=\"norm\"/>     <xsd:enumeration value=\"lighten\"/>     <xsd:enumeration value=\"lightenLess\"/>     <xsd:enumeration value=\"darken\"/>     <xsd:enumeration value=\"darkenLess\"/>   </xsd:restriction> </xsd:simpleType> ```",
+      "description": "Path fill mode. Note: the `\"normal\"` value here maps to the XSD `norm` token.",
       "enum": ["none", "normal", "lighten", "lightenLess", "darken", "darkenLess"],
       "type": "string"
     },
@@ -9003,7 +8940,7 @@
     },
     "PathOptions": {
       "additionalProperties": false,
-      "description": "Options for a 2D path (CT_Path2D).\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_Path2D\">   <xsd:choice minOccurs=\"0\" maxOccurs=\"unbounded\">     <xsd:element name=\"close\" type=\"CT_Path2DClose\"/>     <xsd:element name=\"moveTo\" type=\"CT_Path2DMoveTo\"/>     <xsd:element name=\"lnTo\" type=\"CT_Path2DLineTo\"/>     <xsd:element name=\"arcTo\" type=\"CT_Path2DArcTo\"/>     <xsd:element name=\"quadBezTo\" type=\"CT_Path2DQuadBezierTo\"/>     <xsd:element name=\"cubicBezTo\" type=\"CT_Path2DCubicBezierTo\"/>   </xsd:choice>   <xsd:attribute name=\"w\" type=\"ST_PositiveCoordinate\" default=\"0\"/>   <xsd:attribute name=\"h\" type=\"ST_PositiveCoordinate\" default=\"0\"/>   <xsd:attribute name=\"fill\" type=\"ST_PathFillMode\" default=\"norm\"/>   <xsd:attribute name=\"stroke\" type=\"xsd:boolean\" default=\"true\"/>   <xsd:attribute name=\"extrusionOk\" type=\"xsd:boolean\" default=\"true\"/> </xsd:complexType> ```",
+      "description": "Options for a 2D path (CT_Path2D).",
       "properties": {
         "commands": {
           "description": "Path commands (moveTo, lineTo, arcTo, etc.)",
@@ -9078,15 +9015,13 @@
     },
     "PatternFillOptions": {
       "additionalProperties": false,
-      "description": "Options for pattern fill.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_PatternFillProperties\">   <xsd:sequence>     <xsd:element name=\"fgClr\" type=\"CT_Color\" minOccurs=\"0\"/>     <xsd:element name=\"bgClr\" type=\"CT_Color\" minOccurs=\"0\"/>   </xsd:sequence>   <xsd:attribute name=\"prst\" type=\"ST_PresetPatternVal\" use=\"optional\"/> </xsd:complexType> ```",
+      "description": "Options for pattern fill.",
       "properties": {
         "backgroundColor": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "Background color"
+          "$ref": "#/definitions/SolidFillOptions"
         },
         "foregroundColor": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "Foreground color"
+          "$ref": "#/definitions/SolidFillOptions"
         },
         "pattern": {
           "description": "Preset pattern type",
@@ -9200,7 +9135,7 @@
       "type": "object"
     },
     "PictureFormat": {
-      "description": "Picture-fill mode (ST_PictureFormat): \"stack\" tile at natural size, \"scale\" stretch to fit, \"stackScale\" tile scaled by pictureStackUnit, \"stretch\".",
+      "description": "Picture-fill mode: \"stack\" tile at natural size, \"scale\" stretch to fit, \"stackScale\" tile scaled by pictureStackUnit, \"stretch\".",
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
     },
@@ -9491,7 +9426,6 @@
       "description": "Pivot area for conditional formats, chart formats, etc. (CT_PivotArea)",
       "properties": {
         "axis": {
-          "description": "Axis",
           "enum": ["axisRow", "axisCol", "axisPage", "axisValues"],
           "type": "string"
         },
@@ -9512,7 +9446,6 @@
           "type": "number"
         },
         "fieldPosition": {
-          "description": "Field position",
           "type": "number"
         },
         "grandCol": {
@@ -9536,7 +9469,6 @@
           "type": "boolean"
         },
         "references": {
-          "description": "References",
           "items": {
             "$ref": "#/definitions/PivotAreaReferenceOptions"
           },
@@ -9563,11 +9495,9 @@
           "type": "boolean"
         },
         "count": {
-          "description": "Count",
           "type": "number"
         },
         "countASubtotal": {
-          "description": "CountA subtotal",
           "type": "boolean"
         },
         "countSubtotal": {
@@ -9575,7 +9505,6 @@
           "type": "boolean"
         },
         "defaultSubtotal": {
-          "description": "Default subtotal",
           "type": "boolean"
         },
         "field": {
@@ -9583,11 +9512,9 @@
           "type": "number"
         },
         "maxSubtotal": {
-          "description": "Max subtotal",
           "type": "boolean"
         },
         "minSubtotal": {
-          "description": "Min subtotal",
           "type": "boolean"
         },
         "productSubtotal": {
@@ -9611,7 +9538,6 @@
           "type": "boolean"
         },
         "sumSubtotal": {
-          "description": "Sum subtotal",
           "type": "boolean"
         },
         "varPSubtotal": {
@@ -9836,7 +9762,6 @@
       "description": "Pivot conditional format (CT_ConditionalFormat for pivot)",
       "properties": {
         "pivotAreas": {
-          "description": "Pivot areas",
           "items": {
             "$ref": "#/definitions/PivotAreaOptions"
           },
@@ -10092,7 +10017,7 @@
       "type": "object"
     },
     "PivotFilterType": {
-      "description": "Pivot filter type (ST_PivotFilterType)",
+      "description": "Pivot filter type",
       "enum": [
         "unknown",
         "count",
@@ -10177,8 +10102,7 @@
           "type": "number"
         },
         "pivotArea": {
-          "$ref": "#/definitions/PivotAreaOptions",
-          "description": "Pivot area"
+          "$ref": "#/definitions/PivotAreaOptions"
         }
       },
       "required": ["pivotArea"],
@@ -10189,7 +10113,6 @@
       "description": "Pivot hierarchy (CT_PivotHierarchy)",
       "properties": {
         "caption": {
-          "description": "Caption",
           "type": "string"
         },
         "dragOff": {
@@ -10224,7 +10147,6 @@
           "type": "array"
         },
         "members": {
-          "description": "Members",
           "items": {
             "$ref": "#/definitions/MemberOptions"
           },
@@ -10282,7 +10204,6 @@
           "type": "number"
         },
         "axis": {
-          "description": "Axis",
           "enum": ["axisRow", "axisCol", "axisPage", "axisValues"],
           "type": "string"
         },
@@ -10420,7 +10341,6 @@
           "type": "array"
         },
         "customListSort": {
-          "description": "Custom list sort",
           "type": "boolean"
         },
         "data": {
@@ -10439,7 +10359,6 @@
           "type": "number"
         },
         "disableFieldList": {
-          "description": "Disable field list",
           "type": "boolean"
         },
         "editData": {
@@ -10451,7 +10370,6 @@
           "type": "boolean"
         },
         "enableFieldProperties": {
-          "description": "Enable field properties",
           "type": "boolean"
         },
         "enableWizard": {
@@ -10474,7 +10392,6 @@
           "type": "array"
         },
         "fieldPrintTitles": {
-          "description": "Field print titles",
           "type": "boolean"
         },
         "filters": {
@@ -10496,7 +10413,6 @@
           "type": "string"
         },
         "gridDropZones": {
-          "description": "Grid drop zones",
           "type": "boolean"
         },
         "immersive": {
@@ -10535,7 +10451,6 @@
           "type": "string"
         },
         "multipleFieldFilters": {
-          "description": "Multiple field filters",
           "type": "boolean"
         },
         "name": {
@@ -10592,7 +10507,6 @@
           "type": "boolean"
         },
         "rowHeaderCaption": {
-          "description": "Row header caption",
           "type": "string"
         },
         "rowHierarchiesUsage": {
@@ -10614,11 +10528,9 @@
           "type": "boolean"
         },
         "showDataDropDown": {
-          "description": "Show data drop-down",
           "type": "boolean"
         },
         "showDataTips": {
-          "description": "Show data tips",
           "type": "boolean"
         },
         "showDrill": {
@@ -10626,7 +10538,6 @@
           "type": "boolean"
         },
         "showDropZones": {
-          "description": "Show drop zones",
           "type": "boolean"
         },
         "showEmptyCol": {
@@ -10634,7 +10545,6 @@
           "type": "boolean"
         },
         "showEmptyRow": {
-          "description": "Show empty row",
           "type": "boolean"
         },
         "showError": {
@@ -10642,7 +10552,6 @@
           "type": "boolean"
         },
         "showHeaders": {
-          "description": "Show headers",
           "type": "boolean"
         },
         "showItems": {
@@ -10650,7 +10559,6 @@
           "type": "boolean"
         },
         "showMemberPropertyTips": {
-          "description": "Show member property tips",
           "type": "boolean"
         },
         "showMissing": {
@@ -10674,7 +10582,6 @@
           "type": "string"
         },
         "subtotalHiddenItems": {
-          "description": "Subtotal hidden items",
           "type": "boolean"
         },
         "tag": {
@@ -10686,7 +10593,6 @@
           "type": "string"
         },
         "visualTotals": {
-          "description": "Visual totals",
           "type": "boolean"
         }
       },
@@ -10914,7 +10820,7 @@
       "type": "object"
     },
     "PresetDash": {
-      "description": "Preset dash styles for outlines.\n\n## XSD Schema ```xml <xsd:simpleType name=\"ST_PresetLineDashVal\">   <xsd:restriction base=\"xsd:token\">     <xsd:enumeration value=\"solid\"/>     <xsd:enumeration value=\"dot\"/>     <xsd:enumeration value=\"dash\"/>     <xsd:enumeration value=\"lgDash\"/>     <xsd:enumeration value=\"dashDot\"/>     <xsd:enumeration value=\"lgDashDot\"/>     <xsd:enumeration value=\"lgDashDotDot\"/>     <xsd:enumeration value=\"sysDash\"/>     <xsd:enumeration value=\"sysDot\"/>     <xsd:enumeration value=\"sysDashDot\"/>     <xsd:enumeration value=\"sysDashDotDot\"/>   </xsd:restriction> </xsd:simpleType> ```",
+      "description": "Preset dash styles for outlines.",
       "enum": [
         "solid",
         "dot",
@@ -10946,7 +10852,7 @@
       "type": "object"
     },
     "PresetMaterial": {
-      "description": "Preset material types for 3D shapes (15 variations).\n\nReference: ISO/IEC 29500-4, dml-main.xsd, ST_PresetMaterialType",
+      "description": "Preset material types for 3D shapes (15 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
       "enum": [
         "legacyMatte",
         "legacyPlastic",
@@ -10967,7 +10873,7 @@
       "type": "string"
     },
     "PresetShadow": {
-      "description": "Preset shadow types (20 variations).\n\nReference: ISO/IEC 29500-4, dml-main.xsd, ST_PresetShadowVal",
+      "description": "Preset shadow types (20 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
       "enum": [
         "shadow1",
         "shadow2",
@@ -11336,7 +11242,7 @@
       "type": "object"
     },
     "RadarStyle": {
-      "description": "Radar variant (ST_RadarStyle): \"standard\" lines, \"marker\" lines with point markers, \"filled\" polygon.",
+      "description": "Radar variant: \"standard\" lines, \"marker\" lines with point markers, \"filled\" polygon.",
       "enum": ["standard", "marker", "filled"],
       "type": "string"
     },
@@ -11360,7 +11266,6 @@
       "description": "Options for reflection effect.\n\nAll properties are optional with XSD defaults.",
       "properties": {
         "alignment": {
-          "description": "Alignment",
           "type": "string"
         },
         "blurRadius": {
@@ -11449,7 +11354,7 @@
     },
     "RelativeRect": {
       "additionalProperties": false,
-      "description": "Relative rectangle (CT_RelativeRect) with percentage offsets.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_RelativeRect\">   <xsd:attribute name=\"l\" type=\"ST_Percentage\" default=\"0%\"/>   <xsd:attribute name=\"t\" type=\"ST_Percentage\" default=\"0%\"/>   <xsd:attribute name=\"r\" type=\"ST_Percentage\" default=\"0%\"/>   <xsd:attribute name=\"b\" type=\"ST_Percentage\" default=\"0%\"/> </xsd:complexType> ```",
+      "description": "Relative rectangle (CT_RelativeRect) with percentage offsets.",
       "properties": {
         "bottom": {
           "description": "Bottom offset percentage (e.g., \"0%\")",
@@ -11471,7 +11376,7 @@
       "type": "object"
     },
     "RevisionAction": {
-      "description": "Revision action for comments / custom views (ST_RevisionAction, sml.xsd:2084).",
+      "description": "Revision action for comments / custom views.",
       "enum": ["add", "delete"],
       "type": "string"
     },
@@ -11484,7 +11389,7 @@
           "type": "string"
         },
         "ref": {
-          "description": "Affected range (required, ST_Ref).",
+          "description": "Affected range (required,).",
           "type": "string"
         },
         "sheetId": {
@@ -11588,15 +11493,15 @@
           "type": "boolean"
         },
         "author": {
-          "description": "Author (required, ST_Xstring).",
+          "description": "Author (required,).",
           "type": "string"
         },
         "cell": {
-          "description": "Cell reference (required, ST_CellRef).",
+          "description": "Cell reference (required,).",
           "type": "string"
         },
         "guid": {
-          "description": "GUID (required, ST_Guid).",
+          "description": "GUID (required,).",
           "type": "string"
         },
         "hiddenColumn": {
@@ -11660,7 +11565,7 @@
           "description": "Action (required)."
         },
         "guid": {
-          "description": "GUID (required, ST_Guid).",
+          "description": "GUID (required,).",
           "type": "string"
         }
       },
@@ -11712,7 +11617,7 @@
           "type": "number"
         },
         "name": {
-          "description": "Defined name (required, ST_Xstring).",
+          "description": "Defined name (required,).",
           "type": "string"
         },
         "oldComment": {
@@ -11997,7 +11902,7 @@
           "type": "string"
         },
         "guid": {
-          "description": "Unique GUID for this revision (required, ST_Guid).",
+          "description": "Unique GUID for this revision (required,).",
           "type": "string"
         },
         "maxRId": {
@@ -12031,7 +11936,7 @@
           "type": "array"
         },
         "userName": {
-          "description": "User who made the revision (required, ST_Xstring).",
+          "description": "User who made the revision (required,).",
           "type": "string"
         }
       },
@@ -12106,7 +12011,7 @@
       "description": "Sheet insertion (CT_RevisionInsertSheet, sml.xsd:1981).",
       "properties": {
         "name": {
-          "description": "Sheet name (required, ST_Xstring).",
+          "description": "Sheet name (required,).",
           "type": "string"
         },
         "rId": {
@@ -12160,7 +12065,7 @@
           "type": "array"
         },
         "destination": {
-          "description": "Destination range (required, ST_Ref).",
+          "description": "Destination range (required,).",
           "type": "string"
         },
         "rId": {
@@ -12176,7 +12081,7 @@
           "type": "number"
         },
         "source": {
-          "description": "Source range (required, ST_Ref).",
+          "description": "Source range (required,).",
           "type": "string"
         },
         "sourceSheetId": {
@@ -12274,7 +12179,7 @@
           "type": "number"
         },
         "ref": {
-          "description": "Affected range (required, ST_Ref).",
+          "description": "Affected range (required,).",
           "type": "string"
         },
         "sheetId": {
@@ -12313,7 +12218,7 @@
           "type": "number"
         },
         "ref": {
-          "description": "Affected range (required, ST_Ref).",
+          "description": "Affected range (required,).",
           "type": "string"
         },
         "rejected": {
@@ -12337,11 +12242,11 @@
       "description": "Sheet rename (CT_RevisionSheetRename, sml.xsd:1972).",
       "properties": {
         "newName": {
-          "description": "New sheet name (required, ST_Xstring).",
+          "description": "New sheet name (required,).",
           "type": "string"
         },
         "oldName": {
-          "description": "Old sheet name (required, ST_Xstring).",
+          "description": "Old sheet name (required,).",
           "type": "string"
         },
         "rId": {
@@ -12381,7 +12286,7 @@
           "type": "string"
         },
         "expression": {
-          "description": "Expression kind (required, ST_FormulaExpression).",
+          "description": "Expression kind (required,).",
           "enum": ["ref", "refError", "area", "areaError", "computedArea"],
           "type": "string"
         },
@@ -12406,7 +12311,7 @@
           "type": "number"
         },
         "undoRange": {
-          "description": "Undo range (CT_UndoInfo `@dr`, required, ST_RefA).",
+          "description": "Undo range (CT_UndoInfo `@dr`, required,).",
           "type": "string"
         },
         "value": {
@@ -12483,7 +12388,6 @@
       "description": "Rich text run properties (CT_RPrElt).",
       "properties": {
         "bold": {
-          "description": "Bold",
           "type": "boolean"
         },
         "charset": {
@@ -12495,11 +12399,9 @@
           "type": "string"
         },
         "condense": {
-          "description": "Condense",
           "type": "boolean"
         },
         "extend": {
-          "description": "Extend",
           "type": "boolean"
         },
         "family": {
@@ -12511,11 +12413,9 @@
           "type": "string"
         },
         "italic": {
-          "description": "Italic",
           "type": "boolean"
         },
         "outline": {
-          "description": "Outline",
           "type": "boolean"
         },
         "scheme": {
@@ -12524,7 +12424,6 @@
           "type": "string"
         },
         "shadow": {
-          "description": "Shadow",
           "type": "boolean"
         },
         "size": {
@@ -12699,7 +12598,6 @@
       "description": "A single what-if scenario (maps to CT_Scenario).",
       "properties": {
         "comment": {
-          "description": "Comment",
           "type": "string"
         },
         "count": {
@@ -12758,7 +12656,7 @@
     },
     "Scene3DOptions": {
       "additionalProperties": false,
-      "description": "Options for a 3D scene (CT_Scene3D).\n\nBoth `camera` and `lightRig` are required. `backdrop` is optional.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_Scene3D\">   <xsd:sequence>     <xsd:element name=\"camera\" type=\"CT_Camera\" minOccurs=\"1\"/>     <xsd:element name=\"lightRig\" type=\"CT_LightRig\" minOccurs=\"1\"/>     <xsd:element name=\"backdrop\" type=\"CT_Backdrop\" minOccurs=\"0\"/>   </xsd:sequence> </xsd:complexType> ```",
+      "description": "Options for a 3D scene (CT_Scene3D).\n\nBoth `camera` and `lightRig` are required. `backdrop` is optional.",
       "properties": {
         "backdrop": {
           "$ref": "#/definitions/BackdropOptions",
@@ -13419,7 +13317,7 @@
           "type": "string"
         },
         "guid": {
-          "description": "GUID (required, ST_Guid).",
+          "description": "GUID (required,).",
           "type": "string"
         },
         "id": {
@@ -13427,7 +13325,7 @@
           "type": "number"
         },
         "name": {
-          "description": "User name (required, ST_Xstring).",
+          "description": "User name (required,).",
           "type": "string"
         }
       },
@@ -13497,7 +13395,6 @@
           "type": "number"
         },
         "defaultRowHeight": {
-          "description": "Default row height",
           "type": "number"
         },
         "outlineLevelCol": {
@@ -13755,8 +13652,8 @@
       "type": "object"
     },
     "SizeRepresents": {
-      "description": "Which bubble measure the size drives (ST_SizeRepresents): \"area\" the area, \"w\" the width.",
-      "enum": ["area", "w"],
+      "description": "What the bubble size drives: the area or the width.",
+      "enum": ["area", "width"],
       "type": "string"
     },
     "SolidFillOptions": {
@@ -13874,7 +13771,7 @@
     },
     "SphereCoords": {
       "additionalProperties": false,
-      "description": "Sphere coordinates (CT_SphereCoords).\n\nUsed for camera and light rig rotation. All angles are in degrees.\n\n## XSD Schema ```xml <xsd:complexType name=\"CT_SphereCoords\">   <xsd:attribute name=\"lat\" type=\"ST_PositiveFixedAngle\" use=\"required\"/>   <xsd:attribute name=\"lon\" type=\"ST_PositiveFixedAngle\" use=\"required\"/>   <xsd:attribute name=\"rev\" type=\"ST_PositiveFixedAngle\" use=\"required\"/> </xsd:complexType> ```",
+      "description": "Sphere coordinates (CT_SphereCoords).\n\nUsed for camera and light rig rotation. All angles are in degrees.",
       "properties": {
         "lat": {
           "description": "Latitude angle in degrees (0–360).",
@@ -13893,12 +13790,12 @@
       "type": "object"
     },
     "SplitType": {
-      "description": "ofPie split rule (ST_SplitType): \"auto\" Excel decides, \"cust\" the indices in customSplitPoints, \"percent\" smallest values under splitPosition %, \"pos\" the last splitPosition points, \"val\" points below splitPosition.",
-      "enum": ["auto", "cust", "percent", "pos", "val"],
+      "description": "ofPie split rule: \"auto\" lets Excel decide, \"custom\" takes the indices in customSplitPoints, \"percent\" the smallest values under splitPosition %, \"position\" the last splitPosition points, \"value\" points below splitPosition.",
+      "enum": ["auto", "custom", "percent", "position", "value"],
       "type": "string"
     },
     "StrikeStyle": {
-      "description": "Strikethrough (ST_TextStrikeType). Friendly spellings; xsdStrikeStyle maps them to the XML tokens.",
+      "description": "Strikethrough. Friendly spellings; xsdStrikeStyle maps them to the XML tokens.",
       "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
@@ -14099,7 +13996,6 @@
       "additionalProperties": false,
       "properties": {
         "calculatedColumnFormula": {
-          "description": "Calculated column formula",
           "type": "string"
         },
         "calculatedColumnFormulaArray": {
@@ -14147,8 +14043,7 @@
           "type": "boolean"
         },
         "totalsRowFunction": {
-          "$ref": "#/definitions/TotalsRowFunction",
-          "description": "Totals row function"
+          "$ref": "#/definitions/TotalsRowFunction"
         },
         "totalsRowLabel": {
           "description": "Totals row label (used when totalsRowFunction is \"none\" or \"custom\")",
@@ -14308,7 +14203,7 @@
       "type": "object"
     },
     "TableStyleElementType": {
-      "description": "Table style element type (ST_TableStyleType).",
+      "description": "Table style element type.",
       "enum": [
         "wholeTable",
         "headerRow",
@@ -14364,12 +14259,12 @@
       "type": "object"
     },
     "TableType": {
-      "description": "Table source kind (ST_TableType): \"worksheet\", \"xml\" external XML mapping, \"queryTable\" query result.",
+      "description": "Table source kind: \"worksheet\", \"xml\" external XML mapping, \"queryTable\" query result.",
       "enum": ["worksheet", "xml", "queryTable"],
       "type": "string"
     },
     "TextAlignment": {
-      "description": "Paragraph alignment (ST_TextAlignType); \"justify\" stretches lines to full width.",
+      "description": "Paragraph alignment; \"justify\" stretches lines to full width.",
       "enum": ["left", "center", "right", "justify"],
       "type": "string"
     },
@@ -14483,7 +14378,7 @@
       "type": "object"
     },
     "TextBodyWrapping": {
-      "description": "Text body wrapping type (ST_TextWrappingType).",
+      "description": "Text body wrapping type.",
       "enum": ["none", "square"],
       "type": "string"
     },
@@ -14503,7 +14398,7 @@
       "type": "object"
     },
     "TextCapitalization": {
-      "description": "Case effect (ST_TextCaps): \"all\" ALL CAPS, \"small\" Small Caps, \"none\".",
+      "description": "Case effect: \"all\" ALL CAPS, \"small\" Small Caps, \"none\".",
       "enum": ["none", "all", "small"],
       "type": "string"
     },
@@ -14550,7 +14445,7 @@
           "type": "boolean"
         },
         "kern": {
-          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
+          "description": "`@kern` — kerning threshold in points.",
           "type": "number"
         },
         "kumimoji": {
@@ -14683,7 +14578,7 @@
               "type": "number"
             },
             "panose": {
-              "description": "ST_Panose — 10-byte hex panose classification.",
+              "description": "10-byte hex panose classification.",
               "type": "string"
             },
             "pitchFamily": {
@@ -14721,7 +14616,7 @@
       "type": "object"
     },
     "TextHorzOverflow": {
-      "description": "Text horizontal overflow type (ST_TextHorzOverflowType).",
+      "description": "Text horizontal overflow type.",
       "enum": ["overflow", "clip"],
       "type": "string"
     },
@@ -14812,8 +14707,8 @@
           "type": "string"
         },
         "fontAlignment": {
-          "description": "`@fontAlgn` — baseline reference (ST_TextFontAlign): \"t\" top, \"ctr\" center, \"b\" bottom, \"base\" baseline, \"auto\".",
-          "enum": ["auto", "t", "ctr", "b", "base"],
+          "description": "Character-to-baseline alignment (a:pPr",
+          "enum": ["auto", "top", "center", "bottom", "base"],
           "type": "string"
         },
         "hangingPunctuation": {
@@ -14821,7 +14716,7 @@
           "type": "boolean"
         },
         "indent": {
-          "description": "`@indent` — first-line indent (ST_TextIndent, EMU).",
+          "description": "`@indent` — first-line indent.",
           "type": "number"
         },
         "indentLevel": {
@@ -14880,7 +14775,6 @@
       "description": "Text import properties (CT_TextPr).",
       "properties": {
         "characterSet": {
-          "description": "Character set",
           "type": "string"
         },
         "codePage": {
@@ -15002,7 +14896,7 @@
           "type": "boolean"
         },
         "kern": {
-          "description": "`@kern` — kerning threshold in points (ST_TextNonNegativePoint).",
+          "description": "`@kern` — kerning threshold in points.",
           "type": "number"
         },
         "kumimoji": {
@@ -15100,25 +14994,25 @@
       "type": "object"
     },
     "TextTabAlignment": {
-      "description": "Tab-stop alignment (ST_TextTabAlignType): \"l\" left, \"ctr\" center, \"r\" right, \"dec\" on the decimal point.",
-      "enum": ["l", "ctr", "r", "dec"],
+      "description": "Tab-stop alignment.",
+      "enum": ["left", "center", "right", "decimal"],
       "type": "string"
     },
     "TextVertOverflow": {
-      "description": "Text vertical overflow type (ST_TextVertOverflowType).",
+      "description": "Text vertical overflow type.",
       "enum": ["overflow", "ellipsis", "clip"],
       "type": "string"
     },
     "TextVertical": {
-      "description": "Text vertical type (ST_TextVerticalType).",
+      "description": "Text vertical type.",
       "enum": [
-        "horz",
-        "vert",
-        "vert270",
-        "wordArtVert",
-        "eaVert",
-        "mongolianVert",
-        "wordArtVertRtl"
+        "horizontal",
+        "vertical",
+        "vertical270",
+        "wordArtVertical",
+        "eastAsianVertical",
+        "mongolianVertical",
+        "wordArtVerticalRightToLeft"
       ],
       "type": "string"
     },
@@ -15222,13 +15116,13 @@
       "type": "object"
     },
     "TimeUnit": {
-      "description": "Time-axis unit granularity (ST_TimeUnit).",
+      "description": "Time-axis unit granularity.",
       "enum": ["days", "months", "years"],
       "type": "string"
     },
     "TintEffectOptions": {
       "additionalProperties": false,
-      "description": "Options for tint effect.\n\n## XSD: CT_TintEffect ```xml <xsd:attribute name=\"hue\" type=\"ST_PositiveFixedAngle\" default=\"0\"/> <xsd:attribute name=\"amt\" type=\"ST_FixedPercentage\" default=\"0%\"/> ```",
+      "description": "Options for tint effect.",
       "properties": {
         "amount": {
           "description": "Amount in percentage points (0 to 100). Default 0.",
@@ -15262,7 +15156,7 @@
       "type": "object"
     },
     "TotalsRowFunction": {
-      "description": "Totals-row aggregate (ST_TotalsRowFunction): \"countNums\" counts numeric entries only, \"stdDev\" sample standard deviation, \"var\" sample variance.",
+      "description": "Totals-row aggregate.",
       "enum": [
         "none",
         "sum",
@@ -15270,9 +15164,9 @@
         "max",
         "average",
         "count",
-        "countNums",
-        "stdDev",
-        "var",
+        "countNumbers",
+        "standardDeviation",
+        "variance",
         "custom"
       ],
       "type": "string"
@@ -15357,12 +15251,12 @@
       "type": "object"
     },
     "TrendlineType": {
-      "description": "Trendline fit (ST_TrendlineType): \"exp\" exponential, \"log\" logarithmic, \"movingAvg\" moving average (see period), \"poly\" polynomial (see order), \"power\" power.",
-      "enum": ["exp", "linear", "log", "movingAvg", "poly", "power"],
+      "description": "Trendline fit; see period/order for the moving-average and polynomial degrees.",
+      "enum": ["exponential", "linear", "logarithmic", "movingAverage", "polynomial", "power"],
       "type": "string"
     },
     "UnderlineStyle": {
-      "description": "Underline (ST_TextUnderlineType, simplified set).",
+      "description": "Underline.",
       "enum": ["single", "double", "none"],
       "type": "string"
     },
@@ -15421,8 +15315,8 @@
       "type": "object"
     },
     "VerticalAnchor": {
-      "description": "Text anchoring type (ST_TextAnchoringType).",
-      "enum": ["t", "ctr", "b", "just", "dist"],
+      "description": "Text anchoring type.",
+      "enum": ["top", "center", "bottom", "justify", "distribute"],
       "type": "string"
     },
     "View3DOptions": {
@@ -15605,7 +15499,6 @@
       "description": "Web publish item (CT_WebPublishItem)",
       "properties": {
         "autoRepublish": {
-          "description": "Auto republish",
           "type": "boolean"
         },
         "destinationFile": {
@@ -15629,7 +15522,6 @@
           "type": "string"
         },
         "sourceType": {
-          "description": "Source type",
           "enum": [
             "sheet",
             "printArea",
@@ -15643,7 +15535,6 @@
           "type": "string"
         },
         "title": {
-          "description": "Title",
           "type": "string"
         }
       },
@@ -15687,11 +15578,9 @@
           "type": "boolean"
         },
         "characterSet": {
-          "description": "Character set",
           "type": "string"
         },
         "codePage": {
-          "description": "Code page",
           "type": "number"
         },
         "css": {
@@ -15851,7 +15740,6 @@
           "type": "array"
         },
         "customWorkbookViews": {
-          "description": "Custom workbook views",
           "items": {
             "$ref": "#/definitions/CustomWorkbookViewOptions"
           },
@@ -16150,7 +16038,6 @@
           "type": "boolean"
         },
         "codeName": {
-          "description": "Code name",
           "type": "string"
         },
         "date1904": {
@@ -16158,7 +16045,6 @@
           "type": "boolean"
         },
         "defaultThemeVersion": {
-          "description": "Default theme version",
           "type": "number"
         },
         "filterPrivacy": {
@@ -17466,7 +17352,7 @@
           "type": "number"
         },
         "xmlDataType": {
-          "description": "XML schema data type (required, ST_XmlDataType)",
+          "description": "XML schema data type (required,)",
           "type": "string"
         },
         "xpath": {

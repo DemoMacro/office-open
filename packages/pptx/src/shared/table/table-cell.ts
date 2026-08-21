@@ -7,8 +7,13 @@ import type { CellBorderOptions } from "./table-cell-properties";
 /** Vertical alignment of cell content (ST_TextAnchorType); "distribute" spreads lines evenly across the cell height. */
 export type VerticalAlignment = "top" | "center" | "bottom" | "justify" | "distribute";
 
-/** ST_TextVerticalType — text direction within a cell (a:tcPr `@vert`). */
-export type TextVerticalType = "horz" | "vert" | "vert270" | "wordArt" | "wordArtV";
+/** Text direction within a cell (ST_TextVerticalType, a:tcPr `@vert`). */
+export type TextVerticalType =
+  | "horizontal"
+  | "vertical"
+  | "vertical270"
+  | "wordArtVertical"
+  | "wordArtVerticalRightToLeft";
 
 /** pptx cell extends the base cell contract (span from base); verticalAlign
  *  widens to the DrawingML anchor set (justify/distribute) and fill/borders/

@@ -86,7 +86,7 @@ const options: PresentationOptions = {
           },
         },
       ],
-      transition: { type: "split", orient: "horz", direction: "out" },
+      transition: { type: "split", orient: "horizontal", direction: "out" },
     },
     {
       children: [

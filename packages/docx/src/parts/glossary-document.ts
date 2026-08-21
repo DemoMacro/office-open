@@ -103,7 +103,6 @@ export interface DocPartOptions {
   allTypes?: boolean;
   /** Insertion behaviors */
   behaviors?: DocPartBehavior[];
-  /** Description */
   description?: string;
   /** GUID for this building block */
   guid?: string;

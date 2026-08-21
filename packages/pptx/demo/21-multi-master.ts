@@ -120,7 +120,7 @@ const options: PresentationOptions = {
     },
     {
       master: "dark",
-      layout: "obj",
+      layout: "object",
       children: [
         {
           shape: {

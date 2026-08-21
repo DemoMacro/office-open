@@ -1,3 +1,5 @@
+import { xsdOrient } from "@office-open/core";
+
 type SplitterBarState = "restored" | "maximized" | "minimized";
 
 /**
@@ -67,7 +69,7 @@ export interface ViewPropertiesOptions {
   slideView?: SlideViewOptions;
   /** Slide-view guides (`p:guideLst`); each guide is a vertical or horizontal line at `pos` (EMU). */
   guides?: {
-    orient?: "vert" | "horz";
+    orient?: "vertical" | "horizontal";
     pos?: number;
   }[];
   /** Outline view (`p:outlineViewPr`) — view is its required `p:cViewPr`. */
@@ -97,7 +99,7 @@ export interface NotesViewOptions {
   view?: CommonViewPropertiesOptions;
   /** Notes-view guides (`p:guideLst`); each guide is a vertical or horizontal line at `pos` (EMU). */
   guides?: {
-    orient?: "vert" | "horz";
+    orient?: "vertical" | "horizontal";
     pos?: number;
   }[];
 }
@@ -157,7 +159,7 @@ function buildCSldViewPrXml(
   if (guides && guides.length > 0) {
     const guideXmls = guides.map((g) => {
       const gAttrs: string[] = [];
-      if (g.orient) gAttrs.push(` orient="${g.orient}"`);
+      if (g.orient) gAttrs.push(` orient="${xsdOrient.to(g.orient)}"`);
       if (g.pos !== undefined) gAttrs.push(` pos="${g.pos}"`);
       return `<p:guide${gAttrs.join("")}/>`;
     });

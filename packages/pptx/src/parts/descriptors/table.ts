@@ -9,7 +9,9 @@ import {
   extUriMatches,
   parseOnOff,
   stripColorHashPrefix,
+  xsdDashStyle,
   xsdTextAnchor,
+  xsdTextVerticalType,
 } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
@@ -218,7 +220,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
           const prstDash = findChild(borderEl, "a:prstDash");
           if (prstDash) {
             const val = attr(prstDash, "val");
-            if (val) borderOpts.dashStyle = val as CellBorderOptions["dashStyle"];
+            if (val)
+              borderOpts.dashStyle = xsdDashStyle.from(val) as CellBorderOptions["dashStyle"];
           }
           borderOpts.outline = parse(outlineDesc, borderEl, ctx);
           borders[key] = borderOpts as CellBorderOptions;
@@ -345,7 +348,7 @@ function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
   const children: string[] = [];
 
   if (cell.verticalAlign) attrs.push(`anchor="${xsdTextAnchor.to(cell.verticalAlign)}"`);
-  if (cell.vertical) attrs.push(`vert="${cell.vertical}"`);
+  if (cell.vertical) attrs.push(`vert="${xsdTextVerticalType.to(cell.vertical)}"`);
   if (cell.margins?.left !== undefined) attrs.push(`marL="${convertToEmu(cell.margins.left)}"`);
   if (cell.margins?.right !== undefined) attrs.push(`marR="${convertToEmu(cell.margins.right)}"`);
   if (cell.margins?.top !== undefined) attrs.push(`marT="${convertToEmu(cell.margins.top)}"`);
@@ -398,7 +401,7 @@ function buildBorderLine(name: string, options: CellBorderOptions, ctx: PptxWrit
     if (fillXml) children.push(fillXml);
   }
   if (options.dashStyle) {
-    children.push(`<a:prstDash val="${options.dashStyle}"/>`);
+    children.push(`<a:prstDash val="${xsdDashStyle.to(options.dashStyle)}"/>`);
   }
 
   const attrStr = attrs.length > 0 ? ` ${attrs.join(" ")}` : "";
@@ -494,7 +497,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
     const anchor = attr(tcPr, "anchor");
     if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as VerticalAlignment;
     const vert = attr(tcPr, "vert");
-    if (vert) result.vertical = vert as TextVerticalType;
+    if (vert) result.vertical = xsdTextVerticalType.from(vert) as TextVerticalType;
 
     // Margins from tcPr attributes
     const margins: CellMargins = {};
@@ -537,7 +540,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
         const prstDash = findChild(borderEl, "a:prstDash");
         if (prstDash) {
           const val = attr(prstDash, "val");
-          if (val) borderOpts.dashStyle = val as CellBorderOptions["dashStyle"];
+          if (val) borderOpts.dashStyle = xsdDashStyle.from(val) as CellBorderOptions["dashStyle"];
         }
         // Full line properties — keeps joins/line ends and bare <a:lnX><a:noFill/></a:lnX>.
         borderOpts.outline = parse(outlineDesc, borderEl, ctx);

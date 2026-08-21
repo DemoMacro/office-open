@@ -18,12 +18,12 @@ import type { Percentage, UniversalMeasure } from "@office-open/core";
  * but pct is supported for parity with the other CT_TblWidth fields.
  */
 export const CellSpacingType = {
-  /** Value is in twentieths of a point (dxa) */
-  DXA: "dxa",
+  /** Value is in twentieths of a point (twips) */
+  DXA: "twips",
   /** No (empty) value. */
   NIL: "nil",
   /** Value is a percentage of the table width (100 = 100%). */
-  PERCENTAGE: "pct",
+  PERCENTAGE: "percent",
 } as const;
 
 /**

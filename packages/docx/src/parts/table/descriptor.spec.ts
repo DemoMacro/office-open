@@ -76,7 +76,7 @@ describe("tableDesc round-trip", () => {
 
   it("round-trips table width", () => {
     const result = roundTrip({
-      width: { size: 5000, type: "dxa" },
+      width: { size: 5000, type: "twips" },
       rows: [{ cells: [{ children: [] }] }],
     });
     expect(result.width).toBeDefined();
@@ -156,11 +156,11 @@ describe("tableDesc round-trip", () => {
 
   it("normalizes table width UniversalMeasure (mm) to twips", () => {
     const result = roundTrip({
-      width: { size: "50mm", type: "dxa" },
+      width: { size: "50mm", type: "twips" },
       rows: [{ cells: [{ children: [] }] }],
     });
     expect(result.width?.size).toBe(2834);
-    expect(result.width?.type).toBe("dxa");
+    expect(result.width?.type).toBe("twips");
   });
 
   it("normalizes row height UniversalMeasure (cm) to twips", () => {
@@ -192,12 +192,12 @@ describe("tableDesc round-trip", () => {
     if (!el176) throw new Error("parsed document has no root element");
     const result = tableDesc.parse(el176, readCtx);
     expect(result.width?.size).toBe(100);
-    expect(result.width?.type).toBe("pct");
+    expect(result.width?.type).toBe("percent");
   });
 
   it('round-trips pct width (size:100 → w:w="5000" → size:100)', () => {
     const xml = tableDesc.stringify(
-      { width: { size: 100, type: "pct" }, rows: [{ cells: [{ children: [] }] }] },
+      { width: { size: 100, type: "percent" }, rows: [{ cells: [{ children: [] }] }] },
       writeCtx,
     )!;
     // Stringify emits the fiftieths integer (5000 = 100%), never "100%".
@@ -207,31 +207,31 @@ describe("tableDesc round-trip", () => {
     const parsedEl = parseXml(xml).elements?.[0];
     if (!parsedEl) throw new Error("parsed document has no root element");
     const result = tableDesc.parse(parsedEl, readCtx);
-    expect(result.width).toEqual({ size: 100, type: "pct" });
+    expect(result.width).toEqual({ size: 100, type: "percent" });
   });
 
   it('round-trips cellSpacing pct (size:100 → w:w="5000" → size:100)', () => {
     const xml = tableDesc.stringify(
-      { cellSpacing: { size: 100, type: "pct" }, rows: [{ cells: [{ children: [] }] }] },
+      { cellSpacing: { size: 100, type: "percent" }, rows: [{ cells: [{ children: [] }] }] },
       writeCtx,
     )!;
     expect(xml).toContain('w:tblCellSpacing w:w="5000" w:type="pct"');
     const parsedEl = parseXml(xml).elements?.[0];
     if (!parsedEl) throw new Error("parsed document has no root element");
     const result = tableDesc.parse(parsedEl, readCtx);
-    expect(result.cellSpacing).toEqual({ size: 100, type: "pct" });
+    expect(result.cellSpacing).toEqual({ size: 100, type: "percent" });
   });
 
   it('round-trips indent pct (size:50 → w:w="2500" → size:50)', () => {
     const xml = tableDesc.stringify(
-      { indent: { size: 50, type: "pct" }, rows: [{ cells: [{ children: [] }] }] },
+      { indent: { size: 50, type: "percent" }, rows: [{ cells: [{ children: [] }] }] },
       writeCtx,
     )!;
     expect(xml).toContain('w:tblInd w:w="2500" w:type="pct"');
     const parsedEl = parseXml(xml).elements?.[0];
     if (!parsedEl) throw new Error("parsed document has no root element");
     const result = tableDesc.parse(parsedEl, readCtx);
-    expect(result.indent).toEqual({ size: 50, type: "pct" });
+    expect(result.indent).toEqual({ size: 50, type: "percent" });
   });
 
   it("round-trips description", () => {
@@ -339,7 +339,7 @@ describe("tableDesc round-trip", () => {
 
   it("round-trips cellSpacing (tblCellSpacing)", () => {
     const result = roundTrip({
-      cellSpacing: { size: 108, type: "dxa" },
+      cellSpacing: { size: 108, type: "twips" },
       rows: [{ cells: [{ children: [] }] }],
     });
     expect(result.cellSpacing).toBeDefined();
@@ -383,8 +383,8 @@ describe("tableDesc round-trip", () => {
           divId: 5,
           gridBefore: 1,
           gridAfter: 2,
-          widthBefore: { size: 100, type: "dxa" },
-          widthAfter: { size: 200, type: "dxa" },
+          widthBefore: { size: 100, type: "twips" },
+          widthAfter: { size: 200, type: "twips" },
           rowAlignment: "center",
           hidden: true,
           cells: [{ children: [] }],
@@ -614,13 +614,13 @@ describe("tableDesc round-trip", () => {
   it("round-trips table cell margins (w:tblCellMar) as per-side TableWidthProperties", () => {
     const result = roundTrip({
       margins: {
-        top: { size: 100, type: "dxa" },
+        top: { size: 100, type: "twips" },
         left: { size: 50, type: "nil" },
       },
       rows: [{ cells: [{ children: [] }] }],
     });
     expect(result.margins).toBeDefined();
-    expect(result.margins!.top).toEqual({ size: 100, type: "dxa" });
+    expect(result.margins!.top).toEqual({ size: 100, type: "twips" });
     expect(result.margins!.left).toEqual({ size: 50, type: "nil" });
   });
 
@@ -632,7 +632,7 @@ describe("tableDesc round-trip", () => {
             {
               children: [],
               margins: {
-                top: { size: 80, type: "dxa" },
+                top: { size: 80, type: "twips" },
                 left: { size: 40 },
               },
             },
@@ -642,8 +642,8 @@ describe("tableDesc round-trip", () => {
     });
     const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
     expect(cell.margins).toBeDefined();
-    expect(cell.margins!.top).toEqual({ size: 80, type: "dxa" });
-    expect(cell.margins!.left).toEqual({ size: 40, type: "dxa" });
+    expect(cell.margins!.top).toEqual({ size: 80, type: "twips" });
+    expect(cell.margins!.left).toEqual({ size: 40, type: "twips" });
   });
 
   it("round-trips cell borders with full CT_Border attributes", () => {
@@ -789,14 +789,14 @@ describe("tableDesc round-trip", () => {
       rows: [
         {
           propertyExceptions: {
-            width: { size: 100, type: "dxa" },
+            width: { size: 100, type: "twips" },
             alignment: "center",
-            cellSpacing: { size: 20, type: "dxa" },
+            cellSpacing: { size: 20, type: "twips" },
             tblPrExChange: {
               id: 3,
               author: "E",
               date: "2024-05-05T00:00:00Z",
-              width: { size: 50, type: "dxa" },
+              width: { size: 50, type: "twips" },
             },
           },
           cells: [{ children: [] }],
@@ -805,12 +805,12 @@ describe("tableDesc round-trip", () => {
     });
     const row = result.rows[0] as TableRowOptions;
     expect(row.propertyExceptions).toBeDefined();
-    expect(row.propertyExceptions!.width).toEqual({ size: 100, type: "dxa" });
+    expect(row.propertyExceptions!.width).toEqual({ size: 100, type: "twips" });
     expect(row.propertyExceptions!.alignment).toBe("center");
     expect(row.propertyExceptions!.tblPrExChange).toBeDefined();
     expect(row.propertyExceptions!.tblPrExChange!.id).toBe(3);
     expect(row.propertyExceptions!.tblPrExChange!.author).toBe("E");
-    expect(row.propertyExceptions!.tblPrExChange!.width).toEqual({ size: 50, type: "dxa" });
+    expect(row.propertyExceptions!.tblPrExChange!.width).toEqual({ size: 50, type: "twips" });
   });
 
   it("round-trips tcPr with co-occurring hMerge/noWrap/fitText/verticalAlign (CT_TcPrBase order)", () => {
@@ -840,15 +840,15 @@ describe("tableDesc round-trip", () => {
 
   it("round-trips tblPr with cellSpacing between jc and tblInd (CT_TblPrBase order)", () => {
     const result = roundTrip({
-      width: { size: 5000, type: "dxa" },
+      width: { size: 5000, type: "twips" },
       alignment: "center",
-      cellSpacing: { size: 30, type: "dxa" },
-      indent: { size: 200, type: "dxa" },
+      cellSpacing: { size: 30, type: "twips" },
+      indent: { size: 200, type: "twips" },
       rows: [{ cells: [{ children: [] }] }],
     });
     expect(result.alignment).toBe("center");
-    expect(result.cellSpacing).toEqual({ size: 30, type: "dxa" });
-    expect(result.indent).toEqual({ size: 200, type: "dxa" });
+    expect(result.cellSpacing).toEqual({ size: 30, type: "twips" });
+    expect(result.indent).toEqual({ size: 200, type: "twips" });
   });
 
   it("round-trips cell insideH/insideV borders (CT_TcBorders)", () => {

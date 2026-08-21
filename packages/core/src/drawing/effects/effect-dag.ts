@@ -102,15 +102,11 @@ export interface BlendEffectOptions {
 
 /** Fill effect — applies a fill as an effect (CT_FillEffect). */
 export interface FillEffectOptions {
-  /** Solid fill */
   solidFill?: SolidFillOptions;
-  /** Gradient fill */
   gradientFill?: GradientFillOptions;
-  /** Pattern fill */
   patternFill?: PatternFillOptions;
   /** Group fill (inherit from parent) */
   groupFill?: boolean;
-  /** No fill */
   noFill?: boolean;
 }
 

@@ -1,3 +1,10 @@
+import {
+  xsdAnimCalcMode,
+  xsdAnimClass,
+  xsdAnimValueType,
+  xsdIterateType,
+  xsdTextBuild,
+} from "@office-open/core";
 import { element as buildXml } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
@@ -134,9 +141,9 @@ const PATH_STRINGS: Record<PathAnimationType, string> = {
 function resolvePresetId(options: AnimationOptions): number {
   if (options.mediaType) return 1;
   if (options.attributeName) return 0;
-  const cls: AnimationClass = options.class ?? "entr";
+  const cls: AnimationClass = options.class ?? "entrance";
 
-  if (cls === "emph" && options.emphasisType) {
+  if (cls === "emphasis" && options.emphasisType) {
     return EMPH_PRESET_IDS[options.emphasisType] ?? 0;
   }
 
@@ -150,10 +157,10 @@ function resolvePresetId(options: AnimationOptions): number {
 }
 
 function resolvePresetClass(options: AnimationOptions): AnimationClass {
-  if (options.mediaType) return "mediacall";
-  if (options.attributeName) return "entr";
-  if (options.pathType) return "emph";
-  return options.class ?? "entr";
+  if (options.mediaType) return "mediaCall";
+  if (options.attributeName) return "entrance";
+  if (options.pathType) return "emphasis";
+  return options.class ?? "entrance";
 }
 
 function resolvePresetSubtype(options: AnimationOptions): number {
@@ -226,7 +233,7 @@ function buildEntrOrExitEffects(
   const children: string[] = [];
 
   // p:set — make shape visible (entr) or hidden (exit)
-  const cls = options.class ?? "entr";
+  const cls = options.class ?? "entrance";
   const visibility = cls === "exit" ? "hidden" : "visible";
   children.push(
     buildXml("p:set", undefined, [
@@ -557,7 +564,7 @@ function buildSetBehavior(
  */
 function buildIterate(iterate: NonNullable<AnimationOptions["iterate"]>): string {
   const attrs: Record<string, string | number | undefined> = {};
-  if (iterate.type) attrs.type = iterate.type;
+  if (iterate.type) attrs.type = xsdIterateType.to(iterate.type);
   if (iterate.backwards) attrs.backwards = 1;
 
   const iterChildren: string[] = [];
@@ -666,8 +673,8 @@ function buildPropertyAnimation(
   ids: { cBhvr: number },
 ): string {
   const attrs: Record<string, string | undefined> = {};
-  if (options.calcMode) attrs.calcmode = options.calcMode;
-  if (options.valueType) attrs.valueType = options.valueType;
+  if (options.calcMode) attrs.calcmode = xsdAnimCalcMode.to(options.calcMode);
+  if (options.valueType) attrs.valueType = xsdAnimValueType.to(options.valueType);
   if (options.from !== undefined) attrs.from = options.from;
   if (options.to !== undefined) attrs.to = options.to;
   if (options.animBy !== undefined) attrs.by = options.animBy;
@@ -778,7 +785,7 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
     switch (bld.type) {
       case "paragraph": {
         elementName = "p:bldP";
-        if (bld.build) bldAttrs.build = bld.build;
+        if (bld.build) bldAttrs.build = xsdTextBuild.to(bld.build);
         if (bld.buildLevel !== undefined) bldAttrs.bldLvl = bld.buildLevel;
         if (bld.animateBackground !== undefined) bldAttrs.animBg = bld.animateBackground ? 1 : 0;
         if (bld.autoUpdateAnimateBackground !== undefined)
@@ -931,7 +938,7 @@ export class SlideTiming {
           set: setCtnId,
           effect: effectCtnId2,
         });
-      } else if (presetClass === "emph") {
+      } else if (presetClass === "emphasis") {
         effectChildren = buildEmphasisEffects(options, spid, {
           set: setCtnId,
           effect: effectCtnId2,
@@ -960,12 +967,12 @@ export class SlideTiming {
       };
       if (!options.mediaType && !options.attributeName) {
         cTnAttrs.presetID = presetId;
-        cTnAttrs.presetClass = presetClass;
+        cTnAttrs.presetClass = xsdAnimClass.to(presetClass);
         cTnAttrs.presetSubtype = presetSubtype;
       }
       if (options.mediaType) {
         cTnAttrs.presetID = presetId;
-        cTnAttrs.presetClass = presetClass;
+        cTnAttrs.presetClass = xsdAnimClass.to(presetClass);
         cTnAttrs.presetSubtype = presetSubtype;
       }
       if (options.speed !== undefined) cTnAttrs.spd = String(options.speed * 1000);

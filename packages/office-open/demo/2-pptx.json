@@ -361,7 +361,7 @@
             "width": 550,
             "height": 200,
             "textBody": {
-              "bodyProperties": { "anchor": "ctr" },
+              "bodyProperties": { "anchor": "center" },
               "paragraphs": [
                 {
                   "properties": { "alignment": "center" },

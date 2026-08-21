@@ -79,7 +79,7 @@ const DEFAULT_LAYOUT: LayoutDefinitionOptions = {
     name: "diagram",
     childOrder: "b",
     children: [
-      { variables: { direction: "norm", resizeHandles: "exact" } },
+      { variables: { direction: "normal", resizeHandles: "exact" } },
       {
         choose: {
           name: "Name0",

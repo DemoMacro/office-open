@@ -17,6 +17,8 @@ import {
   hpsMeasureValue,
   pointMeasureValue,
   uCharHexNumber,
+  xsdJcAlignment,
+  xsdShadingPattern,
 } from "@office-open/core";
 import { attrsRaw, escapeXml } from "@office-open/xml";
 import type { CnfConditionalOptions } from "@parts/paragraph/formatting/cnf-style";
@@ -69,7 +71,7 @@ export function borderStr(name: string, opts: BorderOptions): string {
 
 export function shadingStr(opts: ShadingProperties): string {
   const a = attrsRaw({
-    "w:val": opts.type ?? "clear",
+    "w:val": opts.type !== undefined ? xsdShadingPattern.to(opts.type) : "clear",
     "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
     "w:fill": opts.fill !== undefined ? hexColorValue(opts.fill) : undefined,
     "w:themeColor": opts.themeColor,
@@ -462,7 +464,7 @@ export function stringifyParagraphProperties(
     s += onOff("w:suppressOverlap", options.suppressOverlap);
 
   // 27: jc
-  if (options.alignment) s += `<w:jc w:val="${options.alignment}"/>`;
+  if (options.alignment) s += `<w:jc w:val="${xsdJcAlignment.to(options.alignment)}"/>`;
 
   // 28-30: textDirection, textAlignment, textboxTightWrap
   if (options.textDirection !== undefined)

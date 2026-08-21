@@ -27,6 +27,7 @@
  * @module
  */
 import { ThemeColor } from "@office-open/core";
+import { xsdShadingPattern } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -90,29 +91,29 @@ export const ShadingType = {
   HORIZONTAL_CROSS: "horzCross",
   HORIZONTAL_STRIPE: "horzStripe",
   NIL: "nil",
-  PERCENT_10: "pct10",
-  PERCENT_12: "pct12",
-  PERCENT_15: "pct15",
-  PERCENT_20: "pct20",
-  PERCENT_25: "pct25",
-  PERCENT_30: "pct30",
-  PERCENT_35: "pct35",
-  PERCENT_37: "pct37",
-  PERCENT_40: "pct40",
-  PERCENT_45: "pct45",
-  PERCENT_5: "pct5",
-  PERCENT_50: "pct50",
-  PERCENT_55: "pct55",
-  PERCENT_60: "pct60",
-  PERCENT_62: "pct62",
-  PERCENT_65: "pct65",
-  PERCENT_70: "pct70",
-  PERCENT_75: "pct75",
-  PERCENT_80: "pct80",
-  PERCENT_85: "pct85",
-  PERCENT_87: "pct87",
-  PERCENT_90: "pct90",
-  PERCENT_95: "pct95",
+  PERCENT_10: "percent10",
+  PERCENT_12: "percent12",
+  PERCENT_15: "percent15",
+  PERCENT_20: "percent20",
+  PERCENT_25: "percent25",
+  PERCENT_30: "percent30",
+  PERCENT_35: "percent35",
+  PERCENT_37: "percent37",
+  PERCENT_40: "percent40",
+  PERCENT_45: "percent45",
+  PERCENT_5: "percent5",
+  PERCENT_50: "percent50",
+  PERCENT_55: "percent55",
+  PERCENT_60: "percent60",
+  PERCENT_62: "percent62",
+  PERCENT_65: "percent65",
+  PERCENT_70: "percent70",
+  PERCENT_75: "percent75",
+  PERCENT_80: "percent80",
+  PERCENT_85: "percent85",
+  PERCENT_87: "percent87",
+  PERCENT_90: "percent90",
+  PERCENT_95: "percent95",
   REVERSE_DIAGONAL_STRIPE: "reverseDiagStripe",
   SOLID: "solid",
   THIN_DIAGONAL_CROSS: "thinDiagCross",
@@ -139,7 +140,7 @@ export function parseShading(shd: Element): ShadingProperties | undefined {
   const color = attr(shd, "w:color");
   if (color) shading.color = color;
   const val = attr(shd, "w:val");
-  if (val) shading.type = val as ShadingProperties["type"];
+  if (val) shading.type = xsdShadingPattern.from(val) as ShadingProperties["type"];
   const themeColor = attr(shd, "w:themeColor");
   if (themeColor && THEME_COLORS.includes(themeColor)) {
     shading.themeColor = themeColor as ShadingProperties["themeColor"];

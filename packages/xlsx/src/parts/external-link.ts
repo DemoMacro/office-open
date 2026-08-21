@@ -107,9 +107,7 @@ export interface DdeItemOptions {
 export interface DdeLinkOptions {
   /** DDE service name */
   ddeService: string;
-  /** DDE topic */
   ddeTopic: string;
-  /** DDE items */
   ddeItems?: DdeItemOptions[];
 }
 
@@ -127,7 +125,6 @@ export interface OleItemOptions {
 export interface OleLinkOptions {
   /** OLE program identifier (CT_OleLink `@progId`) */
   progId?: string;
-  /** OLE items */
   oleItems?: OleItemOptions[];
 }
 

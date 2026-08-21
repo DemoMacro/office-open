@@ -50,7 +50,7 @@ describe("layoutDefDesc", () => {
           {
             variables: {
               organizationChart: true,
-              direction: "rev",
+              direction: "reversed",
               animateOne: "branch",
             },
           },
@@ -170,7 +170,7 @@ describe("colorsDefDesc", () => {
           name: "node0",
           fillColorList: {
             meth: "cycle",
-            hueDir: "ccw",
+            hueDir: "counterClockwise",
             colors: [{ value: "accent1" }, { value: "#FF0000" }],
           },
           lineColorList: { colors: [{ value: "lt1" }] },

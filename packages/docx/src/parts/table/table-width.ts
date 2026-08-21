@@ -29,12 +29,12 @@ import type { Percentage, UniversalMeasure } from "@office-open/core";
 export const WidthType = {
   /** Auto. */
   AUTO: "auto",
-  /** Value is in twentieths of a point */
-  DXA: "dxa",
+  /** Value is in twentieths of a point (twips). */
+  DXA: "twips",
   /** No (empty) value. */
   NIL: "nil",
   /** Value is in percentage. */
-  PERCENTAGE: "pct",
+  PERCENTAGE: "percent",
 } as const;
 
 /**
@@ -50,7 +50,7 @@ export const WidthType = {
  */
 export interface TableWidthProperties {
   size: number | Percentage | UniversalMeasure;
-  /** How `size` is read (ST_TblWidth): "auto" from content, "dxa" twips, "pct" percent, "nil" no width. */
+  /** How `size` is read (ST_TblWidth): "auto" from content, "twips", "percent", or "nil" no width. */
   type?: (typeof WidthType)[keyof typeof WidthType];
 }
 
@@ -72,8 +72,9 @@ export const widthPctToFiftieths = (
   return size;
 };
 
-/** Parse: OOXML fiftieths (`5000`) → percentage (`100`) when `type` is `"pct"`. */
+/** Parse: OOXML fiftieths (`5000`) → percentage (`100`) when `type` is percent. */
 export const widthFiftiethsToPct = (
   size: number | string | undefined,
   type: string | undefined,
-): number | string | undefined => (type === "pct" && typeof size === "number" ? size / 50 : size);
+): number | string | undefined =>
+  type === "percent" && typeof size === "number" ? size / 50 : size;

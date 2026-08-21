@@ -5,6 +5,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
+import { xsdOrient } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -63,13 +64,15 @@ function parseNormalViewPortion(el: XmlElement): NormalViewPortionOptions {
 }
 
 /** Read a p:guideLst's entries (shared by slide-view and notes-view guides). */
-function parseGuideLst(guideLst: XmlElement): { orient?: "vert" | "horz"; pos?: number }[] {
-  const guides: { orient?: "vert" | "horz"; pos?: number }[] = [];
+function parseGuideLst(
+  guideLst: XmlElement,
+): { orient?: "vertical" | "horizontal"; pos?: number }[] {
+  const guides: { orient?: "vertical" | "horizontal"; pos?: number }[] = [];
   for (const guide of guideLst.elements ?? []) {
     if (guide.name !== "p:guide") continue;
-    const entry: { orient?: "vert" | "horz"; pos?: number } = {};
+    const entry: { orient?: "vertical" | "horizontal"; pos?: number } = {};
     const orient = attr(guide, "orient");
-    if (orient) entry.orient = orient as "vert" | "horz";
+    if (orient) entry.orient = xsdOrient.from(orient) as "vertical" | "horizontal";
     const pos = attrNum(guide, "pos");
     if (pos !== undefined) entry.pos = pos;
     guides.push(entry);

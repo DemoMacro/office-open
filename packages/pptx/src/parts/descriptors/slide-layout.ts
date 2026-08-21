@@ -10,6 +10,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
+import { xsdSlideLayoutType } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { attr, findChild, parse as parseXml, stringify as stringifyXml } from "@office-open/xml";
 import { NS } from "@parts/slide-layout";
@@ -37,17 +38,17 @@ import { readTransition, stringifyTransition } from "./slide";
 
 const NAME_TO_TYPE: Record<string, string> = {
   "Title Slide": "title",
-  "Title and Content": "obj",
-  "Section Header": "secHead",
-  "Two Content": "twoObj",
-  Comparison: "twoTxTwoObj",
+  "Title and Content": "object",
+  "Section Header": "sectionHeader",
+  "Two Content": "twoObjects",
+  Comparison: "twoTextAndTwoObjects",
   "Title Only": "titleOnly",
   Blank: "blank",
-  "Content with Caption": "objTx",
-  "Picture with Caption": "picTx",
-  "Vertical Text": "vertTx",
-  "Vertical Title and Text": "vertTitleAndTx",
-  "Title and Text": "tx",
+  "Content with Caption": "objectAndText",
+  "Picture with Caption": "pictureText",
+  "Vertical Text": "verticalText",
+  "Vertical Title and Text": "verticalTitleAndText",
+  "Title and Text": "text",
 };
 
 /** Placeholder `@type` → LayoutPlaceholderOptions key. */
@@ -70,7 +71,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     const parts: string[] = [];
 
     // Root attributes (CT_SlideLayout: type/matchingName/preserve/userDrawn + AG_ChildSlide).
-    const attrs: string[] = [`type="${opts.type ?? "cust"}"`];
+    const attrs: string[] = [`type="${xsdSlideLayoutType.to(opts.type ?? "custom")}"`];
     if (opts.matchingName !== undefined) attrs.push(`matchingName="${opts.matchingName}"`);
     attrs.push(`preserve="${opts.preserve ? 1 : 0}"`);
     if (opts.userDrawn) attrs.push('userDrawn="1"');
@@ -136,7 +137,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // Root attributes (CT_SlideLayout).
     const typeAttr = attr(el, "type");
-    if (typeAttr) result.type = typeAttr;
+    if (typeAttr) result.type = xsdSlideLayoutType.from(typeAttr);
     const matchingName = attr(el, "matchingName");
     if (matchingName !== undefined) result.matchingName = matchingName;
     const preserveAttr = attr(el, "preserve");

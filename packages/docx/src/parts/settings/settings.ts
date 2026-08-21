@@ -182,11 +182,8 @@ export interface SettingsOptions {
   doNotDemarcateInvalidXml?: boolean;
   /** Save only XML data (no formatting) */
   saveXmlDataOnly?: boolean;
-  /** Use XSLT when saving */
   useXSLTWhenSaving?: boolean;
-  /** Do not embed smart tags */
   doNotEmbedSmartTags?: boolean;
-  /** Do not auto-compress pictures */
   doNotAutoCompressPictures?: boolean;
   /** Do not include subdocuments in word count */
   doNotIncludeSubdocsInStats?: boolean;
@@ -294,7 +291,6 @@ export interface SettingsOptions {
     | "0005";
   /** Document type classification */
   documentType?: "letter" | "eMail" | "notSpecified";
-  /** Do not use margins for drawing grid origin */
   doNotUseMarginsForDrawingGridOrigin?: boolean;
   /** Do not shade form data fields */
   doNotShadeFormData?: boolean;
@@ -310,7 +306,6 @@ export interface SettingsOptions {
   };
   /** Show XML tags in document */
   showXMLTags?: boolean;
-  /** Always merge empty namespace */
   alwaysMergeEmptyNamespace?: boolean;
   /** Header shape defaults (w:hdrShapeDefaults) */
   hdrShapeDefaults?: ShapeDefaultsOptions;
@@ -383,9 +378,7 @@ export interface DocumentProtectionOptions {
   cryptoProviderTypeExtension?: number;
   /** Cryptographic provider type extension source */
   cryptoProviderTypeExtensionSource?: string;
-  /** Algorithm extension ID */
   algorithmExtensionId?: number;
-  /** Algorithm extension source */
   algorithmExtensionSource?: string;
   /** Legacy cryptographic spin count (AG_TransitionalPassword) */
   cryptoSpinCount?: number;
@@ -427,9 +420,7 @@ export interface WriteProtectionOptions {
   cryptoProviderTypeExtension?: number;
   /** Cryptographic provider type extension source */
   cryptoProviderTypeExtensionSource?: string;
-  /** Algorithm extension ID */
   algorithmExtensionId?: number;
-  /** Algorithm extension source */
   algorithmExtensionSource?: string;
   /** Legacy cryptographic spin count (AG_TransitionalPassword) */
   cryptoSpinCount?: number;
@@ -516,7 +507,6 @@ export interface MailMergeOptions {
   dataSource?: string;
   /** Path to header source (relationship ID) */
   headerSource?: string;
-  /** Do not suppress blank lines */
   doNotSuppressBlankLines?: boolean;
   /** Address field name for email merge */
   addressFieldName?: string;

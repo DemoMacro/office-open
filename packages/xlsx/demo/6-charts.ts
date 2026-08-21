@@ -153,17 +153,17 @@ const buffer = await generateWorkbook({
               errorBars: {
                 direction: "y",
                 barType: "both",
-                valueType: "stdErr",
+                valueType: "standardError",
               },
               dataLabels: {
                 showVal: true,
-                position: "t",
+                position: "top",
               },
             },
             {
               name: "Target",
               values: [100, 110, 120, 130, 140, 150],
-              trendlines: [{ type: "poly", order: 2 }],
+              trendlines: [{ type: "polynomial", order: 2 }],
             },
           ],
           col: 5,
@@ -180,13 +180,13 @@ const buffer = await generateWorkbook({
               values: [120, 145, 160, 135, 180, 210],
               dataLabels: {
                 showVal: true,
-                position: "outEnd",
+                position: "outsideEnd",
               },
             },
             {
               name: "Target",
               values: [100, 110, 120, 130, 140, 150],
-              trendlines: [{ type: "movingAvg", period: 2 }],
+              trendlines: [{ type: "movingAverage", period: 2 }],
             },
           ],
           col: 5,
@@ -205,7 +205,7 @@ const buffer = await generateWorkbook({
               errorBars: {
                 direction: "y",
                 barType: "both",
-                valueType: "fixedVal",
+                valueType: "fixedValue",
                 value: 10,
               },
             },

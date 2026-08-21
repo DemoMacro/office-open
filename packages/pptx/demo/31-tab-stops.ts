@@ -32,15 +32,15 @@ const options: PresentationOptions = {
                 {
                   properties: {
                     tabStops: [
-                      { position: 4572000, alignment: "l" },
-                      { position: 9144000, alignment: "dec" },
+                      { position: 4572000, alignment: "left" },
+                      { position: 9144000, alignment: "decimal" },
                     ],
                   },
                   children: [{ text: "Left tab then decimal tab", size: 18 }],
                 },
                 {
                   properties: {
-                    tabStops: [{ position: 6858000, alignment: "r" }],
+                    tabStops: [{ position: 6858000, alignment: "right" }],
                   },
                   children: [{ text: "Right-aligned tab stop", size: 18 }],
                 },

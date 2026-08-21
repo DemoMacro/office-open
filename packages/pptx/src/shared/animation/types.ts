@@ -21,8 +21,8 @@ export type AnimationTrigger = "onClick" | "withPrevious" | "afterPrevious";
 /** Effect direction; "horizontal"/"vertical" cover both screen axes at once (split/zoom effects). */
 export type AnimationDirection = "left" | "right" | "up" | "down" | "horizontal" | "vertical";
 
-/** Effect category: "entr" entrance, "exit", "emph" emphasis, "mediacall" media playback. */
-export type AnimationClass = "entr" | "exit" | "emph" | "mediacall";
+/** Effect category (cTn @presetClass). */
+export type AnimationClass = "entrance" | "exit" | "emphasis" | "mediaCall";
 
 /** Emphasis effect (applies to class "emph"): "growWithTurn" grow while turning, "boldFlash" flash bold; the rest are self-evident. */
 export type EmphasisType =
@@ -49,11 +49,11 @@ export type PathAnimationType =
 /** Media playback action: playAudio, playVideo, or "play" (media-type-agnostic). */
 export type MediaAnimationType = "playAudio" | "playVideo" | "play";
 
-/** Interpolation for property animations (p:anim `@calcmode`): "lin" linear, "fmla" by formula, "discrete" stepwise. */
-export type AnimationCalcMode = "discrete" | "lin" | "fmla";
+/** Interpolation for property animations (p:anim @calcmode). */
+export type AnimationCalcMode = "discrete" | "linear" | "formula";
 
-/** Value type of animation endpoints (p:anim `@valType`): "str" string, "num" number, "clr" color. */
-export type AnimationValueType = "str" | "num" | "clr";
+/** Value type of animation endpoints (p:anim @valType). */
+export type AnimationValueType = "string" | "number" | "color";
 
 export interface AnimationVariantOptions {
   bool?: boolean;
@@ -78,8 +78,8 @@ export interface AnimationBuildOptions {
   groupId: number;
   uiExpand?: boolean;
   // paragraph-specific
-  /** Text build granularity (paragraph builds): "allAtOnce" whole shape, "p" paragraph by paragraph, "cust" by buildLevel, "whole" as one word. */
-  build?: "allAtOnce" | "p" | "cust" | "whole";
+  /** Text build granularity (paragraph builds, p:bldP @build). */
+  build?: "allAtOnce" | "paragraph" | "custom" | "whole";
   buildLevel?: number;
   animateBackground?: boolean;
   autoUpdateAnimateBackground?: boolean;
@@ -171,7 +171,7 @@ export interface AnimationOptions {
 
   // Iterate container (p:iterate) — text-level iteration
   iterate?: {
-    type?: "el" | "wd" | "lt";
+    type?: "element" | "word" | "letter";
     interval?: number;
     backwards?: boolean;
     /** Iterate step as integer percent (0–100). */
@@ -199,17 +199,13 @@ export interface AnimationOptions {
   masterRelation?: "clearConn" | "keepConn" | "resume";
   /** Build level for animation. */
   buildLevel?: number;
-  /** Group ID. */
   groupId?: number;
   /** Whether this is an after-effect node. */
   afterEffect?: boolean;
-  /** Node placeholder. */
   nodePlaceholder?: boolean;
   /** Automatically advance time. */
   advanceAfterTime?: string;
-  /** Animate background. */
   animateBackground?: boolean;
-  /** Auto-update animation background. */
   autoUpdateAnimationBackground?: boolean;
 
   // cBhvr behavior attributes
@@ -229,21 +225,15 @@ export interface AnimationOptions {
   formula?: string;
   /** Color space for color animation. */
   colorSpace?: "rgb" | "hsl";
-  /** Path edit mode. */
   pathEditMode?: "relative" | "fixed" | "none";
-  /** Previous action. */
   previousAction?: "none" | "skipTimed";
-  /** Points types. */
   pointsTypes?: string;
   /** Rotation angle in degrees (p:animMotion `@rAng`, ST_Angle in the XML). */
   rotationAngle?: number;
-  /** Zoom contents. */
   zoomContents?: boolean;
   /** Show when stopped (for media). */
   showWhenStopped?: boolean;
-  /** Number of slides. */
   numberOfSlides?: number;
-  /** Property list. */
   propertyList?: string;
 
   // cTn time node extensions (A2)

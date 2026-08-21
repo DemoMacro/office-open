@@ -736,7 +736,7 @@ async function main() {
                 ],
               },
             ],
-            width: { size: 100, type: "pct" },
+            width: { size: 100, type: "percent" },
           },
         },
       ],

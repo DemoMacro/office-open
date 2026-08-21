@@ -1,4 +1,5 @@
 import { uniqueNumericIdCreator, convertInchesToTwip } from "@office-open/core";
+import { xsdJcAlignment } from "@office-open/core";
 import { decimalNumber } from "@office-open/core";
 /**
  * Numbering module for WordprocessingML documents.
@@ -484,7 +485,7 @@ function stringifyLevel(opts: LevelsOptions): string {
       legacyAttrs.push(`w:legacyIndent="${opts.legacy.indent}"`);
     children.push(`<w:legacy ${legacyAttrs.join(" ")}/>`);
   }
-  children.push(`<w:lvlJc w:val="${opts.alignment ?? AlignmentType.START}"/>`);
+  children.push(`<w:lvlJc w:val="${xsdJcAlignment.to(opts.alignment ?? AlignmentType.START)}"/>`);
 
   // Paragraph/run properties — use compile-path pure string builders
   const pPrXml = stringifyParagraphProperties(opts.paragraph).xml;
@@ -773,7 +774,7 @@ function parseLevelEl(
   const lvlJc = findChild(el, "w:lvlJc");
   if (lvlJc) {
     const val = attr(lvlJc, "w:val");
-    if (val) opts.alignment = val as LevelsOptions["alignment"];
+    if (val) opts.alignment = xsdJcAlignment.from(val) as LevelsOptions["alignment"];
   }
 
   // Level attributes (w:tplc templateCode; w:tentative; w15:tentative)

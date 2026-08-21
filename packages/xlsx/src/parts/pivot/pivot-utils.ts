@@ -16,11 +16,11 @@ export const ConsolidateFunction = {
   MAX: "max",
   MIN: "min",
   PRODUCT: "product",
-  COUNT_NUMS: "countNums",
-  STD_DEV: "stdDev",
-  STD_DEV_P: "stdDevp",
-  VAR: "var",
-  VAR_P: "varp",
+  COUNT_NUMS: "countNumbers",
+  STD_DEV: "standardDeviation",
+  STD_DEV_P: "standardDeviationPopulation",
+  VAR: "variance",
+  VAR_P: "variancePopulation",
 } as const;
 
 export type ConsolidateFunction = (typeof ConsolidateFunction)[keyof typeof ConsolidateFunction];
@@ -265,55 +265,41 @@ export interface PivotTableOptions {
   showItems?: boolean;
   /** Edit data in-place */
   editData?: boolean;
-  /** Disable field list */
   disableFieldList?: boolean;
   /** Show calculated members */
   showCalcMbrs?: boolean;
-  /** Visual totals */
   visualTotals?: boolean;
   /** Show multiple labels */
   showMultipleLabel?: boolean;
-  /** Show data drop-down */
   showDataDropDown?: boolean;
   /** Show drill indicators */
   showDrill?: boolean;
   /** Print drill indicators */
   printDrill?: boolean;
-  /** Show member property tips */
   showMemberPropertyTips?: boolean;
-  /** Show data tips */
   showDataTips?: boolean;
   /** Enable layout wizard */
   enableWizard?: boolean;
   /** Enable drill-down */
   enableDrill?: boolean;
-  /** Enable field properties */
   enableFieldProperties?: boolean;
   /** Number of page fields per row/column */
   pageWrap?: number;
   /** Page layout over then down */
   pageOverThenDown?: boolean;
-  /** Subtotal hidden items */
   subtotalHiddenItems?: boolean;
-  /** Field print titles */
   fieldPrintTitles?: boolean;
   /** Merge item labels */
   mergeItem?: boolean;
-  /** Show drop zones */
   showDropZones?: boolean;
-  /** Show empty row */
   showEmptyRow?: boolean;
   /** Show empty column */
   showEmptyCol?: boolean;
-  /** Show headers */
   showHeaders?: boolean;
   /** Published to server */
   published?: boolean;
-  /** Grid drop zones */
   gridDropZones?: boolean;
-  /** Multiple field filters */
   multipleFieldFilters?: boolean;
-  /** Row header caption */
   rowHeaderCaption?: string;
   /** Column header caption */
   colHeaderCaption?: string;
@@ -321,7 +307,6 @@ export interface PivotTableOptions {
   fieldListSortAscending?: boolean;
   /** MDX subqueries enabled */
   mdxSubqueries?: boolean;
-  /** Custom list sort */
   customListSort?: boolean;
   /** Asterisk totals (CT_PivotTableDefinition `@asteriskTotals`) */
   asteriskTotals?: boolean;
@@ -369,7 +354,6 @@ export interface PivotFormatOptions {
   action?: "formatting" | "drill" | "formula" | "blank" | "subtotal" | "report";
   /** Differential format index */
   dxfId?: number;
-  /** Pivot area */
   pivotArea: PivotAreaOptions;
 }
 
@@ -377,7 +361,6 @@ export interface PivotFormatOptions {
 export interface CalculatedItemOptions {
   /** Field index */
   field?: number;
-  /** Formula */
   formula?: string;
   /** Pivot area reference */
   pivotArea?: PivotAreaOptions;
@@ -389,9 +372,7 @@ export interface CalculatedMemberOptions {
   name: string;
   /** MDX expression (required) */
   mdx: string;
-  /** Member name */
   memberName?: string;
-  /** Hierarchy */
   hierarchy?: string;
   /** Parent member */
   parent?: string;
@@ -423,9 +404,7 @@ export interface PivotHierarchyOptions {
   dragOff?: boolean;
   /** Include new items in filter (default: false) */
   includeNewItemsInFilter?: boolean;
-  /** Caption */
   caption?: string;
-  /** Members */
   members?: MemberOptions[];
   /** Member properties (CT_MemberProperties → mps/mp) */
   memberProperties?: MemberPropertyOptions[];
@@ -445,9 +424,7 @@ export interface MemberPropertyOptions {
   field: number;
   /** Property name */
   name?: string;
-  /** Show cell? */
   showCell?: boolean;
-  /** Show tip? */
   showTip?: boolean;
   /** Show as caption (CT_MemberProperty `@showAsCaption`) */
   showAsCaption?: boolean;
@@ -481,11 +458,8 @@ export interface PivotAreaOptions {
   offset?: string;
   /** Collapsed levels are subtotals (default: false) */
   collapsedLevelsAreSubtotals?: boolean;
-  /** Axis */
   axis?: "axisRow" | "axisCol" | "axisPage" | "axisValues";
-  /** Field position */
   fieldPosition?: number;
-  /** References */
   references?: PivotAreaReferenceOptions[];
 }
 
@@ -493,7 +467,6 @@ export interface PivotAreaOptions {
 export interface PivotAreaReferenceOptions {
   /** Field index */
   field?: number;
-  /** Count */
   count?: number;
   /** Selected (default: true) */
   selected?: boolean;
@@ -501,17 +474,12 @@ export interface PivotAreaReferenceOptions {
   byPosition?: boolean;
   /** Relative (default: false) */
   relative?: boolean;
-  /** Default subtotal */
   defaultSubtotal?: boolean;
-  /** Sum subtotal */
   sumSubtotal?: boolean;
-  /** CountA subtotal */
   countASubtotal?: boolean;
   /** Average subtotal */
   avgSubtotal?: boolean;
-  /** Max subtotal */
   maxSubtotal?: boolean;
-  /** Min subtotal */
   minSubtotal?: boolean;
   /** Count subtotal (CT_Reference `@countSubtotal`) */
   countSubtotal?: boolean;
@@ -537,7 +505,6 @@ export interface PivotConditionalFormatOptions {
   type?: "none" | "all" | "row" | "column";
   /** Priority (required) */
   priority: number;
-  /** Pivot areas */
   pivotAreas?: PivotAreaOptions[];
 }
 
@@ -549,7 +516,6 @@ export interface ChartFormatOptions {
   format: number;
   /** Is series (default: false) */
   series?: boolean;
-  /** Pivot area */
   pivotArea?: PivotAreaOptions;
 }
 
@@ -557,7 +523,6 @@ export interface ChartFormatOptions {
 export interface CacheHierarchyOptions {
   /** Unique name (required) */
   uniqueName: string;
-  /** Caption */
   caption?: string;
   /** Is measure (default: false) */
   measure?: boolean;
@@ -573,17 +538,11 @@ export interface CacheHierarchyOptions {
   time?: boolean;
   /** Key attribute (default: false) */
   keyAttribute?: boolean;
-  /** Default member unique name */
   defaultMemberUniqueName?: string;
-  /** All unique name */
   allUniqueName?: string;
-  /** All caption */
   allCaption?: string;
-  /** Dimension unique name */
   dimensionUniqueName?: string;
-  /** Display folder */
   displayFolder?: string;
-  /** Measure group */
   measureGroup?: string;
   /** Is measures (default: false) */
   measures?: boolean;
@@ -609,13 +568,9 @@ export interface CacheHierarchyOptions {
 export interface KpiOptions {
   /** Unique name (required) */
   uniqueName: string;
-  /** Caption */
   caption?: string;
-  /** Display folder */
   displayFolder?: string;
-  /** Measure group */
   measureGroup?: string;
-  /** Parent */
   parent?: string;
   /** Value expression (required) */
   value: string;
@@ -641,7 +596,6 @@ export interface MeasureGroupOptions {
 
 /** Set definition (CT_Set) */
 export interface SetOptions {
-  /** Count */
   count?: number;
   /** Max rank (required) */
   maxRank: number;
@@ -666,7 +620,6 @@ export interface SetOptions {
 
 /** Server format (CT_ServerFormat) */
 export interface ServerFormatOptions {
-  /** Culture */
   culture?: string;
   /** Format string */
   format?: string;
@@ -796,11 +749,9 @@ export interface LevelGroupOptions {
   uniqueName: string;
   /** Caption (required) */
   caption: string;
-  /** Unique parent */
   uniqueParent?: string;
   /** Group ID */
   id?: number;
-  /** Members */
   members: GroupMemberOptions[];
 }
 
@@ -812,9 +763,7 @@ export interface GroupLevelOptions {
   caption: string;
   /** User-defined */
   user?: boolean;
-  /** Custom roll-up */
   customRollUp?: boolean;
-  /** Groups */
   groups?: LevelGroupOptions[];
 }
 
@@ -961,7 +910,7 @@ export function aggregate(values: number[], func: ConsolidateFunction): number {
     case "sum":
       return values.reduce((a, b) => a + b, 0);
     case "count":
-    case "countNums":
+    case "countNumbers":
       return values.length;
     case "average":
       return values.reduce((a, b) => a + b, 0) / values.length;
@@ -974,13 +923,13 @@ export function aggregate(values: number[], func: ConsolidateFunction): number {
       return values.reduce((a, b) => Math.min(a, b));
     case "product":
       return values.reduce((a, b) => a * b, 1);
-    case "var":
+    case "variance":
       return sampleVariance(values);
-    case "varp":
+    case "variancePopulation":
       return populationVariance(values);
-    case "stdDev":
+    case "standardDeviation":
       return Math.sqrt(sampleVariance(values));
-    case "stdDevp":
+    case "standardDeviationPopulation":
       return Math.sqrt(populationVariance(values));
     default:
       return values.reduce((a, b) => a + b, 0);
@@ -1046,13 +995,9 @@ export interface PivotCacheDefinitionOptions {
   refreshedDateIso?: string;
   /** Background query (CT_PivotCacheDefinition `@backgroundQuery`) */
   backgroundQuery?: boolean;
-  /** Missing items limit */
   missingItemsLimit?: number;
-  /** Upgrade on refresh */
   upgradeOnRefresh?: boolean;
-  /** Support subquery */
   supportSubquery?: boolean;
-  /** Support advanced drill */
   supportAdvancedDrill?: boolean;
   /** Refresh cache when the workbook opens (CT_PivotCacheDefinition `@refreshOnLoad`) */
   refreshOnLoad?: boolean;

@@ -78,7 +78,6 @@ export interface TextPropertiesOptions {
   fileType?: "mac" | "win" | "dos";
   /** Code page (default 1252) */
   codePage?: number;
-  /** Character set */
   characterSet?: string;
   /** First row to import (default 1) */
   firstRow?: number;

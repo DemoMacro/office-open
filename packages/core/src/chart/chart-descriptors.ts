@@ -14,6 +14,19 @@ import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
 import { textBodyDesc } from "../drawing/text/text-body";
 import type { TextBodyOptions } from "../drawing/text/text-body";
 import { parseColorMapping, stringifyColorMapping } from "../theme/color-mapping";
+import {
+  xsdAxisCrossBetween,
+  xsdAxisCrosses,
+  xsdAxisLabelAlignment,
+  xsdAxisOrientation,
+  xsdAxisPosition,
+  xsdDataLabelPosition,
+  xsdErrorValueType,
+  xsdLegendPosition,
+  xsdSizeRepresents,
+  xsdSplitType,
+  xsdTrendlineType,
+} from "../util/mappings";
 import { parseOnOff } from "../util/values";
 import type {
   ChartSpaceOptions,
@@ -163,7 +176,7 @@ function stringifyTrendline(opts: TrendlineOptions): string {
   if (opts.name !== undefined) {
     parts.push(`<c:name>${escapeXml(opts.name)}</c:name>`);
   }
-  parts.push(valEl("c:trendlineType", opts.type ?? "linear"));
+  parts.push(valEl("c:trendlineType", xsdTrendlineType.to(opts.type ?? "linear")));
   if (opts.order !== undefined) parts.push(valEl("c:order", opts.order));
   if (opts.period !== undefined) parts.push(valEl("c:period", opts.period));
   if (opts.forward !== undefined) parts.push(valEl("c:forward", opts.forward));
@@ -187,7 +200,7 @@ function stringifyErrBars(opts: ErrorBarOptions): string {
   const parts: string[] = [];
   if (opts.direction !== undefined) parts.push(valEl("c:errDir", opts.direction));
   parts.push(valEl("c:errBarType", opts.barType ?? "both"));
-  parts.push(valEl("c:errValType", opts.valueType ?? "fixedVal"));
+  parts.push(valEl("c:errValType", xsdErrorValueType.to(opts.valueType ?? "fixedValue")));
   if (opts.noEndCap !== undefined) parts.push(`<c:noEndCap${boolVal(opts.noEndCap)}/>`);
   if (opts.plusValue !== undefined)
     parts.push(`<c:plus>${stringifyNumLit(opts.plusValue)}</c:plus>`);
@@ -215,7 +228,8 @@ function stringifyDataLabel(opts: DataLabelOptions, ctx: WriteContext): string {
   inner.push(chartSpPr(opts.shapeProperties, ctx));
   if (opts.textProperties)
     inner.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
-  if (opts.position !== undefined) inner.push(valEl("c:dLblPos", opts.position));
+  if (opts.position !== undefined)
+    inner.push(valEl("c:dLblPos", xsdDataLabelPosition.to(opts.position)));
   if (opts.showLegendKey !== undefined)
     inner.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
   if (opts.showVal !== undefined) inner.push(`<c:showVal${boolVal(opts.showVal)}/>`);
@@ -241,7 +255,8 @@ function stringifyDataLabels(opts: DataLabelsOptions, ctx: WriteContext): string
   parts.push(chartSpPr(opts.shapeProperties, ctx));
   if (opts.textProperties)
     parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
-  if (opts.position !== undefined) parts.push(valEl("c:dLblPos", opts.position));
+  if (opts.position !== undefined)
+    parts.push(valEl("c:dLblPos", xsdDataLabelPosition.to(opts.position)));
   if (opts.showLegendKey !== undefined)
     parts.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
   if (opts.showVal !== undefined) parts.push(`<c:showVal${boolVal(opts.showVal)}/>`);
@@ -327,7 +342,8 @@ function stringifyScaling(opts: AxisScalingOptions | undefined): string {
   if (!opts) return emptyEl("c:scaling");
   const parts: string[] = [];
   if (opts.logBase !== undefined) parts.push(valEl("c:logBase", opts.logBase));
-  if (opts.orientation !== undefined) parts.push(valEl("c:orientation", opts.orientation));
+  if (opts.orientation !== undefined)
+    parts.push(valEl("c:orientation", xsdAxisOrientation.to(opts.orientation)));
   if (opts.max !== undefined) parts.push(valEl("c:max", opts.max));
   if (opts.min !== undefined) parts.push(valEl("c:min", opts.min));
   return `<c:scaling>${parts.join("")}</c:scaling>`;
@@ -351,7 +367,7 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
   parts.push(valEl("c:axId", opts.id));
   parts.push(stringifyScaling(opts.scaling));
   if (opts.delete !== undefined) parts.push(`<c:delete${boolVal(opts.delete)}/>`);
-  if (opts.position !== undefined) parts.push(valEl("c:axPos", opts.position));
+  if (opts.position !== undefined) parts.push(valEl("c:axPos", xsdAxisPosition.to(opts.position)));
   parts.push(stringifyChartLines("c:majorGridlines", opts.majorGridlines, ctx));
   parts.push(stringifyChartLines("c:minorGridlines", opts.minorGridlines, ctx));
   if (opts.title !== undefined) {
@@ -382,12 +398,14 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
   parts.push(valEl("c:crossAx", opts.crossAxisId));
   // XSD choice: crosses XOR crossesAt
   if (opts.crossesAt !== undefined) parts.push(valEl("c:crossesAt", opts.crossesAt));
-  else if (opts.crosses !== undefined) parts.push(valEl("c:crosses", opts.crosses));
+  else if (opts.crosses !== undefined)
+    parts.push(valEl("c:crosses", xsdAxisCrosses.to(opts.crosses)));
 
   switch (opts.kind) {
     case "category":
       if (opts.auto !== undefined) parts.push(`<c:auto${boolVal(opts.auto)}/>`);
-      if (opts.labelAlignment !== undefined) parts.push(valEl("c:lblAlgn", opts.labelAlignment));
+      if (opts.labelAlignment !== undefined)
+        parts.push(valEl("c:lblAlgn", xsdAxisLabelAlignment.to(opts.labelAlignment)));
       if (opts.labelOffset !== undefined) parts.push(valEl("c:lblOffset", opts.labelOffset));
       if (opts.tickLabelSkip !== undefined) parts.push(valEl("c:tickLblSkip", opts.tickLabelSkip));
       if (opts.tickMarkSkip !== undefined) parts.push(valEl("c:tickMarkSkip", opts.tickMarkSkip));
@@ -410,7 +428,8 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
       if (opts.tickMarkSkip !== undefined) parts.push(valEl("c:tickMarkSkip", opts.tickMarkSkip));
       break;
     case "value":
-      if (opts.crossBetween !== undefined) parts.push(valEl("c:crossBetween", opts.crossBetween));
+      if (opts.crossBetween !== undefined)
+        parts.push(valEl("c:crossBetween", xsdAxisCrossBetween.to(opts.crossBetween)));
       if (opts.majorUnit !== undefined) parts.push(valEl("c:majorUnit", opts.majorUnit));
       if (opts.minorUnit !== undefined) parts.push(valEl("c:minorUnit", opts.minorUnit));
       if (opts.displayUnits) parts.push(stringifyDisplayUnits(opts.displayUnits));
@@ -717,12 +736,13 @@ function chartTypeFooter(opts: ChartSpaceOptions, ctx: WriteContext): string {
       if (opts.showNegativeBubbles !== undefined)
         parts.push(`<c:showNegBubbles${boolVal(opts.showNegativeBubbles)}/>`);
       if (opts.sizeRepresents !== undefined)
-        parts.push(valEl("c:sizeRepresents", opts.sizeRepresents));
+        parts.push(valEl("c:sizeRepresents", xsdSizeRepresents.to(opts.sizeRepresents)));
       break;
     case "ofPie":
       // CT_OfPieChart: gapWidth → splitType → splitPos → custSplit → secondPieSize → serLines
       if (opts.gapWidth !== undefined) parts.push(valEl("c:gapWidth", opts.gapWidth));
-      if (opts.splitType !== undefined) parts.push(valEl("c:splitType", opts.splitType));
+      if (opts.splitType !== undefined)
+        parts.push(valEl("c:splitType", xsdSplitType.to(opts.splitType)));
       if (opts.splitPosition !== undefined) parts.push(valEl("c:splitPos", opts.splitPosition));
       if (opts.customSplitPoints?.length) {
         const pts = opts.customSplitPoints.map((p) => valEl("c:secondPiePt", p)).join("");
@@ -1089,7 +1109,7 @@ function stringifyLegend(opts: ChartSpaceOptions, ctx: WriteContext): string {
   // default bottom-position emission.
   const pos =
     opts.legendPosition !== undefined
-      ? `<c:legendPos val="${opts.legendPosition}"/>`
+      ? `<c:legendPos val="${xsdLegendPosition.to(opts.legendPosition)}"/>`
       : opts.showLegend === true
         ? ""
         : `<c:legendPos val="b"/>`;
@@ -1153,10 +1173,10 @@ function categoryAxis(id: number, crossAxisId: number): AxisOptions {
     kind: "category",
     id,
     crossAxisId,
-    scaling: { orientation: "minMax" },
+    scaling: { orientation: "ascending" },
     delete: false,
-    position: "b",
-    crosses: "autoZero",
+    position: "bottom",
+    crosses: "zero",
     auto: true,
     labelOffset: 100,
     noMultiLevelLabel: false,
@@ -1169,11 +1189,11 @@ function valueAxis(id: number, crossAxisId: number): AxisOptions {
     kind: "value",
     id,
     crossAxisId,
-    scaling: { orientation: "minMax" },
+    scaling: { orientation: "ascending" },
     delete: false,
-    position: "l",
+    position: "left",
     numberFormat: "General",
-    crosses: "autoZero",
+    crosses: "zero",
   };
 }
 
@@ -1183,11 +1203,11 @@ function seriesAxis(id: number, crossAxisId: number): AxisOptions {
     kind: "series",
     id,
     crossAxisId,
-    scaling: { orientation: "minMax" },
+    scaling: { orientation: "ascending" },
     delete: false,
-    position: "b",
+    position: "bottom",
     numberFormat: "General",
-    crosses: "autoZero",
+    crosses: "zero",
     tickLabelSkip: 1,
   };
 }
@@ -1490,7 +1510,7 @@ function readTrendlines(serEl: XmlElement): TrendlineOptions[] | undefined {
   return tlEls.map((tl) => {
     const opts: TrendlineOptions = {};
     const type = readValStr(tl, "c:trendlineType");
-    if (type) opts.type = type as TrendlineOptions["type"];
+    if (type) opts.type = xsdTrendlineType.from(type) as TrendlineOptions["type"];
     const order = readValNum(tl, "c:order");
     if (order !== undefined) opts.order = order;
     const period = readValNum(tl, "c:period");
@@ -1523,7 +1543,7 @@ function readErrBars(serEl: XmlElement): ErrorBarOptions | undefined {
   const barType = readValStr(ebEl, "c:errBarType");
   if (barType) opts.barType = barType as ErrorBarOptions["barType"];
   const valueType = readValStr(ebEl, "c:errValType");
-  if (valueType) opts.valueType = valueType as ErrorBarOptions["valueType"];
+  if (valueType) opts.valueType = xsdErrorValueType.from(valueType) as ErrorBarOptions["valueType"];
   const noEndCap = readBoolAttr(ebEl, "c:noEndCap");
   if (noEndCap !== undefined) opts.noEndCap = noEndCap;
   const plusValue = readNumLit(ebEl, "c:plus");
@@ -1554,7 +1574,8 @@ function readDataLabels(serEl: XmlElement, ctx: ReadContext): DataLabelsOptions 
     if (textProperties) opts.textProperties = textProperties;
   }
   const position = readValStr(dlEl, "c:dLblPos");
-  if (position) opts.position = position as DataLabelsOptions["position"];
+  if (position)
+    opts.position = xsdDataLabelPosition.from(position) as DataLabelsOptions["position"];
   const showLegendKey = readBoolAttr(dlEl, "c:showLegendKey");
   if (showLegendKey !== undefined) opts.showLegendKey = showLegendKey;
   const showVal = readBoolAttr(dlEl, "c:showVal");
@@ -1597,7 +1618,7 @@ function readDataLabels(serEl: XmlElement, ctx: ReadContext): DataLabelsOptions 
         if (textProperties) result.textProperties = textProperties;
       }
       const pos = readValStr(el, "c:dLblPos");
-      if (pos) result.position = pos as DataLabelOptions["position"];
+      if (pos) result.position = xsdDataLabelPosition.from(pos) as DataLabelOptions["position"];
       for (const flag of [
         "showLegendKey",
         "showVal",
@@ -1838,7 +1859,7 @@ function readChartTypeScalars(
     const showNeg = readBoolAttr(chartTypeEl, "c:showNegBubbles");
     if (showNeg !== undefined) result.showNegativeBubbles = showNeg;
     const sizeRep = readValStr(chartTypeEl, "c:sizeRepresents");
-    if (sizeRep) result.sizeRepresents = sizeRep as SizeRepresents;
+    if (sizeRep) result.sizeRepresents = xsdSizeRepresents.from(sizeRep) as SizeRepresents;
   } else if (type === "surface") {
     const wireframe = readBoolAttr(chartTypeEl, "c:wireframe");
     if (wireframe !== undefined) result.wireframe = wireframe;
@@ -1853,7 +1874,7 @@ function readChartTypeScalars(
     const gapWidth = readValNum(chartTypeEl, "c:gapWidth");
     if (gapWidth !== undefined) result.gapWidth = gapWidth;
     const splitType = readValStr(chartTypeEl, "c:splitType");
-    if (splitType) result.splitType = splitType as SplitType;
+    if (splitType) result.splitType = xsdSplitType.from(splitType) as SplitType;
     const splitPos = readValNum(chartTypeEl, "c:splitPos");
     if (splitPos !== undefined) result.splitPosition = splitPos;
     const custSplit = findChild(chartTypeEl, "c:custSplit");
@@ -2080,7 +2101,7 @@ function readLegend(
   const posEl = findChild(legend, "c:legendPos");
   if (posEl) {
     const v = attr(posEl, "val");
-    if (v) result.position = v as LegendPosition;
+    if (v) result.position = xsdLegendPosition.from(v) as LegendPosition;
   }
   const entries = readLegendEntries(legend, ctx);
   if (entries) result.entries = entries;
@@ -2233,7 +2254,7 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
     const logBase = readValNum(scalingEl, "c:logBase");
     if (logBase !== undefined) scaling.logBase = logBase;
     const orientation = readValStr(scalingEl, "c:orientation");
-    if (orientation) scaling.orientation = orientation as AxisOrientation;
+    if (orientation) scaling.orientation = xsdAxisOrientation.from(orientation) as AxisOrientation;
     const max = readValNum(scalingEl, "c:max");
     if (max !== undefined) scaling.max = max;
     const min = readValNum(scalingEl, "c:min");
@@ -2246,7 +2267,7 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
   const del = readBoolAttr(el, "c:delete");
   if (del !== undefined) result.delete = del;
   const pos = readValStr(el, "c:axPos");
-  if (pos) result.position = pos as AxisPosition;
+  if (pos) result.position = xsdAxisPosition.from(pos) as AxisPosition;
   result.majorGridlines = readChartLines(el, "c:majorGridlines", ctx);
   result.minorGridlines = readChartLines(el, "c:minorGridlines", ctx);
   const titleEl = findChild(el, "c:title");
@@ -2281,7 +2302,7 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
   if (crossesAt !== undefined) result.crossesAt = crossesAt;
   else {
     const crosses = readValStr(el, "c:crosses");
-    if (crosses) result.crosses = crosses as AxisCrosses;
+    if (crosses) result.crosses = xsdAxisCrosses.from(crosses) as AxisCrosses;
   }
 
   // kind-specific tail (mirrors stringifyAxis switch order)
@@ -2291,7 +2312,7 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
   }
   if (kind === "category") {
     const lblAlgn = readValStr(el, "c:lblAlgn");
-    if (lblAlgn) result.labelAlignment = lblAlgn as AxisLabelAlignment;
+    if (lblAlgn) result.labelAlignment = xsdAxisLabelAlignment.from(lblAlgn) as AxisLabelAlignment;
   }
   if (kind === "category" || kind === "date") {
     const lblOffsetEl = findChild(el, "c:lblOffset");
@@ -2326,7 +2347,8 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
   }
   if (kind === "value") {
     const crossBetween = readValStr(el, "c:crossBetween");
-    if (crossBetween) result.crossBetween = crossBetween as AxisCrossBetween;
+    if (crossBetween)
+      result.crossBetween = xsdAxisCrossBetween.from(crossBetween) as AxisCrossBetween;
     const dispUnitsEl = findChild(el, "c:dispUnits");
     if (dispUnitsEl) {
       const displayUnits: DisplayUnitsOptions = {};

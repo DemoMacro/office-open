@@ -67,8 +67,8 @@ const options: PresentationOptions = {
     },
     // Guides
     guides: [
-      { orient: "horz", pos: 3429000 },
-      { orient: "vert", pos: 4572000 },
+      { orient: "horizontal", pos: 3429000 },
+      { orient: "vertical", pos: 4572000 },
     ],
     // Outline view — rId values reference slides via auto-generated viewProps.xml.rels
     outlineView: {

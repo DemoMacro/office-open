@@ -4,7 +4,13 @@
  * @module
  */
 
-import { parseOnOff } from "@office-open/core";
+import {
+  parseOnOff,
+  xsdAnimCalcMode,
+  xsdAnimClass,
+  xsdAnimValueType,
+  xsdIterateType,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, findFirst, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -109,8 +115,11 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
   else if (nodeType === "withEffect") opts.trigger = "withPrevious";
   else if (nodeType === "afterEffect") opts.trigger = "afterPrevious";
 
-  const presetClass = attr(cTn, "presetClass");
-  if (presetClass) opts.class = presetClass as AnimationClass;
+  const presetClassAttr = attr(cTn, "presetClass");
+  const presetClass = presetClassAttr
+    ? (xsdAnimClass.from(presetClassAttr) as AnimationClass)
+    : undefined;
+  if (presetClass) opts.class = presetClass;
 
   const presetID = attrNum(cTn, "presetID");
 
@@ -139,20 +148,20 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
   }
 
   if (presetID !== undefined) {
-    const cls = presetClass ?? "entr";
-    if (cls === "entr") {
+    const cls = presetClass ?? "entrance";
+    if (cls === "entrance") {
       const type = ENTR_PRESET_TO_TYPE.get(presetID);
       if (type) opts.type = type;
     } else if (cls === "exit") {
       const type = EXIT_PRESET_TO_TYPE.get(presetID);
       if (type) opts.type = type;
-    } else if (cls === "emph") {
+    } else if (cls === "emphasis") {
       const emphType = EMPH_PRESET_TO_ID.get(presetID);
       if (emphType) {
         opts.emphasisType = emphType;
         opts.type = "appear";
       }
-    } else if (cls === "mediacall") {
+    } else if (cls === "mediaCall") {
       opts.mediaType = "play";
       opts.type = "appear";
     }
@@ -179,9 +188,11 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
         case "p:anim": {
           // CT_TLAnimateBehavior attributes — from/to/by/calcmode/valueType
           const calcMode = attr(sub, "calcmode");
-          if (calcMode) opts.calcMode = calcMode as AnimationOptions["calcMode"];
+          if (calcMode)
+            opts.calcMode = xsdAnimCalcMode.from(calcMode) as AnimationOptions["calcMode"];
           const valueType = attr(sub, "valueType");
-          if (valueType) opts.valueType = valueType as AnimationOptions["valueType"];
+          if (valueType)
+            opts.valueType = xsdAnimValueType.from(valueType) as AnimationOptions["valueType"];
           const fromAttr = attr(sub, "from");
           if (fromAttr) opts.from = fromAttr;
           const toAttr = attr(sub, "to");
@@ -267,7 +278,10 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
   if (iterateEl) {
     const iterate: NonNullable<AnimationOptions["iterate"]> = {};
     const iterType = attr(iterateEl, "type");
-    if (iterType) iterate.type = iterType as NonNullable<AnimationOptions["iterate"]>["type"];
+    if (iterType)
+      iterate.type = xsdIterateType.from(iterType) as NonNullable<
+        AnimationOptions["iterate"]
+      >["type"];
     if (parseOnOff(attr(iterateEl, "backwards"))) iterate.backwards = true;
     const tmPct = findChild(iterateEl, "p:tmPct");
     if (tmPct) {

@@ -13,6 +13,7 @@ import type { Element } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../descriptor";
 import { parse as parseDesc, stringify as stringifyDesc } from "../descriptor";
+import { xsdCompoundLine } from "../util/mappings";
 import { parseColorChoice, stringifyColorChoice } from "./color/color-descriptors";
 import type { SolidFillOptions } from "./color/solid-fill";
 import type { StyleMatrixReferenceOptions } from "./style-reference";
@@ -44,11 +45,11 @@ export type TableStyleRegion =
   | "neCell"
   | "nwCell";
 
-/** Style-part on/off state (ST_OnOffStyleType): "def" inherit the table style's default, "on"/"off" force it. */
-export type OnOffStyleType = "on" | "off" | "def";
+/** Style-part on/off state (ST_OnOffStyleType). */
+export type OnOffStyleType = "on" | "off" | "default";
 
-/** ST_CompoundLine — @cmpd on a:ln. */
-export type CompoundLineType = "sng" | "dbl" | "thickThin" | "thinThick" | "tri";
+/** Compound line type (ST_CompoundLine, @cmpd on a:ln). */
+export type CompoundLineType = "single" | "double" | "thickThin" | "thinThick" | "triple";
 
 /**
  * Font reference — a:fontRef (CT_FontReference). Unlike lnRef/fillRef/effectRef
@@ -176,7 +177,7 @@ function createThemeableLine(opts: ThemeableLineStyleOptions): string {
   if (opts.color) children.push(toStr(opts.color));
   const attrs: Record<string, string> = {};
   if (opts.width !== undefined) attrs.w = String(opts.width);
-  if (opts.compound) attrs.cmpd = opts.compound;
+  if (opts.compound) attrs.cmpd = xsdCompoundLine.to(opts.compound);
   return element("a:ln", attrs, children.length > 0 ? children : undefined);
 }
 
@@ -212,8 +213,8 @@ function buildTextStyle(opts: TableTextStyleOptions): string {
   }
   if (opts.color) children.push(toStr(opts.color));
   const attrs: Record<string, string> = {};
-  if (opts.bold && opts.bold !== "def") attrs.b = opts.bold;
-  if (opts.italic && opts.italic !== "def") attrs.i = opts.italic;
+  if (opts.bold && opts.bold !== "default") attrs.b = opts.bold;
+  if (opts.italic && opts.italic !== "default") attrs.i = opts.italic;
   return element("a:tcTxStyle", attrs, children.length > 0 ? children : undefined);
 }
 
@@ -471,7 +472,7 @@ function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined 
     const w = attrNum(el, "w");
     if (w !== undefined) opts.width = w;
     const cmpd = attr(el, "cmpd");
-    if (cmpd) opts.compound = cmpd as CompoundLineType;
+    if (cmpd) opts.compound = xsdCompoundLine.from(cmpd) as CompoundLineType;
   }
   for (const child of el.elements ?? []) {
     opts.color = serializeChild(child);

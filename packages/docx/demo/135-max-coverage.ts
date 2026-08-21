@@ -388,7 +388,7 @@ const doc: DocumentOptions = {
                 ],
               },
             ],
-            width: { size: 100, type: "pct" },
+            width: { size: 100, type: "percent" },
             borders: {
               top: { style: "single", size: 4, color: "000000" },
               bottom: { style: "single", size: 4, color: "000000" },

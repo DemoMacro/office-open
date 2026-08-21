@@ -6,14 +6,14 @@ const funcs = [
   "sum",
   "average",
   "count",
-  "countNums",
+  "countNumbers",
   "max",
   "min",
   "product",
-  "stdDev",
-  "stdDevp",
-  "var",
-  "varp",
+  "standardDeviation",
+  "standardDeviationPopulation",
+  "variance",
+  "variancePopulation",
 ] as const;
 
 const pivotTables = funcs.map((f, i) => {

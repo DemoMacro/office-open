@@ -8,6 +8,7 @@
  * @module
  */
 import { parseOnOff } from "@office-open/core";
+import { xsdConsolidateFunction } from "@office-open/core";
 import type { PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrMeasure, attrNum, findChild, stringify, textOf } from "@office-open/xml";
@@ -718,7 +719,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     if (dcEl) {
       const dc: DataConsolidateOptions = {};
       const fn = attr(dcEl, "function");
-      if (fn) dc.function = fn as DataConsolidateOptions["function"];
+      if (fn) dc.function = xsdConsolidateFunction.from(fn) as DataConsolidateOptions["function"];
       if (parseOnOff(attr(dcEl, "topLabels"))) dc.topLabels = true;
       if (parseOnOff(attr(dcEl, "leftLabels"))) dc.leftLabels = true;
       if (parseOnOff(attr(dcEl, "startLabels"))) dc.startLabels = true;

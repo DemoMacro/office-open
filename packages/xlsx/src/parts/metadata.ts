@@ -29,45 +29,28 @@ export interface MetadataTypeOptions {
   delete?: boolean;
   /** Copy flag */
   copy?: boolean;
-  /** Paste all */
   pasteAll?: boolean;
-  /** Paste formulas */
   pasteFormulas?: boolean;
-  /** Paste values */
   pasteValues?: boolean;
-  /** Paste formats */
   pasteFormats?: boolean;
-  /** Paste comments */
   pasteComments?: boolean;
-  /** Paste data validation */
   pasteDataValidation?: boolean;
-  /** Paste borders */
   pasteBorders?: boolean;
   /** Paste column widths */
   pasteColWidths?: boolean;
-  /** Paste number formats */
   pasteNumberFormats?: boolean;
   /** Merge cells */
   merge?: boolean;
-  /** Split first */
   splitFirst?: boolean;
-  /** Split all */
   splitAll?: boolean;
   /** Row/column shift */
   rowColShift?: boolean;
-  /** Clear all */
   clearAll?: boolean;
-  /** Clear formats */
   clearFormats?: boolean;
-  /** Clear contents */
   clearContents?: boolean;
-  /** Clear comments */
   clearComments?: boolean;
-  /** Assign */
   assign?: boolean;
-  /** Coerce */
   coerce?: boolean;
-  /** Adjust */
   adjust?: boolean;
   /** Cell metadata */
   cellMeta?: boolean;
@@ -101,13 +84,9 @@ export interface MdxTupleOptions {
   backgroundColor?: string;
   /** Foreground color ARGB hex (CT_MdxTuple `@fc`) */
   foregroundColor?: string;
-  /** Italic */
   italic?: boolean;
-  /** Underline */
   underline?: boolean;
-  /** Strikethrough */
   strikethrough?: boolean;
-  /** Bold */
   bold?: boolean;
   /** Member name string indexes (n children) */
   stringIndexes?: MetadataStringIndexOptions[];

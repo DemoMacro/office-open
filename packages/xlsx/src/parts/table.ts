@@ -7,6 +7,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
+import { xsdTotalsRowFunction } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   findChild,
@@ -30,13 +31,13 @@ export const TotalsRowFunction = {
   MAX: "max",
   AVERAGE: "average",
   COUNT: "count",
-  COUNT_NUMS: "countNums",
-  STD_DEV: "stdDev",
-  VAR: "var",
+  COUNT_NUMS: "countNumbers",
+  STD_DEV: "standardDeviation",
+  VAR: "variance",
   CUSTOM: "custom",
 } as const;
 
-/** Totals-row aggregate (ST_TotalsRowFunction): "countNums" counts numeric entries only, "stdDev" sample standard deviation, "var" sample variance. */
+/** Totals-row aggregate (ST_TotalsRowFunction). */
 export type TotalsRowFunction = (typeof TotalsRowFunction)[keyof typeof TotalsRowFunction];
 
 // ── Table type (ST_TableType) ──
@@ -64,11 +65,9 @@ export interface TableStyleInfoOptions {
 export interface TableColumnOptions {
   /** Column name (used in header row) */
   name: string;
-  /** Totals row function */
   totalsRowFunction?: TotalsRowFunction;
   /** Totals row label (used when totalsRowFunction is "none" or "custom") */
   totalsRowLabel?: string;
-  /** Calculated column formula */
   calculatedColumnFormula?: string;
   /** Totals row formula (CT_TableColumn/totalsRowFormula, used when totalsRowFunction is "custom") */
   totalsRowFormula?: string;
@@ -250,7 +249,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       }
 
       if (col.totalsRowFunction !== undefined && col.totalsRowFunction !== TotalsRowFunction.NONE) {
-        colAttrs.totalsRowFunction = col.totalsRowFunction;
+        colAttrs.totalsRowFunction = xsdTotalsRowFunction.to(col.totalsRowFunction);
       }
       if (col.totalsRowLabel !== undefined) {
         colAttrs.totalsRowLabel = col.totalsRowLabel;
@@ -340,7 +339,9 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         const col: Partial<TableColumnOptions> = {};
         col.name = attr(colEl, "name") ?? "";
         if (attr(colEl, "totalsRowFunction"))
-          col.totalsRowFunction = attr(colEl, "totalsRowFunction") as TotalsRowFunction;
+          col.totalsRowFunction = xsdTotalsRowFunction.from(
+            attr(colEl, "totalsRowFunction") ?? "",
+          ) as TotalsRowFunction;
         if (attr(colEl, "totalsRowLabel")) col.totalsRowLabel = attr(colEl, "totalsRowLabel");
         const ccfEl = findChild(colEl, "calculatedColumnFormula");
         if (ccfEl) {

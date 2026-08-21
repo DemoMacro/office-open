@@ -2,30 +2,24 @@ import { convertToEmu } from "@office-open/core";
 import type { MasterPlaceholderPosition } from "@parts/slide-master";
 import type { LayoutDefinition } from "@shared/file";
 
-/**
- * Slide layout family (ST_SlideLayoutType). Abbreviations: "tx" text body,
- * "obj" object/content, "secHead" section header, "tbl" table, "picTx"
- * picture with text, "twoTxTwoObj" two texts and two objects, "objTx"
- * object with text, "vertTx" vertical text, "vertTitleAndTx" vertical
- * title with vertical text.
- */
+/** Slide layout family (ST_SlideLayoutType). */
 export type SlideLayoutType =
   | "blank"
   | "title"
-  | "tx"
-  | "twoColTx"
+  | "text"
+  | "twoColumnText"
   | "titleOnly"
-  | "obj"
-  | "secHead"
+  | "object"
+  | "sectionHeader"
   | "chart"
-  | "tbl"
-  | "clipArtAndTx"
-  | "picTx"
-  | "twoObj"
-  | "twoTxTwoObj"
-  | "objTx"
-  | "vertTx"
-  | "vertTitleAndTx";
+  | "table"
+  | "clipArtAndText"
+  | "pictureText"
+  | "twoObjects"
+  | "twoTextAndTwoObjects"
+  | "objectAndText"
+  | "verticalText"
+  | "verticalTitleAndText";
 
 export const NS = `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"`;
 
@@ -165,22 +159,22 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
       subTitlePlaceholder(3, sx(1524000, sw), 3602038, sx(9144000, sw), 1655762),
   },
   // 2. obj — title + body (generic content)
-  obj: {
-    type: "obj",
+  object: {
+    type: "object",
     name: "Title and Content",
     buildShapes: () => titlePlaceholder(2) + bodyPlaceholder(3, 1),
   },
   // 3. secHead — title + body (both positioned)
-  secHead: {
-    type: "secHead",
+  sectionHeader: {
+    type: "sectionHeader",
     name: "Section Header",
     buildShapes: (sw) =>
       titlePlaceholderAt(2, sx(831850, sw), 1709738, sx(10515600, sw), 2852737) +
       typedBodyPlaceholder(3, 1, sx(831850, sw), 4589463, sx(10515600, sw), 1500187),
   },
   // 4. twoObj — title + 2 body columns
-  twoObj: {
-    type: "twoObj",
+  twoObjects: {
+    type: "twoObjects",
     name: "Two Content",
     buildShapes: (sw) =>
       titlePlaceholder(2) +
@@ -188,8 +182,8 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
       bodyPlaceholderAt(4, 2, sx(6172200, sw), 1825625, sx(5181600, sw), 4351338),
   },
   // 5. twoTxTwoObj — title + 4 quadrants (2 text, 2 content)
-  twoTxTwoObj: {
-    type: "twoTxTwoObj",
+  twoTextAndTwoObjects: {
+    type: "twoTextAndTwoObjects",
     name: "Comparison",
     buildShapes: (sw) =>
       titlePlaceholderAt(2, sx(839788, sw), 365125, sx(10515600, sw), 1325563) +
@@ -211,8 +205,8 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
     buildShapes: () => "",
   },
   // 8. objTx — title + body + text (object and text)
-  objTx: {
-    type: "objTx",
+  objectAndText: {
+    type: "objectAndText",
     name: "Content with Caption",
     buildShapes: (sw) =>
       titlePlaceholderAt(2, sx(839788, sw), 457200, sx(3932237, sw), 1600200) +
@@ -220,8 +214,8 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
       typedBodyPlaceholder(4, 2, sx(839788, sw), 2057400, sx(3932237, sw), 3811588),
   },
   // 9. picTx — pic on top, title and text caption below
-  picTx: {
-    type: "picTx",
+  pictureText: {
+    type: "pictureText",
     name: "Picture with Caption",
     buildShapes: (sw) =>
       titlePlaceholderAt(2, sx(2389717, sw), 4800600, sx(7315200, sw), 566738) +
@@ -229,8 +223,8 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
       typedBodyPlaceholder(4, 2, sx(2389717, sw), 5367338, sx(7315200, sw), 804862, "half"),
   },
   // 10. clipArtAndTx — full-width title, clip art left, text right
-  clipArtAndTx: {
-    type: "clipArtAndTx",
+  clipArtAndText: {
+    type: "clipArtAndText",
     name: "Title, Clip Art and Text",
     buildShapes: (sw) =>
       titlePlaceholderAt(2, sx(1534584, sw), 617538, sx(10390716, sw), 1143000) +
@@ -247,16 +241,16 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
       typedBodyPlaceholder(4, 2, sx(6860117, sw), 2017713, sx(5080000, sw), 4114800, "half"),
   },
   // 11. vertTx — title + body (vertical text)
-  vertTx: {
-    type: "vertTx",
+  verticalText: {
+    type: "verticalText",
     name: "Vertical Text",
     buildShapes: () =>
       titlePlaceholder(2) +
       `<p:sp><p:nvSpPr><p:cNvPr id="3" name="Text Placeholder 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" orient="vert" idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp>`,
   },
   // 12. vertTitleAndTx — vertical title + body
-  vertTitleAndTx: {
-    type: "vertTitleAndTx",
+  verticalTitleAndText: {
+    type: "verticalTitleAndText",
     name: "Vertical Title and Text",
     buildShapes: (sw) =>
       titlePlaceholderAt(2, sx(8724900, sw), 365125, sx(2628900, sw), 5811838, "vert") +
@@ -272,8 +266,8 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
       ),
   },
   // Aliases / simplified versions
-  tx: {
-    type: "tx",
+  text: {
+    type: "text",
     name: "Title and Text",
     buildShapes: () => titlePlaceholder(2) + bodyPlaceholder(3, 1),
   },
@@ -284,15 +278,15 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
       titlePlaceholderAt(2, sx(1534584, sw), 617538, sx(10390716, sw), 1143000) +
       typedContentPlaceholder(3, "chart", 1, sx(1576917, sw), 2017713, sx(10363200, sw), 4114800),
   },
-  tbl: {
-    type: "tbl",
+  table: {
+    type: "table",
     name: "Title and Table",
     buildShapes: (sw) =>
       titlePlaceholderAt(2, sx(1534584, sw), 617538, sx(10390716, sw), 1143000) +
       typedContentPlaceholder(3, "tbl", 1, sx(1576917, sw), 2017713, sx(10363200, sw), 4114800),
   },
-  twoColTx: {
-    type: "twoColTx",
+  twoColumnText: {
+    type: "twoColumnText",
     name: "Two Content",
     buildShapes: (sw) =>
       titlePlaceholder(2) +

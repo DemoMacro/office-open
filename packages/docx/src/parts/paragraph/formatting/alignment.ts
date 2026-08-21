@@ -53,7 +53,7 @@ export const AlignmentType = {
   /** Distribute All Characters Equally */
   DISTRIBUTE: "distribute",
   /** Align to List Tab */
-  NUM_TAB: "numTab",
+  NUM_TAB: "numericTab",
   /** Widest Kashida Length */
   HIGH_KASHIDA: "highKashida",
   /** Low Kashida Length */

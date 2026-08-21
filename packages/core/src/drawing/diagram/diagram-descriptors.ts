@@ -7,6 +7,7 @@
 import { escapeXml, findChild } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../../descriptor";
+import { xsdAnimLevel, xsdHierBranch } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
 import type { DiagramExtensionListOptions } from "./diagram-props";
 import type { DiagramRelationshipIdsOptions } from "./diagram-rel";
@@ -95,10 +96,10 @@ export const presentationLayoutVariablesDesc: CustomDescriptor<PresentationLayou
         parts.push(`<dgm:animOne val="${escapeXml(opts.animateOneByOne.val)}"/>`);
 
       if (opts.animationLevel?.val !== undefined)
-        parts.push(`<dgm:animLvl val="${escapeXml(opts.animationLevel.val)}"/>`);
+        parts.push(`<dgm:animLvl val="${xsdAnimLevel.to(opts.animationLevel.val)}"/>`);
 
       if (opts.hierBranch?.val !== undefined)
-        parts.push(`<dgm:hierBranch val="${escapeXml(opts.hierBranch.val)}"/>`);
+        parts.push(`<dgm:hierBranch val="${xsdHierBranch.to(opts.hierBranch.val)}"/>`);
 
       if (parts.length === 0) return `<dgm:presLayoutVars/>`;
       return `<dgm:presLayoutVars>${parts.join("")}</dgm:presLayoutVars>`;
@@ -135,8 +136,8 @@ export const presentationLayoutVariablesDesc: CustomDescriptor<PresentationLayou
       const animLvl = findChild(el, "dgm:animLvl");
       if (animLvl?.attributes?.["val"] !== undefined)
         result.animationLevel = {
-          val: String(
-            animLvl.attributes["val"],
+          val: xsdAnimLevel.from(
+            String(animLvl.attributes["val"]),
           ) as PresentationLayoutVariablesOptions["animationLevel"] extends
             | { val?: infer V }
             | undefined
@@ -147,8 +148,8 @@ export const presentationLayoutVariablesDesc: CustomDescriptor<PresentationLayou
       const hierBranch = findChild(el, "dgm:hierBranch");
       if (hierBranch?.attributes?.["val"] !== undefined)
         result.hierBranch = {
-          val: String(
-            hierBranch.attributes["val"],
+          val: xsdHierBranch.from(
+            String(hierBranch.attributes["val"]),
           ) as PresentationLayoutVariablesOptions["hierBranch"] extends
             | { val?: infer V }
             | undefined

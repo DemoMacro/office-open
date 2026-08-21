@@ -7,6 +7,7 @@
  * @module
  */
 import { convertToInch, convertToPt, derivePasswordHash } from "@office-open/core";
+import { xsdConsolidateFunction } from "@office-open/core";
 import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
@@ -336,7 +337,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   if (opts.dataConsolidate) {
     const dc = opts.dataConsolidate;
     const dcAttrs: Record<string, string | number | boolean | undefined> = {};
-    if (dc.function && dc.function !== "sum") dcAttrs.function = dc.function;
+    if (dc.function && dc.function !== "sum")
+      dcAttrs.function = xsdConsolidateFunction.to(dc.function);
     if (dc.topLabels) dcAttrs.topLabels = 1;
     if (dc.leftLabels) dcAttrs.leftLabels = 1;
     if (dc.startLabels) dcAttrs.startLabels = 1;

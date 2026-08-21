@@ -1,3 +1,4 @@
+import { xsdTableWidthType } from "@office-open/core";
 import {
   AlignmentType as AlignmentTypeOrig,
   Document as DocumentOrig,
@@ -266,7 +267,11 @@ const buildTableDocCompetitor = () =>
                       new TableCellOrig({
                         width: {
                           size: cell.width.size,
-                          type: cell.width.type,
+                          type: xsdTableWidthType.to(cell.width.type) as
+                            | "auto"
+                            | "dxa"
+                            | "pct"
+                            | "nil",
                         },
                         children: [
                           new ParagraphOrig({
@@ -358,7 +363,11 @@ const buildFullFeaturedDocCompetitor = () =>
                       new TableCellOrig({
                         width: {
                           size: cell.width.size,
-                          type: cell.width.type,
+                          type: xsdTableWidthType.to(cell.width.type) as
+                            | "auto"
+                            | "dxa"
+                            | "pct"
+                            | "nil",
                         },
                         children: [
                           new ParagraphOrig({
@@ -665,7 +674,11 @@ const buildLargeTableDocCompetitor = () =>
                       new TableCellOrig({
                         width: {
                           size: cell.width.size,
-                          type: cell.width.type,
+                          type: xsdTableWidthType.to(cell.width.type) as
+                            | "auto"
+                            | "dxa"
+                            | "pct"
+                            | "nil",
                         },
                         children: [
                           new ParagraphOrig({
@@ -1068,7 +1081,7 @@ describe("DOCX: Large File (~100MB) — Mixed + async vs sync", () => {
                         { length: 10 },
                         (_, colIdx) =>
                           new TableCellOrig({
-                            width: { size: 1000, type: WidthType.PERCENTAGE },
+                            width: { size: 1000, type: "pct" },
                             children: [
                               new ParagraphOrig({
                                 children: [

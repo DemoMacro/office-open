@@ -457,11 +457,11 @@ function fontAlignToDocx(
   f: DrawingParagraphProperties["fontAlignment"],
 ): ParagraphOptions["textAlignment"] {
   switch (f) {
-    case "t":
+    case "top":
       return "top";
-    case "ctr":
+    case "center":
       return "center";
-    case "b":
+    case "bottom":
       return "bottom";
     case "base":
       return "baseline";
@@ -477,11 +477,11 @@ function fontAlignToDrawing(
 ): DrawingParagraphProperties["fontAlignment"] {
   switch (t) {
     case "top":
-      return "t";
+      return "top";
     case "center":
-      return "ctr";
+      return "center";
     case "bottom":
-      return "b";
+      return "bottom";
     case "baseline":
       return "base";
     case "auto":
@@ -496,13 +496,13 @@ type DocxTabType = NonNullable<ParagraphOptions["tabStops"]>[number]["type"];
 
 function tabAlignToDocx(a: DrawingTabAlignment): DocxTabType {
   switch (a) {
-    case "l":
+    case "left":
       return "left";
-    case "ctr":
+    case "center":
       return "center";
-    case "r":
+    case "right":
       return "right";
-    case "dec":
+    case "decimal":
       return "decimal";
     default:
       return "left";
@@ -512,13 +512,13 @@ function tabAlignToDocx(a: DrawingTabAlignment): DocxTabType {
 function tabAlignToDrawing(t: DocxTabType): DrawingTabAlignment {
   switch (t) {
     case "left":
-      return "l";
+      return "left";
     case "center":
-      return "ctr";
+      return "center";
     case "right":
-      return "r";
+      return "right";
     case "decimal":
-      return "dec";
+      return "decimal";
     default:
       return undefined;
   }

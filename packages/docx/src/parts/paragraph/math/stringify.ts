@@ -10,6 +10,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
+import { xsdMathStyle } from "@office-open/core";
 import { attr, children, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type {
@@ -37,7 +38,7 @@ function mathRunPropsStr(opts: MathRunPropertiesOptions): string {
   if (opts.literal) parts.push(`<m:lit m:val="${onOff(true)}"/>`);
   if (opts.normal) parts.push(`<m:nor m:val="${onOff(true)}"/>`);
   if (opts.script) parts.push(`<m:scr m:val="${opts.script}"/>`);
-  if (opts.style) parts.push(`<m:sty m:val="${opts.style}"/>`);
+  if (opts.style) parts.push(`<m:sty m:val="${xsdMathStyle.to(opts.style)}"/>`);
   if (opts.breakAlignment) parts.push(`<m:brk m:alnAt="${opts.breakAlignment}"/>`);
   if (opts.align) parts.push(`<m:aln m:val="${onOff(true)}"/>`);
   return parts.length ? `<m:rPr>${parts.join("")}</m:rPr>` : "";
@@ -547,7 +548,7 @@ function readMathRunProperties(el: Element): MathRunPropertiesOptions {
   const scr = attr(findChild(el, "m:scr"), "m:val");
   if (scr) result.script = scr as MathRunPropertiesOptions["script"];
   const sty = attr(findChild(el, "m:sty"), "m:val");
-  if (sty) result.style = sty as MathRunPropertiesOptions["style"];
+  if (sty) result.style = xsdMathStyle.from(sty) as MathRunPropertiesOptions["style"];
   const brk = attr(findChild(el, "m:brk"), "m:alnAt");
   if (brk !== undefined && brk !== "") result.breakAlignment = Number(brk);
   if (findChild(el, "m:aln")) result.align = true;

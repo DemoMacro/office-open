@@ -54,13 +54,10 @@ export interface FillOverlayEffectOptions {
   blend: (typeof BlendMode)[keyof typeof BlendMode];
   /** Solid fill color */
   solidFill?: SolidFillOptions;
-  /** Gradient fill */
   gradientFill?: GradientFillOptions;
-  /** Pattern fill */
   patternFill?: PatternFillOptions;
   /** Group fill (inherit from parent) */
   groupFill?: boolean;
-  /** No fill */
   noFill?: boolean;
 }
 

@@ -14,7 +14,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { emitPercent, parsePercent } from "../../util/converters";
-import { xsdTextAlign } from "../../util/mappings";
+import { xsdFontAlignment, xsdTextAlign, xsdTextTabAlignment } from "../../util/mappings";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { emitColorChoice, isPlainRgbColor, parseColorChoice } from "../color/color-descriptors";
 import { stringifyTextRun, textRunDesc } from "./run";
@@ -75,7 +75,7 @@ export function stringifyParagraphPropertiesElement(
   if (options.rightToLeft !== undefined) attrs.push(`rtl="${options.rightToLeft ? 1 : 0}"`);
   if (options.eastAsianLineBreak !== undefined)
     attrs.push(`eaLnBrk="${options.eastAsianLineBreak ? 1 : 0}"`);
-  if (options.fontAlignment) attrs.push(`fontAlgn="${options.fontAlignment}"`);
+  if (options.fontAlignment) attrs.push(`fontAlgn="${xsdFontAlignment.to(options.fontAlignment)}"`);
   if (options.latinLineBreak !== undefined)
     attrs.push(`latinLnBrk="${options.latinLineBreak ? 1 : 0}"`);
   if (options.hangingPunctuation !== undefined)
@@ -203,7 +203,7 @@ function stringifyTabStops(stops: TabStopOptions[]): string {
   const tabs = stops.map((t) => {
     const attrs: string[] = [];
     if (t.position !== undefined) attrs.push(`pos="${t.position}"`);
-    if (t.alignment) attrs.push(`algn="${t.alignment}"`);
+    if (t.alignment) attrs.push(`algn="${xsdTextTabAlignment.to(t.alignment)}"`);
     return `<a:tab${attrs.length ? " " + attrs.join(" ") : ""}/>`;
   });
   if (tabs.length === 0) return "<a:tabLst/>";
@@ -226,8 +226,8 @@ export function readParagraphProperties(
     if (el.attributes["defTabSz"] !== undefined)
       result.defTabSize = Number(el.attributes["defTabSz"]);
     if (el.attributes["fontAlgn"] !== undefined)
-      result.fontAlignment = String(
-        el.attributes["fontAlgn"],
+      result.fontAlignment = xsdFontAlignment.from(
+        String(el.attributes["fontAlgn"]),
       ) as TextParagraphPropertiesOptions["fontAlignment"];
     if (el.attributes["rtl"] !== undefined)
       result.rightToLeft = parseOnOff(el.attributes["rtl"]) ?? false;
@@ -353,7 +353,9 @@ export function readParagraphProperties(
         const tab: Mutable<TabStopOptions> = {};
         if (child.attributes?.["pos"] !== undefined) tab.position = Number(child.attributes["pos"]);
         if (child.attributes?.["algn"] !== undefined)
-          tab.alignment = child.attributes["algn"] as TextTabAlignment;
+          tab.alignment = xsdTextTabAlignment.from(
+            String(child.attributes["algn"]),
+          ) as TextTabAlignment;
         tabs.push(tab);
       }
     }

@@ -61,7 +61,7 @@ describe("tableStylesDesc round-trip", () => {
                 },
                 cell: {
                   borders: {
-                    left: { width: 9525, compound: "sng", color: color("333333") },
+                    left: { width: 9525, compound: "single", color: color("333333") },
                     top: { lineReference: { index: 2 }, color: color("666666") },
                   },
                   fillReference: { index: 1, color: { value: "4472C4" } },
@@ -94,7 +94,7 @@ describe("tableStylesDesc round-trip", () => {
     // wholeTbl — cell style (borders + fillReference)
     const wc = s.regions!.wholeTbl!.cell!;
     expect(wc.borders?.left?.width).toBe(9525);
-    expect(wc.borders?.left?.compound).toBe("sng");
+    expect(wc.borders?.left?.compound).toBe("single");
     expect(wc.borders?.left?.color).toContain('val="333333"');
     expect(wc.borders?.top?.lineReference?.index).toBe(2);
     expect(wc.borders?.top?.color).toContain('val="666666"');

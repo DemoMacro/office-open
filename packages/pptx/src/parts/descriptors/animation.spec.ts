@@ -78,8 +78,8 @@ describe("timingDesc round-trip", () => {
       {
         shapeId: 4,
         attributeName: "ppt_w",
-        calcMode: "lin",
-        valueType: "num",
+        calcMode: "linear",
+        valueType: "number",
         from: "0",
         to: "1",
         animBy: "0.5",
@@ -89,8 +89,8 @@ describe("timingDesc round-trip", () => {
     const result = roundTrip(entries);
     const [entry] = result;
     expect(entry?.shapeId).toBe(4);
-    expect(entry?.calcMode).toBe("lin");
-    expect(entry?.valueType).toBe("num");
+    expect(entry?.calcMode).toBe("linear");
+    expect(entry?.valueType).toBe("number");
     expect(entry?.from).toBe("0");
     expect(entry?.to).toBe("1");
     expect(entry?.animBy).toBe("0.5");
@@ -101,7 +101,7 @@ describe("timingDesc round-trip", () => {
     const entries: AnimationEntry[] = [
       {
         shapeId: 7,
-        class: "emph",
+        class: "emphasis",
         emphasisType: "colorChange",
         colorSpace: "hsl",
         colorTo: "FF0000",
@@ -130,14 +130,14 @@ describe("timingDesc round-trip", () => {
       {
         shapeId: 9,
         attributeName: "ppt_w",
-        iterate: { type: "lt", backwards: true, interval: 200 },
+        iterate: { type: "letter", backwards: true, interval: 200 },
         duration: 500,
       },
     ];
     const result = roundTrip(entries);
     const [entry] = result;
     expect(entry?.shapeId).toBe(9);
-    expect(entry?.iterate).toEqual({ type: "lt", backwards: true, interval: 200 });
+    expect(entry?.iterate).toEqual({ type: "letter", backwards: true, interval: 200 });
   });
 
   it("falls back to verbatim inner XML when the model cannot rebuild the tree", () => {

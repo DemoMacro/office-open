@@ -359,14 +359,14 @@ describe("paragraphDesc round-trip", () => {
       text: "x",
       properties: {
         tabStops: [
-          { position: 914400, alignment: "l" },
-          { position: 4572000, alignment: "dec" },
+          { position: 914400, alignment: "left" },
+          { position: 4572000, alignment: "decimal" },
         ],
       },
     });
     expect(r.properties?.tabStops).toEqual([
-      { position: 914400, alignment: "l" },
-      { position: 4572000, alignment: "dec" },
+      { position: 914400, alignment: "left" },
+      { position: 4572000, alignment: "decimal" },
     ]);
   });
 
@@ -408,8 +408,8 @@ describe("bodyPropertiesDesc round-trip", () => {
   });
 
   it("round-trips anchor/wrap/numCol", () => {
-    const r = roundTrip({ anchor: "ctr", wrap: "square", numCol: 2 });
-    expect(r.anchor).toBe("ctr");
+    const r = roundTrip({ anchor: "center", wrap: "square", numCol: 2 });
+    expect(r.anchor).toBe("center");
     expect(r.wrap).toBe("square");
     expect(r.numCol).toBe(2);
   });
@@ -512,7 +512,7 @@ describe("textListStyleDesc round-trip", () => {
 describe("textBodyDesc top-level sugar", () => {
   it("merges anchor/autoFit/columns sugar into bodyProperties on stringify", () => {
     const xml = textBodyDesc.stringify(
-      { text: "Hi", anchor: "t", autoFit: "normal", columns: 2 },
+      { text: "Hi", anchor: "top", autoFit: "normal", columns: 2 },
       writeCtx,
     )!;
     expect(xml).toContain('anchor="t"');
@@ -527,13 +527,13 @@ describe("textBodyDesc top-level sugar", () => {
 
   it("emits normalized bodyProperties on round-trip (sugar is input-only)", () => {
     const xml = textBodyDesc.stringify(
-      { text: "Hi", anchor: "t", autoFit: "normal", columns: 2 },
+      { text: "Hi", anchor: "top", autoFit: "normal", columns: 2 },
       writeCtx,
     )!;
     const el = parseXml(`<root>${xml}</root>`).elements?.[0];
     if (!el) throw new Error("no root");
     const r = textBodyDesc.parse(el, readCtx);
-    expect(r.bodyProperties?.anchor).toBe("t");
+    expect(r.bodyProperties?.anchor).toBe("top");
     expect(r.bodyProperties?.normAutofit).toEqual({});
     expect(r.bodyProperties?.numCol).toBe(2);
     expect(r.anchor).toBeUndefined();
@@ -541,7 +541,10 @@ describe("textBodyDesc top-level sugar", () => {
   });
 
   it("explicit bodyProperties wins over sugar", () => {
-    const xml = textBodyDesc.stringify({ anchor: "t", bodyProperties: { anchor: "b" } }, writeCtx)!;
+    const xml = textBodyDesc.stringify(
+      { anchor: "top", bodyProperties: { anchor: "bottom" } },
+      writeCtx,
+    )!;
     expect(xml).toContain('anchor="b"');
     expect(xml).not.toContain('anchor="t"');
   });

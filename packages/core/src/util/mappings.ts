@@ -299,3 +299,195 @@ export const xsdTextCaps = bidi({
   all: "all",
   small: "small",
 } as const);
+
+// ---------------------------------------------------------------------------
+// Chart — axis / legend / label placement (c:axPos, c:legendPos, c:dLblPos)
+// Only the abbreviated tokens are mapped; identical values pass through.
+// ---------------------------------------------------------------------------
+
+export const xsdAxisPosition = bidi({ bottom: "b", left: "l", right: "r", top: "t" } as const);
+
+export const xsdLegendPosition = bidi({
+  bottom: "b",
+  topRight: "tr",
+  left: "l",
+  right: "r",
+  top: "t",
+} as const);
+
+export const xsdDataLabelPosition = bidi({
+  bottom: "b",
+  center: "ctr",
+  insideBase: "inBase",
+  insideEnd: "inEnd",
+  left: "l",
+  outsideEnd: "outEnd",
+  right: "r",
+  top: "t",
+} as const);
+
+export const xsdAxisCrossBetween = bidi({ middleOfCategory: "midCat" } as const);
+
+export const xsdAxisCrosses = bidi({ zero: "autoZero" } as const);
+
+export const xsdErrorValueType = bidi({
+  custom: "cust",
+  fixedValue: "fixedVal",
+  standardDeviation: "stdDev",
+  standardError: "stdErr",
+} as const);
+
+export const xsdSizeRepresents = bidi({ width: "w" } as const);
+
+export const xsdSplitType = bidi({ custom: "cust", position: "pos", value: "val" } as const);
+
+export const xsdAxisLabelAlignment = bidi({ center: "ctr", left: "l", right: "r" } as const);
+
+export const xsdAxisOrientation = bidi({ ascending: "minMax", descending: "maxMin" } as const);
+
+export const xsdTrendlineType = bidi({
+  exponential: "exp",
+  logarithmic: "log",
+  movingAverage: "movingAvg",
+  polynomial: "poly",
+} as const);
+
+// ---------------------------------------------------------------------------
+// Chart / text — tab alignment, font alignment, compound line
+// ---------------------------------------------------------------------------
+
+export const xsdTextTabAlignment = bidi({
+  left: "l",
+  center: "ctr",
+  right: "r",
+  decimal: "dec",
+} as const);
+
+export const xsdFontAlignment = bidi({ top: "t", center: "ctr", bottom: "b" } as const);
+
+// ---------------------------------------------------------------------------
+// Diagram — animation levels, hierarchy branch, hue direction (dgm:)
+// ---------------------------------------------------------------------------
+
+export const xsdAnimLevel = bidi({ level: "lvl", center: "ctr" } as const);
+
+export const xsdHierBranch = bidi({
+  left: "l",
+  right: "r",
+  hanging: "hang",
+  standard: "std",
+  initial: "init",
+} as const);
+
+export const xsdHueDirection = bidi({ clockwise: "cw", counterClockwise: "ccw" } as const);
+
+export const xsdDiagramDirection = bidi({ normal: "norm", reversed: "rev" } as const);
+
+export const xsdResizeHandles = bidi({ exact: "exact", relative: "rel" } as const);
+
+export const xsdOnOffStyle = bidi({ default: "def" } as const);
+
+// ---------------------------------------------------------------------------
+// PPTX — animation classes, calc modes, slide layouts, text direction
+// ---------------------------------------------------------------------------
+
+export const xsdAnimClass = bidi({
+  entrance: "entr",
+  emphasis: "emph",
+  mediaCall: "mediacall",
+} as const);
+
+export const xsdAnimCalcMode = bidi({ linear: "lin", formula: "fmla" } as const);
+
+export const xsdAnimValueType = bidi({ string: "str", number: "num", color: "clr" } as const);
+
+export const xsdTextBuild = bidi({ paragraph: "p", custom: "cust" } as const);
+
+export const xsdIterateType = bidi({ element: "el", word: "wd", letter: "lt" } as const);
+
+export const xsdSlideLayoutType = bidi({
+  text: "tx",
+  twoColumnText: "twoColTx",
+  object: "obj",
+  sectionHeader: "secHead",
+  table: "tbl",
+  clipArtAndText: "clipArtAndTx",
+  pictureText: "picTx",
+  twoObjects: "twoObj",
+  twoTextAndTwoObjects: "twoTxTwoObj",
+  objectAndText: "objTx",
+  verticalText: "vertTx",
+  verticalTitleAndText: "vertTitleAndTx",
+} as const);
+
+export const xsdTextVerticalType = bidi({
+  horizontal: "horz",
+  vertical: "vert",
+  vertical270: "vert270",
+  wordArtVertical: "wordArtVert",
+  eastAsianVertical: "eaVert",
+  mongolianVertical: "mongolianVert",
+  wordArtVerticalRightToLeft: "wordArtVertRtl",
+} as const);
+
+export const xsdDashStyle = bidi({
+  longDash: "lgDash",
+  systemDot: "sysDot",
+  systemDash: "sysDash",
+} as const);
+
+export const xsdOrient = bidi({ horizontal: "horz", vertical: "vert" } as const);
+
+// ---------------------------------------------------------------------------
+// DOCX / XLSX — math run style, table width unit, totals-row aggregates
+// ---------------------------------------------------------------------------
+
+export const xsdMathStyle = bidi({ plain: "p", bold: "b", italic: "i", boldItalic: "bi" } as const);
+
+export const xsdTableWidthType = bidi({ twips: "dxa", percent: "pct" } as const);
+
+// ---------------------------------------------------------------------------
+// DOCX — paragraph/table justification (ST_Jc*) and shading pattern (ST_Shd)
+// ---------------------------------------------------------------------------
+
+export const xsdJcAlignment = bidi({ numericTab: "numTab" } as const);
+
+export const xsdConsolidateFunction = bidi({
+  countNumbers: "countNums",
+  standardDeviation: "stdDev",
+  standardDeviationPopulation: "stdDevp",
+  variance: "var",
+  variancePopulation: "varp",
+} as const);
+
+export const xsdShadingPattern = bidi({
+  percent5: "pct5",
+  percent10: "pct10",
+  percent12: "pct12",
+  percent15: "pct15",
+  percent20: "pct20",
+  percent25: "pct25",
+  percent30: "pct30",
+  percent35: "pct35",
+  percent37: "pct37",
+  percent40: "pct40",
+  percent45: "pct45",
+  percent50: "pct50",
+  percent55: "pct55",
+  percent60: "pct60",
+  percent62: "pct62",
+  percent65: "pct65",
+  percent70: "pct70",
+  percent75: "pct75",
+  percent80: "pct80",
+  percent85: "pct85",
+  percent87: "pct87",
+  percent90: "pct90",
+  percent95: "pct95",
+} as const);
+
+export const xsdTotalsRowFunction = bidi({
+  countNumbers: "countNums",
+  standardDeviation: "stdDev",
+  variance: "var",
+} as const);

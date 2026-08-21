@@ -20,6 +20,7 @@ import type { Element } from "@office-open/xml";
 
 import type { ReadContext, WriteContext, CustomDescriptor } from "../../descriptor";
 import { convertToEmu } from "../../util/converters";
+import { xsdTextAnchor, xsdTextVerticalType } from "../../util/mappings";
 import type { UniversalMeasure } from "../../util/values";
 import { createScene3D } from "../three-d/scene-3d";
 import type { Scene3DOptions } from "../three-d/scene-3d";
@@ -30,7 +31,7 @@ import { scene3DDesc, shape3DDesc } from "../three-d/three-d-descriptors";
 // ── Enumerations ──
 
 /** Text anchoring type (ST_TextAnchoringType). */
-export type VerticalAnchor = "t" | "ctr" | "b" | "just" | "dist";
+export type VerticalAnchor = "top" | "center" | "bottom" | "justify" | "distribute";
 
 /** Text vertical overflow type (ST_TextVertOverflowType). */
 export type TextVertOverflow = "overflow" | "ellipsis" | "clip";
@@ -40,13 +41,13 @@ export type TextHorzOverflow = "overflow" | "clip";
 
 /** Text vertical type (ST_TextVerticalType). */
 export type TextVertical =
-  | "horz"
-  | "vert"
-  | "vert270"
-  | "wordArtVert"
-  | "eaVert"
-  | "mongolianVert"
-  | "wordArtVertRtl";
+  | "horizontal"
+  | "vertical"
+  | "vertical270"
+  | "wordArtVertical"
+  | "eastAsianVertical"
+  | "mongolianVertical"
+  | "wordArtVerticalRightToLeft";
 
 /** Text body wrapping type (ST_TextWrappingType). */
 export type TextBodyWrapping = "none" | "square";
@@ -174,7 +175,7 @@ export const createBodyProperties = (
     spcFirstLastPara: options.spcFirstLastPara,
     vertOverflow: options.vertOverflow,
     horzOverflow: options.horzOverflow,
-    vert: options.vertical,
+    vert: options.vertical !== undefined ? xsdTextVerticalType.to(options.vertical) : undefined,
     wrap: options.wrap,
     lIns: lIns !== undefined ? convertToEmu(lIns) : undefined,
     tIns: tIns !== undefined ? convertToEmu(tIns) : undefined,
@@ -184,7 +185,7 @@ export const createBodyProperties = (
     spcCol: options.spcCol !== undefined ? convertToEmu(options.spcCol) : undefined,
     rtlCol: options.rtlCol,
     fromWordArt: options.fromWordArt,
-    anchor,
+    anchor: anchor !== undefined ? xsdTextAnchor.to(anchor) : undefined,
     anchorCtr: options.anchorCtr,
     forceAA: options.forceAA,
     upright: options.upright,
@@ -237,7 +238,8 @@ export const parseBodyProperties = (el: Element, ctx: ReadContext): BodyProperti
   if (horzOverflow !== undefined)
     result.horzOverflow = horzOverflow as BodyPropertiesOptions["horzOverflow"];
   const vert = attr(el, "vert");
-  if (vert !== undefined) result.vertical = vert as BodyPropertiesOptions["vertical"];
+  if (vert !== undefined)
+    result.vertical = xsdTextVerticalType.from(vert) as BodyPropertiesOptions["vertical"];
   const wrap = attr(el, "wrap");
   if (wrap !== undefined) result.wrap = wrap as BodyPropertiesOptions["wrap"];
   const lIns = attrMeasure(el, "lIns");
@@ -257,7 +259,8 @@ export const parseBodyProperties = (el: Element, ctx: ReadContext): BodyProperti
   const fromWordArt = attrBool(el, "fromWordArt");
   if (fromWordArt !== undefined) result.fromWordArt = fromWordArt;
   const anchor = attr(el, "anchor");
-  if (anchor !== undefined) result.anchor = anchor as BodyPropertiesOptions["anchor"];
+  if (anchor !== undefined)
+    result.anchor = xsdTextAnchor.from(anchor) as BodyPropertiesOptions["anchor"];
   const anchorCtr = attrBool(el, "anchorCtr");
   if (anchorCtr !== undefined) result.anchorCtr = anchorCtr;
   const forceAA = attrBool(el, "forceAA");

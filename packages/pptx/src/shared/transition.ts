@@ -1,4 +1,5 @@
 import type { DataType } from "@office-open/core";
+import { xsdOrient } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
 
@@ -67,8 +68,8 @@ export interface TransitionOptions {
   advanceAfterTime?: number;
   /** Motion direction; see TransitionDirection. */
   direction?: TransitionDirection;
-  /** Split/wipe orientation: horizontal or vertical. */
-  orient?: "horz" | "vert";
+  /** Split/wipe orientation. */
+  orient?: "horizontal" | "vertical";
   thruBlk?: boolean;
   spokes?: number;
   startSound?: {
@@ -102,7 +103,7 @@ function buildTransitionElement(
   } else if ((type === "fade" || type === "cut") && thruBlk !== undefined) {
     attrs.push(`thruBlk="${thruBlk ? 1 : 0}"`);
   } else if (type === "split") {
-    if (orient && orient !== "horz") attrs.push(`orient="${orient}"`);
+    if (orient && orient !== "horizontal") attrs.push(`orient="${xsdOrient.to(orient)}"`);
     if (dir && dir !== "out") attrs.push(`dir="${dir}"`);
   } else if (type === "wheel") {
     if (spokes !== undefined && spokes !== 4) attrs.push(`spokes="${spokes}"`);

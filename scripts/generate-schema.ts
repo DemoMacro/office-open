@@ -176,6 +176,40 @@ function postProcess(schema: Record<string, unknown>) {
     // resolve as a reference host. Only the root envelope carries an $id.
     delete obj.$id;
 
+    // P5: JSDoc often carries verbatim XSD excerpts (## XSD: CT_* ```xml …```)
+    // for developers reading the source. Schema consumers need the semantics,
+    // not the XSD source — strip the fenced blocks and their heading lines;
+    // drop the key entirely if nothing meaningful remains.
+    if (typeof obj.description === "string" && obj.description.includes("```")) {
+      const stripped = obj.description
+        .replace(/```[\s\S]*?```/g, "")
+        .replace(/^## XSD[^\n]*$/gm, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+      if (stripped) obj.description = stripped;
+      else delete obj.description;
+    }
+
+    // P6: provenance references (ST_*/CT_* names) are developer anchors to the
+    // XSD; an LLM filling the options needs the semantics, not the spec ids.
+    // Parenthesised attributions go whole; bare ids go alone; dangling
+    // punctuation the removal leaves behind is tidied. Nothing else changes.
+    if (typeof obj.description === "string" && /S[TC]_[A-Za-z]/.test(obj.description)) {
+      const stripped = obj.description
+        .replace(/\s*\((?:see |the )?S[TC]_[A-Za-z][^)]*\)/g, "")
+        .replace(/\bS[TC]_[A-Za-z]+\b/g, "")
+        .replace(/\(\s*\)/g, "")
+        .replace(/\s+([.,;:)])/g, "$1")
+        .replace(/([\n(])\s+[—-]\s+/g, "$1 ")
+        .replace(/^\s*[—-]\s+/gm, "")
+        .replace(/\s{2,}/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
+        .replace(/^[.,;:]\s*/, "");
+      if (stripped) obj.description = stripped;
+      else delete obj.description;
+    }
+
     // P4b: bare `Uint8Array` fields (e.g. BaseMediaEntry["data"]) are inlined
     // by tsj as the typed-array runtime shape (BYTES_PER_ELEMENT/buffer/…).
     // The JSON-representable inputs for such a field are what DataType
@@ -210,6 +244,15 @@ function postProcess(schema: Record<string, unknown>) {
     if (obj.properties && typeof obj.properties === "object") {
       for (const [name, sub] of Object.entries(obj.properties as Record<string, unknown>)) {
         totalProperties++;
+        if (sub && typeof sub === "object") {
+          const subRec = sub as Record<string, unknown>;
+          // P7: a description that merely restates the property name carries
+          // no information — drop it rather than spend tokens on an echo.
+          if (typeof subRec.description === "string") {
+            const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, "");
+            if (norm(subRec.description) === norm(name)) delete subRec.description;
+          }
+        }
         if (
           sub &&
           typeof sub === "object" &&

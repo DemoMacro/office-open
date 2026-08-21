@@ -309,7 +309,6 @@ export interface CustomCellStyleOptions {
   name: string;
   /** Index into cellStyleXfs; the referenced entry holds the format. */
   xfId: number;
-  /** Built-in ID */
   builtinId?: number;
   /** Custom built-in (CT_CellStyle `@customBuiltin`) */
   customBuiltin?: boolean;

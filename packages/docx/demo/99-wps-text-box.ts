@@ -141,7 +141,7 @@ const buffer = await generateDocument({
                       right: "0.4cm",
                       top: "0.2cm",
                     },
-                    anchor: "ctr",
+                    anchor: "center",
                   },
                   children: ["Vertically centered text with custom margins."],
                   outline: {

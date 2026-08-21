@@ -146,9 +146,7 @@ export interface WebPublishingOptions {
   targetScreenSize?: string;
   /** DPI (default 96) */
   dpi?: number;
-  /** Code page */
   codePage?: number;
-  /** Character set */
   characterSet?: string;
 }
 
@@ -174,7 +172,6 @@ export interface FileSharingOptions {
 export interface WorkbookPropertiesOptions {
   /** Use 1904 date system (default false) */
   date1904?: boolean;
-  /** Default theme version */
   defaultThemeVersion?: number;
   /** Show objects: "all" | "placeholders" | "none" */
   showObjects?: string;
@@ -186,7 +183,6 @@ export interface WorkbookPropertiesOptions {
   filterPrivacy?: boolean;
   /** Backup file (default false) */
   backupFile?: boolean;
-  /** Code name */
   codeName?: string;
   /** Show border unselected tables (CT_WorkbookPr `@showBorderUnselectedTables`) */
   showBorderUnselectedTables?: boolean;
@@ -270,11 +266,9 @@ export interface CalculationPropertiesOptions {
   fullCalcOnLoad?: boolean;
   /** Calc on save (default true) */
   calcOnSave?: boolean;
-  /** Force full calc */
   forceFullCalc?: boolean;
   /** Concurrent calc (default true) */
   concurrentCalc?: boolean;
-  /** Concurrent manual count */
   concurrentManualCount?: number;
   /** Iterate (default false) */
   iterate?: boolean;

@@ -105,11 +105,11 @@ Use **camelCase**. Follow the appropriate prefix convention:
 
 ### Enumerated Types
 
-Prefer **string literal unions** for enumerated option types. They are pure types (no runtime object), keep the call site self-documenting (`position: "b"`), and have no runtime cost. Map XSD abbreviations to full words in JSDoc, not via a value object.
+Prefer **string literal unions** for enumerated option types. They are pure types (no runtime object), keep the call site self-documenting (`position: "bottom"`), and have no runtime cost. Enum **values** are full words a caller can read out loud — OOXML token jargon (`midCat`, `inBase`, `b`, `cust`, `stdErr`, `minMax`) is spelled out (`middleOfCategory`, `insideBase`, `bottom`, `custom`, `standardError`, `ascending`) behind an `xsd*` mapping table in `core/util/mappings.ts` that owns the token translation in both directions (`.to()` for stringify, `.from()` for parse). Values that are already common English (`single`, `between`, `min`, `none`) or established domain terms (`kashida`, `aiueo`, `twips`) stay verbatim.
 
 ```typescript
-// Preferred: string literal union
-export type AxisPosition = "b" | "l" | "r" | "t";
+// Preferred: string literal union of full words, translated at the XML boundary
+export type AxisPosition = "bottom" | "left" | "right" | "top";
 
 /** XSD ST_TickMark: cross / in / none / out */
 export type AxisTickMark = "cross" | "in" | "none" | "out";

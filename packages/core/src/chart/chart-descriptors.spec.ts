@@ -158,7 +158,7 @@ describe("chartSpaceDesc", () => {
           values: [10, 20],
           trendlines: [
             { type: "linear", forward: 2, backward: 1, dispEq: true, dispRSqr: true },
-            { type: "poly", order: 3, name: "Poly" },
+            { type: "polynomial", order: 3, name: "Poly" },
           ],
         },
       ],
@@ -177,7 +177,7 @@ describe("chartSpaceDesc", () => {
     expect(trendlines[0]?.type).toBe("linear");
     expect(trendlines[0]?.forward).toBe(2);
     expect(trendlines[0]?.dispEq).toBe(true);
-    expect(trendlines[1]?.type).toBe("poly");
+    expect(trendlines[1]?.type).toBe("polynomial");
     expect(trendlines[1]?.order).toBe(3);
     expect(trendlines[1]?.name).toBe("Poly");
   });
@@ -190,14 +190,14 @@ describe("chartSpaceDesc", () => {
         {
           name: "S",
           values: [5],
-          trendlines: [{ type: "movingAvg", period: 3 }],
+          trendlines: [{ type: "movingAverage", period: 3 }],
         },
       ],
     };
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
     const trendlines = ser.trendlines ?? [];
-    expect(trendlines[0]?.type).toBe("movingAvg");
+    expect(trendlines[0]?.type).toBe("movingAverage");
     expect(trendlines[0]?.period).toBe(3);
   });
 
@@ -214,7 +214,7 @@ describe("chartSpaceDesc", () => {
           errorBars: {
             direction: "y",
             barType: "both",
-            valueType: "fixedVal",
+            valueType: "fixedValue",
             value: 5,
             noEndCap: false,
           },
@@ -231,7 +231,7 @@ describe("chartSpaceDesc", () => {
     const ser = result.series[0] as ChartSeriesData;
     const errorBars = ser.errorBars;
     expect(errorBars?.direction).toBe("y");
-    expect(errorBars?.valueType).toBe("fixedVal");
+    expect(errorBars?.valueType).toBe("fixedValue");
     expect(errorBars?.value).toBe(5);
     expect(errorBars?.noEndCap).toBe(false);
   });
@@ -245,7 +245,7 @@ describe("chartSpaceDesc", () => {
           name: "S",
           values: [10],
           errorBars: {
-            valueType: "cust",
+            valueType: "custom",
             barType: "both",
             plusValue: 3,
             minusValue: 1.5,
@@ -271,7 +271,7 @@ describe("chartSpaceDesc", () => {
           name: "Revenue",
           values: [100, 200],
           dataLabels: {
-            position: "outEnd",
+            position: "outsideEnd",
             showVal: true,
             showCatName: true,
             showLegendKey: false,
@@ -290,7 +290,7 @@ describe("chartSpaceDesc", () => {
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
     const dataLabels = ser.dataLabels;
-    expect(dataLabels?.position).toBe("outEnd");
+    expect(dataLabels?.position).toBe("outsideEnd");
     expect(dataLabels?.showVal).toBe(true);
     expect(dataLabels?.showLegendKey).toBe(false);
     expect(dataLabels?.separator).toBe(", ");
@@ -379,7 +379,7 @@ describe("chartSpaceDesc", () => {
             showVal: true,
             labels: [
               { index: 1, delete: true },
-              { index: 2, position: "outEnd", numberFormat: "0.0" },
+              { index: 2, position: "outsideEnd", numberFormat: "0.0" },
             ],
           },
         },
@@ -394,7 +394,7 @@ describe("chartSpaceDesc", () => {
     const labels = (result.series[0] as ChartSeriesData).dataLabels?.labels ?? [];
     expect(labels).toHaveLength(2);
     expect(labels[0]?.delete).toBe(true);
-    expect(labels[1]?.position).toBe("outEnd");
+    expect(labels[1]?.position).toBe("outsideEnd");
     expect(labels[1]?.numberFormat).toBe("0.0");
   });
 
@@ -448,8 +448,8 @@ describe("chartSpaceDesc", () => {
           kind: "category",
           id: 10,
           crossAxisId: 20,
-          position: "b",
-          crosses: "autoZero",
+          position: "bottom",
+          crosses: "zero",
           majorGridlines: true,
           labelOffset: 100,
         },
@@ -457,7 +457,7 @@ describe("chartSpaceDesc", () => {
           kind: "value",
           id: 20,
           crossAxisId: 10,
-          position: "l",
+          position: "left",
           numberFormat: "0.0",
           majorUnit: 5,
           minorUnit: 1,
@@ -468,7 +468,7 @@ describe("chartSpaceDesc", () => {
           crossesAt: 0,
           majorGridlines: true,
           minorGridlines: true,
-          scaling: { orientation: "minMax", min: 0, max: 10, logBase: 10 },
+          scaling: { orientation: "ascending", min: 0, max: 10, logBase: 10 },
           displayUnits: { builtInUnit: "thousands", label: true },
         },
       ],
@@ -515,15 +515,15 @@ describe("chartSpaceDesc", () => {
           kind: "date",
           id: 10,
           crossAxisId: 20,
-          position: "b",
-          crosses: "autoZero",
+          position: "bottom",
+          crosses: "zero",
           baseTimeUnit: "days",
           majorUnit: 30,
           majorTimeUnit: "months",
           minorUnit: 7,
           minorTimeUnit: "days",
         },
-        { kind: "value", id: 20, crossAxisId: 10, position: "l", crosses: "autoZero" },
+        { kind: "value", id: 20, crossAxisId: 10, position: "left", crosses: "zero" },
       ],
     };
     const result = roundTrip(opts);
@@ -541,13 +541,13 @@ describe("chartSpaceDesc", () => {
       categories: ["A"],
       series: [{ name: "S", values: [1] }],
       axes: [
-        { kind: "category", id: 10, crossAxisId: 20, position: "b", crosses: "autoZero" },
+        { kind: "category", id: 10, crossAxisId: 20, position: "bottom", crosses: "zero" },
         {
           kind: "value",
           id: 20,
           crossAxisId: 10,
-          position: "l",
-          crosses: "autoZero",
+          position: "left",
+          crosses: "zero",
           displayUnits: { customUnit: 50 },
         },
       ],
@@ -779,7 +779,7 @@ describe("chartSpaceDesc", () => {
       series: [{ name: "S", xValues: [1], yValues: [2], bubbleSize: [3] }],
       bubbleScale: 80,
       showNegativeBubbles: true,
-      sizeRepresents: "w",
+      sizeRepresents: "width",
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
     expect(xml).toContain('c:bubbleScale val="80"');
@@ -789,7 +789,7 @@ describe("chartSpaceDesc", () => {
     const result = roundTrip(opts);
     expect(result.bubbleScale).toBe(80);
     expect(result.showNegativeBubbles).toBe(true);
-    expect(result.sizeRepresents).toBe("w");
+    expect(result.sizeRepresents).toBe("width");
   });
 
   it("round-trips CT_Chart tail display options", () => {
@@ -895,7 +895,7 @@ describe("chartSpaceDesc", () => {
       categories: ["A", "B", "C", "D"],
       series: [{ name: "S", values: [10, 20, 30, 40] }],
       gapWidth: 100,
-      splitType: "pos",
+      splitType: "position",
       splitPosition: 2,
       secondPieSize: 75,
     };
@@ -912,7 +912,7 @@ describe("chartSpaceDesc", () => {
     expect(result.type).toBe("ofPie");
     expect(result.ofPieType).toBe("bar");
     expect(result.gapWidth).toBe(100);
-    expect(result.splitType).toBe("pos");
+    expect(result.splitType).toBe("position");
     expect(result.splitPosition).toBe(2);
     expect(result.secondPieSize).toBe(75);
   });
@@ -922,7 +922,7 @@ describe("chartSpaceDesc", () => {
       type: "ofPie",
       categories: ["A", "B", "C", "D", "E"],
       series: [{ name: "S", values: [1, 2, 3, 4, 5] }],
-      splitType: "cust",
+      splitType: "custom",
       customSplitPoints: [2, 4],
       secondPieSize: "75%",
     };
@@ -934,7 +934,7 @@ describe("chartSpaceDesc", () => {
     expect(xml).toContain('c:secondPieSize val="75%"');
 
     const result = roundTrip(opts);
-    expect(result.splitType).toBe("cust");
+    expect(result.splitType).toBe("custom");
     expect(result.customSplitPoints).toEqual([2, 4]);
     expect(result.secondPieSize).toBe("75%");
   });
@@ -1107,7 +1107,7 @@ describe("chartSpaceDesc", () => {
         { name: "Visible", values: [1, 2] },
         { name: "Hidden", values: [3, 4] },
       ],
-      legendPosition: "t",
+      legendPosition: "top",
       legendEntries: [{ index: 1, delete: true }],
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
@@ -1115,7 +1115,7 @@ describe("chartSpaceDesc", () => {
     expect(xml).toContain('<c:legendEntry><c:idx val="1"/><c:delete val="1"/>');
 
     const result = roundTrip(opts);
-    expect(result.legendPosition).toBe("t");
+    expect(result.legendPosition).toBe("top");
     expect(result.legendEntries).toEqual([{ index: 1, delete: true }]);
   });
 

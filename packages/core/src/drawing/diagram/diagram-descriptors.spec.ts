@@ -81,12 +81,12 @@ describe("presentationLayoutVariablesDesc", () => {
 
   it("round-trips hierarchy branch", () => {
     const opts: PresentationLayoutVariablesOptions = {
-      hierBranch: { val: "hang" },
+      hierBranch: { val: "hanging" },
       maxChildren: { val: 4 },
       preferredChildren: { val: 2 },
     };
     const result = roundTrip(presentationLayoutVariablesDesc, opts);
-    expect(result.hierBranch?.val).toBe("hang");
+    expect(result.hierBranch?.val).toBe("hanging");
     expect(result.maxChildren?.val).toBe(4);
     expect(result.preferredChildren?.val).toBe(2);
   });
@@ -94,11 +94,11 @@ describe("presentationLayoutVariablesDesc", () => {
   it("round-trips animation options", () => {
     const opts: PresentationLayoutVariablesOptions = {
       animateOneByOne: { val: "one" },
-      animationLevel: { val: "lvl" },
+      animationLevel: { val: "level" },
     };
     const result = roundTrip(presentationLayoutVariablesDesc, opts);
     expect(result.animateOneByOne?.val).toBe("one");
-    expect(result.animationLevel?.val).toBe("lvl");
+    expect(result.animationLevel?.val).toBe("level");
   });
 });
 
