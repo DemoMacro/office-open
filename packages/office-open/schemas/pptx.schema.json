@@ -11006,7 +11006,15 @@
           "$ref": "#/definitions/SlideSyncOptions"
         },
         "transition": {
-          "$ref": "#/definitions/TransitionOptions"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TransitionOptions"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Slide transition. The structured form covers the plain p:transition element; a string is the verbatim markup-compatibility block a source emits when the transition carries reader-version extensions (mc:Choice p14:dur with an mc:Fallback twin) — re-emitted as written."
         }
       },
       "type": "object"
@@ -11949,6 +11957,10 @@
       "properties": {
         "defaultStyleId": {
           "description": "Default style GUID",
+          "type": "string"
+        },
+        "ext": {
+          "description": "Unmodeled trailing child elements (markup-compatibility blocks above all), serialized verbatim — re-emitted as written after the styles.",
           "type": "string"
         },
         "styles": {

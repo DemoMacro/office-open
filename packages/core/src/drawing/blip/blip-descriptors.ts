@@ -11,6 +11,7 @@ import { findChild, attr } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { emitAngle, emitPercent, parseAngle, parsePercentAttr } from "../../util/converters";
+import { extUriMatches } from "../../util/ext-uri";
 import { xsdRectAlignment } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
 import {
@@ -390,7 +391,8 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
     const extLst = findChild(el, "a:extLst");
     if (extLst) {
       for (const ext of extLst.elements ?? []) {
-        if (ext.name !== "a:ext" || attr(ext, "uri") !== USE_LOCAL_DPI_EXT_URI) continue;
+        if (ext.name !== "a:ext" || !extUriMatches(attr(ext, "uri"), USE_LOCAL_DPI_EXT_URI))
+          continue;
         const useLocalDpi = findChild(ext, "a14:useLocalDpi");
         if (useLocalDpi !== undefined)
           result.useLocalDpi = parseOnOff(attr(useLocalDpi, "val")) ?? true;

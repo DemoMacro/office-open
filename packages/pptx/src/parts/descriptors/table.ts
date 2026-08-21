@@ -4,7 +4,13 @@
  * @module
  */
 
-import { convertToEmu, parseOnOff, xsdTextAnchor, stripColorHashPrefix } from "@office-open/core";
+import {
+  convertToEmu,
+  extUriMatches,
+  parseOnOff,
+  stripColorHashPrefix,
+  xsdTextAnchor,
+} from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
@@ -78,7 +84,7 @@ function readOfficeIdExt(el: Element, uri: string, tag: OfficeIdTag): string | u
   const extLst = findChild(el, "a:extLst");
   if (!extLst) return undefined;
   for (const ext of extLst.elements ?? []) {
-    if (ext.name !== "a:ext" || attr(ext, "uri") !== uri) continue;
+    if (ext.name !== "a:ext" || !extUriMatches(attr(ext, "uri"), uri)) continue;
     const idEl = findChild(ext, tag);
     const val = idEl ? attr(idEl, "val") : undefined;
     if (val) return val;

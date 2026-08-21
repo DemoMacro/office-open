@@ -7,6 +7,7 @@
  * @module
  */
 
+import { extUriMatches } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { attr, findChild, findFirst, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
@@ -150,7 +151,7 @@ function detectMediaType(el: XmlElement): "video" | "audio" | undefined {
   for (const ext of extLst.elements ?? []) {
     if (ext.name !== "p:ext") continue;
     const uri = attr(ext, "uri");
-    if (uri === MEDIA_EXT_URI) return "video";
+    if (extUriMatches(uri, MEDIA_EXT_URI)) return "video";
   }
 
   return undefined;

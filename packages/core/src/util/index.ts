@@ -2,6 +2,7 @@ export * from "./compile";
 export * from "./converters";
 export * from "./crypto";
 export * from "./data-type";
+export * from "./ext-uri";
 export * from "./generators";
 export * from "./image-type";
 export * from "./mappings";

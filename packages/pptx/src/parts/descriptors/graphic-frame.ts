@@ -5,7 +5,7 @@
  * @module
  */
 import type { GraphicFrameLockingOptions } from "@office-open/core";
-import { parseOnOff } from "@office-open/core";
+import { extUriMatches, parseOnOff } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { graphicFrameLockingDesc } from "@office-open/core/drawing";
 import { attr, findChild } from "@office-open/xml";
@@ -136,7 +136,7 @@ export function readNvPrPlaceholder(
   const extLst = findChild(nvPr, "p:extLst");
   if (extLst) {
     for (const ext of extLst.elements ?? []) {
-      if (ext.name !== "p:ext" || attr(ext, "uri") !== MODID_EXT_URI) continue;
+      if (ext.name !== "p:ext" || !extUriMatches(attr(ext, "uri"), MODID_EXT_URI)) continue;
       const modId = findChild(ext, "p14:modId");
       const val = modId ? attr(modId, "val") : undefined;
       if (val) result.modId = val;

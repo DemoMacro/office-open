@@ -11,7 +11,7 @@ import {
   resolveRelationshipTarget,
 } from "@office-open/core";
 import type { DataType } from "@office-open/core";
-import { toUint8Array } from "@office-open/core";
+import { extUriMatches, toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc, themeOverrideDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
@@ -380,7 +380,7 @@ function parseSlideSections(
   let sectionLst: Element | undefined;
   for (const ext of extLst.elements ?? []) {
     if (ext.name !== "p:ext") continue;
-    if (attr(ext, "uri") !== "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}") continue;
+    if (!extUriMatches(attr(ext, "uri"), "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}")) continue;
     sectionLst = findChild(ext, "p14:sectionLst");
     if (sectionLst) break;
   }

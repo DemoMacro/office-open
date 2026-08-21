@@ -91,9 +91,20 @@ export const slideDesc: CustomDescriptor<SlideOptions> = {
     const clrMapOvr = findChild(el, "p:clrMapOvr");
     if (clrMapOvr) result.colorMappingOverride = colorMappingOverrideDesc.parse(clrMapOvr, _ctx);
 
-    // p:transition
+    // p:transition — a plain child parses structured; one wrapped in a
+    // markup-compatibility block (mc:Choice p14:dur + mc:Fallback twin) is
+    // not a direct child at all, so the whole block rides verbatim.
     const transition = findChild(el, "p:transition");
-    if (transition) result.transition = readTransition(transition, _ctx);
+    if (transition) {
+      result.transition = readTransition(transition, _ctx);
+    } else {
+      const mcBlock = (el.elements ?? []).find(
+        (c) => c.name === "mc:AlternateContent" && hasDescendant(c, "p:transition"),
+      );
+      // stringify treats its argument as a document root and serializes only
+      // its children — wrap the block to serialize the block itself.
+      if (mcBlock) result.transition = stringify({ elements: [mcBlock] });
+    }
 
     // p:timing → animations (structured entries, or verbatim inner XML when
     // the source tree exceeds the model)
@@ -116,7 +127,17 @@ export const slideDesc: CustomDescriptor<SlideOptions> = {
 
 // ── Transition helpers ──
 
-export function stringifyTransition(opts: TransitionOptions, ctx?: WriteContext): string {
+/** True when a descendant of any depth carries the element name. */
+function hasDescendant(el: XmlElement, name: string): boolean {
+  for (const child of el.elements ?? []) {
+    if (child.name === name || hasDescendant(child, name)) return true;
+  }
+  return false;
+}
+
+export function stringifyTransition(opts: TransitionOptions | string, ctx?: WriteContext): string {
+  // Verbatim markup-compatibility block (mc:Choice p14:dur + mc:Fallback).
+  if (typeof opts === "string") return opts;
   if (!opts.type) return "";
   return buildTransition(opts, ctx);
 }

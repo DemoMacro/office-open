@@ -114,7 +114,13 @@ export interface SlideOptions {
   background?: BackgroundOptions;
   /** Speaker notes — plain text shorthand, or a structured notes-slide object. */
   notes?: string | NotesSlideOptions;
-  transition?: TransitionOptions;
+  /**
+   * Slide transition. The structured form covers the plain p:transition
+   * element; a string is the verbatim markup-compatibility block a source
+   * emits when the transition carries reader-version extensions (mc:Choice
+   * p14:dur with an mc:Fallback twin) — re-emitted as written.
+   */
+  transition?: TransitionOptions | string;
   headerFooter?: SlideHeaderFooterOptions;
   /** p:clrMapOvr — override the master color mapping for this slide. */
   colorMappingOverride?: ColorMappingOverrideOptions;

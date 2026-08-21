@@ -15,6 +15,7 @@ import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { attr, findChild } from "@office-open/xml";
 
+import { extUriMatches } from "../../util/ext-uri";
 import { parseOnOff } from "../../util/values";
 
 /** The a16:creationId extension uri (CT_NonVisualDrawingProps extLst). */
@@ -86,7 +87,7 @@ export function parseNonVisualDrawingProperties(
   const extLst = findChild(el, "a:extLst");
   if (extLst) {
     for (const ext of extLst.elements ?? []) {
-      if (ext.name !== "a:ext" || attr(ext, "uri") !== CREATION_ID_EXT_URI) continue;
+      if (ext.name !== "a:ext" || !extUriMatches(attr(ext, "uri"), CREATION_ID_EXT_URI)) continue;
       const creationId = findChild(ext, "a16:creationId");
       // a16:creationId keys its GUID on @id (p14:creationId uses @val).
       const id = creationId ? attr(creationId, "id") : undefined;

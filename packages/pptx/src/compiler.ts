@@ -71,7 +71,6 @@ import {
 import { buildHeaderFooterShapes } from "@shared/header-footer";
 import type { MediaData } from "@shared/media/data";
 import { createThemeXml } from "@shared/theme";
-import { buildTransition } from "@shared/transition";
 
 import { PptxWriteContext } from "./context";
 import { timingDesc } from "./parts/descriptors/animation";
@@ -84,6 +83,7 @@ import { notesMasterDesc } from "./parts/descriptors/notes-master";
 import { notesSlideDesc, type NotesSlideOptions } from "./parts/descriptors/notes-slide";
 import { presentationDesc } from "./parts/descriptors/presentation";
 import { presentationPropertiesDesc } from "./parts/descriptors/presentation-properties";
+import { stringifyTransition } from "./parts/descriptors/slide";
 import { parseLayoutDef, slideLayoutDesc } from "./parts/descriptors/slide-layout";
 import { slideMasterDesc } from "./parts/descriptors/slide-master";
 import { slideSyncDesc } from "./parts/descriptors/slide-sync";
@@ -706,7 +706,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   parts.push(colorMappingOverrideDesc.stringify(slideOpts.colorMappingOverride, ctx) ?? "");
 
   if (slideOpts.transition) {
-    parts.push(buildTransition(slideOpts.transition, ctx));
+    parts.push(stringifyTransition(slideOpts.transition, ctx));
   }
 
   if (slideOpts.animations && slideOpts.animations.length > 0) {

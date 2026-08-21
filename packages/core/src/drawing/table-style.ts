@@ -118,6 +118,11 @@ export interface TableStyleListOptions {
   defaultStyleId: string;
   /** Custom table styles */
   styles?: readonly TableStyleOptions[];
+  /**
+   * Unmodeled trailing child elements (markup-compatibility blocks above
+   * all), serialized verbatim — re-emitted as written after the styles.
+   */
+  ext?: string;
 }
 
 // ── Helpers ──
@@ -274,6 +279,7 @@ export function createTableStyleList(opts: TableStyleListOptions): string {
       children.push(createTableStyle(style));
     }
   }
+  if (opts.ext) children.push(opts.ext);
   return element(
     "a:tblStyleLst",
     {
@@ -304,12 +310,22 @@ const ELEMENT_TO_REGION = Object.fromEntries(
 export function parseTableStyleList(el: Element): TableStyleListOptions {
   const defaultStyleId = attr(el, "def") ?? "";
   const styles: TableStyleOptions[] = [];
+  const extParts: string[] = [];
   for (const child of el.elements ?? []) {
-    if (child.name !== "a:tblStyle") continue;
+    if (child.name !== "a:tblStyle") {
+      // Markup-compatibility blocks and other unmodeled children stay
+      // verbatim — re-serialized as written after the parsed styles.
+      extParts.push(serializeChild(child));
+      continue;
+    }
     const style = parseTableStyle(child);
     if (style) styles.push(style);
   }
-  return { defaultStyleId, ...(styles.length > 0 ? { styles } : {}) };
+  return {
+    defaultStyleId,
+    ...(styles.length > 0 ? { styles } : {}),
+    ...(extParts.length > 0 ? { ext: extParts.join("") } : {}),
+  };
 }
 
 export function parseTableStyle(el: Element): TableStyleOptions | undefined {

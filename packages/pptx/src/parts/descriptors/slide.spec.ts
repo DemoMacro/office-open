@@ -1,6 +1,7 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import type { SlideOptions } from "@shared/file";
+import type { TransitionOptions } from "@shared/transition";
 import { describe, expect, it } from "vite-plus/test";
 
 import { slideDesc } from "./slide";
@@ -23,6 +24,12 @@ function roundTrip(opts: SlideOptions) {
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
   return slideDesc.parse(el, readCtx);
+}
+
+/** Narrow the transition union to its structured form for assertions. */
+function asStructured(transition: SlideOptions["transition"]): TransitionOptions {
+  if (typeof transition !== "object") throw new Error("expected structured transition");
+  return transition;
 }
 
 describe("slideDesc round-trip", () => {
@@ -70,8 +77,8 @@ describe("slideDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.transition).toBeDefined();
-    expect(result.transition!.type).toBe("fade");
-    expect(result.transition!.speed).toBe("medium");
+    expect(asStructured(result.transition).type).toBe("fade");
+    expect(asStructured(result.transition).speed).toBe("medium");
   });
 
   it("round-trips transition wipe with advance settings", () => {
@@ -86,10 +93,10 @@ describe("slideDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.transition).toBeDefined();
-    expect(result.transition!.type).toBe("wipe");
-    expect(result.transition!.speed).toBe("fast");
-    expect(result.transition!.advanceOnClick).toBe(false);
-    expect(result.transition!.advanceAfterTime).toBe(5000);
+    expect(asStructured(result.transition).type).toBe("wipe");
+    expect(asStructured(result.transition).speed).toBe("fast");
+    expect(asStructured(result.transition).advanceOnClick).toBe(false);
+    expect(asStructured(result.transition).advanceAfterTime).toBe(5000);
   });
 
   it("round-trips transition dissolve", () => {
@@ -99,8 +106,8 @@ describe("slideDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.transition).toBeDefined();
-    expect(result.transition!.type).toBe("dissolve");
-    expect(result.transition!.speed).toBe("slow");
+    expect(asStructured(result.transition).type).toBe("dissolve");
+    expect(asStructured(result.transition).speed).toBe("slow");
   });
 
   it("round-trips transition push", () => {
@@ -110,8 +117,8 @@ describe("slideDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.transition).toBeDefined();
-    expect(result.transition!.type).toBe("push");
-    expect(result.transition!.advanceOnClick).toBe(true);
+    expect(asStructured(result.transition).type).toBe("push");
+    expect(asStructured(result.transition).advanceOnClick).toBe(true);
   });
 
   it("instantiates dt/ftr/sldNum placeholders for headerFooter (no p:hf on CT_Slide)", () => {

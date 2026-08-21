@@ -7,6 +7,7 @@
 import {
   derivePasswordHash,
   emitPercent,
+  extUriMatches,
   parseOnOff,
   parsePercentAttr,
   uniqueUuid,
@@ -518,7 +519,7 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
     const rest: string[] = [];
     for (const ext of extLst.elements ?? []) {
       if (ext.name !== "p:ext") continue;
-      if (attr(ext, "uri") === "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}") continue;
+      if (extUriMatches(attr(ext, "uri"), "{521415D9-36F7-43E2-AB2F-B90AF26B5E84}")) continue;
       rest.push(stringifyElement(ext));
     }
     if (rest.length > 0) result.ext = rest.join("");
