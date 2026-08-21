@@ -55,7 +55,7 @@ import type { SharedStrings } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import { createThemeXml } from "@parts/theme";
-import type { TablePartReference, SheetDefinition } from "@parts/workbook";
+import type { PivotCacheReference, TablePartReference, SheetDefinition } from "@parts/workbook";
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
 import {
   buildWorksheetXml,
@@ -228,14 +228,34 @@ export function compileWorkbook(
     );
   }
 
-  compileChartsheets(chartsheetConfigs, ctx, mapping);
+  compileChartsheets(chartsheetConfigs, ctx, mapping, options.passthroughRelationships);
   compileDialogsheets(dialogsheetConfigs, ctx, mapping);
+  // Round-trip pivotCache references: register the passthrough pivotCache
+  // definition relationship here (before the workbook XML below and the
+  // generic workbook-rels replay later) so the element and the rels agree on
+  // the possibly renumbered id.
+  let rtPivotRefs: PivotCacheReference[] | undefined;
+  if (options.pivotCacheRefs && options.pivotCacheRefs.length > 0) {
+    rtPivotRefs = [];
+    for (const ref of options.pivotCacheRefs) {
+      const rel = (options.passthroughRelationships ?? []).find(
+        (r) => r.source === "xl/workbook.xml" && r.rId === ref.rId,
+      );
+      if (!rel) continue;
+      let rid = ctx.workbookRels.idOf(rel.relationshipType, rel.target);
+      if (rid === undefined) {
+        ctx.workbookRels.add(rel.relationshipType as RelationshipType, rel.target);
+        rid = ctx.workbookRels.idOf(rel.relationshipType, rel.target);
+      }
+      if (rid) rtPivotRefs.push({ cacheId: ref.cacheId, rId: rid });
+    }
+  }
   // Workbook XML (via descriptor)
   let wbXml =
     workbookDesc.stringify(
       {
         sheets,
-        pivotCaches: ctx.pivotCacheRefs,
+        pivotCaches: ctx.pivotCacheRefs.length > 0 ? ctx.pivotCacheRefs : (rtPivotRefs ?? []),
         protection: options.workbookProtection,
         customViews: options.customWorkbookViews,
         fileRecoveryPr: options.fileRecoveryPr,
@@ -274,7 +294,7 @@ export function compileWorkbook(
     const mRid = ctx.workbookRels.relationshipCount + 1;
     ctx.workbookRels.addRelationship(
       mRid,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/metadata",
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sheetMetadata",
       "metadata.xml",
     );
     mapping["Metadata"] = {
@@ -599,9 +619,15 @@ function compileWorksheetPart(
           height: 0,
         }));
 
-        drawingRels.addRelationship(rid, IMAGE_REL, `../media/${entry.fileName}`);
-        embedRid = `rId${rid}`;
-        rid++;
+        // Anchors sharing one picture share the relationship too — the source
+        // writes a single image rel that every a:blip references.
+        const target = `../media/${entry.fileName}`;
+        embedRid = drawingRels.idOf(IMAGE_REL, target);
+        if (embedRid === undefined) {
+          drawingRels.addRelationship(rid, IMAGE_REL, target);
+          embedRid = `rId${rid}`;
+          rid++;
+        }
         state.globalMediaIdx++;
       }
 
@@ -1013,6 +1039,33 @@ function compileWorksheetPart(
   // tableParts) — their existence depends on relationships owned here.
   sheetXml = stripWorksheetPlaceholders(sheetXml);
 
+  // Round-trip: re-emit sheet relationships the model did not absorb
+  // (printerSettings above all). Rebuilding the rels for tables/comments/…
+  // must not drop part associations the worksheet XML never references by
+  // r:id. Targets are passthrough paths that never move, so kind+target
+  // identifies an instance the model already registered (drawing above).
+  if (wsRels) {
+    // pageSetup r:id → printerSettings: the rebuilt rels renumber every id,
+    // so remap the source id onto the re-emitted relationship (registered by
+    // resolvePassthroughRid; the kind+target loop below then skips it).
+    if (wsOpts.pageSetup?.printerSettingsRId) {
+      const src = wsOpts.pageSetup.printerSettingsRId;
+      const rid = resolvePassthroughRid("/printerSettings", src);
+      if (rid !== src) {
+        sheetXml = sheetXml.replace(
+          new RegExp(`(<pageSetup[^>]*r:id=")${src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(")`),
+          `$1${rid}$2`,
+        );
+      }
+    }
+    for (const rel of passthroughRelationships ?? []) {
+      if (rel.source !== wsPath) continue;
+      if (wsRels.hasRelationship(rel.relationshipType, rel.target)) continue;
+      const n = ++nextRid;
+      wsRels.addRelationship(n, rel.relationshipType as RelationshipType, rel.target);
+    }
+  }
+
   // Write worksheet rels if needed
   if (wsRels) {
     mapping[`WorksheetRels${i}`] = {
@@ -1032,6 +1085,7 @@ function compileChartsheets(
   chartsheetConfigs: ChartsheetOptions[],
   ctx: XlsxWriteContext,
   mapping: Record<string, { data: string; path: string }>,
+  passthroughRelationships?: readonly PassthroughRelationship[],
 ): void {
   // Chartsheets — chart-only sheets
   for (const [i, csOpts] of chartsheetConfigs.entries()) {
@@ -1055,6 +1109,15 @@ function compileChartsheets(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
       `../drawings/drawing${csDrawingIdx}.xml`,
     );
+
+    // Round-trip: re-emit chartsheet relationships the model did not absorb
+    // (printerSettings above all) — same contract as worksheet rels.
+    let csNextRid = 2;
+    for (const rel of passthroughRelationships ?? []) {
+      if (rel.source !== `xl/chartsheets/sheet${i + 1}.xml`) continue;
+      if (csRels.hasRelationship(rel.relationshipType, rel.target)) continue;
+      csRels.addRelationship(csNextRid++, rel.relationshipType as RelationshipType, rel.target);
+    }
 
     // Drawing rels: chart reference
     const csDrawingRels = new Relationships();

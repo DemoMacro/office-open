@@ -55,6 +55,7 @@ import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import type { TableOptions } from "@parts/table";
 import { workbookDesc } from "@parts/workbook";
+import type { PivotCacheReference } from "@parts/workbook";
 import type { RichTextOptions } from "@parts/worksheet";
 import { worksheetDesc } from "@parts/worksheet";
 import type { WorksheetChartOptions, PictureOptions, WorksheetOptions } from "@parts/worksheet";
@@ -257,6 +258,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   }
   // workbook.xml pivotCaches: cacheId → definition part path.
   const pivotCachePathById = new Map<number, string>();
+  const pivotCacheRefs: PivotCacheReference[] = [];
   const wbPivotCaches = xlsx.workbook ? findChild(xlsx.workbook, "pivotCaches") : undefined;
   for (const pc of wbPivotCaches?.elements ?? []) {
     if (pc.name !== "pivotCache") continue;
@@ -264,8 +266,12 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     const rId = attr(pc, "r:id");
     if (cacheId === undefined || rId === undefined) continue;
     const target = readContext.resolveRelationship(rId);
-    if (target) pivotCachePathById.set(Number(cacheId), target);
+    if (target) {
+      pivotCachePathById.set(Number(cacheId), target);
+      pivotCacheRefs.push({ cacheId: Number(cacheId), rId });
+    }
   }
+  if (pivotCacheRefs.length > 0) opts.pivotCacheRefs = pivotCacheRefs;
 
   // Parse styles (fonts, fills, borders, cellXfs)
   if (xlsx.styles) {
@@ -826,6 +832,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     ...(xlsx.appProps ? [xlsx.appProps] : []),
     ...(xlsx.customProps ? [xlsx.customProps] : []),
     ...xlsx.worksheets,
+    ...chartsheetPaths,
+    ...dialogsheetPaths,
   ];
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     xlsx.doc,
