@@ -20,14 +20,22 @@ function stringifyDefaultShapeDefinition(
   opts: DefaultShapeDefinitionOptions,
   ctx: WriteContext,
 ): string {
-  const spPrInner = opts.shapeProperties
-    ? (shapePropertiesDesc.stringify(opts.shapeProperties, ctx) ?? "")
-    : "";
-  const spPr = spPrInner ? `<a:spPr>${spPrInner}</a:spPr>` : "";
-  const bodyPr = opts.bodyProperties
-    ? (bodyPropertiesDesc.stringify(opts.bodyProperties, ctx) ?? "")
-    : "";
-  const lstStyle = opts.listStyle ? (textListStyleDesc.stringify(opts.listStyle, ctx) ?? "") : "";
+  // spPr/bodyPr/lstStyle are minOccurs=1 in CT_DefaultShapeDefinition — a
+  // present-but-empty section must still emit its (empty) element. The spPr
+  // and lstStyle descriptors return inner content only, so the wrapper tags
+  // are added here.
+  const spPr =
+    opts.shapeProperties !== undefined
+      ? `<a:spPr>${shapePropertiesDesc.stringify(opts.shapeProperties, ctx) ?? ""}</a:spPr>`
+      : "";
+  const bodyPr =
+    opts.bodyProperties !== undefined
+      ? bodyPropertiesDesc.stringify(opts.bodyProperties, ctx) || "<a:bodyPr/>"
+      : "";
+  const lstStyle =
+    opts.listStyle !== undefined
+      ? `<a:lstStyle>${textListStyleDesc.stringify(opts.listStyle, ctx) ?? ""}</a:lstStyle>`
+      : "";
   const style = opts.shapeStyle ? stringifyShapeStyle(opts.shapeStyle, ctx) : "";
   return `<${tag}>${spPr}${bodyPr}${lstStyle}${style}</${tag}>`;
 }
@@ -38,21 +46,14 @@ function parseDefaultShapeDefinition(
 ): DefaultShapeDefinitionOptions | undefined {
   if (!el) return undefined;
   const result: Partial<DefaultShapeDefinitionOptions> = {};
+  // An empty element still marks the section present (the stringify leg
+  // re-emits the empty marker), so `?? {}` — never drop on empty.
   const spPr = findChild(el, "a:spPr");
-  if (spPr) {
-    const shapeProperties = shapePropertiesDesc.parse(spPr, ctx);
-    if (shapeProperties) result.shapeProperties = shapeProperties;
-  }
+  if (spPr) result.shapeProperties = shapePropertiesDesc.parse(spPr, ctx) ?? {};
   const bodyPr = findChild(el, "a:bodyPr");
-  if (bodyPr) {
-    const bodyProperties = bodyPropertiesDesc.parse(bodyPr, ctx);
-    if (bodyProperties) result.bodyProperties = bodyProperties;
-  }
+  if (bodyPr) result.bodyProperties = bodyPropertiesDesc.parse(bodyPr, ctx) ?? {};
   const lstStyle = findChild(el, "a:lstStyle");
-  if (lstStyle) {
-    const listStyle = textListStyleDesc.parse(lstStyle, ctx);
-    if (listStyle) result.listStyle = listStyle;
-  }
+  if (lstStyle) result.listStyle = textListStyleDesc.parse(lstStyle, ctx) ?? {};
   const style = findChild(el, "a:style");
   if (style) {
     const shapeStyle = parseShapeStyle(style, ctx);
