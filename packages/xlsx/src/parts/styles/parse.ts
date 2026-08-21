@@ -19,31 +19,37 @@ import type {
 
 export function parseFont(el: XmlElement): FontOptions {
   const result: Partial<FontOptions> = {};
+  // CT_BooleanProperty children (b/i/strike/…) default val to true, so an
+  // explicit val="0" is a real "off" statement — keep it as false rather than
+  // collapsing to the attribute-absent default.
+  const boolProp = (prop: XmlElement): boolean | undefined => parseOnOff(attr(prop, "val")) ?? true;
   for (const child of el.elements ?? []) {
     switch (child.name) {
       case "b":
-        result.bold = true;
+        result.bold = boolProp(child);
         break;
       case "i":
-        result.italic = true;
+        result.italic = boolProp(child);
         break;
       case "u":
-        result.underline = true;
+        // ST_UnderlineValues: "none" is the only off spelling; every other
+        // value (or the omitted default) means some underline is on.
+        result.underline = attr(child, "val") !== "none";
         break;
       case "strike":
-        result.strike = true;
+        result.strike = boolProp(child);
         break;
       case "outline":
-        result.outline = true;
+        result.outline = boolProp(child);
         break;
       case "shadow":
-        result.shadow = true;
+        result.shadow = boolProp(child);
         break;
       case "condense":
-        result.condense = true;
+        result.condense = boolProp(child);
         break;
       case "extend":
-        result.extend = true;
+        result.extend = boolProp(child);
         break;
       case "sz":
         result.size = attrNum(child, "val");

@@ -626,33 +626,62 @@ export class Styles {
       p.push(`<dxfs count="${this.dxfs.length}">`);
       for (const dxf of this.dxfs) {
         const dParts: string[] = [];
+        // CT_Dxf sequence: font, numFmt, fill, alignment, border, protection.
         if (dxf.font) dParts.push(`<font>${this.fontXmlStr(dxf.font)}</font>`);
+        if (dxf.numFmt) {
+          const nf = typeof dxf.numFmt === "string" ? { formatCode: dxf.numFmt } : dxf.numFmt;
+          // CT_NumFmt requires numFmtId; resolve from the built-in table and
+          // fall back to the custom range when the code is not built-in.
+          const numFmtId = nf.numFmtId ?? BUILTIN_NUMFMTS[nf.formatCode] ?? 164;
+          dParts.push(`<numFmt numFmtId="${numFmtId}" formatCode="${escapeXml(nf.formatCode)}"/>`);
+        }
         if (dxf.fill) {
           const f = dxf.fill;
           // Excel's dxf fill convention: the visible tint color carries on
-          // bgColor (often with no patternType). Explicit bg channels from the
-          // source round-trip verbatim; a fresh color-only fill falls back to
-          // bgColor so conditional formatting keeps showing the color.
+          // bgColor (often with no patternType). Round-trips keep both color
+          // elements as written; a fresh color-only fill (no bg channel) falls
+          // back to bgColor so conditional formatting keeps showing the color.
           const patAttrs = f.patternType !== undefined ? attrs({ patternType: f.patternType }) : "";
+          const hasBg =
+            f.bgColor !== undefined ||
+            f.bgColorIndexed !== undefined ||
+            f.bgThemeColor !== undefined ||
+            f.bgAutoColor !== undefined;
+          // With a bg channel present the color field is the parsed fgColor;
+          // alone it is the fresh-authoring color that lands on bgColor.
+          const fgChannel =
+            f.themeColor !== undefined
+              ? `theme="${f.themeColor}"`
+              : f.colorIndexed !== undefined
+                ? `indexed="${f.colorIndexed}"`
+                : f.color && hasBg
+                  ? `rgb="FF${f.color}"`
+                  : f.fgAutoColor
+                    ? 'auto="1"'
+                    : "";
+          const fgTint = f.tint !== undefined ? ` tint="${f.tint}"` : "";
+          const fgContent = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
           const bgChannel =
             f.bgThemeColor !== undefined
               ? `theme="${f.bgThemeColor}"`
               : f.bgColorIndexed !== undefined
                 ? `indexed="${f.bgColorIndexed}"`
-                : f.bgColor || f.color
-                  ? `rgb="FF${f.bgColor ?? f.color}"`
+                : f.bgColor
+                  ? `rgb="FF${f.bgColor}"`
                   : f.bgAutoColor
                     ? 'auto="1"'
-                    : "";
+                    : f.color && !hasBg
+                      ? `rgb="FF${f.color}"`
+                      : "";
           const bgTint = f.bgTint !== undefined ? ` tint="${f.bgTint}"` : "";
-          const colorContent = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
+          const bgContent = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
+          const fillContent = fgContent + bgContent;
           dParts.push(
-            colorContent
-              ? `<fill><patternFill${patAttrs}>${colorContent}</patternFill></fill>`
+            fillContent
+              ? `<fill><patternFill${patAttrs}>${fillContent}</patternFill></fill>`
               : `<fill><patternFill${patAttrs}/></fill>`,
           );
         }
-        if (dxf.numFmt) dParts.push(`<numFmt formatCode="${escapeXml(dxf.numFmt)}"/>`);
         if (dxf.alignment) dParts.push(this.alignmentXmlStr(dxf.alignment));
         // dxf borders carry only the sides the source wrote — no padding
         if (dxf.border) dParts.push(`<border>${this.borderXmlStr(dxf.border, false)}</border>`);
@@ -747,14 +776,20 @@ export class Styles {
 
   private fontXmlStr(f: FontOptions): string {
     const parts: string[] = [];
-    if (f.bold) parts.push("<b/>");
-    if (f.italic) parts.push("<i/>");
-    if (f.underline) parts.push("<u/>");
-    if (f.strike) parts.push("<strike/>");
-    if (f.outline) parts.push("<outline/>");
-    if (f.shadow) parts.push("<shadow/>");
-    if (f.condense) parts.push("<condense/>");
-    if (f.extend) parts.push("<extend/>");
+    // CT_BooleanProperty val defaults to true — an explicit false round-trips
+    // as val="0", an absent flag emits nothing.
+    const flag = (name: string, on: boolean | undefined): void => {
+      if (on === undefined) return;
+      parts.push(on ? `<${name}/>` : `<${name} val="0"/>`);
+    };
+    flag("b", f.bold);
+    flag("i", f.italic);
+    if (f.underline !== undefined) parts.push(f.underline ? "<u/>" : '<u val="none"/>');
+    flag("strike", f.strike);
+    flag("outline", f.outline);
+    flag("shadow", f.shadow);
+    flag("condense", f.condense);
+    flag("extend", f.extend);
     if (f.size) parts.push(`<sz val="${f.size}"/>`);
     if (f.autoColor) parts.push('<color auto="1"/>');
     else if (f.themeColor !== undefined)

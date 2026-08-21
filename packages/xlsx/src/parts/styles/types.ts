@@ -208,6 +208,16 @@ export interface ColorsOptions {
 }
 
 /**
+ * Inline number format inside a dxf (CT_NumFmt). `numFmtId` is required by the
+ * XSD; when omitted the writer resolves it from the built-in table or falls
+ * back to the custom range.
+ */
+export interface DxfNumFmtOptions {
+  numFmtId?: number;
+  formatCode: string;
+}
+
+/**
  * Differential format — used by conditional formatting to specify what changes.
  * Example: `{ font: { color: "9C0006", bold: true }, fill: { color: "C6EFCE" } }`.
  */
@@ -215,7 +225,8 @@ export interface DxfOptions {
   font?: FontOptions;
   fill?: CellFillOptions;
   border?: BorderSideOptions;
-  numFmt?: string;
+  /** A plain string is shorthand for `{ formatCode: string }`. */
+  numFmt?: string | DxfNumFmtOptions;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
 }

@@ -216,7 +216,14 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         const borderEl = findChild(dxf, "border");
         if (borderEl) d.border = parseBorder(borderEl);
         const numFmtEl = findChild(dxf, "numFmt");
-        if (numFmtEl && attr(numFmtEl, "formatCode")) d.numFmt = attr(numFmtEl, "formatCode");
+        if (numFmtEl && attr(numFmtEl, "formatCode")) {
+          const nf: { numFmtId?: number; formatCode: string } = {
+            formatCode: attr(numFmtEl, "formatCode")!,
+          };
+          const numFmtId = attrNum(numFmtEl, "numFmtId");
+          if (numFmtId !== undefined) nf.numFmtId = numFmtId;
+          d.numFmt = nf;
+        }
         const alignmentEl = findChild(dxf, "alignment");
         if (alignmentEl) d.alignment = parseAlignment(alignmentEl);
         const protectionEl = findChild(dxf, "protection");
