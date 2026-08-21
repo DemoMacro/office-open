@@ -1265,4 +1265,41 @@ describe("chartSpaceDesc", () => {
     });
     expect(result.axes?.[0]?.shapeProperties?.outline).toEqual({ type: "noFill" });
   });
+
+  it("closes secondary chart-group elements in a combo chart", () => {
+    const opts: ChartSpaceOptions = {
+      type: "area",
+      categories: ["Foo", "Bar"],
+      series: [{ name: "North", values: [1, 2] }],
+      axes: [
+        { kind: "category", id: 111, crossAxisId: 222 },
+        { kind: "value", id: 222, crossAxisId: 111 },
+      ],
+      secondaryGroups: [
+        {
+          type: "column",
+          series: [{ name: "South", values: [4, 3], index: 0, order: 1 }],
+          gapWidth: 150,
+          axisIds: [333, 444],
+        },
+      ],
+    };
+    // Main-group series carries the interleaved pair (idx=1/order=0).
+    (opts.series[0] as ChartSeriesData).index = 1;
+    (opts.series[0] as ChartSeriesData).order = 0;
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("</c:barChart>");
+    expect(xml).toContain('<c:axId val="333"/>');
+    expect(xml).toContain('<c:idx val="1"/><c:order val="0"/>');
+    expect(xml).toContain('<c:idx val="0"/><c:order val="1"/>');
+
+    const result = roundTrip(opts);
+    expect(result.series[0]?.index).toBe(1);
+    expect(result.series[0]?.order).toBe(0);
+    expect(result.secondaryGroups?.[0]?.type).toBe("column");
+    expect(result.secondaryGroups?.[0]?.gapWidth).toBe(150);
+    expect(result.secondaryGroups?.[0]?.axisIds).toEqual([333, 444]);
+    expect(result.secondaryGroups?.[0]?.series[0]?.index).toBe(0);
+    expect(result.secondaryGroups?.[0]?.series[0]?.order).toBe(1);
+  });
 });

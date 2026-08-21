@@ -1581,6 +1581,21 @@
       "enum": ["ctr", "l", "r"],
       "type": "string"
     },
+    "AxisNumberFormatOptions": {
+      "additionalProperties": false,
+      "description": "Explicit axis c:numFmt (CT_NumFmt) with a decoupled sourceLinked flag.",
+      "properties": {
+        "formatCode": {
+          "type": "string"
+        },
+        "sourceLinked": {
+          "description": "1 (default) links the format to the source data; 0 decouples it.",
+          "type": "boolean"
+        }
+      },
+      "required": ["formatCode"],
+      "type": "object"
+    },
     "AxisOptions": {
       "additionalProperties": false,
       "description": "Per-axis configuration. Covers EG_AxShared plus kind-specific children of CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx. Field order follows the XSD content model; the serializer emits in that order.",
@@ -1668,8 +1683,15 @@
           "type": "boolean"
         },
         "numberFormat": {
-          "description": "c:numFmt formatCode; sourceLinked defaults to 1.",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/AxisNumberFormatOptions"
+            }
+          ],
+          "description": "c:numFmt — a plain string is the formatCode with the default sourceLinked=1; the object form carries an explicit sourceLinked (a source that decoupled the axis format from the data writes \"0\")."
         },
         "position": {
           "$ref": "#/definitions/AxisPosition"
@@ -2246,6 +2268,10 @@
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
+        "index": {
+          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
+          "type": "number"
+        },
         "invertIfNegative": {
           "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
           "type": "boolean"
@@ -2265,6 +2291,10 @@
         "nameLiteral": {
           "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
           "type": "boolean"
+        },
+        "order": {
+          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
+          "type": "number"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -2804,6 +2834,11 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "dialect": {
+          "description": "Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict, purl.oclc.org) source package rejects a chart re-serialized with transitional namespaces — parse records the dialect from the root element and stringify re-declares the matching namespace set.",
+          "enum": ["transitional", "strict"],
+          "type": "string"
+        },
         "displayBlanksAs": {
           "$ref": "#/definitions/DisplayBlanksAs",
           "description": "How blank cells are plotted (c:dispBlanksAs)."
@@ -3300,6 +3335,10 @@
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
+        "index": {
+          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
+          "type": "number"
+        },
         "invertIfNegative": {
           "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
           "type": "boolean"
@@ -3319,6 +3358,10 @@
         "nameLiteral": {
           "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
           "type": "boolean"
+        },
+        "order": {
+          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
+          "type": "number"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",

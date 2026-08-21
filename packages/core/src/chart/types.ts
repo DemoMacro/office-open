@@ -16,6 +16,17 @@ import type { DataType } from "../util/data-type";
 
 /** Fields shared by every chart series type (name + optional decorations). */
 export interface ChartSeriesCommon {
+  /**
+   * Series index across ALL groups of the chart (c:idx, unique chart-wide —
+   * combo charts number secondary-group series into the same space). Omit to
+   * number by array position.
+   */
+  index?: number;
+  /**
+   * Display order across the chart's series (c:order). Omit to number by
+   * array position.
+   */
+  order?: number;
   /** Series name; absent when the source series carried no c:tx. */
   name?: string;
   /** Series name reference formula (c:tx > c:strRef > c:f) — round-trip. */

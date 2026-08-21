@@ -800,9 +800,11 @@ function stringifySeries(
   const parts: string[] = [];
   const s = series as ChartSeriesData;
 
-  // EG_SerShared: idx, order, tx, spPr
-  parts.push(valEl("c:idx", index));
-  parts.push(valEl("c:order", index));
+  // EG_SerShared: idx, order, tx, spPr. Round-tripped series keep their
+  // chart-wide idx/order (combo groups interleave them); fresh series number
+  // by position.
+  parts.push(valEl("c:idx", s.index ?? index));
+  parts.push(valEl("c:order", s.order ?? index));
   if (series.nameLiteral && series.name !== undefined) {
     parts.push(`<c:tx><c:v>${escapeXml(series.name)}</c:v></c:tx>`);
   } else if (series.name !== undefined || series.nameFormula !== undefined)
@@ -1032,7 +1034,9 @@ function stringifySecondaryGroup(
       break;
   }
   for (const id of g.axisIds ?? []) parts.push(valEl("c:axId", id));
-  return parts.join("");
+  // Secondary groups are 2D-only; the header emitted the opening tag, so the
+  // group element must close here or the chart part is not well-formed.
+  return `${parts.join("")}</${CHART_TYPE_TAGS[g.type]}>`;
 }
 
 // ── Title XML ──
@@ -1674,6 +1678,13 @@ function readDataPoints(serEl: XmlElement, ctx: ReadContext): DataPointOptions[]
 /** Read shared ser enhancement fields (CT_Ser children beyond EG_SerShared). */
 function readSeriesCommon(serEl: XmlElement, ctx: ReadContext): Partial<ChartSeriesCommon> {
   const common: Partial<ChartSeriesCommon> = {};
+  // EG_SerShared head: idx/order are unique chart-wide, not array positions —
+  // combo charts interleave them across groups, so renumbering by position
+  // would produce duplicates Excel treats as corruption.
+  const idx = readValNum(serEl, "c:idx");
+  if (idx !== undefined) common.index = idx;
+  const order = readValNum(serEl, "c:order");
+  if (order !== undefined) common.order = order;
   const spPrEl = findChild(serEl, "c:spPr");
   // Presence round-trips: a bare <c:spPr/> placeholder stays an empty object
   // (an XSD-valid form legacy Word writes), not dropped.

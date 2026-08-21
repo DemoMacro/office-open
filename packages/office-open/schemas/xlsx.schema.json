@@ -340,6 +340,21 @@
       "enum": ["ctr", "l", "r"],
       "type": "string"
     },
+    "AxisNumberFormatOptions": {
+      "additionalProperties": false,
+      "description": "Explicit axis c:numFmt (CT_NumFmt) with a decoupled sourceLinked flag.",
+      "properties": {
+        "formatCode": {
+          "type": "string"
+        },
+        "sourceLinked": {
+          "description": "1 (default) links the format to the source data; 0 decouples it.",
+          "type": "boolean"
+        }
+      },
+      "required": ["formatCode"],
+      "type": "object"
+    },
     "AxisOptions": {
       "additionalProperties": false,
       "description": "Per-axis configuration. Covers EG_AxShared plus kind-specific children of CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx. Field order follows the XSD content model; the serializer emits in that order.",
@@ -427,8 +442,15 @@
           "type": "boolean"
         },
         "numberFormat": {
-          "description": "c:numFmt formatCode; sourceLinked defaults to 1.",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/AxisNumberFormatOptions"
+            }
+          ],
+          "description": "c:numFmt — a plain string is the formatCode with the default sourceLinked=1; the object form carries an explicit sourceLinked (a source that decoupled the axis format from the data writes \"0\")."
         },
         "position": {
           "$ref": "#/definitions/AxisPosition"
@@ -1066,6 +1088,10 @@
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
+        "index": {
+          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
+          "type": "number"
+        },
         "invertIfNegative": {
           "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
           "type": "boolean"
@@ -1085,6 +1111,10 @@
         "nameLiteral": {
           "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
           "type": "boolean"
+        },
+        "order": {
+          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
+          "type": "number"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -2064,6 +2094,10 @@
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
+        "index": {
+          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
+          "type": "number"
+        },
         "invertIfNegative": {
           "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
           "type": "boolean"
@@ -2083,6 +2117,10 @@
         "nameLiteral": {
           "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
           "type": "boolean"
+        },
+        "order": {
+          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
+          "type": "number"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -2242,6 +2280,11 @@
         "date1904": {
           "description": "1904 date system (c:date1904) — emitted only when the source had it.",
           "type": "boolean"
+        },
+        "dialect": {
+          "description": "Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict, purl.oclc.org) source package rejects a chart re-serialized with transitional namespaces — parse records the dialect from the root element and stringify re-declares the matching namespace set.",
+          "enum": ["transitional", "strict"],
+          "type": "string"
         },
         "displayBlanksAs": {
           "$ref": "#/definitions/DisplayBlanksAs",
@@ -2643,9 +2686,18 @@
           "description": "Published to server (CT_ChartsheetPr `@published`, XSD default true — only false is emitted)",
           "type": "boolean"
         },
+        "sheetId": {
+          "description": "Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential.",
+          "type": "number"
+        },
         "sheetProtection": {
           "$ref": "#/definitions/ChartsheetProtectionOptions",
           "description": "Sheet protection"
+        },
+        "state": {
+          "description": "Visibility (CT_Sheet `@state`)",
+          "enum": ["visible", "hidden", "veryHidden"],
+          "type": "string"
         },
         "tabColor": {
           "description": "Tab color (hex ARGB, e.g. \"FF4472C4\")",
@@ -3209,6 +3261,10 @@
     "ConditionalFormatOptions": {
       "additionalProperties": false,
       "properties": {
+        "pivot": {
+          "description": "Applies to a PivotTable view rather than the grid (CT_ConditionalFormatting `@pivot`)",
+          "type": "boolean"
+        },
         "rules": {
           "items": {
             "$ref": "#/definitions/ConditionalFormatRule"
@@ -4890,9 +4946,18 @@
           "description": "Published to a server (CT_SheetPr `@published`, XSD default true — only false is emitted)",
           "type": "boolean"
         },
+        "sheetId": {
+          "description": "Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential.",
+          "type": "number"
+        },
         "sheetProtection": {
           "$ref": "#/definitions/SheetProtectionOptions",
           "description": "Sheet protection"
+        },
+        "state": {
+          "description": "Visibility (CT_Sheet `@state`)",
+          "enum": ["visible", "hidden", "veryHidden"],
+          "type": "string"
         },
         "tabColor": {
           "description": "Tab color (hex ARGB)",
@@ -5024,6 +5089,20 @@
       "required": ["color1", "color2"],
       "type": "object"
     },
+    "DxfNumFmtOptions": {
+      "additionalProperties": false,
+      "description": "Inline number format inside a dxf (CT_NumFmt). `numFmtId` is required by the XSD; when omitted the writer resolves it from the built-in table or falls back to the custom range.",
+      "properties": {
+        "formatCode": {
+          "type": "string"
+        },
+        "numFmtId": {
+          "type": "number"
+        }
+      },
+      "required": ["formatCode"],
+      "type": "object"
+    },
     "DxfOptions": {
       "additionalProperties": false,
       "description": "Differential format — used by conditional formatting to specify what changes. Example: `{ font: { color: \"9C0006\", bold: true }, fill: { color: \"C6EFCE\" } }`.",
@@ -5041,7 +5120,15 @@
           "$ref": "#/definitions/FontOptions"
         },
         "numFmt": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/DxfNumFmtOptions"
+            }
+          ],
+          "description": "A plain string is shorthand for `{ formatCode: string }`."
         },
         "protection": {
           "$ref": "#/definitions/CellProtectionOptions"
@@ -15535,7 +15622,7 @@
           "type": "array"
         },
         "calcChain": {
-          "description": "Calculation chain cells (xl/calcChain.xml) — parse-only; compiler rebuilds from formulas",
+          "description": "Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler round-trips them verbatim and rebuilds from formula cells only when absent",
           "items": {
             "$ref": "#/definitions/CalcCell"
           },
@@ -16259,6 +16346,11 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "dialect": {
+          "description": "Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict, purl.oclc.org) source package rejects a chart re-serialized with transitional namespaces — parse records the dialect from the root element and stringify re-declares the matching namespace set.",
+          "enum": ["transitional", "strict"],
+          "type": "string"
+        },
         "displayBlanksAs": {
           "$ref": "#/definitions/DisplayBlanksAs",
           "description": "How blank cells are plotted (c:dispBlanksAs)."
@@ -16906,6 +16998,10 @@
           "$ref": "#/definitions/SheetFormatPropertiesOptions",
           "description": "Sheet format properties (CT_SheetFormatPr)"
         },
+        "sheetId": {
+          "description": "Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential.",
+          "type": "number"
+        },
         "sheetPr": {
           "$ref": "#/definitions/SheetPropertiesOptions",
           "description": "Sheet extended properties (CT_SheetPr attributes)"
@@ -16930,6 +17026,11 @@
         "sortState": {
           "$ref": "#/definitions/SortStateOptions",
           "description": "Sheet-level sort state (CT_Worksheet `sortState` — sorting without a filter)"
+        },
+        "state": {
+          "description": "Visibility (CT_Sheet `@state`)",
+          "enum": ["visible", "hidden", "veryHidden"],
+          "type": "string"
         },
         "tabColor": {
           "$ref": "#/definitions/TabColorOptions"
