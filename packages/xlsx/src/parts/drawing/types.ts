@@ -15,6 +15,7 @@ import type {
   GroupTransform2DOptions,
   NonVisualDrawingPropertiesOptions,
   PictureLockingOptions,
+  ShapeLockingOptions,
   ShapePropertiesOptions,
   SourceRectangleOptions,
   TextBodyOptions,
@@ -182,6 +183,8 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
    * jump to a URL when the object is clicked.
    */
   hyperlink?: TextHyperlinkOptions;
+  /** Shape locks (cNvSpPr/a:spLocks, CT_ShapeLocking). */
+  locking?: ShapeLockingOptions;
   /** Shape properties (a:CT_ShapeProperties). */
   spPr: ShapePropertiesOptions;
   /** Text body (a:CT_TextBody). */
@@ -224,6 +227,8 @@ export interface GroupShapeChildOptions extends NonVisualDrawingPropertiesOption
   style?: DefaultShapeStyleOptions;
   macro?: string;
   textlink?: string;
+  /** Shape locks (cNvSpPr/a:spLocks, CT_ShapeLocking). */
+  locking?: ShapeLockingOptions;
   /** Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it. */
   textBox?: boolean;
 }

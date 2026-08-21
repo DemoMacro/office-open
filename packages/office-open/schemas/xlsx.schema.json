@@ -1525,6 +1525,10 @@
       "additionalProperties": false,
       "description": "Worksheet fill description. `color` alone is a solid fill; `patternType` + `bgColor` describe a pattern fill; `stops` + `gradientType` describe a gradient fill.",
       "properties": {
+        "bgAutoColor": {
+          "description": "Background automatic color (CT_Color `@auto` on bgColor)",
+          "type": "boolean"
+        },
         "bgColor": {
           "description": "Background color for pattern fill (CT_PatternFill/bgColor)",
           "type": "string"
@@ -1546,8 +1550,12 @@
           "type": "string"
         },
         "colorIndexed": {
-          "description": "Background color indexed (CT_Color `@indexed`)",
+          "description": "Foreground color indexed (CT_Color `@indexed` on fgColor)",
           "type": "number"
+        },
+        "fgAutoColor": {
+          "description": "Foreground automatic color (CT_Color `@auto` on fgColor)",
+          "type": "boolean"
         },
         "gradientBottom": {
           "description": "Gradient bottom position for path (CT_GradientFill `@bottom`)",
@@ -3343,6 +3351,10 @@
         "odcFile": {
           "description": "ODC file path (CT_Connection `@odcFile`)",
           "type": "string"
+        },
+        "olapPr": {
+          "$ref": "#/definitions/OLAPPropertiesOptions",
+          "description": "OLAP properties (CT_OlapPr)"
         },
         "onlyUseConnectionFile": {
           "description": "Only use the connection file (default false)",
@@ -6757,6 +6769,10 @@
           "$ref": "#/definitions/TextHyperlinkOptions",
           "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
         },
+        "locking": {
+          "$ref": "#/definitions/ShapeLockingOptions",
+          "description": "Shape locks (cNvSpPr/a:spLocks, CT_ShapeLocking)."
+        },
         "macro": {
           "type": "string"
         },
@@ -7997,6 +8013,49 @@
         }
       },
       "required": ["numFmtId", "formatCode"],
+      "type": "object"
+    },
+    "OLAPPropertiesOptions": {
+      "additionalProperties": false,
+      "description": "OLAP properties (CT_OlapPr — pivot cache definition and connection share it)",
+      "properties": {
+        "local": {
+          "description": "Use the local cube connection (CT_OlapPr `@local`, boolean)",
+          "type": "boolean"
+        },
+        "localConnection": {
+          "description": "Local cube connection string (CT_OlapPr `@localConnection`)",
+          "type": "string"
+        },
+        "localRefresh": {
+          "description": "Local refresh (CT_OlapPr `@localRefresh`)",
+          "type": "boolean"
+        },
+        "rowDrillCount": {
+          "description": "Row dimensions",
+          "type": "number"
+        },
+        "sendLocale": {
+          "description": "Send locale info to OLAP server",
+          "type": "boolean"
+        },
+        "serverFill": {
+          "description": "Use server fill formatting",
+          "type": "boolean"
+        },
+        "serverFont": {
+          "description": "Use server font formatting",
+          "type": "boolean"
+        },
+        "serverFontColor": {
+          "description": "Use server font color",
+          "type": "boolean"
+        },
+        "serverNumberFormat": {
+          "description": "Use server number formatting",
+          "type": "boolean"
+        }
+      },
       "type": "object"
     },
     "ObjectAnchorOptions": {
@@ -9547,6 +9606,19 @@
         }
       },
       "required": ["records"],
+      "type": "object"
+    },
+    "PivotCacheReference": {
+      "additionalProperties": false,
+      "properties": {
+        "cacheId": {
+          "type": "number"
+        },
+        "rId": {
+          "type": "string"
+        }
+      },
+      "required": ["cacheId", "rId"],
       "type": "object"
     },
     "PivotConditionalFormatOptions": {
@@ -12702,6 +12774,56 @@
       },
       "type": "object"
     },
+    "ShapeLockingOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "noAdjustHandles": {
+          "description": "Prevent adjust handles",
+          "type": "boolean"
+        },
+        "noChangeArrowheads": {
+          "description": "Prevent changing arrowheads",
+          "type": "boolean"
+        },
+        "noChangeAspect": {
+          "description": "Prevent aspect ratio change",
+          "type": "boolean"
+        },
+        "noChangeShapeType": {
+          "description": "Prevent changing shape type",
+          "type": "boolean"
+        },
+        "noEditPoints": {
+          "description": "Prevent edit points",
+          "type": "boolean"
+        },
+        "noGrp": {
+          "description": "Prevent grouping",
+          "type": "boolean"
+        },
+        "noMove": {
+          "description": "Prevent moving",
+          "type": "boolean"
+        },
+        "noResize": {
+          "description": "Prevent resizing",
+          "type": "boolean"
+        },
+        "noRot": {
+          "description": "Prevent rotation",
+          "type": "boolean"
+        },
+        "noSelect": {
+          "description": "Prevent selection",
+          "type": "boolean"
+        },
+        "noTextEdit": {
+          "description": "Prevent text editing",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "ShapeOptions": {
       "additionalProperties": false,
       "description": "Anchored shape (xdr:sp): geometry + optional text body.",
@@ -12788,6 +12910,10 @@
         "hyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions",
           "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+        },
+        "locking": {
+          "$ref": "#/definitions/ShapeLockingOptions",
+          "description": "Shape locks (cNvSpPr/a:spLocks, CT_ShapeLocking)."
         },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
@@ -13158,6 +13284,10 @@
       "additionalProperties": false,
       "description": "Sheet properties extended options (CT_SheetPr attributes)",
       "properties": {
+        "codeName": {
+          "description": "VBA code name (CT_SheetPr `@codeName`)",
+          "type": "string"
+        },
         "enableFormatConditionsCalculation": {
           "description": "Enable format conditions calculation (CT_SheetPr `@enableFormatConditionsCalculation`, XSD default true — only false is emitted)",
           "type": "boolean"
@@ -15611,6 +15741,13 @@
           "description": "Pivot cache records — parse-only (CT-layer)",
           "items": {
             "$ref": "#/definitions/PivotCacheRecordsParseResult"
+          },
+          "type": "array"
+        },
+        "pivotCacheRefs": {
+          "description": "Pivot cache references from workbook.xml — parse-only round-trip wiring",
+          "items": {
+            "$ref": "#/definitions/PivotCacheReference"
           },
           "type": "array"
         },

@@ -15,6 +15,7 @@ import {
   registerHyperlink,
   pictureLockingDesc,
   groupShapePropertiesDesc,
+  shapeLockingDesc,
   shapePropertiesDesc,
   stringifyBlipEffects,
   stringifyEndpointConnection,
@@ -26,6 +27,7 @@ import type {
   EndpointConnectionOptions,
   GraphicFrameLockingOptions,
   NonVisualDrawingPropertiesOptions,
+  ShapeLockingOptions,
   ShapePropertiesOptions,
   TextBodyOptions,
   TextHyperlinkOptions,
@@ -234,6 +236,7 @@ function buildShapeContent(
   shape: NonVisualDrawingPropertiesOptions & {
     textBox?: boolean;
     hyperlink?: TextHyperlinkOptions;
+    locking?: ShapeLockingOptions;
   },
   id: number,
   fallbackName: string,
@@ -249,7 +252,12 @@ function buildShapeContent(
   const txBodyXml = textBody
     ? `<xdr:txBody>${textBodyDesc.stringify(textBody, ctx)}</xdr:txBody>`
     : "";
-  return `<xdr:sp${attrs}><xdr:nvSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName, hlinkClickXml(shape.hyperlink, ctx))}<xdr:cNvSpPr${shape.textBox === undefined ? "" : ` txBox="${shape.textBox ? 1 : 0}"`}/></xdr:nvSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}${txBodyXml}</xdr:sp>`;
+  const txBoxAttr = shape.textBox === undefined ? "" : ` txBox="${shape.textBox ? 1 : 0}"`;
+  const locksXml = shape.locking ? (shapeLockingDesc.stringify(shape.locking, ctx) ?? "") : "";
+  const cNvSpPr = locksXml
+    ? `<xdr:cNvSpPr${txBoxAttr}>${locksXml}</xdr:cNvSpPr>`
+    : `<xdr:cNvSpPr${txBoxAttr}/>`;
+  return `<xdr:sp${attrs}><xdr:nvSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName, hlinkClickXml(shape.hyperlink, ctx))}${cNvSpPr}</xdr:nvSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}${txBodyXml}</xdr:sp>`;
 }
 
 /** Build the inner xdr:cxnSp content (nvCxnSpPr + spPr). */

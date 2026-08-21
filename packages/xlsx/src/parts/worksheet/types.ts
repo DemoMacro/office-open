@@ -1040,6 +1040,8 @@ export interface SheetFormatPropertiesOptions {
 
 /** Sheet properties extended options (CT_SheetPr attributes) */
 export interface SheetPropertiesOptions {
+  /** VBA code name (CT_SheetPr `@codeName`) */
+  codeName?: string;
   /** Sync horizontal scroll (CT_SheetPr `@syncHorizontal`) */
   syncHorizontal?: boolean;
   /** Sync vertical scroll (CT_SheetPr `@syncVertical`) */

@@ -4,6 +4,10 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
+import { attr, attrNum, escapeXml } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
+
 /** Aggregation function for data fields (maps to ST_DataConsolidateFunction). */
 export const ConsolidateFunction = {
   SUM: "sum",
@@ -854,7 +858,7 @@ export interface MeasureDimensionMapOptions {
   dimension?: number;
 }
 
-/** OLAP properties for pivot cache (CT_OlapPr) */
+/** OLAP properties (CT_OlapPr — pivot cache definition and connection share it) */
 export interface OLAPPropertiesOptions {
   /** Use the local cube connection (CT_OlapPr `@local`, boolean) */
   local?: boolean;
@@ -864,8 +868,6 @@ export interface OLAPPropertiesOptions {
   sendLocale?: boolean;
   /** Row dimensions */
   rowDrillCount?: number;
-  /** Column dimensions */
-  colDrillCount?: number;
   /** Local refresh (CT_OlapPr `@localRefresh`) */
   localRefresh?: boolean;
   /** Use server fill formatting */
@@ -876,6 +878,38 @@ export interface OLAPPropertiesOptions {
   serverFont?: boolean;
   /** Use server font color */
   serverFontColor?: boolean;
+}
+
+/** Stringify CT_OlapPr attributes (shared by pivot cache definition + connection). */
+export function stringifyOlapPr(ol: OLAPPropertiesOptions): string {
+  const attrs: string[] = [];
+  if (ol.local !== undefined) attrs.push(` local="${ol.local ? 1 : 0}"`);
+  if (ol.localConnection) attrs.push(` localConnection="${escapeXml(ol.localConnection)}"`);
+  if (ol.sendLocale) attrs.push(' sendLocale="1"');
+  if (ol.rowDrillCount !== undefined) attrs.push(` rowDrillCount="${ol.rowDrillCount}"`);
+  if (ol.localRefresh) attrs.push(' localRefresh="1"');
+  if (ol.serverFill === false) attrs.push(' serverFill="0"');
+  if (ol.serverNumberFormat === false) attrs.push(' serverNumberFormat="0"');
+  if (ol.serverFont === false) attrs.push(' serverFont="0"');
+  if (ol.serverFontColor === false) attrs.push(' serverFontColor="0"');
+  return attrs.length > 0 ? `<olapPr${attrs.join("")}/>` : "";
+}
+
+/** Parse a CT_OlapPr element. */
+export function parseOlapPr(el: Element | undefined): OLAPPropertiesOptions | undefined {
+  if (!el) return undefined;
+  const ol: OLAPPropertiesOptions = {};
+  if (attr(el, "local") !== undefined) ol.local = parseOnOff(attr(el, "local")) ?? false;
+  if (attr(el, "localConnection")) ol.localConnection = attr(el, "localConnection");
+  if (parseOnOff(attr(el, "sendLocale"))) ol.sendLocale = true;
+  const rdc = attrNum(el, "rowDrillCount");
+  if (rdc !== undefined) ol.rowDrillCount = rdc;
+  if (parseOnOff(attr(el, "localRefresh"))) ol.localRefresh = true;
+  if (String(attr(el, "serverFill")) === "0") ol.serverFill = false;
+  if (String(attr(el, "serverNumberFormat")) === "0") ol.serverNumberFormat = false;
+  if (String(attr(el, "serverFont")) === "0") ol.serverFont = false;
+  if (String(attr(el, "serverFontColor")) === "0") ol.serverFontColor = false;
+  return Object.keys(ol).length > 0 ? ol : undefined;
 }
 
 /** Parsed source data for pivot cache generation. */

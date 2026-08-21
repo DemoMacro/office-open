@@ -13,7 +13,7 @@ import { escapeXml, findChild, attr, attrNum } from "@office-open/xml";
 
 import type { PivotCacheDefinitionOptions } from "./pivot/pivot-utils";
 import type { PivotSourceData, TupleOptions } from "./pivot/pivot-utils";
-import { collectUniqueValues, isNumericField } from "./pivot/pivot-utils";
+import { collectUniqueValues, isNumericField, stringifyOlapPr } from "./pivot/pivot-utils";
 
 // ── Types ──
 
@@ -434,21 +434,8 @@ function stringifyPivotCacheDef(
   }
 
   // olapPr
-  if (cacheDefOpts?.olapPr) {
-    const ol = cacheDefOpts.olapPr;
-    const olAttrs: string[] = [];
-    if (ol.local !== undefined) olAttrs.push(` local="${ol.local ? 1 : 0}"`);
-    if (ol.localConnection) olAttrs.push(` localConnection="${escapeXml(ol.localConnection)}"`);
-    if (ol.sendLocale) olAttrs.push(' sendLocale="1"');
-    if (ol.rowDrillCount !== undefined) olAttrs.push(` rowDrillCount="${ol.rowDrillCount}"`);
-    if (ol.colDrillCount !== undefined) olAttrs.push(` colDrillCount="${ol.colDrillCount}"`);
-    if (ol.localRefresh) olAttrs.push(' localRefresh="1"');
-    if (ol.serverFill === false) olAttrs.push(' serverFill="0"');
-    if (ol.serverNumberFormat === false) olAttrs.push(' serverNumberFormat="0"');
-    if (ol.serverFont === false) olAttrs.push(' serverFont="0"');
-    if (ol.serverFontColor === false) olAttrs.push(' serverFontColor="0"');
-    if (olAttrs.length > 0) p.push(`<olapPr${olAttrs.join("")}/>`);
-  }
+  const olapPrXml = cacheDefOpts?.olapPr ? stringifyOlapPr(cacheDefOpts.olapPr) : "";
+  if (olapPrXml) p.push(olapPrXml);
 
   // cacheHierarchies
   if (cacheDefOpts?.cacheHierarchies && cacheDefOpts.cacheHierarchies.length > 0) {

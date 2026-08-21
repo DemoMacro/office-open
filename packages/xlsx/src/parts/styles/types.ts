@@ -67,6 +67,8 @@ export interface CellFillOptions {
   themeColor?: number;
   /** Foreground tint (CT_Color `@tint` on fgColor) */
   tint?: number;
+  /** Foreground automatic color (CT_Color `@auto` on fgColor) */
+  fgAutoColor?: boolean;
   patternType?: string;
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
   bgColor?: string;
@@ -74,10 +76,12 @@ export interface CellFillOptions {
   bgThemeColor?: number;
   /** Background tint (CT_Color `@tint` on bgColor) */
   bgTint?: number;
-  /** Background color indexed (CT_Color `@indexed`) */
+  /** Foreground color indexed (CT_Color `@indexed` on fgColor) */
   colorIndexed?: number;
   /** Background color indexed (CT_Color `@indexed` on bgColor) */
   bgColorIndexed?: number;
+  /** Background automatic color (CT_Color `@auto` on bgColor) */
+  bgAutoColor?: boolean;
   /** Gradient stops (CT_GradientFill/stop) */
   stops?: CellGradientStopOptions[];
   /** Gradient type (CT_GradientFill `@type`) */

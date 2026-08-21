@@ -36,7 +36,7 @@ function fontKey(f: FontOptions): string {
 }
 
 function fillKey(f: CellFillOptions): string {
-  return `t${f.type ?? ""}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}p${f.patternType ?? ""}bg${f.bgColor ?? ""}bgtc${f.bgThemeColor ?? ""}bgti${f.bgTint ?? ""}bgix${f.bgColorIndexed ?? ""}g${f.stops?.map((s) => `${s.position}_${s.color}`).join("|") ?? ""}`;
+  return `t${f.type ?? ""}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}fa${f.fgAutoColor ? 1 : 0}p${f.patternType ?? ""}bg${f.bgColor ?? ""}bgtc${f.bgThemeColor ?? ""}bgti${f.bgTint ?? ""}bgix${f.bgColorIndexed ?? ""}bga${f.bgAutoColor ? 1 : 0}g${f.stops?.map((s) => `${s.position}_${s.color}`).join("|") ?? ""}`;
 }
 
 function borderKey(b: BorderSideOptions): string {
@@ -485,7 +485,9 @@ export class Styles {
                 ? `indexed="${f.colorIndexed}"`
                 : f.color
                   ? `rgb="FF${f.color}"`
-                  : "";
+                  : f.fgAutoColor
+                    ? 'auto="1"'
+                    : "";
           const fgTint = f.tint !== undefined ? ` tint="${f.tint}"` : "";
           const fgColor = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
           const bgChannel =
@@ -495,7 +497,9 @@ export class Styles {
                 ? `indexed="${f.bgColorIndexed}"`
                 : f.bgColor
                   ? `rgb="FF${f.bgColor}"`
-                  : "";
+                  : f.bgAutoColor
+                    ? 'auto="1"'
+                    : "";
           const bgTint = f.bgTint !== undefined ? ` tint="${f.bgTint}"` : "";
           const bgColor = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
           const colorContent = fgColor + bgColor;
@@ -637,7 +641,9 @@ export class Styles {
                 ? `indexed="${f.bgColorIndexed}"`
                 : f.bgColor || f.color
                   ? `rgb="FF${f.bgColor ?? f.color}"`
-                  : "";
+                  : f.bgAutoColor
+                    ? 'auto="1"'
+                    : "";
           const bgTint = f.bgTint !== undefined ? ` tint="${f.bgTint}"` : "";
           const colorContent = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
           dParts.push(

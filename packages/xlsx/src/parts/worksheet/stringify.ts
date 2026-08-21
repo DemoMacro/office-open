@@ -74,7 +74,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   const sp = opts.sheetPr;
   const hasSheetPrAttrs =
     sp &&
-    (sp.syncHorizontal ||
+    (sp.codeName ||
+      sp.syncHorizontal ||
       sp.syncVertical ||
       sp.syncRef ||
       sp.transitionEvaluation ||
@@ -85,11 +86,12 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   const hasPageSetUpPr =
     !!opts.pageSetup?.fitToWidth ||
     !!opts.pageSetup?.fitToHeight ||
-    !!opts.pageSetup?.fitToPage ||
-    !!opts.pageSetup?.autoPageBreaks;
+    opts.pageSetup?.fitToPage !== undefined ||
+    opts.pageSetup?.autoPageBreaks !== undefined;
   if (hasTabColor || hasOutline || hasSheetPrAttrs || hasPageSetUpPr) {
     const prParts: string[] = [];
     const prAttrs: Record<string, string | number | boolean | undefined> = {};
+    if (sp?.codeName) prAttrs.codeName = sp.codeName;
     if (sp?.syncHorizontal) prAttrs.syncHorizontal = 1;
     if (sp?.syncVertical) prAttrs.syncVertical = 1;
     if (sp?.syncRef) prAttrs.syncRef = sp.syncRef;
@@ -127,7 +129,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       const psupAttrs: Record<string, string | number | boolean | undefined> = {};
       if (opts.pageSetup?.fitToWidth || opts.pageSetup?.fitToHeight || opts.pageSetup?.fitToPage)
         psupAttrs.fitToPage = 1;
-      if (opts.pageSetup?.autoPageBreaks) psupAttrs.autoPageBreaks = 1;
+      // autoPageBreaks defaults true — emit as written, explicit 0 included.
+      if (opts.pageSetup?.autoPageBreaks !== undefined)
+        psupAttrs.autoPageBreaks = opts.pageSetup.autoPageBreaks ? 1 : 0;
       prParts.push(`<pageSetUpPr${attrs(psupAttrs)}/>`);
     }
     const prAttrStr = Object.keys(prAttrs).length > 0 ? attrs(prAttrs) : "";
@@ -553,8 +557,13 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push('<pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/>');
   }
 
-  // Page setup
-  if (opts.pageSetup) {
+  // Page setup — fitToPage/autoPageBreaks are pageSetUpPr fields stashed on
+  // the same object (emitted inside sheetPr above); alone they must not
+  // conjure a <pageSetup> the source never had.
+  if (
+    opts.pageSetup &&
+    Object.keys(opts.pageSetup).some((k) => k !== "fitToPage" && k !== "autoPageBreaks")
+  ) {
     p.push(stringifyPageSetupXml(opts.pageSetup));
   }
 

@@ -10,6 +10,9 @@ import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 
+import { parseOlapPr, stringifyOlapPr } from "./pivot/pivot-utils";
+import type { OLAPPropertiesOptions } from "./pivot/pivot-utils";
+
 // ── Options ──
 
 /** Database (OLE DB) connection properties (CT_DbPr). */
@@ -177,6 +180,8 @@ export interface ConnectionOptions {
   singleSignOnId?: string;
   /** Database properties (CT_DbPr) */
   dbPr?: DatabasePropertiesOptions;
+  /** OLAP properties (CT_OlapPr) */
+  olapPr?: OLAPPropertiesOptions;
   /** Web query properties (CT_WebPr) */
   webPr?: WebPropertiesOptions;
   /** Text import properties (CT_TextPr) */
@@ -234,6 +239,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
         if (c.dbPr.commandType !== undefined) dAttrs.push(`commandType="${c.dbPr.commandType}"`);
         inner.push(`<dbPr ${dAttrs.join(" ")}/>`);
       }
+      if (c.olapPr) inner.push(stringifyOlapPr(c.olapPr));
       if (c.webPr) {
         const w = c.webPr;
         const wAttrs: string[] = [];
@@ -365,6 +371,11 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
           serverCommand: attr(dbEl, "serverCommand"),
           commandType: attrNum(dbEl, "commandType"),
         };
+      }
+      const olapEl = findChild(cEl, "olapPr");
+      if (olapEl) {
+        const ol = parseOlapPr(olapEl);
+        if (ol) c.olapPr = ol;
       }
       const webEl = findChild(cEl, "webPr");
       if (webEl) {

@@ -87,6 +87,7 @@ export function parseFill(el: XmlElement): CellFillOptions {
       readThemeColor(fg, result);
       const indexed = attrNum(fg, "indexed");
       if (indexed !== undefined) result.colorIndexed = indexed;
+      if (parseOnOff(attr(fg, "auto"))) result.fgAutoColor = true;
     }
     const bg = findChild(patternFill, "bgColor");
     if (bg) {
@@ -97,6 +98,7 @@ export function parseFill(el: XmlElement): CellFillOptions {
       if (bgTint !== undefined) result.bgTint = bgTint;
       const bgIndexed = attrNum(bg, "indexed");
       if (bgIndexed !== undefined) result.bgColorIndexed = bgIndexed;
+      if (parseOnOff(attr(bg, "auto"))) result.bgAutoColor = true;
     }
     return result;
   }

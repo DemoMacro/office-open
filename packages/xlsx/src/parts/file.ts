@@ -48,6 +48,7 @@ import type { ExternalLinkOptions } from "./external-link";
 import type { MetadataOptions } from "./metadata";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
+import type { PivotCacheReference } from "./workbook";
 import type { WorkbookExtensionOptions } from "./workbook";
 import type { RichTextOptions, WorksheetOptions } from "./worksheet";
 import type { MapInfoOptions } from "./xml-mapping";
@@ -141,6 +142,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   calcChain?: CalcCell[];
   /** Pivot cache definitions — parse-only (CT-layer); compiler regenerates from sourceData */
   pivotCaches?: PivotCacheDefParseResult[];
+  /** Pivot cache references from workbook.xml — parse-only round-trip wiring */
+  pivotCacheRefs?: PivotCacheReference[];
   /** Pivot cache records — parse-only (CT-layer) */
   pivotCacheRecords?: PivotCacheRecordsParseResult[];
   /**

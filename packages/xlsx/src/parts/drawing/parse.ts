@@ -17,6 +17,7 @@ import {
   groupShapePropertiesDesc,
   parseNonVisualDrawingProperties,
   readHyperlink,
+  shapeLockingDesc,
   shapePropertiesDesc,
   sourceRectangleDesc,
   textBodyDesc,
@@ -283,6 +284,8 @@ export function parseShapeAnchor(
   const cNvSpPr = nvSpPr ? findXdr(nvSpPr, "cNvSpPr") : undefined;
   if (cNvSpPr?.attributes?.["txBox"] !== undefined)
     result.textBox = parseOnOff(String(cNvSpPr.attributes["txBox"])) ?? true;
+  const spLocks = cNvSpPr ? findChild(cNvSpPr, "a:spLocks") : undefined;
+  if (spLocks) result.locking = shapeLockingDesc.parse(spLocks, ctx);
 
   const spPr = findXdr(sp, "spPr");
   if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
@@ -390,6 +393,8 @@ export function parseGroupAnchor(
       const childCnVSpPr = childNvSpPr ? findXdr(childNvSpPr, "cNvSpPr") : undefined;
       if (childCnVSpPr?.attributes?.["txBox"] !== undefined)
         childShape.textBox = parseOnOff(String(childCnVSpPr.attributes["txBox"])) ?? true;
+      const childSpLocks = childCnVSpPr ? findChild(childCnVSpPr, "a:spLocks") : undefined;
+      if (childSpLocks) childShape.locking = shapeLockingDesc.parse(childSpLocks, ctx);
       const childStyle = findXdr(child, "style");
       if (childStyle) {
         const style = parseShapeStyle(childStyle, ctx);

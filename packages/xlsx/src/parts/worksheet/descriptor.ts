@@ -118,6 +118,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const sheetPrEl = findChild(el, "sheetPr");
     if (sheetPrEl) {
       const sp: SheetPropertiesOptions = {};
+      if (attr(sheetPrEl, "codeName")) sp.codeName = attr(sheetPrEl, "codeName");
       if (parseOnOff(attr(sheetPrEl, "syncHorizontal"))) sp.syncHorizontal = true;
       if (parseOnOff(attr(sheetPrEl, "syncVertical"))) sp.syncVertical = true;
       if (attr(sheetPrEl, "syncRef")) sp.syncRef = attr(sheetPrEl, "syncRef");
@@ -142,8 +143,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const pageSetUpPr = findChild(sheetPrEl, "pageSetUpPr");
       if (pageSetUpPr) {
         const psup: Partial<PageSetupOptions> = {};
-        if (parseOnOff(attr(pageSetUpPr, "fitToPage"))) psup.fitToPage = true;
-        if (parseOnOff(attr(pageSetUpPr, "autoPageBreaks"))) psup.autoPageBreaks = true;
+        // Present-as-written: autoPageBreaks defaults true, so an explicit "0"
+        // carries information and must survive the round-trip.
+        if (attr(pageSetUpPr, "fitToPage") !== undefined)
+          psup.fitToPage = parseOnOff(attr(pageSetUpPr, "fitToPage")) ?? false;
+        if (attr(pageSetUpPr, "autoPageBreaks") !== undefined)
+          psup.autoPageBreaks = parseOnOff(attr(pageSetUpPr, "autoPageBreaks")) ?? true;
         if (Object.keys(psup).length > 0) pageSetUpPrCache = psup;
       }
       if (Object.keys(sp).length > 0) result.sheetPr = sp;
