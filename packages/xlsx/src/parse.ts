@@ -339,6 +339,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (wbData.webPublishObjects) opts.webPublishObjects = wbData.webPublishObjects;
     if (wbData.definedNames) opts.definedNames = wbData.definedNames;
     if (wbData.absPath !== undefined) opts.absPath = wbData.absPath;
+    if (wbData.revisionPtr) opts.revisionPtr = wbData.revisionPtr;
     if (wbData.extensions) opts.extensions = wbData.extensions;
   }
 

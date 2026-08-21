@@ -102,6 +102,22 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     );
   }
 
+  // Coauthoring revision state (mc-ignorable, before bookViews)
+  if (opts.revisionPtr) {
+    const rp = opts.revisionPtr;
+    const rpAttrs: string[] = [];
+    if (rp.revisionIdLastSave !== undefined)
+      rpAttrs.push(`revIDLastSave="${rp.revisionIdLastSave}"`);
+    if (rp.documentId !== undefined) rpAttrs.push(`documentId="${escapeXml(rp.documentId)}"`);
+    if (rp.coauthVersionLast !== undefined)
+      rpAttrs.push(`xr6:coauthVersionLast="${rp.coauthVersionLast}"`);
+    if (rp.coauthVersionMax !== undefined)
+      rpAttrs.push(`xr6:coauthVersionMax="${rp.coauthVersionMax}"`);
+    if (rp.uidLastSave !== undefined)
+      rpAttrs.push(`xr10:uidLastSave="${escapeXml(rp.uidLastSave)}"`);
+    parts.push(`<xr:revisionPtr ${rpAttrs.join(" ")}/>`);
+  }
+
   // Workbook protection (after workbookPr, before bookViews per XSD sequence)
   if (opts.protection) {
     const prot = opts.protection;

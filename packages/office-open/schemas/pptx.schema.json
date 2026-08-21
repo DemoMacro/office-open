@@ -2859,7 +2859,7 @@
           "description": "Drop lines (c:dropLines, line/area/stock)."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
           "type": "string"
         },
         "externalData": {

@@ -2277,6 +2277,10 @@
           ],
           "description": "Drop lines (c:dropLines, line/area/stock)."
         },
+        "ext": {
+          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
+          "type": "string"
+        },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
           "description": "External linked workbook (c:externalData, after c:txPr)."
@@ -2897,6 +2901,10 @@
             }
           ],
           "description": "Drop lines (c:dropLines, line/area/stock)."
+        },
+        "ext": {
+          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
+          "type": "string"
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",

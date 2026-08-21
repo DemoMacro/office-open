@@ -17,6 +17,7 @@ import type {
   FileSharingOptions,
   FileVersionOptions,
   PivotCacheReference,
+  RevisionPtrOptions,
   SheetDefinition,
   SmartTagPropertiesOptions,
   SmartTagShow,
@@ -309,9 +310,28 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     const acEl = findChild(el, "mc:AlternateContent");
     if (acEl) {
       const choice = findChild(acEl, "mc:Choice");
-      const absPathEl = choice ? findChild(choice, "x15ac:absPath") : undefined;
+      // Excel writes both prefixes in the wild: x15ac (2010/11/ac, the
+      // common form our stringify re-emits) and x15 (2010/11/main, root-bound).
+      const absPathEl = choice
+        ? (findChild(choice, "x15ac:absPath") ?? findChild(choice, "x15:absPath"))
+        : undefined;
       const url = absPathEl ? attr(absPathEl, "url") : undefined;
       if (url !== undefined) result.absPath = url;
+    }
+
+    // Coauthoring revision state
+    const rpEl = findChild(el, "xr:revisionPtr");
+    if (rpEl) {
+      const rp: RevisionPtrOptions = {};
+      const revId = attrNum(rpEl, "revIDLastSave");
+      if (revId !== undefined) rp.revisionIdLastSave = revId;
+      if (attr(rpEl, "documentId")) rp.documentId = attr(rpEl, "documentId");
+      const cvLast = attrNum(rpEl, "xr6:coauthVersionLast");
+      if (cvLast !== undefined) rp.coauthVersionLast = cvLast;
+      const cvMax = attrNum(rpEl, "xr6:coauthVersionMax");
+      if (cvMax !== undefined) rp.coauthVersionMax = cvMax;
+      if (attr(rpEl, "xr10:uidLastSave")) rp.uidLastSave = attr(rpEl, "xr10:uidLastSave");
+      result.revisionPtr = rp;
     }
 
     // Trailing extension list (workbook > extLst > ext) — raw round-trip

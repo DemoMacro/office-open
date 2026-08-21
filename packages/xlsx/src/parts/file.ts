@@ -49,7 +49,7 @@ import type { MetadataOptions } from "./metadata";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
 import type { PivotCacheReference } from "./workbook";
-import type { WorkbookExtensionOptions } from "./workbook";
+import type { RevisionPtrOptions, WorkbookExtensionOptions } from "./workbook";
 import type { RichTextOptions, WorksheetOptions } from "./worksheet";
 import type { MapInfoOptions } from "./xml-mapping";
 
@@ -68,6 +68,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
    * workbookPr) — round-trip only.
    */
   absPath?: string;
+  /** Coauthoring revision state (xr:revisionPtr) — round-trip only. */
+  revisionPtr?: RevisionPtrOptions;
   /** Trailing extension list (workbook > extLst > ext) — round-trip only. */
   extensions?: WorkbookExtensionOptions[];
   /** Chart-only sheets (no cells, just a chart) */

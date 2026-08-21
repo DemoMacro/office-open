@@ -319,6 +319,7 @@ export function compileWorkbook(
         oleSize: options.oleSize,
         bookView: options.bookView,
         ...(options.absPath !== undefined ? { absPath: options.absPath } : {}),
+        ...(options.revisionPtr ? { revisionPtr: options.revisionPtr } : {}),
         ...(options.extensions ? { extensions: options.extensions } : {}),
       },
       ctx,

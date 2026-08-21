@@ -2301,6 +2301,10 @@
           ],
           "description": "Drop lines (c:dropLines, line/area/stock)."
         },
+        "ext": {
+          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
+          "type": "string"
+        },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
           "description": "External linked workbook (c:externalData, after c:txPr)."
@@ -12197,6 +12201,33 @@
       ],
       "description": "Nested rrc/rm child — undo tracking, cell change, or formatting (shared choice group)."
     },
+    "RevisionPtrOptions": {
+      "additionalProperties": false,
+      "description": "xr:revisionPtr — coauthoring revision state between workbookPr and bookViews (mc-ignorable Microsoft extension) — round-trip only.",
+      "properties": {
+        "coauthVersionLast": {
+          "description": "Coauthoring version at last save (@xr6:coauthVersionLast).",
+          "type": "number"
+        },
+        "coauthVersionMax": {
+          "description": "Maximum coauthoring version seen (@xr6:coauthVersionMax).",
+          "type": "number"
+        },
+        "documentId": {
+          "description": "Revision document id (@documentId).",
+          "type": "string"
+        },
+        "revisionIdLastSave": {
+          "description": "Last saved revision id (@revIDLastSave).",
+          "type": "number"
+        },
+        "uidLastSave": {
+          "description": "Last save uid (@xr10:uidLastSave, a GUID).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "RevisionQueryTableFieldOptions": {
       "additionalProperties": false,
       "description": "Query table field change (CT_RevisionQueryTableField, sml.xsd:2071 — no AG_RevData).",
@@ -14135,6 +14166,10 @@
           "description": "Display name (required by XSD, defaults to name if not set)",
           "type": "string"
         },
+        "ext": {
+          "description": "Raw inner XML of the table's trailing extLst (x14:table altText lives here). Round-trip only.",
+          "type": "string"
+        },
         "headerRowBorderDxfId": {
           "description": "Header row border differential format index",
           "type": "number"
@@ -15959,6 +15994,10 @@
           "$ref": "#/definitions/SharedWorkbookOptions",
           "description": "Shared-workbook revision log (xl/revisionHeaders.xml + xl/revisions/revisionN.xml + xl/users.xml)."
         },
+        "revisionPtr": {
+          "$ref": "#/definitions/RevisionPtrOptions",
+          "description": "Coauthoring revision state (xr:revisionPtr) — round-trip only."
+        },
         "sharedStrings": {
           "description": "Shared string table (xl/sharedStrings.xml), in table order. Parse fills it so generate() can seed the write context from the source entries — cells referencing rich-text si values keep their structure and index instead of collapsing to flattened text. Fresh documents omit it and register strings from cell values as they stringify.",
           "items": {
@@ -16435,7 +16474,7 @@
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
           "type": "string"
         },
         "extentCx": {

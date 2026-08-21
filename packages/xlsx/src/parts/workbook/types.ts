@@ -368,6 +368,23 @@ export interface FileVersionOptions {
   rupBuild?: number;
 }
 
+/**
+ * xr:revisionPtr — coauthoring revision state between workbookPr and
+ * bookViews (mc-ignorable Microsoft extension) — round-trip only.
+ */
+export interface RevisionPtrOptions {
+  /** Last saved revision id (@revIDLastSave). */
+  revisionIdLastSave?: number;
+  /** Revision document id (@documentId). */
+  documentId?: string;
+  /** Coauthoring version at last save (@xr6:coauthVersionLast). */
+  coauthVersionLast?: number;
+  /** Maximum coauthoring version seen (@xr6:coauthVersionMax). */
+  coauthVersionMax?: number;
+  /** Last save uid (@xr10:uidLastSave, a GUID). */
+  uidLastSave?: string;
+}
+
 /** ST_SmartTagShow — smart tag display policy (CT_SmartTagPr/`@show`). */
 export type SmartTagShow = "all" | "none" | "noIndicator";
 
@@ -397,6 +414,8 @@ export interface WorkbookDescriptorOptions {
    * workbookPr) — round-trip only.
    */
   absPath?: string;
+  /** Coauthoring revision state (xr:revisionPtr) — round-trip only. */
+  revisionPtr?: RevisionPtrOptions;
   /** Trailing extension list (workbook > extLst > ext) — round-trip only. */
   extensions?: WorkbookExtensionOptions[];
   sheets: SheetDefinition[];

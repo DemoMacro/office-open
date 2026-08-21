@@ -258,4 +258,37 @@ describe("workbookDesc round-trip", () => {
     expect(xml.indexOf("<definedNames>")).toBeLessThan(xml.indexOf("<calcPr"));
     expect(xml.indexOf("EXTERNAL_REFS")).toBeLessThan(xml.indexOf("<definedNames>"));
   });
+
+  it("round-trips coauthoring revision state", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      revisionPtr: {
+        revisionIdLastSave: 0,
+        documentId: "8_{5FF0C957-174C-468D-A376-EA8B81D2939C}",
+        coauthVersionLast: 47,
+        coauthVersionMax: 47,
+        uidLastSave: "{00000000-0000-0000-0000-000000000000}",
+      },
+    };
+    const xml = workbookDesc.stringify(opts, writeCtx)!;
+    expect(xml).toMatch(/<xr:revisionPtr revIDLastSave="0"/);
+    expect(xml).toMatch(/xr6:coauthVersionMax="47"/);
+
+    const result = roundTrip(opts);
+    expect(result.revisionPtr).toEqual(opts.revisionPtr);
+  });
+
+  it("parses the x15 absPath form alongside x15ac", () => {
+    const xml =
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+      ' xmlns:x15="http://schemas.microsoft.com/office/spreadsheetml/2010/11/main"' +
+      ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x15">' +
+      '<mc:AlternateContent><mc:Choice Requires="x15">' +
+      '<x15:absPath url="C:\\Users\\kazuma\\Desktop\\"/></mc:Choice></mc:AlternateContent>' +
+      '<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>';
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0]!;
+    const result = workbookDesc.parse(el, readCtx) as unknown as WorkbookDescriptorOptions;
+    expect(result.absPath).toBe("C:\\Users\\kazuma\\Desktop\\");
+  });
 });
