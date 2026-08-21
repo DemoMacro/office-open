@@ -110,6 +110,19 @@ describe("slideDesc round-trip", () => {
     expect(asStructured(result.transition).speed).toBe("slow");
   });
 
+  it("round-trips a typeless transition (attributes only)", () => {
+    const opts: SlideOptions = {
+      transition: { advanceAfterTime: 0 },
+    };
+    const xml = slideDesc.stringify(opts, writeCtx) ?? "";
+
+    expect(xml).toContain('<p:transition advTm="0"/>');
+    const result = roundTrip(opts);
+
+    expect(result.transition).toBeDefined();
+    expect(asStructured(result.transition).advanceAfterTime).toBe(0);
+  });
+
   it("round-trips transition push", () => {
     const opts: SlideOptions = {
       transition: { type: "push", advanceOnClick: true },

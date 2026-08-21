@@ -138,7 +138,8 @@ function hasDescendant(el: XmlElement, name: string): boolean {
 export function stringifyTransition(opts: TransitionOptions | string, ctx?: WriteContext): string {
   // Verbatim markup-compatibility block (mc:Choice p14:dur + mc:Fallback).
   if (typeof opts === "string") return opts;
-  if (!opts.type) return "";
+  // A typeless transition stays legal — buildTransition emits the bare
+  // <p:transition/> (attributes only) the CT_SlideTransition content model allows.
   return buildTransition(opts, ctx);
 }
 
