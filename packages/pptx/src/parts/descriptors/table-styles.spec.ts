@@ -57,11 +57,11 @@ describe("tableStylesDesc round-trip", () => {
                 text: {
                   bold: "on",
                   italic: "off",
-                  fontReference: { index: 0, color: { value: "000000" } },
+                  fontReference: { collection: "minor", color: { value: "000000" } },
                 },
                 cell: {
                   borders: {
-                    left: { width: 9525, color: color("333333") },
+                    left: { width: 9525, compound: "sng", color: color("333333") },
                     top: { lineReference: { index: 2 }, color: color("666666") },
                   },
                   fillReference: { index: 1, color: { value: "4472C4" } },
@@ -88,12 +88,13 @@ describe("tableStylesDesc round-trip", () => {
     const wt = s.regions!.wholeTbl!.text!;
     expect(wt.bold).toBe("on");
     expect(wt.italic).toBe("off");
-    expect(wt.fontReference?.index).toBe(0);
+    expect(wt.fontReference?.collection).toBe("minor");
     expect(wt.fontReference?.color).toEqual({ value: "000000" });
 
     // wholeTbl — cell style (borders + fillReference)
     const wc = s.regions!.wholeTbl!.cell!;
     expect(wc.borders?.left?.width).toBe(9525);
+    expect(wc.borders?.left?.compound).toBe("sng");
     expect(wc.borders?.left?.color).toContain('val="333333"');
     expect(wc.borders?.top?.lineReference?.index).toBe(2);
     expect(wc.borders?.top?.color).toContain('val="666666"');

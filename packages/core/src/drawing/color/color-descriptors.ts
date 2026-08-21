@@ -68,13 +68,15 @@ function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
     if (!TRANSFORM_KEYS.has(key)) continue;
     const val = child.attributes?.["val"];
     if (val !== undefined) {
-      const raw = Number(val);
-      // Percent → integer percent (÷1000); angle → degrees (÷60000); else raw.
+      // ST_Percentage arrives as either a 1/1000th integer ("50000") or a
+      // percent literal ("65%") — parsePercentAttr handles both; a plain
+      // Number() yields NaN on the literal form. Angles are always plain
+      // integers (÷60000).
       (result as Record<string, unknown>)[key] = PERCENT_TRANSFORMS.has(key)
-        ? parsePercent(raw)
+        ? (parsePercentAttr(val) ?? 0)
         : ANGLE_TRANSFORMS.has(key)
-          ? parseAngle(raw)
-          : raw;
+          ? parseAngle(Number(val))
+          : Number(val);
     } else {
       (result as Record<string, unknown>)[key] = true;
     }

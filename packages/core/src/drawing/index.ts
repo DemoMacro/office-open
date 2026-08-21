@@ -142,8 +142,10 @@ export {
   type TableCellBorderOptions,
   type ThemeableLineStyleOptions,
   type StyleMatrixReferenceOptions,
+  type TableFontReferenceOptions,
   type TableStyleRegion,
   type OnOffStyleType,
+  type CompoundLineType,
 } from "./table-style";
 
 // Locking

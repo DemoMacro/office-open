@@ -146,7 +146,7 @@ export type BulletStyleOptions = {
   color?: string | SolidFillOptions;
   /** a:buClrTx — bullet color follows the text run color. */
   colorFollowsText?: boolean;
-  /** a:buSzPct `@val` — bullet size as a percentage of the text size. */
+  /** a:buSzPct — bullet size as a percentage of the text size (60 = 60%). */
   size?: number;
   /** a:buSzTx — bullet size follows the text run size. */
   sizeFollowsText?: boolean;

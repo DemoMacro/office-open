@@ -14,6 +14,7 @@ import type { Element } from "@office-open/xml";
 import type { ReadContext, WriteContext } from "../descriptor";
 import { parse as parseDesc, stringify as stringifyDesc } from "../descriptor";
 import { parseColorChoice, stringifyColorChoice } from "./color/color-descriptors";
+import type { SolidFillOptions } from "./color/solid-fill";
 import type { StyleMatrixReferenceOptions } from "./style-reference";
 import { cell3DDesc } from "./three-d/three-d-descriptors";
 import type { Cell3DOptions } from "./three-d/three-d-descriptors";
@@ -45,6 +46,19 @@ export type TableStyleRegion =
 
 export type OnOffStyleType = "on" | "off" | "def";
 
+/** ST_CompoundLine — @cmpd on a:ln. */
+export type CompoundLineType = "sng" | "dbl" | "thickThin" | "thinThick" | "tri";
+
+/**
+ * Font reference — a:fontRef (CT_FontReference). Unlike lnRef/fillRef/effectRef
+ * (CT_StyleMatrixReference, integer idx), its @idx is a font-collection name
+ * (ST_FontCollectionIndex: major/minor/none).
+ */
+export interface TableFontReferenceOptions {
+  collection: "major" | "minor" | "none";
+  color?: SolidFillOptions;
+}
+
 export interface TablePartStyleOptions {
   /** Cell text style */
   text?: TableTextStyleOptions;
@@ -70,7 +84,7 @@ export interface TableTextStyleOptions {
   /** Italic style */
   italic?: OnOffStyleType;
   /** Font reference (themeable) */
-  fontReference?: StyleMatrixReferenceOptions;
+  fontReference?: TableFontReferenceOptions;
   /** Color element */
   color?: string;
 }
@@ -98,6 +112,8 @@ export interface TableCellBorderOptions {
 export interface ThemeableLineStyleOptions {
   /** Line width in EMUs */
   width?: number;
+  /** Compound line type (@cmpd) */
+  compound?: CompoundLineType;
   /** Fill color component */
   color?: string;
   /** Line reference (a:lnRef) into the theme style matrix */
@@ -158,6 +174,7 @@ function createThemeableLine(opts: ThemeableLineStyleOptions): string {
   if (opts.color) children.push(toStr(opts.color));
   const attrs: Record<string, string> = {};
   if (opts.width !== undefined) attrs.w = String(opts.width);
+  if (opts.compound) attrs.cmpd = opts.compound;
   return element("a:ln", attrs, children.length > 0 ? children : undefined);
 }
 
@@ -185,7 +202,12 @@ function buildCellBorders(opts: TableCellBorderOptions): string {
 
 function buildTextStyle(opts: TableTextStyleOptions): string {
   const children: string[] = [];
-  if (opts.fontReference) children.push(createStyleMatrixRef("fontRef", opts.fontReference));
+  if (opts.fontReference) {
+    const color = opts.fontReference.color
+      ? stringifyColorChoice(opts.fontReference.color, EMPTY_WRITE_CTX)
+      : "";
+    children.push(`<a:fontRef idx="${opts.fontReference.collection}">${color}</a:fontRef>`);
+  }
   if (opts.color) children.push(toStr(opts.color));
   const attrs: Record<string, string> = {};
   if (opts.bold && opts.bold !== "def") attrs.b = opts.bold;
@@ -380,7 +402,14 @@ function parseTableTextStyle(el: Element): TableTextStyleOptions | undefined {
   const i = attr(el, "i");
   if (i === "on" || i === "off") opts.italic = i;
   const fontRefEl = findChild(el, "a:fontRef");
-  if (fontRefEl) opts.fontReference = parseStyleMatrixRef(fontRefEl);
+  if (fontRefEl) {
+    const idx = attr(fontRefEl, "idx");
+    if (idx === "major" || idx === "minor" || idx === "none") {
+      const color = parseColorChoice(fontRefEl, EMPTY_READ_CTX);
+      opts.fontReference =
+        color && Object.keys(color).length > 0 ? { collection: idx, color } : { collection: idx };
+    }
+  }
   // color: first non-fontRef child element, serialized back to the raw string
   // buildTextStyle stores (it pushes opts.color verbatim).
   for (const child of el.elements ?? []) {
@@ -439,6 +468,8 @@ function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined 
   } else {
     const w = attrNum(el, "w");
     if (w !== undefined) opts.width = w;
+    const cmpd = attr(el, "cmpd");
+    if (cmpd) opts.compound = cmpd as CompoundLineType;
   }
   for (const child of el.elements ?? []) {
     opts.color = serializeChild(child);

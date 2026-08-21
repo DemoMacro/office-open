@@ -167,7 +167,9 @@ function stringifyBullet(options: BulletOptions): string[] {
   } else if (options.sizePoints !== undefined) {
     parts.push(`<a:buSzPts val="${Math.round(options.sizePoints * 100)}"/>`);
   } else if (options.size !== undefined) {
-    parts.push(`<a:buSzPct val="${options.size}%"/>`);
+    // Office writes the plain per-mille integer ("60000" = 60%); the XSD's
+    // "25%"-pattern branch is never emitted in practice.
+    parts.push(`<a:buSzPct val="${Math.round(options.size * 1000)}"/>`);
   }
 
   // Font: buFontTx | buFont. No fresh default — Office files omit buFont when
@@ -303,8 +305,13 @@ export function readParagraphProperties(
           style.sizePoints = Number(buSzPts.attributes["val"]) / 100;
         } else {
           const buSzPct = findChild(el, "a:buSzPct");
-          if (buSzPct?.attributes?.["val"])
-            style.size = Number(String(buSzPct.attributes["val"]).replace("%", ""));
+          if (buSzPct?.attributes?.["val"]) {
+            // Per-mille integer ("60000" = 60%) is what Office writes; the
+            // XSD's "75%"-string form carries the percentage directly.
+            const raw = String(buSzPct.attributes["val"]);
+            const num = Number(raw.replace("%", ""));
+            style.size = raw.includes("%") ? num : num / 1000;
+          }
         }
       }
       if (findChild(el, "a:buFontTx")) {
