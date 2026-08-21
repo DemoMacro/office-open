@@ -21,7 +21,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
 import { letterToColumn } from "../util/index";
-import { buildRstXml, parseRPr } from "./shared-strings";
+import { buildRstXml, parseRPr, tElement } from "./shared-strings";
 import type {
   AnchorMarkerOptions,
   CommentOptions,
@@ -58,9 +58,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
     for (const entry of opts.comments) {
       const authorId = authors.indexOf(entry.author);
       const textXml =
-        typeof entry.text === "string"
-          ? `<t>${escapeXml(entry.text)}</t>`
-          : buildRstXml(entry.text);
+        typeof entry.text === "string" ? tElement(entry.text) : buildRstXml(entry.text);
       // commentPr is parsed but never re-emitted: Excel refuses to open a
       // third-party file carrying commentPr beside the VML note drawing this
       // compiler always writes (rival property systems — it reads the VML

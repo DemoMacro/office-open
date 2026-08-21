@@ -12,7 +12,7 @@ import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
 import { stringifyAutoFilter, stringifySortStateXml } from "../auto-filter";
 import { buildPivotAreaXml } from "../pivot-table/stringify";
-import { buildRstXml } from "../shared-strings";
+import { buildRstXml, tElement } from "../shared-strings";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles } from "../styles";
 import { FormulaType } from "./types";
@@ -1125,7 +1125,7 @@ function buildCellString(
       const idx = sharedStrings.register(value);
       return `<c${rAttr}${sAttr}${mdAttr} t="s"><v>${idx}</v></c>`;
     }
-    return `<c${rAttr}${sAttr}${mdAttr} t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`;
+    return `<c${rAttr}${sAttr}${mdAttr} t="inlineStr"><is>${tElement(value)}</is></c>`;
   }
 
   if (typeof value === "number") {

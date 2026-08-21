@@ -53,6 +53,16 @@ describe("commentsDesc round-trip", () => {
     expect(comments[1]?.text).toBe("Another comment");
   });
 
+  it("emits xml:space=preserve for whitespace-edged text (Excel open gate)", () => {
+    const opts: CommentsDocOptions = {
+      comments: [{ cell: "A1", author: "Alice", text: "\nInte" }],
+    };
+    const xml = commentsDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<t xml:space="preserve">\nInte</t>');
+    const result = roundTrip(opts);
+    expect(result.comments[0]?.text).toBe("\nInte");
+  });
+
   it("round-trips multiple authors correctly", () => {
     const opts: CommentsDocOptions = {
       comments: [

@@ -46,5 +46,20 @@ describe("SharedStrings", () => {
       const xml = ss.serialize();
       expect(xml).toContain("<t>&lt;b&gt;&amp;</t>");
     });
+
+    it("marks whitespace-edged text with xml:space=preserve", () => {
+      const ss = new SharedStrings();
+      ss.register(" padded ");
+      const xml = ss.serialize();
+      expect(xml).toContain('<t xml:space="preserve"> padded </t>');
+    });
+
+    it("leaves tight text without the preserve attribute", () => {
+      const ss = new SharedStrings();
+      ss.register("tight");
+      const xml = ss.serialize();
+      expect(xml).toContain("<t>tight</t>");
+      expect(xml).not.toContain("xml:space");
+    });
   });
 });

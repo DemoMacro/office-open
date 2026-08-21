@@ -22,6 +22,17 @@ import type {
 type SstEntry = string | RichTextOptions;
 
 /**
+ * Serialize a CT_Rst text element. Excel requires xml:space="preserve" on a
+ * `<t>` whose text has leading or trailing whitespace — without it the whole
+ * part is rejected on open. The attribute is derived from the text itself, so
+ * parse needs no field for it.
+ */
+export function tElement(text: string): string {
+  const open = /^\s|\s$/.test(text) ? '<t xml:space="preserve">' : "<t>";
+  return `${open}${escapeXml(text)}</t>`;
+}
+
+/**
  * Build rich text run properties XML (CT_RPrElt).
  * Exported for reuse by Comments and other components.
  */
@@ -41,10 +52,20 @@ export function buildRPrXml(
   if (pr.condense) parts.push("<condense/>");
   if (pr.extend) parts.push("<extend/>");
   if (pr.color) {
-    // ST_UnsignedIntHex requires 8 hex chars (AARRGGBB).
-    // Auto-prefix FF (fully opaque) when user provides 6-char RGB.
-    const rgb = pr.color.length === 6 ? `FF${pr.color}` : pr.color;
-    parts.push(`<color rgb="${escapeXml(rgb)}"/>`);
+    // parseRPr encodes the non-rgb channels in the same string: a bare
+    // number is the legacy palette index, "theme:N" a theme slot. They must
+    // go back to their own attributes — rgb accepts only 8 hex chars
+    // (AARRGGBB), and rgb="81" makes Excel refuse the whole package.
+    if (/^\d+$/.test(pr.color)) {
+      parts.push(`<color indexed="${pr.color}"/>`);
+    } else if (pr.color.startsWith("theme:")) {
+      parts.push(`<color theme="${escapeXml(pr.color.slice(6))}"/>`);
+    } else {
+      // ST_UnsignedIntHex requires 8 hex chars (AARRGGBB).
+      // Auto-prefix FF (fully opaque) when user provides 6-char RGB.
+      const rgb = pr.color.length === 6 ? `FF${pr.color}` : pr.color;
+      parts.push(`<color rgb="${escapeXml(rgb)}"/>`);
+    }
   }
   if (pr.size !== undefined) parts.push(`<sz val="${pr.size}"/>`);
   // val="none" is explicit: a bare <u/> means underline single, so omitting
@@ -61,15 +82,15 @@ export function buildRstXml(rst: RichTextOptions): string {
   if (rst.runs && rst.runs.length > 0) {
     for (const run of rst.runs) {
       const rPr = buildRPrXml(run.properties);
-      parts.push(`<r>${rPr}<t>${escapeXml(run.text)}</t></r>`);
+      parts.push(`<r>${rPr}${tElement(run.text)}</r>`);
     }
   } else if (rst.text !== undefined) {
-    parts.push(`<t>${escapeXml(rst.text)}</t>`);
+    parts.push(tElement(rst.text));
   }
   // rPh (phonetics)
   if (rst.phonetics) {
     for (const ph of rst.phonetics) {
-      parts.push(`<rPh sb="${ph.startByte}" eb="${ph.endByte}"><t>${escapeXml(ph.text)}</t></rPh>`);
+      parts.push(`<rPh sb="${ph.startByte}" eb="${ph.endByte}">${tElement(ph.text)}</rPh>`);
     }
   }
   if (rst.phoneticProperties) {
@@ -164,7 +185,7 @@ function serializeSstEntries(entries: (string | RichTextOptions)[]): string {
   ];
   for (const entry of entries) {
     if (typeof entry === "string") {
-      p.push(`<si><t>${escapeXml(entry)}</t></si>`);
+      p.push(`<si>${tElement(entry)}</si>`);
     } else {
       // Rich text (CT_Rst)
       p.push(`<si>${buildRstXml(entry)}</si>`);
