@@ -487,6 +487,11 @@ export interface ChartSpaceOptions {
   legendEntries?: readonly LegendEntryOptions[];
   /** User-drawn shapes relationship id (c:userShapes r:id, after printSettings). */
   userShapes?: string;
+  /**
+   * Raw inner XML of the chart-space trailing c:extLst (after userShapes —
+   * c14:pivotOptions' home). Round-trip only, same contract as series ext.
+   */
+  ext?: string;
 }
 
 // ── 3D view ──

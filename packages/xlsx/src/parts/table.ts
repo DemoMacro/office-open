@@ -8,7 +8,15 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { findChild, attr, attrNum, attrs, textOf, escapeXml } from "@office-open/xml";
+import {
+  findChild,
+  attr,
+  attrNum,
+  attrs,
+  textOf,
+  escapeXml,
+  stringifyElement,
+} from "@office-open/xml";
 
 import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
 import type { AutoFilterOptions } from "./worksheet";
@@ -123,6 +131,11 @@ export interface TableOptions {
   tableType?: TableType;
   /** Table style */
   style?: TableStyleInfoOptions;
+  /**
+   * Raw inner XML of the table's trailing extLst (x14:table altText lives
+   * here). Round-trip only.
+   */
+  ext?: string;
   /** Auto-filter (ref shorthand or structured filter columns/sort state) */
   autoFilter?: string | AutoFilterOptions;
   /** Insert row shifts existing rows (CT_Table `@insertRowShift`) */
@@ -282,6 +295,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       p.push(`<tableStyleInfo${attrs(styleAttrs)}/>`);
     }
 
+    if (o.ext) p.push(`<extLst>${o.ext}</extLst>`);
+
     p.push("</table>");
     return p.join("");
   },
@@ -378,6 +393,12 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       const columnStripes = parseOnOff(attr(siEl, "showColumnStripes"));
       if (columnStripes !== undefined) style.showColumnStripes = columnStripes;
       result.style = style;
+    }
+
+    // Trailing extLst (x14:table) — verbatim round-trip
+    const extLstEl = findChild(el, "extLst");
+    if (extLstEl) {
+      result.ext = (extLstEl.elements ?? []).map((e) => stringifyElement(e)).join("");
     }
 
     // Differential format IDs

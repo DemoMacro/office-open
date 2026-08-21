@@ -4,7 +4,7 @@
  * @module
  */
 
-import { escapeXml, stringify as stringifyXml } from "@office-open/xml";
+import { escapeXml, stringify as stringifyXml, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { attr, findChild, findFirst, children, textOf } from "@office-open/xml";
 
@@ -2486,6 +2486,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     // CT_ChartSpace: printSettings → userShapes → extLst
     if (opts.userShapes !== undefined)
       parts.push(`<c:userShapes r:id="${escapeXml(opts.userShapes)}"/>`);
+    if (opts.ext) parts.push(`<c:extLst>${opts.ext}</c:extLst>`);
 
     parts.push("</c:chartSpace>");
 
@@ -2765,6 +2766,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (userShapesEl) {
       const rid = attr(userShapesEl, "r:id");
       if (rid !== undefined) result.userShapes = rid;
+    }
+    const spaceExtLst = findChild(el, "c:extLst");
+    if (spaceExtLst) {
+      result.ext = (spaceExtLst.elements ?? []).map((e) => stringifyElement(e)).join("");
     }
 
     return result as ChartSpaceOptions;

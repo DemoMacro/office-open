@@ -271,4 +271,22 @@ describe("tableDesc round-trip", () => {
       conditions: [{ ref: "A1", descending: true }],
     });
   });
+
+  it("round-trips the trailing extLst verbatim", () => {
+    const ext =
+      '<ext uri="{504A1905-F514-4f6f-8877-14C23A59335A}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main">' +
+      '<x14:table altTextSummary="Cost summary"/></ext>';
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "Table1",
+      ref: "A1:D4",
+      columns: [{ name: "Col1" }],
+      ext,
+    };
+    const xml = tableDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain("<extLst>" + ext + "</extLst>");
+
+    const result = roundTrip(opts);
+    expect(result.ext).toBe(ext);
+  });
 });

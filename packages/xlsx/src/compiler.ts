@@ -747,9 +747,14 @@ function compileWorksheetPart(
         `../charts/chart${state.globalChartIdx + 1}.xml`,
       );
 
-      // cNvPr @title stays unbridged: WorksheetChartOptions.title is the chart
-      // title (c:title), not the graphicFrame's weak @title.
-      const chartCnvPr = pickNonVisualDrawingProperties({ ...chart, title: undefined });
+      // cNvPr @title/@ext stay unbridged: WorksheetChartOptions.title is the
+      // chart title (c:title) and its ext is the chart-space c:extLst —
+      // neither belongs on the graphicFrame's cNvPr.
+      const chartCnvPr = pickNonVisualDrawingProperties({
+        ...chart,
+        title: undefined,
+        ext: undefined,
+      });
       drawingCharts.push({
         ...pickAnchorOptions(chart),
         ...chartCnvPr,

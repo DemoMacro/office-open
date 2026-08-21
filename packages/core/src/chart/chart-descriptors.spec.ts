@@ -16,6 +16,22 @@ function roundTrip(opts: ChartSpaceOptions): ChartSpaceOptions {
 }
 
 describe("chartSpaceDesc", () => {
+  it("round-trips the chart-space trailing extLst verbatim", () => {
+    const ext =
+      '<c:ext uri="{781A3756-C4B2-4CAC-9D66-4F8BD8637D16}" xmlns:c14="http://schemas.microsoft.com/office/drawing/2007/8/2/chart">' +
+      '<c14:pivotOptions><c14:dropZoneFilter val="1"/></c14:pivotOptions></c:ext>';
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      series: [{ name: "Revenue", values: [1, 2] }],
+      ext,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain("<c:extLst>" + ext + "</c:extLst>");
+
+    const result = roundTrip(opts);
+    expect(result.ext).toBe(ext);
+  });
+
   it("round-trips column chart type detection", () => {
     const opts: ChartSpaceOptions = {
       type: "column",
