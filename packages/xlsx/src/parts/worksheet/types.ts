@@ -813,6 +813,8 @@ export interface ConditionalFormatRule {
 export interface ConditionalFormatOptions {
   /** Cell range, e.g. "A1:A10" */
   sqref: string;
+  /** Applies to a PivotTable view rather than the grid (CT_ConditionalFormatting `@pivot`) */
+  pivot?: boolean;
   rules: ConditionalFormatRule[];
 }
 

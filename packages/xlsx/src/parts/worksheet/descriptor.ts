@@ -401,6 +401,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const cfs: ConditionalFormatOptions[] = [];
       for (const cfEl of cfEls) {
         const sqref = attr(cfEl, "sqref") ?? "";
+        const pivot = parseOnOff(attr(cfEl, "pivot")) ?? false;
         const rules: ConditionalFormatRule[] = [];
         for (const ruleEl of cfEl.elements ?? []) {
           if (ruleEl.name !== "cfRule") continue;
@@ -481,7 +482,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
 
           rules.push(rule);
         }
-        cfs.push({ sqref, rules });
+        cfs.push(pivot ? { sqref, pivot, rules } : { sqref, rules });
       }
       result.conditionalFormats = cfs;
     }

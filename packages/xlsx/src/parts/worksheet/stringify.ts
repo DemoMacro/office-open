@@ -396,7 +396,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   const conditionalFormats = opts.conditionalFormats ?? [];
   if (conditionalFormats.length > 0) {
     for (const cf of conditionalFormats) {
-      p.push(`<conditionalFormatting sqref="${cf.sqref}">`);
+      const cfAttrs = cf.pivot ? ` sqref="${cf.sqref}" pivot="1"` : ` sqref="${cf.sqref}"`;
+      p.push(`<conditionalFormatting${cfAttrs}>`);
       for (const [ri, rule] of cf.rules.entries()) {
         const ruleAttrs: Record<string, string | number | boolean | undefined> = {
           type: rule.type,
