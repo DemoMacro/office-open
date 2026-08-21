@@ -284,7 +284,7 @@ const doc: DocumentOptions = {
                   floating: {
                     horizontalPosition: { relative: "margin", offset: 200000 },
                     verticalPosition: { relative: "paragraph", offset: 100000 },
-                    wrap: { type: 2, side: "bothSides" },
+                    wrap: { type: "tight", side: "bothSides" },
                     margins: { top: 10000, bottom: 10000, left: 10000, right: 10000 },
                   },
                 },

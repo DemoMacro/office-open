@@ -24339,9 +24339,9 @@
           "type": "string"
         },
         "type": {
-          "description": "Wrap mode: 0 inline with text, 1 floating (moves with text), 2 square, 3 tight, 4 top-and-bottom only.",
-          "enum": [0, 1, 2, 3, 4],
-          "type": "number"
+          "description": "Wrap mode: none, square, tight, topAndBottom, or through.",
+          "enum": ["none", "square", "tight", "topAndBottom", "through"],
+          "type": "string"
         }
       },
       "required": ["type"],

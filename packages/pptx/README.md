@@ -55,9 +55,7 @@ const buffer = await generatePresentation({
       children: [
         {
           shape: {
-            textBody: {
-              children: [{ paragraph: { children: ["Hello World"] } }],
-            },
+            textBody: { text: "Hello World" },
             fill: "4472C4",
             x: 100,
             y: 100,

@@ -17,11 +17,11 @@ import type { Distance } from "../drawing";
  * @publicApi
  */
 export const TextWrappingType = {
-  NONE: 0,
-  SQUARE: 1,
-  TIGHT: 2,
-  TOP_AND_BOTTOM: 3,
-  THROUGH: 4,
+  NONE: "none",
+  SQUARE: "square",
+  TIGHT: "tight",
+  TOP_AND_BOTTOM: "topAndBottom",
+  THROUGH: "through",
 } as const;
 
 /**
@@ -65,7 +65,7 @@ export interface WrapPolygon {
  * Options for configuring text wrapping around a drawing.
  */
 export interface TextWrapping {
-  /** Wrap mode: 0 inline with text, 1 floating (moves with text), 2 square, 3 tight, 4 top-and-bottom only. */
+  /** Wrap mode: none, square, tight, topAndBottom, or through. */
   type: (typeof TextWrappingType)[keyof typeof TextWrappingType];
   /** Which sides text may wrap on: bothSides, left, right, or "largest" whichever has more room. */
   side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];

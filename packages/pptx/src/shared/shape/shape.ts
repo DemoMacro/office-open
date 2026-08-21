@@ -62,10 +62,19 @@ export type PlaceholderOrientation = "horz" | "vert";
 
 export type StyleReferenceColor = string | SolidFillOptions;
 
+/**
+ * A style-matrix reference (CT_StyleMatrixReference): an index into the
+ * theme's style matrix plus an optional color override.
+ */
+export interface ShapeStyleReferenceOptions {
+  index: number;
+  color?: StyleReferenceColor;
+}
+
 export interface ShapeStyleOptions {
-  lineReference?: { index: number; color?: StyleReferenceColor };
-  fillReference?: { index: number; color?: StyleReferenceColor };
-  effectReference?: { index: number; color?: StyleReferenceColor };
+  lineReference?: ShapeStyleReferenceOptions;
+  fillReference?: ShapeStyleReferenceOptions;
+  effectReference?: ShapeStyleReferenceOptions;
   /** a:fontRef — @idx is ST_FontCollectionIndex (major/minor/none), not a number. */
   fontReference?: { index: number | "major" | "minor" | "none"; color?: StyleReferenceColor };
 }

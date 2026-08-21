@@ -10644,30 +10644,10 @@
       "additionalProperties": false,
       "properties": {
         "effectReference": {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "$ref": "#/definitions/StyleReferenceColor"
-            },
-            "index": {
-              "type": "number"
-            }
-          },
-          "required": ["index"],
-          "type": "object"
+          "$ref": "#/definitions/ShapeStyleReferenceOptions"
         },
         "fillReference": {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "$ref": "#/definitions/StyleReferenceColor"
-            },
-            "index": {
-              "type": "number"
-            }
-          },
-          "required": ["index"],
-          "type": "object"
+          "$ref": "#/definitions/ShapeStyleReferenceOptions"
         },
         "fontReference": {
           "additionalProperties": false,
@@ -10700,19 +10680,23 @@
           "type": "object"
         },
         "lineReference": {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "$ref": "#/definitions/StyleReferenceColor"
-            },
-            "index": {
-              "type": "number"
-            }
-          },
-          "required": ["index"],
-          "type": "object"
+          "$ref": "#/definitions/ShapeStyleReferenceOptions"
         }
       },
+      "type": "object"
+    },
+    "ShapeStyleReferenceOptions": {
+      "additionalProperties": false,
+      "description": "A style-matrix reference (CT_StyleMatrixReference): an index into the theme's style matrix plus an optional color override.",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/StyleReferenceColor"
+        },
+        "index": {
+          "type": "number"
+        }
+      },
+      "required": ["index"],
       "type": "object"
     },
     "ShowOptions": {
