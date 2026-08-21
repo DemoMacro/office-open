@@ -149,17 +149,19 @@ describe("collectPassthroughParts", () => {
     expect(rootRels.map((r) => r.relationshipType.split("/").pop())).toContain("thumbnail");
   });
 
-  it("does not capture relationships whose target is itself rebuilt", () => {
-    // image1.png absorbed into the model this time — its relationship is the
-    // compiler's own wiring, not a passthrough one.
+  it("keeps a rebuilt-target relationship captured for source-id pre-claim", () => {
+    // image1.png absorbed into the model this time — the part no longer passes
+    // through, but its source rel stays captured: the compiler's pre-claim
+    // reads the source rId to re-emit the rel at the same id, so verbatim
+    // body content referencing it survives round-trip.
     const result = collectPassthroughParts(archiveOf(basePackage()), [
       "word/document.xml",
       "word/media/image1.png",
       "word/_rels/document.xml.rels",
     ]);
     expect(result.parts.map((p) => p.path)).not.toContain("word/media/image1.png");
-    const types = result.relationships.map((r) => r.relationshipType.split("/").pop());
-    expect(types).not.toContain("image");
+    const image = result.relationships.find((r) => r.relationshipType.split("/").pop() === "image");
+    expect(image?.target).toBe("media/image1.png");
   });
 
   it("keeps a rebuilt part's rels verbatim when only the part is listed (glossary pattern)", () => {

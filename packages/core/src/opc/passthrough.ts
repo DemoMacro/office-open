@@ -157,7 +157,11 @@ export function collectPassthroughParts(
         }
         continue;
       }
-      if (kept.has(resolveRelationshipTarget(source, target).toLowerCase())) {
+      // Capture every source rel, including those pointing at rebuilt parts
+      // (presProps/viewProps/theme/tableStyles all fit): the compiler's
+      // pre-claim pass needs the source id to slot structure re-emissions in
+      // after, preserving the source rId ordering on round-trip.
+      if (kept.has(resolveRelationshipTarget(source, target).toLowerCase()) || source !== "") {
         relationships.push({ source, relationshipType, target, rId });
       }
     }

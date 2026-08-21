@@ -89,6 +89,59 @@ const embeddingRelationship = (
 /** XML declaration prepended to every OOXML part. */
 const XML_DECL = OOXML_XML_DECLARATION;
 
+/**
+ * Look up the source rId for a document relationship by kind+target. Returns
+ * the numeric id when the source carried the same rel, undefined otherwise.
+ * The body XML's `r:id` references the source rId verbatim on round-trip, so
+ * the structured compiler must emit the rel at that exact id — otherwise
+ * `r:id="rId4"` would point at a different rel and Word refuses to open.
+ */
+function sourceRidFor(
+  passthroughRelationships:
+    | readonly { source: string; relationshipType: string; target: string; rId: string }[]
+    | undefined,
+  ownerSource: string,
+  relationshipType: string,
+  target: string,
+): number | undefined {
+  if (!passthroughRelationships) return undefined;
+  for (const rel of passthroughRelationships) {
+    if (
+      rel.source === ownerSource &&
+      rel.relationshipType === relationshipType &&
+      rel.target === target
+    ) {
+      const m = /^rId(\d+)$/.exec(rel.rId);
+      if (m) return Number(m[1]);
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Build a {fileName → rId} map for source rels targeting `media/` or
+ * `embeddings/`. findAndReplaceImagePlaceholders consults this map to
+ * substitute the source rId in body XML (so `<a:blip r:embed="rId5"/>` points
+ * at the rel registered at rId5 — not the rel registered at an
+ * offset-derived id, which dangles against any source body that referenced
+ * the source rId). Placeholder keys use the media-collection fileName; a
+ * dedup-renamed file misses the map and falls through to the offset id on
+ * BOTH the body and the .rels side, keeping them consistent.
+ */
+function documentSourceRids(
+  ctx: DocxWriteContext,
+  dir: "media" | "embeddings",
+): ReadonlyMap<string, string> {
+  const map = new Map<string, string>();
+  const prefix = `${dir}/`;
+  for (const rel of ctx._options.passthroughRelationships ?? []) {
+    if (rel.source !== "word/document.xml") continue;
+    if (!rel.target.startsWith(prefix)) continue;
+    map.set(rel.target.slice(prefix.length), rel.rId);
+  }
+  return map;
+}
+
 /** DOCX part path → content type, derived from the part registry. */
 const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
 
@@ -328,7 +381,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   // Sampled after stringify: hyperlinks/altChunks registered during body
   // stringification take sequential ids here, and the media/embedding offsets
   // below must skip them (same ordering as the footnote part).
-  const documentRelationshipCount = ctx.document.relationships.relationshipCount + 1;
+  const documentRelationshipCount = ctx.document.relationships.nextRelationshipId;
 
   // Comments is an optional part — skip it entirely (no comments.xml, no
   // comments rels, no [Content_Types] Override) when the document carries none.
@@ -341,9 +394,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     ? XML_DECL + commentsDesc.stringify(mergedCommentChildrenList, commentCtx)
     : "";
   // Sampled after stringify, like the document and footnote counts above.
-  const commentRelationshipCount = hasComments
-    ? ctx.comments.relationships.relationshipCount + 1
-    : 0;
+  const commentRelationshipCount = hasComments ? ctx.comments.relationships.nextRelationshipId : 0;
 
   const footnoteCtx = mkCtx({
     relationships: ctx.footNotes.relationships,
@@ -362,12 +413,14 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   // Sampled after stringify: hyperlinks registered during note stringification
   // take sequential ids here, and the media/embedding offsets below must skip
   // them (same ordering as the document and comments parts).
-  const footnoteRelationshipCount = ctx.footNotes.relationships.relationshipCount + 1;
+  const footnoteRelationshipCount = ctx.footNotes.relationships.nextRelationshipId;
 
   const documentMedia = findAndReplaceImagePlaceholders(
     documentXmlData,
     ctx.media.array,
     documentRelationshipCount,
+    "rId",
+    documentSourceRids(ctx, "media"),
   );
   // OLE embeddings reuse the same {fileName} placeholder bridge as images; run
   // after media so {oleObjectN.bin} placeholders resolve against the embedding array.
@@ -376,6 +429,8 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     documentMedia.xml,
     ctx.embeddings.array,
     documentEmbeddingOffset,
+    "rId",
+    documentSourceRids(ctx, "embeddings"),
   );
   const commentMedia = hasComments
     ? findAndReplaceImagePlaceholders(commentXmlData, ctx.media.array, commentRelationshipCount)
@@ -505,10 +560,17 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           // Build combined replacement entries for charts, smartart, and numbering
           const entries: Array<{ prefix?: string; key: string; value: string }> = [];
           for (const [i, key] of chartKeys.entries()) {
+            const chartTarget = `charts/chart${i + 1}.xml`;
+            const sourceRid = sourceRidFor(
+              ctx._options.passthroughRelationships,
+              "word/document.xml",
+              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+              chartTarget,
+            );
             entries.push({
               prefix: "chart:",
               key,
-              value: formatId(chartOffset, i, "rId"),
+              value: sourceRid !== undefined ? `rId${sourceRid}` : formatId(chartOffset, i, "rId"),
             });
           }
           const saPrefixes = ["smartart:", "smartart-lo:", "smartart-qs:", "smartart-cs:"];
@@ -561,7 +623,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                   },
                   endnoteCtx,
                 ) ?? "");
-              const endnoteRelCount = ctx.endnotes.relationships.relationshipCount + 1;
+              const endnoteRelCount = ctx.endnotes.relationships.nextRelationshipId;
               const endnoteMedia = findAndReplaceImagePlaceholders(
                 xmlData,
                 ctx.media.array,
@@ -647,9 +709,9 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         const xmlData =
           XML_DECL + stringifyHeaderFooter("w:ftr", FOOTER_NAMESPACES, entry.children, footerCtx);
         // Footer images get per-part relationship IDs starting at
-        // relationshipCount+1, mirroring the document part. The placeholder pass
+        // nextRelationshipId, mirroring the document part. The placeholder pass
         // uses referenced-local positions, so body r:embed and .rels stay aligned.
-        const footerRelCount = entry.relationships.relationshipCount + 1;
+        const footerRelCount = entry.relationships.nextRelationshipId;
         const footerMedia = findAndReplaceImagePlaceholders(
           xmlData,
           ctx.media.array,
@@ -705,9 +767,9 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         const xmlData =
           XML_DECL + stringifyHeaderFooter("w:hdr", HEADER_NAMESPACES, entry.children, headerCtx);
         // Header images get per-part relationship IDs starting at
-        // relationshipCount+1, mirroring the document part. The placeholder pass
+        // nextRelationshipId, mirroring the document part. The placeholder pass
         // uses referenced-local positions, so body r:embed and .rels stay aligned.
-        const headerRelCount = entry.relationships.relationshipCount + 1;
+        const headerRelCount = entry.relationships.nextRelationshipId;
         const headerMedia = findAndReplaceImagePlaceholders(
           xmlData,
           ctx.media.array,
@@ -786,17 +848,31 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     Relationships: {
       data: (() => {
         for (const [i, ref] of documentMedia.referenced.entries()) {
-          ctx.document.relationships.addRelationship(
-            documentRelationshipCount + i,
+          const target = `media/${ref.fileName}`;
+          const sourceRid = sourceRidFor(
+            ctx._options.passthroughRelationships,
+            "word/document.xml",
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-            `media/${ref.fileName}`,
+            target,
+          );
+          ctx.document.relationships.addRelationship(
+            sourceRid ?? documentRelationshipCount + i,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+            target,
           );
         }
         for (const [i, ref] of documentEmbeddings.referenced.entries()) {
-          ctx.document.relationships.addRelationship(
-            documentEmbeddingOffset + i,
+          const target = `embeddings/${ref.fileName}`;
+          const sourceRid = sourceRidFor(
+            ctx._options.passthroughRelationships,
+            "word/document.xml",
             embeddingRelationship(ctx.embeddings, ref.fileName),
-            `embeddings/${ref.fileName}`,
+            target,
+          );
+          ctx.document.relationships.addRelationship(
+            sourceRid ?? documentEmbeddingOffset + i,
+            embeddingRelationship(ctx.embeddings, ref.fileName),
+            target,
           );
         }
 
@@ -805,10 +881,17 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           documentMedia.referenced.length +
           documentEmbeddings.referenced.length;
         for (let i = 0; i < ctx.charts.array.length; i++) {
-          ctx.document.relationships.addRelationship(
-            chartOffset + i,
+          const target = `charts/chart${i + 1}.xml`;
+          const sourceRid = sourceRidFor(
+            ctx._options.passthroughRelationships,
+            "word/document.xml",
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
-            `charts/chart${i + 1}.xml`,
+            target,
+          );
+          ctx.document.relationships.addRelationship(
+            sourceRid ?? chartOffset + i,
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+            target,
           );
         }
 
@@ -834,7 +917,12 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         );
 
         ctx.document.relationships.addRelationship(
-          ctx.document.relationships.relationshipCount + 1,
+          sourceRidFor(
+            ctx._options.passthroughRelationships,
+            "word/document.xml",
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
+            "fontTable.xml",
+          ) ?? ctx.document.relationships.nextRelationshipId,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable",
           "fontTable.xml",
         );

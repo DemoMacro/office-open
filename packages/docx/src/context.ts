@@ -139,8 +139,6 @@ export interface BodyContext extends WriteContext {
 // ── DocxWriteContext ──
 
 export class DocxWriteContext implements WriteContext {
-  private _currentRelationshipId = 1;
-
   // --- Accessed by XmlComponent via context.file.* during toXml() ---
   declare public document: ViewWrapper;
   declare public numbering: Numbering;
@@ -214,9 +212,8 @@ export class DocxWriteContext implements WriteContext {
 
   // --- WriteContext interface (core descriptor pipeline) ---
 
-  public addRelationship(_type: string, _target: string, _mode?: string): string {
-    const id = this._currentRelationshipId++;
-    return `rId${id}`;
+  public addRelationship(type: string, target: string, mode?: string): string {
+    return `rId${this.document.relationships.add(type as RelationshipType, target, mode as "External" | undefined)}`;
   }
 
   public addMedia(data: Uint8Array, type: string): string {
@@ -435,16 +432,14 @@ export class DocxWriteContext implements WriteContext {
     this.webSettings = options.webSettings ?? undefined;
 
     if (options.glossary) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/glossaryDocument",
         "glossary/document.xml",
       );
     }
 
     if (this.webSettings) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/webSettings",
         "webSettings.xml",
       );
@@ -501,7 +496,7 @@ export class DocxWriteContext implements WriteContext {
   }
 
   private createHeader(header: SectionChild[], partName?: string): HeaderFooterEntry {
-    const referenceId = this._currentRelationshipId++;
+    const referenceId = this.document.relationships.nextRelationshipId;
     const entry: HeaderFooterEntry = {
       children: header,
       relationships: new Relationships(),
@@ -512,7 +507,7 @@ export class DocxWriteContext implements WriteContext {
   }
 
   private createFooter(footer: SectionChild[], partName?: string): HeaderFooterEntry {
-    const referenceId = this._currentRelationshipId++;
+    const referenceId = this.document.relationships.nextRelationshipId;
     const entry: HeaderFooterEntry = {
       children: footer,
       relationships: new Relationships(),
@@ -563,34 +558,29 @@ export class DocxWriteContext implements WriteContext {
   }
 
   private addDefaultRelationships(): void {
-    this.document.relationships.addRelationship(
-      this._currentRelationshipId++,
+    this.registerDocumentRel(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
       "styles.xml",
     );
     if (this._hasNumbering) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
         "numbering.xml",
       );
     }
     if (this._hasFootnotes) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes",
         "footnotes.xml",
       );
     }
     if (this._hasEndnotes) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
         "endnotes.xml",
       );
     }
-    this.document.relationships.addRelationship(
-      this._currentRelationshipId++,
+    this.registerDocumentRel(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings",
       "settings.xml",
     );
@@ -600,8 +590,7 @@ export class DocxWriteContext implements WriteContext {
     // (empty part with no [Content_Types] Override when content types are
     // passed through from the source on round-trip).
     if (this._options.comments?.length || this._hasCommentSugar) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
         "comments.xml",
       );
@@ -609,22 +598,19 @@ export class DocxWriteContext implements WriteContext {
     // Word 2013+ comment infrastructure — same conditional rule as comments:
     // emit the part and its relationship only when the document carries them.
     if (this._options.people?.length) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.microsoft.com/office/2011/relationships/people",
         "people.xml",
       );
     }
     if (this._options.commentsExtended?.length) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.microsoft.com/office/2011/relationships/commentsExtended",
         "commentsExtended.xml",
       );
     }
     if (this._options.bibliography) {
-      this.document.relationships.addRelationship(
-        this._currentRelationshipId++,
+      this.registerDocumentRel(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
         "bibliography.xml",
       );
@@ -633,18 +619,33 @@ export class DocxWriteContext implements WriteContext {
     // Theme — always present: fresh-compile generates a default theme, round-trip
     // passes the source theme through rawParts. Word needs the document→theme
     // relationship to resolve theme colors/fonts.
-    // Other document relationships that point at passthrough parts (customXml
-    // items, …) are re-emitted verbatim from the captured source .rels —
-    // targets are passthrough paths that never move.
-    const passthroughDocRels = (this._options.passthroughRelationships ?? []).filter(
-      (r) => r.source === "word/document.xml",
+    const themeRel = (this._options.passthroughRelationships ?? []).find(
+      (r) => r.source === "word/document.xml" && r.relationshipType.endsWith("/theme"),
     );
-    const themeRel = passthroughDocRels.find((r) => r.relationshipType.endsWith("/theme"));
-    this.document.relationships.addRelationship(
-      this._currentRelationshipId++,
+    this.registerDocumentRel(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
       themeRel ? themeRel.target : "theme/theme1.xml",
     );
+  }
+
+  /**
+   * Register a default document relationship. On round-trip, reuse the source
+   * rId when the source captured the same kind+target — that keeps body XML
+   * `r:id` references pointing at the same number after parse→generate, so
+   * verbatim hyperlinks/altChunks/embedded objects stay valid. On fresh
+   * compile (no passthrough rels) this allocates sequentially from 1.
+   */
+  private registerDocumentRel(type: RelationshipType, target: string): void {
+    if (this.document.relationships.hasRelationship(type, target)) return;
+    const preclaimed = (this._options.passthroughRelationships ?? []).find(
+      (r) => r.source === "word/document.xml" && r.relationshipType === type && r.target === target,
+    );
+    const m = preclaimed ? /^rId(\d+)$/.exec(preclaimed.rId) : undefined;
+    const id =
+      m && !this.document.relationships.hasId(m[0])
+        ? Number(m[1])
+        : this.document.relationships.nextRelationshipId;
+    this.document.relationships.addRelationship(id, type, target);
   }
 
   /**
@@ -656,14 +657,7 @@ export class DocxWriteContext implements WriteContext {
   public addPassthroughDocumentRelationships(): void {
     for (const rel of this._options.passthroughRelationships ?? []) {
       if (rel.source !== "word/document.xml" || rel.relationshipType.endsWith("/theme")) continue;
-      if (this.document.relationships.hasRelationship(rel.relationshipType, rel.target)) continue;
-      // Passthrough relationship types come from arbitrary source packages
-      // (any third-party extension); the union only documents the known ones.
-      this.document.relationships.addRelationship(
-        this.document.relationships.relationshipCount + 1,
-        rel.relationshipType as RelationshipType,
-        rel.target,
-      );
+      this.document.relationships.claimSourceRel(rel);
     }
   }
 }

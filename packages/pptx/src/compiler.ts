@@ -248,10 +248,12 @@ function buildMasterMap(
       layoutKeys = keys.length > 0 ? keys : ["blank"];
     }
 
-    // Layout id + rId pairs — rId order matches masterRels below.
+    // Layout id + rId pairs — rId order matches masterRels below. Source
+    // layout ids round-trip as-is; only fresh authoring renumbers.
     const layoutIdBase = 2147483648 + mi * 12 + 1;
+    const layoutDefsById = def.layouts;
     const slideLayoutIds = layoutKeys.map((_, li) => ({
-      id: layoutIdBase + li,
+      id: layoutDefsById?.[li]?.layoutId ?? layoutIdBase + li,
       relationshipId: `rId${li + 1}`,
     }));
     // Rest-spread so every SlideMasterOptions field flows to the descriptor —
@@ -299,11 +301,12 @@ function buildMasterMap(
       // Layout-level passthrough relationships (round-trip) — re-emitted as
       // written unless the model already registered the same kind (ownership
       // test: targets may be renamed and ISO-strict types differ in URI only).
+      // claimSourceRel keeps the source ids when free (verbatim layout
+      // islands reference them).
       for (const rel of passthroughRelationships ?? []) {
         if (rel.source !== `ppt/slideLayouts/slideLayout${globalLayoutIndex + 1}.xml`) continue;
         if (layoutRel.hasRelationshipKind(rel.relationshipType.split("/").pop()!)) continue;
-        if (layoutRel.hasRelationship(rel.relationshipType, rel.target)) continue;
-        layoutRel.add(rel.relationshipType as RelationshipType, rel.target);
+        layoutRel.claimSourceRel(rel);
       }
       layoutRels.push(layoutRel);
       globalLayoutIndex++;
@@ -355,6 +358,8 @@ function buildMasterMap(
     // Master-level passthrough relationships (round-trip) — re-emitted as
     // written unless the model already registered the same kind (ownership
     // test: targets may be renamed and ISO-strict types differ in URI only).
+    // Source ids stay when free: verbatim master islands (unmodeled pictures,
+    // OLE shapes) reference the source rIds, and renumbering dangles them.
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slideMasters/slideMaster${mi + 1}.xml`) continue;
       const kind = rel.relationshipType.split("/").pop();
@@ -363,8 +368,14 @@ function buildMasterMap(
         (e) => e.type.split("/").pop() === kind && e.target === rel.target,
       );
       if (kindOwned || exists) continue;
+      const numeric = /^rId(\d+)$/.exec(rel.rId);
+      const sourceId = numeric ? Number(numeric[1]) : undefined;
+      const id =
+        sourceId !== undefined && !masterRelsEntries.some((e) => e.id === sourceId)
+          ? sourceId
+          : Math.max(0, ...masterRelsEntries.map((e) => Number(e.id))) + 1;
       masterRelsEntries.push({
-        id: masterRelsEntries.length + 1,
+        id,
         type: rel.relationshipType as RelationshipType,
         target: rel.target,
       });
@@ -421,6 +432,28 @@ function buildSlideRels(masters: MasterInfo[], slides: SlideOptions[]): Relation
     );
   }
   return rels;
+}
+
+/** Promote the slide layout rel to its source id when the source rId is free
+ * — verbatim slide content references the source rId and dangling the layout
+ * would dangle the rest of the slide's rels. */
+function promoteLayoutToSourceId(
+  rels: Relationships,
+  sourcePassthrough: { rId: string; target: string; relationshipType: string }[] | undefined,
+): void {
+  if (!sourcePassthrough) return;
+  const sourceLayout = sourcePassthrough.find(
+    (r) =>
+      r.relationshipType ===
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+  );
+  if (!sourceLayout) return;
+  const numeric = /^rId(\d+)$/.exec(sourceLayout.rId);
+  if (!numeric) return;
+  rels.renameEntryByType(
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+    Number(numeric[1]),
+  );
 }
 
 export function buildCommentData(
@@ -522,45 +555,26 @@ const PPTX_MEDIA_CONTENT_TYPES: Record<string, string> = {
 };
 
 function initPresRels(masters: MasterInfo[], slideCount: number): Relationships {
+  // Only structure-owned slots are pre-allocated here: slideMaster + slide rels.
+  // presProps/viewProps/theme/tableStyles are added at the end of the
+  // compiler pass after passthrough id pre-claim, so they slot in *after* the
+  // source ids (notesMaster, handoutMaster, …) and the source ordering of
+  // presentation.xml.rels survives round-trip.
   const rels = new Relationships();
-  let rid = 1;
   for (let mi = 0; mi < masters.length; mi++) {
     rels.addRelationship(
-      rid++,
+      mi + 1,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
       `slideMasters/slideMaster${mi + 1}.xml`,
     );
   }
   for (let i = 0; i < slideCount; i++) {
     rels.addRelationship(
-      rid++,
+      masters.length + i + 1,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
       `slides/slide${i + 1}.xml`,
     );
   }
-  rels.addRelationship(
-    rid++,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps",
-    "presProps.xml",
-  );
-  rels.addRelationship(
-    rid++,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps",
-    "viewProps.xml",
-  );
-  // presentation.xml.rels carries exactly one theme rel (the presentation's
-  // default theme) regardless of how many masters or theme parts exist —
-  // extra masters reference their themes through their own rels.
-  rels.addRelationship(
-    rid++,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-    "theme/theme1.xml",
-  );
-  rels.addRelationship(
-    rid,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
-    "tableStyles.xml",
-  );
   return rels;
 }
 
@@ -913,7 +927,7 @@ export function compilePresentation(
     // wiring slides use (layout pictures otherwise lose their rel).
     const layoutRels = allLayoutRels[li]!;
     const layoutMediaData = getReferencedMedia(layoutXml, media.array);
-    const layoutImageOffset = layoutRels.relationshipCount + 1;
+    const layoutImageOffset = layoutRels.nextRelationshipId;
     for (const [idx, mediaItem] of layoutMediaData.entries()) {
       layoutRels.addRelationship(
         layoutImageOffset + idx,
@@ -927,7 +941,7 @@ export function compilePresentation(
     if (layoutImgLinkKeys.length > 0) {
       const layoutImgLinkSet = new Set(layoutImgLinkKeys);
       const layoutImgLinks = descCtx.imageLinks.filter((l) => layoutImgLinkSet.has(l.key));
-      const imgLinkOffset = layoutRels.relationshipCount + 1;
+      const imgLinkOffset = layoutRels.nextRelationshipId;
       replacedLayoutXml = replaceImageLinkPlaceholders(
         replacedLayoutXml,
         layoutImgLinks,
@@ -947,7 +961,7 @@ export function compilePresentation(
     if (layoutOleLinkKeys.length > 0) {
       const layoutOleLinkSet = new Set(layoutOleLinkKeys);
       const layoutOleLinks = descCtx.oleLinks.filter((l) => layoutOleLinkSet.has(l.key));
-      const oleLinkOffset = layoutRels.relationshipCount + 1;
+      const oleLinkOffset = layoutRels.nextRelationshipId;
       replacedLayoutXml = replaceOleLinkPlaceholders(
         replacedLayoutXml,
         layoutOleLinks,
@@ -979,13 +993,26 @@ export function compilePresentation(
   }
 
   // Notes Master — emitted when notes slides exist or the source carried one.
+  // Pre-claim the source passthrough rel ids first so the structured
+  // notesMaster/handoutMaster additions slot in after them (preserving
+  // source rId ordering); claimSourceRel skips entries the model already owns.
+  for (const rel of options.passthroughRelationships ?? []) {
+    if (rel.source !== "ppt/presentation.xml") continue;
+    presRels.claimSourceRel(rel);
+  }
   const includeNotesMasterPart =
     notesOptions.length > 0 || options.notesMasterOptions !== undefined;
   if (includeNotesMasterPart) {
-    const notesMasterRId = presRels.add(
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
-      "notesMasters/notesMaster1.xml",
-    );
+    let notesMasterRId: number;
+    if (presRels.hasRelationshipKind("notesMaster")) {
+      // Already pre-claimed by the source passthrough rel (round-trip).
+      notesMasterRId = presRels.idByKind("notesMaster")!;
+    } else {
+      notesMasterRId = presRels.add(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
+        "notesMasters/notesMaster1.xml",
+      );
+    }
     presOptions.notesMasterRId = notesMasterRId;
     const notesMasterThemeIndex = themes.length + 1;
     const notesMasterXml =
@@ -1003,7 +1030,7 @@ export function compilePresentation(
     );
     // Media referenced by notes-master shapes gets slide-style image wiring.
     const notesMasterMediaData = getReferencedMedia(notesMasterXml, media.array);
-    const notesMasterImageOffset = notesMasterRels.relationshipCount + 1;
+    const notesMasterImageOffset = notesMasterRels.nextRelationshipId;
     for (const [idx, mediaItem] of notesMasterMediaData.entries()) {
       notesMasterRels.addRelationship(
         notesMasterImageOffset + idx,
@@ -1025,10 +1052,15 @@ export function compilePresentation(
 
   // Handout Master
   if (includeHandout) {
-    const handoutMasterRId = presRels.add(
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster",
-      "handoutMasters/handoutMaster1.xml",
-    );
+    let handoutMasterRId: number;
+    if (presRels.hasRelationshipKind("handoutMaster")) {
+      handoutMasterRId = presRels.idByKind("handoutMaster")!;
+    } else {
+      handoutMasterRId = presRels.add(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster",
+        "handoutMasters/handoutMaster1.xml",
+      );
+    }
     presOptions.handoutMasterRId = handoutMasterRId;
     const handoutMasterThemeIndex = themes.length + (includeNotesMasterPart ? 2 : 1);
     const handoutMasterXml =
@@ -1046,7 +1078,7 @@ export function compilePresentation(
     );
     // Media referenced by handout-master shapes gets slide-style image wiring.
     const handoutMediaData = getReferencedMedia(handoutMasterXml, media.array);
-    const handoutImageOffset = handoutMasterRels.relationshipCount + 1;
+    const handoutImageOffset = handoutMasterRels.nextRelationshipId;
     for (const [idx, mediaItem] of handoutMediaData.entries()) {
       handoutMasterRels.addRelationship(
         handoutImageOffset + idx,
@@ -1066,10 +1098,41 @@ export function compilePresentation(
   }
 
   // Comment Authors
-  if (commentAuthorEntries) {
+  if (commentAuthorEntries && !presRels.hasRelationshipKind("commentAuthors")) {
     presRels.add(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors",
       "commentAuthors.xml",
+    );
+  }
+
+  // Structure-owned presentation rels not claimable by passthrough
+  // (presProps/viewProps/theme/tableStyles), slotted after the pre-claimed
+  // source ids so the source rId ordering is preserved.
+  // presentation.xml.rels carries exactly one theme rel (the presentation's
+  // default theme) regardless of how many masters or theme parts exist —
+  // extra masters reference their themes through their own rels.
+  if (!presRels.hasRelationshipKind("presProps")) {
+    presRels.add(
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps",
+      "presProps.xml",
+    );
+  }
+  if (!presRels.hasRelationshipKind("viewProps")) {
+    presRels.add(
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps",
+      "viewProps.xml",
+    );
+  }
+  if (!presRels.hasRelationshipKind("theme")) {
+    presRels.add(
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+      "theme/theme1.xml",
+    );
+  }
+  if (!presRels.hasRelationshipKind("tableStyles")) {
+    presRels.add(
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
+      "tableStyles.xml",
     );
   }
 
@@ -1077,7 +1140,7 @@ export function compilePresentation(
   const presBody = presentationDesc.stringify(presOptions, descCtx);
   const presentationXml = presBody ? XML_DECL + presBody : "";
   const mediaData = getReferencedMedia(presentationXml, media.array);
-  const presImageOffset = presRels.relationshipCount + 1;
+  const presImageOffset = presRels.nextRelationshipId;
   for (const [idx, mediaItem] of mediaData.entries()) {
     presRels.addRelationship(
       presImageOffset + idx,
@@ -1095,14 +1158,6 @@ export function compilePresentation(
     data: replacedPresentationXml,
     path: "ppt/presentation.xml",
   };
-  // Passthrough relationships (round-trip): the source presentation.xml.rels
-  // referenced parts the model carries verbatim (handoutMaster, customXml, …).
-  // Re-emit them as written — targets are passthrough paths that never move.
-  for (const rel of options.passthroughRelationships ?? []) {
-    if (rel.source !== "ppt/presentation.xml") continue;
-    if (presRels.hasRelationship(rel.relationshipType, rel.target)) continue;
-    presRels.add(rel.relationshipType as RelationshipType, rel.target);
-  }
   mapping["PresentationRelationships"] = {
     data: XML_DECL + presRels.serialize(),
     path: "ppt/_rels/presentation.xml.rels",
@@ -1115,7 +1170,14 @@ export function compilePresentation(
     const slideMediaData = getReferencedMedia(slideXml, media.array);
     const currentSlideRels = slideRels[i];
     if (!currentSlideRels) continue; // slideRels is built one-per-slide in lockstep with slides
-    const slideImageOffset = currentSlideRels.relationshipCount + 1;
+    // Promote the slide layout rel to its source id up front — the model's
+    // layout registration is rId1 by construction and the source id is free
+    // below it, so the rename never collides.
+    promoteLayoutToSourceId(
+      currentSlideRels,
+      options.passthroughRelationships?.filter((r) => r.source === `ppt/slides/slide${i + 1}.xml`),
+    );
+    const slideImageOffset = currentSlideRels.nextRelationshipId;
     for (const [idx, mediaItem] of slideMediaData.entries()) {
       currentSlideRels.addRelationship(
         slideImageOffset + idx,
@@ -1130,7 +1192,7 @@ export function compilePresentation(
       // Chart
       const slideChartKeys = collectPlaceholderKeys(replacedSlideXml, "chart:");
       if (slideChartKeys.length > 0) {
-        const slideChartOffset = currentSlideRels.relationshipCount + 1;
+        const slideChartOffset = currentSlideRels.nextRelationshipId;
         const slideChartKeySet = new Set(slideChartKeys);
         const xmlCompCharts = charts.array.filter((c) => slideChartKeySet.has(c.key));
         const descCharts = descCtx.charts.filter((c) => slideChartKeySet.has(c.key));
@@ -1159,7 +1221,7 @@ export function compilePresentation(
           ...xmlCompSmartArts.map((s) => s.key),
           ...descSmartArts.map((s) => s.key),
         ];
-        const saOffset = currentSlideRels.relationshipCount + 1;
+        const saOffset = currentSlideRels.nextRelationshipId;
         replacedSlideXml = replaceSmartArtPlaceholders(replacedSlideXml, allSaKeys, saOffset);
         const firstSaKey = allSaKeys[0];
         if (firstSaKey !== undefined) {
@@ -1189,7 +1251,7 @@ export function compilePresentation(
       if (slideHlinkKeys.length > 0) {
         const slideHlinkKeySet = new Set(slideHlinkKeys);
         const slideHlinks = descCtx.hyperlinks.filter((h) => slideHlinkKeySet.has(h.key));
-        const hlinkOffset = currentSlideRels.relationshipCount + 1;
+        const hlinkOffset = currentSlideRels.nextRelationshipId;
         replacedSlideXml = replaceHyperlinkPlaceholders(replacedSlideXml, slideHlinks, hlinkOffset);
         for (const [hi, hlink] of slideHlinks.entries()) {
           if (hlink.slide !== undefined) {
@@ -1216,7 +1278,7 @@ export function compilePresentation(
       if (slideImgLinkKeys.length > 0) {
         const slideImgLinkSet = new Set(slideImgLinkKeys);
         const slideImgLinks = descCtx.imageLinks.filter((l) => slideImgLinkSet.has(l.key));
-        const imgLinkOffset = currentSlideRels.relationshipCount + 1;
+        const imgLinkOffset = currentSlideRels.nextRelationshipId;
         replacedSlideXml = replaceImageLinkPlaceholders(
           replacedSlideXml,
           slideImgLinks,
@@ -1238,7 +1300,7 @@ export function compilePresentation(
       if (slideOleLinkKeys.length > 0) {
         const slideOleLinkSet = new Set(slideOleLinkKeys);
         const slideOleLinks = descCtx.oleLinks.filter((l) => slideOleLinkSet.has(l.key));
-        const oleLinkOffset = currentSlideRels.relationshipCount + 1;
+        const oleLinkOffset = currentSlideRels.nextRelationshipId;
         replacedSlideXml = replaceOleLinkPlaceholders(
           replacedSlideXml,
           slideOleLinks,
@@ -1259,7 +1321,7 @@ export function compilePresentation(
       const slideAudioRefs = getAudioRefs(replacedSlideXml, media.array);
       const slideVideoRefs = getVideoRefs(replacedSlideXml, media.array);
       if (slideMediaRefs.length > 0 || slideAudioRefs.length > 0 || slideVideoRefs.length > 0) {
-        const mediaOffset = currentSlideRels.relationshipCount + 1;
+        const mediaOffset = currentSlideRels.nextRelationshipId;
         const audioOffset = mediaOffset + slideMediaRefs.length;
         const videoOffset = audioOffset + slideAudioRefs.length;
         replacedSlideXml = replaceMediaPlaceholders(replacedSlideXml, slideMediaRefs, mediaOffset);
@@ -1291,7 +1353,7 @@ export function compilePresentation(
       // OLE embeddings
       const slideOleRefs = getOleRefs(replacedSlideXml, descCtx.embeddings);
       if (slideOleRefs.length > 0) {
-        const oleOffset = currentSlideRels.relationshipCount + 1;
+        const oleOffset = currentSlideRels.nextRelationshipId;
         replacedSlideXml = replaceOlePlaceholders(replacedSlideXml, slideOleRefs, oleOffset);
         for (const [oi, oleRef] of slideOleRefs.entries()) {
           currentSlideRels.addRelationship(
@@ -1308,7 +1370,14 @@ export function compilePresentation(
       path: `ppt/slides/slide${i + 1}.xml`,
     };
 
-    if (slideCommentEntries[i]) {
+    if (
+      slideCommentEntries[i] &&
+      !currentSlideRels.hasRelationshipKind("comments") &&
+      !currentSlideRels.hasRelationship(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+        `../comments/comment${i + 1}.xml`,
+      )
+    ) {
       currentSlideRels.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
         `../comments/comment${i + 1}.xml`,
@@ -1316,7 +1385,14 @@ export function compilePresentation(
     }
 
     const notesSlideIndex = notesSlideIndexMap.get(i);
-    if (notesSlideIndex !== undefined) {
+    if (
+      notesSlideIndex !== undefined &&
+      !currentSlideRels.hasRelationshipKind("notesSlide") &&
+      !currentSlideRels.hasRelationship(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
+        `../notesSlides/notesSlide${notesSlideIndex + 1}.xml`,
+      )
+    ) {
       currentSlideRels.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
         `../notesSlides/notesSlide${notesSlideIndex + 1}.xml`,
@@ -1331,38 +1407,18 @@ export function compilePresentation(
       );
     }
 
-    // Slide-level passthrough relationships (round-trip), appended last so the
-    // ownership test sees every model registration above. Ownership is decided
-    // by kind+target: the model registers the rels it absorbed (comments,
-    // notesSlide, a slide layout) with the same target, so those skip;
-    // same-kind-different-target rels — one diagramDrawing per SmartArt
-    // instance — are distinct facts and re-emit as written. Media-targeted
-    // kinds are the exception: the model renames media files, so a registered
-    // kind means the source rel was absorbed under a new name — skip on kind
-    // alone or the stale target would re-emit dangling.
+    // Slide-level passthrough relationships, appended after every model
+    // registration so the ownership test sees them all. claimSourceRel keeps
+    // the source id when its slot is free — verbatim slide islands reference
+    // the source rIds and renumbering would dangle them. Media-targeted rels
+    // whose kind the model already owns mean the source rel was absorbed
+    // under a renamed target — skip on kind alone or the stale target would
+    // re-emit dangling.
     for (const rel of options.passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
-      if (rel.targetMode === "External") {
-        // External targets serve verbatim (rawXml) content whose source rIds
-        // never renumber — keep the source id when free.
-        if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
-        const numeric = /^rId(\d+)$/.exec(rel.rId);
-        if (numeric && !currentSlideRels.hasId(rel.rId)) {
-          currentSlideRels.addRelationship(
-            Number(numeric[1]),
-            rel.relationshipType as RelationshipType,
-            rel.target,
-            "External",
-          );
-        } else {
-          currentSlideRels.add(rel.relationshipType as RelationshipType, rel.target, "External");
-        }
-        continue;
-      }
       const kind = rel.relationshipType.split("/").pop()!;
       if (MEDIA_REL_KINDS.has(kind) && currentSlideRels.hasRelationshipKind(kind)) continue;
-      if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
-      currentSlideRels.add(rel.relationshipType as RelationshipType, rel.target);
+      currentSlideRels.claimSourceRel(rel);
     }
 
     mapping[`SlideRelationships${i}`] = {

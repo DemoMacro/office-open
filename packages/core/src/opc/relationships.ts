@@ -119,19 +119,82 @@ export class Relationships {
    * `addRelationship` pair at every call site that wants the next id; reach
    * for `addRelationship` directly only when the id is externally determined
    * (a contiguous batch pre-computed from an offset, a fixed rId1, …).
+   *
+   * The id is max(existing) + 1, not count + 1 — externally-determined ids
+   * (passthrough source ids) can leave gaps, and a gap-following count-based
+   * id would collide with an existing entry (duplicate Relationship ids
+   * corrupt the package for Office applications).
    */
   public add(
     type: RelationshipType,
     target: string,
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
   ): number {
-    const id = this.entries.length + 1;
+    const id = this.nextRelationshipId;
     this.entries.push({ id: `rId${id}`, type, target, targetMode });
     return id;
   }
 
   public get relationshipCount(): number {
     return this.entries.length;
+  }
+
+  /** The next free numeric id (max existing + 1) — the safe offset base when
+   * externally-determined ids (passthrough source ids) leave gaps below it. */
+  public get nextRelationshipId(): number {
+    let max = 0;
+    for (const e of this.entries) {
+      const n = /^rId(\d+)$/.exec(e.id);
+      if (n) max = Math.max(max, Number(n[1]));
+    }
+    return max + 1;
+  }
+
+  /** Rename the first entry matching `type` to `newId` — used to promote a
+   * structured rel (e.g. the slide layout) to its source id when the
+   * source rId is free. No-op when the slot is taken or no match. */
+  public renameEntryByType(type: string, newId: number): void {
+    if (this.hasId(`rId${newId}`)) return;
+    const entry = this.entries.find((e) => e.type === type);
+    if (entry) entry.id = `rId${newId}`;
+  }
+
+  /** Numeric id of the first entry matching `kind` (last segment of the type
+   * URI), or undefined when none is registered. */
+  public idByKind(kind: string): number | undefined {
+    const entry = this.entries.find((e) => e.type.split("/").pop() === kind);
+    if (!entry) return undefined;
+    const m = /^rId(\d+)$/.exec(entry.id);
+    if (!m) return undefined;
+    return Number(m[1]);
+  }
+
+  /**
+   * Claim a captured source relationship (round-trip pre-claim). Verbatim
+   * part content references the source rIds, so re-emit the rel at its exact
+   * source id whenever that slot is still free — renumbering would dangle
+   * those references. Skips rels already registered under the same
+   * kind+target (the model absorbed them); falls back to an auto id for
+   * non-numeric source ids.
+   */
+  public claimSourceRel(rel: {
+    relationshipType: string;
+    target: string;
+    rId: string;
+    targetMode?: "External";
+  }): void {
+    if (this.hasRelationship(rel.relationshipType, rel.target)) return;
+    const numeric = /^rId(\d+)$/.exec(rel.rId);
+    if (numeric && !this.hasId(rel.rId)) {
+      this.addRelationship(
+        Number(numeric[1]),
+        rel.relationshipType as RelationshipType,
+        rel.target,
+        rel.targetMode,
+      );
+    } else {
+      this.add(rel.relationshipType as RelationshipType, rel.target, rel.targetMode);
+    }
   }
 
   /**

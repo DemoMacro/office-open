@@ -114,6 +114,7 @@ export function findAndReplaceImagePlaceholders(
   mediaArray: { fileName: string }[],
   offset: number,
   idFormat: IdFormat = "rId",
+  sourceRids?: ReadonlyMap<string, string>,
 ): { xml: string; referenced: { fileName: string }[] } {
   if (mediaArray.length === 0 || !hasPlaceholders(xml)) {
     return { xml, referenced: [] };
@@ -139,12 +140,18 @@ export function findAndReplaceImagePlaceholders(
     if (item !== undefined) {
       let id = replaceMap.get(key);
       if (id === undefined) {
+        // Source round-trip: when the source rels captured the rId for this
+        // media file, the body XML must reference that exact rId — the
+        // structured compiler's rels will then point to the same target. Using
+        // an offset-derived id here would dangle the body's `r:embed` against
+        // a rel pointing at a different media item.
+        const override = sourceRids?.get(key);
         // Use the referenced-local position (not the global media index) so the
         // generated IDs align with the caller's per-part addRelationship(offset+i)
         // loop. Using the global index desyncs the body's r:embed from the part's
         // .rels when a part references only a subset of the global media array
         // (e.g. headers/footers, whose images sit at high global indices).
-        id = formatId(offset, referenced.length, idFormat);
+        id = override ?? formatId(offset, referenced.length, idFormat);
         replaceMap.set(key, id);
         referenced.push(item);
       }

@@ -327,7 +327,7 @@ export function compileWorkbook(
 
   // Connections — xl/connections.xml (single part, workbook-level relationship)
   if (options.connections && options.connections.length > 0) {
-    const cRid = ctx.workbookRels.relationshipCount + 1;
+    const cRid = ctx.workbookRels.nextRelationshipId;
     ctx.workbookRels.addRelationship(
       cRid,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections",
@@ -341,7 +341,7 @@ export function compileWorkbook(
 
   // Metadata — xl/metadata.xml (single part, workbook-level relationship)
   if (options.metadata && hasMetadataContent(options.metadata)) {
-    const mRid = ctx.workbookRels.relationshipCount + 1;
+    const mRid = ctx.workbookRels.nextRelationshipId;
     ctx.workbookRels.addRelationship(
       mRid,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sheetMetadata",
@@ -355,7 +355,7 @@ export function compileWorkbook(
 
   // XML mappings — xl/xmlMaps.xml (single part, workbook-level relationship)
   if (options.xmlMaps) {
-    const xRid = ctx.workbookRels.relationshipCount + 1;
+    const xRid = ctx.workbookRels.nextRelationshipId;
     ctx.workbookRels.addRelationship(
       xRid,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/xmlMaps",
@@ -373,7 +373,7 @@ export function compileWorkbook(
     const extRefs: { rId: string }[] = [];
     for (let ei = 0; ei < extLinks.length; ei++) {
       const elIdx = ei + 1;
-      const elRid = ctx.workbookRels.relationshipCount + 1;
+      const elRid = ctx.workbookRels.nextRelationshipId;
       ctx.workbookRels.addRelationship(
         elRid,
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLink",
@@ -423,7 +423,7 @@ export function compileWorkbook(
   // Shared Strings — AFTER worksheets so all strings are collected
   if (ctx.sharedStrings.count > 0) {
     ctx.workbookRels.addRelationship(
-      ctx.workbookRels.relationshipCount + 1,
+      ctx.workbookRels.nextRelationshipId,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings",
       "sharedStrings.xml",
     );
@@ -481,7 +481,7 @@ export function compileWorkbook(
       data: calcChainDesc.stringify({ cells: calcChainCells }, ctx) ?? "",
       path: "xl/calcChain.xml",
     };
-    const calcChainRid = ctx.workbookRels.relationshipCount + 1;
+    const calcChainRid = ctx.workbookRels.nextRelationshipId;
     ctx.workbookRels.addRelationship(
       calcChainRid,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain",
@@ -1021,7 +1021,7 @@ function compileWorksheetPart(
         };
 
         // Register in workbook
-        const wbPivotRid = ctx.workbookRels.relationshipCount + 1;
+        const wbPivotRid = ctx.workbookRels.nextRelationshipId;
         ctx.workbookRels.addRelationship(
           wbPivotRid,
           "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotCacheDefinition",
@@ -1370,7 +1370,7 @@ function compileRevisionLogs(
     path: "xl/revisionHeaders.xml",
   };
   ctx.workbookRels.addRelationship(
-    ctx.workbookRels.relationshipCount + 1,
+    ctx.workbookRels.nextRelationshipId,
     REV_HEADERS_REL,
     "revisionHeaders.xml",
   );
@@ -1394,11 +1394,7 @@ function compileRevisionLogs(
     const usersXml = usersDesc.stringify(rl.users, ctx);
     if (usersXml) {
       mapping["Users"] = { data: XML_DECL + usersXml, path: "xl/users.xml" };
-      ctx.workbookRels.addRelationship(
-        ctx.workbookRels.relationshipCount + 1,
-        USERS_REL,
-        "users.xml",
-      );
+      ctx.workbookRels.addRelationship(ctx.workbookRels.nextRelationshipId, USERS_REL, "users.xml");
     }
   }
 }
