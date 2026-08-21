@@ -80,7 +80,7 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
   if (dataBinding) {
     opts.dataBinding = {
       xpath: attr(dataBinding, "w:xpath") ?? "",
-      storeItemID: attr(dataBinding, "w:storeItemID") ?? "",
+      storeItemID: attr(dataBinding, "w:storeItemID"),
       prefixMappings: attr(dataBinding, "w:prefixMappings"),
     };
   }

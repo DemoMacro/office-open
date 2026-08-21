@@ -440,7 +440,8 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain("<w:showingPlcHdr/>");
     expect(xml).toContain('w:storeItemID="{6C3C8BC8-F283-45AE-878A-BAB7291924A1}"');
     expect(xml).toContain('w:prefixMappings="xmlns:ns0=&apos;');
-    expect(xml).toContain('<w:text w:multiLine="0"/>');
+    // w:multiLine defaults to false — the attribute stays omitted, like Office.
+    expect(xml).toContain("<w:text/>");
     expect(xml).toContain("<w:sdtEndPr/>");
     expect(xml).toContain('<w:t xml:space="preserve">     </w:t>');
 

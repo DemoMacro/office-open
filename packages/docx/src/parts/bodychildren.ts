@@ -203,12 +203,12 @@ function sdtDateXml(options: {
 function sdtDataBindingXml(options: {
   prefixMappings?: string;
   xpath: string;
-  storeItemID: string;
+  storeItemID?: string;
 }): string {
-  const attrs: string[] = [
-    `w:xpath="${escapeXml(options.xpath)}"`,
-    `w:storeItemID="${escapeXml(options.storeItemID)}"`,
-  ];
+  const attrs: string[] = [`w:xpath="${escapeXml(options.xpath)}"`];
+  // ST_Guid — an empty string is not a legal value and Word rejects the
+  // package on open, so omit the attribute when no id was bound.
+  if (options.storeItemID) attrs.push(`w:storeItemID="${escapeXml(options.storeItemID)}"`);
   if (options.prefixMappings !== undefined)
     attrs.push(`w:prefixMappings="${escapeXml(options.prefixMappings)}"`);
   return `<w:dataBinding ${attrs.join(" ")}/>`;
@@ -312,8 +312,9 @@ export function stringifySdtPr(opts: SdtPropertiesOptions): string {
   } else if (opts.richText) {
     parts.push("<w:richText/>");
   } else if (opts.text !== undefined) {
-    const multiLine = opts.text.multiLine ?? false;
-    parts.push(`<w:text w:multiLine="${multiLine ? 1 : 0}"/>`);
+    // w:multiLine defaults to false (ST_OnOff) — Office omits the attribute
+    // for the default, so only the true case carries it.
+    parts.push(opts.text.multiLine === true ? `<w:text w:multiLine="1"/>` : `<w:text/>`);
   } else if (opts.citation) {
     parts.push("<w:citation/>");
   } else if (opts.group) {
@@ -365,7 +366,7 @@ export function parseCustomXmlProperties(el: Element): CustomXmlPropertiesOption
   if (dataBinding) {
     opts.dataBinding = {
       xpath: attr(dataBinding, "w:xpath") ?? "",
-      storeItemID: attr(dataBinding, "w:storeItemID") ?? "",
+      storeItemID: attr(dataBinding, "w:storeItemID"),
       prefixMappings: attr(dataBinding, "w:prefixMappings"),
     };
   }
@@ -492,10 +493,10 @@ function buildCustomXmlPropertiesXml(pr: CustomXmlPropertiesOptions): string {
     parts.push(`<w:placeholder w:val="${escapeXml(pr.placeholder)}"/>`);
   }
   if (pr.dataBinding) {
-    const dbParts: string[] = [
-      `w:xpath="${escapeXml(pr.dataBinding.xpath)}"`,
-      `w:storeItemID="${escapeXml(pr.dataBinding.storeItemID)}"`,
-    ];
+    const dbParts: string[] = [`w:xpath="${escapeXml(pr.dataBinding.xpath)}"`];
+    // ST_Guid — an empty string is not a legal value (see sdtDataBindingXml).
+    if (pr.dataBinding.storeItemID)
+      dbParts.push(`w:storeItemID="${escapeXml(pr.dataBinding.storeItemID)}"`);
     if (pr.dataBinding.prefixMappings !== undefined) {
       dbParts.push(`w:prefixMappings="${escapeXml(pr.dataBinding.prefixMappings)}"`);
     }

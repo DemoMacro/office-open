@@ -130,8 +130,8 @@ export interface SdtDataBindingOptions {
   prefixMappings?: string;
   /** XPath expression (required) */
   xpath: string;
-  /** Custom XML store item ID (required) */
-  storeItemID: string;
+  /** Custom XML store item ID (ST_Guid) — absent when no store item is bound */
+  storeItemID?: string;
 }
 
 /**

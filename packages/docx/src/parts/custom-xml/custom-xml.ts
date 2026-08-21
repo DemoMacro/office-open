@@ -21,8 +21,8 @@ import type { SectionChild } from "@shared/section";
 export interface CustomXmlDataBindingOptions {
   /** XPath expression for the data binding */
   xpath: string;
-  /** Store item ID for the data binding */
-  storeItemID: string;
+  /** Store item ID (ST_Guid) — absent when the binding has no store item */
+  storeItemID?: string;
   /** Namespace prefix mappings */
   prefixMappings?: string;
 }
