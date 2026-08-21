@@ -1206,7 +1206,7 @@
           "type": "string"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1258,7 +1258,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1305,7 +1305,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1371,7 +1371,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {

@@ -1694,7 +1694,7 @@
           "type": "string"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1746,7 +1746,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1793,7 +1793,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -1859,7 +1859,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -4802,7 +4802,7 @@
           "type": "string"
         },
         "storeItemID": {
-          "description": "Store item ID for the data binding",
+          "description": "Store item ID (ST_Guid) — absent when the binding has no store item",
           "type": "string"
         },
         "xpath": {
@@ -4810,7 +4810,7 @@
           "type": "string"
         }
       },
-      "required": ["xpath", "storeItemID"],
+      "required": ["xpath"],
       "type": "object"
     },
     "CustomXmlPropertiesOptions": {
@@ -17739,7 +17739,7 @@
           "type": "string"
         },
         "storeItemID": {
-          "description": "Custom XML store item ID (required)",
+          "description": "Custom XML store item ID (ST_Guid) — absent when no store item is bound",
           "type": "string"
         },
         "xpath": {
@@ -17747,7 +17747,7 @@
           "type": "string"
         }
       },
-      "required": ["xpath", "storeItemID"],
+      "required": ["xpath"],
       "type": "object"
     },
     "SdtDateOptions": {

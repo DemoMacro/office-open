@@ -2390,7 +2390,7 @@
           "type": "string"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -2442,7 +2442,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -2489,7 +2489,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -2555,7 +2555,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct `@val` — bullet size as a percentage of the text size.",
+          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
           "type": "number"
         },
         "sizeFollowsText": {
@@ -3938,6 +3938,11 @@
     "CompoundLine": {
       "description": "Compound line types for outlines.\n\nDefines the structure of compound lines (single, double, etc.).",
       "enum": ["single", "double", "thickThin", "thinThick", "triple"],
+      "type": "string"
+    },
+    "CompoundLineType": {
+      "description": "ST_CompoundLine —",
+      "enum": ["sng", "dbl", "thickThin", "thinThick", "tri"],
       "type": "string"
     },
     "ConditionFunction": {
@@ -6319,6 +6324,10 @@
         "layout": {
           "description": "Verbatim layout XML; when set, the compiler parses this instead of synthesizing layout XML from the structured fields.",
           "type": "string"
+        },
+        "layoutId": {
+          "description": "Source p:sldLayoutId",
+          "type": "number"
         },
         "matchingName": {
           "type": "string"
@@ -11805,6 +11814,21 @@
       },
       "type": "object"
     },
+    "TableFontReferenceOptions": {
+      "additionalProperties": false,
+      "description": "Font reference — a:fontRef (CT_FontReference). Unlike lnRef/fillRef/effectRef (CT_StyleMatrixReference, integer idx), its",
+      "properties": {
+        "collection": {
+          "enum": ["major", "minor", "none"],
+          "type": "string"
+        },
+        "color": {
+          "$ref": "#/definitions/SolidFillOptions"
+        }
+      },
+      "required": ["collection"],
+      "type": "object"
+    },
     "TableOptions": {
       "additionalProperties": false,
       "description": "Table options for pptx slides (p:graphicFrame with a:tbl). The structural base (rows/columnWidths/6-flags) comes from  {@link  BaseTableOptions } ; the cNvPr fields (name/description/title/hidden) from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.",
@@ -12137,7 +12161,7 @@
           "type": "string"
         },
         "fontReference": {
-          "$ref": "#/definitions/StyleMatrixReferenceOptions",
+          "$ref": "#/definitions/TableFontReferenceOptions",
           "description": "Font reference (themeable)"
         },
         "italic": {
@@ -12909,6 +12933,10 @@
         "color": {
           "description": "Fill color component",
           "type": "string"
+        },
+        "compound": {
+          "$ref": "#/definitions/CompoundLineType",
+          "description": "Compound line type (@cmpd)"
         },
         "lineReference": {
           "$ref": "#/definitions/StyleMatrixReferenceOptions",
