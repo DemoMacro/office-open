@@ -79,6 +79,10 @@ export interface ChartsheetProtectionOptions {
 export interface ChartsheetOptions {
   /** Sheet name */
   name?: string;
+  /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
+  sheetId?: number;
+  /** Visibility (CT_Sheet `@state`) */
+  state?: "visible" | "hidden" | "veryHidden";
   /** Tab color (hex ARGB, e.g. "FF4472C4") */
   tabColor?: string;
   /** Page margins */

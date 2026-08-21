@@ -36,6 +36,10 @@ import type {
 export interface DialogsheetOptions {
   /** Sheet name */
   name?: string;
+  /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
+  sheetId?: number;
+  /** Visibility (CT_Sheet `@state`) */
+  state?: "visible" | "hidden" | "veryHidden";
   /** Tab color (hex ARGB) */
   tabColor?: string;
   /** Published to a server (CT_SheetPr `@published`, XSD default true — only false is emitted) */

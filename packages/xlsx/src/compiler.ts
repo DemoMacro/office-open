@@ -211,28 +211,38 @@ export function compileWorkbook(
     dialogsheetConfigs.length,
   );
 
-  // Build sheet definitions for workbook XML
+  // Build sheet definitions for workbook XML. An explicit sheetId wins; the
+  // fallback counter skips past every id handed out so ids stay unique even
+  // when options mix explicit and generated values.
   const sheets: SheetDefinition[] = [];
   let sheetId = 1;
+  const nextSheetId = (explicit: number | undefined): number => {
+    const id = explicit ?? sheetId;
+    if (id >= sheetId) sheetId = id + 1;
+    return id;
+  };
   let rId = 1;
   for (const ws of worksheetConfigs) {
     sheets.push({
       name: ws.name ?? `Sheet${sheetId}`,
-      sheetId: sheetId++,
+      sheetId: nextSheetId(ws.sheetId),
+      state: ws.state,
       rId: `rId${rId++}`,
     });
   }
   for (const cs of chartsheetConfigs) {
     sheets.push({
       name: cs.name ?? `Chart${sheetId}`,
-      sheetId: sheetId++,
+      sheetId: nextSheetId(cs.sheetId),
+      state: cs.state,
       rId: `rId${rId++}`,
     });
   }
   for (const ds of dialogsheetConfigs) {
     sheets.push({
       name: ds.name ?? `Dialog${sheetId}`,
-      sheetId: sheetId++,
+      sheetId: nextSheetId(ds.sheetId),
+      state: ds.state,
       rId: `rId${rId++}`,
     });
   }

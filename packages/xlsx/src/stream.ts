@@ -174,7 +174,8 @@ export function streamWorkbook(
   // Workbook + its rels — the sheet list is known up front.
   const sheets: SheetDefinition[] = worksheets.map((ws, i) => ({
     name: ws.name ?? `Sheet${i + 1}`,
-    sheetId: i + 1,
+    sheetId: ws.sheetId ?? i + 1,
+    state: ws.state,
     rId: `rId${i + 1}`,
   }));
   writeString(

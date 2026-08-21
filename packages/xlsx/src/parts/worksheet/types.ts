@@ -1339,6 +1339,10 @@ export interface DrawingHfOptions {
 
 export interface WorksheetOptions {
   name?: string;
+  /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
+  sheetId?: number;
+  /** Visibility (CT_Sheet `@state`) */
+  state?: "visible" | "hidden" | "veryHidden";
   rows?: RowOptions[];
   columns?: ColumnOptions[];
   mergeCells?: MergeCellOptions[];

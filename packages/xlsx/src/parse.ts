@@ -308,9 +308,15 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
 
   // Parse workbook via descriptor for richer data
   let sheetNames: string[] = [];
+  let sheetIds: number[] = [];
+  let sheetStates: Array<"visible" | "hidden" | "veryHidden" | undefined> = [];
   if (xlsx.workbook) {
     const wbData = workbookDesc.parse(xlsx.workbook, readContext);
-    if (wbData.sheets) sheetNames = wbData.sheets.map((s) => s.name);
+    if (wbData.sheets) {
+      sheetNames = wbData.sheets.map((s) => s.name);
+      sheetIds = wbData.sheets.map((s) => s.sheetId);
+      sheetStates = wbData.sheets.map((s) => s.state);
+    }
 
     // Workbook-level properties
     if (wbData.protection) opts.workbookProtection = wbData.protection;
@@ -340,6 +346,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
 
     const wsOpts = worksheetDesc.parse(wsEl, readContext);
     if (sheetNames[i]) wsOpts.name = sheetNames[i];
+    if (sheetIds[i] !== undefined) wsOpts.sheetId = sheetIds[i];
+    if (sheetStates[i]) wsOpts.state = sheetStates[i];
 
     // ── Resolve sub-parts via worksheet relationships ──
 
@@ -601,6 +609,9 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
       if (!csEl) continue;
       const csData = chartsheetDesc.parse(csEl, readContext);
       if (sheetNames[worksheets.length + i]) csData.name = sheetNames[worksheets.length + i];
+      if (sheetIds[worksheets.length + i] !== undefined)
+        csData.sheetId = sheetIds[worksheets.length + i]!;
+      if (sheetStates[worksheets.length + i]) csData.state = sheetStates[worksheets.length + i];
       // The chart itself lives in a drawing part — bridge it back through the
       // core chartSpace descriptor into the simplified chartsheet chart shape.
       const csDrawingRels = readContext.getWorksheetRelsByType(csPath, "/drawing");
