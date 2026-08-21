@@ -19,6 +19,7 @@ import { FormulaType } from "./types";
 import type { AnchorMarkerOptions, ObjectAnchorOptions } from "./types";
 import type {
   CellOptions,
+  CfColorOptions,
   CfvoOptions,
   FormulaOptions,
   HeaderFooterOptions,
@@ -425,7 +426,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
             inner.push(buildCfvoXml(v));
           }
           for (const c of cs.colors) {
-            inner.push(`<color rgb="FF${c}"/>`);
+            inner.push(buildCfColorXml(c));
           }
           p.push(
             `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<colorScale>${inner.join("")}</colorScale></cfRule>`,
@@ -438,7 +439,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
           for (const v of db.cfvo) {
             inner.push(buildCfvoXml(v));
           }
-          inner.push(`<color rgb="FF${db.color}"/>`);
+          inner.push(buildCfColorXml(db.color));
           const dbAttrs: Record<string, string | number | boolean | undefined> = {};
           if (db.minLength !== undefined && db.minLength !== 10) dbAttrs.minLength = db.minLength;
           if (db.maxLength !== undefined && db.maxLength !== 90) dbAttrs.maxLength = db.maxLength;
@@ -878,6 +879,18 @@ function buildCfvoXml(cfvo: CfvoOptions): string {
   if (cfvo.val !== undefined) a.val = cfvo.val;
   if (cfvo.gte === false) a.gte = 0;
   return `<cfvo${attrs(a)}/>`;
+}
+
+/** Serialize a CT_Color by its channel — rgb is the only one with a fixed width. */
+function buildCfColorXml(color: CfColorOptions): string {
+  if (color.rgb !== undefined) return `<color rgb="FF${color.rgb}"/>`;
+  const a: Record<string, string | number | undefined> = {};
+  if (color.theme !== undefined) {
+    a.theme = color.theme;
+    if (color.tint !== undefined) a.tint = color.tint;
+  }
+  if (color.indexed !== undefined) a.indexed = color.indexed;
+  return `<color${attrs(a)}/>`;
 }
 
 function buildSheetViewAttrs(sv?: SheetViewOptions): string {

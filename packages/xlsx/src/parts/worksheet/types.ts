@@ -715,20 +715,35 @@ export type IconSetType =
   | "5Rating"
   | "5Quarters";
 
+/**
+ * One CT_Color channel set for conditional-formatting colors. A color picks
+ * exactly one channel (rgb, theme, or indexed); tint qualifies a theme slot.
+ */
+export interface CfColorOptions {
+  /** RGB hex without alpha, e.g. "FF0000" */
+  rgb?: string;
+  /** Theme palette slot (CT_Color @theme) */
+  theme?: number;
+  /** Tint applied to the theme slot */
+  tint?: number;
+  /** Legacy palette index */
+  indexed?: number;
+}
+
 /** Color scale rule configuration */
 export interface ColorScaleOptions {
   /** Conditional format values (minimum 2, typically 2 or 3) */
   cfvo: CfvoOptions[];
-  /** Colors for each value (same count as cfvo) — RGB hex without alpha, e.g. "FF0000" */
-  colors: string[];
+  /** Colors for each value (same count as cfvo) */
+  colors: CfColorOptions[];
 }
 
 /** Data bar rule configuration */
 export interface DataBarOptions {
   /** Minimum and maximum value objects (exactly 2) */
   cfvo: [CfvoOptions, CfvoOptions];
-  /** Bar color — RGB hex without alpha, e.g. "638EC6" */
-  color: string;
+  /** Bar color */
+  color: CfColorOptions;
   /** Minimum bar length as percentage (default: 10) */
   minLength?: number;
   /** Maximum bar length as percentage (default: 90) */

@@ -72,6 +72,41 @@ const XML_DECL = OOXML_XML_DECLARATION;
 
 const IMAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
 
+/**
+ * Replace `{fileName}` media placeholders in compiled part XML with
+ * relationship ids. Core fill descriptors register blip-fill images through
+ * `ctx.addMedia`, which returns a placeholder because the owning part's rels
+ * don't exist yet; a placeholder surviving into the part makes Excel refuse
+ * the package. Each distinct image registers one relationship — consuming
+ * parts (theme, drawings) live one level under `xl/`, so the media target is
+ * always `../media/<name>`.
+ */
+function bindMediaPlaceholders(
+  xml: string,
+  media: XlsxWriteContext["media"],
+  rels: Relationships,
+): string {
+  const names = new Set(media.array.map((m) => m.fileName));
+  let usesMedia = false;
+  for (const name of names) {
+    if (xml.includes(`{${name}}`)) {
+      usesMedia = true;
+      break;
+    }
+  }
+  if (!usesMedia) return xml;
+  const ridByName = new Map<string, string>();
+  return xml.replace(/\{([^{}]+)\}/g, (whole, name: string) => {
+    let rid = ridByName.get(name);
+    if (rid === undefined) {
+      if (!names.has(name)) return whole;
+      rid = `rId${rels.add(IMAGE_REL, `../media/${name}`)}`;
+      ridByName.set(name, rid);
+    }
+    return rid;
+  });
+}
+
 /** XLSX part path → content type, derived from the part registry. Matches
  * actual file paths, so the dense/sequential xlsx part naming is handled. */
 const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
@@ -392,11 +427,22 @@ export function compileWorkbook(
   };
 
   // Theme — a parsed source theme round-trips structurally; fresh output
-  // keeps the Office default.
+  // keeps the Office default. Blip fills inside the format scheme register
+  // media placeholders; bind them to a theme-part image relationship.
+  const themeRels = new Relationships();
+  const themeXml = options.theme
+    ? bindMediaPlaceholders(buildThemeXml(options.theme, ctx), ctx.media, themeRels)
+    : createThemeXml();
   mapping["Theme"] = {
-    data: XML_DECL + (options.theme ? buildThemeXml(options.theme, ctx) : createThemeXml()),
+    data: XML_DECL + themeXml,
     path: "xl/theme/theme1.xml",
   };
+  if (themeRels.relationshipCount > 0) {
+    mapping["ThemeRels"] = {
+      data: XML_DECL + themeRels.serialize(),
+      path: "xl/theme/_rels/theme1.xml.rels",
+    };
+  }
 
   // Charts — AFTER worksheets so charts are registered
   for (const [i, chartData] of ctx.charts.array.entries()) {
@@ -725,6 +771,9 @@ function compileWorksheetPart(
         .split(`r:id="{hlink:${h.key}}"`)
         .join(`r:id="rId${hlinkRid}"`);
     }
+    // Shape blip fills inside the drawing register `{fileName}` media
+    // placeholders — bind them the same way the theme does.
+    resolvedDrawingXml = bindMediaPlaceholders(resolvedDrawingXml, ctx.media, drawingRels);
     const drawingIdx = i + 1;
     mapping[`Drawing${i}`] = {
       data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${resolvedDrawingXml}`,

@@ -103,14 +103,59 @@ export class XlsxReadContext implements ReadContext {
    */
   public readonly sharedStrings: (string | RichTextOptions)[];
 
+  /**
+   * Path of the part currently being parsed. rId numbering is per-part, so a
+   * descriptor resolving a relationship mid-parse (a theme blip fill's
+   * r:embed) must hit that part's own .rels, not the workbook's.
+   */
+  public currentPart = "xl/workbook.xml";
+  private readonly partRels = new Map<string, Map<string, string>>();
+
   constructor(
     private xlsx: XlsxDocument,
     sharedStrings?: (string | RichTextOptions)[],
   ) {
     this.sharedStrings = sharedStrings ?? [];
+    this.loadPartRels();
+  }
+
+  /** Index every `x/_rels/y.xml.rels` as y → (rId → resolved target path). */
+  private loadPartRels(): void {
+    for (const relsPath of this.xlsx.doc.keys()) {
+      const idx = relsPath.lastIndexOf("/_rels/");
+      if (idx < 0 || !relsPath.endsWith(".rels")) continue;
+      const partPath = `${relsPath.slice(0, idx)}/${relsPath.slice(idx + 7, -5)}`;
+      const relsEl = this.xlsx.doc.get(relsPath);
+      if (!relsEl?.elements) continue;
+      const byId = new Map<string, string>();
+      for (const child of relsEl.elements) {
+        if (child.name !== "Relationship") continue;
+        const id = child.attributes?.["Id"] as string | undefined;
+        const target = child.attributes?.["Target"] as string | undefined;
+        if (id && target) byId.set(id, resolveRelationshipTarget(partPath, target));
+      }
+      this.partRels.set(partPath, byId);
+    }
+  }
+
+  /**
+   * Run `fn` with `currentPart` temporarily set to `partPath`, restoring the
+   * previous value afterwards — a sub-part parse (the theme) resolves its
+   * relationship ids against that part's own rels.
+   */
+  public withPart<T>(partPath: string, fn: () => T): T {
+    const prev = this.currentPart;
+    this.currentPart = partPath;
+    try {
+      return fn();
+    } finally {
+      this.currentPart = prev;
+    }
   }
 
   public resolveRelationship(rId: string): string | undefined {
+    const scoped = this.partRels.get(this.currentPart)?.get(rId);
+    if (scoped !== undefined) return scoped;
     const wbRels = this.xlsx.doc.get("xl/_rels/workbook.xml.rels");
     if (!wbRels?.elements) return undefined;
     for (const child of wbRels.elements) {
@@ -129,18 +174,7 @@ export class XlsxReadContext implements ReadContext {
    * Worksheet rels paths: `xl/worksheets/sheet1.xml` → `xl/worksheets/_rels/sheet1.xml.rels`
    */
   public resolveWorksheetRel(wsPath: string, rId: string): string | undefined {
-    const relsPath = partPathToRelsPath(wsPath);
-    const rels = this.xlsx.doc.get(relsPath);
-    if (!rels?.elements) return undefined;
-    for (const child of rels.elements) {
-      if (child.name !== "Relationship") continue;
-      if (child.attributes?.["Id"] === rId) {
-        const target = child.attributes["Target"] as string | undefined;
-        if (!target) return undefined;
-        return resolveRelationshipTarget(wsPath, target);
-      }
-    }
-    return undefined;
+    return this.partRels.get(wsPath)?.get(rId);
   }
 
   /**

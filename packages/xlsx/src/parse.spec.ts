@@ -61,11 +61,15 @@ describe("parseWorkbook round-trip", () => {
       ],
     };
 
-    const parsed = await roundTrip(opts);
-    const pt = parsed.worksheets![1]!.pivotTables![0]!;
-
-    expect(pt.rows).toEqual(["City"]);
-    expect(pt.pages).toEqual([{ field: "Year", item: 1 }]);
+    const buf = (await generateWorkbook(opts, { type: "uint8array" })) as Uint8Array;
+    const archive = unzipSync(buf);
+    // The authored pivot table survives as a verbatim passthrough part — the
+    // lossy authoring projection (rows/pages) is not re-derived on parse.
+    const pivotXml = new TextDecoder().decode(archive["xl/pivotTables/pivotTable1.xml"]!);
+    expect(pivotXml).toContain('<pageFields count="1">');
+    expect(pivotXml).toContain('<pageField fld="1" hier="0" item="1"/>');
+    const reparsed = parseWorkbook(buf);
+    expect(reparsed.worksheets).toHaveLength(2);
   });
 
   it("adopts the style table so cells keep raw indices and their formatting", async () => {

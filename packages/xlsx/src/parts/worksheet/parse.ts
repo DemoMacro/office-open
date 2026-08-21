@@ -7,7 +7,27 @@ import { parseOnOff } from "@office-open/core";
 import { attr, attrNum } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import type { CfvoOptions, CfvoType, PageBreakOptions } from "./types";
+import type { CfColorOptions, CfvoOptions, CfvoType, PageBreakOptions } from "./types";
+
+/**
+ * Parse a conditional-formatting `<color>` (CT_Color). Every channel is an
+ * alternative — rgb hex, a theme slot (with optional tint), or a legacy
+ * palette index. Returns undefined when the element carries none of them.
+ */
+export function parseCfColor(el: XmlElement): CfColorOptions | undefined {
+  const result: CfColorOptions = {};
+  const rgb = attr(el, "rgb");
+  if (rgb) result.rgb = rgb.length === 8 ? rgb.slice(2) : rgb;
+  const theme = attrNum(el, "theme");
+  if (theme !== undefined) {
+    result.theme = theme;
+    const tint = attrNum(el, "tint");
+    if (tint !== undefined) result.tint = tint;
+  }
+  const indexed = attrNum(el, "indexed");
+  if (indexed !== undefined) result.indexed = indexed;
+  return Object.keys(result).length > 0 ? result : undefined;
+}
 
 /** Parse a CT_PageBreak (w:rowBreaks / w:colBreaks) into break entries. */
 export function parsePageBreaks(el: XmlElement): PageBreakOptions[] {

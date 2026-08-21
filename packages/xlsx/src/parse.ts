@@ -40,8 +40,6 @@ import type { SharedWorkbookOptions, WorkbookOptions } from "@parts/file";
 import { metadataDesc } from "@parts/metadata";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "@parts/pivot-cache";
-import { pivotTableDesc } from "@parts/pivot-table";
-import type { ConsolidateFunction, PivotTableOptions } from "@parts/pivot/pivot-utils";
 import { queryTableDesc } from "@parts/query-table";
 import type { QueryTableOptions } from "@parts/query-table";
 import {
@@ -245,10 +243,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   // Create read context for descriptor pipeline
   const readContext = new XlsxReadContext(xlsx, sstEntries);
 
-  // Pivot cache definitions, keyed by part path — worksheet parsing resolves
-  // each pivot table's cacheId against this map when rebuilding the
-  // user-layer PivotTableOptions (field indices → cache field names, data
-  // range → worksheetSource).
+  // Pivot cache definitions, keyed by part path — surfaced on
+  // WorkbookOptions.pivotCaches for the model layer.
   const pivotCacheByPath = new Map<string, PivotCacheDefParseResult>();
   for (const key of xlsx.doc.keys("xl/pivotCache/")) {
     if (!key.includes("pivotCacheDefinition")) continue;
@@ -256,8 +252,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (!pcdEl) continue;
     pivotCacheByPath.set(key, pivotCacheDefDesc.parse(pcdEl, readContext));
   }
-  // workbook.xml pivotCaches: cacheId → definition part path.
-  const pivotCachePathById = new Map<number, string>();
+  // workbook.xml pivotCaches: cacheId → rId reference chain.
   const pivotCacheRefs: PivotCacheReference[] = [];
   const wbPivotCaches = xlsx.workbook ? findChild(xlsx.workbook, "pivotCaches") : undefined;
   for (const pc of wbPivotCaches?.elements ?? []) {
@@ -265,11 +260,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     const cacheId = attr(pc, "cacheId");
     const rId = attr(pc, "r:id");
     if (cacheId === undefined || rId === undefined) continue;
-    const target = readContext.resolveRelationship(rId);
-    if (target) {
-      pivotCachePathById.set(Number(cacheId), target);
-      pivotCacheRefs.push({ cacheId: Number(cacheId), rId });
-    }
+    pivotCacheRefs.push({ cacheId: Number(cacheId), rId });
   }
   if (pivotCacheRefs.length > 0) opts.pivotCacheRefs = pivotCacheRefs;
 
@@ -302,11 +293,15 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   }
 
   // Theme — structured round-trip so a custom source theme survives instead of
-  // being replaced by the compiler's fresh default.
+  // being replaced by the compiler's fresh default. Parsed under the theme
+  // part's own rels scope so a blip fill's r:embed resolves to the theme's
+  // image, not to whatever the workbook rels hide under the same rId.
   if (xlsx.theme) {
     const themeEl = xlsx.doc.get(xlsx.theme);
     if (themeEl) {
-      const themeOptions = themeDesc.parse(themeEl, readContext);
+      const themeOptions = readContext.withPart(xlsx.theme, () =>
+        themeDesc.parse(themeEl, readContext),
+      );
       if (themeOptions) opts.theme = themeOptions;
     }
   }
@@ -572,60 +567,11 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     // Pivot tables — rebuild the user-layer shape from the CT-layer parse
     // result: field indices resolve against the cache definition's field
     // names, the data range against its worksheetSource.
-    const pivotRels = readContext.getWorksheetRelsByType(wsPath, "/pivotTable");
-    if (pivotRels.length > 0) {
-      const pivotTables: PivotTableOptions[] = [];
-      for (const pr of pivotRels) {
-        const pivotEl = xlsx.doc.get(pr.target);
-        if (!pivotEl) continue;
-        const pivotData = pivotTableDesc.parse(pivotEl, readContext);
-        const cache = pivotCacheByPath.get(pivotCachePathById.get(pivotData.cacheId ?? -1) ?? "");
-        const ref = cache?.worksheetSource?.ref;
-        if (!cache || !ref) continue;
-        const fieldNames = (cache.cacheFields ?? []).map((f) => f.name ?? "");
-        const rows = (pivotData.rowFields ?? [])
-          .map((i) => fieldNames[i])
-          .filter((name): name is string => name !== "");
-        const data = (pivotData.dataFields ?? [])
-          .filter((d) => d.fld !== undefined)
-          .map((d) => ({
-            field: fieldNames[d.fld!] ?? "",
-            ...(d.subtotal ? { summarize: d.subtotal as ConsolidateFunction } : {}),
-            ...(d.name ? { name: d.name } : {}),
-          }));
-        if (rows.length === 0 || data.length === 0) continue;
-        const pt: PivotTableOptions = { source: ref, rows, data };
-        if (pivotData.name) pt.name = pivotData.name;
-        if (cache.worksheetSource?.sheet) pt.sourceSheet = cache.worksheetSource.sheet;
-        if (pivotData.location) pt.location = pivotData.location;
-        const columns = (pivotData.colFields ?? [])
-          .map((i) => fieldNames[i])
-          .filter((name): name is string => name !== "");
-        if (columns.length > 0) pt.columns = columns;
-        const pages = (pivotData.pageFields ?? [])
-          .filter((p) => p.fld !== undefined)
-          .map((p) => ({
-            field: fieldNames[p.fld!] ?? "",
-            ...(p.cap ? { caption: p.cap } : {}),
-            ...(p.item !== undefined ? { item: p.item } : {}),
-          }))
-          .filter((p) => p.field !== "");
-        if (pages.length > 0) pt.pages = pages;
-        if (pivotData.pivotTableStyle) pt.style = pivotData.pivotTableStyle;
-        if (pivotData.dataOnRows) pt.dataOnRows = true;
-        if (pivotData.grandTotalCaption) pt.grandTotalCaption = pivotData.grandTotalCaption;
-        if (pivotData.errorCaption) pt.errorCaption = pivotData.errorCaption;
-        if (pivotData.showError) pt.showError = true;
-        if (pivotData.missingCaption) pt.missingCaption = pivotData.missingCaption;
-        if (pivotData.showMissing === false) pt.showMissing = false;
-        if (pivotData.pageStyle) pt.pageStyle = pivotData.pageStyle;
-        if (pivotData.tag) pt.tag = pivotData.tag;
-        if (pivotData.showItems === false) pt.showItems = false;
-        if (pivotData.editData) pt.editData = true;
-        pivotTables.push(pt);
-      }
-      if (pivotTables.length > 0) wsOpts.pivotTables = pivotTables;
-    }
+    // PivotTable parts are NOT absorbed into the model here: the authoring
+    // model (source ref + field-name rows/columns/data) is a lossy projection
+    // that the compiler would rebuild from, reinterpreting the source. A
+    // round-tripped pivot table stays in the verbatim passthrough set —
+    // sheet-level pivotTable relationships re-attach via passthrough rels.
 
     // Resolve external hyperlink URLs
     const hyperlinks = wsOpts.hyperlinks;

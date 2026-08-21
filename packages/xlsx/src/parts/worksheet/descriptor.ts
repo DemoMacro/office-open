@@ -16,12 +16,12 @@ import type { Element } from "@office-open/xml";
 import type { XlsxReadContext } from "../../context";
 import { parseAutoFilter, parseSortStateEl } from "../auto-filter";
 import { parsePivotArea } from "../pivot-table/parse";
-import { parseColorHex } from "../styles/parse";
-import { parseCfvo, parsePageBreaks } from "./parse";
+import { parseCfColor, parseCfvo, parsePageBreaks } from "./parse";
 import { parseSheetDataRows } from "./sheet-data";
 import type {
   CellSmartTagsOptions,
   CellWatchOptions,
+  CfColorOptions,
   CfvoOptions,
   ColumnOptions,
   ConditionalFormatOperator,
@@ -430,12 +430,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const csEl = findChild(ruleEl, "colorScale");
           if (csEl) {
             const cfvo: CfvoOptions[] = [];
-            const colors: string[] = [];
+            const colors: CfColorOptions[] = [];
             for (const child of csEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
               if (child.name === "color") {
-                const hex = parseColorHex(child);
-                if (hex) colors.push(hex);
+                const c = parseCfColor(child);
+                if (c) colors.push(c);
               }
             }
             rule.colorScale = { cfvo, colors };
@@ -445,15 +445,15 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const dbEl = findChild(ruleEl, "dataBar");
           if (dbEl) {
             const cfvo: CfvoOptions[] = [];
-            let color = "";
+            let color: CfColorOptions | undefined;
             for (const child of dbEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
-              if (child.name === "color") {
-                const hex = parseColorHex(child);
-                if (hex) color = hex;
-              }
+              if (child.name === "color") color = parseCfColor(child) ?? { indexed: 0 };
             }
-            rule.dataBar = { cfvo: cfvo as [CfvoOptions, CfvoOptions], color };
+            rule.dataBar = {
+              cfvo: cfvo as [CfvoOptions, CfvoOptions],
+              color: color ?? { indexed: 0 },
+            };
           }
 
           // Icon set

@@ -53,7 +53,7 @@ describe("Worksheet", () => {
                   formulas: [formula],
                   colorScale: {
                     cfvo: [{ type: "min" }, { type: "max" }],
-                    colors: ["FF0000", "00FF00"],
+                    colors: [{ rgb: "FF0000" }, { rgb: "00FF00" }],
                   },
                 },
                 {
@@ -61,7 +61,7 @@ describe("Worksheet", () => {
                   formulas: [formula],
                   dataBar: {
                     cfvo: [{ type: "min" }, { type: "max" }],
-                    color: "638EC6",
+                    color: { rgb: "638EC6" },
                   },
                 },
               ],
@@ -73,6 +73,25 @@ describe("Worksheet", () => {
       const escapedFormula = "<formula>MAX(IF(A1=&quot;&quot;, 0, A1))</formula>";
       expect(xml).toContain(`${escapedFormula}<colorScale>`);
       expect(xml).toContain(`${escapedFormula}<dataBar>`);
+    });
+
+    it("round-trips a theme-channel data bar color without inventing rgb", () => {
+      const readCtx = {
+        resolveRelationship: () => undefined,
+        getPart: () => undefined,
+        getRaw: () => undefined,
+      } as unknown as ReadContext;
+      const el = parseXml(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<conditionalFormatting sqref="G1:G3"><cfRule type="dataBar" priority="5">` +
+          `<dataBar><cfvo type="min" val="0"/><cfvo type="max" val="0"/>` +
+          `<color theme="4"/></dataBar></cfRule></conditionalFormatting></worksheet>`,
+      ).elements?.[0];
+      if (!el) throw new Error("no root");
+      const ws = worksheetDesc.parse(el, readCtx);
+      const xml = buildWorksheetXml(ws, {});
+      expect(xml).toContain('<color theme="4"/>');
+      expect(xml).not.toContain('rgb="FF"');
     });
   });
 

@@ -1827,6 +1827,29 @@
       "required": ["reference"],
       "type": "object"
     },
+    "CfColorOptions": {
+      "additionalProperties": false,
+      "description": "One CT_Color channel set for conditional-formatting colors. A color picks exactly one channel (rgb, theme, or indexed); tint qualifies a theme slot.",
+      "properties": {
+        "indexed": {
+          "description": "Legacy palette index",
+          "type": "number"
+        },
+        "rgb": {
+          "description": "RGB hex without alpha, e.g. \"FF0000\"",
+          "type": "string"
+        },
+        "theme": {
+          "description": "Theme palette slot (CT_Color",
+          "type": "number"
+        },
+        "tint": {
+          "description": "Tint applied to the theme slot",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "CfvoOptions": {
       "additionalProperties": false,
       "description": "Conditional format value object",
@@ -2797,9 +2820,9 @@
           "type": "array"
         },
         "colors": {
-          "description": "Colors for each value (same count as cfvo) — RGB hex without alpha, e.g. \"FF0000\"",
+          "description": "Colors for each value (same count as cfvo)",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/CfColorOptions"
           },
           "type": "array"
         }
@@ -4173,8 +4196,8 @@
           "type": "array"
         },
         "color": {
-          "description": "Bar color — RGB hex without alpha, e.g. \"638EC6\"",
-          "type": "string"
+          "$ref": "#/definitions/CfColorOptions",
+          "description": "Bar color"
         },
         "maxLength": {
           "description": "Maximum bar length as percentage (default: 90)",

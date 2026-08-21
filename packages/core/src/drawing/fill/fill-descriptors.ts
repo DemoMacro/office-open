@@ -300,11 +300,14 @@ function emitBlipFill(options: BlipFillConfigOptions & { type: "blip" }, embed?:
   }
   // noEmbed: the source blip carried no r:embed (an empty marker) — re-emit
   // it bare instead of fabricating a media reference.
+  // The r: prefix is declared inline on the blip: hosts whose root declares
+  // only the a: namespace (a theme's fmtScheme) still get well-formed XML.
+  const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   const blip = options.noEmbed
     ? element("a:blip", undefined, blipChildren.length > 0 ? blipChildren : undefined)
     : element(
         "a:blip",
-        { cstate: "none", "r:embed": embedRef },
+        { cstate: "none", "xmlns:r": R_NS, "r:embed": embedRef },
         blipChildren.length > 0 ? blipChildren : undefined,
       );
 
