@@ -167,9 +167,9 @@ function stringifyBullet(options: BulletOptions): string[] {
   } else if (options.sizePoints !== undefined) {
     parts.push(`<a:buSzPts val="${Math.round(options.sizePoints * 100)}"/>`);
   } else if (options.size !== undefined) {
-    // Office writes the plain per-mille integer ("60000" = 60%); the XSD's
-    // "25%"-pattern branch is never emitted in practice.
-    parts.push(`<a:buSzPct val="${Math.round(options.size * 1000)}"/>`);
+    // ST_TextBulletSizePercent is an "N%" string per the XSD pattern; Office
+    // also accepts per-mille integers when reading (handled at parse below).
+    parts.push(`<a:buSzPct val="${Math.round(options.size)}%"/>`);
   }
 
   // Font: buFontTx | buFont. No fresh default — Office files omit buFont when
