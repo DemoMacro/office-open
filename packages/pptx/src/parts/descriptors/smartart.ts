@@ -60,8 +60,10 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     const colorId =
       typeof opts.color === "object" ? definitionId(opts.color) : (opts.color ?? "accent1_2");
 
-    // Register SmartArt data with context
-    if (opts.nodes && opts.nodes.length > 0) {
+    // Register SmartArt data with context — an explicitly empty node tree
+    // still round-trips (the data part keeps its bare doc point); only an
+    // absent tree skips registration.
+    if (opts.nodes !== undefined) {
       const body = createDataModel(opts.nodes, layoutId, styleId, colorId);
       const dataModelXml = body
         ? '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + body
@@ -182,14 +184,16 @@ function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtOptions>)
 
   // Build node text map and extract layout/style/color from doc point
   const nodeMap = new Map<string, string>();
+  let docModelId: string | undefined;
 
   for (const pt of pts.elements ?? []) {
     if (pt.name !== "dgm:pt") continue;
-    const ptType = attr(pt, "type");
+    const ptType = attr(pt, "type"); // XSD default: "node"
     const modelId = attr(pt, "modelId");
 
     // Document root — extract layout/style/color
     if (ptType === "doc") {
+      docModelId = modelId;
       const prSet = findChild(pt, "dgm:prSet");
       if (prSet) {
         const loTypeId = attr(prSet, "loTypeId") ?? "";
@@ -205,18 +209,17 @@ function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtOptions>)
       continue;
     }
 
-    // Skip connection points
-    if (ptType === "conn") continue;
-
-    // Node — extract text
-    if (ptType === "node" && modelId) {
+    // Nodes — the XSD default type. pres/asst/parTrans/sibTrans points carry
+    // no user text.
+    if ((ptType === undefined || ptType === "node") && modelId) {
       const t = findFirst(pt, "a:t");
       const text = t ? extractText(t) : "";
       nodeMap.set(modelId, text);
     }
   }
 
-  // Build tree from connections
+  // Build tree from data connections (XSD default cxn type: "parOf";
+  // presOf/presParOf are presentation-tree edges that would pollute it)
   const cxnLst = findChild(model, "dgm:cxnLst");
   if (!cxnLst) {
     result.nodes = [];
@@ -226,6 +229,8 @@ function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtOptions>)
   const childrenMap = new Map<string, string[]>();
   for (const cxn of cxnLst.elements ?? []) {
     if (cxn.name !== "dgm:cxn") continue;
+    const cxnType = attr(cxn, "type");
+    if (cxnType !== undefined && cxnType !== "parOf") continue;
     const srcId = attr(cxn, "srcId");
     const destId = attr(cxn, "destId");
     if (!srcId || !destId || !nodeMap.has(destId)) continue;
@@ -238,7 +243,9 @@ function parseSmartArtDataXml(dataEl: Element, result: Partial<SmartArtOptions>)
     arr.push(destId);
   }
 
-  const topIds = childrenMap.get("0") ?? [];
+  // The doc point is the tree root — referenced either by its own modelId
+  // (2007-era files) or by the reserved id "0".
+  const topIds = childrenMap.get(docModelId ?? "") ?? childrenMap.get("0") ?? [];
   result.nodes = topIds.map((id) => buildSmartArtNode(id, nodeMap, childrenMap));
 }
 

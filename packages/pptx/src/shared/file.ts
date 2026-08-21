@@ -62,6 +62,8 @@ export interface LayoutDefinition {
   userDrawn?: boolean;
   showMasterShapes?: boolean;
   showMasterPlaceholderAnimations?: boolean;
+  /** Source p:sldLayoutId @id — kept so round-trip reuses it instead of renumbering (PowerPoint rejects renumbered ids on real-open). */
+  layoutId?: number;
   // Structured cSld content (round-trip, mirrors SlideDescriptorOptions)
   children?: SlideChild[];
   background?: BackgroundOptions;

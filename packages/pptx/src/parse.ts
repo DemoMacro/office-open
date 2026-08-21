@@ -618,6 +618,7 @@ export function parsePresentation(data: DataType): PresentationOptions {
     // A layout with no .rels (sources ship such packages) still belongs when
     // the master's sldLayoutIdLst names it — fall back to that membership.
     const masterListedLayouts = new Set<string>();
+    const layoutIdsByPath = new Map<string, number>();
     const sldLayoutIdLst = findChild(masterEl, "p:sldLayoutIdLst");
     if (sldLayoutIdLst) {
       const masterRelTargets = parseSlideRelMap(pptx.doc, masterPath);
@@ -625,7 +626,14 @@ export function parsePresentation(data: DataType): PresentationOptions {
         if (sldLayoutId.name !== "p:sldLayoutId") continue;
         const rid = sldLayoutId.attributes?.["r:id"];
         const target = rid ? masterRelTargets.get(String(rid)) : undefined;
-        if (target && pptx.slideLayouts.includes(target)) masterListedLayouts.add(target);
+        const idAttr = sldLayoutId.attributes?.["id"];
+        if (target && pptx.slideLayouts.includes(target)) {
+          masterListedLayouts.add(target);
+          const idNum = Number(idAttr);
+          if (idAttr !== undefined && Number.isFinite(idNum)) {
+            layoutIdsByPath.set(target, idNum);
+          }
+        }
       }
     }
     const masterLayouts: LayoutDefinition[] = [];
@@ -641,6 +649,8 @@ export function parsePresentation(data: DataType): PresentationOptions {
           new ParseContext(pptx, parseSlideRelMap(pptx.doc, layoutPath)),
         );
         const layoutDef = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
+        const sourceLayoutId = layoutIdsByPath.get(layoutPath);
+        if (sourceLayoutId !== undefined) layoutDef.layoutId = sourceLayoutId;
         const themeOverridePath = layoutThemeOverridePaths.get(layoutPath);
         const themeOverrideEl = themeOverridePath ? pptx.doc.get(themeOverridePath) : undefined;
         if (themeOverrideEl) {

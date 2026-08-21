@@ -155,7 +155,10 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       const name = attr(cSld, "name");
       if (name !== undefined) {
         result.name = name;
-        if (!result.type) result.type = NAME_TO_TYPE[name] ?? name;
+        // Only map display names that have a real ST_SlideLayoutType value —
+        // free-form names ("True or False") are not legal @type values and
+        // PowerPoint rejects the part on real-open.
+        if (!result.type) result.type = NAME_TO_TYPE[name];
       }
 
       const bg = findChild(cSld, "p:bg");
