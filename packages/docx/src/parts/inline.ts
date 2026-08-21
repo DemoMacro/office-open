@@ -193,12 +193,12 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   if (fnRef !== undefined) {
     const id = typeof fnRef === "number" ? fnRef : fnRef.id;
     const cmf =
-      typeof fnRef === "object" && fnRef.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+      typeof fnRef === "object" && fnRef.customMarkFollows ? ' w:customMarkFollows="1"' : "";
     body += `<w:footnoteReference w:id="${id}"${cmf}/>`;
   } else if (enRef !== undefined) {
     const id = typeof enRef === "number" ? enRef : enRef.id;
     const cmf =
-      typeof enRef === "object" && enRef.customMarkFollows ? ' w:customMarkFollows="true"' : "";
+      typeof enRef === "object" && enRef.customMarkFollows ? ' w:customMarkFollows="1"' : "";
     body += `<w:endnoteReference w:id="${id}"${cmf}/>`;
   }
 
@@ -245,7 +245,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           const id = typeof bareFnRef === "number" ? bareFnRef : bareFnRef.id;
           const cmf =
             typeof bareFnRef === "object" && bareFnRef.customMarkFollows
-              ? ' w:customMarkFollows="true"'
+              ? ' w:customMarkFollows="1"'
               : "";
           body += `<w:footnoteReference w:id="${id}"${cmf}/>`;
           continue;
@@ -255,7 +255,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           const id = typeof bareEnRef === "number" ? bareEnRef : bareEnRef.id;
           const cmf =
             typeof bareEnRef === "object" && bareEnRef.customMarkFollows
-              ? ' w:customMarkFollows="true"'
+              ? ' w:customMarkFollows="1"'
               : "";
           body += `<w:endnoteReference w:id="${id}"${cmf}/>`;
           continue;
@@ -649,7 +649,7 @@ export function stringifyChildDispatch(
     const id = typeof fnRefChild === "number" ? fnRefChild : fnRefChild.id;
     const cmf =
       typeof fnRefChild === "object" && fnRefChild.customMarkFollows
-        ? ' w:customMarkFollows="true"'
+        ? ' w:customMarkFollows="1"'
         : "";
     // Round-tripped run properties win; a fresh reference gets the
     // conventional FootnoteReference character style. A RunOptions-flavored
@@ -665,7 +665,7 @@ export function stringifyChildDispatch(
     const id = typeof enRefChild === "number" ? enRefChild : enRefChild.id;
     const cmf =
       typeof enRefChild === "object" && enRefChild.customMarkFollows
-        ? ' w:customMarkFollows="true"'
+        ? ' w:customMarkFollows="1"'
         : "";
     const props = "properties" in child ? child.properties : undefined;
     const rPr = props

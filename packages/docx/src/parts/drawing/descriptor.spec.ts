@@ -440,7 +440,7 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain("<w:showingPlcHdr/>");
     expect(xml).toContain('w:storeItemID="{6C3C8BC8-F283-45AE-878A-BAB7291924A1}"');
     expect(xml).toContain('w:prefixMappings="xmlns:ns0=&apos;');
-    expect(xml).toContain('<w:text w:multiLine="false"/>');
+    expect(xml).toContain('<w:text w:multiLine="0"/>');
     expect(xml).toContain("<w:sdtEndPr/>");
     expect(xml).toContain('<w:t xml:space="preserve">     </w:t>');
 
@@ -529,7 +529,7 @@ describe("drawingDesc round-trip", () => {
     });
     expect(xml).toContain('<wpg:contentPart r:id="rId9" bwMode="auto">');
     expect(xml).toContain('<wpg:cNvContentPartPr isComment="0">');
-    expect(xml).toContain('<a:cpLocks noChangeAspect="true"/>');
+    expect(xml).toContain('<a:cpLocks noChangeAspect="1"/>');
 
     const doc = parseXml(xml);
     const el = doc.elements?.[0];

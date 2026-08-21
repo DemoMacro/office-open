@@ -313,7 +313,7 @@ export function stringifySdtPr(opts: SdtPropertiesOptions): string {
     parts.push("<w:richText/>");
   } else if (opts.text !== undefined) {
     const multiLine = opts.text.multiLine ?? false;
-    parts.push(`<w:text w:multiLine="${multiLine}"/>`);
+    parts.push(`<w:text w:multiLine="${multiLine ? 1 : 0}"/>`);
   } else if (opts.citation) {
     parts.push("<w:citation/>");
   } else if (opts.group) {

@@ -23,7 +23,9 @@ export function escapeXml(str: string): string {
 /**
  * Build an XML attribute string fragment from a record.
  * `undefined` values are automatically skipped.
- * String values are escaped via `escapeXml`.
+ * String values are escaped via `escapeXml`. Booleans serialize as 0/1 —
+ * the spelling Office itself writes for xsd:boolean attributes and
+ * ST_OnOff unions alike.
  *
  * @example
  * attrs({ id: 1, name: "foo", hidden: undefined })
@@ -33,7 +35,8 @@ export function attrs(record: Record<string, string | number | boolean | undefin
   const parts: string[] = [];
   for (const [key, v] of Object.entries(record)) {
     if (v !== undefined) {
-      parts.push(` ${key}="${typeof v === "string" ? escapeXml(v) : v}"`);
+      const value = typeof v === "string" ? escapeXml(v) : typeof v === "boolean" ? (v ? 1 : 0) : v;
+      parts.push(` ${key}="${value}"`);
     }
   }
   return parts.join("");
