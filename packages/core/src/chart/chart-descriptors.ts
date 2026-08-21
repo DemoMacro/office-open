@@ -362,8 +362,14 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
         : stringifyTitle(opts.title, ctx),
     );
   }
-  if (opts.numberFormat !== undefined)
-    parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="1"/>`);
+  if (opts.numberFormat !== undefined) {
+    // A plain string keeps the default sourceLinked=1; the object form
+    // round-trips an explicit decoupling from the source data.
+    const fmt =
+      typeof opts.numberFormat === "string" ? { formatCode: opts.numberFormat } : opts.numberFormat;
+    const linked = fmt.sourceLinked === undefined || fmt.sourceLinked ? 1 : 0;
+    parts.push(`<c:numFmt formatCode="${escapeXml(fmt.formatCode)}" sourceLinked="${linked}"/>`);
+  }
   if (opts.majorTickMark !== undefined) parts.push(valEl("c:majorTickMark", opts.majorTickMark));
   if (opts.minorTickMark !== undefined) parts.push(valEl("c:minorTickMark", opts.minorTickMark));
   if (opts.tickLabelPosition !== undefined)
@@ -2240,7 +2246,12 @@ function readAxis(el: XmlElement, kind: AxisKind, ctx: ReadContext): AxisOptions
   const numFmtEl = findChild(el, "c:numFmt");
   if (numFmtEl) {
     const formatCode = attr(numFmtEl, "formatCode");
-    if (formatCode) result.numberFormat = formatCode;
+    if (formatCode) {
+      const sourceLinked = attr(numFmtEl, "sourceLinked");
+      // Only a decoupled sourceLinked (0) needs the object form; the default
+      // 1 round-trips through the plain-string shorthand.
+      result.numberFormat = sourceLinked === "0" ? { formatCode, sourceLinked: false } : formatCode;
+    }
   }
   const majorTickMark = readValStr(el, "c:majorTickMark");
   if (majorTickMark) result.majorTickMark = majorTickMark as AxisTickMark;
@@ -2341,10 +2352,13 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
   stringify(opts: ChartSpaceOptions, ctx: WriteContext): string {
     const parts: string[] = [];
 
-    // Opening tag with namespaces
-    parts.push(
-      `<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">`,
-    );
+    // Opening tag with namespaces — the strict dialect re-declares the
+    // purl.oclc.org set a strict source package requires.
+    const ns =
+      opts.dialect === "strict"
+        ? `xmlns:c="http://purl.oclc.org/ooxml/drawingml/chart" xmlns:a="http://purl.oclc.org/ooxml/drawingml/main" xmlns:r="http://purl.oclc.org/ooxml/officeDocument/relationships"`
+        : `xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"`;
+    parts.push(`<c:chartSpace ${ns}>`);
 
     // Optional header elements — emitted only when set (round-trip from a
     // source that carried them). Fresh output omits them, matching the
@@ -2469,6 +2483,12 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
 
   parse(el: XmlElement, ctx: ReadContext) {
     const result: MutableChartSpaceResult = {};
+
+    // Namespace dialect — a strict root declares the purl.oclc.org chart
+    // namespace; everything else reads as transitional.
+    if (el.attributes?.["xmlns:c"] === "http://purl.oclc.org/ooxml/drawingml/chart") {
+      result.dialect = "strict";
+    }
 
     // Optional header elements — recorded only when present so stringify
     // re-emits exactly what the source carried.

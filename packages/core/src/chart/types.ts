@@ -294,6 +294,13 @@ export interface SecondaryChartGroupOptions {
 
 export interface ChartSpaceOptions {
   /**
+   * Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict,
+   * purl.oclc.org) source package rejects a chart re-serialized with
+   * transitional namespaces — parse records the dialect from the root element
+   * and stringify re-declares the matching namespace set.
+   */
+  dialect?: "transitional" | "strict";
+  /**
    * Chart title (c:title). An empty string round-trips a title placeholder
    * that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).
    */
@@ -533,6 +540,13 @@ export interface DisplayUnitsOptions {
   label?: boolean;
 }
 
+/** Explicit axis c:numFmt (CT_NumFmt) with a decoupled sourceLinked flag. */
+export interface AxisNumberFormatOptions {
+  formatCode: string;
+  /** 1 (default) links the format to the source data; 0 decouples it. */
+  sourceLinked?: boolean;
+}
+
 /**
  * Per-axis configuration. Covers EG_AxShared plus kind-specific children of
  * CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx. Field order follows the XSD
@@ -555,8 +569,12 @@ export interface AxisOptions {
   minorGridlines?: boolean | ChartLinesOptions;
   /** Axis title (c:title) — plain text or the full CT_Title object form. */
   title?: string | ChartTitleOptions;
-  /** c:numFmt formatCode; sourceLinked defaults to 1. */
-  numberFormat?: string;
+  /**
+   * c:numFmt — a plain string is the formatCode with the default
+   * sourceLinked=1; the object form carries an explicit sourceLinked (a
+   * source that decoupled the axis format from the data writes "0").
+   */
+  numberFormat?: string | AxisNumberFormatOptions;
   majorTickMark?: AxisTickMark;
   minorTickMark?: AxisTickMark;
   tickLabelPosition?: AxisTickLabelPosition;
