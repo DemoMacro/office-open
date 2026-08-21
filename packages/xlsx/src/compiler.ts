@@ -584,8 +584,10 @@ function compileWorksheetPart(
   // Worksheet uses buildWorksheetXml fast path (zero-allocation string concat)
   let sheetXml = buildWorksheetXml(wsOpts, wsContext);
 
-  // Collect formula cells for calcChain
-  const sheetIdx = i + 1;
+  // Collect formula cells for calcChain. calcChain's i attribute is the
+  // workbook sheetId (CT_Sheet @sheetId), not the sheet's position — the
+  // fallback matches the all-generated case where both coincide.
+  const sheetIdx = wsOpts.sheetId ?? i + 1;
   const wsRows = wsOpts.rows ?? [];
   for (let ri = 0; ri < wsRows.length; ri++) {
     const rowOpts = wsRows[ri]!;
@@ -1113,6 +1115,21 @@ function compileWorksheetPart(
       if (rid !== src) {
         sheetXml = sheetXml.replace(
           new RegExp(`(<pageSetup[^>]*r:id=")${src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(")`),
+          `$1${rid}$2`,
+        );
+      }
+    }
+    // pivotSelection r:id → pivotTable: same renumbering concern — the
+    // selection references a pivotTable by the source id, which a rebuilt
+    // rels table may have handed to a different part type.
+    if (wsOpts.pivotSelection?.rId) {
+      const src = wsOpts.pivotSelection.rId;
+      const rid = resolvePassthroughRid("/pivotTable", src);
+      if (rid !== src) {
+        sheetXml = sheetXml.replace(
+          new RegExp(
+            `(<pivotSelection[^>]*r:id=")${src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(")`,
+          ),
           `$1${rid}$2`,
         );
       }

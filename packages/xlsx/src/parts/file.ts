@@ -138,7 +138,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Workbook properties (CT_WorkbookPr) — includes defaultThemeVersion, which Excel
    * requires when the package carries a theme (dropping it makes the file unopenable) */
   workbookPr?: WorkbookPropertiesOptions;
-  /** Calculation chain cells (xl/calcChain.xml) — parse-only; compiler rebuilds from formulas */
+  /** Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler
+   * round-trips them verbatim and rebuilds from formula cells only when absent */
   calcChain?: CalcCell[];
   /** Pivot cache definitions — parse-only (CT-layer); compiler regenerates from sourceData */
   pivotCaches?: PivotCacheDefParseResult[];
