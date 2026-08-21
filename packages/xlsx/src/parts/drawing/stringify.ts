@@ -43,6 +43,7 @@ import type {
   GroupOptions,
   DrawingPictureOptions,
   DrawingChartOptions,
+  DrawingSmartArtOptions,
   ShapeOptions,
 } from "./types";
 import { ANCHOR_TYPES } from "./types";
@@ -53,6 +54,8 @@ export const XDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsh
 export const A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
 export const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 export const C_URI = "http://schemas.openxmlformats.org/drawingml/2006/chart";
+/** graphicData uri for the diagram (SmartArt) payload. */
+export const DGM_URI = "http://schemas.openxmlformats.org/drawingml/2006/diagram";
 
 export const DEFAULT_EXTENT_CX = 400000;
 export const DEFAULT_EXTENT_CY = 300000;
@@ -228,6 +231,37 @@ export function stringifyChart(chart: DrawingChartOptions, id: number, ctx?: Wri
     macro: chart.macro,
     hyperlink: chart.hyperlink,
   });
+  return wrapAnchor(anchor, `${frame}${clientData}`);
+}
+
+/** Anchored SmartArt: a graphicFrame whose graphicData points at the four
+ *  diagram parts through dgm:relIds (same anchor footprint as a chart). */
+export function stringifySmartArt(
+  smartArt: DrawingSmartArtOptions,
+  id: number,
+  ctx?: WriteContext,
+): string {
+  const anchor = { toCol: smartArt.col + 9, toRow: smartArt.row + 16, ...smartArt };
+  const clientData = clientDataXml(smartArt);
+  const isTwoCell = (anchor.anchorType ?? ANCHOR_TYPES.twoCell) === ANCHOR_TYPES.twoCell;
+  const cx = isTwoCell ? 0 : convertToEmu(anchor.extentCx ?? DEFAULT_EXTENT_CX);
+  const cy = isTwoCell ? 0 : convertToEmu(anchor.extentCy ?? DEFAULT_EXTENT_CY);
+  // Same nv/xfrm scaffolding as graphicFrameXml, with dgm:relIds replacing
+  // the c:chart payload.
+  const locks = smartArt.frameLocks
+    ? (graphicFrameLockingDesc.stringify(smartArt.frameLocks, ctx as WriteContext) ?? "")
+    : "";
+  const cNvGraphicFramePr = locks
+    ? `<xdr:cNvGraphicFramePr>${locks}</xdr:cNvGraphicFramePr>`
+    : "<xdr:cNvGraphicFramePr/>";
+  const macroAttr = smartArt.macro === undefined ? "" : ` macro="${escapeXml(smartArt.macro)}"`;
+  const frame =
+    `<xdr:graphicFrame${macroAttr}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, smartArt, `SmartArt ${id}`)}` +
+    `${cNvGraphicFramePr}</xdr:nvGraphicFramePr>` +
+    `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></xdr:xfrm>` +
+    `<a:graphic><a:graphicData uri="${DGM_URI}">` +
+    `<dgm:relIds xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" r:dm="${smartArt.dataRId}" r:lo="${smartArt.layoutRId}" r:qs="${smartArt.quickStyleRId}" r:cs="${smartArt.colorsRId}"/>` +
+    `</a:graphicData></a:graphic></xdr:graphicFrame>`;
   return wrapAnchor(anchor, `${frame}${clientData}`);
 }
 

@@ -83,6 +83,38 @@ describe("drawingDesc round-trip", () => {
     expect(images[1]?.row).toBe(10);
   });
 
+  it("round-trips smartArt relIds and anchor", () => {
+    const opts: DrawingOptions = {
+      smartArts: [
+        {
+          dataRId: "rId1",
+          layoutRId: "rId2",
+          quickStyleRId: "rId3",
+          colorsRId: "rId4",
+          col: 2,
+          row: 3,
+          toCol: 8,
+          toRow: 12,
+          name: "Diagram 1",
+        },
+      ],
+    };
+    const xml = drawingDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('uri="http://schemas.openxmlformats.org/drawingml/2006/diagram"');
+    expect(xml).toMatch(/r:dm="rId1" r:lo="rId2" r:qs="rId3" r:cs="rId4"/);
+
+    const result = roundTrip(opts);
+    const smartArt = result.smartArts![0]!;
+    expect(smartArt.dataRId).toBe("rId1");
+    expect(smartArt.layoutRId).toBe("rId2");
+    expect(smartArt.quickStyleRId).toBe("rId3");
+    expect(smartArt.colorsRId).toBe("rId4");
+    expect(smartArt.col).toBe(2);
+    expect(smartArt.row).toBe(3);
+    expect(smartArt.toCol).toBe(8);
+    expect(smartArt.toRow).toBe(12);
+    expect(smartArt.name).toBe("Diagram 1");
+  });
   it("round-trips chart", () => {
     const opts: DrawingOptions = {
       charts: [{ col: 1, row: 1, rId: "rId3" }],

@@ -36,6 +36,7 @@ import type {
   DrawingAnchorOptions,
   DrawingChartOptions,
   DrawingContentPartOptions,
+  DrawingSmartArtOptions,
   ConnectorOptions,
   GroupOptions,
   DrawingPictureOptions,
@@ -254,6 +255,48 @@ export function parseChartAnchor(
   if (!rId) return undefined;
 
   const result = { col: 1, row: 1, rId } as DrawingChartOptions;
+  Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
+  const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
+  const cNvGraphicFramePr = nvGraphicFramePr
+    ? findXdr(nvGraphicFramePr, "cNvGraphicFramePr")
+    : undefined;
+  if (cNvGraphicFramePr) {
+    const locks = findChild(cNvGraphicFramePr, "a:graphicFrameLocks");
+    if (locks) result.frameLocks = graphicFrameLockingDesc.parse(locks, ctx);
+  }
+  if (graphicFrame.attributes?.["macro"] !== undefined)
+    result.macro = String(graphicFrame.attributes["macro"]);
+
+  readAnchorFields(anchor, name, result);
+  return result;
+}
+
+/** Read an anchored SmartArt graphicFrame (graphicData > dgm:relIds). */
+export function parseSmartArtAnchor(
+  anchor: XmlElement,
+  graphicFrame: XmlElement,
+  name: string,
+  ctx: ReadContext,
+): DrawingSmartArtOptions | undefined {
+  const graphicData = findChild(
+    findChild(graphicFrame, "a:graphic") ?? graphicFrame,
+    "a:graphicData",
+  );
+  const relIds = graphicData ? findChild(graphicData, "dgm:relIds") : undefined;
+  const dm = relIds?.attributes?.["r:dm"] as string | undefined;
+  const lo = relIds?.attributes?.["r:lo"] as string | undefined;
+  const qs = relIds?.attributes?.["r:qs"] as string | undefined;
+  const cs = relIds?.attributes?.["r:cs"] as string | undefined;
+  if (!dm || !lo || !qs || !cs) return undefined;
+
+  const result = {
+    col: 1,
+    row: 1,
+    dataRId: dm,
+    layoutRId: lo,
+    quickStyleRId: qs,
+    colorsRId: cs,
+  } as DrawingSmartArtOptions;
   Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
   const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
   const cNvGraphicFramePr = nvGraphicFramePr

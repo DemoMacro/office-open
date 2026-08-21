@@ -176,6 +176,27 @@ export interface DrawingChartOptions
   macro?: string;
 }
 
+/**
+ * Anchored SmartArt (xdr:graphicFrame whose graphicData carries dgm:relIds).
+ * The four diagram parts (data/layout/quickStyle/colors) travel as passthrough
+ * parts; these ids wire the frame to them in the drawing rels.
+ */
+export interface DrawingSmartArtOptions
+  extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /** Diagram data part (dgm:relIds @r:dm). */
+  dataRId: string;
+  /** Diagram layout part (dgm:relIds @r:lo). */
+  layoutRId: string;
+  /** Diagram quick style part (dgm:relIds @r:qs). */
+  quickStyleRId: string;
+  /** Diagram colors part (dgm:relIds @r:cs). */
+  colorsRId: string;
+  /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
+  frameLocks?: GraphicFrameLockingOptions;
+  /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
+  macro?: string;
+}
+
 /** Anchored shape (xdr:sp): geometry + optional text body. */
 export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /**
@@ -270,6 +291,7 @@ export interface DrawingContentPartOptions extends DrawingAnchorOptions {
 export interface DrawingOptions {
   images?: DrawingPictureOptions[];
   charts?: DrawingChartOptions[];
+  smartArts?: DrawingSmartArtOptions[];
   shapes?: ShapeOptions[];
   connectors?: ConnectorOptions[];
   groups?: GroupOptions[];

@@ -389,6 +389,32 @@ export interface WorksheetChartOptions
   macro?: string;
 }
 
+/**
+ * SmartArt anchored in the sheet. The four diagram parts travel as passthrough
+ * parts; their package-absolute paths (as resolved from the source drawing
+ * rels) wire the frame to them — passthrough paths never move, so they stay
+ * valid verbatim.
+ */
+export interface WorksheetSmartArtOptions
+  extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /** Diagram data part (dgm:relIds @r:dm, e.g. "xl/diagrams/data1.xml"). */
+  dataPath: string;
+  /** Diagram layout part (dgm:relIds @r:lo). */
+  layoutPath: string;
+  /** Diagram quick style part (dgm:relIds @r:qs). */
+  quickStylePath: string;
+  /** Diagram colors part (dgm:relIds @r:cs). */
+  colorsPath: string;
+  /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
+  frameLocks?: GraphicFrameLockingOptions;
+  /** Document-order position inside the drawing part (round-trip only). */
+  zOrder?: number;
+  /** Original cNvPr id (round-trip only). */
+  shapeId?: number;
+  /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
+  macro?: string;
+}
+
 export interface SheetViewOptions {
   showGridLines?: boolean;
   showRowColHeaders?: boolean;
@@ -1360,6 +1386,8 @@ export interface WorksheetOptions {
   sortState?: SortStateOptions;
   images?: PictureOptions[];
   charts?: WorksheetChartOptions[];
+  /** Anchored SmartArt frames (xdr:graphicFrame with dgm:relIds). */
+  smartArts?: WorksheetSmartArtOptions[];
   /** Anchored shapes (xdr:sp): geometry + optional text body. */
   shapes?: ShapeOptions[];
   /** Anchored connectors (xdr:cxnSp): line/arrow geometry. */

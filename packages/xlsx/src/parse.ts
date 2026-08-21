@@ -57,7 +57,12 @@ import { workbookDesc } from "@parts/workbook";
 import type { PivotCacheReference } from "@parts/workbook";
 import type { RichTextOptions } from "@parts/worksheet";
 import { worksheetDesc } from "@parts/worksheet";
-import type { WorksheetChartOptions, PictureOptions, WorksheetOptions } from "@parts/worksheet";
+import type {
+  WorksheetChartOptions,
+  WorksheetSmartArtOptions,
+  PictureOptions,
+  WorksheetOptions,
+} from "@parts/worksheet";
 import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
 import type { SingleXmlCellOptions } from "@parts/xml-mapping";
 
@@ -512,6 +517,31 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           });
         }
         if (charts.length > 0) wsOpts.charts = charts;
+      }
+      if (drawingData.smartArts) {
+        const smartArts: WorksheetSmartArtOptions[] = [];
+        for (const anchor of drawingData.smartArts) {
+          // The diagram parts themselves pass through verbatim; carry their
+          // package-absolute paths so the compiler can re-wire the drawing rels.
+          const dataPath = readContext.resolveWorksheetRel(dr.target, anchor.dataRId);
+          const layoutPath = readContext.resolveWorksheetRel(dr.target, anchor.layoutRId);
+          const quickStylePath = readContext.resolveWorksheetRel(dr.target, anchor.quickStyleRId);
+          const colorsPath = readContext.resolveWorksheetRel(dr.target, anchor.colorsRId);
+          if (!dataPath || !layoutPath || !quickStylePath || !colorsPath) continue;
+          smartArts.push({
+            ...pickAnchorOptions(anchor),
+            ...pickNonVisualDrawingProperties(anchor),
+            dataPath,
+            layoutPath,
+            quickStylePath,
+            colorsPath,
+            ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
+            ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
+            ...(anchor.zOrder !== undefined ? { zOrder: anchor.zOrder } : {}),
+            ...(anchor.shapeId !== undefined ? { shapeId: anchor.shapeId } : {}),
+          });
+        }
+        if (smartArts.length > 0) wsOpts.smartArts = smartArts;
       }
       // Shapes/connectors/groups pass through unchanged (no media bridge).
       if (drawingData.shapes) wsOpts.shapes = drawingData.shapes;

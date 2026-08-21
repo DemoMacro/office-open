@@ -36,7 +36,11 @@ import { chartsheetDesc, type ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
 import { dialogsheetDesc, type DialogsheetOptions } from "@parts/dialogsheet";
-import type { DrawingChartOptions, DrawingPictureOptions } from "@parts/drawing";
+import type {
+  DrawingChartOptions,
+  DrawingPictureOptions,
+  DrawingSmartArtOptions,
+} from "@parts/drawing";
 import { pickAnchorOptions } from "@parts/drawing";
 import { drawingDesc } from "@parts/drawing";
 import { A_NS, R_NS, XDR_NS, graphicFrameXml, wrapAnchor } from "@parts/drawing/stringify";
@@ -583,6 +587,7 @@ function compileWorksheetPart(
 ): void {
   const imgOpts = wsOpts.images ?? [];
   const chartOpts = wsOpts.charts ?? [];
+  const smartArtOpts = wsOpts.smartArts ?? [];
   const shapeOpts = wsOpts.shapes ?? [];
   const connectorOpts = wsOpts.connectors ?? [];
   const groupOpts = wsOpts.groups ?? [];
@@ -617,6 +622,7 @@ function compileWorksheetPart(
   const hasMedia =
     imgOpts.length > 0 ||
     chartOpts.length > 0 ||
+    smartArtOpts.length > 0 ||
     shapeOpts.length > 0 ||
     connectorOpts.length > 0 ||
     groupOpts.length > 0;
@@ -665,6 +671,7 @@ function compileWorksheetPart(
   if (hasMedia) {
     const drawingImages: DrawingPictureOptions[] = [];
     const drawingCharts: DrawingChartOptions[] = [];
+    const drawingSmartArts: DrawingSmartArtOptions[] = [];
     const drawingRels = new Relationships();
     let rid = 1;
 
@@ -755,6 +762,36 @@ function compileWorksheetPart(
       state.globalChartIdx++;
     }
 
+    // Process SmartArt — the diagram parts themselves are passthrough, so the
+    // relationship targets stay exactly the source-relative form; only the
+    // rIds are renumbered into the rebuilt drawing rels.
+    for (const sa of smartArtOpts) {
+      const relTarget = (path: string): string =>
+        path.startsWith("xl/") ? `../${path.slice(3)}` : path;
+      // One relationship per (kind, target) — anchors sharing a diagram set
+      // share its relationships too.
+      const addDiagRel = (relType: RelationshipType, path: string): string => {
+        const target = relTarget(path);
+        const existing = drawingRels.idOf(relType, target);
+        if (existing !== undefined) return existing;
+        drawingRels.addRelationship(rid, relType, target);
+        return `rId${rid++}`;
+      };
+      const relBase = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+      drawingSmartArts.push({
+        ...pickAnchorOptions(sa),
+        ...pickNonVisualDrawingProperties(sa),
+        dataRId: addDiagRel(`${relBase}/diagramData`, sa.dataPath),
+        layoutRId: addDiagRel(`${relBase}/diagramLayout`, sa.layoutPath),
+        quickStyleRId: addDiagRel(`${relBase}/diagramQuickStyle`, sa.quickStylePath),
+        colorsRId: addDiagRel(`${relBase}/diagramColors`, sa.colorsPath),
+        ...(sa.frameLocks ? { frameLocks: sa.frameLocks } : {}),
+        ...(sa.macro !== undefined ? { macro: sa.macro } : {}),
+        ...(sa.zOrder !== undefined ? { zOrder: sa.zOrder } : {}),
+        ...(sa.shapeId !== undefined ? { shapeId: sa.shapeId } : {}),
+      });
+    }
+
     // Generate drawing XML (via descriptor). Snapshot the hyperlink registry
     // first so only runs stringified for this sheet's drawing resolve here.
     const hyperlinkBase = ctx.hyperlinks.length;
@@ -762,6 +799,7 @@ function compileWorksheetPart(
       {
         images: drawingImages,
         charts: drawingCharts,
+        smartArts: drawingSmartArts,
         shapes: shapeOpts,
         connectors: connectorOpts,
         groups: groupOpts,

@@ -18,6 +18,7 @@ import {
   parseGroupAnchor,
   parseImageAnchor,
   parseShapeAnchor,
+  parseSmartArtAnchor,
   findXdr,
 } from "./parse";
 import {
@@ -28,6 +29,7 @@ import {
   stringifyContentPart,
   stringifyImage,
   stringifyShape,
+  stringifySmartArt,
   wrapAnchor,
   A_NS,
   R_NS,
@@ -36,6 +38,7 @@ import {
 import type {
   DrawingChartOptions,
   DrawingContentPartOptions,
+  DrawingSmartArtOptions,
   ConnectorOptions,
   GroupOptions,
   DrawingPictureOptions,
@@ -67,6 +70,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
   stringify(opts, ctx) {
     const images = opts.images ?? [];
     const charts = opts.charts ?? [];
+    const smartArts = opts.smartArts ?? [];
     const shapes = opts.shapes ?? [];
     const connectors = opts.connectors ?? [];
     const groups = opts.groups ?? [];
@@ -74,6 +78,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
     const total =
       images.length +
       charts.length +
+      smartArts.length +
       shapes.length +
       connectors.length +
       groups.length +
@@ -100,6 +105,12 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
         order: chart.zOrder,
         shapeId: chart.shapeId,
         emit: (id) => stringifyChart(chart, id, ctx),
+      });
+    for (const smartArt of smartArts)
+      emissions.push({
+        order: smartArt.zOrder,
+        shapeId: smartArt.shapeId,
+        emit: (id) => stringifySmartArt(smartArt, id, ctx),
       });
     for (const shape of shapes)
       emissions.push({
@@ -153,6 +164,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
     const result: Partial<DrawingOptions> = {};
     const images: DrawingPictureOptions[] = [];
     const charts: DrawingChartOptions[] = [];
+    const smartArts: DrawingSmartArtOptions[] = [];
     const shapes: ShapeOptions[] = [];
     const connectors: ConnectorOptions[] = [];
     const groups: GroupOptions[] = [];
@@ -190,7 +202,15 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       const graphicFrame = findXdr(anchor, "graphicFrame");
       if (graphicFrame) {
         const chart = parseChartAnchor(anchor, graphicFrame, name, ctx);
-        if (chart) charts.push(stamp(chart, anchor));
+        if (chart) {
+          charts.push(stamp(chart, anchor));
+          continue;
+        }
+        const smartArt = parseSmartArtAnchor(anchor, graphicFrame, name, ctx);
+        if (smartArt) {
+          smartArts.push(stamp(smartArt, anchor));
+          continue;
+        }
         continue;
       }
 
@@ -221,6 +241,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
 
     if (images.length > 0) result.images = images;
     if (charts.length > 0) result.charts = charts;
+    if (smartArts.length > 0) result.smartArts = smartArts;
     if (shapes.length > 0) result.shapes = shapes;
     if (connectors.length > 0) result.connectors = connectors;
     if (groups.length > 0) result.groups = groups;
