@@ -73,11 +73,21 @@ export interface ChartSeriesCommon {
   ext?: string;
 }
 
-// ── BubbleSeriesData ──
+// ── ScatterSeriesData ──
 
-export interface BubbleSeriesData extends ChartSeriesCommon {
+/**
+ * XY numeric series (c:xVal/c:yVal) — a scatter series without bubble sizes.
+ * `valueFormula`/`formatCode` describe the y reference, matching the
+ * ChartSeriesData value-slot semantics.
+ */
+export interface ScatterSeriesData extends ChartSeriesCommon {
   xValues: readonly number[];
   yValues: readonly number[];
+}
+
+// ── BubbleSeriesData ──
+
+export interface BubbleSeriesData extends ScatterSeriesData {
   bubbleSize: readonly number[];
 }
 
@@ -370,7 +380,10 @@ export interface ChartSpaceOptions {
   multiLevelCategories?: readonly (readonly string[])[];
   /** Literal category labels, emitted as c:strLit (c:cat > c:strLit). */
   categoryLabels?: readonly string[];
-  series: readonly ChartSeriesData[] | readonly BubbleSeriesData[];
+  // Bubble stays an explicit union arm: TS would accept a BubbleSeriesData[]
+  // as ScatterSeriesData[] (structural subtype), but the generated schema's
+  // closed-world properties reject the extra bubbleSize field.
+  series: readonly ChartSeriesData[] | readonly ScatterSeriesData[] | readonly BubbleSeriesData[];
   /**
    * Vary data-point colors (chart-group-level c:varyColors). Emitted only
    * when set — the corpus is mixed and fresh output stays bare.

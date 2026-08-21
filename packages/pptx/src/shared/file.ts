@@ -39,7 +39,11 @@ import type { TransitionOptions } from "@shared/transition";
 
 // ── Public interfaces ──
 
-export type SlideSize = "16:9" | "4:3" | { width: number; height: number };
+/** Slide size — named classes or explicit dimensions in EMU or UniversalMeasure. */
+export type SlideSize =
+  | "16:9"
+  | "4:3"
+  | { width: number | UniversalMeasure; height: number | UniversalMeasure };
 
 /** Placeholder slot map — `false` hides the slot, a definition overrides its
  * position and facets, omitted shows the default. Same value shape as

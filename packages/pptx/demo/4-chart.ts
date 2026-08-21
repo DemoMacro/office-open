@@ -119,8 +119,13 @@ const options: PresentationOptions = {
             height: "9.3cm",
             type: "scatter",
             title: "Height vs Weight",
-            categories: ["Person A", "Person B", "Person C", "Person D"],
-            series: [{ name: "Measurements", values: [160, 175, 155, 170] }],
+            series: [
+              {
+                name: "Measurements",
+                xValues: [160, 175, 155, 170],
+                yValues: [60, 74, 55, 68],
+              },
+            ],
           },
         },
       ],

@@ -4,7 +4,7 @@ import { describe, it, expect } from "vite-plus/test";
 import { stringify, parse } from "../descriptor";
 import type { ReadContext, WriteContext } from "../descriptor";
 import { chartSpaceDesc } from "./chart-descriptors";
-import type { ChartSeriesData, ChartSpaceOptions } from "./types";
+import type { ChartSeriesData, ChartSpaceOptions, ScatterSeriesData } from "./types";
 
 function roundTrip(opts: ChartSpaceOptions): ChartSpaceOptions {
   const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
@@ -75,6 +75,19 @@ describe("chartSpaceDesc", () => {
     };
     const result = roundTrip(opts);
     expect(result.type).toBe("scatter");
+  });
+
+  it("round-trips numeric-axis scatter series (c:xVal/c:yVal)", () => {
+    const opts: ChartSpaceOptions = {
+      type: "scatter",
+      series: [{ name: "Height vs Weight", xValues: [160, 170, 180], yValues: [55, 70, 85] }],
+    };
+    const result = roundTrip(opts);
+    expect(result.type).toBe("scatter");
+    const series = result.series as ScatterSeriesData[];
+    expect(series[0]!.xValues).toEqual([160, 170, 180]);
+    expect(series[0]!.yValues).toEqual([55, 70, 85]);
+    expect("bubbleSize" in series[0]!).toBe(false);
   });
 
   it("round-trips bar chart type (distinguished from column via c:barDir)", () => {

@@ -2347,7 +2347,7 @@
           "type": "array"
         }
       },
-      "required": ["xValues", "yValues", "bubbleSize"],
+      "required": ["bubbleSize", "xValues", "yValues"],
       "type": "object"
     },
     "BuiltInDisplayUnit": {
@@ -3086,6 +3086,12 @@
             {
               "items": {
                 "$ref": "#/definitions/ChartSeriesData"
+              },
+              "type": "array"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/ScatterSeriesData"
               },
               "type": "array"
             },
@@ -10057,6 +10063,113 @@
       "required": ["r", "g", "b"],
       "type": "object"
     },
+    "ScatterSeriesData": {
+      "additionalProperties": false,
+      "description": "XY numeric series (c:xVal/c:yVal) — a scatter series without bubble sizes. `valueFormula`/`formatCode` describe the y reference, matching the ChartSeriesData value-slot semantics.",
+      "properties": {
+        "bubble3D": {
+          "description": "3D bubble (c:bubble3D on the bubble series).",
+          "type": "boolean"
+        },
+        "dataLabels": {
+          "$ref": "#/definitions/DataLabelsOptions"
+        },
+        "dataPoints": {
+          "description": "Per-point overrides (c:dPt), emitted after spPr in ser order.",
+          "items": {
+            "$ref": "#/definitions/DataPointOptions"
+          },
+          "type": "array"
+        },
+        "errorBars": {
+          "$ref": "#/definitions/ErrorBarOptions"
+        },
+        "explosion": {
+          "description": "Pie slice explosion offset in percent (c:explosion).",
+          "type": "number"
+        },
+        "ext": {
+          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "type": "string"
+        },
+        "formatCode": {
+          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
+          "type": "string"
+        },
+        "index": {
+          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
+          "type": "number"
+        },
+        "invertIfNegative": {
+          "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
+          "type": "boolean"
+        },
+        "marker": {
+          "$ref": "#/definitions/MarkerOptions",
+          "description": "Line/scatter/radar marker (c:marker)."
+        },
+        "name": {
+          "description": "Series name; absent when the source series carried no c:tx.",
+          "type": "string"
+        },
+        "nameFormula": {
+          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
+          "type": "string"
+        },
+        "nameLiteral": {
+          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
+          "type": "boolean"
+        },
+        "order": {
+          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
+          "type": "number"
+        },
+        "pictureOptions": {
+          "$ref": "#/definitions/PictureOptionsOptions",
+          "description": "Picture-fill options (c:pictureOptions, bar/area)."
+        },
+        "shape": {
+          "$ref": "#/definitions/BarShape",
+          "description": "3D bar column shape (c:shape, bar3D)."
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip."
+        },
+        "smooth": {
+          "description": "Smooth the line (c:smooth, line/scatter).",
+          "type": "boolean"
+        },
+        "trendlines": {
+          "items": {
+            "$ref": "#/definitions/TrendlineOptions"
+          },
+          "type": "array"
+        },
+        "valueFormula": {
+          "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
+          "type": "string"
+        },
+        "valueLiteral": {
+          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
+          "type": "boolean"
+        },
+        "xValues": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "yValues": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["xValues", "yValues"],
+      "type": "object"
+    },
     "Scene3DOptions": {
       "additionalProperties": false,
       "description": "Options for a 3D scene (CT_Scene3D).\n\nBoth `camera` and `lightRig` are required. `backdrop` is optional.",
@@ -11141,16 +11254,31 @@
           "additionalProperties": false,
           "properties": {
             "height": {
-              "type": "number"
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/definitions/UniversalMeasure"
+                }
+              ]
             },
             "width": {
-              "type": "number"
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/definitions/UniversalMeasure"
+                }
+              ]
             }
           },
           "required": ["width", "height"],
           "type": "object"
         }
-      ]
+      ],
+      "description": "Slide size — named classes or explicit dimensions in EMU or UniversalMeasure."
     },
     "SlideSyncOptions": {
       "additionalProperties": false,

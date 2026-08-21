@@ -62,6 +62,7 @@ import type {
   PictureFormat,
   BarShape,
   ChartSeriesCommon,
+  ScatterSeriesData,
   ChartTitleOptions,
   ManualLayoutOptions,
   SurfaceOptions,
@@ -809,7 +810,7 @@ function stringifyDataPoint(opts: DataPointOptions, ctx: WriteContext): string {
 
 function stringifySeries(
   index: number,
-  series: ChartSeriesData | BubbleSeriesData,
+  series: ChartSeriesData | ScatterSeriesData,
   opts: ChartSpaceOptions,
   ctx: WriteContext,
   groupType?: ChartType,
@@ -866,10 +867,18 @@ function stringifySeries(
     parts.push(`<c:yVal>${stringifyNumRef(bs.yValues)}</c:yVal>`);
     parts.push(`<c:bubbleSize>${stringifyNumRef(bs.bubbleSize)}</c:bubbleSize>`);
   } else if (chartType === "scatter") {
-    // Scatter x values share the category source model — numeric x axes carry
-    // c:numRef/c:numCache like numeric categories.
-    parts.push(`<c:xVal>${stringifyCategorySource(opts)}</c:xVal>`);
-    parts.push(`<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:yVal>`);
+    if ("xValues" in series) {
+      // True numeric axes: c:xVal/c:yVal are CT_NumDataSource references.
+      parts.push(`<c:xVal>${stringifyNumRef(series.xValues)}</c:xVal>`);
+      parts.push(
+        `<c:yVal>${stringifyNumRef(series.yValues, series.valueFormula, series.formatCode)}</c:yVal>`,
+      );
+    } else {
+      // Label-x shape: x values share the category source model — string
+      // labels round-trip through c:strRef like regular categories.
+      parts.push(`<c:xVal>${stringifyCategorySource(opts)}</c:xVal>`);
+      parts.push(`<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:yVal>`);
+    }
   } else if (hasCategoryData(opts)) {
     parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
     parts.push(
@@ -1351,6 +1360,17 @@ function readNumLitPoints(numLit: XmlElement): number[] {
     }
   }
   return result;
+}
+
+/** A scatter series carries numeric x values when c:xVal holds the
+ * CT_NumDataSource choice (numRef/numLit); the label-x shape stringifies
+ * x as a strRef category source instead. */
+function hasNumericXRef(serEl: XmlElement): boolean {
+  const xVal = findChild(serEl, "c:xVal");
+  return (
+    xVal !== undefined &&
+    (findChild(xVal, "c:numRef") !== undefined || findChild(xVal, "c:numLit") !== undefined)
+  );
 }
 
 function readNumCache(el: XmlElement): number[] {
@@ -2660,6 +2680,31 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
             });
           }
           result.series = bubbleSeries as BubbleSeriesData[];
+        } else if (detectedType === "scatter" && hasNumericXRef(seriesEls[0]!)) {
+          // Numeric-axis scatter (c:xVal/c:yVal as CT_NumDataSource) — per-series
+          // xy arrays; the label-x shape falls through to the category path.
+          const xySeries: ScatterSeriesData[] = [];
+          for (const serEl of seriesEls) {
+            const { name, literal: nameLiteral } = readSeriesName(serEl);
+            const txEl = findChild(serEl, "c:tx");
+            const nameFormula = txEl ? readRefMeta(txEl).formula : undefined;
+            const xVal = findChild(serEl, "c:xVal");
+            const yVal = findChild(serEl, "c:yVal");
+            const valueLiteral = yVal ? findChild(yVal, "c:numLit") !== undefined : false;
+            const yMeta = yVal ? readRefMeta(yVal) : {};
+            xySeries.push({
+              name,
+              ...(nameLiteral ? { nameLiteral } : {}),
+              ...(nameFormula ? { nameFormula } : {}),
+              ...(valueLiteral ? { valueLiteral } : {}),
+              ...(yMeta.formula ? { valueFormula: yMeta.formula } : {}),
+              ...(yMeta.formatCode ? { formatCode: yMeta.formatCode } : {}),
+              xValues: xVal ? readNumCache(xVal) : [],
+              yValues: yVal ? readNumCache(yVal) : [],
+              ...readSeriesCommon(serEl, ctx),
+            });
+          }
+          result.series = xySeries;
         } else {
           const chartSeries: ChartSeriesData[] = [];
           let categories: string[] | undefined;
