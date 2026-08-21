@@ -159,6 +159,15 @@ export interface DrawingPictureOptions
   preferRelativeResize?: boolean;
   /** Image adjustment effects carried inside a:blip (a:lum, a:duotone, …). */
   blipEffects?: BlipEffectsOptions;
+  /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
+  useLocalDpi?: boolean;
+  /**
+   * Verbatim a:blip `a:extLst` inner XML for extensions beyond useLocalDpi
+   * (a14 imgProps artistic effects, …). Round-trip only; subsumes
+   * {@link useLocalDpi} when the source list carries both. Named blipExt to
+   * avoid colliding with the inherited cNvPr {@link ext} channel.
+   */
+  blipExt?: string;
 }
 
 export interface DrawingChartOptions

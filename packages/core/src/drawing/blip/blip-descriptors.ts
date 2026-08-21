@@ -6,7 +6,7 @@
 
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, attr } from "@office-open/xml";
+import { findChild, attr, stringifyElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
@@ -343,6 +343,12 @@ export type BlipDescriptorOptions = BlipOptions & {
    * hint, the dominant non-SVG a:blip ext content.
    */
   useLocalDpi?: boolean;
+  /**
+   * Verbatim `a:extLst` inner XML for extensions beyond useLocalDpi (a14
+   * imgProps artistic effects, …). Round-trip only: takes precedence over
+   * {@link useLocalDpi}, which it subsumes when the source list carries both.
+   */
+  ext?: string;
 };
 
 export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
@@ -363,7 +369,10 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
     if (opts.blipEffects) {
       parts.push(stringifyBlipEffects(opts.blipEffects, ctx));
     }
-    if (opts.useLocalDpi !== undefined) {
+    // The verbatim channel subsumes useLocalDpi when both would apply.
+    if (opts.ext !== undefined) {
+      parts.push(`<a:extLst>${opts.ext}</a:extLst>`);
+    } else if (opts.useLocalDpi !== undefined) {
       parts.push(
         `<a:extLst><a:ext uri="${USE_LOCAL_DPI_EXT_URI}"><a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" val="${opts.useLocalDpi ? 1 : 0}"/></a:ext></a:extLst>`,
       );
@@ -390,12 +399,23 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
     if (effects) result.blipEffects = effects;
     const extLst = findChild(el, "a:extLst");
     if (extLst) {
-      for (const ext of extLst.elements ?? []) {
-        if (ext.name !== "a:ext" || !extUriMatches(attr(ext, "uri"), USE_LOCAL_DPI_EXT_URI))
-          continue;
-        const useLocalDpi = findChild(ext, "a14:useLocalDpi");
-        if (useLocalDpi !== undefined)
-          result.useLocalDpi = parseOnOff(attr(useLocalDpi, "val")) ?? true;
+      // Extensions beyond useLocalDpi (a14 imgProps effects, …) have no
+      // structured model — keep the whole list verbatim and skip the
+      // useLocalDpi extraction so the two channels never double-emit.
+      const hasUnmodeled = (extLst.elements ?? []).some(
+        (ext) => ext.name === "a:ext" && !extUriMatches(attr(ext, "uri"), USE_LOCAL_DPI_EXT_URI),
+      );
+      if (hasUnmodeled) {
+        const inner = (extLst.elements ?? []).map((e) => stringifyElement(e)).join("");
+        if (inner) result.ext = inner;
+      } else {
+        for (const ext of extLst.elements ?? []) {
+          if (ext.name !== "a:ext" || !extUriMatches(attr(ext, "uri"), USE_LOCAL_DPI_EXT_URI))
+            continue;
+          const useLocalDpi = findChild(ext, "a14:useLocalDpi");
+          if (useLocalDpi !== undefined)
+            result.useLocalDpi = parseOnOff(attr(useLocalDpi, "val")) ?? true;
+        }
       }
     }
     return result as BlipDescriptorOptions;

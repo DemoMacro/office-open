@@ -458,6 +458,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
                   ? { preferRelativeResize: image.preferRelativeResize }
                   : {}),
                 ...(image.blipEffects ? { blipEffects: image.blipEffects } : {}),
+                ...(image.useLocalDpi !== undefined ? { useLocalDpi: image.useLocalDpi } : {}),
+                ...(image.blipExt !== undefined ? { blipExt: image.blipExt } : {}),
                 ...(image.locking ? { locking: image.locking } : {}),
                 ...(image.hyperlink ? { hyperlink: image.hyperlink } : {}),
                 ...(image.zOrder !== undefined ? { zOrder: image.zOrder } : {}),
@@ -486,6 +488,8 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
               ? { preferRelativeResize: image.preferRelativeResize }
               : {}),
             ...(image.blipEffects ? { blipEffects: image.blipEffects } : {}),
+            ...(image.useLocalDpi !== undefined ? { useLocalDpi: image.useLocalDpi } : {}),
+            ...(image.blipExt !== undefined ? { blipExt: image.blipExt } : {}),
             ...(image.locking ? { locking: image.locking } : {}),
             ...(image.hyperlink ? { hyperlink: image.hyperlink } : {}),
             ...(image.zOrder !== undefined ? { zOrder: image.zOrder } : {}),

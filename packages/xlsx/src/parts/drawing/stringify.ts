@@ -143,6 +143,12 @@ function picXml(
     ? `<xdr:cNvPicPr${prAttr}>${locks}</xdr:cNvPicPr>`
     : `<xdr:cNvPicPr${prAttr}/>`;
   const effects = img.blipEffects ? stringifyBlipEffects(img.blipEffects, ctx) : "";
+  // The blip extension list: the verbatim channel subsumes useLocalDpi.
+  const extLst = img.blipExt
+    ? `<a:extLst>${img.blipExt}</a:extLst>`
+    : img.useLocalDpi !== undefined
+      ? `<a:extLst><a:ext uri="{28A0092B-C50C-407E-A947-70E740481C1C}"><a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" val="${img.useLocalDpi ? 1 : 0}"/></a:ext></a:extLst>`
+      : "";
   // r:embed carries the embedded copy, r:link the external source — a
   // linked-only picture has no rId, a purely embedded one no linkRId.
   const blipAttrs: string[] = [];
@@ -150,7 +156,8 @@ function picXml(
   if (img.linkRId) blipAttrs.push(`r:link="${img.linkRId}"`);
   const attrs = blipAttrs.join(" ");
   const open = blipAttrs.length ? `<a:blip ${attrs}` : "<a:blip";
-  const blip = effects ? `${open}>${effects}</a:blip>` : `${open}/>`;
+  const blipContent = effects + extLst;
+  const blip = blipContent ? `${open}>${blipContent}</a:blip>` : `${open}/>`;
   const srcRect = img.sourceRectangle ? createSourceRectangle(img.sourceRectangle) : "";
   const bwModeAttr = img.blackWhiteMode ? ` bwMode="${img.blackWhiteMode}"` : "";
   return (

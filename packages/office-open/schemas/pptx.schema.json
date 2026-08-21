@@ -1478,6 +1478,10 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "fileName": {
           "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the frame name.",
           "type": "string"
@@ -2854,6 +2858,10 @@
           ],
           "description": "Drop lines (c:dropLines, line/area/stock)."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
           "description": "External linked workbook (c:externalData, after c:txPr)."
@@ -3980,6 +3988,10 @@
         "endConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:endCxn — end endpoint glued to a shape connection site."
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
@@ -5931,6 +5943,10 @@
           "$ref": "#/definitions/EffectListOptions",
           "description": "Group-level effects (EG_EffectProperties on grpSpPr)."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "fill": {
           "$ref": "#/definitions/FillOptions",
           "description": "Group-level fill (EG_FillProperties on grpSpPr)."
@@ -6807,6 +6823,10 @@
           "$ref": "#/definitions/EffectListOptions",
           "description": "Effect list (a:effectLst) inside spPr. An empty object emits the bare element."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "fill": {
           "$ref": "#/definitions/FillOptions"
         },
@@ -6922,6 +6942,10 @@
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hasCustomPrompt": {
@@ -7863,6 +7887,10 @@
           "$ref": "#/definitions/OleEmbedOptions",
           "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). Mutually exclusive with  {@link  link }  — p:oleObj's content model is a required choice between p:embed and p:link."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "hasCustomPrompt": {
           "type": "boolean"
         },
@@ -8594,6 +8622,10 @@
           "$ref": "#/definitions/EffectListOptions",
           "description": "Shape-level effects on p:spPr (e.g. shadow/reflection)."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "fileName": {
           "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the shape name.",
           "type": "string"
@@ -8817,6 +8849,10 @@
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions"
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
@@ -11146,6 +11182,10 @@
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "hasCustomPrompt": {
           "type": "boolean"
         },
@@ -11820,6 +11860,10 @@
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
           "type": "string"
         },
         "firstCol": {
@@ -13270,6 +13314,10 @@
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
           "type": "string"
         },
         "fileName": {

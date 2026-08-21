@@ -724,6 +724,8 @@ function compileWorksheetPart(
           ? { preferRelativeResize: img.preferRelativeResize }
           : {}),
         ...(img.blipEffects ? { blipEffects: img.blipEffects } : {}),
+        ...(img.useLocalDpi !== undefined ? { useLocalDpi: img.useLocalDpi } : {}),
+        ...(img.blipExt !== undefined ? { blipExt: img.blipExt } : {}),
         ...(img.locking ? { locking: img.locking } : {}),
         ...(img.hyperlink ? { hyperlink: img.hyperlink } : {}),
         ...(img.zOrder !== undefined ? { zOrder: img.zOrder } : {}),

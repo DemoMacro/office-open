@@ -3617,6 +3617,10 @@
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "extentCx": {
           "anyOf": [
             {
@@ -6637,6 +6641,10 @@
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
@@ -6765,6 +6773,10 @@
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
         },
         "extentCx": {
           "anyOf": [
@@ -6901,6 +6913,10 @@
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hidden": {
@@ -9237,6 +9253,10 @@
           "$ref": "#/definitions/BlipEffectsOptions",
           "description": "Image adjustment effects carried inside a:blip (a:lum, a:duotone, …)."
         },
+        "blipExt": {
+          "description": "Verbatim a:blip `a:extLst` inner XML for extensions beyond useLocalDpi (a14 imgProps artistic effects, …). Round-trip only; subsumes  {@link  useLocalDpi }  when the source list carries both.",
+          "type": "string"
+        },
         "col": {
           "description": "1-based column (from marker)",
           "type": "number"
@@ -9267,6 +9287,10 @@
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
         },
         "extentCx": {
           "anyOf": [
@@ -9386,6 +9410,10 @@
         "type": {
           "enum": ["png", "jpg", "wmf", "emf"],
           "type": "string"
+        },
+        "useLocalDpi": {
+          "description": "Local-DPI display hint (a14:useLocalDpi in the a:blip extension list).",
+          "type": "boolean"
         },
         "zOrder": {
           "description": "Document-order position inside the drawing part (z-order when objects overlap). Round-trip only; fresh authoring uses insertion order.",
@@ -13023,6 +13051,10 @@
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "extentCx": {
           "anyOf": [
             {
@@ -16402,6 +16434,10 @@
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
         "extentCx": {
           "anyOf": [
             {
@@ -17048,6 +17084,13 @@
           },
           "type": "array"
         },
+        "smartArts": {
+          "description": "Anchored SmartArt frames (xdr:graphicFrame with dgm:relIds).",
+          "items": {
+            "$ref": "#/definitions/WorksheetSmartArtOptions"
+          },
+          "type": "array"
+        },
         "smartTags": {
           "description": "Cell smart tags (CT_SmartTags)",
           "items": {
@@ -17082,6 +17125,190 @@
           "type": "array"
         }
       },
+      "type": "object"
+    },
+    "WorksheetSmartArtOptions": {
+      "additionalProperties": false,
+      "description": "SmartArt anchored in the sheet. The four diagram parts travel as passthrough parts; their package-absolute paths (as resolved from the source drawing rels) wire the frame to them — passthrough paths never move, so they stay valid verbatim.",
+      "properties": {
+        "absoluteX": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Absolute X in EMU (absoluteAnchor)."
+        },
+        "absoluteY": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Absolute Y in EMU (absoluteAnchor)."
+        },
+        "anchorType": {
+          "$ref": "#/definitions/AnchorType",
+          "description": "Anchor type (default \"twoCell\")."
+        },
+        "col": {
+          "description": "1-based column (from marker)",
+          "type": "number"
+        },
+        "colOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Column offset in EMU (default 0)"
+        },
+        "colorsPath": {
+          "description": "Diagram colors part (dgm:relIds",
+          "type": "string"
+        },
+        "creationId": {
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
+          "type": "string"
+        },
+        "dataPath": {
+          "description": "Diagram data part (dgm:relIds",
+          "type": "string"
+        },
+        "description": {
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
+        },
+        "editAs": {
+          "$ref": "#/definitions/EditAsType",
+          "description": "editAs for twoCellAnchor (default \"oneCell\")."
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "type": "string"
+        },
+        "extentCx": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Anchor extent width in EMU (oneCell/absoluteAnchor ext, default 400000)."
+        },
+        "extentCy": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
+        },
+        "frameLocks": {
+          "$ref": "#/definitions/GraphicFrameLockingOptions",
+          "description": "Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty."
+        },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
+        "layoutPath": {
+          "description": "Diagram layout part (dgm:relIds",
+          "type": "string"
+        },
+        "locksWithSheet": {
+          "description": "Lock anchor with sheet (default true)",
+          "type": "boolean"
+        },
+        "macro": {
+          "description": "Macro reference (CT_GraphicFrame/@macro); empty string round-trips.",
+          "type": "string"
+        },
+        "name": {
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
+          "type": "string"
+        },
+        "printsWithSheet": {
+          "description": "Print with sheet (default true)",
+          "type": "boolean"
+        },
+        "quickStylePath": {
+          "description": "Diagram quick style part (dgm:relIds",
+          "type": "string"
+        },
+        "row": {
+          "description": "1-based row (from marker)",
+          "type": "number"
+        },
+        "rowOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Row offset in EMU (default 0)"
+        },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only).",
+          "type": "number"
+        },
+        "title": {
+          "description": "XSD `@title`.",
+          "type": "string"
+        },
+        "toCol": {
+          "description": "To cell column (1-based) for twoCellAnchor. Defaults to col + 1.",
+          "type": "number"
+        },
+        "toColOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "To cell column offset in EMU."
+        },
+        "toRow": {
+          "description": "To cell row (1-based) for twoCellAnchor. Defaults to row + 1.",
+          "type": "number"
+        },
+        "toRowOffset": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "To cell row offset in EMU."
+        },
+        "zOrder": {
+          "description": "Document-order position inside the drawing part (round-trip only).",
+          "type": "number"
+        }
+      },
+      "required": ["col", "colorsPath", "dataPath", "layoutPath", "quickStylePath", "row"],
       "type": "object"
     },
     "XYAdjustHandle": {

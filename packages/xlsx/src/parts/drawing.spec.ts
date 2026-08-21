@@ -115,6 +115,37 @@ describe("drawingDesc round-trip", () => {
     expect(smartArt.toRow).toBe(12);
     expect(smartArt.name).toBe("Diagram 1");
   });
+
+  it("round-trips image blip useLocalDpi", () => {
+    const opts: DrawingOptions = {
+      images: [{ rId: "rId1", col: 1, row: 1, useLocalDpi: false }],
+    };
+    const xml = drawingDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain("<a14:useLocalDpi");
+    expect(xml).toContain('val="0"');
+
+    const result = roundTrip(opts);
+    expect(result.images![0]!.useLocalDpi).toBe(false);
+    expect(result.images![0]!.blipExt).toBeUndefined();
+  });
+
+  it("round-trips image blip extensions verbatim", () => {
+    const ext =
+      '<a:ext uri="{BEBA8EAE-BF5A-486C-A8C5-ECC9F3942E4B}"><a14:imgProps xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main"><a14:imgLayer r:embed="rId2"/></a14:imgProps></a:ext>';
+    const opts: DrawingOptions = {
+      images: [{ rId: "rId1", col: 1, row: 1, blipExt: ext }],
+    };
+    const xml = drawingDesc.stringify(opts, writeCtx)!;
+    // The verbatim channel owns the whole a:extLst — no useLocalDpi replay.
+    expect(xml).toContain(ext);
+    expect(xml).not.toContain("useLocalDpi val=");
+
+    const result = roundTrip(opts);
+    expect(result.images![0]!.blipExt).toBe(ext);
+    // The unmodeled ext subsumes useLocalDpi even when present inside it.
+    expect(result.images![0]!.useLocalDpi).toBeUndefined();
+  });
+
   it("round-trips chart", () => {
     const opts: DrawingOptions = {
       charts: [{ col: 1, row: 1, rId: "rId3" }],

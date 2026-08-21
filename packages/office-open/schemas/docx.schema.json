@@ -4543,6 +4543,10 @@
               "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
               "type": "string"
             },
+            "ext": {
+              "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+              "type": "string"
+            },
             "hidden": {
               "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
               "type": "boolean"
@@ -5617,6 +5621,10 @@
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hidden": {
@@ -7872,6 +7880,10 @@
                 },
                 "description": {
                   "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+                  "type": "string"
+                },
+                "ext": {
+                  "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
                   "type": "string"
                 },
                 "hidden": {
@@ -10984,6 +10996,10 @@
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
+        },
+        "ext": {
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hidden": {

@@ -194,6 +194,8 @@ export function parseImageAnchor(
   if (blip) {
     const parsed = blipDesc.parse(blip, {} as never);
     if (parsed.blipEffects) result.blipEffects = parsed.blipEffects;
+    if (parsed.useLocalDpi !== undefined) result.useLocalDpi = parsed.useLocalDpi;
+    if (parsed.ext !== undefined) result.blipExt = parsed.ext;
   }
   const srcRect = blipFill ? findChild(blipFill, "a:srcRect") : undefined;
   if (srcRect) result.sourceRectangle = sourceRectangleDesc.parse(srcRect, ctx);
