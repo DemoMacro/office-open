@@ -48,6 +48,7 @@
       "additionalProperties": false,
       "properties": {
         "horizontal": {
+          "description": "Horizontal alignment: \"general\" per content type, \"fill\" repeat the value across the cell, \"centerContinuous\" merge with the cell to the right, \"justify\"/\"distributed\" spread words/columns evenly.",
           "enum": [
             "general",
             "left",
@@ -83,6 +84,7 @@
           "type": "number"
         },
         "vertical": {
+          "description": "Vertical alignment; \"justify\"/\"distributed\" spread lines evenly across the cell height.",
           "enum": ["top", "center", "bottom", "justify", "distributed"],
           "type": "string"
         },
@@ -174,6 +176,7 @@
       "type": "object"
     },
     "AnchorType": {
+      "description": "How a drawing is anchored to the worksheet: \"twoCell\" from/to cell markers, \"oneCell\" from-marker plus size, \"absolute\" absolute EMU offset.",
       "enum": ["twoCell", "oneCell", "absolute"],
       "type": "string"
     },
@@ -325,18 +328,22 @@
       "type": "object"
     },
     "AxisCrossBetween": {
+      "description": "Value-axis crossing mode: \"between\" between category bands, \"midCat\" at the band middle.",
       "enum": ["between", "midCat"],
       "type": "string"
     },
     "AxisCrosses": {
+      "description": "Where the crossing axis meets this one: \"autoZero\" at zero, \"max\" at maximum, \"min\" at minimum.",
       "enum": ["autoZero", "max", "min"],
       "type": "string"
     },
     "AxisKind": {
+      "description": "Axis role; decides the CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx element.",
       "enum": ["category", "value", "date", "series"],
       "type": "string"
     },
     "AxisLabelAlignment": {
+      "description": "Category tick-label alignment: \"ctr\" center, \"l\" left, \"r\" right.",
       "enum": ["ctr", "l", "r"],
       "type": "string"
     },
@@ -491,10 +498,12 @@
       "type": "object"
     },
     "AxisOrientation": {
+      "description": "Value direction: \"minMax\" ascending, \"maxMin\" descending.",
       "enum": ["minMax", "maxMin"],
       "type": "string"
     },
     "AxisPosition": {
+      "description": "Axis side (c:axPos): \"b\" bottom, \"l\" left, \"r\" right, \"t\" top.",
       "enum": ["b", "l", "r", "t"],
       "type": "string"
     },
@@ -519,10 +528,12 @@
       "type": "object"
     },
     "AxisTickLabelPosition": {
+      "description": "Tick-label placement: \"high\" top of the plot, \"low\" bottom, \"nextTo\" beside the axis, \"none\".",
       "enum": ["high", "low", "nextTo", "none"],
       "type": "string"
     },
     "AxisTickMark": {
+      "description": "Tick-mark style: \"cross\" spanning the axis, \"in\" inside the plot, \"out\" outside, \"none\".",
       "enum": ["cross", "in", "none", "out"],
       "type": "string"
     },
@@ -562,6 +573,7 @@
       "type": "object"
     },
     "BarShape": {
+      "description": "3D bar column shape (ST_Shape): \"coneToMax\"/\"pyramidToMax\" taper to a point at the full height; plain \"cone\"/\"pyramid\" taper halfway, then run cylindrically.",
       "enum": ["cone", "coneToMax", "box", "cylinder", "pyramid", "pyramidToMax"],
       "type": "string"
     },
@@ -976,6 +988,7 @@
           "type": "number"
         },
         "style": {
+          "description": "Border pattern (ST_BorderStyle); \"medium*\" variants thicken the pattern, \"hair\" is the thinnest hairline, \"slantDashDot\" slanted dashes with dots.",
           "enum": [
             "none",
             "thin",
@@ -1163,6 +1176,7 @@
       "type": "object"
     },
     "BuiltInDisplayUnit": {
+      "description": "Built-in value-axis scaling unit (ST_BuiltInUnit), e.g. \"millions\" divides tick values by 1e6.",
       "enum": [
         "hundreds",
         "thousands",
@@ -1631,6 +1645,7 @@
           "type": "number"
         },
         "type": {
+          "description": "Fill kind; pattern/gradient read the dedicated fields below.",
           "enum": ["solid", "pattern", "gradient"],
           "type": "string"
         }
@@ -2635,6 +2650,7 @@
       "type": "object"
     },
     "ChartType": {
+      "description": "Chart family; drives the c:*Chart plot element. \"ofPie\" is the pie-of-pie / bar-of-pie family (see ofPieType).",
       "enum": [
         "column",
         "bar",
@@ -3278,6 +3294,7 @@
       "type": "string"
     },
     "ConditionalFormatOperator": {
+      "description": "Comparison for the \"cellIs\" rule, between formula1 and the cell value.",
       "enum": [
         "lessThan",
         "lessThanOrEqual",
@@ -3403,6 +3420,7 @@
       "type": "object"
     },
     "ConditionalFormatType": {
+      "description": "Conditional-format rule kind (ST_CfType): \"cellIs\" value comparison (see operator), \"expression\" formula trigger, \"top10\" ranked values, \"containsText\" substring match.",
       "enum": [
         "cellIs",
         "containsText",
@@ -4455,6 +4473,7 @@
       "type": "object"
     },
     "DataLabelPosition": {
+      "description": "Data-label placement (ST_DLblPos): \"bestFit\" auto (pie), \"b\" bottom, \"ctr\" center, \"inBase\" inside the bar base, \"inEnd\" inside the bar tip, \"outEnd\" outside the bar tip, \"l\"/\"r\"/\"t\" left/right/top.",
       "enum": ["bestFit", "b", "ctr", "inBase", "inEnd", "l", "outEnd", "r", "t"],
       "type": "string"
     },
@@ -4596,6 +4615,7 @@
       "description": "Binary content as a string or an array of byte values."
     },
     "DataValidationOperator": {
+      "description": "Comparison applied between formula1 (and formula2 for between/notBetween) and the cell value.",
       "enum": [
         "between",
         "notBetween",
@@ -4679,6 +4699,7 @@
       "type": "object"
     },
     "DataValidationType": {
+      "description": "What cell input is validated against (ST_DataValidationType): \"whole\" whole number, \"textLength\" character count, \"list\" values from formula1, \"custom\" formula must be true.",
       "enum": ["none", "whole", "decimal", "list", "date", "time", "textLength", "custom"],
       "type": "string"
     },
@@ -5007,6 +5028,7 @@
       "type": "object"
     },
     "DisplayBlanksAs": {
+      "description": "How blank cells plot (ST_DispBlanksAs): \"gap\" skip with a line break, \"span\" bridge with a straight line, \"zero\" treat as 0.",
       "enum": ["gap", "span", "zero"],
       "type": "string"
     },
@@ -5242,6 +5264,7 @@
       "type": "object"
     },
     "EditAsType": {
+      "description": "How a twoCellAnchor tracks later row/column edits: \"twoCell\" move and resize, \"oneCell\" move only, \"absolute\" neither.",
       "enum": ["twoCell", "oneCell", "absolute"],
       "type": "string"
     },
@@ -5509,6 +5532,7 @@
       "type": "object"
     },
     "ErrorBarDirection": {
+      "description": "Which axes the error bars span: both, x only, or y only.",
       "enum": ["both", "x", "y"],
       "type": "string"
     },
@@ -5542,10 +5566,12 @@
       "type": "object"
     },
     "ErrorBarType": {
+      "description": "Which side of the point gets a bar: both, minus (below/left), or plus (above/right).",
       "enum": ["both", "minus", "plus"],
       "type": "string"
     },
     "ErrorValueType": {
+      "description": "Error amount source (ST_ErrorValueType): \"cust\" custom plus/minus values (see plusValue/minusValue), \"fixedVal\" a fixed value, \"percentage\" percent of the data point, \"stdDev\" standard deviation, \"stdErr\" standard error.",
       "enum": ["cust", "fixedVal", "percentage", "stdDev", "stdErr"],
       "type": "string"
     },
@@ -7413,10 +7439,12 @@
       "type": "object"
     },
     "LayoutMode": {
+      "description": "How x/y/w/h are read (ST_LayoutMode): \"edge\" offset from the chart edge, \"factor\" fraction of the plot area.",
       "enum": ["edge", "factor"],
       "type": "string"
     },
     "LayoutTarget": {
+      "description": "Manual-layout region (ST_LayoutTarget): \"inner\" plot area only, \"outer\" including tick labels and axis titles.",
       "enum": ["inner", "outer"],
       "type": "string"
     },
@@ -7440,6 +7468,7 @@
       "type": "object"
     },
     "LegendPosition": {
+      "description": "Legend placement (ST_LegendPos): \"b\" bottom, \"tr\" top-right, \"l\" left, \"r\" right, \"t\" top.",
       "enum": ["b", "tr", "l", "r", "t"],
       "type": "string"
     },
@@ -7664,6 +7693,7 @@
       "type": "object"
     },
     "MarkerSymbol": {
+      "description": "Point-marker glyph (ST_MarkerStyle).",
       "enum": [
         "circle",
         "dash",
@@ -8264,6 +8294,7 @@
       "type": "object"
     },
     "OfPieType": {
+      "description": "ofPie variant (ST_OfPieType): \"pie\" pie-of-pie, \"bar\" bar-of-pie.",
       "enum": ["pie", "bar"],
       "type": "string"
     },
@@ -8655,6 +8686,7 @@
       "type": "object"
     },
     "PageOrientation": {
+      "description": "Print orientation (ST_Orientation): \"default\" keeps the printer's own setting.",
       "enum": ["default", "portrait", "landscape"],
       "type": "string"
     },
@@ -8708,6 +8740,7 @@
           "$ref": "#/definitions/PageOrientation"
         },
         "pageOrder": {
+          "description": "Page sequencing when printing wide sheets: down then over, or across then down.",
           "enum": ["downThenOver", "overThenDown"],
           "type": "string"
         },
@@ -8758,6 +8791,7 @@
       "type": "object"
     },
     "PageSetupOrientation": {
+      "description": "Print orientation (ST_Orientation): \"default\" keeps the printer's own setting.",
       "enum": ["default", "portrait", "landscape"],
       "type": "string"
     },
@@ -9166,6 +9200,7 @@
       "type": "object"
     },
     "PictureFormat": {
+      "description": "Picture-fill mode (ST_PictureFormat): \"stack\" tile at natural size, \"scale\" stretch to fit, \"stackScale\" tile scaled by pictureStackUnit, \"stretch\".",
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
     },
@@ -9412,6 +9447,7 @@
           "description": "To cell row offset in EMU."
         },
         "type": {
+          "description": "Image format of the `data` bytes; wmf/emf are Windows metafiles.",
           "enum": ["png", "jpg", "wmf", "emf"],
           "type": "string"
         },
@@ -11300,6 +11336,7 @@
       "type": "object"
     },
     "RadarStyle": {
+      "description": "Radar variant (ST_RadarStyle): \"standard\" lines, \"marker\" lines with point markers, \"filled\" polygon.",
       "enum": ["standard", "marker", "filled"],
       "type": "string"
     },
@@ -13428,6 +13465,7 @@
           "$ref": "#/definitions/DataType"
         },
         "type": {
+          "description": "Image format of the `data` bytes.",
           "enum": ["png", "jpg"],
           "type": "string"
         }
@@ -13717,6 +13755,7 @@
       "type": "object"
     },
     "SizeRepresents": {
+      "description": "Which bubble measure the size drives (ST_SizeRepresents): \"area\" the area, \"w\" the width.",
       "enum": ["area", "w"],
       "type": "string"
     },
@@ -13854,10 +13893,12 @@
       "type": "object"
     },
     "SplitType": {
+      "description": "ofPie split rule (ST_SplitType): \"auto\" Excel decides, \"cust\" the indices in customSplitPoints, \"percent\" smallest values under splitPosition %, \"pos\" the last splitPosition points, \"val\" points below splitPosition.",
       "enum": ["auto", "cust", "percent", "pos", "val"],
       "type": "string"
     },
     "StrikeStyle": {
+      "description": "Strikethrough (ST_TextStrikeType). Friendly spellings; xsdStrikeStyle maps them to the XML tokens.",
       "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
@@ -14323,10 +14364,12 @@
       "type": "object"
     },
     "TableType": {
+      "description": "Table source kind (ST_TableType): \"worksheet\", \"xml\" external XML mapping, \"queryTable\" query result.",
       "enum": ["worksheet", "xml", "queryTable"],
       "type": "string"
     },
     "TextAlignment": {
+      "description": "Paragraph alignment (ST_TextAlignType); \"justify\" stretches lines to full width.",
       "enum": ["left", "center", "right", "justify"],
       "type": "string"
     },
@@ -14460,6 +14503,7 @@
       "type": "object"
     },
     "TextCapitalization": {
+      "description": "Case effect (ST_TextCaps): \"all\" ALL CAPS, \"small\" Small Caps, \"none\".",
       "enum": ["none", "all", "small"],
       "type": "string"
     },
@@ -14768,6 +14812,7 @@
           "type": "string"
         },
         "fontAlignment": {
+          "description": "`@fontAlgn` — baseline reference (ST_TextFontAlign): \"t\" top, \"ctr\" center, \"b\" bottom, \"base\" baseline, \"auto\".",
           "enum": ["auto", "t", "ctr", "b", "base"],
           "type": "string"
         },
@@ -15055,6 +15100,7 @@
       "type": "object"
     },
     "TextTabAlignment": {
+      "description": "Tab-stop alignment (ST_TextTabAlignType): \"l\" left, \"ctr\" center, \"r\" right, \"dec\" on the decimal point.",
       "enum": ["l", "ctr", "r", "dec"],
       "type": "string"
     },
@@ -15176,6 +15222,7 @@
       "type": "object"
     },
     "TimeUnit": {
+      "description": "Time-axis unit granularity (ST_TimeUnit).",
       "enum": ["days", "months", "years"],
       "type": "string"
     },
@@ -15215,6 +15262,7 @@
       "type": "object"
     },
     "TotalsRowFunction": {
+      "description": "Totals-row aggregate (ST_TotalsRowFunction): \"countNums\" counts numeric entries only, \"stdDev\" sample standard deviation, \"var\" sample variance.",
       "enum": [
         "none",
         "sum",
@@ -15309,10 +15357,12 @@
       "type": "object"
     },
     "TrendlineType": {
+      "description": "Trendline fit (ST_TrendlineType): \"exp\" exponential, \"log\" logarithmic, \"movingAvg\" moving average (see period), \"poly\" polynomial (see order), \"power\" power.",
       "enum": ["exp", "linear", "log", "movingAvg", "poly", "power"],
       "type": "string"
     },
     "UnderlineStyle": {
+      "description": "Underline (ST_TextUnderlineType, simplified set).",
       "enum": ["single", "double", "none"],
       "type": "string"
     },

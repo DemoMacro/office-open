@@ -50,6 +50,7 @@ export const WidthType = {
  */
 export interface TableWidthProperties {
   size: number | Percentage | UniversalMeasure;
+  /** How `size` is read (ST_TblWidth): "auto" from content, "dxa" twips, "pct" percent, "nil" no width. */
   type?: (typeof WidthType)[keyof typeof WidthType];
 }
 

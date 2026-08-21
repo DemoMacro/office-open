@@ -13,6 +13,7 @@ export interface WebPropertiesOptions {
 }
 
 export interface PrintPropertiesOptions {
+  /** What each printed page holds: slides, "handoutsN" N slides per page, notes pages, or the outline. */
   printWhat?:
     | "slides"
     | "handouts1"
@@ -23,6 +24,7 @@ export interface PrintPropertiesOptions {
     | "handouts9"
     | "notes"
     | "outline";
+  /** Print in pure black-and-white, grayscale, or color. */
   colorMode?: "blackWhite" | "gray" | "color";
   hiddenSlides?: boolean;
   scaleToFitPaper?: boolean;

@@ -2,6 +2,13 @@ import { convertToEmu } from "@office-open/core";
 import type { MasterPlaceholderPosition } from "@parts/slide-master";
 import type { LayoutDefinition } from "@shared/file";
 
+/**
+ * Slide layout family (ST_SlideLayoutType). Abbreviations: "tx" text body,
+ * "obj" object/content, "secHead" section header, "tbl" table, "picTx"
+ * picture with text, "twoTxTwoObj" two texts and two objects, "objTx"
+ * object with text, "vertTx" vertical text, "vertTitleAndTx" vertical
+ * title with vertical text.
+ */
 export type SlideLayoutType =
   | "blank"
   | "title"

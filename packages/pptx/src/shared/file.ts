@@ -151,6 +151,7 @@ export interface SlideOptions {
 
 export interface ShowOptions {
   loop?: boolean;
+  /** Slide-show mode: "present" full screen, "browse" in a window, "kiosk" full screen, no exit. */
   type?: "present" | "browse" | "kiosk";
   showScrollbar?: boolean;
   restart?: number;
@@ -197,6 +198,7 @@ export interface PresentationOptions extends CorePropertiesOptions {
   saveSubsetFonts?: boolean;
   autoCompressPictures?: boolean;
   bookmarkIdSeed?: number;
+  /** Package dialect to emit: ISO strict or transitional namespace set (round-trips a strict source). */
   conformance?: "strict" | "transitional";
   photoAlbum?: PhotoAlbumOptions;
   modifyVerifier?: ModifyVerifierOptions;

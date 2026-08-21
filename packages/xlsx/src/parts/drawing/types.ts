@@ -36,6 +36,7 @@ export const ANCHOR_TYPES = {
   oneCell: "oneCell",
   absolute: "absolute",
 } as const;
+/** How a drawing is anchored to the worksheet: "twoCell" from/to cell markers, "oneCell" from-marker plus size, "absolute" absolute EMU offset. */
 export type AnchorType = (typeof ANCHOR_TYPES)[keyof typeof ANCHOR_TYPES];
 
 /** editAs behavior for twoCellAnchor (ST_EditAs). */
@@ -44,6 +45,7 @@ export const EDIT_AS_TYPES = {
   oneCell: "oneCell",
   absolute: "absolute",
 } as const;
+/** How a twoCellAnchor tracks later row/column edits: "twoCell" move and resize, "oneCell" move only, "absolute" neither. */
 export type EditAsType = (typeof EDIT_AS_TYPES)[keyof typeof EDIT_AS_TYPES];
 
 /**

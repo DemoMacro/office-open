@@ -46,9 +46,11 @@ export interface TableOptions extends BaseTableOptions<
   margins?: TableCellMarginOptions;
   indent?: TableWidthProperties;
   float?: TableFloatOptions;
+  /** Column sizing: "autofit" let content resize columns, "fixed" honor column widths. */
   layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
   style?: string;
   borders?: TableBordersOptions;
+  /** Justification (ST_JcTable): "both"/"distribute" stretch rows to full width, "mediumKashida"/"highKashida"/"lowKashida" Kashida elongation, "numTab" at the numeric tab. */
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   visuallyRightToLeft?: boolean;
   cellSpacing?: TableCellSpacingProperties;

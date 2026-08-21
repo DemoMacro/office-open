@@ -36,6 +36,7 @@ export const TotalsRowFunction = {
   CUSTOM: "custom",
 } as const;
 
+/** Totals-row aggregate (ST_TotalsRowFunction): "countNums" counts numeric entries only, "stdDev" sample standard deviation, "var" sample variance. */
 export type TotalsRowFunction = (typeof TotalsRowFunction)[keyof typeof TotalsRowFunction];
 
 // ── Table type (ST_TableType) ──
@@ -46,6 +47,7 @@ export const TableType = {
   QUERY_TABLE: "queryTable",
 } as const;
 
+/** Table source kind (ST_TableType): "worksheet", "xml" external XML mapping, "queryTable" query result. */
 export type TableType = (typeof TableType)[keyof typeof TableType];
 
 // ── Options interfaces ──

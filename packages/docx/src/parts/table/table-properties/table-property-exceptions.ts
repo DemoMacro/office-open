@@ -28,9 +28,11 @@ import type { TableLookOptions } from "./table-look";
 export interface TablePropertyExOptions {
   width?: TableWidthProperties;
   indent?: TableWidthProperties;
+  /** Column sizing: "autofit" let content resize columns, "fixed" honor column widths. */
   layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
   borders?: TableBordersOptions;
   shading?: ShadingProperties;
+  /** Justification (ST_JcTable): "both"/"distribute" stretch rows to full width, "mediumKashida"/"highKashida"/"lowKashida" Kashida elongation, "numTab" at the numeric tab. */
   alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
   margins?: TableCellMarginOptions;
   tableLook?: TableLookOptions;

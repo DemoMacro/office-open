@@ -43,16 +43,20 @@ export const NumberRestartType = {
 } as const;
 
 interface NumberPropertiesOptions {
+  /** Numbering format (ST_NumberFormat): "arabic" 1,2,3…, "lowerLetter"/"upperLetter" a,b,c…, "lowerRoman"/"upperRoman" i,ii…, "chicago", "aiueo" Japanese kana, "chineseCounting" and other script-specific counters, "bullet", "none". */
   formatType?: (typeof NumberFormat)[keyof typeof NumberFormat];
   format?: string;
   numStart?: number;
+  /** Restart rule: "continuous" never, "eachSect" per section, "eachPage" per page. */
   numRestart?: (typeof NumberRestartType)[keyof typeof NumberRestartType];
 }
 
 export interface FootnotePropertiesOptions extends NumberPropertiesOptions {
+  /** Where footnotes print: "pageBottom", "beneathText" under the text, "sectEnd", "docEnd". */
   pos?: (typeof FootnotePositionType)[keyof typeof FootnotePositionType];
 }
 
 export interface EndnotePropertiesOptions extends NumberPropertiesOptions {
+  /** Where endnotes print: "sectEnd" end of the section, "docEnd" end of the document. */
   pos?: (typeof EndnotePositionType)[keyof typeof EndnotePositionType];
 }

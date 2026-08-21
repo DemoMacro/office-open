@@ -24,7 +24,9 @@ export interface NormalViewPortionOptions {
 export interface NormalViewOptions {
   showOutlineIcons?: boolean;
   snapVertSplitter?: boolean;
+  /** Vertical splitter-bar state: restored (pane visible at restored size), maximized, or minimized. */
   vertBarState?: SplitterBarState;
+  /** Horizontal splitter-bar state, same states as vertBarState. */
   horzBarState?: SplitterBarState;
   preferSingleView?: boolean;
   /** Restored left outline pane (`p:restoredLeft`). */
@@ -51,6 +53,7 @@ const LAST_VIEW_XSD: Record<string, string> = {
 };
 
 export interface ViewPropertiesOptions {
+  /** View active when the file was last saved; "slideSorterView" = the slide-overview grid. */
   lastView?:
     | "slideView"
     | "slideMasterView"
@@ -62,6 +65,7 @@ export interface ViewPropertiesOptions {
   gridSpacing?: { cx: number; cy: number };
   normalView?: NormalViewOptions;
   slideView?: SlideViewOptions;
+  /** Slide-view guides (`p:guideLst`); each guide is a vertical or horizontal line at `pos` (EMU). */
   guides?: {
     orient?: "vert" | "horz";
     pos?: number;
@@ -91,7 +95,7 @@ export interface ViewPropertiesOptions {
 export interface NotesViewOptions {
   /** Zoom/origin of the notes view (`p:cViewPr`). */
   view?: CommonViewPropertiesOptions;
-  /** Notes-view guides (`p:guideLst`). */
+  /** Notes-view guides (`p:guideLst`); each guide is a vertical or horizontal line at `pos` (EMU). */
   guides?: {
     orient?: "vert" | "horz";
     pos?: number;

@@ -106,11 +106,14 @@ export interface RunStylePropertiesOptions {
   boldComplexScript?: boolean;
   italic?: boolean;
   italicComplexScript?: boolean;
+  /** Underline: "words" underlines words only, "dashLong"/"dashLongHeavy" long dashes, "*Heavy" variants thicken the pattern. */
   underline?: {
     color?: string;
     type?: (typeof UnderlineType)[keyof typeof UnderlineType];
   };
+  /** Animated text effect: "antsBlack"/"antsRed" marching ants, "blinkBackground" flashing background, "shimmer"/"sparkle", "lights", "none". */
   effect?: (typeof TextEffect)[keyof typeof TextEffect];
+  /** Emphasis mark glyph above/below the run: comma, circle, dot, underDot. */
   emphasisMark?: {
     type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
   };
@@ -135,6 +138,7 @@ export interface RunStylePropertiesOptions {
    */
   verticalAlign?: "baseline" | "subscript" | "superscript";
   font?: string | RunFontReference | FontProperties;
+  /** Fixed text highlight palette (w:highlight); "lightGray"/"darkGray" etc., not arbitrary colors. */
   highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
   characterSpacing?: number | UniversalMeasure;
   shading?: ShadingProperties;

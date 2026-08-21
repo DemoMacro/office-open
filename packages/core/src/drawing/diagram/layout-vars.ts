@@ -27,6 +27,7 @@ export const createAdjust = (options: AdjustOptions): string =>
 // dgm:animLvl — animation level (CT_AnimLvl)
 // ---------------------------------------------------------------------------
 
+/** Diagram animation granularity (ST_AnimLvl): "lvl" by level, "ctr" from the center outward, "none". */
 export type AnimationLevel = "none" | "lvl" | "ctr";
 
 export interface AnimationLevelOptions {
@@ -41,6 +42,7 @@ export const createAnimationLevel = (options?: AnimationLevelOptions): string =>
 // dgm:animOne — animation one-by-one (CT_AnimOne)
 // ---------------------------------------------------------------------------
 
+/** One-by-one animation scope (ST_AnimOne): "one" item by item, "branch" branch by branch, "none". */
 export type AnimateOneByOne = "none" | "one" | "branch";
 
 export interface AnimateOneByOneOptions {
@@ -91,6 +93,7 @@ export const createOrgChart = (options?: OrgChartOptions): string =>
 // dgm:hierBranch — hierarchy branch style (CT_HierBranchStyle)
 // ---------------------------------------------------------------------------
 
+/** Hierarchy branch style (ST_HierBranchStyle): "l"/"r" hang left/right, "hang" hanging tree, "std" standard tree, "init" initial. */
 export type HierBranch = "l" | "r" | "hang" | "std" | "init";
 
 export interface HierBranchOptions {

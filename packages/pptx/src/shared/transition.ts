@@ -8,6 +8,7 @@ const SIDE_DIR_TYPES = new Set(["push", "wipe"]);
 
 const EIGHT_DIR_TYPES = new Set(["cover", "pull"]);
 
+/** Slide-change effect (ST_Transition): "newsflash" spinning blur, "plus" plus-shaped reveal, "wedge" wedge-shaped wipe, "comb" comb-tooth reveal, "randomBar" random bars. */
 export type TransitionType =
   | "fade"
   | "push"
@@ -31,6 +32,7 @@ export type TransitionType =
   | "random"
   | "cut";
 
+/** Slide-transition motion direction; diagonal corners like "leftUp" apply to cover/pull, "in"/"out" to circle/plus/wedge/diamond. */
 export type TransitionDirection =
   | "left"
   | "up"
@@ -57,11 +59,15 @@ export const DIRECTION_MAP: Record<TransitionDirection, string> = {
 };
 
 export interface TransitionOptions {
+  /** Slide-change effect; see TransitionType. */
   type?: TransitionType;
+  /** Transition playback speed. */
   speed?: "slow" | "medium" | "fast";
   advanceOnClick?: boolean;
   advanceAfterTime?: number;
+  /** Motion direction; see TransitionDirection. */
   direction?: TransitionDirection;
+  /** Split/wipe orientation: horizontal or vertical. */
   orient?: "horz" | "vert";
   thruBlk?: boolean;
   spokes?: number;

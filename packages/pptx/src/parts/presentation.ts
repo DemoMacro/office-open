@@ -10,6 +10,7 @@
 export interface PhotoAlbumOptions {
   blackWhite?: boolean;
   showCaptions?: boolean;
+  /** Pictures per slide; "*Title" variants repeat the title placeholder on each slide. */
   layout?: "fitToSlide" | "1pic" | "2pic" | "4pic" | "1picTitle" | "2picTitle" | "4picTitle";
   /** Frame shape (ST_PhotoAlbumFrameShape); omit for no frame. */
   frame?:

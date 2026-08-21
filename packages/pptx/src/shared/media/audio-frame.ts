@@ -2,6 +2,7 @@ import type { DataType } from "@office-open/core";
 
 import type { MediaFrameBaseOptions } from "./media-frame-base";
 
+/** Audio container format of the media file. */
 export type AudioType = "mp3" | "wav" | "wma" | "aac";
 
 /** A point on an audio CD (CT_AudioCDTime). */

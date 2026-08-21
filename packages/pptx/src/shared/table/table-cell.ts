@@ -4,6 +4,7 @@ import type { Cell3DOptions, ParagraphDescriptorOptions } from "@office-open/cor
 import type { FillOptions } from "../drawing/fill";
 import type { CellBorderOptions } from "./table-cell-properties";
 
+/** Vertical alignment of cell content (ST_TextAnchorType); "distribute" spreads lines evenly across the cell height. */
 export type VerticalAlignment = "top" | "center" | "bottom" | "justify" | "distribute";
 
 /** ST_TextVerticalType — text direction within a cell (a:tcPr `@vert`). */
@@ -29,7 +30,9 @@ export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAl
     diagonalTopLeftToBottomRight?: CellBorderOptions;
     diagonalBottomLeftToTopRight?: CellBorderOptions;
   };
+  /** Horizontal merge: "restart" first cell of the merge, "continue" cell absorbed into it. */
   horizontalMerge?: "continue" | "restart";
+  /** Vertical merge: "restart" first cell of the merge, "continue" cell absorbed into it. */
   verticalMerge?: "continue" | "restart";
   /**
    * The source carried an `<a:tcPr/>` with no attributes or children.

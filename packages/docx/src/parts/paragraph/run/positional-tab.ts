@@ -24,7 +24,10 @@ export const PositionalTabLeader = {
 } as const;
 
 export interface PositionalTabOptions {
+  /** Where the tab lands on the reference line. */
   alignment: (typeof PositionalTabAlignment)[keyof typeof PositionalTabAlignment];
+  /** Reference line for the position: page margin or paragraph indent. */
   relativeTo: (typeof PositionalTabRelativeTo)[keyof typeof PositionalTabRelativeTo];
+  /** Fill character drawn across the tab. */
   leader: (typeof PositionalTabLeader)[keyof typeof PositionalTabLeader];
 }

@@ -44,6 +44,7 @@ export type TableStyleRegion =
   | "neCell"
   | "nwCell";
 
+/** Style-part on/off state (ST_OnOffStyleType): "def" inherit the table style's default, "on"/"off" force it. */
 export type OnOffStyleType = "on" | "off" | "def";
 
 /** ST_CompoundLine — @cmpd on a:ln. */
@@ -55,6 +56,7 @@ export type CompoundLineType = "sng" | "dbl" | "thickThin" | "thinThick" | "tri"
  * (ST_FontCollectionIndex: major/minor/none).
  */
 export interface TableFontReferenceOptions {
+  /** Theme font slot: "major" headings, "minor" body text, "none". */
   collection: "major" | "minor" | "none";
   color?: SolidFillOptions;
 }

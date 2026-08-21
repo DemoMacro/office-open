@@ -44,6 +44,8 @@ export const VerticalAlignSection = {
   BOTH: "both",
 } as const;
 
+/** Vertical alignment of content within a table cell (ST_VerticalJc). */
 export type TableVerticalAlign = (typeof VerticalAlignTable)[keyof typeof VerticalAlignTable];
 
+/** Vertical alignment of content on the page (ST_VerticalJc in w:sectPr); "both" = justified top-to-bottom. */
 export type SectionVerticalAlign = (typeof VerticalAlignSection)[keyof typeof VerticalAlignSection];

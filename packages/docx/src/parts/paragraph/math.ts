@@ -11,6 +11,7 @@ import type { RunPropertiesOptions } from "./run/properties";
 
 // ── MathRunProperties ──
 
+/** Math alphanumerics font class (ST_Script). */
 export type MathScriptType =
   | "roman"
   | "script"
@@ -19,6 +20,7 @@ export type MathScriptType =
   | "sans-serif"
   | "monospace";
 
+/** Math run style (ST_Style): "p" plain, "b" bold, "i" italic, "bi" bold-italic. */
 export type MathStyleType = "p" | "b" | "i" | "bi";
 
 export interface MathRunPropertiesOptions {

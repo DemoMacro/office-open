@@ -65,7 +65,9 @@ export interface WrapPolygon {
  * Options for configuring text wrapping around a drawing.
  */
 export interface TextWrapping {
+  /** Wrap mode: 0 inline with text, 1 floating (moves with text), 2 square, 3 tight, 4 top-and-bottom only. */
   type: (typeof TextWrappingType)[keyof typeof TextWrappingType];
+  /** Which sides text may wrap on: bothSides, left, right, or "largest" whichever has more room. */
   side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
   margins?: Distance;
   /** Wrap polygon for wrapTight/wrapThrough. Preserves the source contour on round-trip; defaults to the extent rectangle when unset. */

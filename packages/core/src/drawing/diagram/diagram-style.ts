@@ -95,8 +95,10 @@ export const createDiagramStyle = (options?: DiagramStyleOptions): string => {
 // Color list elements (CT_Colors) — used for fillClrLst, linClrLst, etc.
 // ---------------------------------------------------------------------------
 
+/** How the color list maps onto shapes (ST_ColorMethod): "span" interpolate across the list, "cycle" repeat in order, "repeat" alternate. */
 export type ColorMethod = "span" | "cycle" | "repeat";
 
+/** Hue rotation direction: "cw" clockwise, "ccw" counter-clockwise. */
 export type HueDirection = "cw" | "ccw";
 
 export interface ColorListOptions {

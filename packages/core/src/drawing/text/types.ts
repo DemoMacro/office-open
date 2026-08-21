@@ -16,15 +16,18 @@ import type { OutlineOptions } from "../outline/outline";
 
 // ── Run style enums ──
 
+/** Underline (ST_TextUnderlineType, simplified set). */
 export type UnderlineStyle = "single" | "double" | "none";
 
-// Friendly spellings; xsdStrikeStyle maps them to ST_TextStrikeType tokens.
+/** Strikethrough (ST_TextStrikeType). Friendly spellings; xsdStrikeStyle maps them to the XML tokens. */
 export type StrikeStyle = "singleStrike" | "doubleStrike" | "noStrike";
 
+/** Case effect (ST_TextCaps): "all" ALL CAPS, "small" Small Caps, "none". */
 export type TextCapitalization = "none" | "all" | "small";
 
 // ── Paragraph alignment ──
 
+/** Paragraph alignment (ST_TextAlignType); "justify" stretches lines to full width. */
 export type TextAlignment = "left" | "center" | "right" | "justify";
 
 // ── Hyperlink (a:hlinkClick) ──
@@ -187,6 +190,7 @@ export type BulletOptions =
 
 // ── Tab stops (a:tabLst) ──
 
+/** Tab-stop alignment (ST_TextTabAlignType): "l" left, "ctr" center, "r" right, "dec" on the decimal point. */
 export type TextTabAlignment = "l" | "ctr" | "r" | "dec";
 
 export interface TabStopOptions {
@@ -223,6 +227,7 @@ export interface TextParagraphPropertiesOptions {
   tabStops?: TabStopOptions[];
   /** a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties). */
   defaultRunProperties?: TextCharacterPropertiesOptions;
+  /** `@fontAlgn` — baseline reference (ST_TextFontAlign): "t" top, "ctr" center, "b" bottom, "base" baseline, "auto". */
   fontAlignment?: "auto" | "t" | "ctr" | "b" | "base";
   /** `@rtl` — paragraph right-to-left. */
   rightToLeft?: boolean;

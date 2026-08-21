@@ -5,6 +5,7 @@ export interface CellBorderOptions {
   width?: number | UniversalMeasure;
   /** Hex color string sugar, or a full fill (scheme colors, gradients). */
   color?: string | FillOptions;
+  /** Dash pattern (ST_PresetLineDashVal): "lgDash" long dashes, "sysDot"/"sysDash" system-defined dot/dash. */
   dashStyle?: "solid" | "dash" | "dashDot" | "lgDash" | "sysDot" | "sysDash";
   /**
    * Full line properties (CT_LineProperties) for round-trip fidelity — joins,

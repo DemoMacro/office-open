@@ -60,6 +60,7 @@ export interface CellGradientStopOptions {
  * gradient fill.
  */
 export interface CellFillOptions {
+  /** Fill kind; pattern/gradient read the dedicated fields below. */
   type?: "solid" | "pattern" | "gradient";
   /** Foreground color hex without alpha, e.g. "C6EFCE" */
   color?: string;
@@ -99,6 +100,7 @@ export interface CellFillOptions {
 }
 
 export interface BorderOptions {
+  /** Border pattern (ST_BorderStyle); "medium*" variants thicken the pattern, "hair" is the thinnest hairline, "slantDashDot" slanted dashes with dots. */
   style?:
     | "none"
     | "thin"
@@ -146,6 +148,7 @@ export interface BorderSideOptions {
 }
 
 export interface AlignmentOptions {
+  /** Horizontal alignment: "general" per content type, "fill" repeat the value across the cell, "centerContinuous" merge with the cell to the right, "justify"/"distributed" spread words/columns evenly. */
   horizontal?:
     | "general"
     | "left"
@@ -155,6 +158,7 @@ export interface AlignmentOptions {
     | "justify"
     | "centerContinuous"
     | "distributed";
+  /** Vertical alignment; "justify"/"distributed" spread lines evenly across the cell height. */
   vertical?: "top" | "center" | "bottom" | "justify" | "distributed";
   wrapText?: boolean;
   textRotation?: number;

@@ -360,10 +360,12 @@
       "type": "object"
     },
     "AnimateOneByOne": {
+      "description": "One-by-one animation scope (ST_AnimOne): \"one\" item by item, \"branch\" branch by branch, \"none\".",
       "enum": ["none", "one", "branch"],
       "type": "string"
     },
     "AnimationLevel": {
+      "description": "Diagram animation granularity (ST_AnimLvl): \"lvl\" by level, \"ctr\" from the center outward, \"none\".",
       "enum": ["none", "lvl", "ctr"],
       "type": "string"
     },
@@ -639,18 +641,22 @@
       "type": "object"
     },
     "AxisCrossBetween": {
+      "description": "Value-axis crossing mode: \"between\" between category bands, \"midCat\" at the band middle.",
       "enum": ["between", "midCat"],
       "type": "string"
     },
     "AxisCrosses": {
+      "description": "Where the crossing axis meets this one: \"autoZero\" at zero, \"max\" at maximum, \"min\" at minimum.",
       "enum": ["autoZero", "max", "min"],
       "type": "string"
     },
     "AxisKind": {
+      "description": "Axis role; decides the CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx element.",
       "enum": ["category", "value", "date", "series"],
       "type": "string"
     },
     "AxisLabelAlignment": {
+      "description": "Category tick-label alignment: \"ctr\" center, \"l\" left, \"r\" right.",
       "enum": ["ctr", "l", "r"],
       "type": "string"
     },
@@ -805,10 +811,12 @@
       "type": "object"
     },
     "AxisOrientation": {
+      "description": "Value direction: \"minMax\" ascending, \"maxMin\" descending.",
       "enum": ["minMax", "maxMin"],
       "type": "string"
     },
     "AxisPosition": {
+      "description": "Axis side (c:axPos): \"b\" bottom, \"l\" left, \"r\" right, \"t\" top.",
       "enum": ["b", "l", "r", "t"],
       "type": "string"
     },
@@ -833,10 +841,12 @@
       "type": "object"
     },
     "AxisTickLabelPosition": {
+      "description": "Tick-label placement: \"high\" top of the plot, \"low\" bottom, \"nextTo\" beside the axis, \"none\".",
       "enum": ["high", "low", "nextTo", "none"],
       "type": "string"
     },
     "AxisTickMark": {
+      "description": "Tick-mark style: \"cross\" spanning the axis, \"in\" inside the plot, \"out\" outside, \"none\".",
       "enum": ["cross", "in", "none", "out"],
       "type": "string"
     },
@@ -914,6 +924,7 @@
       "type": "object"
     },
     "BarShape": {
+      "description": "3D bar column shape (ST_Shape): \"coneToMax\"/\"pyramidToMax\" taper to a point at the full height; plain \"cone\"/\"pyramid\" taper halfway, then run cylindrically.",
       "enum": ["cone", "coneToMax", "box", "cylinder", "pyramid", "pyramidToMax"],
       "type": "string"
     },
@@ -1421,6 +1432,7 @@
           "type": "number"
         },
         "style": {
+          "description": "Border pattern (ST_Border): \"dashSmallGap\" dashed with small gaps, \"dashDotStroked\"/\"dotDotDash\" mixed dot-dash strokes, \"doubleWave\"/\"wave\" wavy lines, \"inset\"/\"outset\" pseudo-3D ridges, \"pctN\" dotted density, \"thickThinSmallGap\"/\"thinThickThinSmallGap\" (…) compound lines, \"nil\" none.",
           "enum": [
             "single",
             "dashDotStroked",
@@ -1453,7 +1465,7 @@
           "type": "string"
         },
         "themeColor": {
-          "description": "Theme color reference",
+          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\".",
           "enum": [
             "dark1",
             "light1",
@@ -1651,6 +1663,7 @@
       "type": "object"
     },
     "BuiltInDisplayUnit": {
+      "description": "Built-in value-axis scaling unit (ST_BuiltInUnit), e.g. \"millions\" divides tick values by 1e6.",
       "enum": [
         "hundreds",
         "thousands",
@@ -1978,10 +1991,12 @@
           "type": "number"
         },
         "verticalMerge": {
+          "description": "Merge state this revision sets: \"restart\" first cell of the merge, \"continue\" cell absorbed into it.",
           "enum": ["continue", "restart"],
           "type": "string"
         },
         "verticalMergeOriginal": {
+          "description": "Merge state before the revision.",
           "enum": ["continue", "restart"],
           "type": "string"
         }
@@ -3236,6 +3251,7 @@
       "type": "object"
     },
     "ChartType": {
+      "description": "Chart family; drives the c:*Chart plot element. \"ofPie\" is the pie-of-pie / bar-of-pie family (see ofPieType).",
       "enum": [
         "column",
         "bar",
@@ -3521,6 +3537,7 @@
       "type": "object"
     },
     "ColorMethod": {
+      "description": "How the color list maps onto shapes (ST_ColorMethod): \"span\" interpolate across the list, \"cycle\" repeat in order, \"repeat\" alternate.",
       "enum": ["span", "cycle", "repeat"],
       "type": "string"
     },
@@ -3529,6 +3546,7 @@
       "description": "Options for theme color configuration.",
       "properties": {
         "themeColor": {
+          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\".",
           "enum": [
             "dark1",
             "light1",
@@ -4947,6 +4965,7 @@
       "type": "object"
     },
     "DataLabelPosition": {
+      "description": "Data-label placement (ST_DLblPos): \"bestFit\" auto (pie), \"b\" bottom, \"ctr\" center, \"inBase\" inside the bar base, \"inEnd\" inside the bar tip, \"outEnd\" outside the bar tip, \"l\"/\"r\"/\"t\" left/right/top.",
       "enum": ["bestFit", "b", "ctr", "inBase", "inEnd", "l", "outEnd", "r", "t"],
       "type": "string"
     },
@@ -5285,6 +5304,7 @@
       "type": "string"
     },
     "DisplayBlanksAs": {
+      "description": "How blank cells plot (ST_DispBlanksAs): \"gap\" skip with a line break, \"span\" bridge with a straight line, \"zero\" treat as 0.",
       "enum": ["gap", "span", "zero"],
       "type": "string"
     },
@@ -6217,6 +6237,7 @@
       "type": "object"
     },
     "EditGroup": {
+      "description": "Who may edit within a permission range (ST_EdGrp): \"current\" = whoever holds the range.",
       "enum": [
         "none",
         "everyone",
@@ -6572,6 +6593,7 @@
           "type": "string"
         },
         "formatType": {
+          "description": "Numbering format (ST_NumberFormat): \"arabic\" 1,2,3…, \"lowerLetter\"/\"upperLetter\" a,b,c…, \"lowerRoman\"/\"upperRoman\" i,ii…, \"chicago\", \"aiueo\" Japanese kana, \"chineseCounting\" and other script-specific counters, \"bullet\", \"none\".",
           "enum": [
             "aiueo",
             "aiueoFullWidth",
@@ -6639,6 +6661,7 @@
           "type": "string"
         },
         "numRestart": {
+          "description": "Restart rule: \"continuous\" never, \"eachSect\" per section, \"eachPage\" per page.",
           "enum": ["continuous", "eachSect", "eachPage"],
           "type": "string"
         },
@@ -6646,6 +6669,7 @@
           "type": "number"
         },
         "pos": {
+          "description": "Where endnotes print: \"sectEnd\" end of the section, \"docEnd\" end of the document.",
           "enum": ["sectEnd", "docEnd"],
           "type": "string"
         }
@@ -6657,6 +6681,7 @@
       "description": "System endnote (separator / continuationSeparator). Round-tripped verbatim."
     },
     "ErrorBarDirection": {
+      "description": "Which axes the error bars span: both, x only, or y only.",
       "enum": ["both", "x", "y"],
       "type": "string"
     },
@@ -6690,10 +6715,12 @@
       "type": "object"
     },
     "ErrorBarType": {
+      "description": "Which side of the point gets a bar: both, minus (below/left), or plus (above/right).",
       "enum": ["both", "minus", "plus"],
       "type": "string"
     },
     "ErrorValueType": {
+      "description": "Error amount source (ST_ErrorValueType): \"cust\" custom plus/minus values (see plusValue/minusValue), \"fixedVal\" a fixed value, \"percentage\" percent of the data point, \"stdDev\" standard deviation, \"stdErr\" standard error.",
       "enum": ["cust", "fixedVal", "percentage", "stdDev", "stdErr"],
       "type": "string"
     },
@@ -7176,6 +7203,7 @@
           "type": "string"
         },
         "formatType": {
+          "description": "Numbering format (ST_NumberFormat): \"arabic\" 1,2,3…, \"lowerLetter\"/\"upperLetter\" a,b,c…, \"lowerRoman\"/\"upperRoman\" i,ii…, \"chicago\", \"aiueo\" Japanese kana, \"chineseCounting\" and other script-specific counters, \"bullet\", \"none\".",
           "enum": [
             "aiueo",
             "aiueoFullWidth",
@@ -7243,6 +7271,7 @@
           "type": "string"
         },
         "numRestart": {
+          "description": "Restart rule: \"continuous\" never, \"eachSect\" per section, \"eachPage\" per page.",
           "enum": ["continuous", "eachSect", "eachPage"],
           "type": "string"
         },
@@ -7250,6 +7279,7 @@
           "type": "number"
         },
         "pos": {
+          "description": "Where footnotes print: \"pageBottom\", \"beneathText\" under the text, \"sectEnd\", \"docEnd\".",
           "enum": ["pageBottom", "beneathText", "sectEnd", "docEnd"],
           "type": "string"
         }
@@ -8089,6 +8119,7 @@
       "type": "object"
     },
     "HierBranch": {
+      "description": "Hierarchy branch style (ST_HierBranchStyle): \"l\"/\"r\" hang left/right, \"hang\" hanging tree, \"std\" standard tree, \"init\" initial.",
       "enum": ["l", "r", "hang", "std", "init"],
       "type": "string"
     },
@@ -8158,6 +8189,7 @@
       "type": "object"
     },
     "HueDirection": {
+      "description": "Hue rotation direction: \"cw\" clockwise, \"ccw\" counter-clockwise.",
       "enum": ["cw", "ccw"],
       "type": "string"
     },
@@ -8380,6 +8412,7 @@
       "type": "object"
     },
     "LayoutMode": {
+      "description": "How x/y/w/h are read (ST_LayoutMode): \"edge\" offset from the chart edge, \"factor\" fraction of the plot area.",
       "enum": ["edge", "factor"],
       "type": "string"
     },
@@ -8602,6 +8635,7 @@
       "type": "object"
     },
     "LayoutTarget": {
+      "description": "Manual-layout region (ST_LayoutTarget): \"inner\" plot area only, \"outer\" including tick labels and axis titles.",
       "enum": ["inner", "outer"],
       "type": "string"
     },
@@ -8625,6 +8659,7 @@
       "type": "object"
     },
     "LegendPosition": {
+      "description": "Legend placement (ST_LegendPos): \"b\" bottom, \"tr\" top-right, \"l\" left, \"r\" right, \"t\" top.",
       "enum": ["b", "tr", "l", "r", "t"],
       "type": "string"
     },
@@ -9336,6 +9371,7 @@
       "type": "object"
     },
     "MarkerSymbol": {
+      "description": "Point-marker glyph (ST_MarkerStyle).",
       "enum": [
         "circle",
         "dash",
@@ -10619,6 +10655,7 @@
       "type": "object"
     },
     "MathScriptType": {
+      "description": "Math alphanumerics font class (ST_Script).",
       "enum": ["roman", "script", "fraktur", "double-struck", "sans-serif", "monospace"],
       "type": "string"
     },
@@ -10628,6 +10665,7 @@
       "type": "number"
     },
     "MathStyleType": {
+      "description": "Math run style (ST_Style): \"p\" plain, \"b\" bold, \"i\" italic, \"bi\" bold-italic.",
       "enum": ["p", "b", "i", "bi"],
       "type": "string"
     },
@@ -11592,6 +11630,7 @@
       "type": "object"
     },
     "OfPieType": {
+      "description": "ofPie variant (ST_OfPieType): \"pie\" pie-of-pie, \"bar\" bar-of-pie.",
       "enum": ["pie", "bar"],
       "type": "string"
     },
@@ -11984,6 +12023,7 @@
       "type": "object"
     },
     "PageSetupOrientation": {
+      "description": "Print orientation (ST_Orientation): \"default\" keeps the printer's own setting.",
       "enum": ["default", "portrait", "landscape"],
       "type": "string"
     },
@@ -14063,6 +14103,7 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
+          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
           "enum": [
             "blinkBackground",
             "lights",
@@ -14079,6 +14120,7 @@
         },
         "emphasisMark": {
           "additionalProperties": false,
+          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
           "properties": {
             "type": {
               "enum": ["none", "comma", "circle", "dot", "underDot"],
@@ -14141,6 +14183,7 @@
           "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
         },
         "highlight": {
+          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
           "enum": [
             "black",
             "blue",
@@ -14252,6 +14295,7 @@
         },
         "underline": {
           "additionalProperties": false,
+          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
               "type": "string"
@@ -15052,6 +15096,7 @@
       "type": "object"
     },
     "PictureFormat": {
+      "description": "Picture-fill mode (ST_PictureFormat): \"stack\" tile at natural size, \"scale\" stretch to fit, \"stackScale\" tile scaled by pictureStackUnit, \"stretch\".",
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
     },
@@ -15498,14 +15543,17 @@
       "additionalProperties": false,
       "properties": {
         "alignment": {
+          "description": "Where the tab lands on the reference line.",
           "enum": ["left", "center", "right"],
           "type": "string"
         },
         "leader": {
+          "description": "Fill character drawn across the tab.",
           "enum": ["none", "dot", "hyphen", "underscore", "middleDot"],
           "type": "string"
         },
         "relativeTo": {
+          "description": "Reference line for the position: page margin or paragraph indent.",
           "enum": ["margin", "indent"],
           "type": "string"
         }
@@ -15865,6 +15913,7 @@
       "type": "object"
     },
     "RadarStyle": {
+      "description": "Radar variant (ST_RadarStyle): \"standard\" lines, \"marker\" lines with point markers, \"filled\" polygon.",
       "enum": ["standard", "marker", "filled"],
       "type": "string"
     },
@@ -16538,6 +16587,7 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
+          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
           "enum": [
             "blinkBackground",
             "lights",
@@ -16554,6 +16604,7 @@
         },
         "emphasisMark": {
           "additionalProperties": false,
+          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
           "properties": {
             "type": {
               "enum": ["none", "comma", "circle", "dot", "underDot"],
@@ -16616,6 +16667,7 @@
           "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
         },
         "highlight": {
+          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
           "enum": [
             "black",
             "blue",
@@ -16728,6 +16780,7 @@
         },
         "underline": {
           "additionalProperties": false,
+          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
               "type": "string"
@@ -16834,6 +16887,7 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
+          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
           "enum": [
             "blinkBackground",
             "lights",
@@ -16850,6 +16904,7 @@
         },
         "emphasisMark": {
           "additionalProperties": false,
+          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
           "properties": {
             "type": {
               "enum": ["none", "comma", "circle", "dot", "underDot"],
@@ -16890,6 +16945,7 @@
           ]
         },
         "highlight": {
+          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
           "enum": [
             "black",
             "blue",
@@ -16999,6 +17055,7 @@
         },
         "underline": {
           "additionalProperties": false,
+          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
               "type": "string"
@@ -17098,6 +17155,7 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
+          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
           "enum": [
             "blinkBackground",
             "lights",
@@ -17114,6 +17172,7 @@
         },
         "emphasisMark": {
           "additionalProperties": false,
+          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
           "properties": {
             "type": {
               "enum": ["none", "comma", "circle", "dot", "underDot"],
@@ -17154,6 +17213,7 @@
           ]
         },
         "highlight": {
+          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
           "enum": [
             "black",
             "blue",
@@ -17259,6 +17319,7 @@
         },
         "underline": {
           "additionalProperties": false,
+          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
               "type": "string"
@@ -17357,6 +17418,7 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
+          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
           "enum": [
             "blinkBackground",
             "lights",
@@ -17373,6 +17435,7 @@
         },
         "emphasisMark": {
           "additionalProperties": false,
+          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
           "properties": {
             "type": {
               "enum": ["none", "comma", "circle", "dot", "underDot"],
@@ -17413,6 +17476,7 @@
           ]
         },
         "highlight": {
+          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
           "enum": [
             "black",
             "blue",
@@ -17514,6 +17578,7 @@
         },
         "underline": {
           "additionalProperties": false,
+          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
               "type": "string"
@@ -19159,6 +19224,7 @@
           "type": "boolean"
         },
         "type": {
+          "description": "Section-break placement: \"nextPage\"/\"nextColumn\" start there, \"continuous\" flows on, \"evenPage\"/\"oddPage\" next even/odd page.",
           "enum": ["nextPage", "nextColumn", "continuous", "evenPage", "oddPage"],
           "type": "string"
         },
@@ -19276,6 +19342,7 @@
           "type": "boolean"
         },
         "type": {
+          "description": "Section-break placement: \"nextPage\"/\"nextColumn\" start there, \"continuous\" flows on, \"evenPage\"/\"oddPage\" next even/odd page.",
           "enum": ["nextPage", "nextColumn", "continuous", "evenPage", "oddPage"],
           "type": "string"
         },
@@ -19286,6 +19353,7 @@
       "type": "object"
     },
     "SectionVerticalAlign": {
+      "description": "Vertical alignment of content on the page (ST_VerticalJc in w:sectPr); \"both\" = justified top-to-bottom.",
       "enum": ["both", "bottom", "center", "top"],
       "type": "string"
     },
@@ -20032,6 +20100,7 @@
           "type": "string"
         },
         "type": {
+          "description": "Fill pattern (ST_Shd): \"clear\" solid fill, \"nil\" no fill, \"pctN\" dot-density percent, \"horzStripe\"/\"diagStripe\"/\"horzCross\"/\"diagCross\" hatch patterns.",
           "enum": [
             "clear",
             "diagCross",
@@ -20615,6 +20684,7 @@
       "type": "object"
     },
     "SizeRepresents": {
+      "description": "Which bubble measure the size drives (ST_SizeRepresents): \"area\" the area, \"w\" the width.",
       "enum": ["area", "w"],
       "type": "string"
     },
@@ -21059,10 +21129,12 @@
       "type": "object"
     },
     "SplitType": {
+      "description": "ofPie split rule (ST_SplitType): \"auto\" Excel decides, \"cust\" the indices in customSplitPoints, \"percent\" smallest values under splitPosition %, \"pos\" the last splitPosition points, \"val\" points below splitPosition.",
       "enum": ["auto", "cust", "percent", "pos", "val"],
       "type": "string"
     },
     "StrikeStyle": {
+      "description": "Strikethrough (ST_TextStrikeType). Friendly spellings; xsdStrikeStyle maps them to the XML tokens.",
       "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
@@ -21743,6 +21815,7 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
+          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
           "enum": [
             "blinkBackground",
             "lights",
@@ -21759,6 +21832,7 @@
         },
         "emphasisMark": {
           "additionalProperties": false,
+          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
           "properties": {
             "type": {
               "enum": ["none", "comma", "circle", "dot", "underDot"],
@@ -21821,6 +21895,7 @@
           "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
         },
         "highlight": {
+          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
           "enum": [
             "black",
             "blue",
@@ -21942,6 +22017,7 @@
         },
         "underline": {
           "additionalProperties": false,
+          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
               "type": "string"
@@ -22512,6 +22588,7 @@
           "type": "number"
         },
         "horizontalAnchor": {
+          "description": "Reference edge for the horizontal position: margin, page, or text column.",
           "enum": ["margin", "page", "text"],
           "type": "string"
         },
@@ -22519,14 +22596,17 @@
           "type": "number"
         },
         "overlap": {
+          "description": "Whether two floating tables may overlap.",
           "enum": ["never", "overlap"],
           "type": "string"
         },
         "relativeHorizontalPosition": {
+          "description": "Horizontal alignment within the anchor: \"inside\"/\"outside\" the binding (odd/even page side), or an edge.",
           "enum": ["center", "inside", "left", "outside", "right"],
           "type": "string"
         },
         "relativeVerticalPosition": {
+          "description": "Vertical alignment within the anchor; \"inline\" flows in the text line.",
           "enum": ["bottom", "center", "inline", "inside", "outside", "top"],
           "type": "string"
         },
@@ -22537,6 +22617,7 @@
           "type": "number"
         },
         "verticalAnchor": {
+          "description": "Reference edge for the vertical position: margin, page, or text paragraph.",
           "enum": ["margin", "page", "text"],
           "type": "string"
         }
@@ -22609,6 +22690,7 @@
       "description": "Options for creating a Table element.\n\nNote: 0-width columns don't get rendered correctly, so we need to give them some value. A reasonable default would be ~6in / numCols, but if we do that it becomes very hard to resize the table using setWidth, unless the layout algorithm is set to 'fixed'. Instead, the approach here means even in 'auto' layout, setting a width on the table will make it look reasonable, as the layout algorithm will expand columns to fit its content.",
       "properties": {
         "alignment": {
+          "description": "Justification (ST_JcTable): \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numTab\" at the numeric tab.",
           "enum": [
             "start",
             "center",
@@ -22680,6 +22762,7 @@
           "type": "boolean"
         },
         "layout": {
+          "description": "Column sizing: \"autofit\" let content resize columns, \"fixed\" honor column widths.",
           "enum": ["autofit", "fixed"],
           "type": "string"
         },
@@ -22752,6 +22835,7 @@
       "additionalProperties": false,
       "properties": {
         "alignment": {
+          "description": "Justification (ST_JcTable): \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numTab\" at the numeric tab.",
           "enum": [
             "start",
             "center",
@@ -22801,6 +22885,7 @@
           "$ref": "#/definitions/TableWidthProperties"
         },
         "layout": {
+          "description": "Column sizing: \"autofit\" let content resize columns, \"fixed\" honor column widths.",
           "enum": ["autofit", "fixed"],
           "type": "string"
         },
@@ -22842,6 +22927,7 @@
       "description": "Options for configuring table properties.",
       "properties": {
         "alignment": {
+          "description": "Justification (ST_JcTable): \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numTab\" at the numeric tab.",
           "enum": [
             "start",
             "center",
@@ -22879,6 +22965,7 @@
           "$ref": "#/definitions/TableWidthProperties"
         },
         "layout": {
+          "description": "Column sizing: \"autofit\" let content resize columns, \"fixed\" honor column widths.",
           "enum": ["autofit", "fixed"],
           "type": "string"
         },
@@ -22938,6 +23025,7 @@
       "description": "Options for table property exceptions (w:tblPrEx).\n\nThese override the parent table's properties for a specific row. Subset of TablePropertiesOptionsBase.",
       "properties": {
         "alignment": {
+          "description": "Justification (ST_JcTable): \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numTab\" at the numeric tab.",
           "enum": [
             "start",
             "center",
@@ -22964,6 +23052,7 @@
           "$ref": "#/definitions/TableWidthProperties"
         },
         "layout": {
+          "description": "Column sizing: \"autofit\" let content resize columns, \"fixed\" honor column widths.",
           "enum": ["autofit", "fixed"],
           "type": "string"
         },
@@ -23503,6 +23592,7 @@
       "type": "string"
     },
     "TableVerticalAlign": {
+      "description": "Vertical alignment of content within a table cell (ST_VerticalJc).",
       "enum": ["bottom", "center", "top"],
       "type": "string"
     },
@@ -23524,6 +23614,7 @@
           ]
         },
         "type": {
+          "description": "How `size` is read (ST_TblWidth): \"auto\" from content, \"dxa\" twips, \"pct\" percent, \"nil\" no width.",
           "enum": ["auto", "dxa", "nil", "pct"],
           "type": "string"
         }
@@ -23532,6 +23623,7 @@
       "type": "object"
     },
     "TextAlignment": {
+      "description": "Paragraph alignment (ST_TextAlignType); \"justify\" stretches lines to full width.",
       "enum": ["left", "center", "right", "justify"],
       "type": "string"
     },
@@ -23681,6 +23773,7 @@
       "type": "object"
     },
     "TextCapitalization": {
+      "description": "Case effect (ST_TextCaps): \"all\" ALL CAPS, \"small\" Small Caps, \"none\".",
       "enum": ["none", "all", "small"],
       "type": "string"
     },
@@ -23997,6 +24090,7 @@
           "type": "string"
         },
         "fontAlignment": {
+          "description": "`@fontAlgn` — baseline reference (ST_TextFontAlign): \"t\" top, \"ctr\" center, \"b\" bottom, \"base\" baseline, \"auto\".",
           "enum": ["auto", "t", "ctr", "b", "base"],
           "type": "string"
         },
@@ -24219,6 +24313,7 @@
       "type": "object"
     },
     "TextTabAlignment": {
+      "description": "Tab-stop alignment (ST_TextTabAlignType): \"l\" left, \"ctr\" center, \"r\" right, \"dec\" on the decimal point.",
       "enum": ["l", "ctr", "r", "dec"],
       "type": "string"
     },
@@ -24252,10 +24347,12 @@
           "description": "Wrap polygon for wrapTight/wrapThrough. Preserves the source contour on round-trip; defaults to the extent rectangle when unset."
         },
         "side": {
+          "description": "Which sides text may wrap on: bothSides, left, right, or \"largest\" whichever has more room.",
           "enum": ["bothSides", "left", "right", "largest"],
           "type": "string"
         },
         "type": {
+          "description": "Wrap mode: 0 inline with text, 1 floating (moves with text), 2 square, 3 tight, 4 top-and-bottom only.",
           "enum": [0, 1, 2, 3, 4],
           "type": "number"
         }
@@ -24329,6 +24426,7 @@
       "type": "object"
     },
     "TimeUnit": {
+      "description": "Time-axis unit granularity (ST_TimeUnit).",
       "enum": ["days", "months", "years"],
       "type": "string"
     },
@@ -24628,10 +24726,12 @@
       "type": "object"
     },
     "TrendlineType": {
+      "description": "Trendline fit (ST_TrendlineType): \"exp\" exponential, \"log\" logarithmic, \"movingAvg\" moving average (see period), \"poly\" polynomial (see order), \"power\" power.",
       "enum": ["exp", "linear", "log", "movingAvg", "poly", "power"],
       "type": "string"
     },
     "UnderlineStyle": {
+      "description": "Underline (ST_TextUnderlineType, simplified set).",
       "enum": ["single", "double", "none"],
       "type": "string"
     },

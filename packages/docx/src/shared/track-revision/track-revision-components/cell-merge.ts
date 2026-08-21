@@ -21,6 +21,8 @@ export const VerticalMergeRevisionType = {
 } as const;
 
 export type CellMergeAttributes = ChangedProperties & {
+  /** Merge state this revision sets: "restart" first cell of the merge, "continue" cell absorbed into it. */
   verticalMerge?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
+  /** Merge state before the revision. */
   verticalMergeOriginal?: (typeof VerticalMergeRevisionType)[keyof typeof VerticalMergeRevisionType];
 };

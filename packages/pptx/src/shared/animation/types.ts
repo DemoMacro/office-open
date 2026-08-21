@@ -1,3 +1,4 @@
+/** Shape effect family (entrance/exit presets): "randomBars" random bars, "strips" diagonal strips, "wheel" radial wheel segments; the rest are self-evident. */
 export type AnimationType =
   | "appear"
   | "fade"
@@ -14,12 +15,16 @@ export type AnimationType =
   | "push"
   | "strips";
 
+/** When the effect starts: on click, together with the previous effect, or after it ends. */
 export type AnimationTrigger = "onClick" | "withPrevious" | "afterPrevious";
 
+/** Effect direction; "horizontal"/"vertical" cover both screen axes at once (split/zoom effects). */
 export type AnimationDirection = "left" | "right" | "up" | "down" | "horizontal" | "vertical";
 
+/** Effect category: "entr" entrance, "exit", "emph" emphasis, "mediacall" media playback. */
 export type AnimationClass = "entr" | "exit" | "emph" | "mediacall";
 
+/** Emphasis effect (applies to class "emph"): "growWithTurn" grow while turning, "boldFlash" flash bold; the rest are self-evident. */
 export type EmphasisType =
   | "growShrink"
   | "spin"
@@ -30,6 +35,7 @@ export type EmphasisType =
   | "wave"
   | "pulse";
 
+/** Motion-path preset (p:animMotion); "figureEight" traces a figure-eight. */
 export type PathAnimationType =
   | "customPath"
   | "arc"
@@ -40,10 +46,13 @@ export type PathAnimationType =
   | "line"
   | "loop";
 
+/** Media playback action: playAudio, playVideo, or "play" (media-type-agnostic). */
 export type MediaAnimationType = "playAudio" | "playVideo" | "play";
 
+/** Interpolation for property animations (p:anim `@calcmode`): "lin" linear, "fmla" by formula, "discrete" stepwise. */
 export type AnimationCalcMode = "discrete" | "lin" | "fmla";
 
+/** Value type of animation endpoints (p:anim `@valType`): "str" string, "num" number, "clr" color. */
 export type AnimationValueType = "str" | "num" | "clr";
 
 export interface AnimationVariantOptions {
@@ -58,15 +67,18 @@ export interface EndConditionOptions {
   event?: string;
   delay?: string;
   timeNodeId?: number;
+  /** Which sibling time nodes the condition covers: first, last, or all. */
   runtimeNode?: "first" | "last" | "all";
 }
 
 export interface AnimationBuildOptions {
+  /** What the shape is that builds: its text paragraphs, a diagram, an OLE chart, or a generic graphic. */
   type: "paragraph" | "diagram" | "oleChart" | "graphic";
   shapeId: number;
   groupId: number;
   uiExpand?: boolean;
   // paragraph-specific
+  /** Text build granularity (paragraph builds): "allAtOnce" whole shape, "p" paragraph by paragraph, "cust" by buildLevel, "whole" as one word. */
   build?: "allAtOnce" | "p" | "cust" | "whole";
   buildLevel?: number;
   animateBackground?: boolean;
@@ -148,10 +160,12 @@ export interface AnimationOptions {
   setBehavior?: {
     attributeName: string;
     toValue: string;
+    /** How to interpret toValue when written to the attribute. */
     toType?: "string" | "number";
   };
 
   // Command behavior (p:cmd) — extended command types
+  /** Command kind (p:cmd `@type`): "call" invoke a macro, "evt" fire an event, "verb" OLE verb. */
   commandType?: "call" | "evt" | "verb";
   command?: string;
 

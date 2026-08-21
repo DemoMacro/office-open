@@ -40,6 +40,7 @@ import type { Element } from "@office-open/xml";
 export interface ShadingProperties {
   fill?: string;
   color?: string;
+  /** Fill pattern (ST_Shd): "clear" solid fill, "nil" no fill, "pctN" dot-density percent, "horzStripe"/"diagStripe"/"horzCross"/"diagCross" hatch patterns. */
   type?: (typeof ShadingType)[keyof typeof ShadingType];
   /** Theme color reference */
   themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];

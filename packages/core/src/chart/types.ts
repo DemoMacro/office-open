@@ -83,6 +83,11 @@ export interface BubbleSeriesData extends ChartSeriesCommon {
 
 // ── Trendline ──
 
+/**
+ * Trendline fit (ST_TrendlineType): "exp" exponential, "log" logarithmic,
+ * "movingAvg" moving average (see period), "poly" polynomial (see order),
+ * "power" power.
+ */
 export type TrendlineType = "exp" | "linear" | "log" | "movingAvg" | "poly" | "power";
 
 /** Trendline label formatting (CT_TrendlineLbl — all children optional). */
@@ -107,10 +112,17 @@ export interface TrendlineOptions {
 
 // ── Error bars ──
 
+/** Which axes the error bars span: both, x only, or y only. */
 export type ErrorBarDirection = "both" | "x" | "y";
 
+/** Which side of the point gets a bar: both, minus (below/left), or plus (above/right). */
 export type ErrorBarType = "both" | "minus" | "plus";
 
+/**
+ * Error amount source (ST_ErrorValueType): "cust" custom plus/minus values
+ * (see plusValue/minusValue), "fixedVal" a fixed value, "percentage" percent
+ * of the data point, "stdDev" standard deviation, "stdErr" standard error.
+ */
 export type ErrorValueType = "cust" | "fixedVal" | "percentage" | "stdDev" | "stdErr";
 
 export interface ErrorBarOptions {
@@ -127,6 +139,11 @@ export interface ErrorBarOptions {
 
 // ── Data labels ──
 
+/**
+ * Data-label placement (ST_DLblPos): "bestFit" auto (pie), "b" bottom,
+ * "ctr" center, "inBase" inside the bar base, "inEnd" inside the bar tip,
+ * "outEnd" outside the bar tip, "l"/"r"/"t" left/right/top.
+ */
 export type DataLabelPosition =
   | "bestFit"
   | "b"
@@ -205,6 +222,10 @@ export interface ChartSeriesData extends ChartSeriesCommon {
 
 // ── Chart types ──
 
+/**
+ * Chart family; drives the c:*Chart plot element. "ofPie" is the
+ * pie-of-pie / bar-of-pie family (see ofPieType).
+ */
 export type ChartType =
   | "column"
   | "bar"
@@ -496,6 +517,7 @@ export interface ChartSpaceOptions {
 
 // ── 3D view ──
 
+/** Time-axis unit granularity (ST_TimeUnit). */
 export type TimeUnit = "days" | "months" | "years";
 
 export interface View3DOptions {
@@ -510,22 +532,31 @@ export interface View3DOptions {
 
 // ── Chart axes (EG_AxShared + CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx) ──
 
+/** Axis role; decides the CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx element. */
 export type AxisKind = "category" | "value" | "date" | "series";
 
+/** Axis side (c:axPos): "b" bottom, "l" left, "r" right, "t" top. */
 export type AxisPosition = "b" | "l" | "r" | "t";
 
+/** Tick-mark style: "cross" spanning the axis, "in" inside the plot, "out" outside, "none". */
 export type AxisTickMark = "cross" | "in" | "none" | "out";
 
+/** Tick-label placement: "high" top of the plot, "low" bottom, "nextTo" beside the axis, "none". */
 export type AxisTickLabelPosition = "high" | "low" | "nextTo" | "none";
 
+/** Where the crossing axis meets this one: "autoZero" at zero, "max" at maximum, "min" at minimum. */
 export type AxisCrosses = "autoZero" | "max" | "min";
 
+/** Value-axis crossing mode: "between" between category bands, "midCat" at the band middle. */
 export type AxisCrossBetween = "between" | "midCat";
 
+/** Value direction: "minMax" ascending, "maxMin" descending. */
 export type AxisOrientation = "minMax" | "maxMin";
 
+/** Category tick-label alignment: "ctr" center, "l" left, "r" right. */
 export type AxisLabelAlignment = "ctr" | "l" | "r";
 
+/** Built-in value-axis scaling unit (ST_BuiltInUnit), e.g. "millions" divides tick values by 1e6. */
 export type BuiltInDisplayUnit =
   | "hundreds"
   | "thousands"
@@ -623,6 +654,7 @@ export interface AxisOptions {
 
 // ── Series marker / data point / picture options (CT_Marker/CT_DPt/CT_PictureOptions) ──
 
+/** Point-marker glyph (ST_MarkerStyle). */
 export type MarkerSymbol =
   | "circle"
   | "dash"
@@ -660,6 +692,7 @@ export interface DataPointOptions {
   pictureOptions?: PictureOptionsOptions;
 }
 
+/** Picture-fill mode (ST_PictureFormat): "stack" tile at natural size, "scale" stretch to fit, "stackScale" tile scaled by pictureStackUnit, "stretch". */
 export type PictureFormat = "stack" | "scale" | "stackScale" | "stretch";
 
 /** Picture-fill options for bar/area series (CT_PictureOptions). */
@@ -672,12 +705,15 @@ export interface PictureOptionsOptions {
   pictureStackUnit?: number;
 }
 
+/** 3D bar column shape (ST_Shape): "coneToMax"/"pyramidToMax" taper to a point at the full height; plain "cone"/"pyramid" taper halfway, then run cylindrically. */
 export type BarShape = "cone" | "coneToMax" | "box" | "cylinder" | "pyramid" | "pyramidToMax";
 
 // ── Plot-area layout + 3D surfaces (CT_ManualLayout / CT_Layout / CT_Surface) ──
 
+/** Manual-layout region (ST_LayoutTarget): "inner" plot area only, "outer" including tick labels and axis titles. */
 export type LayoutTarget = "inner" | "outer";
 
+/** How x/y/w/h are read (ST_LayoutMode): "edge" offset from the chart edge, "factor" fraction of the plot area. */
 export type LayoutMode = "edge" | "factor";
 
 /** Manual plot-area layout (CT_ManualLayout). Field order follows the XSD. */
@@ -703,8 +739,10 @@ export interface SurfaceOptions {
 
 // ── Chart-level scalars (CT_Chart tail + CT_xxxChart type-specific heads) ──
 
+/** How blank cells plot (ST_DispBlanksAs): "gap" skip with a line break, "span" bridge with a straight line, "zero" treat as 0. */
 export type DisplayBlanksAs = "gap" | "span" | "zero";
 
+/** Which bubble measure the size drives (ST_SizeRepresents): "area" the area, "w" the width. */
 export type SizeRepresents = "area" | "w";
 
 /** Plot-area data table (CT_DTable). */
@@ -769,6 +807,7 @@ export interface ChartPageMarginsOptions {
   footer?: number;
 }
 
+/** Print orientation (ST_Orientation): "default" keeps the printer's own setting. */
 export type PageSetupOrientation = "default" | "portrait" | "landscape";
 
 /** Print page setup (CT_PageSetup). */
@@ -799,12 +838,19 @@ export interface PrintSettingsOptions {
 
 // ── ofPie chart (bar-of-pie / pie-of-pie, CT_OfPieChart) ──
 
+/** ofPie variant (ST_OfPieType): "pie" pie-of-pie, "bar" bar-of-pie. */
 export type OfPieType = "pie" | "bar";
 
 // ── Radar chart (CT_RadarChart) ──
 
+/** Radar variant (ST_RadarStyle): "standard" lines, "marker" lines with point markers, "filled" polygon. */
 export type RadarStyle = "standard" | "marker" | "filled";
 
+/**
+ * ofPie split rule (ST_SplitType): "auto" Excel decides, "cust" the indices
+ * in customSplitPoints, "percent" smallest values under splitPosition %,
+ * "pos" the last splitPosition points, "val" points below splitPosition.
+ */
 export type SplitType = "auto" | "cust" | "percent" | "pos" | "val";
 
 // ── Pivot chart (CT_PivotSource / CT_PivotFmts) ──
@@ -830,6 +876,7 @@ export interface BandFormatOptions {
 
 // ── Legend entries (CT_Legend / CT_LegendEntry) ──
 
+/** Legend placement (ST_LegendPos): "b" bottom, "tr" top-right, "l" left, "r" right, "t" top. */
 export type LegendPosition = "b" | "tr" | "l" | "r" | "t";
 
 /** Legend entry override (CT_LegendEntry: idx + delete | txPr). */

@@ -41,10 +41,16 @@ import type { Element } from "@office-open/xml";
  * @property space - Spacing offset from the content in points
  */
 export interface BorderOptions {
+  /**
+   * Border pattern (ST_Border): "dashSmallGap" dashed with small gaps,
+   * "dashDotStroked"/"dotDotDash" mixed dot-dash strokes, "doubleWave"/"wave"
+   * wavy lines, "inset"/"outset" pseudo-3D ridges, "pctN" dotted density,
+   * "thickThinSmallGap"/"thinThickThinSmallGap" (…) compound lines, "nil" none.
+   */
   style: (typeof BorderStyle)[keyof typeof BorderStyle];
   /** Border color, in hex (eg 'FF00AA') */
   color?: string;
-  /** Theme color reference */
+  /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
   themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
   /** Theme color tint (2-char hex) */
   themeTint?: string;

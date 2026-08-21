@@ -70,6 +70,7 @@ export interface SectionPropertiesOptionsBase {
   titlePage?: boolean;
   verticalAlign?: SectionVerticalAlign;
   columns?: ColumnsProperties;
+  /** Section-break placement: "nextPage"/"nextColumn" start there, "continuous" flows on, "evenPage"/"oddPage" next even/odd page. */
   type?: (typeof SectionType)[keyof typeof SectionType];
   noEndnote?: boolean;
   formProtection?: boolean;

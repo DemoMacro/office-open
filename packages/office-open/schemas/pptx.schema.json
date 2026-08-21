@@ -172,6 +172,7 @@
       "type": "object"
     },
     "AnimateOneByOne": {
+      "description": "One-by-one animation scope (ST_AnimOne): \"one\" item by item, \"branch\" branch by branch, \"none\".",
       "enum": ["none", "one", "branch"],
       "type": "string"
     },
@@ -188,6 +189,7 @@
           "type": "boolean"
         },
         "build": {
+          "description": "Text build granularity (paragraph builds): \"allAtOnce\" whole shape, \"p\" paragraph by paragraph, \"cust\" by buildLevel, \"whole\" as one word.",
           "enum": ["allAtOnce", "p", "cust", "whole"],
           "type": "string"
         },
@@ -226,6 +228,7 @@
           "type": "array"
         },
         "type": {
+          "description": "What the shape is that builds: its text paragraphs, a diagram, an OLE chart, or a generic graphic.",
           "enum": ["paragraph", "diagram", "oleChart", "graphic"],
           "type": "string"
         },
@@ -237,14 +240,17 @@
       "type": "object"
     },
     "AnimationCalcMode": {
+      "description": "Interpolation for property animations (p:anim `@calcmode`): \"lin\" linear, \"fmla\" by formula, \"discrete\" stepwise.",
       "enum": ["discrete", "lin", "fmla"],
       "type": "string"
     },
     "AnimationClass": {
+      "description": "Effect category: \"entr\" entrance, \"exit\", \"emph\" emphasis, \"mediacall\" media playback.",
       "enum": ["entr", "exit", "emph", "mediacall"],
       "type": "string"
     },
     "AnimationDirection": {
+      "description": "Effect direction; \"horizontal\"/\"vertical\" cover both screen axes at once (split/zoom effects).",
       "enum": ["left", "right", "up", "down", "horizontal", "vertical"],
       "type": "string"
     },
@@ -369,6 +375,7 @@
           "type": "string"
         },
         "commandType": {
+          "description": "Command kind (p:cmd `@type`): \"call\" invoke a macro, \"evt\" fire an event, \"verb\" OLE verb.",
           "enum": ["call", "evt", "verb"],
           "type": "string"
         },
@@ -626,6 +633,7 @@
               "type": "string"
             },
             "toType": {
+              "description": "How to interpret toValue when written to the attribute.",
               "enum": ["string", "number"],
               "type": "string"
             },
@@ -750,6 +758,7 @@
       "type": "object"
     },
     "AnimationLevel": {
+      "description": "Diagram animation granularity (ST_AnimLvl): \"lvl\" by level, \"ctr\" from the center outward, \"none\".",
       "enum": ["none", "lvl", "ctr"],
       "type": "string"
     },
@@ -873,6 +882,7 @@
           "type": "string"
         },
         "commandType": {
+          "description": "Command kind (p:cmd `@type`): \"call\" invoke a macro, \"evt\" fire an event, \"verb\" OLE verb.",
           "enum": ["call", "evt", "verb"],
           "type": "string"
         },
@@ -1130,6 +1140,7 @@
               "type": "string"
             },
             "toType": {
+              "description": "How to interpret toValue when written to the attribute.",
               "enum": ["string", "number"],
               "type": "string"
             },
@@ -1229,10 +1240,12 @@
       "type": "object"
     },
     "AnimationTrigger": {
+      "description": "When the effect starts: on click, together with the previous effect, or after it ends.",
       "enum": ["onClick", "withPrevious", "afterPrevious"],
       "type": "string"
     },
     "AnimationType": {
+      "description": "Shape effect family (entrance/exit presets): \"randomBars\" random bars, \"strips\" diagonal strips, \"wheel\" radial wheel segments; the rest are self-evident.",
       "enum": [
         "appear",
         "fade",
@@ -1252,6 +1265,7 @@
       "type": "string"
     },
     "AnimationValueType": {
+      "description": "Value type of animation endpoints (p:anim `@valType`): \"str\" string, \"num\" number, \"clr\" color.",
       "enum": ["str", "num", "clr"],
       "type": "string"
     },
@@ -1566,22 +1580,27 @@
       "type": "object"
     },
     "AudioType": {
+      "description": "Audio container format of the media file.",
       "enum": ["mp3", "wav", "wma", "aac"],
       "type": "string"
     },
     "AxisCrossBetween": {
+      "description": "Value-axis crossing mode: \"between\" between category bands, \"midCat\" at the band middle.",
       "enum": ["between", "midCat"],
       "type": "string"
     },
     "AxisCrosses": {
+      "description": "Where the crossing axis meets this one: \"autoZero\" at zero, \"max\" at maximum, \"min\" at minimum.",
       "enum": ["autoZero", "max", "min"],
       "type": "string"
     },
     "AxisKind": {
+      "description": "Axis role; decides the CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx element.",
       "enum": ["category", "value", "date", "series"],
       "type": "string"
     },
     "AxisLabelAlignment": {
+      "description": "Category tick-label alignment: \"ctr\" center, \"l\" left, \"r\" right.",
       "enum": ["ctr", "l", "r"],
       "type": "string"
     },
@@ -1736,10 +1755,12 @@
       "type": "object"
     },
     "AxisOrientation": {
+      "description": "Value direction: \"minMax\" ascending, \"maxMin\" descending.",
       "enum": ["minMax", "maxMin"],
       "type": "string"
     },
     "AxisPosition": {
+      "description": "Axis side (c:axPos): \"b\" bottom, \"l\" left, \"r\" right, \"t\" top.",
       "enum": ["b", "l", "r", "t"],
       "type": "string"
     },
@@ -1764,10 +1785,12 @@
       "type": "object"
     },
     "AxisTickLabelPosition": {
+      "description": "Tick-label placement: \"high\" top of the plot, \"low\" bottom, \"nextTo\" beside the axis, \"none\".",
       "enum": ["high", "low", "nextTo", "none"],
       "type": "string"
     },
     "AxisTickMark": {
+      "description": "Tick-mark style: \"cross\" spanning the axis, \"in\" inside the plot, \"out\" outside, \"none\".",
       "enum": ["cross", "in", "none", "out"],
       "type": "string"
     },
@@ -1830,6 +1853,7 @@
       "type": "object"
     },
     "BarShape": {
+      "description": "3D bar column shape (ST_Shape): \"coneToMax\"/\"pyramidToMax\" taper to a point at the full height; plain \"cone\"/\"pyramid\" taper halfway, then run cylindrically.",
       "enum": ["cone", "coneToMax", "box", "cylinder", "pyramid", "pyramidToMax"],
       "type": "string"
     },
@@ -2347,6 +2371,7 @@
       "type": "object"
     },
     "BuiltInDisplayUnit": {
+      "description": "Built-in value-axis scaling unit (ST_BuiltInUnit), e.g. \"millions\" divides tick values by 1e6.",
       "enum": [
         "hundreds",
         "thousands",
@@ -2632,6 +2657,7 @@
           "description": "Hex color string sugar, or a full fill (scheme colors, gradients)."
         },
         "dashStyle": {
+          "description": "Dash pattern (ST_PresetLineDashVal): \"lgDash\" long dashes, \"sysDot\"/\"sysDash\" system-defined dot/dash.",
           "enum": ["solid", "dash", "dashDot", "lgDash", "sysDot", "sysDash"],
           "type": "string"
         },
@@ -3467,6 +3493,7 @@
       "type": "object"
     },
     "ChartType": {
+      "description": "Chart family; drives the c:*Chart plot element. \"ofPie\" is the pie-of-pie / bar-of-pie family (see ofPieType).",
       "enum": [
         "column",
         "bar",
@@ -3668,6 +3695,7 @@
       ]
     },
     "ColorMethod": {
+      "description": "How the color list maps onto shapes (ST_ColorMethod): \"span\" interpolate across the list, \"cycle\" repeat in order, \"repeat\" alternate.",
       "enum": ["span", "cycle", "repeat"],
       "type": "string"
     },
@@ -4524,6 +4552,7 @@
       "type": "object"
     },
     "DataLabelPosition": {
+      "description": "Data-label placement (ST_DLblPos): \"bestFit\" auto (pie), \"b\" bottom, \"ctr\" center, \"inBase\" inside the bar base, \"inEnd\" inside the bar tip, \"outEnd\" outside the bar tip, \"l\"/\"r\"/\"t\" left/right/top.",
       "enum": ["bestFit", "b", "ctr", "inBase", "inEnd", "l", "outEnd", "r", "t"],
       "type": "string"
     },
@@ -4798,6 +4827,7 @@
       "type": "object"
     },
     "DisplayBlanksAs": {
+      "description": "How blank cells plot (ST_DispBlanksAs): \"gap\" skip with a line break, \"span\" bridge with a straight line, \"zero\" treat as 0.",
       "enum": ["gap", "span", "zero"],
       "type": "string"
     },
@@ -5110,6 +5140,7 @@
       "type": "object"
     },
     "EmphasisType": {
+      "description": "Emphasis effect (applies to class \"emph\"): \"growWithTurn\" grow while turning, \"boldFlash\" flash bold; the rest are self-evident.",
       "enum": [
         "growShrink",
         "spin",
@@ -5144,6 +5175,7 @@
           "type": "string"
         },
         "runtimeNode": {
+          "description": "Which sibling time nodes the condition covers: first, last, or all.",
           "enum": ["first", "last", "all"],
           "type": "string"
         },
@@ -5170,6 +5202,7 @@
       "type": "object"
     },
     "ErrorBarDirection": {
+      "description": "Which axes the error bars span: both, x only, or y only.",
       "enum": ["both", "x", "y"],
       "type": "string"
     },
@@ -5203,10 +5236,12 @@
       "type": "object"
     },
     "ErrorBarType": {
+      "description": "Which side of the point gets a bar: both, minus (below/left), or plus (above/right).",
       "enum": ["both", "minus", "plus"],
       "type": "string"
     },
     "ErrorValueType": {
+      "description": "Error amount source (ST_ErrorValueType): \"cust\" custom plus/minus values (see plusValue/minusValue), \"fixedVal\" a fixed value, \"percentage\" percent of the data point, \"stdDev\" standard deviation, \"stdErr\" standard error.",
       "enum": ["cust", "fixedVal", "percentage", "stdDev", "stdErr"],
       "type": "string"
     },
@@ -6170,6 +6205,7 @@
       "type": "object"
     },
     "HierBranch": {
+      "description": "Hierarchy branch style (ST_HierBranchStyle): \"l\"/\"r\" hang left/right, \"hang\" hanging tree, \"std\" standard tree, \"init\" initial.",
       "enum": ["l", "r", "hang", "std", "init"],
       "type": "string"
     },
@@ -6216,6 +6252,7 @@
       "type": "object"
     },
     "HueDirection": {
+      "description": "Hue rotation direction: \"cw\" clockwise, \"ccw\" counter-clockwise.",
       "enum": ["cw", "ccw"],
       "type": "string"
     },
@@ -6432,6 +6469,7 @@
       "type": "object"
     },
     "LayoutMode": {
+      "description": "How x/y/w/h are read (ST_LayoutMode): \"edge\" offset from the chart edge, \"factor\" fraction of the plot area.",
       "enum": ["edge", "factor"],
       "type": "string"
     },
@@ -6727,6 +6765,7 @@
       "type": "object"
     },
     "LayoutTarget": {
+      "description": "Manual-layout region (ST_LayoutTarget): \"inner\" plot area only, \"outer\" including tick labels and axis titles.",
       "enum": ["inner", "outer"],
       "type": "string"
     },
@@ -6750,6 +6789,7 @@
       "type": "object"
     },
     "LegendPosition": {
+      "description": "Legend placement (ST_LegendPos): \"b\" bottom, \"tr\" top-right, \"l\" left, \"r\" right, \"t\" top.",
       "enum": ["b", "tr", "l", "r", "t"],
       "type": "string"
     },
@@ -7269,6 +7309,7 @@
       "type": "object"
     },
     "MarkerSymbol": {
+      "description": "Point-marker glyph (ST_MarkerStyle).",
       "enum": [
         "circle",
         "dash",
@@ -7468,6 +7509,7 @@
       "type": "object"
     },
     "MediaAnimationType": {
+      "description": "Media playback action: playAudio, playVideo, or \"play\" (media-type-agnostic).",
       "enum": ["playAudio", "playVideo", "play"],
       "type": "string"
     },
@@ -7626,6 +7668,7 @@
       "additionalProperties": false,
       "properties": {
         "horzBarState": {
+          "description": "Horizontal splitter-bar state, same states as vertBarState.",
           "enum": ["restored", "maximized", "minimized"],
           "type": "string"
         },
@@ -7647,6 +7690,7 @@
           "type": "boolean"
         },
         "vertBarState": {
+          "description": "Vertical splitter-bar state: restored (pane visible at restored size), maximized, or minimized.",
           "enum": ["restored", "maximized", "minimized"],
           "type": "string"
         }
@@ -7788,7 +7832,7 @@
       "description": "The `p:notesViewPr` payload — a CT_CommonSlideViewProperties (view + guides).",
       "properties": {
         "guides": {
-          "description": "Notes-view guides (`p:guideLst`).",
+          "description": "Notes-view guides (`p:guideLst`); each guide is a vertical or horizontal line at `pos` (EMU).",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -7831,6 +7875,7 @@
       "type": "object"
     },
     "OfPieType": {
+      "description": "ofPie variant (ST_OfPieType): \"pie\" pie-of-pie, \"bar\" bar-of-pie.",
       "enum": ["pie", "bar"],
       "type": "string"
     },
@@ -8031,6 +8076,7 @@
       "type": "object"
     },
     "OnOffStyleType": {
+      "description": "Style-part on/off state (ST_OnOffStyleType): \"def\" inherit the table style's default, \"on\"/\"off\" force it.",
       "enum": ["on", "off", "def"],
       "type": "string"
     },
@@ -8198,6 +8244,7 @@
       "type": "object"
     },
     "PageSetupOrientation": {
+      "description": "Print orientation (ST_Orientation): \"default\" keeps the printer's own setting.",
       "enum": ["default", "portrait", "landscape"],
       "type": "string"
     },
@@ -8246,6 +8293,7 @@
       "type": "object"
     },
     "PathAnimationType": {
+      "description": "Motion-path preset (p:animMotion); \"figureEight\" traces a figure-eight.",
       "enum": ["customPath", "arc", "bounce", "circle", "curve", "figureEight", "line", "loop"],
       "type": "string"
     },
@@ -8540,6 +8588,7 @@
           "type": "string"
         },
         "layout": {
+          "description": "Pictures per slide; \"*Title\" variants repeat the title placeholder on each slide.",
           "enum": ["fitToSlide", "1pic", "2pic", "4pic", "1picTitle", "2picTitle", "4picTitle"],
           "type": "string"
         },
@@ -8550,6 +8599,7 @@
       "type": "object"
     },
     "PictureFormat": {
+      "description": "Picture-fill mode (ST_PictureFormat): \"stack\" tile at natural size, \"scale\" stretch to fit, \"stackScale\" tile scaled by pictureStackUnit, \"stretch\".",
       "enum": ["stack", "scale", "stackScale", "stretch"],
       "type": "string"
     },
@@ -9143,6 +9193,7 @@
       "type": "string"
     },
     "PosterType": {
+      "description": "Poster-frame image format.",
       "enum": ["png", "jpg"],
       "type": "string"
     },
@@ -9173,6 +9224,7 @@
           "type": "boolean"
         },
         "conformance": {
+          "description": "Package dialect to emit: ISO strict or transitional namespace set (round-trips a strict source).",
           "enum": ["strict", "transitional"],
           "type": "string"
         },
@@ -9734,6 +9786,7 @@
       "additionalProperties": false,
       "properties": {
         "colorMode": {
+          "description": "Print in pure black-and-white, grayscale, or color.",
           "enum": ["blackWhite", "gray", "color"],
           "type": "string"
         },
@@ -9744,6 +9797,7 @@
           "type": "boolean"
         },
         "printWhat": {
+          "description": "What each printed page holds: slides, \"handoutsN\" N slides per page, notes pages, or the outline.",
           "enum": [
             "slides",
             "handouts1",
@@ -9806,6 +9860,7 @@
       "type": "object"
     },
     "RadarStyle": {
+      "description": "Radar variant (ST_RadarStyle): \"standard\" lines, \"marker\" lines with point markers, \"filled\" polygon.",
       "enum": ["standard", "marker", "filled"],
       "type": "string"
     },
@@ -10721,6 +10776,7 @@
           "type": "object"
         },
         "type": {
+          "description": "Slide-show mode: \"present\" full screen, \"browse\" in a window, \"kiosk\" full screen, no exit.",
           "enum": ["present", "browse", "kiosk"],
           "type": "string"
         },
@@ -10731,6 +10787,7 @@
       "type": "object"
     },
     "SizeRepresents": {
+      "description": "Which bubble measure the size drives (ST_SizeRepresents): \"area\" the area, \"w\" the width.",
       "enum": ["area", "w"],
       "type": "string"
     },
@@ -10966,6 +11023,7 @@
       "type": "object"
     },
     "SlideLayoutType": {
+      "description": "Slide layout family (ST_SlideLayoutType). Abbreviations: \"tx\" text body, \"obj\" object/content, \"secHead\" section header, \"tbl\" table, \"picTx\" picture with text, \"twoTxTwoObj\" two texts and two objects, \"objTx\" object with text, \"vertTx\" vertical text, \"vertTitleAndTx\" vertical title with vertical text.",
       "enum": [
         "blank",
         "title",
@@ -11397,10 +11455,12 @@
       "type": "object"
     },
     "SplitType": {
+      "description": "ofPie split rule (ST_SplitType): \"auto\" Excel decides, \"cust\" the indices in customSplitPoints, \"percent\" smallest values under splitPosition %, \"pos\" the last splitPosition points, \"val\" points below splitPosition.",
       "enum": ["auto", "cust", "percent", "pos", "val"],
       "type": "string"
     },
     "StrikeStyle": {
+      "description": "Strikethrough (ST_TextStrikeType). Friendly spellings; xsdStrikeStyle maps them to the XML tokens.",
       "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
@@ -11722,6 +11782,7 @@
           "$ref": "#/definitions/FillOptions"
         },
         "horizontalMerge": {
+          "description": "Horizontal merge: \"restart\" first cell of the merge, \"continue\" cell absorbed into it.",
           "enum": ["continue", "restart"],
           "type": "string"
         },
@@ -11786,6 +11847,7 @@
           "$ref": "#/definitions/VerticalAlignment"
         },
         "verticalMerge": {
+          "description": "Vertical merge: \"restart\" first cell of the merge, \"continue\" cell absorbed into it.",
           "enum": ["continue", "restart"],
           "type": "string"
         }
@@ -11819,6 +11881,7 @@
       "description": "Font reference — a:fontRef (CT_FontReference). Unlike lnRef/fillRef/effectRef (CT_StyleMatrixReference, integer idx), its",
       "properties": {
         "collection": {
+          "description": "Theme font slot: \"major\" headings, \"minor\" body text, \"none\".",
           "enum": ["major", "minor", "none"],
           "type": "string"
         },
@@ -12172,6 +12235,7 @@
       "type": "object"
     },
     "TextAlignment": {
+      "description": "Paragraph alignment (ST_TextAlignType); \"justify\" stretches lines to full width.",
       "enum": ["left", "center", "right", "justify"],
       "type": "string"
     },
@@ -12305,6 +12369,7 @@
       "type": "object"
     },
     "TextCapitalization": {
+      "description": "Case effect (ST_TextCaps): \"all\" ALL CAPS, \"small\" Small Caps, \"none\".",
       "enum": ["none", "all", "small"],
       "type": "string"
     },
@@ -12613,6 +12678,7 @@
           "type": "string"
         },
         "fontAlignment": {
+          "description": "`@fontAlgn` — baseline reference (ST_TextFontAlign): \"t\" top, \"ctr\" center, \"b\" bottom, \"base\" baseline, \"auto\".",
           "enum": ["auto", "t", "ctr", "b", "base"],
           "type": "string"
         },
@@ -12851,6 +12917,7 @@
       "type": "object"
     },
     "TextTabAlignment": {
+      "description": "Tab-stop alignment (ST_TextTabAlignType): \"l\" left, \"ctr\" center, \"r\" right, \"dec\" on the decimal point.",
       "enum": ["l", "ctr", "r", "dec"],
       "type": "string"
     },
@@ -13015,6 +13082,7 @@
       "type": "object"
     },
     "TimeUnit": {
+      "description": "Time-axis unit granularity (ST_TimeUnit).",
       "enum": ["days", "months", "years"],
       "type": "string"
     },
@@ -13065,6 +13133,7 @@
       "type": "object"
     },
     "TransitionDirection": {
+      "description": "Slide-transition motion direction; diagonal corners like \"leftUp\" apply to cover/pull, \"in\"/\"out\" to circle/plus/wedge/diamond.",
       "enum": [
         "left",
         "up",
@@ -13089,13 +13158,16 @@
           "type": "boolean"
         },
         "direction": {
-          "$ref": "#/definitions/TransitionDirection"
+          "$ref": "#/definitions/TransitionDirection",
+          "description": "Motion direction; see TransitionDirection."
         },
         "orient": {
+          "description": "Split/wipe orientation: horizontal or vertical.",
           "enum": ["horz", "vert"],
           "type": "string"
         },
         "speed": {
+          "description": "Transition playback speed.",
           "enum": ["slow", "medium", "fast"],
           "type": "string"
         },
@@ -13131,12 +13203,14 @@
           "type": "boolean"
         },
         "type": {
-          "$ref": "#/definitions/TransitionType"
+          "$ref": "#/definitions/TransitionType",
+          "description": "Slide-change effect; see TransitionType."
         }
       },
       "type": "object"
     },
     "TransitionType": {
+      "description": "Slide-change effect (ST_Transition): \"newsflash\" spinning blur, \"plus\" plus-shaped reveal, \"wedge\" wedge-shaped wipe, \"comb\" comb-tooth reveal, \"randomBar\" random bars.",
       "enum": [
         "fade",
         "push",
@@ -13227,10 +13301,12 @@
       "type": "object"
     },
     "TrendlineType": {
+      "description": "Trendline fit (ST_TrendlineType): \"exp\" exponential, \"log\" logarithmic, \"movingAvg\" moving average (see period), \"poly\" polynomial (see order), \"power\" power.",
       "enum": ["exp", "linear", "log", "movingAvg", "poly", "power"],
       "type": "string"
     },
     "UnderlineStyle": {
+      "description": "Underline (ST_TextUnderlineType, simplified set).",
       "enum": ["single", "double", "none"],
       "type": "string"
     },
@@ -13318,6 +13394,7 @@
       "type": "object"
     },
     "VerticalAlignment": {
+      "description": "Vertical alignment of cell content (ST_TextAnchorType); \"distribute\" spreads lines evenly across the cell height.",
       "enum": ["top", "center", "bottom", "justify", "distribute"],
       "type": "string"
     },
@@ -13429,6 +13506,7 @@
       "type": "object"
     },
     "VideoType": {
+      "description": "Video container format of the media file.",
       "enum": ["mp4", "mov", "wmv", "avi"],
       "type": "string"
     },
@@ -13474,6 +13552,7 @@
           "type": "object"
         },
         "guides": {
+          "description": "Slide-view guides (`p:guideLst`); each guide is a vertical or horizontal line at `pos` (EMU).",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -13490,6 +13569,7 @@
           "type": "array"
         },
         "lastView": {
+          "description": "View active when the file was last saved; \"slideSorterView\" = the slide-overview grid.",
           "enum": [
             "slideView",
             "slideMasterView",

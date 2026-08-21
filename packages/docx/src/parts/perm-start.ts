@@ -25,6 +25,7 @@ export const EditGroupType = {
   CURRENT: "current",
 } as const;
 
+/** Who may edit within a permission range (ST_EdGrp): "current" = whoever holds the range. */
 export type EditGroup = (typeof EditGroupType)[keyof typeof EditGroupType];
 
 /**

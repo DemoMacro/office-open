@@ -335,6 +335,7 @@ export interface FreezePaneOptions {
  * to the drawing's cNvPr.
  */
 export interface PictureOptions extends Omit<BasePictureOptions, "type">, DrawingAnchorOptions {
+  /** Image format of the `data` bytes; wmf/emf are Windows metafiles. */
   type: "png" | "jpg" | "wmf" | "emf";
   /** Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position). */
   spPr?: ShapePropertiesOptions;
@@ -484,6 +485,7 @@ export interface HeaderFooterOptions {
   alignWithMargins?: boolean;
 }
 
+/** Print orientation (ST_Orientation): "default" keeps the printer's own setting. */
 export type PageOrientation = "default" | "portrait" | "landscape";
 
 export interface PageSetupOptions {
@@ -492,6 +494,7 @@ export interface PageSetupOptions {
   scale?: number;
   fitToWidth?: number;
   fitToHeight?: number;
+  /** Page sequencing when printing wide sheets: down then over, or across then down. */
   pageOrder?: "downThenOver" | "overThenDown";
   useFirstPageNumber?: boolean;
   firstPageNumber?: number;
@@ -643,6 +646,7 @@ export interface NoteAnchorOptions {
   to: AnchorMarkerOptions;
 }
 
+/** What cell input is validated against (ST_DataValidationType): "whole" whole number, "textLength" character count, "list" values from formula1, "custom" formula must be true. */
 export type DataValidationType =
   | "none"
   | "whole"
@@ -652,6 +656,7 @@ export type DataValidationType =
   | "time"
   | "textLength"
   | "custom";
+/** Comparison applied between formula1 (and formula2 for between/notBetween) and the cell value. */
 export type DataValidationOperator =
   | "between"
   | "notBetween"
@@ -695,6 +700,7 @@ export interface DataValidationOptions {
   showDropDown?: boolean;
 }
 
+/** Conditional-format rule kind (ST_CfType): "cellIs" value comparison (see operator), "expression" formula trigger, "top10" ranked values, "containsText" substring match. */
 export type ConditionalFormatType =
   | "cellIs"
   | "containsText"
@@ -704,6 +710,7 @@ export type ConditionalFormatType =
   | "colorScale"
   | "dataBar"
   | "iconSet";
+/** Comparison for the "cellIs" rule, between formula1 and the cell value. */
 export type ConditionalFormatOperator =
   | "lessThan"
   | "lessThanOrEqual"
@@ -1147,6 +1154,7 @@ export interface PhoneticPropertiesOptions {
 /** Background image for a worksheet */
 export interface SheetBackgroundImageOptions {
   data: DataType;
+  /** Image format of the `data` bytes. */
   type: "png" | "jpg";
 }
 
