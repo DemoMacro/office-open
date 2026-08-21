@@ -2650,6 +2650,14 @@
     "ChartsheetOptions": {
       "additionalProperties": false,
       "properties": {
+        "absoluteX": {
+          "description": "Chart anchor X in EMU (xdr:absoluteAnchor/xdr:pos",
+          "type": "number"
+        },
+        "absoluteY": {
+          "description": "Chart anchor Y in EMU (xdr:absoluteAnchor/xdr:pos",
+          "type": "number"
+        },
         "chart": {
           "$ref": "#/definitions/ChartSpaceOptions",
           "description": "Chart definition — the shared chart-space model, same shape as a worksheet chart."
@@ -2657,6 +2665,14 @@
         "codeName": {
           "description": "VBA code name (CT_ChartsheetPr `@codeName`)",
           "type": "string"
+        },
+        "extentCx": {
+          "description": "Chart width in EMU (xdr:ext",
+          "type": "number"
+        },
+        "extentCy": {
+          "description": "Chart height in EMU (xdr:ext",
+          "type": "number"
         },
         "frameLocks": {
           "$ref": "#/definitions/GraphicFrameLockingOptions",
@@ -2686,6 +2702,10 @@
           "description": "Published to server (CT_ChartsheetPr `@published`, XSD default true — only false is emitted)",
           "type": "boolean"
         },
+        "shapeId": {
+          "description": "Chart frame shape id (xdr:cNvPr",
+          "type": "number"
+        },
         "sheetId": {
           "description": "Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential.",
           "type": "number"
@@ -2702,6 +2722,14 @@
         "tabColor": {
           "description": "Tab color (hex ARGB, e.g. \"FF4472C4\")",
           "type": "string"
+        },
+        "tabSelected": {
+          "description": "Sheet selected state (CT_ChartsheetView `@tabSelected`, XSD default false).",
+          "type": "boolean"
+        },
+        "zoomScale": {
+          "description": "Window zoom percent (CT_ChartsheetView `@zoomScale`, default 100).",
+          "type": "number"
         },
         "zoomToFit": {
           "description": "Zoom to fit (CT_ChartsheetView `@zoomToFit`)",
@@ -2763,6 +2791,10 @@
             }
           ],
           "description": "Paper width (ST_PositiveUniversalMeasure)"
+        },
+        "printerSettingsRId": {
+          "description": "Relationship ID for the printer settings part (CT_CsPageSetup `@r:id`)",
+          "type": "string"
         },
         "useFirstPageNumber": {
           "description": "Use firstPageNumber as the starting page number",

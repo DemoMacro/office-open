@@ -93,6 +93,28 @@ describe("chartsheetDesc round-trip", () => {
     expect(result.pageSetup?.copies).toBe(2);
   });
 
+  it("round-trips pageSetup printerSettings r:id", () => {
+    const opts: ChartsheetDescriptorOptions = {
+      ...baseOpts,
+      pageSetup: { orientation: "landscape", printerSettingsRId: "rId2" },
+    };
+    const xml = chartsheetDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<pageSetup orientation="landscape" r:id="rId2"/>');
+
+    const result = roundTrip(opts);
+    expect(result.pageSetup?.printerSettingsRId).toBe("rId2");
+  });
+
+  it("round-trips sheetView tabSelected and zoomScale", () => {
+    const opts: ChartsheetDescriptorOptions = { ...baseOpts, tabSelected: true, zoomScale: 75 };
+    const xml = chartsheetDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<sheetView tabSelected="1" zoomScale="75" workbookViewId="0"/>');
+
+    const result = roundTrip(opts);
+    expect(result.tabSelected).toBe(true);
+    expect(result.zoomScale).toBe(75);
+  });
+
   it("round-trips headerFooter", () => {
     const opts: ChartsheetDescriptorOptions = {
       ...baseOpts,

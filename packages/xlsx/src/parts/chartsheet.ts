@@ -53,6 +53,8 @@ export interface ChartsheetPageSetup {
   verticalDpi?: number;
   /** Copies to print */
   copies?: number;
+  /** Relationship ID for the printer settings part (CT_CsPageSetup `@r:id`) */
+  printerSettingsRId?: string;
 }
 
 export interface ChartsheetProtectionOptions {
@@ -99,12 +101,29 @@ export interface ChartsheetOptions {
   codeName?: string;
   /** Zoom to fit (CT_ChartsheetView `@zoomToFit`) */
   zoomToFit?: boolean;
+  /** Sheet selected state (CT_ChartsheetView `@tabSelected`, XSD default false). */
+  tabSelected?: boolean;
+  /** Window zoom percent (CT_ChartsheetView `@zoomScale`, default 100). */
+  zoomScale?: number;
   /** Chart definition — the shared chart-space model, same shape as a worksheet chart. */
   chart?: ChartSpaceOptions;
   /** Macro reference on the chart's graphicFrame (CT_GraphicFrame/@macro). */
   macro?: string;
   /** Frame locks on the chart's graphicFrame (a:graphicFrameLocks). */
   frameLocks?: GraphicFrameLockingOptions;
+  /** Chart anchor X in EMU (xdr:absoluteAnchor/xdr:pos @x) — fresh sheets anchor at origin. */
+  absoluteX?: number;
+  /** Chart anchor Y in EMU (xdr:absoluteAnchor/xdr:pos @y). */
+  absoluteY?: number;
+  /**
+   * Chart width in EMU (xdr:ext @cx) — the rendered chart size on the sheet;
+   * fresh sheets use the full-page default.
+   */
+  extentCx?: number;
+  /** Chart height in EMU (xdr:ext @cy). */
+  extentCy?: number;
+  /** Chart frame shape id (xdr:cNvPr @id) — unique within the drawing part. */
+  shapeId?: number;
 }
 
 // ── Descriptor Types ──
@@ -137,8 +156,12 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     }
 
     // sheetViews (required)
-    const svAttrs: string[] = ['workbookViewId="0"'];
+    const svAttrs: string[] = [];
+    // XSD default false — only the explicit true carries information.
+    if (opts.tabSelected) svAttrs.push('tabSelected="1"');
+    if (opts.zoomScale !== undefined) svAttrs.push(`zoomScale="${opts.zoomScale}"`);
     if (opts.zoomToFit) svAttrs.push('zoomToFit="1"');
+    svAttrs.push('workbookViewId="0"');
     p.push(`<sheetViews><sheetView ${svAttrs.join(" ")}/></sheetViews>`);
 
     // sheetProtection (optional) — CT_ChartsheetProtection
@@ -199,6 +222,7 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (ps.horizontalDpi !== undefined) psAttrs.horizontalDpi = ps.horizontalDpi;
       if (ps.verticalDpi !== undefined) psAttrs.verticalDpi = ps.verticalDpi;
       if (ps.copies !== undefined) psAttrs.copies = ps.copies;
+      if (ps.printerSettingsRId) psAttrs["r:id"] = ps.printerSettingsRId;
       p.push(`<pageSetup${attrs(psAttrs)}/>`);
     }
 
@@ -237,7 +261,13 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     const sheetViews = findChild(el, "sheetViews");
     if (sheetViews) {
       const sv = findChild(sheetViews, "sheetView");
-      if (sv && parseOnOff(attr(sv, "zoomToFit"))) result.zoomToFit = true;
+      if (sv) {
+        // XSD default false — only the explicit "1" carries information back.
+        if (parseOnOff(attr(sv, "tabSelected"))) result.tabSelected = true;
+        const zoomScale = attrNum(sv, "zoomScale");
+        if (zoomScale !== undefined) result.zoomScale = zoomScale;
+        if (parseOnOff(attr(sv, "zoomToFit"))) result.zoomToFit = true;
+      }
     }
 
     // sheetProtection — CT_ChartsheetProtection
@@ -302,6 +332,8 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (vdpi !== undefined) ps.verticalDpi = vdpi;
       const copies = attrNum(pageSetupEl, "copies");
       if (copies !== undefined) ps.copies = copies;
+      const psRid = attr(pageSetupEl, "r:id");
+      if (psRid) ps.printerSettingsRId = psRid;
       result.pageSetup = ps;
     }
 

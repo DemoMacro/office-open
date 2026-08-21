@@ -6,6 +6,7 @@
 import {
   appPropertiesDesc,
   contentTypesDesc,
+  convertToEmu,
   customPropertiesDesc,
   parseArchive,
   parseCorePropsElement,
@@ -629,6 +630,15 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           csData.chart = chartSpaceDesc.parse(chartEl, readContext);
           if (anchor.macro !== undefined) csData.macro = anchor.macro;
           if (anchor.frameLocks) csData.frameLocks = anchor.frameLocks;
+          // Anchor geometry is the rendered chart size on the sheet — Excel
+          // keeps it verbatim on save, so round-trip must not fall back to the
+          // full-page default. The drawing fields accept UniversalMeasure;
+          // chartsheet anchors are plain EMU numbers.
+          if (anchor.absoluteX !== undefined) csData.absoluteX = convertToEmu(anchor.absoluteX);
+          if (anchor.absoluteY !== undefined) csData.absoluteY = convertToEmu(anchor.absoluteY);
+          if (anchor.extentCx !== undefined) csData.extentCx = convertToEmu(anchor.extentCx);
+          if (anchor.extentCy !== undefined) csData.extentCy = convertToEmu(anchor.extentCy);
+          if (anchor.shapeId !== undefined) csData.shapeId = anchor.shapeId;
           break outer;
         }
       }

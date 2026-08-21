@@ -1164,6 +1164,10 @@ function compileWorksheetPart(
   };
 }
 
+/** Full-page default frame for a fresh chartsheet chart (≈9.70×6.35 in). */
+const CHARTSHEET_DEFAULT_CX = 9308969;
+const CHARTSHEET_DEFAULT_CY = 6096000;
+
 /** Compile all chartsheets: chart part, chartsheet/drawing XML and rels. */
 function compileChartsheets(
   chartsheetConfigs: ChartsheetOptions[],
@@ -1211,22 +1215,34 @@ function compileChartsheets(
       `../charts/chart${csChartGlobalIdx + 1}.xml`,
     );
 
-    // Minimal drawing XML with chart anchor — reuses the parts/drawing anchor
-    // and graphicFrame builders (no hand-rolled xdr emitter). A chartsheet
-    // chart fills the sheet: absolute anchor at origin with the full-page frame.
-    const frame = graphicFrameXml(1, undefined, `Chart ${i + 1}`, "rId1", 9308969, 6096000, ctx, {
-      frameLocks: csOpts.frameLocks,
-      macro: csOpts.macro,
-    });
+    // Drawing XML with chart anchor — reuses the parts/drawing anchor and
+    // graphicFrame builders (no hand-rolled xdr emitter). Round-tripped
+    // sheets keep the source anchor geometry (the rendered chart size —
+    // Excel writes it back verbatim on save); fresh sheets anchor at origin
+    // with the full-page frame. The graphicFrame xfrm stays 0×0, Excel's own
+    // chartsheet form: it sizes from the anchor ext and zeroes xfrm on save.
+    const frame = graphicFrameXml(
+      csOpts.shapeId ?? 1,
+      undefined,
+      `Chart ${i + 1}`,
+      "rId1",
+      0,
+      0,
+      ctx,
+      {
+        frameLocks: csOpts.frameLocks,
+        macro: csOpts.macro,
+      },
+    );
     const anchor = wrapAnchor(
       {
         anchorType: "absolute",
         col: 1,
         row: 1,
-        absoluteX: 0,
-        absoluteY: 0,
-        extentCx: 9308969,
-        extentCy: 6096000,
+        absoluteX: csOpts.absoluteX ?? 0,
+        absoluteY: csOpts.absoluteY ?? 0,
+        extentCx: csOpts.extentCx ?? CHARTSHEET_DEFAULT_CX,
+        extentCy: csOpts.extentCy ?? CHARTSHEET_DEFAULT_CY,
       },
       `${frame}<xdr:clientData/>`,
     );
@@ -1245,8 +1261,27 @@ function compileChartsheets(
       data: XML_DECL + csRels.serialize(),
       path: `xl/chartsheets/_rels/sheet${i + 1}.xml.rels`,
     };
+
+    // pageSetup r:id → printerSettings: the rebuilt rels renumber every id
+    // (drawing holds rId1), so remap the source id onto the re-emitted
+    // relationship — otherwise the passthrough .bin stays orphaned and Excel
+    // discards it on the next save.
+    let csPageSetup = csOpts.pageSetup;
+    if (csPageSetup?.printerSettingsRId) {
+      const srcRid = csPageSetup.printerSettingsRId;
+      const rel = (passthroughRelationships ?? []).find(
+        (r) =>
+          r.source === `xl/chartsheets/sheet${i + 1}.xml` &&
+          r.rId === srcRid &&
+          r.relationshipType.endsWith("/printerSettings"),
+      );
+      const rid = rel ? (csRels.idOf(rel.relationshipType, rel.target) ?? srcRid) : srcRid;
+      if (rid !== srcRid) csPageSetup = { ...csPageSetup, printerSettingsRId: rid };
+    }
     mapping[`Chartsheet${i}`] = {
-      data: XML_DECL + chartsheetDesc.stringify({ ...csOpts, drawingRId: "rId1" }, ctx),
+      data:
+        XML_DECL +
+        chartsheetDesc.stringify({ ...csOpts, drawingRId: "rId1", pageSetup: csPageSetup }, ctx),
       path: `xl/chartsheets/sheet${i + 1}.xml`,
     };
   }
