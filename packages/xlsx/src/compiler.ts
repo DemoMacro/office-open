@@ -462,10 +462,18 @@ export function compileWorkbook(
     };
   }
 
-  // Calculation chain — auto-generated from formula cells
-  if (state.calcCells.length > 0) {
+  // Calculation chain — round-trips preserve the parsed chain verbatim (the
+  // chain encodes Excel's own evaluation order, not something derivable);
+  // fresh authoring rebuilds one from formula cells. A source whose workbook
+  // rels reference calcChain but ship no part (repair-style files) keeps the
+  // part absent — Excel tolerates the dangling reference exactly as received.
+  const calcChainCells = options.calcChain ?? state.calcCells;
+  const srcReferencesCalcChain = (options.passthroughRelationships ?? []).some(
+    (r) => r.source === "xl/workbook.xml" && r.relationshipType.endsWith("/calcChain"),
+  );
+  if (calcChainCells.length > 0 && !(srcReferencesCalcChain && options.calcChain === undefined)) {
     mapping["CalcChain"] = {
-      data: calcChainDesc.stringify({ cells: state.calcCells }, ctx) ?? "",
+      data: calcChainDesc.stringify({ cells: calcChainCells }, ctx) ?? "",
       path: "xl/calcChain.xml",
     };
     const calcChainRid = ctx.workbookRels.relationshipCount + 1;
