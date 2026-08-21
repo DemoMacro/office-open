@@ -152,7 +152,7 @@ describe("slideDesc round-trip", () => {
   it("skips headerFooter placeholders the children already carry", () => {
     const opts: SlideOptions = {
       headerFooter: { slideNumber: true, footer: "Confidential", dateTime: true },
-      children: [{ shape: { placeholder: "sldNum" } }],
+      children: [{ shape: { placeholder: "slideNumber" } }],
     };
     const xml = slideDesc.stringify(opts, writeCtx) ?? "";
 

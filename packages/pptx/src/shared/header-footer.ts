@@ -31,7 +31,7 @@ export function buildHeaderFooterShapes(opts: SlideHeaderFooterOptions): ShapeOp
 
   if (opts.dateTime) {
     shapes.push({
-      placeholder: "dt",
+      placeholder: "date",
       placeholderIndex: DT_IDX,
       placeholderSize: "half",
       textBody: { paragraphs: [{ children: [{ type: "datetimeFigureOut", text: "1/1/1" }] }] },
@@ -40,7 +40,7 @@ export function buildHeaderFooterShapes(opts: SlideHeaderFooterOptions): ShapeOp
 
   if (opts.footer) {
     shapes.push({
-      placeholder: "ftr",
+      placeholder: "footer",
       placeholderIndex: FTR_IDX,
       placeholderSize: "quarter",
       // A false/absent footer stays inherited-hidden; a true footer with no
@@ -51,7 +51,7 @@ export function buildHeaderFooterShapes(opts: SlideHeaderFooterOptions): ShapeOp
 
   if (opts.slideNumber) {
     shapes.push({
-      placeholder: "sldNum",
+      placeholder: "slideNumber",
       placeholderIndex: SLD_NUM_IDX,
       placeholderSize: "quarter",
       textBody: { paragraphs: [{ children: [{ type: "slidenum", text: "1" }] }] },

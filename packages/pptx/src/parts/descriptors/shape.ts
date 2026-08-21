@@ -7,7 +7,13 @@
  * @module
  */
 
-import { convertEmuToPixels, convertToEmu, parseOnOff, toUint8Array } from "@office-open/core";
+import {
+  convertEmuToPixels,
+  convertToEmu,
+  parseOnOff,
+  toUint8Array,
+  xsdPlaceholderType,
+} from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions, ShapeLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
@@ -365,7 +371,7 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions, ctx: Writ
   let nvPrContent = "<p:nvPr/>";
   if (opts.placeholder || opts.placeholderIndex !== undefined) {
     const phAttrs: string[] = [];
-    if (opts.placeholder) phAttrs.push(`type="${opts.placeholder}"`);
+    if (opts.placeholder) phAttrs.push(`type="${xsdPlaceholderType.to(opts.placeholder)}"`);
     if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
     if (opts.placeholderSize !== undefined) phAttrs.push(`sz="${opts.placeholderSize}"`);
     if (opts.placeholderOrientation !== undefined)
@@ -657,7 +663,9 @@ export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
     const ph = findChild(nvPr, "p:ph");
     if (ph?.attributes) {
       if (ph.attributes["type"] !== undefined)
-        result.placeholder = String(ph.attributes["type"]) as ShapeOptions["placeholder"];
+        result.placeholder = xsdPlaceholderType.from(
+          String(ph.attributes["type"]),
+        ) as ShapeOptions["placeholder"];
       if (ph.attributes["idx"] !== undefined)
         result.placeholderIndex = Number(ph.attributes["idx"]);
       if (ph.attributes["sz"] !== undefined)

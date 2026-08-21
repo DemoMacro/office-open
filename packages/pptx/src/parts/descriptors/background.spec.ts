@@ -110,7 +110,7 @@ describe("backgroundDesc round-trip", () => {
     const opts: BackgroundOptions = {
       fill: {
         type: "pattern",
-        pattern: "diagCross",
+        pattern: "diagonalCross",
         foregroundColor: "FF0000",
         backgroundColor: "FFFFFF",
       },

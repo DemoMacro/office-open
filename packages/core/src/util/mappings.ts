@@ -438,6 +438,21 @@ export const xsdDashStyle = bidi({
 
 export const xsdOrient = bidi({ horizontal: "horz", vertical: "vert" } as const);
 
+// ST_PlaceholderType (p:ph/@type) — identity pairs title/body/subTitle/chart/
+// clipArt/media are omitted.
+export const xsdPlaceholderType = bidi({
+  centerTitle: "ctrTitle",
+  date: "dt",
+  slideNumber: "sldNum",
+  footer: "ftr",
+  header: "hdr",
+  object: "obj",
+  table: "tbl",
+  diagram: "dgm",
+  slideImage: "sldImg",
+  picture: "pic",
+} as const);
+
 // ---------------------------------------------------------------------------
 // DOCX / XLSX — math run style, table width unit, totals-row aggregates
 // ---------------------------------------------------------------------------
@@ -461,6 +476,18 @@ export const xsdConsolidateFunction = bidi({
 } as const);
 
 export const xsdShadingPattern = bidi({
+  horizontalStripe: "horzStripe",
+  verticalStripe: "vertStripe",
+  reverseDiagonalStripe: "reverseDiagStripe",
+  diagonalStripe: "diagStripe",
+  horizontalCross: "horzCross",
+  diagonalCross: "diagCross",
+  thinHorizontalStripe: "thinHorzStripe",
+  thinVerticalStripe: "thinVertStripe",
+  thinReverseDiagonalStripe: "thinReverseDiagStripe",
+  thinDiagonalStripe: "thinDiagStripe",
+  thinHorizontalCross: "thinHorzCross",
+  thinDiagonalCross: "thinDiagCross",
   percent5: "pct5",
   percent10: "pct10",
   percent12: "pct12",

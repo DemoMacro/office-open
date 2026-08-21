@@ -74,27 +74,37 @@ const FORMATS: FormatConfig[] = [
  * P1 overrides: ts-json-schema-generator degrades template-literal types with
  * `${number}` holes to plain `{"type":"string"}` (literal enumeration aborts on
  * the infinite number space). Restore the unit semantics as regex patterns.
+ * `examples` give a schema-driven generator concrete instances to imitate —
+ * the pattern alone leaves the unit suffix easy to miss.
  */
-const PATTERN_OVERRIDES: Record<string, { pattern: string; description: string }> = {
+const PATTERN_OVERRIDES: Record<
+  string,
+  { pattern: string; description: string; examples?: string[] }
+> = {
   UniversalMeasure: {
     pattern: "^-?(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi|px)$",
     description: "Measurement string: number followed by a unit (mm, cm, in, pt, pc, pi or px).",
+    examples: ["1.5cm", "0.75in", "12pt"],
   },
   PositiveUniversalMeasure: {
     pattern: "^(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi)$",
     description: "Positive measurement string: number followed by mm, cm, in, pt, pc or pi.",
+    examples: ["2.5cm", "1in", "6pt"],
   },
   Percentage: {
     pattern: "^-?(\\d+(\\.\\d+)?|\\.\\d+)%$",
     description: 'Percentage string: number followed by % (e.g. "50%", "-10.5%").',
+    examples: ["50%", "-10.5%"],
   },
   PositivePercentage: {
     pattern: "^(\\d+(\\.\\d+)?|\\.\\d+)%$",
     description: "Positive percentage string: number followed by %.",
+    examples: ["50%", "10.5%"],
   },
   RelativeMeasure: {
     pattern: "^-?(\\d+(\\.\\d+)?|\\.\\d+)(em|ex)$",
     description: "Relative measurement string: number followed by em or ex.",
+    examples: ["1.5em", "2ex"],
   },
 };
 
@@ -109,6 +119,7 @@ const PATTERN_OVERRIDES: Record<string, { pattern: string; description: string }
 const DEFINITION_OVERRIDES: Record<string, Record<string, unknown>> = {
   DataType: {
     description: "Binary content as a string or an array of byte values.",
+    examples: ["data:image/png;base64,iVBORw0KGgo="],
     anyOf: [
       {
         type: "string",
@@ -300,6 +311,7 @@ function postProcess(schema: Record<string, unknown>) {
     if (def.type === "string") {
       def.pattern = override.pattern;
       def.description = override.description;
+      if (override.examples) def.examples = override.examples;
     } else if (def.anyOf) {
       // `${number}${unit}` degrades to anyOf[number, string-of-units] in some
       // versions — replace the whole definition with the pattern form

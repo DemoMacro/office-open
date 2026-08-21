@@ -5,7 +5,7 @@
  * @module
  */
 import type { GraphicFrameLockingOptions } from "@office-open/core";
-import { extUriMatches, parseOnOff } from "@office-open/core";
+import { extUriMatches, parseOnOff, xsdPlaceholderType } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { graphicFrameLockingDesc } from "@office-open/core/drawing";
 import { attr, findChild } from "@office-open/xml";
@@ -80,7 +80,7 @@ export function stringifyNvPr(opts: NvPrPlaceholderOptions): string {
   // by idx must still emit <p:ph/> without a type attribute.
   if (opts.placeholder || opts.placeholderIndex !== undefined) {
     const phAttrs: string[] = [];
-    if (opts.placeholder) phAttrs.push(`type="${opts.placeholder}"`);
+    if (opts.placeholder) phAttrs.push(`type="${xsdPlaceholderType.to(opts.placeholder)}"`);
     if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
     if (opts.placeholderSize !== undefined) phAttrs.push(`sz="${opts.placeholderSize}"`);
     if (opts.placeholderOrientation !== undefined)
@@ -124,7 +124,9 @@ export function readNvPrPlaceholder(
   const ph = findChild(nvPr, "p:ph");
   if (ph?.attributes) {
     if (ph.attributes["type"] !== undefined)
-      result.placeholder = String(ph.attributes["type"]) as PlaceholderType;
+      result.placeholder = xsdPlaceholderType.from(
+        String(ph.attributes["type"]),
+      ) as PlaceholderType;
     if (ph.attributes["idx"] !== undefined) result.placeholderIndex = Number(ph.attributes["idx"]);
     if (ph.attributes["sz"] !== undefined)
       result.placeholderSize = ph.attributes["sz"] as PlaceholderSize;

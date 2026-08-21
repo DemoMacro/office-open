@@ -39,20 +39,20 @@ import type { Element as XmlElement } from "@office-open/xml";
 export type PlaceholderType =
   | "title"
   | "body"
-  | "ctrTitle"
+  | "centerTitle"
   | "subTitle"
-  | "dt"
-  | "sldNum"
-  | "ftr"
-  | "hdr"
-  | "obj"
+  | "date"
+  | "slideNumber"
+  | "footer"
+  | "header"
+  | "object"
   | "chart"
-  | "tbl"
+  | "table"
   | "clipArt"
-  | "dgm"
+  | "diagram"
   | "media"
-  | "sldImg"
-  | "pic";
+  | "slideImage"
+  | "picture";
 
 /** CT_Placeholder `@sz` — sizing hint. */
 export type PlaceholderSize = "full" | "half" | "quarter";

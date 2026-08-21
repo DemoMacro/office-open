@@ -41,7 +41,7 @@ import type { Element } from "@office-open/xml";
 export interface ShadingProperties {
   fill?: string;
   color?: string;
-  /** Fill pattern (ST_Shd): "clear" solid fill, "nil" no fill, "pctN" dot-density percent, "horzStripe"/"diagStripe"/"horzCross"/"diagCross" hatch patterns. */
+  /** Fill pattern (ST_Shd): "clear" solid fill, "nil" no fill, "percentN" dot-density percent, "horizontalStripe"/"diagonalStripe"/"horizontalCross"/"diagonalCross" hatch patterns. */
   type?: (typeof ShadingType)[keyof typeof ShadingType];
   /** Theme color reference */
   themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
@@ -86,10 +86,10 @@ export interface ShadingProperties {
 export const ShadingType = {
   /** Clear shading - no pattern, fill color only */
   CLEAR: "clear",
-  DIAGONAL_CROSS: "diagCross",
-  DIAGONAL_STRIPE: "diagStripe",
-  HORIZONTAL_CROSS: "horzCross",
-  HORIZONTAL_STRIPE: "horzStripe",
+  DIAGONAL_CROSS: "diagonalCross",
+  DIAGONAL_STRIPE: "diagonalStripe",
+  HORIZONTAL_CROSS: "horizontalCross",
+  HORIZONTAL_STRIPE: "horizontalStripe",
   NIL: "nil",
   PERCENT_10: "percent10",
   PERCENT_12: "percent12",
@@ -114,14 +114,15 @@ export const ShadingType = {
   PERCENT_87: "percent87",
   PERCENT_90: "percent90",
   PERCENT_95: "percent95",
-  REVERSE_DIAGONAL_STRIPE: "reverseDiagStripe",
+  REVERSE_DIAGONAL_STRIPE: "reverseDiagonalStripe",
   SOLID: "solid",
-  THIN_DIAGONAL_CROSS: "thinDiagCross",
-  THIN_DIAGONAL_STRIPE: "thinDiagStripe",
-  THIN_HORIZONTAL_CROSS: "thinHorzCross",
-  THIN_REVERSE_DIAGONAL_STRIPE: "thinReverseDiagStripe",
-  THIN_VERTICAL_STRIPE: "thinVertStripe",
-  VERTICAL_STRIPE: "vertStripe",
+  THIN_DIAGONAL_CROSS: "thinDiagonalCross",
+  THIN_DIAGONAL_STRIPE: "thinDiagonalStripe",
+  THIN_HORIZONTAL_CROSS: "thinHorizontalCross",
+  THIN_HORIZONTAL_STRIPE: "thinHorizontalStripe",
+  THIN_REVERSE_DIAGONAL_STRIPE: "thinReverseDiagonalStripe",
+  THIN_VERTICAL_STRIPE: "thinVerticalStripe",
+  VERTICAL_STRIPE: "verticalStripe",
 } as const;
 
 const THEME_COLORS = Object.values(ThemeColor) as readonly string[];

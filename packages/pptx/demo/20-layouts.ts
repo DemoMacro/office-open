@@ -34,8 +34,8 @@ const options: PresentationOptions = {
       layouts: [
         // Preset layouts
         { type: "title" },
-        { type: "obj" },
-        { type: "twoColTx" },
+        { type: "object" },
+        { type: "twoColumnText" },
         { type: "blank" },
         { type: "titleOnly" },
         // Custom layout with decorative shapes + positioned placeholders

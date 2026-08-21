@@ -4699,7 +4699,8 @@
           "type": "array"
         }
       ],
-      "description": "Binary content as a string or an array of byte values."
+      "description": "Binary content as a string or an array of byte values.",
+      "examples": ["data:image/png;base64,iVBORw0KGgo="]
     },
     "DefaultShapeDefinitionOptions": {
       "additionalProperties": false,
@@ -8989,20 +8990,20 @@
       "enum": [
         "title",
         "body",
-        "ctrTitle",
+        "centerTitle",
         "subTitle",
-        "dt",
-        "sldNum",
-        "ftr",
-        "hdr",
-        "obj",
+        "date",
+        "slideNumber",
+        "footer",
+        "header",
+        "object",
         "chart",
-        "tbl",
+        "table",
         "clipArt",
-        "dgm",
+        "diagram",
         "media",
-        "sldImg",
-        "pic"
+        "slideImage",
+        "picture"
       ],
       "type": "string"
     },
@@ -9166,6 +9167,7 @@
     },
     "PositiveUniversalMeasure": {
       "description": "Positive measurement string: number followed by mm, cm, in, pt, pc or pi.",
+      "examples": ["2.5cm", "1in", "6pt"],
       "pattern": "^(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi)$",
       "type": "string"
     },
@@ -13294,6 +13296,7 @@
     },
     "UniversalMeasure": {
       "description": "Measurement string: number followed by a unit (mm, cm, in, pt, pc, pi or px).",
+      "examples": ["1.5cm", "0.75in", "12pt"],
       "pattern": "^-?(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi|px)$",
       "type": "string"
     },

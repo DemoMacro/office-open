@@ -704,7 +704,7 @@ const slides: SlideOptions[] = [
           height: "4.0cm",
           fill: {
             type: "pattern",
-            pattern: "diagCross",
+            pattern: "diagonalCross",
             foregroundColor: "4472C4",
             backgroundColor: "FFFFFF",
           },
