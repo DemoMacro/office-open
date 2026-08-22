@@ -12,6 +12,7 @@
 export { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 
 import type { ColorListOptions } from "../drawing/diagram/diagram-style";
+import type { Scene3DOptions } from "../drawing/three-d/scene-3d";
 import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 import { stringifyColorDefinitionPart, type ColorDefinitionOptions } from "./color-definition";
 import type { ModelPointOptions } from "./data-model/data-model";
@@ -237,9 +238,9 @@ export function getLayoutXml(layoutId: string): string {
 // Style XML
 // ---------------------------------------------------------------------------
 
-const STYLE_SCENE_3D = {
+const STYLE_SCENE_3D: Scene3DOptions = {
   camera: { preset: "orthographicFront" },
-  lightRig: { rig: "threePt", direction: "t" },
+  lightRig: { rig: "threePt", direction: "top" },
 };
 
 /**

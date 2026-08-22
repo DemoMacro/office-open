@@ -11,6 +11,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
+import type { LongHexNumber } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml } from "@office-open/xml";
 
@@ -19,9 +20,9 @@ import { COMMENTS_NS } from "./comments";
 /** Options for one extended-comment entry (w15:commentEx). */
 export interface CommentExtendedOptions {
   /** w14:paraId of the comment's first paragraph (w15:paraId, required). */
-  paraId: string;
+  paraId: LongHexNumber;
   /** w14:paraId of the first paragraph of the comment this one replies to (w15:paraIdParent). */
-  paraIdParent?: string;
+  paraIdParent?: LongHexNumber;
   /** Resolved state; Word writes both 0 and 1 explicitly (w15:done). */
   done?: boolean;
   /**

@@ -11,13 +11,13 @@
 import type { ShadingProperties } from "@shared/shading";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
-import type { AlignmentType } from "../../paragraph";
 import type { TableCellSpacingProperties } from "../table-cell-spacing";
 import type { TableWidthProperties } from "../table-width";
 import type { TableBordersOptions } from "./table-borders";
 import type { TableCellMarginOptions } from "./table-cell-margin";
 import type { TableLayoutType } from "./table-layout";
 import type { TableLookOptions } from "./table-look";
+import type { TableJustification } from "./table-properties";
 
 /**
  * Options for table property exceptions (w:tblPrEx).
@@ -33,7 +33,7 @@ export interface TablePropertyExOptions {
   borders?: TableBordersOptions;
   shading?: ShadingProperties;
   /** Justification (ST_JcTable): "both"/"distribute" stretch rows to full width, "mediumKashida"/"highKashida"/"lowKashida" Kashida elongation, "numericTab" at the numeric tab. */
-  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  alignment?: TableJustification;
   margins?: TableCellMarginOptions;
   tableLook?: TableLookOptions;
   cellSpacing?: TableCellSpacingProperties;

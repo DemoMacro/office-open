@@ -11,6 +11,8 @@
  */
 import { element } from "@office-open/xml";
 
+import type { PositivePercentage } from "../../util/values";
+
 /**
  * A single dash stop in a custom dash pattern.
  *
@@ -33,9 +35,9 @@ import { element } from "@office-open/xml";
  */
 export interface DashStop {
   /** Dash length as a percentage of line width (e.g., "500%") */
-  d: string;
+  d: PositivePercentage;
   /** Space length as a percentage of line width (e.g., "200%") */
-  sp: string;
+  sp: PositivePercentage;
 }
 
 /**

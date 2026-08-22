@@ -40,7 +40,7 @@ const buffer = await generateDocument({
                   ],
                   scene3d: {
                     camera: { preset: "isometricTopUp" },
-                    lightRig: { direction: "t", rig: "threePt" },
+                    lightRig: { direction: "top", rig: "threePt" },
                   },
                   shape3d: {
                     bevelT: { prst: "circle", w: 76200, h: 76200 },
@@ -92,9 +92,9 @@ const buffer = await generateDocument({
                     camera: {
                       fov: 10,
                       preset: "perspectiveFront",
-                      zoom: "120000",
+                      zoom: "120%",
                     },
-                    lightRig: { direction: "t", rig: "morning" },
+                    lightRig: { direction: "top", rig: "morning" },
                   },
                   shape3d: {
                     bevelB: { prst: "circle", w: 50800, h: 25400 },
@@ -146,7 +146,7 @@ const buffer = await generateDocument({
                         rev: 7.5,
                       },
                     },
-                    lightRig: { direction: "t", rig: "balanced" },
+                    lightRig: { direction: "top", rig: "balanced" },
                   },
                   shape3d: {
                     bevelT: { prst: "angle", w: 76200, h: 38100 },

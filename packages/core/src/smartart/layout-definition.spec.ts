@@ -2,6 +2,7 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
+import type { Scene3DOptions } from "../drawing/three-d/scene-3d";
 import { colorsDefDesc, type ColorDefinitionOptions } from "./color-definition";
 import { layoutDefDesc, type LayoutDefinitionOptions } from "./layout-definition";
 import { styleDefDesc, type StyleDefinitionOptions } from "./style-definition";
@@ -131,9 +132,9 @@ describe("layoutDefDesc", () => {
 
 describe("styleDefDesc", () => {
   it("round-trips style labels with 3D and style-matrix content", () => {
-    const scene = {
+    const scene: Scene3DOptions = {
       camera: { preset: "orthographicFront" },
-      lightRig: { rig: "threePt", direction: "tl" },
+      lightRig: { rig: "threePt", direction: "topLeft" },
     };
     const style = {
       lineReference: { index: 2, color: { value: "accent1" } },

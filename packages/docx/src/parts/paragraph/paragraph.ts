@@ -264,7 +264,7 @@ export type ParagraphOptions = {
   /** Revision save ID when the paragraph was deleted (w:rsidDel). */
   deletionRsid?: LongHexNumber;
   /** Unique paragraph identifier (w14:paraId, 8-digit hex string). */
-  paraId?: string;
+  paraId?: LongHexNumber;
   /** Paragraph text identifier (w14:textId, 8-digit hex string). */
-  textId?: string;
+  textId?: LongHexNumber;
 } & ParagraphPropertiesOptions;

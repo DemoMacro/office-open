@@ -336,7 +336,8 @@ export function readParagraphProperties(
         result.bullet = bullet as BulletCharOptions;
       } else {
         const bullet: Mutable<BulletAutoNumOptions> = { type: "autoNum", ...style };
-        if (buAutoNum!.attributes?.["type"]) bullet.format = String(buAutoNum!.attributes["type"]);
+        if (buAutoNum!.attributes?.["type"])
+          bullet.format = String(buAutoNum!.attributes["type"]) as BulletAutoNumOptions["format"];
         if (buAutoNum!.attributes?.["startAt"] !== undefined)
           bullet.startAt = Number(buAutoNum!.attributes["startAt"]);
         result.bullet = bullet as BulletAutoNumOptions;

@@ -11,7 +11,7 @@ import { findChild } from "@office-open/xml";
 import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { emitAngle, parseAngle } from "../../util/converters";
-import { xsdMaterialType } from "../../util/mappings";
+import { xsdLightRigDirection, xsdMaterialType } from "../../util/mappings";
 import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { BevelOptions } from "./bevel";
 import type {
@@ -167,9 +167,11 @@ const cameraDesc: CustomDescriptor<CameraOptions> = {
   },
   parse(el, _ctx) {
     const result: Partial<CameraOptions> = {};
-    if (el.attributes?.["prst"] !== undefined) result.preset = String(el.attributes["prst"]);
+    if (el.attributes?.["prst"] !== undefined)
+      result.preset = String(el.attributes["prst"]) as CameraOptions["preset"];
     if (el.attributes?.["fov"] !== undefined) result.fov = parseAngle(Number(el.attributes["fov"]));
-    if (el.attributes?.["zoom"] !== undefined) result.zoom = String(el.attributes["zoom"]);
+    if (el.attributes?.["zoom"] !== undefined)
+      result.zoom = String(el.attributes["zoom"]) as CameraOptions["zoom"];
     const rot = findChild(el, "a:rot");
     if (rot) result.rotation = readSphereCoords(rot);
     return result as CameraOptions;
@@ -183,7 +185,7 @@ const lightRigDesc: CustomDescriptor<LightRigOptions> = {
   stringify(opts, _ctx) {
     const attrParts: string[] = [];
     attrParts.push(`rig="${escapeXml(opts.rig)}"`);
-    attrParts.push(`dir="${escapeXml(opts.direction)}"`);
+    attrParts.push(`dir="${escapeXml(xsdLightRigDirection.to(opts.direction))}"`);
     const attrStr = " " + attrParts.join(" ");
 
     const parts: string[] = [];
@@ -195,8 +197,12 @@ const lightRigDesc: CustomDescriptor<LightRigOptions> = {
   },
   parse(el, _ctx) {
     const result: Partial<LightRigOptions> = {};
-    if (el.attributes?.["rig"] !== undefined) result.rig = String(el.attributes["rig"]);
-    if (el.attributes?.["dir"] !== undefined) result.direction = String(el.attributes["dir"]);
+    if (el.attributes?.["rig"] !== undefined)
+      result.rig = String(el.attributes["rig"]) as LightRigOptions["rig"];
+    if (el.attributes?.["dir"] !== undefined)
+      result.direction = xsdLightRigDirection.from(
+        String(el.attributes["dir"]),
+      ) as LightRigOptions["direction"];
     const rot = findChild(el, "a:rot");
     if (rot) result.rotation = readSphereCoords(rot);
     return result as LightRigOptions;

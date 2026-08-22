@@ -369,7 +369,7 @@ describe("tableDesc round-trip", () => {
               cell3D: {
                 prstMaterial: "metal",
                 bevel: { w: 25400, h: 19050, prst: "circle" },
-                lightRig: { rig: "threePt", direction: "t" },
+                lightRig: { rig: "threePt", direction: "top" },
               },
             },
           ],
@@ -380,7 +380,7 @@ describe("tableDesc round-trip", () => {
     expect(result.rows[0]!.cells[0]!.cell3D).toMatchObject({
       prstMaterial: "metal",
       bevel: { w: 25400, h: 19050, prst: "circle" },
-      lightRig: { rig: "threePt", direction: "t" },
+      lightRig: { rig: "threePt", direction: "top" },
     });
   });
 

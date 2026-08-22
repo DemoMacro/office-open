@@ -250,7 +250,7 @@ describe("shapeDesc round-trip", () => {
         lineReference: { index: 2, color: "333333" },
         fillReference: { index: 1 },
         effectReference: { index: 0 },
-        fontReference: { index: 0, color: "333333" },
+        fontReference: { collection: "minor", color: "333333" },
       },
     });
     const style = result.style!;

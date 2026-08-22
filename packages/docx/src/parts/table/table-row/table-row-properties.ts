@@ -80,9 +80,15 @@ import type { HeightRule } from "./table-row-height";
  * </xsd:complexType>
  * ```
  */
+/**
+ * Conditional-format bit string (ST_Cnf) — exactly twelve 0/1 flags, e.g.
+ * "100000000001" for first-row-first-column.
+ */
+export type CnfBitmask = string;
+
 export interface CnfStyleOptions {
   /** Conditional-format bit string (ST_Cnf: 12-char [01]*) */
-  val?: string;
+  val?: CnfBitmask;
   firstRow?: boolean;
   lastRow?: boolean;
   firstColumn?: boolean;

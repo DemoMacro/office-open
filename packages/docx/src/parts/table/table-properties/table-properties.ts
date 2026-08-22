@@ -46,7 +46,6 @@ import type { ShadingProperties } from "@shared/shading";
  */
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
-import type { AlignmentType } from "../../paragraph";
 import type { TableCellSpacingProperties } from "../table-cell-spacing";
 import type { TableWidthProperties } from "../table-width";
 import type { TableBordersOptions } from "./table-borders";
@@ -54,6 +53,12 @@ import type { TableCellMarginOptions } from "./table-cell-margin";
 import type { TableFloatOptions } from "./table-float-properties";
 import type { TableLayoutType } from "./table-layout";
 import type { TableLookOptions } from "./table-look";
+
+/**
+ * Table row justification (ST_JcTable) — the five positions a table can
+ * sit at, narrower than paragraph ST_Jc (no both/kashida/distribute).
+ */
+export type TableJustification = "start" | "center" | "end" | "left" | "right";
 
 export interface TablePropertiesOptionsBase {
   width?: TableWidthProperties;
@@ -65,7 +70,7 @@ export interface TablePropertiesOptionsBase {
   shading?: ShadingProperties;
   style?: string;
   /** Justification (ST_JcTable): "both"/"distribute" stretch rows to full width, "mediumKashida"/"highKashida"/"lowKashida" Kashida elongation, "numericTab" at the numeric tab. */
-  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  alignment?: TableJustification;
   margins?: TableCellMarginOptions;
   visuallyRightToLeft?: boolean;
   tableLook?: TableLookOptions;

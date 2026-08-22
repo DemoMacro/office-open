@@ -272,7 +272,7 @@ const slides: SlideOptions[] = [
               preset: "orthographicFront",
               rotation: { lat: 20, lon: 10, rev: 5 },
             },
-            lightRig: { rig: "threePt", direction: "t" },
+            lightRig: { rig: "threePt", direction: "top" },
           },
           shape3d: { bevelT: { w: 8, h: 8 }, extrusionH: 30000, prstMaterial: "plastic" },
         },

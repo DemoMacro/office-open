@@ -121,7 +121,8 @@ export interface TextCharacterPropertiesOptions {
   alternateLanguage?: string;
   normalizeHeight?: boolean;
   bookmarkMark?: string;
-  smartTagId?: string;
+  /** `@smtId` — smart tag id (ST_UnsignedInt). */
+  smartTagId?: number;
   /** `@err` — spelling error flag. */
   err?: boolean;
   /** `@smtClean` — smart tag clean flag (XSD default true). */
@@ -167,9 +168,58 @@ export type BulletCharOptions = BulletStyleOptions & {
   char?: string;
 };
 
+/**
+ * Autonumbering scheme (ST_TextAutonumberScheme). Values are the XSD tokens
+ * verbatim — a numbering-scheme shorthand (alphaLc = lowercase letters,
+ * ParenR = right parenthesis, Db = double-byte) that has no fuller spelling
+ * in the wild.
+ */
+export type AutoNumberFormat =
+  | "alphaLcParenBoth"
+  | "alphaUcParenBoth"
+  | "alphaLcParenR"
+  | "alphaUcParenR"
+  | "alphaLcPeriod"
+  | "alphaUcPeriod"
+  | "arabicParenBoth"
+  | "arabicParenR"
+  | "arabicPeriod"
+  | "arabicPlain"
+  | "romanLcParenBoth"
+  | "romanUcParenBoth"
+  | "romanLcParenR"
+  | "romanUcParenR"
+  | "romanLcPeriod"
+  | "romanUcPeriod"
+  | "circleNumDbPlain"
+  | "circleNumWdBlackPlain"
+  | "circleNumWdWhitePlain"
+  | "arabicDbPeriod"
+  | "arabicDbPlain"
+  | "ea1ChsPeriod"
+  | "ea1ChsPlain"
+  | "ea1ChtPeriod"
+  | "ea1ChtPlain"
+  | "ea1JpnChsDbPeriod"
+  | "ea1JpnKorPlain"
+  | "ea1JpnKorPeriod"
+  | "arabic1Minus"
+  | "arabic2Minus"
+  | "hebrew2Minus"
+  | "thaiAlphaPeriod"
+  | "thaiAlphaParenR"
+  | "thaiAlphaParenBoth"
+  | "thaiNumPeriod"
+  | "thaiNumParenR"
+  | "thaiNumParenBoth"
+  | "hindiAlphaPeriod"
+  | "hindiNumPeriod"
+  | "hindiNumParenR"
+  | "hindiAlpha1Period";
+
 export type BulletAutoNumOptions = BulletStyleOptions & {
   type: "autoNum";
-  format?: string;
+  format?: AutoNumberFormat;
   startAt?: number;
 };
 

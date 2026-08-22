@@ -10,6 +10,115 @@
  */
 import { element } from "@office-open/xml";
 
+import { xsdLightRigDirection } from "../../util/mappings";
+import type { PositivePercentage } from "../../util/values";
+
+/** Preset camera type (ST_PresetCameraType). */
+export type CameraPreset =
+  | "legacyObliqueTopLeft"
+  | "legacyObliqueTop"
+  | "legacyObliqueTopRight"
+  | "legacyObliqueLeft"
+  | "legacyObliqueFront"
+  | "legacyObliqueRight"
+  | "legacyObliqueBottomLeft"
+  | "legacyObliqueBottom"
+  | "legacyObliqueBottomRight"
+  | "legacyPerspectiveTopLeft"
+  | "legacyPerspectiveTop"
+  | "legacyPerspectiveTopRight"
+  | "legacyPerspectiveLeft"
+  | "legacyPerspectiveFront"
+  | "legacyPerspectiveRight"
+  | "legacyPerspectiveBottomLeft"
+  | "legacyPerspectiveBottom"
+  | "legacyPerspectiveBottomRight"
+  | "orthographicFront"
+  | "isometricTopUp"
+  | "isometricTopDown"
+  | "isometricBottomUp"
+  | "isometricBottomDown"
+  | "isometricLeftUp"
+  | "isometricLeftDown"
+  | "isometricRightUp"
+  | "isometricRightDown"
+  | "isometricOffAxis1Left"
+  | "isometricOffAxis1Right"
+  | "isometricOffAxis1Top"
+  | "isometricOffAxis2Left"
+  | "isometricOffAxis2Right"
+  | "isometricOffAxis2Top"
+  | "isometricOffAxis3Left"
+  | "isometricOffAxis3Right"
+  | "isometricOffAxis3Bottom"
+  | "isometricOffAxis4Left"
+  | "isometricOffAxis4Right"
+  | "isometricOffAxis4Bottom"
+  | "obliqueTopLeft"
+  | "obliqueTop"
+  | "obliqueTopRight"
+  | "obliqueLeft"
+  | "obliqueRight"
+  | "obliqueBottomLeft"
+  | "obliqueBottom"
+  | "obliqueBottomRight"
+  | "perspectiveFront"
+  | "perspectiveLeft"
+  | "perspectiveRight"
+  | "perspectiveAbove"
+  | "perspectiveBelow"
+  | "perspectiveAboveLeftFacing"
+  | "perspectiveAboveRightFacing"
+  | "perspectiveContrastingLeftFacing"
+  | "perspectiveContrastingRightFacing"
+  | "perspectiveHeroicLeftFacing"
+  | "perspectiveHeroicRightFacing"
+  | "perspectiveHeroicExtremeLeftFacing"
+  | "perspectiveHeroicExtremeRightFacing"
+  | "perspectiveRelaxed"
+  | "perspectiveRelaxedModerately";
+
+/** Light rig preset (ST_LightRigType). */
+export type LightRigType =
+  | "legacyFlat1"
+  | "legacyFlat2"
+  | "legacyFlat3"
+  | "legacyFlat4"
+  | "legacyNormal1"
+  | "legacyNormal2"
+  | "legacyNormal3"
+  | "legacyNormal4"
+  | "legacyHarsh1"
+  | "legacyHarsh2"
+  | "legacyHarsh3"
+  | "legacyHarsh4"
+  | "threePt"
+  | "balanced"
+  | "soft"
+  | "harsh"
+  | "flood"
+  | "contrasting"
+  | "morning"
+  | "sunrise"
+  | "sunset"
+  | "chilly"
+  | "freezing"
+  | "flat"
+  | "twoPt"
+  | "glow"
+  | "brightRoom";
+
+/** Light direction (ST_LightRigDirection) — full words; XSD tokens topLeft→tl etc. */
+export type LightRigDirection =
+  | "topLeft"
+  | "top"
+  | "topRight"
+  | "left"
+  | "right"
+  | "bottomLeft"
+  | "bottom"
+  | "bottomRight";
+
 // ─── Sphere Coordinates ─────────────────────────────────────────────────────
 
 /**
@@ -62,12 +171,12 @@ const createSphereCoords = (coords: SphereCoords): string => {
  * ```
  */
 export interface CameraOptions {
-  /** Preset camera type (e.g., "perspectiveFront", "isometricTopUp") */
-  preset: string;
+  /** Preset camera type (ST_PresetCameraType) */
+  preset: CameraPreset;
   /** Field of view angle in degrees (0–180). */
   fov?: number;
-  /** Zoom percentage (e.g., "100%") */
-  zoom?: string;
+  /** Zoom percentage, e.g. "100%" (ST_PositivePercentage) */
+  zoom?: PositivePercentage;
   /** Camera rotation */
   rotation?: SphereCoords;
 }
@@ -108,10 +217,10 @@ const createCamera = (options: CameraOptions): string => {
  * ```
  */
 export interface LightRigOptions {
-  /** Light rig type (e.g., "threePt", "balanced", "soft") */
-  rig: string;
-  /** Light direction (e.g., "tl", "t", "tr", "l", "r", "bl", "b", "br") */
-  direction: string;
+  /** Light rig preset (ST_LightRigType) */
+  rig: LightRigType;
+  /** Light direction (ST_LightRigDirection, full words: "tl" → topLeft) */
+  direction: LightRigDirection;
   /** Light rig rotation */
   rotation?: SphereCoords;
 }
@@ -122,7 +231,11 @@ const createLightRig = (options: LightRigOptions): string => {
     children.push(createSphereCoords(options.rotation));
   }
 
-  return element("a:lightRig", { rig: options.rig, dir: options.direction }, children);
+  return element(
+    "a:lightRig",
+    { rig: options.rig, dir: xsdLightRigDirection.to(options.direction) },
+    children,
+  );
 };
 
 // ─── Backdrop ───────────────────────────────────────────────────────────────
@@ -208,7 +321,7 @@ const createBackdrop = (options: BackdropOptions): string =>
  * ```typescript
  * createScene3D({
  *   camera: { preset: "perspectiveFront" },
- *   lightRig: { rig: "threePt", direction: "t" },
+ *   lightRig: { rig: "threePt", direction: "top" },
  * });
  * ```
  */
@@ -229,7 +342,7 @@ export interface Scene3DOptions {
  * // Simple scene with default camera and lighting
  * createScene3D({
  *   camera: { preset: "perspectiveFront" },
- *   lightRig: { rig: "threePt", direction: "t" },
+ *   lightRig: { rig: "threePt", direction: "top" },
  * });
  *
  * // Scene with rotated camera and backdrop
@@ -238,7 +351,7 @@ export interface Scene3DOptions {
  *     preset: "isometricTopUp",
  *     rotation: { lat: 0, lon: 0, rev: 90 },
  *   },
- *   lightRig: { rig: "balanced", direction: "tl" },
+ *   lightRig: { rig: "balanced", direction: "topLeft" },
  *   backdrop: {
  *     anchor: { x: 0, y: 0, z: 0 },
  *     normal: { dx: 0, dy: 0, dz: 1 },

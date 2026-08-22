@@ -523,7 +523,13 @@ export function stringifyShapeStyle(style: ShapeStyleOptions, ctx: WriteContext)
   if (style.lineReference) parts.push(ref("a:lnRef", style.lineReference));
   if (style.fillReference) parts.push(ref("a:fillRef", style.fillReference));
   if (style.effectReference) parts.push(ref("a:effectRef", style.effectReference));
-  if (style.fontReference) parts.push(ref("a:fontRef", style.fontReference));
+  if (style.fontReference)
+    parts.push(
+      ref("a:fontRef", {
+        index: style.fontReference.collection,
+        color: style.fontReference.color,
+      }),
+    );
   return parts.length > 0 ? `<p:style>${parts.join("")}</p:style>` : "";
 }
 

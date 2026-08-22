@@ -315,7 +315,7 @@ export const runPropertiesDesc: CustomDescriptor<TextCharacterPropertiesOptions>
       if (el.attributes["normalizeH"] !== undefined)
         result.normalizeHeight = isOn(el.attributes["normalizeH"]);
       if (el.attributes["bmk"] !== undefined) result.bookmarkMark = String(el.attributes["bmk"]);
-      if (el.attributes["smtId"] !== undefined) result.smartTagId = String(el.attributes["smtId"]);
+      if (el.attributes["smtId"] !== undefined) result.smartTagId = Number(el.attributes["smtId"]);
       if (el.attributes["kern"] !== undefined) result.kern = Number(el.attributes["kern"]) / 100;
       if (el.attributes["err"] !== undefined) result.err = isOn(el.attributes["err"]);
       if (el.attributes["smtClean"] !== undefined)

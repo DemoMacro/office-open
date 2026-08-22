@@ -174,10 +174,13 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     if (custDash?.elements) {
       result.customDash = custDash.elements
         .filter((c) => c.name === "a:ds")
-        .map((c) => ({
-          d: String(c.attributes?.["d"] ?? ""),
-          sp: String(c.attributes?.["sp"] ?? ""),
-        }));
+        .map(
+          (c) =>
+            ({
+              d: String(c.attributes?.["d"] ?? ""),
+              sp: String(c.attributes?.["sp"] ?? ""),
+            }) as DashStop,
+        );
     }
 
     // Join

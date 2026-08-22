@@ -76,8 +76,11 @@ export interface ShapeStyleOptions {
   lineReference?: ShapeStyleReferenceOptions;
   fillReference?: ShapeStyleReferenceOptions;
   effectReference?: ShapeStyleReferenceOptions;
-  /** a:fontRef — @idx is ST_FontCollectionIndex (major/minor/none), not a number. */
-  fontReference?: { index: number | "major" | "minor" | "none"; color?: StyleReferenceColor };
+  /**
+   * a:fontRef — @idx is ST_FontCollectionIndex (major/minor/none), not a
+   * number.
+   */
+  fontReference?: { collection: "major" | "minor" | "none"; color?: StyleReferenceColor };
 }
 
 export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
@@ -169,15 +172,13 @@ export function readShapeStyle(styleEl: XmlElement, ctx: ReadContext): ShapeStyl
   }
   const fontRef = findChild(styleEl, "a:fontRef");
   if (fontRef) {
-    // @idx is ST_FontCollectionIndex — numeric stays numeric, the
-    // major/minor/none tokens keep their string form.
+    // @idx is ST_FontCollectionIndex (major/minor/none) — passthrough keeps
+    // unknown tokens intact for round-trip fidelity.
     const raw = attr(fontRef, "idx");
-    let idx: number | "major" | "minor" | "none" | undefined;
-    if (raw === "major" || raw === "minor" || raw === "none") idx = raw;
-    else idx = attrNum(fontRef, "idx");
-    if (idx !== undefined) {
+    if (raw !== undefined) {
       const color = readRefColor(fontRef, ctx);
-      style.fontReference = color !== undefined ? { index: idx, color } : { index: idx };
+      const collection = raw as "major" | "minor" | "none";
+      style.fontReference = color !== undefined ? { collection, color } : { collection };
     }
   }
   return style;

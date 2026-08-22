@@ -703,6 +703,53 @@
       "required": ["name", "caption"],
       "type": "object"
     },
+    "AutoNumberFormat": {
+      "description": "Autonumbering scheme. Values are the XSD tokens verbatim — a numbering-scheme shorthand (alphaLc = lowercase letters, ParenR = right parenthesis, Db = double-byte) that has no fuller spelling in the wild.",
+      "enum": [
+        "alphaLcParenBoth",
+        "alphaUcParenBoth",
+        "alphaLcParenR",
+        "alphaUcParenR",
+        "alphaLcPeriod",
+        "alphaUcPeriod",
+        "arabicParenBoth",
+        "arabicParenR",
+        "arabicPeriod",
+        "arabicPlain",
+        "romanLcParenBoth",
+        "romanUcParenBoth",
+        "romanLcParenR",
+        "romanUcParenR",
+        "romanLcPeriod",
+        "romanUcPeriod",
+        "circleNumDbPlain",
+        "circleNumWdBlackPlain",
+        "circleNumWdWhitePlain",
+        "arabicDbPeriod",
+        "arabicDbPlain",
+        "ea1ChsPeriod",
+        "ea1ChsPlain",
+        "ea1ChtPeriod",
+        "ea1ChtPlain",
+        "ea1JpnChsDbPeriod",
+        "ea1JpnKorPlain",
+        "ea1JpnKorPeriod",
+        "arabic1Minus",
+        "arabic2Minus",
+        "hebrew2Minus",
+        "thaiAlphaPeriod",
+        "thaiAlphaParenR",
+        "thaiAlphaParenBoth",
+        "thaiNumPeriod",
+        "thaiNumParenR",
+        "thaiNumParenBoth",
+        "hindiAlphaPeriod",
+        "hindiNumPeriod",
+        "hindiNumParenR",
+        "hindiAlpha1Period"
+      ],
+      "type": "string"
+    },
     "AxisCrossBetween": {
       "description": "Value-axis crossing mode: between category bands or at the band middle.",
       "enum": ["between", "middleOfCategory"],
@@ -1758,7 +1805,7 @@
           "type": "boolean"
         },
         "format": {
-          "type": "string"
+          "$ref": "#/definitions/AutoNumberFormat"
         },
         "size": {
           "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
@@ -1954,20 +2001,88 @@
           "type": "number"
         },
         "preset": {
-          "description": "Preset camera type (e.g., \"perspectiveFront\", \"isometricTopUp\")",
-          "type": "string"
+          "$ref": "#/definitions/CameraPreset",
+          "description": "Preset camera type"
         },
         "rotation": {
           "$ref": "#/definitions/SphereCoords",
           "description": "Camera rotation"
         },
         "zoom": {
-          "description": "Zoom percentage (e.g., \"100%\")",
-          "type": "string"
+          "$ref": "#/definitions/PositivePercentage",
+          "description": "Zoom percentage, e.g. \"100%\""
         }
       },
       "required": ["preset"],
       "type": "object"
+    },
+    "CameraPreset": {
+      "description": "Preset camera type.",
+      "enum": [
+        "legacyObliqueTopLeft",
+        "legacyObliqueTop",
+        "legacyObliqueTopRight",
+        "legacyObliqueLeft",
+        "legacyObliqueFront",
+        "legacyObliqueRight",
+        "legacyObliqueBottomLeft",
+        "legacyObliqueBottom",
+        "legacyObliqueBottomRight",
+        "legacyPerspectiveTopLeft",
+        "legacyPerspectiveTop",
+        "legacyPerspectiveTopRight",
+        "legacyPerspectiveLeft",
+        "legacyPerspectiveFront",
+        "legacyPerspectiveRight",
+        "legacyPerspectiveBottomLeft",
+        "legacyPerspectiveBottom",
+        "legacyPerspectiveBottomRight",
+        "orthographicFront",
+        "isometricTopUp",
+        "isometricTopDown",
+        "isometricBottomUp",
+        "isometricBottomDown",
+        "isometricLeftUp",
+        "isometricLeftDown",
+        "isometricRightUp",
+        "isometricRightDown",
+        "isometricOffAxis1Left",
+        "isometricOffAxis1Right",
+        "isometricOffAxis1Top",
+        "isometricOffAxis2Left",
+        "isometricOffAxis2Right",
+        "isometricOffAxis2Top",
+        "isometricOffAxis3Left",
+        "isometricOffAxis3Right",
+        "isometricOffAxis3Bottom",
+        "isometricOffAxis4Left",
+        "isometricOffAxis4Right",
+        "isometricOffAxis4Bottom",
+        "obliqueTopLeft",
+        "obliqueTop",
+        "obliqueTopRight",
+        "obliqueLeft",
+        "obliqueRight",
+        "obliqueBottomLeft",
+        "obliqueBottom",
+        "obliqueBottomRight",
+        "perspectiveFront",
+        "perspectiveLeft",
+        "perspectiveRight",
+        "perspectiveAbove",
+        "perspectiveBelow",
+        "perspectiveAboveLeftFacing",
+        "perspectiveAboveRightFacing",
+        "perspectiveContrastingLeftFacing",
+        "perspectiveContrastingRightFacing",
+        "perspectiveHeroicLeftFacing",
+        "perspectiveHeroicRightFacing",
+        "perspectiveHeroicExtremeLeftFacing",
+        "perspectiveHeroicExtremeRightFacing",
+        "perspectiveRelaxed",
+        "perspectiveRelaxedModerately"
+      ],
+      "type": "string"
     },
     "CaptionOptions": {
       "additionalProperties": false,
@@ -3476,6 +3591,12 @@
       "required": ["conditions"],
       "type": "object"
     },
+    "CnfBitmask": {
+      "description": "Conditional-format bit string (ST_Cnf) — exactly twelve 0/1 flags.",
+      "examples": ["100000000001"],
+      "pattern": "^[01]{12}$",
+      "type": "string"
+    },
     "CnfConditionalOptions": {
       "additionalProperties": false,
       "description": "Options for conditional formatting style.\n\nThese options specify which conditions apply to the element based on its position within a table (first/last row, first/last column, bands).",
@@ -3533,7 +3654,6 @@
     },
     "CnfStyleOptions": {
       "additionalProperties": false,
-      "description": "Options for — conditional formatting style. Each boolean attribute mirrors one of the 12 positions in the conditional- format bit string; val is the canonical 12-char pattern ([01]*).",
       "properties": {
         "evenHBand": {
           "type": "boolean"
@@ -3572,8 +3692,8 @@
           "type": "boolean"
         },
         "val": {
-          "description": "Conditional-format bit string",
-          "type": "string"
+          "$ref": "#/definitions/CnfBitmask",
+          "description": "Conditional-format bit string"
         }
       },
       "type": "object"
@@ -3993,12 +4113,12 @@
           "type": "boolean"
         },
         "paraId": {
-          "description": "w14:paraId of the comment's first paragraph (w15:paraId, required).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "w14:paraId of the comment's first paragraph (w15:paraId, required)."
         },
         "paraIdParent": {
-          "description": "w14:paraId of the first paragraph of the comment this one replies to (w15:paraIdParent).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "w14:paraId of the first paragraph of the comment this one replies to (w15:paraIdParent)."
         }
       },
       "required": ["paraId"],
@@ -4991,12 +5111,12 @@
       "description": "A single dash stop in a custom dash pattern. `` is a string matching `[0-9]+(\\.[0-9]+)?%` (e.g., `\"100%\"`, `\"500%\"`, `\"50.5%\"`).",
       "properties": {
         "d": {
-          "description": "Dash length as a percentage of line width (e.g., \"500%\")",
-          "type": "string"
+          "$ref": "#/definitions/PositivePercentage",
+          "description": "Dash length as a percentage of line width (e.g., \"500%\")"
         },
         "sp": {
-          "description": "Space length as a percentage of line width (e.g., \"200%\")",
-          "type": "string"
+          "$ref": "#/definitions/PositivePercentage",
+          "description": "Space length as a percentage of line width (e.g., \"200%\")"
         }
       },
       "required": ["d", "sp"],
@@ -9259,17 +9379,31 @@
       "required": ["level"],
       "type": "object"
     },
+    "LightRigDirection": {
+      "description": "Light direction — full words; XSD tokens topLeft→tl etc.",
+      "enum": [
+        "topLeft",
+        "top",
+        "topRight",
+        "left",
+        "right",
+        "bottomLeft",
+        "bottom",
+        "bottomRight"
+      ],
+      "type": "string"
+    },
     "LightRigOptions": {
       "additionalProperties": false,
       "description": "Light rig options. Defines the lighting setup for the 3D scene.",
       "properties": {
         "direction": {
-          "description": "Light direction (e.g., \"tl\", \"t\", \"tr\", \"l\", \"r\", \"bl\", \"b\", \"br\")",
-          "type": "string"
+          "$ref": "#/definitions/LightRigDirection",
+          "description": "Light direction"
         },
         "rig": {
-          "description": "Light rig type (e.g., \"threePt\", \"balanced\", \"soft\")",
-          "type": "string"
+          "$ref": "#/definitions/LightRigType",
+          "description": "Light rig preset"
         },
         "rotation": {
           "$ref": "#/definitions/SphereCoords",
@@ -9278,6 +9412,39 @@
       },
       "required": ["rig", "direction"],
       "type": "object"
+    },
+    "LightRigType": {
+      "description": "Light rig preset.",
+      "enum": [
+        "legacyFlat1",
+        "legacyFlat2",
+        "legacyFlat3",
+        "legacyFlat4",
+        "legacyNormal1",
+        "legacyNormal2",
+        "legacyNormal3",
+        "legacyNormal4",
+        "legacyHarsh1",
+        "legacyHarsh2",
+        "legacyHarsh3",
+        "legacyHarsh4",
+        "threePt",
+        "balanced",
+        "soft",
+        "harsh",
+        "flood",
+        "contrasting",
+        "morning",
+        "sunrise",
+        "sunset",
+        "chilly",
+        "freezing",
+        "flat",
+        "twoPt",
+        "glow",
+        "brightRoom"
+      ],
+      "type": "string"
     },
     "LineCap": {
       "description": "Line cap styles for outline endpoints.\n\nDefines how the ends of a line are rendered.",
@@ -13606,8 +13773,8 @@
           "type": "boolean"
         },
         "paraId": {
-          "description": "Unique paragraph identifier (w14:paraId, 8-digit hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Unique paragraph identifier (w14:paraId, 8-digit hex string)."
         },
         "propertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -13678,8 +13845,8 @@
           "type": "string"
         },
         "textId": {
-          "description": "Paragraph text identifier (w14:textId, 8-digit hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Paragraph text identifier (w14:textId, 8-digit hex string)."
         },
         "textboxTightWrap": {
           "description": "Textbox tight wrap setting",
@@ -15760,6 +15927,12 @@
       "required": ["alignment", "relativeTo", "leader"],
       "type": "object"
     },
+    "PositivePercentage": {
+      "description": "Positive percentage string: number followed by %.",
+      "examples": ["50%", "10.5%"],
+      "pattern": "^(\\d+(\\.\\d+)?|\\.\\d+)%$",
+      "type": "string"
+    },
     "PositiveUniversalMeasure": {
       "description": "Positive measurement string: number followed by mm, cm, in, pt, pc or pi.",
       "examples": ["2.5cm", "1in", "6pt"],
@@ -16104,7 +16277,6 @@
     },
     "PresetTextShapeOptions": {
       "additionalProperties": false,
-      "description": "Preset text warp options.",
       "properties": {
         "adjustments": {
           "description": "Optional adjustment values.",
@@ -16124,8 +16296,8 @@
           "type": "array"
         },
         "preset": {
-          "description": "Preset shape type (e.g. \"textArchUp\", \"textCircle\").",
-          "type": "string"
+          "$ref": "#/definitions/TextShapePreset",
+          "description": "Preset shape type."
         }
       },
       "required": ["preset"],
@@ -19191,8 +19363,8 @@
                   "type": "boolean"
                 },
                 "paraId": {
-                  "description": "Unique paragraph identifier (w14:paraId, 8-digit hex string).",
-                  "type": "string"
+                  "$ref": "#/definitions/LongHexNumber",
+                  "description": "Unique paragraph identifier (w14:paraId, 8-digit hex string)."
                 },
                 "propertiesRsid": {
                   "$ref": "#/definitions/LongHexNumber",
@@ -19262,8 +19434,8 @@
                   "type": "string"
                 },
                 "textId": {
-                  "description": "Paragraph text identifier (w14:textId, 8-digit hex string).",
-                  "type": "string"
+                  "$ref": "#/definitions/LongHexNumber",
+                  "description": "Paragraph text identifier (w14:textId, 8-digit hex string)."
                 },
                 "textboxTightWrap": {
                   "description": "Textbox tight wrap setting",
@@ -23195,6 +23367,11 @@
       "required": ["id", "columnWidths"],
       "type": "object"
     },
+    "TableJustification": {
+      "description": "Table row justification — the five positions a table can sit at, narrower than paragraph (no both/kashida/distribute).",
+      "enum": ["start", "center", "end", "left", "right"],
+      "type": "string"
+    },
     "TableLookOptions": {
       "additionalProperties": false,
       "description": "Options for configuring table look conditional formatting.\n\nThese options control which conditional formatting styles are applied to the table. Field names and polarity match the base table 6-flags (firstRow/lastRow/firstCol/lastCol/bandRow/bandCol) so the same concept reads the same everywhere; the serializer maps them onto the XML attributes, inverting banding (w:noHBand = !bandRow).",
@@ -23235,22 +23412,8 @@
       "description": "Options for creating a Table element.\n\nNote: 0-width columns don't get rendered correctly, so we need to give them some value. A reasonable default would be ~6in / numCols, but if we do that it becomes very hard to resize the table using setWidth, unless the layout algorithm is set to 'fixed'. Instead, the approach here means even in 'auto' layout, setting a width on the table will make it look reasonable, as the layout algorithm will expand columns to fit its content.",
       "properties": {
         "alignment": {
-          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab.",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/TableJustification",
+          "description": "Justification: where the table sits — \"start\"/\"center\"/\"end\" or the legacy \"left\"/\"right\"."
         },
         "bandCol": {
           "type": "boolean"
@@ -23380,22 +23543,8 @@
       "additionalProperties": false,
       "properties": {
         "alignment": {
-          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab.",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/TableJustification",
+          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab."
         },
         "author": {
           "description": "Name of the author who made the change",
@@ -23472,22 +23621,8 @@
       "description": "Options for configuring table properties.",
       "properties": {
         "alignment": {
-          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab.",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/TableJustification",
+          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab."
         },
         "borders": {
           "$ref": "#/definitions/TableBordersOptions"
@@ -23570,22 +23705,8 @@
       "description": "Options for table property exceptions (w:tblPrEx).\n\nThese override the parent table's properties for a specific row. Subset of TablePropertiesOptionsBase.",
       "properties": {
         "alignment": {
-          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab.",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/TableJustification",
+          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab."
         },
         "borders": {
           "$ref": "#/definitions/TableBordersOptions"
@@ -24416,7 +24537,8 @@
           "type": "number"
         },
         "smartTagId": {
-          "type": "string"
+          "description": "`@smtId` — smart tag id.",
+          "type": "number"
         },
         "smtClean": {
           "description": "`@smtClean` — smart tag clean flag (XSD default true).",
@@ -24811,7 +24933,8 @@
           "type": "number"
         },
         "smartTagId": {
-          "type": "string"
+          "description": "`@smtId` — smart tag id.",
+          "type": "number"
         },
         "smtClean": {
           "description": "`@smtClean` — smart tag clean flag (XSD default true).",
@@ -24856,6 +24979,53 @@
         }
       },
       "type": "object"
+    },
+    "TextShapePreset": {
+      "description": "Preset text shape — the warp geometry applied to a text body (a:prstTxWarp `@prst`).",
+      "enum": [
+        "textNoShape",
+        "textPlain",
+        "textStop",
+        "textTriangle",
+        "textTriangleInverted",
+        "textChevron",
+        "textChevronInverted",
+        "textRingInside",
+        "textRingOutside",
+        "textArchUp",
+        "textArchDown",
+        "textCircle",
+        "textButton",
+        "textArchUpPour",
+        "textArchDownPour",
+        "textCirclePour",
+        "textButtonPour",
+        "textCurveUp",
+        "textCurveDown",
+        "textCanUp",
+        "textCanDown",
+        "textWave1",
+        "textWave2",
+        "textDoubleWave1",
+        "textWave4",
+        "textInflate",
+        "textDeflate",
+        "textInflateBottom",
+        "textDeflateBottom",
+        "textInflateTop",
+        "textDeflateTop",
+        "textDeflateInflate",
+        "textDeflateInflateDeflate",
+        "textFadeRight",
+        "textFadeLeft",
+        "textFadeUp",
+        "textFadeDown",
+        "textSlantUp",
+        "textSlantDown",
+        "textCascadeUp",
+        "textCascadeDown"
+      ],
+      "type": "string"
     },
     "TextTabAlignment": {
       "description": "Tab-stop alignment.",

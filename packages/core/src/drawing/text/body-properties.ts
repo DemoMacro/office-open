@@ -63,9 +63,56 @@ export interface NormalAutofitOptions {
 }
 
 /** Preset text warp options (CT_PresetTextShape). */
+/**
+ * Preset text shape (ST_TextShapeType) — the warp geometry applied to a text
+ * body (a:prstTxWarp `@prst`).
+ */
+export type TextShapePreset =
+  | "textNoShape"
+  | "textPlain"
+  | "textStop"
+  | "textTriangle"
+  | "textTriangleInverted"
+  | "textChevron"
+  | "textChevronInverted"
+  | "textRingInside"
+  | "textRingOutside"
+  | "textArchUp"
+  | "textArchDown"
+  | "textCircle"
+  | "textButton"
+  | "textArchUpPour"
+  | "textArchDownPour"
+  | "textCirclePour"
+  | "textButtonPour"
+  | "textCurveUp"
+  | "textCurveDown"
+  | "textCanUp"
+  | "textCanDown"
+  | "textWave1"
+  | "textWave2"
+  | "textDoubleWave1"
+  | "textWave4"
+  | "textInflate"
+  | "textDeflate"
+  | "textInflateBottom"
+  | "textDeflateBottom"
+  | "textInflateTop"
+  | "textDeflateTop"
+  | "textDeflateInflate"
+  | "textDeflateInflateDeflate"
+  | "textFadeRight"
+  | "textFadeLeft"
+  | "textFadeUp"
+  | "textFadeDown"
+  | "textSlantUp"
+  | "textSlantDown"
+  | "textCascadeUp"
+  | "textCascadeDown";
+
 export interface PresetTextShapeOptions {
-  /** Preset shape type (e.g. "textArchUp", "textCircle"). */
-  preset: string;
+  /** Preset shape type (ST_TextShapeType). */
+  preset: TextShapePreset;
   /** Optional adjustment values. */
   adjustments?: { name: string; formula: string }[];
 }
@@ -298,7 +345,10 @@ export const parseBodyProperties = (el: Element, ctx: ReadContext): BodyProperti
         adjustments.push({ name: attr(gd, "name") ?? "", formula: attr(gd, "fmla") ?? "" });
       }
     }
-    result.prstTxWarp = { preset, ...(adjustments.length > 0 ? { adjustments } : {}) };
+    result.prstTxWarp = {
+      preset: preset as TextShapePreset,
+      ...(adjustments.length > 0 ? { adjustments } : {}),
+    };
   }
 
   // a:scene3d

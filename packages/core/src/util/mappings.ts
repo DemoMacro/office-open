@@ -181,6 +181,17 @@ export const xsdPresetShadow = bidi({
 // Only the abbreviated ones need mapping; full-word values pass through.
 // ---------------------------------------------------------------------------
 
+export const xsdLightRigDirection = bidi({
+  topLeft: "tl",
+  top: "t",
+  topRight: "tr",
+  left: "l",
+  right: "r",
+  bottomLeft: "bl",
+  bottom: "b",
+  bottomRight: "br",
+} as const);
+
 export const xsdMaterialType = bidi({
   legacyMatte: "legacyMatte",
   legacyPlastic: "legacyPlastic",

@@ -91,15 +91,15 @@ describe("outlineDesc", () => {
     const opts: OutlineOptions = {
       type: "noFill",
       customDash: [
-        { d: "100000", sp: "50000" },
-        { d: "200000", sp: "100000" },
+        { d: "1000%", sp: "500%" },
+        { d: "2000%", sp: "1000%" },
       ],
     };
     const result = roundTrip(opts);
     expect(result.customDash).toBeDefined();
     expect(result.customDash).toHaveLength(2);
-    expect(result.customDash?.[0]?.d).toBe("100000");
-    expect(result.customDash?.[0]?.sp).toBe("50000");
+    expect(result.customDash?.[0]?.d).toBe("1000%");
+    expect(result.customDash?.[0]?.sp).toBe("500%");
   });
 
   it("round-trips join styles", () => {

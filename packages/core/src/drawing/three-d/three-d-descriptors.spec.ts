@@ -81,14 +81,14 @@ describe("scene3DDesc", () => {
   it("round-trips basic scene with camera and lightRig", () => {
     const opts: Scene3DOptions = {
       camera: { preset: "perspectiveFront" },
-      lightRig: { rig: "threePt", direction: "t" },
+      lightRig: { rig: "threePt", direction: "top" },
     };
     const result = roundTrip(scene3DDesc, opts);
     expect(result.camera).toBeDefined();
     expect(result.camera.preset).toBe("perspectiveFront");
     expect(result.lightRig).toBeDefined();
     expect(result.lightRig.rig).toBe("threePt");
-    expect(result.lightRig.direction).toBe("t");
+    expect(result.lightRig.direction).toBe("top");
   });
 
   it("round-trips camera with rotation", () => {
@@ -99,7 +99,7 @@ describe("scene3DDesc", () => {
         zoom: "100%",
         rotation: { lat: 0, lon: 0, rev: 90 },
       },
-      lightRig: { rig: "balanced", direction: "tl" },
+      lightRig: { rig: "balanced", direction: "topLeft" },
     };
     const result = roundTrip(scene3DDesc, opts);
     expect(result.camera.preset).toBe("isometricTopUp");
@@ -113,20 +113,20 @@ describe("scene3DDesc", () => {
       camera: { preset: "perspectiveFront" },
       lightRig: {
         rig: "soft",
-        direction: "b",
+        direction: "bottom",
         rotation: { lat: 90, lon: 0, rev: 0 },
       },
     };
     const result = roundTrip(scene3DDesc, opts);
     expect(result.lightRig.rig).toBe("soft");
-    expect(result.lightRig.direction).toBe("b");
+    expect(result.lightRig.direction).toBe("bottom");
     expect(result.lightRig.rotation).toEqual({ lat: 90, lon: 0, rev: 0 });
   });
 
   it("round-trips scene with backdrop", () => {
     const opts: Scene3DOptions = {
       camera: { preset: "perspectiveFront" },
-      lightRig: { rig: "threePt", direction: "t" },
+      lightRig: { rig: "threePt", direction: "top" },
       backdrop: {
         anchor: { x: 0, y: 0, z: 0 },
         normal: { dx: 0, dy: 0, dz: 1 },

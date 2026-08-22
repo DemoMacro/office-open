@@ -158,12 +158,22 @@ const PATTERN_OVERRIDES: Record<
     description: "Base64-encoded bytes (xsd:base64Binary) — password hash or salt.",
     examples: ["Hh8eLiw+KTpAPT4nPj8="],
   },
+  DateTime: {
+    pattern: "^-?\\d{4,}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})?$",
+    description: "ISO 8601 timestamp (xsd:dateTime) — Office writes the UTC Z suffix.",
+    examples: ["2024-06-01T09:30:00Z"],
+  },
   RichTextColor: {
     pattern: "^([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8}|[0-9]+|theme:[0-9]+)$",
     description:
       'Color as the parse encoding: 6-digit RGB ("FF0000"), 8-digit ARGB (' +
       '"FFFF0000"), a legacy palette index ("10"), or "theme:N".',
     examples: ["FF0000", "FFFF0000", "10", "theme:4"],
+  },
+  CnfBitmask: {
+    pattern: "^[01]{12}$",
+    description: "Conditional-format bit string (ST_Cnf) — exactly twelve 0/1 flags.",
+    examples: ["100000000001"],
   },
 };
 
