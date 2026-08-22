@@ -54,6 +54,7 @@ const LAST_VIEW_XSD: Record<string, string> = {
   slideSorterView: "sldSorterView",
 };
 
+/** Editing-view settings (p:viewPr — last active view, grid, guides, window panes). */
 export interface ViewPropertiesOptions {
   /** View active when the file was last saved; "slideSorterView" = the slide-overview grid. */
   lastView?:

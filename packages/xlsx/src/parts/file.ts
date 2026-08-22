@@ -53,6 +53,7 @@ import type { RevisionPtrOptions, WorkbookExtensionOptions } from "./workbook";
 import type { RichTextOptions, WorksheetOptions } from "./worksheet";
 import type { MapInfoOptions } from "./xml-mapping";
 
+/** Root options for a .xlsx package — maps to workbook.xml plus its satellite parts. */
 export interface WorkbookOptions extends CorePropertiesOptions {
   worksheets?: WorksheetOptions[];
   /**

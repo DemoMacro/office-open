@@ -127,6 +127,7 @@ export interface BorderOptions {
   colorIndexed?: number;
 }
 
+/** The four sides plus diagonals of a cell border (CT_Border children). */
 export interface BorderSideOptions {
   top?: BorderOptions;
   bottom?: BorderOptions;
@@ -292,6 +293,7 @@ export interface StyleExtensionOptions {
   content?: string;
 }
 
+/** A custom table or pivot style (styles.xml dxf-based tableStyle entry). */
 export interface CustomTableStyleOptions {
   /** Style name (must be unique) */
   name: string;

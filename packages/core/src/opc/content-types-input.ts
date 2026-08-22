@@ -31,6 +31,10 @@ export interface ContentTypeOverride {
   contentType: string;
 }
 
+/**
+ * [Content_Types].xml source. Usually omitted — the compiler derives it from
+ * the parts actually written; supply it only to override the derivation.
+ */
 export interface ContentTypesInput {
   defaults: ContentTypeDefault[];
   overrides: ContentTypeOverride[];

@@ -38,6 +38,12 @@ export interface FontSignature {
  * (name/family/pitch/sig/...) for non-embedded fonts, which have no bytes to
  * embed and must still round-trip into fontTable.xml.
  */
+/**
+ * An embedded font (fontTable.xml w:font with w:embedRegular parts). When
+ * authoring, set name/data and leave the internal round-trip fields
+ * (rawOdttf/odttfPath/fontKey/subsetted) unset — they carry source-file
+ * obfuscation state that fresh generation must not fake.
+ */
 export interface EmbeddedFontOptions {
   /** Font family name */
   name: string;

@@ -59,6 +59,7 @@ export interface ExternalSheetDataOptions {
   rows?: ExternalRowOptions[];
 }
 
+/** An external workbook link (xl/externalLinks/externalLinkN.xml). */
 export interface ExternalLinkOptions {
   /** External book configuration */
   externalBook?: ExternalBookOptions;

@@ -23,6 +23,7 @@ export interface PhotoAlbumOptions {
     | "frameStyle7";
 }
 
+/** Presentation modify password (p:modifiedVerifier — shared-editing protection). */
 export interface ModifyVerifierOptions {
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
   password?: string;
@@ -44,6 +45,7 @@ export interface ModifyVerifierOptions {
   cryptoProviderTypeExtensionSource?: string;
 }
 
+/** Embedded font (p:embeddedFontLst entry — a typeface plus its per-style font parts). */
 export interface EmbeddedFontOptions {
   font: {
     typeface: string;
@@ -57,12 +59,14 @@ export interface EmbeddedFontOptions {
   boldItalic?: string;
 }
 
+/** Custom slide show (p:custShowLst entry — a named subset and order of slides). */
 export interface CustomShowOptions {
   name: string;
   id: number;
   slides: { rId: string }[];
 }
 
+/** Kinsoku line-breaking rules (p:kinsoku — characters that cannot start or end a line). */
 export interface KinsokuOptions {
   lang?: string;
   invalStChars: string;
@@ -75,6 +79,7 @@ export interface StringTagOptions {
   val: string;
 }
 
+/** Customer data on the presentation (p:custDataLst — data parts, tags, inline tagLst). */
 export interface CustomerDataOptions {
   data?: { rId: string }[];
   tags?: { rId: string };

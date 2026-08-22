@@ -12,6 +12,7 @@ import { attrs } from "@office-open/xml";
 
 // ── Types ──
 
+/** One calc-chain entry (xl/calcChain.xml c:r — a formula cell in calc order). */
 export interface CalcCell {
   /** Cell reference, e.g. "A1" */
   reference: string;

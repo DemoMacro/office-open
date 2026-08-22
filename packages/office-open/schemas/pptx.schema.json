@@ -45,7 +45,7 @@
     },
     "AdjustPoint": {
       "additionalProperties": false,
-      "description": "An adjustable point (CT_AdjPoint2D).\n\nCoordinates can be absolute values or references to geometry guide names.",
+      "description": "An adjustable point. Coordinates can be absolute values or references to geometry guide names.",
       "properties": {
         "x": {
           "description": "X coordinate (absolute value or guide name)",
@@ -61,7 +61,7 @@
     },
     "AlgorithmOptions": {
       "additionalProperties": false,
-      "description": "dgm:alg (CT_Algorithm).",
+      "description": "dgm:alg.",
       "properties": {
         "parameters": {
           "description": "Algorithm parameters (dgm:param*).",
@@ -84,10 +84,10 @@
     },
     "AlgorithmParameterOptions": {
       "additionalProperties": false,
-      "description": "dgm:param (CT_Parameter) — inlined in AlgorithmOptions.parameters.",
+      "description": "dgm:param — inlined in AlgorithmOptions.parameters.",
       "properties": {
         "type": {
-          "description": "Parameter name (dgm:param `@type`,).",
+          "description": "Parameter name (dgm:param `@type`).",
           "type": "string"
         },
         "value": {
@@ -128,7 +128,7 @@
     },
     "AlphaInverseEffectOptions": {
       "additionalProperties": false,
-      "description": "Alpha inverse effect — inverts alpha, optionally with color (CT_AlphaInverseEffect).",
+      "description": "Alpha inverse effect — inverts alpha, optionally with color.",
       "properties": {
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -150,7 +150,7 @@
     },
     "AlphaOutsetEffectOptions": {
       "additionalProperties": false,
-      "description": "Alpha outset effect (CT_AlphaOutsetEffect).",
+      "description": "Alpha outset effect.",
       "properties": {
         "radius": {
           "description": "Outset radius",
@@ -712,7 +712,7 @@
     },
     "AnimationGraphicSubBuildOptions": {
       "additionalProperties": false,
-      "description": "a:bldDgm / a:bldChart inside p:bldSub (CT_AnimationGraphicalObjectBuildProperties).",
+      "description": "a:bldDgm / a:bldChart inside p:bldSub.",
       "properties": {
         "chart": {
           "additionalProperties": false,
@@ -1286,7 +1286,7 @@
     },
     "AppPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Options for docProps/app.xml extended properties (CT_Properties).\n\nProperty order follows the CT_Properties xsd:all sequence so the emitted XML matches the reference schema ordering.",
+      "description": "Options for docProps/app.xml extended properties. Property order follows the xsd:all sequence so the emitted XML matches the reference schema ordering.",
       "properties": {
         "apPrefix": {
           "const": true,
@@ -1431,10 +1431,10 @@
     },
     "AudioCdTimeOptions": {
       "additionalProperties": false,
-      "description": "A point on an audio CD (CT_AudioCDTime).",
+      "description": "A point on an audio CD.",
       "properties": {
         "time": {
-          "description": "Offset within the track, in milliseconds (CT_AudioCDTime `@time`, default 0)",
+          "description": "Offset within the track, in milliseconds",
           "type": "number"
         },
         "track": {
@@ -1453,11 +1453,11 @@
           "description": "CD audio playback (a:audioCd) — mutually exclusive with data"
         },
         "audioFileName": {
-          "description": "Original audio file name (CT_EmbeddedWAVAudioFile `@name`, wav only)",
+          "description": "Original audio file name",
           "type": "string"
         },
         "contentType": {
-          "description": "MIME content type of the linked audio (CT_AudioFile `@contentType`)",
+          "description": "MIME content type of the linked audio",
           "type": "string"
         },
         "creationId": {
@@ -1575,7 +1575,7 @@
       "type": "string"
     },
     "AxisKind": {
-      "description": "Axis role; decides the CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx element.",
+      "description": "Axis role; decides the /// element.",
       "enum": ["category", "value", "date", "series"],
       "type": "string"
     },
@@ -1586,7 +1586,7 @@
     },
     "AxisNumberFormatOptions": {
       "additionalProperties": false,
-      "description": "Explicit axis c:numFmt (CT_NumFmt) with a decoupled sourceLinked flag.",
+      "description": "Explicit axis c:numFmt with a decoupled sourceLinked flag.",
       "properties": {
         "formatCode": {
           "type": "string"
@@ -1601,7 +1601,7 @@
     },
     "AxisOptions": {
       "additionalProperties": false,
-      "description": "Per-axis configuration. Covers EG_AxShared plus kind-specific children of CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx. Field order follows the XSD content model; the serializer emits in that order.",
+      "description": "Per-axis configuration. Covers EG_AxShared plus kind-specific children of / / /. Field order follows the XSD content model; the serializer emits in that order.",
       "properties": {
         "auto": {
           "type": "boolean"
@@ -1652,7 +1652,7 @@
               "$ref": "#/definitions/ChartLinesOptions"
             }
           ],
-          "description": "c:majorGridlines (CT_ChartLines) — true emits the bare element, an object carries its spPr/txPr decorations."
+          "description": "c:majorGridlines — true emits the bare element, an object carries its spPr/txPr decorations."
         },
         "majorTickMark": {
           "$ref": "#/definitions/AxisTickMark"
@@ -1708,7 +1708,7 @@
         },
         "textProperties": {
           "$ref": "#/definitions/TextBodyOptions",
-          "description": "Axis text (c:txPr, a CT_TextBody) — round-trip."
+          "description": "Axis text (c:txPr, a) — round-trip."
         },
         "tickLabelPosition": {
           "$ref": "#/definitions/AxisTickLabelPosition"
@@ -1728,7 +1728,7 @@
               "$ref": "#/definitions/ChartTitleOptions"
             }
           ],
-          "description": "Axis title (c:title) — plain text or the full CT_Title object form."
+          "description": "Axis title (c:title) — plain text or the full object form."
         }
       },
       "required": ["kind", "id", "crossAxisId"],
@@ -1746,7 +1746,7 @@
     },
     "AxisScalingOptions": {
       "additionalProperties": false,
-      "description": "Axis scale bounds and orientation (CT_Scaling).",
+      "description": "Axis scale bounds and orientation.",
       "properties": {
         "logBase": {
           "description": "Logarithmic base, 2-1000 (c:logBase val, required when present).",
@@ -1776,7 +1776,7 @@
     },
     "BackdropOptions": {
       "additionalProperties": false,
-      "description": "Backdrop options (CT_Backdrop).\n\nDefines the backdrop plane for the 3D scene.",
+      "description": "Backdrop options. Defines the backdrop plane for the 3D scene.",
       "properties": {
         "anchor": {
           "$ref": "#/definitions/Point3D",
@@ -1823,7 +1823,7 @@
     },
     "BandFormatOptions": {
       "additionalProperties": false,
-      "description": "Surface chart color band format (CT_BandFmt: idx).",
+      "description": "Surface chart color band format.",
       "properties": {
         "index": {
           "type": "number"
@@ -1951,7 +1951,7 @@
     },
     "BlendEffectOptions": {
       "additionalProperties": false,
-      "description": "Blend effect — blends with nested container (CT_BlendEffect).",
+      "description": "Blend effect — blends with nested container.",
       "properties": {
         "blend": {
           "description": "Blend mode (required)",
@@ -2070,7 +2070,7 @@
     },
     "BodyPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Options for text body properties (CT_TextBodyProperties).\n\nXSD content model:   prstTxWarp?, EG_TextAutofit?, scene3d?, EG_Text3D? followed by 19 attributes.",
+      "description": "Options for text body properties. XSD content model: prstTxWarp?, EG_TextAutofit?, scene3d?, EG_Text3D? followed by 19 attributes.",
       "properties": {
         "anchor": {
           "$ref": "#/definitions/VerticalAnchor"
@@ -2269,7 +2269,7 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
           "type": "string"
         },
         "formatCode": {
@@ -2581,7 +2581,7 @@
     },
     "CameraOptions": {
       "additionalProperties": false,
-      "description": "Camera options (CT_Camera).\n\nDefines the camera type and optional rotation for the 3D scene.",
+      "description": "Camera options. Defines the camera type and optional rotation for the 3D scene.",
       "properties": {
         "fov": {
           "description": "Field of view angle in degrees (0–180).",
@@ -2608,11 +2608,11 @@
       "properties": {
         "bevel": {
           "$ref": "#/definitions/BevelOptions",
-          "description": "Cell bevel (required CT_Bevel)"
+          "description": "Cell bevel (required)"
         },
         "lightRig": {
           "$ref": "#/definitions/LightRigOptions",
-          "description": "Light rig (CT_LightRig)"
+          "description": "Light rig"
         },
         "prstMaterial": {
           "$ref": "#/definitions/PresetMaterial",
@@ -2643,7 +2643,7 @@
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions",
-          "description": "Full line properties (CT_LineProperties) for round-trip fidelity — joins, line ends, compound/cap/alignment. Takes precedence over the sugar fields."
+          "description": "Full line properties for round-trip fidelity — joins, line ends, compound/cap/alignment. Takes precedence over the sugar fields."
         },
         "width": {
           "anyOf": [
@@ -2665,7 +2665,7 @@
     },
     "ChartHeaderFooterOptions": {
       "additionalProperties": false,
-      "description": "Print-time header/footer text (CT_HeaderFooter).",
+      "description": "Print-time header/footer text.",
       "properties": {
         "alignWithMargins": {
           "type": "boolean"
@@ -2699,7 +2699,7 @@
     },
     "ChartLinesOptions": {
       "additionalProperties": false,
-      "description": "Chart lines with formatting (CT_ChartLines: spPr + txPr).",
+      "description": "Chart lines with formatting.",
       "properties": {
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -2968,7 +2968,7 @@
         },
         "legendTextProperties": {
           "$ref": "#/definitions/TextBodyOptions",
-          "description": "Legend text (c:legend's c:txPr, a CT_TextBody) — round-trip."
+          "description": "Legend text (c:legend's c:txPr, a) — round-trip."
         },
         "locking": {
           "anyOf": [
@@ -2982,7 +2982,7 @@
           "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
         },
         "markers": {
-          "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",
+          "description": "Show line-chart markers (c:marker on c:lineChart, 2D only). Emitted only when set.",
           "type": "boolean"
         },
         "modId": {
@@ -3028,19 +3028,19 @@
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
-          "description": "CT_Placeholder `@type` —."
+          "description": "`@type` —."
         },
         "placeholderIndex": {
-          "description": "CT_Placeholder `@idx`.",
+          "description": "`@idx`.",
           "type": "number"
         },
         "placeholderOrientation": {
           "$ref": "#/definitions/PlaceholderOrientation",
-          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+          "description": "`@orient` — orientation hint (default \"horz\")."
         },
         "placeholderSize": {
           "$ref": "#/definitions/PlaceholderSize",
-          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+          "description": "`@sz` — sizing hint (default \"full\")."
         },
         "plotAreaLayout": {
           "$ref": "#/definitions/ManualLayoutOptions",
@@ -3142,7 +3142,7 @@
           "description": "What the bubble size represents (c:sizeRepresents)."
         },
         "smooth": {
-          "description": "Smooth lines for the whole line-chart group (c:smooth CT_Boolean on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
+          "description": "Smooth lines for the whole line-chart group (c:smooth on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
           "type": "boolean"
         },
         "splitPosition": {
@@ -3162,7 +3162,7 @@
         },
         "textProperties": {
           "$ref": "#/definitions/TextBodyOptions",
-          "description": "Chart-space default text (c:txPr, a CT_TextBody) — round-trip."
+          "description": "Chart-space default text (c:txPr, a) — round-trip."
         },
         "threeD": {
           "type": "boolean"
@@ -3244,7 +3244,7 @@
     },
     "ChartPageMarginsOptions": {
       "additionalProperties": false,
-      "description": "Print page margins in inches (CT_PageMargins, all XSD-required).",
+      "description": "Print page margins in inches.",
       "properties": {
         "bottom": {
           "type": "number"
@@ -3269,7 +3269,7 @@
     },
     "ChartPageSetupOptions": {
       "additionalProperties": false,
-      "description": "Print page setup (CT_PageSetup).",
+      "description": "Print page setup.",
       "properties": {
         "blackAndWhite": {
           "type": "boolean"
@@ -3311,7 +3311,7 @@
     },
     "ChartPivotFormatOptions": {
       "additionalProperties": false,
-      "description": "Per-series pivot format override (CT_PivotFmt).",
+      "description": "Per-series pivot format override.",
       "properties": {
         "index": {
           "type": "number"
@@ -3348,7 +3348,7 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
           "type": "string"
         },
         "formatCode": {
@@ -3441,7 +3441,7 @@
     },
     "ChartTitleOptions": {
       "additionalProperties": false,
-      "description": "Chart title (CT_Title). A plain string emits the simple c:rich form; an empty string the bare `<c:title/>` placeholder; the object form round-trips layout/overlay/spPr/txPr decorations alongside the text.",
+      "description": "Chart title. A plain string emits the simple c:rich form; an empty string the bare `<c:title/>` placeholder; the object form round-trips layout/overlay/spPr/txPr decorations alongside the text.",
       "properties": {
         "layout": {
           "anyOf": [
@@ -3503,10 +3503,10 @@
     },
     "ChooseOptions": {
       "additionalProperties": false,
-      "description": "dgm:choose (CT_Choose): pick the first matching condition.",
+      "description": "dgm:choose: pick the first matching condition.",
       "properties": {
         "conditions": {
-          "description": "Alternatives in priority order (dgm:if*, CT_When).",
+          "description": "Alternatives in priority order (dgm:if*).",
           "items": {
             "$ref": "#/definitions/WhenOptions"
           },
@@ -3517,7 +3517,7 @@
         },
         "otherwise": {
           "$ref": "#/definitions/OtherwiseOptions",
-          "description": "Fallback branch (dgm:else, CT_Otherwise)."
+          "description": "Fallback branch (dgm:else)."
         }
       },
       "required": ["conditions"],
@@ -3545,7 +3545,7 @@
     },
     "ColorDefinitionOptions": {
       "additionalProperties": false,
-      "description": "dgm:colorsDef (CT_ColorTransform) — the colors part root.",
+      "description": "dgm:colorsDef — the colors part root.",
       "properties": {
         "categories": {
           "description": "Gallery categories (dgm:catLst).",
@@ -3698,7 +3698,7 @@
       "type": "object"
     },
     "ColorSchemeIndex": {
-      "description": "Theme color slot referenced by CT_ColorMapping.",
+      "description": "Theme color slot referenced by.",
       "enum": [
         "dark1",
         "light1",
@@ -3717,7 +3717,7 @@
     },
     "ColorSchemeOptions": {
       "additionalProperties": false,
-      "description": "Color scheme — 12 theme colors (CT_ColorScheme).",
+      "description": "Color scheme — 12 theme colors.",
       "properties": {
         "accent1": {
           "$ref": "#/definitions/SchemeColorValue"
@@ -3912,11 +3912,11 @@
     },
     "CommonViewPropertiesOptions": {
       "additionalProperties": false,
-      "description": "CT_CommonViewProperties (`p:cViewPr`) — zoom scale and origin, the child shared by the slide/outline/notes-text/sorter view property elements.",
+      "description": "(`p:cViewPr`) — zoom scale and origin, the child shared by the slide/outline/notes-text/sorter view property elements.",
       "properties": {
         "origin": {
           "additionalProperties": false,
-          "description": "View origin coordinates (CT_Point2D).",
+          "description": "View origin coordinates.",
           "properties": {
             "x": {
               "type": "number"
@@ -3930,7 +3930,7 @@
         },
         "scale": {
           "additionalProperties": false,
-          "description": "Zoom scale as a fraction (CT_Scale2D `a:sx` n/d; `a:sy` mirrors sx).",
+          "description": "Zoom scale as a fraction.",
           "properties": {
             "denominator": {
               "type": "number"
@@ -3971,7 +3971,7 @@
     },
     "ConnectionSite": {
       "additionalProperties": false,
-      "description": "Connection site (CT_ConnectionSite).\n\nDefines a point on the shape boundary where connectors can attach.",
+      "description": "Connection site. Defines a point on the shape boundary where connectors can attach.",
       "properties": {
         "angle": {
           "description": "Angle (absolute value or guide name)",
@@ -4113,7 +4113,7 @@
     },
     "ConstraintOptions": {
       "additionalProperties": false,
-      "description": "dgm:constr (CT_Constraint).",
+      "description": "dgm:constr.",
       "properties": {
         "factor": {
           "description": "Factor applied to the reference (dgm:constr `@fact`).",
@@ -4266,6 +4266,7 @@
     },
     "ContentTypesInput": {
       "additionalProperties": false,
+      "description": "[Content_Types].xml source. Usually omitted — the compiler derives it from the parts actually written; supply it only to override the derivation.",
       "properties": {
         "defaults": {
           "items": {
@@ -4310,14 +4311,14 @@
     },
     "CustomColorOptions": {
       "additionalProperties": false,
-      "description": "Custom color entry (CT_CustomColor) — a named color in the theme's palette.",
+      "description": "Custom color entry — a named color in the theme's palette.",
       "properties": {
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
           "description": "Color value (EG_ColorChoice)"
         },
         "name": {
-          "description": "Palette display name (CT_CustomColor `@name`, default \"\")",
+          "description": "Palette display name",
           "type": "string"
         }
       },
@@ -4326,7 +4327,7 @@
     },
     "CustomGeometryOptions": {
       "additionalProperties": false,
-      "description": "Options for a custom 2D geometry (CT_CustomGeometry2D).\n\nOnly `pathList` is required. All other sub-elements are optional.",
+      "description": "Options for a custom 2D geometry. Only `pathList` is required. All other sub-elements are optional.",
       "properties": {
         "adjustHandles": {
           "description": "Adjust handles (a:ahLst)",
@@ -4392,6 +4393,7 @@
     },
     "CustomShowOptions": {
       "additionalProperties": false,
+      "description": "Custom slide show (p:custShowLst entry — a named subset and order of slides).",
       "properties": {
         "id": {
           "type": "number"
@@ -4418,6 +4420,7 @@
     },
     "CustomerDataOptions": {
       "additionalProperties": false,
+      "description": "Customer data on the presentation (p:custDataLst — data parts, tags, inline tagLst).",
       "properties": {
         "data": {
           "items": {
@@ -4470,7 +4473,7 @@
     },
     "DataLabelOptions": {
       "additionalProperties": false,
-      "description": "Single data-point label override (CT_DLbl).",
+      "description": "Single data-point label override.",
       "properties": {
         "delete": {
           "description": "Drop the label for this point (c:delete).",
@@ -4613,7 +4616,7 @@
     },
     "DataModelOptions": {
       "additionalProperties": false,
-      "description": "dgm:dataModel — structured point/connection model (CT_DataModel).",
+      "description": "dgm:dataModel — structured point/connection model.",
       "properties": {
         "connections": {
           "items": {
@@ -4632,7 +4635,7 @@
     },
     "DataPointOptions": {
       "additionalProperties": false,
-      "description": "Per-point override (CT_DPt). Field order follows the XSD content model.",
+      "description": "Per-point override. Field order follows the XSD content model.",
       "properties": {
         "bubble3D": {
           "description": "3D bubble on this point (c:bubble3D).",
@@ -4665,7 +4668,7 @@
     },
     "DataTableOptions": {
       "additionalProperties": false,
-      "description": "Plot-area data table (CT_DTable).",
+      "description": "Plot-area data table.",
       "properties": {
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -4710,7 +4713,7 @@
     },
     "DefaultShapeDefinitionOptions": {
       "additionalProperties": false,
-      "description": "Default shape/line/text definition (CT_DefaultShapeDefinition: spDef/lnDef/txDef).",
+      "description": "Default shape/line/text definition.",
       "properties": {
         "bodyProperties": {
           "$ref": "#/definitions/BodyPropertiesOptions"
@@ -4729,7 +4732,7 @@
     },
     "DefaultShapeStyleOptions": {
       "additionalProperties": false,
-      "description": "Shape style — a:style (CT_ShapeStyle).",
+      "description": "Shape style — a:style.",
       "properties": {
         "effectReference": {
           "$ref": "#/definitions/StyleMatrixReferenceOptions"
@@ -4783,27 +4786,27 @@
       "description": "AG_IteratorAttributes — the traversal selector shared by presOf, forEach, and when-branches. List-typed XSD attributes (axis, ptType, hideLastTrans, st, cnt, step) surface as strings; single values read fine too.",
       "properties": {
         "axis": {
-          "description": "Selection axes, space-separated (dgm:`@axis`,).",
+          "description": "Selection axes, space-separated (dgm:`@axis`).",
           "type": "string"
         },
         "count": {
-          "description": "Iteration count (dgm:`@cnt`,).",
+          "description": "Iteration count (dgm:`@cnt`).",
           "type": "string"
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:`@hideLastTrans`,).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`).",
           "type": "string"
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:`@ptType`,).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:`@st`,).",
+          "description": "Start index (dgm:`@st`).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:`@step`,).",
+          "description": "Index step (dgm:`@step`).",
           "type": "string"
         }
       },
@@ -4829,7 +4832,7 @@
     },
     "DisplayUnitsOptions": {
       "additionalProperties": false,
-      "description": "Display-unit scaling for a value axis (CT_DispUnits).",
+      "description": "Display-unit scaling for a value axis.",
       "properties": {
         "builtInUnit": {
           "$ref": "#/definitions/BuiltInDisplayUnit",
@@ -4840,7 +4843,7 @@
           "type": "number"
         },
         "label": {
-          "description": "Emit c:dispUnitsLbl (presence only; CT_DispUnitsLbl body not modeled here).",
+          "description": "Emit c:dispUnitsLbl (presence only; body not modeled here).",
           "type": "boolean"
         }
       },
@@ -4869,7 +4872,7 @@
     },
     "EffectDagOptions": {
       "additionalProperties": false,
-      "description": "Options for an effect container (CT_EffectContainer).\n\nSupports all 28 effect types from EG_Effect, including recursive nesting.",
+      "description": "Options for an effect container. Supports all 28 effect types from EG_Effect, including recursive nesting.",
       "properties": {
         "alphaBiLevel": {
           "$ref": "#/definitions/AlphaBiLevelEffectOptions",
@@ -5071,7 +5074,7 @@
     },
     "EffectReferenceOptions": {
       "additionalProperties": false,
-      "description": "Effect reference — references an effect by ID (CT_EffectReference).",
+      "description": "Effect reference — references an effect by ID.",
       "properties": {
         "ref": {
           "description": "Reference ID (required)",
@@ -5083,7 +5086,7 @@
     },
     "EffectStyleOptions": {
       "additionalProperties": false,
-      "description": "Effect style entry — a:effectStyle (CT_EffectStyleItem).",
+      "description": "Effect style entry — a:effectStyle.",
       "properties": {
         "effects": {
           "$ref": "#/definitions/EffectListOptions"
@@ -5099,6 +5102,7 @@
     },
     "EmbeddedFontOptions": {
       "additionalProperties": false,
+      "description": "Embedded font (p:embeddedFontLst entry — a typeface plus its per-style font parts).",
       "properties": {
         "bold": {
           "type": "string"
@@ -5243,7 +5247,7 @@
     },
     "ExternalDataOptions": {
       "additionalProperties": false,
-      "description": "External linked workbook reference (CT_ExternalData).",
+      "description": "External linked workbook reference.",
       "properties": {
         "autoUpdate": {
           "type": "boolean"
@@ -5265,7 +5269,7 @@
     },
     "ExtraColorSchemeOptions": {
       "additionalProperties": false,
-      "description": "Extra color scheme (CT_ExtraColorScheme).",
+      "description": "Extra color scheme.",
       "properties": {
         "colorMapping": {
           "additionalProperties": false,
@@ -5318,7 +5322,7 @@
     },
     "FillEffectOptions": {
       "additionalProperties": false,
-      "description": "Fill effect — applies a fill as an effect (CT_FillEffect).",
+      "description": "Fill effect — applies a fill as an effect.",
       "properties": {
         "gradientFill": {
           "$ref": "#/definitions/GradientFillOptions"
@@ -5548,7 +5552,7 @@
     },
     "FlatTextOptions": {
       "additionalProperties": false,
-      "description": "Flat text options (CT_FlatText).",
+      "description": "Flat text options.",
       "properties": {
         "z": {
           "description": "Z-offset in EMUs.",
@@ -5559,7 +5563,7 @@
     },
     "FontCollectionOptions": {
       "additionalProperties": false,
-      "description": "Major or minor font collection (CT_FontCollection).",
+      "description": "Major or minor font collection.",
       "properties": {
         "complexScript": {
           "$ref": "#/definitions/TextFontOptions",
@@ -5587,7 +5591,7 @@
     },
     "FontReferenceOptions": {
       "additionalProperties": false,
-      "description": "Font reference — a:fontRef (CT_FontReference).",
+      "description": "Font reference — a:fontRef.",
       "properties": {
         "collection": {
           "description": "Font collection (idx attribute:).",
@@ -5603,7 +5607,7 @@
     },
     "FontSchemeOptions": {
       "additionalProperties": false,
-      "description": "Font scheme (CT_FontScheme).",
+      "description": "Font scheme.",
       "properties": {
         "majorFont": {
           "$ref": "#/definitions/FontCollectionOptions"
@@ -5619,10 +5623,10 @@
     },
     "ForEachOptions": {
       "additionalProperties": false,
-      "description": "dgm:forEach (CT_ForEach) — apply children to each selected point.",
+      "description": "dgm:forEach — apply children to each selected point.",
       "properties": {
         "axis": {
-          "description": "Selection axes, space-separated (dgm:`@axis`,).",
+          "description": "Selection axes, space-separated (dgm:`@axis`).",
           "type": "string"
         },
         "children": {
@@ -5632,18 +5636,18 @@
           "type": "array"
         },
         "count": {
-          "description": "Iteration count (dgm:`@cnt`,).",
+          "description": "Iteration count (dgm:`@cnt`).",
           "type": "string"
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:`@hideLastTrans`,).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`).",
           "type": "string"
         },
         "name": {
           "type": "string"
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:`@ptType`,).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`).",
           "type": "string"
         },
         "reference": {
@@ -5651,11 +5655,11 @@
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:`@st`,).",
+          "description": "Start index (dgm:`@st`).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:`@step`,).",
+          "description": "Index step (dgm:`@step`).",
           "type": "string"
         }
       },
@@ -5663,7 +5667,7 @@
     },
     "FormatSchemeOptions": {
       "additionalProperties": false,
-      "description": "Format scheme / style matrix — a:fmtScheme (CT_StyleMatrix).",
+      "description": "Format scheme / style matrix — a:fmtScheme.",
       "properties": {
         "backgroundFillStyles": {
           "description": "Background fill style list (bgFillStyleLst, ≥3 entries).",
@@ -5702,7 +5706,7 @@
     },
     "GeomRect": {
       "additionalProperties": false,
-      "description": "Text insertion rectangle (CT_GeomRect).\n\nDefines the rectangle within the shape where text is placed. Coordinates can be absolute values or references to geometry guide names.",
+      "description": "Text insertion rectangle. Defines the rectangle within the shape where text is placed. Coordinates can be absolute values or references to geometry guide names.",
       "properties": {
         "bottom": {
           "type": "string"
@@ -6223,6 +6227,7 @@
     },
     "HtmlPublishPropertiesOptions": {
       "additionalProperties": false,
+      "description": "Web-publishing target (p:htmlPubPr — browser and title for HTML export).",
       "properties": {
         "rId": {
           "type": "string"
@@ -6284,6 +6289,7 @@
     },
     "KinsokuOptions": {
       "additionalProperties": false,
+      "description": "Kinsoku line-breaking rules (p:kinsoku — characters that cannot start or end a line).",
       "properties": {
         "invalEndChars": {
           "type": "string"
@@ -6308,7 +6314,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail — where p14:creationId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip.",
           "type": "string"
         },
         "children": {
@@ -6397,7 +6403,7 @@
     },
     "LayoutDefinitionOptions": {
       "additionalProperties": false,
-      "description": "dgm:layoutDef (CT_DiagramDefinition) — the layoutDef part root.",
+      "description": "dgm:layoutDef — the layoutDef part root.",
       "properties": {
         "categories": {
           "description": "Gallery categories (dgm:catLst).",
@@ -6573,7 +6579,7 @@
     },
     "LayoutNodeOptions": {
       "additionalProperties": false,
-      "description": "dgm:layoutNode (CT_LayoutNode) — one node of the layout tree.",
+      "description": "dgm:layoutNode — one node of the layout tree.",
       "properties": {
         "childOrder": {
           "$ref": "#/definitions/ChildOrder",
@@ -6679,7 +6685,7 @@
     },
     "LayoutRuleOptions": {
       "additionalProperties": false,
-      "description": "dgm:rule (CT_NumericRule).",
+      "description": "dgm:rule.",
       "properties": {
         "factor": {
           "description": "Multiplied factor (dgm:rule `@fact`).",
@@ -6712,7 +6718,7 @@
     },
     "LayoutShapeOptions": {
       "additionalProperties": false,
-      "description": "dgm:shape (CT_Shape) — the geometry template a layout node renders as.",
+      "description": "dgm:shape — the geometry template a layout node renders as.",
       "properties": {
         "adjustments": {
           "description": "Geometry adjustment values (dgm:adjLst).",
@@ -6742,7 +6748,7 @@
           "type": "number"
         },
         "type": {
-          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape `@type`,).",
+          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape `@type`).",
           "type": "string"
         },
         "zOrderOffset": {
@@ -6759,7 +6765,7 @@
     },
     "LegendEntryOptions": {
       "additionalProperties": false,
-      "description": "Legend entry override (CT_LegendEntry: idx + delete | txPr).",
+      "description": "Legend entry override.",
       "properties": {
         "delete": {
           "description": "Hide this legend entry (c:delete).",
@@ -6783,7 +6789,7 @@
     },
     "LightRigOptions": {
       "additionalProperties": false,
-      "description": "Light rig options (CT_LightRig).\n\nDefines the lighting setup for the 3D scene.",
+      "description": "Light rig options. Defines the lighting setup for the 3D scene.",
       "properties": {
         "direction": {
           "description": "Light direction (e.g., \"tl\", \"t\", \"tr\", \"l\", \"r\", \"bl\", \"b\", \"br\")",
@@ -7031,19 +7037,19 @@
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
-          "description": "CT_Placeholder `@type` —."
+          "description": "`@type` —."
         },
         "placeholderIndex": {
-          "description": "CT_Placeholder `@idx`.",
+          "description": "`@idx`.",
           "type": "number"
         },
         "placeholderOrientation": {
           "$ref": "#/definitions/PlaceholderOrientation",
-          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+          "description": "`@orient` — orientation hint (default \"horz\")."
         },
         "placeholderSize": {
           "$ref": "#/definitions/PlaceholderSize",
-          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+          "description": "`@sz` — sizing hint (default \"full\")."
         },
         "title": {
           "description": "XSD `@title`.",
@@ -7088,7 +7094,7 @@
     },
     "LockedCanvasShapeOptions": {
       "additionalProperties": false,
-      "description": "Locked-canvas child shape (a:sp). Shape properties (position/geometry/fill/ outline/effects) come from the core CT_ShapeProperties model; text is plain string only — locked-canvas shapes carry no rich text.",
+      "description": "Locked-canvas child shape (a:sp). Shape properties (position/geometry/fill/ outline/effects) come from the core model; text is plain string only — locked-canvas shapes carry no rich text.",
       "properties": {
         "childExtentHeight": {
           "anyOf": [
@@ -7246,7 +7252,7 @@
     },
     "ManualLayoutOptions": {
       "additionalProperties": false,
-      "description": "Manual plot-area layout (CT_ManualLayout). Field order follows the XSD.",
+      "description": "Manual plot-area layout. Field order follows the XSD.",
       "properties": {
         "h": {
           "type": "number"
@@ -7280,7 +7286,7 @@
     },
     "MarkerOptions": {
       "additionalProperties": false,
-      "description": "Line/scatter/radar point marker (CT_Marker).",
+      "description": "Line/scatter/radar point marker.",
       "properties": {
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -7315,6 +7321,7 @@
     },
     "MasterDefinition": {
       "additionalProperties": false,
+      "description": "A slide master plus its theme and layout family (p:sldMaster + p:sldLayout children).",
       "properties": {
         "animations": {
           "$ref": "#/definitions/AnimationsOptions",
@@ -7324,7 +7331,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail — where p14:creationId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip.",
           "type": "string"
         },
         "children": {
@@ -7423,7 +7430,7 @@
         },
         "textStyles": {
           "$ref": "#/definitions/TextStylesOptions",
-          "description": "Master text styles (p:txStyles — title/body/other, CT_SlideMasterTextStyles). Defaults to the MS Office standard block when omitted. Round-tripped masters carry their own so custom typography (fonts, indents, bullets) survives."
+          "description": "Master text styles (p:txStyles — title/body/other). Defaults to the MS Office standard block when omitted. Round-tripped masters carry their own so custom typography (fonts, indents, bullets) survives."
         },
         "theme": {
           "$ref": "#/definitions/ThemeOptions"
@@ -7518,7 +7525,7 @@
     },
     "ModelConnectionOptions": {
       "additionalProperties": false,
-      "description": "dgm:cxn — one data-model connection (CT_Cxn).",
+      "description": "dgm:cxn — one data-model connection.",
       "properties": {
         "destinationId": {
           "type": "string"
@@ -7554,7 +7561,7 @@
     },
     "ModelPointOptions": {
       "additionalProperties": false,
-      "description": "dgm:pt — one data-model point (dgm:pt, CT_Pt).",
+      "description": "dgm:pt — one data-model point (dgm:pt).",
       "properties": {
         "connectionId": {
           "description": "Transition point owning connection (dgm:pt `@cxnId`, transition points only).",
@@ -7581,6 +7588,7 @@
     },
     "ModifyVerifierOptions": {
       "additionalProperties": false,
+      "description": "Presentation modify password (p:modifiedVerifier — shared-editing protection).",
       "properties": {
         "algorithmExtensionId": {
           "type": "number"
@@ -7639,7 +7647,7 @@
     },
     "NormalAutofitOptions": {
       "additionalProperties": false,
-      "description": "Normal autofit options (CT_TextNormalAutofit).",
+      "description": "Normal autofit options.",
       "properties": {
         "fontScale": {
           "description": "Font scale percentage (e.g., 100000 = 100%).",
@@ -7687,7 +7695,7 @@
     },
     "NormalViewPortionOptions": {
       "additionalProperties": false,
-      "description": "CT_NormalViewPortion — one restored pane of the normal view.",
+      "description": "one restored pane of the normal view.",
       "properties": {
         "autoAdjust": {
           "description": "Auto-adjust the pane when the window resizes (`@autoAdjust`, default true).",
@@ -7769,7 +7777,7 @@
         },
         "notesStyle": {
           "$ref": "#/definitions/TextListStyleOptions",
-          "description": "Notes text style (p:notesStyle, CT_TextListStyle); defaults to the Office 9-level notes style."
+          "description": "Notes text style (p:notesStyle); defaults to the Office 9-level notes style."
         },
         "theme": {
           "$ref": "#/definitions/ThemeOptions",
@@ -7785,7 +7793,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail — where p14:creationId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip.",
           "type": "string"
         },
         "children": {
@@ -7817,7 +7825,7 @@
     },
     "NotesViewOptions": {
       "additionalProperties": false,
-      "description": "The `p:notesViewPr` payload — a CT_CommonSlideViewProperties (view + guides).",
+      "description": "The `p:notesViewPr` payload — a (view + guides).",
       "properties": {
         "guides": {
           "description": "Notes-view guides (`p:guideLst`); each guide is a vertical or horizontal line at `pos` (EMU).",
@@ -7845,7 +7853,7 @@
     },
     "ObjectDefaultsOptions": {
       "additionalProperties": false,
-      "description": "Object defaults — a:objectDefaults (CT_ObjectStyleDefaults).",
+      "description": "Object defaults — a:objectDefaults.",
       "properties": {
         "lineDefault": {
           "$ref": "#/definitions/DefaultShapeDefinitionOptions",
@@ -7995,19 +8003,19 @@
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
-          "description": "CT_Placeholder `@type` —."
+          "description": "`@type` —."
         },
         "placeholderIndex": {
-          "description": "CT_Placeholder `@idx`.",
+          "description": "`@idx`.",
           "type": "number"
         },
         "placeholderOrientation": {
           "$ref": "#/definitions/PlaceholderOrientation",
-          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+          "description": "`@orient` — orientation hint (default \"horz\")."
         },
         "placeholderSize": {
           "$ref": "#/definitions/PlaceholderSize",
-          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+          "description": "`@sz` — sizing hint (default \"full\")."
         },
         "progId": {
           "description": "OLE program ID (e.g., \"Excel.Sheet.12\")",
@@ -8068,7 +8076,7 @@
     },
     "OtherwiseOptions": {
       "additionalProperties": false,
-      "description": "dgm:else (CT_Otherwise).",
+      "description": "dgm:else.",
       "properties": {
         "children": {
           "items": {
@@ -8285,7 +8293,7 @@
     },
     "PathArcTo": {
       "additionalProperties": false,
-      "description": "Arc-to path command (CT_Path2DArcTo).",
+      "description": "Arc-to path command.",
       "properties": {
         "command": {
           "const": "arcTo",
@@ -8309,7 +8317,7 @@
     },
     "PathClose": {
       "additionalProperties": false,
-      "description": "Close path command (CT_Path2DClose).",
+      "description": "Close path command.",
       "properties": {
         "command": {
           "const": "close",
@@ -8344,7 +8352,7 @@
     },
     "PathCubicBezTo": {
       "additionalProperties": false,
-      "description": "Cubic Bezier-to path command (CT_Path2DCubicBezierTo).",
+      "description": "Cubic Bezier-to path command.",
       "properties": {
         "command": {
           "const": "cubicBezTo",
@@ -8369,7 +8377,7 @@
     },
     "PathLineTo": {
       "additionalProperties": false,
-      "description": "Line-to path command (CT_Path2DLineTo).",
+      "description": "Line-to path command.",
       "properties": {
         "command": {
           "const": "lineTo",
@@ -8384,7 +8392,7 @@
     },
     "PathMoveTo": {
       "additionalProperties": false,
-      "description": "Move-to path command (CT_Path2DMoveTo).",
+      "description": "Move-to path command.",
       "properties": {
         "command": {
           "const": "moveTo",
@@ -8399,7 +8407,7 @@
     },
     "PathOptions": {
       "additionalProperties": false,
-      "description": "Options for a 2D path (CT_Path2D).",
+      "description": "Options for a 2D path.",
       "properties": {
         "commands": {
           "description": "Path commands (moveTo, lineTo, arcTo, etc.)",
@@ -8434,7 +8442,7 @@
     },
     "PathQuadBezTo": {
       "additionalProperties": false,
-      "description": "Quadratic Bezier-to path command (CT_Path2DQuadBezierTo).",
+      "description": "Quadratic Bezier-to path command.",
       "properties": {
         "command": {
           "const": "quadBezTo",
@@ -8749,19 +8757,19 @@
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
-          "description": "CT_Placeholder `@type` —."
+          "description": "`@type` —."
         },
         "placeholderIndex": {
-          "description": "CT_Placeholder `@idx`.",
+          "description": "`@idx`.",
           "type": "number"
         },
         "placeholderOrientation": {
           "$ref": "#/definitions/PlaceholderOrientation",
-          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+          "description": "`@orient` — orientation hint (default \"horz\")."
         },
         "placeholderSize": {
           "$ref": "#/definitions/PlaceholderSize",
-          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+          "description": "`@sz` — sizing hint (default \"full\")."
         },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
@@ -8840,7 +8848,7 @@
     },
     "PictureOptionsOptions": {
       "additionalProperties": false,
-      "description": "Picture-fill options for bar/area series (CT_PictureOptions).",
+      "description": "Picture-fill options for bar/area series.",
       "properties": {
         "applyToEnd": {
           "type": "boolean"
@@ -8863,7 +8871,7 @@
     },
     "PivotSourceOptions": {
       "additionalProperties": false,
-      "description": "Pivot chart source (CT_PivotSource: name + fmtId, both required).",
+      "description": "Pivot chart source.",
       "properties": {
         "formatId": {
           "type": "number"
@@ -8982,17 +8990,17 @@
       "type": "object"
     },
     "PlaceholderOrientation": {
-      "description": "CT_Placeholder `@orient` — orientation hint.",
+      "description": "`@orient` — orientation hint.",
       "enum": ["horz", "vert"],
       "type": "string"
     },
     "PlaceholderSize": {
-      "description": "CT_Placeholder `@sz` — sizing hint.",
+      "description": "`@sz` — sizing hint.",
       "enum": ["full", "half", "quarter"],
       "type": "string"
     },
     "PlaceholderType": {
-      "description": "CT_Placeholder `@type` —.",
+      "description": "`@type` —.",
       "enum": [
         "title",
         "body",
@@ -9015,7 +9023,7 @@
     },
     "Point3D": {
       "additionalProperties": false,
-      "description": "3D point (CT_Point3D).",
+      "description": "3D point.",
       "properties": {
         "x": {
           "type": "number"
@@ -9140,7 +9148,7 @@
     },
     "PolarAdjustHandle": {
       "additionalProperties": false,
-      "description": "Polar adjust handle (CT_PolarAdjustHandle).\n\nAllows the user to drag a handle in radius/angle directions.",
+      "description": "Polar adjust handle. Allows the user to drag a handle in radius/angle directions.",
       "properties": {
         "guideRefAngle": {
           "type": "string"
@@ -9184,6 +9192,7 @@
     },
     "PresentationOptions": {
       "additionalProperties": false,
+      "description": "Root options for a .pptx package — maps to presentation.xml plus its satellite parts.",
       "properties": {
         "appProperties": {
           "$ref": "#/definitions/AppPropertiesOptions",
@@ -9409,7 +9418,7 @@
           "type": "boolean"
         },
         "serverZoom": {
-          "description": "Server zoom in percent (p:presentation/@serverZoom,).",
+          "description": "Server zoom in percent (p:presentation/@serverZoom).",
           "type": "number"
         },
         "show": {
@@ -9740,7 +9749,7 @@
     },
     "PresetTextShapeOptions": {
       "additionalProperties": false,
-      "description": "Preset text warp options (CT_PresetTextShape).",
+      "description": "Preset text warp options.",
       "properties": {
         "adjustments": {
           "description": "Optional adjustment values.",
@@ -9769,6 +9778,7 @@
     },
     "PrintPropertiesOptions": {
       "additionalProperties": false,
+      "description": "Print options (p:prnPr — what each page holds and the color mode).",
       "properties": {
         "colorMode": {
           "description": "Print in pure black-and-white, grayscale, or color.",
@@ -9804,7 +9814,7 @@
     },
     "PrintSettingsOptions": {
       "additionalProperties": false,
-      "description": "Print settings (CT_PrintSettings).",
+      "description": "Print settings.",
       "properties": {
         "headerFooter": {
           "$ref": "#/definitions/ChartHeaderFooterOptions"
@@ -9824,7 +9834,7 @@
     },
     "ProtectionOptions": {
       "additionalProperties": false,
-      "description": "Chart protection flags (CT_Protection).",
+      "description": "Chart protection flags.",
       "properties": {
         "chartObject": {
           "type": "boolean"
@@ -9942,7 +9952,7 @@
     },
     "RelativeOffsetEffectOptions": {
       "additionalProperties": false,
-      "description": "Relative offset effect (CT_RelativeOffsetEffect).",
+      "description": "Relative offset effect.",
       "properties": {
         "translateX": {
           "description": "Horizontal offset percentage (default 0%)",
@@ -9957,7 +9967,7 @@
     },
     "RelativeRect": {
       "additionalProperties": false,
-      "description": "Relative rectangle (CT_RelativeRect) with percentage offsets.",
+      "description": "Relative rectangle with percentage offsets.",
       "properties": {
         "bottom": {
           "description": "Bottom offset percentage (e.g., \"0%\")",
@@ -10027,7 +10037,7 @@
     },
     "SampleDataOptions": {
       "additionalProperties": false,
-      "description": "dgm:sampData / dgm:styleData / dgm:clrData (CT_SampleData).",
+      "description": "dgm:sampData / dgm:styleData / dgm:clrData.",
       "properties": {
         "dataModel": {
           "$ref": "#/definitions/DataModelOptions"
@@ -10089,7 +10099,7 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
           "type": "string"
         },
         "formatCode": {
@@ -10172,7 +10182,7 @@
     },
     "Scene3DOptions": {
       "additionalProperties": false,
-      "description": "Options for a 3D scene (CT_Scene3D).\n\nBoth `camera` and `lightRig` are required. `backdrop` is optional.",
+      "description": "Options for a 3D scene. Both `camera` and `lightRig` are required. `backdrop` is optional.",
       "properties": {
         "backdrop": {
           "$ref": "#/definitions/BackdropOptions",
@@ -10238,7 +10248,7 @@
     },
     "SecondaryChartGroupOptions": {
       "additionalProperties": false,
-      "description": "Additional chart groups in a combo chart (CT_PlotArea may carry several\n*Chart groups; each secondary one shares the category source and the axes list with the main group).",
+      "description": "Additional chart groups in a combo chart.",
       "properties": {
         "axisIds": {
           "description": "axId pair referencing entries of the shared axes list.",
@@ -10349,7 +10359,7 @@
         },
         "contourColor": {
           "$ref": "#/definitions/SolidFillOptions",
-          "description": "Contour color (CT_Color / EG_ColorChoice)"
+          "description": "Contour color"
         },
         "contourW": {
           "description": "Contour width in EMUs (default 0)",
@@ -10357,7 +10367,7 @@
         },
         "extrusionColor": {
           "$ref": "#/definitions/SolidFillOptions",
-          "description": "Extrusion color (CT_Color / EG_ColorChoice)"
+          "description": "Extrusion color"
         },
         "extrusionH": {
           "description": "Extrusion height in EMUs (default 0)",
@@ -10523,18 +10533,18 @@
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
-          "description": "CT_Placeholder `@type` —."
+          "description": "`@type` —."
         },
         "placeholderIndex": {
           "type": "number"
         },
         "placeholderOrientation": {
-          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\").",
+          "description": "`@orient` — orientation hint (default \"horz\").",
           "enum": ["horz", "vert"],
           "type": "string"
         },
         "placeholderSize": {
-          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\").",
+          "description": "`@sz` — sizing hint (default \"full\").",
           "enum": ["full", "half", "quarter"],
           "type": "string"
         },
@@ -10616,7 +10626,7 @@
     },
     "ShapePropertiesOptions": {
       "additionalProperties": false,
-      "description": "Shape properties (CT_ShapeProperties children). Field order follows the XSD content model; the serializer emits in that order. Container-only attributes (bwMode, rotWithShape) and the wrapping tag are the caller's responsibility.",
+      "description": "Shape properties. Field order follows the XSD content model; the serializer emits in that order. Container-only attributes (bwMode, rotWithShape) and the wrapping tag are the caller's responsibility.",
       "properties": {
         "childExtentHeight": {
           "anyOf": [
@@ -10800,7 +10810,7 @@
     },
     "ShapeStyleReferenceOptions": {
       "additionalProperties": false,
-      "description": "A style-matrix reference (CT_StyleMatrixReference): an index into the theme's style matrix plus an optional color override.",
+      "description": "A style-matrix reference: an index into the theme's style matrix plus an optional color override.",
       "properties": {
         "color": {
           "$ref": "#/definitions/StyleReferenceColor"
@@ -10814,6 +10824,7 @@
     },
     "ShowOptions": {
       "additionalProperties": false,
+      "description": "Slide-show setup (p:presentation > p:showPr).",
       "properties": {
         "ext": {
           "description": "Verbatim children of the showPr p:extLst (p14 laser pointer extensions).",
@@ -11121,6 +11132,7 @@
     },
     "SlideOptions": {
       "additionalProperties": false,
+      "description": "One slide (p:sld) — children, notes, transition, and slide-level settings.",
       "properties": {
         "animations": {
           "anyOf": [
@@ -11140,7 +11152,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail — where p14:creationId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip.",
           "type": "string"
         },
         "children": {
@@ -11407,19 +11419,19 @@
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
-          "description": "CT_Placeholder `@type` —."
+          "description": "`@type` —."
         },
         "placeholderIndex": {
-          "description": "CT_Placeholder `@idx`.",
+          "description": "`@idx`.",
           "type": "number"
         },
         "placeholderOrientation": {
           "$ref": "#/definitions/PlaceholderOrientation",
-          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+          "description": "`@orient` — orientation hint (default \"horz\")."
         },
         "placeholderSize": {
           "$ref": "#/definitions/PlaceholderSize",
-          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+          "description": "`@sz` — sizing hint (default \"full\")."
         },
         "smartArtKey": {
           "description": "Pre-generated SmartArt key (e.g. \"smartart_1024\"). Auto-generated if omitted.",
@@ -11526,7 +11538,7 @@
     },
     "SphereCoords": {
       "additionalProperties": false,
-      "description": "Sphere coordinates (CT_SphereCoords).\n\nUsed for camera and light rig rotation. All angles are in degrees.",
+      "description": "Sphere coordinates. Used for camera and light rig rotation. All angles are in degrees.",
       "properties": {
         "lat": {
           "description": "Latitude angle in degrees (0–360).",
@@ -11570,7 +11582,7 @@
     },
     "StyleDefinitionOptions": {
       "additionalProperties": false,
-      "description": "dgm:styleDef (CT_StyleDefinition) — the quickStyle part root.",
+      "description": "dgm:styleDef — the quickStyle part root.",
       "properties": {
         "categories": {
           "description": "Gallery categories (dgm:catLst).",
@@ -11621,7 +11633,7 @@
     },
     "StyleLabelOptions": {
       "additionalProperties": false,
-      "description": "dgm:styleLbl (CT_StyleLabel) — formatting for one style slot.",
+      "description": "dgm:styleLbl — formatting for one style slot.",
       "properties": {
         "ext": {
           "description": "Raw a:extLst inner XML — verbatim round-trip.",
@@ -11641,7 +11653,7 @@
         },
         "style": {
           "$ref": "#/definitions/DefaultShapeStyleOptions",
-          "description": "Theme style-matrix references (dgm:style, a:CT_ShapeStyle)."
+          "description": "Theme style-matrix references (dgm:style, a:)."
         },
         "textProperties": {
           "$ref": "#/definitions/TextProperties3DOptions",
@@ -11679,7 +11691,7 @@
     },
     "SupplementalFontOptions": {
       "additionalProperties": false,
-      "description": "Supplemental font for a script range (CT_SupplementalFont).",
+      "description": "Supplemental font for a script range.",
       "properties": {
         "script": {
           "type": "string"
@@ -11693,7 +11705,7 @@
     },
     "SurfaceOptions": {
       "additionalProperties": false,
-      "description": "3D wall/floor surface (CT_Surface: thickness → spPr → pictureOptions).",
+      "description": "3D wall/floor surface.",
       "properties": {
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -11774,7 +11786,7 @@
     },
     "TableBackgroundStyleOptions": {
       "additionalProperties": false,
-      "description": "Table background style (CT_TableBackgroundStyle: fill → effect).",
+      "description": "Table background style.",
       "properties": {
         "effectReference": {
           "$ref": "#/definitions/StyleMatrixReferenceOptions",
@@ -11953,7 +11965,7 @@
         },
         "cell3D": {
           "$ref": "#/definitions/Cell3DOptions",
-          "description": "Cell bevel (CT_Cell3D)"
+          "description": "Cell bevel"
         },
         "fill": {
           "description": "Direct fill",
@@ -11968,7 +11980,7 @@
     },
     "TableFontReferenceOptions": {
       "additionalProperties": false,
-      "description": "Font reference — a:fontRef (CT_FontReference). Unlike lnRef/fillRef/effectRef (CT_StyleMatrixReference, integer idx), its",
+      "description": "Font reference — a:fontRef. Unlike lnRef/fillRef/effectRef, its",
       "properties": {
         "collection": {
           "description": "Theme font slot: \"major\" headings, \"minor\" body text, \"none\".",
@@ -12102,19 +12114,19 @@
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
-          "description": "CT_Placeholder `@type` —."
+          "description": "`@type` —."
         },
         "placeholderIndex": {
-          "description": "CT_Placeholder `@idx`.",
+          "description": "`@idx`.",
           "type": "number"
         },
         "placeholderOrientation": {
           "$ref": "#/definitions/PlaceholderOrientation",
-          "description": "CT_Placeholder `@orient` — orientation hint (default \"horz\")."
+          "description": "`@orient` — orientation hint (default \"horz\")."
         },
         "placeholderSize": {
           "$ref": "#/definitions/PlaceholderSize",
-          "description": "CT_Placeholder `@sz` — sizing hint (default \"full\")."
+          "description": "`@sz` — sizing hint (default \"full\")."
         },
         "rows": {
           "items": {
@@ -12218,6 +12230,7 @@
     },
     "TableStyleListOptions": {
       "additionalProperties": false,
+      "description": "The table-style gallery (p:tblStyleLst / w:tblStyles — default GUID plus custom styles).",
       "properties": {
         "defaultStyleId": {
           "description": "Default style GUID",
@@ -12497,7 +12510,7 @@
         },
         "highlight": {
           "$ref": "#/definitions/SolidFillOptions",
-          "description": "a:highlight (CT_Color) — text highlight color."
+          "description": "a:highlight — text highlight color."
         },
         "hyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions"
@@ -12517,7 +12530,7 @@
         },
         "mouseoverHyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
+          "description": "a:hlinkMouseOver — hover hyperlink."
         },
         "noProof": {
           "type": "boolean"
@@ -12535,7 +12548,7 @@
               "$ref": "#/definitions/OutlineOptions"
             }
           ],
-          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
+          "description": "a:ln. `true` emits a sane default; a full OutlineOptions round-trips."
         },
         "rightToLeft": {
           "type": "boolean"
@@ -12609,7 +12622,7 @@
         },
         "paragraphProperties": {
           "$ref": "#/definitions/TextParagraphPropertiesOptions",
-          "description": "a:pPr — paragraph properties (CT_TextParagraphProperties)."
+          "description": "a:pPr — paragraph properties."
         },
         "properties": {
           "$ref": "#/definitions/TextCharacterPropertiesOptions",
@@ -12654,11 +12667,11 @@
           "type": "object"
         }
       ],
-      "description": "A script typeface (CT_TextFont). A bare string is the typeface only; the full object carries panose/pitchFamily/charset for embedded font metrics."
+      "description": "A script typeface. A bare string is the typeface only; the full object carries panose/pitchFamily/charset for embedded font metrics."
     },
     "TextFontOptions": {
       "additionalProperties": false,
-      "description": "Single font slot — a:latin / a:ea / a:cs / a:sym (CT_TextFont).",
+      "description": "Single font slot — a:latin / a:ea / a:cs / a:sym.",
       "properties": {
         "charset": {
           "type": "number"
@@ -12716,7 +12729,7 @@
     },
     "TextListStyleOptions": {
       "additionalProperties": false,
-      "description": "A bare CT_TextListStyle — a:defPPr plus up to 9 outline levels. The shape of a:lstStyle inside a txBody, p:notesStyle, and p:defaultTextStyle.",
+      "description": "A bare — a:defPPr plus up to 9 outline levels. The shape of a:lstStyle inside a txBody, p:notesStyle, and p:defaultTextStyle.",
       "properties": {
         "defaultParagraph": {
           "$ref": "#/definitions/TextParagraphPropertiesOptions",
@@ -12757,14 +12770,14 @@
         },
         "defaultRunProperties": {
           "$ref": "#/definitions/TextCharacterPropertiesOptions",
-          "description": "a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties)."
+          "description": "a:defRPr — default run properties for the paragraph."
         },
         "eastAsianLineBreak": {
           "description": "`@eaLnBrk` — East Asian line break.",
           "type": "boolean"
         },
         "ext": {
-          "description": "Verbatim inner XML of a:extLst (last child per CT_TextParagraphProperties).",
+          "description": "Verbatim inner XML of a:extLst (last child per).",
           "type": "string"
         },
         "fontAlignment": {
@@ -12833,7 +12846,7 @@
     },
     "TextProperties3DOptions": {
       "additionalProperties": false,
-      "description": "dgm:txPr (CT_TextProps) — a choice of 3D text treatments (EG_Text3D).",
+      "description": "dgm:txPr — a choice of 3D text treatments (EG_Text3D).",
       "properties": {
         "flatText": {
           "description": "Flatten text to a plane at this z coordinate, EMU (a:flatTx `@z`).",
@@ -12884,7 +12897,7 @@
         },
         "highlight": {
           "$ref": "#/definitions/SolidFillOptions",
-          "description": "a:highlight (CT_Color) — text highlight color."
+          "description": "a:highlight — text highlight color."
         },
         "hyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions"
@@ -12904,7 +12917,7 @@
         },
         "mouseoverHyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
+          "description": "a:hlinkMouseOver — hover hyperlink."
         },
         "noProof": {
           "type": "boolean"
@@ -12922,7 +12935,7 @@
               "$ref": "#/definitions/OutlineOptions"
             }
           ],
-          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
+          "description": "a:ln. `true` emits a sane default; a full OutlineOptions round-trips."
         },
         "rightToLeft": {
           "type": "boolean"
@@ -12992,7 +13005,7 @@
     },
     "TextStylesOptions": {
       "additionalProperties": false,
-      "description": "CT_SlideMasterTextStyles — the master's title/body/other style groups.",
+      "description": "the master's title/body/other style groups.",
       "properties": {
         "body": {
           "$ref": "#/definitions/TextListStyleOptions"
@@ -13076,7 +13089,7 @@
     },
     "ThemeOverrideOptions": {
       "additionalProperties": false,
-      "description": "Theme override (a:themeOverride / CT_BaseStylesOverride) — a per-part subset of the theme.",
+      "description": "Theme override (a:themeOverride /) — a per-part subset of the theme.",
       "properties": {
         "colorScheme": {
           "$ref": "#/definitions/ColorSchemeOptions"
@@ -13199,7 +13212,7 @@
     },
     "TransformEffectOptions": {
       "additionalProperties": false,
-      "description": "Transform effect — scale, skew, translate (CT_TransformEffect).",
+      "description": "Transform effect — scale, skew, translate.",
       "properties": {
         "scaleX": {
           "description": "Horizontal scale percentage (default 100%)",
@@ -13350,7 +13363,7 @@
     },
     "TrendlineLabelOptions": {
       "additionalProperties": false,
-      "description": "Trendline label formatting (CT_TrendlineLbl — all children optional).",
+      "description": "Trendline label formatting.",
       "properties": {
         "numberFormat": {
           "description": "Number format applied to the trendline label (c:numFmt formatCode).",
@@ -13414,7 +13427,7 @@
     },
     "VariableListOptions": {
       "additionalProperties": false,
-      "description": "dgm:varLst (CT_LayoutVariablePropertySet).",
+      "description": "dgm:varLst.",
       "properties": {
         "animateLevel": {
           "$ref": "#/definitions/AnimationLevel",
@@ -13475,7 +13488,7 @@
     },
     "Vector3D": {
       "additionalProperties": false,
-      "description": "3D vector (CT_Vector3D).",
+      "description": "3D vector.",
       "properties": {
         "dx": {
           "type": "number"
@@ -13504,7 +13517,7 @@
       "additionalProperties": false,
       "properties": {
         "contentType": {
-          "description": "MIME content type of the linked video (CT_VideoFile `@contentType`)",
+          "description": "MIME content type of the linked video",
           "type": "string"
         },
         "creationId": {
@@ -13614,7 +13627,7 @@
           "type": "number"
         },
         "hPercent": {
-          "description": "Height percentage of the chart (XSD CT_HPercent).",
+          "description": "Height percentage of the chart (XSD).",
           "type": "number"
         },
         "perspective": {
@@ -13634,6 +13647,7 @@
     },
     "ViewPropertiesOptions": {
       "additionalProperties": false,
+      "description": "Editing-view settings (p:viewPr — last active view, grid, guides, window panes).",
       "properties": {
         "gridSpacing": {
           "additionalProperties": false,
@@ -13746,6 +13760,7 @@
     },
     "WebPropertiesOptions": {
       "additionalProperties": false,
+      "description": "Web output options (p:webPr — HTML export behavior).",
       "properties": {
         "allowPng": {
           "type": "boolean"
@@ -13779,14 +13794,14 @@
     },
     "WhenOptions": {
       "additionalProperties": false,
-      "description": "One alternative inside a choose — dgm:if (CT_When); `if` is a reserved word.",
+      "description": "One alternative inside a choose — dgm:if; `if` is a reserved word.",
       "properties": {
         "argument": {
           "description": "Function argument, usually a variable name (dgm:if `@arg`).",
           "type": "string"
         },
         "axis": {
-          "description": "Selection axes, space-separated (dgm:`@axis`,).",
+          "description": "Selection axes, space-separated (dgm:`@axis`).",
           "type": "string"
         },
         "children": {
@@ -13796,7 +13811,7 @@
           "type": "array"
         },
         "count": {
-          "description": "Iteration count (dgm:`@cnt`,).",
+          "description": "Iteration count (dgm:`@cnt`).",
           "type": "string"
         },
         "function": {
@@ -13804,7 +13819,7 @@
           "description": "Selection function (dgm:if `@func`)."
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:`@hideLastTrans`,).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`).",
           "type": "string"
         },
         "name": {
@@ -13815,15 +13830,15 @@
           "description": "Comparison operator (dgm:if `@op`)."
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:`@ptType`,).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:`@st`,).",
+          "description": "Start index (dgm:`@st`).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:`@step`,).",
+          "description": "Index step (dgm:`@step`).",
           "type": "string"
         },
         "value": {
@@ -13836,7 +13851,7 @@
     },
     "XYAdjustHandle": {
       "additionalProperties": false,
-      "description": "XY adjust handle (CT_XYAdjustHandle).\n\nAllows the user to drag a handle in X/Y directions.",
+      "description": "XY adjust handle. Allows the user to drag a handle in X/Y directions.",
       "properties": {
         "guideRefX": {
           "type": "string"

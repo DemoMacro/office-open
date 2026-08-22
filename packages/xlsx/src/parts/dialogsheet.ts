@@ -33,6 +33,7 @@ import type {
 
 // ── Types ──
 
+/** A legacy dialog sheet (xl/dialogsheets/sheetN.xml) — form-dialog controls. */
 export interface DialogsheetOptions {
   /** Sheet name */
   name?: string;

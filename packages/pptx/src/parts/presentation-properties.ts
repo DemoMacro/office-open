@@ -1,5 +1,6 @@
 import type { ShowOptions } from "@shared/file";
 
+/** Web output options (p:webPr — HTML export behavior). */
 export interface WebPropertiesOptions {
   showAnimation?: boolean;
   resizeGraphics?: boolean;
@@ -12,6 +13,7 @@ export interface WebPropertiesOptions {
   color?: string;
 }
 
+/** Print options (p:prnPr — what each page holds and the color mode). */
 export interface PrintPropertiesOptions {
   /** What each printed page holds: slides, "handoutsN" N slides per page, notes pages, or the outline. */
   printWhat?:
@@ -31,6 +33,7 @@ export interface PrintPropertiesOptions {
   frameSlides?: boolean;
 }
 
+/** Web-publishing target (p:htmlPubPr — browser and title for HTML export). */
 export interface HtmlPublishPropertiesOptions {
   showSpeakerNotes?: boolean;
   target?: string;

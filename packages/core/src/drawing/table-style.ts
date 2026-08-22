@@ -132,6 +132,7 @@ export interface TableStyleOptions {
   regions?: Partial<Record<TableStyleRegion, TablePartStyleOptions>>;
 }
 
+/** The table-style gallery (p:tblStyleLst / w:tblStyles — default GUID plus custom styles). */
 export interface TableStyleListOptions {
   /** Default style GUID */
   defaultStyleId: string;

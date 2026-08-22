@@ -75,6 +75,7 @@ export interface ChartsheetProtectionOptions {
   objects?: boolean;
 }
 
+/** A chart sheet (xl/chartsheets/sheetN.xml) — a full-sheet chart with its own view state. */
 export interface ChartsheetOptions {
   /** Sheet name */
   name?: string;

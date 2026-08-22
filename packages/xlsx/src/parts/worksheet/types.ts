@@ -1361,6 +1361,7 @@ export interface DrawingHfOptions {
   rff?: number;
 }
 
+/** One worksheet (xl/worksheets/sheetN.xml) — cells, dimensions, and sheet-level parts. */
 export interface WorksheetOptions {
   name?: string;
   /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */

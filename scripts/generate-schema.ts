@@ -205,11 +205,12 @@ function postProcess(schema: Record<string, unknown>) {
     // XSD; an LLM filling the options needs the semantics, not the spec ids.
     // Parenthesised attributions go whole; bare ids go alone; dangling
     // punctuation the removal leaves behind is tidied. Nothing else changes.
-    if (typeof obj.description === "string" && /S[TC]_[A-Za-z]/.test(obj.description)) {
+    if (typeof obj.description === "string" && /(?:ST|CT)_[A-Za-z]/.test(obj.description)) {
       const stripped = obj.description
-        .replace(/\s*\((?:see |the )?S[TC]_[A-Za-z][^)]*\)/g, "")
-        .replace(/\bS[TC]_[A-Za-z]+\b/g, "")
+        .replace(/\s*\((?:see |the )?(?:ST|CT)_[A-Za-z][^)]*\)/g, "")
+        .replace(/\b(?:ST|CT)_[A-Za-z]+\b/g, "")
         .replace(/\(\s*\)/g, "")
+        .replace(/([,;])\s*\)/g, ")")
         .replace(/\s+([.,;:)])/g, "$1")
         .replace(/([\n(])\s+[—-]\s+/g, "$1 ")
         .replace(/^\s*[—-]\s+/gm, "")

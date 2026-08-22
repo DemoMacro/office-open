@@ -5,7 +5,7 @@
   "definitions": {
     "AbstractNumberingPropertiesOptions": {
       "additionalProperties": false,
-      "description": "w:abstractNum attributes + child elements + w15 restart (CT_AbstractNum).",
+      "description": "w:abstractNum attributes + child elements + w15 restart.",
       "properties": {
         "multiLevelType": {
           "description": "w:multiLevelType value.",
@@ -76,7 +76,7 @@
     },
     "AdjustPoint": {
       "additionalProperties": false,
-      "description": "An adjustable point (CT_AdjPoint2D).\n\nCoordinates can be absolute values or references to geometry guide names.",
+      "description": "An adjustable point. Coordinates can be absolute values or references to geometry guide names.",
       "properties": {
         "x": {
           "description": "X coordinate (absolute value or guide name)",
@@ -92,7 +92,7 @@
     },
     "AlgorithmOptions": {
       "additionalProperties": false,
-      "description": "dgm:alg (CT_Algorithm).",
+      "description": "dgm:alg.",
       "properties": {
         "parameters": {
           "description": "Algorithm parameters (dgm:param*).",
@@ -115,10 +115,10 @@
     },
     "AlgorithmParameterOptions": {
       "additionalProperties": false,
-      "description": "dgm:param (CT_Parameter) — inlined in AlgorithmOptions.parameters.",
+      "description": "dgm:param — inlined in AlgorithmOptions.parameters.",
       "properties": {
         "type": {
-          "description": "Parameter name (dgm:param `@type`,).",
+          "description": "Parameter name (dgm:param `@type`).",
           "type": "string"
         },
         "value": {
@@ -283,7 +283,7 @@
     },
     "AlphaInverseEffectOptions": {
       "additionalProperties": false,
-      "description": "Alpha inverse effect — inverts alpha, optionally with color (CT_AlphaInverseEffect).",
+      "description": "Alpha inverse effect — inverts alpha, optionally with color.",
       "properties": {
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -305,7 +305,7 @@
     },
     "AlphaOutsetEffectOptions": {
       "additionalProperties": false,
-      "description": "Alpha outset effect (CT_AlphaOutsetEffect).",
+      "description": "Alpha outset effect.",
       "properties": {
         "radius": {
           "description": "Outset radius",
@@ -371,7 +371,7 @@
     },
     "AppPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Options for docProps/app.xml extended properties (CT_Properties).\n\nProperty order follows the CT_Properties xsd:all sequence so the emitted XML matches the reference schema ordering.",
+      "description": "Options for docProps/app.xml extended properties. Property order follows the xsd:all sequence so the emitted XML matches the reference schema ordering.",
       "properties": {
         "apPrefix": {
           "const": true,
@@ -507,7 +507,7 @@
     },
     "AuthorOptions": {
       "additionalProperties": false,
-      "description": "Author container (CT_AuthorType) — one array per named role; each entry serializes to one `b:<Role>` element. All roles are optional; include only the ones relevant to the source type.",
+      "description": "Author container — one array per named role; each entry serializes to one `b:<Role>` element. All roles are optional; include only the ones relevant to the source type.",
       "properties": {
         "artists": {
           "description": "b:Artist role",
@@ -626,7 +626,7 @@
     },
     "AutoCaptionOptions": {
       "additionalProperties": false,
-      "description": "Auto-caption (CT_AutoCaption)",
+      "description": "Auto-caption",
       "properties": {
         "caption": {
           "description": "Caption style name to apply",
@@ -651,7 +651,7 @@
       "type": "string"
     },
     "AxisKind": {
-      "description": "Axis role; decides the CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx element.",
+      "description": "Axis role; decides the /// element.",
       "enum": ["category", "value", "date", "series"],
       "type": "string"
     },
@@ -662,7 +662,7 @@
     },
     "AxisNumberFormatOptions": {
       "additionalProperties": false,
-      "description": "Explicit axis c:numFmt (CT_NumFmt) with a decoupled sourceLinked flag.",
+      "description": "Explicit axis c:numFmt with a decoupled sourceLinked flag.",
       "properties": {
         "formatCode": {
           "type": "string"
@@ -677,7 +677,7 @@
     },
     "AxisOptions": {
       "additionalProperties": false,
-      "description": "Per-axis configuration. Covers EG_AxShared plus kind-specific children of CT_CatAx / CT_ValAx / CT_DateAx / CT_SerAx. Field order follows the XSD content model; the serializer emits in that order.",
+      "description": "Per-axis configuration. Covers EG_AxShared plus kind-specific children of / / /. Field order follows the XSD content model; the serializer emits in that order.",
       "properties": {
         "auto": {
           "type": "boolean"
@@ -728,7 +728,7 @@
               "$ref": "#/definitions/ChartLinesOptions"
             }
           ],
-          "description": "c:majorGridlines (CT_ChartLines) — true emits the bare element, an object carries its spPr/txPr decorations."
+          "description": "c:majorGridlines — true emits the bare element, an object carries its spPr/txPr decorations."
         },
         "majorTickMark": {
           "$ref": "#/definitions/AxisTickMark"
@@ -784,7 +784,7 @@
         },
         "textProperties": {
           "$ref": "#/definitions/TextBodyOptions",
-          "description": "Axis text (c:txPr, a CT_TextBody) — round-trip."
+          "description": "Axis text (c:txPr, a) — round-trip."
         },
         "tickLabelPosition": {
           "$ref": "#/definitions/AxisTickLabelPosition"
@@ -804,7 +804,7 @@
               "$ref": "#/definitions/ChartTitleOptions"
             }
           ],
-          "description": "Axis title (c:title) — plain text or the full CT_Title object form."
+          "description": "Axis title (c:title) — plain text or the full object form."
         }
       },
       "required": ["kind", "id", "crossAxisId"],
@@ -822,7 +822,7 @@
     },
     "AxisScalingOptions": {
       "additionalProperties": false,
-      "description": "Axis scale bounds and orientation (CT_Scaling).",
+      "description": "Axis scale bounds and orientation.",
       "properties": {
         "logBase": {
           "description": "Logarithmic base, 2-1000 (c:logBase val, required when present).",
@@ -852,7 +852,7 @@
     },
     "BackdropOptions": {
       "additionalProperties": false,
-      "description": "Backdrop options (CT_Backdrop).\n\nDefines the backdrop plane for the 3D scene.",
+      "description": "Backdrop options. Defines the backdrop plane for the 3D scene.",
       "properties": {
         "anchor": {
           "$ref": "#/definitions/Point3D",
@@ -914,7 +914,7 @@
     },
     "BandFormatOptions": {
       "additionalProperties": false,
-      "description": "Surface chart color band format (CT_BandFmt: idx).",
+      "description": "Surface chart color band format.",
       "properties": {
         "index": {
           "type": "number"
@@ -1059,7 +1059,7 @@
     },
     "BlendEffectOptions": {
       "additionalProperties": false,
-      "description": "Blend effect — blends with nested container (CT_BlendEffect).",
+      "description": "Blend effect — blends with nested container.",
       "properties": {
         "blend": {
           "description": "Blend mode (required)",
@@ -1173,7 +1173,7 @@
     },
     "BodyPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Options for text body properties (CT_TextBodyProperties).\n\nXSD content model:   prstTxWarp?, EG_TextAutofit?, scene3d?, EG_Text3D? followed by 19 attributes.",
+      "description": "Options for text body properties. XSD content model: prstTxWarp?, EG_TextAutofit?, scene3d?, EG_Text3D? followed by 19 attributes.",
       "properties": {
         "anchor": {
           "$ref": "#/definitions/VerticalAnchor"
@@ -1343,22 +1343,22 @@
     },
     "BookmarkOptions": {
       "additionalProperties": false,
-      "description": "A bookmark authored as a single inline paragraph child. The library allocates the bookmark id and emits the paired bookmarkStart/bookmarkEnd with one shared id — the caller never touches an id or pairs markers.\n\n`wrap` is the anchored document content the bookmark range wraps (inline runs/text, emitted between the markers). Bookmarks are pure markup: they add no part or relationship, only the two markers in document.xml.\n\nReference: wml.xsd CT_Bookmark, CT_BookmarkRange, EG_RangeMarkupElements.",
+      "description": "A bookmark authored as a single inline paragraph child. The library allocates the bookmark id and emits the paired bookmarkStart/bookmarkEnd with one shared id — the caller never touches an id or pairs markers. `wrap` is the anchored document content the bookmark range wraps (inline runs/text, emitted between the markers). Bookmarks are pure markup: they add no part or relationship, only the two markers in document.xml. Reference: wml.xsd,, EG_RangeMarkupElements.",
       "properties": {
         "colFirst": {
-          "description": "First column of a table-cell bookmark scope (CT_BookmarkRange `@w:colFirst`).",
+          "description": "First column of a table-cell bookmark scope.",
           "type": "number"
         },
         "colLast": {
-          "description": "Last column of a table-cell bookmark scope (CT_BookmarkRange `@w:colLast`).",
+          "description": "Last column of a table-cell bookmark scope.",
           "type": "number"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
+          "description": "Displacement relative to a sibling customXml."
         },
         "name": {
-          "description": "Bookmark name used for reference (CT_Bookmark `@w:name`, required).",
+          "description": "Bookmark name used for reference.",
           "type": "string"
         },
         "wrap": {
@@ -1381,26 +1381,26 @@
     },
     "BookmarkStartOptions": {
       "additionalProperties": false,
-      "description": "Options for a bookmark start (w:bookmarkStart).\n\nMaps to CT_Bookmark = CT_BookmarkRange (colFirst/colLast) + name. The column range scopes a bookmark to specific table columns so Word preserves the exact cell span on round-trip rather than recomputing it.\n\nReference: wml.xsd CT_Bookmark, CT_BookmarkRange",
+      "description": "Options for a bookmark start (w:bookmarkStart). Maps to = (colFirst/colLast) + name. The column range scopes a bookmark to specific table columns so Word preserves the exact cell span on round-trip rather than recomputing it. Reference: wml.xsd,",
       "properties": {
         "colFirst": {
-          "description": "First column of a table-cell bookmark scope (CT_BookmarkRange `@w:colFirst`).",
+          "description": "First column of a table-cell bookmark scope.",
           "type": "number"
         },
         "colLast": {
-          "description": "Last column of a table-cell bookmark scope (CT_BookmarkRange `@w:colLast`).",
+          "description": "Last column of a table-cell bookmark scope.",
           "type": "number"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
+          "description": "Displacement relative to a sibling customXml."
         },
         "id": {
-          "description": "Marker identifier (CT_Markup `@w:id`, required).",
+          "description": "Marker identifier.",
           "type": "number"
         },
         "name": {
-          "description": "Bookmark name used for reference (CT_Bookmark `@w:name`, required).",
+          "description": "Bookmark name used for reference.",
           "type": "string"
         }
       },
@@ -1537,7 +1537,7 @@
     },
     "BreakOptions": {
       "additionalProperties": false,
-      "description": "Options for a line break with optional float-clearing (CT_Br).",
+      "description": "Options for a line break with optional float-clearing.",
       "properties": {
         "clear": {
           "$ref": "#/definitions/BreakClear",
@@ -1581,7 +1581,7 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
           "type": "string"
         },
         "formatCode": {
@@ -1893,7 +1893,7 @@
     },
     "CameraOptions": {
       "additionalProperties": false,
-      "description": "Camera options (CT_Camera).\n\nDefines the camera type and optional rotation for the 3D scene.",
+      "description": "Camera options. Defines the camera type and optional rotation for the 3D scene.",
       "properties": {
         "fov": {
           "description": "Field of view angle in degrees (0–180).",
@@ -1917,7 +1917,7 @@
     },
     "CaptionOptions": {
       "additionalProperties": false,
-      "description": "Caption definition (CT_Caption)",
+      "description": "Caption definition",
       "properties": {
         "chapterNumber": {
           "description": "Include chapter number",
@@ -1955,7 +1955,7 @@
     },
     "CaptionsOptions": {
       "additionalProperties": false,
-      "description": "Captions configuration (CT_Captions)",
+      "description": "Captions configuration",
       "properties": {
         "autoCaptions": {
           "description": "Auto-caption definitions",
@@ -2037,15 +2037,15 @@
           "type": "string"
         },
         "customStyle": {
-          "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
+          "description": "`@w:customStyle` — a user-defined custom style.",
           "type": "boolean"
         },
         "default": {
-          "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
+          "description": "`@w:default` — the default style for its type.",
           "type": "boolean"
         },
         "hidden": {
-          "description": "CT_Style w:hidden — style hidden from the UI (CT_OnOff).",
+          "description": "w:hidden — style hidden from the UI.",
           "type": "boolean"
         },
         "id": {
@@ -2076,7 +2076,7 @@
           "type": "boolean"
         },
         "rsid": {
-          "description": "CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim).",
+          "description": "w:rsid — revision save id.",
           "type": "string"
         },
         "run": {
@@ -2101,7 +2101,7 @@
     },
     "ChartHeaderFooterOptions": {
       "additionalProperties": false,
-      "description": "Print-time header/footer text (CT_HeaderFooter).",
+      "description": "Print-time header/footer text.",
       "properties": {
         "alignWithMargins": {
           "type": "boolean"
@@ -2135,7 +2135,7 @@
     },
     "ChartLinesOptions": {
       "additionalProperties": false,
-      "description": "Chart lines with formatting (CT_ChartLines: spPr + txPr).",
+      "description": "Chart lines with formatting.",
       "properties": {
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -2390,10 +2390,10 @@
         },
         "legendTextProperties": {
           "$ref": "#/definitions/TextBodyOptions",
-          "description": "Legend text (c:legend's c:txPr, a CT_TextBody) — round-trip."
+          "description": "Legend text (c:legend's c:txPr, a) — round-trip."
         },
         "markers": {
-          "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",
+          "description": "Show line-chart markers (c:marker on c:lineChart, 2D only). Emitted only when set.",
           "type": "boolean"
         },
         "multiLevelCategories": {
@@ -2533,7 +2533,7 @@
           "description": "What the bubble size represents (c:sizeRepresents)."
         },
         "smooth": {
-          "description": "Smooth lines for the whole line-chart group (c:smooth CT_Boolean on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
+          "description": "Smooth lines for the whole line-chart group (c:smooth on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
           "type": "boolean"
         },
         "splitPosition": {
@@ -2553,7 +2553,7 @@
         },
         "textProperties": {
           "$ref": "#/definitions/TextBodyOptions",
-          "description": "Chart-space default text (c:txPr, a CT_TextBody) — round-trip."
+          "description": "Chart-space default text (c:txPr, a) — round-trip."
         },
         "threeD": {
           "type": "boolean"
@@ -2605,7 +2605,7 @@
     },
     "ChartPageMarginsOptions": {
       "additionalProperties": false,
-      "description": "Print page margins in inches (CT_PageMargins, all XSD-required).",
+      "description": "Print page margins in inches.",
       "properties": {
         "bottom": {
           "type": "number"
@@ -2630,7 +2630,7 @@
     },
     "ChartPageSetupOptions": {
       "additionalProperties": false,
-      "description": "Print page setup (CT_PageSetup).",
+      "description": "Print page setup.",
       "properties": {
         "blackAndWhite": {
           "type": "boolean"
@@ -2672,7 +2672,7 @@
     },
     "ChartPivotFormatOptions": {
       "additionalProperties": false,
-      "description": "Per-series pivot format override (CT_PivotFmt).",
+      "description": "Per-series pivot format override.",
       "properties": {
         "index": {
           "type": "number"
@@ -2709,7 +2709,7 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
           "type": "string"
         },
         "formatCode": {
@@ -3002,10 +3002,10 @@
         },
         "legendTextProperties": {
           "$ref": "#/definitions/TextBodyOptions",
-          "description": "Legend text (c:legend's c:txPr, a CT_TextBody) — round-trip."
+          "description": "Legend text (c:legend's c:txPr, a) — round-trip."
         },
         "markers": {
-          "description": "Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only). Emitted only when set.",
+          "description": "Show line-chart markers (c:marker on c:lineChart, 2D only). Emitted only when set.",
           "type": "boolean"
         },
         "multiLevelCategories": {
@@ -3141,7 +3141,7 @@
           "description": "What the bubble size represents (c:sizeRepresents)."
         },
         "smooth": {
-          "description": "Smooth lines for the whole line-chart group (c:smooth CT_Boolean on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
+          "description": "Smooth lines for the whole line-chart group (c:smooth on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
           "type": "boolean"
         },
         "splitPosition": {
@@ -3161,7 +3161,7 @@
         },
         "textProperties": {
           "$ref": "#/definitions/TextBodyOptions",
-          "description": "Chart-space default text (c:txPr, a CT_TextBody) — round-trip."
+          "description": "Chart-space default text (c:txPr, a) — round-trip."
         },
         "threeD": {
           "type": "boolean"
@@ -3225,7 +3225,7 @@
     },
     "ChartTitleOptions": {
       "additionalProperties": false,
-      "description": "Chart title (CT_Title). A plain string emits the simple c:rich form; an empty string the bare `<c:title/>` placeholder; the object form round-trips layout/overlay/spPr/txPr decorations alongside the text.",
+      "description": "Chart title. A plain string emits the simple c:rich form; an empty string the bare `<c:title/>` placeholder; the object form round-trips layout/overlay/spPr/txPr decorations alongside the text.",
       "properties": {
         "layout": {
           "anyOf": [
@@ -3305,7 +3305,7 @@
     },
     "ChildExtent": {
       "additionalProperties": false,
-      "description": "Child coordinate extent (CT_PositiveSize2D).",
+      "description": "Child coordinate extent.",
       "properties": {
         "cx": {
           "type": "number"
@@ -3319,7 +3319,7 @@
     },
     "ChildOffset": {
       "additionalProperties": false,
-      "description": "Child coordinate offset (CT_Point2D).",
+      "description": "Child coordinate offset.",
       "properties": {
         "x": {
           "type": "number"
@@ -3338,10 +3338,10 @@
     },
     "ChooseOptions": {
       "additionalProperties": false,
-      "description": "dgm:choose (CT_Choose): pick the first matching condition.",
+      "description": "dgm:choose: pick the first matching condition.",
       "properties": {
         "conditions": {
-          "description": "Alternatives in priority order (dgm:if*, CT_When).",
+          "description": "Alternatives in priority order (dgm:if*).",
           "items": {
             "$ref": "#/definitions/WhenOptions"
           },
@@ -3352,7 +3352,7 @@
         },
         "otherwise": {
           "$ref": "#/definitions/OtherwiseOptions",
-          "description": "Fallback branch (dgm:else, CT_Otherwise)."
+          "description": "Fallback branch (dgm:else)."
         }
       },
       "required": ["conditions"],
@@ -3415,7 +3415,7 @@
     },
     "CnfStyleOptions": {
       "additionalProperties": false,
-      "description": "Options for CT_Cnf — conditional formatting style. Each boolean attribute mirrors one of the 12 positions in the conditional- format bit string; val is the canonical 12-char pattern ([01]*).",
+      "description": "Options for — conditional formatting style. Each boolean attribute mirrors one of the 12 positions in the conditional- format bit string; val is the canonical 12-char pattern ([01]*).",
       "properties": {
         "evenHBand": {
           "type": "boolean"
@@ -3482,7 +3482,7 @@
     },
     "ColorDefinitionOptions": {
       "additionalProperties": false,
-      "description": "dgm:colorsDef (CT_ColorTransform) — the colors part root.",
+      "description": "dgm:colorsDef — the colors part root.",
       "properties": {
         "categories": {
           "description": "Gallery categories (dgm:catLst).",
@@ -3605,7 +3605,7 @@
       "type": "object"
     },
     "ColorSchemeIndex": {
-      "description": "Theme color slot referenced by CT_ColorMapping.",
+      "description": "Theme color slot referenced by.",
       "enum": [
         "dark1",
         "light1",
@@ -3834,10 +3834,10 @@
     },
     "CommentChildOptions": {
       "additionalProperties": false,
-      "description": "A comment authored as a single inline paragraph child. The library allocates the comment id, emits the range markers + reference, and registers the comment entry in word/comments.xml — the caller never touches an id or pairs markers.\n\n`children` is the comment reply (stored in the comments part, same shape as  {@link  CommentOptions.children } ); `wrap` is the anchored document content the comment range wraps (inline runs/text, emitted between the range markers).\n\nReference: wml.xsd CT_Markup, CT_Comment, EG_RangeMarkupElements.",
+      "description": "A comment authored as a single inline paragraph child. The library allocates the comment id, emits the range markers + reference, and registers the comment entry in word/comments.xml — the caller never touches an id or pairs markers. `children` is the comment reply (stored in the comments part, same shape as {@link CommentOptions.children }); `wrap` is the anchored document content the comment range wraps (inline runs/text, emitted between the range markers). Reference: wml.xsd,, EG_RangeMarkupElements.",
       "properties": {
         "author": {
-          "description": "Comment author (CT_Comment `@w:author` — required by XSD, defaults to \"\").",
+          "description": "Comment author.",
           "type": "string"
         },
         "children": {
@@ -3855,11 +3855,11 @@
           "type": "array"
         },
         "date": {
-          "description": "Creation date (CT_Comment `@w:date`, ISO 8601 string); defaults to the current time.",
+          "description": "Creation date; defaults to the current time.",
           "type": "string"
         },
         "initials": {
-          "description": "Author initials (CT_Comment `@w:initials`).",
+          "description": "Author initials.",
           "type": "string"
         },
         "wrap": {
@@ -3961,7 +3961,7 @@
           "type": "array"
         },
         "date": {
-          "description": "Creation date (CT_Comment `@w:date`, ISO 8601 string). Tri-stated: `null` = the source comment carried no date (attribute omitted), omitted = fresh authoring (defaults to the current time), a string = used verbatim.",
+          "description": "Creation date. Tri-stated: `null` = the source comment carried no date (attribute omitted), omitted = fresh authoring (defaults to the current time), a string = used verbatim.",
           "type": ["string", "null"]
         },
         "id": {
@@ -4009,7 +4009,7 @@
     },
     "CompatSettingOptions": {
       "additionalProperties": false,
-      "description": "A single w:compatSetting entry (CT_CompatSetting).\n\nCaptures Word version-specific compatibility flags as name/value pairs.",
+      "description": "A single w:compatSetting entry. Captures Word version-specific compatibility flags as name/value pairs.",
       "properties": {
         "name": {
           "description": "Setting name (w:name), e.g. \"compatibilityMode\"",
@@ -4369,31 +4369,31 @@
     },
     "ConditionalTableStyleOptions": {
       "additionalProperties": false,
-      "description": "Conditional table style format (CT_TblStylePr).",
+      "description": "Conditional table style format.",
       "properties": {
         "cell": {
           "$ref": "#/definitions/TableCellPropertiesOptions",
-          "description": "Table cell properties (CT_TcPr)."
+          "description": "Table cell properties."
         },
         "paragraph": {
           "$ref": "#/definitions/ParagraphStylePropertiesOptions",
-          "description": "Paragraph properties (CT_PPrGeneral)."
+          "description": "Paragraph properties."
         },
         "row": {
           "$ref": "#/definitions/TableRowPropertiesOptions",
-          "description": "Table row properties (CT_TrPr)."
+          "description": "Table row properties."
         },
         "run": {
           "$ref": "#/definitions/RunStylePropertiesOptions",
-          "description": "Run properties (CT_RPr)."
+          "description": "Run properties."
         },
         "table": {
           "$ref": "#/definitions/TablePropertiesOptions",
-          "description": "Table properties (CT_TblPrBase)."
+          "description": "Table properties."
         },
         "type": {
           "$ref": "#/definitions/TableStyleOverrideType",
-          "description": "Which region this format applies to (CT_TblStylePr `@w:type`, required)."
+          "description": "Which region this format applies to."
         }
       },
       "required": ["type"],
@@ -4401,7 +4401,7 @@
     },
     "ConnectionSite": {
       "additionalProperties": false,
-      "description": "Connection site (CT_ConnectionSite).\n\nDefines a point on the shape boundary where connectors can attach.",
+      "description": "Connection site. Defines a point on the shape boundary where connectors can attach.",
       "properties": {
         "angle": {
           "description": "Angle (absolute value or guide name)",
@@ -4424,7 +4424,7 @@
     },
     "ConstraintOptions": {
       "additionalProperties": false,
-      "description": "dgm:constr (CT_Constraint).",
+      "description": "dgm:constr.",
       "properties": {
         "factor": {
           "description": "Factor applied to the reference (dgm:constr `@fact`).",
@@ -4554,7 +4554,7 @@
     },
     "ContentPartOptions": {
       "additionalProperties": false,
-      "description": "Content part options — references an opaque part via r:id. The relationship is not re-registered on generate; the source r:id is passed through verbatim. At run level this serializes as the CT_Rel form (w:contentPart, referenceId only); the placement and non-visual fields apply only to the wpg:contentPart form nested inside a group child.",
+      "description": "Content part options — references an opaque part via r:id. The relationship is not re-registered on generate; the source r:id is passed through verbatim. At run level this serializes as the form (w:contentPart, referenceId only); the placement and non-visual fields apply only to the wpg:contentPart form nested inside a group child.",
       "properties": {
         "blackWhiteMode": {
           "$ref": "#/definitions/BlackWhiteMode",
@@ -4652,6 +4652,7 @@
     },
     "ContentTypesInput": {
       "additionalProperties": false,
+      "description": "[Content_Types].xml source. Usually omitted — the compiler derives it from the parts actually written; supply it only to override the derivation.",
       "properties": {
         "defaults": {
           "items": {
@@ -4671,7 +4672,7 @@
     },
     "CorporateOptions": {
       "additionalProperties": false,
-      "description": "A corporate (organization) author entry (b:Corporate) — only valid in the author and performer roles, whose XSD type is CT_NameOrCorporateType.",
+      "description": "A corporate (organization) author entry (b:Corporate) — only valid in the author and performer roles, whose XSD type is.",
       "properties": {
         "corporate": {
           "type": "string"
@@ -4682,7 +4683,7 @@
     },
     "CustomGeometryOptions": {
       "additionalProperties": false,
-      "description": "Options for a custom 2D geometry (CT_CustomGeometry2D).\n\nOnly `pathList` is required. All other sub-elements are optional.",
+      "description": "Options for a custom 2D geometry. Only `pathList` is required. All other sub-elements are optional.",
       "properties": {
         "adjustHandles": {
           "description": "Adjust handles (a:ahLst)",
@@ -4748,7 +4749,7 @@
     },
     "CustomXmlAttributeOptions": {
       "additionalProperties": false,
-      "description": "Custom attribute (CT_Attr)",
+      "description": "Custom attribute",
       "properties": {
         "name": {
           "type": "string"
@@ -4765,7 +4766,7 @@
     },
     "CustomXmlBlockOptions": {
       "additionalProperties": false,
-      "description": "Options for block-level custom XML (CT_CustomXmlBlock). Wraps block content (paragraphs, tables, …); lives in EG_BlockLevelElts.\n\nMicrosoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
+      "description": "Options for block-level custom XML. Wraps block content (paragraphs, tables, …); lives in EG_BlockLevelElts. Microsoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
       "properties": {
         "children": {
           "description": "Block content (paragraphs, tables, etc.)",
@@ -4792,7 +4793,7 @@
     },
     "CustomXmlCellOptions": {
       "additionalProperties": false,
-      "description": "Options for cell-level custom XML (CT_CustomXmlCell). Wraps one or more table cells; lives in EG_ContentCellContent alongside w:tc.\n\nMicrosoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
+      "description": "Options for cell-level custom XML. Wraps one or more table cells; lives in EG_ContentCellContent alongside w:tc. Microsoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
       "properties": {
         "children": {
           "description": "Cell content (TableCell children)",
@@ -4819,7 +4820,7 @@
     },
     "CustomXmlDataBindingOptions": {
       "additionalProperties": false,
-      "description": "Data binding configuration (CT_DataBinding)",
+      "description": "Data binding configuration",
       "properties": {
         "prefixMappings": {
           "description": "Namespace prefix mappings",
@@ -4839,7 +4840,7 @@
     },
     "CustomXmlPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Custom XML properties (CT_CustomXmlProperties)",
+      "description": "Custom XML properties",
       "properties": {
         "attributes": {
           "description": "Custom attributes",
@@ -4850,7 +4851,7 @@
         },
         "dataBinding": {
           "$ref": "#/definitions/CustomXmlDataBindingOptions",
-          "description": "XML data binding (CT_CustomXmlPr/w:dataBinding)"
+          "description": "XML data binding"
         },
         "placeholder": {
           "description": "Placeholder text",
@@ -4861,7 +4862,7 @@
     },
     "CustomXmlRowOptions": {
       "additionalProperties": false,
-      "description": "Options for row-level custom XML (CT_CustomXmlRow). Wraps one or more table rows; lives in EG_ContentRowContent alongside w:tr.\n\nMicrosoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
+      "description": "Options for row-level custom XML. Wraps one or more table rows; lives in EG_ContentRowContent alongside w:tr. Microsoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
       "properties": {
         "children": {
           "description": "Row content (TableRow children)",
@@ -4904,7 +4905,7 @@
     },
     "DataLabelOptions": {
       "additionalProperties": false,
-      "description": "Single data-point label override (CT_DLbl).",
+      "description": "Single data-point label override.",
       "properties": {
         "delete": {
           "description": "Drop the label for this point (c:delete).",
@@ -5047,7 +5048,7 @@
     },
     "DataModelOptions": {
       "additionalProperties": false,
-      "description": "dgm:dataModel — structured point/connection model (CT_DataModel).",
+      "description": "dgm:dataModel — structured point/connection model.",
       "properties": {
         "connections": {
           "items": {
@@ -5066,7 +5067,7 @@
     },
     "DataPointOptions": {
       "additionalProperties": false,
-      "description": "Per-point override (CT_DPt). Field order follows the XSD content model.",
+      "description": "Per-point override. Field order follows the XSD content model.",
       "properties": {
         "bubble3D": {
           "description": "3D bubble on this point (c:bubble3D).",
@@ -5099,7 +5100,7 @@
     },
     "DataTableOptions": {
       "additionalProperties": false,
-      "description": "Plot-area data table (CT_DTable).",
+      "description": "Plot-area data table.",
       "properties": {
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -5144,7 +5145,7 @@
     },
     "DefaultShapeStyleOptions": {
       "additionalProperties": false,
-      "description": "Shape style — a:style (CT_ShapeStyle).",
+      "description": "Shape style — a:style.",
       "properties": {
         "effectReference": {
           "$ref": "#/definitions/StyleMatrixReferenceOptions"
@@ -5276,27 +5277,27 @@
       "description": "AG_IteratorAttributes — the traversal selector shared by presOf, forEach, and when-branches. List-typed XSD attributes (axis, ptType, hideLastTrans, st, cnt, step) surface as strings; single values read fine too.",
       "properties": {
         "axis": {
-          "description": "Selection axes, space-separated (dgm:`@axis`,).",
+          "description": "Selection axes, space-separated (dgm:`@axis`).",
           "type": "string"
         },
         "count": {
-          "description": "Iteration count (dgm:`@cnt`,).",
+          "description": "Iteration count (dgm:`@cnt`).",
           "type": "string"
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:`@hideLastTrans`,).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`).",
           "type": "string"
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:`@ptType`,).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:`@st`,).",
+          "description": "Start index (dgm:`@st`).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:`@step`,).",
+          "description": "Index step (dgm:`@step`).",
           "type": "string"
         }
       },
@@ -5316,7 +5317,7 @@
       "type": "object"
     },
     "DisplacedByCustomXml": {
-      "description": "whether a range marker is displaced before or after a sibling customXml element. Shared by every CT_MarkupRange derivative (bookmark, move range, comment range, …).",
+      "description": "whether a range marker is displaced before or after a sibling customXml element. Shared by every derivative (bookmark, move range, comment range, …).",
       "enum": ["before", "after"],
       "type": "string"
     },
@@ -5327,7 +5328,7 @@
     },
     "DisplayUnitsOptions": {
       "additionalProperties": false,
-      "description": "Display-unit scaling for a value axis (CT_DispUnits).",
+      "description": "Display-unit scaling for a value axis.",
       "properties": {
         "builtInUnit": {
           "$ref": "#/definitions/BuiltInDisplayUnit",
@@ -5338,7 +5339,7 @@
           "type": "number"
         },
         "label": {
-          "description": "Emit c:dispUnitsLbl (presence only; CT_DispUnitsLbl body not modeled here).",
+          "description": "Emit c:dispUnitsLbl (presence only; body not modeled here).",
           "type": "boolean"
         }
       },
@@ -5436,7 +5437,7 @@
     },
     "DivOptions": {
       "additionalProperties": false,
-      "description": "Options for a div element (CT_Div).",
+      "description": "Options for a div element.",
       "properties": {
         "blockQuote": {
           "description": "Mark as HTML blockquote element",
@@ -5456,7 +5457,7 @@
           "type": "array"
         },
         "id": {
-          "description": "Unique div identifier (required by CT_Div/`@id`)",
+          "description": "Unique div identifier (required by /`@id`)",
           "type": "number"
         },
         "marginBottom": {
@@ -5573,7 +5574,7 @@
     },
     "DocPartOptions": {
       "additionalProperties": false,
-      "description": "A single building block (CT_DocPart)",
+      "description": "A single building block",
       "properties": {
         "allTypes": {
           "description": "Whether all building block types are included (w:all attribute)",
@@ -5633,7 +5634,7 @@
     },
     "DocPartSectionOptions": {
       "additionalProperties": false,
-      "description": "A section within a building block body (CT_Body section boundary).",
+      "description": "A section within a building block body.",
       "properties": {
         "children": {
           "description": "Block-level content in this section.",
@@ -5760,7 +5761,7 @@
     },
     "DocumentEndnotePropertiesOptions": {
       "additionalProperties": false,
-      "description": "Endnote properties for document-level settings (CT_EdnDocProps).",
+      "description": "Endnote properties for document-level settings.",
       "properties": {
         "endnotes": {
           "description": "Special endnotes acting as separator/continuation, as endnote ids in word/endnotes.xml (Word writes the separator as -1 and the continuation note as 0).",
@@ -5795,7 +5796,7 @@
     },
     "DocumentFootnotePropertiesOptions": {
       "additionalProperties": false,
-      "description": "Footnote properties for document-level settings (CT_FtnDocProps).",
+      "description": "Footnote properties for document-level settings.",
       "properties": {
         "footnotes": {
           "description": "Special footnotes acting as separator/continuation, as footnote ids in word/footnotes.xml (Word writes the separator as -1 and the continuation note as 0).",
@@ -6103,7 +6104,7 @@
     },
     "DocumentProtectionOptions": {
       "additionalProperties": false,
-      "description": "Options for document protection (restrict editing).\n\nReference: ISO/IEC 29500-4, wml.xsd, CT_DocProtect",
+      "description": "Options for document protection (restrict editing). Reference: ISO/IEC 29500-4, wml.xsd,",
       "properties": {
         "algorithmExtensionId": {
           "type": "number"
@@ -6270,7 +6271,7 @@
     },
     "EffectDagOptions": {
       "additionalProperties": false,
-      "description": "Options for an effect container (CT_EffectContainer).\n\nSupports all 28 effect types from EG_Effect, including recursive nesting.",
+      "description": "Options for an effect container. Supports all 28 effect types from EG_Effect, including recursive nesting.",
       "properties": {
         "alphaBiLevel": {
           "$ref": "#/definitions/AlphaBiLevelEffectOptions",
@@ -6472,7 +6473,7 @@
     },
     "EffectReferenceOptions": {
       "additionalProperties": false,
-      "description": "Effect reference — references an effect by ID (CT_EffectReference).",
+      "description": "Effect reference — references an effect by ID.",
       "properties": {
         "ref": {
           "description": "Reference ID (required)",
@@ -6484,7 +6485,7 @@
     },
     "EmbeddedFontOptions": {
       "additionalProperties": false,
-      "description": "Options for embedding a font in the document.\n\n`data` is optional: a parsed font table carries metadata-only declarations (name/family/pitch/sig/...) for non-embedded fonts, which have no bytes to embed and must still round-trip into fontTable.xml.",
+      "description": "An embedded font (fontTable.xml w:font with w:embedRegular parts). When authoring, set name/data and leave the internal round-trip fields (rawOdttf/odttfPath/fontKey/subsetted) unset — they carry source-file obfuscation state that fresh generation must not fake.",
       "properties": {
         "altName": {
           "description": "Alternative font name",
@@ -6564,7 +6565,7 @@
           "description": "Font signature (Unicode/code-page bitfields)"
         },
         "subsetted": {
-          "description": "Embedded font is subsetted rather than complete (CT_FontRel `@subsetted`). Round-trip flag preserved from source embedRegular.",
+          "description": "Embedded font is subsetted rather than complete. Round-trip flag preserved from source embedRegular.",
           "type": "boolean"
         }
       },
@@ -6740,7 +6741,7 @@
     },
     "ExternalDataOptions": {
       "additionalProperties": false,
-      "description": "External linked workbook reference (CT_ExternalData).",
+      "description": "External linked workbook reference.",
       "properties": {
         "autoUpdate": {
           "type": "boolean"
@@ -6762,7 +6763,7 @@
     },
     "FillEffectOptions": {
       "additionalProperties": false,
-      "description": "Fill effect — applies a fill as an effect (CT_FillEffect).",
+      "description": "Fill effect — applies a fill as an effect.",
       "properties": {
         "gradientFill": {
           "$ref": "#/definitions/GradientFillOptions"
@@ -6992,7 +6993,7 @@
     },
     "FlatTextOptions": {
       "additionalProperties": false,
-      "description": "Flat text options (CT_FlatText).",
+      "description": "Flat text options.",
       "properties": {
         "z": {
           "description": "Z-offset in EMUs.",
@@ -7129,7 +7130,7 @@
     },
     "FontReferenceOptions": {
       "additionalProperties": false,
-      "description": "Font reference — a:fontRef (CT_FontReference).",
+      "description": "Font reference — a:fontRef.",
       "properties": {
         "collection": {
           "description": "Font collection (idx attribute:).",
@@ -7171,7 +7172,7 @@
     },
     "FootnoteEndnoteReferenceOptions": {
       "additionalProperties": false,
-      "description": "Options for a footnote/endnote reference (CT_FtnEdnRef).",
+      "description": "Options for a footnote/endnote reference.",
       "properties": {
         "customMarkFollows": {
           "description": "Whether a custom reference mark follows the reference (w:customMarkFollows).",
@@ -7298,10 +7299,10 @@
     },
     "ForEachOptions": {
       "additionalProperties": false,
-      "description": "dgm:forEach (CT_ForEach) — apply children to each selected point.",
+      "description": "dgm:forEach — apply children to each selected point.",
       "properties": {
         "axis": {
-          "description": "Selection axes, space-separated (dgm:`@axis`,).",
+          "description": "Selection axes, space-separated (dgm:`@axis`).",
           "type": "string"
         },
         "children": {
@@ -7311,18 +7312,18 @@
           "type": "array"
         },
         "count": {
-          "description": "Iteration count (dgm:`@cnt`,).",
+          "description": "Iteration count (dgm:`@cnt`).",
           "type": "string"
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:`@hideLastTrans`,).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`).",
           "type": "string"
         },
         "name": {
           "type": "string"
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:`@ptType`,).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`).",
           "type": "string"
         },
         "reference": {
@@ -7330,11 +7331,11 @@
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:`@st`,).",
+          "description": "Start index (dgm:`@st`).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:`@step`,).",
+          "description": "Index step (dgm:`@step`).",
           "type": "string"
         }
       },
@@ -7342,7 +7343,7 @@
     },
     "FormFieldOptions": {
       "additionalProperties": false,
-      "description": "Options for a form field definition (CT_FFData).\n\nExactly one of `checkBox`, `dropDownList`, or `textInput` must be specified.",
+      "description": "Options for a form field definition. Exactly one of `checkBox`, `dropDownList`, or `textInput` must be specified.",
       "properties": {
         "calcOnExit": {
           "description": "Recalculate fields when exiting",
@@ -7482,7 +7483,7 @@
     },
     "GeomRect": {
       "additionalProperties": false,
-      "description": "Text insertion rectangle (CT_GeomRect).\n\nDefines the rectangle within the shape where text is placed. Coordinates can be absolute values or references to geometry guide names.",
+      "description": "Text insertion rectangle. Defines the rectangle within the shape where text is placed. Coordinates can be absolute values or references to geometry guide names.",
       "properties": {
         "bottom": {
           "type": "string"
@@ -7635,7 +7636,7 @@
     },
     "GraphicFrameLocksOptions": {
       "additionalProperties": false,
-      "description": "Locking flags for wp:cNvGraphicFramePr (CT_GraphicalObjectFrameLocking).",
+      "description": "Locking flags for wp:cNvGraphicFramePr.",
       "properties": {
         "emptyLocks": {
           "description": "The source carried a bare `<a:graphicFrameLocks/>` with no attributes. Round-trip marker only — re-emits the empty element (element presence is part of the source's fidelity) instead of dropping it.",
@@ -8061,7 +8062,7 @@
     },
     "GroupShapeLocksOptions": {
       "additionalProperties": false,
-      "description": "Group shape locks (CT_GroupLocking) carried inside wpg:cNvGrpSpPr. Distinct from GraphicFrameLocksOptions: groups use noUngrp/noRot instead of noDrilldown.",
+      "description": "Group shape locks carried inside wpg:cNvGrpSpPr. Distinct from GraphicFrameLocksOptions: groups use noUngrp/noRot instead of noDrilldown.",
       "properties": {
         "noChangeAspect": {
           "type": "boolean"
@@ -8356,7 +8357,7 @@
     },
     "LayoutDefinitionOptions": {
       "additionalProperties": false,
-      "description": "dgm:layoutDef (CT_DiagramDefinition) — the layoutDef part root.",
+      "description": "dgm:layoutDef — the layoutDef part root.",
       "properties": {
         "categories": {
           "description": "Gallery categories (dgm:catLst).",
@@ -8532,7 +8533,7 @@
     },
     "LayoutNodeOptions": {
       "additionalProperties": false,
-      "description": "dgm:layoutNode (CT_LayoutNode) — one node of the layout tree.",
+      "description": "dgm:layoutNode — one node of the layout tree.",
       "properties": {
         "childOrder": {
           "$ref": "#/definitions/ChildOrder",
@@ -8565,7 +8566,7 @@
     },
     "LayoutRuleOptions": {
       "additionalProperties": false,
-      "description": "dgm:rule (CT_NumericRule).",
+      "description": "dgm:rule.",
       "properties": {
         "factor": {
           "description": "Multiplied factor (dgm:rule `@fact`).",
@@ -8598,7 +8599,7 @@
     },
     "LayoutShapeOptions": {
       "additionalProperties": false,
-      "description": "dgm:shape (CT_Shape) — the geometry template a layout node renders as.",
+      "description": "dgm:shape — the geometry template a layout node renders as.",
       "properties": {
         "adjustments": {
           "description": "Geometry adjustment values (dgm:adjLst).",
@@ -8628,7 +8629,7 @@
           "type": "number"
         },
         "type": {
-          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape `@type`,).",
+          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape `@type`).",
           "type": "string"
         },
         "zOrderOffset": {
@@ -8645,7 +8646,7 @@
     },
     "LegendEntryOptions": {
       "additionalProperties": false,
-      "description": "Legend entry override (CT_LegendEntry: idx + delete | txPr).",
+      "description": "Legend entry override.",
       "properties": {
         "delete": {
           "description": "Hide this legend entry (c:delete).",
@@ -8690,7 +8691,7 @@
     },
     "LevelOverrideOptions": {
       "additionalProperties": false,
-      "description": "Per-instance level override (CT_NumLvl, child of the instance's w:num): a nested w:lvl redefines the level wholesale, w:startOverride re-pins its start; both may appear together.",
+      "description": "Per-instance level override: a nested w:lvl redefines the level wholesale, w:startOverride re-pins its start; both may appear together.",
       "properties": {
         "level": {
           "$ref": "#/definitions/LevelsOptions",
@@ -8960,7 +8961,7 @@
         },
         "legacy": {
           "additionalProperties": false,
-          "description": "Legacy spacing/indent settings. `enabled` maps to the required CT_LvlLegacy `@w:legacy` flag.",
+          "description": "Legacy spacing/indent settings. `enabled` maps to the required `@w:legacy` flag.",
           "properties": {
             "enabled": {
               "type": "boolean"
@@ -8991,7 +8992,7 @@
           "description": "Paragraph properties for the level (w:pPr)."
         },
         "paragraphStyle": {
-          "description": "Paragraph style ID this level is linked to (CT_Lvl pStyle).",
+          "description": "Paragraph style ID this level is linked to.",
           "type": "string"
         },
         "run": {
@@ -9020,7 +9021,7 @@
           "type": "string"
         },
         "textNull": {
-          "description": "Whether this level emits no text (CT_LevelText `@w:null`).",
+          "description": "Whether this level emits no text.",
           "type": "boolean"
         },
         "w15Tentative": {
@@ -9033,7 +9034,7 @@
     },
     "LightRigOptions": {
       "additionalProperties": false,
-      "description": "Light rig options (CT_LightRig).\n\nDefines the lighting setup for the 3D scene.",
+      "description": "Light rig options. Defines the lighting setup for the 3D scene.",
       "properties": {
         "direction": {
           "description": "Light direction (e.g., \"tl\", \"t\", \"tr\", \"l\", \"r\", \"bl\", \"b\", \"br\")",
@@ -9182,7 +9183,7 @@
     },
     "MailMergeOptions": {
       "additionalProperties": false,
-      "description": "Mail merge configuration (CT_MailMerge)",
+      "description": "Mail merge configuration",
       "properties": {
         "active": {
           "description": "Whether this mail merge is the active one (w:active)",
@@ -9276,7 +9277,7 @@
     },
     "ManualLayoutOptions": {
       "additionalProperties": false,
-      "description": "Manual plot-area layout (CT_ManualLayout). Field order follows the XSD.",
+      "description": "Manual plot-area layout. Field order follows the XSD.",
       "properties": {
         "h": {
           "type": "number"
@@ -9357,7 +9358,7 @@
     },
     "MarkerOptions": {
       "additionalProperties": false,
-      "description": "Line/scatter/radar point marker (CT_Marker).",
+      "description": "Line/scatter/radar point marker.",
       "properties": {
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -9392,14 +9393,14 @@
     },
     "MarkupRangeOptions": {
       "additionalProperties": false,
-      "description": "Options for a CT_MarkupRange end marker — `@id` + `@displacedByCustomXml`.\n\nShared by every range end marker that derives from CT_MarkupRange: w:bookmarkEnd, w:commentRangeStart/End, w:moveFromRangeEnd, w:moveToRangeEnd. None of these carry a name or column range (only the start markers do).\n\nReference: wml.xsd CT_MarkupRange, EG_RangeMarkupElements",
+      "description": "Options for a end marker — `@id` + `@displacedByCustomXml`. Shared by every range end marker that derives from: w:bookmarkEnd, w:commentRangeStart/End, w:moveFromRangeEnd, w:moveToRangeEnd. None of these carry a name or column range (only the start markers do). Reference: wml.xsd, EG_RangeMarkupElements",
       "properties": {
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
+          "description": "Displacement relative to a sibling customXml."
         },
         "id": {
-          "description": "Marker identifier (CT_Markup `@w:id`, required).",
+          "description": "Marker identifier.",
           "type": "number"
         }
       },
@@ -9413,7 +9414,7 @@
     },
     "MathBorderBoxProperties": {
       "additionalProperties": false,
-      "description": "Border-box properties (CT_BorderBoxPr) — which edges/strikes to hide or draw.",
+      "description": "Border-box properties — which edges/strikes to hide or draw.",
       "properties": {
         "hideBottom": {
           "description": "Omit the bottom border (m:hideBot).",
@@ -9452,7 +9453,7 @@
     },
     "MathBoxProperties": {
       "additionalProperties": false,
-      "description": "Box properties (CT_BoxPr).",
+      "description": "Box properties.",
       "properties": {
         "align": {
           "description": "Align this box with surrounding text (m:aln).",
@@ -9475,7 +9476,7 @@
     },
     "MathDelimiterProperties": {
       "additionalProperties": false,
-      "description": "Delimiter properties (CT_DPr) — bracket characters, growth, shape.",
+      "description": "Delimiter properties — bracket characters, growth, shape.",
       "properties": {
         "beginCharacter": {
           "description": "Beginning character (m:begChr).",
@@ -9498,7 +9499,7 @@
           "type": "string"
         },
         "shape": {
-          "description": "Delimiter shape — centered or match (m:shp,).",
+          "description": "Delimiter shape — centered or match (m:shp).",
           "enum": ["centered", "match"],
           "type": "string"
         }
@@ -9507,7 +9508,7 @@
     },
     "MathEquationArrayProperties": {
       "additionalProperties": false,
-      "description": "Equation-array properties (CT_EqArrPr).",
+      "description": "Equation-array properties.",
       "properties": {
         "baseline": {
           "$ref": "#/definitions/MathBaselineAlignment",
@@ -9534,7 +9535,7 @@
     },
     "MathGroupCharacterProperties": {
       "additionalProperties": false,
-      "description": "Group-character properties (CT_GroupChrPr).",
+      "description": "Group-character properties.",
       "properties": {
         "character": {
           "description": "Grouping character (m:chr).",
@@ -9581,7 +9582,7 @@
           "properties": {
             "argumentControlProperties": {
               "$ref": "#/definitions/RunPropertiesOptions",
-              "description": "Trailing m:ctrlPr inside an argument element (m:e/m:num/m:den..., CT_OMathArg) — carried as a children-array member so its position round-trips."
+              "description": "Trailing m:ctrlPr inside an argument element (m:e/m:num/m:den...) — carried as a children-array member so its position round-trips."
             }
           },
           "required": ["argumentControlProperties"],
@@ -10459,7 +10460,7 @@
     },
     "MathMatrixProperties": {
       "additionalProperties": false,
-      "description": "Matrix properties (CT_MPr).",
+      "description": "Matrix properties.",
       "properties": {
         "baseline": {
           "$ref": "#/definitions/MathBaselineAlignment",
@@ -10506,7 +10507,7 @@
     },
     "MathNaryProperties": {
       "additionalProperties": false,
-      "description": "N-ary operator properties (CT_NaryPr beyond character/subHide/supHide).",
+      "description": "N-ary operator properties.",
       "properties": {
         "grow": {
           "description": "Whether the operator grows to content height (m:grow).",
@@ -10521,7 +10522,7 @@
     },
     "MathPhantomProperties": {
       "additionalProperties": false,
-      "description": "Phantom properties (CT_PhantPr).",
+      "description": "Phantom properties.",
       "properties": {
         "show": {
           "description": "Show the phantom content (m:show).",
@@ -10548,7 +10549,7 @@
     },
     "MathPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Math properties (CT_MathPr)",
+      "description": "Math properties",
       "properties": {
         "binaryOperatorBreak": {
           "description": "Binary operator break style (m:brkBin)",
@@ -10624,7 +10625,7 @@
     },
     "MathRadicalProperties": {
       "additionalProperties": false,
-      "description": "Radical properties (CT_RadPr).",
+      "description": "Radical properties.",
       "properties": {
         "hideDegree": {
           "description": "Hide the degree argument — square-root display (m:degHide).",
@@ -10878,7 +10879,7 @@
     },
     "ModelConnectionOptions": {
       "additionalProperties": false,
-      "description": "dgm:cxn — one data-model connection (CT_Cxn).",
+      "description": "dgm:cxn — one data-model connection.",
       "properties": {
         "destinationId": {
           "type": "string"
@@ -10914,7 +10915,7 @@
     },
     "ModelPointOptions": {
       "additionalProperties": false,
-      "description": "dgm:pt — one data-model point (dgm:pt, CT_Pt).",
+      "description": "dgm:pt — one data-model point (dgm:pt).",
       "properties": {
         "connectionId": {
           "description": "Transition point owning connection (dgm:pt `@cxnId`, transition points only).",
@@ -10941,30 +10942,30 @@
     },
     "MoveRangeOptions": {
       "additionalProperties": false,
-      "description": "A move revision authored as a single inline paragraph child. The library allocates the range id and the move-run id, then emits the paired range markers with the moved run between them — the caller never touches an id.\n\nUsed by both the `{ moveFrom }` (source) and `{ moveTo }` (destination) sugars. `wrap` is the moved content carried by the move run. `author` and `date` apply to both the range start (CT_MoveBookmark) and the move run (CT_TrackChange). `name` is required by XSD (CT_Bookmark); the source (`moveFrom`) and destination (`moveTo`) of one logical move MUST share a name so Word pairs them as a single move.\n\nReference: wml.xsd CT_MoveBookmark, CT_TrackChange, EG_RangeMarkupElements.",
+      "description": "A move revision authored as a single inline paragraph child. The library allocates the range id and the move-run id, then emits the paired range markers with the moved run between them — the caller never touches an id. Used by both the `{ moveFrom }` (source) and `{ moveTo }` (destination) sugars. `wrap` is the moved content carried by the move run. `author` and `date` apply to both the range start and the move run. `name` is required by XSD; the source (`moveFrom`) and destination (`moveTo`) of one logical move MUST share a name so Word pairs them as a single move. Reference: wml.xsd,, EG_RangeMarkupElements.",
       "properties": {
         "author": {
-          "description": "Author of the move (CT_MoveBookmark + move run `@w:author`, required).",
+          "description": "Author of the move.",
           "type": "string"
         },
         "colFirst": {
-          "description": "First column of a table-cell move range scope (CT_BookmarkRange `@w:colFirst`).",
+          "description": "First column of a table-cell move range scope.",
           "type": "number"
         },
         "colLast": {
-          "description": "Last column of a table-cell move range scope (CT_BookmarkRange `@w:colLast`).",
+          "description": "Last column of a table-cell move range scope.",
           "type": "number"
         },
         "date": {
-          "description": "Date of the move (CT_MoveBookmark + move run `@w:date`, required).",
+          "description": "Date of the move.",
           "type": "string"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
+          "description": "Displacement relative to a sibling customXml."
         },
         "name": {
-          "description": "Move range name (CT_Bookmark `@w:name`, required). Share it across the matching `moveFrom`/`moveTo` pair so Word links them into one move.",
+          "description": "Move range name. Share it across the matching `moveFrom`/`moveTo` pair so Word links them into one move.",
           "type": "string"
         },
         "wrap": {
@@ -10987,34 +10988,34 @@
     },
     "MoveRangeStartOptions": {
       "additionalProperties": false,
-      "description": "Options for a move revision range start (w:moveFromRangeStart / w:moveToRangeStart).\n\nMaps to CT_MoveBookmark = CT_Bookmark (name, colFirst, colLast, displacedByCustomXml) + author + date. `name` is optional in practice: Word does not always emit one for auto-generated move ranges.\n\nReference: wml.xsd CT_MoveBookmark, EG_RangeMarkupElements",
+      "description": "Options for a move revision range start (w:moveFromRangeStart / w:moveToRangeStart). Maps to = (name, colFirst, colLast, displacedByCustomXml) + author + date. `name` is optional in practice: Word does not always emit one for auto-generated move ranges. Reference: wml.xsd, EG_RangeMarkupElements",
       "properties": {
         "author": {
-          "description": "Author of the move (CT_MoveBookmark `@w:author`).",
+          "description": "Author of the move.",
           "type": "string"
         },
         "colFirst": {
-          "description": "First column of a table-cell move range scope (CT_BookmarkRange `@w:colFirst`).",
+          "description": "First column of a table-cell move range scope.",
           "type": "number"
         },
         "colLast": {
-          "description": "Last column of a table-cell move range scope (CT_BookmarkRange `@w:colLast`).",
+          "description": "Last column of a table-cell move range scope.",
           "type": "number"
         },
         "date": {
-          "description": "Date of the move (CT_MoveBookmark `@w:date`).",
+          "description": "Date of the move.",
           "type": "string"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`)."
+          "description": "Displacement relative to a sibling customXml."
         },
         "id": {
-          "description": "Move range identifier (CT_Markup `@w:id`, required).",
+          "description": "Move range identifier.",
           "type": "number"
         },
         "name": {
-          "description": "Move range name (CT_Bookmark `@w:name` — required by XSD, often absent in Word).",
+          "description": "Move range name.",
           "type": "string"
         }
       },
@@ -11030,7 +11031,7 @@
         },
         "locks": {
           "$ref": "#/definitions/ContentPartLockingOptions",
-          "description": "Locking flags (a:cpLocks — CT_ContentPartLocking)"
+          "description": "Locking flags (a:cpLocks —)"
         }
       },
       "type": "object"
@@ -11088,7 +11089,7 @@
       "additionalProperties": false,
       "properties": {
         "connector": {
-          "description": "Connector shape marker — when true the shape emits wps:cNvCnPr (connector non-visual properties) instead of wps:cNvSpPr. Per the CT_WordprocessingShape choice these are mutually exclusive.",
+          "description": "Connector shape marker — when true the shape emits wps:cNvCnPr (connector non-visual properties) instead of wps:cNvSpPr. Per the choice these are mutually exclusive.",
           "type": "boolean"
         },
         "connectorLocking": {
@@ -11124,7 +11125,7 @@
     },
     "NormalAutofitOptions": {
       "additionalProperties": false,
-      "description": "Normal autofit options (CT_TextNormalAutofit).",
+      "description": "Normal autofit options.",
       "properties": {
         "fontScale": {
           "description": "Font scale percentage (e.g., 100000 = 100%).",
@@ -11169,7 +11170,7 @@
     },
     "NumberingInsertionOptions": {
       "additionalProperties": false,
-      "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange).",
+      "description": "Numbering applied as a revision (w:numPr/w:ins).",
       "properties": {
         "author": {
           "description": "Author of the change",
@@ -11246,7 +11247,7 @@
             "additionalProperties": false,
             "properties": {
               "drawing": {
-                "description": "Verbatim w:drawing element XML (CT_Drawing) — alternative to pict",
+                "description": "Verbatim w:drawing element XML — alternative to pict",
                 "type": "string"
               },
               "numPicBulletId": {
@@ -11254,7 +11255,7 @@
               },
               "pict": {
                 "$ref": "#/definitions/PictOptions",
-                "description": "VML picture content (CT_Picture) — imagedata media round-trips through it"
+                "description": "VML picture content — imagedata media round-trips through it"
               }
             },
             "required": ["numPicBulletId"],
@@ -11268,7 +11269,7 @@
     },
     "NumberingStyleOptions": {
       "additionalProperties": false,
-      "description": "Numbering style (CT_Style type=\"numbering\").",
+      "description": "Numbering style.",
       "properties": {
         "aliases": {
           "type": "string"
@@ -11280,15 +11281,15 @@
           "type": "string"
         },
         "customStyle": {
-          "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
+          "description": "`@w:customStyle` — a user-defined custom style.",
           "type": "boolean"
         },
         "default": {
-          "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
+          "description": "`@w:default` — the default style for its type.",
           "type": "boolean"
         },
         "hidden": {
-          "description": "CT_Style w:hidden — style hidden from the UI (CT_OnOff).",
+          "description": "w:hidden — style hidden from the UI.",
           "type": "boolean"
         },
         "id": {
@@ -11308,7 +11309,7 @@
         },
         "paragraph": {
           "$ref": "#/definitions/ParagraphStylePropertiesOptions",
-          "description": "Paragraph properties (CT_PPrGeneral — usually carries numPr)."
+          "description": "Paragraph properties."
         },
         "personal": {
           "type": "boolean"
@@ -11323,12 +11324,12 @@
           "type": "boolean"
         },
         "rsid": {
-          "description": "CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim).",
+          "description": "w:rsid — revision save id.",
           "type": "string"
         },
         "run": {
           "$ref": "#/definitions/RunStylePropertiesOptions",
-          "description": "Run properties (CT_RPr)."
+          "description": "Run properties."
         },
         "semiHidden": {
           "type": "boolean"
@@ -11401,7 +11402,7 @@
           "description": "Linked OLE object (o:OLEObject Type=\"Link\")."
         },
         "movie": {
-          "description": "Movie relationship id — CT_Rel (w:movie/`@r:id`). External.",
+          "description": "Movie relationship id — (w:movie/`@r:id`). External.",
           "type": "string"
         },
         "shapeId": {
@@ -11563,7 +11564,7 @@
     },
     "OdsoFieldMapDataOptions": {
       "additionalProperties": false,
-      "description": "Field mapping for ODSO (CT_OdsoFieldMapData)",
+      "description": "Field mapping for ODSO",
       "properties": {
         "column": {
           "type": "number"
@@ -11593,7 +11594,7 @@
     },
     "OdsoOptions": {
       "additionalProperties": false,
-      "description": "Office Data Source Object (CT_Odso)",
+      "description": "Office Data Source Object",
       "properties": {
         "colDelim": {
           "type": "number"
@@ -11639,14 +11640,14 @@
     },
     "OptimizeForBrowserOptions": {
       "additionalProperties": false,
-      "description": "Options for the w:optimizeForBrowser element.\n\nCT_OptimizeForBrowser extends CT_OnOff with an optional `@w:target` attribute.",
+      "description": "Options for the w:optimizeForBrowser element. extends with an optional `@w:target` attribute.",
       "properties": {
         "target": {
           "description": "Target screen resolution name (w:optimizeForBrowser/`@w:target`).",
           "type": "string"
         },
         "value": {
-          "description": "On/off value — defaults to true when omitted (CT_OnOff).",
+          "description": "On/off value — defaults to true when omitted.",
           "type": "boolean"
         }
       },
@@ -11654,7 +11655,7 @@
     },
     "OtherwiseOptions": {
       "additionalProperties": false,
-      "description": "dgm:else (CT_Otherwise).",
+      "description": "dgm:else.",
       "properties": {
         "children": {
           "items": {
@@ -12348,15 +12349,15 @@
                   "type": "array"
                 },
                 "docLocation": {
-                  "description": "Location within the target document (CT_Hyperlink `@docLocation`)",
+                  "description": "Location within the target document",
                   "type": "string"
                 },
                 "history": {
-                  "description": "Add the target to the navigation history (CT_Hyperlink `@history`)",
+                  "description": "Add the target to the navigation history",
                   "type": "boolean"
                 },
                 "targetFrame": {
-                  "description": "Target frame for the hyperlink (CT_Hyperlink `@tgtFrame`)",
+                  "description": "Target frame for the hyperlink",
                   "type": "string"
                 },
                 "tooltip": {
@@ -13084,7 +13085,7 @@
       "description": "Options for creating a Paragraph element.",
       "properties": {
         "additionRsid": {
-          "description": "Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string).",
+          "description": "Revision save ID for the paragraph mark (w:rsidR, hex string).",
           "type": "string"
         },
         "adjustRightInd": {
@@ -13236,7 +13237,7 @@
                 },
                 "insertion": {
                   "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
                 },
                 "instance": {
                   "description": "Instance number for multiple lists with same reference",
@@ -13248,7 +13249,7 @@
                 },
                 "numberingChange": {
                   "additionalProperties": false,
-                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "description": "Numbering change tracking",
                   "properties": {
                     "author": {
                       "description": "Author of the change",
@@ -13288,7 +13289,7 @@
                 },
                 "levelOnly": {
                   "const": true,
-                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level (CT_NumPr leaves both children optional). Emits `<w:numPr>` with only the w:ilvl.",
+                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level. Emits `<w:numPr>` with only the w:ilvl.",
                   "type": "boolean"
                 }
               },
@@ -13301,11 +13302,11 @@
               "properties": {
                 "insertion": {
                   "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
                 },
                 "numberingChange": {
                   "additionalProperties": false,
-                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "description": "Numbering change tracking",
                   "properties": {
                     "author": {
                       "type": "string"
@@ -13594,7 +13595,7 @@
                 },
                 "insertion": {
                   "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
                 },
                 "instance": {
                   "description": "Instance number for multiple lists with same reference",
@@ -13606,7 +13607,7 @@
                 },
                 "numberingChange": {
                   "additionalProperties": false,
-                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "description": "Numbering change tracking",
                   "properties": {
                     "author": {
                       "description": "Author of the change",
@@ -13646,7 +13647,7 @@
                 },
                 "levelOnly": {
                   "const": true,
-                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level (CT_NumPr leaves both children optional). Emits `<w:numPr>` with only the w:ilvl.",
+                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level. Emits `<w:numPr>` with only the w:ilvl.",
                   "type": "boolean"
                 }
               },
@@ -13659,11 +13660,11 @@
               "properties": {
                 "insertion": {
                   "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
                 },
                 "numberingChange": {
                   "additionalProperties": false,
-                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "description": "Numbering change tracking",
                   "properties": {
                     "author": {
                       "type": "string"
@@ -14333,7 +14334,7 @@
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign,). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
           "enum": ["baseline", "subscript", "superscript"],
           "type": "string"
         },
@@ -14360,15 +14361,15 @@
           "type": "string"
         },
         "customStyle": {
-          "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
+          "description": "`@w:customStyle` — a user-defined custom style.",
           "type": "boolean"
         },
         "default": {
-          "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
+          "description": "`@w:default` — the default style for its type.",
           "type": "boolean"
         },
         "hidden": {
-          "description": "CT_Style w:hidden — style hidden from the UI (CT_OnOff).",
+          "description": "w:hidden — style hidden from the UI.",
           "type": "boolean"
         },
         "id": {
@@ -14402,7 +14403,7 @@
           "type": "boolean"
         },
         "rsid": {
-          "description": "CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim).",
+          "description": "w:rsid — revision save id.",
           "type": "string"
         },
         "run": {
@@ -14539,7 +14540,7 @@
                 },
                 "insertion": {
                   "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
                 },
                 "instance": {
                   "description": "Instance number for multiple lists with same reference",
@@ -14551,7 +14552,7 @@
                 },
                 "numberingChange": {
                   "additionalProperties": false,
-                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "description": "Numbering change tracking",
                   "properties": {
                     "author": {
                       "description": "Author of the change",
@@ -14591,7 +14592,7 @@
                 },
                 "levelOnly": {
                   "const": true,
-                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level (CT_NumPr leaves both children optional). Emits `<w:numPr>` with only the w:ilvl.",
+                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level. Emits `<w:numPr>` with only the w:ilvl.",
                   "type": "boolean"
                 }
               },
@@ -14604,11 +14605,11 @@
               "properties": {
                 "insertion": {
                   "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
                 },
                 "numberingChange": {
                   "additionalProperties": false,
-                  "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                  "description": "Numbering change tracking",
                   "properties": {
                     "author": {
                       "type": "string"
@@ -14730,7 +14731,7 @@
     },
     "PathArcTo": {
       "additionalProperties": false,
-      "description": "Arc-to path command (CT_Path2DArcTo).",
+      "description": "Arc-to path command.",
       "properties": {
         "command": {
           "const": "arcTo",
@@ -14754,7 +14755,7 @@
     },
     "PathClose": {
       "additionalProperties": false,
-      "description": "Close path command (CT_Path2DClose).",
+      "description": "Close path command.",
       "properties": {
         "command": {
           "const": "close",
@@ -14789,7 +14790,7 @@
     },
     "PathCubicBezTo": {
       "additionalProperties": false,
-      "description": "Cubic Bezier-to path command (CT_Path2DCubicBezierTo).",
+      "description": "Cubic Bezier-to path command.",
       "properties": {
         "command": {
           "const": "cubicBezTo",
@@ -14814,7 +14815,7 @@
     },
     "PathLineTo": {
       "additionalProperties": false,
-      "description": "Line-to path command (CT_Path2DLineTo).",
+      "description": "Line-to path command.",
       "properties": {
         "command": {
           "const": "lineTo",
@@ -14829,7 +14830,7 @@
     },
     "PathMoveTo": {
       "additionalProperties": false,
-      "description": "Move-to path command (CT_Path2DMoveTo).",
+      "description": "Move-to path command.",
       "properties": {
         "command": {
           "const": "moveTo",
@@ -14844,7 +14845,7 @@
     },
     "PathOptions": {
       "additionalProperties": false,
-      "description": "Options for a 2D path (CT_Path2D).",
+      "description": "Options for a 2D path.",
       "properties": {
         "commands": {
           "description": "Path commands (moveTo, lineTo, arcTo, etc.)",
@@ -14879,7 +14880,7 @@
     },
     "PathQuadBezTo": {
       "additionalProperties": false,
-      "description": "Quadratic Bezier-to path command (CT_Path2DQuadBezierTo).",
+      "description": "Quadratic Bezier-to path command.",
       "properties": {
         "command": {
           "const": "quadBezTo",
@@ -15019,7 +15020,7 @@
           "description": "Editing group that can edit this range"
         },
         "editor": {
-          "description": "Individual user who can edit this range (CT_PermStart `@ed`)",
+          "description": "Individual user who can edit this range",
           "type": "string"
         },
         "id": {
@@ -15032,7 +15033,7 @@
     },
     "PersonOptions": {
       "additionalProperties": false,
-      "description": "A person in a bibliography name list (CT_PersonType).",
+      "description": "A person in a bibliography name list.",
       "properties": {
         "first": {
           "type": "string"
@@ -15348,7 +15349,7 @@
     },
     "PictureOptionsOptions": {
       "additionalProperties": false,
-      "description": "Picture-fill options for bar/area series (CT_PictureOptions).",
+      "description": "Picture-fill options for bar/area series.",
       "properties": {
         "applyToEnd": {
           "type": "boolean"
@@ -15371,7 +15372,7 @@
     },
     "PivotSourceOptions": {
       "additionalProperties": false,
-      "description": "Pivot chart source (CT_PivotSource: name + fmtId, both required).",
+      "description": "Pivot chart source.",
       "properties": {
         "formatId": {
           "type": "number"
@@ -15385,7 +15386,7 @@
     },
     "Point3D": {
       "additionalProperties": false,
-      "description": "3D point (CT_Point3D).",
+      "description": "3D point.",
       "properties": {
         "x": {
           "type": "number"
@@ -15510,7 +15511,7 @@
     },
     "PolarAdjustHandle": {
       "additionalProperties": false,
-      "description": "Polar adjust handle (CT_PolarAdjustHandle).\n\nAllows the user to drag a handle in radius/angle directions.",
+      "description": "Polar adjust handle. Allows the user to drag a handle in radius/angle directions.",
       "properties": {
         "guideRefAngle": {
           "type": "string"
@@ -15846,7 +15847,7 @@
     },
     "PresetTextShapeOptions": {
       "additionalProperties": false,
-      "description": "Preset text warp options (CT_PresetTextShape).",
+      "description": "Preset text warp options.",
       "properties": {
         "adjustments": {
           "description": "Optional adjustment values.",
@@ -15875,7 +15876,7 @@
     },
     "PrintSettingsOptions": {
       "additionalProperties": false,
-      "description": "Print settings (CT_PrintSettings).",
+      "description": "Print settings.",
       "properties": {
         "headerFooter": {
           "$ref": "#/definitions/ChartHeaderFooterOptions"
@@ -15895,7 +15896,7 @@
     },
     "ProtectionOptions": {
       "additionalProperties": false,
-      "description": "Chart protection flags (CT_Protection).",
+      "description": "Chart protection flags.",
       "properties": {
         "chartObject": {
           "type": "boolean"
@@ -15922,7 +15923,7 @@
     },
     "ReadModeInkLockDownOptions": {
       "additionalProperties": false,
-      "description": "Reading mode ink lock-down (CT_ReadingModeInkLockDown)",
+      "description": "Reading mode ink lock-down",
       "properties": {
         "actualPg": {
           "description": "Use actual page dimensions",
@@ -16043,7 +16044,7 @@
     },
     "RelativeOffsetEffectOptions": {
       "additionalProperties": false,
-      "description": "Relative offset effect (CT_RelativeOffsetEffect).",
+      "description": "Relative offset effect.",
       "properties": {
         "translateX": {
           "description": "Horizontal offset percentage (default 0%)",
@@ -16058,7 +16059,7 @@
     },
     "RelativeRect": {
       "additionalProperties": false,
-      "description": "Relative rectangle (CT_RelativeRect) with percentage offsets.",
+      "description": "Relative rectangle with percentage offsets.",
       "properties": {
         "bottom": {
           "description": "Bottom offset percentage (e.g., \"0%\")",
@@ -16081,7 +16082,7 @@
     },
     "RelativeSizeOptions": {
       "additionalProperties": false,
-      "description": "Options for sizing a floating drawing relative to a page base (CT_SizeRelH/CT_SizeRelV).",
+      "description": "Options for sizing a floating drawing relative to a page base.",
       "properties": {
         "percent": {
           "description": "Whole-number percentage (wp14:pctWidth / wp14:pctHeight, 0-100).",
@@ -16145,7 +16146,7 @@
     },
     "RsidsOptions": {
       "additionalProperties": false,
-      "description": "Document revision save IDs (CT_DocRsids)",
+      "description": "Document revision save IDs",
       "properties": {
         "rsidRoot": {
           "description": "Root revision save ID (8 hex characters)",
@@ -16163,7 +16164,7 @@
     },
     "RubyContentOptions": {
       "additionalProperties": false,
-      "description": "Formatted runs inside ruby text or ruby base content (CT_RubyContent).",
+      "description": "Formatted runs inside ruby text or ruby base content.",
       "properties": {
         "children": {
           "items": {
@@ -16183,7 +16184,7 @@
     },
     "RubyOptions": {
       "additionalProperties": false,
-      "description": "A ruby annotation (CT_Ruby).",
+      "description": "A ruby annotation.",
       "properties": {
         "base": {
           "$ref": "#/definitions/RubyContentOptions",
@@ -16202,7 +16203,7 @@
     },
     "RubyPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Properties of a ruby annotation (CT_RubyPr).",
+      "description": "Properties of a ruby annotation.",
       "properties": {
         "alignment": {
           "description": "Alignment of the annotation text relative to its base text.",
@@ -16818,7 +16819,7 @@
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign,). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
           "enum": ["baseline", "subscript", "superscript"],
           "type": "string"
         },
@@ -17093,7 +17094,7 @@
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign,). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
           "enum": ["baseline", "subscript", "superscript"],
           "type": "string"
         },
@@ -17357,7 +17358,7 @@
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign,). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
           "enum": ["baseline", "subscript", "superscript"],
           "type": "string"
         },
@@ -17616,7 +17617,7 @@
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign,). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
           "enum": ["baseline", "subscript", "superscript"],
           "type": "string"
         },
@@ -17632,7 +17633,7 @@
     },
     "SampleDataOptions": {
       "additionalProperties": false,
-      "description": "dgm:sampData / dgm:styleData / dgm:clrData (CT_SampleData).",
+      "description": "dgm:sampData / dgm:styleData / dgm:clrData.",
       "properties": {
         "dataModel": {
           "$ref": "#/definitions/DataModelOptions"
@@ -17694,7 +17695,7 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst (CT_xxxSer tail — where c16:uniqueId lives) — verbatim round-trip.",
+          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
           "type": "string"
         },
         "formatCode": {
@@ -17777,7 +17778,7 @@
     },
     "Scene3DOptions": {
       "additionalProperties": false,
-      "description": "Options for a 3D scene (CT_Scene3D).\n\nBoth `camera` and `lightRig` are required. `backdrop` is optional.",
+      "description": "Options for a 3D scene. Both `camera` and `lightRig` are required. `backdrop` is optional.",
       "properties": {
         "backdrop": {
           "$ref": "#/definitions/BackdropOptions",
@@ -17832,7 +17833,7 @@
     },
     "SdtCellOptions": {
       "additionalProperties": false,
-      "description": "Options for a cell-level structured document tag (CT_SdtCell).",
+      "description": "Options for a cell-level structured document tag.",
       "properties": {
         "cells": {
           "description": "Cells wrapped by the SDT (sdtContent holds <w:tc>).",
@@ -17854,7 +17855,7 @@
     },
     "SdtCheckboxOptions": {
       "additionalProperties": false,
-      "description": "Options for a checkbox content control (CT_SdtCheckbox, w14:checkbox).\n\nWord 2010+ content control checkbox. When present, the SDT renders the current state symbol instead of its declared children.",
+      "description": "Options for a checkbox content control. Word 2010+ content control checkbox. When present, the SDT renders the current state symbol instead of its declared children.",
       "properties": {
         "checked": {
           "description": "Whether the checkbox is checked (default: false)",
@@ -17873,7 +17874,7 @@
     },
     "SdtCheckboxSymbol": {
       "additionalProperties": false,
-      "description": "Symbol for a checkbox content control state (CT_SdtCheckboxSymbol).\n\n`val` is a hex Unicode code point (e.g., \"2612\" for ☒); `font` defaults to \"MS Gothic\" per the OOXML specification.",
+      "description": "Symbol for a checkbox content control state. `val` is a hex Unicode code point (e.g., \"2612\" for ☒); `font` defaults to \"MS Gothic\" per the OOXML specification.",
       "properties": {
         "font": {
           "description": "Font face; defaults to \"MS Gothic\"",
@@ -17889,7 +17890,7 @@
     },
     "SdtComboBoxOptions": {
       "additionalProperties": false,
-      "description": "Options for comboBox SDT type (CT_SdtComboBox).",
+      "description": "Options for comboBox SDT type.",
       "properties": {
         "items": {
           "description": "List items",
@@ -17907,7 +17908,7 @@
     },
     "SdtDataBindingOptions": {
       "additionalProperties": false,
-      "description": "Data binding options (CT_DataBinding).",
+      "description": "Data binding options.",
       "properties": {
         "prefixMappings": {
           "description": "XML namespace prefix mappings",
@@ -17927,7 +17928,7 @@
     },
     "SdtDateOptions": {
       "additionalProperties": false,
-      "description": "Options for date SDT type (CT_SdtDate).",
+      "description": "Options for date SDT type.",
       "properties": {
         "calendar": {
           "description": "Calendar type",
@@ -17955,7 +17956,7 @@
     },
     "SdtDropDownListOptions": {
       "additionalProperties": false,
-      "description": "Options for dropDownList SDT type (CT_SdtDropDownList).",
+      "description": "Options for dropDownList SDT type.",
       "properties": {
         "items": {
           "description": "List items",
@@ -17973,7 +17974,7 @@
     },
     "SdtListItem": {
       "additionalProperties": false,
-      "description": "A list item for comboBox or dropDownList SDTs (CT_SdtListItem).",
+      "description": "A list item for comboBox or dropDownList SDTs.",
       "properties": {
         "displayText": {
           "description": "Display text shown in the UI",
@@ -17988,7 +17989,7 @@
     },
     "SdtPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Options for CT_SdtPr — structured document tag properties.",
+      "description": "Options for — structured document tag properties.",
       "properties": {
         "alias": {
           "description": "Display name",
@@ -18086,7 +18087,7 @@
         },
         "placeholder": {
           "additionalProperties": false,
-          "description": "Placeholder part reference (CT_Placeholder) — the building block Word inserts as placeholder content for this control.",
+          "description": "Placeholder part reference — the building block Word inserts as placeholder content for this control.",
           "properties": {
             "docPart": {
               "type": "string"
@@ -18127,7 +18128,7 @@
     },
     "SdtRowOptions": {
       "additionalProperties": false,
-      "description": "Options for a row-level structured document tag (CT_SdtRow).",
+      "description": "Options for a row-level structured document tag.",
       "properties": {
         "endProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
@@ -18149,7 +18150,7 @@
     },
     "SdtRunOptions": {
       "additionalProperties": false,
-      "description": "Options for an inline (run-level) structured document tag (CT_SdtRun).",
+      "description": "Options for an inline (run-level) structured document tag.",
       "properties": {
         "children": {
           "items": {
@@ -18177,7 +18178,7 @@
     },
     "SdtTextOptions": {
       "additionalProperties": false,
-      "description": "Options for plain text SDT type (CT_SdtText).",
+      "description": "Options for plain text SDT type.",
       "properties": {
         "multiLine": {
           "description": "Whether the text control supports multiple lines",
@@ -18188,7 +18189,7 @@
     },
     "SecondaryChartGroupOptions": {
       "additionalProperties": false,
-      "description": "Additional chart groups in a combo chart (CT_PlotArea may carry several\n*Chart groups; each secondary one shares the category source and the axes list with the main group).",
+      "description": "Additional chart groups in a combo chart.",
       "properties": {
         "axisIds": {
           "description": "axId pair referencing entries of the shared axes list.",
@@ -18464,7 +18465,7 @@
               "additionalProperties": false,
               "properties": {
                 "additionRsid": {
-                  "description": "Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string).",
+                  "description": "Revision save ID for the paragraph mark (w:rsidR, hex string).",
                   "type": "string"
                 },
                 "adjustRightInd": {
@@ -18804,7 +18805,7 @@
                         },
                         "insertion": {
                           "$ref": "#/definitions/NumberingInsertionOptions",
-                          "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                          "description": "Numbering applied as a revision (w:numPr/w:ins)"
                         },
                         "instance": {
                           "description": "Instance number for multiple lists with same reference",
@@ -18816,7 +18817,7 @@
                         },
                         "numberingChange": {
                           "additionalProperties": false,
-                          "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                          "description": "Numbering change tracking",
                           "properties": {
                             "author": {
                               "description": "Author of the change",
@@ -18856,7 +18857,7 @@
                         },
                         "levelOnly": {
                           "const": true,
-                          "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level (CT_NumPr leaves both children optional). Emits `<w:numPr>` with only the w:ilvl.",
+                          "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level. Emits `<w:numPr>` with only the w:ilvl.",
                           "type": "boolean"
                         }
                       },
@@ -18869,11 +18870,11 @@
                       "properties": {
                         "insertion": {
                           "$ref": "#/definitions/NumberingInsertionOptions",
-                          "description": "Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange)"
+                          "description": "Numbering applied as a revision (w:numPr/w:ins)"
                         },
                         "numberingChange": {
                           "additionalProperties": false,
-                          "description": "Numbering change tracking (CT_TrackChangeNumbering)",
+                          "description": "Numbering change tracking",
                           "properties": {
                             "author": {
                               "type": "string"
@@ -19554,7 +19555,7 @@
         },
         "captions": {
           "$ref": "#/definitions/CaptionsOptions",
-          "description": "Caption configuration (CT_Captions)"
+          "description": "Caption configuration"
         },
         "characterSpacingControl": {
           "description": "Controls whether punctuation is compressed at line ends",
@@ -19741,7 +19742,7 @@
         },
         "endnoteProperties": {
           "$ref": "#/definitions/DocumentEndnotePropertiesOptions",
-          "description": "Document-level endnote properties (CT_EdnDocProps, w:endnotePr)"
+          "description": "Document-level endnote properties"
         },
         "evenAndOddHeaders": {
           "description": "Enable different headers/footers for even and odd pages",
@@ -19749,7 +19750,7 @@
         },
         "footnoteProperties": {
           "$ref": "#/definitions/DocumentFootnotePropertiesOptions",
-          "description": "Document-level footnote properties (CT_FtnDocProps, w:footnotePr)"
+          "description": "Document-level footnote properties"
         },
         "forceUpgrade": {
           "description": "Force schema upgrade",
@@ -19865,7 +19866,7 @@
           "type": "object"
         },
         "rawXml": {
-          "description": "Verbatim inner XML of `<w:settings>` (all child elements). When set (from parse), generate emits it verbatim so the full CT_Settings content — compat flags, math properties, rsids, footnote/endnote properties, shape defaults, clrSchemeMapping, etc. (~100 element types, most without a structured API) — round-trips byte-for-byte. Delete this to fall back to structured generation.",
+          "description": "Verbatim inner XML of `<w:settings>` (all child elements). When set (from parse), generate emits it verbatim so the full content — compat flags, math properties, rsids, footnote/endnote properties, shape defaults, clrSchemeMapping, etc. (~100 element types, most without a structured API) — round-trips byte-for-byte. Delete this to fall back to structured generation.",
           "type": "string"
         },
         "readModeInkLockDown": {
@@ -19893,7 +19894,7 @@
         },
         "rsids": {
           "$ref": "#/definitions/RsidsOptions",
-          "description": "Document revision save IDs (CT_DocRsids)"
+          "description": "Document revision save IDs"
         },
         "saveFormsData": {
           "description": "Save only form field data",
@@ -20057,7 +20058,7 @@
         },
         "themeFontLang": {
           "additionalProperties": false,
-          "description": "Theme font languages (CT_Language): latin, eastAsian, and complex-script BCP-47 tags",
+          "description": "Theme font languages: latin, eastAsian, and complex-script BCP-47 tags",
           "properties": {
             "bidi": {
               "type": "string"
@@ -20265,7 +20266,7 @@
         },
         "contourColor": {
           "$ref": "#/definitions/SolidFillOptions",
-          "description": "Contour color (CT_Color / EG_ColorChoice)"
+          "description": "Contour color"
         },
         "contourW": {
           "description": "Contour width in EMUs (default 0)",
@@ -20273,7 +20274,7 @@
         },
         "extrusionColor": {
           "$ref": "#/definitions/SolidFillOptions",
-          "description": "Extrusion color (CT_Color / EG_ColorChoice)"
+          "description": "Extrusion color"
         },
         "extrusionH": {
           "description": "Extrusion height in EMUs (default 0)",
@@ -20371,7 +20372,7 @@
     },
     "ShapeDefaultsOptions": {
       "additionalProperties": false,
-      "description": "Shape defaults content (CT_ShapeDefaults) — the o: element sequence hosted by `<w:hdrShapeDefaults>` and `<w:shapeDefaults>`.",
+      "description": "Shape defaults content — the o: element sequence hosted by `<w:hdrShapeDefaults>` and `<w:shapeDefaults>`.",
       "properties": {
         "shapedefaults": {
           "$ref": "#/definitions/VmlShapeDefaultsOptions",
@@ -20576,7 +20577,7 @@
     },
     "ShapePropertiesOptions": {
       "additionalProperties": false,
-      "description": "Shape properties (CT_ShapeProperties children). Field order follows the XSD content model; the serializer emits in that order. Container-only attributes (bwMode, rotWithShape) and the wrapping tag are the caller's responsibility.",
+      "description": "Shape properties. Field order follows the XSD content model; the serializer emits in that order. Container-only attributes (bwMode, rotWithShape) and the wrapping tag are the caller's responsibility.",
       "properties": {
         "childExtentHeight": {
           "anyOf": [
@@ -20715,7 +20716,7 @@
     },
     "ShapeStyleOptions": {
       "additionalProperties": false,
-      "description": "Shape style (CT_ShapeStyle): line/fill/effect/font references into the document's theme. Word emits this for every shape that inherits theme styling.",
+      "description": "Shape style: line/fill/effect/font references into the document's theme. Word emits this for every shape that inherits theme styling.",
       "properties": {
         "effectReference": {
           "$ref": "#/definitions/ShapeStyleReferenceOptions"
@@ -20734,7 +20735,7 @@
     },
     "ShapeStyleReferenceOptions": {
       "additionalProperties": false,
-      "description": "A style-matrix reference (CT_StyleMatrixReference): an `idx` into the theme style matrix plus an optional color override.",
+      "description": "A style-matrix reference: an `idx` into the theme style matrix plus an optional color override.",
       "properties": {
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -20774,11 +20775,11 @@
           "type": "string"
         },
         "dirty": {
-          "description": "Field result is out of date (CT_SimpleField `@dirty`)",
+          "description": "Field result is out of date",
           "type": "boolean"
         },
         "fieldLock": {
-          "description": "Lock the field to prevent updates (CT_SimpleField `@fldLock`)",
+          "description": "Lock the field to prevent updates",
           "type": "boolean"
         },
         "instruction": {
@@ -20990,7 +20991,7 @@
     },
     "SourceTypeOptions": {
       "additionalProperties": false,
-      "description": "Options for a single bibliography source entry.\n\nMaps to CT_SourceType in the bibliography XSD schema (choice of 48 elements, all optional). All fields are optional — include only the relevant ones for each source type. `author` maps the structured CT_AuthorType role container.",
+      "description": "Options for a single bibliography source entry. Maps to in the bibliography XSD schema (choice of 48 elements, all optional). All fields are optional — include only the relevant ones for each source type. `author` maps the structured role container.",
       "properties": {
         "abbreviatedCaseNumber": {
           "type": "string"
@@ -21216,7 +21217,7 @@
     },
     "SphereCoords": {
       "additionalProperties": false,
-      "description": "Sphere coordinates (CT_SphereCoords).\n\nUsed for camera and light rig rotation. All angles are in degrees.",
+      "description": "Sphere coordinates. Used for camera and light rig rotation. All angles are in degrees.",
       "properties": {
         "lat": {
           "description": "Latitude angle in degrees (0–360).",
@@ -21246,7 +21247,7 @@
     },
     "StyleDefinitionOptions": {
       "additionalProperties": false,
-      "description": "dgm:styleDef (CT_StyleDefinition) — the quickStyle part root.",
+      "description": "dgm:styleDef — the quickStyle part root.",
       "properties": {
         "categories": {
           "description": "Gallery categories (dgm:catLst).",
@@ -21297,7 +21298,7 @@
     },
     "StyleLabelOptions": {
       "additionalProperties": false,
-      "description": "dgm:styleLbl (CT_StyleLabel) — formatting for one style slot.",
+      "description": "dgm:styleLbl — formatting for one style slot.",
       "properties": {
         "ext": {
           "description": "Raw a:extLst inner XML — verbatim round-trip.",
@@ -21317,7 +21318,7 @@
         },
         "style": {
           "$ref": "#/definitions/DefaultShapeStyleOptions",
-          "description": "Theme style-matrix references (dgm:style, a:CT_ShapeStyle)."
+          "description": "Theme style-matrix references (dgm:style, a:)."
         },
         "textProperties": {
           "$ref": "#/definitions/TextProperties3DOptions",
@@ -21378,15 +21379,15 @@
                 "type": "string"
               },
               "customStyle": {
-                "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
+                "description": "`@w:customStyle` — a user-defined custom style.",
                 "type": "boolean"
               },
               "default": {
-                "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
+                "description": "`@w:default` — the default style for its type.",
                 "type": "boolean"
               },
               "hidden": {
-                "description": "CT_Style w:hidden — style hidden from the UI (CT_OnOff).",
+                "description": "w:hidden — style hidden from the UI.",
                 "type": "boolean"
               },
               "id": {
@@ -21417,7 +21418,7 @@
                 "type": "boolean"
               },
               "rsid": {
-                "description": "CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim).",
+                "description": "w:rsid — revision save id.",
                 "type": "string"
               },
               "run": {
@@ -21465,11 +21466,11 @@
           "type": "object"
         },
         "latentStylesXml": {
-          "description": "Verbatim `<w:latentStyles>` XML (CT_LatentStyles + lsdException list). When set (from parse), generate uses it in place of the default factory's latent styles so the full latent-style table round-trips.",
+          "description": "Verbatim `<w:latentStyles>` XML. When set (from parse), generate uses it in place of the default factory's latent styles so the full latent-style table round-trips.",
           "type": "string"
         },
         "numberingStyles": {
-          "description": "Array of numbering style definitions (CT_Style type=\"numbering\").",
+          "description": "Array of numbering style definitions.",
           "items": {
             "$ref": "#/definitions/NumberingStyleOptions"
           },
@@ -21490,15 +21491,15 @@
                 "type": "string"
               },
               "customStyle": {
-                "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
+                "description": "`@w:customStyle` — a user-defined custom style.",
                 "type": "boolean"
               },
               "default": {
-                "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
+                "description": "`@w:default` — the default style for its type.",
                 "type": "boolean"
               },
               "hidden": {
-                "description": "CT_Style w:hidden — style hidden from the UI (CT_OnOff).",
+                "description": "w:hidden — style hidden from the UI.",
                 "type": "boolean"
               },
               "id": {
@@ -21532,7 +21533,7 @@
                 "type": "boolean"
               },
               "rsid": {
-                "description": "CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim).",
+                "description": "w:rsid — revision save id.",
                 "type": "string"
               },
               "run": {
@@ -21557,7 +21558,7 @@
           "type": "boolean"
         },
         "tableStyles": {
-          "description": "Array of custom table style definitions (CT_Style type=\"table\").",
+          "description": "Array of custom table style definitions.",
           "items": {
             "$ref": "#/definitions/TableStyleOptions"
           },
@@ -21580,7 +21581,7 @@
     },
     "SurfaceOptions": {
       "additionalProperties": false,
-      "description": "3D wall/floor surface (CT_Surface: thickness → spPr → pictureOptions).",
+      "description": "3D wall/floor surface.",
       "properties": {
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -22158,7 +22159,7 @@
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign,). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
+          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
           "enum": ["baseline", "subscript", "superscript"],
           "type": "string"
         },
@@ -22270,7 +22271,7 @@
     },
     "TableBordersOptions": {
       "additionalProperties": false,
-      "description": "Options for configuring table borders.\n\nBorders can be applied to the outside edges (top, bottom, left, right, start, end) and inside lines (insideHorizontal, insideVertical) of the table. start/end are the bidi-aware equivalents of left/right (CT_TblBorders carries both; Word emits whichever the table's direction selects).",
+      "description": "Options for configuring table borders. Borders can be applied to the outside edges (top, bottom, left, right, start, end) and inside lines (insideHorizontal, insideVertical) of the table. start/end are the bidi-aware equivalents of left/right.",
       "properties": {
         "bottom": {
           "$ref": "#/definitions/BorderOptions"
@@ -22313,11 +22314,11 @@
         },
         "insideHorizontal": {
           "$ref": "#/definitions/BorderOptions",
-          "description": "Inside horizontal border (CT_TcBorders/insideH)"
+          "description": "Inside horizontal border"
         },
         "insideVertical": {
           "$ref": "#/definitions/BorderOptions",
-          "description": "Inside vertical border (CT_TcBorders/insideV)"
+          "description": "Inside vertical border"
         },
         "left": {
           "$ref": "#/definitions/BorderOptions",
@@ -22348,7 +22349,7 @@
     },
     "TableCellMarginOptions": {
       "additionalProperties": false,
-      "description": "Options for configuring table cell margins (CT_TblCellMar).\n\nEach side is an independent CT_TblWidth ({ size, type }), mirroring TableWidthProperties / TableCellSpacingProperties. This is faithful to the XSD, which models CT_TblCellMar as a sequence of six CT_TblWidth elements — every side carries its own width and unit type (no shared `marginUnitType`).",
+      "description": "Options for configuring table cell margins. Each side is an independent ({ size, type }), mirroring TableWidthProperties / TableCellSpacingProperties. This is faithful to the XSD, which models as a sequence of six elements — every side carries its own width and unit type (no shared `marginUnitType`).",
       "properties": {
         "bottom": {
           "$ref": "#/definitions/TableWidthProperties",
@@ -22785,7 +22786,7 @@
           "type": "boolean"
         },
         "val": {
-          "description": "Legacy hex bitmask (w:val,) — Word 2007 wrote it alone (e.g. \"04A0\"), Word 2010+ writes the explicit booleans. Round-tripped verbatim as a string so leading zeros survive; authoring needs only the boolean fields.",
+          "description": "Legacy hex bitmask (w:val) — Word 2007 wrote it alone (e.g. \"04A0\"), Word 2010+ writes the explicit booleans. Round-tripped verbatim as a string so leading zeros survive; authoring needs only the boolean fields.",
           "type": "string"
         }
       },
@@ -22925,7 +22926,7 @@
         },
         "tableLook": {
           "$ref": "#/definitions/TableLookOptions",
-          "description": "Explicit w:tblLook content (CT_TblLook). The base 6-flags above are the authoring shorthand for the boolean attributes; this carries the full element including the legacy w:val hex bitmask only old Word files write."
+          "description": "Explicit w:tblLook content. The base 6-flags above are the authoring shorthand for the boolean attributes; this carries the full element including the legacy w:val hex bitmask only old Word files write."
         },
         "visuallyRightToLeft": {
           "type": "boolean"
@@ -23173,7 +23174,7 @@
         },
         "tblPrExChange": {
           "$ref": "#/definitions/TablePropertyExChangeOptions",
-          "description": "Table property exceptions change tracking (CT_TblPrExChange)"
+          "description": "Table property exceptions change tracking"
         },
         "width": {
           "$ref": "#/definitions/TableWidthProperties"
@@ -23584,7 +23585,7 @@
     },
     "TableStyleOptions": {
       "additionalProperties": false,
-      "description": "Table style (CT_Style type=\"table\").",
+      "description": "Table style.",
       "properties": {
         "aliases": {
           "type": "string"
@@ -23597,25 +23598,25 @@
         },
         "cell": {
           "$ref": "#/definitions/TableCellPropertiesOptions",
-          "description": "Table cell properties (CT_TcPr)."
+          "description": "Table cell properties."
         },
         "conditionalFormats": {
-          "description": "Conditional formats per region (CT_TblStylePr, unbounded).",
+          "description": "Conditional formats per region.",
           "items": {
             "$ref": "#/definitions/ConditionalTableStyleOptions"
           },
           "type": "array"
         },
         "customStyle": {
-          "description": "CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff).",
+          "description": "`@w:customStyle` — a user-defined custom style.",
           "type": "boolean"
         },
         "default": {
-          "description": "CT_Style `@w:default` — the default style for its type (CT_OnOff).",
+          "description": "`@w:default` — the default style for its type.",
           "type": "boolean"
         },
         "hidden": {
-          "description": "CT_Style w:hidden — style hidden from the UI (CT_OnOff).",
+          "description": "w:hidden — style hidden from the UI.",
           "type": "boolean"
         },
         "id": {
@@ -23635,7 +23636,7 @@
         },
         "paragraph": {
           "$ref": "#/definitions/ParagraphStylePropertiesOptions",
-          "description": "Paragraph properties (CT_PPrGeneral)."
+          "description": "Paragraph properties."
         },
         "personal": {
           "type": "boolean"
@@ -23651,22 +23652,22 @@
         },
         "row": {
           "$ref": "#/definitions/TableRowPropertiesOptions",
-          "description": "Table row properties (CT_TrPr)."
+          "description": "Table row properties."
         },
         "rsid": {
-          "description": "CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim).",
+          "description": "w:rsid — revision save id.",
           "type": "string"
         },
         "run": {
           "$ref": "#/definitions/RunStylePropertiesOptions",
-          "description": "Run properties (CT_RPr)."
+          "description": "Run properties."
         },
         "semiHidden": {
           "type": "boolean"
         },
         "table": {
           "$ref": "#/definitions/TablePropertiesOptions",
-          "description": "Table properties (CT_TblPrBase)."
+          "description": "Table properties."
         },
         "uiPriority": {
           "type": "number"
@@ -23679,7 +23680,7 @@
       "type": "object"
     },
     "TableStyleOverrideType": {
-      "description": "OOXML tokens verbatim (CT_TblStylePr `@w:type`).",
+      "description": "OOXML tokens verbatim.",
       "enum": [
         "wholeTable",
         "firstRow",
@@ -23917,7 +23918,7 @@
         },
         "highlight": {
           "$ref": "#/definitions/SolidFillOptions",
-          "description": "a:highlight (CT_Color) — text highlight color."
+          "description": "a:highlight — text highlight color."
         },
         "hyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions"
@@ -23937,7 +23938,7 @@
         },
         "mouseoverHyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
+          "description": "a:hlinkMouseOver — hover hyperlink."
         },
         "noProof": {
           "type": "boolean"
@@ -23955,7 +23956,7 @@
               "$ref": "#/definitions/OutlineOptions"
             }
           ],
-          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
+          "description": "a:ln. `true` emits a sane default; a full OutlineOptions round-trips."
         },
         "rightToLeft": {
           "type": "boolean"
@@ -24029,7 +24030,7 @@
         },
         "paragraphProperties": {
           "$ref": "#/definitions/TextParagraphPropertiesOptions",
-          "description": "a:pPr — paragraph properties (CT_TextParagraphProperties)."
+          "description": "a:pPr — paragraph properties."
         },
         "properties": {
           "$ref": "#/definitions/TextCharacterPropertiesOptions",
@@ -24074,7 +24075,7 @@
           "type": "object"
         }
       ],
-      "description": "A script typeface (CT_TextFont). A bare string is the typeface only; the full object carries panose/pitchFamily/charset for embedded font metrics."
+      "description": "A script typeface. A bare string is the typeface only; the full object carries panose/pitchFamily/charset for embedded font metrics."
     },
     "TextHorzOverflow": {
       "description": "Text horizontal overflow type.",
@@ -24144,7 +24145,7 @@
     },
     "TextListStyleOptions": {
       "additionalProperties": false,
-      "description": "A bare CT_TextListStyle — a:defPPr plus up to 9 outline levels. The shape of a:lstStyle inside a txBody, p:notesStyle, and p:defaultTextStyle.",
+      "description": "A bare — a:defPPr plus up to 9 outline levels. The shape of a:lstStyle inside a txBody, p:notesStyle, and p:defaultTextStyle.",
       "properties": {
         "defaultParagraph": {
           "$ref": "#/definitions/TextParagraphPropertiesOptions",
@@ -24185,14 +24186,14 @@
         },
         "defaultRunProperties": {
           "$ref": "#/definitions/TextCharacterPropertiesOptions",
-          "description": "a:defRPr — default run properties for the paragraph (CT_TextCharacterProperties)."
+          "description": "a:defRPr — default run properties for the paragraph."
         },
         "eastAsianLineBreak": {
           "description": "`@eaLnBrk` — East Asian line break.",
           "type": "boolean"
         },
         "ext": {
-          "description": "Verbatim inner XML of a:extLst (last child per CT_TextParagraphProperties).",
+          "description": "Verbatim inner XML of a:extLst (last child per).",
           "type": "string"
         },
         "fontAlignment": {
@@ -24261,7 +24262,7 @@
     },
     "TextProperties3DOptions": {
       "additionalProperties": false,
-      "description": "dgm:txPr (CT_TextProps) — a choice of 3D text treatments (EG_Text3D).",
+      "description": "dgm:txPr — a choice of 3D text treatments (EG_Text3D).",
       "properties": {
         "flatText": {
           "description": "Flatten text to a plane at this z coordinate, EMU (a:flatTx `@z`).",
@@ -24312,7 +24313,7 @@
         },
         "highlight": {
           "$ref": "#/definitions/SolidFillOptions",
-          "description": "a:highlight (CT_Color) — text highlight color."
+          "description": "a:highlight — text highlight color."
         },
         "hyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions"
@@ -24332,7 +24333,7 @@
         },
         "mouseoverHyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "a:hlinkMouseOver — hover hyperlink (CT_Hyperlink)."
+          "description": "a:hlinkMouseOver — hover hyperlink."
         },
         "noProof": {
           "type": "boolean"
@@ -24350,7 +24351,7 @@
               "$ref": "#/definitions/OutlineOptions"
             }
           ],
-          "description": "a:ln (CT_LineProperties). `true` emits a sane default; a full OutlineOptions round-trips."
+          "description": "a:ln. `true` emits a sane default; a full OutlineOptions round-trips."
         },
         "rightToLeft": {
           "type": "boolean"
@@ -24750,11 +24751,11 @@
           "type": "object"
         }
       ],
-      "description": "Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/ w:moveTo, CT_RunTrackChange) — runs, the comment range markers Word anchors directly inside the wrapper, complete field chains, and nested same-type wrappers."
+      "description": "Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/ w:moveTo) — runs, the comment range markers Word anchors directly inside the wrapper, complete field chains, and nested same-type wrappers."
     },
     "TransformEffectOptions": {
       "additionalProperties": false,
-      "description": "Transform effect — scale, skew, translate (CT_TransformEffect).",
+      "description": "Transform effect — scale, skew, translate.",
       "properties": {
         "scaleX": {
           "description": "Horizontal scale percentage (default 100%)",
@@ -24785,7 +24786,7 @@
     },
     "TrendlineLabelOptions": {
       "additionalProperties": false,
-      "description": "Trendline label formatting (CT_TrendlineLbl — all children optional).",
+      "description": "Trendline label formatting.",
       "properties": {
         "numberFormat": {
           "description": "Number format applied to the trendline label (c:numFmt formatCode).",
@@ -24849,7 +24850,7 @@
     },
     "VariableListOptions": {
       "additionalProperties": false,
-      "description": "dgm:varLst (CT_LayoutVariablePropertySet).",
+      "description": "dgm:varLst.",
       "properties": {
         "animateLevel": {
           "$ref": "#/definitions/AnimationLevel",
@@ -24910,7 +24911,7 @@
     },
     "Vector3D": {
       "additionalProperties": false,
-      "description": "3D vector (CT_Vector3D).",
+      "description": "3D vector.",
       "properties": {
         "dx": {
           "type": "number"
@@ -24978,7 +24979,7 @@
           "type": "number"
         },
         "hPercent": {
-          "description": "Height percentage of the chart (XSD CT_HPercent).",
+          "description": "Height percentage of the chart (XSD).",
           "type": "number"
         },
         "perspective": {
@@ -24998,12 +24999,12 @@
     },
     "VmlAnchorLockOptions": {
       "additionalProperties": false,
-      "description": "w10:anchorlock options (CT_AnchorLock) — empty marker element.",
+      "description": "w10:anchorlock options — empty marker element.",
       "type": "object"
     },
     "VmlArcOptions": {
       "additionalProperties": false,
-      "description": "v:arc options (CT_Arc).",
+      "description": "v:arc options.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -25192,7 +25193,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -25284,7 +25285,7 @@
     },
     "VmlBorderOptions": {
       "additionalProperties": false,
-      "description": "w10:bordertop/borderleft/borderright/borderbottom options (CT_Border).",
+      "description": "w10:bordertop/borderleft/borderright/borderbottom options.",
       "properties": {
         "shadow": {
           "$ref": "#/definitions/VmlTrueFalseBlank"
@@ -25339,7 +25340,7 @@
     },
     "VmlCalloutOptions": {
       "additionalProperties": false,
-      "description": "o:callout options (CT_Callout).",
+      "description": "o:callout options.",
       "properties": {
         "accentbar": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -25388,7 +25389,7 @@
     },
     "VmlClientDataOptions": {
       "additionalProperties": false,
-      "description": "x:ClientData options (CT_ClientData).",
+      "description": "x:ClientData options.",
       "properties": {
         "Accel": {
           "type": "number"
@@ -25627,7 +25628,7 @@
     },
     "VmlClipPathOptions": {
       "additionalProperties": false,
-      "description": "o:clippath options (CT_ClipPath). The path attribute is qualified: `v:v`.",
+      "description": "o:clippath options. The path attribute is qualified: `v:v`.",
       "properties": {
         "v": {
           "description": "Path command string, serialized as the `v:v` attribute.",
@@ -25643,7 +25644,7 @@
     },
     "VmlColorMenuOptions": {
       "additionalProperties": false,
-      "description": "o:colormenu options (CT_ColorMenu) — the palette slots.",
+      "description": "o:colormenu options — the palette slots.",
       "properties": {
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
@@ -25669,7 +25670,7 @@
     },
     "VmlColorMruOptions": {
       "additionalProperties": false,
-      "description": "o:colormru options (CT_ColorMru) — the recently-used color list.",
+      "description": "o:colormru options — the recently-used color list.",
       "properties": {
         "colors": {
           "type": "string"
@@ -25682,7 +25683,7 @@
     },
     "VmlComplexOptions": {
       "additionalProperties": false,
-      "description": "o:complex options (CT_Complex) — the extension slot at the end of CT_Shapetype.",
+      "description": "o:complex options — the extension slot at the end of.",
       "properties": {
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
@@ -25702,7 +25703,7 @@
     },
     "VmlCurveOptions": {
       "additionalProperties": false,
-      "description": "v:curve options (CT_Curve).",
+      "description": "v:curve options.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -25896,7 +25897,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -25974,7 +25975,7 @@
     },
     "VmlDiagramOptions": {
       "additionalProperties": false,
-      "description": "o:diagram options (CT_Diagram) — legacy org-chart/diagram shape group.",
+      "description": "o:diagram options — legacy org-chart/diagram shape group.",
       "properties": {
         "autoformat": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -26017,7 +26018,7 @@
     },
     "VmlDiagramRelationOptions": {
       "additionalProperties": false,
-      "description": "CT_Relation — one relationtable row.",
+      "description": "one relationtable row.",
       "properties": {
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
@@ -26040,7 +26041,7 @@
     },
     "VmlEquationXmlOptions": {
       "additionalProperties": false,
-      "description": "o:equationxml options (CT_EquationXml) — the alternative math content, carried as verbatim inner XML (the XSD allows any single element).",
+      "description": "o:equationxml options — the alternative math content, carried as verbatim inner XML (the XSD allows any single element).",
       "properties": {
         "content": {
           "description": "Inner XML of the alternate equation element, serialized verbatim.",
@@ -26059,7 +26060,7 @@
     },
     "VmlExtrusionOptions": {
       "additionalProperties": false,
-      "description": "o:extrusion options (CT_Extrusion).",
+      "description": "o:extrusion options.",
       "properties": {
         "autorotationcenter": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -26181,7 +26182,7 @@
     },
     "VmlFillOptions": {
       "additionalProperties": false,
-      "description": "v:fill options (CT_Fill).",
+      "description": "v:fill options.",
       "properties": {
         "alignshape": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -26285,7 +26286,7 @@
     },
     "VmlFormulasOptions": {
       "additionalProperties": false,
-      "description": "v:formulas options (CT_Formulas).",
+      "description": "v:formulas options.",
       "properties": {
         "equations": {
           "description": "Equation strings, each becoming a `<v:f eqn=\"…\"/>` child.",
@@ -26299,7 +26300,7 @@
     },
     "VmlGroupOptions": {
       "additionalProperties": false,
-      "description": "v:group options (CT_Group) — full attr vocabulary + fill subset + nested shapes.",
+      "description": "v:group options — full attr vocabulary + fill subset + nested shapes.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -26497,7 +26498,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -26574,7 +26575,7 @@
     },
     "VmlHandleOptions": {
       "additionalProperties": false,
-      "description": "v:h options (CT_H). `switch` matches the XML attribute name.",
+      "description": "v:h options. `switch` matches the XML attribute name.",
       "properties": {
         "invx": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -26608,7 +26609,7 @@
     },
     "VmlHandlesOptions": {
       "additionalProperties": false,
-      "description": "v:handles options (CT_Handles).",
+      "description": "v:handles options.",
       "properties": {
         "handles": {
           "items": {
@@ -26630,7 +26631,7 @@
     },
     "VmlIdMapOptions": {
       "additionalProperties": false,
-      "description": "o:idmap options (CT_IdMap).",
+      "description": "o:idmap options.",
       "properties": {
         "data": {
           "description": "Space-separated shape-id prefixes, e.g. \"1 2 3\".",
@@ -26648,7 +26649,7 @@
     },
     "VmlImageDataOptions": {
       "additionalProperties": false,
-      "description": "v:imagedata options (CT_ImageData).",
+      "description": "v:imagedata options.",
       "properties": {
         "bilevel": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -26737,7 +26738,7 @@
     },
     "VmlImageOptions": {
       "additionalProperties": false,
-      "description": "v:image options (CT_Image) — AG_ImageAttributes rides along.",
+      "description": "v:image options — AG_ImageAttributes rides along.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -26949,7 +26950,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -27022,7 +27023,7 @@
     },
     "VmlInkOptions": {
       "additionalProperties": false,
-      "description": "o:ink options (CT_Ink) — Tablet PC ink annotation data.",
+      "description": "o:ink options — Tablet PC ink annotation data.",
       "properties": {
         "annotation": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -27045,12 +27046,12 @@
     },
     "VmlIsCommentOptions": {
       "additionalProperties": false,
-      "description": "pvml:iscomment options (CT_Empty) — empty marker element.",
+      "description": "pvml:iscomment options — empty marker element.",
       "type": "object"
     },
     "VmlLineOptions": {
       "additionalProperties": false,
-      "description": "v:line options (CT_Line).",
+      "description": "v:line options.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -27238,7 +27239,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -27311,7 +27312,7 @@
     },
     "VmlLockOptions": {
       "additionalProperties": false,
-      "description": "o:lock options (CT_Lock) — a true flag locks the capability.",
+      "description": "o:lock options — a true flag locks the capability.",
       "properties": {
         "adjusthandles": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -27354,7 +27355,7 @@
     },
     "VmlOfficeFillOptions": {
       "additionalProperties": false,
-      "description": "o:fill options (CT_Fill) — the o: extension child of v:fill.",
+      "description": "o:fill options — the o: extension child of v:fill.",
       "properties": {
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
@@ -27382,7 +27383,7 @@
     },
     "VmlOvalOptions": {
       "additionalProperties": false,
-      "description": "v:oval options (CT_Oval).",
+      "description": "v:oval options.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -27567,7 +27568,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -27637,7 +27638,7 @@
     },
     "VmlPathOptions": {
       "additionalProperties": false,
-      "description": "v:path options (CT_Path).",
+      "description": "v:path options.",
       "properties": {
         "arrowok": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -27694,7 +27695,7 @@
     },
     "VmlPolylineOptions": {
       "additionalProperties": false,
-      "description": "v:polyline options (CT_PolyLine).",
+      "description": "v:polyline options.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -27886,7 +27887,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -27956,7 +27957,7 @@
     },
     "VmlRectOptions": {
       "additionalProperties": false,
-      "description": "v:rect options (CT_Rect).",
+      "description": "v:rect options.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -28141,7 +28142,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -28211,7 +28212,7 @@
     },
     "VmlRegroupEntryOptions": {
       "additionalProperties": false,
-      "description": "CT_Entry — one regroup-table row.",
+      "description": "one regroup-table row.",
       "properties": {
         "new": {
           "type": "number"
@@ -28224,7 +28225,7 @@
     },
     "VmlRegroupTableOptions": {
       "additionalProperties": false,
-      "description": "o:regrouptable options (CT_RegroupTable).",
+      "description": "o:regrouptable options.",
       "properties": {
         "entries": {
           "items": {
@@ -28240,7 +28241,7 @@
     },
     "VmlRoundRectOptions": {
       "additionalProperties": false,
-      "description": "v:roundrect options (CT_RoundRect).",
+      "description": "v:roundrect options.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -28428,7 +28429,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -28502,7 +28503,7 @@
     },
     "VmlRuleOptions": {
       "additionalProperties": false,
-      "description": "CT_R — one layout rule.",
+      "description": "one layout rule.",
       "properties": {
         "how": {
           "$ref": "#/definitions/VmlRuleHow"
@@ -28528,7 +28529,7 @@
     },
     "VmlRuleProxyOptions": {
       "additionalProperties": false,
-      "description": "CT_Proxy — one rule proxy.",
+      "description": "one rule proxy.",
       "properties": {
         "connectloc": {
           "type": "number"
@@ -28567,7 +28568,7 @@
     },
     "VmlRulesOptions": {
       "additionalProperties": false,
-      "description": "o:rules options (CT_Rules).",
+      "description": "o:rules options.",
       "properties": {
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
@@ -28583,7 +28584,7 @@
     },
     "VmlShadowOptions": {
       "additionalProperties": false,
-      "description": "v:shadow options (CT_Shadow).",
+      "description": "v:shadow options.",
       "properties": {
         "color": {
           "$ref": "#/definitions/VmlColor"
@@ -28753,7 +28754,7 @@
     },
     "VmlShapeDefaultsOptions": {
       "additionalProperties": false,
-      "description": "o:shapedefaults options (CT_ShapeDefaults).",
+      "description": "o:shapedefaults options.",
       "properties": {
         "allowincell": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -28816,7 +28817,7 @@
     },
     "VmlShapeLayoutOptions": {
       "additionalProperties": false,
-      "description": "o:shapelayout options (CT_ShapeLayout).",
+      "description": "o:shapelayout options.",
       "properties": {
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
@@ -28835,7 +28836,7 @@
     },
     "VmlShapeOptions": {
       "additionalProperties": false,
-      "description": "v:shape options (CT_Shape).",
+      "description": "v:shape options.",
       "properties": {
         "adj": {
           "description": "AG_Adj — adjustment values, e.g. \"1,500\".",
@@ -29044,7 +29045,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -29242,7 +29243,7 @@
     },
     "VmlShapetypeOptions": {
       "additionalProperties": false,
-      "description": "v:shapetype options (CT_Shapetype).",
+      "description": "v:shapetype options.",
       "properties": {
         "adj": {
           "type": "string"
@@ -29438,7 +29439,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
           "type": "string"
         },
         "regroupid": {
@@ -29508,7 +29509,7 @@
     },
     "VmlSignatureLineOptions": {
       "additionalProperties": false,
-      "description": "o:signatureline options (CT_SignatureLine).",
+      "description": "o:signatureline options.",
       "properties": {
         "addlxml": {
           "type": "string"
@@ -29555,7 +29556,7 @@
     },
     "VmlSkewOptions": {
       "additionalProperties": false,
-      "description": "o:skew options (CT_Skew).",
+      "description": "o:skew options.",
       "properties": {
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
@@ -29592,7 +29593,7 @@
     },
     "VmlStrokeChildOptions": {
       "additionalProperties": false,
-      "description": "o:left/top/right/bottom/column options (CT_StrokeChild) — the per-edge sub-strokes of v:stroke, sharing most of the stroke vocabulary.",
+      "description": "o:left/top/right/bottom/column options — the per-edge sub-strokes of v:stroke, sharing most of the stroke vocabulary.",
       "properties": {
         "color": {
           "$ref": "#/definitions/VmlColor"
@@ -29696,7 +29697,7 @@
     },
     "VmlStrokeOptions": {
       "additionalProperties": false,
-      "description": "v:stroke options (CT_Stroke / AG_StrokeAttributes).",
+      "description": "v:stroke options.",
       "properties": {
         "bottomStroke": {
           "$ref": "#/definitions/VmlStrokeChildOptions"
@@ -29813,7 +29814,7 @@
     },
     "VmlTextDataOptions": {
       "additionalProperties": false,
-      "description": "pvml:textdata options (CT_Rel).",
+      "description": "pvml:textdata options.",
       "properties": {
         "id": {
           "description": "Relationship id — bridged by the caller.",
@@ -29824,7 +29825,7 @@
     },
     "VmlTextPathOptions": {
       "additionalProperties": false,
-      "description": "v:textpath options (CT_TextPath).",
+      "description": "v:textpath options.",
       "properties": {
         "fitpath": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -29902,7 +29903,7 @@
     },
     "VmlTextboxOptions": {
       "additionalProperties": false,
-      "description": "v:textbox options (CT_Textbox).",
+      "description": "v:textbox options.",
       "properties": {
         "content": {
           "description": "Verbatim inner XML for a local (unqualified) child — Excel's `<div>` form.",
@@ -29955,7 +29956,7 @@
     },
     "VmlWrapOptions": {
       "additionalProperties": false,
-      "description": "w10:wrap options (CT_Wrap).",
+      "description": "w10:wrap options.",
       "properties": {
         "anchorx": {
           "$ref": "#/definitions/VmlHorizontalAnchor"
@@ -29982,7 +29983,7 @@
     },
     "WebFrameOptions": {
       "additionalProperties": false,
-      "description": "Frameset and Frame type definitions for webSettings.xml.\n\nFramesets define a frames-based layout within a Word document (web layout). XML generation is handled by the descriptor at compile/descriptors/web-settings.ts.\n\nReference: OOXML transitional, wml.xsd, CT_Frameset / CT_Frame",
+      "description": "Frameset and Frame type definitions for webSettings.xml. Framesets define a frames-based layout within a Word document (web layout). XML generation is handled by the descriptor at compile/descriptors/web-settings.ts. Reference: OOXML transitional, wml.xsd, /",
       "properties": {
         "linkedToFile": {
           "type": "boolean"
@@ -30028,7 +30029,7 @@
     },
     "WebSettingsOptions": {
       "additionalProperties": false,
-      "description": "Options for web settings (CT_WebSettings).",
+      "description": "Options for web settings.",
       "properties": {
         "allowPNG": {
           "description": "Allow PNG image format in web output",
@@ -30108,14 +30109,14 @@
     },
     "WhenOptions": {
       "additionalProperties": false,
-      "description": "One alternative inside a choose — dgm:if (CT_When); `if` is a reserved word.",
+      "description": "One alternative inside a choose — dgm:if; `if` is a reserved word.",
       "properties": {
         "argument": {
           "description": "Function argument, usually a variable name (dgm:if `@arg`).",
           "type": "string"
         },
         "axis": {
-          "description": "Selection axes, space-separated (dgm:`@axis`,).",
+          "description": "Selection axes, space-separated (dgm:`@axis`).",
           "type": "string"
         },
         "children": {
@@ -30125,7 +30126,7 @@
           "type": "array"
         },
         "count": {
-          "description": "Iteration count (dgm:`@cnt`,).",
+          "description": "Iteration count (dgm:`@cnt`).",
           "type": "string"
         },
         "function": {
@@ -30133,7 +30134,7 @@
           "description": "Selection function (dgm:if `@func`)."
         },
         "hideLastTransition": {
-          "description": "Hide the last transition point (dgm:`@hideLastTrans`,).",
+          "description": "Hide the last transition point (dgm:`@hideLastTrans`).",
           "type": "string"
         },
         "name": {
@@ -30144,15 +30145,15 @@
           "description": "Comparison operator (dgm:if `@op`)."
         },
         "pointType": {
-          "description": "Selected point kinds, space-separated (dgm:`@ptType`,).",
+          "description": "Selected point kinds, space-separated (dgm:`@ptType`).",
           "type": "string"
         },
         "start": {
-          "description": "Start index (dgm:`@st`,).",
+          "description": "Start index (dgm:`@st`).",
           "type": "string"
         },
         "step": {
-          "description": "Index step (dgm:`@step`,).",
+          "description": "Index step (dgm:`@step`).",
           "type": "string"
         },
         "value": {
@@ -30196,7 +30197,7 @@
     },
     "WriteProtectionOptions": {
       "additionalProperties": false,
-      "description": "Options for write protection (read-only recommendation, not enforcement).\n\nReference: ISO/IEC 29500-4, wml.xsd, CT_WriteProtection",
+      "description": "Options for write protection (read-only recommendation, not enforcement). Reference: ISO/IEC 29500-4, wml.xsd,",
       "properties": {
         "algorithmExtensionId": {
           "type": "number"
@@ -30273,7 +30274,7 @@
     },
     "XYAdjustHandle": {
       "additionalProperties": false,
-      "description": "XY adjust handle (CT_XYAdjustHandle).\n\nAllows the user to drag a handle in X/Y directions.",
+      "description": "XY adjust handle. Allows the user to drag a handle in X/Y directions.",
       "properties": {
         "guideRefX": {
           "type": "string"

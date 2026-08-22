@@ -93,6 +93,7 @@ export interface LayoutDefinition {
   themeOverride?: ThemeOverrideOptions;
 }
 
+/** A slide master plus its theme and layout family (p:sldMaster + p:sldLayout children). */
 export interface MasterDefinition extends SlideMasterOptions {
   name?: string;
   theme?: ThemeOptions;
@@ -115,6 +116,7 @@ export interface SlideCommentOptions {
 export type SlideAnimation = AnimationEntry;
 export type { AnimationsOptions } from "@shared/animation/timing";
 
+/** One slide (p:sld) — children, notes, transition, and slide-level settings. */
 export interface SlideOptions {
   children?: SlideChild[];
   background?: BackgroundOptions;
@@ -153,6 +155,7 @@ export interface SlideOptions {
   section?: string;
 }
 
+/** Slide-show setup (p:presentation > p:showPr). */
 export interface ShowOptions {
   loop?: boolean;
   /** Slide-show mode: "present" full screen, "browse" in a window, "kiosk" full screen, no exit. */
@@ -168,6 +171,7 @@ export interface ShowOptions {
   ext?: string;
 }
 
+/** Root options for a .pptx package — maps to presentation.xml plus its satellite parts. */
 export interface PresentationOptions extends CorePropertiesOptions {
   size?: SlideSize;
   /**
