@@ -29,6 +29,7 @@
  * @module
  */
 import type { ThemeColor } from "@office-open/core";
+import type { HexColorOrAuto, UcharHexNumber } from "@office-open/core";
 import { attr, attrBool, attrNum } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -48,14 +49,14 @@ export interface BorderOptions {
    * "thickThinSmallGap"/"thinThickThinSmallGap" (…) compound lines, "nil" none.
    */
   style: (typeof BorderStyle)[keyof typeof BorderStyle];
-  /** Border color, in hex (eg 'FF00AA') */
-  color?: string;
+  /** Border color, "auto" or hex (eg 'FF00AA') */
+  color?: HexColorOrAuto;
   /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
   themeColor?: ThemeColor;
   /** Theme color tint (2-char hex) */
-  themeTint?: string;
+  themeTint?: UcharHexNumber;
   /** Theme color shade (2-char hex) */
-  themeShade?: string;
+  themeShade?: UcharHexNumber;
   /** Border shadow */
   shadow?: boolean;
   /** Border frame */

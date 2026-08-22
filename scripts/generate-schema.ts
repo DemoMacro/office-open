@@ -106,6 +106,65 @@ const PATTERN_OVERRIDES: Record<
     description: "Relative measurement string: number followed by em or ex.",
     examples: ["1.5em", "2ex"],
   },
+  // Constrained string domains (core util/values.ts) — XSD facets that no
+  // enumeration can express, restored as regex on the alias definitions.
+  HexColor: {
+    pattern: "^[0-9A-Fa-f]{6}$",
+    description: "6-digit hex RGB color without '#' (e.g. FF0000).",
+    examples: ["FF0000", "4472C4"],
+  },
+  ArgbHexColor: {
+    pattern: "^[0-9A-Fa-f]{8}$",
+    description: "8-digit hex ARGB color with the alpha channel first (e.g. FF4472C4).",
+    examples: ["FF4472C4", "FFED7D31"],
+  },
+  HexColorOrAuto: {
+    pattern: "^(auto|[0-9A-Fa-f]{6})$",
+    description: '"auto" or a 6-digit hex RGB color without "#".',
+    examples: ["auto", "FF0000"],
+  },
+  Guid: {
+    pattern: "^\\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\\}$",
+    description: "GUID in braced upper-case form (ST_Guid).",
+    examples: ["{1DF903F5-8FC7-4C6A-9DF9-2AB1D10E6D84}"],
+  },
+  Panose: {
+    pattern: "^[0-9A-Fa-f]{20}$",
+    description: "20-digit hex Panose-1 font classification (ST_Panose).",
+    examples: ["020F0502020204030204"],
+  },
+  LongHexNumber: {
+    pattern: "^[0-9A-Fa-f]{8}$",
+    description: "8-digit hex number (ST_LongHexNumber) — rsid or font signature.",
+    examples: ["00A1B2C3"],
+  },
+  ShortHexNumber: {
+    pattern: "^[0-9A-Fa-f]{4}$",
+    description: "4-digit hex number (ST_ShortHexNumber).",
+    examples: ["00A1"],
+  },
+  UcharHexNumber: {
+    pattern: "^[0-9A-Fa-f]{2}$",
+    description: "2-digit hex byte (ST_UcharHexNumber) — theme tint/shade.",
+    examples: ["99"],
+  },
+  UnsignedShortHex: {
+    pattern: "^[0-9A-Fa-f]{4}$",
+    description: "4-digit hex number (ST_UnsignedShortHex) — legacy password hash.",
+    examples: ["83AF"],
+  },
+  Base64: {
+    pattern: "^[A-Za-z0-9+/]*={0,2}$",
+    description: "Base64-encoded bytes (xsd:base64Binary) — password hash or salt.",
+    examples: ["Hh8eLiw+KTpAPT4nPj8="],
+  },
+  RichTextColor: {
+    pattern: "^([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8}|[0-9]+|theme:[0-9]+)$",
+    description:
+      'Color as the parse encoding: 6-digit RGB ("FF0000"), 8-digit ARGB (' +
+      '"FFFF0000"), a legacy palette index ("10"), or "theme:N".',
+    examples: ["FF0000", "FFFF0000", "10", "theme:4"],
+  },
 };
 
 /**

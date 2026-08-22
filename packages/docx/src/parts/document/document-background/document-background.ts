@@ -10,6 +10,7 @@
  */
 import type { DataType } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
+import type { HexColorOrAuto, UcharHexNumber } from "@office-open/core";
 
 /**
  * Image options for document background.
@@ -29,14 +30,14 @@ export interface BackgroundImageOptions {
  * @see {@link DocumentBackground}
  */
 export interface DocumentBackgroundOptions {
-  /** Background color in hex format (e.g., "FF0000" for red) */
-  color?: string;
+  /** Background color, "auto" or hex format (e.g., "FF0000" for red) */
+  color?: HexColorOrAuto;
   /** Theme color name (w:themeColor, ST_ThemeColor — e.g. "accent1", "dark1") */
   themeColor?: ThemeColor;
   /** Theme shade value (darkens the theme color) */
-  themeShade?: string;
+  themeShade?: UcharHexNumber;
   /** Theme tint value (lightens the theme color) */
-  themeTint?: string;
+  themeTint?: UcharHexNumber;
   /** Background image rendered as a full-page VML fill */
   image?: BackgroundImageOptions;
   /**

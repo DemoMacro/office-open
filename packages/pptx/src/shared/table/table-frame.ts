@@ -5,6 +5,7 @@ import type {
   TableStyleOptions,
   UniversalMeasure,
 } from "@office-open/core";
+import type { Guid } from "@office-open/core";
 import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
 
 import type { CellBorderOptions } from "./table-cell-properties";
@@ -32,7 +33,7 @@ export interface TableOptions
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
-  tableStyleId?: string;
+  tableStyleId?: Guid;
   /** Inline table style (a:tableStyle in a:tblPr) — alternative to tableStyleId. */
   tableStyle?: TableStyleOptions;
   /**

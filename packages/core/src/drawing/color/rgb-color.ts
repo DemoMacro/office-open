@@ -9,6 +9,7 @@
  */
 import { element } from "@office-open/xml";
 
+import type { HexColor } from "../../util/values";
 import type { ColorTransformOptions } from "./color-transform";
 import { createColorTransforms } from "./color-transform";
 
@@ -17,7 +18,7 @@ import { createColorTransforms } from "./color-transform";
  */
 export interface RgbColorOptions {
   /** Hex color value (e.g., "FF0000" for red) */
-  value: string;
+  value: HexColor;
   /** Optional color transforms */
   transforms?: ColorTransformOptions;
 }

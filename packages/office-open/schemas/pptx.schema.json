@@ -1550,8 +1550,8 @@
           "type": "string"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "data": {
           "$ref": "#/definitions/DataType",
@@ -1924,6 +1924,12 @@
     "BarShape": {
       "description": "3D bar column shape: \"coneToMax\"/\"pyramidToMax\" taper to a point at the full height; plain \"cone\"/\"pyramid\" taper halfway, then run cylindrically.",
       "enum": ["cone", "coneToMax", "box", "cylinder", "pyramid", "pyramidToMax"],
+      "type": "string"
+    },
+    "Base64": {
+      "description": "Base64-encoded bytes (xsd:base64Binary) — password hash or salt.",
+      "examples": ["Hh8eLiw+KTpAPT4nPj8="],
+      "pattern": "^[A-Za-z0-9+/]*={0,2}$",
       "type": "string"
     },
     "BaseLockingOptions": {
@@ -2907,8 +2913,8 @@
           "type": "object"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "customSplitPoints": {
           "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
@@ -4081,8 +4087,8 @@
       "description": "Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint connection fields come from  {@link  BaseConnectorOptions } ; the rest is the pptx two-endpoint positioning model plus line fill/outline.",
       "properties": {
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -5206,7 +5212,7 @@
               "type": "number"
             },
             "panose": {
-              "type": "string"
+              "$ref": "#/definitions/Panose"
             },
             "pitchFamily": {
               "type": "number"
@@ -5580,7 +5586,7 @@
             "backgroundColor": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/HexColor"
                 },
                 {
                   "$ref": "#/definitions/SolidFillOptions"
@@ -5590,7 +5596,7 @@
             "foregroundColor": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/HexColor"
                 },
                 {
                   "$ref": "#/definitions/SolidFillOptions"
@@ -5932,7 +5938,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColor"
             },
             {
               "$ref": "#/definitions/SolidFillOptions"
@@ -6068,8 +6074,8 @@
           "type": "array"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -6168,6 +6174,12 @@
       },
       "required": ["children"],
       "type": "object"
+    },
+    "Guid": {
+      "description": "GUID in braced upper-case form (ST_Guid).",
+      "examples": ["{1DF903F5-8FC7-4C6A-9DF9-2AB1D10E6D84}"],
+      "pattern": "^\\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\\}$",
+      "type": "string"
     },
     "HSLEffectOptions": {
       "additionalProperties": false,
@@ -6299,6 +6311,12 @@
       },
       "required": ["name", "count"],
       "type": "object"
+    },
+    "HexColor": {
+      "description": "6-digit hex RGB color without '#' (e.g. FF0000).",
+      "examples": ["FF0000", "4472C4"],
+      "pattern": "^[0-9A-Fa-f]{6}$",
+      "type": "string"
     },
     "HierBranch": {
       "description": "Hierarchy branch style.",
@@ -6971,8 +6989,8 @@
       "additionalProperties": false,
       "properties": {
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -7096,8 +7114,8 @@
           "type": "array"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -7745,20 +7763,20 @@
           "type": "string"
         },
         "hashData": {
-          "type": "string"
+          "$ref": "#/definitions/Base64"
         },
         "hashValue": {
-          "type": "string"
+          "$ref": "#/definitions/Base64"
         },
         "password": {
           "description": "Plaintext password — automatically hashed to hashValue/saltValue when provided",
           "type": "string"
         },
         "saltData": {
-          "type": "string"
+          "$ref": "#/definitions/Base64"
         },
         "saltValue": {
-          "type": "string"
+          "$ref": "#/definitions/Base64"
         },
         "spinCount": {
           "type": "number"
@@ -8050,8 +8068,8 @@
       "description": "OLE Object frame options for pptx slides (p:graphicFrame with p:oleObj). The cNvPr fields (name/description/title/hidden) come from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.",
       "properties": {
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -8364,6 +8382,12 @@
     "PageSetupOrientation": {
       "description": "Print orientation: \"default\" keeps the printer's own setting.",
       "enum": ["default", "portrait", "landscape"],
+      "type": "string"
+    },
+    "Panose": {
+      "description": "20-digit hex Panose-1 font classification (ST_Panose).",
+      "examples": ["020F0502020204030204"],
+      "pattern": "^[0-9A-Fa-f]{20}$",
       "type": "string"
     },
     "ParagraphDescriptorOptions": {
@@ -8726,8 +8750,8 @@
           "description": "Compression state (a:blip"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "data": {
           "$ref": "#/definitions/DataType",
@@ -8956,8 +8980,8 @@
       "description": "A complete placeholder template on a master/layout: position, inheritable facets the source defined, and the cNvPr fields (a16:creationId etc.) so a re-emitted placeholder keeps its identity. Backward-compatible with the old position-only input shape (flat x/y/width/height).",
       "properties": {
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
@@ -10143,8 +10167,8 @@
           "description": "Optional color transforms"
         },
         "value": {
-          "description": "Hex color value (e.g., \"FF0000\" for red)",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "Hex color value (e.g., \"FF0000\" for red)"
         }
       },
       "required": ["value"],
@@ -10583,8 +10607,8 @@
           "description": "`@bwMode` on `p:spPr` — how the shape renders in black-and-white view/print."
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
@@ -11680,8 +11704,8 @@
           "description": "Built-in color transform ID (\"accent1_2\") or a custom color definition."
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -12059,8 +12083,8 @@
       "description": "Options for system color.",
       "properties": {
         "lastClr": {
-          "description": "Last known RGB color value (optional fallback)",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "Last known RGB color value (optional fallback)"
         },
         "transforms": {
           "$ref": "#/definitions/ColorTransformOptions",
@@ -12380,8 +12404,8 @@
           "type": "array"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -12475,7 +12499,7 @@
           "description": "Inline table style (a:tableStyle in a:tblPr) — alternative to tableStyleId."
         },
         "tableStyleId": {
-          "type": "string"
+          "$ref": "#/definitions/Guid"
         },
         "title": {
           "description": "XSD `@title`.",
@@ -12988,8 +13012,8 @@
               "type": "number"
             },
             "panose": {
-              "description": "10-byte hex panose classification.",
-              "type": "string"
+              "$ref": "#/definitions/Panose",
+              "description": "10-byte hex panose classification."
             },
             "pitchFamily": {
               "type": "number"
@@ -13013,7 +13037,7 @@
           "type": "number"
         },
         "panose": {
-          "type": "string"
+          "$ref": "#/definitions/Panose"
         },
         "pitchFamily": {
           "type": "number"
@@ -13857,8 +13881,8 @@
           "type": "string"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "data": {
           "$ref": "#/definitions/DataType"

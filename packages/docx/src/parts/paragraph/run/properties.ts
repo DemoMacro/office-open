@@ -10,6 +10,7 @@
  * @module
  */
 import type { UniversalMeasure } from "@office-open/core";
+import type { HexColorOrAuto } from "@office-open/core";
 import type { BorderOptions } from "@shared/border";
 import type { ShadingProperties } from "@shared/shading";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
@@ -108,7 +109,7 @@ export interface RunStylePropertiesOptions {
   italicComplexScript?: boolean;
   /** Underline: "words" underlines words only, "dashLong"/"dashLongHeavy" long dashes, "*Heavy" variants thicken the pattern. */
   underline?: {
-    color?: string;
+    color?: HexColorOrAuto;
     type?: (typeof UnderlineType)[keyof typeof UnderlineType];
   };
   /** Animated text effect: "antsBlack"/"antsRed" marching ants, "blinkBackground" flashing background, "shimmer"/"sparkle", "lights", "none". */
@@ -117,7 +118,7 @@ export interface RunStylePropertiesOptions {
   emphasisMark?: {
     type?: (typeof EmphasisMarkType)[keyof typeof EmphasisMarkType];
   };
-  color?: string | ColorOptions;
+  color?: HexColorOrAuto | ColorOptions;
   /** Kerning threshold in points (w:kern, half-points in XML). */
   kern?: number | UniversalMeasure;
   /** Raised/lowered text position in points (w:position, half-points in XML). */

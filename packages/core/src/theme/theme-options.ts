@@ -21,13 +21,14 @@ import type {
   SystemColorOptions,
   TextListStyleOptions,
 } from "../drawing";
+import type { Panose } from "../util/values";
 
 export type { StyleMatrixReferenceOptions } from "../drawing";
 
 /** Single font slot — a:latin / a:ea / a:cs / a:sym (CT_TextFont). */
 export interface TextFontOptions {
   typeface: string;
-  panose?: string;
+  panose?: Panose;
   pitchFamily?: number;
   charset?: number;
 }

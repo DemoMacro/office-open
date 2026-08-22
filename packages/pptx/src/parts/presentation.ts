@@ -1,3 +1,4 @@
+import type { Base64, Panose } from "@office-open/core";
 /**
  * Presentation options types for PPTX.
  *
@@ -28,8 +29,8 @@ export interface ModifyVerifierOptions {
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
   password?: string;
   algorithmName?: string;
-  hashValue?: string;
-  saltValue?: string;
+  hashValue?: Base64;
+  saltValue?: Base64;
   spinValue?: number;
   /** Crypto provider (p:modifiedVerifier `@cryptProviderType`, s:ST_CryptProv) */
   cryptoProviderType?: "rsaAES" | "rsaFull" | "custom";
@@ -39,8 +40,8 @@ export interface ModifyVerifierOptions {
   cryptoAlgorithmType?: "typeAny" | "custom";
   cryptoAlgorithmSid?: number;
   spinCount?: number;
-  saltData?: string;
-  hashData?: string;
+  saltData?: Base64;
+  hashData?: Base64;
   cryptoProvider?: string;
   algorithmExtensionId?: number;
   algorithmExtensionSource?: string;
@@ -52,7 +53,7 @@ export interface ModifyVerifierOptions {
 export interface EmbeddedFontOptions {
   font: {
     typeface: string;
-    panose?: string;
+    panose?: Panose;
     pitchFamily?: number;
     charset?: number;
   };

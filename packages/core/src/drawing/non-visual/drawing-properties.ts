@@ -17,6 +17,7 @@ import { attr, findChild, stringifyElement } from "@office-open/xml";
 
 import { extUriMatches } from "../../util/ext-uri";
 import { parseOnOff } from "../../util/values";
+import type { Guid } from "../../util/values";
 
 /** The a16:creationId extension uri (CT_NonVisualDrawingProps extLst). */
 const CREATION_ID_EXT_URI = "{FF2B5EF4-FFF2-40B4-BE49-F238E27FC236}";
@@ -35,7 +36,7 @@ export interface NonVisualDrawingPropertiesOptions {
    * a16:creationId `@id` from the cNvPr/docPr extension list — Office's
    * per-object creation stamp, the sole known cNvPr ext content.
    */
-  creationId?: string;
+  creationId?: Guid;
   /**
    * Verbatim `a:extLst` inner XML for extensions beyond creationId (a14
    * picture effects, useLocalDpi, …). Round-trip only: takes precedence over

@@ -1,3 +1,5 @@
+import type { LongHexNumber } from "@office-open/core";
+
 /**
  * Numbering level definitions module for WordprocessingML documents.
  *
@@ -203,7 +205,7 @@ export interface LevelsOptions {
   /** Picture bullet ID reference. */
   levelPictureBulletId?: number;
   /** Template code for the level. */
-  templateCode?: string;
+  templateCode?: LongHexNumber;
   /** Whether this level is tentative (w:tentative attribute). */
   tentative?: boolean;
   /** Whether this level is tentative (w15:tentative attribute). */

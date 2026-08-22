@@ -11,6 +11,7 @@ import type {
   PositiveUniversalMeasure,
   UniversalMeasure,
 } from "@office-open/core";
+import type { ArgbHexColor, Base64, HexColor } from "@office-open/core";
 import type {
   BlackWhiteMode,
   BlipEffectsOptions,
@@ -78,6 +79,13 @@ export interface RowOptions {
 }
 
 /** Rich text run properties (CT_RPrElt). */
+/**
+ * Rich-text run color — the single string parse emits and stringify decodes:
+ * 6-digit RGB (alpha auto-prefixed), 8-digit ARGB verbatim, a legacy palette
+ * index ("10"), or a "theme:N" slot reference.
+ */
+export type RichTextColor = string;
+
 export interface RichTextRunPropertiesOptions {
   /** Font name (CT_FontName → rFont) */
   font?: string;
@@ -93,8 +101,12 @@ export interface RichTextRunPropertiesOptions {
   shadow?: boolean;
   condense?: boolean;
   extend?: boolean;
-  /** Font color (hex RGB, e.g. "FF0000") */
-  color?: string;
+  /**
+   * Font color: 6-digit RGB ("FF0000", FF alpha auto-prefixed on emit),
+   * 8-digit ARGB verbatim, a bare palette index ("10" → indexed), or
+   * "theme:N" — the same string parse produces.
+   */
+  color?: RichTextColor;
   /** Font size in points */
   size?: number;
   /** Underline type */
@@ -255,9 +267,9 @@ export interface SheetProtectionOptions {
   /** Modern encryption: algorithm name (e.g. "SHA-512") */
   algorithmName?: string;
   /** Modern encryption: base64-encoded hash value */
-  hashValue?: string;
+  hashValue?: Base64;
   /** Modern encryption: base64-encoded salt value */
-  saltValue?: string;
+  saltValue?: Base64;
   /** Modern encryption: spin count for hash iteration */
   spinCount?: number;
   /** Set true to enable sheet protection (required for protection flags to take effect) */
@@ -293,9 +305,9 @@ export interface ProtectedRangeOptions {
   /** Modern encryption: algorithm name */
   algorithmName?: string;
   /** Modern encryption: base64-encoded hash value */
-  hashValue?: string;
+  hashValue?: Base64;
   /** Modern encryption: base64-encoded salt value */
-  saltValue?: string;
+  saltValue?: Base64;
   /** Modern encryption: spin count */
   spinCount?: number;
   /** Security descriptor (SID string, emitted as the attribute form) */
@@ -524,8 +536,8 @@ export interface PageSetupOptions {
 }
 
 export interface TabColorOptions {
-  /** RGB color string, e.g. "FF0000" */
-  rgb?: string;
+  /** Hex ARGB color string with alpha, e.g. "FF4472C4" (passed through verbatim) */
+  rgb?: ArgbHexColor;
   /** Theme color index (0-based) */
   theme?: number;
   /** Tint value (-1.0 to 1.0) */
@@ -746,7 +758,7 @@ export type IconSetType =
  */
 export interface CfColorOptions {
   /** RGB hex without alpha, e.g. "FF0000" */
-  rgb?: string;
+  rgb?: HexColor;
   /** Theme palette slot (CT_Color @theme) */
   theme?: number;
   /** Tint applied to the theme slot */

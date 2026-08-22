@@ -9,7 +9,7 @@
  * @module
  */
 import type { VmlShapeDefaultsOptions, VmlShapeLayoutOptions } from "@office-open/core";
-import type { ColorSchemeIndex } from "@office-open/core";
+import type { Base64, ColorSchemeIndex, LongHexNumber, ShortHexNumber } from "@office-open/core";
 import { NumberRestartType } from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
 import type { NumberFormat } from "@shared/constants";
 
@@ -276,7 +276,7 @@ export interface SettingsOptions {
     latentStyles?: boolean;
     /** Legacy Word 2007 hex bitmask (ST_ShortHexNumber) — string keeps
      *  leading zeros; Word 2010+ writes the boolean attributes instead. */
-    val?: string;
+    val?: ShortHexNumber;
   };
   /** Style pane sort method (ST_StyleSort) */
   stylePaneSortMethod?:
@@ -356,13 +356,13 @@ export interface DocumentProtectionOptions {
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
   password?: string;
   /** Password hash (SHA-512 base64) */
-  hashValue?: string;
+  hashValue?: Base64;
   /** Password salt (base64) */
-  saltValue?: string;
+  saltValue?: Base64;
   /** Legacy password hash (Transitional XSD: w:hash) */
-  hash?: string;
+  hash?: Base64;
   /** Legacy password salt (Transitional XSD: w:salt) */
-  salt?: string;
+  salt?: Base64;
   /** Password spin count */
   spinCount?: number;
   /** Password algorithm name */
@@ -396,13 +396,13 @@ export interface WriteProtectionOptions {
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
   password?: string;
   /** Cryptographic hash of the password */
-  hashValue?: string;
+  hashValue?: Base64;
   /** Salt value for the hash (base64) */
-  saltValue?: string;
+  saltValue?: Base64;
   /** Legacy password hash (Transitional XSD: w:hash) */
-  hash?: string;
+  hash?: Base64;
   /** Legacy password salt (Transitional XSD: w:salt) */
-  salt?: string;
+  salt?: Base64;
   /** Password spin count */
   spinCount?: number;
   /** Password algorithm name */
@@ -580,9 +580,9 @@ export interface DocumentEndnotePropertiesOptions {
 /** Document revision save IDs (CT_DocRsids) */
 export interface RsidsOptions {
   /** Root revision save ID (8 hex characters) */
-  rsidRoot?: string;
+  rsidRoot?: LongHexNumber;
   /** List of revision save IDs */
-  rsids?: string[];
+  rsids?: LongHexNumber[];
 }
 
 /** Reading mode ink lock-down (CT_ReadingModeInkLockDown) */

@@ -1,3 +1,4 @@
+import type { Guid, LongHexNumber, Panose } from "@office-open/core";
 /**
  * Font module for WordprocessingML documents.
  *
@@ -25,7 +26,7 @@ export interface FontRelationshipOptions {
   /** Relationship to Part */
   id: string;
   /** Embedded Font Obfuscation Key (GUID) */
-  fontKey?: string;
+  fontKey?: Guid;
   /** Whether the embedded font is subsetted */
   subsetted?: boolean;
 }
@@ -82,7 +83,7 @@ export interface FontEntry {
   /** Alternative font name */
   altName?: string;
   /** PANOSE-1 classification */
-  panose1?: string;
+  panose1?: Panose;
   /** Character set identifier */
   charset?: (typeof CharacterSet)[keyof typeof CharacterSet];
   /** Font family (w:family, ST_FontFamily) */
@@ -94,17 +95,17 @@ export interface FontEntry {
   /** Font signature (Unicode and code page ranges) */
   sig?: {
     /** Unicode Subset Bitfield 0 */
-    usb0: string;
+    usb0: LongHexNumber;
     /** Unicode Subset Bitfield 1 */
-    usb1: string;
+    usb1: LongHexNumber;
     /** Unicode Subset Bitfield 2 */
-    usb2: string;
+    usb2: LongHexNumber;
     /** Unicode Subset Bitfield 3 */
-    usb3: string;
+    usb3: LongHexNumber;
     /** Code Page Bitfield 0 */
-    csb0: string;
+    csb0: LongHexNumber;
     /** Code Page Bitfield 1 */
-    csb1: string;
+    csb1: LongHexNumber;
   };
   /** Embedded regular font relationship */
   embedRegular?: FontRelationshipOptions;

@@ -1,4 +1,5 @@
 import { Relationships, toUint8Array, uniqueUuid } from "@office-open/core";
+import type { Guid } from "@office-open/core";
 
 /**
  * Font Wrapper module for WordprocessingML documents.
@@ -17,7 +18,7 @@ import type { EmbeddedFontOptions } from "./font-table";
  * Font options extended with a unique font key.
  */
 export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & {
-  fontKey: string;
+  fontKey: Guid;
   /** Relationship id assigned to embedRegular (only fonts carrying data). */
   embedRid?: string;
   /** Normalized font bytes (Uint8Array regardless of the input form). */

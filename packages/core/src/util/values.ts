@@ -89,6 +89,102 @@ export type PositivePercentage = `${number}%`;
  */
 export type RelativeMeasure = `${"-" | ""}${number}${"em" | "ex"}`;
 
+// ── Constrained string value domains ──
+//
+// Plain-string aliases over XSD facets that enumeration cannot express
+// (hex digits, GUID shape, base64). The JSON schema generator attaches the
+// matching regex to each alias definition, so schema-driven generation gets
+// a hard constraint where TypeScript alone stays permissive.
+
+/**
+ * A 6-digit hex RGB color, without "#" (ST_HexColorRGB — 3-byte hexBinary).
+ *
+ * DrawingML writes it in upper case ("FF0000"); the pattern admits both
+ * cases since parse keeps source casing verbatim.
+ *
+ * @example
+ * ```typescript
+ * const color: HexColor = "4472C4";
+ * ```
+ */
+export type HexColor = string;
+
+/**
+ * An 8-digit hex ARGB color (ST_UnsignedIntHex in sml.xsd — 4-byte
+ * hexBinary). SpreadsheetML tab colors carry the alpha channel verbatim
+ * ("FF4472C4" is opaque blue); most other sml color fields normalize to
+ * {@link HexColor} with the library owning the FF prefix.
+ *
+ * @example
+ * ```typescript
+ * const tab: ArgbHexColor = "FF4472C4";
+ * ```
+ */
+export type ArgbHexColor = string;
+
+/**
+ * "auto" or a 6-digit hex RGB color (ST_HexColor — union of ST_HexColorAuto
+ * and ST_HexColorRGB in wml.xsd).
+ *
+ * @example
+ * ```typescript
+ * const auto: HexColorOrAuto = "auto";
+ * const red: HexColorOrAuto = "FF0000";
+ * ```
+ */
+export type HexColorOrAuto = string;
+
+/**
+ * A GUID in braced form (ST_Guid — `{{8-4-4-4-12 hex}}`, upper case per the
+ * XSD pattern; Office writes it braced).
+ *
+ * @example
+ * ```typescript
+ * const id: Guid = "{1DF903F5-8FC7-4C6A-9DF9-2AB1D10E6D84}";
+ * ```
+ */
+export type Guid = string;
+
+/**
+ * A 20-digit hex Panose-1 font classification string (ST_Panose — 10-byte
+ * hexBinary, e.g. "020F0502020204030204" for Arial).
+ */
+export type Panose = string;
+
+/**
+ * An 8-digit hex number (ST_LongHexNumber in wml.xsd — 4-byte hexBinary).
+ * Word revision-save ids (rsid) and font-signature bytes (usb/csb) use it.
+ */
+export type LongHexNumber = string;
+
+/**
+ * A 4-digit hex number (ST_ShortHexNumber in wml.xsd — 2-byte hexBinary).
+ */
+export type ShortHexNumber = string;
+
+/**
+ * A 2-digit hex byte (ST_UcharHexNumber in wml.xsd — 1-byte hexBinary).
+ * Border/shading theme tint and shade percentages use it.
+ */
+export type UcharHexNumber = string;
+
+/**
+ * A 4-digit hex number (ST_UnsignedShortHex in sml.xsd — 2-byte hexBinary).
+ * The legacy file-sharing reservation password hash uses it.
+ */
+export type UnsignedShortHex = string;
+
+/**
+ * Base64-encoded bytes (xsd:base64Binary). Workbook, sheet, and write
+ * protection carry password hashes and salts in this form.
+ *
+ * @example
+ * ```typescript
+ * const hash: Base64 = "Hh8eLiw+KTpAPT4nPj8=";
+ * ```
+ */
+export type Base64 = string;
+
 /**
  * Validates and converts a number to an integer (decimal number).
  *

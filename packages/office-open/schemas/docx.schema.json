@@ -991,6 +991,12 @@
       "enum": ["cone", "coneToMax", "box", "cylinder", "pyramid", "pyramidToMax"],
       "type": "string"
     },
+    "Base64": {
+      "description": "Base64-encoded bytes (xsd:base64Binary) — password hash or salt.",
+      "examples": ["Hh8eLiw+KTpAPT4nPj8="],
+      "pattern": "^[A-Za-z0-9+/]*={0,2}$",
+      "type": "string"
+    },
     "BaseLockingOptions": {
       "additionalProperties": false,
       "properties": {
@@ -1475,8 +1481,8 @@
       "description": "Options for configuring a border element.",
       "properties": {
         "color": {
-          "description": "Border color, in hex (eg 'FF00AA')",
-          "type": "string"
+          "$ref": "#/definitions/HexColorOrAuto",
+          "description": "Border color, \"auto\" or hex (eg 'FF00AA')"
         },
         "frame": {
           "description": "Border frame",
@@ -1532,12 +1538,12 @@
           "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\"."
         },
         "themeShade": {
-          "description": "Theme color shade (2-char hex)",
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme color shade (2-char hex)"
         },
         "themeTint": {
-          "description": "Theme color tint (2-char hex)",
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme color tint (2-char hex)"
         }
       },
       "required": ["style"],
@@ -3670,13 +3676,13 @@
           "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\"."
         },
         "themeShade": {
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber"
         },
         "themeTint": {
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber"
         },
         "val": {
-          "type": "string"
+          "$ref": "#/definitions/HexColorOrAuto"
         }
       },
       "type": "object"
@@ -4657,8 +4663,8 @@
               "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
             },
             "creationId": {
-              "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-              "type": "string"
+              "$ref": "#/definitions/Guid",
+              "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
             },
             "description": {
               "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -5747,8 +5753,8 @@
       "description": "Options for configuring document properties of a drawing.",
       "properties": {
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -5786,8 +5792,8 @@
       "description": "Options for creating a document background.",
       "properties": {
         "color": {
-          "description": "Background color in hex format (e.g., \"FF0000\" for red)",
-          "type": "string"
+          "$ref": "#/definitions/HexColorOrAuto",
+          "description": "Background color, \"auto\" or hex format (e.g., \"FF0000\" for red)"
         },
         "image": {
           "$ref": "#/definitions/BackgroundImageOptions",
@@ -5809,12 +5815,12 @@
           "description": "Theme color name (w:themeColor, — e.g. \"accent1\", \"dark1\")"
         },
         "themeShade": {
-          "description": "Theme shade value (darkens the theme color)",
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme shade value (darkens the theme color)"
         },
         "themeTint": {
-          "description": "Theme tint value (lightens the theme color)",
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme tint value (lightens the theme color)"
         }
       },
       "type": "object"
@@ -6377,24 +6383,24 @@
           "type": "boolean"
         },
         "hash": {
-          "description": "Legacy password hash (Transitional XSD: w:hash)",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Legacy password hash (Transitional XSD: w:hash)"
         },
         "hashValue": {
-          "description": "Password hash (SHA-512 base64)",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Password hash (SHA-512 base64)"
         },
         "password": {
           "description": "Plaintext password — automatically hashed to hashValue/saltValue when provided",
           "type": "string"
         },
         "salt": {
-          "description": "Legacy password salt (Transitional XSD: w:salt)",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Legacy password salt (Transitional XSD: w:salt)"
         },
         "saltValue": {
-          "description": "Password salt (base64)",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Password salt (base64)"
         },
         "spinCount": {
           "description": "Password spin count",
@@ -7137,7 +7143,7 @@
             "backgroundColor": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/HexColor"
                 },
                 {
                   "$ref": "#/definitions/SolidFillOptions"
@@ -7147,7 +7153,7 @@
             "foregroundColor": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/HexColor"
                 },
                 {
                   "$ref": "#/definitions/SolidFillOptions"
@@ -7801,7 +7807,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColor"
             },
             {
               "$ref": "#/definitions/SolidFillOptions"
@@ -8099,8 +8105,8 @@
                   "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
                 },
                 "creationId": {
-                  "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-                  "type": "string"
+                  "$ref": "#/definitions/Guid",
+                  "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
                 },
                 "description": {
                   "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -8269,6 +8275,12 @@
       },
       "type": "object"
     },
+    "Guid": {
+      "description": "GUID in braced upper-case form (ST_Guid).",
+      "examples": ["{1DF903F5-8FC7-4C6A-9DF9-2AB1D10E6D84}"],
+      "pattern": "^\\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\\}$",
+      "type": "string"
+    },
     "HSLEffectOptions": {
       "additionalProperties": false,
       "description": "Options for HSL effect.",
@@ -8303,6 +8315,18 @@
       },
       "required": ["name", "count"],
       "type": "object"
+    },
+    "HexColor": {
+      "description": "6-digit hex RGB color without '#' (e.g. FF0000).",
+      "examples": ["FF0000", "4472C4"],
+      "pattern": "^[0-9A-Fa-f]{6}$",
+      "type": "string"
+    },
+    "HexColorOrAuto": {
+      "description": "\"auto\" or a 6-digit hex RGB color without \"#\".",
+      "examples": ["auto", "FF0000"],
+      "pattern": "^(auto|[0-9A-Fa-f]{6})$",
+      "type": "string"
     },
     "HierBranch": {
       "description": "Hierarchy branch style.",
@@ -9202,8 +9226,8 @@
           "type": "string"
         },
         "templateCode": {
-          "description": "Template code for the level.",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Template code for the level."
         },
         "tentative": {
           "description": "Whether this level is tentative (w:tentative attribute).",
@@ -9333,6 +9357,12 @@
         }
       },
       "type": "object"
+    },
+    "LongHexNumber": {
+      "description": "8-digit hex number (ST_LongHexNumber) — rsid or font signature.",
+      "examples": ["00A1B2C3"],
+      "pattern": "^[0-9A-Fa-f]{8}$",
+      "type": "string"
     },
     "LuminanceEffectOptions": {
       "additionalProperties": false,
@@ -11236,8 +11266,8 @@
       "description": "Round-trip of `pic:cNvPr` — the picture non-visual id/name/description. All fields optional to mirror the source element: `description` is omitted when absent rather than emitted as an empty attribute (Word never writes it empty).",
       "properties": {
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -12262,6 +12292,12 @@
         }
       },
       "type": "object"
+    },
+    "Panose": {
+      "description": "20-digit hex Panose-1 font classification (ST_Panose).",
+      "examples": ["020F0502020204030204"],
+      "pattern": "^[0-9A-Fa-f]{20}$",
+      "type": "string"
     },
     "ParagraphChild": {
       "anyOf": [
@@ -13291,8 +13327,8 @@
       "description": "Options for creating a Paragraph element.",
       "properties": {
         "additionRsid": {
-          "description": "Revision save ID for the paragraph mark (w:rsidR, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for the paragraph mark (w:rsidR, hex string)."
         },
         "adjustRightInd": {
           "description": "Whether to automatically adjust right indent for document grid",
@@ -13367,12 +13403,12 @@
           "type": "boolean"
         },
         "defaultRunRsid": {
-          "description": "Default revision save ID for runs in this paragraph (w:rsidRDefault).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Default revision save ID for runs in this paragraph (w:rsidRDefault)."
         },
         "deletionRsid": {
-          "description": "Revision save ID when the paragraph was deleted (w:rsidDel).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the paragraph was deleted (w:rsidDel)."
         },
         "divId": {
           "description": "HTML div ID reference",
@@ -13564,8 +13600,8 @@
           "type": "string"
         },
         "propertiesRsid": {
-          "description": "Revision save ID for the paragraph properties (w:rsidP).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for the paragraph properties (w:rsidP)."
         },
         "revision": {
           "$ref": "#/definitions/ParagraphPropertiesChangeOptions"
@@ -13579,8 +13615,8 @@
           "description": "Run properties to apply to all runs in the paragraph. Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29."
         },
         "runPropertiesRsid": {
-          "description": "Revision save ID for the paragraph mark run properties (w:rsidRPr).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for the paragraph mark run properties (w:rsidRPr)."
         },
         "shading": {
           "$ref": "#/definitions/ShadingProperties",
@@ -14289,7 +14325,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             {
               "$ref": "#/definitions/ColorOptions"
@@ -14508,7 +14544,7 @@
           "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             "type": {
               "enum": [
@@ -16360,8 +16396,8 @@
           "description": "Optional color transforms"
         },
         "value": {
-          "description": "Hex color value (e.g., \"FF0000\" for red)",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "Hex color value (e.g., \"FF0000\" for red)"
         }
       },
       "required": ["value"],
@@ -16372,13 +16408,13 @@
       "description": "Document revision save IDs",
       "properties": {
         "rsidRoot": {
-          "description": "Root revision save ID (8 hex characters)",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Root revision save ID (8 hex characters)"
         },
         "rsids": {
           "description": "List of revision save IDs",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/LongHexNumber"
           },
           "type": "array"
         }
@@ -16789,7 +16825,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             {
               "$ref": "#/definitions/ColorOptions"
@@ -17010,7 +17046,7 @@
           "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             "type": {
               "enum": [
@@ -17089,7 +17125,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             {
               "$ref": "#/definitions/ColorOptions"
@@ -17285,7 +17321,7 @@
           "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             "type": {
               "enum": [
@@ -17361,7 +17397,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             {
               "$ref": "#/definitions/ColorOptions"
@@ -17549,7 +17585,7 @@
           "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             "type": {
               "enum": [
@@ -17624,7 +17660,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             {
               "$ref": "#/definitions/ColorOptions"
@@ -17808,7 +17844,7 @@
           "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             "type": {
               "enum": [
@@ -18688,8 +18724,8 @@
               "additionalProperties": false,
               "properties": {
                 "additionRsid": {
-                  "description": "Revision save ID for the paragraph mark (w:rsidR, hex string).",
-                  "type": "string"
+                  "$ref": "#/definitions/LongHexNumber",
+                  "description": "Revision save ID for the paragraph mark (w:rsidR, hex string)."
                 },
                 "adjustRightInd": {
                   "description": "Whether to automatically adjust right indent for document grid",
@@ -18756,12 +18792,12 @@
                   "type": "boolean"
                 },
                 "defaultRunRsid": {
-                  "description": "Default revision save ID for runs in this paragraph (w:rsidRDefault).",
-                  "type": "string"
+                  "$ref": "#/definitions/LongHexNumber",
+                  "description": "Default revision save ID for runs in this paragraph (w:rsidRDefault)."
                 },
                 "deletionRsid": {
-                  "description": "Revision save ID when the paragraph was deleted (w:rsidDel).",
-                  "type": "string"
+                  "$ref": "#/definitions/LongHexNumber",
+                  "description": "Revision save ID when the paragraph was deleted (w:rsidDel)."
                 },
                 "divId": {
                   "description": "HTML div ID reference",
@@ -19149,8 +19185,8 @@
                   "type": "string"
                 },
                 "propertiesRsid": {
-                  "description": "Revision save ID for the paragraph properties (w:rsidP).",
-                  "type": "string"
+                  "$ref": "#/definitions/LongHexNumber",
+                  "description": "Revision save ID for the paragraph properties (w:rsidP)."
                 },
                 "revision": {
                   "$ref": "#/definitions/ParagraphPropertiesChangeOptions"
@@ -19164,8 +19200,8 @@
                   "description": "Run properties to apply to all runs in the paragraph. Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29."
                 },
                 "runPropertiesRsid": {
-                  "description": "Revision save ID for the paragraph mark run properties (w:rsidRPr).",
-                  "type": "string"
+                  "$ref": "#/definitions/LongHexNumber",
+                  "description": "Revision save ID for the paragraph mark run properties (w:rsidRPr)."
                 },
                 "shading": {
                   "$ref": "#/definitions/ShadingProperties",
@@ -20237,8 +20273,8 @@
               "type": "boolean"
             },
             "val": {
-              "description": "Legacy Word 2007 hex bitmask — string keeps leading zeros; Word 2010+ writes the boolean attributes instead.",
-              "type": "string"
+              "$ref": "#/definitions/ShortHexNumber",
+              "description": "Legacy Word 2007 hex bitmask — string keeps leading zeros; Word 2010+ writes the boolean attributes instead."
             },
             "visibleStyles": {
               "type": "boolean"
@@ -20350,10 +20386,10 @@
       "description": "Properties for configuring shading.",
       "properties": {
         "color": {
-          "type": "string"
+          "$ref": "#/definitions/HexColorOrAuto"
         },
         "fill": {
-          "type": "string"
+          "$ref": "#/definitions/HexColorOrAuto"
         },
         "themeColor": {
           "$ref": "#/definitions/ThemeColor",
@@ -20364,20 +20400,20 @@
           "description": "Theme fill color reference"
         },
         "themeFillShade": {
-          "description": "Theme fill shade (2-char hex)",
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme fill shade (2-char hex)"
         },
         "themeFillTint": {
-          "description": "Theme fill tint (2-char hex)",
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme fill tint (2-char hex)"
         },
         "themeShade": {
-          "description": "Theme color shade (2-char hex)",
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme color shade (2-char hex)"
         },
         "themeTint": {
-          "description": "Theme color tint (2-char hex)",
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme color tint (2-char hex)"
         },
         "type": {
           "description": "Fill pattern: \"clear\" solid fill, \"nil\" no fill, \"percentN\" dot-density percent, \"horizontalStripe\"/\"diagonalStripe\"/\"horizontalCross\"/\"diagonalCross\" hatch patterns.",
@@ -21128,6 +21164,12 @@
         "chartPlus",
         "textNoShape"
       ],
+      "type": "string"
+    },
+    "ShortHexNumber": {
+      "description": "4-digit hex number (ST_ShortHexNumber).",
+      "examples": ["00A1"],
+      "pattern": "^[0-9A-Fa-f]{4}$",
       "type": "string"
     },
     "SimpleFieldOptions": {
@@ -22284,7 +22326,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             {
               "$ref": "#/definitions/ColorOptions"
@@ -22514,7 +22556,7 @@
           "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
           "properties": {
             "color": {
-              "type": "string"
+              "$ref": "#/definitions/HexColorOrAuto"
             },
             "type": {
               "enum": [
@@ -22566,8 +22608,8 @@
       "description": "Options for system color.",
       "properties": {
         "lastClr": {
-          "description": "Last known RGB color value (optional fallback)",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "Last known RGB color value (optional fallback)"
         },
         "transforms": {
           "$ref": "#/definitions/ColorTransformOptions",
@@ -23173,8 +23215,8 @@
           "type": "boolean"
         },
         "val": {
-          "description": "Legacy hex bitmask (w:val) — Word 2007 wrote it alone (e.g. \"04A0\"), Word 2010+ writes the explicit booleans. Round-tripped verbatim as a string so leading zeros survive; authoring needs only the boolean fields.",
-          "type": "string"
+          "$ref": "#/definitions/ShortHexNumber",
+          "description": "Legacy hex bitmask (w:val) — Word 2007 wrote it alone (e.g. \"04A0\"), Word 2010+ writes the explicit booleans. Round-tripped verbatim as a string so leading zeros survive; authoring needs only the boolean fields."
         }
       },
       "type": "object"
@@ -24447,8 +24489,8 @@
               "type": "number"
             },
             "panose": {
-              "description": "10-byte hex panose classification.",
-              "type": "string"
+              "$ref": "#/definitions/Panose",
+              "description": "10-byte hex panose classification."
             },
             "pitchFamily": {
               "type": "number"
@@ -25259,6 +25301,12 @@
     "TrendlineType": {
       "description": "Trendline fit; see period/order for the moving-average and polynomial degrees.",
       "enum": ["exponential", "linear", "logarithmic", "movingAverage", "polynomial", "power"],
+      "type": "string"
+    },
+    "UcharHexNumber": {
+      "description": "2-digit hex byte (ST_UcharHexNumber) — theme tint/shade.",
+      "examples": ["99"],
+      "pattern": "^[0-9A-Fa-f]{2}$",
       "type": "string"
     },
     "UnderlineStyle": {
@@ -29945,14 +29993,14 @@
           "$ref": "#/definitions/VmlExtensionMode"
         },
         "id": {
-          "description": "s: — a GUID string.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "s: — a GUID string."
         },
         "issignatureline": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "provid": {
-          "type": "string"
+          "$ref": "#/definitions/Guid"
         },
         "showsigndate": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -30669,12 +30717,12 @@
           "type": "number"
         },
         "hash": {
-          "description": "Legacy password hash (Transitional XSD: w:hash)",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Legacy password hash (Transitional XSD: w:hash)"
         },
         "hashValue": {
-          "description": "Cryptographic hash of the password",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Cryptographic hash of the password"
         },
         "password": {
           "description": "Plaintext password — automatically hashed to hashValue/saltValue when provided",
@@ -30685,12 +30733,12 @@
           "type": "boolean"
         },
         "salt": {
-          "description": "Legacy password salt (Transitional XSD: w:salt)",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Legacy password salt (Transitional XSD: w:salt)"
         },
         "saltValue": {
-          "description": "Salt value for the hash (base64)",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Salt value for the hash (base64)"
         },
         "spinCount": {
           "description": "Password spin count",

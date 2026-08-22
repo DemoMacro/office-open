@@ -9,6 +9,7 @@
  */
 import { element } from "@office-open/xml";
 
+import type { HexColor } from "../../util/values";
 import type { ColorTransformOptions } from "./color-transform";
 import { createColorTransforms } from "./color-transform";
 
@@ -67,7 +68,7 @@ export interface SystemColorOptions {
   /** System color value */
   value: (typeof SystemColor)[keyof typeof SystemColor];
   /** Last known RGB color value (optional fallback) */
-  lastClr?: string;
+  lastClr?: HexColor;
   /** Optional color transforms */
   transforms?: ColorTransformOptions;
 }

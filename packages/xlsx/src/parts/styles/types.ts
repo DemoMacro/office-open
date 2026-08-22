@@ -1,3 +1,4 @@
+import type { ArgbHexColor, HexColor } from "@office-open/core";
 /**
  * Styles — option types for xl/styles.xml.
  *
@@ -15,7 +16,7 @@ export interface FontOptions {
   underline?: boolean;
   strike?: boolean;
   size?: number;
-  color?: string;
+  color?: HexColor;
   /**
    * Theme palette index (CT_Color `@theme`) — takes precedence over `color`
    * when both are set, matching the XSD's single-channel choice.
@@ -51,7 +52,7 @@ export interface CellGradientStopOptions {
   /** Position (0.0–1.0) */
   position: number;
   /** RGB color hex without alpha, e.g. "FF0000" */
-  color: string;
+  color: HexColor;
 }
 
 /**
@@ -63,7 +64,7 @@ export interface CellFillOptions {
   /** Fill kind; pattern/gradient read the dedicated fields below. */
   type?: "solid" | "pattern" | "gradient";
   /** Foreground color hex without alpha, e.g. "C6EFCE" */
-  color?: string;
+  color?: HexColor;
   /** Foreground theme palette index (CT_Color `@theme` on fgColor) */
   themeColor?: number;
   /** Foreground tint (CT_Color `@tint` on fgColor) */
@@ -92,7 +93,7 @@ export interface CellFillOptions {
     | "gray125"
     | "gray0625";
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
-  bgColor?: string;
+  bgColor?: HexColor;
   /** Background theme palette index (CT_Color `@theme` on bgColor) */
   bgThemeColor?: number;
   /** Background tint (CT_Color `@tint` on bgColor) */
@@ -221,7 +222,7 @@ export interface CellProtectionOptions {
 /** Indexed color entry (CT_RgbColor) */
 export interface IndexedColorOptions {
   /** RGB hex value, e.g. "FF000000" */
-  rgb: string;
+  rgb: ArgbHexColor;
 }
 
 /** Colors palette (CT_Colors) */
@@ -229,7 +230,7 @@ export interface ColorsOptions {
   /** Indexed color palette (CT_IndexedColors) */
   indexedColors?: IndexedColorOptions[];
   /** Most recently used colors (CT_MRUColors) */
-  mruColors?: string[];
+  mruColors?: HexColor[];
 }
 
 /**

@@ -305,6 +305,12 @@
       },
       "type": "object"
     },
+    "ArgbHexColor": {
+      "description": "8-digit hex ARGB color with the alpha channel first (e.g. FF4472C4).",
+      "examples": ["FF4472C4", "FFED7D31"],
+      "pattern": "^[0-9A-Fa-f]{8}$",
+      "type": "string"
+    },
     "AutoFilterOptions": {
       "additionalProperties": false,
       "properties": {
@@ -575,6 +581,12 @@
     "BarShape": {
       "description": "3D bar column shape: \"coneToMax\"/\"pyramidToMax\" taper to a point at the full height; plain \"cone\"/\"pyramid\" taper halfway, then run cylindrically.",
       "enum": ["cone", "coneToMax", "box", "cylinder", "pyramid", "pyramidToMax"],
+      "type": "string"
+    },
+    "Base64": {
+      "description": "Base64-encoded bytes (xsd:base64Binary) — password hash or salt.",
+      "examples": ["Hh8eLiw+KTpAPT4nPj8="],
+      "pattern": "^[A-Za-z0-9+/]*={0,2}$",
       "type": "string"
     },
     "BaseLockingOptions": {
@@ -1573,8 +1585,8 @@
           "type": "boolean"
         },
         "bgColor": {
-          "description": "Background color for pattern fill",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "Background color for pattern fill"
         },
         "bgColorIndexed": {
           "description": "Background color indexed",
@@ -1589,8 +1601,8 @@
           "type": "number"
         },
         "color": {
-          "description": "Foreground color hex without alpha, e.g. \"C6EFCE\"",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "Foreground color hex without alpha, e.g. \"C6EFCE\""
         },
         "colorIndexed": {
           "description": "Foreground color indexed",
@@ -1678,8 +1690,8 @@
       "description": "Gradient stop",
       "properties": {
         "color": {
-          "description": "RGB color hex without alpha, e.g. \"FF0000\"",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "RGB color hex without alpha, e.g. \"FF0000\""
         },
         "position": {
           "description": "Position (0.0–1.0)",
@@ -1900,8 +1912,8 @@
           "type": "number"
         },
         "rgb": {
-          "description": "RGB hex without alpha, e.g. \"FF0000\"",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "RGB hex without alpha, e.g. \"FF0000\""
         },
         "theme": {
           "description": "Theme palette slot (",
@@ -2761,8 +2773,8 @@
           "type": "string"
         },
         "tabColor": {
-          "description": "Tab color (hex ARGB, e.g. \"FF4472C4\")",
-          "type": "string"
+          "$ref": "#/definitions/ArgbHexColor",
+          "description": "Tab color (hex ARGB, e.g. \"FF4472C4\")"
         },
         "tabSelected": {
           "description": "Sheet selected state.",
@@ -2861,8 +2873,8 @@
           "type": "boolean"
         },
         "hashValue": {
-          "description": "Modern encryption: base64-encoded hash value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64-encoded hash value"
         },
         "objects": {
           "description": "Objects are protected",
@@ -2873,8 +2885,8 @@
           "type": "string"
         },
         "saltValue": {
-          "description": "Modern encryption: base64-encoded salt value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64-encoded salt value"
         },
         "spinCount": {
           "description": "Modern encryption: spin count for hash iteration",
@@ -3150,7 +3162,7 @@
         "mruColors": {
           "description": "Most recently used colors",
           "items": {
-            "type": "string"
+            "$ref": "#/definitions/HexColor"
           },
           "type": "array"
         }
@@ -3633,8 +3645,8 @@
           "description": "Column offset in EMU (default 0)"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -4201,8 +4213,8 @@
           "type": "boolean"
         },
         "guid": {
-          "description": "GUID (e.g. \"{00000000-0000-0000-0000-000000000000}\")",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "GUID (e.g. \"{00000000-0000-0000-0000-000000000000}\")"
         },
         "includeHiddenRowCol": {
           "description": "Include hidden rows/columns (default true)",
@@ -5849,20 +5861,20 @@
           "type": "string"
         },
         "hashValue": {
-          "description": "Modern encryption: base64 hash value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64 hash value"
         },
         "readOnlyRecommended": {
           "description": "Recommend read-only mode (default false)",
           "type": "boolean"
         },
         "reservationPassword": {
-          "description": "Legacy reservation password (hex)",
-          "type": "string"
+          "$ref": "#/definitions/UnsignedShortHex",
+          "description": "Legacy reservation password (hex)"
         },
         "saltValue": {
-          "description": "Modern encryption: base64 salt value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64 salt value"
         },
         "spinCount": {
           "description": "Modern encryption: spin count",
@@ -6032,7 +6044,7 @@
             "backgroundColor": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/HexColor"
                 },
                 {
                   "$ref": "#/definitions/SolidFillOptions"
@@ -6042,7 +6054,7 @@
             "foregroundColor": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "$ref": "#/definitions/HexColor"
                 },
                 {
                   "$ref": "#/definitions/SolidFillOptions"
@@ -6250,7 +6262,7 @@
           "type": "number"
         },
         "color": {
-          "type": "string"
+          "$ref": "#/definitions/HexColor"
         },
         "colorIndexed": {
           "description": "Indexed color palette entry",
@@ -6629,7 +6641,7 @@
         "color": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/HexColor"
             },
             {
               "$ref": "#/definitions/SolidFillOptions"
@@ -6672,8 +6684,8 @@
       "description": "Connector nested inside a group (no anchor).",
       "properties": {
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -6805,8 +6817,8 @@
           "type": "array"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -6950,8 +6962,8 @@
       "description": "Shape nested inside a group (no anchor — positioned via spPr.xfrm).",
       "properties": {
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -7101,6 +7113,12 @@
       },
       "type": "object"
     },
+    "Guid": {
+      "description": "GUID in braced upper-case form (ST_Guid).",
+      "examples": ["{1DF903F5-8FC7-4C6A-9DF9-2AB1D10E6D84}"],
+      "pattern": "^\\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}\\}$",
+      "type": "string"
+    },
     "HSLEffectOptions": {
       "additionalProperties": false,
       "description": "Options for HSL effect.",
@@ -7173,6 +7191,12 @@
       },
       "required": ["name", "count"],
       "type": "object"
+    },
+    "HexColor": {
+      "description": "6-digit hex RGB color without '#' (e.g. FF0000).",
+      "examples": ["FF0000", "4472C4"],
+      "pattern": "^[0-9A-Fa-f]{6}$",
+      "type": "string"
     },
     "HierarchyUsageOptions": {
       "additionalProperties": false,
@@ -7351,8 +7375,8 @@
       "description": "Indexed color entry",
       "properties": {
         "rgb": {
-          "description": "RGB hex value, e.g. \"FF000000\"",
-          "type": "string"
+          "$ref": "#/definitions/ArgbHexColor",
+          "description": "RGB hex value, e.g. \"FF000000\""
         }
       },
       "required": ["rgb"],
@@ -8774,6 +8798,12 @@
       "enum": ["default", "portrait", "landscape"],
       "type": "string"
     },
+    "Panose": {
+      "description": "20-digit hex Panose-1 font classification (ST_Panose).",
+      "examples": ["020F0502020204030204"],
+      "pattern": "^[0-9A-Fa-f]{20}$",
+      "type": "string"
+    },
     "ParagraphDescriptorOptions": {
       "additionalProperties": false,
       "description": "Descriptor-layer paragraph accumulator (a:p).",
@@ -9233,8 +9263,8 @@
           "description": "Column offset in EMU (default 0)"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "data": {
           "$ref": "#/definitions/DataType",
@@ -11074,8 +11104,8 @@
           "type": "string"
         },
         "hashValue": {
-          "description": "Modern encryption: base64-encoded hash value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64-encoded hash value"
         },
         "name": {
           "description": "Range name (required)",
@@ -11086,8 +11116,8 @@
           "type": "string"
         },
         "saltValue": {
-          "description": "Modern encryption: base64-encoded salt value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64-encoded salt value"
         },
         "securityDescriptor": {
           "description": "Security descriptor (SID string, emitted as the attribute form)",
@@ -11573,8 +11603,8 @@
           "type": "string"
         },
         "guid": {
-          "description": "GUID (required).",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "GUID (required)."
         },
         "hiddenColumn": {
           "description": "Hidden column (default false).",
@@ -11637,8 +11667,8 @@
           "description": "Action (required)."
         },
         "guid": {
-          "description": "GUID (required).",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "GUID (required)."
         }
       },
       "required": ["guid", "action"],
@@ -11974,8 +12004,8 @@
           "type": "string"
         },
         "guid": {
-          "description": "Unique GUID for this revision (required).",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "Unique GUID for this revision (required)."
         },
         "maxRId": {
           "description": "Maximum revision ID (optional).",
@@ -12028,8 +12058,8 @@
           "type": "boolean"
         },
         "guid": {
-          "description": "Unique GUID for the headers collection (required).",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "Unique GUID for the headers collection (required)."
         },
         "headers": {
           "description": "Revision header entries (required, ≥1).",
@@ -12047,8 +12077,8 @@
           "type": "boolean"
         },
         "lastGuid": {
-          "description": "Last GUID (optional).",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "Last GUID (optional)."
         },
         "preserveHistory": {
           "description": "Preserve history days (default 30).",
@@ -12236,8 +12266,8 @@
           "type": "number"
         },
         "uidLastSave": {
-          "description": "Last save uid (@xr10:uidLastSave, a GUID).",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "Last save uid (@xr10:uidLastSave, a GUID)."
         }
       },
       "type": "object"
@@ -12403,12 +12433,18 @@
           "description": "Optional color transforms"
         },
         "value": {
-          "description": "Hex color value (e.g., \"FF0000\" for red)",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "Hex color value (e.g., \"FF0000\" for red)"
         }
       },
       "required": ["value"],
       "type": "object"
+    },
+    "RichTextColor": {
+      "description": "Color as the parse encoding: 6-digit RGB (\"FF0000\"), 8-digit ARGB (\"FFFF0000\"), a legacy palette index (\"10\"), or \"theme:N\".",
+      "examples": ["FF0000", "FFFF0000", "10", "theme:4"],
+      "pattern": "^([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8}|[0-9]+|theme:[0-9]+)$",
+      "type": "string"
     },
     "RichTextOptions": {
       "additionalProperties": false,
@@ -12457,7 +12493,6 @@
     },
     "RichTextRunPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Rich text run properties.",
       "properties": {
         "bold": {
           "type": "boolean"
@@ -12467,8 +12502,8 @@
           "type": "number"
         },
         "color": {
-          "description": "Font color (hex RGB, e.g. \"FF0000\")",
-          "type": "string"
+          "$ref": "#/definitions/RichTextColor",
+          "description": "Font color: 6-digit RGB (\"FF0000\", FF alpha auto-prefixed on emit), 8-digit ARGB verbatim, a bare palette index (\"10\" → indexed), or \"theme:N\" — the same string parse produces."
         },
         "condense": {
           "type": "boolean"
@@ -13185,8 +13220,8 @@
           "description": "Column offset in EMU (default 0)"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -13690,8 +13725,8 @@
           "type": "string"
         },
         "guid": {
-          "description": "GUID (required).",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "GUID (required)."
         },
         "id": {
           "description": "User ID (required).",
@@ -13878,8 +13913,8 @@
           "type": "boolean"
         },
         "hashValue": {
-          "description": "Modern encryption: base64-encoded hash value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64-encoded hash value"
         },
         "insertColumns": {
           "type": "boolean"
@@ -13901,8 +13936,8 @@
           "type": "boolean"
         },
         "saltValue": {
-          "description": "Modern encryption: base64-encoded salt value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64-encoded salt value"
         },
         "scenarios": {
           "type": "boolean"
@@ -14282,8 +14317,8 @@
       "description": "Options for system color.",
       "properties": {
         "lastClr": {
-          "description": "Last known RGB color value (optional fallback)",
-          "type": "string"
+          "$ref": "#/definitions/HexColor",
+          "description": "Last known RGB color value (optional fallback)"
         },
         "transforms": {
           "$ref": "#/definitions/ColorTransformOptions",
@@ -14337,8 +14372,8 @@
           "type": "number"
         },
         "rgb": {
-          "description": "RGB color string, e.g. \"FF0000\"",
-          "type": "string"
+          "$ref": "#/definitions/ArgbHexColor",
+          "description": "Hex ARGB color string with alpha, e.g. \"FF4472C4\" (passed through verbatim)"
         },
         "theme": {
           "description": "Theme color index (0-based)",
@@ -14951,8 +14986,8 @@
               "type": "number"
             },
             "panose": {
-              "description": "10-byte hex panose classification.",
-              "type": "string"
+              "$ref": "#/definitions/Panose",
+              "description": "10-byte hex panose classification."
             },
             "pitchFamily": {
               "type": "number"
@@ -14976,7 +15011,7 @@
           "type": "number"
         },
         "panose": {
-          "type": "string"
+          "$ref": "#/definitions/Panose"
         },
         "pitchFamily": {
           "type": "number"
@@ -15637,6 +15672,12 @@
       "description": "Measurement string: number followed by a unit (mm, cm, in, pt, pc, pi or px).",
       "examples": ["1.5cm", "0.75in", "12pt"],
       "pattern": "^-?(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi|px)$",
+      "type": "string"
+    },
+    "UnsignedShortHex": {
+      "description": "4-digit hex number (ST_UnsignedShortHex) — legacy password hash.",
+      "examples": ["83AF"],
+      "pattern": "^[0-9A-Fa-f]{4}$",
       "type": "string"
     },
     "UsersOptions": {
@@ -16506,8 +16547,8 @@
           "type": "string"
         },
         "revisionsHashValue": {
-          "description": "Revisions modern encryption: base64-encoded hash value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Revisions modern encryption: base64-encoded hash value"
         },
         "revisionsPassword": {
           "description": "Revisions password (legacy)",
@@ -16518,8 +16559,8 @@
           "type": "string"
         },
         "revisionsSaltValue": {
-          "description": "Revisions modern encryption: base64-encoded salt value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Revisions modern encryption: base64-encoded salt value"
         },
         "revisionsSpinCount": {
           "description": "Revisions modern encryption: spin count",
@@ -16530,8 +16571,8 @@
           "type": "string"
         },
         "workbookHashValue": {
-          "description": "Modern encryption: base64-encoded hash value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64-encoded hash value"
         },
         "workbookPassword": {
           "description": "Plain-text password — legacy Excel hash computed automatically",
@@ -16542,8 +16583,8 @@
           "type": "string"
         },
         "workbookSaltValue": {
-          "description": "Modern encryption: base64-encoded salt value",
-          "type": "string"
+          "$ref": "#/definitions/Base64",
+          "description": "Modern encryption: base64-encoded salt value"
         },
         "workbookSpinCount": {
           "description": "Modern encryption: spin count",
@@ -16751,8 +16792,8 @@
           "type": "object"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "customSplitPoints": {
           "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
@@ -17551,8 +17592,8 @@
           "type": "string"
         },
         "creationId": {
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "dataPath": {
           "description": "Diagram data part (dgm:relIds",

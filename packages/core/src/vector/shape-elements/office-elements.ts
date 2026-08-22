@@ -14,6 +14,7 @@
 import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml, stringifyElement } from "@office-open/xml";
 
+import type { Guid } from "../../util/values";
 import {
   stringifyVmlAttributes,
   parseVmlAttributes,
@@ -301,8 +302,8 @@ export function parseVmlClipPath(el: XmlElement): VmlClipPathOptions {
 export interface VmlSignatureLineOptions extends VmlExtAttribute {
   issignatureline?: VmlTrueFalse;
   /** s:ST_Guid — a GUID string. */
-  id?: string;
-  provid?: string;
+  id?: Guid;
+  provid?: Guid;
   signinginstructionsset?: VmlTrueFalse;
   allowcomments?: VmlTrueFalse;
   showsigndate?: VmlTrueFalse;

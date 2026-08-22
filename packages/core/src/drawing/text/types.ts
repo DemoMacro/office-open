@@ -9,6 +9,7 @@
  * @module
  */
 
+import type { Panose } from "../../util/values";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { EffectListOptions } from "../effects/effect-list";
 import type { FillOptions } from "../fill/fill-options";
@@ -63,7 +64,7 @@ export type TextFont =
   | {
       typeface: string;
       /** ST_Panose — 10-byte hex panose classification. */
-      panose?: string;
+      panose?: Panose;
       pitchFamily?: number;
       charset?: number;
     };

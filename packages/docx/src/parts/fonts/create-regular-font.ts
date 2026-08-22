@@ -1,3 +1,5 @@
+import type { Guid } from "@office-open/core";
+
 /**
  * Create Regular Font module for WordprocessingML documents.
  *
@@ -43,7 +45,7 @@ export const createRegularFont = ({
 }: {
   name: string;
   index: number;
-  fontKey: string;
+  fontKey: Guid;
   characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
 }): string =>
   createFont({

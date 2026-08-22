@@ -12,6 +12,7 @@ import { parseOnOff } from "@office-open/core";
 import { derivePasswordHash } from "@office-open/core";
 import type { PositiveUniversalMeasure } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
+import type { ArgbHexColor, Base64 } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import type { GraphicFrameLockingOptions } from "@office-open/core/drawing";
@@ -64,9 +65,9 @@ export interface ChartsheetProtectionOptions {
   /** Modern encryption: algorithm name (e.g. "SHA-512") */
   algorithmName?: string;
   /** Modern encryption: base64-encoded hash value */
-  hashValue?: string;
+  hashValue?: Base64;
   /** Modern encryption: base64-encoded salt value */
-  saltValue?: string;
+  saltValue?: Base64;
   /** Modern encryption: spin count for hash iteration */
   spinCount?: number;
   /** Content is protected */
@@ -84,7 +85,7 @@ export interface ChartsheetOptions {
   /** Visibility (CT_Sheet `@state`) */
   state?: "visible" | "hidden" | "veryHidden";
   /** Tab color (hex ARGB, e.g. "FF4472C4") */
-  tabColor?: string;
+  tabColor?: ArgbHexColor;
   pageMargins?: PageMarginsOptions;
   pageSetup?: ChartsheetPageSetup;
   headerFooter?: HeaderFooterOptions;

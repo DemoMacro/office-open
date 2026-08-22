@@ -1,6 +1,7 @@
 import { toUint8Array } from "../../util/data-type";
 import type { DataType } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
+import type { HexColor } from "../../util/values";
 import type { BlipEffectsOptions } from "../blip/blip-effects";
 import type { SourceRectangleOptions } from "../blip/source-rectangle";
 import type { TileOptions } from "../blip/tile";
@@ -15,7 +16,7 @@ import type { PresetPattern } from "./pattern-fill";
  */
 export interface GradientStopOptions {
   position: number;
-  color: string | SolidFillOptions;
+  color: HexColor | SolidFillOptions;
 }
 
 /**
@@ -103,8 +104,8 @@ export type FillOptions =
       type: "pattern";
       /** Preset pattern (a:pattFill `@prst`, ST_PresetPatternVal). */
       pattern: PresetPattern;
-      foregroundColor?: string | SolidFillOptions;
-      backgroundColor?: string | SolidFillOptions;
+      foregroundColor?: HexColor | SolidFillOptions;
+      backgroundColor?: HexColor | SolidFillOptions;
     }
   | { type: "group" };
 

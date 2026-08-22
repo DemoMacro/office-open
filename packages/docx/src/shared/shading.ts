@@ -28,6 +28,7 @@
  */
 import { xsdShadingPattern } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
+import type { HexColorOrAuto, UcharHexNumber } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -39,22 +40,22 @@ import type { Element } from "@office-open/xml";
  * @property type - Shading pattern type
  */
 export interface ShadingProperties {
-  fill?: string;
-  color?: string;
+  fill?: HexColorOrAuto;
+  color?: HexColorOrAuto;
   /** Fill pattern (ST_Shd): "clear" solid fill, "nil" no fill, "percentN" dot-density percent, "horizontalStripe"/"diagonalStripe"/"horizontalCross"/"diagonalCross" hatch patterns. */
   type?: (typeof ShadingType)[keyof typeof ShadingType];
   /** Theme color reference */
   themeColor?: ThemeColor;
   /** Theme color tint (2-char hex) */
-  themeTint?: string;
+  themeTint?: UcharHexNumber;
   /** Theme color shade (2-char hex) */
-  themeShade?: string;
+  themeShade?: UcharHexNumber;
   /** Theme fill color reference */
   themeFill?: ThemeColor;
   /** Theme fill tint (2-char hex) */
-  themeFillTint?: string;
+  themeFillTint?: UcharHexNumber;
   /** Theme fill shade (2-char hex) */
-  themeFillShade?: string;
+  themeFillShade?: UcharHexNumber;
 }
 
 /**

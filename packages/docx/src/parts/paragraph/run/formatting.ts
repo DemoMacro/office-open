@@ -9,6 +9,7 @@
  * @module
  */
 import type { ThemeColor } from "@office-open/core";
+import type { HexColorOrAuto, UcharHexNumber } from "@office-open/core";
 
 /**
  * Options for theme color configuration.
@@ -19,9 +20,9 @@ import type { ThemeColor } from "@office-open/core";
  * @property themeShade - Theme color shade (2-char hex, e.g., "BF")
  */
 export interface ColorOptions {
-  val?: string;
+  val?: HexColorOrAuto;
   /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
   themeColor?: ThemeColor;
-  themeTint?: string;
-  themeShade?: string;
+  themeTint?: UcharHexNumber;
+  themeShade?: UcharHexNumber;
 }

@@ -1,3 +1,4 @@
+import type { Base64, Guid, UnsignedShortHex } from "@office-open/core";
 /**
  * Workbook — option types for SpreadsheetML documents.
  *
@@ -36,7 +37,7 @@ export interface CustomWorkbookViewOptions {
   /** View name */
   name: string;
   /** GUID (e.g. "{00000000-0000-0000-0000-000000000000}") */
-  guid: string;
+  guid: Guid;
   /** Window width in twips */
   windowWidth: number;
   /** Window height in twips */
@@ -100,9 +101,9 @@ export interface WorkbookProtectionOptions {
   /** Modern encryption: algorithm name (e.g. "SHA-512") */
   workbookAlgorithmName?: string;
   /** Modern encryption: base64-encoded hash value */
-  workbookHashValue?: string;
+  workbookHashValue?: Base64;
   /** Modern encryption: base64-encoded salt value */
-  workbookSaltValue?: string;
+  workbookSaltValue?: Base64;
   /** Modern encryption: spin count */
   workbookSpinCount?: number;
   /** Revisions password (legacy) */
@@ -110,9 +111,9 @@ export interface WorkbookProtectionOptions {
   /** Revisions modern encryption: algorithm name */
   revisionsAlgorithmName?: string;
   /** Revisions modern encryption: base64-encoded hash value */
-  revisionsHashValue?: string;
+  revisionsHashValue?: Base64;
   /** Revisions modern encryption: base64-encoded salt value */
-  revisionsSaltValue?: string;
+  revisionsSaltValue?: Base64;
   /** Revisions modern encryption: spin count */
   revisionsSpinCount?: number;
   /** Workbook password character set (CT_WorkbookProtection `@workbookPasswordCharacterSet`) */
@@ -174,13 +175,13 @@ export interface FileSharingOptions {
   /** User name who has the file locked */
   userName?: string;
   /** Legacy reservation password (hex) */
-  reservationPassword?: string;
+  reservationPassword?: UnsignedShortHex;
   /** Modern encryption: algorithm name */
   algorithmName?: string;
   /** Modern encryption: base64 hash value */
-  hashValue?: string;
+  hashValue?: Base64;
   /** Modern encryption: base64 salt value */
-  saltValue?: string;
+  saltValue?: Base64;
   /** Modern encryption: spin count */
   spinCount?: number;
 }
@@ -393,7 +394,7 @@ export interface RevisionPtrOptions {
   /** Maximum coauthoring version seen (@xr6:coauthVersionMax). */
   coauthVersionMax?: number;
   /** Last save uid (@xr10:uidLastSave, a GUID). */
-  uidLastSave?: string;
+  uidLastSave?: Guid;
 }
 
 /** ST_SmartTagShow — smart tag display policy (CT_SmartTagPr/`@show`). */

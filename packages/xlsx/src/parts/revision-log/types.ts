@@ -1,3 +1,4 @@
+import type { Guid } from "@office-open/core";
 /**
  * Revision log — option types for shared-workbook change tracking.
  *
@@ -16,7 +17,7 @@ export type RevisionAction = "add" | "delete";
 /** One header entry (CT_RevisionHeader, sml.xsd:1898). */
 export interface RevisionHeaderEntry {
   /** Unique GUID for this revision (required, ST_Guid). */
-  guid: string;
+  guid: Guid;
   /** Date/time of the revision (required, xsd:dateTime). */
   dateTime: string;
   /** User who made the revision (required, ST_Xstring). */
@@ -38,11 +39,11 @@ export interface RevisionHeaderEntry {
 /** Options for xl/revisionHeaders.xml (CT_RevisionHeaders, sml.xsd:1860). */
 export interface RevisionHeadersOptions {
   /** Unique GUID for the headers collection (required). */
-  guid: string;
+  guid: Guid;
   /** Revision header entries (required, ≥1). */
   headers: RevisionHeaderEntry[];
   /** Last GUID (optional). */
-  lastGuid?: string;
+  lastGuid?: Guid;
   /** Shared workbook (default true). */
   shared?: boolean;
   /** Disk revisions (default false). */
@@ -70,7 +71,7 @@ export interface RevisionHeadersOptions {
 /** One shared-workbook user (CT_SharedUser, sml.xsd:2106). */
 export interface SharedUserOptions {
   /** GUID (required, ST_Guid). */
-  guid: string;
+  guid: Guid;
   /** User name (required, ST_Xstring). */
   name: string;
   /** User ID (required). */
@@ -167,7 +168,7 @@ export interface RevisionMoveOptions {
 /** Custom view add/delete (CT_RevisionCustomView, sml.xsd:1968 — no AG_RevData). */
 export interface RevisionCustomViewOptions {
   /** GUID (required, ST_Guid). */
-  guid: string;
+  guid: Guid;
   /** Action (required). */
   action: RevisionAction;
 }
@@ -335,7 +336,7 @@ export interface RevisionCommentOptions {
   /** Cell reference (required, ST_CellRef). */
   cell: string;
   /** GUID (required, ST_Guid). */
-  guid: string;
+  guid: Guid;
   /** Action (default add). */
   action?: RevisionAction;
   /** Always show (default false). */

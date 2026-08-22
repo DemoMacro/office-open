@@ -6,6 +6,7 @@
  * @module
  */
 
+import type { LongHexNumber } from "@office-open/core";
 import type { CustomXmlRunOptions } from "@parts/custom-xml";
 import type { ObjectElementOptions } from "@parts/object";
 import type { PermStartOptions } from "@parts/perm-start";
@@ -253,15 +254,15 @@ export type ParagraphOptions = {
   /** Array of child elements. */
   children?: (ParagraphChild | string)[];
   /** Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string). */
-  additionRsid?: string;
+  additionRsid?: LongHexNumber;
   /** Default revision save ID for runs in this paragraph (w:rsidRDefault). */
-  defaultRunRsid?: string;
+  defaultRunRsid?: LongHexNumber;
   /** Revision save ID for the paragraph properties (w:rsidP). */
-  propertiesRsid?: string;
+  propertiesRsid?: LongHexNumber;
   /** Revision save ID for the paragraph mark run properties (w:rsidRPr). */
-  runPropertiesRsid?: string;
+  runPropertiesRsid?: LongHexNumber;
   /** Revision save ID when the paragraph was deleted (w:rsidDel). */
-  deletionRsid?: string;
+  deletionRsid?: LongHexNumber;
   /** Unique paragraph identifier (w14:paraId, 8-digit hex string). */
   paraId?: string;
   /** Paragraph text identifier (w14:textId, 8-digit hex string). */

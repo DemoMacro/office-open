@@ -1,3 +1,4 @@
+import type { ShortHexNumber } from "@office-open/core";
 /**
  * Table look module for WordprocessingML documents.
  *
@@ -39,7 +40,7 @@ export interface TableLookOptions {
    * verbatim as a string so leading zeros survive; authoring needs only the
    * boolean fields.
    */
-  val?: string;
+  val?: ShortHexNumber;
   /** Apply first row conditional formatting. */
   firstRow?: boolean;
   /** Apply last row conditional formatting. */
