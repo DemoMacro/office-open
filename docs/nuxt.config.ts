@@ -53,8 +53,8 @@ export default defineNuxtConfig({
 
   // Nitro's server-bundle esbuild plugin defaults to target "es2019"
   // (rollup/index.mjs), which rejects top-level await emitted by some
-  // dependencies bundled under the Vercel preset. Raise it to "es2022"
-  // (TLA is part of ES2022) so the prerenderer stops failing on Vercel.
+  // dependencies bundled under serverless presets. Raise it to "es2022"
+  // (TLA is part of ES2022) so the prerenderer stops failing.
   nitro: {
     esbuild: {
       options: {
@@ -150,6 +150,7 @@ export default defineNuxtConfig({
       const image = modules.indexOf("@nuxt/image");
       if (image !== -1) modules.splice(image, 1);
     },
+
     "nitro:config"(nitroConfig) {
       nitroConfig.handlers = nitroConfig.handlers?.filter((h) => h?.route !== "/api/search");
     },
