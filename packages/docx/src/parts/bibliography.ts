@@ -95,8 +95,25 @@ export interface AuthorOptions {
  * @property institution - Institution (for theses, reports)
  */
 export interface SourceTypeOptions {
-  /** Source type element (ST_SourceType: Book, JournalArticle, …). */
-  sourceType?: string;
+  /** Source type element (b:SourceType, ST_SourceType). */
+  sourceType?:
+    | "ArticleInAPeriodical"
+    | "Book"
+    | "BookSection"
+    | "JournalArticle"
+    | "ConferenceProceedings"
+    | "Report"
+    | "SoundRecording"
+    | "Performance"
+    | "Art"
+    | "DocumentFromInternetSite"
+    | "InternetSite"
+    | "Film"
+    | "Interview"
+    | "Patent"
+    | "ElectronicSource"
+    | "Case"
+    | "Misc";
   /** Subcategory string (XSD Type element). */
   type?: string;
   title?: string;
@@ -374,7 +391,12 @@ export const bibliographyDesc: CustomDescriptor<BibliographyOptions> = {
           continue;
         }
         const val = textOf(xmlChild);
-        if (val) source[key] = val;
+        if (!val) continue;
+        if (key === "sourceType") {
+          source.sourceType = val as SourceTypeOptions["sourceType"];
+        } else {
+          source[key] = val;
+        }
       }
       sources.push(source);
     }

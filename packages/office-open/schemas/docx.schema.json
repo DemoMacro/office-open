@@ -1465,27 +1465,8 @@
           "type": "string"
         },
         "themeColor": {
-          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\".",
-          "enum": [
-            "dark1",
-            "light1",
-            "dark2",
-            "light2",
-            "accent1",
-            "accent2",
-            "accent3",
-            "accent4",
-            "accent5",
-            "accent6",
-            "hyperlink",
-            "followedHyperlink",
-            "none",
-            "background1",
-            "text1",
-            "background2",
-            "text2"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThemeColor",
+          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\"."
         },
         "themeShade": {
           "description": "Theme color shade (2-char hex)",
@@ -1936,7 +1917,71 @@
           "type": "boolean"
         },
         "numFmt": {
-          "description": "Number format",
+          "description": "Number format (w:numFmt)",
+          "enum": [
+            "aiueo",
+            "aiueoFullWidth",
+            "arabicAbjad",
+            "arabicAlpha",
+            "bahtText",
+            "bullet",
+            "cardinalText",
+            "chicago",
+            "chineseCounting",
+            "chineseCountingThousand",
+            "chineseLegalSimplified",
+            "chosung",
+            "decimal",
+            "decimalEnclosedCircle",
+            "decimalEnclosedCircleChinese",
+            "decimalEnclosedFullstop",
+            "decimalEnclosedParen",
+            "decimalFullWidth",
+            "decimalFullWidth2",
+            "decimalHalfWidth",
+            "decimalZero",
+            "dollarText",
+            "ganada",
+            "hebrew1",
+            "hebrew2",
+            "hex",
+            "hindiConsonants",
+            "hindiCounting",
+            "hindiNumbers",
+            "hindiVowels",
+            "ideographDigital",
+            "ideographEnclosedCircle",
+            "ideographLegalTraditional",
+            "ideographTraditional",
+            "ideographZodiac",
+            "ideographZodiacTraditional",
+            "iroha",
+            "irohaFullWidth",
+            "japaneseCounting",
+            "japaneseDigitalTenThousand",
+            "japaneseLegal",
+            "koreanCounting",
+            "koreanDigital",
+            "koreanDigital2",
+            "koreanLegal",
+            "lowerLetter",
+            "lowerRoman",
+            "none",
+            "numberInDash",
+            "ordinal",
+            "ordinalText",
+            "russianLower",
+            "russianUpper",
+            "taiwaneseCounting",
+            "taiwaneseCountingThousand",
+            "taiwaneseDigital",
+            "thaiCounting",
+            "thaiLetters",
+            "thaiNumbers",
+            "upperLetter",
+            "upperRoman",
+            "vietnameseCounting"
+          ],
           "type": "string"
         },
         "pos": {
@@ -3558,27 +3603,8 @@
       "description": "Options for theme color configuration.",
       "properties": {
         "themeColor": {
-          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\".",
-          "enum": [
-            "dark1",
-            "light1",
-            "dark2",
-            "light2",
-            "accent1",
-            "accent2",
-            "accent3",
-            "accent4",
-            "accent5",
-            "accent6",
-            "hyperlink",
-            "followedHyperlink",
-            "none",
-            "background1",
-            "text1",
-            "background2",
-            "text2"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThemeColor",
+          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\"."
         },
         "themeShade": {
           "type": "string"
@@ -5716,8 +5742,8 @@
           "type": "string"
         },
         "themeColor": {
-          "description": "Theme color name (e.g., \"accent1\", \"dark1\")",
-          "type": "string"
+          "$ref": "#/definitions/ThemeColor",
+          "description": "Theme color name (w:themeColor, — e.g. \"accent1\", \"dark1\")"
         },
         "themeShade": {
           "description": "Theme shade value (darkens the theme color)",
@@ -5772,11 +5798,76 @@
           "type": "string"
         },
         "numFmt": {
-          "description": "Number format",
+          "description": "Number format (w:numFmt)",
+          "enum": [
+            "aiueo",
+            "aiueoFullWidth",
+            "arabicAbjad",
+            "arabicAlpha",
+            "bahtText",
+            "bullet",
+            "cardinalText",
+            "chicago",
+            "chineseCounting",
+            "chineseCountingThousand",
+            "chineseLegalSimplified",
+            "chosung",
+            "decimal",
+            "decimalEnclosedCircle",
+            "decimalEnclosedCircleChinese",
+            "decimalEnclosedFullstop",
+            "decimalEnclosedParen",
+            "decimalFullWidth",
+            "decimalFullWidth2",
+            "decimalHalfWidth",
+            "decimalZero",
+            "dollarText",
+            "ganada",
+            "hebrew1",
+            "hebrew2",
+            "hex",
+            "hindiConsonants",
+            "hindiCounting",
+            "hindiNumbers",
+            "hindiVowels",
+            "ideographDigital",
+            "ideographEnclosedCircle",
+            "ideographLegalTraditional",
+            "ideographTraditional",
+            "ideographZodiac",
+            "ideographZodiacTraditional",
+            "iroha",
+            "irohaFullWidth",
+            "japaneseCounting",
+            "japaneseDigitalTenThousand",
+            "japaneseLegal",
+            "koreanCounting",
+            "koreanDigital",
+            "koreanDigital2",
+            "koreanLegal",
+            "lowerLetter",
+            "lowerRoman",
+            "none",
+            "numberInDash",
+            "ordinal",
+            "ordinalText",
+            "russianLower",
+            "russianUpper",
+            "taiwaneseCounting",
+            "taiwaneseCountingThousand",
+            "taiwaneseDigital",
+            "thaiCounting",
+            "thaiLetters",
+            "thaiNumbers",
+            "upperLetter",
+            "upperRoman",
+            "vietnameseCounting"
+          ],
           "type": "string"
         },
         "numRestart": {
-          "description": "When to restart numbering",
+          "description": "When to restart numbering (w:numRestart)",
+          "enum": ["continuous", "eachSect", "eachPage"],
           "type": "string"
         },
         "numStart": {
@@ -5807,11 +5898,76 @@
           "type": "string"
         },
         "numFmt": {
-          "description": "Number format",
+          "description": "Number format (w:numFmt)",
+          "enum": [
+            "aiueo",
+            "aiueoFullWidth",
+            "arabicAbjad",
+            "arabicAlpha",
+            "bahtText",
+            "bullet",
+            "cardinalText",
+            "chicago",
+            "chineseCounting",
+            "chineseCountingThousand",
+            "chineseLegalSimplified",
+            "chosung",
+            "decimal",
+            "decimalEnclosedCircle",
+            "decimalEnclosedCircleChinese",
+            "decimalEnclosedFullstop",
+            "decimalEnclosedParen",
+            "decimalFullWidth",
+            "decimalFullWidth2",
+            "decimalHalfWidth",
+            "decimalZero",
+            "dollarText",
+            "ganada",
+            "hebrew1",
+            "hebrew2",
+            "hex",
+            "hindiConsonants",
+            "hindiCounting",
+            "hindiNumbers",
+            "hindiVowels",
+            "ideographDigital",
+            "ideographEnclosedCircle",
+            "ideographLegalTraditional",
+            "ideographTraditional",
+            "ideographZodiac",
+            "ideographZodiacTraditional",
+            "iroha",
+            "irohaFullWidth",
+            "japaneseCounting",
+            "japaneseDigitalTenThousand",
+            "japaneseLegal",
+            "koreanCounting",
+            "koreanDigital",
+            "koreanDigital2",
+            "koreanLegal",
+            "lowerLetter",
+            "lowerRoman",
+            "none",
+            "numberInDash",
+            "ordinal",
+            "ordinalText",
+            "russianLower",
+            "russianUpper",
+            "taiwaneseCounting",
+            "taiwaneseCountingThousand",
+            "taiwaneseDigital",
+            "thaiCounting",
+            "thaiLetters",
+            "thaiNumbers",
+            "upperLetter",
+            "upperRoman",
+            "vietnameseCounting"
+          ],
           "type": "string"
         },
         "numRestart": {
-          "description": "When to restart numbering",
+          "description": "When to restart numbering (w:numRestart)",
+          "enum": ["continuous", "eachSect", "eachPage"],
           "type": "string"
         },
         "numStart": {
@@ -6114,7 +6270,8 @@
           "type": "string"
         },
         "cryptoAlgorithmClass": {
-          "description": "Cryptographic algorithm class",
+          "description": "Cryptographic algorithm class (w:cryptAlgorithmClass, s:)",
+          "enum": ["hash", "custom"],
           "type": "string"
         },
         "cryptoAlgorithmSid": {
@@ -6122,7 +6279,8 @@
           "type": "number"
         },
         "cryptoAlgorithmType": {
-          "description": "Cryptographic algorithm type",
+          "description": "Cryptographic algorithm type (w:cryptAlgorithmType, s:)",
+          "enum": ["typeAny", "custom"],
           "type": "string"
         },
         "cryptoProvider": {
@@ -6130,7 +6288,8 @@
           "type": "string"
         },
         "cryptoProviderType": {
-          "description": "Cryptographic provider type",
+          "description": "Cryptographic provider type (w:cryptProviderType, s:)",
+          "enum": ["rsaAES", "rsaFull", "custom"],
           "type": "string"
         },
         "cryptoProviderTypeExtension": {
@@ -7051,75 +7210,36 @@
           "type": "string"
         },
         "asciiTheme": {
-          "description": "Theme font for ASCII characters",
-          "enum": [
-            "majorEastAsia",
-            "majorBidi",
-            "majorAscii",
-            "majorHAnsi",
-            "minorEastAsia",
-            "minorBidi",
-            "minorAscii",
-            "minorHAnsi"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThemeFont",
+          "description": "Theme font for ASCII characters"
         },
         "complexScript": {
           "description": "Font for complex script characters",
           "type": "string"
         },
         "complexScriptTheme": {
-          "description": "Theme font for complex script characters",
-          "enum": [
-            "majorEastAsia",
-            "majorBidi",
-            "majorAscii",
-            "majorHAnsi",
-            "minorEastAsia",
-            "minorBidi",
-            "minorAscii",
-            "minorHAnsi"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThemeFont",
+          "description": "Theme font for complex script characters"
         },
         "eastAsia": {
           "description": "Font for East Asian characters",
           "type": "string"
         },
         "eastAsiaTheme": {
-          "description": "Theme font for East Asian characters",
-          "enum": [
-            "majorEastAsia",
-            "majorBidi",
-            "majorAscii",
-            "majorHAnsi",
-            "minorEastAsia",
-            "minorBidi",
-            "minorAscii",
-            "minorHAnsi"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThemeFont",
+          "description": "Theme font for East Asian characters"
         },
         "hAnsi": {
           "description": "Font for high ANSI characters (0x80-0xFF)",
           "type": "string"
         },
         "hAnsiTheme": {
-          "description": "Theme font for high ANSI characters",
-          "enum": [
-            "majorEastAsia",
-            "majorBidi",
-            "majorAscii",
-            "majorHAnsi",
-            "minorEastAsia",
-            "minorBidi",
-            "minorAscii",
-            "minorHAnsi"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThemeFont",
+          "description": "Theme font for high ANSI characters"
         },
         "hint": {
-          "description": "Hint for font selection algorithm",
+          "description": "Hint for font selection algorithm (w:hint)",
+          "enum": ["default", "eastAsia"],
           "type": "string"
         }
       },
@@ -19566,43 +19686,43 @@
         },
         "colorSchemeMapping": {
           "additionalProperties": false,
-          "description": "Theme color scheme remapping",
+          "description": "Theme color scheme remapping (w:clrSchemeMapping)",
           "properties": {
             "accent1": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "accent2": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "accent3": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "accent4": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "accent5": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "accent6": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "bg1": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "bg2": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "followedHyperlink": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "hyperlink": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "t1": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             },
             "t2": {
-              "type": "string"
+              "$ref": "#/definitions/ColorSchemeIndex"
             }
           },
           "type": "object"
@@ -20142,50 +20262,12 @@
           "type": "string"
         },
         "themeColor": {
-          "description": "Theme color reference",
-          "enum": [
-            "dark1",
-            "light1",
-            "dark2",
-            "light2",
-            "accent1",
-            "accent2",
-            "accent3",
-            "accent4",
-            "accent5",
-            "accent6",
-            "hyperlink",
-            "followedHyperlink",
-            "none",
-            "background1",
-            "text1",
-            "background2",
-            "text2"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThemeColor",
+          "description": "Theme color reference"
         },
         "themeFill": {
-          "description": "Theme fill color reference",
-          "enum": [
-            "dark1",
-            "light1",
-            "dark2",
-            "light2",
-            "accent1",
-            "accent2",
-            "accent3",
-            "accent4",
-            "accent5",
-            "accent6",
-            "hyperlink",
-            "followedHyperlink",
-            "none",
-            "background1",
-            "text1",
-            "background2",
-            "text2"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ThemeColor",
+          "description": "Theme fill color reference"
         },
         "themeFillShade": {
           "description": "Theme fill shade (2-char hex)",
@@ -21300,7 +21382,26 @@
           "type": "string"
         },
         "sourceType": {
-          "description": "Source type element.",
+          "description": "Source type element (b:SourceType).",
+          "enum": [
+            "ArticleInAPeriodical",
+            "Book",
+            "BookSection",
+            "JournalArticle",
+            "ConferenceProceedings",
+            "Report",
+            "SoundRecording",
+            "Performance",
+            "Art",
+            "DocumentFromInternetSite",
+            "InternetSite",
+            "Film",
+            "Interview",
+            "Patent",
+            "ElectronicSource",
+            "Case",
+            "Misc"
+          ],
           "type": "string"
         },
         "standardNumber": {
@@ -24658,6 +24759,43 @@
       },
       "required": ["type"],
       "type": "object"
+    },
+    "ThemeColor": {
+      "description": "Theme color values used throughout OOXML for referencing document theme colors. Reference: in OOXML specification",
+      "enum": [
+        "dark1",
+        "light1",
+        "dark2",
+        "light2",
+        "accent1",
+        "accent2",
+        "accent3",
+        "accent4",
+        "accent5",
+        "accent6",
+        "hyperlink",
+        "followedHyperlink",
+        "none",
+        "background1",
+        "text1",
+        "background2",
+        "text2"
+      ],
+      "type": "string"
+    },
+    "ThemeFont": {
+      "description": "Theme font values used for referencing document theme fonts. Reference: in OOXML specification",
+      "enum": [
+        "majorEastAsia",
+        "majorBidi",
+        "majorAscii",
+        "majorHAnsi",
+        "minorEastAsia",
+        "minorBidi",
+        "minorAscii",
+        "minorHAnsi"
+      ],
+      "type": "string"
     },
     "TileAlignment": {
       "description": "Tile alignment within the shape.\n\nSpecifies the anchor position of the first tile relative to the shape.",
@@ -30402,7 +30540,8 @@
           "type": "string"
         },
         "cryptoAlgorithmClass": {
-          "description": "Cryptographic algorithm class",
+          "description": "Cryptographic algorithm class (w:cryptAlgorithmClass, s:)",
+          "enum": ["hash", "custom"],
           "type": "string"
         },
         "cryptoAlgorithmSid": {
@@ -30410,7 +30549,8 @@
           "type": "number"
         },
         "cryptoAlgorithmType": {
-          "description": "Cryptographic algorithm type",
+          "description": "Cryptographic algorithm type (w:cryptAlgorithmType, s:)",
+          "enum": ["typeAny", "custom"],
           "type": "string"
         },
         "cryptoProvider": {
@@ -30418,7 +30558,8 @@
           "type": "string"
         },
         "cryptoProviderType": {
-          "description": "Cryptographic provider type",
+          "description": "Cryptographic provider type (w:cryptProviderType, s:)",
+          "enum": ["rsaAES", "rsaFull", "custom"],
           "type": "string"
         },
         "cryptoProviderTypeExtension": {

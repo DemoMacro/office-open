@@ -21,7 +21,7 @@ import type { ThemeColor } from "@office-open/core";
 export interface ColorOptions {
   val?: string;
   /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
-  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeColor?: ThemeColor;
   themeTint?: string;
   themeShade?: string;
 }

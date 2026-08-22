@@ -380,7 +380,7 @@ function parseCaptions(el: Element): CaptionsOptions | undefined {
       const noLabel = attr(child, "w:noLabel");
       if (noLabel !== undefined) c.noLabel = parseOnOff(noLabel) ?? false;
       const numFmt = attr(child, "w:numFmt");
-      if (numFmt) c.numFmt = numFmt;
+      if (numFmt) c.numFmt = numFmt as CaptionOptions["numFmt"];
       const sep = attr(child, "w:sep");
       if (sep) c.sep = sep as CaptionOptions["sep"];
       captions.push(c);

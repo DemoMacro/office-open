@@ -9,6 +9,7 @@
  * @module
  */
 import type { DataType } from "@office-open/core";
+import type { ThemeColor } from "@office-open/core";
 
 /**
  * Image options for document background.
@@ -30,8 +31,8 @@ export interface BackgroundImageOptions {
 export interface DocumentBackgroundOptions {
   /** Background color in hex format (e.g., "FF0000" for red) */
   color?: string;
-  /** Theme color name (e.g., "accent1", "dark1") */
-  themeColor?: string;
+  /** Theme color name (w:themeColor, ST_ThemeColor — e.g. "accent1", "dark1") */
+  themeColor?: ThemeColor;
   /** Theme shade value (darkens the theme color) */
   themeShade?: string;
   /** Theme tint value (lightens the theme color) */

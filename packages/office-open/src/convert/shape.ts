@@ -25,6 +25,7 @@ import type {
   Scene3DOptions,
   Shape3DOptions,
   PresetGeometryOptions,
+  ShapeType,
   ParagraphDescriptorOptions,
   TextBodyOptions,
   ShapePropertiesOptions,
@@ -81,9 +82,9 @@ export function pickContent<T extends ShapeContent>(source: T): PickedContent {
   return out;
 }
 
-/** pptx/xlsx geometry shorthand (string | PresetGeometryOptions) → docx preset. */
+/** pptx/xlsx geometry shorthand (ShapeType | PresetGeometryOptions) → docx preset. */
 export function toPresetGeometry(
-  g: string | PresetGeometryOptions | undefined,
+  g: ShapeType | PresetGeometryOptions | undefined,
 ): PresetGeometryOptions | undefined {
   if (g === undefined) return undefined;
   return typeof g === "string" ? { preset: g } : g;

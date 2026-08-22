@@ -19,8 +19,6 @@ import {
   uCharHexNumber,
   universalMeasureValue,
   unsignedDecimalNumber,
-  ThemeColor,
-  ThemeFont,
 } from "./values";
 
 describe("decimalNumber", () => {
@@ -267,41 +265,9 @@ describe("pointMeasureValue", () => {
   });
 });
 
-describe("ThemeColor", () => {
-  it("should have all 17 ST_ThemeColor values", () => {
-    const values = Object.values(ThemeColor);
-    expect(values).toHaveLength(17);
-  });
-
-  it("should include required values per XSD", () => {
-    expect(ThemeColor.DARK1).toBe("dark1");
-    expect(ThemeColor.LIGHT1).toBe("light1");
-    expect(ThemeColor.ACCENT1).toBe("accent1");
-    expect(ThemeColor.HYPERLINK).toBe("hyperlink");
-    expect(ThemeColor.FOLLOWED_HYPERLINK).toBe("followedHyperlink");
-    expect(ThemeColor.NONE).toBe("none");
-    expect(ThemeColor.BACKGROUND1).toBe("background1");
-    expect(ThemeColor.TEXT1).toBe("text1");
-  });
-});
-
-describe("ThemeFont", () => {
-  it("should have all 8 ST_Theme values", () => {
-    const values = Object.values(ThemeFont);
-    expect(values).toHaveLength(8);
-  });
-
-  it("should include required values per XSD", () => {
-    expect(ThemeFont.MAJOR_ASCII).toBe("majorAscii");
-    expect(ThemeFont.MAJOR_H_ANSI).toBe("majorHAnsi");
-    expect(ThemeFont.MAJOR_EAST_ASIA).toBe("majorEastAsia");
-    expect(ThemeFont.MAJOR_BIDI).toBe("majorBidi");
-    expect(ThemeFont.MINOR_ASCII).toBe("minorAscii");
-    expect(ThemeFont.MINOR_H_ANSI).toBe("minorHAnsi");
-    expect(ThemeFont.MINOR_EAST_ASIA).toBe("minorEastAsia");
-    expect(ThemeFont.MINOR_BIDI).toBe("minorBidi");
-  });
-});
+// ThemeColor/ThemeFont are now pure type aliases — their value domains are
+// compile-time checked by the consumers' literal unions and the frozen JSON
+// schemas, so runtime constant assertions no longer apply.
 
 // ── Additional input cases (merged from the former top-level values.spec.ts) ──
 // These exercise a complementary set of inputs for the same validators.

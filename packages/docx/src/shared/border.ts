@@ -28,7 +28,7 @@
  *
  * @module
  */
-import { ThemeColor } from "@office-open/core";
+import type { ThemeColor } from "@office-open/core";
 import { attr, attrBool, attrNum } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -51,7 +51,7 @@ export interface BorderOptions {
   /** Border color, in hex (eg 'FF00AA') */
   color?: string;
   /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
-  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeColor?: ThemeColor;
   /** Theme color tint (2-char hex) */
   themeTint?: string;
   /** Theme color shade (2-char hex) */
@@ -171,8 +171,6 @@ export const BorderStyle = {
 
 /** Valid border `@w:val` values (ST_Border). */
 const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
-/** Valid border `@w:themeColor` values (ST_ThemeColor). */
-const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
 
 /**
  * Parse one CT_Border side element. Returns undefined when the element is
@@ -189,8 +187,8 @@ export function parseBorderSide(sideEl: Element): BorderOptions | undefined {
   const space = attrNum(sideEl, "w:space");
   if (space !== undefined) sideOpts.space = space;
   const themeColor = attr(sideEl, "w:themeColor");
-  if (themeColor && THEME_COLORS.includes(themeColor)) {
-    sideOpts.themeColor = themeColor as BorderOptions["themeColor"];
+  if (themeColor) {
+    sideOpts.themeColor = themeColor as ThemeColor;
   }
   const themeTint = attr(sideEl, "w:themeTint");
   if (themeTint) sideOpts.themeTint = themeTint;

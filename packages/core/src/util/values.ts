@@ -518,25 +518,24 @@ export const dateTimeValue = (val: Date): string => val.toISOString();
  *
  * @publicApi
  */
-export const ThemeColor = {
-  DARK1: "dark1",
-  LIGHT1: "light1",
-  DARK2: "dark2",
-  LIGHT2: "light2",
-  ACCENT1: "accent1",
-  ACCENT2: "accent2",
-  ACCENT3: "accent3",
-  ACCENT4: "accent4",
-  ACCENT5: "accent5",
-  ACCENT6: "accent6",
-  HYPERLINK: "hyperlink",
-  FOLLOWED_HYPERLINK: "followedHyperlink",
-  NONE: "none",
-  BACKGROUND1: "background1",
-  TEXT1: "text1",
-  BACKGROUND2: "background2",
-  TEXT2: "text2",
-} as const;
+export type ThemeColor =
+  | "dark1"
+  | "light1"
+  | "dark2"
+  | "light2"
+  | "accent1"
+  | "accent2"
+  | "accent3"
+  | "accent4"
+  | "accent5"
+  | "accent6"
+  | "hyperlink"
+  | "followedHyperlink"
+  | "none"
+  | "background1"
+  | "text1"
+  | "background2"
+  | "text2";
 
 /**
  * Theme font values used for referencing document theme fonts.
@@ -545,13 +544,12 @@ export const ThemeColor = {
  *
  * @publicApi
  */
-export const ThemeFont = {
-  MAJOR_EAST_ASIA: "majorEastAsia",
-  MAJOR_BIDI: "majorBidi",
-  MAJOR_ASCII: "majorAscii",
-  MAJOR_H_ANSI: "majorHAnsi",
-  MINOR_EAST_ASIA: "minorEastAsia",
-  MINOR_BIDI: "minorBidi",
-  MINOR_ASCII: "minorAscii",
-  MINOR_H_ANSI: "minorHAnsi",
-} as const;
+export type ThemeFont =
+  | "majorEastAsia"
+  | "majorBidi"
+  | "majorAscii"
+  | "majorHAnsi"
+  | "minorEastAsia"
+  | "minorBidi"
+  | "minorAscii"
+  | "minorHAnsi";

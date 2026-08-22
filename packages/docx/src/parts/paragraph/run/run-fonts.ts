@@ -33,14 +33,14 @@ export interface FontProperties {
   eastAsia?: string;
   /** Font for high ANSI characters (0x80-0xFF) */
   hAnsi?: string;
-  /** Hint for font selection algorithm */
-  hint?: string;
+  /** Hint for font selection algorithm (w:hint, ST_Hint) */
+  hint?: "default" | "eastAsia";
   /** Theme font for ASCII characters */
-  asciiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  asciiTheme?: ThemeFont;
   /** Theme font for high ANSI characters */
-  hAnsiTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  hAnsiTheme?: ThemeFont;
   /** Theme font for East Asian characters */
-  eastAsiaTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  eastAsiaTheme?: ThemeFont;
   /** Theme font for complex script characters */
-  complexScriptTheme?: (typeof ThemeFont)[keyof typeof ThemeFont];
+  complexScriptTheme?: ThemeFont;
 }

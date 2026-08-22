@@ -7,6 +7,7 @@ import {
   resolveRelationshipTarget,
   toUint8Array,
 } from "@office-open/core";
+import type { ThemeColor } from "@office-open/core";
 import { contentTypesDesc } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -420,7 +421,7 @@ export function parseDocument(data: DataType): DocumentOptions {
       const color = attr(docx.background, "w:color");
       if (color) bg.color = color;
       const themeColor = attr(docx.background, "w:themeColor");
-      if (themeColor) bg.themeColor = themeColor;
+      if (themeColor) bg.themeColor = themeColor as ThemeColor;
       const themeShade = attr(docx.background, "w:themeShade");
       if (themeShade) bg.themeShade = themeShade;
       const themeTint = attr(docx.background, "w:themeTint");

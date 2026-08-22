@@ -85,12 +85,12 @@ export interface FontEntry {
   panose1?: string;
   /** Character set identifier */
   charset?: (typeof CharacterSet)[keyof typeof CharacterSet];
-  /** Font family */
-  family?: string;
+  /** Font family (w:family, ST_FontFamily) */
+  family?: "decorative" | "modern" | "roman" | "script" | "swiss" | "auto";
   /** Whether this is not a TrueType font */
   notTrueType?: boolean;
-  /** Font pitch */
-  pitch?: string;
+  /** Font pitch (w:pitch, ST_Pitch) */
+  pitch?: "fixed" | "variable" | "default";
   /** Font signature (Unicode and code page ranges) */
   sig?: {
     /** Unicode Subset Bitfield 0 */

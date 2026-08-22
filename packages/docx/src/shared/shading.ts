@@ -26,8 +26,8 @@
  *
  * @module
  */
-import { ThemeColor } from "@office-open/core";
 import { xsdShadingPattern } from "@office-open/core";
+import type { ThemeColor } from "@office-open/core";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -44,13 +44,13 @@ export interface ShadingProperties {
   /** Fill pattern (ST_Shd): "clear" solid fill, "nil" no fill, "percentN" dot-density percent, "horizontalStripe"/"diagonalStripe"/"horizontalCross"/"diagonalCross" hatch patterns. */
   type?: (typeof ShadingType)[keyof typeof ShadingType];
   /** Theme color reference */
-  themeColor?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeColor?: ThemeColor;
   /** Theme color tint (2-char hex) */
   themeTint?: string;
   /** Theme color shade (2-char hex) */
   themeShade?: string;
   /** Theme fill color reference */
-  themeFill?: (typeof ThemeColor)[keyof typeof ThemeColor];
+  themeFill?: ThemeColor;
   /** Theme fill tint (2-char hex) */
   themeFillTint?: string;
   /** Theme fill shade (2-char hex) */
@@ -125,8 +125,6 @@ export const ShadingType = {
   VERTICAL_STRIPE: "verticalStripe",
 } as const;
 
-const THEME_COLORS = Object.values(ThemeColor) as readonly string[];
-
 /**
  * Parse a w:shd (CT_Shd) element into ShadingProperties.
  *
@@ -143,16 +141,16 @@ export function parseShading(shd: Element): ShadingProperties | undefined {
   const val = attr(shd, "w:val");
   if (val) shading.type = xsdShadingPattern.from(val) as ShadingProperties["type"];
   const themeColor = attr(shd, "w:themeColor");
-  if (themeColor && THEME_COLORS.includes(themeColor)) {
-    shading.themeColor = themeColor as ShadingProperties["themeColor"];
+  if (themeColor) {
+    shading.themeColor = themeColor as ThemeColor;
   }
   const themeTint = attr(shd, "w:themeTint");
   if (themeTint) shading.themeTint = themeTint;
   const themeShade = attr(shd, "w:themeShade");
   if (themeShade) shading.themeShade = themeShade;
   const themeFill = attr(shd, "w:themeFill");
-  if (themeFill && THEME_COLORS.includes(themeFill)) {
-    shading.themeFill = themeFill as ShadingProperties["themeFill"];
+  if (themeFill) {
+    shading.themeFill = themeFill as ThemeColor;
   }
   const themeFillTint = attr(shd, "w:themeFillTint");
   if (themeFillTint) shading.themeFillTint = themeFillTint;

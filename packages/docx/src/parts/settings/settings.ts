@@ -9,6 +9,9 @@
  * @module
  */
 import type { VmlShapeDefaultsOptions, VmlShapeLayoutOptions } from "@office-open/core";
+import type { ColorSchemeIndex } from "@office-open/core";
+import { NumberRestartType } from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
+import type { NumberFormat } from "@shared/constants";
 
 import type { CompatibilityOptions } from "./compatibility";
 export type { CompatibilityOptions, CompatSettingOptions } from "./compatibility";
@@ -105,20 +108,20 @@ export interface SettingsOptions {
   docVars?: { name: string; val: string }[];
   /** Mail merge configuration */
   mailMerge?: MailMergeOptions;
-  /** Theme color scheme remapping */
+  /** Theme color scheme remapping (w:clrSchemeMapping, ST_WmlColorSchemeIndex) */
   colorSchemeMapping?: {
-    bg1?: string;
-    t1?: string;
-    bg2?: string;
-    t2?: string;
-    accent1?: string;
-    accent2?: string;
-    accent3?: string;
-    accent4?: string;
-    accent5?: string;
-    accent6?: string;
-    hyperlink?: string;
-    followedHyperlink?: string;
+    bg1?: ColorSchemeIndex;
+    t1?: ColorSchemeIndex;
+    bg2?: ColorSchemeIndex;
+    t2?: ColorSchemeIndex;
+    accent1?: ColorSchemeIndex;
+    accent2?: ColorSchemeIndex;
+    accent3?: ColorSchemeIndex;
+    accent4?: ColorSchemeIndex;
+    accent5?: ColorSchemeIndex;
+    accent6?: ColorSchemeIndex;
+    hyperlink?: ColorSchemeIndex;
+    followedHyperlink?: ColorSchemeIndex;
   };
   /** URL of the attached template document (external relationship target) */
   attachedTemplate?: string;
@@ -364,16 +367,16 @@ export interface DocumentProtectionOptions {
   spinCount?: number;
   /** Password algorithm name */
   algorithmName?: string;
-  /** Cryptographic algorithm class */
-  cryptoAlgorithmClass?: string;
+  /** Cryptographic algorithm class (w:cryptAlgorithmClass, s:ST_AlgClass) */
+  cryptoAlgorithmClass?: "hash" | "custom";
   /** Cryptographic algorithm SID */
   cryptoAlgorithmSid?: number;
-  /** Cryptographic algorithm type */
-  cryptoAlgorithmType?: string;
+  /** Cryptographic algorithm type (w:cryptAlgorithmType, s:ST_AlgType) */
+  cryptoAlgorithmType?: "typeAny" | "custom";
   /** Cryptographic provider */
   cryptoProvider?: string;
-  /** Cryptographic provider type */
-  cryptoProviderType?: string;
+  /** Cryptographic provider type (w:cryptProviderType, s:ST_CryptProv) */
+  cryptoProviderType?: "rsaAES" | "rsaFull" | "custom";
   /** Cryptographic provider type extension */
   cryptoProviderTypeExtension?: number;
   /** Cryptographic provider type extension source */
@@ -406,16 +409,16 @@ export interface WriteProtectionOptions {
   algorithmName?: string;
   /** Whether write protection is recommended (default true when options provided) */
   recommended?: boolean;
-  /** Cryptographic algorithm class */
-  cryptoAlgorithmClass?: string;
+  /** Cryptographic algorithm class (w:cryptAlgorithmClass, s:ST_AlgClass) */
+  cryptoAlgorithmClass?: "hash" | "custom";
   /** Cryptographic algorithm SID */
   cryptoAlgorithmSid?: number;
-  /** Cryptographic algorithm type */
-  cryptoAlgorithmType?: string;
+  /** Cryptographic algorithm type (w:cryptAlgorithmType, s:ST_AlgType) */
+  cryptoAlgorithmType?: "typeAny" | "custom";
   /** Cryptographic provider */
   cryptoProvider?: string;
-  /** Cryptographic provider type */
-  cryptoProviderType?: string;
+  /** Cryptographic provider type (w:cryptProviderType, s:ST_CryptProv) */
+  cryptoProviderType?: "rsaAES" | "rsaFull" | "custom";
   /** Cryptographic provider type extension */
   cryptoProviderTypeExtension?: number;
   /** Cryptographic provider type extension source */
@@ -536,14 +539,14 @@ export interface MailMergeOptions {
 export interface DocumentFootnotePropertiesOptions {
   /** Footnote placement */
   pos?: "pageBottom" | "beneathText" | "sectEnd" | "docEnd";
-  /** Number format */
-  numFmt?: string;
+  /** Number format (w:numFmt, ST_NumberFormat) */
+  numFmt?: (typeof NumberFormat)[keyof typeof NumberFormat];
   /** Custom number format string */
   format?: string;
   /** Starting number */
   numStart?: number;
-  /** When to restart numbering */
-  numRestart?: string;
+  /** When to restart numbering (w:numRestart, ST_RestartNumber) */
+  numRestart?: (typeof NumberRestartType)[keyof typeof NumberRestartType];
   /**
    * Special footnotes acting as separator/continuation, as footnote ids in
    * word/footnotes.xml (Word writes the separator as -1 and the continuation
@@ -558,14 +561,14 @@ export interface DocumentFootnotePropertiesOptions {
 export interface DocumentEndnotePropertiesOptions {
   /** Endnote placement */
   pos?: "sectEnd" | "docEnd";
-  /** Number format */
-  numFmt?: string;
+  /** Number format (w:numFmt, ST_NumberFormat) */
+  numFmt?: (typeof NumberFormat)[keyof typeof NumberFormat];
   /** Custom number format string */
   format?: string;
   /** Starting number */
   numStart?: number;
-  /** When to restart numbering */
-  numRestart?: string;
+  /** When to restart numbering (w:numRestart, ST_RestartNumber) */
+  numRestart?: (typeof NumberRestartType)[keyof typeof NumberRestartType];
   /**
    * Special endnotes acting as separator/continuation, as endnote ids in
    * word/endnotes.xml (Word writes the separator as -1 and the continuation
@@ -606,8 +609,8 @@ export interface CaptionOptions {
   heading?: number;
   /** Exclude label */
   noLabel?: boolean;
-  /** Number format */
-  numFmt?: string;
+  /** Number format (w:numFmt, ST_NumberFormat) */
+  numFmt?: (typeof NumberFormat)[keyof typeof NumberFormat];
   /** Chapter separator */
   sep?: "hyphen" | "period" | "colon" | "emDash" | "enDash";
 }

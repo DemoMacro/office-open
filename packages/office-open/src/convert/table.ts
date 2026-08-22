@@ -34,8 +34,8 @@ import {
   convertToPt,
   convertToTwip,
   convertTwipToEmu,
-  ThemeColor,
 } from "@office-open/core";
+import type { ThemeColor } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { ParagraphDescriptorOptions } from "@office-open/core/drawing";
 import type {
@@ -214,7 +214,7 @@ function pptxCellText(cell: PptxTableCellOptions): string | undefined {
  *  (ST_ThemeColor). accent1-6 pass through; bg/tx/dk/lt → background/text/
  *  dark/light; hlink → hyperlink, folHlink → followedHyperlink. phClr has no
  *  w: equivalent (dropped). */
-const SCHEME_TO_THEME: Record<string, (typeof ThemeColor)[keyof typeof ThemeColor]> = {
+const SCHEME_TO_THEME: Record<string, ThemeColor> = {
   bg1: "background1",
   tx1: "text1",
   bg2: "background2",
