@@ -11,6 +11,7 @@ import type { LongHexNumber } from "@office-open/core";
  */
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { documentNamespaceRecord } from "@parts/document/document-attributes";
 import type {
   ParagraphPropertiesOptions,
   ParagraphStylePropertiesOptions,
@@ -162,8 +163,17 @@ export class Styles {
    * Serialize to word/styles.xml content (with XML declaration).
    */
   public serialize(): string {
+    // A user-provided StylesOptions carries no initialAttributes (those only
+    // exist on parse round-trips) — bind the root namespaces like the default
+    // template path does, else w:styles emits with an unbound prefix
+    const merged: Record<string, string> = {
+      ...documentNamespaceRecord(["mc", "r", "w", "w14", "w15"]),
+      "mc:Ignorable": "w14 w15",
+      ...this.attributes,
+    };
+
     const attrParts: string[] = [];
-    for (const [k, v] of Object.entries(this.attributes)) {
+    for (const [k, v] of Object.entries(merged)) {
       if (v !== undefined && v !== null) attrParts.push(` ${k}="${v}"`);
     }
 

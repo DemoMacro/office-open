@@ -240,6 +240,12 @@ export interface SettingsOptions {
   captions?: CaptionsOptions;
   /** Math properties (m:mathPr) */
   mathProperties?: MathPropertiesOptions;
+  /**
+   * Emulate Word 97-2003 UI behavior (w:uiCompat97To2003, Word 2010+).
+   * Absent from the ISO transitional schema but written by Word and declared
+   * in the Open XML SDK schema data — kept for round-trip fidelity.
+   */
+  uiCompat97To2003?: boolean;
   /** Active writing style checking language/grammar settings */
   activeWritingStyle?: {
     lang?: string;
@@ -247,7 +253,6 @@ export interface SettingsOptions {
     dllVersion?: string;
     nlCheck?: boolean;
     checkStyle?: boolean;
-    appCheck?: string;
     appName?: string;
   }[];
   /** Proofing state (spelling/grammar check status) */
@@ -302,7 +307,6 @@ export interface SettingsOptions {
   /** Save through XSLT transform */
   saveThroughXslt?: {
     id?: string;
-    val?: string;
     solutionID?: string;
   };
   /** Show XML tags in document */
@@ -488,8 +492,6 @@ export interface OdsoOptions {
   fHdr?: boolean;
   fieldMapData?: OdsoFieldMapDataOptions[];
   recipientData?: string[];
-  /** Unique tag for identifying the data source (w:uniqueTag) */
-  uniqueTag?: string;
 }
 
 /** Mail merge configuration (CT_MailMerge) */
@@ -525,10 +527,6 @@ export interface MailMergeOptions {
   linkToQuery?: boolean;
   /** Office Data Source Object configuration */
   odso?: OdsoOptions;
-  /** Whether this mail merge is the active one (w:active) */
-  active?: boolean;
-  /** Recipients data reference (w:recipients r:id) */
-  recipients?: string;
 }
 
 /**

@@ -17,16 +17,6 @@ import type { BlockContentChild } from "@shared/section";
 
 // ── Options ──
 
-/** Data binding configuration (CT_DataBinding) */
-export interface CustomXmlDataBindingOptions {
-  /** XPath expression for the data binding */
-  xpath: string;
-  /** Store item ID (ST_Guid) — absent when the binding has no store item */
-  storeItemID?: string;
-  /** Namespace prefix mappings */
-  prefixMappings?: string;
-}
-
 /** Custom attribute (CT_Attr) */
 export interface CustomXmlAttributeOptions {
   name: string;
@@ -38,8 +28,6 @@ export interface CustomXmlAttributeOptions {
 export interface CustomXmlPropertiesOptions {
   /** Placeholder text */
   placeholder?: string;
-  /** XML data binding (CT_CustomXmlPr/w:dataBinding) */
-  dataBinding?: CustomXmlDataBindingOptions;
   /** Custom attributes */
   attributes?: CustomXmlAttributeOptions[];
 }

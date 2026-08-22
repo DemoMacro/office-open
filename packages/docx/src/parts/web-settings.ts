@@ -182,7 +182,7 @@ function parseSplitbarEl(el: Element): FramesetSplitbarOptions {
 
   const w = findChild(el, "w:w");
   if (w) {
-    const val = attrNum(w, "w:w");
+    const val = attrNum(w, "w:val");
     if (val !== undefined) opts.width = val;
   }
 
@@ -398,8 +398,9 @@ export function framesetXml(fs: FramesetOptions): string {
   if (fs.size !== undefined) parts.push(wsStringVal("w:sz", fs.size));
   if (fs.splitbar) {
     parts.push("<w:framesetSplitbar>");
-    if (fs.splitbar.width !== undefined)
-      parts.push(`<w:w w:w="${fs.splitbar.width}" w:type="dxa"/>`);
+    // w:w is CT_TwipsMeasure — a plain @w:val attribute (w:w/w:type belong to
+    // CT_TblWidth, a different element)
+    if (fs.splitbar.width !== undefined) parts.push(wsNumVal("w:w", fs.splitbar.width));
     if (fs.splitbar.color !== undefined) parts.push(wsStringVal("w:color", fs.splitbar.color));
     if (fs.splitbar.noBorder) parts.push("<w:noBorder/>");
     if (fs.splitbar.flatBorders) parts.push("<w:flatBorders/>");

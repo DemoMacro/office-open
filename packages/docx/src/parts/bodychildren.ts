@@ -203,11 +203,12 @@ function sdtDateXml(options: {
 function sdtDataBindingXml(options: {
   prefixMappings?: string;
   xpath: string;
-  storeItemID?: string;
+  storeItemID: string;
 }): string {
   const attrs: string[] = [`w:xpath="${escapeXml(options.xpath)}"`];
-  // ST_Guid — an empty string is not a legal value and Word rejects the
-  // package on open, so omit the attribute when no id was bound.
+  // @w:storeItemID is required by CT_DataBinding; an empty string is not a
+  // legal value and Word rejects the package on open, so skip the attribute
+  // only in that degenerate case.
   if (options.storeItemID) attrs.push(`w:storeItemID="${escapeXml(options.storeItemID)}"`);
   if (options.prefixMappings !== undefined)
     attrs.push(`w:prefixMappings="${escapeXml(options.prefixMappings)}"`);
@@ -277,11 +278,12 @@ export function stringifySdtPr(opts: SdtPropertiesOptions): string {
   if (opts.id !== undefined) parts.push(`<w:id w:val="${opts.id}"/>`);
   if (opts.lock !== undefined) parts.push(`<w:lock w:val="${opts.lock}"/>`);
 
-  if (opts.placeholder) {
+  // CT_Placeholder requires its w:docPart child — skip the element entirely
+  // when no building block is referenced instead of writing the illegal bare
+  // <w:placeholder/>.
+  if (opts.placeholder?.docPart !== undefined) {
     parts.push(
-      opts.placeholder.docPart !== undefined
-        ? `<w:placeholder><w:docPart w:val="${escapeXml(opts.placeholder.docPart)}"/></w:placeholder>`
-        : "<w:placeholder/>",
+      `<w:placeholder><w:docPart w:val="${escapeXml(opts.placeholder.docPart)}"/></w:placeholder>`,
     );
   }
 
@@ -361,14 +363,6 @@ export function parseCustomXmlProperties(el: Element): CustomXmlPropertiesOption
   if (placeholder) {
     const val = attr(placeholder, "w:val");
     if (val) opts.placeholder = val;
-  }
-  const dataBinding = findChild(el, "w:dataBinding");
-  if (dataBinding) {
-    opts.dataBinding = {
-      xpath: attr(dataBinding, "w:xpath") ?? "",
-      storeItemID: attr(dataBinding, "w:storeItemID"),
-      prefixMappings: attr(dataBinding, "w:prefixMappings"),
-    };
   }
   const attributes: { name: string; val: string; uri?: string }[] = [];
   for (const child of el.elements ?? []) {
@@ -491,16 +485,6 @@ function buildCustomXmlPropertiesXml(pr: CustomXmlPropertiesOptions): string {
   const parts: string[] = ["<w:customXmlPr>"];
   if (pr.placeholder !== undefined) {
     parts.push(`<w:placeholder w:val="${escapeXml(pr.placeholder)}"/>`);
-  }
-  if (pr.dataBinding) {
-    const dbParts: string[] = [`w:xpath="${escapeXml(pr.dataBinding.xpath)}"`];
-    // ST_Guid — an empty string is not a legal value (see sdtDataBindingXml).
-    if (pr.dataBinding.storeItemID)
-      dbParts.push(`w:storeItemID="${escapeXml(pr.dataBinding.storeItemID)}"`);
-    if (pr.dataBinding.prefixMappings !== undefined) {
-      dbParts.push(`w:prefixMappings="${escapeXml(pr.dataBinding.prefixMappings)}"`);
-    }
-    parts.push(`<w:dataBinding ${dbParts.join(" ")}/>`);
   }
   if (pr.attributes) {
     for (const attr of pr.attributes) {

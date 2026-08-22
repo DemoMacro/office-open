@@ -443,8 +443,6 @@ function parseOdso(el: Element): OdsoOptions | undefined {
     if (rid) recipientData.push(rid);
   }
   if (recipientData.length > 0) o.recipientData = recipientData;
-  const uniqueTag = readStr(findChild(el, "w:uniqueTag"), "w:val");
-  if (uniqueTag) o.uniqueTag = uniqueTag;
   return Object.keys(o).length > 0 ? o : undefined;
 }
 
@@ -487,13 +485,6 @@ function parseMailMerge(el: Element): MailMergeOptions | undefined {
   if (activeRecord !== undefined) o.activeRecord = activeRecord;
   const checkErrors = readNum(findChild(el, "w:checkErrors"), "w:val");
   if (checkErrors !== undefined) o.checkErrors = checkErrors;
-  const active = readOnOff(findChild(el, "w:active"));
-  if (active !== undefined) o.active = active;
-  const recipientsEl = findChild(el, "w:recipients");
-  if (recipientsEl) {
-    const rid = attr(recipientsEl, "r:id");
-    if (rid) o.recipients = rid;
-  }
   const odsoEl = findChild(el, "w:odso");
   if (odsoEl) {
     const odso = parseOdso(odsoEl);
@@ -621,8 +612,6 @@ function stringifyMailMerge(opts: MailMergeOptions): string {
   p.push(numVal("w:activeRecord", opts.activeRecord));
   p.push(numVal("w:checkErrors", opts.checkErrors));
   if (opts.odso !== undefined) p.push(stringifyOdso(opts.odso));
-  p.push(onOff("w:active", opts.active));
-  if (opts.recipients !== undefined) p.push(attrEl("w:recipients", { "r:id": opts.recipients }));
   return `<w:mailMerge>${p.join("")}</w:mailMerge>`;
 }
 
@@ -640,7 +629,6 @@ function stringifyOdso(opts: OdsoOptions): string {
   if (opts.recipientData !== undefined) {
     for (const rd of opts.recipientData) p.push(attrEl("w:recipientData", { "r:id": rd }));
   }
-  p.push(strVal("w:uniqueTag", opts.uniqueTag));
   return `<w:odso>${p.join("")}</w:odso>`;
 }
 
@@ -742,7 +730,8 @@ function stringifyMathPr(opts: MathPropertiesOptions): string {
   p.push(numVal("m:interSp", opts.interSpacing));
   p.push(numVal("m:intraSp", opts.intraSpacing));
   p.push(numVal("m:wrapIndent", opts.wrapIndent));
-  p.push(onOff("m:wrapRight", opts.wrapRight));
+  // CT_MathPr wraps with wrapIndent | wrapRight (a choice) — wrapIndent wins
+  if (opts.wrapIndent === undefined) p.push(onOff("m:wrapRight", opts.wrapRight));
   if (opts.integralLimitLocation !== undefined)
     p.push(attrEl("m:intLim", { "m:val": opts.integralLimitLocation }));
   if (opts.naryLimitLocation !== undefined)
@@ -955,7 +944,6 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
         if (ws.dllVersion !== undefined) attrs["w:dllVersion"] = ws.dllVersion;
         if (ws.nlCheck !== undefined) attrs["w:nlCheck"] = ws.nlCheck;
         if (ws.checkStyle !== undefined) attrs["w:checkStyle"] = ws.checkStyle;
-        if (ws.appCheck !== undefined) attrs["w:appCheck"] = ws.appCheck;
         if (ws.appName !== undefined) attrs["w:appName"] = ws.appName;
         p.push(attrEl("w:activeWritingStyle", attrs));
       }
@@ -1087,7 +1075,6 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     if (opts.saveThroughXslt !== undefined) {
       const attrs: Record<string, string> = {};
       if (opts.saveThroughXslt.id !== undefined) attrs["r:id"] = opts.saveThroughXslt.id;
-      if (opts.saveThroughXslt.val !== undefined) attrs["w:val"] = opts.saveThroughXslt.val;
       if (opts.saveThroughXslt.solutionID !== undefined)
         attrs["w:solutionID"] = opts.saveThroughXslt.solutionID;
       p.push(attrEl("w:saveThroughXslt", attrs));
@@ -1126,6 +1113,12 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
 
     if (opts.rsids !== undefined) p.push(stringifyRsids(opts.rsids));
     if (opts.mathProperties !== undefined) p.push(stringifyMathPr(opts.mathProperties));
+
+    // Not in the ISO transitional schema, but Word writes this flag and the
+    // Open XML SDK schema data declares it — keep for round-trip fidelity.
+    // Sits between m:mathPr and w:themeFontLang.
+    if (opts.uiCompat97To2003 !== undefined)
+      p.push(onOff("w:uiCompat97To2003", opts.uiCompat97To2003));
 
     if (opts.attachedSchema !== undefined) {
       for (const schema of opts.attachedSchema) p.push(strVal("w:attachedSchema", schema)!);
@@ -1281,8 +1274,6 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (nlCheck !== undefined) entry.nlCheck = parseOnOff(nlCheck) ?? true;
       const checkStyle = attr(child, "w:checkStyle");
       if (checkStyle !== undefined) entry.checkStyle = parseOnOff(checkStyle) ?? true;
-      const appCheck = attr(child, "w:appCheck");
-      if (appCheck) entry.appCheck = appCheck;
       const appName = attr(child, "w:appName");
       if (appName) entry.appName = appName;
       if (Object.keys(entry).length > 0) awsList.push(entry);
@@ -1452,14 +1443,12 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       if (Object.keys(entry).length > 0) opts[key] = entry;
     }
 
-    // saveThroughXslt → w:saveThroughXslt (r:id, w:val, w:solutionID)
+    // saveThroughXslt → w:saveThroughXslt (r:id, w:solutionID)
     const stxEl = findChild(el, "w:saveThroughXslt");
     if (stxEl) {
       const stx: Record<string, string> = {};
       const id = attr(stxEl, "r:id");
       if (id) stx.id = id;
-      const val = attr(stxEl, "w:val");
-      if (val) stx.val = val;
       const solutionID = attr(stxEl, "w:solutionID");
       if (solutionID) stx.solutionID = solutionID;
       if (Object.keys(stx).length > 0) opts.saveThroughXslt = stx;
@@ -1537,6 +1526,10 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const mp = parseMathPr(mathPrEl);
       if (mp) opts.mathProperties = mp;
     }
+
+    // uiCompat97To2003 — Word 2010+ flag between mathPr and themeFontLang
+    const uiCompat = findChild(el, "w:uiCompat97To2003");
+    if (uiCompat) opts.uiCompat97To2003 = parseOnOff(attr(uiCompat, "w:val")) ?? true;
 
     // attachedSchema → w:attachedSchema/@w:val (multiple)
     const attachedSchemas: string[] = [];

@@ -234,7 +234,9 @@ function cellSpacingStr(opts: TableCellSpacingProperties): string {
 // ── Table properties change (w:tblPrChange) ──
 
 function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptions): string {
-  const inner = stringifyTablePropertiesInner({ ...options, includeIfEmpty: true });
+  // The embedded w:tblPr is CT_TblPrBase — no nested tblPrChange.
+  const { revision: _rev, ...innerOptions } = options;
+  const inner = stringifyTablePropertiesInner({ ...innerOptions, includeIfEmpty: true });
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": escapeXml(options.date),
@@ -339,6 +341,8 @@ export function stringifyTableProperties(
 // ── Row properties change (w:trPrChange) ──
 
 function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChangeOptions): string {
+  // TableRowPropertiesChangeOptions already narrows to CT_TrPrBase fields —
+  // ins/del/trPrChange live only on the full TableRowPropertiesOptions.
   const inner = stringifyTableRowPropertiesInner({ ...options, includeIfEmpty: true });
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
@@ -437,7 +441,10 @@ export function stringifyTableRowProperties(
 function stringifyTableCellPropertiesChangeInner(
   options: TableCellPropertiesChangeOptions,
 ): string {
-  const inner = stringifyTableCellPropertiesInner({ ...options, includeIfEmpty: true });
+  // The embedded w:tcPr is CT_TcPrInner — drop the cell-markup revision
+  // elements that only the full TableCellPropertiesOptions carries.
+  const { insertion: _ins, deletion: _del, cellMerge: _cm, ...innerOptions } = options;
+  const inner = stringifyTableCellPropertiesInner({ ...innerOptions, includeIfEmpty: true });
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": escapeXml(options.date),

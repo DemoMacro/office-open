@@ -80,7 +80,8 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
   if (dataBinding) {
     opts.dataBinding = {
       xpath: attr(dataBinding, "w:xpath") ?? "",
-      storeItemID: attr(dataBinding, "w:storeItemID"),
+      // required by CT_DataBinding; tolerate a degenerate source without one
+      storeItemID: attr(dataBinding, "w:storeItemID") ?? "",
       prefixMappings: attr(dataBinding, "w:prefixMappings"),
     };
   }

@@ -35,6 +35,7 @@ export const DocumentAttributeNamespaces = {
   m: "http://schemas.openxmlformats.org/officeDocument/2006/math",
   mc: "http://schemas.openxmlformats.org/markup-compatibility/2006",
   o: "urn:schemas-microsoft-com:office:office",
+  pvml: "urn:schemas-microsoft-com:office:powerpoint",
   r: "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
   v: "urn:schemas-microsoft-com:vml",
   w: "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
@@ -53,6 +54,7 @@ export const DocumentAttributeNamespaces = {
   wpg: "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup",
   wpi: "http://schemas.microsoft.com/office/word/2010/wordprocessingInk",
   wps: "http://schemas.microsoft.com/office/word/2010/wordprocessingShape",
+  x: "urn:schemas-microsoft-com:office:excel",
   xsi: "http://www.w3.org/2001/XMLSchema-instance",
 };
 /* CSpell:enable */

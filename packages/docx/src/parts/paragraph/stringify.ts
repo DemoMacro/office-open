@@ -495,7 +495,8 @@ export function stringifyParagraphProperties(
         const { id, author, date } = runOpts.deletion;
         extra.push(`<w:del w:id="${id}" w:author="${escapeXml(author)}" w:date="${date}"/>`);
       }
-      const body = (inner ?? "") + extra.join("");
+      // CT_ParaRPr sequence: ins/del/moveFrom/moveTo lead, then EG_RPrBase.
+      const body = extra.join("") + (inner ?? "");
       s += body ? `<w:rPr>${body}</w:rPr>` : "<w:rPr/>";
     }
   }
@@ -503,7 +504,9 @@ export function stringifyParagraphProperties(
   // Revision (pPrChange)
   if (options.revision) {
     const rev = options.revision;
-    const { author: _a, date: _d, id: _i, ...originalProps } = rev;
+    // The embedded w:pPr is CT_PPrBase — no rPr (run), so drop it before
+    // serializing the pre-change properties.
+    const { author: _a, date: _d, id: _i, run: _r, ...originalProps } = rev;
     const inner = stringifyParagraphProperties({ ...originalProps, includeIfEmpty: true });
     s += `<w:pPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
   }

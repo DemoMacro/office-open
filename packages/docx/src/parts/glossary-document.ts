@@ -141,6 +141,7 @@ const GLOSSARY_NS = documentNamespaceAttributes([
   "w10",
   "w",
   "w14",
+  "w15",
   "wpg",
   "wpi",
   "wne",

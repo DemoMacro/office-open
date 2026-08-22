@@ -81,6 +81,7 @@ const NUMBERING_ATTRS =
     "wpc",
     "mc",
     "o",
+    "pvml",
     "r",
     "m",
     "v",
@@ -94,6 +95,7 @@ const NUMBERING_ATTRS =
     "wpi",
     "wne",
     "wps",
+    "x",
   ]) + ' mc:Ignorable="w14 w15 wp14"';
 
 /** Default bullet levels (9 levels: 0-8). */

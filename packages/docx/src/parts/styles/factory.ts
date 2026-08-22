@@ -563,7 +563,10 @@ export class DefaultStylesFactory {
           name: `${h.name} Char`,
           basedOn: "DefaultParagraphFont",
           link: h.id,
-          run: headingOverrideOpts.run,
+          // The linked char style carries the run formatting only — a copied
+          // revision would emit a second w:rPrChange with the same CT_TrackChange
+          // id in the same part (Word never writes one on the linked style)
+          run: headingOverrideOpts.run && { ...headingOverrideOpts.run, revision: undefined },
         });
         continue;
       }
@@ -685,7 +688,7 @@ export class DefaultStylesFactory {
         name: "Title Char",
         basedOn: "DefaultParagraphFont",
         link: "Title",
-        run: options.title.run,
+        run: options.title.run && { ...options.title.run, revision: undefined },
       });
     } else {
       const titleRun: RunStylePropertiesOptions = {
@@ -721,7 +724,7 @@ export class DefaultStylesFactory {
         basedOn: "DefaultParagraphFont",
         link: "Title",
         uiPriority: 10,
-        run: titleRun,
+        run: titleRun && { ...titleRun, revision: undefined },
       });
     }
 
@@ -743,7 +746,7 @@ export class DefaultStylesFactory {
         name: "Subtitle Char",
         basedOn: "DefaultParagraphFont",
         link: "Subtitle",
-        run: options.subtitle.run,
+        run: options.subtitle.run && { ...options.subtitle.run, revision: undefined },
       });
     } else {
       const subtitleRun: RunStylePropertiesOptions = {
@@ -850,7 +853,7 @@ export class DefaultStylesFactory {
         name: "Quote Char",
         basedOn: "DefaultParagraphFont",
         link: "Quote",
-        run: options.quote.run,
+        run: options.quote.run && { ...options.quote.run, revision: undefined },
       });
     } else {
       paragraphStyles.push({
