@@ -7,6 +7,7 @@ import type { TileOptions } from "../blip/tile";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { emitFillXml } from "./fill-descriptors";
 import type { GradientFillOptions } from "./gradient-fill";
+import type { PresetPattern } from "./pattern-fill";
 
 /**
  * Gradient stop options (simplified API).
@@ -100,7 +101,8 @@ export type FillOptions =
   | ({ type: "blip" } & BlipFillConfigOptions)
   | {
       type: "pattern";
-      pattern: string;
+      /** Preset pattern (a:pattFill `@prst`, ST_PresetPatternVal). */
+      pattern: PresetPattern;
       foregroundColor?: string | SolidFillOptions;
       backgroundColor?: string | SolidFillOptions;
     }

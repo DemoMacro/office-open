@@ -28,6 +28,7 @@ import type {
   AnimationLevel,
   HierBranch,
 } from "../drawing/diagram/layout-vars";
+import type { ShapeType } from "../drawing/geometry/preset-geometry";
 import {
   xsdAnimLevel,
   xsdDiagramDirection,
@@ -142,6 +143,70 @@ export type ConditionFunction =
 /** ST_FunctionOperator (dgm:if `@op`). */
 export type ConditionOperator = "equ" | "neq" | "gt" | "lt" | "gte" | "lte";
 
+/**
+ * ST_ParameterId (dgm:param `@type`) — 55 transitional layout-parameter ids
+ * verbatim, plus the numCol/animBg extension ids Office 2010+ layoutDefs use
+ * (dgm14, outside the transitional XSD).
+ */
+export type AlgorithmParameterType =
+  | "horzAlign"
+  | "vertAlign"
+  | "chDir"
+  | "chAlign"
+  | "secChAlign"
+  | "linDir"
+  | "secLinDir"
+  | "stElem"
+  | "bendPt"
+  | "connRout"
+  | "begSty"
+  | "endSty"
+  | "dim"
+  | "rotPath"
+  | "ctrShpMap"
+  | "nodeHorzAlign"
+  | "nodeVertAlign"
+  | "fallback"
+  | "txDir"
+  | "pyraAcctPos"
+  | "pyraAcctTxMar"
+  | "txBlDir"
+  | "txAnchorHorz"
+  | "txAnchorVert"
+  | "txAnchorHorzCh"
+  | "txAnchorVertCh"
+  | "parTxLTRAlign"
+  | "parTxRTLAlign"
+  | "shpTxLTRAlignCh"
+  | "shpTxRTLAlignCh"
+  | "autoTxRot"
+  | "grDir"
+  | "flowDir"
+  | "contDir"
+  | "bkpt"
+  | "off"
+  | "hierAlign"
+  | "bkPtFixedVal"
+  | "stBulletLvl"
+  | "stAng"
+  | "spanAng"
+  | "ar"
+  | "lnSpPar"
+  | "lnSpAfParP"
+  | "lnSpCh"
+  | "lnSpAfChP"
+  | "rtShortDist"
+  | "alignTx"
+  | "pyraLvlNode"
+  | "pyraAcctBkgdNode"
+  | "pyraAcctTxNode"
+  | "srcNode"
+  | "dstNode"
+  | "begPts"
+  | "endPts"
+  | "numCol"
+  | "animBg";
+
 /** ST_Direction (dgm:dir `@val`). */
 export type DiagramDirection = "normal" | "reversed";
 
@@ -150,7 +215,7 @@ export type ResizeHandles = "exact" | "relative";
 
 // ST_FunctionArgument / ST_FunctionValue are unions of every layout-parameter
 // enum plus numbers; ST_AxisTypes / ST_ElementTypes / ST_Booleans / ST_Ints are
-// space-separated lists — all surface as plain string.
+// space-separated lists — those stay plain string by design.
 
 // dgm:title / dgm:desc reuse DiagramNameOptions / DiagramDescriptionOptions
 // (same CT_Name shape as the headers), dgm:cat reuses DiagramCategoryOptions,
@@ -198,7 +263,7 @@ export interface AlgorithmOptions {
 /** dgm:param (CT_Parameter) — inlined in AlgorithmOptions.parameters. */
 export interface AlgorithmParameterOptions {
   /** Parameter name (dgm:param `@type`, ST_ParameterId). */
-  type: string;
+  type: AlgorithmParameterType;
   /**
    * Parameter value (dgm:param `@val`, ST_ParameterVal — a union of direction
    * tokens, numbers, and booleans, so it stays polymorphic).
@@ -211,7 +276,7 @@ export interface LayoutShapeOptions {
   /** Shape rotation as a raw double (dgm:shape `@rot`). */
   rotation?: number;
   /** Preset geometry name or "none"/"conn" (dgm:shape `@type`, ST_LayoutShapeType). */
-  type?: string;
+  type?: ShapeType | "none" | "conn";
   /** Preview picture relationship id (dgm:shape `@r:blip`). */
   blip?: string;
   /** Z-order offset (dgm:shape `@zOrderOff`). */
@@ -642,7 +707,7 @@ function parseAlgorithm(el: Element): AlgorithmOptions {
     const raw = attr(child, "val") ?? "";
     const numeric = Number(raw);
     parameters.push({
-      type: attr(child, "type") ?? "",
+      type: (attr(child, "type") ?? "") as AlgorithmParameterType,
       value:
         raw === "1" || raw === "0"
           ? raw === "1"
@@ -660,7 +725,7 @@ function parseShape(el: Element): LayoutShapeOptions {
   const rot = attrNum(el, "rot");
   if (rot !== undefined) result.rotation = rot;
   const type = attr(el, "type");
-  if (type !== undefined && type !== "none") result.type = type;
+  if (type !== undefined && type !== "none") result.type = type as LayoutShapeOptions["type"];
   const blip = attr(el, "r:blip");
   if (blip) result.blip = blip;
   const zOrderOff = attrNum(el, "zOrderOff");

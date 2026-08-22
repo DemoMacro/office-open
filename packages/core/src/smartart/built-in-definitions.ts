@@ -14,6 +14,7 @@ export { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categor
 import type { ColorListOptions } from "../drawing/diagram/diagram-style";
 import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 import { stringifyColorDefinitionPart, type ColorDefinitionOptions } from "./color-definition";
+import type { ModelPointOptions } from "./data-model/data-model";
 import { stringifyLayoutDefinitionPart, type LayoutDefinitionOptions } from "./layout-definition";
 import { stringifyStyleDefinitionPart, type StyleDefinitionOptions } from "./style-definition";
 
@@ -25,7 +26,7 @@ const BUILTIN_ACCENTS = ["accent1", "accent2", "accent3", "accent4", "accent5", 
 
 /** Sample-model point list shared by the layout stubs: a doc point plus placeholders. */
 function samplePoints(count: number): LayoutDefinitionOptions["sampleData"] {
-  const points = [
+  const points: ModelPointOptions[] = [
     { modelId: "0", type: "doc" },
     ...Array.from({ length: count }, (_, i) => ({
       modelId: String(i + 1),

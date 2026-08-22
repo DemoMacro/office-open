@@ -351,7 +351,9 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
       if (reflection.attributes?.["ky"] !== undefined)
         refOpts.skewY = parseAngle(Number(reflection.attributes["ky"]));
       if (reflection.attributes?.["algn"] !== undefined)
-        refOpts.alignment = xsdRectAlignment.from(String(reflection.attributes["algn"]));
+        refOpts.alignment = xsdRectAlignment.from(
+          String(reflection.attributes["algn"]),
+        ) as ReflectionEffectOptions["alignment"];
       if (reflection.attributes?.["rotWithShape"] !== undefined)
         refOpts.rotWithShape = parseOnOff(reflection.attributes["rotWithShape"]) ?? true;
       result.reflection = refOpts;

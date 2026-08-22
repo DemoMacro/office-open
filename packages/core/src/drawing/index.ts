@@ -37,8 +37,8 @@ export type {
   PathShade,
   TileFlipMode,
 } from "./fill/gradient-fill";
-export { createPatternFill, PresetPattern } from "./fill/pattern-fill";
-export type { PatternFillOptions } from "./fill/pattern-fill";
+export { createPatternFill } from "./fill/pattern-fill";
+export type { PatternFillOptions, PresetPattern } from "./fill/pattern-fill";
 export { createGroupFill } from "./fill/group-fill";
 
 // Outline

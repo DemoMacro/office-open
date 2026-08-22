@@ -118,8 +118,8 @@
       "description": "dgm:param — inlined in AlgorithmOptions.parameters.",
       "properties": {
         "type": {
-          "description": "Parameter name (dgm:param `@type`).",
-          "type": "string"
+          "$ref": "#/definitions/AlgorithmParameterType",
+          "description": "Parameter name (dgm:param `@type`)."
         },
         "value": {
           "description": "Parameter value (dgm:param `@val`, — a union of direction tokens, numbers, and booleans, so it stays polymorphic).",
@@ -128,6 +128,69 @@
       },
       "required": ["type", "value"],
       "type": "object"
+    },
+    "AlgorithmParameterType": {
+      "description": "(dgm:param `@type`) — 55 transitional layout-parameter ids verbatim, plus the numCol/animBg extension ids Office 2010+ layoutDefs use (dgm14, outside the transitional XSD).",
+      "enum": [
+        "horzAlign",
+        "vertAlign",
+        "chDir",
+        "chAlign",
+        "secChAlign",
+        "linDir",
+        "secLinDir",
+        "stElem",
+        "bendPt",
+        "connRout",
+        "begSty",
+        "endSty",
+        "dim",
+        "rotPath",
+        "ctrShpMap",
+        "nodeHorzAlign",
+        "nodeVertAlign",
+        "fallback",
+        "txDir",
+        "pyraAcctPos",
+        "pyraAcctTxMar",
+        "txBlDir",
+        "txAnchorHorz",
+        "txAnchorVert",
+        "txAnchorHorzCh",
+        "txAnchorVertCh",
+        "parTxLTRAlign",
+        "parTxRTLAlign",
+        "shpTxLTRAlignCh",
+        "shpTxRTLAlignCh",
+        "autoTxRot",
+        "grDir",
+        "flowDir",
+        "contDir",
+        "bkpt",
+        "off",
+        "hierAlign",
+        "bkPtFixedVal",
+        "stBulletLvl",
+        "stAng",
+        "spanAng",
+        "ar",
+        "lnSpPar",
+        "lnSpAfParP",
+        "lnSpCh",
+        "lnSpAfChP",
+        "rtShortDist",
+        "alignTx",
+        "pyraLvlNode",
+        "pyraAcctBkgdNode",
+        "pyraAcctTxNode",
+        "srcNode",
+        "dstNode",
+        "begPts",
+        "endPts",
+        "numCol",
+        "animBg"
+      ],
+      "type": "string"
     },
     "AlgorithmType": {
       "description": "(dgm:alg `@type`).",
@@ -7092,7 +7155,8 @@
               ]
             },
             "pattern": {
-              "type": "string"
+              "$ref": "#/definitions/PresetPattern",
+              "description": "Preset pattern (a:pattFill `@prst`)."
             },
             "type": {
               "const": "pattern",
@@ -8746,8 +8810,20 @@
           "type": "number"
         },
         "type": {
-          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape `@type`).",
-          "type": "string"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ShapeType"
+            },
+            {
+              "const": "none",
+              "type": "string"
+            },
+            {
+              "const": "conn",
+              "type": "string"
+            }
+          ],
+          "description": "Preset geometry name or \"none\"/\"conn\" (dgm:shape `@type`)."
         },
         "zOrderOffset": {
           "description": "Z-order offset (dgm:shape `@zOrderOff`).",
@@ -11023,7 +11099,8 @@
           "type": "number"
         },
         "type": {
-          "description": "Connection kind (dgm:cxn `@type`,: parOf | presOf | unknownRelationship).",
+          "description": "Connection kind (dgm:cxn `@type`).",
+          "enum": ["parOf", "presOf", "presParOf", "unknownRelationship"],
           "type": "string"
         }
       },
@@ -11050,7 +11127,8 @@
           "type": "string"
         },
         "type": {
-          "description": "Point kind (dgm:pt `@type`,: node | doc | asst | parTrans | sibTrans).",
+          "description": "Point kind (dgm:pt `@type`).",
+          "enum": ["node", "asst", "doc", "pres", "parTrans", "sibTrans"],
           "type": "string"
         }
       },
@@ -15057,64 +15135,8 @@
           "$ref": "#/definitions/SolidFillOptions"
         },
         "pattern": {
-          "description": "Preset pattern type",
-          "enum": [
-            "percent5",
-            "percent10",
-            "percent20",
-            "percent25",
-            "percent30",
-            "percent40",
-            "percent50",
-            "percent60",
-            "percent70",
-            "percent75",
-            "percent80",
-            "percent90",
-            "horizontal",
-            "vertical",
-            "lightHorizontal",
-            "lightVertical",
-            "darkHorizontal",
-            "darkVertical",
-            "narrowHorizontal",
-            "narrowVertical",
-            "dashedHorizontal",
-            "dashedVertical",
-            "cross",
-            "downDiagonal",
-            "upDiagonal",
-            "lightDownDiagonal",
-            "lightUpDiagonal",
-            "darkDownDiagonal",
-            "darkUpDiagonal",
-            "wideDownDiagonal",
-            "wideUpDiagonal",
-            "dashedDownDiagonal",
-            "dashedUpDiagonal",
-            "diagonalCross",
-            "smallChecker",
-            "largeChecker",
-            "smallGrid",
-            "largeGrid",
-            "dotGrid",
-            "smallConfetti",
-            "largeConfetti",
-            "horizontalBrick",
-            "diagonalBrick",
-            "solidDiamond",
-            "openDiamond",
-            "dottedDiamond",
-            "plaid",
-            "sphere",
-            "weave",
-            "divot",
-            "shingle",
-            "wave",
-            "trellis",
-            "zigZag"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/PresetPattern",
+          "description": "Preset pattern type"
         }
       },
       "required": ["pattern"],
@@ -15917,6 +15939,66 @@
       ],
       "type": "string"
     },
+    "PresetPattern": {
+      "description": "Preset pattern values (a:pattFill `@prst`) — full words; xsdPattern maps them to the abbreviated XSD tokens.",
+      "enum": [
+        "percent5",
+        "percent10",
+        "percent20",
+        "percent25",
+        "percent30",
+        "percent40",
+        "percent50",
+        "percent60",
+        "percent70",
+        "percent75",
+        "percent80",
+        "percent90",
+        "horizontal",
+        "vertical",
+        "lightHorizontal",
+        "lightVertical",
+        "darkHorizontal",
+        "darkVertical",
+        "narrowHorizontal",
+        "narrowVertical",
+        "dashedHorizontal",
+        "dashedVertical",
+        "cross",
+        "downDiagonal",
+        "upDiagonal",
+        "lightDownDiagonal",
+        "lightUpDiagonal",
+        "darkDownDiagonal",
+        "darkUpDiagonal",
+        "wideDownDiagonal",
+        "wideUpDiagonal",
+        "dashedDownDiagonal",
+        "dashedUpDiagonal",
+        "diagonalCross",
+        "smallChecker",
+        "largeChecker",
+        "smallGrid",
+        "largeGrid",
+        "dotGrid",
+        "smallConfetti",
+        "largeConfetti",
+        "horizontalBrick",
+        "diagonalBrick",
+        "solidDiamond",
+        "openDiamond",
+        "dottedDiamond",
+        "plaid",
+        "sphere",
+        "weave",
+        "divot",
+        "shingle",
+        "wave",
+        "trellis",
+        "zigZag"
+      ],
+      "type": "string"
+    },
     "PresetShadow": {
       "description": "Preset shadow types (20 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
       "enum": [
@@ -16094,6 +16176,18 @@
       "description": "Options for reflection effect.\n\nAll properties are optional with XSD defaults.",
       "properties": {
         "alignment": {
+          "description": "Reflection alignment (a:reflection `@algn`).",
+          "enum": [
+            "topLeft",
+            "top",
+            "topRight",
+            "left",
+            "center",
+            "right",
+            "bottomLeft",
+            "bottom",
+            "bottomRight"
+          ],
           "type": "string"
         },
         "blurRadius": {

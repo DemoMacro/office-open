@@ -41,7 +41,17 @@ export interface ReflectionEffectOptions {
   skewX?: number;
   /** Vertical skew angle in degrees. */
   skewY?: number;
-  alignment?: string;
+  /** Reflection alignment (a:reflection `@algn`, ST_RectAlignment). */
+  alignment?:
+    | "topLeft"
+    | "top"
+    | "topRight"
+    | "left"
+    | "center"
+    | "right"
+    | "bottomLeft"
+    | "bottom"
+    | "bottomRight";
   /** Whether reflection rotates with shape */
   rotWithShape?: boolean;
 }

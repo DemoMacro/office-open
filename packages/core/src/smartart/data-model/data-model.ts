@@ -32,8 +32,8 @@ export function stringifyDataModel(
 export interface ModelPointOptions {
   /** Point identity (dgm:pt `@modelId`). */
   modelId: string;
-  /** Point kind (dgm:pt `@type`, ST_PtType: node | doc | asst | parTrans | sibTrans). */
-  type?: string;
+  /** Point kind (dgm:pt `@type`, ST_PtType). */
+  type?: "node" | "asst" | "doc" | "pres" | "parTrans" | "sibTrans";
   /** Transition point owning connection (dgm:pt `@cxnId`, transition points only). */
   connectionId?: string;
   /** Point text (dgm:t). */
@@ -46,8 +46,8 @@ export interface ModelConnectionOptions {
   modelId: string;
   sourceId: string;
   destinationId: string;
-  /** Connection kind (dgm:cxn `@type`, ST_CxnType: parOf | presOf | unknownRelationship). */
-  type?: string;
+  /** Connection kind (dgm:cxn `@type`, ST_CxnType). */
+  type?: "parOf" | "presOf" | "presParOf" | "unknownRelationship";
   sourceOrder?: number;
   destinationOrder?: number;
   parentTransitionId?: string;
@@ -104,7 +104,7 @@ export function parseDataModelOptions(el: Element | undefined): DataModelOptions
       if (pt.name !== "dgm:pt") continue;
       const point: ModelPointOptions = { modelId: attr(pt, "modelId") ?? "" };
       const type = attr(pt, "type");
-      if (type) point.type = type;
+      if (type) point.type = type as ModelPointOptions["type"];
       const cxnId = attr(pt, "cxnId");
       if (cxnId) point.connectionId = cxnId;
       const t = findChild(pt, "dgm:t");
@@ -127,7 +127,7 @@ export function parseDataModelOptions(el: Element | undefined): DataModelOptions
         destinationId: attr(cxn, "destId") ?? "",
       };
       const type = attr(cxn, "type");
-      if (type) connection.type = type;
+      if (type) connection.type = type as ModelConnectionOptions["type"];
       const srcOrd = attrNum(cxn, "srcOrd");
       if (srcOrd !== undefined) connection.sourceOrder = srcOrd;
       const destOrd = attrNum(cxn, "destOrd");
