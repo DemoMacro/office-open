@@ -76,6 +76,67 @@ describe("webSettingsDesc round-trip", () => {
     expect(Object.keys(result).length).toBe(0);
   });
 
+  it("round-trips div borders with an ST_Border style", () => {
+    const result = roundTrip({
+      divs: [
+        {
+          id: 1,
+          marginLeft: 720,
+          marginRight: 720,
+          marginTop: 360,
+          marginBottom: 360,
+          border: { top: { style: "single", color: "FF0000", size: 4 } },
+        },
+      ],
+    });
+    expect(result.divs![0]?.border?.top).toEqual({ style: "single", color: "FF0000", size: 4 });
+  });
+
+  it("parses an unknown ST_Border token through verbatim", () => {
+    const result = roundTrip({
+      divs: [
+        {
+          id: 1,
+          marginLeft: 0,
+          marginRight: 0,
+          marginTop: 0,
+          marginBottom: 0,
+          border: { left: { style: "single" } },
+        },
+      ],
+    });
+    expect(result.divs![0]?.border?.left?.style).toBe("single");
+  });
+
+  it("throws when a div border side carries no style", () => {
+    expect(() =>
+      webSettingsDesc.stringify(
+        {
+          divs: [
+            {
+              id: 1,
+              marginLeft: 0,
+              marginRight: 0,
+              marginTop: 0,
+              marginBottom: 0,
+              border: { top: {} as never },
+            },
+          ],
+        },
+        writeCtx,
+      ),
+    ).toThrow(/div border.*style/);
+  });
+
+  it("throws when a div misses the required id or margins", () => {
+    expect(() =>
+      webSettingsDesc.stringify(
+        { divs: [{ marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0 } as never] },
+        writeCtx,
+      ),
+    ).toThrow(/CT_Div/);
+  });
+
   it("round-trips combined options", () => {
     const result = roundTrip({
       optimizeForBrowser: true,

@@ -10,15 +10,28 @@
  */
 
 import type { FramesetOptions } from "@parts/frameset";
+import { BorderStyle } from "@shared/border";
+
+/**
+ * Border options for one side of a div (CT_DivBdr's CT_Border children).
+ */
+export interface DivBorderSideOptions {
+  /** Border pattern (ST_Border), same vocabulary as other WordprocessingML borders */
+  style: (typeof BorderStyle)[keyof typeof BorderStyle];
+  /** Border color, in hex (eg 'FF00AA') */
+  color?: string;
+  /** Size of the border in 1/8 pt */
+  size?: number;
+}
 
 /**
  * Border options for div elements.
  */
 export interface DivBorderOptions {
-  top?: { style: string; color?: string; size?: number };
-  left?: { style: string; color?: string; size?: number };
-  bottom?: { style: string; color?: string; size?: number };
-  right?: { style: string; color?: string; size?: number };
+  top?: DivBorderSideOptions;
+  left?: DivBorderSideOptions;
+  bottom?: DivBorderSideOptions;
+  right?: DivBorderSideOptions;
 }
 
 /**
@@ -312,14 +325,15 @@ function parseDivBorderEl(el: Element): DivBorderOptions {
   for (const side of ["top", "left", "bottom", "right"] as const) {
     const sideEl = findChild(el, `w:${side}`);
     if (sideEl) {
-      const b: Partial<NonNullable<DivBorderOptions["top"]>> = {};
+      const b: Partial<DivBorderSideOptions> = {};
       const val = attr(sideEl, "w:val");
-      if (val) b.style = val;
+      // parse stays lenient: unknown ST_Border tokens pass through verbatim
+      if (val) b.style = val as DivBorderSideOptions["style"];
       const color = attr(sideEl, "w:color");
       if (color) b.color = color;
       const sz = attrNum(sideEl, "w:sz");
       if (sz !== undefined) b.size = sz;
-      opts[side] = b as NonNullable<DivBorderOptions["top"]>;
+      opts[side] = b as DivBorderSideOptions;
     }
   }
 
@@ -328,7 +342,7 @@ function parseDivBorderEl(el: Element): DivBorderOptions {
 
 function wsDivBorderXml(b: NonNullable<DivOptions["border"]>): string {
   const parts: string[] = ["<w:divBdr>"];
-  const sides: [string, NonNullable<DivOptions["border"]>["top"]][] = [
+  const sides: [string, DivBorderSideOptions | undefined][] = [
     ["w:top", b.top],
     ["w:left", b.left],
     ["w:bottom", b.bottom],
@@ -336,6 +350,11 @@ function wsDivBorderXml(b: NonNullable<DivOptions["border"]>): string {
   ];
   for (const [tag, side] of sides) {
     if (!side) continue;
+    // CT_Border/@w:val is required — a missing style would otherwise emit the
+    // literal string "undefined" and Word rejects the whole part
+    if (side.style === undefined) {
+      throw new Error(`webSettings div border <${tag}> requires a style (CT_Border/@w:val)`);
+    }
     const attrParts: string[] = [`w:val="${escapeXml(side.style)}"`];
     if (side.color) attrParts.push(`w:color="${escapeXml(side.color)}"`);
     if (side.size !== undefined) attrParts.push(`w:sz="${side.size}"`);
@@ -346,6 +365,16 @@ function wsDivBorderXml(b: NonNullable<DivOptions["border"]>): string {
 }
 
 function wsDivXml(d: DivOptions): string {
+  // CT_Div/@w:id and the four margin children are required
+  if (
+    d.id === undefined ||
+    d.marginLeft === undefined ||
+    d.marginRight === undefined ||
+    d.marginTop === undefined ||
+    d.marginBottom === undefined
+  ) {
+    throw new Error("webSettings div requires id and the four margin fields (CT_Div)");
+  }
   const parts: string[] = [`<w:div w:id="${d.id}">`];
   if (d.blockQuote !== undefined)
     parts.push(wsStringVal("w:blockQuote", d.blockQuote ? "on" : "off"));

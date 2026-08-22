@@ -29,8 +29,21 @@ function encryptedPassthrough<T extends OutputType>(
   options: DocumentOptions,
   type: T,
 ): OutputByType[T] | undefined {
-  assertEncryptedExclusive(options, options.sections.length > 0);
+  assertEncryptedExclusive(options, sectionsOf(options).length > 0);
   return encryptedContainerOutput(options, type, OoxmlMimeType.DOCX);
+}
+
+/**
+ * Fail fast on a missing `sections` array — otherwise generation dies deep in
+ * the compiler on `undefined.length` instead of naming the missing field.
+ */
+function sectionsOf(options: DocumentOptions): DocumentOptions["sections"] {
+  if (!Array.isArray(options.sections)) {
+    throw new Error(
+      "DocumentOptions.sections is required (an array, possibly empty for an encrypted passthrough)",
+    );
+  }
+  return options.sections;
 }
 
 /**
@@ -79,7 +92,7 @@ export function generateDocumentStream(
   options: DocumentOptions,
   packerOptions?: PackerOptions,
 ): ReadableStream<Uint8Array> {
-  assertEncryptedExclusive(options, options.sections.length > 0);
+  assertEncryptedExclusive(options, sectionsOf(options).length > 0);
   const encrypted = encryptedContainerStream(options);
   if (encrypted) return encrypted;
   return Packer.toStream(options, packerOptions);

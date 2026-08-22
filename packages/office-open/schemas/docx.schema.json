@@ -5369,70 +5369,67 @@
       "description": "Border options for div elements.",
       "properties": {
         "bottom": {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "type": "string"
-            },
-            "size": {
-              "type": "number"
-            },
-            "style": {
-              "type": "string"
-            }
-          },
-          "required": ["style"],
-          "type": "object"
+          "$ref": "#/definitions/DivBorderSideOptions"
         },
         "left": {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "type": "string"
-            },
-            "size": {
-              "type": "number"
-            },
-            "style": {
-              "type": "string"
-            }
-          },
-          "required": ["style"],
-          "type": "object"
+          "$ref": "#/definitions/DivBorderSideOptions"
         },
         "right": {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "type": "string"
-            },
-            "size": {
-              "type": "number"
-            },
-            "style": {
-              "type": "string"
-            }
-          },
-          "required": ["style"],
-          "type": "object"
+          "$ref": "#/definitions/DivBorderSideOptions"
         },
         "top": {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "type": "string"
-            },
-            "size": {
-              "type": "number"
-            },
-            "style": {
-              "type": "string"
-            }
-          },
-          "required": ["style"],
-          "type": "object"
+          "$ref": "#/definitions/DivBorderSideOptions"
         }
       },
+      "type": "object"
+    },
+    "DivBorderSideOptions": {
+      "additionalProperties": false,
+      "description": "Border options for one side of a div.",
+      "properties": {
+        "color": {
+          "description": "Border color, in hex (eg 'FF00AA')",
+          "type": "string"
+        },
+        "size": {
+          "description": "Size of the border in 1/8 pt",
+          "type": "number"
+        },
+        "style": {
+          "description": "Border pattern, same vocabulary as other WordprocessingML borders",
+          "enum": [
+            "single",
+            "dashDotStroked",
+            "dashed",
+            "dashSmallGap",
+            "dotDash",
+            "dotDotDash",
+            "dotted",
+            "double",
+            "doubleWave",
+            "inset",
+            "nil",
+            "none",
+            "outset",
+            "thick",
+            "thickThinLargeGap",
+            "thickThinMediumGap",
+            "thickThinSmallGap",
+            "thinThickLargeGap",
+            "thinThickMediumGap",
+            "thinThickSmallGap",
+            "thinThickThinLargeGap",
+            "thinThickThinMediumGap",
+            "thinThickThinSmallGap",
+            "threeDEmboss",
+            "threeDEngrave",
+            "triple",
+            "wave"
+          ],
+          "type": "string"
+        }
+      },
+      "required": ["style"],
       "type": "object"
     },
     "DivOptions": {
