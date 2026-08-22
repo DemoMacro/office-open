@@ -166,7 +166,7 @@ export const patternFillDesc: CustomDescriptor<PatternFillOptions> = {
  * without a write context. The blip variant takes the embed placeholder
  * directly — callers with a write context get it from `ctx.addMedia`.
  */
-export function emitFillXml(options: FillOptions, embedPlaceholder?: string): string {
+export function emitFillXml(options: FillOptions, embedPlaceholder?: string): string | undefined {
   // String shorthand → solid fill
   if (typeof options === "string") {
     return `<a:solidFill>${emitColorChoice({ value: stripColorHashPrefix(options) } as SolidFillOptions)}</a:solidFill>`;
@@ -185,7 +185,7 @@ export function emitFillXml(options: FillOptions, embedPlaceholder?: string): st
     }
 
     case "gradient": {
-      // Core API variant
+      // Core API variant; a one-stop gradient is skipped (gsLst needs >=2)
       if ("options" in options) {
         return emitGradientFillXml(options.options);
       }
@@ -236,7 +236,12 @@ export function emitFillXml(options: FillOptions, embedPlaceholder?: string): st
 }
 
 /** Serialize a:gradFill from full GradientFillOptions (descriptor emission). */
-function emitGradientFillXml(opts: GradientFillOptions): string {
+function emitGradientFillXml(opts: GradientFillOptions): string | undefined {
+  // a:gsLst requires at least two a:gs stops (CT_GradientStopList) — a single
+  // stop cannot form a gradient, so the fill is skipped rather than emitted
+  // as an illegal one-stop list.
+  if (opts.stops.length < 2) return undefined;
+
   const parts: string[] = [];
 
   // Gradient stop list — a:gs expects EG_ColorChoice (direct color), NOT solidFill

@@ -31,8 +31,8 @@ import { outlineDesc, stringifyLineProperties } from "./outline/outline-descript
 import type { Scene3DOptions } from "./three-d/scene-3d";
 import type { Shape3DOptions } from "./three-d/shape-3d";
 import { scene3DDesc, shape3DDesc } from "./three-d/three-d-descriptors";
-import type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
-import { transform2DDesc, groupTransform2DDesc } from "./transform-descriptors";
+import type { Transform2DOptions } from "./transform";
+import { transform2DDesc } from "./transform-descriptors";
 
 // ── Types ──
 
@@ -59,13 +59,6 @@ export interface ShapePropertiesOptions {
   flipVertical?: boolean;
   /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
-  // CT_GroupTransform2D extras (a:chOff / a:chExt). When any is set, the
-  // descriptor emits a group transform (groupTransform2DDesc) instead of a
-  // plain CT_Transform2D.
-  childOffsetX?: number | UniversalMeasure;
-  childOffsetY?: number | UniversalMeasure;
-  childExtentWidth?: number | UniversalMeasure;
-  childExtentHeight?: number | UniversalMeasure;
   // EG_Geometry (choice: a:custGeom | a:prstGeom). customGeometry wins; a bare
   // string geometry is shorthand for { preset: "<name>" }.
   geometry?: ShapeType | PresetGeometryOptions;
@@ -97,13 +90,9 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
   stringify(opts, ctx) {
     const parts: string[] = [];
 
-    // a:xfrm — emit only when any transform field is set. Group-only child
-    // fields (chOff/chExt) trigger a group transform.
-    const hasGroupChild =
-      opts.childOffsetX !== undefined ||
-      opts.childOffsetY !== undefined ||
-      opts.childExtentWidth !== undefined ||
-      opts.childExtentHeight !== undefined;
+    // a:xfrm — CT_Transform2D; emit only when any transform field is set.
+    // (chOff/chExt belong to CT_GroupTransform2D under grpSpPr — group shapes
+    // go through groupShapePropertiesDesc, never here.)
     const hasTransform =
       opts.x !== undefined ||
       opts.y !== undefined ||
@@ -111,8 +100,7 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
       opts.height !== undefined ||
       opts.flipHorizontal !== undefined ||
       opts.flipVertical !== undefined ||
-      opts.rotation !== undefined ||
-      hasGroupChild;
+      opts.rotation !== undefined;
     if (hasTransform) {
       const transformOpts = {
         x: opts.x,
@@ -122,14 +110,8 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
         flipHorizontal: opts.flipHorizontal,
         flipVertical: opts.flipVertical,
         rotation: opts.rotation,
-        childOffsetX: opts.childOffsetX,
-        childOffsetY: opts.childOffsetY,
-        childExtentWidth: opts.childExtentWidth,
-        childExtentHeight: opts.childExtentHeight,
       };
-      const xfrm = hasGroupChild
-        ? groupTransform2DDesc.stringify(transformOpts as GroupTransform2DOptions, ctx)
-        : transform2DDesc.stringify(transformOpts as Transform2DOptions, ctx);
+      const xfrm = transform2DDesc.stringify(transformOpts as Transform2DOptions, ctx);
       if (xfrm) parts.push(xfrm);
     }
 
@@ -204,14 +186,11 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
   parse(el, ctx) {
     const result: Partial<ShapePropertiesOptions> = {};
 
-    // a:xfrm — group transform when chOff/chExt present, else plain transform.
+    // a:xfrm — plain CT_Transform2D (a chOff/chExt-bearing source xfrm would
+    // only appear under grpSpPr, which parses through groupShapePropertiesDesc)
     const xfrm = findChild(el, "a:xfrm");
     if (xfrm) {
-      const hasGroupChild = !!(findChild(xfrm, "a:chOff") ?? findChild(xfrm, "a:chExt"));
-      Object.assign(
-        result,
-        hasGroupChild ? groupTransform2DDesc.parse(xfrm, ctx) : transform2DDesc.parse(xfrm, ctx),
-      );
+      Object.assign(result, transform2DDesc.parse(xfrm, ctx));
     }
 
     // EG_Geometry

@@ -46,8 +46,6 @@ export interface FontCollectionOptions {
   eastAsian?: TextFontOptions;
   /** Complex-script font (a:cs). */
   complexScript?: TextFontOptions;
-  /** Symbol font (a:sym). */
-  symbol?: TextFontOptions;
   supplementalFonts?: SupplementalFontOptions[];
 }
 

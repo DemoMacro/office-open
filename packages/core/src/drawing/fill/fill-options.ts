@@ -141,5 +141,5 @@ export const extractBlipFillMedia = (
  * context-free public entry (blip fills mint a `{fileName}` embed placeholder
  * unless the caller supplies one).
  */
-export const buildFill = (options: FillOptions, embedPlaceholder?: string): string =>
+export const buildFill = (options: FillOptions, embedPlaceholder?: string): string | undefined =>
   emitFillXml(options, embedPlaceholder);

@@ -81,13 +81,13 @@ export function stringifyParagraphPropertiesElement(
   if (options.hangingPunctuation !== undefined)
     attrs.push(`hangingPunct="${options.hangingPunctuation ? 1 : 0}"`);
 
-  // Line spacing
+  // Line spacing — a percentage and a points value are mutually exclusive
+  // (a:lnSpc carries a single spcPct | spcPts child).
   if (options.lineSpacingPercent !== undefined) {
     children.push(
       `<a:lnSpc><a:spcPct val="${emitPercent(options.lineSpacingPercent)}"/></a:lnSpc>`,
     );
-  }
-  if (options.lineSpacingPoints !== undefined) {
+  } else if (options.lineSpacingPoints !== undefined) {
     children.push(
       `<a:lnSpc><a:spcPts val="${Math.round(options.lineSpacingPoints * 100)}"/></a:lnSpc>`,
     );

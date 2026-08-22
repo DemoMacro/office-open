@@ -199,7 +199,11 @@ function stringifyTrendline(opts: TrendlineOptions): string {
 
 function stringifyErrBars(opts: ErrorBarOptions): string {
   const parts: string[] = [];
-  if (opts.direction !== undefined) parts.push(valEl("c:errDir", opts.direction));
+  // ST_ErrDir is x|y — skip values outside the enum (a legacy "both" belongs
+  // to errBarType, not errDir)
+  if (opts.direction === "x" || opts.direction === "y") {
+    parts.push(valEl("c:errDir", opts.direction));
+  }
   parts.push(valEl("c:errBarType", opts.barType ?? "both"));
   parts.push(valEl("c:errValType", xsdErrorValueType.to(opts.valueType ?? "fixedValue")));
   if (opts.noEndCap !== undefined) parts.push(`<c:noEndCap${boolVal(opts.noEndCap)}/>`);
@@ -268,10 +272,14 @@ function stringifyDataLabels(opts: DataLabelsOptions, ctx: WriteContext): string
     parts.push(`<c:showBubbleSize${boolVal(opts.showBubbleSize)}/>`);
   if (opts.separator !== undefined)
     parts.push(`<c:separator>${escapeXml(opts.separator)}</c:separator>`);
-  if (opts.showLeaderLines !== undefined)
-    parts.push(`<c:showLeaderLines${boolVal(opts.showLeaderLines)}/>`);
-  // CT_ChartLines (leaderLines) closes Group_DLbls; an empty element is XSD-valid.
-  if (opts.leaderLines) parts.push(emptyEl("c:leaderLines"));
+  // CT_DLbls is a choice: delete OR the shared-settings group (which carries
+  // showLeaderLines/leaderLines). The tail pair only rides along with the group.
+  if (opts.delete === undefined) {
+    if (opts.showLeaderLines !== undefined)
+      parts.push(`<c:showLeaderLines${boolVal(opts.showLeaderLines)}/>`);
+    // CT_ChartLines (leaderLines); an empty element is XSD-valid.
+    if (opts.leaderLines) parts.push(emptyEl("c:leaderLines"));
+  }
   return `<c:dLbls>${parts.join("")}</c:dLbls>`;
 }
 
@@ -368,7 +376,10 @@ function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
   parts.push(valEl("c:axId", opts.id));
   parts.push(stringifyScaling(opts.scaling));
   if (opts.delete !== undefined) parts.push(`<c:delete${boolVal(opts.delete)}/>`);
-  if (opts.position !== undefined) parts.push(valEl("c:axPos", xsdAxisPosition.to(opts.position)));
+  // axPos is required (EG_AxShared); default by axis role when unset —
+  // category-style axes sit at the bottom, value/secondary axes on the left
+  const axPos = opts.position ?? (opts.kind === "value" ? "left" : "bottom");
+  parts.push(valEl("c:axPos", xsdAxisPosition.to(axPos)));
   parts.push(stringifyChartLines("c:majorGridlines", opts.majorGridlines, ctx));
   parts.push(stringifyChartLines("c:minorGridlines", opts.minorGridlines, ctx));
   if (opts.title !== undefined) {
@@ -552,7 +563,10 @@ function stringifyProtection(opts: ProtectionOptions): string {
   return `<c:protection>${parts.join("")}</c:protection>`;
 }
 
-function stringifyExternalData(opts: ExternalDataOptions): string {
+function stringifyExternalData(opts: ExternalDataOptions): string | undefined {
+  // r:id must resolve to a relationship the chart part owns — an unresolvable
+  // id (fresh authoring, junk reference) would dangle, so skip the element
+  if (!opts.relationshipId || /^r?Id?(0|undefined)?$/i.test(opts.relationshipId)) return undefined;
   const auto =
     opts.autoUpdate !== undefined ? `<c:autoUpdate val="${opts.autoUpdate ? 1 : 0}"/>` : "";
   return `<c:externalData r:id="${escapeXml(opts.relationshipId)}">${auto}</c:externalData>`;
@@ -2516,7 +2530,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (opts.textProperties) {
       parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
     }
-    if (opts.externalData) parts.push(stringifyExternalData(opts.externalData));
+    if (opts.externalData) {
+      const ext = stringifyExternalData(opts.externalData);
+      if (ext) parts.push(ext);
+    }
     if (opts.printSettings) parts.push(stringifyPrintSettings(opts.printSettings));
     // CT_ChartSpace: printSettings → userShapes → extLst
     if (opts.userShapes !== undefined)

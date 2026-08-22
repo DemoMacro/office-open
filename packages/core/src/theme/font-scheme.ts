@@ -1,7 +1,7 @@
 /**
  * Font scheme (a:fontScheme / CT_FontScheme) stringify + parse.
  *
- * CT_FontCollection order: latin → ea → cs → sym → font[] (supplemental).
+ * CT_FontCollection order: latin → ea → cs → font[] (supplemental).
  *
  * @module
  */
@@ -16,7 +16,7 @@ import type {
   TextFontOptions,
 } from "./theme-options";
 
-// ── TextFont (a:latin / a:ea / a:cs / a:sym) ──
+// ── TextFont (a:latin / a:ea / a:cs) ──
 
 function stringifyTextFont(tag: string, opts: TextFontOptions | undefined): string {
   if (!opts) return "";
@@ -45,11 +45,10 @@ function stringifyFontCollection(tag: string, opts: FontCollectionOptions | unde
   const latin = stringifyTextFont("a:latin", opts?.latin);
   const eastAsian = stringifyTextFont("a:ea", opts?.eastAsian);
   const complexScript = stringifyTextFont("a:cs", opts?.complexScript);
-  const symbol = stringifyTextFont("a:sym", opts?.symbol);
   const supplemental = (opts?.supplementalFonts ?? [])
     .map((f) => `<a:font script="${escapeXml(f.script)}" typeface="${escapeXml(f.typeface)}"/>`)
     .join("");
-  return `<${tag}>${latin}${eastAsian}${complexScript}${symbol}${supplemental}</${tag}>`;
+  return `<${tag}>${latin}${eastAsian}${complexScript}${supplemental}</${tag}>`;
 }
 
 function parseFontCollection(el: XmlElement | undefined): FontCollectionOptions | undefined {
@@ -61,8 +60,6 @@ function parseFontCollection(el: XmlElement | undefined): FontCollectionOptions 
   if (eastAsian) result.eastAsian = eastAsian;
   const complexScript = parseTextFont(findChild(el, "a:cs"));
   if (complexScript) result.complexScript = complexScript;
-  const symbol = parseTextFont(findChild(el, "a:sym"));
-  if (symbol) result.symbol = symbol;
   const supplementalFonts = (el.elements ?? [])
     .filter((c) => c.name === "a:font")
     .map((c): SupplementalFontOptions | undefined => {

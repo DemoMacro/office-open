@@ -665,15 +665,18 @@ export function stringifyLayoutDefinition(o: LayoutDefinitionOptions): string {
 
 const DGM_NS = "http://schemas.openxmlformats.org/drawingml/2006/diagram";
 const A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
+const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
 /**
  * Inject the part-level dgm/a namespace declarations into the root element of
- * a serialized layoutDef/styleDef/colorsDef body.
+ * a serialized layoutDef/styleDef/colorsDef body; r joins only when the body
+ * actually uses the prefix (dgm:shape @r:blip preview references).
  */
 export function withDiagramNamespaces(xml: string): string {
+  const r = xml.includes("xmlns:r=") ? "" : /\sr:[\w]+=/.test(xml) ? ` xmlns:r="${R_NS}"` : "";
   return xml.replace(
     /^<dgm:(layoutDef|styleDef|colorsDef)/,
-    `<dgm:$1 xmlns:dgm="${DGM_NS}" xmlns:a="${A_NS}"`,
+    `<dgm:$1 xmlns:dgm="${DGM_NS}" xmlns:a="${A_NS}"${r}`,
   );
 }
 

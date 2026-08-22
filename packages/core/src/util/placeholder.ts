@@ -39,7 +39,8 @@ function nextPlaceholder(xml: string, from: number): [number, number] | undefine
   }
 }
 
-function replacePlaceholders(xml: string, map: Map<string, string>): string {
+/** Replace `{name}` placeholders with the given values (missing keys stay). */
+export function replacePlaceholders(xml: string, map: Map<string, string>): string {
   const parts: string[] = [];
   let last = 0;
   let pos = 0;

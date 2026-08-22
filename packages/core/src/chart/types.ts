@@ -125,7 +125,7 @@ export interface TrendlineOptions {
 // ── Error bars ──
 
 /** Which axes the error bars span: both, x only, or y only. */
-export type ErrorBarDirection = "both" | "x" | "y";
+export type ErrorBarDirection = "x" | "y";
 
 /** Which side of the point gets a bar: both, minus (below/left), or plus (above/right). */
 export type ErrorBarType = "both" | "minus" | "plus";

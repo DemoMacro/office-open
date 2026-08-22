@@ -65,10 +65,13 @@ export function stringifyNonVisualDrawingProperties(
   if (opts?.title) attrs += ` title="${escapeXml(opts.title)}"`;
   if (opts?.hidden) attrs += ` hidden="1"`;
   // CT_NonVisualDrawingProps tail: hlinkClick/hover (caller innerXml) → extLst.
+  // xmlns:a is declared locally: parts that host docPr without a DrawingML
+  // root (comments.xml, notes) never declare the a: prefix themselves.
+  const A_NS = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"';
   const extLst = opts?.ext
-    ? `<a:extLst>${opts.ext}</a:extLst>`
+    ? `<a:extLst ${A_NS}>${opts.ext}</a:extLst>`
     : opts?.creationId
-      ? `<a:extLst><a:ext uri="${CREATION_ID_EXT_URI}"><a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="${escapeXml(opts.creationId)}"/></a:ext></a:extLst>`
+      ? `<a:extLst ${A_NS}><a:ext uri="${CREATION_ID_EXT_URI}"><a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="${escapeXml(opts.creationId)}"/></a:ext></a:extLst>`
       : "";
   const content = (innerXml ?? "") + extLst;
   return content ? `<${tag} ${attrs}>${content}</${tag}>` : `<${tag} ${attrs}/>`;
