@@ -240,8 +240,6 @@ export interface SettingsOptions {
   captions?: CaptionsOptions;
   /** Math properties (m:mathPr) */
   mathProperties?: MathPropertiesOptions;
-  /** Emulate Word 97-2003 UI behavior (w:uiCompat97To2003, Word 2010+) */
-  uiCompat97To2003?: boolean;
   /** Active writing style checking language/grammar settings */
   activeWritingStyle?: {
     lang?: string;

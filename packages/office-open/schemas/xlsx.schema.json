@@ -2133,10 +2133,6 @@
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Line fill/outline (spPr)."
-        },
-        "textProperties": {
-          "$ref": "#/definitions/TextBodyOptions",
-          "description": "Line text properties (txPr)."
         }
       },
       "type": "object"

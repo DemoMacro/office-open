@@ -907,7 +907,7 @@ function stringifySeries(
   return `<c:ser>${parts.join("")}</c:ser>`;
 }
 
-// CT_ChartLines: a bare element or an spPr/txPr pair (true keeps the bare form)
+// CT_ChartLines: a bare element or an spPr carrier (true keeps the bare form)
 function stringifyChartLines(
   tag: string,
   opts: boolean | ChartLinesOptions | undefined,
@@ -915,10 +915,7 @@ function stringifyChartLines(
 ): string {
   if (opts === undefined || opts === false) return "";
   if (opts === true) return emptyEl(tag);
-  const parts = [chartSpPr(opts.shapeProperties, ctx)];
-  if (opts.textProperties)
-    parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
-  return `<${tag}>${parts.join("")}</${tag}>`;
+  return `<${tag}>${chartSpPr(opts.shapeProperties, ctx)}</${tag}>`;
 }
 
 /** Read any CT_ChartLines element: true when bare, decorations when carried. */
@@ -930,14 +927,10 @@ function readChartLines(
   const el = findChild(parent, tag);
   if (!el) return undefined;
   const spPrEl = findChild(el, "c:spPr");
-  const txPrEl = findChild(el, "c:txPr");
-  if (!spPrEl && !txPrEl) return true;
+  if (!spPrEl) return true;
   const lines: ChartLinesOptions = {};
-  if (spPrEl) {
-    const shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx);
-    if (shapeProperties) lines.shapeProperties = shapeProperties;
-  }
-  if (txPrEl) lines.textProperties = textBodyDesc.parse(txPrEl, ctx);
+  const shapeProperties = shapePropertiesDesc.parse(spPrEl, ctx);
+  if (shapeProperties) lines.shapeProperties = shapeProperties;
   return lines;
 }
 

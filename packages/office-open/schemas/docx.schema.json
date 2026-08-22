@@ -2373,10 +2373,6 @@
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Line fill/outline (spPr)."
-        },
-        "textProperties": {
-          "$ref": "#/definitions/TextBodyOptions",
-          "description": "Line text properties (txPr)."
         }
       },
       "type": "object"
@@ -3737,7 +3733,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "minVer": {
@@ -8717,7 +8713,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "layoutNode": {
@@ -8881,7 +8877,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "moveWith": {
@@ -20505,10 +20501,6 @@
           "description": "Enable track changes (revision marking)",
           "type": "boolean"
         },
-        "uiCompat97To2003": {
-          "description": "Emulate Word 97-2003 UI behavior (w:uiCompat97To2003, Word 2010+)",
-          "type": "boolean"
-        },
         "updateFields": {
           "description": "Update fields when document is opened",
           "type": "boolean"
@@ -21874,7 +21866,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "minVer": {
@@ -21911,7 +21903,7 @@
       "description": "dgm:styleLbl — formatting for one style slot.",
       "properties": {
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "name": {

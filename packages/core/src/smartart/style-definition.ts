@@ -50,7 +50,7 @@ export interface StyleLabelOptions {
   textProperties?: TextProperties3DOptions;
   /** Theme style-matrix references (dgm:style, a:CT_ShapeStyle). */
   style?: DefaultShapeStyleOptions;
-  /** Raw a:extLst inner XML — verbatim round-trip. */
+  /** Raw dgm:extLst inner XML — verbatim round-trip. */
   ext?: string;
 }
 
@@ -70,7 +70,7 @@ export interface StyleDefinitionOptions {
   scene3d?: Scene3DOptions;
   /** Style slots, at least one in a real part (dgm:styleLbl*). */
   styleLabels?: StyleLabelOptions[];
-  /** Raw a:extLst inner XML — verbatim round-trip. */
+  /** Raw dgm:extLst inner XML — verbatim round-trip. */
   ext?: string;
 }
 
@@ -112,7 +112,8 @@ function stringifyStyleLabel(o: StyleLabelOptions, ctx: WriteContext): string {
   if (o.shape3d) body += renamespaceTag("sp3d", shape3DDesc.stringify(o.shape3d, ctx) ?? "");
   if (o.textProperties) body += stringifyTextProperties(o.textProperties, ctx);
   if (o.style) body += renamespaceTag("style", stringifyShapeStyle(o.style, ctx));
-  if (o.ext) body += `<a:extLst>${o.ext}</a:extLst>`;
+  // CT_StyleLabel declares extLst locally — the element is dgm-namespaced
+  if (o.ext) body += `<dgm:extLst>${o.ext}</dgm:extLst>`;
   return `<dgm:styleLbl${attrs({ name: o.name })}>${body}</dgm:styleLbl>`;
 }
 
@@ -140,7 +141,7 @@ export function stringifyStyleDefinition(o: StyleDefinitionOptions): string {
       ? renamespaceTag("scene3d", scene3DDesc.stringify(o.scene3d, DIRECT_WRITE_CTX) ?? "")
       : "") +
     (o.styleLabels ?? []).map((l) => stringifyStyleLabel(l, DIRECT_WRITE_CTX)).join("") +
-    (o.ext ? `<a:extLst>${o.ext}</a:extLst>` : "");
+    (o.ext ? `<dgm:extLst>${o.ext}</dgm:extLst>` : "");
   return `<dgm:styleDef${attrs({ uniqueId: o.uniqueId, minVer: o.minVer })}>${body}</dgm:styleDef>`;
 }
 
@@ -168,7 +169,7 @@ function parseStyleLabel(el: Element): StyleLabelOptions {
   if (txPr) result.textProperties = parseTextProperties(txPr);
   const style = findChild(el, "dgm:style");
   if (style) result.style = parseShapeStyle(style, DIRECT_READ_CTX);
-  const extLst = findChild(el, "a:extLst");
+  const extLst = findChild(el, "dgm:extLst") ?? findChild(el, "a:extLst");
   if (extLst) result.ext = stringifyInnerXml(extLst);
   return result as StyleLabelOptions;
 }
@@ -213,7 +214,7 @@ export function parseStyleDefinition(el: Element): StyleDefinitionOptions {
     if (child.name === "dgm:styleLbl") styleLabels.push(parseStyleLabel(child));
   }
   if (styleLabels.length) result.styleLabels = styleLabels;
-  const extLst = findChild(root, "a:extLst");
+  const extLst = findChild(root, "dgm:extLst") ?? findChild(root, "a:extLst");
   if (extLst) result.ext = stringifyInnerXml(extLst);
   return result as StyleDefinitionOptions;
 }

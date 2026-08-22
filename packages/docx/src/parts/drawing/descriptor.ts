@@ -309,7 +309,8 @@ function stringifyBlipFill(
   // Blip effects
   const blipEffectsXml = blipEffects ? stringifyBlipEffects(blipEffects, NOOP_CTX) : "";
 
-  const blipContent = extLstXml + blipEffectsXml;
+  // CT_Blip orders the effect choice before the trailing extLst
+  const blipContent = blipEffectsXml + extLstXml;
   if (blipContent) {
     parts.push(`<a:blip ${blipAttrs.join(" ")}>${blipContent}</a:blip>`);
   } else {

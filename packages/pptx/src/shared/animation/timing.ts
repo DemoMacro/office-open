@@ -1007,11 +1007,6 @@ export class SlideTiming {
         ]),
       ];
 
-      // Add iterate container if specified
-      if (options.iterate) {
-        effectCtnChildren.push(buildIterate(options.iterate));
-      }
-
       // Add endCondLst (A2)
       if (options.endConditions && options.endConditions.length > 0) {
         effectCtnChildren.push(
@@ -1037,6 +1032,12 @@ export class SlideTiming {
         effectCtnChildren.push(
           buildXml("p:endSync", syncAttrs, syncChildren.length > 0 ? syncChildren : undefined),
         );
+      }
+
+      // Add iterate container if specified (CT_TLCommonTimeNodeData places
+      // iterate after endSync, before childTnLst)
+      if (options.iterate) {
+        effectCtnChildren.push(buildIterate(options.iterate));
       }
 
       // Add childTnLst with possible excl wrapper

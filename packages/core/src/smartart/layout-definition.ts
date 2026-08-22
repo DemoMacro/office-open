@@ -410,7 +410,7 @@ export interface LayoutNodeOptions {
   /** Move with another named layout node (dgm:`@moveWith`). */
   moveWith?: string;
   children?: LayoutNodeChild[];
-  /** Raw a:extLst inner XML — verbatim round-trip. */
+  /** Raw dgm:extLst inner XML — verbatim round-trip. */
   ext?: string;
 }
 
@@ -444,7 +444,7 @@ export interface LayoutDefinitionOptions {
   colorData?: SampleDataOptions;
   /** The layout tree (dgm:layoutNode, required). */
   layoutNode: LayoutNodeOptions;
-  /** Raw a:extLst inner XML — verbatim round-trip. */
+  /** Raw dgm:extLst inner XML — verbatim round-trip. */
   ext?: string;
 }
 
@@ -577,7 +577,8 @@ function stringifyChildren(children: readonly LayoutNodeChild[] | undefined): st
 }
 
 function stringifyLayoutNode(o: LayoutNodeOptions): string {
-  const body = stringifyChildren(o.children) + (o.ext ? `<a:extLst>${o.ext}</a:extLst>` : "");
+  // CT_LayoutNode declares extLst locally — the element is dgm-namespaced
+  const body = stringifyChildren(o.children) + (o.ext ? `<dgm:extLst>${o.ext}</dgm:extLst>` : "");
   return `<dgm:layoutNode${attrs({
     name: o.name,
     styleLbl: o.styleLabel,
@@ -654,7 +655,7 @@ export function stringifyLayoutDefinition(o: LayoutDefinitionOptions): string {
     stringifySampleData("styleData", o.styleData) +
     stringifySampleData("clrData", o.colorData) +
     stringifyLayoutNode(o.layoutNode) +
-    (o.ext ? `<a:extLst>${o.ext}</a:extLst>` : "");
+    (o.ext ? `<dgm:extLst>${o.ext}</dgm:extLst>` : "");
   return `<dgm:layoutDef${attrs({
     uniqueId: o.uniqueId,
     minVer: o.minVer,
@@ -907,7 +908,7 @@ function parseLayoutNode(el: Element): LayoutNodeOptions {
   if (moveWith) result.moveWith = moveWith;
   const children = parseChildren(el);
   if (children) result.children = children;
-  const extLst = findChild(el, "a:extLst");
+  const extLst = findChild(el, "dgm:extLst") ?? findChild(el, "a:extLst");
   if (extLst) result.ext = stringifyInnerXml(extLst);
   return result as LayoutNodeOptions;
 }
@@ -1015,7 +1016,7 @@ export function parseLayoutDefinition(el: Element): LayoutDefinitionOptions {
   if (colorData) result.colorData = colorData;
   const layoutNode = findChild(root, "dgm:layoutNode");
   if (layoutNode) result.layoutNode = parseLayoutNode(layoutNode);
-  const extLst = findChild(root, "a:extLst");
+  const extLst = findChild(root, "dgm:extLst") ?? findChild(root, "a:extLst");
   if (extLst) result.ext = stringifyInnerXml(extLst);
   return result as LayoutDefinitionOptions;
 }

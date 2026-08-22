@@ -2914,10 +2914,6 @@
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Line fill/outline (spPr)."
-        },
-        "textProperties": {
-          "$ref": "#/definitions/TextBodyOptions",
-          "description": "Line text properties (txPr)."
         }
       },
       "type": "object"
@@ -3772,7 +3768,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "minVer": {
@@ -4630,7 +4626,7 @@
     },
     "CustomerDataOptions": {
       "additionalProperties": false,
-      "description": "Customer data on the presentation (p:custDataLst — data parts, tags, inline tagLst).",
+      "description": "Customer data on the presentation (p:custDataLst — r:id part references).",
       "properties": {
         "data": {
           "items": {
@@ -4642,13 +4638,6 @@
             },
             "required": ["rId"],
             "type": "object"
-          },
-          "type": "array"
-        },
-        "tagList": {
-          "description": "Inline tags — generates <p:tagLst><p:tag name=\"...\" val=\"...\"/>...</p:tagLst>",
-          "items": {
-            "$ref": "#/definitions/StringTagOptions"
           },
           "type": "array"
         },
@@ -6671,7 +6660,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "layoutNode": {
@@ -6835,7 +6824,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "moveWith": {
@@ -12084,20 +12073,6 @@
       "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
-    "StringTagOptions": {
-      "additionalProperties": false,
-      "description": "Tag entry for inline tagLst generation.",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "val": {
-          "type": "string"
-        }
-      },
-      "required": ["name", "val"],
-      "type": "object"
-    },
     "StyleDefinitionOptions": {
       "additionalProperties": false,
       "description": "dgm:styleDef — the quickStyle part root.",
@@ -12117,7 +12092,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "minVer": {
@@ -12154,7 +12129,7 @@
       "description": "dgm:styleLbl — formatting for one style slot.",
       "properties": {
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip.",
+          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
           "type": "string"
         },
         "name": {

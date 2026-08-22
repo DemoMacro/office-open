@@ -228,17 +228,30 @@ function buildCellStyle(opts: TableCellStyleOptions): string {
   return element("a:tcStyle", undefined, children);
 }
 
-function buildPartStyle(elementName: string, opts: TablePartStyleOptions): string {
+/**
+ * Build one region element. a:tblBg is CT_TableBackgroundStyle (themeable
+ * fill/effect only); every other region is CT_TablePartStyle (tcTxStyle +
+ * tcStyle only) — the two child sets never mix per XSD.
+ */
+function buildPartStyle(
+  elementName: string,
+  opts: TablePartStyleOptions,
+  isBackground: boolean,
+): string {
   const children: string[] = [];
-  if (opts.background) {
-    if (opts.background.fillReference)
-      children.push(createStyleMatrixRef("fillRef", opts.background.fillReference));
-    else if (opts.background.fill) children.push(toStr(opts.background.fill));
-    if (opts.background.effectReference)
-      children.push(createStyleMatrixRef("effectRef", opts.background.effectReference));
+  if (isBackground) {
+    const background = opts.background;
+    if (background) {
+      if (background.fillReference)
+        children.push(createStyleMatrixRef("fillRef", background.fillReference));
+      else if (background.fill) children.push(toStr(background.fill));
+      if (background.effectReference)
+        children.push(createStyleMatrixRef("effectRef", background.effectReference));
+    }
+  } else {
+    if (opts.text) children.push(buildTextStyle(opts.text));
+    if (opts.cell) children.push(buildCellStyle(opts.cell));
   }
-  if (opts.text) children.push(buildTextStyle(opts.text));
-  if (opts.cell) children.push(buildCellStyle(opts.cell));
   return element(elementName, undefined, children);
 }
 
@@ -287,7 +300,7 @@ export function createTableStyle(opts: TableStyleOptions, elementName = "a:tblSt
     for (const region of REGION_ORDER) {
       const part = opts.regions[region];
       if (!part) continue;
-      children.push(buildPartStyle(REGION_ELEMENTS[region], part));
+      children.push(buildPartStyle(REGION_ELEMENTS[region], part, region === "tblBg"));
     }
   }
   return element(

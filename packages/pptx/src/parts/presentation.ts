@@ -77,18 +77,10 @@ export interface KinsokuOptions {
   invalEndChars: string;
 }
 
-/** Tag entry for inline tagLst generation. */
-export interface StringTagOptions {
-  name: string;
-  val: string;
-}
-
-/** Customer data on the presentation (p:custDataLst — data parts, tags, inline tagLst). */
+/** Customer data on the presentation (p:custDataLst — r:id part references). */
 export interface CustomerDataOptions {
   data?: { rId: string }[];
   tags?: { rId: string };
-  /** Inline tags — generates <p:tagLst><p:tag name="..." val="..."/>...</p:tagLst> */
-  tagList?: StringTagOptions[];
 }
 
 export interface PresentationPartOptions {

@@ -282,12 +282,10 @@ export interface ChartStyle2010Options {
   fallbackStyle?: number;
 }
 
-/** Chart lines with formatting (CT_ChartLines: spPr + txPr). */
+/** Chart lines with formatting (CT_ChartLines: spPr only). */
 export interface ChartLinesOptions {
   /** Line fill/outline (spPr). */
   shapeProperties?: ShapePropertiesOptions;
-  /** Line text properties (txPr). */
-  textProperties?: TextBodyOptions;
 }
 
 /** Series grouping mode (c:grouping val) — bar/column/line/area groups. */

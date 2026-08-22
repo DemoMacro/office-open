@@ -40,7 +40,7 @@ export interface ColorDefinitionOptions {
   categories?: DiagramCategoryOptions[];
   /** Color slots, at least one in a real part (dgm:styleLbl*). */
   styleLabels?: ColorStyleLabelOptions[];
-  /** Raw a:extLst inner XML — verbatim round-trip. */
+  /** Raw dgm:extLst inner XML — verbatim round-trip. */
   ext?: string;
 }
 
@@ -87,7 +87,8 @@ export function stringifyColorDefinition(o: ColorDefinitionOptions): string {
           .join("")}</dgm:catLst>`
       : "") +
     (o.styleLabels ?? []).map(stringifyColorStyleLabel).join("") +
-    (o.ext ? `<a:extLst>${o.ext}</a:extLst>` : "");
+    // CT_ColorTransform declares extLst locally — the element is dgm-namespaced
+    (o.ext ? `<dgm:extLst>${o.ext}</dgm:extLst>` : "");
   return `<dgm:colorsDef${attrs({ uniqueId: o.uniqueId, minVer: o.minVer })}>${body}</dgm:colorsDef>`;
 }
 
@@ -140,7 +141,7 @@ export function parseColorDefinition(el: Element): ColorDefinitionOptions {
     if (child.name === "dgm:styleLbl") styleLabels.push(parseColorStyleLabel(child));
   }
   if (styleLabels.length) result.styleLabels = styleLabels;
-  const extLst = findChild(root, "a:extLst");
+  const extLst = findChild(root, "dgm:extLst") ?? findChild(root, "a:extLst");
   if (extLst) result.ext = stringifyInnerXml(extLst);
   return result as ColorDefinitionOptions;
 }

@@ -32,7 +32,7 @@ import { viewPropsDesc } from "./parts/descriptors/view-properties";
 
 export { parseArchive };
 
-import type { CustomerDataOptions, StringTagOptions } from "./parts/presentation";
+import type { CustomerDataOptions } from "./parts/presentation";
 import type { SlideLayoutType } from "./parts/slide-layout";
 import type {
   LayoutDefinition,
@@ -472,12 +472,11 @@ export function parsePresentation(data: DataType): PresentationOptions {
       }
     }
 
-    // p:custDataLst — customer data parts, tags reference, and inline tag list.
+    // p:custDataLst — customer data parts and the tags part reference.
     const custDataLst = findChild(pptx.presentation, "p:custDataLst");
     if (custDataLst) {
       const customerData: CustomerDataOptions = {};
       const data: { rId: string }[] = [];
-      const tagList: StringTagOptions[] = [];
       for (const child of custDataLst.elements ?? []) {
         if (child.name === "p:custData") {
           const rId = attr(child, "r:id");
@@ -485,17 +484,9 @@ export function parsePresentation(data: DataType): PresentationOptions {
         } else if (child.name === "p:tags") {
           const rId = attr(child, "r:id");
           if (rId) customerData.tags = { rId };
-        } else if (child.name === "p:tagLst") {
-          for (const tag of child.elements ?? []) {
-            if (tag.name !== "p:tag") continue;
-            const name = attr(tag, "name");
-            const val = attr(tag, "val");
-            if (name && val) tagList.push({ name, val });
-          }
         }
       }
       if (data.length > 0) customerData.data = data;
-      if (tagList.length > 0) customerData.tagList = tagList;
       if (Object.keys(customerData).length > 0) opts.customerData = customerData;
     }
   }

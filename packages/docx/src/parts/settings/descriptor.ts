@@ -1009,12 +1009,14 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(strVal("w:stylePaneSortMethod", opts.stylePaneSortMethod));
     p.push(strVal("w:documentType", opts.documentType));
 
+    // CT_Settings order: mailMerge precedes the revision-tracking group
+    if (opts.mailMerge !== undefined) p.push(stringifyMailMerge(opts.mailMerge));
+
     if (opts.revisionView !== undefined) p.push(stringifyRevisionView(opts.revisionView));
     p.push(onOff("w:trackRevisions", opts.trackRevisions));
     p.push(onOff("w:doNotTrackMoves", opts.doNotTrackMoves));
     p.push(onOff("w:doNotTrackFormatting", opts.doNotTrackFormatting));
 
-    if (opts.mailMerge !== undefined) p.push(stringifyMailMerge(opts.mailMerge));
     if (opts.documentProtection !== undefined) p.push(stringifyDocProtect(opts.documentProtection));
 
     p.push(onOff("w:autoFormatOverride", opts.autoFormatOverride));
@@ -1124,9 +1126,6 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
 
     if (opts.rsids !== undefined) p.push(stringifyRsids(opts.rsids));
     if (opts.mathProperties !== undefined) p.push(stringifyMathPr(opts.mathProperties));
-    // Word 2010+ UI compat flag — sits between m:mathPr and w:themeFontLang
-    if (opts.uiCompat97To2003 !== undefined)
-      p.push(onOff("w:uiCompat97To2003", opts.uiCompat97To2003));
 
     if (opts.attachedSchema !== undefined) {
       for (const schema of opts.attachedSchema) p.push(strVal("w:attachedSchema", schema)!);
@@ -1538,10 +1537,6 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const mp = parseMathPr(mathPrEl);
       if (mp) opts.mathProperties = mp;
     }
-
-    // uiCompat97To2003 — Word 2010+ flag between mathPr and themeFontLang
-    const uiCompat = findChild(el, "w:uiCompat97To2003");
-    if (uiCompat) opts.uiCompat97To2003 = parseOnOff(attr(uiCompat, "w:val")) ?? true;
 
     // attachedSchema → w:attachedSchema/@w:val (multiple)
     const attachedSchemas: string[] = [];

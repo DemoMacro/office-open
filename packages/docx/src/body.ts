@@ -362,7 +362,9 @@ function stringifyTextbox(
     },
   });
 
-  return `<w:p>${pPrXml}<w:pict>${vshape}</w:pict></w:p>`;
+  // w:pict is run-level content (EG_RunInnerContent) — Word rejects it bare
+  // under w:p, so the textbox paragraph carries its VML shape inside a run
+  return `<w:p>${pPrXml}<w:r><w:pict>${vshape}</w:pict></w:r></w:p>`;
 }
 
 // ── Document body ──
