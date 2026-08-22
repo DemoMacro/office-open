@@ -59,6 +59,7 @@ import type { SharedStrings } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import { createThemeXml } from "@parts/theme";
+import { buildVolTypesXml } from "@parts/vol-types";
 import type { PivotCacheReference, TablePartReference, SheetDefinition } from "@parts/workbook";
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
 import {
@@ -312,7 +313,6 @@ export function compileWorkbook(
         functionGroups: options.functionGroups,
         webPublishing: options.webPublishing,
         fileSharing: options.fileSharing,
-        volTypes: options.volTypes,
         webPublishObjects: options.webPublishObjects,
         definedNames: options.definedNames,
         workbookPr: options.workbookPr,
@@ -365,6 +365,21 @@ export function compileWorkbook(
     mapping["XmlMaps"] = {
       data: XML_DECL + mapInfoDesc.stringify(options.xmlMaps, ctx),
       path: "xl/xmlMaps.xml",
+    };
+  }
+
+  // Volatile function types — xl/volTypes.xml (single part, workbook-level
+  // relationship; sml.xsd declares volTypes as a part root, never a workbook child)
+  if (options.volTypes && options.volTypes.length > 0) {
+    const vRid = ctx.workbookRels.nextRelationshipId;
+    ctx.workbookRels.addRelationship(
+      vRid,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/volTypes",
+      "volTypes.xml",
+    );
+    mapping["VolTypes"] = {
+      data: XML_DECL + buildVolTypesXml(options.volTypes),
+      path: "xl/volTypes.xml",
     };
   }
 

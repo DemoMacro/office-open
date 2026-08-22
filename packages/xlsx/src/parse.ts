@@ -53,6 +53,7 @@ import { sharedStringsDesc } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import type { TableOptions } from "@parts/table";
+import { parseVolTypesEl } from "@parts/vol-types";
 import { workbookDesc } from "@parts/workbook";
 import type { PivotCacheReference } from "@parts/workbook";
 import type { RichTextOptions } from "@parts/worksheet";
@@ -335,7 +336,6 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     if (wbData.webPublishing) opts.webPublishing = wbData.webPublishing;
     if (wbData.fileSharing) opts.fileSharing = wbData.fileSharing;
     if (wbData.workbookPr) opts.workbookPr = wbData.workbookPr;
-    if (wbData.volTypes) opts.volTypes = wbData.volTypes;
     if (wbData.webPublishObjects) opts.webPublishObjects = wbData.webPublishObjects;
     if (wbData.definedNames) opts.definedNames = wbData.definedNames;
     if (wbData.absPath !== undefined) opts.absPath = wbData.absPath;
@@ -739,6 +739,13 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
   const xmlMapsEl = xlsx.doc.get("xl/xmlMaps.xml");
   if (xmlMapsEl) {
     opts.xmlMaps = mapInfoDesc.parse(xmlMapsEl, readContext);
+  }
+
+  // Volatile function types (xl/volTypes.xml)
+  const volTypesEl = xlsx.doc.get("xl/volTypes.xml");
+  if (volTypesEl) {
+    const volTypes = parseVolTypesEl(volTypesEl);
+    if (volTypes.length > 0) opts.volTypes = volTypes;
   }
 
   // External links

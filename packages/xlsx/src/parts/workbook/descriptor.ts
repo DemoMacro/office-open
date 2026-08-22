@@ -22,10 +22,6 @@ import type {
   SmartTagPropertiesOptions,
   SmartTagShow,
   SmartTagTypeOptions,
-  VolMainOptions,
-  VolTopicOptions,
-  VolTopicRefOptions,
-  VolTypeOptions,
   WebPublishObjectOptions,
   WebPublishingOptions,
   WorkbookConformance,
@@ -385,51 +381,6 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         objs.push(obj);
       }
       if (objs.length > 0) result.webPublishObjects = objs;
-    }
-
-    // Volatile types (volTypes)
-    const vtEl = findChild(el, "volTypes");
-    if (vtEl) {
-      const volTypes: VolTypeOptions[] = [];
-      for (const vt of vtEl.elements ?? []) {
-        if (vt.name !== "volType") continue;
-        const volType: VolTypeOptions = {};
-        const typeVal = attr(vt, "type");
-        if (typeVal) volType.type = typeVal as VolTypeOptions["type"];
-        const mains: VolMainOptions[] = [];
-        for (const m of vt.elements ?? []) {
-          if (m.name !== "main") continue;
-          const main: VolMainOptions = { first: attr(m, "first") ?? "" };
-          const topics: VolTopicOptions[] = [];
-          for (const tp of m.elements ?? []) {
-            if (tp.name !== "tp") continue;
-            const vEl = findChild(tp, "v");
-            const topic: VolTopicOptions = { value: String(vEl?.elements?.[0]?.text ?? "") };
-            const tVal = attr(tp, "t");
-            if (tVal) topic.valueType = tVal;
-            const stps: string[] = [];
-            const refs: VolTopicRefOptions[] = [];
-            for (const inner of tp.elements ?? []) {
-              if (inner.name === "stp") stps.push(String(inner.elements?.[0]?.text ?? ""));
-              if (inner.name === "tr") {
-                const ref: VolTopicRefOptions = {
-                  reference: attr(inner, "r") ?? "",
-                  sheetIndex: attrNum(inner, "s") ?? 0,
-                };
-                refs.push(ref);
-              }
-            }
-            if (stps.length > 0) topic.stringTopics = stps;
-            if (refs.length > 0) topic.refs = refs;
-            topics.push(topic);
-          }
-          if (topics.length > 0) main.topics = topics;
-          mains.push(main);
-        }
-        if (mains.length > 0) volType.mains = mains;
-        volTypes.push(volType);
-      }
-      if (volTypes.length > 0) result.volTypes = volTypes;
     }
 
     // Defined names (CT_DefinedNames — simpleContent ST_Formula + 14 attrs)

@@ -125,7 +125,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   webPublishing?: WebPublishingOptions;
   /** File sharing / read-only recommendation */
   fileSharing?: FileSharingOptions;
-  /** Volatile dependencies (CT_VolTypes) */
+  /** Volatile function types (xl/volTypes.xml part, CT_VolTypes root) */
   volTypes?: VolTypeOptions[];
   /** Web publish objects (CT_WebPublishItems) */
   webPublishObjects?: WebPublishObjectOptions[];

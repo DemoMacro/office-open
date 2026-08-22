@@ -435,7 +435,6 @@ export interface WorkbookDescriptorOptions {
   /** OLE embedded range (CT_OleSize, after calcPr per XSD sequence) */
   oleSize?: string;
   bookView?: WorkbookViewOptions;
-  volTypes?: VolTypeOptions[];
   webPublishObjects?: WebPublishObjectOptions[];
   /** Defined names (CT_DefinedNames) — named ranges, constants, formulas */
   definedNames?: DefinedNameOptions[];

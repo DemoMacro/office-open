@@ -391,41 +391,6 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     parts.push(wpoParts.join(""));
   }
 
-  // Volatile dependencies (volTypes)
-  if (opts.volTypes && opts.volTypes.length > 0) {
-    const vtParts: string[] = [`<volTypes count="${opts.volTypes.length}">`];
-    for (const vt of opts.volTypes) {
-      const vtType = vt.type ?? "realTimeData";
-      const mains = vt.mains ?? [];
-      if (mains.length > 0) {
-        const mainParts: string[] = [];
-        for (const m of mains) {
-          const tpParts: string[] = [];
-          for (const topic of m.topics ?? []) {
-            const tpInner: string[] = [`<v>${escapeXml(topic.value)}</v>`];
-            for (const stp of topic.stringTopics ?? []) {
-              tpInner.push(`<stp>${escapeXml(stp)}</stp>`);
-            }
-            for (const tr of topic.refs ?? []) {
-              tpInner.push(`<tr r="${escapeXml(tr.reference)}" s="${tr.sheetIndex}"/>`);
-            }
-            const tpAttr =
-              topic.valueType && topic.valueType !== "n"
-                ? ` t="${escapeXml(topic.valueType)}"`
-                : "";
-            tpParts.push(`<tp${tpAttr}>${tpInner.join("")}</tp>`);
-          }
-          mainParts.push(`<main first="${escapeXml(m.first)}">${tpParts.join("")}</main>`);
-        }
-        vtParts.push(`<volType type="${vtType}">${mainParts.join("")}</volType>`);
-      } else {
-        vtParts.push(`<volType type="${vtType}"/>`);
-      }
-    }
-    vtParts.push("</volTypes>");
-    parts.push(vtParts.join(""));
-  }
-
   if (opts.extensions?.length) {
     const exts = opts.extensions
       .map((ext) => {

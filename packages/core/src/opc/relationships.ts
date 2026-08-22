@@ -82,6 +82,7 @@ export type RelationshipType =
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/metadata"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sheetMetadata"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/xmlMaps"
+  | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/volTypes"
   | "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells";
 
 export const TargetModeType = {

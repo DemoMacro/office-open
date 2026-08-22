@@ -37,6 +37,7 @@ import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
 import { stylesDesc } from "@parts/styles";
 import { createThemeXml } from "@parts/theme";
+import { buildVolTypesXml } from "@parts/vol-types";
 import { workbookDesc } from "@parts/workbook";
 import type { SheetDefinition } from "@parts/workbook";
 import type { RowOptions } from "@parts/worksheet";
@@ -115,6 +116,7 @@ export function streamWorkbook(
   const worksheets = options.worksheets ?? [];
   const sheetPaths = worksheets.map((_, i) => `xl/worksheets/sheet${i + 1}.xml`);
   const hasCustomProperties = !!options.customProperties?.length;
+  const hasVolTypes = !!(options.volTypes && options.volTypes.length > 0);
 
   // [Content_Types].xml leads per OPC; its part list is deterministic from
   // the options (this path emits a fixed part set).
@@ -130,6 +132,7 @@ export function streamWorkbook(
     ...sheetPaths,
   ];
   if (hasCustomProperties) partPaths.push("docProps/custom.xml");
+  if (hasVolTypes) partPaths.push("xl/volTypes.xml");
 
   const writeString = (path: string, xml: string): void => {
     const sink = writer.addPart(path, xmlLevel);
@@ -190,11 +193,17 @@ export function streamWorkbook(
           functionGroups: options.functionGroups,
           webPublishing: options.webPublishing,
           fileSharing: options.fileSharing,
-          volTypes: options.volTypes,
         },
         ctx,
       ) ?? ""),
   );
+  // Volatile function types live in their own part (never a workbook child)
+  if (hasVolTypes) {
+    writeString(
+      "xl/volTypes.xml",
+      OOXML_XML_DECLARATION + buildVolTypesXml(options.volTypes ?? []),
+    );
+  }
   const wbRels = new Relationships();
   let rid = 1;
   for (let i = 0; i < sheets.length; i++) {
@@ -214,6 +223,13 @@ export function streamWorkbook(
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
     "theme/theme1.xml",
   );
+  if (hasVolTypes) {
+    wbRels.addRelationship(
+      rid++,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/volTypes",
+      "volTypes.xml",
+    );
+  }
   writeString("xl/_rels/workbook.xml.rels", OOXML_XML_DECLARATION + wbRels.serialize());
 
   // Worksheets — the streaming core. Cells serialize with sharedStrings
