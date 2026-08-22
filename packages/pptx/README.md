@@ -88,9 +88,9 @@ writeFileSync("output.pptx", buffer);
 
 ## Benchmark
 
-Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher ops/s is better, Windows 11 / Node 24).
+Performance vs [PptxGenJS](https://github.com/gitbrent/PptxGenJS) (higher ops/s is better, Windows 11; each scenario runs under both Node 24 and Bun 1.4).
 
-**Default** = XML DEFLATE level 1 (SuperFast); media is split by type, matching MS Office PowerPoint — already-compressed formats (PNG/JPEG/GIF) are STOREd, the rest (EMF/WMF/BMP/TIFF/…) use DEFLATE level 6 / Normal (verified on a real MS Office file). **All STORE** = no compression (`{ compression: { xml: 0, media: 0 } }`). **PptxGenJS** (async only) defaults to STORE (via JSZip), supports DEFLATE via `compression: true` (applies to ALL entries including images).
+**Default** = XML DEFLATE level 1; media matches MS Office PowerPoint — already-compressed formats (PNG/JPEG/GIF) are STOREd, the rest (EMF/WMF/BMP/TIFF/…) use DEFLATE level 6. **All STORE** = no compression (`{ compression: { xml: 0, media: 0 } }`). PptxGenJS (async only) defaults to STORE (JSZip) and applies DEFLATE to every entry with `compression: true`.
 
 ```typescript
 // Default (matches MS Office)
@@ -101,33 +101,42 @@ await generatePresentation(options, { compression: { xml: 0, media: 0 } });
 generatePresentationStream(options);
 ```
 
-**Create + toBuffer / toStream (end-to-end)**
+**Create + toBuffer / toStream**
 
-| Scenario           | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
-| ------------------ | -----------: | ------------: | -------------: | --------------: | -------------: | ----------------: | --------------: |
-| Simple (2 shapes)  |    944 ops/s |   1,155 ops/s |    2,761 ops/s |     3,068 ops/s |     13.2 ops/s |         184 ops/s |       190 ops/s |
-| Styled shapes (20) |  1,044 ops/s |   1,210 ops/s |    2,861 ops/s |     2,788 ops/s |     13.5 ops/s |         175 ops/s |       181 ops/s |
-| Table (10x5)       |  1,150 ops/s |   1,122 ops/s |    2,950 ops/s |     2,933 ops/s |     13.2 ops/s |         985 ops/s |       996 ops/s |
-| Full featured      |    914 ops/s |     963 ops/s |    1,790 ops/s |     1,738 ops/s |     13.2 ops/s |        97.4 ops/s |      98.8 ops/s |
+| Scenario           | Runtime | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
+| ------------------ | ------- | ------------ | ------------- | -------------- | --------------- | -------------- | ----------------- | --------------- |
+| Simple (2 shapes)  | Node 24 | 862 ops/s    | 1,150 ops/s   | 2,535 ops/s    | 2,878 ops/s     | 12.2 ops/s     | 177 ops/s         | 177 ops/s       |
+|                    | Bun 1.4 | 2,016 ops/s  | 563 ops/s     | 4,327 ops/s    | 4,573 ops/s     | —              | 133 ops/s         | 133 ops/s       |
+| Styled shapes (20) | Node 24 | 997 ops/s    | 1,161 ops/s   | 2,573 ops/s    | 2,355 ops/s     | 12.2 ops/s     | 165 ops/s         | 173 ops/s       |
+|                    | Bun 1.4 | 2,367 ops/s  | 510 ops/s     | 3,992 ops/s    | 3,920 ops/s     | —              | 131 ops/s         | 145 ops/s       |
+| Table (10x5)       | Node 24 | 1,149 ops/s  | 1,210 ops/s   | 2,940 ops/s    | 2,953 ops/s     | 12.2 ops/s     | 821 ops/s         | 885 ops/s       |
+|                    | Bun 1.4 | 2,233 ops/s  | 508 ops/s     | 4,707 ops/s    | 4,101 ops/s     | —              | 842 ops/s         | 1,093 ops/s     |
+| Full featured      | Node 24 | 789 ops/s    | 951 ops/s     | 1,760 ops/s    | 1,600 ops/s     | 11.6 ops/s     | 85.1 ops/s        | 89.8 ops/s      |
+|                    | Bun 1.4 | 1,686 ops/s  | 499 ops/s     | 2,198 ops/s    | 2,396 ops/s     | —              | 71.4 ops/s        | 72.2 ops/s      |
 
 **Large Files — Create + toBuffer / toStream**
 
-| Scenario              | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
-| --------------------- | -----------: | ------------: | -------------: | --------------: | -------------: | ----------------: | --------------: |
-| 30 slides x 20 shapes |    198 ops/s |     205 ops/s |      369 ops/s |       370 ops/s |     2.91 ops/s |         125 ops/s |       131 ops/s |
-| 30 slides x 10 images |    115 ops/s |     117 ops/s |      153 ops/s |       149 ops/s |     2.83 ops/s |        0.31 ops/s |      0.32 ops/s |
-| 100x10 table          |    274 ops/s |     302 ops/s |      328 ops/s |       349 ops/s |     12.6 ops/s |         136 ops/s |       127 ops/s |
-| 50 slides full        |   77.7 ops/s |    79.7 ops/s |      106 ops/s |       101 ops/s |     1.75 ops/s |        0.94 ops/s |      0.93 ops/s |
+| Scenario              | Runtime | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
+| --------------------- | ------- | ------------ | ------------- | -------------- | --------------- | -------------- | ----------------- | --------------- |
+| 30 slides x 20 shapes | Node 24 | 197 ops/s    | 200 ops/s     | 345 ops/s      | 347 ops/s       | 2.7 ops/s      | 112 ops/s         | 120 ops/s       |
+|                       | Bun 1.4 | 327 ops/s    | 89.0 ops/s    | 499 ops/s      | 458 ops/s       | —              | 125 ops/s         | 161 ops/s       |
+| 30 slides x 10 images | Node 24 | 112 ops/s    | 112 ops/s     | 144 ops/s      | 144 ops/s       | 2.66 ops/s     | 0.298 ops/s       | 0.304 ops/s     |
+|                       | Bun 1.4 | 204 ops/s    | 87.9 ops/s    | 224 ops/s      | 213 ops/s       | —              | 0.233 ops/s       | 0.232 ops/s     |
+| 100x10 table          | Node 24 | 303 ops/s    | 327 ops/s     | 342 ops/s      | 401 ops/s       | 10.2 ops/s     | 117 ops/s         | 117 ops/s       |
+|                       | Bun 1.4 | 395 ops/s    | 292 ops/s     | 530 ops/s      | 429 ops/s       | —              | 139 ops/s         | 150 ops/s       |
+| 50 slides full        | Node 24 | 73.8 ops/s   | 71.5 ops/s    | 100 ops/s      | 92.5 ops/s      | 1.7 ops/s      | 0.906 ops/s       | 0.893 ops/s     |
+|                       | Bun 1.4 | 124 ops/s    | 60.7 ops/s    | 143 ops/s      | 134 ops/s       | —              | 0.687 ops/s       | 0.686 ops/s     |
 
 **Large File (~100MB) — Mixed Content**
 
 40 slides x (2 shapes + 2 mixed-size images + 3x3 table).
 
-| Scenario        | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
-| --------------- | -----------: | ------------: | -------------: | --------------: | -------------: | ----------------: | --------------: |
-| 40 slides mixed |   24.2 ops/s |    21.2 ops/s |     24.8 ops/s |      25.4 ops/s |     1.68 ops/s |        0.23 ops/s |      0.23 ops/s |
+| Scenario        | Runtime | Default sync | Default async | All STORE sync | All STORE async | Default stream | PptxGenJS DEFLATE | PptxGenJS STORE |
+| --------------- | ------- | ------------ | ------------- | -------------- | --------------- | -------------- | ----------------- | --------------- |
+| 40 slides mixed | Node 24 | 22.8 ops/s   | 20.9 ops/s    | 23.9 ops/s     | 23.5 ops/s      | 1.56 ops/s     | 0.214 ops/s       | 0.216 ops/s     |
+|                 | Bun 1.4 | 34.8 ops/s   | 24.4 ops/s    | 28.9 ops/s     | 39.9 ops/s      | —              | 0.165 ops/s       | 0.165 ops/s     |
 
-**Stream column** = `generatePresentationStream` (default compression, fully drained). Streaming trades throughput for pipeability: each part is compressed in a Web Worker as it is produced, so a fixed per-part worker handoff dominates small decks — streaming targets memory footprint and piping (file / HTTP response), not peak ops/s.
+**Stream** = `generatePresentationStream` (default compression, fully drained) — it targets piping and a flat memory profile, not peak throughput. — = not measured under Bun.
 
 ## Examples
 

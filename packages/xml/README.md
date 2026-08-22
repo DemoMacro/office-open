@@ -76,23 +76,27 @@ interface Element {
 
 ## Benchmark
 
-Performance vs [txml](https://github.com/TobiasNickel/tXml), [xml-js](https://github.com/nashwaan/xml-js), and [xml](https://github.com/dylang/node-xml) (higher ops/s is better, Windows 11 / Node 24; run with `pnpm exec vp test bench src/xml.bench.ts` in this package). `@office-open/xml` is a drop-in replacement for xml-js and xml. The `xml` (npm) package is generation-only (no parser), so it only appears under stringify.
+Performance vs [txml](https://github.com/TobiasNickel/tXml), [xml-js](https://github.com/nashwaan/xml-js), and [xml](https://github.com/dylang/node-xml) (higher ops/s is better, Windows 11; each scenario runs under both Node 24 and Bun 1.4). `@office-open/xml` is a drop-in replacement for xml-js and xml. The `xml` (npm) package is generation-only (no parser), so it only appears under stringify. `Bun.XML` is Bun-only and its compact parse mode is lossy (`#text` runs concatenate, same-name children collapse into keyed arrays), so it is a throughput reference rather than a drop-in option.
 
 txml skips entity encoding by default (`encodeEntities: false`), which emits invalid XML when text contains `&`, `<`, or `>`; the `txml` column shows that raw mode and the `txml (entities)` column is the output-equivalent mode.
 
 **parse() — XML string → Element tree**
 
-| Scenario      | @office-open/xml |            txml |       xml-js |
-| ------------- | ---------------: | --------------: | -----------: |
-| simple XML    |  1,420,676 ops/s | 1,077,871 ops/s | 99,049 ops/s |
-| complex OOXML |    434,118 ops/s |   393,714 ops/s | 52,849 ops/s |
+| Scenario      | Runtime | @office-open/xml | txml          | xml-js        | Bun.XML.parse |
+| ------------- | ------- | ---------------- | ------------- | ------------- | ------------- |
+| simple XML    | Node 24 | 1,301,742 ops/s  | 983,046 ops/s | 93,951 ops/s  | —             |
+|               | Bun 1.4 | 1,906,525 ops/s  | 616,562 ops/s | 161,894 ops/s | 828,554 ops/s |
+| complex OOXML | Node 24 | 423,536 ops/s    | 388,743 ops/s | 49,771 ops/s  | —             |
+|               | Bun 1.4 | 483,512 ops/s    | 241,036 ops/s | 63,029 ops/s  | 451,177 ops/s |
 
 **stringify() — Element tree → XML string**
 
-| Scenario       | @office-open/xml | txml (entities) |            txml |        xml-js |     xml (npm) |
-| -------------- | ---------------: | --------------: | --------------: | ------------: | ------------: |
-| simple element |  2,039,248 ops/s | 1,339,180 ops/s | 3,188,605 ops/s | 207,318 ops/s | 299,226 ops/s |
-| complex OOXML  |    579,213 ops/s |   465,948 ops/s | 1,409,039 ops/s | 137,595 ops/s | 186,069 ops/s |
+| Scenario       | Runtime | @office-open/xml | txml (entities) | txml            | xml-js        | xml (npm)     | Bun.XML.stringify |
+| -------------- | ------- | ---------------- | --------------- | --------------- | ------------- | ------------- | ----------------- |
+| simple element | Node 24 | 2,049,617 ops/s  | 1,255,456 ops/s | 2,765,770 ops/s | 190,783 ops/s | 303,724 ops/s | —                 |
+|                | Bun 1.4 | 2,588,728 ops/s  | 1,721,498 ops/s | 4,248,377 ops/s | 438,430 ops/s | 483,526 ops/s | 584,746 ops/s     |
+| complex OOXML  | Node 24 | 583,811 ops/s    | 447,274 ops/s   | 1,326,397 ops/s | 130,335 ops/s | 172,258 ops/s | —                 |
+|                | Bun 1.4 | 510,448 ops/s    | 528,375 ops/s   | 2,303,173 ops/s | 226,645 ops/s | 292,534 ops/s | 251,444 ops/s     |
 
 ## License
 
