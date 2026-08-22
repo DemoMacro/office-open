@@ -197,6 +197,9 @@ export interface ConnectionsOptions {
 
 // ── Descriptor ──
 
+// ST_CredMethod (sml.xsd:412) — closed enumeration
+const CRED_METHODS: ReadonlySet<string> = new Set(["integrated", "none", "stored", "prompt"]);
+
 export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
   kind: "custom",
 
@@ -225,7 +228,10 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
       if (c.backgroundRefresh) cAttrs.push('background="1"');
       if (c.refreshOnLoad) cAttrs.push('refreshOnLoad="1"');
       if (c.saveData) cAttrs.push('saveData="1"');
-      if (c.credentials !== undefined) cAttrs.push(`credentials="${escapeXml(c.credentials)}"`);
+      // ST_CredMethod is a closed enum — an unknown value would fail validation
+      if (c.credentials !== undefined && CRED_METHODS.has(c.credentials)) {
+        cAttrs.push(`credentials="${c.credentials}"`);
+      }
       if (c.singleSignOnId !== undefined)
         cAttrs.push(`singleSignOnId="${escapeXml(c.singleSignOnId)}"`);
 

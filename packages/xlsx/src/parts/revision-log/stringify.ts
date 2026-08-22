@@ -96,6 +96,9 @@ export function stringifyEntry(entry: RevisionEntry): string {
       if (d.phonetic) a += ` ph="1"`;
       if (d.oldPhonetic) a += ` oldPh="1"`;
       if (d.endOfListFormulaUpdate) a += ` endOfListFormulaUpdate="1"`;
+      // CT_RevisionCellChange requires the new-cell child (nc, min 1) — an entry
+      // without one cannot serialize and is skipped
+      if (!d.newCellXml) return "";
       const children = [d.oldCellXml ?? "", d.newCellXml, d.oldDxfXml ?? "", d.newDxfXml ?? ""]
         .filter(Boolean)
         .join("");
@@ -156,11 +159,15 @@ export function stringifyEntry(entry: RevisionEntry): string {
       return `<rcmt${a}/>`;
     }
     case "queryTableField": {
+      // All three attributes are required by CT_RevisionQueryTableField — skip
+      // the entry rather than emit "undefined" literals for missing fields.
       const d = entry.data;
+      if (d.sheetId === undefined || d.ref === undefined || d.fieldId === undefined) return "";
       return `<rqt sheetId="${d.sheetId}" ref="${escapeXml(d.ref)}" fieldId="${d.fieldId}"/>`;
     }
     case "conflict": {
       const d = entry.data;
+      if (d.rId === undefined) return "";
       let a = agRevData(d);
       if (d.sheetId !== undefined) a += ` sheetId="${d.sheetId}"`;
       return `<rcft${a}/>`;

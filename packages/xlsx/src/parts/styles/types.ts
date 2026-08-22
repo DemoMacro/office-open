@@ -296,8 +296,6 @@ export interface TableStyleElementOptions {
   type: TableStyleElementType;
   /** Differential format index (dxf) */
   dxfId?: number;
-  /** Button style (for pivot tables) */
-  button?: boolean;
 }
 
 /** Custom table/pivot table style (CT_TableStyle). */

@@ -380,11 +380,16 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   if (opts.webPublishObjects && opts.webPublishObjects.length > 0) {
     const wpoParts: string[] = [`<webPublishObjects count="${opts.webPublishObjects.length}">`];
     for (const wpo of opts.webPublishObjects) {
-      const wpoAttrs: string[] = [`r:id="${escapeXml(wpo.rId)}"`];
-      if (wpo.destinationFile) wpoAttrs.push(`destinationFile="${escapeXml(wpo.destinationFile)}"`);
-      if (wpo.autoRepublish) wpoAttrs.push('autoRepublish="1"');
-      if (wpo.title) wpoAttrs.push(`title="${escapeXml(wpo.title)}"`);
+      // CT_WebPublishObject attribute set — @id/@divId/@destinationFile are
+      // required; there is no r:id on this element
+      const wpoAttrs: string[] = [
+        `id="${wpo.id}"`,
+        `divId="${escapeXml(wpo.divId)}"`,
+        `destinationFile="${escapeXml(wpo.destinationFile)}"`,
+      ];
       if (wpo.sourceObject) wpoAttrs.push(`sourceObject="${escapeXml(wpo.sourceObject)}"`);
+      if (wpo.title) wpoAttrs.push(`title="${escapeXml(wpo.title)}"`);
+      if (wpo.autoRepublish) wpoAttrs.push('autoRepublish="1"');
       wpoParts.push(`<webPublishObject ${wpoAttrs.join(" ")}/>`);
     }
     wpoParts.push("</webPublishObjects>");

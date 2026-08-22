@@ -263,7 +263,9 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       if (col.dataCellStyle) colAttrs.dataCellStyle = col.dataCellStyle;
       if (col.totalsRowCellStyle) colAttrs.totalsRowCellStyle = col.totalsRowCellStyle;
 
-      if (col.xmlColumnPr) {
+      // x:xmlColumnPr @mapId is a required UInt32 — skip the whole element when
+      // no usable map id exists (nothing to bind the column to)
+      if (col.xmlColumnPr && typeof col.xmlColumnPr.mapId === "number") {
         const xp = col.xmlColumnPr;
         const xpAttrs = [`mapId="${xp.mapId}"`, `xpath="${escapeXml(xp.xpath)}"`];
         if (xp.denormalized) xpAttrs.push('denormalized="1"');

@@ -262,16 +262,18 @@ export interface VolTopicRefOptions {
 
 /** Web publish object (CT_WebPublishObject) */
 export interface WebPublishObjectOptions {
-  /** Relationship ID to the published item */
-  rId: string;
-  /** Destination file name */
-  destinationFile?: string;
-  /** Auto republish (default: false) */
-  autoRepublish?: boolean;
-  /** Title of the published item */
-  title?: string;
+  /** Unique publish-object id (@id, unsignedInt, required) */
+  id: number;
+  /** HTML div id of the published item (@divId, required) */
+  divId: string;
+  /** Destination file name (@destinationFile, required) */
+  destinationFile: string;
   /** Source object reference */
   sourceObject?: string;
+  /** Title of the published item */
+  title?: string;
+  /** Auto republish (default: false) */
+  autoRepublish?: boolean;
 }
 
 /** Calculation properties (CT_CalcPr) */

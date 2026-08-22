@@ -153,7 +153,7 @@ describe("externalLinkDesc round-trip", () => {
     const opts: ExternalLinkOptions = {
       externalBook: {
         sheetNames: ["S1"],
-        definedNames: [{ name: "N1", publishToServer: true, vbProcedure: true }],
+        definedNames: [{ name: "N1", sheetId: 3 }],
         sheetDataSet: [{ sheetId: 1, refreshError: true }],
       },
       oleLink: { oleItems: [{ name: "I1", advise: true, preferPic: true }] },
@@ -161,8 +161,7 @@ describe("externalLinkDesc round-trip", () => {
     const result = roundTrip(opts);
 
     const dn = result.externalBook?.definedNames![0]!;
-    expect(dn.publishToServer).toBe(true);
-    expect(dn.vbProcedure).toBe(true);
+    expect(dn.sheetId).toBe(3);
     expect(result.externalBook?.sheetDataSet![0]?.refreshError).toBe(true);
     expect(result.oleLink?.oleItems![0]?.advise).toBe(true);
     expect(result.oleLink?.oleItems![0]?.preferPic).toBe(true);

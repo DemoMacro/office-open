@@ -256,7 +256,6 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
           if (attr(tsee, "type")) elOpts.type = attr(tsee, "type") as TableStyleElementType;
           const dxfId = attrNum(tsee, "dxfId");
           if (dxfId !== undefined) elOpts.dxfId = dxfId;
-          if (parseOnOff(attr(tsee, "button"))) elOpts.button = true;
           elements.push(elOpts as TableStyleElementOptions);
         }
         if (elements.length > 0) style.elements = elements;

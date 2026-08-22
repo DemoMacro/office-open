@@ -15,14 +15,6 @@ export interface ExternalDefinedNameOptions {
   name: string;
   refersTo?: string;
   sheetId?: number;
-  /** Publish to server (CT_DefinedName `@publishToServer`) */
-  publishToServer?: boolean;
-  /** VBA procedure (CT_DefinedName `@vbProcedure`) */
-  vbProcedure?: boolean;
-  /** Workbook parameter (CT_DefinedName `@workbookParameter`) */
-  workbookParameter?: boolean;
-  /** XLM macro (CT_DefinedName `@xlm`) */
-  xlm?: boolean;
 }
 
 export interface ExternalCellOptions {
@@ -158,10 +150,6 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
           const dnAttrs: Record<string, string | number | boolean | undefined> = { name: dn.name };
           if (dn.refersTo !== undefined) dnAttrs.refersTo = dn.refersTo;
           if (dn.sheetId !== undefined) dnAttrs.sheetId = dn.sheetId;
-          if (dn.publishToServer) dnAttrs.publishToServer = 1;
-          if (dn.vbProcedure) dnAttrs.vbProcedure = 1;
-          if (dn.workbookParameter) dnAttrs.workbookParameter = 1;
-          if (dn.xlm) dnAttrs.xlm = 1;
           bookParts.push(`<definedName${attrs(dnAttrs)}/>`);
         }
         bookParts.push("</definedNames>");
@@ -303,10 +291,6 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
           if (child.attributes?.["refersTo"]) dn.refersTo = String(child.attributes["refersTo"]);
           if (child.attributes?.["sheetId"] !== undefined)
             dn.sheetId = Number(child.attributes["sheetId"]);
-          if (child.attributes?.["publishToServer"]) dn.publishToServer = true;
-          if (child.attributes?.["vbProcedure"]) dn.vbProcedure = true;
-          if (child.attributes?.["workbookParameter"]) dn.workbookParameter = true;
-          if (child.attributes?.["xlm"]) dn.xlm = true;
           dns.push(dn);
         }
         if (dns.length > 0) book.definedNames = dns;

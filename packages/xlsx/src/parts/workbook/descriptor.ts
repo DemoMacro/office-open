@@ -378,13 +378,14 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const objs: WebPublishObjectOptions[] = [];
       for (const wo of wpoEl.elements ?? []) {
         if (wo.name !== "webPublishObject") continue;
-        const obj: WebPublishObjectOptions = {
-          rId: (wo.attributes?.["r:id"] as string) ?? "",
-        };
-        if (attr(wo, "destinationFile")) obj.destinationFile = attr(wo, "destinationFile");
-        if (parseOnOff(attr(wo, "autoRepublish"))) obj.autoRepublish = true;
-        if (attr(wo, "title")) obj.title = attr(wo, "title");
+        const id = attrNum(wo, "id");
+        const divId = attr(wo, "divId");
+        const destinationFile = attr(wo, "destinationFile");
+        if (id === undefined || divId === undefined || destinationFile === undefined) continue;
+        const obj: WebPublishObjectOptions = { id, divId, destinationFile };
         if (attr(wo, "sourceObject")) obj.sourceObject = attr(wo, "sourceObject");
+        if (attr(wo, "title")) obj.title = attr(wo, "title");
+        if (parseOnOff(attr(wo, "autoRepublish"))) obj.autoRepublish = true;
         objs.push(obj);
       }
       if (objs.length > 0) result.webPublishObjects = objs;

@@ -29,7 +29,7 @@ export const revisionLogDesc: CustomDescriptor<RevisionLogOptions> = {
 
   stringify(opts, _ctx) {
     if (opts.revisions.length === 0) return undefined;
-    return `<revisions xmlns="${S_NS}">${opts.revisions.map(stringifyEntry).join("")}</revisions>`;
+    return `<revisions xmlns="${S_NS}">${opts.revisions.map(stringifyEntry).filter(Boolean).join("")}</revisions>`;
   },
 
   parse(el, _ctx) {

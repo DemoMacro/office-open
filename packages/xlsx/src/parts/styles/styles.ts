@@ -713,7 +713,6 @@ export class Styles {
           for (const el of ts.elements) {
             const elAttrs: string[] = [`type="${el.type}"`];
             if (el.dxfId !== undefined) elAttrs.push(`dxfId="${el.dxfId}"`);
-            if (el.button) elAttrs.push('button="1"');
             tsParts.push(`<tableStyleElement ${elAttrs.join(" ")}/>`);
           }
           tsParts.push("</tableStyle>");
@@ -782,14 +781,19 @@ export class Styles {
       if (on === undefined) return;
       parts.push(on ? `<${name}/>` : `<${name} val="0"/>`);
     };
+    // x:font child order follows Excel's writer (and the Open XML SDK particle):
+    // b, i, strike, condense, extend, outline, shadow, u, vertAlign, sz, color,
+    // name, family, charset, scheme — the literal ISO sequence (name/charset/
+    // family leading) matches no real-world file
     flag("b", f.bold);
     flag("i", f.italic);
-    if (f.underline !== undefined) parts.push(f.underline ? "<u/>" : '<u val="none"/>');
     flag("strike", f.strike);
-    flag("outline", f.outline);
-    flag("shadow", f.shadow);
     flag("condense", f.condense);
     flag("extend", f.extend);
+    flag("outline", f.outline);
+    flag("shadow", f.shadow);
+    if (f.underline !== undefined) parts.push(f.underline ? "<u/>" : '<u val="none"/>');
+    if (f.vertAlign) parts.push(`<vertAlign val="${f.vertAlign}"/>`);
     if (f.size) parts.push(`<sz val="${f.size}"/>`);
     if (f.autoColor) parts.push('<color auto="1"/>');
     else if (f.themeColor !== undefined)
@@ -799,9 +803,8 @@ export class Styles {
     else if (f.colorIndexed !== undefined) parts.push(`<color indexed="${f.colorIndexed}"/>`);
     else if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
     if (f.font) parts.push(`<name val="${escapeXml(f.font)}"/>`);
-    if (f.charset !== undefined) parts.push(`<charset val="${f.charset}"/>`);
     if (f.family !== undefined) parts.push(`<family val="${f.family}"/>`);
-    if (f.vertAlign) parts.push(`<vertAlign val="${f.vertAlign}"/>`);
+    if (f.charset !== undefined) parts.push(`<charset val="${f.charset}"/>`);
     if (f.scheme) parts.push(`<scheme val="${f.scheme}"/>`);
     return parts.join("");
   }

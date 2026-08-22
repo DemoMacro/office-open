@@ -238,6 +238,9 @@ export const singleXmlCellsDesc: CustomDescriptor<SingleXmlCellsOptions> = {
       const pr = c.xmlCellPr;
       const prAttrs: string[] = [`id="${pr.id}"`];
       if (pr.uniqueName !== undefined) prAttrs.push(`uniqueName="${escapeXml(pr.uniqueName)}"`);
+      // x:xmlPr @mapId is a required UInt32 (CT_XmlPr) — without a usable map
+      // id the cell has nothing to bind to, so drop the whole xmlCellPr branch
+      if (typeof pr.xmlPr.mapId !== "number") continue;
       p.push(
         `<singleXmlCell id="${c.id}" r="${escapeXml(c.reference)}" connectionId="${c.connectionId}">` +
           `<xmlCellPr ${prAttrs.join(" ")}>` +
