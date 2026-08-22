@@ -1,3 +1,51 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+
+import { useNuxt } from "@nuxt/kit";
+
+// clientBundle.scan only sees icons referenced as literals inside vite modules;
+// icons from docus .navigation.yml and content frontmatter live in the content
+// dump instead, and with provider "server" those fall back to
+// /api/_nuxt_icon/* at runtime — which does not exist in a fully static deploy.
+// Collect every icon literal ourselves and hand the list to the client bundle.
+function collectIconNames(): string[] {
+  const names = new Set<string>();
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) {
+        if (entry !== "node_modules") walk(full);
+      } else if (/\.(vue|ts|md|yml|json)$/.test(entry)) {
+        for (const match of readFileSync(full, "utf8").matchAll(
+          /\bi-[a-z][a-z0-9]*(?:-[a-z0-9]+)+/g,
+        )) {
+          names.add(match[0]);
+        }
+      }
+    }
+  };
+  for (const dir of ["app", "content"]) {
+    try {
+      walk(join(__dirname, dir));
+    } catch {
+      // directory missing in this workspace layout — nothing to scan
+    }
+  }
+  // clientBundle.icons expects "collection:name"; component usage is "i-collection-name".
+  const collections = ["vscode-icons", "simple-icons", "lucide", "custom"];
+  return [...names]
+    .map((icon) => {
+      const body = icon.slice(2);
+      for (const collection of collections) {
+        if (body.startsWith(collection + "-")) {
+          return `${collection}:${body.slice(collection.length + 1)}`;
+        }
+      }
+      return null;
+    })
+    .filter((name): name is string => name !== null);
+}
+
 export default defineNuxtConfig({
   extends: ["docus"],
   modules: ["@nuxtjs/i18n"],
@@ -12,6 +60,28 @@ export default defineNuxtConfig({
       options: {
         target: "es2022",
       },
+    },
+  },
+
+  // unifont initializes its google/googleicons providers on every build,
+  // fetching fonts.google.com metadata (with retry backoff) even though this
+  // site requests no Google web font or material-symbols icon. Disable both;
+  // icon rendering is fully covered by @nuxt/icon with local collections.
+  fonts: {
+    providers: {
+      google: false,
+      googleicons: false,
+    },
+  },
+
+  // Resolve icons from locally installed @iconify-json/* collections instead
+  // of the iconify CDN (docus defaults provider to "iconify", which makes
+  // every visitor's browser call api.iconify.design at runtime).
+  icon: {
+    provider: "server",
+    serverBundle: "local",
+    clientBundle: {
+      icons: collectIconNames(),
     },
   },
 
@@ -72,6 +142,14 @@ export default defineNuxtConfig({
   },
 
   hooks: {
+    // docus pulls in @nuxt/image but neither this site nor the docus theme
+    // renders a single NuxtImg/NuxtPicture; dropping the module keeps ipx and
+    // the sharp binary wiring out of the server bundle.
+    "modules:before"() {
+      const { modules } = useNuxt().options;
+      const image = modules.indexOf("@nuxt/image");
+      if (image !== -1) modules.splice(image, 1);
+    },
     "nitro:config"(nitroConfig) {
       nitroConfig.handlers = nitroConfig.handlers?.filter((h) => h?.route !== "/api/search");
     },
