@@ -148,8 +148,19 @@ export interface WebPublishingOptions {
   vml?: boolean;
   /** Allow PNG (default false) */
   allowPng?: boolean;
-  /** Target screen size (default "800x600") */
-  targetScreenSize?: string;
+  /** Target screen size (CT_WebPublishing `@targetScreenSize`, ST_TargetScreenSize) */
+  targetScreenSize?:
+    | "544x376"
+    | "640x480"
+    | "720x512"
+    | "800x600"
+    | "1024x768"
+    | "1152x882"
+    | "1152x900"
+    | "1280x1024"
+    | "1600x1200"
+    | "1800x1440"
+    | "1920x1200";
   /** DPI (default 96) */
   dpi?: number;
   codePage?: number;
@@ -179,8 +190,8 @@ export interface WorkbookPropertiesOptions {
   /** Use 1904 date system (default false) */
   date1904?: boolean;
   defaultThemeVersion?: number;
-  /** Show objects: "all" | "placeholders" | "none" */
-  showObjects?: string;
+  /** Object display mode (CT_WorkbookPr `@showObjects`, ST_Objects) */
+  showObjects?: "all" | "placeholders" | "none";
   /** Hide pivot field list (default false) */
   hidePivotFieldList?: boolean;
   /** Allow refresh queries (default false) */
@@ -198,8 +209,8 @@ export interface WorkbookPropertiesOptions {
   showInkAnnotation?: boolean;
   /** Save external link values (CT_WorkbookPr `@saveExternalLinkValues`) */
   saveExternalLinkValues?: boolean;
-  /** Update links mode (CT_WorkbookPr `@updateLinks`) */
-  updateLinks?: string;
+  /** Update links mode (CT_WorkbookPr `@updateLinks`, ST_UpdateLinks) */
+  updateLinks?: "userSet" | "never" | "always";
   /** Show pivot chart filter (CT_WorkbookPr `@showPivotChartFilter`) */
   showPivotChartFilter?: boolean;
   /** Publish items (CT_WorkbookPr `@publishItems`) */
@@ -264,8 +275,8 @@ export interface WebPublishObjectOptions {
 
 /** Calculation properties (CT_CalcPr) */
 export interface CalculationPropertiesOptions {
-  /** Calculation mode: "manual" | "auto" | "autoNoTable" */
-  calcMode?: string;
+  /** Calculation mode (CT_CalcPr `@calcMode`, ST_CalcMode) */
+  calcMode?: "manual" | "auto" | "autoNoTable";
   /** Calc ID (default 162913) */
   calcId?: number;
   /** Full calc on load (default false) */
@@ -282,8 +293,8 @@ export interface CalculationPropertiesOptions {
   iterateCount?: number;
   /** Iterate delta (default 0.001) */
   iterateDelta?: number;
-  /** Reference mode: "A1" | "R1C1" */
-  refMode?: string;
+  /** Reference mode (CT_CalcPr `@refMode`, ST_RefMode) */
+  refMode?: "A1" | "R1C1";
   /** Full precision (default true) */
   fullPrecision?: boolean;
   /** Calc completed (CT_CalcPr `@calcCompleted`) */

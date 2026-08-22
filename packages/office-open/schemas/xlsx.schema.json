@@ -1494,7 +1494,8 @@
           "type": "number"
         },
         "calcMode": {
-          "description": "Calculation mode: \"manual\" | \"auto\" | \"autoNoTable\"",
+          "description": "Calculation mode",
+          "enum": ["manual", "auto", "autoNoTable"],
           "type": "string"
         },
         "calcOnSave": {
@@ -1532,7 +1533,8 @@
           "type": "number"
         },
         "refMode": {
-          "description": "Reference mode: \"A1\" | \"R1C1\"",
+          "description": "Reference mode",
+          "enum": ["A1", "R1C1"],
           "type": "string"
         }
       },
@@ -15720,7 +15722,20 @@
           "type": "boolean"
         },
         "targetScreenSize": {
-          "description": "Target screen size (default \"800x600\")",
+          "description": "Target screen size",
+          "enum": [
+            "544x376",
+            "640x480",
+            "720x512",
+            "800x600",
+            "1024x768",
+            "1152x882",
+            "1152x900",
+            "1280x1024",
+            "1600x1200",
+            "1800x1440",
+            "1920x1200"
+          ],
           "type": "string"
         },
         "thicket": {
@@ -16205,7 +16220,8 @@
           "type": "boolean"
         },
         "showObjects": {
-          "description": "Show objects: \"all\" | \"placeholders\" | \"none\"",
+          "description": "Object display mode",
+          "enum": ["all", "placeholders", "none"],
           "type": "string"
         },
         "showPivotChartFilter": {
@@ -16214,6 +16230,7 @@
         },
         "updateLinks": {
           "description": "Update links mode",
+          "enum": ["userSet", "never", "always"],
           "type": "string"
         }
       },

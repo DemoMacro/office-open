@@ -158,10 +158,12 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const calc: CalculationPropertiesOptions = {};
       const calcId = attrNum(calcPrEl, "calcId");
       if (calcId !== undefined) calc.calcId = calcId;
-      if (attr(calcPrEl, "calcMode")) calc.calcMode = attr(calcPrEl, "calcMode");
+      if (attr(calcPrEl, "calcMode"))
+        calc.calcMode = attr(calcPrEl, "calcMode") as CalculationPropertiesOptions["calcMode"];
       if (parseOnOff(attr(calcPrEl, "fullCalcOnLoad"))) calc.fullCalcOnLoad = true;
       if (String(attr(calcPrEl, "concurrentCalc")) === "0") calc.concurrentCalc = false;
-      if (attr(calcPrEl, "refMode")) calc.refMode = attr(calcPrEl, "refMode");
+      if (attr(calcPrEl, "refMode"))
+        calc.refMode = attr(calcPrEl, "refMode") as CalculationPropertiesOptions["refMode"];
       if (String(attr(calcPrEl, "calcOnSave")) === "0") calc.calcOnSave = false;
       if (parseOnOff(attr(calcPrEl, "forceFullCalc"))) calc.forceFullCalc = true;
       const cmc = attrNum(calcPrEl, "concurrentManualCount");
@@ -254,7 +256,10 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (parseOnOff(attr(webPublishingEl, "vml"))) wp.vml = true;
       if (parseOnOff(attr(webPublishingEl, "allowPng"))) wp.allowPng = true;
       if (attr(webPublishingEl, "targetScreenSize"))
-        wp.targetScreenSize = attr(webPublishingEl, "targetScreenSize");
+        wp.targetScreenSize = attr(
+          webPublishingEl,
+          "targetScreenSize",
+        ) as WebPublishingOptions["targetScreenSize"];
       const dpi = attrNum(webPublishingEl, "dpi");
       if (dpi !== undefined) wp.dpi = dpi;
       const codePage = attrNum(webPublishingEl, "codePage");
@@ -282,7 +287,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (parseOnOff(attr(wbPrEl, "date1904"))) wbPr.date1904 = true;
       const dtv = attrNum(wbPrEl, "defaultThemeVersion");
       if (dtv !== undefined) wbPr.defaultThemeVersion = dtv;
-      if (attr(wbPrEl, "showObjects")) wbPr.showObjects = attr(wbPrEl, "showObjects");
+      if (attr(wbPrEl, "showObjects"))
+        wbPr.showObjects = attr(wbPrEl, "showObjects") as WorkbookPropertiesOptions["showObjects"];
       if (parseOnOff(attr(wbPrEl, "hidePivotFieldList"))) wbPr.hidePivotFieldList = true;
       if (parseOnOff(attr(wbPrEl, "allowRefreshQuery"))) wbPr.allowRefreshQuery = true;
       if (parseOnOff(attr(wbPrEl, "filterPrivacy"))) wbPr.filterPrivacy = true;
@@ -294,7 +300,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (String(attr(wbPrEl, "showInkAnnotation")) === "0") wbPr.showInkAnnotation = false;
       if (String(attr(wbPrEl, "saveExternalLinkValues")) === "0")
         wbPr.saveExternalLinkValues = false;
-      if (attr(wbPrEl, "updateLinks")) wbPr.updateLinks = attr(wbPrEl, "updateLinks");
+      if (attr(wbPrEl, "updateLinks"))
+        wbPr.updateLinks = attr(wbPrEl, "updateLinks") as WorkbookPropertiesOptions["updateLinks"];
       if (parseOnOff(attr(wbPrEl, "showPivotChartFilter"))) wbPr.showPivotChartFilter = true;
       if (parseOnOff(attr(wbPrEl, "publishItems"))) wbPr.publishItems = true;
       if (parseOnOff(attr(wbPrEl, "checkCompatibility"))) wbPr.checkCompatibility = true;
