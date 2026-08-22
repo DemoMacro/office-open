@@ -70,14 +70,9 @@ const buffer = await generateDocument({
         },
 
         // 3. Run-level content part reference (w:contentPart, CT_Rel) — the
-        //    opaque-part form Word uses for ink. The r:id must point at a real
-        //    content-part relationship (round-trip passthrough); the demo uses
-        //    a placeholder id since it registers no such part.
-        {
-          paragraph: {
-            children: [{ contentPart: { referenceId: "rIdPlaceholder" } }],
-          },
-        },
+        //    opaque-part form Word uses for ink. Its r:id must point at a
+        //    registered content-part relationship, which only a round-trip
+        //    carries — a fresh document has no such part, so it is omitted here.
       ],
     },
   ],

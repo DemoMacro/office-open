@@ -13,7 +13,9 @@ const buffer = await generateDocument({
       dataType: "spreadsheet",
       connectString: "DSN=Excel Files;DBQ=data.xlsx",
       query: "SELECT * FROM `Sheet1$`",
-      dataSource: "data.xlsx",
+      // dataSource/headerSource take a relationship id (r:id) that must be
+      // registered in settings.xml.rels — round-trip only; a fresh document
+      // has no data-source part to point at.
       destination: "newDocument",
       addressFieldName: "Email",
       mailSubject: "Monthly Report",

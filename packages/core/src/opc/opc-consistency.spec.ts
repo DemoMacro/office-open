@@ -145,6 +145,41 @@ describe("validateOpcConsistency", () => {
     expect(codes(validateOpcConsistency(entries, DOCX_PARTS))).not.toContain("O3");
   });
 
+  it("O4 — flags a reference that the part's .rels never declares", () => {
+    const entries = baseDocxEntries();
+    entries.set(
+      "word/document.xml",
+      `<w:document><w:hyperlink r:id="rId9">x</w:hyperlink></w:document>`,
+    );
+    const issues = validateOpcConsistency(entries, DOCX_PARTS);
+    expect(codes(issues)).toContain("O4");
+    expect(issues.some((i) => i.code === "O4" && i.part === "word/document.xml")).toBe(true);
+  });
+
+  it("O4 — passes references declared by the part's .rels", () => {
+    const entries = baseDocxEntries();
+    entries.set(
+      "word/document.xml",
+      `<w:document r:id="rId6"><w:hyperlink r:id="rId1">x</w:hyperlink></w:document>`,
+    );
+    expect(codes(validateOpcConsistency(entries, DOCX_PARTS))).not.toContain("O4");
+  });
+
+  it("O4 — flags an unreplaced `{key}` placeholder as an undeclared reference", () => {
+    const entries = baseDocxEntries();
+    entries.set("word/document.xml", `<w:document><a:blip r:embed="{image1.png}"/></w:document>`);
+    const issues = validateOpcConsistency(entries, DOCX_PARTS);
+    const o4 = issues.filter((i) => i.code === "O4");
+    expect(o4).toHaveLength(1);
+    expect(o4[0]?.message).toContain("{image1.png}");
+  });
+
+  it("O4 — ignores parts without relationship references", () => {
+    const entries = baseDocxEntries();
+    entries.set("word/styles.xml", `<w:styles>{literal braces in text}</w:styles>`);
+    expect(codes(validateOpcConsistency(entries, DOCX_PARTS))).not.toContain("O4");
+  });
+
   it("O5 — flags a part with no Override and no Default for its extension", () => {
     const entries = baseDocxEntries();
     entries.set("word/data.bin", "binary");

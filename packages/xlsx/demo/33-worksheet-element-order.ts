@@ -58,7 +58,8 @@ const buffer = await generateWorkbook({
       },
       rowBreaks: [{ id: 8, manual: true }],
       colBreaks: [{ id: 3, manual: true }],
-      customProperties: [{ name: "CellProp", rId: "rId9" }],
+      // customProperties (customPr name + r:id) requires a relationship the
+      // worksheet's .rels must declare — round-trip only; XSD marks r:id required.
       cellWatches: [{ reference: "B2" }],
       ignoredErrors: [{ sqref: "A2:A12", numberStoredAsText: true }],
       oleObjects: [{ shapeId: 1, progId: "Pkg" }],
