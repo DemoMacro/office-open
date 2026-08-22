@@ -15,6 +15,7 @@ import type {
   ShapePropertiesExtensionOptions,
   FillOptions,
   BlackWhiteMode,
+  ShapeType,
   TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import { parseColorChoice, isPlainRgbColor } from "@office-open/core/drawing";
@@ -85,7 +86,8 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
-  geometry?: string | PresetGeometryOptions;
+  /** Preset geometry token or full geometry (a:prstGeom `@prst`, ST_ShapeType) */
+  geometry?: ShapeType | PresetGeometryOptions;
   customGeometry?: CustomGeometryOptions;
   /**
    * `null` marks a source spPr with no fill child — absence is the fidelity

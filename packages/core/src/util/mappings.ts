@@ -409,6 +409,31 @@ export const xsdAnimValueType = bidi({ string: "str", number: "num", color: "clr
 
 export const xsdTextBuild = bidi({ paragraph: "p", custom: "cust" } as const);
 
+// Diagram build (p:bldDgm @bld, ST_TLDiagramBuildType) — rotation directions
+// and "cust" are abbreviated; the rest pass through verbatim.
+export const xsdDiagramBuild = bidi({
+  clockwise: "cw",
+  clockwiseIn: "cwIn",
+  clockwiseOut: "cwOut",
+  counterclockwise: "ccw",
+  counterclockwiseIn: "ccwIn",
+  counterclockwiseOut: "ccwOut",
+  custom: "cust",
+} as const);
+
+// Chart build (p:bldOleChart @bld and a:bldChart @bld — identical token sets,
+// ST_TLOleChartBuildType / ST_AnimationChartBuildType).
+export const xsdChartBuild = bidi({
+  seriesElement: "seriesEl",
+  categoryElement: "categoryEl",
+} as const);
+
+// Diagram sub-build (a:bldDgm @bld, ST_AnimationDgmBuildType).
+export const xsdAnimationDgmBuild = bidi({
+  levelOne: "lvlOne",
+  levelAtOnce: "lvlAtOnce",
+} as const);
+
 export const xsdIterateType = bidi({ element: "el", word: "wd", letter: "lt" } as const);
 
 export const xsdSlideLayoutType = bidi({

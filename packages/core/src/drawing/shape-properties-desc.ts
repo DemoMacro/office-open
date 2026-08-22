@@ -25,7 +25,7 @@ import { fillDesc, findFillChild } from "./fill/fill-descriptors";
 import type { FillOptions } from "./fill/fill-options";
 import type { CustomGeometryOptions } from "./geometry/custom-geometry";
 import { presetGeometryDesc, customGeometryDesc } from "./geometry/geometry-descriptors";
-import type { PresetGeometryOptions } from "./geometry/preset-geometry";
+import type { PresetGeometryOptions, ShapeType } from "./geometry/preset-geometry";
 import type { OutlineOptions } from "./outline/outline";
 import { outlineDesc, stringifyLineProperties } from "./outline/outline-descriptors";
 import type { Scene3DOptions } from "./three-d/scene-3d";
@@ -68,7 +68,7 @@ export interface ShapePropertiesOptions {
   childExtentHeight?: number | UniversalMeasure;
   // EG_Geometry (choice: a:custGeom | a:prstGeom). customGeometry wins; a bare
   // string geometry is shorthand for { preset: "<name>" }.
-  geometry?: string | PresetGeometryOptions;
+  geometry?: ShapeType | PresetGeometryOptions;
   customGeometry?: CustomGeometryOptions;
   // EG_FillProperties
   fill?: FillOptions;

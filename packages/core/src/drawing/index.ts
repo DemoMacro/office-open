@@ -92,7 +92,7 @@ export type { BevelPreset } from "./three-d/bevel";
 
 // Geometry
 export { stringifyPresetGeometry } from "./geometry/preset-geometry";
-export type { PresetGeometryOptions } from "./geometry/preset-geometry";
+export type { PresetGeometryOptions, ShapeType } from "./geometry/preset-geometry";
 export { stringifyAdjustmentValues } from "./geometry/adjustment-values";
 export type { GeometryGuide } from "./geometry/adjustment-values";
 export { createCustomGeometry } from "./geometry/custom-geometry";

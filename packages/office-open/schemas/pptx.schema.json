@@ -197,6 +197,26 @@
           "type": "number"
         },
         "diagramBuild": {
+          "description": "Diagram build order (p:bldDgm `@bld`).",
+          "enum": [
+            "whole",
+            "depthByNode",
+            "depthByBranch",
+            "breadthByNode",
+            "breadthByLvl",
+            "clockwise",
+            "clockwiseIn",
+            "clockwiseOut",
+            "counterclockwise",
+            "counterclockwiseIn",
+            "counterclockwiseOut",
+            "inByRing",
+            "outByRing",
+            "up",
+            "down",
+            "allAtOnce",
+            "custom"
+          ],
           "type": "string"
         },
         "graphicBuildAsOne": {
@@ -213,6 +233,8 @@
           "type": "boolean"
         },
         "oleChartBuild": {
+          "description": "OLE chart build order (p:bldOleChart `@bld`).",
+          "enum": ["allAtOnce", "series", "category", "seriesElement", "categoryElement"],
           "type": "string"
         },
         "rev": {
@@ -562,6 +584,7 @@
         },
         "oleChartElementType": {
           "description": "OLE chart element type (p:oleChartEl `@type`).",
+          "enum": ["gridLegend", "series", "category", "ptInSeries", "ptInCategory"],
           "type": "string"
         },
         "override": {
@@ -723,7 +746,8 @@
               "type": "boolean"
             },
             "build": {
-              "description": "Build type",
+              "description": "Build type (a:bldChart `@bld`,, default \"allAtOnce\")",
+              "enum": ["allAtOnce", "series", "category", "seriesElement", "categoryElement"],
               "type": "string"
             }
           },
@@ -734,7 +758,8 @@
           "description": "Diagram build (a:bldDgm).",
           "properties": {
             "build": {
-              "description": "Build type",
+              "description": "Build type (a:bldDgm `@bld`,, default \"allAtOnce\")",
+              "enum": ["allAtOnce", "one", "levelOne", "levelAtOnce"],
               "type": "string"
             },
             "reverse": {
@@ -1059,6 +1084,7 @@
         },
         "oleChartElementType": {
           "description": "OLE chart element type (p:oleChartEl `@type`).",
+          "enum": ["gridLegend", "series", "category", "ptInSeries", "ptInCategory"],
           "type": "string"
         },
         "override": {
@@ -4017,7 +4043,7 @@
         "geometry": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/ShapeType"
             },
             {
               "$ref": "#/definitions/PresetGeometryOptions"
@@ -5172,6 +5198,20 @@
           "type": "string"
         },
         "event": {
+          "description": "Trigger event (p:cond `@evt`)",
+          "enum": [
+            "onBegin",
+            "onEnd",
+            "begin",
+            "end",
+            "onClick",
+            "onDblClick",
+            "onMouseOver",
+            "onMouseOut",
+            "onNext",
+            "onPrev",
+            "onStopAudio"
+          ],
           "type": "string"
         },
         "runtimeNode": {
@@ -7168,7 +7208,7 @@
         "geometry": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/ShapeType"
             },
             {
               "$ref": "#/definitions/PresetGeometryOptions"
@@ -7600,18 +7640,24 @@
           "type": "string"
         },
         "cryptoAlgorithmClass": {
+          "description": "Crypto algorithm class (`@cryptAlgorithmClass`, s:)",
+          "enum": ["hash", "custom"],
           "type": "string"
         },
         "cryptoAlgorithmSid": {
           "type": "number"
         },
         "cryptoAlgorithmType": {
+          "description": "Crypto algorithm type (`@cryptAlgorithmType`, s:)",
+          "enum": ["typeAny", "custom"],
           "type": "string"
         },
         "cryptoProvider": {
           "type": "string"
         },
         "cryptoProviderType": {
+          "description": "Crypto provider (p:modifiedVerifier `@cryptProviderType`, s:)",
+          "enum": ["rsaAES", "rsaFull", "custom"],
           "type": "string"
         },
         "cryptoProviderTypeExtension": {
@@ -8911,7 +8957,7 @@
         "geometry": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/ShapeType"
             },
             {
               "$ref": "#/definitions/PresetGeometryOptions"
@@ -9664,7 +9710,8 @@
           "type": "array"
         },
         "preset": {
-          "type": "string"
+          "$ref": "#/definitions/ShapeType",
+          "description": "Preset token (a:prstGeom `@prst`)"
         }
       },
       "type": "object"
@@ -10487,12 +10534,13 @@
         "geometry": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/ShapeType"
             },
             {
               "$ref": "#/definitions/PresetGeometryOptions"
             }
-          ]
+          ],
+          "description": "Preset geometry token or full geometry (a:prstGeom `@prst`)"
         },
         "hasCustomPrompt": {
           "type": "boolean"
@@ -10700,7 +10748,7 @@
         "geometry": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/definitions/ShapeType"
             },
             {
               "$ref": "#/definitions/PresetGeometryOptions"
@@ -10821,6 +10869,200 @@
       },
       "required": ["index"],
       "type": "object"
+    },
+    "ShapeType": {
+      "description": "Preset shape tokens (a:prstGeom `@prst`, — dml-main.xsd, 188 values verbatim). `textNoShape` is a text-body-only preset; the arrows, flowChart*, and actionButton* families round out the set.",
+      "enum": [
+        "line",
+        "lineInv",
+        "triangle",
+        "rtTriangle",
+        "rect",
+        "diamond",
+        "parallelogram",
+        "trapezoid",
+        "nonIsoscelesTrapezoid",
+        "pentagon",
+        "hexagon",
+        "heptagon",
+        "octagon",
+        "decagon",
+        "dodecagon",
+        "star4",
+        "star5",
+        "star6",
+        "star7",
+        "star8",
+        "star10",
+        "star12",
+        "star16",
+        "star24",
+        "star32",
+        "roundRect",
+        "round1Rect",
+        "round2SameRect",
+        "round2DiagRect",
+        "snipRoundRect",
+        "snip1Rect",
+        "snip2SameRect",
+        "snip2DiagRect",
+        "plaque",
+        "ellipse",
+        "teardrop",
+        "homePlate",
+        "chevron",
+        "pieWedge",
+        "pie",
+        "blockArc",
+        "donut",
+        "noSmoking",
+        "rightArrow",
+        "leftArrow",
+        "upArrow",
+        "downArrow",
+        "stripedRightArrow",
+        "notchedRightArrow",
+        "bentUpArrow",
+        "leftRightArrow",
+        "upDownArrow",
+        "leftUpArrow",
+        "leftRightUpArrow",
+        "quadArrow",
+        "leftArrowCallout",
+        "rightArrowCallout",
+        "upArrowCallout",
+        "downArrowCallout",
+        "leftRightArrowCallout",
+        "upDownArrowCallout",
+        "quadArrowCallout",
+        "bentArrow",
+        "uturnArrow",
+        "circularArrow",
+        "leftCircularArrow",
+        "leftRightCircularArrow",
+        "curvedRightArrow",
+        "curvedLeftArrow",
+        "curvedUpArrow",
+        "curvedDownArrow",
+        "swooshArrow",
+        "cube",
+        "can",
+        "lightningBolt",
+        "heart",
+        "sun",
+        "moon",
+        "smileyFace",
+        "irregularSeal1",
+        "irregularSeal2",
+        "foldedCorner",
+        "bevel",
+        "frame",
+        "halfFrame",
+        "corner",
+        "diagStripe",
+        "chord",
+        "arc",
+        "leftBracket",
+        "rightBracket",
+        "leftBrace",
+        "rightBrace",
+        "bracketPair",
+        "bracePair",
+        "straightConnector1",
+        "bentConnector2",
+        "bentConnector3",
+        "bentConnector4",
+        "bentConnector5",
+        "curvedConnector2",
+        "curvedConnector3",
+        "curvedConnector4",
+        "curvedConnector5",
+        "callout1",
+        "callout2",
+        "callout3",
+        "accentCallout1",
+        "accentCallout2",
+        "accentCallout3",
+        "borderCallout1",
+        "borderCallout2",
+        "borderCallout3",
+        "accentBorderCallout1",
+        "accentBorderCallout2",
+        "accentBorderCallout3",
+        "wedgeRectCallout",
+        "wedgeRoundRectCallout",
+        "wedgeEllipseCallout",
+        "cloudCallout",
+        "cloud",
+        "ribbon",
+        "ribbon2",
+        "ellipseRibbon",
+        "ellipseRibbon2",
+        "leftRightRibbon",
+        "verticalScroll",
+        "horizontalScroll",
+        "wave",
+        "doubleWave",
+        "plus",
+        "flowChartProcess",
+        "flowChartDecision",
+        "flowChartInputOutput",
+        "flowChartPredefinedProcess",
+        "flowChartInternalStorage",
+        "flowChartDocument",
+        "flowChartMultidocument",
+        "flowChartTerminator",
+        "flowChartPreparation",
+        "flowChartManualInput",
+        "flowChartManualOperation",
+        "flowChartConnector",
+        "flowChartPunchedCard",
+        "flowChartPunchedTape",
+        "flowChartSummingJunction",
+        "flowChartOr",
+        "flowChartCollate",
+        "flowChartSort",
+        "flowChartExtract",
+        "flowChartMerge",
+        "flowChartOfflineStorage",
+        "flowChartOnlineStorage",
+        "flowChartMagneticTape",
+        "flowChartMagneticDisk",
+        "flowChartMagneticDrum",
+        "flowChartDisplay",
+        "flowChartDelay",
+        "flowChartAlternateProcess",
+        "flowChartOffpageConnector",
+        "actionButtonBlank",
+        "actionButtonHome",
+        "actionButtonHelp",
+        "actionButtonInformation",
+        "actionButtonForwardNext",
+        "actionButtonBackPrevious",
+        "actionButtonEnd",
+        "actionButtonBeginning",
+        "actionButtonReturn",
+        "actionButtonDocument",
+        "actionButtonSound",
+        "actionButtonMovie",
+        "gear6",
+        "gear9",
+        "funnel",
+        "mathPlus",
+        "mathMinus",
+        "mathMultiply",
+        "mathDivide",
+        "mathEqual",
+        "mathNotEqual",
+        "cornerTabs",
+        "squareTabs",
+        "plaqueTabs",
+        "chartX",
+        "chartStar",
+        "chartPlus",
+        "textNoShape"
+      ],
+      "type": "string"
     },
     "ShowOptions": {
       "additionalProperties": false,
@@ -13766,12 +14008,35 @@
           "type": "boolean"
         },
         "color": {
+          "description": "Color scheme for web output (p:webPr `@clr`)",
+          "enum": [
+            "none",
+            "browser",
+            "presentationText",
+            "presentationAccent",
+            "whiteTextOnBlack",
+            "blackTextOnWhite"
+          ],
           "type": "string"
         },
         "encoding": {
           "type": "string"
         },
         "imageSize": {
+          "description": "Monitor size for web output (p:webPr `@imgSz`)",
+          "enum": [
+            "544x376",
+            "640x480",
+            "720x512",
+            "800x600",
+            "1024x768",
+            "1152x882",
+            "1152x900",
+            "1280x1024",
+            "1600x1200",
+            "1800x1400",
+            "1920x1200"
+          ],
           "type": "string"
         },
         "organizeInFolders": {

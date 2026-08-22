@@ -31,9 +31,12 @@ export interface ModifyVerifierOptions {
   hashValue?: string;
   saltValue?: string;
   spinValue?: number;
-  cryptoProviderType?: string;
-  cryptoAlgorithmClass?: string;
-  cryptoAlgorithmType?: string;
+  /** Crypto provider (p:modifiedVerifier `@cryptProviderType`, s:ST_CryptProv) */
+  cryptoProviderType?: "rsaAES" | "rsaFull" | "custom";
+  /** Crypto algorithm class (`@cryptAlgorithmClass`, s:ST_AlgClass) */
+  cryptoAlgorithmClass?: "hash" | "custom";
+  /** Crypto algorithm type (`@cryptAlgorithmType`, s:ST_AlgType) */
+  cryptoAlgorithmType?: "typeAny" | "custom";
   cryptoAlgorithmSid?: number;
   spinCount?: number;
   saltData?: string;

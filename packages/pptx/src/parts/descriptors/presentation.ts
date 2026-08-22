@@ -421,11 +421,17 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
     if (mv.attributes["spinValue"] !== undefined)
       mvOpts.spinValue = Number(mv.attributes["spinValue"]);
     if (mv.attributes["cryptProviderType"])
-      mvOpts.cryptoProviderType = String(mv.attributes["cryptProviderType"]);
+      mvOpts.cryptoProviderType = String(
+        mv.attributes["cryptProviderType"],
+      ) as ModifyVerifierOptions["cryptoProviderType"];
     if (mv.attributes["cryptAlgorithmClass"])
-      mvOpts.cryptoAlgorithmClass = String(mv.attributes["cryptAlgorithmClass"]);
+      mvOpts.cryptoAlgorithmClass = String(
+        mv.attributes["cryptAlgorithmClass"],
+      ) as ModifyVerifierOptions["cryptoAlgorithmClass"];
     if (mv.attributes["cryptAlgorithmType"])
-      mvOpts.cryptoAlgorithmType = String(mv.attributes["cryptAlgorithmType"]);
+      mvOpts.cryptoAlgorithmType = String(
+        mv.attributes["cryptAlgorithmType"],
+      ) as ModifyVerifierOptions["cryptoAlgorithmType"];
     if (mv.attributes["cryptAlgorithmSid"] !== undefined)
       mvOpts.cryptoAlgorithmSid = Number(mv.attributes["cryptAlgorithmSid"]);
     if (mv.attributes["spinCount"] !== undefined)

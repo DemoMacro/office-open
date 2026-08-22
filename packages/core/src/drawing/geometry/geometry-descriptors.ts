@@ -22,7 +22,7 @@ import type {
   ConnectionSite,
   GeomRect,
 } from "./custom-geometry";
-import type { PresetGeometryOptions } from "./preset-geometry";
+import type { PresetGeometryOptions, ShapeType } from "./preset-geometry";
 
 // ── Adjustment values helper ──
 
@@ -53,7 +53,7 @@ export const presetGeometryDesc: CustomDescriptor<PresetGeometryOptions> = {
   parse(el, ctx) {
     const result: PresetGeometryOptions = {};
     if (el.attributes?.["prst"] !== undefined) {
-      result.preset = String(el.attributes["prst"]);
+      result.preset = String(el.attributes["prst"]) as ShapeType;
     }
     const avLst = findChild(el, "a:avLst");
     if (avLst) {

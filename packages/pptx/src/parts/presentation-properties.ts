@@ -8,9 +8,28 @@ export interface WebPropertiesOptions {
   relyOnVml?: boolean;
   organizeInFolders?: boolean;
   useLongFilenames?: boolean;
-  imageSize?: string;
+  /** Monitor size for web output (p:webPr `@imgSz`, ST_WebScreenSize) */
+  imageSize?:
+    | "544x376"
+    | "640x480"
+    | "720x512"
+    | "800x600"
+    | "1024x768"
+    | "1152x882"
+    | "1152x900"
+    | "1280x1024"
+    | "1600x1200"
+    | "1800x1400"
+    | "1920x1200";
   encoding?: string;
-  color?: string;
+  /** Color scheme for web output (p:webPr `@clr`, ST_WebColorType) */
+  color?:
+    | "none"
+    | "browser"
+    | "presentationText"
+    | "presentationAccent"
+    | "whiteTextOnBlack"
+    | "blackTextOnWhite";
 }
 
 /** Print options (p:prnPr — what each page holds and the color mode). */

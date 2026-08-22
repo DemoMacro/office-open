@@ -64,7 +64,19 @@ export interface AnimationVariantOptions {
 }
 
 export interface EndConditionOptions {
-  event?: string;
+  /** Trigger event (p:cond `@evt`, ST_TLTriggerEvent) */
+  event?:
+    | "onBegin"
+    | "onEnd"
+    | "begin"
+    | "end"
+    | "onClick"
+    | "onDblClick"
+    | "onMouseOver"
+    | "onMouseOut"
+    | "onNext"
+    | "onPrev"
+    | "onStopAudio";
   delay?: string;
   timeNodeId?: number;
   /** Which sibling time nodes the condition covers: first, last, or all. */
@@ -87,9 +99,28 @@ export interface AnimationBuildOptions {
   advanceAuto?: number;
   templates?: AnimationTemplateOptions[];
   // diagram-specific
-  diagramBuild?: string;
+  /** Diagram build order (p:bldDgm `@bld`, ST_TLDiagramBuildType). */
+  diagramBuild?:
+    | "whole"
+    | "depthByNode"
+    | "depthByBranch"
+    | "breadthByNode"
+    | "breadthByLvl"
+    | "clockwise"
+    | "clockwiseIn"
+    | "clockwiseOut"
+    | "counterclockwise"
+    | "counterclockwiseIn"
+    | "counterclockwiseOut"
+    | "inByRing"
+    | "outByRing"
+    | "up"
+    | "down"
+    | "allAtOnce"
+    | "custom";
   // oleChart-specific
-  oleChartBuild?: string;
+  /** OLE chart build order (p:bldOleChart `@bld`, ST_TLOleChartBuildType). */
+  oleChartBuild?: "allAtOnce" | "series" | "category" | "seriesElement" | "categoryElement";
   oleChartAnimateBackground?: boolean;
   // graphic-specific
   graphicBuildAsOne?: boolean;
@@ -101,15 +132,15 @@ export interface AnimationBuildOptions {
 export interface AnimationGraphicSubBuildOptions {
   /** Diagram build (a:bldDgm). */
   diagram?: {
-    /** Build type (ST_AnimationDgmBuildType, default "allAtOnce") */
-    build?: string;
+    /** Build type (a:bldDgm `@bld`, ST_AnimationDgmBuildType, default "allAtOnce") */
+    build?: "allAtOnce" | "one" | "levelOne" | "levelAtOnce";
     /** Reverse build order (`@rev`, default false) */
     reverse?: boolean;
   };
   /** Chart build (a:bldChart). */
   chart?: {
-    /** Build type (ST_AnimationChartBuildType, default "allAtOnce") */
-    build?: string;
+    /** Build type (a:bldChart `@bld`, ST_AnimationChartBuildType, default "allAtOnce") */
+    build?: "allAtOnce" | "series" | "category" | "seriesElement" | "categoryElement";
     /** Animate chart background (`@animBg`, default true) */
     animateBackground?: boolean;
   };
@@ -272,8 +303,8 @@ export interface AnimationOptions {
       buildStep: "category" | "ptInCategory" | "series" | "ptInSeries" | "allPts" | "gridLegend";
     };
   };
-  /** OLE chart element type (p:oleChartEl `@type`). */
-  oleChartElementType?: string;
+  /** OLE chart element type (p:oleChartEl `@type`, ST_TLChartSubelementType). */
+  oleChartElementType?: "gridLegend" | "series" | "category" | "ptInSeries" | "ptInCategory";
   /** OLE chart element level (p:oleChartEl `@lvl`). */
   oleChartElementLevel?: number;
 

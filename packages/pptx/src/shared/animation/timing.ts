@@ -2,6 +2,9 @@ import {
   xsdAnimCalcMode,
   xsdAnimClass,
   xsdAnimValueType,
+  xsdAnimationDgmBuild,
+  xsdChartBuild,
+  xsdDiagramBuild,
   xsdIterateType,
   xsdTextBuild,
 } from "@office-open/core";
@@ -809,12 +812,12 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
       }
       case "diagram": {
         elementName = "p:bldDgm";
-        if (bld.diagramBuild) bldAttrs.bld = bld.diagramBuild;
+        if (bld.diagramBuild) bldAttrs.bld = xsdDiagramBuild.to(bld.diagramBuild);
         break;
       }
       case "oleChart": {
         elementName = "p:bldOleChart";
-        if (bld.oleChartBuild) bldAttrs.bld = bld.oleChartBuild;
+        if (bld.oleChartBuild) bldAttrs.bld = xsdChartBuild.to(bld.oleChartBuild);
         if (bld.oleChartAnimateBackground !== undefined)
           bldAttrs.animBg = bld.oleChartAnimateBackground ? 1 : 0;
         break;
@@ -827,14 +830,14 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
           const sub = bld.graphicSubBuild;
           if (sub?.diagram) {
             const dgmAttrs: Record<string, string | number> = {};
-            if (sub.diagram.build) dgmAttrs.bld = sub.diagram.build;
+            if (sub.diagram.build) dgmAttrs.bld = xsdAnimationDgmBuild.to(sub.diagram.build);
             if (sub.diagram.reverse) dgmAttrs.rev = 1;
             bldChildrenInner.push(
               buildXml("p:bldSub", undefined, [buildXml("a:bldDgm", dgmAttrs)]),
             );
           } else if (sub?.chart) {
             const chartAttrs: Record<string, string | number> = {};
-            if (sub.chart.build) chartAttrs.bld = sub.chart.build;
+            if (sub.chart.build) chartAttrs.bld = xsdChartBuild.to(sub.chart.build);
             if (sub.chart.animateBackground !== undefined)
               chartAttrs.animBg = sub.chart.animateBackground ? 1 : 0;
             bldChildrenInner.push(

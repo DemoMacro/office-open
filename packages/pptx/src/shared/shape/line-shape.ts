@@ -10,6 +10,7 @@ import type {
   Scene3DOptions,
   Shape3DOptions,
   ShapeLockingOptions,
+  ShapeType,
   TextBodyOptions,
 } from "@office-open/core/drawing";
 import type { FillOptions } from "@shared/drawing/fill";
@@ -50,7 +51,7 @@ export interface ConnectorOptions extends BaseConnectorOptions {
    * guides). The endpoint model defaults to "line"; source connectors often
    * use bentConnector/elbowConnector forms with adjusted values.
    */
-  geometry?: string | PresetGeometryOptions;
+  geometry?: ShapeType | PresetGeometryOptions;
   x1?: number | UniversalMeasure;
   y1?: number | UniversalMeasure;
   x2?: number | UniversalMeasure;

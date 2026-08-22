@@ -94,11 +94,11 @@ function parsePresentationProperties(el: XmlElement): PresentationPropertiesOpti
     if (String(webPr.attributes?.["organizeInFolders"]) === "0") web.organizeInFolders = false;
     if (String(webPr.attributes?.["useLongFilenames"]) === "0") web.useLongFilenames = false;
     const imageSize = attr(webPr, "imgSz");
-    if (imageSize) web.imageSize = imageSize;
+    if (imageSize) web.imageSize = imageSize as WebPropertiesOptions["imageSize"];
     const encoding = attr(webPr, "encoding");
     if (encoding) web.encoding = encoding;
     const color = attr(webPr, "clr");
-    if (color) web.color = color;
+    if (color) web.color = color as WebPropertiesOptions["color"];
     if (Object.keys(web).length > 0) result.web = web as WebPropertiesOptions;
   }
 
