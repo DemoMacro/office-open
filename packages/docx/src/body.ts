@@ -61,6 +61,7 @@ import type {
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
+import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
 import { parseBorderSide } from "@shared/border";
 import type { MediaData } from "@shared/media/data";
@@ -68,7 +69,7 @@ import type { SectionChild } from "@shared/section";
 import { parseShading } from "@shared/shading";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
-import { tableDesc, altChunkDesc, subDocDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
+import { tableDesc, altChunkDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
 import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch, stringifyRunInline } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
@@ -229,9 +230,6 @@ export function stringifyBodyChild(
   }
   if ("altChunk" in child) {
     return altChunkDesc.stringify(child.altChunk, ctx) ?? "";
-  }
-  if ("subDoc" in child) {
-    return subDocDesc.stringify(child.subDoc, ctx) ?? "";
   }
   if ("customXml" in child) {
     return customXmlBlockDesc.stringify(child.customXml, ctx) ?? "";
@@ -1599,6 +1597,12 @@ function parseRunLevelChildren(
       case "w:hyperlink": {
         const hlChild = parseHyperlinkChild(child, ctx);
         if (hlChild) childList.push(hlChild);
+        break;
+      }
+      case "w:subDoc": {
+        // EG_PContent member — the sub-document insertion sits inside a
+        // paragraph like a hyperlink, never directly under w:body
+        childList.push({ subDoc: parseSubDoc(child, ctx) });
         break;
       }
       case "w:bookmarkStart": {

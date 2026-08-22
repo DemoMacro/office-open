@@ -10,6 +10,7 @@ import type { CustomXmlRunOptions } from "@parts/custom-xml";
 import type { ObjectElementOptions } from "@parts/object";
 import type { PermStartOptions } from "@parts/perm-start";
 import type { PictOptions } from "@parts/pict";
+import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ContentPartOptions } from "@shared/media/data";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
@@ -232,6 +233,9 @@ export type ParagraphChild =
     }
   // Inline structured document tag (CT_SdtRun)
   | { sdt: SdtRunOptions }
+  // Sub-document insertion point (w:subDoc, CT_Rel — EG_PContent member like
+  // hyperlink, never a body-level child)
+  | { subDoc: SubDocOptions }
   // Verbatim run-level XML captured on parse for shapes without a structured
   // form (unrecognized drawings, future graphicData payloads)
   | { rawXml: string }

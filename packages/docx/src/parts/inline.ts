@@ -17,6 +17,7 @@ import { chartSpaceDesc } from "@office-open/core/chart";
 import { createDataModel, definitionId } from "@office-open/core/smartart";
 import type { SmartArtRawParts } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
+import { subDocDesc } from "@parts/bodychildren";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import { objectDesc, type ObjectElementOptions } from "@parts/object";
 import type {
@@ -641,6 +642,11 @@ export function stringifyChildDispatch(
   }
   if ("tab" in child) {
     return `<w:r>${runPropertiesXml(child)}<w:tab/></w:r>`;
+  }
+  // Sub-document insertion (w:subDoc, EG_PContent member like hyperlink — no
+  // run wrapper, the element sits directly in the paragraph)
+  if ("subDoc" in child) {
+    return subDocDesc.stringify(child.subDoc, ctx) ?? "";
   }
 
   // Reference types — pure XML, no side effects

@@ -364,4 +364,14 @@ describe("subDocDesc stringify", () => {
     expect(xml).toContain("<w:subDoc");
     expect(xml).toContain('r:id="rId');
   });
+
+  it("dispatches as a paragraph child without a run wrapper", async () => {
+    const { stringifyChildDispatch } = await import("./inline");
+    const xml = stringifyChildDispatch(
+      { subDoc: { data: new Uint8Array([1, 2, 3]) } },
+      writeCtx,
+    ) as string;
+    expect(xml).toMatch(/^<w:subDoc r:id="rId/);
+    expect(xml).not.toContain("<w:r>");
+  });
 });

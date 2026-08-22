@@ -136,7 +136,6 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
               "textbox" in child ||
               "sdt" in child ||
               "altChunk" in child ||
-              "subDoc" in child ||
               "customXml" in child ||
               "bookmarkStart" in child ||
               "bookmarkEnd" in child ||

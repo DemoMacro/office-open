@@ -12,7 +12,6 @@ import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
 import { parseSectionPropertiesEl } from "@parts/document/body/section-properties/descriptor";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
-import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 import {
   parseToc,
@@ -186,8 +185,6 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
     }
     case "w:altChunk":
       return { altChunk: parseAltChunk(el, ctx) };
-    case "w:subDoc":
-      return { subDoc: parseSubDoc(el, ctx) };
     case "w:customXml":
       return { customXml: parseCustomXmlBlock(el, ctx, parseSectionChild) };
     case "w:bookmarkStart": {

@@ -13019,6 +13019,17 @@
         {
           "additionalProperties": false,
           "properties": {
+            "subDoc": {
+              "$ref": "#/definitions/SubDocOptions"
+            }
+          },
+          "required": ["subDoc"],
+          "title": "subDoc",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "rawXml": {
               "type": "string"
             }
@@ -19064,17 +19075,6 @@
         {
           "additionalProperties": false,
           "properties": {
-            "subDoc": {
-              "$ref": "#/definitions/SubDocOptions"
-            }
-          },
-          "required": ["subDoc"],
-          "title": "subDoc",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
             "customXml": {
               "$ref": "#/definitions/CustomXmlBlockOptions"
             }
@@ -19117,7 +19117,7 @@
           "type": "object"
         }
       ],
-      "description": "Discriminated union for section body, header, and footer children.\n\nEach variant uses a single-key discriminator:\n- `{ paragraph: … }` → paragraph\n- `{ table: … }`      → table\n- `{ toc: … }`         → table of contents\n- `{ textbox: … }`     → textbox\n- `{ sdt: … }`         → structured document tag\n- `{ altChunk: … }`    → alt chunk\n- `{ subDoc: … }`      → sub document\n- `{ customXml: … }`   → custom XML\n- `{ bookmarkStart/End }` → body-level range markers (between paragraphs)"
+      "description": "Discriminated union for section body, header, and footer children.\n\nEach variant uses a single-key discriminator:\n- `{ paragraph: … }` → paragraph\n- `{ table: … }`      → table\n- `{ toc: … }`         → table of contents\n- `{ textbox: … }`     → textbox\n- `{ sdt: … }`         → structured document tag\n- `{ altChunk: … }`    → alt chunk\n- `{ customXml: … }`   → custom XML\n- `{ bookmarkStart/End }` → body-level range markers (between paragraphs)"
     },
     "SectionOptions": {
       "additionalProperties": false,

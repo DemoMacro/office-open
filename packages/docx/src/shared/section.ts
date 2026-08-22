@@ -13,7 +13,6 @@ import type { SectionPropertiesOptions } from "@parts/document/body/section-prop
 import type { MarkupRangeOptions, BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
-import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 import type { TableOptions } from "@parts/table/table";
@@ -28,7 +27,6 @@ import type { TableOptions } from "@parts/table/table";
  * - `{ textbox: … }`     → textbox
  * - `{ sdt: … }`         → structured document tag
  * - `{ altChunk: … }`    → alt chunk
- * - `{ subDoc: … }`      → sub document
  * - `{ customXml: … }`   → custom XML
  * - `{ bookmarkStart/End }` → body-level range markers (between paragraphs)
  */
@@ -51,7 +49,6 @@ export type SectionChild =
       };
     }
   | { altChunk: AltChunkOptions }
-  | { subDoc: SubDocOptions }
   | { customXml: CustomXmlBlockOptions }
   | { bookmarkStart: BookmarkStartOptions }
   | { bookmarkEnd: MarkupRangeOptions }

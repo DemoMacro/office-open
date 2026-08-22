@@ -16104,7 +16104,7 @@
           "type": "string"
         },
         "volTypes": {
-          "description": "Volatile dependencies",
+          "description": "Volatile function types (xl/volTypes.xml part, root)",
           "items": {
             "$ref": "#/definitions/VolTypeOptions"
           },
