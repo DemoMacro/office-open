@@ -1,0 +1,163 @@
+{
+  "sdk": {
+    "docx": {
+      "total": 502,
+      "clean": 492,
+      "diff": 8,
+      "parseFail": 2,
+      "genFail": 0
+    },
+    "xlsx": {
+      "total": 109,
+      "clean": 77,
+      "diff": 32,
+      "parseFail": 0,
+      "genFail": 0
+    },
+    "pptx": {
+      "total": 183,
+      "clean": 170,
+      "diff": 12,
+      "parseFail": 1,
+      "genFail": 0
+    }
+  },
+  "calamine": {
+    "docx": {
+      "total": 0,
+      "clean": 0,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0
+    },
+    "xlsx": {
+      "total": 69,
+      "clean": 35,
+      "diff": 33,
+      "parseFail": 1,
+      "genFail": 0
+    },
+    "pptx": {
+      "total": 0,
+      "clean": 0,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0
+    }
+  },
+  "closedxml": {
+    "docx": {
+      "total": 0,
+      "clean": 0,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0
+    },
+    "xlsx": {
+      "total": 384,
+      "clean": 120,
+      "diff": 262,
+      "parseFail": 2,
+      "genFail": 0
+    },
+    "pptx": {
+      "total": 0,
+      "clean": 0,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0
+    }
+  },
+  "oletools": {
+    "docx": {
+      "total": 16,
+      "clean": 8,
+      "diff": 3,
+      "parseFail": 5,
+      "genFail": 0
+    },
+    "xlsx": {
+      "total": 12,
+      "clean": 6,
+      "diff": 1,
+      "parseFail": 5,
+      "genFail": 0
+    },
+    "pptx": {
+      "total": 6,
+      "clean": 4,
+      "diff": 0,
+      "parseFail": 2,
+      "genFail": 0
+    }
+  },
+  "pandoc": {
+    "docx": {
+      "total": 131,
+      "clean": 117,
+      "diff": 13,
+      "parseFail": 1,
+      "genFail": 0
+    },
+    "xlsx": {
+      "total": 1,
+      "clean": 1,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0
+    },
+    "pptx": {
+      "total": 109,
+      "clean": 103,
+      "diff": 6,
+      "parseFail": 0,
+      "genFail": 0
+    }
+  },
+  "python-pptx": {
+    "docx": {
+      "total": 1,
+      "clean": 1,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0
+    },
+    "xlsx": {
+      "total": 1,
+      "clean": 1,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0
+    },
+    "pptx": {
+      "total": 68,
+      "clean": 62,
+      "diff": 6,
+      "parseFail": 0,
+      "genFail": 0
+    }
+  },
+  "tika": {
+    "docx": {
+      "total": 76,
+      "clean": 44,
+      "diff": 27,
+      "parseFail": 5,
+      "genFail": 0
+    },
+    "xlsx": {
+      "total": 36,
+      "clean": 21,
+      "diff": 11,
+      "parseFail": 4,
+      "genFail": 0
+    },
+    "pptx": {
+      "total": 32,
+      "clean": 16,
+      "diff": 15,
+      "parseFail": 1,
+      "genFail": 0
+    }
+  }
+}

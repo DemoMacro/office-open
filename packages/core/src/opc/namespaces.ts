@@ -143,11 +143,12 @@ function replaceAsciiBytes(
 
 // Needle/value pairs encoded once at module load — the per-call
 // TextEncoder().encode() pair allocated on every passthrough part.
-const OBSOLETE_PATTERNS: ReadonlyArray<{ needle: Uint8Array; value: Uint8Array }> =
-  Object.entries(OOXML_OBSOLETE_NAMESPACE_ALIASES).map(([obsolete, finalUri]) => ({
-    needle: new TextEncoder().encode(obsolete),
-    value: new TextEncoder().encode(finalUri),
-  }));
+const OBSOLETE_PATTERNS: ReadonlyArray<{ needle: Uint8Array; value: Uint8Array }> = Object.entries(
+  OOXML_OBSOLETE_NAMESPACE_ALIASES,
+).map(([obsolete, finalUri]) => ({
+  needle: new TextEncoder().encode(obsolete),
+  value: new TextEncoder().encode(finalUri),
+}));
 
 export const OOXML_CANONICAL_PREFIXES: Readonly<Record<string, string>> = {
   // Obsolete aliases resolve through their final namespace's canonical prefix.

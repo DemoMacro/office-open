@@ -36,6 +36,8 @@
     "schema:generate": "tsx scripts/generate-schema.ts && vp fmt packages/office-open/schemas",
     "schema:check": "tsx scripts/generate-schema.ts --check",
     "schema:validate": "tsx scripts/schema-validate.ts",
+    "corpus:setup": "tsx scripts/corpus-check.ts --setup",
+    "corpus:check": "tsx scripts/corpus-check.ts",
     "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
     "version": "pnpm --filter \"./packages/**\" -r exec basis version",
     "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
